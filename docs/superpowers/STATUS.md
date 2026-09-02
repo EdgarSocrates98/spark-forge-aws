@@ -61,7 +61,7 @@ arquivo ganha.
 | Skills | **46** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases`) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **23 de 46**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **289** em 33 domínios — recontado em 2026-09-02; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). A 289ª é `consumers/v3_sem_propriedade_com_athena` (2026-09-02), e ela prova um **falso negativo** que `SF-ENV-002` tinha: a regra lia a table property `format-version`, que é OPCIONAL, em vez do `format_version` do metadata, que é autoritativo. Tabela v3 sem a propriedade não disparava — e o modo de falha é o mesmo da fixture irmã: o job migra verde e o dashboard do outro time quebra dias depois. As duas juntas são o contrafactual: apontar a regra de volta para a propriedade cala esta e mantém a outra. |
+| Fixtures golden | **290** em 33 domínios — recontado em 2026-09-02; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). A 289ª é `consumers/v3_sem_propriedade_com_athena` (2026-09-02), e ela prova um **falso negativo** que `SF-ENV-002` tinha: a regra lia a table property `format-version`, que é OPCIONAL, em vez do `format_version` do metadata, que é autoritativo. Tabela v3 sem a propriedade não disparava — e o modo de falha é o mesmo da fixture irmã: o job migra verde e o dashboard do outro time quebra dias depois. As duas juntas são o contrafactual: apontar a regra de volta para a propriedade cala esta e mantém a outra. A 290ª é `iceberg/delete_content_separado` (2026-09-02): os **três** estados do censo por `content` no mesmo dump — 4 position, 3 equality e 3 sem a coluna, somando os 10 delete files. Antes, os dois tipos entravam no mesmo `delete_file_count` e um dump sem a coluna era indistinguível de um em que todos fossem do mesmo tipo. `SF-ICE-002` continua disparando pelo mesmo número: o censo **acrescenta** medida, não muda a que a regra já usava. |
 | Ramos de severidade com golden que os produz | **119 de 119** — recontado em 2026-09-02 (o sub-número **15 deles nas 7 regras com `severity_by`** continua certo; nenhuma das cinco `SF-CTM` de 2026-09-02 declara `severity_by`, então cada uma acrescenta um ramo só, o de `severity_default`. `SF-GRAPH` também não tem nenhuma, ver `V-GR-3`). A leitura anterior publicava 113 e já estava defasada em 1 antes desta entrega | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **225** (210 móveis, 15 fixas) — 93 citadas por regra, 215 por `knowledge/`, 83 pelas duas. As cinco parcelas foram **recontadas** em 2026-09-01 sobre o lock: as anteriores (201/14 e 87/205/77) somavam 215 e não fechavam com o total publicado. A entrega de conhecimento do Control-M acrescentou **uma** — a página What's New do Automation API —, e a de `Jobs-as-Code` acrescentou **quatro**: as três páginas do `API_CodeRef` que descrevem a forma do artefato (*Job Properties*, *Job Types*, *Folders and Flows*, citadas por `knowledge/controlm/` **e** por `SF-CTM-001`) e *Secrets in Code*, citada só por `knowledge/` — é ela que sustenta o veto V-CTM-1, porque publica que a credencial mora em connection profile e não em definição de job. A frase anterior desta linha, *"por regra nenhuma, porque não há regra de Control-M"*, deixou de valer com `SF-CTM`. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -6653,6 +6653,60 @@ existe.
 25 alegações novas, todas com prova: `command` para o que se mede, `source` para o que a
 spec publica, `historical` para os limiares que foram **removidos** — reexecutá-los no
 HEAD daria zero, que é o ponto.
+
+## Iceberg — o censo por `content`, e a auditoria da Fase B (2026-09-02)
+
+Sexto incremento. Fecha a camada *"parcialmente ao alcance"* do
+[`ICEBERG-GAP.md`](../harness/ICEBERG-GAP.md) e faz a auditoria de fontes que a §2 do
+prompt exige.
+
+### O censo de delete files
+
+O extrator contava `delete_file_count` e mais nada: **position delete e equality delete
+entravam no mesmo número**, e um dump sem a coluna `content` era indistinguível de um em
+que todos os deletes fossem do mesmo tipo.
+
+`.delete_files` tem a coluna `content` desde a v2 — é a única forma de separar os dois
+sem abrir o Avro. O censo agora sai com os três estados:
+
+| | |
+|---|---|
+| `position_delete_count` | `content = 1` |
+| `equality_delete_count` | `content = 2` |
+| `content_unresolved` | a coluna é **opcional** no dump; sem ela, nunca zero |
+| `content_unknown` | código fora do que a spec publica — nomeado, não empurrado para o tipo mais provável |
+
+**`0` não está no mapa, e a ausência é a decisão:** `0` é **data file**. Um `0` em
+`.delete_files` seria o coletor tendo misturado as duas tabelas, e chamá-lo de delete
+esconderia esse erro.
+
+**O deletion vector de v3 conta como position**, e a razão está escrita: ele *substitui* o
+position delete, não se soma a ele. Separá-los exigiria ler o Puffin — a mesma lacuna de
+coletor que o mapa registra.
+
+`delete_content_separado` tem os três no mesmo dump: **4 + 3 + 3 = 10**. E `SF-ICE-002`
+continua disparando pelo mesmo `delete_file_count` — o censo **acrescenta** medida, não
+muda a que a regra usava.
+
+### A auditoria das fontes (Fase B)
+
+A §2 lista dezesseis páginas da documentação do Iceberg. Medido contra as **225** fontes
+de `sources.lock.json`: **três** estão vigiadas — a Table Specification,
+`spark-procedures` e `spark-queries`. **Treze não estão.**
+
+**A varredura por substring dá três falsos positivos**, e vale registrá-los porque quem
+repetir a medição vai encontrá-los: `configuration` casa com a página do **Spark**,
+`metrics` com um blog da AWS, `releases` com a API do **GraphFrames**. A conta honesta é
+três, não sete.
+
+**O critério para vigiar não é "está na lista".** Vigiar custa: cada fonte vira alarme de
+drift, e a matriz do EMR já dispara ~4×/ano, a mensal do Control-M ~12×/ano. Uma fonte só
+se paga quando **sustenta um defeito** — e nenhuma das treze foi lida ainda para saber se
+destrava alguma das seis camadas paradas por falta de fonte.
+
+O trabalho que decide, e que **não** foi feito: varrer cada uma por padrão de defeito
+(`must`, `cannot`, `is not supported`, `up to N`), como a entrega de Control-M fez. Até lá,
+acrescentá-las compraria treze alarmes anuais sem nenhuma regra em troca.
 
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.

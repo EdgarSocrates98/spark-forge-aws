@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_757c0d",
+    "id": "f_dc9253",
     "schema_version": 1,
     "kind": "iceberg.delete_files_summary",
     "subject": {
@@ -11,7 +11,8 @@
     "measures": {
       "delete_file_count": 2,
       "data_file_count": 30,
-      "total_bytes": 80000
+      "total_bytes": 80000,
+      "content_unresolved": 2
     },
     "attrs": {},
     "provenance": {

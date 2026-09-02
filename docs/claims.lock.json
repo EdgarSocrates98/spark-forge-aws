@@ -2965,7 +2965,7 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **499** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **500** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
@@ -2975,13 +2975,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 499
+          "value": 500
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "499",
+      "text": "500",
       "type": "number"
     },
     {
@@ -3025,23 +3025,23 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-643",
       "line": 213,
-      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova.",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova. Remedido ao acrescentar o censo de `content` (2026-09-02).",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 674544
+          "value": 676195
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "670385",
+      "text": "676195",
       "type": "number"
     },
     {
@@ -3515,13 +3515,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1459759
+          "value": 1461410
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1459759",
+      "text": "1461410",
       "type": "number"
     },
     {
@@ -5691,7 +5691,7 @@
       "type": "number"
     },
     {
-      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **12 engines × 13",
+      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-747",
       "line": 24,
@@ -5711,7 +5711,7 @@
       "type": "number"
     },
     {
-      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **858 linhas** com **14 engines × 13",
+      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-748",
       "line": 24,
@@ -5731,7 +5731,7 @@
       "type": "number"
     },
     {
-      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **858 linhas** com **12 engines × 13",
+      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-749",
       "line": 24,
@@ -6024,10 +6024,94 @@
       "type": "number"
     },
     {
+      "context": "`knowledge/sources.lock.json`, que vigia **225** fontes no total:",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-767",
+      "line": 116,
+      "note": "quantas fontes o lock vigia hoje.",
+      "proof": {
+        "cmd": "python -c \"import json,pathlib; d=json.loads(pathlib.Path('knowledge/sources.lock.json').read_text(encoding='utf-8')); print(len(d if isinstance(d,list) else d.get('sources',d)))\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 225
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "225",
+      "type": "number"
+    },
+    {
+      "context": "dela vira alarme de drift. A matriz de runtime do EMR já dispara ~4×/ano e a página",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-768",
+      "line": 134,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "4",
+      "type": "number"
+    },
+    {
+      "context": "mensal do Control-M ~12×/ano — alarmes que quase sempre fecham sem ação.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-769",
+      "line": 135,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "12",
+      "type": "number"
+    },
+    {
+      "context": "mediu **3 defeitos de janela, 2 de dependência e zero de SLA**, e o zero virou veto em vez",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-770",
+      "line": 144,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "3",
+      "type": "number"
+    },
+    {
+      "context": "mediu **3 defeitos de janela, 2 de dependência e zero de SLA**, e o zero virou veto em vez",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-771",
+      "line": 144,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "2",
+      "type": "number"
+    },
+    {
       "context": "2. **§2–7, a auditoria das fontes** (Fase B do prompt). Seis camadas estão paradas por",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-765",
-      "line": 118,
+      "line": 156,
       "note": "o numero da secao §2-7 do prompt de origem",
       "proof": {
         "kind": "source",
@@ -6042,7 +6126,7 @@
       "context": "**O que não fazer:** escrever regra para camada sem fonte. Seis das 27 estão exatamente",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-766",
-      "line": 125,
+      "line": 163,
       "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
       "proof": {
         "cmd": "python scripts/count_iceberg_gap.py",
@@ -11484,6 +11568,6 @@
       "type": "capability"
     }
   ],
-  "extracted_from": "7bdd33e229b7e71caa47603c84b7fe63d647c20a",
+  "extracted_from": "e90f41f4c713e350a7d25a4427b853754a0afaf0",
   "schema_version": 1
 }

@@ -109,6 +109,44 @@ coluna a mais no `SELECT`.
 limiar — o defeito que `V-ICE-1` recusou para manifests, e que
 `IcebergMaintenancePlanner` cometia com `> 20`, `> 5` e `> 50` até ser reescrito.
 
+## A auditoria das fontes que a §2 exige (Fase B)
+
+A §2 do prompt manda auditar as fontes oficiais **antes de implementar qualquer coisa**, e
+lista dezesseis páginas da documentação do Iceberg. Medido em 2026-09-02 contra
+`knowledge/sources.lock.json`, que vigia **225** fontes no total:
+
+**Três** páginas específicas de Iceberg estão vigiadas: a Table Specification,
+`spark-procedures` e `spark-queries#inspecting-tables`.
+
+**Treze não estão**: `spark-writes`, `spark-ddl`, `spark-configuration`, `maintenance`,
+`partitioning`, `evolution`, `docs/latest/aws`, `configuration`, `branching`, `puffin`,
+`metrics`, `rest-catalog` e o histórico de releases.
+
+**A varredura por substring dá três falsos positivos, e vale registrá-los** porque quem
+repetir a medição vai encontrá-los: `configuration` casa com
+`spark.apache.org/docs/latest/configuration.html` — que é do **Spark**, não do Iceberg;
+`metrics` casa com um blog da AWS; `releases` casa com a API de releases do **GraphFrames**.
+A conta honesta é três, não sete.
+
+### O critério para vigiar uma fonte, e por que ele não é "está na lista"
+
+Vigiar custa: a fonte entra no `sources.lock.json` com hash de conteúdo, e cada mudança
+dela vira alarme de drift. A matriz de runtime do EMR já dispara ~4×/ano e a página
+mensal do Control-M ~12×/ano — alarmes que quase sempre fecham sem ação.
+
+**Uma fonte só se paga quando sustenta um defeito.** As seis camadas da seção *"sem fonte
+que nomeie defeito"* acima estão paradas exatamente por isso, e nenhuma das treze páginas
+não vigiadas foi lida ainda para saber se destrava alguma.
+
+O trabalho que decide, e que **não** foi feito: ler cada uma das treze varrendo por padrão
+de defeito — `must`, `cannot`, `is not supported`, `up to \d+` —, como a entrega de
+dependência e janela do Control-M fez sobre `API_CodeRef_JobProperties`. Lá a varredura
+mediu **3 defeitos de janela, 2 de dependência e zero de SLA**, e o zero virou veto em vez
+de cinco regras inventadas.
+
+Até que essa leitura aconteça, acrescentar as treze ao `sources.lock.json` compraria treze
+alarmes anuais sem nenhuma regra em troca.
+
 ## O que este mapa sustenta como próximo passo
 
 Em ordem de valor por custo:
