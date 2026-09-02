@@ -1,0 +1,157 @@
+[
+  {
+    "id": "f_5dde9c",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 2,
+      "job_count": 2,
+      "dependency_count": 0,
+      "capability_probe_count": 0,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "b4d96a1fae01773f3a96c1d0e79b2639d7721ec8aa3b5c9d8354edf1770f50e5",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_646377",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Parent",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "Parent",
+      "application": "DataLake"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "b4d96a1fae01773f3a96c1d0e79b2639d7721ec8aa3b5c9d8354edf1770f50e5",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_a6d7a8",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Parent/JobImpl",
+      "snippet": ""
+    },
+    "measures": {
+      "explicit_job_count": 1
+    },
+    "attrs": {
+      "folder_type": "SubFolder",
+      "name": "JobImpl",
+      "run_as": "ctmagent",
+      "reference_path": "JobTemplate",
+      "reference_path_with_explicit_jobs": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "b4d96a1fae01773f3a96c1d0e79b2639d7721ec8aa3b5c9d8354edf1770f50e5",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_6466cb",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Parent/JobImpl/CargaAvulsa",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "CargaAvulsa",
+      "run_as": "ctmagent"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "b4d96a1fae01773f3a96c1d0e79b2639d7721ec8aa3b5c9d8354edf1770f50e5",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_9896f8",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Parent/JobTemplate",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "JobTemplate",
+      "run_as": "ctmagent"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "b4d96a1fae01773f3a96c1d0e79b2639d7721ec8aa3b5c9d8354edf1770f50e5",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.22.010",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "b4d96a1fae01773f3a96c1d0e79b2639d7721ec8aa3b5c9d8354edf1770f50e5",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

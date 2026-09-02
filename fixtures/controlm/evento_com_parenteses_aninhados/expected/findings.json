@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "SF-CTM-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Parênteses aninhados na expressão de eventos",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "ConciliacaoDiaria/Concilia/EsperaAsCargas",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2e09c4"
+    ],
+    "measured": {
+      "max_paren_depth": 2,
+      "open_paren_count": 2,
+      "close_paren_count": 2,
+      "operator_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Esta expressão de eventos abre um parêntese dentro de outro, e a fonte declara que a forma não é suportada: \"You can specify the logical relationship between events, using logical operators (AND/OR) and parentheses. The default relationship is AND. Note that nesting of parentheses within parentheses is not supported.\" measures.max_paren_depth É A EVIDÊNCIA, e ela é contagem e não opinião: o extrator percorre a lista de eventos uma vez e registra a profundidade máxima alcançada. Profundidade 1 é a forma correta — grupos irmãos, que é o que o exemplo da própria página faz; profundidade 2 ou mais é o que a frase acima proíbe. OS PARÊNTESES NÃO SÃO UM CAMPO, e é por isso que a decisão vem do extrator. A fonte os publica como elementos string dentro da mesma lista dos objetos de evento, e contar aninhamento é percorrer a lista — coisa que nenhuma condição deste catálogo sabe fazer, porque o motor avalia expressão sobre atributo, não sobre sequência. O CUSTO É A EXPRESSÃO NÃO SER A QUE O AUTOR ESCREVEU, e é isso que sustenta a severidade. Uma condição de espera é o que decide se o job roda cedo, tarde ou nunca; se o agrupamento lógico não é o declarado, o job passa a esperar por um conjunto de eventos diferente do pretendido, e o sintoma é um job que dispara antes da hora ou fica parado — nos dois casos longe do arquivo que o causou. O QUE ESTE ACHADO NÃO AFIRMA — e o limite é grande: como o Control-M efetivamente interpreta a expressão aninhada. A fonte diz \"is not supported\" e não publica o que acontece: se rejeita no deploy, se ignora os parênteses internos, ou se avalia de outro jeito. Nenhuma das três é afirmada aqui. E ELE NÃO JULGA SEMÂNTICA DE DEPENDÊNCIA. \"Este job espera um evento que ninguém produz\" continua vetado (V-CTM-2): exigiria o grafo do site inteiro, e a página não declara que evento órfão seja defeito. Esta regra julga a SINTAXE que a fonte nomeia, e só. attrs.balanced viaja no fact como evidência de leitura e não alimenta regra nenhuma, pela mesma razão — parêntese que abre e não fecha é assunto de ctm build.",
+    "proposed_change": [
+      "Achatar a expressão para um nível: escrever os grupos como irmãos, na forma que o exemplo da própria página usa — dois grupos entre parênteses ligados por um operador, sem parêntese dentro de parêntese. É a correção literal, e mantém a lista num bloco só.",
+      "Se a lógica pretendida realmente precisa de dois níveis, ela não cabe numa expressão de eventos: introduzir um evento intermediário, adicionado por um job que represente o grupo interno, e esperar por ele no lugar do parêntese aninhado. O agrupamento passa a ser um objeto do fluxo, visível no Control-M, em vez de sintaxe.",
+      "Se o aninhamento existia só para deixar a intenção legível, remover os parênteses redundantes: a fonte declara que o relacionamento default é `AND`, então um grupo que só contém `AND` não precisa de parênteses nenhum."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Achatar a expressão MUDA a condição de espera se a lógica original dependia mesmo do agrupamento — `A OR (B AND C)` e `A OR B AND C` não são a mesma pergunta. Confirme a intenção antes de editar; a fonte não publica como o aninhamento é interpretado hoje, então não há como derivar o comportamento atual do arquivo.",
+      "Introduzir um evento intermediário acrescenta um job ao fluxo e, com ele, um ponto de falha e uma dependência a mais para operar. O ganho é a lógica ficar explícita; o custo é o fluxo crescer.",
+      "Evento é global no Control-M: o nome escolhido para o evento intermediário pode colidir com um evento já usado por outro folder, e a colisão faz dois fluxos independentes passarem a se esperar."
+    ],
+    "tradeoffs": [
+      "Achatar é a correção mínima e cabe no mesmo bloco; decompor em evento intermediário é mais trabalho e deixa o agrupamento visível para quem opera o fluxo pela interface, e não só para quem lê o JSON."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a expressão é aceita.",
+      "EIXO DE RESULTADO — o job espera pelo mesmo conjunto de eventos. A lista de `WaitForEvents` do job, antes e depois, tem os mesmos nomes de evento e as mesmas datas, item a item: achatar parênteses é mudança de AGRUPAMENTO, e não pode acrescentar nem remover evento esperado.",
+      "EIXO DE RESULTADO — a ordem efetiva de execução não mudou. Uma ordenação (`run order`) do fluxo no ambiente alvo termina em OK e a sequência de horários de início dos jobs é a mesma da última execução boa — é isso que prova que a condição de espera continua sendo satisfeita nos mesmos pontos.",
+      "EIXO DE RESULTADO — o efeito do job é o mesmo. O artefato que ele produz confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job que passa a rodar antes da hora roda sobre dado incompleto e termina em OK — é essa falha que este eixo existe para pegar.",
+      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-005, e `ctm.event_logic` mostra `max_paren_depth` igual a 1 — com `dependency_count` inalterado na sentinela, porque regra que cala por o extrator ter parado de ler os eventos é verde falso."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um evento intermediário, o rollback precisa também remover o job que o adiciona — deixá-lo publicado faz o Control-M acumular um evento que ninguém mais consome."
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-02"
+      }
+    ]
+  }
+]

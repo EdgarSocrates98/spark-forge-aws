@@ -1,0 +1,23 @@
+{
+  "FechamentoContabil": {
+    "Type": "Folder",
+    "Application": "Contabilidade",
+    "SubApplication": "Apuracao",
+    "ApuraImpostos": {
+      "Type": "Job:Command",
+      "Command": "apura_impostos --competencia %%$DATE",
+      "RunAs": "ctmagent",
+      "Host": "agente-cont-01",
+      "When": {
+        "SpecificDates": [
+          "03/01",
+          "06/01",
+          "09/01",
+          "12/01"
+        ],
+        "FromTime": "0200",
+        "ToTime": "0500"
+      }
+    }
+  }
+}

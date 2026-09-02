@@ -68,6 +68,30 @@ Por isso as tres saidas do cruzamento sao TRES kinds, e nao dois:
 `attrs.unblocked_by` acompanha toda recusa com a medida que a destrava, na
 disciplina da secao 20 do `CLAUDE.md`.
 
+## A OMISSAO E DECIDIDA AQUI, PORQUE O MOTOR NAO A ENXERGA (D-1 do incremento 3)
+
+A fonte diz, sobre `SpecificDates`: *"cannot be used in combination with options
+`WeekDays`, `Months`, or `MonthDays`. However, since the default for these
+options is "ALL", you must specify these options with a value of "NONE"."*
+
+A segunda frase e a que torna a exigencia verificavel, e a que nenhuma condicao
+do motor consegue exprimir. `engine._where_matches` REPROVA caminho ausente --
+e assim que o motor diz "nao sei" --, entao `attrs.week_days != "NONE"` e FALSO
+justamente quando `WeekDays` nao foi escrito, que e o caso comum: default `ALL`,
+combinacao proibida acontecendo, e ninguem ve lendo o JSON.
+
+Entao a ausencia vira DECISAO no extrator, no molde de `tf.graphframes.jar` e de
+`graph.algorithm.checkpoint_required`: quem enxerga as tres opcoes de uma vez e
+este modulo, ele decide UMA vez e emite `attrs.specific_dates_conflict` ja
+decidido, com `specific_dates_conflict_by_omission` separado de
+`specific_dates_conflict_declared` para que o achado saiba dizer QUAL das duas
+formas encontrou. A regra fica com uma condicao sobre um booleano.
+
+E a mesma divida que a area `SF-GRAPH` pagou em 2026-08-31, e a solucao e a
+mesma. Severidade, limiar e recomendacao continuam no catalogo: o `400` de
+`SpecificDates` e limiar, mora em `threshold` da regra, e nao aqui -- este
+modulo so CONTA as datas.
+
 ## O QUE ESTE MODULO NAO FAZ
 
 **Nao valida o JSON contra o schema completo.** `ctm build` faz isso e e da BMC;
@@ -75,9 +99,20 @@ reimplementar validacao de schema seria concorrer com a ferramenta oficial sem
 fonte que sustente divergencia. O que aqui vira `ctm.unresolved` e o que nao deu
 para LER, nunca o que esta errado segundo um schema que este modulo nao carrega.
 
-**Nao julga dependencia, janela nem SLA.** Os facts `ctm.dependency` e
-`ctm.schedule` saem porque a fonte nomeia os campos; regra sobre eles e o
-incremento 3, e a pagina *What's New* nao sustenta o que e defeito nesses eixos.
+**Nao julga SLA, e nao julga semantica de dependencia.** `SLA`, `ServiceLevel`,
+`Deadline`, `MaxWait` e `CompletionTime` tem ZERO ocorrencia na pagina *Job
+Properties* -- medido em 2026-09-02 sobre os 423 KB dela --, entao nao ha fonte
+que nomeie defeito de SLA e o veto `V-CTM-5` do catalogo o registra. "Este job
+espera evento que ninguem produz" tambem fica de fora: exigiria o grafo do site
+inteiro, e a pagina nao declara que evento orfao seja defeito.
+
+O QUE PASSOU A SER JULGADO EM 2026-09-02 (incremento 3). A pagina *Job
+Properties* nomeia CINCO defeitos nos eixos de janela e dependencia -- tres e
+dois --, cada um com um `cannot`, um `must`, um `must not`, um `is not
+supported` ou um limite numerico. Campo documentado nunca sustentou regra; frase
+que diz que algo esta errado sustenta. Os kinds derivados que este modulo passou
+a emitir sao a metade de extracao dessa decisao, e a lista de qual regra le qual
+atributo esta em `rules/catalog/controlm.yaml`.
 
 ## Forma do artefato, medida na fonte (2026-09-01)
 
@@ -125,8 +160,10 @@ EMITTED_KINDS = frozenset(
     {
         "ctm.folder",
         "ctm.job",
+        "ctm.job_array_format",
         "ctm.schedule",
         "ctm.dependency",
+        "ctm.event_logic",
         "ctm.action",
         "ctm.variable",
         "ctm.version_declared",
@@ -155,6 +192,44 @@ _EVENT_BLOCKS: tuple[tuple[str, str], ...] = (
     ("AddEvents", "add"),
     ("DeleteEvents", "delete"),
 )
+
+# A MESMA dependencia na OUTRA forma que a pagina publica, e ler so uma delas
+# perderia exatamente o exemplo em que a fonte demonstra o defeito de D-1.
+#
+# A forma acima e a chave direta no job (`"WaitForEvents": [{"Event": "e1"}]`).
+# Esta e um objeto NOMEADO com `Type`, e e a unica que a pagina *Job Properties*
+# usa nos exemplos da secao de eventos:
+#
+#   "Wait2": {"Type": "WaitForEvents", "Events": ["(", {"Event": "ev1"}, ")"]}
+#
+# Sem este mapa, `_walk` veria `Wait2` como filho com `Type` que nao e folder,
+# nem job, nem `Flow`, nem `If`, e sairia sem emitir nada -- silencio sobre a
+# forma que a propria fonte escreve.
+_EVENT_OBJECT_TYPES: dict[str, str] = {
+    "WaitForEvents": "wait",
+    "AddEvents": "add",
+    "DeleteEvents": "delete",
+}
+
+# Os tokens logicos que a fonte publica DENTRO da lista de eventos, como
+# elementos string ao lado dos objetos `{"Event": ...}`. Nao ha bloco proprio de
+# expressao: a relacao logica viaja na mesma lista.
+_PAREN_OPEN = "("
+_PAREN_CLOSE = ")"
+_LOGICAL_OPERATORS = frozenset({"AND", "OR"})
+
+# As tres opcoes que `SpecificDates` NAO pode acompanhar, na grafia da pagina, e
+# o valor com que a fonte exige que sejam anuladas. O default delas e "ALL", e e
+# por isso que a AUSENCIA de qualquer uma ja e a combinacao proibida.
+_SPECIFIC_DATES_EXCLUSIVE: tuple[str, ...] = ("WeekDays", "Months", "MonthDays")
+_NEUTRALIZED = "NONE"
+
+# O array de JOBS, que e outra chave e outra pergunta que `Folders`/`SubFolders`.
+# A pagina liga `allowDuplicateJobNames` a "job definitions in an array format",
+# e a capacidade `folders_array_structure` da matriz e sobre a estrutura de
+# FOLDER. Somar as duas numa lista so faria a sonda de capacidade disparar sobre
+# um array de jobs, que a matriz nao nomeia.
+_JOB_ARRAY_KEYS: tuple[str, ...] = ("Jobs",)
 
 # As propriedades de identidade que valem para job E para folder, na grafia da
 # fonte. `Type` e `Name` saem em campo proprio; estas entram em `attrs` com o
@@ -531,6 +606,7 @@ def _schedule_fact(
         valor = quando.get(chave)
         if isinstance(valor, list):
             measures[f"{_snake(chave)}_count"] = len(valor)
+    _specific_dates(quando, measures, attrs)
     return [
         Fact(
             kind="ctm.schedule",
@@ -540,6 +616,67 @@ def _schedule_fact(
             provenance=provenance,
         )
     ]
+
+
+def _neutralized(value: Any) -> bool:
+    """`True` quando a opcao foi anulada com "NONE", na forma que a fonte publica.
+
+    DUAS FORMAS CONTAM, e a primeira e a da propria pagina. O exemplo oficial
+    escreve o valor como LISTA -- `"WeekDays": ["NONE"], "Months": ["NONE"],
+    "MonthDays": ["NONE"]` --, e um autor pode escrever o escalar
+    (`"WeekDays": "NONE"`). A exigencia da fonte e sobre o VALOR, nunca sobre o
+    involucro, e aceitar so uma das duas acusaria o exemplo que a BMC publica.
+
+    LISTA COM MAIS DE UM ITEM NAO ANULA: `["NONE", "MON"]` declara segunda-feira
+    ao lado da anulacao, e isso E a combinacao que a fonte proibe.
+
+    A CAIXA E IGNORADA, e a escolha e medida contra o que a fonte diz e nao diz.
+    Ela publica "NONE" em maiuscula e NAO declara se o Control-M aceita "none";
+    acusar por caixa afirmaria mais do que a fonte sustenta, e quem escreveu
+    "none" declarou a intencao de anular. Caixa e assunto de `ctm build`, que e
+    o validador oficial (veto `V-CTM-3`).
+    """
+    if isinstance(value, str):
+        return value.strip().upper() == _NEUTRALIZED
+    if isinstance(value, list):
+        return len(value) == 1 and _neutralized(value[0])
+    return False
+
+
+def _specific_dates(
+    quando: dict[str, Any], measures: dict[str, Any], attrs: dict[str, Any]
+) -> None:
+    """A decisao de `SpecificDates`, tomada UMA vez, no lugar onde ela cabe.
+
+    SO MEXE NO FACT QUANDO `SpecificDates` E UMA LISTA. Sem a propriedade nao ha
+    pergunta a responder, e emitir `specific_dates_conflict: false` em todo
+    `When` do repositorio afirmaria sobre jobs que ninguem perguntou -- alem de
+    fazer todo golden existente mudar sem que nada tenha mudado.
+
+    AS DUAS FORMAS DO CONFLITO SAEM SEPARADAS, e a separacao e o produto desta
+    funcao. `by_omission` e a opcao que nao foi escrita e portanto vale "ALL" por
+    default -- o caso que ninguem ve lendo o JSON, e a razao de esta decisao nao
+    caber numa condicao do motor. `declared` e a opcao escrita com outro valor,
+    que qualquer leitor humano ja veria. O achado precisa saber qual das duas
+    encontrou, porque a correcao e diferente: uma acrescenta linha, a outra troca
+    valor.
+
+    A CONTAGEM SAI SEMPRE QUE HA LISTA, inclusive quando nao ha conflito: e ela
+    que sustenta o limite de 400 da fonte, e o limite e outro defeito. Contar aqui
+    e medir; decidir se 401 e demais e limiar, e limiar mora na regra.
+    """
+    datas = quando.get("SpecificDates")
+    if not isinstance(datas, list):
+        return
+    measures["specific_dates_count"] = len(datas)
+    omitidas = [o for o in _SPECIFIC_DATES_EXCLUSIVE if o not in quando]
+    declaradas = [
+        o for o in _SPECIFIC_DATES_EXCLUSIVE if o in quando and not _neutralized(quando[o])
+    ]
+    attrs["specific_dates"] = True
+    attrs["specific_dates_conflict"] = bool(omitidas or declaradas)
+    attrs["specific_dates_conflict_by_omission"] = sorted(omitidas)
+    attrs["specific_dates_conflict_declared"] = sorted(declaradas)
 
 
 def _snake(name: str) -> str:
@@ -572,25 +709,146 @@ def _dependency_facts(
             entradas = bloco.get(chave)
             if not isinstance(entradas, list):
                 continue
-            for entrada in entradas:
-                if not isinstance(entrada, dict):
-                    continue
-                nome = _as_str(entrada.get("Event"))
-                if nome is None:
-                    continue
-                attrs = {"direction": direcao, "event": nome, "container": container}
-                data = _as_str(entrada.get("Date"))
-                if data is not None:
-                    attrs["date"] = data
-                facts.append(
-                    Fact(
-                        kind="ctm.dependency",
-                        subject=subject,
-                        attrs=attrs,
-                        provenance=provenance,
-                    )
+            facts.extend(
+                _event_entry_facts(
+                    entradas, chave, direcao, container, subject, provenance
                 )
+            )
     return facts
+
+
+def _event_entry_facts(
+    entradas: list[Any],
+    block: str,
+    direcao: str,
+    container: str,
+    subject: dict[str, Any],
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """Os eventos de UMA lista, mais o fact de logica quando ela tem tokens.
+
+    A lista mistura dois tipos de elemento, e a fonte os publica juntos: objetos
+    `{"Event": ...}` e strings que sao parenteses ou operadores. Ler so os
+    objetos -- que era o que este modulo fazia -- perde a expressao inteira.
+    """
+    facts: list[Fact] = []
+    for entrada in entradas:
+        if not isinstance(entrada, dict):
+            continue
+        nome = _as_str(entrada.get("Event"))
+        if nome is None:
+            continue
+        attrs = {"direction": direcao, "event": nome, "container": container}
+        data = _as_str(entrada.get("Date"))
+        if data is not None:
+            attrs["date"] = data
+        facts.append(
+            Fact(
+                kind="ctm.dependency",
+                subject=subject,
+                attrs=attrs,
+                provenance=provenance,
+            )
+        )
+    facts.extend(_event_logic_facts(entradas, block, container, subject, provenance))
+    return facts
+
+
+def _event_logic_facts(
+    entradas: list[Any],
+    block: str,
+    container: str,
+    subject: dict[str, Any],
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """O aninhamento de parenteses, DECIDIDO aqui (D-1 do incremento 3).
+
+    A fonte: *"You can specify the logical relationship between events, using
+    logical operators (AND/OR) and parentheses. The default relationship is AND.
+    Note that nesting of parentheses within parentheses is not supported."*
+
+    Profundidade e contagem, e contagem e medida -- entao ela sai daqui em
+    `measures`, e o veredito ja decidido sai em `attrs.nested_parentheses`. A
+    regra fica com uma condicao sobre um booleano, e nenhum `expr` do motor
+    precisa aprender a contar parentese.
+
+    SO SAI FACT QUANDO HA TOKEN LOGICO. Um bloco de evento sem parentese e sem
+    operador nao declara relacao nenhuma -- a fonte diz que o default e AND --,
+    e emitir "profundidade zero" sobre ele encheria todo artefato de facts que
+    nao respondem pergunta nenhuma, alem de mover todo golden existente.
+
+    O DESBALANCEAMENTO SAI COMO EVIDENCIA E NAO VIRA REGRA. Parentese que abre e
+    nao fecha e defeito obvio para um humano, e a fonte NAO o nomeia: ela fala de
+    aninhamento, e so. `balanced` viaja no fact para quem estiver lendo; julga-lo
+    seria inventar o sexto defeito, e o `ctm build` da BMC ja e o validador de
+    schema (veto `V-CTM-3`).
+    """
+    profundidade = 0
+    maxima = 0
+    abre = 0
+    fecha = 0
+    operadores = 0
+    balanceado = True
+    for entrada in entradas:
+        if not isinstance(entrada, str):
+            continue
+        token = entrada.strip()
+        if token == _PAREN_OPEN:
+            abre += 1
+            profundidade += 1
+            maxima = max(maxima, profundidade)
+        elif token == _PAREN_CLOSE:
+            fecha += 1
+            profundidade -= 1
+            if profundidade < 0:
+                # Fecha sem abrir. Zera para que o resto da lista continue a ser
+                # contado a partir do nivel de topo, em vez de gerar
+                # profundidade negativa que mascararia um aninhamento adiante.
+                balanceado = False
+                profundidade = 0
+        elif token.upper() in _LOGICAL_OPERATORS:
+            operadores += 1
+    if abre == 0 and fecha == 0 and operadores == 0:
+        return []
+    return [
+        Fact(
+            kind="ctm.event_logic",
+            subject=subject,
+            measures={
+                "max_paren_depth": maxima,
+                "open_paren_count": abre,
+                "close_paren_count": fecha,
+                "operator_count": operadores,
+            },
+            attrs={
+                "block": block,
+                "container": container,
+                "nested_parentheses": maxima > 1,
+                "balanced": balanceado and profundidade == 0,
+            },
+            provenance=provenance,
+        )
+    ]
+
+
+def _event_object_facts(
+    node: dict[str, Any],
+    tipo: str,
+    subject: dict[str, Any],
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """A forma `{"Type": "WaitForEvents", "Events": [...]}`, que a pagina usa.
+
+    Aqui `Events` e uma LISTA, e no job ela e um MAPA que agrupa os tres blocos
+    -- mesma chave, duas formas, e e por isso que `_dependency_facts` testa
+    `isinstance(..., dict)` e esta funcao testa `list`. As duas nunca se cruzam.
+    """
+    entradas = node.get("Events")
+    if not isinstance(entradas, list):
+        return []
+    return _event_entry_facts(
+        entradas, tipo, _EVENT_OBJECT_TYPES[tipo], tipo, subject, provenance
+    )
 
 
 def _flow_facts(
@@ -729,6 +987,50 @@ def _variable_facts(
 # --------------------------------------------------------------------------- #
 
 
+def _is_job_type(tipo: str | None) -> bool:
+    return tipo is not None and (tipo.startswith("Job:") or tipo == "Job")
+
+
+def _reference_path(node: dict[str, Any], folder_type: str) -> tuple[dict[str, Any], int]:
+    """`ReferencePath` contra job explicito, ja decidido (D-2 do incremento 3).
+
+    A fonte: *"Note that a sub-folder that contains the `ReferencePath` property
+    must not contain any explicit job objects."*
+
+    SO RESPONDE QUANDO A PROPRIEDADE EXISTE. A exigencia e condicional a presenca
+    dela; contar job explicito em todo folder responderia uma pergunta que
+    ninguem fez sobre a maioria deles, e moveria todo golden existente.
+
+    O VEREDITO E SO PARA `SubFolder`, E A LITERALIDADE E DELIBERADA. A frase da
+    fonte diz "a sub-folder", e a propria descricao da propriedade diz que ela
+    serve para "reference a job or folder from within a sub-folder". Um `Folder`
+    de topo com `ReferencePath` continua registrando `reference_path` -- a
+    evidencia existe --, mas nao recebe veredito, porque a fonte nao declara
+    defeito ali. Estender por simetria seria acusar o que ninguem publicou.
+
+    O QUE CONTA COMO "explicit job object": objeto NOMEADO com `Type: Job:*`
+    dentro do proprio no, e entrada do array `Jobs` -- as duas formas que a
+    pagina publica para declarar um job. Sub-folder aninhado NAO conta: a fonte
+    fala de job, e um container nao e um job.
+    """
+    caminho = _as_str(node.get("ReferencePath"))
+    if caminho is None:
+        return {}, 0
+    explicitos = sum(1 for _, filho in _children(node) if _is_job_type(_as_str(filho.get("Type"))))
+    for chave in _JOB_ARRAY_KEYS:
+        entradas = node.get(chave)
+        if isinstance(entradas, list):
+            explicitos += sum(
+                1
+                for e in entradas
+                if isinstance(e, dict) and _is_job_type(_as_str(e.get("Type")))
+            )
+    attrs: dict[str, Any] = {"reference_path": caminho}
+    if folder_type == "SubFolder":
+        attrs["reference_path_with_explicit_jobs"] = explicitos > 0
+    return attrs, explicitos
+
+
 def _children(node: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
     """Os filhos NOMEADOS de um objeto, na ordem em que o JSON os declara.
 
@@ -752,12 +1054,18 @@ def _walk(
     declared_version: str | None,
     provenance: dict[str, Any],
     facts: list[Fact],
+    array_key: str | None = None,
 ) -> None:
     """Visita um objeto com `Type` e emite os facts dele e dos filhos.
 
     Recursao com trilha explicita, e nao um indice global: o subject de cada
     entidade e `Folder/SubFolder/Job`, e uma trilha errada faria dois jobs
     homonimos em folders diferentes compartilharem grupo de `same_subject`.
+
+    `array_key` diz por qual array este objeto foi alcancado, ou `None` quando
+    ele e filho nomeado. Ele NAO desce na recursao: o que a fonte liga a
+    `allowDuplicateJobNames` e a definicao do proprio objeto em formato de array,
+    nao a de tudo que estiver dentro dele.
     """
     tipo = _as_str(node.get("Type"))
     if tipo is None:
@@ -768,16 +1076,42 @@ def _walk(
     if tipo in _FOLDER_TYPES:
         attrs = {"folder_type": tipo, "name": _as_str(node.get("Name")) or name}
         attrs.update(_identity_attrs(node))
+        referencia, explicitos = _reference_path(node, tipo)
+        attrs.update(referencia)
         facts.append(
-            Fact(kind="ctm.folder", subject=subject, attrs=attrs, provenance=provenance)
+            Fact(
+                kind="ctm.folder",
+                subject=subject,
+                measures={"explicit_job_count": explicitos} if referencia else {},
+                attrs=attrs,
+                provenance=provenance,
+            )
         )
         facts.extend(_schedule_fact(node, subject, provenance))
         facts.extend(_dependency_facts(node, subject, provenance))
         facts.extend(_variable_facts(node, subject, provenance))
-    elif tipo.startswith("Job:") or tipo == "Job":
+    elif _is_job_type(tipo):
         attrs = {"job_type": tipo, "name": _as_str(node.get("Name")) or name}
         attrs.update(_identity_attrs(node))
         facts.append(Fact(kind="ctm.job", subject=subject, attrs=attrs, provenance=provenance))
+        if array_key is not None:
+            # O fact derivado de J-3. Ele existe porque a exigencia da fonte e
+            # sobre a FORMA da definicao -- "job definitions in an array format"
+            # --, e essa forma nao esta em nenhum campo do job: esta em como se
+            # chegou ate ele. So o caminho sabe, e o caminho e este.
+            facts.append(
+                Fact(
+                    kind="ctm.job_array_format",
+                    subject=subject,
+                    attrs={
+                        "array_key": array_key,
+                        "job_type": tipo,
+                        "name": _as_str(node.get("Name")) or name,
+                        "name_declared": _as_str(node.get("Name")) is not None,
+                    },
+                    provenance=provenance,
+                )
+            )
         facts.extend(_schedule_fact(node, subject, provenance))
         facts.extend(_dependency_facts(node, subject, provenance))
         facts.extend(_variable_facts(node, subject, provenance))
@@ -796,6 +1130,8 @@ def _walk(
         facts.extend(_flow_facts(node, name, subject, provenance))
     elif tipo == "If":
         facts.extend(_action_facts(node, name, subject, provenance))
+    elif tipo in _EVENT_OBJECT_TYPES:
+        facts.extend(_event_object_facts(node, tipo, subject, provenance))
 
     # A sonda de ESTRUTURA olha o proprio no, e nao os filhos: `Folders` e
     # `SubFolders` sao arrays de folder, e o que a capacidade nomeia e a FORMA
@@ -825,11 +1161,18 @@ def _walk_array_entries(
     provenance: dict[str, Any],
     facts: list[Fact],
 ) -> int:
-    """Visita os folders declarados em `Folders`/`SubFolders`, e devolve quantos.
+    """Visita o que esta declarado em array -- `Folders`, `SubFolders`, `Jobs`.
 
-    Folder dentro de array NAO e filho nomeado: ele nao tem chave, e o nome vem
+    Objeto dentro de array NAO e filho nomeado: ele nao tem chave, e o nome vem
     da propriedade `Name`. Sem este laco, todo artefato na forma de array sairia
     com zero jobs.
+
+    `Jobs` entra AQUI e nao em `_ARRAY_STRUCTURE_KEYS`, e a separacao decide o
+    que a sonda de capacidade acusa. `folders_array_structure` e a capacidade que
+    a matriz nomeia, e ela e sobre a estrutura de FOLDER; incluir `Jobs` naquela
+    tupla faria a sonda disparar sobre um array de jobs, que a matriz nao data --
+    exatamente o veto `V-CTM-4`. As duas listas se somam so aqui, na travessia,
+    porque a travessia e cega a capacidade.
 
     O INDICE ENTRA NA TRILHA (`Folders[0]/CargaNoturna`) e isso nao e cosmetica.
     A capacidade que este array introduz e justamente permitir DOIS folders com o
@@ -838,7 +1181,7 @@ def _walk_array_entries(
     o incorreto, que e o falso negativo que `same_subject` existe para evitar.
     """
     visitados = 0
-    for chave in _ARRAY_STRUCTURE_KEYS:
+    for chave in _ARRAY_STRUCTURE_KEYS + _JOB_ARRAY_KEYS:
         entradas = node.get(chave)
         if not isinstance(entradas, list):
             continue
@@ -848,7 +1191,16 @@ def _walk_array_entries(
             nome = _as_str(entrada.get("Name")) or f"{chave}[{indice}]"
             posicao = f"{chave}[{indice}]"
             base = f"{trilha}/{posicao}" if trilha else posicao
-            _walk(entrada, nome, base, path, declared_version, provenance, facts)
+            _walk(
+                entrada,
+                nome,
+                base,
+                path,
+                declared_version,
+                provenance,
+                facts,
+                array_key=chave,
+            )
             visitados += 1
     return visitados
 
@@ -889,10 +1241,10 @@ def extract_controlm_jobs(
     for nome, valor in payload.items():
         if nome in _RESERVED_TOP_LEVEL:
             continue
-        if nome in _ARRAY_STRUCTURE_KEYS and isinstance(valor, list):
-            # `Folders`/`SubFolders` de topo NAO sao entrada mal formada: sao a
-            # estrutura de array, e o laco proprio logo abaixo os visita. Sem
-            # esta guarda o artefato inteiro na forma de array sairia com um
+        if nome in _ARRAY_STRUCTURE_KEYS + _JOB_ARRAY_KEYS and isinstance(valor, list):
+            # `Folders`/`SubFolders`/`Jobs` de topo NAO sao entrada mal formada:
+            # sao a estrutura de array, e o laco proprio logo abaixo os visita.
+            # Sem esta guarda o artefato inteiro na forma de array sairia com um
             # `ctm.unresolved` fantasma dizendo que o topo nao e um objeto.
             continue
         if not isinstance(valor, dict):

@@ -1,0 +1,179 @@
+[
+  {
+    "id": "f_1de4f0",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 1,
+      "job_count": 2,
+      "dependency_count": 0,
+      "capability_probe_count": 0,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_33057f",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "CargaDiaria",
+      "application": "DataLake"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_f52c77",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria/Jobs[0]/Job1",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "Job1",
+      "run_as": "ctmagent"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_e23f73",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria/Jobs[1]/Job1",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "Job1",
+      "run_as": "ctmagent"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_2d0f4c",
+    "schema_version": 1,
+    "kind": "ctm.job_array_format",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria/Jobs[0]/Job1",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "array_key": "Jobs",
+      "job_type": "Job:Command",
+      "name": "Job1",
+      "name_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_ff44e3",
+    "schema_version": 1,
+    "kind": "ctm.job_array_format",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria/Jobs[1]/Job1",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "array_key": "Jobs",
+      "job_type": "Job:Command",
+      "name": "Job1",
+      "name_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.22.010",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "af3dccde14ca4c00018f8b5f7034b78dc2268d168eb267e391746607e9104bac",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

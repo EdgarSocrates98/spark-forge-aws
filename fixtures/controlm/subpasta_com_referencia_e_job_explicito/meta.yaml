@@ -1,0 +1,22 @@
+name: subpasta_com_referencia_e_job_explicito
+proves: >
+  O POSITIVO de `SF-CTM-006`: um `SubFolder` com `ReferencePath` que tambem
+  declara um job explicito dentro dele -- a combinacao que a fonte proibe com um
+  `must not`. `explicit_job_count` sai 1 e o veredito ja vem decidido em
+  `attrs.reference_path_with_explicit_jobs`.
+  A FRONTEIRA DE VERSAO DA MESMA FRASE NAO E JULGADA, e esta fixture nao declara
+  versao de Enterprise Manager nenhuma -- porque nao ha onde. A fonte diz que a
+  propriedade exige EM 9.0.21 ou superior, que e outro produto e outra numeracao
+  que a do Automation API do `meta.yaml`. O veto `V-CTM-6` registra a medicao;
+  aqui o que se prova e que o achado sai sem depender dela.
+  O par e `subpasta_com_referencia_sem_job_explicito`, que tem o MESMO `Parent` e
+  o MESMO `JobTemplate` e so nao tem o job explicito dentro do sub-folder.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-006

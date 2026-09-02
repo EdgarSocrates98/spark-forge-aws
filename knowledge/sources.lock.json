@@ -1913,10 +1913,16 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-01"
+        "2026-09-01",
+        "2026-09-02"
       ],
       "rules": [
-        "SF-CTM-001"
+        "SF-CTM-001",
+        "SF-CTM-002",
+        "SF-CTM-003",
+        "SF-CTM-004",
+        "SF-CTM-005",
+        "SF-CTM-006"
       ]
     },
     "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm": {
