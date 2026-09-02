@@ -61,7 +61,7 @@ rules:
       - Reavaliar depois de qualquer mudança de layout ou de código, porque folga medida hoje é sobre o trabalho de hoje.
     risks:
       - Reduzir capacidade sem histórico na capacidade menor troca custo por risco de SLA, e o risco não aparece até o dia de volume maior.
-      - Utilização média esconde pico: o `p50` diz o dia normal, e o run que estoura é o outro.
+      - "Utilização média esconde pico: o `p50` diz o dia normal, e o run que estoura é o outro."
     tradeoffs:
       - Capacidade menor custa menos por run e deixa menos margem para variação de volume.
     validation:

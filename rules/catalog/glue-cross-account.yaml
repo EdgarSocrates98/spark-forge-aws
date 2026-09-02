@@ -94,9 +94,10 @@ rules:
         Spectrum) sobre a tabela compartilhada.
       - >-
         Uma execução do job que leia a tabela e termine sem erro de permissão.
-    rollback: >
-      Remover a propriedade devolve o job ao catálogo da própria conta -- e junto
-      o acesso ao dado compartilhado que motivou a configuração. É decisão de
-      arquitetura, não rollback.
+    rollback:
+      - >
+        Remover a propriedade devolve o job ao catálogo da própria conta -- e junto
+        o acesso ao dado compartilhado que motivou a configuração. É decisão de
+        arquitetura, não rollback.
     sources:
       - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html", retrieved: 2026-08-23}
