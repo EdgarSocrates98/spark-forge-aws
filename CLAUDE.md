@@ -102,6 +102,61 @@ Regras que valem para todos eles:
     `detail_level_effect` com os bytes de cada nível pedido — ele mostra os dois
     e não conclui por você.
 
+
+## Economia: o que medir antes de afirmar que economizou
+
+**68 tools, 31 com `detail_level`.** Os niveis sao `summary`, `normal` e `full`. A
+regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
+numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
+cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
+
+**Medido em 2026-09-02, sobre o gold set de recuperacao:** `full` 46 488 bytes
+contra `summary` 45 878 — **1,3%**. Num corpus pequeno o envelope fixo do pacote
+(840 bytes) domina, e `detail_level` quase nao move. Citar "reduz o pacote" sem
+esse numero e a divida que a regra 28 fechou.
+
+### Antes de ler artefato no olho, rode o verbo
+
+As nove tools de Code Intelligence existem para responder sem que ninguem leia
+arquivo:
+
+| Pergunta | Tool |
+|---|---|
+| onde esta X definido | `sparkforge_code_search` |
+| quem chama X, e o que quebra se eu mudar | `sparkforge_code_symbol` |
+| **como** X chega em Y | `sparkforge_code_path` |
+| como este codigo esta organizado | `sparkforge_code_shape` |
+| o pacote de contexto dentro de um teto de bytes | `sparkforge_code_context` |
+| o trecho de fonte, com rotulo de conteudo nao confiavel | `sparkforge_code_read` |
+| o indice esta fresco | `sparkforge_code_status` / `_sync` |
+| o grafo no formato de extracao do Graphify | `sparkforge_code_export` |
+
+**O denominador decide o sinal, e ele precisa sair junto.** Medido na secao 10 de
+`docs/harness/CODEINTEL-GAP.md`: contra ler os arquivos o indice economiza
+**649,5x**; contra a saida de um `grep` pelo nome, **9,4x**; contra um `grep`
+cirurgico pela definicao ele **custa 5,3x mais**. As tres medidas sao verdadeiras
+e citar so a primeira escolheria o resultado.
+
+### O gate que torna "economizou" conferivel
+
+`python scripts/check_recall_economy.py` decide **uma** coisa e recusa outra:
+
+- **recall nominal tem piso duro de 100%** — perguntado pelo nome do simbolo, o
+  pacote entrega aquele simbolo. Economia que omite o simbolo necessario e falha,
+  nao sucesso;
+- **recall conceitual e medido e nao tem piso** — perguntado pelo titulo da
+  regra, o pacote recupera? **Medido: 0 de 27.** O indice guarda NOME e o titulo
+  descreve DEFEITO;
+- **a razao de economia sai `unresolved`** quando o corpus e menor que o envelope
+  fixo do pacote, porque ali ela mede o piso do envelope e nao o subsistema.
+
+### Byte e token nao se somam
+
+`payload_bytes` e medido e sempre existe. Token de provider so aparece quando ha
+transcript do host; sem fonte sai `tokens_unresolved`. `estimar_tokens` existe e
+sai como `estimated_tokens` — **estimativa declarada**, e ela nunca entra numa
+razao de economia.
+
 ## Verificação antes de fechar
 
 A suíte inteira num processo só não sobrevive — rode em lotes (ver

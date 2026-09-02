@@ -150,6 +150,47 @@ Start a Devin session by pointing it at the entry prompt, which is what
 Read PROMPT_INICIAL_MESTRE.md and use the glue-incremental-performance-architect skill.
 ```
 
+
+## Economy: measure before claiming a saving
+
+**68 tools, 31 with `detail_level`** (`summary`, `normal`, `full`). Rule 28 of
+`CLAUDE.md` applies to all three: *read the number before claiming `detail_level`
+reduces anything*. `sparkforge_economy_report` returns `detail_level_effect` with
+the bytes of each level requested — it shows both sides and does not conclude for
+you.
+
+Measured 2026-09-02 over the retrieval gold set: `full` 46 488 bytes against
+`summary` 45 878 — **1.3%**. On a small corpus the pack's fixed envelope (840
+bytes) dominates.
+
+### Ask the verb before reading the artifact by eye
+
+Nine Code Intelligence tools exist so that nobody has to open a file:
+`code_search` (where is X), `code_symbol` (who calls X, what breaks), `code_path`
+(**how** X reaches Y), `code_shape` (communities and degree), `code_context` (the
+context pack inside a byte budget), `code_read` (source, labelled untrusted),
+`code_status`/`code_sync` (freshness), `code_export` (the graph in Graphify's
+extraction format).
+
+**The denominator decides the sign, and it must be published alongside.** Measured
+in §10 of `docs/harness/CODEINTEL-GAP.md`: against reading the files the index
+saves **649.5x**; against a `grep` by name, **9.4x**; against a surgical `grep`
+by definition it **costs 5.3x more**. All three are true, and citing only the
+first would be choosing the result.
+
+### The gate that makes "it saved tokens" checkable
+
+`python scripts/check_recall_economy.py` decides **one** thing and refuses
+another: recall by name has a **hard 100% floor** — a pack that saved 90% and
+omitted the required symbol is a failure, not a success; conceptual recall is
+**measured with no floor** (measured: 0 of 27); and the economy ratio comes out
+`unresolved` whenever the corpus is smaller than the pack's fixed envelope.
+
+**Bytes and tokens never add up.** `payload_bytes` is measured and always exists.
+Provider tokens appear only when the host transcript does; otherwise
+`tokens_unresolved`. `estimated_tokens` is a **declared estimate** and never
+enters an economy ratio.
+
 ## Deterministic evidence
 
 Evidence for this project comes from deterministic extraction, not from an
