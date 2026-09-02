@@ -290,10 +290,11 @@ rules:
       - "Um job novo executa com sucesso lendo do Secret montado, e produz contagem total e contagem por chave de negócio iguais às do último run bom: trocar a origem da credencial não pode mudar o conjunto de linhas escrito, e é isso que prova que a troca foi só de origem."
       - O segredo anterior está revogado, confirmado por uma tentativa de uso que falha.
       - "Uma chamada de DescribeJobRun feita por um principal com permissão apenas de leitura confirma que ele não vê mais o valor — é o ângulo pelo qual o segredo estava exposto."
-    rollback: >
-      Não reverter para o literal em texto claro. Se a leitura do Secret falha, a
-      correção é a política de RBAC do namespace e o service account do job, não
-      o método de armazenamento.
+    rollback:
+      - >
+        Não reverter para o literal em texto claro. Se a leitura do Secret falha, a
+        correção é a política de RBAC do namespace e o service account do job, não
+        o método de armazenamento.
     sources:
       - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeJobRun.html", retrieved: 2026-08-31}
       - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html", retrieved: 2026-08-31}

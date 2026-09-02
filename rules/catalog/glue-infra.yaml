@@ -316,8 +316,9 @@ rules:
       - Argumento não contém mais o valor.
       - Job executa com sucesso lendo do cofre.
       - Segredo antigo revogado.
-    rollback: >
-      Não reverter para o segredo em texto claro. Se a leitura do cofre falha, corrigir
-      a permissão de IAM, não o método de armazenamento.
+    rollback:
+      - >
+        Não reverter para o segredo em texto claro. Se a leitura do cofre falha, corrigir
+        a permissão de IAM, não o método de armazenamento.
     sources:
       - {origin: field-heuristic, note: "Prática de segurança padrão; a superfície de exposição de default arguments é documentada no comportamento da API do Glue."}
