@@ -6503,6 +6503,62 @@ cruzamento com `readiness()` dependem exatamente deste fato.
 governa *upgrade*, e ninguém faz upgrade **para** v1. Um teste trava a "unificação"
 óbvia das duas.
 
+## Iceberg — o plano de manutenção deriva do catálogo, e não de limiar próprio (2026-09-02)
+
+Segundo incremento de `prompt_evo_iceberg.md` (§40–44).
+
+### O defeito, e por que ele importava
+
+`IcebergMaintenancePlanner.generate_plan` recebia **contagens cruas** e decidia com
+limiares escritos no próprio módulo:
+
+    small_files_count > 20      delete_files_count > 5
+    snapshots_count > 50        retention_days = 7
+
+Os quatro sem fonte, e os três primeiros **duplicando julgamento que o catálogo já
+faz** — `SF-ICE-001`, `SF-ICE-002` e `SF-ICE-003`, cada um com `severity_by` medido e
+`sources` citadas. Duas verdades sobre a mesma pergunta, e a segunda sem fonte.
+
+Havia um quarto, pior: **`rewrite_manifests` era acrescentado incondicionalmente** — uma
+ação proposta sem evidência nenhuma, num comando que o operador executaria.
+
+E nada disso era alcançável: `sparkforge/cli/forge.py` não é entry point (`pyproject.toml`
+publica `sparkforge` e `sparkforge-tools`) e nem importa `maintenance`. **O único chamador
+era o teste.**
+
+### O que substitui
+
+`plan_from_findings(findings, table, retention_days)` traduz cada achado na ação que o
+corrige. **Não há `if` sobre contagem.** Se `SF-ICE-001` não disparou, não há
+`rewrite_data_files` no plano.
+
+`ACOES_POR_REGRA` mapeia `rule_id` → ações. Uma regra pode autorizar **duas**:
+`SF-ICE-002` pede `rewrite_data_files` para materializar os deletes **e**
+`expire_snapshots` para que os arquivos antigos saiam.
+
+Toda ação carrega `authorized_by` com a regra que a permitiu.
+
+### `retention_days` não tem default, e isso é decisão
+
+Reter N dias é escolha de negócio, não medida. Um default produziria um
+`expire_snapshots` com janela que ninguém declarou — e ele apaga snapshots de verdade.
+Sem ele, a ação sai em `refused` com a medida que a destrava, e **a ação reversível da
+mesma regra continua saindo**.
+
+A regra 10 do `CLAUDE.md` proíbe manutenção destrutiva sem escopo e retenção explícitos.
+
+### `rewrite_manifests` sai recusado, com o que o destravaria
+
+Nenhuma regra julga o estado dos manifests hoje. O extrator já emite
+`iceberg.manifests_summary`; falta a regra. A recusa listada é a diferença entre *"não há
+o que fazer"* e *"ninguém sabe dizer"*.
+
+### O guard é por AST, e a razão está medida
+
+`test_nao_ha_limiar_escrito_no_modulo` procura `ast.Compare` contra literal numérico, não
+texto. A docstring do módulo **cita** os limiares antigos como registro do defeito, e uma
+busca textual os acharia ali — foi o que aconteceu na primeira versão do teste.
+
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.
 3. Escreva o par spec + plan em `specs/` e `plans/` com a data do merge.
