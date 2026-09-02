@@ -6602,6 +6602,58 @@ contada duas vezes.
 A recusa em `maintenance.py` cita o veto pelo id, e um teste confere que ele **está
 escrito** — veto citado e não escrito é pior que veto nenhum.
 
+## Iceberg — o mapa das 27 camadas, e as seis que não têm fonte (2026-09-02)
+
+Quinto incremento de `prompt_evo_iceberg.md`. Documento em
+[`../harness/ICEBERG-GAP.md`](../harness/ICEBERG-GAP.md), sob o gate de lastro.
+
+### O erro de método que o mapa corrige
+
+A primeira varredura procurou **o nome da camada** e concluiu que 15 das 27 não tinham
+mecanismo. **Estava errada.** `deletion vectors`, `Puffin` e `query planning` estavam lá,
+sob outros nomes.
+
+A segunda usou padrões de **capacidade** (`plan_files|scan_planning`,
+`commit\.retry|CommitFailed`, `io-impl|S3FileIO`) e deu outro resultado.
+
+**Procure pelo que a camada faz, não pelo nome dela.**
+
+### As 27, e a soma fecha
+
+| Categoria | |
+|---|---|
+| Têm fato **e** regra | **5** |
+| Têm fato, sem regra | **3** |
+| Já existem sob outro nome | **2** |
+| Pertencem a outro artefato, com dono | **4** |
+| **O artefato não carrega o dado** | **6** |
+| Parcialmente ao alcance | **1** |
+| **Sem fonte que nomeie defeito** | **6** |
+
+`scripts/count_iceberg_gap.py` soma os cabeçalhos e o gate confere que dá **27**: se não
+der, o documento se contradiz — alguma camada está em duas categorias ou em nenhuma.
+
+### O achado que decide o próximo passo
+
+**Seis camadas estão bloqueadas pelo COLETOR, não pelas regras.** O dump tem dez seções;
+`schemas`, `manifest lists`, `metadata files`, `Puffin`, `transactions` e `query planning`
+exigiriam `.statistics`, `.metadata_log_entries`, `.refs` ou o `metadata.json` inteiro. O
+extrator declara na própria docstring que a coleta é de outra camada.
+
+**Outras seis não têm fonte que nomeie defeito.** Medido: `object-storage` tem **zero
+ocorrências** em todo `knowledge/` e `rules/`. Eu ia escrever `SF-ICE-006` sobre ela — a
+medição me impediu, e é o mesmo que `V-ICE-1` acabou de recusar para manifests.
+
+### As provas do documento corrigiram dois números meus
+
+Publiquei **858 linhas** e **12 engines** para a matriz de features. As provas mediram
+**878** e **14**. Corrigido antes do commit — o gate de lastro fez o trabalho para que ele
+existe.
+
+25 alegações novas, todas com prova: `command` para o que se mede, `source` para o que a
+spec publica, `historical` para os limiares que foram **removidos** — reexecutá-los no
+HEAD daria zero, que é o ponto.
+
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.
 3. Escreva o par spec + plan em `specs/` e `plans/` com a data do merge.
