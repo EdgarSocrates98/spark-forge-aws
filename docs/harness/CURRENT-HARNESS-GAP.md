@@ -104,7 +104,7 @@ Muito pouco em termos de **capacidade nova**, e um trabalho real em **unificaç�
 - **Enforcement de tool policy FORA do processo Python, via hook `PreToolUse`** (§41):
   dentro do processo a política deixou de ser só decisão — `adapters/tools.py:call_tool`
   chama `authorize()` por `CallPolicy` e o handler não executa quando a cadeia recusa,
-  o que cobre as 67 tools num ponto só. O que resta é o que nunca passa por `call_tool`:
+  o que cobre as 68 tools num ponto só. O que resta é o que nunca passa por `call_tool`:
   um agente que rode `terraform destroy` por `Bash` não é interceptado por nada. Duas
   ressalvas honestas sobre o que já existe — a imposição só morde onde há política
   declarada (sem `policy`, o comportamento é o de antes, por não-regressão deliberada),

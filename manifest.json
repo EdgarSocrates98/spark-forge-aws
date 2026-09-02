@@ -107,6 +107,7 @@
     "sparkforge_case_open",
     "sparkforge_case_update",
     "sparkforge_code_context",
+    "sparkforge_code_export",
     "sparkforge_code_path",
     "sparkforge_code_read",
     "sparkforge_code_search",

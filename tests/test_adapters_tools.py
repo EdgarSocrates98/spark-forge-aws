@@ -97,6 +97,7 @@ class TestToolSurface:
             "sparkforge_code_search",
             "sparkforge_code_path",
             "sparkforge_code_shape",
+            "sparkforge_code_export",
             "sparkforge_code_symbol",
             "sparkforge_code_read",
             "sparkforge_code_status",
@@ -242,6 +243,7 @@ class TestToolSurface:
             "sparkforge_code_read",
             "sparkforge_code_path",
             "sparkforge_code_shape",
+            "sparkforge_code_export",
             "sparkforge_code_search",
             "sparkforge_code_status",
             "sparkforge_code_symbol",
@@ -1459,7 +1461,7 @@ def _code_tree(tmp_path):
 
 
 def _real_code_output_for(name, tmp_path):
-    """Saida REAL das oito tools de Code Intelligence, sobre uma arvore de verdade.
+    """Saida REAL das nove tools de Code Intelligence, sobre uma arvore de verdade.
 
     Cada uma passa pela porta de frescor da SPEC 43 antes de responder, entao
     construir o indice com `sparkforge_code_sync` aqui nao e conveniencia: e o
@@ -1502,6 +1504,15 @@ def _real_code_output_for(name, tmp_path):
     assert achados["results"], "a busca precisa achar o simbolo da amostra"
     if name == "sparkforge_code_search":
         return achados
+
+    if name == "sparkforge_code_export":
+        resultado = call_tool("sparkforge_code_export", {"repo": str(raiz)})
+        # As DUAS metades da compatibilidade sao o que este teste prende: um
+        # artefato que so declarasse a primeira convidaria a assumir a segunda.
+        assert resultado["sparkforge"]["compatible_fields"]
+        assert resultado["sparkforge"]["not_implemented"]
+        assert resultado["node_count"] >= 1
+        return resultado
 
     if name == "sparkforge_code_shape":
         resultado = call_tool("sparkforge_code_shape", {"repo": str(raiz)})
@@ -2007,6 +2018,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_code_symbol",
         "sparkforge_code_path",
         "sparkforge_code_shape",
+        "sparkforge_code_export",
         "sparkforge_code_read",
         "sparkforge_code_status",
         "sparkforge_code_sync",

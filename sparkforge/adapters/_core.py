@@ -28,6 +28,7 @@ from sparkforge.case.resume import resume as run_resume
 from sparkforge.codeintel import budget as _codeintel_budget
 from sparkforge.codeintel import context as _codeintel_context
 from sparkforge.codeintel import db as _codeintel_db
+from sparkforge.codeintel import export as _codeintel_export
 from sparkforge.codeintel import graph as _codeintel_graph
 from sparkforge.codeintel import ranking as _codeintel_ranking
 from sparkforge.codeintel import search as _codeintel_search
@@ -4980,6 +4981,65 @@ def code_symbol(
     return corpo
 
 
+def code_export(
+    repo: str,
+    *,
+    communities: bool = True,
+    detail_level: str = "full",
+    db: str | None = None,
+) -> dict[str, Any]:
+    """O grafo no formato de EXTRACAO que a fonte do Graphify publica.
+
+    ## O que a medicao decidiu, e por que a tool tem este escopo
+
+    Medido em 2026-09-02 sobre `Graphify-Labs/graphify@v8`: o `README.md`
+    nao especifica o `graph.json` final, e o `ARCHITECTURE.md` diz
+    literalmente que o schema que ele mostra e o da EXTRACAO, anterior a
+    `build()`. **O formato do arquivo final nao e publicado.**
+
+    Escrever um exportador contra ele seria inventar o formato e chamar isso
+    de compatibilidade. Entao esta tool exporta o que a fonte DE FATO
+    publica, e diz no proprio artefato o que ela NAO faz.
+
+    ## As duas metades saem juntas
+
+    `sparkforge.compatible_fields` lista o que veio da fonte;
+    `sparkforge.not_from_source` e `sparkforge.not_implemented` listam o que
+    nao veio e o que nao existe. Um artefato que so declarasse a primeira
+    metade convidaria quem o le a assumir a segunda.
+
+    Nao ha importacao, e nao ha dependencia de `graphifyy` -- cuja versao
+    0.9.53 traz 29 dependencias obrigatorias contra as DUAS do wheel minimo
+    deste projeto. A compatibilidade e de FORMATO, nunca de codigo.
+
+    `detail_level`: `summary` traz so as contagens e a declaracao de
+    compatibilidade; `normal` e `full` trazem os nos e as arestas.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    grafo = _codeintel_export.exportar(banco, incluir_comunidades=communities)
+    corpo: dict[str, Any] = {
+        "index": indice,
+        "schema_version": grafo["schema_version"],
+        "node_count": len(grafo["nodes"]),
+        "edge_count": len(grafo["edges"]),
+        "nodes": [],
+        "edges": [],
+        "sparkforge": grafo["sparkforge"],
+    }
+    if detail_level in ("normal", "full"):
+        corpo["nodes"] = grafo["nodes"]
+        corpo["edges"] = grafo["edges"]
+    return corpo
+
+
 def code_shape(
     repo: str,
     *,
@@ -5454,6 +5514,7 @@ CODE_TOOLS = (
     "sparkforge_code_symbol",
     "sparkforge_code_path",
     "sparkforge_code_shape",
+    "sparkforge_code_export",
     "sparkforge_code_read",
     "sparkforge_code_status",
     "sparkforge_code_sync",

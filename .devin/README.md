@@ -117,6 +117,45 @@ As **46 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
 dizendo **quando** entrar e **o que ela não julga**. Ler a fronteira antes de
 trazer o artefato economiza a investigação inteira.
 
+
+## Economia: o que medir antes de dizer que economizou
+
+**68 tools, 31 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
+quando so precisa do veredito.
+
+**Leia o numero antes de afirmar reducao.** Medido em 2026-09-02 sobre o gold set
+de recuperacao: `summary` contra `full` da **1,3%**, porque o envelope fixo do
+pacote (840 bytes) domina num corpus pequeno.
+
+**O denominador decide o sinal.** Contra ler os arquivos, o indice economiza
+**649,5x**; contra a saida de um `grep` pelo nome, **9,4x**; contra um `grep`
+cirurgico pela definicao ele **custa 5,3x mais**. Publicar a razao sem o
+denominador ao lado nao diz nada.
+
+**Pacote que omitiu o simbolo exigido e falha, nao economia.**
+`python scripts/check_recall_economy.py` cobra isso: recall pelo nome tem piso
+duro de 100%. O recall conceitual — perguntar pelo titulo da regra em vez do nome
+do simbolo — e **medido e sem piso**, e hoje da **0 de 27**: o indice guarda NOME
+e o titulo descreve DEFEITO.
+
+### Antes de abrir arquivo, pergunte ao indice
+
+| Pergunta | Tool MCP | CLI |
+|---|---|---|
+| onde esta X | `sparkforge_code_search` | `code search` |
+| quem chama X | `sparkforge_code_symbol` | `code symbol` |
+| **como** X chega em Y | `sparkforge_code_path` | `code path` |
+| como o codigo esta organizado | `sparkforge_code_shape` | `code shape` |
+| contexto dentro de um teto de bytes | `sparkforge_code_context` | `code context` |
+| fonte, com rotulo de nao confiavel | `sparkforge_code_read` | `code read` |
+| o indice esta fresco | `sparkforge_code_status` | `code status` |
+| grafo no formato do Graphify | `sparkforge_code_export` | `code export` |
+
+`sparkforge_economy_report` mede quanto contexto a execucao consumiu, e
+`detail_level_effect` mostra os bytes de cada nivel. Byte de payload e token de
+provider **nunca se somam**: o primeiro e medido, o segundo so existe com
+transcript do host — sem ele sai `tokens_unresolved`.
+
 ## As armadilhas deste repositório
 
 Cada uma já derrubou uma entrega aqui.

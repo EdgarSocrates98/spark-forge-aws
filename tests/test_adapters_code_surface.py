@@ -33,6 +33,7 @@ CODE_TOOLS = (
     "sparkforge_code_symbol",
     "sparkforge_code_path",
     "sparkforge_code_shape",
+    "sparkforge_code_export",
     "sparkforge_code_read",
     "sparkforge_code_status",
     "sparkforge_code_sync",
@@ -132,7 +133,7 @@ class TestQuantasToolsEPorQue:
     decisao escrita, e nao um arquivo que engordou.
     """
 
-    def test_sao_exatamente_oito(self):
+    def test_sao_exatamente_nove(self):
         declaradas = {n for n in TOOLS if n.startswith("sparkforge_code_")}
         assert declaradas == set(CODE_TOOLS)
 
