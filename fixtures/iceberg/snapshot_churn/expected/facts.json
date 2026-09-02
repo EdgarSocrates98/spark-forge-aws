@@ -1,5 +1,29 @@
 [
   {
+    "id": "f_14fc5b",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.snapshot_churn_demo"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "property": "2",
+      "declared": "2",
+      "diverges": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "04c55d86d5c107a4538758ac9d101c5f0773a74e4fc6800bd747cc5e2bcd63f8",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_4c6c9d",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",

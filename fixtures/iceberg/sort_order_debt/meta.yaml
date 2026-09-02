@@ -1,29 +1,28 @@
 name: sort_order_debt
-proves: >
-  Sort order evoluido no meio da vida da tabela, sem rewrite do passivo.
-  default-sort-order-id e 2; quatro dos sete data files carregam
-  sort_order_id 1, uma ordem REGISTRADA anterior -- id nao-zero so e gravado
-  quando um writer chamou withSortOrder deliberadamente, entao esses quatro
-  sao prova, nao suposicao, de escrita sob outra ordem. Dois carregam 2 (ja
-  sob a ordem vigente) e um carrega 0, que nao prova nada e cai em
-  files_sort_order_unknown. Exercita SF-ICE-004 disparando com
-  files_written_before_sort_order = 4 -- um PISO confirmado, nao um total,
-  porque o arquivo com 0 continua sem resposta e vira iceberg.unresolved.
-  Runtime Glue 4.0 / Iceberg 1.0.0 de proposito: e a versao mais antiga do
-  range suportado, e o campo 140 (sort_order_id) precisa existir nela para o
-  runtime_scope `>=1.0.0` da regra se sustentar. Arquivos de 256MB e
-  distribution-mode hash isolam SF-ICE-004: nem SF-ICE-001 nem SF-ICE-005
+proves: 'Sort order evoluido no meio da vida da tabela, sem rewrite do passivo. default-sort-order-id
+  e 2; quatro dos sete data files carregam sort_order_id 1, uma ordem REGISTRADA anterior
+  -- id nao-zero so e gravado quando um writer chamou withSortOrder deliberadamente, entao
+  esses quatro sao prova, nao suposicao, de escrita sob outra ordem. Dois carregam 2 (ja sob
+  a ordem vigente) e um carrega 0, que nao prova nada e cai em files_sort_order_unknown. Exercita
+  SF-ICE-004 disparando com files_written_before_sort_order = 4 -- um PISO confirmado, nao
+  um total, porque o arquivo com 0 continua sem resposta e vira iceberg.unresolved. Runtime
+  Glue 4.0 / Iceberg 1.0.0 de proposito: e a versao mais antiga do range suportado, e o campo
+  140 (sort_order_id) precisa existir nela para o runtime_scope `>=1.0.0` da regra se sustentar.
+  Arquivos de 256MB e distribution-mode hash isolam SF-ICE-004: nem SF-ICE-001 nem SF-ICE-005
   podem disparar aqui.
+
+  '
 runtime:
-  glue: "4.0"
-  spark: "3.3.0"
-  python: "3.10"
-  iceberg: "1.0.0"
+  glue: '4.0'
+  spark: 3.3.0
+  python: '3.10'
+  iceberg: 1.0.0
 expects_kinds:
-  - iceberg.files_summary
-  - iceberg.snapshots_summary
-  - iceberg.table_property
-  - iceberg.table_analyzed
-  - iceberg.unresolved
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+- iceberg.unresolved
 expects_rules:
-  - SF-ICE-004
+- SF-ICE-004

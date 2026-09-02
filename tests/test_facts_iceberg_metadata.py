@@ -15,6 +15,7 @@ EXPECTED_KINDS = {
     "iceberg.table_property",
     "iceberg.unresolved",
     "iceberg.table_analyzed",
+    "iceberg.format_version",
 }
 
 
@@ -30,7 +31,10 @@ def one(kind, payload, path="dump.json"):
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 8
+    # 9 desde `iceberg.format_version` (2026-09-02). A lista acima e MANUAL de
+    # proposito: derivar `EXPECTED_KINDS` de `EMITTED_KINDS` faria o teste
+    # concordar consigo mesmo, e um kind acrescentado por engano passaria.
+    assert len(EMITTED_KINDS) == 9
     assert EXTRACTOR_ID.startswith("iceberg_metadata@")
 
 

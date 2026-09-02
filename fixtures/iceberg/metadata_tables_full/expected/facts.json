@@ -46,6 +46,30 @@
     }
   },
   {
+    "id": "f_84384c",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_particionado"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "property": "2",
+      "declared": "2",
+      "diverges": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "21fda22e9cbfde08a1537946ffa8a9f29d220286f169b072cfdfdffee2e4a12e",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_819147",
     "schema_version": 1,
     "kind": "iceberg.manifests_summary",

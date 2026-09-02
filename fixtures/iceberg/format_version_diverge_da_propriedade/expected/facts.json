@@ -1,108 +1,129 @@
 [
   {
-    "id": "f_33cb7f",
+    "id": "f_562942",
+    "schema_version": 1,
+    "kind": "iceberg.delete_files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.tabela_divergente"
+    },
+    "measures": {
+      "delete_file_count": 2,
+      "data_file_count": 30,
+      "total_bytes": 80000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_c7ed1e",
     "schema_version": 1,
     "kind": "iceberg.files_summary",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {
-      "data_file_count": 20,
-      "total_bytes": 80000000,
-      "avg_file_bytes": 4000000.0,
-      "p50_file_bytes": 4000000,
-      "p95_file_bytes": 4000000,
-      "min_file_bytes": 4000000,
-      "max_file_bytes": 4000000,
-      "total_records": 100000
+      "data_file_count": 30,
+      "total_bytes": 9000000000,
+      "avg_file_bytes": 300000000.0,
+      "p50_file_bytes": 300000000,
+      "p95_file_bytes": 300000000,
+      "min_file_bytes": 300000000,
+      "max_file_bytes": 300000000,
+      "total_records": 24000000
     },
     "attrs": {},
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_e4d511",
+    "id": "f_30a013",
     "schema_version": 1,
     "kind": "iceberg.format_version",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {
-      "version": 2
+      "version": 3
     },
     "attrs": {
       "resolved": true,
       "property": "2",
-      "declared": "2",
-      "diverges": false
+      "declared": "3",
+      "diverges": true
     },
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_62a30e",
+    "id": "f_aa857b",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {
       "snapshot_count": 3,
-      "span_hours": 216.0
+      "span_hours": 720.0
     },
     "attrs": {
       "operations": [
         "append"
       ],
-      "oldest": "2026-07-01T00:00:00+00:00",
-      "newest": "2026-07-10T00:00:00+00:00"
+      "oldest": "2026-06-01T00:00:00+00:00",
+      "newest": "2026-07-01T00:00:00+00:00"
     },
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_823c14",
+    "id": "f_6d983b",
     "schema_version": 1,
     "kind": "iceberg.table_analyzed",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {
-      "section_count": 3,
+      "section_count": 4,
       "unresolved_count": 0
     },
     "attrs": {},
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_888138",
+    "id": "f_507519",
     "schema_version": 1,
     "kind": "iceberg.table_property",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {},
     "attrs": {
@@ -113,71 +134,71 @@
     },
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_888138",
+    "id": "f_507519",
     "schema_version": 1,
     "kind": "iceberg.table_property",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {},
     "attrs": {
       "key": "write.distribution-mode",
-      "value": "none",
+      "value": "hash",
       "present": true,
       "non_empty": true
     },
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_888138",
+    "id": "f_507519",
     "schema_version": 1,
     "kind": "iceberg.table_property",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {},
     "attrs": {
       "key": "sort-order",
-      "present": true,
-      "non_empty": true
+      "present": false,
+      "non_empty": false
     },
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   },
   {
-    "id": "f_888138",
+    "id": "f_507519",
     "schema_version": 1,
     "kind": "iceberg.table_property",
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.small_files_demo"
+      "symbol": "analytics.tabela_divergente"
     },
     "measures": {},
     "attrs": {
       "key": "partition-spec",
-      "present": true,
-      "non_empty": true
+      "present": false,
+      "non_empty": false
     },
     "provenance": {
       "artifact": "dump.json",
-      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "artifact_sha256": "e1c0aae3b82d703deb5ecd4b9736a0f8b3e4d5a60f455221d97329d8aef2001c",
       "extractor": "iceberg_metadata@0.1.0"
     }
   }

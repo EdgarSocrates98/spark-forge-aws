@@ -32,6 +32,18 @@ REQUIRED_FIXTURES = {
     "sort_order_rewritten",
     "sort_order_unknown",
     "metadata_tables_full",
+    # O trio de versao de spec, e a recusa. Ate 2026-09-02 o corpus era 9 de 9
+    # em v2: o eixo de `format_version` nunca fora exercitado, e um kind que so
+    # ve um valor em todo o corpus nao esta sendo testado.
+    #
+    # `format_v1_valida` tambem cobre a AUSENCIA da propriedade -- ali
+    # `attrs.diverges` nao sai de todo, e a diferenca para `format_v3_com_
+    # propriedade` (onde ele sai `false`) e o que prova que ausencia de lado nao
+    # e concordancia.
+    "format_v1_valida",
+    "format_v3_com_propriedade",
+    "format_version_diverge_da_propriedade",
+    "format_version_ausente_no_dump",
 }
 
 

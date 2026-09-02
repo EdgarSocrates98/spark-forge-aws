@@ -117,6 +117,7 @@ EMITTED_KINDS = frozenset(
         "iceberg.partitions_summary",
         "iceberg.table_property",
         "iceberg.unresolved",
+        "iceberg.format_version",
         "iceberg.table_analyzed",
     }
 )
@@ -503,6 +504,112 @@ def _structural_property_fact(
     )
 
 
+# As tres versoes que a spec publica. `feature_support.SPEC_VERSIONS` vale
+# `{2, 3}` e NAO e a mesma coisa: aquela constante governa UPGRADE de spec, e
+# ninguem faz upgrade PARA v1. Aqui a pergunta e outra -- de que versao a
+# tabela E --, e v1 e resposta legitima.
+_VERSOES_DA_SPEC = (1, 2, 3)
+
+
+def _format_version_fact(
+    payload: dict[str, Any],
+    subject: dict[str, Any],
+    path: str,
+    provenance: dict[str, Any],
+) -> Fact:
+    """A versao que a tabela E, contra a que a propriedade DECLARA.
+
+    ## Duas coisas diferentes, e por isso dois campos
+
+    `format_version` no topo do dump vem do `metadata.json` e e AUTORITATIVO.
+    `properties['format-version']` e um par chave/valor que pode estar
+    ausente, ficar para tras de um upgrade, ou nao ter sido propagado pelo
+    coletor.
+
+    Colapsa-los num campo escolheria por conta propria qual dos dois e a
+    verdade -- e o caso em que divergem e exatamente o que vale reportar.
+
+    ## A ausencia do topo NAO e suprida pela propriedade
+
+    Inferir da propriedade transformaria "o coletor nao me deu" em "a tabela
+    e v2". A recusa sai nomeada, com a medida que a destrava: incluir o campo
+    e uma linha do `metadata.json`.
+
+    ## v1 nao e defeito
+
+    Uma tabela v1 e valida. O defeito so existe quando a matriz diz que o
+    engine do consumidor suporta mais E ha motivo para subir -- e isso e
+    julgamento, que mora em regra e nao aqui.
+    """
+    propriedades = payload.get("properties")
+    da_propriedade: str | None = None
+    if isinstance(propriedades, dict) and "format-version" in propriedades:
+        da_propriedade = _value_to_str(propriedades["format-version"])
+
+    attrs: dict[str, Any] = {"resolved": False}
+    if da_propriedade is not None:
+        attrs["property"] = da_propriedade
+
+    if "format_version" not in payload:
+        attrs["reason"] = "format_version_ausente_no_dump"
+        attrs["unblocked_by"] = (
+            "o coletor precisa incluir `format_version` no dump -- e uma linha "
+            "do `metadata.json` da tabela, e sem ela a versao so poderia ser "
+            "inferida da propriedade, que e outra coisa"
+        )
+        return Fact(
+            kind="iceberg.format_version",
+            subject=subject,
+            attrs=attrs,
+            provenance=provenance,
+        )
+
+    bruto = payload["format_version"]
+    if not isinstance(bruto, int) or isinstance(bruto, bool):
+        attrs["reason"] = "format_version_nao_numerico"
+        attrs["observed"] = _value_to_str(bruto)
+        attrs["unblocked_by"] = (
+            "o dump trouxe `format_version` como algo que nao e inteiro; a "
+            "spec publica 1, 2 e 3"
+        )
+        return Fact(
+            kind="iceberg.format_version",
+            subject=subject,
+            attrs=attrs,
+            provenance=provenance,
+        )
+
+    if bruto not in _VERSOES_DA_SPEC:
+        attrs["reason"] = "format_version_fora_da_spec"
+        attrs["observed"] = str(bruto)
+        attrs["unblocked_by"] = (
+            f"a spec publica {', '.join(str(v) for v in _VERSOES_DA_SPEC)}; "
+            f"um valor fora disso e do coletor ou de uma spec futura que este "
+            f"extrator nao conhece"
+        )
+        return Fact(
+            kind="iceberg.format_version",
+            subject=subject,
+            attrs=attrs,
+            provenance=provenance,
+        )
+
+    attrs["resolved"] = True
+    attrs["declared"] = str(bruto)
+    # `diverges` so existe quando HA os dois lados para comparar. Sem a
+    # propriedade, `false` se leria como "conferido e concorda", que e
+    # afirmacao sobre um lado que nao existe.
+    if da_propriedade is not None:
+        attrs["diverges"] = da_propriedade.strip() != str(bruto)
+    return Fact(
+        kind="iceberg.format_version",
+        subject=subject,
+        measures={"version": bruto},
+        attrs=attrs,
+        provenance=provenance,
+    )
+
+
 def extract_iceberg_metadata(
     payload: dict[str, Any], path: str, artifact_sha256: str = ""
 ) -> list[Fact]:
@@ -619,6 +726,10 @@ def extract_iceberg_metadata(
         facts.append(
             _structural_property_fact("partition-spec", bool(partition_spec), subject, provenance)
         )
+
+    # SEMPRE, inclusive quando o dump nao traz `format_version`: ali como
+    # recusa nomeada. Ausencia do fact se leria como "ninguem perguntou".
+    facts.append(_format_version_fact(payload, subject, path, provenance))
 
     unresolved_count = sum(1 for f in facts if f.kind == "iceberg.unresolved")
 

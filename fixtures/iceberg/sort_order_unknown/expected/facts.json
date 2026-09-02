@@ -29,6 +29,30 @@
     }
   },
   {
+    "id": "f_7b874d",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_cego"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "property": "2",
+      "declared": "2",
+      "diverges": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "bc26bdbf309723f2daaa014f7ff43d514831684c59501d59dbec9e31f183efe1",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_9a3287",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",
