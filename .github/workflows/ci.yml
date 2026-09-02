@@ -94,6 +94,13 @@ jobs:
       # *Numeros correntes* com o gate acima em exit 0.
       - name: STATUS.md numeros correntes
         run: python scripts/check_status_numbers.py --strict
+      # O gate de recall decide UMA coisa e recusa outra: recall nominal tem
+      # piso duro de 100% (perguntado pelo nome, o pack entrega o simbolo), e
+      # a razao de economia sai `unresolved` porque o corpus do gold set e
+      # menor que o envelope fixo do pack. Publicar a razao daqui mediria o
+      # piso do envelope, nao a economia do subsistema.
+      - name: Recall e economia do ContextPack
+        run: python scripts/check_recall_economy.py
       - name: Surface lock
         run: python scripts/check_surface_lock.py
       - name: Catalog loads with expression validation

@@ -120,6 +120,33 @@ Convenção da casa: kind, entrada nas listas `EXTRACTORS` dos dois arquivos de 
 golden entram **no mesmo commit**. `EMITTED_KINDS` declara só o que o extrator emite —
 kind declarado e nunca emitido torna inalcançável qualquer regra que dependa dele.
 
+## Mexer no funil de contexto (`sparkforge/codeintel/context.py`, `ranking.py`, `budget.py`)
+
+```
+python scripts/check_recall_economy.py
+python -m pytest tests/test_economy_recall.py tests/test_economy_goldset.py -q
+```
+
+O gate decide **uma** coisa e recusa outra, e a distinção é o ponto:
+
+- **Recall nominal tem piso duro de 100%.** Perguntado pelo nome do símbolo, o pack
+  entrega aquele símbolo. Se `buscar()` acha o nó e `montar()` não o entrega, o funil
+  perdeu no caminho.
+- **Recall conceitual é medido e não tem piso.** Perguntado pelo título da regra — como
+  um operador descreve o problema —, o pack recupera? **Medido: 0 de 23.** O índice
+  guarda NOME e o título descreve DEFEITO. Dar piso reprovaria capacidade que ninguém
+  construiu; omitir esconderia o quanto falta.
+- **A razão de economia sai `unresolved`.** O corpus do gold set tem 15 279 bytes em 23
+  fixtures, e o envelope fixo do pack custa 840 bytes por chamada — 19 320 no total. Com
+  o corpus menor que o envelope, qualquer razão daqui mede o piso do envelope. A §10 de
+  `docs/harness/CODEINTEL-GAP.md` mediu **645× a favor** sobre 479 arquivos; as duas
+  medições não se contradizem, medem corpora de ordens de grandeza diferentes.
+
+O gold set é **derivado** das regras a cada execução (`finding.evidence[] → fact.id →
+fact.subject.{file,symbol}`) e nunca versionado como arquivo. Se uma regra perder
+ancoragem, o piso de 23 perguntas cai e o gate reclama; se uma regra nova ganhar fixture
+ancorada, o piso sobe **no commit que o fez subir**.
+
 ## Acrescentar um CORPUS de fixture novo (`fixtures/<dominio>/`)
 
 ```
