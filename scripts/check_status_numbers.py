@@ -118,6 +118,24 @@ def _rotas() -> int:
     return sum(1 for linha in texto.splitlines() if re.match(r"^  - id: ", linha))
 
 
+def _goldset() -> list:
+    from sparkforge.economy.goldset import derivar_goldset
+
+    return list(derivar_goldset())
+
+
+def _fora_do_goldset() -> list:
+    """Os achados que a derivacao RECUSA, e a razao de eles serem publicados.
+
+    Publicar 23 perguntas sem publicar as 25 recusas faria "o gate cobre 23
+    achados" ser lido como "existem 23 achados" -- o gate esconderia o proprio
+    denominador.
+    """
+    from sparkforge.economy.goldset import fora_do_alcance
+
+    return list(fora_do_alcance())
+
+
 def _regras_do_protocolo() -> int:
     """Itens numerados DENTRO da secao `## Regras` do `AGENT_PROTOCOL.md`.
 
@@ -174,6 +192,11 @@ MEDIDAS: dict[str, Callable[[], int]] = {
     "Rotas determinísticas": _rotas,
     "Gates do case": _gates_do_case,
     "Regras do `AGENT_PROTOCOL.md`": lambda: _regras_do_protocolo(),
+    # DERIVADO das regras, nunca lido de arquivo -- ver
+    # `sparkforge/economy/goldset.py` sobre por que congelar o gold set o faria
+    # afirmar sobre a ancoragem de ontem.
+    "Perguntas do gold set de recuperação": lambda: len(_goldset()),
+    "Achados que NÃO rendem pergunta de ouro": lambda: len(_fora_do_goldset()),
 }
 
 # Dimensoes que a tabela publica e que este gate NAO mede, com a razao. Sem

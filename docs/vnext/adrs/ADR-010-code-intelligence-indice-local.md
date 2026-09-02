@@ -87,7 +87,7 @@ propósito. Os valores absolutos moram em `sparkforge/codeintel/resolve.py`, dat
 módulo, e **não** são copiados para cá: eles se movem a cada arquivo novo da árvore, e número
 copiado envelhece no documento sem que nada acuse.
 
-O motivo dominante é o que diz onde está o limite. **91,8%** das não resolvidas são
+O motivo dominante é o que diz onde está o limite. **91,7%** das não resolvidas são
 `UNKNOWN_RECEIVER` — `df.filtrar()` sem saber o tipo de `df`. Inferir tipo aqui seria adivinhação
 vestida de análise, e é por isso que a próxima fase tem o que ganhar exatamente ali, e não afinando
 estas regras. Número baixo medido vale mais que número alto inventado, e a fase anterior já havia

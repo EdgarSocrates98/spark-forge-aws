@@ -49,6 +49,8 @@ arquivo ganha.
 | Fact kinds distintos emitidos | **182** — os **catorze** últimos são `ctm.*`: doze da entrega de `Jobs-as-Code` (seis de inventário — `folder`, `job`, `schedule`, `dependency`, `action`, `variable` —, a declaração de versão `version_declared`, **três** de cruzamento com a matriz — `capability_supported`, `capability_incompatible`, `capability_unresolved` — e o par recusa/sentinela `unresolved`/`analyzed`) e **dois** da entrega de dependência e janela (2026-09-02): `ctm.event_logic` e `ctm.job_array_format`. Os dois novos são DERIVADOS pela mesma razão de `tf.graphframes.jar` — a evidência não está em campo nenhum do artefato. `event_logic` mede a profundidade de parênteses de uma lista de eventos, que é contagem e nenhum `expr` do motor conta; `job_array_format` diz que o job foi alcançado por índice de array, que só a travessia sabe. A terceira decisão do incremento **não** virou kind: `specific_dates_conflict` e `reference_path_with_explicit_jobs` são atributos já decididos sobre `ctm.schedule` e `ctm.folder`, no molde de `graph.algorithm.checkpoint_required`, porque nenhuma regra precisa de `absent:` sobre eles. Os oito de EMR on EKS são `emrc.*` | união de `EMITTED_KINDS` sobre os 29 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (182 = 182, sem overlap entre módulos) |
 | Regras de diagnóstico | **146**, sendo **66 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** (as cinco últimas `structural` são `SF-CTM-002` a `SF-CTM-006`, de 2026-09-02: como `SF-CTM-001`, elas julgam análise estática de código-fonte, sem nenhuma medida de execução) (`SF-CTM-001` foi a quadragésima) (as duas anteriores são `SF-GRAPH-005` e `SF-GRAPH-006`, da rodada de dívidas) (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
+| Perguntas do gold set de recuperação | **23**, cobrindo **18 regras distintas** — DERIVADAS das regras a cada execução pela cadeia `finding.evidence[] → fact.id → fact.subject.{file,symbol}`, e **nunca versionadas como arquivo**. Congelar o gold set em JSON o faria afirmar sobre a ancoragem de ontem enquanto as regras mudam hoje, que é o defeito que `EMR_MATRIX` literal em código tinha contra a matriz em YAML. É **piso, não igualdade**: cair significa que uma regra perdeu ancoragem e é defeito; subir significa que uma regra nova ganhou fixture ancorada e é progresso, e o piso sobe no commit que o fez subir | `python scripts/check_recall_economy.py` |
+| Achados que NÃO rendem pergunta de ouro | **25 em 48**, por duas razões que destravam com medidas **diferentes**: **23** são `evidencia_sem_simbolo` (o fato citado ancora arquivo e linha, com `subject.symbol` vazio — destrava no EXTRATOR que produziu o fato) e **2** são `extensao_nao_indexada` (`SF-ENV-003` e `SF-GRAPH-005` ancoram símbolo em `.tf`, que `codeintel.index.indexar` não percorre — destrava no INDEXADOR). Somá-las num rótulo só mandaria quem fosse consertar para o módulo errado. Metade dos achados destas fixtures não rende pergunta, e publicar isso é o que impede que "o gate cobre 23 achados" seja lido como "existem 23 achados" | `python scripts/check_recall_economy.py` |
 | Regras com golden que dispara | **111 de 111 executáveis** — recontado em 2026-09-02 sobre `_executable_rules()`; as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, e cada uma tem golden positivo **e** negativo. A leitura anterior publicava 105 e já estava defasada em 1 antes desta entrega. `_executable_rules()` filtra por `executable`, **nunca** por `status` | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **98** — a `AGENT-082` da entrega de Control-M é a nonagésima oitava, e ela é rota **própria** e não uma linha a mais num `any:` existente: Control-M não é EMR, não roda Spark e não tem cluster, então enfiá-la na `AGENT-007` mandaria o case para um coordenador cujo vocabulário inteiro não descreve o artefato. A fase de EMR on EKS, ao contrário, **não** moveu esta linha: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` |
 | Tools MCP | **65** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` |
@@ -6083,6 +6085,68 @@ precedente e teria entregue menos do que a fonte sustenta.
 ## Como manter este arquivo honesto
 
 Ao fechar uma fase:
+
+## Gate de recall e economia do `ContextPack` — a lacuna que estava nomeada três vezes (2026-09-02)
+
+Primeiro incremento de `prompt_evo_graph_economy.md`. Spec em
+[`specs/2026-09-02-sparkforge-recall-economia-design.md`](specs/2026-09-02-sparkforge-recall-economia-design.md).
+
+**A premissa do prompt de origem é majoritariamente falsa, e medi-la foi o trabalho
+mais barato do incremento.** Ele pede 14 fases sobre *"não há uma camada unificada"*;
+`sparkforge/codeintel/` tem 16 módulos e ~300 KB, com `NoDoGrafo`, `GrafoDeDados`,
+`staleness.py` git-aware, `budget.py`, `ids.py`, `security.py`, `ContextPack` de 13
+campos, seis tools MCP e onze arquivos de teste. **Nove das catorze fases estavam
+entregues.** A que não estava é a F11, e ela já aparecia como NÃO EXISTE três vezes na
+§14 de `docs/harness/CODEINTEL-GAP.md` — corpus de query, gold set com símbolo exigido, e
+gate de recall e economia. A linha 292 do mesmo documento já escrevera a consequência sem
+poder torná-la executável: *"economia que omite o símbolo necessário é falha, não
+sucesso"*.
+
+### O que o gate decide, e o que ele recusa a decidir
+
+| | Medido em 2026-09-02 |
+|---|---|
+| **Recall nominal** — piso duro 100% | **23/23**. Perguntado pelo nome do símbolo, o pack entrega aquele símbolo |
+| **Recall conceitual** — medido, sem piso | **0/23**. Perguntado pelo título da regra, o pack recupera **nada** |
+| **Razão de economia** | **`unresolved`**, com a medida que a destravaria |
+| `detail_level` `summary` vs `full` | 38 610 contra 39 220 bytes — **1.5%** |
+
+**O zero do recall conceitual é o achado que mais vale.** O índice guarda NOME
+(`componentes`) e o título da regra descreve DEFEITO (`connectedComponents sem diretório
+de checkpoint`); a expansão de termos não liga os dois, e ninguém construiu essa ponte.
+Dar piso reprovaria capacidade que a SPEC não promete; omitir esconderia o quanto falta.
+
+**A recusa de publicar economia é a decisão de desenho central.** Medido: o envelope fixo
+do pack é **840 bytes** e o corpus inteiro do gold set tem **15 279 bytes em 23
+fixtures** — 19 320 de envelope. Com o corpus menor que o envelope, o pack não pode
+custar menos que ler o corpus, e qualquer razão daqui mediria o piso do envelope. A §10
+daquele mesmo documento mediu **645× a favor** sobre 479 arquivos: as duas medições não
+se contradizem, medem corpora de ordens de grandeza diferentes, e citar uma sem a outra
+escolheria o resultado.
+
+### Os dois defeitos que a construção encontrou, ambos meus
+
+- **`any(gerador for ...)` nunca filtrou.** Testa a verdade do objeto gerador, sempre
+  verdadeira. Medido: **244 casos onde há 83**. Fechado com `next(..., None)`.
+- **Ler só `symbols` dava recall zero no caso que a ferramenta acertou.** `montar()`
+  fatia a lista ordenada em duas (`context.py:775`) e soma as duas para reportar
+  `selected_symbols` (`context.py:861`). O sintoma parecia defeito do produto — o pacote
+  dizia `selected_symbols: 1` com `symbols` vazio.
+
+### O limite do contrafactual, declarado
+
+Desligar `_profundidades` muda o pack em **2 bytes** (2405 → 2403) e **não** muda o
+recall. Fica provado que a ancoragem no grafo está ligada ao escore; **não** fica provado
+que ela muda o que se recupera. Nestas fixtures — um arquivo, poucos símbolos — não há o
+que reordenar. A medida que destravaria a pergunta forte é um corpus onde vários símbolos
+disputem a mesma consulta, e é a mesma lacuna que faz o gate recusar a razão de economia.
+
+### O que sobra do prompt, em ordem
+
+`shortest_path` e `graph_stats` (F4) → ponte grafo ↔ Spark (F6) → comunidades e god nodes
+(F8, provavelmente `communities.unresolved` porque a dependência não cabe no wheel
+mínimo) → `GraphifyJsonAdapter` (F1.6), **último de propósito**: único item genuinamente
+novo e o de menor valor, porque exporta para ferramenta fora do fluxo do operador.
 
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.
