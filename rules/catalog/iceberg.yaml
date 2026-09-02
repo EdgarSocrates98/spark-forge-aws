@@ -176,9 +176,10 @@ rules:
       - Contagem de snapshots antes e depois.
       - Tamanho de metadata.json antes e depois.
       - Tempo de planejamento de uma query de referência antes e depois.
-    rollback: >
-      Não há rollback para expire_snapshots. A mitigação é escolher a retenção com
-      confirmação explícita antes de executar.
+    rollback:
+      - >
+        Não há rollback para expire_snapshots. A mitigação é escolher a retenção com
+        confirmação explícita antes de executar.
     sources:
       - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29}
 

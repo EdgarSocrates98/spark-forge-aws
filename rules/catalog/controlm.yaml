@@ -272,12 +272,13 @@ rules:
       - "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e a lista de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item. É o que prova que a troca foi de mecanismo de execução e não de topologia do fluxo."
       - "EIXO DE RESULTADO — o efeito do job é o mesmo. Uma ordenação (`run order`) no ambiente alvo termina em OK e o artefato que o job produz — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job type novo que roda sem erro e escreve outra coisa é a falha que este eixo existe para pegar."
       - "`sparkforge analyze controlm-jobs --path <arquivo> --version <a mesma>` não produz mais SF-CTM-001, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
-    rollback: >
-      Reverter o commit da definição e reimplantar a versão anterior com `ctm
-      deploy`. O rollback é barato porque a definição é código versionado, e não
-      estado — mas ele NÃO desfaz uma ordenação já submetida no ambiente alvo: o
-      job que já entrou no Active continua com a definição com que entrou, e
-      cancelá-lo é operação de runtime, com confirmação de escopo.
+    rollback:
+      - >
+        Reverter o commit da definição e reimplantar a versão anterior com `ctm
+        deploy`. O rollback é barato porque a definição é código versionado, e não
+        estado — mas ele NÃO desfaz uma ordenação já submetida no ambiente alvo: o
+        job que já entrou no Active continua com a definição com que entrou, e
+        cancelá-lo é operação de runtime, com confirmação de escopo.
     sources:
       - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm", retrieved: 2026-09-01}
       - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm", retrieved: 2026-09-01}
