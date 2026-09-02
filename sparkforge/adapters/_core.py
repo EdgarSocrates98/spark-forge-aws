@@ -36,6 +36,7 @@ from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect.base import CollectorUnavailable, verify_all
+from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
     UnknownVersion as UnknownControlMVersion,
 )
@@ -1555,6 +1556,113 @@ def analyze_call_graph(
 # --------------------------------------------------------------------------- #
 
 
+# A quinta plataforma de migracao, e a UNICA que nao passa por
+# `assess_migration`. A razao esta na docstring de
+# `sparkforge/controlm/migration.py`: as duas formas nao sao a mesma.
+# `release_descriptor` devolve componente -> versao, que `_runtime_for` consome;
+# o descritor de Control-M devolve CAPACIDADE com fronteira, que e mais rico para
+# migracao e nao cabe naquele molde. Achatar os dois seria o erro que a D-1 do
+# primeiro incremento de Control-M recusou por escrito.
+MIGRATION_CONTROLM_PLATFORM = "controlm"
+
+
+def _migration_assess_controlm(alvo: Path, source: str, target: str) -> dict[str, Any]:
+    """O ramo de Control-M de `migration_assess`, com composicao propria.
+
+    NAO passa por `assess_migration`, e a razao e de forma e nao de gosto: aquele
+    motor monta um `runtime` por degrau e chama `judge`, e o eixo de Control-M
+    nao e runtime -- e CAPACIDADE com fronteira declarada. A D-f do incremento 2
+    ja registrou que `runtime_scope` guarda a versao do `RuntimeContext` e que
+    nada ali conhece `9.0.2x.yyy`.
+
+    A FORMA DO RELATORIO E A MESMA, e isso e contrato: quem le o assessment de
+    Glue reconhece `source`, `target`, `steps` e `gate` aqui. So a fonte do
+    veredito muda.
+
+    `declared_version=source` na extracao e escolha SEM EFEITO no resultado: o
+    que se le dos facts e o CONJUNTO de capacidades que o job usa, e ele nao
+    depende da versao declarada. O cruzamento por versao acontece degrau a
+    degrau, em `_ctm_migration.avaliar`.
+    """
+    arquivos = (
+        [alvo] if alvo.is_file() else sorted(p for p in alvo.rglob("*.json") if p.is_file())
+    )
+    if not arquivos:
+        raise AdapterError(
+            f"nenhum arquivo .json de Jobs-as-Code em {alvo}\n"
+            f"  Aponte para a definicao de job que o `ctm build` valida.",
+            exit_code=2,
+        )
+
+    facts: list[Any] = []
+    for arquivo in arquivos:
+        facts.extend(
+            extract_controlm_jobs_path(
+                arquivo,
+                repo_root=alvo if alvo.is_dir() else alvo.parent,
+                declared_version=source,
+            )
+        )
+
+    try:
+        avaliacao = _ctm_migration.avaliar(facts, source, target)
+    except _ctm_migration.ControlMMigrationError as exc:
+        raise AdapterError(
+            f"{exc}\n"
+            f"  Confira o par contra a matriz:\n"
+            f"    sparkforge controlm describe --version <versao>",
+            exit_code=2,
+        ) from exc
+
+    return {
+        "platform": MIGRATION_CONTROLM_PLATFORM,
+        "source": avaliacao.source,
+        "target": avaliacao.target,
+        "direction": avaliacao.direcao,
+        "gate": avaliacao.gate,
+        "job_capabilities": list(avaliacao.capacidades_do_job),
+        "steps": [
+            {
+                "from": d.de,
+                "to": d.para,
+                "gate": d.gate,
+                "changes": [
+                    {
+                        "capability": m.capability,
+                        "boundary": m.boundary,
+                        "severity": m.severity,
+                        "declared_at": m.declared_at,
+                        "summary": m.summary,
+                        "replaced_by": m.replaced_by,
+                    }
+                    for m in d.mudancas
+                ],
+            }
+            for d in avaliacao.degraus
+        ],
+        # As quebras saem SEPARADAS do resto, e nao so somadas no gate: um
+        # relatorio de dez degraus com uma quebra no sexto esconde a quebra se
+        # ela so aparecer dentro do degrau.
+        "breaking": [
+            {
+                "capability": m.capability,
+                "at": f"{m.de} -> {m.para}",
+                "boundary": m.boundary,
+                "declared_at": m.declared_at,
+                "summary": m.summary,
+            }
+            for m in avaliacao.quebras
+        ],
+        # Recusa do extrator que vira ausencia aqui se leria como "nada a
+        # declarar". Ela viaja com a razao e a medida que a destravaria.
+        "unresolved": [dict(r) for r in avaliacao.unresolved],
+        "coverage_note": (
+            "o relatorio cobre as capacidades que ESTE job usa, nao tudo o que "
+            "mudou entre as versoes: a pergunta e o que quebra aqui"
+        ),
+    }
+
+
 def migration_assess(
     path: str, source: str, target: str, platform: str = MIGRATION_DEFAULT_PLATFORM
 ) -> dict[str, Any]:
@@ -1600,6 +1708,9 @@ def migration_assess(
             f"    sparkforge migrate glue ./meu-job --from 4.0 --to 6.0",
             exit_code=2,
         )
+    if platform == MIGRATION_CONTROLM_PLATFORM:
+        return _migration_assess_controlm(target_path, source, target)
+
     facts = collect_migration(target_path)
 
     try:

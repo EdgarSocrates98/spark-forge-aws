@@ -6368,6 +6368,77 @@ Marcar `INFERRED` alguma delas seria afirmar uma inferência que não houve.
 
 Superfície: 67 para **68** tools, +3384 bytes. **O prompt está fechado.**
 
+## Migração de Control-M — a capacidade que o job usa, degrau a degrau (2026-09-02)
+
+Quarto incremento de `prompt_evo_spark_bmc.md` (§66). Spec em
+[`specs/2026-09-02-sparkforge-controlm-migracao-design.md`](specs/2026-09-02-sparkforge-controlm-migracao-design.md).
+
+### A auditoria que as §64–69 nunca tinham tido
+
+| Seção | Estado | Prova |
+|---|---|---|
+| §64 ingestão | **EXISTE, parcial** | 225 fontes no `sources.lock.json`, **5 da BMC** — o mecanismo está pronto, falta largura |
+| §65 release watcher | **NÃO EXISTE** como agente; o guard de drift **existe** |
+| §66 migration engine | **EXISTIA sem Control-M** | `version_path.platforms()` devolvia as quatro de Spark |
+| §68/69 Git e CI-CD | **parcial** | `ctm build`/`ctm deploy` já citados no extrator |
+
+O padrão do prompt irmão se repetiu: o motor já fazia a maior parte.
+
+### As duas formas não são a mesma, e essa é a decisão central
+
+`release_descriptor.describe()` devolve **componente → versão**, que `_runtime_for`
+consome para julgar por `runtime_scope`. `controlm.descriptor.describe()` devolve
+**capacidade com fronteira** (`introduced_in`, `changed_in`, `deprecated_from`,
+`discontinued_in`) — e é **mais rica para migração**, porque já carrega o que muda.
+
+Forçá-la no molde de componente perderia exatamente o campo que importa. Por isso
+`platform="controlm"` é o **único ramo que não passa por `assess_migration`** — e a
+**forma do relatório é a mesma**, porque ela é contrato com quem consome.
+
+### O defeito que o teste de sentido inverso pegou
+
+A primeira versão tinha `_inverter(severidade)`, que trocava `gain` por `break` ao
+descer. **Estava errado.** Descer de `9.0.22.005` para `9.0.21.300` com um job que usa
+`Job:DetachedEmbeddedScript` dava `gain` e gate `compatible`, quando a capacidade **não
+existe** no destino.
+
+A causa, medida: `descriptor.describe(v)` é **cumulativo** — `9.0.22.000` tem 34
+capacidades e não inclui a do teste; `9.0.22.005` tem 35 e inclui. Presença e ausência
+**já codificam a direção**, e inverter depois disso era inverter duas vezes a mesma
+coisa. `test_nao_ha_inversao_por_direcao_e_a_razao_esta_medida` trava a "correção"
+óbvia.
+
+### O contrafactual
+
+O mesmo job, o mesmo par de versões, os dois sentidos:
+
+| | gate | breaking |
+|---|---|---|
+| `9.0.21.300 → 9.0.22.005` | `compatible` | 0 (a capacidade nasce — **ganho**) |
+| `9.0.22.005 → 9.0.21.300` | `incompatible` | 1 (a capacidade some — **quebra**) |
+
+Se os dois lados dessem o mesmo veredito, o motor estaria repetindo o conjunto de
+capacidades do job em vez de cruzá-lo com a matriz.
+
+### Migração para trás é caso legítimo, e os outros dois verbos a recusam
+
+`version_path.steps` levanta `alvo anterior a origem`. Aqui descer é legítimo — um job
+pode estar indo para um ambiente mais antigo —, e é **exatamente onde `introduced_in`
+morde**. Recusar a descida esconderia metade dos casos.
+
+### Verbo próprio na CLI, tool a mesma no MCP
+
+`migrate controlm`, pela mesma lógica que separou `glue` de `emr`: Control-M não divide
+vocabulário com nenhuma das quatro. No MCP, `sparkforge_migration_assess` ganhou mais um
+valor no enum de `platform` — **tool count inalterado em 68**, superfície +460 bytes só
+de schema.
+
+### Vetos escritos
+
+`deployment plan`, `generated definitions` e `test suite` que a §66 pede ficam de fora: a
+matriz nomeia **capacidade**, não sintaxe. Gerar definição de job a partir dela seria
+escrever o artefato do cliente por inferência.
+
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.
 3. Escreva o par spec + plan em `specs/` e `plans/` com a data do merge.

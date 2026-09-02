@@ -567,6 +567,47 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o assessment completo (JSON) neste arquivo."
     )
 
+    # TERCEIRO VERBO, pela mesma logica que separou `glue` de `emr`.
+    #
+    # Control-M nao divide vocabulario com nenhuma das quatro: a versao e
+    # `9.0.2x.yyy` e nao `7.5.0`, nao ha prefixo a normalizar, e o eixo nao e
+    # runtime -- e capacidade com fronteira. Um `--platform controlm` em
+    # `migrate emr` seria a combinacao absurda que o comentario acima recusa
+    # para `migrate glue --platform emr_eks`.
+    migrate_controlm_p = migrate_sub.add_parser(
+        "controlm",
+        help=(
+            "Julga a migracao de um job Control-M entre um par de versoes, "
+            "degrau a degrau, por CAPACIDADE e nao por runtime."
+        ),
+    )
+    migrate_controlm_p.add_argument(
+        "path",
+        help=(
+            "Diretorio com as definicoes de `Jobs-as-Code` (`*.json`), ou um "
+            "arquivo sozinho. E o mesmo artefato que o `ctm build` valida."
+        ),
+    )
+    migrate_controlm_p.add_argument(
+        "--from",
+        dest="from_runtime",
+        required=True,
+        help="Versao de Control-M de origem, na grafia da matriz (`9.0.21.300`).",
+    )
+    # SEM a recusa de alvo anterior a origem, ao contrario dos dois verbos
+    # acima: descer de versao e caso legitimo aqui -- um job pode estar indo
+    # para um ambiente mais antigo --, e e exatamente onde `introduced_in`
+    # morde. Recusar a descida esconderia metade dos casos.
+    migrate_controlm_p.add_argument(
+        "--to",
+        dest="to_runtime",
+        required=True,
+        help="Versao alvo. Pode ser ANTERIOR a origem: descer e caso legitimo.",
+    )
+    migrate_controlm_p.add_argument(
+        "--out", help="Escreve o assessment completo (JSON) neste arquivo."
+    )
+
     # glue / iceberg -------------------------------------------------------
     # Verbos de TOPO por SERVICO, e nao mais um degrau sob `analyze`: os dois
     # comandos abaixo extraem E julgam, e `analyze` para na extracao. Cada um
@@ -1895,6 +1936,15 @@ def _cmd_migrate_glue(args: argparse.Namespace) -> int:
     return _migrate(args, _core.MIGRATION_DEFAULT_PLATFORM)
 
 
+def _cmd_migrate_controlm(args: argparse.Namespace) -> int:
+    """Reusa `_migrate`, que ja trata `--out` e a saida, como os outros dois.
+
+    Duplicar a escrita aqui criaria uma segunda forma de gravar o mesmo
+    assessment, e as duas divergiriam no primeiro ajuste.
+    """
+    return _migrate(args, _core.MIGRATION_CONTROLM_PLATFORM)
+
+
 def _cmd_migrate_emr(args: argparse.Namespace) -> int:
     return _migrate(args, args.platform)
 
@@ -2680,6 +2730,7 @@ _DISPATCH = {
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("migrate", "glue"): _cmd_migrate_glue,
     ("migrate", "emr"): _cmd_migrate_emr,
+    ("migrate", "controlm"): _cmd_migrate_controlm,
     ("glue", "dependency-audit"): _cmd_glue_dependency_audit,
     ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("release", "describe"): _cmd_release_describe,
