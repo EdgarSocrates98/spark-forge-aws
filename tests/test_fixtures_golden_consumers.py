@@ -25,6 +25,11 @@ FIXTURES = ROOT / "fixtures" / "consumers"
 
 REQUIRED_FIXTURES = {
     "v3_with_athena_consumer",
+    # O par que prova a correcao de SF-ENV-002: MESMA tabela v3 e MESMO
+    # consumidor Athena, sem a table property `format-version`. Enquanto a
+    # regra lia a propriedade, esta ficava calada -- falso negativo, porque a
+    # propriedade e opcional e o `format_version` do metadata e que manda.
+    "v3_sem_propriedade_com_athena",
     "v2_with_athena_consumer",
     "malformed_inventory",
 }

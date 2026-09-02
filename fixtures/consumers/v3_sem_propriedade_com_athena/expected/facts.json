@@ -1,0 +1,205 @@
+[
+  {
+    "id": "f_632d90",
+    "schema_version": 1,
+    "kind": "env.consumer",
+    "subject": {
+      "type": "table",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "table": "glue_catalog.curated.pedidos",
+      "service": "athena",
+      "known_service": true,
+      "owner": "squad-analytics",
+      "note": "dashboard executivo, consulta diaria"
+    },
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "1f811f933605a6e1db01b2029fb22d099b3944de53d133bf15d1d0f78693ec31",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_632d90",
+    "schema_version": 1,
+    "kind": "env.consumer",
+    "subject": {
+      "type": "table",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "table": "glue_catalog.curated.pedidos",
+      "service": "quicksight",
+      "known_service": true,
+      "owner": "squad-bi"
+    },
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "1f811f933605a6e1db01b2029fb22d099b3944de53d133bf15d1d0f78693ec31",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_cd73d2",
+    "schema_version": 1,
+    "kind": "env.consumers_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "consumers.yaml",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "consumer_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "consumers.yaml",
+      "artifact_sha256": "1f811f933605a6e1db01b2029fb22d099b3944de53d133bf15d1d0f78693ec31",
+      "extractor": "consumers@0.1.0"
+    }
+  },
+  {
+    "id": "f_db7aee",
+    "schema_version": 1,
+    "kind": "iceberg.delete_files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "delete_file_count": 0,
+      "data_file_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea23e6",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "data_file_count": 1,
+      "total_bytes": 402653184,
+      "avg_file_bytes": 402653184.0,
+      "p50_file_bytes": 402653184,
+      "p95_file_bytes": 402653184,
+      "min_file_bytes": 402653184,
+      "max_file_bytes": 402653184,
+      "total_records": 1000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_3d102c",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "version": 3
+    },
+    "attrs": {
+      "resolved": true,
+      "declared": "3"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_6886f1",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "snapshot_count": 1,
+      "span_hours": 0.0
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-07-30T03:00:00+00:00",
+      "newest": "2026-07-30T03:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_a96bae",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "section_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_8cdcb6",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]
