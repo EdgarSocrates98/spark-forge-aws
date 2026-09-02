@@ -2260,6 +2260,66 @@ _CODE_SYMBOL_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_CODE_SHAPE_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "index",
+        "communities",
+        "by_degree",
+        "graph",
+        "partition_note",
+        "degree_note",
+    ],
+    "properties": {
+        "index": _CODE_INDEX_SCHEMA,
+        "communities": {
+            "type": "object",
+            "required": ["total", "algorithm", "iterations", "converged", "members"],
+            "properties": {
+                "total": {"type": "integer", "minimum": 0},
+                # O ALGORITMO e obrigatorio, e nao decorativo: a particao nao e
+                # unica, e publica-la sem o metodo ao lado convidaria a le-la
+                # como canonica.
+                "algorithm": {"type": "string"},
+                "iterations": {"type": "integer", "minimum": 0},
+                "converged": {"type": "boolean"},
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["label", "size", "nodes"],
+                        "properties": {
+                            "label": {"type": "string"},
+                            "size": {"type": "integer", "minimum": 1},
+                            "nodes": {"type": "array", "items": _CODE_SYMBOL_REF},
+                        },
+                    },
+                },
+            },
+        },
+        "by_degree": {"type": "array", "items": {"type": "object"}},
+        "graph": {
+            "type": "object",
+            "required": [
+                "resolved_edges",
+                "unresolved_refs",
+                "resolution_rate",
+                "nodes",
+                "files",
+            ],
+            "properties": {
+                "resolved_edges": {"type": "integer", "minimum": 0},
+                "unresolved_refs": {"type": "integer", "minimum": 0},
+                "resolution_rate": {"type": "number", "minimum": 0, "maximum": 1},
+                "nodes": {"type": "integer", "minimum": 0},
+                "files": {"type": "integer", "minimum": 0},
+            },
+        },
+        "partition_note": {"type": "string"},
+        "degree_note": {"type": "string"},
+    },
+}
+
 _CODE_PATH_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -5548,6 +5608,50 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _CODE_WRITES_INDEX,
     },
+    "sparkforge_code_shape": {
+        "description": (
+            "A FORMA do grafo de codigo: comunidades (grupos que se chamam mais "
+            "entre si) e os nos de maior grau. NAO e um julgamento -- comunidade "
+            "nao e modulo nem sugestao de refatoracao, e grau alto nao e defeito: "
+            "um simbolo chamado de trinta lugares pode ser um utilitario bem "
+            "fatorado. `communities.algorithm` sai no corpo porque a particao e "
+            "REPRODUZIVEL e nao UNICA: propagacao de rotulo nao tem resposta "
+            "canonica. As duas medidas contam aresta RESOLVIDA, e "
+            "`graph.resolution_rate` diz o tamanho do ponto cego. CORPO DE FONTE "
+            "NUNCA SAI DAQUI."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["repo"],
+            "properties": {
+                "repo": _CODE_REPO_PROP,
+                "top": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": (
+                        "Quantas comunidades e quantos nos por grau devolver. "
+                        "Satura no teto, nao recusa."
+                    ),
+                },
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": (
+                        "`summary` para as contagens e o metodo; `normal` e "
+                        "`full` acrescentam os membros e a lista por grau."
+                    ),
+                },
+                "db": _CODE_DB_PROP,
+            },
+        },
+        "outputSchema": _may_fail(
+            _CODE_SHAPE_SUCCESS_SCHEMA,
+            "Comunidades e graus com o metodo declarado, ou erro de indice.",
+        ),
+        "annotations": _CODE_WRITES_INDEX,
+    },
     "sparkforge_code_path": {
         "description": (
             "O caminho MAIS CURTO de chamadas de um simbolo ate outro, descendo "
@@ -6312,6 +6416,15 @@ def _h_code_search(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_code_shape(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.code_shape(
+        args["repo"],
+        top=int(args.get("top", _core.CODE_SHAPE_DEFAULT_TOP)),
+        detail_level=args.get("detail_level", "full"),
+        db=args.get("db"),
+    )
+
+
 def _h_code_path(args: dict[str, Any]) -> dict[str, Any]:
     return _core.code_path(
         args["repo"],
@@ -6419,6 +6532,7 @@ _HANDLERS = {
     "sparkforge_collect_verify": _h_collect_verify,
     "sparkforge_code_context": _h_code_context,
     "sparkforge_code_search": _h_code_search,
+    "sparkforge_code_shape": _h_code_shape,
     "sparkforge_code_path": _h_code_path,
     "sparkforge_code_symbol": _h_code_symbol,
     "sparkforge_code_read": _h_code_read,

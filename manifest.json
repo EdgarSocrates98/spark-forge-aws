@@ -110,6 +110,7 @@
     "sparkforge_code_path",
     "sparkforge_code_read",
     "sparkforge_code_search",
+    "sparkforge_code_shape",
     "sparkforge_code_status",
     "sparkforge_code_symbol",
     "sparkforge_code_sync",

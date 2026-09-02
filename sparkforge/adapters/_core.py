@@ -4177,6 +4177,12 @@ CODE_MAX_DEPTH = 5
 # `depth_exhausted`, entao o teto nunca vira uma afirmacao de ausencia.
 CODE_MAX_PATH_DEPTH = 6
 
+# Quantas comunidades e quantos nos por grau `code_shape` devolve por padrao,
+# e o teto duro. Vinte cabe numa revisao; a lista inteira seria o indice
+# ordenado de outro jeito, que nao e resposta.
+CODE_SHAPE_DEFAULT_TOP = 20
+CODE_SHAPE_MAX_TOP = 100
+
 # SPEC 63. Teto de arquivos alterados que viram simbolo + chamador na resposta
 # de `code_status`. Acima disto a resposta diz `changes_truncated: true` em vez
 # de crescer sem limite -- uma arvore com 400 arquivos mexidos produziria um
@@ -4974,6 +4980,110 @@ def code_symbol(
     return corpo
 
 
+def code_shape(
+    repo: str,
+    *,
+    top: int = CODE_SHAPE_DEFAULT_TOP,
+    detail_level: str = "full",
+    db: str | None = None,
+) -> dict[str, Any]:
+    """A FORMA do grafo de codigo: comunidades e nos de maior grau.
+
+    UMA tool para as duas medidas porque a entrada e a mesma (o indice
+    inteiro) e a pergunta e a mesma -- 'como este codigo esta organizado'.
+    Duas tools cobririam o mesmo contrato duas vezes nos gates de paridade,
+    para sempre, e a §70 manda expandir em vez de multiplicar.
+
+    ## O que esta resposta NAO afirma
+
+    **Comunidade nao e modulo, nem camada, nem sugestao de refatoracao.** E
+    um grupo de simbolos que se chamam mais entre si do que com o resto.
+    `communities.algorithm` sai no corpo porque a particao NAO E UNICA:
+    propagacao de rotulo nao tem resposta canonica, e o que este motor
+    garante e reprodutibilidade -- a ordem de visita e fixa --, nunca
+    unicidade.
+
+    **Grau alto nao e defeito.** O campo se chama `by_degree` e nao
+    `god_nodes` de proposito: 'no-deus' e veredito e grau e medida. Um
+    `_normalizar` chamado de trinta lugares tem grau trinta porque foi bem
+    fatorado. O que o numero diz e que mudar aquele no toca muita coisa --
+    para 'o que quebra se eu mudar isto', a resposta com nome e
+    `sparkforge_code_symbol` com `depth`.
+
+    ## O ponto cego sai junto, e com tamanho
+
+    As duas medidas contam aresta RESOLVIDA. `graph.resolution_rate`
+    acompanha a resposta porque numa arvore que resolve 36% das chamadas o
+    que ficou de fora e maior que o que entrou -- e uma comunidade medida
+    sobre um terco das arestas nao e a comunidade do codigo.
+
+    `detail_level`: `summary` traz so as contagens e o metodo; `normal` e
+    `full` acrescentam os membros e a lista por grau. CORPO DE FONTE NUNCA
+    SAI DAQUI.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    quantos = max(0, min(int(top), CODE_SHAPE_MAX_TOP))
+    particao = _codeintel_graph.comunidades(banco)
+    graus = _codeintel_graph.nos_por_grau(banco, quantos)
+    medida = _codeintel_graph.estatisticas(banco)
+
+    corpo: dict[str, Any] = {
+        "index": indice,
+        "communities": {
+            "total": particao.total,
+            "algorithm": particao.algoritmo,
+            "iterations": particao.iteracoes,
+            "converged": particao.convergiu,
+            "members": [],
+        },
+        "by_degree": [],
+        "graph": {
+            "resolved_edges": medida.arestas_resolvidas,
+            "unresolved_refs": medida.referencias_nao_resolvidas,
+            "resolution_rate": round(medida.taxa_de_resolucao, 4),
+            "nodes": medida.nos,
+            "files": medida.arquivos,
+        },
+        "partition_note": (
+            "a particao e reproduzivel, nao unica: propagacao de rotulo nao "
+            "tem resposta canonica, e outra ordem de visita daria outro "
+            "agrupamento igualmente valido"
+        ),
+        "degree_note": (
+            "grau alto nao e defeito: um simbolo chamado de muitos lugares "
+            "pode ser um utilitario bem fatorado. O que o numero diz e que "
+            "mudar aquele no toca muita coisa"
+        ),
+    }
+    if detail_level in ("normal", "full"):
+        corpo["communities"]["members"] = [
+            {
+                "label": comunidade.rotulo,
+                "size": comunidade.tamanho,
+                "nodes": [_code_vizinho(n) for n in comunidade.nos],
+            }
+            for comunidade in particao.comunidades[:quantos]
+        ]
+        corpo["by_degree"] = [
+            {
+                **_code_vizinho(m.no),
+                "degree": m.grau,
+                "in_degree": m.grau_de_entrada,
+                "out_degree": m.grau_de_saida,
+            }
+            for m in graus
+        ]
+    return corpo
+
+
 def code_path(
     repo: str,
     *,
@@ -5343,6 +5453,7 @@ CODE_TOOLS = (
     "sparkforge_code_search",
     "sparkforge_code_symbol",
     "sparkforge_code_path",
+    "sparkforge_code_shape",
     "sparkforge_code_read",
     "sparkforge_code_status",
     "sparkforge_code_sync",
