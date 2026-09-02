@@ -883,7 +883,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 60
+        # 62 desde `code_shape` (2026-09-02); 61 era com `code_path`. As duas
+        # declaram `repo`, como as outras de Code Intelligence -- a cadeia de
+        # autorizacao as ve pelo mesmo caminho.
+        assert len(TOOLS) - len(sem_caminho) == 62
 
 
 class TestAImposicaoNoDespacho:
