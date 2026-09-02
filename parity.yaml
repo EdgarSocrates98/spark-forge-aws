@@ -390,12 +390,13 @@ capabilities:
   # matrizes de EMR. Nenhum runtime sai da matriz de outra plataforma.
   - name: assess a runtime version migration step by step, on any of the four platforms
     tools: [sparkforge_migration_assess]
-    cli: [migrate glue, migrate emr]
+    cli: [migrate glue, migrate emr, migrate controlm]
     knowledge:
       - knowledge/glue/runtime-matrix.md
       - knowledge/emr/runtime-matrix.md
       - knowledge/emr-serverless/runtime-matrix.md
       - knowledge/emr-eks/runtime-matrix.md
+      - knowledge/controlm/automation-api-matrix.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

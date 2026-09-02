@@ -4218,11 +4218,23 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "platform": {
                     "type": "string",
-                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "enum": [
+                        *_core.RELEASE_PLATFORMS,
+                        _core.MIGRATION_CONTROLM_PLATFORM,
+                    ],
                     "default": _core.MIGRATION_DEFAULT_PLATFORM,
                     "description": (
-                        "Qual das quatro matrizes ordena o caminho e fornece o "
-                        "runtime de cada degrau. Default `glue`, que era a unica "
+                        "Qual matriz ordena o caminho. As QUATRO de Spark "
+                        "(`glue`, `emr_ec2`, `emr_serverless`, `emr_eks`) "
+                        "fornecem o runtime de cada degrau e julgam por "
+                        "`runtime_scope`. `controlm` e a QUINTA e responde por "
+                        "outro eixo: nao runtime, mas CAPACIDADE com fronteira "
+                        "declarada (`introduced_in`, `changed_in`, "
+                        "`deprecated_from`, `discontinued_in`), e por isso a "
+                        "saida dela traz `steps[].changes` e `breaking` em vez "
+                        "de `findings`. Ela tambem aceita migracao PARA TRAS, "
+                        "que as outras recusam -- descer de versao e onde "
+                        "`introduced_in` morde. Default `glue`, que era a unica "
                         "resposta possivel antes desta extensao."
                     ),
                 },
