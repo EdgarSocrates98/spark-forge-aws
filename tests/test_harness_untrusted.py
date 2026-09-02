@@ -86,6 +86,7 @@ def _derivados_de_facts(pool):
     """
     from sparkforge.facts import (
         benchmark,
+        bridge,
         call_graph,
         funcval,
         fusion,
@@ -95,6 +96,7 @@ def _derivados_de_facts(pool):
         utilization,
     )
 
+    yield "bridge", bridge.build_bridge(pool)
     yield "call_graph", call_graph.build_call_graph(pool)
     yield "fusion", fusion.fuse(pool)
     yield "funcval", funcval.build_plan(pool)
