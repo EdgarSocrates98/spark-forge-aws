@@ -74,6 +74,17 @@ _LADOS = {
 # prioriza nada. Quem precisa de mais pede.
 _PROFUNDIDADE_DE_IMPACTO = 3
 
+# Teto do caminho mais curto. MAIOR que o de impacto, e a razao e que as duas
+# perguntas tem formas diferentes: impacto devolve TUDO ate N saltos, e o custo
+# cresce com a vizinhanca a cada nivel; caminho devolve UMA sequencia, e parar
+# cedo demais transforma "existe caminho longo" em "nao existe caminho" -- que e
+# a resposta errada mais cara que este modulo pode dar.
+#
+# 6 e escolha e nao medida, e por isso e parametro com default: numa arvore em
+# que a maior distancia observada for maior, quem pergunta sobe o teto, e o
+# campo `truncado` do resultado diz quando ele foi atingido.
+_PROFUNDIDADE_DE_CAMINHO = 6
+
 # Teto de marcadores `?` por consulta. `SQLITE_MAX_VARIABLE_NUMBER` vale 999 nas
 # builds anteriores a 3.32 e 32766 depois, e o interpretador embarca a build que
 # quiser -- inclusive a antiga, no Python que o cliente tiver. 400 fica abaixo do
@@ -247,6 +258,287 @@ def impacto(
     return sorted(alcancados, key=_chave_de_ordem)
 
 
+@dataclass(frozen=True)
+class Caminho:
+    """Uma sequencia de chamadas de `origem` ate `destino`, ou a recusa nomeada.
+
+    `nos` vem em ordem de percurso -- `nos[0]` e a origem, `nos[-1]` o destino
+    -- e cada `depth` e a POSICAO no caminho, nao a distancia a uma ancora. Os
+    dois numeros coincidem aqui, e reescrever `depth` na reconstrucao e o que
+    garante que continuem coincidindo se a travessia mudar.
+
+    `truncado` diz que a busca parou no teto SEM ter achado o destino. E a
+    distincao que decide se `nos` vazio significa 'nao ha caminho' ou 'nao ha
+    caminho ate aqui': sem ela, um teto baixo devolveria a mesma coisa que a
+    ausencia real, e quem lesse concluiria o mais forte dos dois.
+    """
+
+    nos: tuple[NoDoGrafo, ...]
+    truncado: bool
+    profundidade_maxima: int
+
+    @property
+    def existe(self) -> bool:
+        return bool(self.nos)
+
+    @property
+    def saltos(self) -> int:
+        """Arestas percorridas. Caminho de um no so tem zero saltos."""
+        return max(len(self.nos) - 1, 0)
+
+
+def caminho(
+    banco: str | os.PathLike[str],
+    origem: str,
+    destino: str,
+    profundidade: int = _PROFUNDIDADE_DE_CAMINHO,
+    kind: str = _CALLS,
+) -> Caminho:
+    """O caminho MAIS CURTO de `origem` a `destino`, descendo pelas chamadas.
+
+    Responde a pergunta que `impacto` nao responde: nao 'o que isto alcanca',
+    mas COMO isto chega ali -- a forma que importa quando o destino e um
+    `collect` no driver ou um algoritmo de grafo sem checkpoint. O raio diz que
+    ha ligacao; o caminho diz por onde ela passa, e e por onde ela passa que se
+    decide onde intervir.
+
+    ## Sentido
+
+    Desce (`_JUSANTE`): `origem` chama ... chama `destino`. Para o sentido
+    inverso, troque os argumentos. Nao ha parametro de direcao porque
+    `caminho(a, b, subir=True)` e exatamente `caminho(b, a)` invertido, e duas
+    formas de escrever a mesma coisa e uma a mais do que precisa existir.
+
+    ## Por que BFS, e o que 'mais curto' significa
+
+    Largura garante que o primeiro encontro com `destino` e por um caminho de
+    numero MINIMO de arestas. Nao ha peso: uma chamada nao e mais cara que
+    outra neste indice, e inventar peso -- por frequencia, por tamanho da
+    funcao -- seria julgamento vestido de medida.
+
+    **Pode haver mais de um caminho minimo, e este devolve UM.** A escolha e
+    deterministica: a fronteira e percorrida em `_chave_de_ordem`, entao entre
+    predecessores igualmente curtos vence o de menor `(path, start_line,
+    node_id)`. Determinismo nao e unicidade, e dizer 'o caminho' quando ha tres
+    seria afirmar mais do que se mediu.
+
+    ## As tres respostas negativas, que nao sao a mesma
+
+    - `origem` ou `destino` fora do indice -> vazio, `truncado` falso.
+    - travessia foi ate o teto e o destino nao apareceu -> vazio, **`truncado`
+      verdadeiro**.
+    - o grafo esgotou ANTES do teto -> vazio, `truncado` falso, e ai a ausencia
+      de caminho e afirmacao, nao recusa.
+
+    Colapsa-las num `[]` faria 'nao procurei fundo o bastante' ser lido como
+    'nao existe'.
+
+    ## O ponto cego, que e o mesmo de `chamados`
+
+    O que sai daqui percorre aresta RESOLVIDA. Chamada que virou
+    `unresolved_refs` -- `df.filtrar()` com tipo de `df` desconhecido -- nao e
+    aresta, entao caminho que so existiria por ela nao aparece. Vazio significa
+    'nenhum caminho resolvido', nunca 'nenhum caminho'.
+    """
+    if profundidade < 0:
+        return Caminho(nos=(), truncado=False, profundidade_maxima=profundidade)
+
+    conexao = abrir(banco)
+    try:
+        inicio = _no(conexao, origem, profundidade=0)
+        if inicio is None or _no(conexao, destino, profundidade=0) is None:
+            return Caminho(nos=(), truncado=False, profundidade_maxima=profundidade)
+
+        if origem == destino:
+            # Um no so, zero saltos. Nao e caso degenerado a recusar: 'como x
+            # chega em x' tem resposta, e ela e 'ja esta la'.
+            return Caminho(
+                nos=(inicio,), truncado=False, profundidade_maxima=profundidade
+            )
+
+        # `predecessor[b] = a` reconstroi o caminho de tras para frente. Guardar
+        # o predecessor e nao a lista inteira por no e o que impede a memoria
+        # crescer com o numero de CAMINHOS -- que num componente fortemente
+        # conectado e exponencial -- em vez de com o numero de nos.
+        predecessor: dict[str, str] = {}
+        encontrado: dict[str, NoDoGrafo] = {origem: inicio}
+        visitados = {origem}
+        fronteira = [origem]
+        esgotou = False
+
+        for salto in range(1, profundidade + 1):
+            vizinhos = sorted(
+                _vizinhos(conexao, fronteira, kind, _JUSANTE, salto),
+                key=_chave_de_ordem,
+            )
+            proxima: list[str] = []
+            for vizinho in vizinhos:
+                if vizinho.node_id in visitados:
+                    continue
+                visitados.add(vizinho.node_id)
+                encontrado[vizinho.node_id] = vizinho
+                predecessor[vizinho.node_id] = _predecessor_estavel(
+                    conexao, fronteira, vizinho.node_id, kind
+                )
+                if vizinho.node_id == destino:
+                    return Caminho(
+                        nos=_reconstruir(encontrado, predecessor, origem, destino),
+                        truncado=False,
+                        profundidade_maxima=profundidade,
+                    )
+                proxima.append(vizinho.node_id)
+            if not proxima:
+                # Grafo esgotado ANTES do teto: a ausencia de caminho aqui e
+                # afirmacao, e nao 'nao fui fundo o bastante'.
+                esgotou = True
+                break
+            fronteira = proxima
+    finally:
+        conexao.close()
+
+    return Caminho(nos=(), truncado=not esgotou, profundidade_maxima=profundidade)
+
+
+def _predecessor_estavel(
+    conexao: sqlite3.Connection,
+    fronteira: list[str],
+    alvo: str,
+    kind: str,
+) -> str:
+    """Qual no da fronteira chama `alvo`, escolhido deterministicamente.
+
+    `_vizinhos` consulta a fronteira inteira de uma vez e devolve os vizinhos
+    sem dizer de qual ancora cada um veio -- e mudar aquela consulta para
+    carregar a origem mudaria `NoDoGrafo` para todos os chamadores, por uma
+    necessidade que so o caminho tem.
+
+    Entao a origem e reconsultada aqui, uma vez por no NOVO. A `fronteira`
+    chega na ordem da rodada anterior, e tomar o PRIMEIRO elegivel e o que faz
+    a escolha entre predecessores empatados nao depender da ordem que o SQLite
+    achar mais barata.
+    """
+    candidatos = {
+        no.node_id for no in _vizinhos(conexao, [alvo], kind, _MONTANTE, 1)
+    }
+    elegiveis = [n for n in fronteira if n in candidatos]
+    return elegiveis[0] if elegiveis else fronteira[0]
+
+
+def _reconstruir(
+    encontrado: dict[str, NoDoGrafo],
+    predecessor: dict[str, str],
+    origem: str,
+    destino: str,
+) -> tuple[NoDoGrafo, ...]:
+    """Do destino para a origem, e depois ao contrario, com `depth` reescrito."""
+    trilha = [destino]
+    while trilha[-1] != origem:
+        anterior = predecessor.get(trilha[-1])
+        if anterior is None:  # pragma: no cover - defesa: BFS sempre encadeia
+            break
+        trilha.append(anterior)
+    trilha.reverse()
+    return tuple(
+        NoDoGrafo(
+            node_id=encontrado[n].node_id,
+            name=encontrado[n].name,
+            qualified_name=encontrado[n].qualified_name,
+            kind=encontrado[n].kind,
+            path=encontrado[n].path,
+            start_line=encontrado[n].start_line,
+            depth=posicao,
+        )
+        for posicao, n in enumerate(trilha)
+        if n in encontrado
+    )
+
+
+@dataclass(frozen=True)
+class Estatisticas:
+    """O tamanho do grafo, e o quanto dele NAO e grafo.
+
+    `arestas_resolvidas` e `referencias_nao_resolvidas` saem juntas de
+    proposito. Publicar so a primeira faria um indice com 8899 arestas parecer
+    completo quando ha 10784 chamadas que a resolucao nao ligou -- e e a taxa,
+    nao a contagem de arestas, que diz o quanto uma travessia daqui cobre.
+    """
+
+    arquivos: int
+    nos: int
+    arestas_resolvidas: int
+    referencias_nao_resolvidas: int
+
+    @property
+    def taxa_de_resolucao(self) -> float:
+        """Arestas sobre tentativas. `0.0` quando nao houve tentativa nenhuma.
+
+        Zero tentativas devolve `0.0` e nao `1.0`: um indice vazio nao resolveu
+        tudo, ele nao resolveu nada -- e `1.0` ali seria a forma mais silenciosa
+        possivel de afirmar cobertura total sobre um banco sem conteudo.
+        """
+        tentativas = self.arestas_resolvidas + self.referencias_nao_resolvidas
+        return self.arestas_resolvidas / tentativas if tentativas else 0.0
+
+
+def estatisticas(banco: str | os.PathLike[str]) -> Estatisticas:
+    """Quatro contagens do indice, e nada derivado alem da taxa.
+
+    Nao tem `god_nodes` nem comunidades, e a ausencia e decisao: grau alto num
+    grafo de CHAMADAS nao e causa de gargalo Spark, e publicar 'estes sao os
+    nos-deus' ao lado de metricas de execucao convidaria exatamente essa
+    leitura. Se um dia entrarem, entram com a razao pela qual grau responde
+    alguma pergunta que alguem de fato faz.
+    """
+    conexao = abrir(banco)
+    try:
+        return Estatisticas(
+            arquivos=_conta(conexao, "files"),
+            nos=_conta(conexao, "nodes"),
+            arestas_resolvidas=_conta(conexao, "edges"),
+            referencias_nao_resolvidas=_conta(conexao, "unresolved_refs"),
+        )
+    finally:
+        conexao.close()
+
+
+# As quatro contagens, como SQL literal e nao como nome de tabela interpolado.
+#
+# SQLite nao aceita placeholder em nome de tabela, entao a alternativa seria uma
+# f-string -- e o linter reprova (`S608`), com razao. Reprova mesmo aqui, onde os
+# quatro nomes sao literais deste arquivo: a defesa que depende de o proximo
+# leitor notar que a variavel e confiavel nao e defesa, e no dia em que alguem
+# aceitar `tabela` de fora, a supressao que teria sido escrita hoje ja estaria la
+# calando o aviso.
+#
+# Com o conjunto FECHADO em constante, a pergunta some em vez de ser silenciada.
+_CONTAGENS = {
+    "files": "SELECT COUNT(*) FROM files",
+    "nodes": "SELECT COUNT(*) FROM nodes",
+    "edges": "SELECT COUNT(*) FROM edges",
+    "unresolved_refs": "SELECT COUNT(*) FROM unresolved_refs",
+}
+
+
+def _conta(conexao: sqlite3.Connection, tabela: str) -> int:
+    """Conta linhas de `tabela`, e devolve 0 se ela nao existir.
+
+    Tabela ausente e banco de schema mais velho, nao defeito: `estatisticas`
+    descreve o indice que HA, e levantar aqui transformaria uma leitura em erro
+    por causa de uma tabela que a pergunta nem precisava.
+
+    Nome fora de `_CONTAGENS` tambem devolve 0, e por outra razao: e erro de
+    programacao deste modulo, e ele aparece como contagem zero num campo que o
+    teste de forma ja confere -- nao como excecao no meio de uma leitura.
+    """
+    sql = _CONTAGENS.get(tabela)
+    if sql is None:
+        return 0
+    try:
+        return int(conexao.execute(sql).fetchone()[0])
+    except sqlite3.Error:
+        return 0
+
+
 def _um_salto(
     banco: str | os.PathLike[str],
     node_id: str,
@@ -335,4 +627,13 @@ def _do_linha(linha: tuple, profundidade: int) -> NoDoGrafo:
     )
 
 
-__all__ = ["NoDoGrafo", "chamadores", "chamados", "impacto"]
+__all__ = [
+    "Caminho",
+    "Estatisticas",
+    "NoDoGrafo",
+    "caminho",
+    "chamadores",
+    "chamados",
+    "estatisticas",
+    "impacto",
+]

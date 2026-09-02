@@ -877,23 +877,23 @@
       "type": "capability"
     },
     {
-      "context": "65 tools:",
+      "context": "66 tools:",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-482",
       "line": 80,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
@@ -917,23 +917,23 @@
       "type": "number"
     },
     {
-      "context": "| `LOCAL_MUTATION` | 11 |",
+      "context": "| `LOCAL_MUTATION` | 12 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-485",
       "line": 85,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.LOCAL_MUTATION))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 11
+          "value": 12
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "11",
+      "text": "12",
       "type": "number"
     },
     {
@@ -997,7 +997,7 @@
       "type": "number"
     },
     {
-      "context": "| `READ_ONLY` | 40 | 2 |",
+      "context": "| `READ_ONLY` | 40 | 5 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-490",
       "line": 172,
@@ -1017,7 +1017,7 @@
       "type": "number"
     },
     {
-      "context": "| `READ_ONLY` | 39 | 5 |",
+      "context": "| `READ_ONLY` | 40 | 5 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-631",
       "line": 172,
@@ -1037,27 +1037,27 @@
       "type": "number"
     },
     {
-      "context": "| `LOCAL_MUTATION` | 11 | 0 |",
+      "context": "| `LOCAL_MUTATION` | 12 | 0 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-632",
       "line": 173,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.LOCAL_MUTATION and tem(n)))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 11
+          "value": 12
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "11",
+      "text": "12",
       "type": "number"
     },
     {
-      "context": "| `LOCAL_MUTATION` | 11 | 0 |",
+      "context": "| `LOCAL_MUTATION` | 12 | 0 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-633",
       "line": 173,
@@ -1137,83 +1137,83 @@
       "type": "number"
     },
     {
-      "context": "**60** de 61 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
+      "context": "**61** de 66 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-636",
       "line": 182,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tem(n)))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 60
+          "value": 61
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "60",
+      "text": "61",
       "type": "number"
     },
     {
-      "context": "**59** de 65 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
+      "context": "**61** de 66 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-637",
       "line": 182,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
-      "context": "> `CallPolicy.decide`, e o despacho é único para as 65 tools, então fechar ali",
+      "context": "> `CallPolicy.decide`, e o despacho é único para as 66 tools, então fechar ali",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-732",
       "line": 264,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
-      "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 65",
+      "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 66",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-733",
       "line": 310,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
@@ -2965,27 +2965,27 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **484** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **485** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova.",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 484
+          "value": 485
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "484",
+      "text": "485",
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 609082 | 8648 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-651",
       "line": 213,
@@ -3005,7 +3005,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 609082 | 8648 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-642",
       "line": 213,
@@ -3025,7 +3025,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8648 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-643",
       "line": 213,
@@ -3045,7 +3045,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 609082 | 8833 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-644",
       "line": 213,
@@ -3065,7 +3065,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 609082 | 8648 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-645",
       "line": 213,
@@ -3085,7 +3085,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 466 | 139575 | 2607 | 85 |",
+      "context": "| `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-646",
       "line": 214,
@@ -3105,7 +3105,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 466 | 139575 | 2607 | 85 |",
+      "context": "| `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-647",
       "line": 214,
@@ -3125,7 +3125,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 466 | 198731 | 2607 | 85 |",
+      "context": "| `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-648",
       "line": 214,
@@ -3145,7 +3145,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 466 | 139575 | 2722 | 85 |",
+      "context": "| `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-649",
       "line": 214,
@@ -3165,7 +3165,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 466 | 139575 | 2607 | 85 |",
+      "context": "| `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-650",
       "line": 214,
@@ -3185,7 +3185,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 207861 | 1826 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-656",
       "line": 215,
@@ -3205,7 +3205,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 207861 | 1826 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-652",
       "line": 215,
@@ -3225,27 +3225,27 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 224930 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-653",
       "line": 215,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 224930
+          "value": 229842
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "224930",
+      "text": "229842",
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 224930 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-654",
       "line": 215,
@@ -3265,7 +3265,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 207861 | 1826 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-655",
       "line": 215,
@@ -3385,7 +3385,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 264128 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-661",
       "line": 217,
@@ -3405,7 +3405,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 264128 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-662",
       "line": 217,
@@ -3425,27 +3425,27 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 302966 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-663",
       "line": 217,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge/capacity/plan.py e os testes novos sao codigo novo varrido por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge/capacity/plan.py e os testes novos sao codigo novo varrido por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 302966
+          "value": 307817
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "302966",
+      "text": "307817",
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 264128 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-664",
       "line": 217,
@@ -3465,7 +3465,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 264128 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-665",
       "line": 217,
@@ -3485,7 +3485,7 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1249171**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1435300**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-737",
       "line": 219,
@@ -3505,23 +3505,23 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1425537**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1435300**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-666",
       "line": 219,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova.",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1425537
+          "value": 1435300
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1425537",
+      "text": "1435300",
       "type": "number"
     },
     {
@@ -3545,7 +3545,7 @@
       "type": "number"
     },
     {
-      "context": "a saída do `grep` pelo nome, **20070**; a saída do `grep` pela definição, **420**.",
+      "context": "a saída do `grep` pelo nome, **20714**; a saída do `grep` pela definição, **420**.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-668",
       "line": 220,
@@ -3585,22 +3585,22 @@
       "type": "number"
     },
     {
-      "context": "**Contra o denominador do plano, o índice economiza 645.0 vezes.** Contra a saída de um `grep`",
+      "context": "**Contra o denominador do plano, o índice economiza 1435300 / 2210 = 649.5 vezes.** Contra a saída de um `grep`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "id": "VNX-669",
+      "id": "VNX-741",
       "line": 229,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova.",
+      "note": "A razao entre o denominador do plano (soma dos arquivos lidos) e a resposta do indice. Os dois numeradores tem entrada propria no manifesto e prova propria; esta alegacao e a divisao deles, e a prova a reexecuta em vez de reafirmar os dois. Criada em 2026-09-02 ao substituir VNX-669, cujo `text` era a expressao inteira e deixou de casar quando o extrator passou a ver os numeros separados.",
       "proof": {
-        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
+        "cmd": "python -c \"print(round(1435300 / 2210, 1))\"",
         "expect": {
           "kind": "contains",
-          "value": "1425537 / 2210 = 645.0"
+          "value": "649.5"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "645.0",
+      "text": "649.5",
       "type": "number"
     },
     {
@@ -3837,43 +3837,43 @@
       "type": "number"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **28** das **65** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **29** das **66** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-557",
       "line": 305,
-      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(sum(1 for t in TOOLS.values() if \"detail_level\" in t[\"inputSchema\"][\"properties\"]))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 28
+          "value": 29
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "28",
+      "text": "29",
       "type": "number"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **26** das **65** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **29** das **66** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-558",
       "line": 305,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
@@ -4167,19 +4167,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-638",
       "line": 42,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tem(n)))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 60
+          "value": 61
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "60",
+      "text": "61",
       "type": "number"
     },
     {
@@ -4187,19 +4187,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-639",
       "line": 42,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
@@ -4537,45 +4537,45 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (268,0 KB) e `_core.py` (219,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/tools.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "268,0"
+          "value": "272,7"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "268,0",
+      "text": "272,7",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (268,0 KB) e `_core.py` (219,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco; remedido de novo em 2026-08-31, na divida do --emr sobre facts de EMR Serverless: build_runtime passou a escolher a matriz de derivacao pelo namespace dos facts, e _core.py cresceu com _e_so_de_serverless e com o comentario que justifica a troca Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco; remedido de novo em 2026-08-31, na divida do --emr sobre facts de EMR Serverless: build_runtime passou a escolher a matriz de derivacao pelo namespace dos facts, e _core.py cresceu com _e_so_de_serverless e com o comentario que justifica a troca Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "219,7"
+          "value": "224,5"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "219,7",
+      "text": "224,5",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-324",
       "line": 83,
@@ -4595,7 +4595,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-325",
       "line": 83,
@@ -4615,7 +4615,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-326",
       "line": 83,
@@ -4635,7 +4635,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-327",
       "line": 83,
@@ -4655,23 +4655,23 @@
       "type": "number"
     },
     {
-      "context": "o que cobre as 65 tools num ponto só. O que resta é o que nunca passa por `call_tool`:",
+      "context": "o que cobre as 66 tools num ponto só. O que resta é o que nunca passa por `call_tool`:",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-734",
       "line": 107,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 65
+          "value": 66
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "65",
+      "text": "66",
       "type": "number"
     },
     {
@@ -6907,7 +6907,7 @@
       "type": "capability"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **26** das **61** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **29** das **66** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-629",
       "line": 305,
@@ -11020,6 +11020,6 @@
       "type": "capability"
     }
   ],
-  "extracted_from": "e9d28f1551d4b0c2a71254b7610a357eefeb8a29",
+  "extracted_from": "38ea09dbeed35a200aba295ff348eec6c4d14b74",
   "schema_version": 1
 }

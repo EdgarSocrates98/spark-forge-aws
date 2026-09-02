@@ -24,6 +24,11 @@ inteiro — que é a razão de este agente existir.
 - `sparkforge_code_sync` — sincroniza o índice quando `status` acusar defasagem.
 - `sparkforge_code_search` — acha símbolo por nome ou parte dele.
 - `sparkforge_code_symbol` — quem chama, o que chama, e o impacto de mudar.
+- `sparkforge_code_path` — **como** um símbolo chega em outro, não só se chega.
+  Quando não há caminho, `reason` separa três casos que não querem dizer o mesmo:
+  `node_not_indexed`, `depth_exhausted` (recusa por teto — subir `depth` pode mudar
+  a resposta) e `no_resolved_path`. Leia `graph.resolution_rate` antes de concluir
+  ausência: num índice que resolve 36% das chamadas, "não há caminho" pesa pouco.
 - `sparkforge_code_context` — monta o pacote de contexto com teto em bytes
   declarado. Ele **recusa** a seção que não sabe preencher, com a razão, em vez
   de devolver lista vazia.

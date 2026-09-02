@@ -1258,6 +1258,30 @@ def build_parser() -> argparse.ArgumentParser:
     code_search_p.add_argument("--path-prefix", help="Filtra por prefixo do caminho relativo.")
     code_search_p.add_argument("--limit", type=int, default=_core.CODE_SEARCH_DEFAULT_LIMIT)
 
+    code_path_p = _code_comum(
+        code_sub.add_parser(
+            "path",
+            help="O caminho mais curto de chamadas entre dois simbolos. Nunca o corpo.",
+        )
+    )
+    code_path_p.add_argument("origem")
+    code_path_p.add_argument("destino")
+    code_path_p.add_argument(
+        "--depth",
+        type=int,
+        default=_core.CODE_MAX_PATH_DEPTH,
+        help="Teto de saltos. Satura no maximo; atingi-lo sai como `depth_exhausted`.",
+    )
+    code_path_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "`summary` para o veredito e as contagens do grafo; `normal` e `full` "
+            "acrescentam os nos do caminho."
+        ),
+    )
+
     code_symbol_p = _code_comum(
         code_sub.add_parser(
             "symbol",
@@ -2493,6 +2517,20 @@ def _cmd_code_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_code_path(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_path(
+            args.root,
+            origem=args.origem,
+            destino=args.destino,
+            depth=args.depth,
+            detail_level=args.detail_level,
+            db=args.db,
+        )
+    )
+    return 0
+
+
 def _cmd_code_symbol(args: argparse.Namespace) -> int:
     _print(
         _core.code_symbol(
@@ -2604,6 +2642,7 @@ _DISPATCH = {
     ("code", "sync"): _cmd_code_sync,
     ("code", "status"): _cmd_code_status,
     ("code", "search"): _cmd_code_search,
+    ("code", "path"): _cmd_code_path,
     ("code", "symbol"): _cmd_code_symbol,
     ("code", "read"): _cmd_code_read,
     ("code", "context"): _cmd_code_context,
