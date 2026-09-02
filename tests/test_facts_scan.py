@@ -49,6 +49,21 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
     "rules/loader.py": "varre o catalogo de regras embarcado no wheel",
     "context/progressive.py": "varre as references embarcadas no wheel",
     "economy/cache.py": "varre o cache que o proprio motor escreveu",
+    "economy/goldset.py": (
+        "varre `fixtures/*/*/` do PROPRIO repositorio, corpus curado e "
+        "versionado, nunca arvore de cliente. Passar por `iter_source_files` "
+        "tornaria o gold set fail-open pelo lado errado: fixture podada pela "
+        "denylist ou acima do teto sairia da DERIVACAO, e o piso de perguntas "
+        "cairia sem que ninguem tivesse removido regra nenhuma -- que e "
+        "exatamente o que `PISO_DE_PERGUNTAS` existe para pegar"
+    ),
+    "economy/recall.py": (
+        "varre o `input/` de UMA fixture por vez, para somar os bytes do "
+        "denominador e achar o arquivo de um simbolo exigido. O corpus e o "
+        "mesmo de `goldset.py` e vale a mesma razao; aqui ela e mais estreita "
+        "ainda, porque a raiz e um diretorio de tres arquivos que este "
+        "repositorio escreveu"
+    ),
     "observability/surface.py": (
         "mede a superficie EM REPOUSO -- `skills/` e `knowledge/` do proprio "
         "repositorio, conteudo curado e versionado, nunca arvore de cliente. "
