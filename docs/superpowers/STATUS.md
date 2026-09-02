@@ -61,7 +61,7 @@ arquivo ganha.
 | Skills | **46** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases`) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **23 de 46**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **288** em 33 domínios — recontado em 2026-09-02; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). |
+| Fixtures golden | **289** em 33 domínios — recontado em 2026-09-02; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). A 289ª é `consumers/v3_sem_propriedade_com_athena` (2026-09-02), e ela prova um **falso negativo** que `SF-ENV-002` tinha: a regra lia a table property `format-version`, que é OPCIONAL, em vez do `format_version` do metadata, que é autoritativo. Tabela v3 sem a propriedade não disparava — e o modo de falha é o mesmo da fixture irmã: o job migra verde e o dashboard do outro time quebra dias depois. As duas juntas são o contrafactual: apontar a regra de volta para a propriedade cala esta e mantém a outra. |
 | Ramos de severidade com golden que os produz | **119 de 119** — recontado em 2026-09-02 (o sub-número **15 deles nas 7 regras com `severity_by`** continua certo; nenhuma das cinco `SF-CTM` de 2026-09-02 declara `severity_by`, então cada uma acrescenta um ramo só, o de `severity_default`. `SF-GRAPH` também não tem nenhuma, ver `V-GR-3`). A leitura anterior publicava 113 e já estava defasada em 1 antes desta entrega | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **225** (210 móveis, 15 fixas) — 93 citadas por regra, 215 por `knowledge/`, 83 pelas duas. As cinco parcelas foram **recontadas** em 2026-09-01 sobre o lock: as anteriores (201/14 e 87/205/77) somavam 215 e não fechavam com o total publicado. A entrega de conhecimento do Control-M acrescentou **uma** — a página What's New do Automation API —, e a de `Jobs-as-Code` acrescentou **quatro**: as três páginas do `API_CodeRef` que descrevem a forma do artefato (*Job Properties*, *Job Types*, *Folders and Flows*, citadas por `knowledge/controlm/` **e** por `SF-CTM-001`) e *Secrets in Code*, citada só por `knowledge/` — é ela que sustenta o veto V-CTM-1, porque publica que a credencial mora em connection profile e não em definição de job. A frase anterior desta linha, *"por regra nenhuma, porque não há regra de Control-M"*, deixou de valer com `SF-CTM`. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -6558,6 +6558,49 @@ o que fazer"* e *"ninguém sabe dizer"*.
 `test_nao_ha_limiar_escrito_no_modulo` procura `ast.Compare` contra literal numérico, não
 texto. A docstring do módulo **cita** os limiares antigos como registro do defeito, e uma
 busca textual os acharia ali — foi o que aconteceu na primeira versão do teste.
+
+## Iceberg — o falso negativo de `SF-ENV-002`, e o veto que fecha os manifests (2026-09-02)
+
+Terceiro e quarto incrementos de `prompt_evo_iceberg.md` (§71–72 e §44).
+
+### `SF-ENV-002` julgava a propriedade, não a tabela
+
+A regra que pega *"tabela V3 com consumo por Athena"* — **P0**, a armadilha mais cara
+documentada na matriz de runtime — lia `iceberg.table_property` com
+`attrs.key: format-version`.
+
+Essa é a **propriedade**, e ela é **opcional**: pode nunca ter sido escrita, ou ter ficado
+para trás de um upgrade que mudou o `format_version` do `metadata.json` sem reescrevê-la.
+Nos dois casos a tabela **é** v3, o Athena continua sem ler V3, e **a regra ficava calada**.
+
+Agora ela lê `iceberg.format_version.attrs.declared`, com `attrs.resolved: true` no mesmo
+`where` — sem ele, um dump sem `format_version` casaria por `declared` ausente.
+
+`v3_sem_propriedade_com_athena` prova o defeito: mesma tabela, mesmo consumidor, **sem** a
+propriedade. Ela e a irmã são o contrafactual — apontar a regra de volta para a
+propriedade cala esta e mantém a outra, e só esta acusa a regressão.
+
+O `proposed_change` também mudou: *"fixar `format-version = 2` na table property"* era
+conselho **errado** pela mesma razão. Fixar a propriedade não muda o que a engine lê.
+
+### `V-ICE-1` — manifests não têm limiar com fonte
+
+O extrator emite `iceberg.manifests_summary` com `manifest_count`, `total_bytes` e
+`avg_data_files_per_manifest` desde a Fase 1, e a knowledge diz que manifests causam
+*"planejamento lento; driver heap alto"* e que `rewrite_manifests` é a ação — **mas não
+publica número nenhum**.
+
+`avg_data_files_per_manifest < N` seria N inventado, e no relatório apareceria com a
+mesma cara de um limiar medido. É o mesmo defeito que `IcebergMaintenancePlanner` tinha
+com `> 20`, `> 5` e `> 50`, e que `V-CTM-5` (SLA) e `V-BR-3` (fan-in) recusaram nas suas
+áreas.
+
+**O que não destrava:** `SF-ICE-003` já pega churn de snapshot, e cada commit cria
+manifests. Um `rewrite_manifests` proposto por causa de churn seria a mesma evidência
+contada duas vezes.
+
+A recusa em `maintenance.py` cita o veto pelo id, e um teste confere que ele **está
+escrito** — veto citado e não escrito é pior que veto nenhum.
 
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.

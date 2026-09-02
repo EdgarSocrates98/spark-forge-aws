@@ -1,4 +1,32 @@
 # Catálogo de regras — Apache Iceberg
+#
+# VETOS DESTA ÁREA
+#
+# V-ICE-1 — MANIFESTS NÃO TÊM LIMIAR COM FONTE, e por isso não há regra sobre
+#   eles. O extrator emite `iceberg.manifests_summary` com `manifest_count`,
+#   `total_bytes` e `avg_data_files_per_manifest` desde a Fase 1, e
+#   `knowledge/storage/iceberg-performance.md` diz que manifests causam
+#   "planejamento lento; driver heap alto" e que `rewrite_manifests` é a ação
+#   — mas **não publica número nenhum**.
+#
+#   `avg_data_files_per_manifest < N` seria N inventado, e no relatório ele
+#   apareceria com a mesma cara de um limiar medido. É o mesmo defeito que
+#   `IcebergMaintenancePlanner` tinha com `> 20`, `> 5` e `> 50` (removidos em
+#   2026-09-02) e que os vetos V-CTM-5 (SLA) e V-BR-3 (fan-in) recusaram nas
+#   suas áreas.
+#
+#   Consequência declarada: `sparkforge/iceberg/maintenance.py` mantém
+#   `rewrite_manifests` em `refused`, com esta razão. A ação existe e é
+#   conhecida; o que falta é saber QUANDO propô-la.
+#
+#   Destravaria: uma fonte que publique limiar de manifest — tamanho alvo,
+#   contagem por partição, ou razão de data files por manifest —, ou uma
+#   medição neste corpus que ligue `avg_data_files_per_manifest` a tempo de
+#   planejamento observado em event log.
+#
+#   O que NÃO destrava: `SF-ICE-003` já pega churn de snapshot, e cada commit
+#   cria manifests (`iceberg-performance.md` linha 138). Um `rewrite_manifests`
+#   proposto por causa de churn seria a mesma evidência contada duas vezes.
 # Depende do leitor de metadata tables da Fase 1. Regras inertes até ele existir.
 # Atenção: procedimentos e propriedades variam muito entre Iceberg 1.0.0 (Glue 4.0),
 # 1.7.1 (5.0) e 1.10.0 (5.1). Onde uma regra depender de comportamento introduzido

@@ -67,9 +67,11 @@ ACOES_POR_REGRA: dict[str, tuple[str, ...]] = {
 # manifests, sobre o kind que o extrator ja emite.
 _SEM_REGRA = {
     "rewrite_manifests": (
-        "nenhuma regra do catalogo julga o estado dos manifests. O extrator ja "
-        "emite `iceberg.manifests_summary`; falta a regra que diga quando "
-        "reescreve-los e defeito"
+        "veto V-ICE-1 em `rules/catalog/iceberg.yaml`: nenhuma regra julga o "
+        "estado dos manifests porque NAO HA FONTE COM LIMIAR. O extrator ja "
+        "emite `iceberg.manifests_summary` e a knowledge diz que manifests "
+        "causam planejamento lento -- mas nao publica numero, e "
+        "`avg_data_files_per_manifest < N` seria N inventado"
     ),
 }
 

@@ -1,0 +1,34 @@
+name: v3_sem_propriedade_com_athena
+proves: 'O FALSO NEGATIVO que `SF-ENV-002` tinha ate 2026-09-02, e a correcao dele.
+
+  A tabela E format version 3 -- `format_version: 3` no topo do dump, que vem do `metadata.json`
+  e e autoritativo --, e ha consumo declarado por Athena, que nao le V3. Mas a table property
+  `format-version` esta AUSENTE, e ela e opcional: pode nunca ter sido escrita, ou ter ficado
+  para tras de um upgrade que mudou o metadata sem reescrever a propriedade.
+
+  Enquanto a regra lia `iceberg.table_property` com `attrs.key: format-version`, ela ficava
+  CALADA neste caso -- e o modo de falha e o mesmo que a fixture irma descreve: o job migra
+  verde e o dashboard do outro time quebra dias depois.
+
+  Com a regra lendo `iceberg.format_version.attrs.declared`, ela dispara. O par com `v3_with_athena_consumer`
+  (onde a propriedade existe e concorda) e o contrafactual: se alguem apontar a regra de volta
+  para a propriedade, ESTA fixture para de disparar e a outra continua -- e so esta acusa
+  a regressao.
+
+  '
+runtime:
+  glue: '5.1'
+  spark: 3.5.6
+  python: '3.11'
+  iceberg: 1.10.0
+expects_kinds:
+- env.consumer
+- env.consumers_analyzed
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+expects_rules:
+- SF-ENV-002
