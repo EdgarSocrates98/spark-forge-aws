@@ -58,7 +58,7 @@ from sparkforge.economy.recall import medir  # noqa: E402
 # progresso -- e a armadilha que `check_surface_lock.py` resolve deixando
 # crescer e obrigando a DECLARAR de quanto foi. O piso sobe no commit que o fez
 # subir.
-PISO_DE_PERGUNTAS = 23
+PISO_DE_PERGUNTAS = 27
 
 # Recall nominal e 100%, sem excecao silenciosa.
 RECALL_EXIGIDO = 1.0

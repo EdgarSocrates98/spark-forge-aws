@@ -18,10 +18,12 @@ from sparkforge.economy.goldset import (
     fora_do_alcance,
 )
 
-# Medido em 2026-09-02. PISO, nunca igualdade -- ver a mesma decisao em
+# Medido em 2026-09-02, e SUBIU de 23 para 27 na entrega da ponte, cujas tres
+# fixtures ancoram simbolo. Subir e progresso, e o piso sobe no commit que o
+# fez subir. PISO, nunca igualdade -- ver a mesma decisao em
 # `scripts/check_recall_economy.py:PISO_DE_PERGUNTAS`.
-PISO_DE_PERGUNTAS = 23
-PISO_DE_REGRAS = 18
+PISO_DE_PERGUNTAS = 27
+PISO_DE_REGRAS = 18  # inalterado: as 4 novas vem de regras ja cobertas
 
 
 @pytest.fixture(scope="module")

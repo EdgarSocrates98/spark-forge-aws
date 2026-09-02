@@ -501,6 +501,27 @@ rules:
   # tomado pela expansão agêntica; o que decide precedência é a ORDEM de
   # avaliação, e ela põe esta rota antes da AGENT-010 e depois de todas as que
   # decidem por evidência de plataforma.
+  # `SF-BRIDGE` e a PRIMEIRA area que cruza artefato estatico com artefato de
+  # execucao, e por isso ela nao herda a rota de nenhuma das duas metades:
+  # `SF-PY` iria para quem le codigo e `SF-SPARK` para quem le event log, e o
+  # caso precisa de alguem que saiba pedir OS DOIS.
+  #
+  # A posicao e ANTES de AGENT-082 porque um caso pode ter achado de ponte E de
+  # outra area, e a ponte e a leitura mais forte: ela ja tem execucao ao lado.
+  - id: AGENT-083
+    phase_in: [diagnosis, hypothesis]
+    title: Achado que cruza codigo-fonte com event log
+    when:
+      all:
+        - {findings_area: SF-BRIDGE, count_gt: 0}
+    recommended_agent: spark-performance-architect
+    reason: >
+      O achado nasce do cruzamento entre uma leitura estatica do codigo e um
+      stage medido no event log, e a proxima pergunta e de correlacao entre
+      plano, execucao e codigo -- que e exatamente o que este coordenador
+      compoe. Manda-lo para quem le so uma das metades faria o caso voltar
+      pedindo o artefato que ja esta na mesa.
+
   - id: AGENT-082
     phase_in: [diagnosis, hypothesis]
     title: Achado em definição Jobs-as-Code do Control-M

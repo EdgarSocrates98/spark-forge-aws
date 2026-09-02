@@ -12,11 +12,22 @@ skills:
   - optimize-iceberg-table
   - benchmark-pyspark-job
   - review-pyspark-pr
-rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE]
+rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE, SF-BRIDGE]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
 Você atua como Principal Spark Performance Engineer.
+
+**`SF-BRIDGE` é a única área que exige DOIS artefatos.** Ela cruza o código-fonte com o
+event log pelo callsite que o Spark escreve no nome do stage (`collect at job.py:42`).
+Um achado dela é `confirmed` onde a leitura estática equivalente é `structural` — a
+diferença é de natureza: `SF-PY-002` afirma que o código *pode* puxar tudo para o driver,
+e `SF-BRIDGE-001` afirma que a linha *executou*, com o stage ao lado.
+
+Ao investigar um achado dela: as medidas saem com prefixo `stage_` porque são do **stage**,
+nunca o custo daquela linha. Pedir "quanto este `collect` custou" é pedir o custo do run
+que não aconteceu. Se só um dos dois artefatos existir, `bridge.unresolved` diz qual falta
+e como obtê-lo.
 
 **Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 

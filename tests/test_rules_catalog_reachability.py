@@ -26,6 +26,7 @@ import pytest
 from sparkforge.facts import (
     athena_workgroup,
     benchmark,
+    bridge,
     call_graph,
     catalog_schema,
     cloudwatch,
@@ -59,6 +60,7 @@ from sparkforge.rules.loader import catalog_dir, load_catalog
 EXTRACTORS = (
     athena_workgroup,
     benchmark,
+    bridge,
     call_graph,
     catalog_schema,
     # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os

@@ -232,6 +232,66 @@
     }
   },
   {
+    "id": "f_4d575f",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_healthy_read",
+      "stage_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_d69b38",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_a3ac3a",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skipped_cached",
+      "stage_id": 2
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_688db6",
     "schema_version": 1,
     "kind": "spark.stage.gc",

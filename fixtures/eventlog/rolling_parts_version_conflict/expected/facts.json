@@ -234,6 +234,26 @@
     }
   },
   {
+    "id": "f_36c655",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_uniform_scan",
+      "stage_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_97228a",
     "schema_version": 1,
     "kind": "spark.stage.gc",

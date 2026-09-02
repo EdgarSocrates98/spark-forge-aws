@@ -276,6 +276,27 @@
     }
   },
   {
+    "id": "f_10f26f",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "broadcast exchange at Join.scala:120",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "arquivo_nao_python",
+      "file": "Join.scala"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_4782a3",
     "schema_version": 1,
     "kind": "spark.stage.failure",

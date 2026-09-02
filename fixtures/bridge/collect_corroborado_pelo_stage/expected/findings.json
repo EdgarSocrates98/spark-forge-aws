@@ -1,0 +1,114 @@
+[
+  {
+    "rule_id": "SF-BRIDGE-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "collect() sem limite CONFIRMADO por stage no event log",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 9,
+      "col": 13,
+      "end_line": 9,
+      "symbol": "principal",
+      "snippet": "linhas = ativos.collect()"
+    },
+    "evidence": [
+      "f_9799df"
+    ],
+    "measured": {
+      "stage_min_bytes": 2050000000,
+      "stage_p50_bytes": 2050000000,
+      "stage_p95_bytes": 2050000000,
+      "stage_max_bytes": 2050000000,
+      "stage_total_bytes": 4100000000
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "`SF-PY-002` ja diz que este `collect()` PODE puxar tudo para o driver -- leitura estatica, sem execucao ao lado. Esta regra diz outra coisa: o mesmo callsite apareceu no event log como stage, com volume medido.\nA diferenca e de natureza, nao de grau. Uma afirma risco; a outra afirma que a linha executou e traz o stage como evidencia. Por isso esta e `confirmed` e aquela e `structural`.\nAs medidas saem com prefixo `stage_` de proposito: elas sao do STAGE, e nao o custo desta linha. Atribuir custo a uma causa exigiria o custo do run que nao aconteceu.",
+    "proposed_change": [
+      "Trocar por escrita distribuida (`write`) ou por agregacao que devolva poucas linhas -- a mesma mudanca que `SF-PY-002` propoe, agora com o volume do stage ao lado para dimensionar a urgencia.\n",
+      "Se a inspecao e mesmo necessaria, `limit(n)` explicito antes, ou `take(n)`. `toLocalIterator` reduz o pico de memoria as custas de mais round-trips.\n"
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Logica downstream pode assumir uma lista Python em memoria, e trocar por escrita distribuida quebra quem itera sobre o retorno.\n"
+    ],
+    "tradeoffs": [
+      "Manter o `collect()` e aceitar que o pico de heap do driver cresca com o dado, sem que o codigo mude -- o modo de falha e OOM de driver por crescimento, e ele chega sem aviso.\n"
+    ],
+    "validation": [
+      "Contagem de linhas processadas identica.",
+      "Resultado final identico por contagem, schema, chaves e agregados de controle.\n",
+      "No proximo event log, o stage daquele callsite deve sumir ou trocar de metodo -- e a confirmacao de que a mudanca chegou a execucao, e nao so ao codigo.\n"
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "spark-doc",
+        "note": "O nome do stage no event log e o callsite do RDD -- `<metodo> at <arquivo>:<linha>` --, e e a mesma string que a Spark UI mostra na coluna Description. `facts/event_log.py` a guarda verbatim desde a primeira versao; `spark.stage.callsite` faz o parse.\n"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "Consequencia de `collect()` sem limite: serializa no driver o que era distribuido, e o pico de heap cresce com o resultado. Esta regra nao acrescenta essa heuristica -- ela acrescenta a evidencia de que o caminho executou.\n"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-PY-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "collect() ou toPandas() sem limite na cadeia",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 9,
+      "col": 13,
+      "end_line": 9,
+      "symbol": "principal",
+      "snippet": "linhas = ativos.collect()"
+    },
+    "evidence": [
+      "f_100caf"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Traz todo o resultado para o heap do driver. O risco cresce com o volume do resultado, que costuma crescer com o tempo sem que o código mude. Modo de falha é OOM de driver, e o job passa a falhar por crescimento de dado, não por alteração de código. Também serializa no driver o que era distribuído.",
+    "proposed_change": [
+      "Substituir por escrita distribuída (write) ou por agregação que devolva poucas linhas.",
+      "Se precisa mesmo inspecionar, usar limit(n) explícito antes, ou take(n).",
+      "Para iterar sobre resultado grande, toLocalIterator reduz o pico de memória."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Lógica downstream pode assumir uma lista Python em memória."
+    ],
+    "tradeoffs": [
+      "toLocalIterator reduz pico de memória mas aumenta round-trips."
+    ],
+    "validation": [
+      "Contagem de linhas processadas idêntica.",
+      "Resultado final (arquivo ou tabela) idêntico por contagem, schema e agregados de controle."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Consequência direta do modelo de execução; ver knowledge/spark/memory-and-oom.md secao 2, classe driver heap."
+      }
+    ]
+  }
+]

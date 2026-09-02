@@ -213,6 +213,46 @@
     }
   },
   {
+    "id": "f_249ecd",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_gc_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c9f22b",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_gc_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_5d6135",
     "schema_version": 1,
     "kind": "spark.stage.gc",

@@ -42,6 +42,7 @@ EMITTED_KINDS = frozenset(
         "spark.stage.gc",
         "spark.stage.task_count",
         "spark.stage.failure",
+        "spark.stage.callsite",
         "spark.cluster.cores",
         "spark.executor.lost",
         "spark.executor.memory_usage",
@@ -241,6 +242,99 @@ def _stage_subject(stage_id: int, stage_name: str) -> dict[str, Any]:
     return {"type": "stage", "symbol": stage_name, "stage_id": stage_id}
 
 
+# O Spark escreve o nome do stage no formato de CALLSITE:
+# `<metodo> at <arquivo>:<linha>` -- `collect at job.py:42`. E a mesma
+# string que aparece na Spark UI, e ela e a UNICA ancora que liga um stage
+# de execucao a uma linha de codigo-fonte.
+#
+# O grupo do arquivo aceita qualquer caminho sem espaco; a decisao de so
+# aceitar `.py` e tomada DEPOIS, para que o motivo da recusa possa ser
+# `arquivo_nao_python` em vez de "nao casou".
+_CALLSITE = re.compile(r"^(?P<metodo>.+?) at (?P<arquivo>\S+):(?P<linha>[^:\s]+)$")
+
+
+def _callsite_do_stage(stage_id: int, stage_name: str, provenance: dict[str, Any]) -> Fact:
+    """O callsite que o nome do stage carrega, ou a recusa NOMEADA.
+
+    ## Por que derivado, e nao regex no `when` da regra
+
+    `engine._where_matches` nao casa padrao. Por a decisao na regra faria cada
+    regra nova reimplementar o parse, que e a divida que a area `SF-GRAPH` ja
+    pagou em 2026-08-31. O extrator decide UMA vez e emite o kind ja decidido,
+    no molde de `tf.graphframes.jar` e `ctm.event_logic`.
+
+    ## As tres recusas, e por que `arquivo_nao_python` nao e lacuna
+
+    - `sem_forma_de_callsite` -- o nome nao tem ` at <arquivo>:<linha>`.
+    - `arquivo_nao_python` -- `count at GraphFrame.scala:112`. O stage nasceu
+      DENTRO da biblioteca, e nao ha linha no `.py` do operador para apontar.
+      Inventar uma seria pior que recusar: mandaria quem le olhar para um
+      arquivo que nao causou nada.
+    - `linha_nao_numerica` -- ` at job.py:<unknown>`, que o Spark escreve
+      quando nao consegue resolver a linha.
+
+    Nenhuma das tres e defeito. Todas saem como fato com `resolved: False` e
+    `attrs.reason`, nunca como ausencia -- ausencia se le como 'nao ha
+    callsite', e o que ha e 'nao consegui nomear este'.
+    """
+    subject = _stage_subject(stage_id, stage_name)
+    casou = _CALLSITE.match(stage_name.strip())
+
+    if casou is None:
+        return Fact(
+            kind="spark.stage.callsite",
+            subject=subject,
+            measures={},
+            attrs={"resolved": False, "reason": "sem_forma_de_callsite"},
+            provenance=provenance,
+        )
+
+    arquivo = casou.group("arquivo")
+    linha_txt = casou.group("linha")
+    if not arquivo.endswith(".py"):
+        return Fact(
+            kind="spark.stage.callsite",
+            subject=subject,
+            measures={},
+            attrs={
+                "resolved": False,
+                "reason": "arquivo_nao_python",
+                "file": arquivo,
+            },
+            provenance=provenance,
+        )
+
+    if not linha_txt.isdigit():
+        return Fact(
+            kind="spark.stage.callsite",
+            subject=subject,
+            measures={},
+            attrs={
+                "resolved": False,
+                "reason": "linha_nao_numerica",
+                "file": arquivo,
+            },
+            provenance=provenance,
+        )
+
+    return Fact(
+        kind="spark.stage.callsite",
+        subject=subject,
+        measures={"line": int(linha_txt)},
+        attrs={
+            "resolved": True,
+            "method": casou.group("metodo"),
+            # `file` sai como BASENAME e tambem inteiro. O basename e o que
+            # casa com `fact.subject.file` do lado estatico, que e relativo ao
+            # artefato; o caminho inteiro fica porque descarta-lo perderia a
+            # unica pista de pacote que o event log da.
+            "file": arquivo.replace("\\", "/").rsplit("/", 1)[-1],
+            "path": arquivo,
+        },
+        provenance=provenance,
+    )
+
+
 def _stage_facts(
     stage_id: int,
     stage_name: str,
@@ -251,6 +345,10 @@ def _stage_facts(
 ) -> list[Fact]:
     facts: list[Fact] = []
     subject = _stage_subject(stage_id, stage_name)
+
+    # SEMPRE, inclusive quando o nome nao tem callsite: a recusa nomeada e o
+    # que distingue 'este stage nao diz de onde veio' de 'ninguem perguntou'.
+    facts.append(_callsite_do_stage(stage_id, stage_name, provenance))
 
     if acc.durations_ms:
         values = sorted(acc.durations_ms)
