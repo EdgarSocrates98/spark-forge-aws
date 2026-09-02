@@ -1,32 +1,29 @@
 name: small_files_at_p1_boundary
-proves: >
-  O ramo P2 de SF-ICE-001, que até aqui não tinha golden nenhum, e o limiar que
-  separa os dois ramos — no mesmo dump.
-  A média é 8388608 bytes EXATOS, os 8 MiB do primeiro ramo de `severity_by`.
-  A comparação daquele ramo é `<`, então a média no limiar NÃO é P1: cai no
-  segundo ramo, P2. Uma tabela cujos arquivos estão abaixo do alvo de 32 MB mas
-  acima do piso de 8 MB custa passada extra de planejamento e abertura, não
-  perde o job.
-  Existe em par com `small_files`, que tem 4 MB de média e sai P1. Os dois juntos
-  são o que trava os dois ramos: sem este, a severidade do ramo P2 podia virar
-  qualquer valor com a suíte inteira verde, e trocar o `<` do primeiro ramo por
-  `<=` não quebrava nada — o corpus só tinha média muito abaixo do limiar, onde
-  as duas comparações concordam.
-  Nenhuma outra regra da área dispara, e o dump é magro para isso:
-  `write.distribution-mode` é `hash`, então SF-ICE-005 não vê o par com
-  `partition-spec`; não há `delete_files`, então SF-ICE-002 não tem fact; três
-  snapshots ficam longe dos 500 de SF-ICE-003; e sem `sort_order_id` nos data
-  files o extrator não emite `written_before_sort_order`, que é o que SF-ICE-004
-  exige.
+proves: 'O ramo P2 de SF-ICE-001, que até aqui não tinha golden nenhum, e o limiar que separa
+  os dois ramos — no mesmo dump. A média é 8388608 bytes EXATOS, os 8 MiB do primeiro ramo
+  de `severity_by`. A comparação daquele ramo é `<`, então a média no limiar NÃO é P1: cai
+  no segundo ramo, P2. Uma tabela cujos arquivos estão abaixo do alvo de 32 MB mas acima do
+  piso de 8 MB custa passada extra de planejamento e abertura, não perde o job. Existe em
+  par com `small_files`, que tem 4 MB de média e sai P1. Os dois juntos são o que trava os
+  dois ramos: sem este, a severidade do ramo P2 podia virar qualquer valor com a suíte inteira
+  verde, e trocar o `<` do primeiro ramo por `<=` não quebrava nada — o corpus só tinha média
+  muito abaixo do limiar, onde as duas comparações concordam. Nenhuma outra regra da área
+  dispara, e o dump é magro para isso: `write.distribution-mode` é `hash`, então SF-ICE-005
+  não vê o par com `partition-spec`; não há `delete_files`, então SF-ICE-002 não tem fact;
+  três snapshots ficam longe dos 500 de SF-ICE-003; e sem `sort_order_id` nos data files o
+  extrator não emite `written_before_sort_order`, que é o que SF-ICE-004 exige.
+
+  '
 runtime:
-  glue: "5.0"
-  spark: "3.5.4"
-  python: "3.11"
-  iceberg: "1.7.1"
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
 expects_kinds:
-  - iceberg.files_summary
-  - iceberg.snapshots_summary
-  - iceberg.table_property
-  - iceberg.table_analyzed
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
 expects_rules:
-  - SF-ICE-001
+- SF-ICE-001

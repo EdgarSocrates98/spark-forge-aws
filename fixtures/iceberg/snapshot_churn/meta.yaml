@@ -1,16 +1,18 @@
 name: snapshot_churn
-proves: >
-  600 snapshots (acima do limiar de 500), um a cada 5 minutos, tipico de um
-  loop de append por lote sem agrupamento. Dump so com a secao `snapshots`
-  para isolar SF-ICE-003 sem tocar files/delete_files/table_property.
+proves: '600 snapshots (acima do limiar de 500), um a cada 5 minutos, tipico de um loop de
+  append por lote sem agrupamento. Dump so com a secao `snapshots` para isolar SF-ICE-003
+  sem tocar files/delete_files/table_property.
+
+  '
 runtime:
-  glue: "5.0"
-  spark: "3.5.4"
-  python: "3.11"
-  iceberg: "1.7.1"
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
 expects_kinds:
-  - iceberg.snapshots_summary
-  - iceberg.table_property
-  - iceberg.table_analyzed
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
 expects_rules:
-  - SF-ICE-003
+- SF-ICE-003

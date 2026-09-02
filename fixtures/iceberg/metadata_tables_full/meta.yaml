@@ -1,26 +1,26 @@
 name: metadata_tables_full
-proves: >
-  Dump com TODAS as metadata tables preenchidas, inclusive as duas que nenhum
-  outro corpus exercitava: `manifests` e `partitions`. Sao as unicas fontes de
-  `iceberg.manifests_summary` e `iceberg.partitions_summary`, que nenhuma
-  regra consome hoje -- eles alimentam a skill `optimize-iceberg-table` e o
-  agente, e fact sem regra e o que some primeiro numa refatoracao.
-  A tabela e saudavel de proposito (arquivos de ~400 MB, zero delete files,
-  dois snapshots em 24h, sort order declarado): a fixture prova que os
-  sumarios sao CALCULADOS certo -- media de arquivos por manifest, maximo de
-  arquivos por particao -- sem que nada dispare. `section_count: 6` prova que
-  as seis secoes do dump foram lidas.
+proves: 'Dump com TODAS as metadata tables preenchidas, inclusive as duas que nenhum outro
+  corpus exercitava: `manifests` e `partitions`. Sao as unicas fontes de `iceberg.manifests_summary`
+  e `iceberg.partitions_summary`, que nenhuma regra consome hoje -- eles alimentam a skill
+  `optimize-iceberg-table` e o agente, e fact sem regra e o que some primeiro numa refatoracao.
+  A tabela e saudavel de proposito (arquivos de ~400 MB, zero delete files, dois snapshots
+  em 24h, sort order declarado): a fixture prova que os sumarios sao CALCULADOS certo -- media
+  de arquivos por manifest, maximo de arquivos por particao -- sem que nada dispare. `section_count:
+  6` prova que as seis secoes do dump foram lidas.
+
+  '
 runtime:
-  glue: "5.0"
-  spark: "3.5.4"
-  python: "3.11"
-  iceberg: "1.7.1"
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
 expects_kinds:
-  - iceberg.table_analyzed
-  - iceberg.table_property
-  - iceberg.files_summary
-  - iceberg.delete_files_summary
-  - iceberg.snapshots_summary
-  - iceberg.manifests_summary
-  - iceberg.partitions_summary
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.manifests_summary
+- iceberg.partitions_summary
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
 expects_rules: []

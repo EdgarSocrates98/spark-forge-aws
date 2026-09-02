@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **496** nesta árvore.
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **498** nesta árvore.
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -216,7 +216,7 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **49
 | `tool_class` | 1 | 188 | 28525 | 2563 | 74 |
 | `authorize` | 4 | 897 | 317005 | 4426 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1455600**;
+Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1459759**;
 a saída do `grep` pelo nome, **20821**; a saída do `grep` pela definição, **420**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **44** símbolos em **11589** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **140677** bytes. O `grep` pela definição contendo o fragmento continua menor
+  no mesmo corpus, tem **141071** bytes. O `grep` pela definição contendo o fragmento continua menor
   (**8474** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não

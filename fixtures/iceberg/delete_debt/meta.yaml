@@ -1,21 +1,22 @@
 name: delete_debt
-proves: >
-  Tabela merge-on-read com 10 delete files para 50 data files (razao 0.2,
-  acima do limiar 0.1) e data files de 200MB (acima do alvo de 32MB, para
-  isolar SF-ICE-002 sem SF-ICE-001 disparar junto). Exercita a divida de
-  delete files: measures.delete_file_count e measures.data_file_count
-  precisam estar no MESMO fact (iceberg.delete_files_summary) porque o motor
-  de regras avalia expr contra o contexto de um unico fact.
+proves: 'Tabela merge-on-read com 10 delete files para 50 data files (razao 0.2, acima do
+  limiar 0.1) e data files de 200MB (acima do alvo de 32MB, para isolar SF-ICE-002 sem SF-ICE-001
+  disparar junto). Exercita a divida de delete files: measures.delete_file_count e measures.data_file_count
+  precisam estar no MESMO fact (iceberg.delete_files_summary) porque o motor de regras avalia
+  expr contra o contexto de um unico fact.
+
+  '
 runtime:
-  glue: "5.0"
-  spark: "3.5.4"
-  python: "3.11"
-  iceberg: "1.7.1"
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
 expects_kinds:
-  - iceberg.files_summary
-  - iceberg.delete_files_summary
-  - iceberg.snapshots_summary
-  - iceberg.table_property
-  - iceberg.table_analyzed
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
 expects_rules:
-  - SF-ICE-002
+- SF-ICE-002

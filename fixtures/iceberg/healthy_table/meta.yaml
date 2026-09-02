@@ -1,20 +1,21 @@
 name: healthy_table
-proves: >
-  Tabela Iceberg saudavel: data files de 300MB de media, poucos delete files
-  (razao 0.067, abaixo do limiar), poucos snapshots, distribution-mode hash
-  e partition-spec/sort-order explicitamente vazios (chave presente, lista
-  vazia -- testa o caminho "definido como vazio", nao so "chave ausente").
-  Nao deve produzir nenhum finding: se disparar, e falso positivo do
-  catalogo ou do extrator.
+proves: 'Tabela Iceberg saudavel: data files de 300MB de media, poucos delete files (razao
+  0.067, abaixo do limiar), poucos snapshots, distribution-mode hash e partition-spec/sort-order
+  explicitamente vazios (chave presente, lista vazia -- testa o caminho "definido como vazio",
+  nao so "chave ausente"). Nao deve produzir nenhum finding: se disparar, e falso positivo
+  do catalogo ou do extrator.
+
+  '
 runtime:
-  glue: "5.0"
-  spark: "3.5.4"
-  python: "3.11"
-  iceberg: "1.7.1"
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
 expects_kinds:
-  - iceberg.files_summary
-  - iceberg.delete_files_summary
-  - iceberg.snapshots_summary
-  - iceberg.table_property
-  - iceberg.table_analyzed
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
 expects_rules: []

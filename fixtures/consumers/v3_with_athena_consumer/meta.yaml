@@ -17,6 +17,7 @@ expects_kinds:
   - env.consumers_analyzed
   - iceberg.table_analyzed
   - iceberg.table_property
+  - iceberg.format_version
   - iceberg.files_summary
   - iceberg.delete_files_summary
   - iceberg.snapshots_summary

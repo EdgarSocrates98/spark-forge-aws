@@ -1,0 +1,21 @@
+name: format_v3_com_propriedade
+proves: 'Uma tabela **v3**, com a propriedade concordando. Fecha o trio v1/v2/v3 do corpus.
+
+  `attrs.diverges` sai `false` porque HA os dois lados e eles concordam -- a diferenca para
+  a fixture v1, onde o campo nao sai de todo, e o que este par prova: ausencia de lado nao
+  e concordancia.
+
+  v3 e a spec que a §29 (Variant) e a §30 (deletion vectors) do prompt de origem pedem, e
+  `knowledge/storage/iceberg-feature-support.yaml` ja data as duas por engine. O que faltava
+  era o motor saber que a tabela E v3 -- e nao ser informado disso por quem pergunta.
+
+  '
+runtime: {}
+expects_kinds:
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+expects_rules: []
