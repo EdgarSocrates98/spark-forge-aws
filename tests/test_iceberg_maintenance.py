@@ -154,8 +154,12 @@ class TestARecusaSemRegra:
         que a destravaria."""
         plano = planner.plan_from_findings([], "db.t", retention_days=7)
         recusa = next(x for x in plano.refused if x.action_type == "rewrite_manifests")
-        assert "nenhuma regra" in recusa.reason
+        assert "V-ICE-1" in recusa.reason, (
+            "a recusa precisa citar o veto que a sustenta, e nao so descrever a "
+            "ausencia -- veto sem id nao e conferivel"
+        )
         assert "manifests_summary" in recusa.reason
+        assert "inventado" in recusa.reason
         assert recusa.unblocked_by
 
     def test_toda_recusa_tem_razao_e_destrava(self, planner):
@@ -207,3 +211,13 @@ class TestSobreOCorpusReal:
         achados = resultado[2] if len(resultado) > 2 else []
         plano = planner.plan_from_findings(achados, f"db.{fixture}", retention_days=7)
         assert {a.action_type for a in plano.actions} == esperado
+
+    def test_o_veto_V_ICE_1_esta_escrito_no_catalogo(self):
+        """A recusa cita `V-ICE-1`; este teste confere que ele existe la.
+
+        Veto citado e nao escrito e pior que veto nenhum: quem for conferir
+        acha a citacao e nao a razao.
+        """
+        catalogo = Path("rules/catalog/iceberg.yaml").read_text(encoding="utf-8")
+        assert "V-ICE-1" in catalogo
+        assert "Destravaria:" in catalogo, "veto sem medida que o destrava"
