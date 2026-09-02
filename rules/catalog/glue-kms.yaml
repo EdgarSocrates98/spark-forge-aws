@@ -111,10 +111,11 @@ rules:
       - >-
         `aws ec2 describe-vpc-endpoints` na VPC da conexão, procurando o serviço
         de KMS da região.
-    rollback: >
-      Nenhuma mudança de código está envolvida. Se o endpoint foi criado e
-      precisa ser desfeito, remover o recurso reverte o estado -- mas o job
-      volta a ter o modo de falha descrito acima.
+    rollback:
+      - >
+        Nenhuma mudança de código está envolvida. Se o endpoint foi criado e
+        precisa ser desfeito, remover o recurso reverte o estado -- mas o job
+        volta a ter o modo de falha descrito acima.
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html", retrieved: 2026-08-23}
 
@@ -174,8 +175,9 @@ rules:
       - >-
         `aws s3api head-object` num arquivo de dado recém-escrito, conferindo o
         cabeçalho de encriptação server-side.
-    rollback: >
-      Desabilitar a configuração de SSE do Iceberg reverte a decisão para os
-      arquivos NOVOS. Os já escritos mantêm a encriptação com que nasceram.
+    rollback:
+      - >
+        Desabilitar a configuração de SSE do Iceberg reverte a decisão para os
+        arquivos NOVOS. Os já escritos mantêm a encriptação com que nasceram.
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html", retrieved: 2026-08-23}

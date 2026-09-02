@@ -272,10 +272,11 @@ rules:
       - DescribeCluster, ListInstanceGroups, ListInstanceFleets e ListBootstrapActions do cluster novo não contêm mais o literal.
       - O job executa com sucesso lendo do cofre.
       - O segredo anterior está revogado, confirmado por uma tentativa de uso que falha.
-    rollback: >
-      Não reverter para o literal em texto claro. Se a leitura do cofre falha, a
-      correção é a política de IAM do perfil de instância EC2 do cluster, não o
-      método de armazenamento.
+    rollback:
+      - >
+        Não reverter para o literal em texto claro. Se a leitura do cofre falha, a
+        correção é a política de IAM do perfil de instância EC2 do cluster, não o
+        método de armazenamento.
     sources:
       - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html", retrieved: 2026-08-01}
       - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html", retrieved: 2026-08-01}

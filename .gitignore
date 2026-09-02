@@ -58,3 +58,6 @@ cm_claims_out.txt
 # sem aviso de vencimento. O que e versionado sao os locks, que dizem o que se
 # audita, e a politica, que diz o que fazer com o achado.
 audit.json
+
+# Prompts de origem: insumo de sessao, nao artefato do repositorio.
+prompt_evo_*.md
