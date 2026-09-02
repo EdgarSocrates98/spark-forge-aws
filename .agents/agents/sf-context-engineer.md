@@ -24,6 +24,10 @@ inteiro — que é a razão de este agente existir.
 - `sparkforge_code_sync` — sincroniza o índice quando `status` acusar defasagem.
 - `sparkforge_code_search` — acha símbolo por nome ou parte dele.
 - `sparkforge_code_symbol` — quem chama, o que chama, e o impacto de mudar.
+- `sparkforge_code_export` — o grafo no formato de **extração** que a fonte do Graphify
+  publica. O formato do `graph.json` **final** dele não é publicado, então não há
+  importação — e o artefato diz isso em `sparkforge.not_implemented`. Nada aqui
+  depende de `graphifyy`: a compatibilidade é de formato, nunca de código.
 - `sparkforge_code_shape` — a **forma** do grafo: comunidades e nós de maior grau.
   Não é julgamento. Comunidade não é módulo nem sugestão de refatoração, e grau alto
   não é defeito — um símbolo chamado de trinta lugares pode ser um utilitário bem

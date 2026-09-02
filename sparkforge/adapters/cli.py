@@ -1258,6 +1258,29 @@ def build_parser() -> argparse.ArgumentParser:
     code_search_p.add_argument("--path-prefix", help="Filtra por prefixo do caminho relativo.")
     code_search_p.add_argument("--limit", type=int, default=_core.CODE_SEARCH_DEFAULT_LIMIT)
 
+    code_export_p = _code_comum(
+        code_sub.add_parser(
+            "export",
+            help="Exporta o grafo no formato de extracao que a fonte publica.",
+        )
+    )
+    code_export_p.add_argument(
+        "--no-communities",
+        dest="communities",
+        action="store_false",
+        default=True,
+        help="Nao calcula comunidade. `algorithm` sai `null`, que diz 'nao calculei'.",
+    )
+    code_export_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "`summary` para as contagens e a declaracao de compatibilidade; "
+            "`normal` e `full` trazem nos e arestas."
+        ),
+    )
+
     code_shape_p = _code_comum(
         code_sub.add_parser(
             "shape",
@@ -2539,6 +2562,18 @@ def _cmd_code_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_code_export(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_export(
+            args.root,
+            communities=args.communities,
+            detail_level=args.detail_level,
+            db=args.db,
+        )
+    )
+    return 0
+
+
 def _cmd_code_shape(args: argparse.Namespace) -> int:
     _print(
         _core.code_shape(
@@ -2676,6 +2711,7 @@ _DISPATCH = {
     ("code", "sync"): _cmd_code_sync,
     ("code", "status"): _cmd_code_status,
     ("code", "search"): _cmd_code_search,
+    ("code", "export"): _cmd_code_export,
     ("code", "shape"): _cmd_code_shape,
     ("code", "path"): _cmd_code_path,
     ("code", "symbol"): _cmd_code_symbol,

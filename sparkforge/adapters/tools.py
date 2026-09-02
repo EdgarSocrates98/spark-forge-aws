@@ -2260,6 +2260,49 @@ _CODE_SYMBOL_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_CODE_EXPORT_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "index",
+        "schema_version",
+        "node_count",
+        "edge_count",
+        "nodes",
+        "edges",
+        "sparkforge",
+    ],
+    "properties": {
+        "index": _CODE_INDEX_SCHEMA,
+        "schema_version": {"type": "integer"},
+        "node_count": {"type": "integer", "minimum": 0},
+        "edge_count": {"type": "integer", "minimum": 0},
+        "nodes": {"type": "array", "items": {"type": "object"}},
+        "edges": {"type": "array", "items": {"type": "object"}},
+        # As DUAS metades da compatibilidade sao OBRIGATORIAS. Tornar
+        # `not_implemented` opcional faria a ausencia da chave e "nao ha nada
+        # faltando" serem a mesma coisa para quem le.
+        "sparkforge": {
+            "type": "object",
+            "required": [
+                "format",
+                "source_checked",
+                "compatible_fields",
+                "not_from_source",
+                "not_implemented",
+                "communities",
+            ],
+            "properties": {
+                "format": {"type": "string"},
+                "source_checked": {"type": "string"},
+                "compatible_fields": {"type": "object"},
+                "not_from_source": {"type": "string"},
+                "not_implemented": {"type": "string"},
+                "communities": {"type": "object"},
+            },
+        },
+    },
+}
+
 _CODE_SHAPE_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -5608,6 +5651,51 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _CODE_WRITES_INDEX,
     },
+    "sparkforge_code_export": {
+        "description": (
+            "Exporta o grafo de codigo no formato de EXTRACAO que a fonte do "
+            "Graphify publica -- `id`/`label`/`source_file`/`source_location` nos "
+            "nos, `source`/`target`/`relation`/`confidence` nas arestas. MEDIDO em "
+            "2026-09-02: o formato do `graph.json` FINAL do Graphify NAO e "
+            "publicado (o README nao o especifica e o ARCHITECTURE.md diz que o "
+            "schema que mostra e o da extracao, anterior a `build()`), entao esta "
+            "tool exporta o que a fonte de fato publica e declara no proprio "
+            "artefato o que nao faz. NAO ha importacao e NAO ha dependencia de "
+            "`graphifyy`: a compatibilidade e de FORMATO, nunca de codigo. Tudo o "
+            "que este motor sabe e a fonte nao nomeia vive no bloco `sparkforge`, "
+            "separado, para que ninguem assuma que veio de la."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["repo"],
+            "properties": {
+                "repo": _CODE_REPO_PROP,
+                "communities": {
+                    "type": "boolean",
+                    "description": (
+                        "Inclui a comunidade de cada no. `false` deixa "
+                        "`communities.algorithm` como `null`, que diz 'nao "
+                        "calculei' -- diferente de chave ausente."
+                    ),
+                },
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": (
+                        "`summary` para as contagens e a declaracao de "
+                        "compatibilidade; `normal` e `full` trazem nos e arestas."
+                    ),
+                },
+                "db": _CODE_DB_PROP,
+            },
+        },
+        "outputSchema": _may_fail(
+            _CODE_EXPORT_SUCCESS_SCHEMA,
+            "Grafo no formato de extracao com a compatibilidade declarada, ou erro.",
+        ),
+        "annotations": _CODE_WRITES_INDEX,
+    },
     "sparkforge_code_shape": {
         "description": (
             "A FORMA do grafo de codigo: comunidades (grupos que se chamam mais "
@@ -6416,6 +6504,15 @@ def _h_code_search(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_code_export(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.code_export(
+        args["repo"],
+        communities=bool(args.get("communities", True)),
+        detail_level=args.get("detail_level", "full"),
+        db=args.get("db"),
+    )
+
+
 def _h_code_shape(args: dict[str, Any]) -> dict[str, Any]:
     return _core.code_shape(
         args["repo"],
@@ -6532,6 +6629,7 @@ _HANDLERS = {
     "sparkforge_collect_verify": _h_collect_verify,
     "sparkforge_code_context": _h_code_context,
     "sparkforge_code_search": _h_code_search,
+    "sparkforge_code_export": _h_code_export,
     "sparkforge_code_shape": _h_code_shape,
     "sparkforge_code_path": _h_code_path,
     "sparkforge_code_symbol": _h_code_symbol,

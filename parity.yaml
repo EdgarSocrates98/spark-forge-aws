@@ -734,6 +734,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: exportar o grafo no formato de extracao do Graphify
+    tools: [sparkforge_code_export]
+    cli: [code export]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: conferir e sincronizar o frescor do indice de codigo
     tools: [sparkforge_code_status, sparkforge_code_sync]
     cli: [code status, code sync]
