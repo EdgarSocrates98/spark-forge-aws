@@ -1,49 +1,61 @@
 [
   {
-    "rule_id": "SF-WASTE-001",
-    "schema_version": 1,
+    "benchmark_ref": "",
     "catalog_version": 1,
-    "title": "Folga medida em worker, memória e disco, sem skew que a explique",
-    "severity": "P2",
     "confidence": "high",
-    "status": "confirmed",
-    "subject": {
-      "type": "job_run",
-      "symbol": "etl_pedidos_diario"
-    },
     "evidence": [
       "f_681614",
       "f_681614",
       "f_681614",
       "f_681614"
     ],
-    "measured": {
-      "worker_utilization_p50": 0.31,
-      "memory_used_pct_p95": 22.0,
-      "disk_used_pct_p95": 9.0,
-      "skew_p95_over_p50": 1.3
-    },
-    "threshold": {
-      "utilization": 0.5,
-      "memory_pct": 50.0,
-      "disk_pct": 50.0,
-      "skew_ratio": 3.0
-    },
-    "runtime_scope": {},
+    "expected_effect": "",
     "explanation": "As quatro medidas apontam na mesma direção: o worker fica ocioso metade do tempo ou mais, memória e disco não passam da metade, e não há skew que explique a ociosidade. A capacidade tem folga — e a pergunta de quanto reduzir tem resposta com evidência em `sparkforge capacity`, que compara as capacidades que o job JÁ rodou contra o SLA declarado.\n\nEsta regra NÃO diz quanto se economizaria. Atribuir economia exigiria o custo do run que não aconteceu, e nenhuma fonte mede contrafactual. O que ela faz é dizer que a pergunta de capacidade tem base para ser feita.\n\nAs quatro condições são um `all` de propósito: três delas sozinhas já apareceram juntas num job saudável com pico de memória alto, e a quarta — a ausência de skew — é a que separa esta regra da `SF-WASTE-002`.",
+    "measured": {
+      "disk_used_pct_p95": 9.0,
+      "memory_used_pct_p95": 22.0,
+      "skew_p95_over_p50": 1.3,
+      "worker_utilization_p50": 0.31
+    },
     "proposed_change": [
       "Rodar `sparkforge capacity` com o SLA declarado, e ler a capacidade mais barata que o cumpre entre as observadas.",
       "Conferir se o job já rodou em capacidade menor; se nunca rodou, a redução é experimento e não escolha — o `capacity` recusa extrapolar de propósito.",
       "Reavaliar depois de qualquer mudança de layout ou de código, porque folga medida hoje é sobre o trabalho de hoje."
     ],
-    "expected_effect": "",
-    "benchmark_ref": "",
     "risks": [
       "Reduzir capacidade sem histórico na capacidade menor troca custo por risco de SLA, e o risco não aparece até o dia de volume maior.",
+      "Utilização média esconde pico: o `p50` diz o dia normal, e o run que estoura é o outro."
+    ],
+    "rollback": [
+      "Voltar a capacidade anterior no Terraform ou na definição do job. Nenhuma escrita de dado é envolvida."
+    ],
+    "rule_id": "SF-WASTE-001",
+    "runtime_scope": {},
+    "schema_version": 1,
+    "severity": "P2",
+    "sources": [
       {
-        "Utilização média esconde pico": "o `p50` diz o dia normal, e o run que estoura é o outro."
+        "note": "A observabilidade do Glue publica `glue.driver.workerUtilization`, memória e disco por run, que são as quatro medidas desta regra.\n",
+        "retrieved": "2026-08-29",
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html"
+      },
+      {
+        "note": "Os limiares 0.5 de utilização e 50% de memória e disco são heurística de campo. O limiar de skew 3.0 é o mesmo de `SF-UI-001`, e é deliberado: a fronteira entre folga e ociosidade por skew precisa ser a mesma que o resto do catálogo usa para chamar skew de skew.\n",
+        "origin": "field-heuristic"
       }
     ],
+    "status": "confirmed",
+    "subject": {
+      "symbol": "etl_pedidos_diario",
+      "type": "job_run"
+    },
+    "threshold": {
+      "disk_pct": 50.0,
+      "memory_pct": 50.0,
+      "skew_ratio": 3.0,
+      "utilization": 0.5
+    },
+    "title": "Folga medida em worker, memória e disco, sem skew que a explique",
     "tradeoffs": [
       "Capacidade menor custa menos por run e deixa menos margem para variação de volume."
     ],
@@ -51,20 +63,6 @@
       "Utilização de worker do run seguinte, na capacidade nova.",
       "Duração p50 e p95 contra `glue.job_run.distribution`, antes e depois.",
       "Confiabilidade contra o SLA declarado, com runs suficientes para sustentar o alvo."
-    ],
-    "rollback": [
-      "Voltar a capacidade anterior no Terraform ou na definição do job. Nenhuma escrita de dado é envolvida."
-    ],
-    "sources": [
-      {
-        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
-        "retrieved": "2026-08-29",
-        "note": "A observabilidade do Glue publica `glue.driver.workerUtilization`, memória e disco por run, que são as quatro medidas desta regra.\n"
-      },
-      {
-        "origin": "field-heuristic",
-        "note": "Os limiares 0.5 de utilização e 50% de memória e disco são heurística de campo. O limiar de skew 3.0 é o mesmo de `SF-UI-001`, e é deliberado: a fronteira entre folga e ociosidade por skew precisa ser a mesma que o resto do catálogo usa para chamar skew de skew.\n"
-      }
     ]
   }
 ]
