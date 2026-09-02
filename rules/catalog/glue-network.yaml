@@ -82,10 +82,11 @@ rules:
         endpoint de gateway do S3 ou a rota para o NAT.
       - >-
         Uma execução do job que leia um objeto do S3 e termine sem timeout.
-    rollback: >
-      Nenhuma mudança de código está envolvida. Remover `connections` tira o job
-      da VPC e devolve a rota pública -- e junto o acesso ao banco que motivou a
-      conexão, então isso é decisão de arquitetura, não rollback.
+    rollback:
+      - >
+        Nenhuma mudança de código está envolvida. Remover `connections` tira o job
+        da VPC e devolve a rota pública -- e junto o acesso ao banco que motivou a
+        conexão, então isso é decisão de arquitetura, não rollback.
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html", retrieved: 2026-08-23}
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html", retrieved: 2026-08-23}

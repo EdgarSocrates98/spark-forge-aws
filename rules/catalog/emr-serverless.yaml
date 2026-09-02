@@ -370,10 +370,11 @@ rules:
       - GetApplication da application corrigida não contém mais o literal, e a propriedade aparece com o prefixo EMR.secret@.
       - Um job novo executa com sucesso lendo do cofre — a resolução acontece na transição para running, então só um job novo prova.
       - O segredo anterior está revogado, confirmado por uma tentativa de uso que falha.
-    rollback: >
-      Não reverter para o literal em texto claro. Se a resolução do cofre falha,
-      a correção é a política de IAM do papel de execução do job, não o método
-      de armazenamento.
+    rollback:
+      - >
+        Não reverter para o literal em texto claro. Se a resolução do cofre falha,
+        a correção é a política de IAM do papel de execução do job, não o método
+        de armazenamento.
     sources:
       - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/secrets-manager.html", retrieved: 2026-08-04}
       - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_GetApplication.html", retrieved: 2026-08-04}
