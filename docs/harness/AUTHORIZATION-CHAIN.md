@@ -77,12 +77,12 @@ confirmação, não menos —, e nenhuma capacidade foi removida.
 ## Duas classes ficam sem membro, e não são as esperadas
 
 Distribuição depois da correção, derivada executando `tool_class()` sobre as
-66 tools:
+67 tools:
 
 | classe | tools |
 |---|---|
 | `READ_ONLY` | 45 |
-| `LOCAL_MUTATION` | 12 |
+| `LOCAL_MUTATION` | 13 |
 | `CLOUD_MUTATION` | 9 |
 | `CLOUD_READ` | 0 |
 | `DESTRUCTIVE` | 0 |
@@ -170,7 +170,7 @@ sistema de arquivos, com a classe derivada por `tool_class()`:
 | classe | declaram caminho | não declaram |
 |---|---|---|
 | `READ_ONLY` | 40 | 5 |
-| `LOCAL_MUTATION` | 12 | 0 |
+| `LOCAL_MUTATION` | 13 | 0 |
 | `CLOUD_MUTATION` | 9 | 0 |
 
 Medido: **40** das tools `READ_ONLY` declaram algum argumento de caminho
@@ -179,7 +179,7 @@ Medido: **40** das tools `READ_ONLY` declaram algum argumento de caminho
 aceita `category`, `id`, `limit` e `cursor`, e `sparkforge_economy_report`, que
 lê o ledger pelo `run_id` e aceita `host_transcript` — nenhum dos dois nomeia
 caminho de arquivo. Estendendo às outras classes, o total é
-**61** de 66 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram
+**62** de 67 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram
 caminho sem exceção. Receber caminho é a forma normal da chamada neste
 catálogo, não um caso de borda. As onze tools que a SPEC do `SFCI` propõe
 recebem todas caminho, e é o caminho que decide se a chamada é legítima.
@@ -261,7 +261,7 @@ chamar a tool direto.
 > **Superado em `5cc065d`.** O parágrafo acima registra o que a fase J2 não
 > fechou e fica como está — é o registro dela. O que mudou depois:
 > `sparkforge/adapters/tools.py:call_tool` passou a chamar a cadeia via
-> `CallPolicy.decide`, e o despacho é único para as 66 tools, então fechar ali
+> `CallPolicy.decide`, e o despacho é único para as 67 tools, então fechar ali
 > cobre `adapters/mcp.py` junto. Ver *A imposição no despacho* abaixo.
 
 Isso é o gap do hook `PreToolUse` do §41, e ele **não** fecha aqui. O que
@@ -307,7 +307,7 @@ pública; a afirmação de fato que a acompanhava não era verdade e foi corrigi
 ## A imposição no despacho
 
 `sparkforge/adapters/tools.py:call_tool(name, arguments, *, policy=None)` chama
-a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 66
+a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 67
 tools passam por ele, e `adapters/mcp.py` o usa, então fechar ali cobre os dois
 de uma vez em vez de uma checagem por porta.
 

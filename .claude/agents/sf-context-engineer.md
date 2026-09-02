@@ -25,6 +25,11 @@ inteiro — que é a razão de este agente existir.
 - `sparkforge_code_sync` — sincroniza o índice quando `status` acusar defasagem.
 - `sparkforge_code_search` — acha símbolo por nome ou parte dele.
 - `sparkforge_code_symbol` — quem chama, o que chama, e o impacto de mudar.
+- `sparkforge_code_shape` — a **forma** do grafo: comunidades e nós de maior grau.
+  Não é julgamento. Comunidade não é módulo nem sugestão de refatoração, e grau alto
+  não é defeito — um símbolo chamado de trinta lugares pode ser um utilitário bem
+  fatorado. `communities.algorithm` vem no corpo porque a partição é **reproduzível
+  e não única**: propagação de rótulo não tem resposta canônica.
 - `sparkforge_code_path` — **como** um símbolo chega em outro, não só se chega.
   Quando não há caminho, `reason` separa três casos que não querem dizer o mesmo:
   `node_not_indexed`, `depth_exhausted` (recusa por teto — subir `depth` pode mudar

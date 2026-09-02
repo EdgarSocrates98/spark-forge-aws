@@ -53,7 +53,7 @@ arquivo ganha.
 | Achados que NÃO rendem pergunta de ouro | **25 em 48**, por duas razões que destravam com medidas **diferentes**: **23** são `evidencia_sem_simbolo` (o fato citado ancora arquivo e linha, com `subject.symbol` vazio — destrava no EXTRATOR que produziu o fato) e **2** são `extensao_nao_indexada` (`SF-ENV-003` e `SF-GRAPH-005` ancoram símbolo em `.tf`, que `codeintel.index.indexar` não percorre — destrava no INDEXADOR). Somá-las num rótulo só mandaria quem fosse consertar para o módulo errado. Metade dos achados destas fixtures não rende pergunta, e publicar isso é o que impede que "o gate cobre 23 achados" seja lido como "existem 23 achados" | `python scripts/check_recall_economy.py` |
 | Regras com golden que dispara | **111 de 111 executáveis** — recontado em 2026-09-02 sobre `_executable_rules()`; as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, e cada uma tem golden positivo **e** negativo. A leitura anterior publicava 105 e já estava defasada em 1 antes desta entrega. `_executable_rules()` filtra por `executable`, **nunca** por `status` | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **99** — a `AGENT-082` da entrega de Control-M é a nonagésima oitava, e ela é rota **própria** e não uma linha a mais num `any:` existente: Control-M não é EMR, não roda Spark e não tem cluster, então enfiá-la na `AGENT-007` mandaria o case para um coordenador cujo vocabulário inteiro não descreve o artefato. A fase de EMR on EKS, ao contrário, **não** moveu esta linha: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` `AGENT-083` e a 99ª, da entrega da ponte (2026-09-02). Ela **nao** herda a rota de nenhuma das duas metades que cruza: `SF-PY` iria para quem le codigo e `SF-SPARK` para quem le event log, e o caso precisa de alguem que saiba pedir OS DOIS. Destino `spark-performance-architect`, e a posicao e antes de `AGENT-082` porque a leitura com execucao ao lado e a mais forte. |
-| Tools MCP | **66** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` A entrega de `code path` (2026-09-02) levou de 65 para **66**: `sparkforge_code_path` e a setima tool de Code Intelligence, e a superficie de tools cresceu 4103 bytes (355071 para 359174). O schema proprio existe porque a resposta tem uma forma que nenhuma outra tem: `reason` obrigatorio e ANULAVEL, com tres razoes de recusa que nao querem dizer a mesma coisa (`node_not_indexed`, `depth_exhausted`, `no_resolved_path`). Numero relido pela propria prova. |
+| Tools MCP | **67** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` A entrega de `code path` (2026-09-02) levou de 65 para **66**: `sparkforge_code_path` e a setima tool de Code Intelligence, e a superficie de tools cresceu 4103 bytes (355071 para 359174). O schema proprio existe porque a resposta tem uma forma que nenhuma outra tem: `reason` obrigatorio e ANULAVEL, com tres razoes de recusa que nao querem dizer a mesma coisa (`node_not_indexed`, `depth_exhausted`, `no_resolved_path`). Numero relido pela propria prova. A entrega de `code shape` (2026-09-02) levou de 66 para **67**: `sparkforge_code_shape` é a oitava tool de Code Intelligence, e traz **duas** medidas na mesma resposta porque a entrada é a mesma (o índice inteiro) e a pergunta é a mesma — *como este código está organizado*. Duas tools cobririam o mesmo contrato duas vezes nos gates de paridade, para sempre. O schema obriga `communities.algorithm` no corpo, e isso **não** é decorativo: a partição é reproduzível e não única, e publicá-la sem o método ao lado convidaria a lê-la como canônica. |
 | Tools alcançáveis a partir de algum coordenador | **65 de 65** — as quatro novas chegam por `sf-runtime-specialist`: as duas de `ReleaseDiff` pela skill `compare-releases`, e `sparkforge_controlm_describe` por citacao direta no proprio coordenador. Nao ha skill de Control-M, e a razao esta escrita la: a fronteira da pergunta e **versao**, a mesma que ja separa `migrate-glue-6` de `spark4-compatibility`. `sparkforge_analyze_controlm_jobs` chega pelo mesmo caminho, e `tests/test_agent_coverage.py` ganhou a classe que cobra as TRES metades do despacho de `SF-CTM` juntas -- rota, coordenador que declara a area, e as duas tools alcancaveis -- porque `SF-EMRS` ja ficou declarada num coordenador e sem rota nenhuma por uma fase inteira, com cada invariante generico passando sozinho | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
@@ -6264,6 +6264,58 @@ Sete alegações de lastro remediadas por lista de ids.
 ### O que sobra do prompt
 
 Comunidades e god nodes (F8) → `GraphifyJsonAdapter` (F1.6), último de propósito.
+
+## Comunidades e grau — a forma do grafo, sem virar veredito (2026-09-02)
+
+Quarto incremento de `prompt_evo_graph_economy.md` (F8).
+
+### A dependência não coube, e o algoritmo coube
+
+A F8 do prompt manda implementar comunidades **somente se** a dependência puder ficar no
+wheel mínimo. Medido: o wheel tem **duas** dependências — `PyYAML` e `jsonschema` —, e
+`networkx` seria uma terceira para uma capacidade que **não julga nada**.
+
+Propagação de rótulo cabe em quarenta linhas e não tem dependência. É a primeira
+preferência que a própria fase lista: *algoritmo determinístico e local antes de
+biblioteca*.
+
+### O que "determinístico" significa aqui, exatamente
+
+Propagação de rótulo canônica visita os nós em ordem **aleatória** e devolve partições
+diferentes a cada execução. Aqui: ordem `_chave_de_ordem`, empate vence o **menor** rótulo,
+rótulo inicial é o próprio `node_id`. Com os três, duas execuções sobre o mesmo índice dão
+a mesma partição.
+
+**Reprodutibilidade não é unicidade.** Não há partição canônica de um grafo, e por isso
+`Particao.algoritmo` sai no resultado e `communities.algorithm` é **obrigatório** no
+schema. Publicá-la sem o método convidaria a lê-la como canônica.
+
+Medido sobre `sparkforge/codeintel/`: **70 comunidades, 4 iterações, convergiu**, e os
+grupos batem com os módulos — `staleness`, `context` e `lineage` caem separados.
+
+### O nome não é `god_nodes`, e a escolha está travada por teste
+
+"Nó-deus" é **veredito**; grau é **medida**. Um `_normalizar` chamado de trinta lugares tem
+grau trinta porque foi bem fatorado. O campo se chama `by_degree`, a função se chama
+`nos_por_grau`, e `test_o_nome_nao_e_god_node_e_a_escolha_e_deliberada` existe para que a
+renomeação "óbvia" tenha de passar por cima de uma decisão escrita.
+
+É a mesma doutrina do veto **V-BR-3** da entrega anterior, que recusou fan-in alto como
+achado por falta de fonte.
+
+### O ponto cego sai junto, com tamanho
+
+As duas medidas contam aresta **resolvida**, e `graph.resolution_rate` acompanha a
+resposta. Medido: **0.364** neste repositório — o que ficou de fora é maior que o que
+entrou, e uma comunidade medida sobre um terço das arestas não é a comunidade do código.
+
+### Uma tool para as duas medidas
+
+A entrada é a mesma (o índice inteiro) e a pergunta é a mesma — *como este código está
+organizado*. Duas tools cobririam o mesmo contrato duas vezes nos gates de paridade, para
+sempre.
+
+Superfície: 66 para **67** tools, +3884 bytes. 23 alegações de lastro remediadas.
 
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.

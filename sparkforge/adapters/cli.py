@@ -1258,6 +1258,28 @@ def build_parser() -> argparse.ArgumentParser:
     code_search_p.add_argument("--path-prefix", help="Filtra por prefixo do caminho relativo.")
     code_search_p.add_argument("--limit", type=int, default=_core.CODE_SEARCH_DEFAULT_LIMIT)
 
+    code_shape_p = _code_comum(
+        code_sub.add_parser(
+            "shape",
+            help="Comunidades e nos de maior grau. Nao e julgamento, e forma.",
+        )
+    )
+    code_shape_p.add_argument(
+        "--top",
+        type=int,
+        default=_core.CODE_SHAPE_DEFAULT_TOP,
+        help="Quantas comunidades e quantos nos por grau. Satura no teto.",
+    )
+    code_shape_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "`summary` para as contagens e o metodo; `normal` e `full` "
+            "acrescentam os membros e a lista por grau."
+        ),
+    )
+
     code_path_p = _code_comum(
         code_sub.add_parser(
             "path",
@@ -2517,6 +2539,18 @@ def _cmd_code_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_code_shape(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_shape(
+            args.root,
+            top=args.top,
+            detail_level=args.detail_level,
+            db=args.db,
+        )
+    )
+    return 0
+
+
 def _cmd_code_path(args: argparse.Namespace) -> int:
     _print(
         _core.code_path(
@@ -2642,6 +2676,7 @@ _DISPATCH = {
     ("code", "sync"): _cmd_code_sync,
     ("code", "status"): _cmd_code_status,
     ("code", "search"): _cmd_code_search,
+    ("code", "shape"): _cmd_code_shape,
     ("code", "path"): _cmd_code_path,
     ("code", "symbol"): _cmd_code_symbol,
     ("code", "read"): _cmd_code_read,

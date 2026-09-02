@@ -96,6 +96,7 @@ class TestToolSurface:
             "sparkforge_code_context",
             "sparkforge_code_search",
             "sparkforge_code_path",
+            "sparkforge_code_shape",
             "sparkforge_code_symbol",
             "sparkforge_code_read",
             "sparkforge_code_status",
@@ -240,6 +241,7 @@ class TestToolSurface:
             "sparkforge_code_context",
             "sparkforge_code_read",
             "sparkforge_code_path",
+            "sparkforge_code_shape",
             "sparkforge_code_search",
             "sparkforge_code_status",
             "sparkforge_code_symbol",
@@ -1457,7 +1459,7 @@ def _code_tree(tmp_path):
 
 
 def _real_code_output_for(name, tmp_path):
-    """Saida REAL das sete tools de Code Intelligence, sobre uma arvore de verdade.
+    """Saida REAL das oito tools de Code Intelligence, sobre uma arvore de verdade.
 
     Cada uma passa pela porta de frescor da SPEC 43 antes de responder, entao
     construir o indice com `sparkforge_code_sync` aqui nao e conveniencia: e o
@@ -1500,6 +1502,14 @@ def _real_code_output_for(name, tmp_path):
     assert achados["results"], "a busca precisa achar o simbolo da amostra"
     if name == "sparkforge_code_search":
         return achados
+
+    if name == "sparkforge_code_shape":
+        resultado = call_tool("sparkforge_code_shape", {"repo": str(raiz)})
+        # O ALGORITMO e o que este teste prende: sem ele no corpo, a particao
+        # sairia com cara de canonica, e ela nao e.
+        assert resultado["communities"]["algorithm"]
+        assert resultado["communities"]["total"] >= 1
+        return resultado
 
     node_id = achados["results"][0]["node_id"]
     if name == "sparkforge_code_path":
@@ -1996,6 +2006,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_code_search",
         "sparkforge_code_symbol",
         "sparkforge_code_path",
+        "sparkforge_code_shape",
         "sparkforge_code_read",
         "sparkforge_code_status",
         "sparkforge_code_sync",

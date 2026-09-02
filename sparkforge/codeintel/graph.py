@@ -85,6 +85,18 @@ _PROFUNDIDADE_DE_IMPACTO = 3
 # campo `truncado` do resultado diz quando ele foi atingido.
 _PROFUNDIDADE_DE_CAMINHO = 6
 
+# Teto de iteracoes da propagacao de rotulo. Propagacao converge rapido em
+# grafo esparso -- e grafo de chamadas e esparso --, e o teto existe para o
+# caso em que dois rotulos oscilam entre si sem estabilizar. Atingi-lo sai
+# como `convergiu: False` no resultado, nunca em silencio.
+_ITERACOES_DE_COMUNIDADE = 20
+
+_ALGORITMO_DE_COMUNIDADE = "propagacao-de-rotulo-ordem-fixa/1"
+
+# Quantos nos `nos_por_grau` devolve por padrao. Vinte cabe numa revisao; a
+# lista inteira seria o indice ordenado de outro jeito, que nao e resposta.
+_LIMITE_DE_GRAU = 20
+
 # Teto de marcadores `?` por consulta. `SQLITE_MAX_VARIABLE_NUMBER` vale 999 nas
 # builds anteriores a 3.32 e 32766 depois, e o interpretador embarca a build que
 # quiser -- inclusive a antiga, no Python que o cliente tiver. 400 fica abaixo do
@@ -98,6 +110,19 @@ _PROFUNDIDADE_DE_CAMINHO = 6
 # consulta partida --, e ela vale para qualquer valor. O numero em si e o teto
 # do SQLite, e esta acima.
 _LOTE = 400
+
+_SQL_TODOS_OS_NOS = (
+    "SELECT nodes.id, nodes.name, nodes.qualified_name, nodes.kind,"
+    "       files.path, nodes.start_line"
+    "  FROM nodes"
+    "  JOIN files ON files.id = nodes.file_id"
+)
+
+_SQL_ARESTAS = (
+    "SELECT DISTINCT edges.source_id, edges.target_id"
+    "  FROM edges"
+    " WHERE edges.kind = ?"
+)
 
 _SQL_NO = (
     "SELECT nodes.id, nodes.name, nodes.qualified_name, nodes.kind,"
@@ -539,6 +564,283 @@ def _conta(conexao: sqlite3.Connection, tabela: str) -> int:
         return 0
 
 
+@dataclass(frozen=True)
+class Comunidade:
+    """Um grupo de nos que se chamam mais entre si do que com o resto.
+
+    `nos` vem ordenado por `_chave_de_ordem`, e `rotulo` e o `node_id` do
+    menor membro -- identidade derivada do conteudo, e nao um contador, para
+    que duas execucoes sobre o mesmo indice deem o mesmo rotulo.
+    """
+
+    rotulo: str
+    nos: tuple[NoDoGrafo, ...]
+
+    @property
+    def tamanho(self) -> int:
+        return len(self.nos)
+
+
+@dataclass(frozen=True)
+class Particao:
+    """O resultado de `comunidades()`, com o metodo DECLARADO ao lado.
+
+    `algoritmo`, `iteracoes` e `convergiu` saem no resultado e nao em log
+    porque a particao NAO E UNICA: propagacao de rotulo nao tem resposta
+    canonica, e duas ordens de visita dao duas particoes igualmente validas.
+    O que este modulo garante e REPRODUTIBILIDADE -- a ordem e fixa --, nao
+    unicidade, e publicar a particao sem o metodo convidaria a segunda
+    leitura.
+
+    `convergiu: False` significa que o teto de iteracoes foi atingido com
+    rotulos ainda mudando. O resultado continua utilizavel e continua
+    reproduzivel; o que ele nao e, nesse caso, e estavel sob mais iteracoes.
+    """
+
+    comunidades: tuple[Comunidade, ...]
+    algoritmo: str
+    iteracoes: int
+    convergiu: bool
+
+    @property
+    def total(self) -> int:
+        return len(self.comunidades)
+
+
+def comunidades(
+    banco: str | os.PathLike[str],
+    iteracoes_maximas: int = _ITERACOES_DE_COMUNIDADE,
+    kind: str = _CALLS,
+) -> Particao:
+    """Agrupa os nos por propagacao de rotulo, de forma DETERMINISTICA.
+
+    ## Por que este algoritmo, e nao uma dependencia
+
+    O wheel minimo tem DUAS dependencias -- `PyYAML` e `jsonschema` --, e
+    detectar comunidade com `networkx` acrescentaria uma terceira para uma
+    capacidade que nao julga nada. Propagacao de rotulo cabe em quarenta
+    linhas, nao tem dependencia, e e a preferencia que a fase declarou:
+    algoritmo local e deterministico antes de biblioteca.
+
+    ## O que 'deterministico' significa aqui, exatamente
+
+    Propagacao de rotulo canonica visita os nos em ordem ALEATORIA, e por
+    isso devolve particoes diferentes a cada execucao. Aqui:
+
+    - os nos sao visitados em `_chave_de_ordem`, que e ordem total;
+    - o empate entre rotulos igualmente frequentes vence o MENOR rotulo;
+    - o rotulo inicial de cada no e o proprio `node_id`.
+
+    Com os tres, duas execucoes sobre o mesmo indice dao a MESMA particao.
+
+    **Reprodutibilidade nao e unicidade.** Nao ha particao canonica de um
+    grafo: outra ordem de visita daria outro agrupamento igualmente valido, e
+    por isso `Particao.algoritmo` sai no resultado. Quem publicar 'as
+    comunidades deste codigo' sem o metodo ao lado esta afirmando mais do que
+    foi medido.
+
+    ## O que uma comunidade NAO e
+
+    Nao e modulo, nao e camada, e nao e sugestao de refatoracao. E um grupo
+    de simbolos que se chamam mais entre si do que com o resto, medido sobre
+    as arestas que a resolucao CONSEGUIU resolver -- e com taxa de resolucao
+    de 36% neste repositorio, o que ficou de fora e maior que o que entrou.
+    Ler `estatisticas().taxa_de_resolucao` antes de concluir qualquer coisa.
+    """
+    conexao = abrir(banco)
+    try:
+        nos = _todos_os_nos(conexao)
+        vizinhanca = _vizinhanca_nao_dirigida(conexao, kind)
+    finally:
+        conexao.close()
+
+    if not nos:
+        return Particao(
+            comunidades=(),
+            algoritmo=_ALGORITMO_DE_COMUNIDADE,
+            iteracoes=0,
+            # Grafo vazio CONVERGIU: nao ha rotulo que possa mudar. `False`
+            # aqui se leria como 'o teto foi atingido', que e outra coisa.
+            convergiu=True,
+        )
+
+    ordem = [no.node_id for no in sorted(nos.values(), key=_chave_de_ordem)]
+    rotulo = {node_id: node_id for node_id in ordem}
+
+    iteracoes = 0
+    convergiu = False
+    for _ in range(max(0, iteracoes_maximas)):
+        iteracoes += 1
+        mudou = False
+        for node_id in ordem:
+            vizinhos = vizinhanca.get(node_id)
+            if not vizinhos:
+                continue
+            escolhido = _rotulo_mais_frequente(
+                [rotulo[v] for v in vizinhos if v in rotulo]
+            )
+            if escolhido is not None and escolhido != rotulo[node_id]:
+                rotulo[node_id] = escolhido
+                mudou = True
+        if not mudou:
+            convergiu = True
+            break
+
+    grupos: dict[str, list[NoDoGrafo]] = {}
+    for node_id, marca in rotulo.items():
+        grupos.setdefault(marca, []).append(nos[node_id])
+
+    saida = []
+    for membros in grupos.values():
+        ordenados = tuple(sorted(membros, key=_chave_de_ordem))
+        # O rotulo final e o MENOR `node_id` do grupo, e nao a marca que a
+        # propagacao deixou: a marca depende de por onde a propagacao passou,
+        # e o menor membro depende so do conteudo do grupo.
+        saida.append(
+            Comunidade(
+                rotulo=min(no.node_id for no in ordenados),
+                nos=ordenados,
+            )
+        )
+    saida.sort(key=lambda c: (-c.tamanho, c.rotulo))
+
+    return Particao(
+        comunidades=tuple(saida),
+        algoritmo=_ALGORITMO_DE_COMUNIDADE,
+        iteracoes=iteracoes,
+        convergiu=convergiu,
+    )
+
+
+def _rotulo_mais_frequente(rotulos: list[str]) -> str | None:
+    """O rotulo mais comum entre os vizinhos; empate vence o MENOR.
+
+    O desempate por menor rotulo e o que torna a propagacao reproduzivel:
+    sem ele, dois rotulos igualmente frequentes fariam a escolha depender da
+    ordem de insercao no dicionario, que muda com a ordem de leitura do
+    banco.
+    """
+    if not rotulos:
+        return None
+    contagem: dict[str, int] = {}
+    for marca in rotulos:
+        contagem[marca] = contagem.get(marca, 0) + 1
+    melhor = max(contagem.values())
+    return min(marca for marca, n in contagem.items() if n == melhor)
+
+
+@dataclass(frozen=True)
+class NoComGrau:
+    """Um no e quantas arestas resolvidas o tocam.
+
+    O nome NAO e `god_node`, e a escolha e deliberada: 'no-deus' e veredito, e
+    grau e medida. Um simbolo de grau alto pode ser um utilitario bem
+    fatorado, e chama-lo de defeito por causa do grau seria julgamento sem
+    fonte -- o mesmo que o veto V-BR-3 recusa para fan-in.
+    """
+
+    no: NoDoGrafo
+    grau_de_entrada: int
+    grau_de_saida: int
+
+    @property
+    def grau(self) -> int:
+        return self.grau_de_entrada + self.grau_de_saida
+
+
+def nos_por_grau(
+    banco: str | os.PathLike[str],
+    limite: int = _LIMITE_DE_GRAU,
+    kind: str = _CALLS,
+) -> list[NoComGrau]:
+    """Os `limite` nos de maior grau, do maior para o menor.
+
+    ## O que este numero NAO responde
+
+    Grau alto num grafo de CHAMADAS nao e causa de gargalo Spark, e nao e
+    defeito. Um `_normalizar` chamado de trinta lugares tem grau trinta
+    porque foi bem fatorado. Publicar 'estes sao os nos-deus' ao lado de
+    metricas de execucao convidaria a leitura de que eles CAUSAM algo.
+
+    O que ele responde e estreito e util: mudar um destes nos toca muita
+    coisa, e a revisao de uma mudanca neles custa mais. Para 'o que quebra se
+    eu mudar isto', a resposta com nome e `impacto`.
+
+    ## O ponto cego
+
+    Grau conta aresta RESOLVIDA. Uma funcao chamada so por despacho dinamico
+    tem grau de entrada zero aqui e nao e folha nenhuma na execucao. Ver
+    `estatisticas().taxa_de_resolucao` antes de ler a lista.
+    """
+    if limite <= 0:
+        return []
+
+    conexao = abrir(banco)
+    try:
+        nos = _todos_os_nos(conexao)
+        entrada: dict[str, int] = {}
+        saida: dict[str, int] = {}
+        for origem, destino in _arestas(conexao, kind):
+            saida[origem] = saida.get(origem, 0) + 1
+            entrada[destino] = entrada.get(destino, 0) + 1
+    finally:
+        conexao.close()
+
+    medidos = [
+        NoComGrau(
+            no=no,
+            grau_de_entrada=entrada.get(node_id, 0),
+            grau_de_saida=saida.get(node_id, 0),
+        )
+        for node_id, no in nos.items()
+    ]
+    # Grau decrescente, e `_chave_de_ordem` desempata -- sem o segundo
+    # criterio, dois nos de mesmo grau sairiam na ordem que o SQLite achar
+    # mais barata, e um golden sobre esta lista falharia de forma
+    # intermitente.
+    medidos.sort(key=lambda m: (-m.grau, _chave_de_ordem(m.no)))
+    return medidos[:limite]
+
+
+def _todos_os_nos(conexao: sqlite3.Connection) -> dict[str, NoDoGrafo]:
+    """Todos os nos do indice, por id. `depth` sai 0: nao ha ancora aqui."""
+    linhas = conexao.execute(_SQL_TODOS_OS_NOS).fetchall()
+    return {linha[0]: _do_linha(linha, 0) for linha in linhas}
+
+
+def _arestas(conexao: sqlite3.Connection, kind: str) -> list[tuple[str, str]]:
+    """Os pares `(origem, destino)` distintos.
+
+    `DISTINCT` pela mesma razao de `_SQL_VIZINHOS`: `f()` chamada tres vezes
+    na mesma funcao sao TRES arestas, e tres arestas nao sao grau tres.
+    """
+    return [
+        (str(a), str(b))
+        for a, b in conexao.execute(_SQL_ARESTAS, (kind,)).fetchall()
+    ]
+
+
+def _vizinhanca_nao_dirigida(
+    conexao: sqlite3.Connection, kind: str
+) -> dict[str, set[str]]:
+    """Adjacencia SEM direcao, que e a forma que a propagacao de rotulo pede.
+
+    Comunidade nao tem sentido: `a` chamar `b` os poe no mesmo grupo tanto
+    quanto `b` chamar `a`. Manter a direcao faria a propagacao so descer, e
+    todo no sem chamador viraria comunidade de um.
+    """
+    adjacencia: dict[str, set[str]] = {}
+    for origem, destino in _arestas(conexao, kind):
+        if origem == destino:
+            # Recursao direta e aresta legitima e NAO informa comunidade: um
+            # no e sempre do proprio grupo, e conta-la daria peso extra ao
+            # rotulo que o no ja tem.
+            continue
+        adjacencia.setdefault(origem, set()).add(destino)
+        adjacencia.setdefault(destino, set()).add(origem)
+    return adjacencia
+
+
 def _um_salto(
     banco: str | os.PathLike[str],
     node_id: str,
@@ -629,11 +931,16 @@ def _do_linha(linha: tuple, profundidade: int) -> NoDoGrafo:
 
 __all__ = [
     "Caminho",
+    "Comunidade",
     "Estatisticas",
+    "NoComGrau",
     "NoDoGrafo",
+    "Particao",
     "caminho",
     "chamadores",
     "chamados",
+    "comunidades",
     "estatisticas",
     "impacto",
+    "nos_por_grau",
 ]
