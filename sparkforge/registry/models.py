@@ -78,6 +78,18 @@ class ModelPolicy:
 
 @dataclass(frozen=True)
 class AgentManifest:
+    """Contrato completo de um agente.
+
+    Campos obrigatórios: id, name, version, description, purpose, role.
+    Campos de contrato agêntico (FASE C da evolução): responsibilities,
+    non_responsibilities, allowed_actions, forbidden_actions, inputs,
+    outputs, evidence_requirements, confidence_policy, escalation_policy,
+    time_budget, compatible_runtimes, evaluation_profile.
+
+    Estes campos são opcionais (default vazio) para não quebrar instâncias
+    existentes. Agents que participam de debate/equipe devem preenchê-los.
+    """
+
     id: str
     name: str
     version: str
@@ -105,6 +117,19 @@ class AgentManifest:
             PlatformTarget.GENERIC,
         ]
     )
+    # --- Contrato agêntico (FASE C) ---
+    responsibilities: list[str] = field(default_factory=list)
+    non_responsibilities: list[str] = field(default_factory=list)
+    allowed_actions: list[str] = field(default_factory=list)
+    forbidden_actions: list[str] = field(default_factory=list)
+    inputs: list[str] = field(default_factory=list)
+    outputs: list[str] = field(default_factory=list)
+    evidence_requirements: str = ""
+    confidence_policy: str = ""
+    escalation_policy: str = ""
+    time_budget: str | None = None
+    compatible_runtimes: list[str] = field(default_factory=list)
+    evaluation_profile: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

@@ -343,3 +343,72 @@ rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
 
 Overall average: **60-90% token reduction** on common development operations.
 <!-- /rtk-instructions -->
+
+## Skills AWS oficiais complementares
+
+O SparkForge inclui **11 skills de procedimento operacional AWS** adaptadas do
+`aws/agent-toolkit-for-aws` (commit `10b28af8`, 2026-09-02). São **não-despacháveis**
+— podem mutar infraestrutura AWS ao vivo, e a fronteira `## Não faz` de cada uma
+exige confirmação explícita do operador por comando de escrita.
+
+| Skill | Quando usar |
+|---|---|
+| `provision-s3-tables-table` | Criar table bucket, namespace e tabela Iceberg no S3 Tables |
+| `harden-s3-bucket` | Hardening de bucket S3 (encryption, policy, versioning, BPA) |
+| `aws-storage` | Selecionar entre S3, EFS, FSx, EBS; custo e performance de storage |
+| `aws-database` | Rotear para o database AWS correto (Aurora, RDS, DynamoDB, etc) |
+| `aws-serverless` | Lambda, API Gateway, Step Functions, EventBridge, SAM/CDK |
+| `aws-iam` | Policies, roles, trust policies, STS, Organizations, SAML/MFA |
+| `aws-observability` | CloudWatch, X-Ray, CloudTrail, ADOT, Application Signals |
+| `aws-billing-and-cost-management` | CUR, Savings Plans, Reserved Instances, Compute Optimizer |
+| `aws-messaging-and-streaming` | SQS, SNS, EventBridge, Kinesis, Firehose, Flink, MSK |
+| `aws-security` | Security Hub, GuardDuty, Inspector, Macie, Detective |
+| `aws-sdk-python-usage` | Padrões de boto3/botocore (clients, sessions, paginators) |
+
+**Estas skills são complementares às skills SparkForge determinísticas.** Use
+as skills `analyze-*`, `benchmark`, `tune`, `funcval` para diagnóstico de job
+PySpark. Use as skills AWS acima quando a pergunta for sobre o **serviço AWS**
+em si — qual storage escolher, como configurar IAM, como ler CUR.
+
+As 15 skills AWS restantes (Bedrock, SageMaker, Cognito, CDK, CloudFormation,
+EC2, EKS, CodePipeline, networking, JS/Swift SDK, credenciais, prompts de
+startup, AWS Blocks, launch-with-aws) estão fora do domínio SparkForge e
+permanecem no nível usuário (`~/.agents/skills/`).
+
+## Agentic Engineering Runtime
+
+O SparkForge agora tem uma camada agêntica em `sparkforge/agentic/` com 13
+módulos: `models` (Claim, Evidence, Hypothesis, Experiment, Decision, Unknown,
+Contradiction, Objection, Rebuttal), `runtime` (AgentRuntime protocol),
+`evidence` (Source Authority T1-T6), `blackboard` (Shared Blackboard JSONL),
+`debate` (Debate Engine com protocolo formal), `arbitration` (arbitragem
+independente + false consensus detection), `experiment` (Experiment Designer),
+`decision` (Decision Engine + ADR automático), `memory` (Decision Memory
+跨-case), `budget` (Unified token economics), `security` (threat model +
+guardrails), `autonomy` (L0-L5), `graph` (Agent Execution Graph).
+
+### CLI commands agênticos
+
+```bash
+sparkforge agents list           # lista agentes
+sparkforge agents inspect <id>   # inspeciona agente
+sparkforge blackboard summary    # resumo do blackboard
+sparkforge blackboard list --type <tipo>  # lista entidades
+sparkforge decisions list        # lista decisões
+sparkforge decisions explain <id>  # explica decisão
+sparkforge budget show           # budget do case
+sparkforge autonomy show --level L3  # perfil de autonomia
+```
+
+### Evidence Authority Tiers
+
+T1 (docs oficial) > T2 (source/changelog) > T3 (benchmark reproduzível) >
+T4 (autoridade reconhecida) >> T5 (LLM) > T6 (conjectura). T5 e T6 **nunca**
+são suficientes sozinhos para confirmar uma claim de alta confiança.
+
+### Autonomy Levels
+
+L0 deterministic → L1 specialist → L2 cooperative → L3 debate → L4 experimental
+→ L5 autonomous engineering. L5 não é permitido para high-risk sem guardrails.
+
+Spec: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`

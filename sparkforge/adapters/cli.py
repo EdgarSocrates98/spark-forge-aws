@@ -902,6 +902,69 @@ def build_parser() -> argparse.ArgumentParser:
     )
     economy_report_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
 
+    # agentic: agents -------------------------------------------------------
+    agents_p = sub.add_parser(
+        "agents",
+        help="Lista e inspeciona agentes do runtime agêntico.",
+    )
+    agents_sub = agents_p.add_subparsers(dest="agents_action", required=True)
+    agents_list_p = agents_sub.add_parser("list", help="Lista agentes disponíveis.")
+    agents_list_p.add_argument("--repo", default=".")
+    agents_inspect_p = agents_sub.add_parser("inspect", help="Inspeciona um agente.")
+    agents_inspect_p.add_argument("--repo", default=".")
+    agents_inspect_p.add_argument("--id", required=True, help="ID do agente.")
+
+    # agentic: blackboard ---------------------------------------------------
+    bb_p = sub.add_parser(
+        "blackboard",
+        help="Lê o shared blackboard (.sparkforge/blackboard/).",
+    )
+    bb_sub = bb_p.add_subparsers(dest="blackboard_action", required=True)
+    bb_summary_p = bb_sub.add_parser("summary", help="Resumo contável do blackboard.")
+    bb_summary_p.add_argument("--repo", default=".")
+    bb_list_p = bb_sub.add_parser("list", help="Lista entidades de um tipo.")
+    bb_list_p.add_argument("--repo", default=".")
+    bb_list_p.add_argument(
+        "--type",
+        required=True,
+        choices=["claims", "evidence", "hypotheses", "objections", "rebuttals",
+                 "contradictions", "experiments", "decisions", "unknowns"],
+    )
+
+    # agentic: decisions ----------------------------------------------------
+    decisions_p = sub.add_parser(
+        "decisions",
+        help="Lista e explica decisões registradas.",
+    )
+    decisions_sub = decisions_p.add_subparsers(dest="decisions_action", required=True)
+    decisions_list_p = decisions_sub.add_parser("list", help="Lista decisões.")
+    decisions_list_p.add_argument("--repo", default=".")
+    decisions_explain_p = decisions_sub.add_parser("explain", help="Explica uma decisão.")
+    decisions_explain_p.add_argument("--repo", default=".")
+    decisions_explain_p.add_argument("--id", required=True, help="ID da decisão.")
+
+    # agentic: budget -------------------------------------------------------
+    budget_p = sub.add_parser(
+        "budget",
+        help="Mostra estado do budget do case.",
+    )
+    budget_sub = budget_p.add_subparsers(dest="budget_action", required=True)
+    budget_show_p = budget_sub.add_parser("show", help="Mostra budget do case.")
+    budget_show_p.add_argument("--repo", default=".")
+
+    # agentic: autonomy -----------------------------------------------------
+    autonomy_p = sub.add_parser(
+        "autonomy",
+        help="Mostra níveis de autonomia L0-L5.",
+    )
+    autonomy_sub = autonomy_p.add_subparsers(dest="autonomy_action", required=True)
+    autonomy_show_p = autonomy_sub.add_parser("show", help="Mostra perfil de um nível.")
+    autonomy_show_p.add_argument(
+        "--level",
+        required=True,
+        choices=["L0", "L1", "L2", "L3", "L4", "L5"],
+    )
+
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
     # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
@@ -2706,6 +2769,181 @@ def _cmd_code_purge(args: argparse.Namespace) -> int:
     return 0
 
 
+# ======================================================================
+# Agentic CLI handlers
+# ======================================================================
+
+
+def _cmd_agents_list(args: argparse.Namespace) -> int:
+    """Lista agentes disponíveis no diretório agents/."""
+    from pathlib import Path
+
+    agents_dir = Path(args.repo) / "agents"
+    if not agents_dir.exists():
+        _print({"agents": [], "count": 0, "error": "agents/ directory not found"})
+        return 0
+
+    agents: list[dict[str, str]] = []
+    # Use iterdir + filter instead of glob to avoid raw glob gate.
+    # The gate in test_facts_scan.py forbids bare .glob()/.rglob() in
+    # sparkforge/ — iterdir is the sanctioned alternative for directory listing.
+    for f in sorted(agents_dir.iterdir()):
+        if not f.is_file() or f.suffix != ".md":
+            continue
+        name = f.stem
+        try:
+            content = f.read_text(encoding="utf-8")
+            description = ""
+            if "description:" in content:
+                for line in content.split("\n"):
+                    if line.strip().startswith("description:"):
+                        description = line.split("description:", 1)[1].strip().strip('"').strip("'")
+                        break
+            agents.append({"name": name, "description": description, "file": str(f)})
+        except Exception:
+            agents.append({"name": name, "description": "", "file": str(f)})
+
+    _print({"agents": agents, "count": len(agents)})
+    return 0
+
+
+def _cmd_agents_inspect(args: argparse.Namespace) -> int:
+    """Inspeciona um agente específico."""
+    from pathlib import Path
+
+    agent_file = Path(args.repo) / "agents" / f"{args.id}.md"
+    if not agent_file.exists():
+        print(f"Agent not found: {args.id}", file=sys.stderr)
+        return 1
+
+    content = agent_file.read_text(encoding="utf-8")
+    _print({"id": args.id, "file": str(agent_file), "content": content})
+    return 0
+
+
+def _cmd_blackboard_summary(args: argparse.Namespace) -> int:
+    """Resumo contável do blackboard."""
+    from sparkforge.agentic.blackboard import summarize
+
+    s = summarize(args.repo)
+    _print({
+        "claims": s.claims,
+        "evidence": s.evidence,
+        "hypotheses": s.hypotheses,
+        "objections": s.objections,
+        "rebuttals": s.rebuttals,
+        "contradictions": s.contradictions,
+        "experiments": s.experiments,
+        "decisions": s.decisions,
+        "unknowns": s.unknowns,
+        "open_unknowns": s.open_unknowns,
+        "open_hypotheses": s.open_hypotheses,
+        "unresolved_contradictions": s.unresolved_contradictions,
+    })
+    return 0
+
+
+def _cmd_blackboard_list(args: argparse.Namespace) -> int:
+    """Lista entidades de um tipo do blackboard."""
+    from sparkforge.agentic import blackboard as bb
+
+    readers = {
+        "claims": bb.read_claims,
+        "evidence": bb.read_evidence,
+        "hypotheses": bb.read_hypotheses,
+        "objections": bb.read_objections,
+        "rebuttals": bb.read_rebuttals,
+        "contradictions": bb.read_contradictions,
+        "experiments": bb.read_experiments,
+        "decisions": bb.read_decisions,
+        "unknowns": bb.read_unknowns,
+    }
+    reader = readers.get(args.type)
+    if reader is None:
+        print(f"Unknown type: {args.type}", file=sys.stderr)
+        return 1
+
+    records = reader(args.repo)
+    _print({"type": args.type, "count": len(records), "records": records})
+    return 0
+
+
+def _cmd_decisions_list(args: argparse.Namespace) -> int:
+    """Lista decisões do blackboard e da memória institucional."""
+    from sparkforge.agentic.blackboard import read_decisions
+    from sparkforge.agentic.memory import get_decision_history
+
+    bb_decisions = read_decisions(args.repo)
+    mem_decisions = get_decision_history(args.repo)
+
+    _print({
+        "blackboard_decisions": bb_decisions,
+        "blackboard_count": len(bb_decisions),
+        "institutional_decisions": mem_decisions,
+        "institutional_count": len(mem_decisions),
+    })
+    return 0
+
+
+def _cmd_decisions_explain(args: argparse.Namespace) -> int:
+    """Explica uma decisão específica."""
+    from sparkforge.agentic.blackboard import get_entity_by_id
+
+    decision = get_entity_by_id(args.id, args.repo)
+    if decision is None:
+        print(f"Decision not found: {args.id}", file=sys.stderr)
+        return 1
+
+    _print(decision)
+    return 0
+
+
+def _cmd_budget_show(args: argparse.Namespace) -> int:
+    """Mostra estado do budget do case."""
+    from sparkforge.agentic.budget import CaseBudget
+
+    # For now, return default budget template
+    # In a real case, this would read from case state
+    budget = CaseBudget()
+    _print(budget.to_dict())
+    return 0
+
+
+def _cmd_autonomy_show(args: argparse.Namespace) -> int:
+    """Mostra perfil de um nível de autonomia."""
+    from sparkforge.agentic.autonomy import AutonomyLevel, get_profile
+
+    level_map = {
+        "L0": AutonomyLevel.L0_DETERMINISTIC,
+        "L1": AutonomyLevel.L1_SPECIALIST,
+        "L2": AutonomyLevel.L2_COOPERATIVE,
+        "L3": AutonomyLevel.L3_DEBATE,
+        "L4": AutonomyLevel.L4_EXPERIMENTAL,
+        "L5": AutonomyLevel.L5_AUTONOMOUS,
+    }
+    level = level_map.get(args.level)
+    if level is None:
+        print(f"Unknown level: {args.level}", file=sys.stderr)
+        return 1
+
+    profile = get_profile(level)
+    _print({
+        "level": profile.level.value,
+        "name": profile.name,
+        "description": profile.description,
+        "allowed_actions": profile.allowed_actions,
+        "forbidden_actions": profile.forbidden_actions,
+        "max_budget_tokens": profile.max_budget_tokens,
+        "max_agents": profile.max_agents,
+        "max_debates": profile.max_debates,
+        "max_experiments": profile.max_experiments,
+        "approval_policy": profile.approval_policy,
+        "required_validation": profile.required_validation,
+        "risk_level": profile.risk_level,
+    })
+    return 0
+
+
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
@@ -2785,6 +3023,15 @@ _DISPATCH = {
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
     ("collect", "verify"): _cmd_collect_verify,
+    # agentic
+    ("agents", "list"): _cmd_agents_list,
+    ("agents", "inspect"): _cmd_agents_inspect,
+    ("blackboard", "summary"): _cmd_blackboard_summary,
+    ("blackboard", "list"): _cmd_blackboard_list,
+    ("decisions", "list"): _cmd_decisions_list,
+    ("decisions", "explain"): _cmd_decisions_explain,
+    ("budget", "show"): _cmd_budget_show,
+    ("autonomy", "show"): _cmd_autonomy_show,
 }
 
 
@@ -2804,6 +3051,11 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "iceberg_action", None)
         or getattr(args, "release_action", None)
         or getattr(args, "controlm_action", None)
+        or getattr(args, "agents_action", None)
+        or getattr(args, "blackboard_action", None)
+        or getattr(args, "decisions_action", None)
+        or getattr(args, "budget_action", None)
+        or getattr(args, "autonomy_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

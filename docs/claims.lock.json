@@ -191,23 +191,23 @@
       "type": "number"
     },
     {
-      "context": "| **Skills** | 46 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
+      "context": "| **Skills** | 57 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-053",
       "line": 53,
-      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
+      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido ao trazer duas skills de procedimento operacional AWS (2026-09-03): \\provision-s3-tables-table\\ e \\harden-s3-bucket\\, adaptadas de aws/agent-toolkit-for-aws, levaram as skills de 46 para 48. Numero relido pela propria prova. Remedido ao trazer nove skills oficiais AWS adaptadas (2026-09-03): aws-storage, aws-database, aws-serverless, aws-iam, aws-observability, aws-billing-and-cost-management, aws-messaging-and-streaming, aws-security, aws-sdk-python-usage, adaptadas de aws/agent-toolkit-for-aws commit 10b28af8, levaram as skills de 48 para 57. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('skills').glob('*/SKILL.md'))), 'skills')\"",
         "expect": {
           "kind": "number",
           "pattern": "(\\d+) skills",
-          "value": 46
+          "value": 57
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "46",
+      "text": "57",
       "type": "number"
     },
     {
@@ -4579,19 +4579,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-324",
       "line": 83,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic: ALLOWED_CLI_ONLY ganhou 8 verbos agentic.",
       "proof": {
         "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"tests/test_capability_parity.py\").read_text(encoding=\"utf-8\").splitlines()))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 819
+          "value": 856
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "819",
+      "text": "856",
       "type": "number"
     },
     {
@@ -4599,19 +4599,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-325",
       "line": 83,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica. Atualizado na fase de skills AWS.",
       "proof": {
         "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"tests/test_agents_parity.py\").read_text(encoding=\"utf-8\").splitlines()))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 539
+          "value": 545
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "539",
+      "text": "545",
       "type": "number"
     },
     {
@@ -4639,19 +4639,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-327",
       "line": 83,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic + skills AWS.",
       "proof": {
         "cmd": "python -c 'import pathlib; files=[\"tests/test_capability_parity.py\",\"tests/test_agents_parity.py\",\"tests/test_platform_divergence.py\"]; print(sum(len(pathlib.Path(f).read_text(encoding=\"utf-8\").splitlines()) for f in files))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 1585
+          "value": 1628
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1585",
+      "text": "1628",
       "type": "number"
     },
     {

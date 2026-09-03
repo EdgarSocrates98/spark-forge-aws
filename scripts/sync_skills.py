@@ -325,6 +325,62 @@ NON_DISPATCHABLE_SKILLS = {
     "optimize-athena-queries": "Especialista de dominio; despacho por coordenador",
     "design-lambda-serverless": "Especialista de dominio; despacho por coordenador",
     "design-step-functions-orchestration": "Especialista de dominio; despacho por coordenador",
+    # As duas que mutam infraestrutura AWS ao vivo: procedimento operacional,
+    # nao gatilho do motor. Rodam `aws s3tables create-*` e `aws s3api put-*`,
+    # e a fronteira `## Nao faz` exige confirmacao explicita do operador para
+    # cada comando de escrita -- inalcancavel dentro de subagente (V-DV-10).
+    "provision-s3-tables-table": (
+        "cria table bucket, namespace, tabela e catalog integration S3 Tables "
+        "via `aws s3tables`/`aws glue` ao vivo; a fronteira `## Nao faz` exige "
+        "confirmacao do operador por comando de escrita, inalcancavel em subagente"
+    ),
+    "harden-s3-bucket": (
+        "executa `put-bucket-policy`, `put-bucket-encryption`, `create-detector` "
+        "ao vivo; a fronteira `## Nao faz` exige confirmacao do operador por "
+        "comando de escrita, inalcancavel em subagente"
+    ),
+    # As nove skills oficiais AWS adaptadas (aws/agent-toolkit-for-aws, commit
+    # 10b28af8): procedimento operacional AWS, nao gatilho do motor SparkForge.
+    # Sao referencia de servico (storage, database, serverless, IAM, observability,
+    # billing, messaging, security, SDK Python) e podem mutar infra ao vivo.
+    # A fronteira `## Nao faz` de cada uma exige confirmacao do operador por
+    # comando de escrita -- inalcancavel em subagente (V-DV-10).
+    "aws-storage": (
+        "referencia de storage AWS (S3, EFS, FSx, EBS); pode mutar configuracao "
+        "de bucket e lifecycle ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-database": (
+        "roteia para skill de database AWS (Aurora, RDS, DynamoDB, etc); pode "
+        "mutar configuracao de instancia ao vivo, fronteira exige confirmacao"
+    ),
+    "aws-serverless": (
+        "procedimento de Lambda, Step Functions, EventBridge; pode mutar funcao "
+        "e state machine ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-iam": (
+        "referencia de IAM (policies, roles, trust); pode mutar policy e role "
+        "ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-observability": (
+        "procedimento de CloudWatch, X-Ray, CloudTrail; pode mutar alarme, "
+        "dashboard e trail ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-billing-and-cost-management": (
+        "analise de custo AWS (CUR, Savings Plans); pode mutar budget e alerta "
+        "ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-messaging-and-streaming": (
+        "referencia de SQS, SNS, EventBridge, Kinesis, MSK; pode mutar fila, "
+        "topico e stream ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-security": (
+        "procedimento de Security Hub, GuardDuty, Inspector; pode mutar finding "
+        "e detector ao vivo, fronteira exige confirmacao do operador"
+    ),
+    "aws-sdk-python-usage": (
+        "padroes de boto3/botocore; e referencia de uso de SDK, nao muta infra "
+        "por si, mas pode executar chamadas AWS se o operador pedir"
+    ),
 }
 
 SKILL_DISPATCH_REASON = {**DISPATCHABLE_SKILLS, **NON_DISPATCHABLE_SKILLS}

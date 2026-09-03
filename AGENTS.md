@@ -649,3 +649,116 @@ Subagents: intake-packager, evidence-extractor, hypothesis-generator, experiment
 Tools: sparkforge_offline_knowledge_verify, sparkforge_offline_knowledge_search, sparkforge_context_pack, sparkforge_schema_compare, sparkforge_lineage_extract, sparkforge_eval_golden_case, sparkforge_cost_estimate.
 Teams: evidence-quality, governance-security, streaming-reliability, finops-data, agent-quality.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
+
+## Skills AWS oficiais complementares
+
+Onze skills de procedimento operacional AWS vivem no repositório como
+referência de serviço, adaptadas do `aws/agent-toolkit-for-aws` (commit
+`10b28af8`, 2026-09-02). São **não-despacháveis** — podem mutar infraestrutura
+AWS ao vivo, e a fronteira `## Não faz` de cada uma exige confirmação explícita
+do operador por comando de escrita, inalcansável em subagente (V-DV-10).
+
+| Skill | Domínio | Cross-ref SparkForge |
+|---|---|---|
+| `provision-s3-tables-table` | S3 Tables (Iceberg gerenciado) | `design-s3-data-lake`, `optimize-iceberg-table` |
+| `harden-s3-bucket` | Hardening de bucket S3 | `review-terraform-data-platform` |
+| `aws-storage` | S3, EFS, FSx, EBS (seleção, custo, performance) | `design-s3-data-lake`, `provision-s3-tables-table`, `harden-s3-bucket`, `optimize-parquet-layout` |
+| `aws-database` | Aurora, RDS, DynamoDB, ElastiCache, DocumentDB, Keyspaces, Timestream, Neptune | `design-dynamodb-model`, `design-neptune-graph` |
+| `aws-serverless` | Lambda, API Gateway, Step Functions, EventBridge, SAM/CDK | `design-lambda-serverless`, `design-step-functions-orchestration` |
+| `aws-iam` | Policies, roles, trust, STS, Organizations, SAML/MFA | `review-terraform-data-platform`, `harden-s3-bucket` |
+| `aws-observability` | CloudWatch, X-Ray, CloudTrail, ADOT, Application Signals | `analyze-spark-ui`, `analyze-analytics` |
+| `aws-billing-and-cost-management` | CUR, Savings Plans, Reserved Instances, Compute Optimizer, Free Tier | `benchmark-pyspark-job`, `finops` (DPU-seconds) |
+| `aws-messaging-and-streaming` | SQS, SNS, EventBridge, Amazon MQ, Kinesis, Firehose, Flink, MSK | `design-airflow-pipelines` (orquestração) |
+| `aws-security` | Security Hub, GuardDuty, Inspector, Macie, Detective | `harden-s3-bucket`, `review-terraform-data-platform` |
+| `aws-sdk-python-usage` | boto3/botocore: clients, sessions, credentials, paginators, waiters | coletores SparkForge usam boto3 |
+
+**Quando usar**: quando a pergunta do operador é sobre o **serviço AWS** —
+qual storage escolher, como configurar IAM, como ler CUR — e não sobre
+diagnóstico determinístico de job PySpark. A skill SparkForge correspondente
+diagnostica; a skill AWS complementar descreve o procedimento operacional do
+serviço.
+
+**Quando NÃO usar**: quando a pergunta é sobre gargalo de performance, plano
+físico, Iceberg metadata, event log ou code review de PySpark. Use as skills
+SparkForge determinísticas (`analyze-*`, `benchmark`, `tune`, `funcval`).
+
+**As 15 skills AWS restantes** (Bedrock, SageMaker, Cognito, CDK,
+CloudFormation, EC2, EKS, CodePipeline, Route 53, JS/Swift SDK, credenciais,
+prompts de startup, AWS Blocks, launch-with-aws) **não foram trazidas** porque
+estão fora do domínio SparkForge (PySpark/Glue/EMR/Iceberg/Athena). Elas
+permanecem instaladas no nível usuário (`~/.agents/skills/`) e são descobertas
+pelo Devin CLI sem o repositório declará-las.
+
+## Agentic Engineering Runtime
+
+O SparkForge evoluiu de "repositório de skills" para **Agentic Engineering
+Runtime**: especialistas independentes formam equipes, compartilham evidências,
+desafiam hipóteses, debatem, realizam experimentos, validam soluções, registram
+decisões e executam trabalho de forma auditável, econômica, segura e
+independente do LLM/runtime.
+
+### Pacote `sparkforge/agentic/`
+
+12 módulos com entidades de primeira classe e engines:
+
+| Módulo | Função |
+|---|---|
+| `models.py` | `Claim`, `Evidence`, `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`, `Objection`, `Rebuttal` — dataclasses frozen com id determinístico |
+| `runtime.py` | `AgentRuntime` protocol, `RuntimeCapabilities`, capability negotiation por runtime (Claude/Devin/Copilot/Codex) |
+| `evidence.py` | Source Authority Engine T1-T6: classifica fontes, verifica freshness/scope, agrega força |
+| `blackboard.py` | Shared Blackboard: árvore `.sparkforge/blackboard/*.jsonl` (append-only, dedup) |
+| `debate.py` | Debate Engine: protocolo formal Opening→Claim→Objection→Rebuttal→Verdict, budget finito, deadlock resolution |
+| `arbitration.py` | Arbitration independente + false consensus detection (independence score) |
+| `experiment.py` | Experiment Designer: uma variável, baseline, controls, success/failure criteria, rollback |
+| `decision.py` | Decision Engine + ADR automático (Architecture Decision Record em Markdown) |
+| `memory.py` | Decision Memory跨-case: working/case/institutional, `find_similar_decisions` |
+| `budget.py` | Unified token economics: `AgentBudget`, `CaseBudget`, `DebateBudget`, waste detection |
+| `security.py` | Threat model (12 threat types) + guardrails: input/output/injection/identity/tool auth |
+| `autonomy.py` | L0-L5 autonomy levels: deterministic → specialist → cooperative → debate → experimental → autonomous |
+| `graph.py` | Agent Execution Graph: nós tipados (agent/claim/evidence/debate/decision) + edges tipadas |
+
+### Princípios
+
+- Nenhum agente é confiável apenas por ser especialista.
+- Uma conclusão só é confiável quando sobrevive à evidência, revisão cruzada,
+  contestação adversarial e validação.
+- Unknown nunca vira fact por conveniência — retorna `UNRESOLVED`.
+- Toda decisão é auditável e reversível (ou declara irreversível).
+- Budget é finito e enforced — não aumenta infinitamente.
+- Runtime-independente: Claude, Devin, Copilot, Codex executam o mesmo protocolo.
+
+### Evidence Authority Tiers
+
+| Tier | Fonte | Suficiente sozinho? |
+|---|---|---|
+| T1 | Documentação oficial vigente (Apache Spark, AWS, Iceberg) | Sim |
+| T2 | Código-fonte / release notes / changelog | Sim |
+| T3 | Benchmark reproduzível | Sim |
+| T4 | Autoridade reconhecida (committers, engenheiros) | Sim |
+| T5 | Conhecimento LLM sem citação | **Não** |
+| T6 | Conjectura / opinião | **Não** |
+
+### CLI commands agênticos
+
+```bash
+sparkforge agents list           # lista agentes disponíveis
+sparkforge agents inspect <id>   # inspeciona um agente
+sparkforge blackboard summary    # resumo do blackboard
+sparkforge blackboard list --type <tipo>  # lista entidades
+sparkforge decisions list        # lista decisões
+sparkforge decisions explain <id>  # explica uma decisão
+sparkforge budget show           # mostra budget do case
+sparkforge autonomy show --level L3  # mostra perfil de autonomia
+```
+
+### Status de implementação
+
+- **IMPLEMENTED**: models, runtime, evidence, blackboard, debate, arbitration,
+  experiment, decision, memory, budget, security, autonomy, graph
+- **PARTIALLY IMPLEMENTED**: CLI commands (leitura only, escrita via API Python)
+- **EXPERIMENTAL**: debate execution real (protocolo definido, execução
+  depende do runtime spawn capability)
+- **NOT IMPLEMENTED**: semantic cache (embedding-based), L5 autonomous
+  self-modification, cross-case memory retrieval automático
+
+Spec completa: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
