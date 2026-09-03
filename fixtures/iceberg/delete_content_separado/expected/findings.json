@@ -10,16 +10,18 @@
     "subject": {
       "type": "table",
       "file": "dump.json",
-      "symbol": "analytics.delete_debt_demo"
+      "symbol": "analytics.delete_content_separado"
     },
     "evidence": [
-      "f_8f6981"
+      "f_244a1d"
     ],
     "measured": {
       "delete_file_count": 10,
       "data_file_count": 50,
       "total_bytes": 500000,
-      "content_unresolved": 10
+      "position_delete_count": 4,
+      "equality_delete_count": 3,
+      "content_unresolved": 3
     },
     "threshold": {
       "ratio": 0.1

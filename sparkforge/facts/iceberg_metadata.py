@@ -337,6 +337,17 @@ def _files_summary_fact(
     return fact, data_file_count
 
 
+# `content` na metadata table `.delete_files`, com os codigos que a Table
+# Specification publica. A coluna existe desde a v2 e e a UNICA forma de
+# distinguir position delete de equality delete sem abrir o arquivo Avro.
+#
+# Em v3 o DELETION VECTOR aparece com `content = 1` -- ele SUBSTITUI o
+# position delete, e nao se soma a ele. Contar os dois juntos como
+# "position" e o que a spec sustenta; separa-los exigiria ler o
+# `content_offset`/`content_size_in_bytes` do Puffin, que o dump nao traz.
+_CONTENT_DE_DELETE = {1: "position", 2: "equality"}
+
+
 def _delete_files_summary_fact(
     delete_files: list[Any],
     data_file_count: int | None,
@@ -360,11 +371,35 @@ def _delete_files_summary_fact(
     # quando a verdade e "esta secao nao foi coletada"; omitir a chave faz o
     # `expr` da regra levantar `ExprError` (caminho ausente), que o motor trata
     # como "nao casa" -- silencioso e seguro, nunca um falso positivo.
+    # Censo por `content`. A coluna e OPCIONAL no dump: um coletor que nao a
+    # traga produz `content_unresolved`, e nunca zero -- zero se leria como "nao
+    # ha delete de posicao", quando a verdade e "ninguem perguntou".
+    censo: dict[str, int] = {}
+    sem_content = 0
+    for entry in delete_files:
+        if not isinstance(entry, dict):
+            continue
+        bruto = entry.get("content")
+        if isinstance(bruto, int) and not isinstance(bruto, bool):
+            nome = _CONTENT_DE_DELETE.get(bruto)
+            if nome is None:
+                # Codigo fora do que a spec publica: nomeado, nao somado a
+                # nenhum dos dois. Uma spec futura pode acrescentar codigo, e
+                # empurra-lo para "position" seria adivinhar.
+                censo["content_unknown"] = censo.get("content_unknown", 0) + 1
+            else:
+                censo[f"{nome}_delete_count"] = censo.get(f"{nome}_delete_count", 0) + 1
+        else:
+            sem_content += 1
+
     measures: dict[str, Any] = {"delete_file_count": len(delete_files)}
     if data_file_count is not None:
         measures["data_file_count"] = data_file_count
     if sizes:
         measures["total_bytes"] = sum(sizes)
+    measures.update(censo)
+    if sem_content:
+        measures["content_unresolved"] = sem_content
 
     return Fact(
         kind="iceberg.delete_files_summary",

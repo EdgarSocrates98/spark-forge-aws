@@ -1,0 +1,29 @@
+name: delete_content_separado
+proves: 'O censo por `content` em `.delete_files`, com os TRES estados no mesmo dump.
+
+  Ate 2026-09-02 o extrator contava `delete_file_count` e mais nada: position delete e equality
+  delete entravam no mesmo numero, e um dump sem a coluna `content` era indistinguivel de
+  um em que todos os deletes fossem do mesmo tipo.
+
+  Aqui um terco dos delete files tem `content: 1` (position -- e e onde o DELETION VECTOR
+  de v3 aparece, porque ele SUBSTITUI o position delete e nao se soma a ele), um terco tem
+  `content: 2` (equality), e um terco NAO TEM a coluna: o coletor pode nao traze-la, e ela
+  e opcional no dump.
+
+  Os tres saem separados, e o terceiro como `content_unresolved` -- nunca zero. Zero se leria
+  como "nao ha delete de posicao", quando a verdade e "ninguem perguntou".
+
+  `SF-ICE-002` continua disparando pelo mesmo `delete_file_count`: o censo ACRESCENTA medida,
+  e nao muda a que a regra ja usava. Se o achado sumir, o censo quebrou a regra.
+
+  '
+runtime: {}
+expects_kinds:
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+expects_rules:
+- SF-ICE-002

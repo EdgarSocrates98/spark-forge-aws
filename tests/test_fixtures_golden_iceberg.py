@@ -44,6 +44,10 @@ REQUIRED_FIXTURES = {
     "format_v3_com_propriedade",
     "format_version_diverge_da_propriedade",
     "format_version_ausente_no_dump",
+    # O censo por `content`: os TRES estados no mesmo dump -- position,
+    # equality, e a coluna ausente. Sem ela o eixo nao existia: os dois tipos
+    # entravam no mesmo `delete_file_count`.
+    "delete_content_separado",
 }
 
 

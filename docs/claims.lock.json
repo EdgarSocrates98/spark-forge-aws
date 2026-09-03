@@ -1057,7 +1057,7 @@
       "type": "number"
     },
     {
-      "context": "| `LOCAL_MUTATION` | 12 | 0 |",
+      "context": "| `LOCAL_MUTATION` | 14 | 0 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-633",
       "line": 173,
@@ -1157,7 +1157,7 @@
       "type": "number"
     },
     {
-      "context": "**62** de 67 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
+      "context": "**63** de 67 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-637",
       "line": 182,
@@ -2965,27 +2965,27 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **498** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **500** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega do rollback escalar (2026-09-02): o corpus de *.py cresceu com tests/test_rules_campos_de_lista.py, varrido por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code export` (2026-09-02): `sparkforge_code_export` levou o catalogo de 67 para 68 tools, e o corpus de *.py cresceu com sparkforge/codeintel/export.py e tests/test_codeintel_export.py. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova.",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega do rollback escalar (2026-09-02): o corpus de *.py cresceu com tests/test_rules_campos_de_lista.py, varrido por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code export` (2026-09-02): `sparkforge_code_export` levou o catalogo de 67 para 68 tools, e o corpus de *.py cresceu com sparkforge/codeintel/export.py e tests/test_codeintel_export.py. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido ao escrever ICEBERG-GAP.md (2026-09-02): scripts/count_iceberg_gap.py entrou na arvore.",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 498
+          "value": 500
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "498",
+      "text": "500",
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-651",
       "line": 213,
@@ -3005,7 +3005,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-642",
       "line": 213,
@@ -3025,23 +3025,23 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-643",
       "line": 213,
-      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova.",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova. Remedido ao acrescentar o censo de `content` (2026-09-02).",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 674544
+          "value": 676195
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "670385",
+      "text": "676195",
       "type": "number"
     },
     {
@@ -3065,7 +3065,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8833 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-645",
       "line": 213,
@@ -3185,7 +3185,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-656",
       "line": 215,
@@ -3205,7 +3205,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-652",
       "line": 215,
@@ -3245,7 +3245,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-654",
       "line": 215,
@@ -3265,7 +3265,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 229842 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-655",
       "line": 215,
@@ -3385,7 +3385,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-661",
       "line": 217,
@@ -3405,7 +3405,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-662",
       "line": 217,
@@ -3445,7 +3445,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-664",
       "line": 217,
@@ -3465,7 +3465,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 307817 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-665",
       "line": 217,
@@ -3485,7 +3485,7 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1435300**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1459759**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-737",
       "line": 219,
@@ -3515,13 +3515,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1459759
+          "value": 1461410
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1459759",
+      "text": "1461410",
       "type": "number"
     },
     {
@@ -3545,7 +3545,7 @@
       "type": "number"
     },
     {
-      "context": "a saída do `grep` pelo nome, **20714**; a saída do `grep` pela definição, **420**.",
+      "context": "a saída do `grep` pelo nome, **20821**; a saída do `grep` pela definição, **420**.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-668",
       "line": 220,
@@ -3585,7 +3585,7 @@
       "type": "number"
     },
     {
-      "context": "**Contra o denominador do plano, o índice economiza 1435300 / 2210 = 649.5 vezes.** Contra a saída de um `grep`",
+      "context": "**Contra o denominador do plano, o índice economiza 649.5 vezes.** Contra a saída de um `grep`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-741",
       "line": 229,
@@ -3837,7 +3837,7 @@
       "type": "number"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **66** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-557",
       "line": 305,
@@ -4537,7 +4537,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
@@ -4556,7 +4556,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
@@ -4575,7 +4575,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-324",
       "line": 83,
@@ -4595,7 +4595,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-325",
       "line": 83,
@@ -4615,7 +4615,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-326",
       "line": 83,
@@ -4635,7 +4635,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (272,7 KB) e `_core.py` (224,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (277,1 KB) e `_core.py` (228,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-327",
       "line": 83,
@@ -5592,6 +5592,554 @@
       },
       "state": "PROVADA",
       "text": "6",
+      "type": "number"
+    },
+    {
+      "context": "# ICEBERG-GAP — as 27 camadas da §1, e o que sustenta cada uma",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-742",
+      "line": 1,
+      "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 27
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "27",
+      "type": "number"
+    },
+    {
+      "context": "A §1 do prompt de origem exige raciocinar sobre **27 camadas** de Iceberg em separado, e",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-743",
+      "line": 12,
+      "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 27
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "27",
+      "type": "number"
+    },
+    {
+      "context": "lista as 27. A pergunta que decide o trabalho não é *\"o repositório fala dessas camadas?\"*",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-744",
+      "line": 13,
+      "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 27
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "27",
+      "type": "number"
+    },
+    {
+      "context": "A primeira varredura procurou **o nome da camada** no repositório e concluiu que 15 das 27",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-745",
+      "line": 21,
+      "note": "a contagem ERRADA da primeira varredura, citada como o erro que o mapa corrige",
+      "proof": {
+        "cmd": "git show c73cd8a:docs/superpowers/STATUS.md | grep '15 so em documentacao'",
+        "commit": "c73cd8a",
+        "kind": "historical",
+        "note": "a contagem ERRADA da primeira varredura, registrada no STATUS daquele commit. E o erro que este mapa corrige, nao uma medida de hoje."
+      },
+      "state": "PROVADA",
+      "text": "15",
+      "type": "number"
+    },
+    {
+      "context": "A primeira varredura procurou **o nome da camada** no repositório e concluiu que 15 das 27",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-746",
+      "line": 21,
+      "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 27
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "27",
+      "type": "number"
+    },
+    {
+      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-747",
+      "line": 24,
+      "note": "numero medido pelo comando ao lado, sobre o artefato real.",
+      "proof": {
+        "cmd": "python -c \"import pathlib; print(len(pathlib.Path('knowledge/storage/iceberg-feature-support.yaml').read_text(encoding='utf-8').rstrip().split(chr(10))))\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 878
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "878",
+      "type": "number"
+    },
+    {
+      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-748",
+      "line": 24,
+      "note": "numero medido pelo comando ao lado, sobre o artefato real.",
+      "proof": {
+        "cmd": "python -c \"import yaml,pathlib; print(len(yaml.safe_load(pathlib.Path('knowledge/storage/iceberg-feature-support.yaml').read_text(encoding='utf-8'))['engines']))\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 14
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "14",
+      "type": "number"
+    },
+    {
+      "context": "`knowledge/storage/iceberg-feature-support.yaml` tem **878 linhas** com **14 engines × 13",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-749",
+      "line": 24,
+      "note": "numero medido pelo comando ao lado, sobre o artefato real.",
+      "proof": {
+        "cmd": "python -c \"import yaml,pathlib; print(len(yaml.safe_load(pathlib.Path('knowledge/storage/iceberg-feature-support.yaml').read_text(encoding='utf-8'))['features']))\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 13
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "13",
+      "type": "number"
+    },
+    {
+      "context": "## As 27, por estado",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-750",
+      "line": 32,
+      "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 27
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "27",
+      "type": "number"
+    },
+    {
+      "context": "### Têm fato e regra (5)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-751",
+      "line": 34,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"Têm fato e regra\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 5
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "### Têm fato, sem regra (3)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-752",
+      "line": 44,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"Têm fato, sem regra\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 3
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "3",
+      "type": "number"
+    },
+    {
+      "context": "### Já existem sob outro nome (2)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-753",
+      "line": 52,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"Já existem sob outro nome\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 2
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "2",
+      "type": "number"
+    },
+    {
+      "context": "| compatibility | `feature_support.py` + `readiness.py` + `upgrade.py`, sobre uma matriz de 878 linhas |",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-754",
+      "line": 57,
+      "note": "numero medido pelo comando ao lado, sobre o artefato real.",
+      "proof": {
+        "cmd": "python -c \"import pathlib; print(len(pathlib.Path('knowledge/storage/iceberg-feature-support.yaml').read_text(encoding='utf-8').rstrip().split(chr(10))))\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 878
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "878",
+      "type": "number"
+    },
+    {
+      "context": "### Pertencem a outro artefato, e já têm dono (4)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-755",
+      "line": 59,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"Pertencem a outro artefato\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 4
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "4",
+      "type": "number"
+    },
+    {
+      "context": "### O artefato não carrega o dado (6)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-756",
+      "line": 70,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"O artefato não carrega o dado\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 6
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6",
+      "type": "number"
+    },
+    {
+      "context": "### Parcialmente ao alcance (1)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-757",
+      "line": 91,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"Parcialmente ao alcance\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "**deletion vectors.** `.delete_files` tem a coluna `content` (`0` data, `1` position, `2`",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-758",
+      "line": 93,
+      "note": "codigo de `content` para data file, publicado pela spec",
+      "proof": {
+        "kind": "source",
+        "note": "codigo de `content` publicado pela Table Specification: 0 data file, 1 position delete, 2 equality delete. Nao e medicao do repositorio.",
+        "source_id": "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md"
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "**deletion vectors.** `.delete_files` tem a coluna `content` (`0` data, `1` position, `2`",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-759",
+      "line": 93,
+      "note": "codigo de `content` para position delete",
+      "proof": {
+        "kind": "source",
+        "note": "codigo de `content` publicado pela Table Specification: 0 data file, 1 position delete, 2 equality delete. Nao e medicao do repositorio.",
+        "source_id": "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "**deletion vectors.** `.delete_files` tem a coluna `content` (`0` data, `1` position, `2`",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-760",
+      "line": 93,
+      "note": "codigo de `content` para equality delete",
+      "proof": {
+        "kind": "source",
+        "note": "codigo de `content` publicado pela Table Specification: 0 data file, 1 position delete, 2 equality delete. Nao e medicao do repositorio.",
+        "source_id": "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md"
+      },
+      "state": "PROVADA",
+      "text": "2",
+      "type": "number"
+    },
+    {
+      "context": "### Sem fonte que nomeie defeito (6)",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-761",
+      "line": 97,
+      "note": "a contagem daquela categoria, lida do cabecalho do documento.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py --secao \"Sem fonte que nomeie defeito\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 6
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6",
+      "type": "number"
+    },
+    {
+      "context": "`IcebergMaintenancePlanner` cometia com `> 20`, `> 5` e `> 50` até ser reescrito.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-762",
+      "line": 110,
+      "note": "limiar REMOVIDO de IcebergMaintenancePlanner",
+      "proof": {
+        "cmd": "git show 71589e6^:sparkforge/iceberg/maintenance.py | grep -c \"> 20\"",
+        "commit": "71589e6",
+        "kind": "historical",
+        "note": "limiar `> 20` que `IcebergMaintenancePlanner` usava ANTES de 71589e6. E registro do defeito removido, nao estado de hoje -- reexecutar no HEAD daria zero, que e o ponto."
+      },
+      "state": "PROVADA",
+      "text": "20",
+      "type": "number"
+    },
+    {
+      "context": "`IcebergMaintenancePlanner` cometia com `> 20`, `> 5` e `> 50` até ser reescrito.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-763",
+      "line": 110,
+      "note": "limiar REMOVIDO de IcebergMaintenancePlanner",
+      "proof": {
+        "cmd": "git show 71589e6^:sparkforge/iceberg/maintenance.py | grep -c \"> 5\"",
+        "commit": "71589e6",
+        "kind": "historical",
+        "note": "limiar `> 5` que `IcebergMaintenancePlanner` usava ANTES de 71589e6. E registro do defeito removido, nao estado de hoje -- reexecutar no HEAD daria zero, que e o ponto."
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "`IcebergMaintenancePlanner` cometia com `> 20`, `> 5` e `> 50` até ser reescrito.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-764",
+      "line": 110,
+      "note": "limiar REMOVIDO de IcebergMaintenancePlanner",
+      "proof": {
+        "cmd": "git show 71589e6^:sparkforge/iceberg/maintenance.py | grep -c \"> 50\"",
+        "commit": "71589e6",
+        "kind": "historical",
+        "note": "limiar `> 50` que `IcebergMaintenancePlanner` usava ANTES de 71589e6. E registro do defeito removido, nao estado de hoje -- reexecutar no HEAD daria zero, que e o ponto."
+      },
+      "state": "PROVADA",
+      "text": "50",
+      "type": "number"
+    },
+    {
+      "context": "`knowledge/sources.lock.json`, que vigia **225** fontes no total:",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-767",
+      "line": 116,
+      "note": "quantas fontes o lock vigia hoje.",
+      "proof": {
+        "cmd": "python -c \"import json,pathlib; d=json.loads(pathlib.Path('knowledge/sources.lock.json').read_text(encoding='utf-8')); print(len(d if isinstance(d,list) else d.get('sources',d)))\"",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 225
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "225",
+      "type": "number"
+    },
+    {
+      "context": "dela vira alarme de drift. A matriz de runtime do EMR já dispara ~4×/ano e a página",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-768",
+      "line": 134,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "4",
+      "type": "number"
+    },
+    {
+      "context": "mensal do Control-M ~12×/ano — alarmes que quase sempre fecham sem ação.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-769",
+      "line": 135,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "12",
+      "type": "number"
+    },
+    {
+      "context": "mediu **3 defeitos de janela, 2 de dependência e zero de SLA**, e o zero virou veto em vez",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-770",
+      "line": 144,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "3",
+      "type": "number"
+    },
+    {
+      "context": "mediu **3 defeitos de janela, 2 de dependência e zero de SLA**, e o zero virou veto em vez",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-771",
+      "line": 144,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "git show ebe2a74:docs/superpowers/STATUS.md | grep -c 'drift'",
+        "commit": "ebe2a74",
+        "kind": "historical",
+        "note": "numero MEDIDO em entrega anterior e citado aqui como precedente: o perfil de drift do EMR e do Control-M, e a varredura por padrao de defeito no API_CodeRef. Nao e medida de hoje sobre Iceberg."
+      },
+      "state": "PROVADA",
+      "text": "2",
+      "type": "number"
+    },
+    {
+      "context": "2. **§2–7, a auditoria das fontes** (Fase B do prompt). Seis camadas estão paradas por",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-765",
+      "line": 156,
+      "note": "o numero da secao §2-7 do prompt de origem",
+      "proof": {
+        "kind": "source",
+        "note": "numero de secao do prompt de origem (§2-7), que nao e versionado neste repositorio -- e referencia, nao medida.",
+        "source_id": "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md"
+      },
+      "state": "PROVADA",
+      "text": "7",
+      "type": "number"
+    },
+    {
+      "context": "**O que não fazer:** escrever regra para camada sem fonte. Seis das 27 estão exatamente",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-766",
+      "line": 163,
+      "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
+      "proof": {
+        "cmd": "python scripts/count_iceberg_gap.py",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 27
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "27",
       "type": "number"
     },
     {
@@ -6907,7 +7455,7 @@
       "type": "capability"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **29** das **66** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-629",
       "line": 305,
@@ -11020,6 +11568,6 @@
       "type": "capability"
     }
   ],
-  "extracted_from": "38ea09dbeed35a200aba295ff348eec6c4d14b74",
+  "extracted_from": "e90f41f4c713e350a7d25a4427b853754a0afaf0",
   "schema_version": 1
 }
