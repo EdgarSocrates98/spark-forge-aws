@@ -6761,6 +6761,51 @@ nomeada** — que é a resposta certa, porque o Athena não fornece o campo.
 aceito como table property. O censo por `content` está **certo e não exercitado contra
 produção** — a medida que o destravaria é um job Spark com merge-on-read, não outra query.
 
+## Auditoria dos fakes de coleta — o CloudWatch tinha o mesmo defeito (2026-09-03)
+
+Oitavo incremento. Motivada pelo achado do PR #38: `FakeAthenaClient` respondia
+`$delete_files` de bom grado e mantinha verde um teste sobre uma consulta impossível.
+
+> Um fake que aceita tudo prova que o código chama o que ele espera, nunca que o serviço
+> responde.
+
+A pergunta desta auditoria: **os outros oito fakes escondem a mesma coisa?**
+
+### O que cada um respondeu
+
+| | |
+|---|---|
+| **S3** | pagina por `ContinuationToken`, e `EmptyS3Client` cobre o prefixo vazio — **sem defeito** |
+| **Glue** e **Glue runs** | paginam por `NextToken` — **sem defeito** |
+| **EMR**, **EMR Serverless**, **EMR on EKS** | `_pagina_emr` segue `Marker`, e o coletor já trata a falha cruzada de `list_instance_fleets` contra cluster de instance groups — **sem defeito** |
+| **CloudWatch** | **dois defeitos** |
+
+### Os dois defeitos do CloudWatch
+
+**Não paginava.** `get_metric_data` devolve até 100 800 pontos por chamada e o resto atrás
+de `NextToken`. Com **17 métricas** e período fino, um run longo estoura isso — e a série
+truncada saía **indistinguível da completa**.
+
+**Não conferia o que voltou.** A API pode devolver menos resultados do que se pediu, e o
+payload sairia com a mesma cara de um completo. Agora sai com `metrics_requested`,
+`metrics_returned` e `metrics_missing` — o buraco **declarado**, não um erro.
+
+**E o fake era o que escondia os dois:** devolvia **um** resultado para as 17 consultas.
+Nenhum dos comportamentos era exercitado.
+
+O teto de 20 páginas existe para que uma janela absurda **falhe dizendo o que aconteceu**,
+em vez de gravar um parcial silencioso.
+
+### O guard que fecha a classe
+
+`tests/test_fakes_de_coleta.py` trava o que dá para travar sem AWS: **todo serviço precisa
+ter um fake com caminho de recusa**. Um fake sem forma de dizer "não" não exercita o ramo
+de erro do coletor — e é nesse ramo que esta classe de defeito mora.
+
+Também trava a raiz do defeito original: nenhuma seção de
+`ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA` pode reaparecer em
+`ICEBERG_METADATA_SECTIONS`.
+
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.
 3. Escreva o par spec + plan em `specs/` e `plans/` com a data do merge.

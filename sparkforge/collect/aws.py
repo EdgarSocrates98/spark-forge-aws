@@ -77,6 +77,11 @@ CLOUDWATCH_METRICS: tuple[tuple[str, str], ...] = (
 
 CLOUDWATCH_METRIC_NAMES: tuple[str, ...] = tuple(n for n, _ in CLOUDWATCH_METRICS)
 
+# Teto de paginas de `get_metric_data`. Existe para que uma janela absurda
+# falhe DIZENDO o que aconteceu, em vez de rodar para sempre ou gravar um
+# parcial silencioso.
+_MAX_PAGINAS_DE_METRICA = 20
+
 # As cinco metadata tables do Iceberg que este coletor consulta via Athena.
 # `partition_spec`/`sort_order`/`default_sort_order_id` (ver
 # `sparkforge/facts/iceberg_metadata.py`) nao vem de uma metadata table
@@ -558,16 +563,54 @@ def collect_cloudwatch(
         for index, (metric, stat) in enumerate(CLOUDWATCH_METRICS)
     ]
 
-    response = client.get_metric_data(
-        MetricDataQueries=queries, StartTime=start_dt, EndTime=end_dt
-    )
+    # PAGINA. `get_metric_data` devolve ate 100 800 pontos por chamada e o
+    # resto atras de `NextToken` -- com 17 metricas e periodo fino, um run
+    # longo estoura isso e a resposta vem PARCIAL.
+    #
+    # Ler uma resposta so era o defeito: a serie truncada e indistinguivel da
+    # serie completa, e nada acusava. Achado na auditoria de fakes de
+    # 2026-09-03, na mesma classe do `$delete_files` do Athena -- o
+    # `FakeCloudWatchClient` devolvia UM resultado para as 17 consultas, entao
+    # aceitar menos do que se pediu nunca foi exercitado.
+    resultados: list[dict[str, Any]] = []
+    token: str | None = None
+    for _ in range(_MAX_PAGINAS_DE_METRICA):
+        kwargs: dict[str, Any] = {
+            "MetricDataQueries": queries,
+            "StartTime": start_dt,
+            "EndTime": end_dt,
+        }
+        if token:
+            kwargs["NextToken"] = token
+        pagina = client.get_metric_data(**kwargs)
+        resultados.extend(pagina.get("MetricDataResults") or [])
+        token = pagina.get("NextToken")
+        if not token:
+            break
+    else:
+        raise CollectionFailed(
+            f"`get_metric_data` ainda paginava depois de "
+            f"{_MAX_PAGINAS_DE_METRICA} paginas para {job_name}/{job_run_id}. "
+            f"Gravar o parcial produziria uma serie truncada indistinguivel da "
+            f"completa -- reduza a janela ou aumente o periodo."
+        )
+
+    # O QUE VOLTOU CONTRA O QUE SE PEDIU. A API pode devolver menos resultados
+    # que consultas, e sem esta conta o payload sairia com a mesma cara de um
+    # completo. Nao e erro: sai declarado, e quem le decide.
+    devolvidos = {r.get("Label") for r in resultados}
+    faltando = sorted(set(CLOUDWATCH_METRIC_NAMES) - devolvidos)
+
     payload = {
         "job_name": job_name,
         "job_run_id": job_run_id,
         "start": start,
         "end": end,
         "period_seconds": period,
-        "metric_data_results": response.get("MetricDataResults") or [],
+        "metric_data_results": resultados,
+        "metrics_requested": len(queries),
+        "metrics_returned": len(devolvidos & set(CLOUDWATCH_METRIC_NAMES)),
+        "metrics_missing": faltando,
     }
     content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
         "utf-8"

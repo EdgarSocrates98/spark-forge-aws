@@ -86,16 +86,41 @@ def _run(run_id: str, state: str = "SUCCEEDED", **extra) -> dict:
 
 
 class FakeCloudWatchClient:
-    def __init__(self):
+    """Devolve as 17 metricas pedidas, e pagina se `paginas` pedir.
+
+    A VERSAO ANTERIOR DEVOLVIA UMA SO, e por isso nada exercitava dois
+    comportamentos reais da API: a paginacao por `NextToken`, e o caso em que
+    voltam menos resultados do que se pediu. Achado na auditoria de fakes de
+    2026-09-03, na mesma classe do `$delete_files` do Athena.
+
+    `faltando` remove metricas da resposta -- e como se mede que o coletor
+    DECLARA o buraco em vez de gravar um payload com cara de completo.
+    """
+
+    def __init__(self, paginas: int = 1, faltando: tuple[str, ...] = ()):
         self.calls: list[tuple[str, dict]] = []
+        self._paginas = paginas
+        self._faltando = set(faltando)
+        self._servidas = 0
 
     def get_metric_data(self, **kwargs):
         self.calls.append(("get_metric_data", kwargs))
-        return {
+        self._servidas += 1
+        nomes = [n for n in aws.CLOUDWATCH_METRIC_NAMES if n not in self._faltando]
+        # Cada pagina traz uma fatia dos nomes, como a API faz.
+        por_pagina = max(1, len(nomes) // self._paginas)
+        inicio = (self._servidas - 1) * por_pagina
+        ultima = self._servidas >= self._paginas
+        fatia = nomes[inicio:] if ultima else nomes[inicio : inicio + por_pagina]
+        resposta = {
             "MetricDataResults": [
-                {"Id": "m0", "Label": aws.CLOUDWATCH_METRICS[0], "Timestamps": [], "Values": []}
+                {"Id": f"m{i}", "Label": nome, "Timestamps": [], "Values": []}
+                for i, nome in enumerate(fatia)
             ]
         }
+        if self._servidas < self._paginas:
+            resposta["NextToken"] = f"tok{self._servidas}"
+        return resposta
 
 
 class FakeAthenaClient:
@@ -386,6 +411,69 @@ class TestCollectGlueJobRuns:
 
 
 class TestCollectCloudwatch:
+    """Os dois comportamentos reais da API que o fake antigo escondia.
+
+    `get_metric_data` PAGINA por `NextToken` -- ate 100 800 pontos por chamada,
+    e com 17 metricas e periodo fino um run longo estoura isso. E ela pode
+    devolver MENOS resultados do que se pediu.
+
+    Antes de 2026-09-03 o fake devolvia UM resultado para as 17 consultas, e
+    nenhum dos dois casos era exercitado: a serie truncada saia indistinguivel
+    da completa.
+    """
+
+    def _coleta(self, tmp_path, monkeypatch, cw):
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(cloudwatch=cw))
+        entry = aws.collect_cloudwatch(
+            "meu-job", "jr_1", tmp_path,
+            now="2026-07-30T00:00:00Z",
+            start="2026-07-29T00:00:00Z",
+            end="2026-07-29T01:00:00Z",
+        )
+        return json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+
+    def test_junta_todas_as_paginas(self, tmp_path, monkeypatch):
+        """Tres paginas devem render as 17 metricas, nao as da primeira."""
+        cw = FakeCloudWatchClient(paginas=3)
+        payload = self._coleta(tmp_path, monkeypatch, cw)
+        chamadas = [c for c in cw.calls if c[0] == "get_metric_data"]
+        assert len(chamadas) == 3, "o coletor precisa seguir `NextToken`"
+        assert chamadas[1][1]["NextToken"] == "tok1"
+        rotulos = {r["Label"] for r in payload["metric_data_results"]}
+        assert rotulos == set(aws.CLOUDWATCH_METRIC_NAMES)
+        assert payload["metrics_missing"] == []
+
+    def test_o_buraco_sai_DECLARADO_e_nao_como_payload_completo(self, tmp_path, monkeypatch):
+        """A API pode devolver menos que o pedido. Sem a conta, o payload
+        parcial teria a mesma cara de um completo."""
+        ausentes = aws.CLOUDWATCH_METRIC_NAMES[:2]
+        cw = FakeCloudWatchClient(faltando=ausentes)
+        payload = self._coleta(tmp_path, monkeypatch, cw)
+        assert payload["metrics_requested"] == len(aws.CLOUDWATCH_METRICS)
+        assert payload["metrics_returned"] == len(aws.CLOUDWATCH_METRICS) - 2
+        assert payload["metrics_missing"] == sorted(ausentes)
+
+    def test_paginacao_infinita_falha_DIZENDO_em_vez_de_gravar_parcial(
+        self, tmp_path, monkeypatch
+    ):
+        """Um `NextToken` que nunca acaba nao pode virar arquivo truncado."""
+        class SempreTem(FakeCloudWatchClient):
+            def get_metric_data(self, **kwargs):
+                r = super().get_metric_data(**kwargs)
+                r["NextToken"] = "infinito"
+                return r
+
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: FakeBoto3(cloudwatch=SempreTem())
+        )
+        with pytest.raises(aws.CollectionFailed, match="paginava"):
+            aws.collect_cloudwatch(
+                "meu-job", "jr_1", tmp_path,
+                now="2026-07-30T00:00:00Z",
+                start="2026-07-29T00:00:00Z",
+                end="2026-07-29T01:00:00Z",
+            )
+
     def test_queries_exact_metric_names_including_bytesWrittten(self, tmp_path, monkeypatch):
         cw = FakeCloudWatchClient()
         monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(cloudwatch=cw))
