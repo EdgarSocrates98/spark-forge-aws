@@ -1,8 +1,19 @@
-# Créditos e procedência — ecossistema caveman
+# Créditos e procedência — terceiros dentro do SparkForge
 
-Este diretório contém **código de terceiros**, vendorizado dentro do SparkForge
-AWS para que quem clonar o repositório tenha economia de token ligada por
-padrão — sem instalar nada, sem rede, sem `npm install`, sem `npx`.
+Este arquivo cobre **duas** procedências diferentes, e a diferença importa:
+
+1. **Vendorizado** (`vendor/`, este diretório) — bytes de terceiro, pinados por
+   SHA e conferidos por gate sem rede. Nada aqui é nosso.
+2. **Adaptado** (`skills/aws-*`, `skills/harden-s3-bucket`,
+   `skills/provision-s3-tables-table`) — procedimento de terceiro reescrito em
+   português e recortado ao domínio deste repositório. Não é cópia byte a byte,
+   e por isso não tem pin nem `MANIFEST.sha256`: tem commit de origem citado no
+   rodapé de cada `SKILL.md`.
+
+## Vendorizado — ecossistema caveman
+
+O `vendor/` existe para que quem clonar o repositório tenha economia de token
+ligada por padrão — sem instalar nada, sem rede, sem `npm install`, sem `npx`.
 
 Nada aqui é nosso. Todo o crédito é de **[Julius Brussee](https://github.com/JuliusBrussee)**.
 
@@ -52,6 +63,37 @@ Ligar, se algum dia o catálogo passar a ter descrição em inglês:
   }
 }
 ```
+
+## Adaptado, não vendorizado — skills oficiais AWS
+
+| Origem | Licença | Commit de origem | O que veio |
+|---|---|---|---|
+| [`aws/agent-toolkit-for-aws`](https://github.com/aws/agent-toolkit-for-aws) | **Apache-2.0** (verificado na página do repositório em 2026-09-03) | `10b28af8aa3417eeeac6f1ebb5dd4f470a0c3594` (2026-09-02) | 11 skills de procedimento operacional AWS |
+
+As onze: `provision-s3-tables-table`, `harden-s3-bucket`, `aws-storage`,
+`aws-database`, `aws-serverless`, `aws-iam`, `aws-observability`,
+`aws-billing-and-cost-management`, `aws-messaging-and-streaming`,
+`aws-security`, `aws-sdk-python-usage`.
+
+**Por que não estão em `vendor/`**: elas foram **reescritas**, não copiadas —
+traduzidas para português, recortadas ao domínio deste repositório e ganharam a
+fronteira `## Não faz` que o upstream não tem. Um `MANIFEST.sha256` sobre texto
+reescrito não conferiria nada: a cada ajuste de redação o gate quebraria sem
+que nenhuma divergência com o upstream tivesse acontecido. O que as mantém
+honestas é outra coisa:
+
+- cada `SKILL.md` cita a skill de origem e o commit no rodapé;
+- o upstream é declarado como **fonte autoritativa** dentro de cada uma — em
+  divergência, vale a AWS, não o nosso texto;
+- as onze são **não-despacháveis** (podem mutar infraestrutura ao vivo, e a
+  fronteira exige confirmação do operador), registrado em
+  `docs/superpowers/STATUS.md`.
+
+Apache-2.0 permite obra derivada com atribuição e aviso de licença. A
+atribuição é o rodapé de cada `SKILL.md` mais esta seção; o aviso de licença é
+esta linha: o material original é © Amazon Web Services, licenciado sob
+Apache-2.0, e o texto integral da licença está em
+<https://www.apache.org/licenses/LICENSE-2.0>.
 
 ## Fora do repositório, e por quê
 

@@ -44,8 +44,19 @@ class RuntimeCapabilities:
     max_nesting_depth: int = 0
 
 
-# Capacidades medidas por runtime (parity.yaml é a fonte canônica).
-# Atualizado quando parity.yaml muda — não copiar para outros arquivos.
+# Capacidades por runtime. DUAS delas são derivadas de `parity.yaml`, que é a
+# fonte canônica, e um teste amarra as duas fontes
+# (`tests/test_agentic_runtime.py::TestParityBinding`):
+#   - `spawn_agent`  <-> a plataforma declara o mecanismo `subagent`
+#   - `tool_calling` <-> a plataforma declara o mecanismo `mcp`
+# Divergir de `parity.yaml` nesses dois campos derruba o teste — antes, o
+# comentário dizia "parity.yaml é canônica" e nada verificava, então as duas
+# fontes podiam divergir em silêncio.
+#
+# Os demais campos (`streaming`, `checkpointing`, `max_concurrent_agents`,
+# `max_nesting_depth`, `structured_output`, `parallel_agents`, `nested_agents`)
+# NÃO existem em `parity.yaml` e são declarados aqui: o manifesto fala de
+# mecanismo de entrega de capacidade, não de propriedade de harness.
 _MEASURED_CAPABILITIES: dict[RuntimeName, RuntimeCapabilities] = {
     RuntimeName.CLAUDE_CODE: RuntimeCapabilities(
         spawn_agent=True,

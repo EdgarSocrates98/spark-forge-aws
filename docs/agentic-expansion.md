@@ -1,5 +1,17 @@
 # Agentic Expansion e Offline First
 
+> **Dois pacotes com nome parecido, e eles não são a mesma coisa.** Este
+> documento descreve `sparkforge/agents/` — `ConversationRoom`,
+> `AutonomyController`, `Supervisor`, `budget`, `model_policy` —, a camada de
+> orquestração que existe desde a expansão agêntica. `sparkforge/agentic/`
+> (2026-09-03) é OUTRO pacote: entidades de primeira classe (`Claim`,
+> `Evidence`, `Decision`), protocolo de debate, arbitragem e blackboard JSONL,
+> e ele é **biblioteca sem produtor** — nada no produto escreve nessas
+> entidades. Ver `docs/agentic-evolution-report.md`. A sobreposição entre os
+> dois (autonomia, budget e observabilidade aparecem nos dois pacotes) é dívida
+> conhecida, registrada e não resolvida.
+
+
 ## O que foi criado
 
 A expansao adiciona dez agents permanentes, dezesseis subagents efemeros, seis ferramentas locais deterministicas, seis knowledge bases novas, cinco times cooperativos e um manifesto SHA-256 para todos os documentos locais. Os registries sao `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`.

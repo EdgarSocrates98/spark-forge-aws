@@ -15,6 +15,7 @@ Princípios:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -22,7 +23,7 @@ from typing import Any
 
 class BudgetStatus(str, Enum):
     WITHIN = "within"  # dentro do budget
-    WARNING = "warning"  # 接近 do limite (80%+)
+    WARNING = "warning"  # perto do limite (80%+)
     EXCEEDED = "exceeded"  # excedeu
     EXHAUSTED = "exhausted"  # totalmente consumido
 
@@ -47,15 +48,28 @@ class AgentBudget:
 
     @property
     def status(self) -> BudgetStatus:
-        token_ratio = self.tokens_used / self.max_tokens if self.max_tokens > 0 else 0
+        """Status pelos QUATRO limites, não só tokens.
+
+        `max_time_seconds` e `max_retries` eram rastreados e nunca lidos até
+        2026-09-03: um agente com `time_elapsed_seconds=9999` sobre um teto de
+        120 reportava `within`. Limite declarado e não verificado é pior que
+        limite ausente — promete corte que não acontece.
+        """
         if self.tokens_used >= self.max_tokens:
             return BudgetStatus.EXHAUSTED
         if self.tool_calls_used >= self.max_tool_calls:
             return BudgetStatus.EXHAUSTED
-        if token_ratio >= 0.8:
+        if self.max_time_seconds > 0 and self.time_elapsed_seconds >= self.max_time_seconds:
+            return BudgetStatus.EXHAUSTED
+        if self.retries_used > self.max_retries:
+            return BudgetStatus.EXHAUSTED
+        ratios = [
+            self.tokens_used / self.max_tokens if self.max_tokens > 0 else 0.0,
+            self.tool_calls_used / self.max_tool_calls if self.max_tool_calls > 0 else 0.0,
+            self.time_elapsed_seconds / self.max_time_seconds if self.max_time_seconds > 0 else 0.0,
+        ]
+        if max(ratios) >= 0.8:
             return BudgetStatus.WARNING
-        if self.tokens_used > 0 or self.tool_calls_used > 0:
-            return BudgetStatus.WITHIN
         return BudgetStatus.WITHIN
 
     @property
@@ -74,6 +88,25 @@ class AgentBudget:
         if self.tool_calls_used > self.max_tool_calls:
             raise BudgetExceededError(
                 f"AgentBudget: tool_calls {self.tool_calls_used} > max {self.max_tool_calls}"
+            )
+
+    def consume_time(self, seconds: int) -> None:
+        """Acumula tempo decorrido. Estoura quando passa do teto declarado.
+
+        O tempo é injetado por quem chama — este módulo nunca lê o relógio,
+        pela mesma razão que `case.store` nunca gera timestamp.
+        """
+        self.time_elapsed_seconds += seconds
+        if self.max_time_seconds > 0 and self.time_elapsed_seconds > self.max_time_seconds:
+            raise BudgetExceededError(
+                f"AgentBudget: time {self.time_elapsed_seconds}s > max {self.max_time_seconds}s"
+            )
+
+    def consume_retry(self) -> None:
+        self.retries_used += 1
+        if self.retries_used > self.max_retries:
+            raise BudgetExceededError(
+                f"AgentBudget: retries {self.retries_used} > max {self.max_retries}"
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -116,14 +149,34 @@ class CaseBudget:
 
     @property
     def status(self) -> BudgetStatus:
+        """Status pelos limites declarados, incluindo tool calls e tempo.
+
+        `max_total_tool_calls` e `max_total_time_seconds` eram declarados e
+        nunca lidos até 2026-09-03 — mesmo defeito de `AgentBudget.status`.
+        """
         if self.tokens_used >= self.max_total_tokens:
             return BudgetStatus.EXHAUSTED
         if self.agents_spawned >= self.max_agents:
             return BudgetStatus.EXHAUSTED
         if self.cost_incurred_usd >= self.max_cost_usd:
             return BudgetStatus.EXHAUSTED
-        token_ratio = self.tokens_used / self.max_total_tokens if self.max_total_tokens > 0 else 0
-        if token_ratio >= 0.8:
+        if self.tool_calls_used >= self.max_total_tool_calls:
+            return BudgetStatus.EXHAUSTED
+        if (
+            self.max_total_time_seconds > 0
+            and self.time_elapsed_seconds >= self.max_total_time_seconds
+        ):
+            return BudgetStatus.EXHAUSTED
+        ratios = [
+            self.tokens_used / self.max_total_tokens if self.max_total_tokens > 0 else 0.0,
+            self.tool_calls_used / self.max_total_tool_calls
+            if self.max_total_tool_calls > 0
+            else 0.0,
+            self.time_elapsed_seconds / self.max_total_time_seconds
+            if self.max_total_time_seconds > 0
+            else 0.0,
+        ]
+        if max(ratios) >= 0.8:
             return BudgetStatus.WARNING
         return BudgetStatus.WITHIN
 
@@ -167,6 +220,25 @@ class CaseBudget:
                 f"CaseBudget: tokens {self.tokens_used} > max {self.max_total_tokens}"
             )
 
+    def consume_tool_call(self, n: int = 1) -> None:
+        self.tool_calls_used += n
+        if self.tool_calls_used > self.max_total_tool_calls:
+            raise BudgetExceededError(
+                f"CaseBudget: tool_calls {self.tool_calls_used} > max {self.max_total_tool_calls}"
+            )
+
+    def consume_time(self, seconds: int) -> None:
+        """Tempo injetado por quem chama — este módulo nunca lê o relógio."""
+        self.time_elapsed_seconds += seconds
+        if (
+            self.max_total_time_seconds > 0
+            and self.time_elapsed_seconds > self.max_total_time_seconds
+        ):
+            raise BudgetExceededError(
+                f"CaseBudget: time {self.time_elapsed_seconds}s > "
+                f"max {self.max_total_time_seconds}s"
+            )
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "max_total_tokens": self.max_total_tokens,
@@ -187,6 +259,66 @@ class CaseBudget:
         }
 
 
+# Chave opcional de `.sparkforge/case.yaml` que declara os tetos do case.
+CASE_BUDGET_KEY = "budget"
+
+_CASE_BUDGET_INT_FIELDS = (
+    "max_total_tokens",
+    "max_total_tool_calls",
+    "max_total_time_seconds",
+    "max_agents",
+    "max_debates",
+    "max_experiments",
+)
+
+
+def case_budget_from_case(case: Mapping[str, Any]) -> CaseBudget | None:
+    """Constrói o `CaseBudget` declarado no case, ou `None` se não há bloco.
+
+    `None` é a resposta honesta para "este case não declara budget": devolver
+    o default do código no lugar seria apresentar valor de fábrica como estado
+    medido do case — o defeito que `budget show` tinha até 2026-09-03.
+
+    Só limites vêm daqui. Consumo (`tokens_used`, `cost_incurred_usd`) não é
+    lido do case: consumo é medido no ledger de spans, não declarado à mão.
+    """
+    raw = case.get(CASE_BUDGET_KEY)
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise ValueError(
+            f"case.yaml: `{CASE_BUDGET_KEY}` deve ser um mapa, recebido {type(raw).__name__}"
+        )
+
+    permitidas = set(_CASE_BUDGET_INT_FIELDS) | {"max_cost_usd"}
+    desconhecidas = sorted(set(raw) - permitidas)
+    if desconhecidas:
+        raise ValueError(
+            f"case.yaml: chaves desconhecidas em `{CASE_BUDGET_KEY}`: "
+            f"{', '.join(desconhecidas)}. Esperado: {', '.join(sorted(permitidas))}"
+        )
+
+    kwargs: dict[str, Any] = {}
+    for nome in _CASE_BUDGET_INT_FIELDS:
+        if nome in raw:
+            valor = raw[nome]
+            if not isinstance(valor, int) or isinstance(valor, bool) or valor < 0:
+                raise ValueError(
+                    f"case.yaml: `{CASE_BUDGET_KEY}.{nome}` deve ser int >= 0, recebido {valor!r}"
+                )
+            kwargs[nome] = valor
+    if "max_cost_usd" in raw:
+        valor = raw["max_cost_usd"]
+        if isinstance(valor, bool) or not isinstance(valor, int | float) or valor < 0:
+            raise ValueError(
+                f"case.yaml: `{CASE_BUDGET_KEY}.max_cost_usd` deve ser número >= 0, "
+                f"recebido {valor!r}"
+            )
+        kwargs["max_cost_usd"] = float(valor)
+
+    return CaseBudget(**kwargs)
+
+
 @dataclass
 class WasteReport:
     """Relatório de desperdício detectado."""
@@ -195,6 +327,8 @@ class WasteReport:
     duplicate_tool_calls: list[str] = field(default_factory=list)
     duplicate_evidence: list[str] = field(default_factory=list)
     redundant_agents: list[str] = field(default_factory=list)
+    # Preenchido por quem executa o debate — `detect_waste` não o mede
+    # (decidir que um debate era desnecessário exige o resultado dele).
     unnecessary_debates: list[str] = field(default_factory=list)
     repeated_summaries: list[str] = field(default_factory=list)
     oversized_outputs: list[str] = field(default_factory=list)
@@ -227,19 +361,30 @@ class BudgetExceededError(Exception):
 def detect_waste(
     tool_calls: list[dict[str, Any]],
     evidence_ids: list[str],
-    agent_ids: list[str],
+    agent_outputs: Mapping[str, str] | None,
     summaries: list[str],
     retrieved_docs: list[str],
     used_docs: list[str],
+    context_chunks: list[str] | None = None,
 ) -> WasteReport:
     """Detecta desperdício em uma execução.
 
-    Heurísticas simples:
+    Heurísticas simples, todas exatas (igualdade, não semelhança):
     - duplicate_tool_calls: mesma tool+args chamada >1 vez
     - duplicate_evidence: mesma evidence_id >1 vez
-    - redundant_agents: agentes que não produziram output
+    - redundant_agents: agentes que não produziram output (`agent_outputs`
+      mapeia agent_id -> output; vazio ou só espaço conta como redundante)
     - repeated_summaries: summaries idênticos
     - unused_retrieved_docs: retrieved mas não used
+    - duplicated_context: mesmo trecho de contexto enviado >1 vez
+
+    `unnecessary_debates` NÃO é medido aqui: decidir que um debate era
+    desnecessário exige o resultado dele, que esta função não recebe. O campo
+    existe em `WasteReport` para quem executa o debate preencher — vazio aqui
+    significa "não medido", não "não houve".
+
+    Até 2026-09-03 esta função recebia `agent_ids` e nunca o usava, e três dos
+    campos do relatório saíam sempre vazios sem que nada dissesse por quê.
     """
     # Duplicate tool calls
     seen_calls: set[str] = set()
@@ -271,9 +416,24 @@ def detect_waste(
     used_set = set(used_docs)
     unused = len(retrieved_set - used_set)
 
+    # Agentes que não produziram output
+    redundant = sorted(
+        agent_id for agent_id, output in (agent_outputs or {}).items() if not output.strip()
+    )
+
+    # Mesmo trecho de contexto enviado mais de uma vez
+    seen_chunks: set[str] = set()
+    duplicated_context: list[str] = []
+    for chunk in context_chunks or []:
+        if chunk in seen_chunks:
+            duplicated_context.append(chunk)
+        seen_chunks.add(chunk)
+
     return WasteReport(
+        duplicated_context=duplicated_context,
         duplicate_tool_calls=duplicate_calls,
         duplicate_evidence=duplicate_ev,
+        redundant_agents=redundant,
         repeated_summaries=repeated,
         unused_retrieved_docs=unused,
     )

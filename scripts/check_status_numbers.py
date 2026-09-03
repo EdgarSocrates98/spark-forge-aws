@@ -169,9 +169,7 @@ def _gates_do_case() -> int:
 # `STATUS.md`, e a divergencia entre os dois e o que este gate reprova.
 MEDIDAS: dict[str, Callable[[], int]] = {
     "Regras de diagnóstico": lambda: len(_catalogo()),
-    "Regras bloqueadas (`blocked_on`)": lambda: sum(
-        1 for r in _catalogo() if r.get("blocked_on")
-    ),
+    "Regras bloqueadas (`blocked_on`)": lambda: sum(1 for r in _catalogo() if r.get("blocked_on")),
     "Regras com `runtime_scope` não-vazio": lambda: sum(
         1 for r in _catalogo() if r.get("runtime_scope")
     ),
@@ -197,12 +195,29 @@ MEDIDAS: dict[str, Callable[[], int]] = {
     # afirmar sobre a ancoragem de ontem.
     "Perguntas do gold set de recuperação": lambda: len(_goldset()),
     "Achados que NÃO rendem pergunta de ouro": lambda: len(_fora_do_goldset()),
+    # Conta os MODULOS, nao os arquivos: `__init__.py` e reexport, nao modulo
+    # da camada. A tabela publica "13 (+ `__init__.py`)" pela mesma razao --
+    # somar os dois daria 14 e faria a linha divergir do que AGENTS.md e
+    # `docs/agentic-evolution-report.md` descrevem modulo a modulo.
+    "Módulos da camada agêntica": lambda: len(
+        [
+            f
+            for f in glob.glob(str(ROOT / "sparkforge" / "agentic" / "*.py"))
+            if os.path.basename(f) != "__init__.py"
+        ]
+    ),
 }
 
 # Dimensoes que a tabela publica e que este gate NAO mede, com a razao. Sem
 # esta lista, `--strict` reprovaria por elas -- e a recusa precisa ter nome,
 # como toda recusa neste repositorio.
 SEM_MEDIDA: dict[str, str] = {
+    "Testes da camada agêntica": (
+        "mesma razão da linha `Testes`: contar teste exige coletar com o "
+        "pytest, e este gate não roda suíte. Medido por "
+        "`python -m pytest tests/test_agentic_*.py -q --collect-only`, e o "
+        "guarda que impede arquivo órfão continua sendo `test_suite_batches.py`"
+    ),
     "Testes": (
         "a suite inteira num processo so nao sobrevive; medir aqui exigiria "
         "rodar os nove lotes de `tests/test_suite_batches.py`, que leva mais de "

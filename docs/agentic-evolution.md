@@ -1,32 +1,44 @@
-# Evolu‡Æo Agˆntica do SparkForge
+# Evoluâ€¡Ã†o AgË†ntica do SparkForge
 
-## VisÆo
+> **Dois pacotes com nome parecido, e eles nÃ£o sÃ£o a mesma coisa.** Este
+> documento descreve `sparkforge/agents/` â€” `ConversationRoom`,
+> `AutonomyController`, `Supervisor`, `budget`, `model_policy` â€”, a camada de
+> orquestraÃ§Ã£o que existe desde a expansÃ£o agÃªntica. `sparkforge/agentic/`
+> (2026-09-03) Ã© OUTRO pacote: entidades de primeira classe (`Claim`,
+> `Evidence`, `Decision`), protocolo de debate, arbitragem e blackboard JSONL,
+> e ele Ã© **biblioteca sem produtor** â€” nada no produto escreve nessas
+> entidades. Ver `docs/agentic-evolution-report.md`. A sobreposiÃ§Ã£o entre os
+> dois (autonomia, budget e observabilidade aparecem nos dois pacotes) Ã© dÃ­vida
+> conhecida, registrada e nÃ£o resolvida.
 
-O SparkForge agora combina agents especializados, mem¢ria compartilhada por caso, handoffs estruturados, roteamento por fase e autonomia limitada. A met fora de sala de conversa representa o protocolo de coopera‡Æo; nÆo ‚ necess rio criar uma interface de chat.
+
+## VisÃ†o
+
+O SparkForge agora combina agents especializados, memÂ¢ria compartilhada por caso, handoffs estruturados, roteamento por fase e autonomia limitada. A metÂ fora de sala de conversa representa o protocolo de cooperaâ€¡Ã†o; nÃ†o â€š necessÂ rio criar uma interface de chat.
 
 ## Capacidades
 
-| Capacidade | Implementa‡Æo | Benef¡cio |
+| Capacidade | Implementaâ€¡Ã†o | BenefÂ¡cio |
 |---|---|---|
-| Autonomia controlada | `AutonomyController` | Escolhe a menor pr¢xima etapa e para por or‡amento, estagna‡Æo ou sucesso |
-| Mem¢ria compartilhada | `ConversationRoom` | Mant‚m fatos, decisäes, referˆncias e snapshots sem reenviar o hist¢rico inteiro |
-| Economia de tokens | `budget.py` e `token-efficient-agent` | Deduplica, ranqueia por relevƒncia, preserva decisäes e limita contexto |
-| Especializa‡Æo | agents de PySpark, runtime, storage, orquestra‡Æo e verifica‡Æo | Reduz escopo, fan-out e chamadas sem ganho |
-| Governan‡a de ferramentas | allowlist, aprova‡Æo e rollback | Evita a‡äes mut veis e ferramentas fora do contrato |
-| Conhecimento | `knowledge/agentic-engineering.md`, `token-economy.md` e matriz | Padroniza decisäes e melhora handoffs |
+| Autonomia controlada | `AutonomyController` | Escolhe a menor prÂ¢xima etapa e para por orâ€¡amento, estagnaâ€¡Ã†o ou sucesso |
+| MemÂ¢ria compartilhada | `ConversationRoom` | Mantâ€šm fatos, decisÃ¤es, referË†ncias e snapshots sem reenviar o histÂ¢rico inteiro |
+| Economia de tokens | `budget.py` e `token-efficient-agent` | Deduplica, ranqueia por relevÆ’ncia, preserva decisÃ¤es e limita contexto |
+| Especializaâ€¡Ã†o | agents de PySpark, runtime, storage, orquestraâ€¡Ã†o e verificaâ€¡Ã†o | Reduz escopo, fan-out e chamadas sem ganho |
+| Governanâ€¡a de ferramentas | allowlist, aprovaâ€¡Ã†o e rollback | Evita aâ€¡Ã¤es mutÂ veis e ferramentas fora do contrato |
+| Conhecimento | `knowledge/agentic-engineering.md`, `token-economy.md` e matriz | Padroniza decisÃ¤es e melhora handoffs |
 
-## Pol¡tica de qualidade por token
+## PolÂ¡tica de qualidade por token
 
-Uma redu‡Æo s¢ ‚ v lida quando mant‚m cobertura de evidˆncia, achados aceitos, taxa de verifica‡Æo e crit‚rios de aceita‡Æo. O sistema deve medir tokens de entrada e sa¡da, cache hits, duplicatas removidas, cobertura de evidˆncia e falhas de verifica‡Æo.
+Uma reduâ€¡Ã†o sÂ¢ â€š vÂ lida quando mantâ€šm cobertura de evidË†ncia, achados aceitos, taxa de verificaâ€¡Ã†o e critâ€šrios de aceitaâ€¡Ã†o. O sistema deve medir tokens de entrada e saÂ¡da, cache hits, duplicatas removidas, cobertura de evidË†ncia e falhas de verificaâ€¡Ã†o.
 
 ## Loop recomendado
 
-O fluxo normal ‚ `inventory -> collect -> analyze -> judge -> verify -> synthesize`. O supervisor s¢ amplia o n£mero de agents quando existe risco, contradi‡Æo ou lacuna. A execu‡Æo deve come‡ar pelo caminho barato e determin¡stico, usando LLM apenas quando houver ambiguidade ou s¡ntese necess ria.
+O fluxo normal â€š `inventory -> collect -> analyze -> judge -> verify -> synthesize`. O supervisor sÂ¢ amplia o nÂ£mero de agents quando existe risco, contradiâ€¡Ã†o ou lacuna. A execuâ€¡Ã†o deve comeâ€¡ar pelo caminho barato e determinÂ¡stico, usando LLM apenas quando houver ambiguidade ou sÂ¡ntese necessÂ ria.
 
-## Crit‚rios de parada
+## Critâ€šrios de parada
 
-A execu‡Æo termina por decisÆo terminal, or‡amento de itera‡äes, or‡amento de tokens, limite de mensagens, estagna‡Æo ou regressÆo de qualidade. Nunca aumente o or‡amento automaticamente porque o loop nÆo progrediu.
+A execuâ€¡Ã†o termina por decisÃ†o terminal, orâ€¡amento de iteraâ€¡Ã¤es, orâ€¡amento de tokens, limite de mensagens, estagnaâ€¡Ã†o ou regressÃ†o de qualidade. Nunca aumente o orâ€¡amento automaticamente porque o loop nÃ†o progrediu.
 
-## Opera‡Æo
+## Operaâ€¡Ã†o
 
-Ap¢s alterar skills ou agents, execute `python scripts/sync_skills.py`. Antes de publicar uma mudan‡a, execute os testes focados, a su¡te completa e as avalia‡äes existentes. Mudan‡as de infraestrutura, escrita ou publica‡Æo exigem aprova‡Æo humana, plano de rollback e evidˆncia do impacto.
+ApÂ¢s alterar skills ou agents, execute `python scripts/sync_skills.py`. Antes de publicar uma mudanâ€¡a, execute os testes focados, a suÂ¡te completa e as avaliaâ€¡Ã¤es existentes. Mudanâ€¡as de infraestrutura, escrita ou publicaâ€¡Ã†o exigem aprovaâ€¡Ã†o humana, plano de rollback e evidË†ncia do impacto.

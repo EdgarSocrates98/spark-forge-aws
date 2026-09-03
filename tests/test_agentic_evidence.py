@@ -179,3 +179,40 @@ class TestDetectConflicts:
         assert len(conflicts) == 1
         # Par ordenado canonicamente
         assert conflicts[0] == tuple(sorted([e1.id, e2.id]))
+
+
+class TestAutoridadeNaoEOMesmoQueFrescor:
+    """Os dois campos eram a MESMA expressao ate 2026-09-03.
+
+    `has_sufficient_authority` olha so o tier; `has_fresh_in_scope` exige tier
+    E verificacao. Quando os dois eram identicos, a docstring prometia uma
+    distincao que o codigo nao tinha, e uma T1 fora de versao reportava
+    "sem autoridade" em vez de "autoridade sim, vigencia nao".
+    """
+
+    def test_t1_fora_de_scope_tem_autoridade_mas_nao_esta_em_scope(self):
+        e = Evidence(
+            source="https://spark.apache.org/docs/",
+            authority=EvidenceAuthority.T1_OFFICIAL_DOCS,
+            scope="spark",
+        )
+        s = aggregate_strength([e], target_runtime={"iceberg": "1.5"})
+        assert s.has_sufficient_authority
+        assert not s.has_fresh_in_scope
+        assert not s.sufficient_for_high_confidence
+
+    def test_t1_em_scope_satisfaz_os_dois(self):
+        e = Evidence(
+            source="https://spark.apache.org/docs/",
+            authority=EvidenceAuthority.T1_OFFICIAL_DOCS,
+            scope="spark",
+        )
+        s = aggregate_strength([e], target_runtime={"spark": "3.5"})
+        assert s.has_sufficient_authority
+        assert s.has_fresh_in_scope
+
+    def test_t5_sozinha_nao_satisfaz_nenhum_dos_dois(self):
+        e = Evidence(source="claude-opus disse", authority=EvidenceAuthority.T5_LLM_KNOWLEDGE)
+        s = aggregate_strength([e])
+        assert not s.has_sufficient_authority
+        assert not s.has_fresh_in_scope

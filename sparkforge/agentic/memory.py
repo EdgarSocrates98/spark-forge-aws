@@ -1,9 +1,9 @@
-"""Decision Memory — memória de decisões跨-case.
+"""Decision Memory — memória de decisões cross-case.
 
 Três níveis de memória:
 1. Working memory — contexto da sessão atual (não persiste)
 2. Case memory — decisões dentro de um case (persiste no blackboard)
-3. Institutional memory — decisões跨-case, "what worked in similar problems"
+3. Institutional memory — decisões cross-case, "what worked in similar problems"
 
 Institutional memory é um índice de decisões passadas que pode ser consultado
 para evitar repetir erros e reusar soluções provadas. É armazenado em

@@ -13,6 +13,7 @@ actions sem guardrails.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -207,10 +208,21 @@ def validate_autonomy_boundary(
     level: AutonomyLevel,
     action: str,
     is_high_risk: bool = False,
+    guardrails_satisfied: Iterable[str] | None = None,
 ) -> tuple[bool, str]:
     """Valida que uma ação está dentro do boundary de autonomia.
 
-    L5 não é permitido automaticamente para high-risk sem guardrails.
+    `guardrails_satisfied` é o que o CHAMADOR comprova ter executado —
+    aprovação humana obtida, validação de schema rodada, etc. A ação de alto
+    risco só passa quando cobre o `required_validation` do perfil.
+
+    Até 2026-09-03 a checagem de alto risco era `if "human_approval" not in
+    profile.required_validation`, lida do perfil ESTÁTICO do próprio L5, que
+    sempre contém `human_approval` — o ramo nunca podia disparar, e
+    `validate_autonomy_boundary(L5, "modify_code", is_high_risk=True)`
+    devolvia `(True, "")` sem que nada tivesse sido aprovado. Guardrail que
+    valida a si mesmo não é guardrail.
+
     Retorna (allowed, reason).
     """
     profile = get_profile(level)
@@ -221,9 +233,21 @@ def validate_autonomy_boundary(
     if action not in profile.allowed_actions:
         return False, f"Ação {action!r} não está permitida no nível {level.value}."
 
-    # L5 high-risk requires explicit guardrails
-    if level == AutonomyLevel.L5_AUTONOMOUS and is_high_risk:
-        if "human_approval" not in profile.required_validation:
-            return False, "L5 high-risk requer human_approval guardrail."
+    if is_high_risk:
+        satisfeitos = set(guardrails_satisfied or ())
+        faltando = [g for g in profile.required_validation if g not in satisfeitos]
+        if faltando:
+            return False, (
+                f"Ação {action!r} de alto risco no nível {level.value} exige "
+                f"guardrails não comprovados pelo chamador: {', '.join(faltando)}."
+            )
+
+    if requires_approval_for_action(level, action):
+        satisfeitos = set(guardrails_satisfied or ())
+        if "human_approval" not in satisfeitos:
+            return False, (
+                f"Ação {action!r} no nível {level.value} tem approval_policy "
+                f"{profile.approval_policy!r} e exige `human_approval` comprovado."
+            )
 
     return True, ""

@@ -405,6 +405,23 @@ não passa calado, porque as entradas dele viram órfãs no manifesto. Só linha
 classificação começa em `EXISTE` vira alegação: a linha que diz `NÃO EXISTE` descreve uma
 ausência, e ausência não é capacidade a provar.
 
+**Artefato removido da árvore também vira `historical`, e o caso é medido.** Em
+2026-09-03, catorze alegações de `docs/harness/CURRENT-HARNESS-GAP.md` e
+`docs/harness/GLUE6-GAP.md` liam `prompt_evo_harness.md` e
+`prompt_glue_harness.md`, apagados no commit `083a038`. Reexecutar no HEAD
+reprovava pelo único motivo de o arquivo não existir mais — e o gap que aquelas
+linhas medem contra o prompt continua verdadeiro. Convertidas para `historical`
+com `commit: 386d402` (o último que continha os arquivos), o `cmd` virando
+receita: reproduza com `git checkout` daquele commit primeiro.
+
+**Medida de corpus não honra `.gitignore`, e por isso diverge entre workstation
+e CI.** `iter_source_files` percorre o que está EM DISCO. Em 2026-09-03 um
+diretório ignorado com 57 arquivos `.py` (`tmp_skills/`, sobra do import das
+skills AWS) fazia a mesma prova devolver **581** na workstation e **524** no CI,
+sem que nada versionado tivesse mudado. Antes de remediar alegação de corpus,
+confira que a árvore está limpa — `git status --ignored` mostra o que a medição
+enxerga e o `git` não.
+
 Um número que descreve um estado ATUAL (re-executável, e portanto obrigado a
 continuar batendo) usa `proof.kind: "command"`. Um número que descreve uma MEDIÇÃO
 PASSADA ancorada a um commit (um baseline, que por definição envelhece) usa

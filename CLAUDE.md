@@ -133,7 +133,9 @@ arquivo:
 
 **O denominador decide o sinal, e ele precisa sair junto.** Medido na secao 10 de
 `docs/harness/CODEINTEL-GAP.md`: contra ler os arquivos o indice economiza
-**649,5x**; contra a saida de um `grep` pelo nome, **9,4x**; contra um `grep`
+**661,3x** (remedido em 2026-09-03: era 649,5x, e a prova dividia um numerador
+LITERAL que ja nao batia com a medicao ao lado); contra a saida de um `grep`
+pelo nome, **9,4x**; contra um `grep`
 cirurgico pela definicao ele **custa 5,3x mais**. As tres medidas sao verdadeiras
 e citar so a primeira escolheria o resultado.
 
@@ -377,15 +379,25 @@ permanecem no nível usuário (`~/.agents/skills/`).
 
 ## Agentic Engineering Runtime
 
-O SparkForge agora tem uma camada agêntica em `sparkforge/agentic/` com 13
-módulos: `models` (Claim, Evidence, Hypothesis, Experiment, Decision, Unknown,
-Contradiction, Objection, Rebuttal), `runtime` (AgentRuntime protocol),
-`evidence` (Source Authority T1-T6), `blackboard` (Shared Blackboard JSONL),
-`debate` (Debate Engine com protocolo formal), `arbitration` (arbitragem
-independente + false consensus detection), `experiment` (Experiment Designer),
-`decision` (Decision Engine + ADR automático), `memory` (Decision Memory
-跨-case), `budget` (Unified token economics), `security` (threat model +
+`sparkforge/agentic/` tem 13 módulos: `models` (Claim, Evidence, Hypothesis,
+Experiment, Decision, Unknown, Contradiction, Objection, Rebuttal), `runtime`
+(AgentRuntime protocol), `evidence` (Source Authority T1-T6), `blackboard`
+(Shared Blackboard JSONL), `debate` (protocolo formal), `arbitration`
+(arbitragem independente + false consensus detection), `experiment` (Experiment
+Designer), `decision` (Decision Engine + ADR automático), `memory` (Decision
+Memory cross-case), `budget` (token economics), `security` (threat model +
 guardrails), `autonomy` (L0-L5), `graph` (Agent Execution Graph).
+
+29. **A camada agêntica é BIBLIOTECA, não pipeline em execução.** Nenhum
+    extrator, regra, tool ou coordenador escreve `Claim`/`Evidence`/`Decision`:
+    num repositório de trabalho `blackboard summary` devolve zero em tudo, e
+    isso é o estado correto, não bug. Antes de dizer que o SparkForge "debate"
+    ou "arbitra" um caso, lembre que não existe executor de debate — existe o
+    protocolo, o budget e as entidades. Status por componente em
+    `docs/agentic-evolution-report.md`.
+30. **Não há benchmark da camada agêntica, e por isso não há afirmação de
+    ganho.** Comparar arquitetura nova com antiga exige os dois lados rodando o
+    mesmo caso; o lado novo não roda. Regra 28 vale aqui igual.
 
 ### CLI commands agênticos
 
@@ -394,11 +406,18 @@ sparkforge agents list           # lista agentes
 sparkforge agents inspect <id>   # inspeciona agente
 sparkforge blackboard summary    # resumo do blackboard
 sparkforge blackboard list --type <tipo>  # lista entidades
-sparkforge decisions list        # lista decisões
-sparkforge decisions explain <id>  # explica decisão
-sparkforge budget show           # budget do case
+sparkforge decisions list        # lista decisoes
+sparkforge decisions explain <id>  # explica decisao
+sparkforge budget show           # budget DECLARADO do case
+sparkforge budget show --template  # defaults do codigo, rotulados
 sparkforge autonomy show --level L3  # perfil de autonomia
 ```
+
+`budget show` lê o bloco `budget:` do `case.yaml`. Sem o bloco, sai
+`limits.status = "unresolved"` nomeando a lacuna — o default do código só
+aparece sob `--template`. Consumo sai `unresolved` e aponta `economy report
+--run-id`, que é onde ele é medido (token exige transcript: regra 24; dólar
+exige `cost_basis`: regra 25).
 
 ### Evidence Authority Tiers
 
@@ -406,9 +425,30 @@ T1 (docs oficial) > T2 (source/changelog) > T3 (benchmark reproduzível) >
 T4 (autoridade reconhecida) >> T5 (LLM) > T6 (conjectura). T5 e T6 **nunca**
 são suficientes sozinhos para confirmar uma claim de alta confiança.
 
+`aggregate_strength` separa duas perguntas que já foram a mesma expressão:
+`has_sufficient_authority` é só o tier; `has_fresh_in_scope` é tier **mais**
+verificação de vigência e escopo. Uma T1 fora da versão alvo tem autoridade e
+não sustenta a claim — e é essa diferença que nomeia por quê.
+
 ### Autonomy Levels
 
 L0 deterministic → L1 specialist → L2 cooperative → L3 debate → L4 experimental
-→ L5 autonomous engineering. L5 não é permitido para high-risk sem guardrails.
+→ L5 autonomous engineering.
+
+**O perfil EXIGIR um guardrail não é o mesmo que tê-lo obtido.**
+`validate_autonomy_boundary` recebe `guardrails_satisfied` do chamador — a lista
+do que ele comprova ter executado — e recusa ação de alto risco enquanto o
+`required_validation` do nível não estiver coberto. Ler a exigência do próprio
+perfil estático era tautologia: o ramo nunca disparava, e L5 `modify_code` de
+alto risco saía autorizado sem aprovação nenhuma.
+
+### Arbitragem: o que o score é, e o que ele não é
+
+Os pesos de `assess_claim` (evidência 40%, autoridade 30%, especificidade 20%,
+aplicabilidade 10%) são **convenção**, não medida — nenhum experimento os
+calibrou. Eles ordenam claims dentro de uma mesma arbitragem; o valor absoluto
+não é confiança medida e não deve ser publicado como tal. Uma claim avaliada
+sozinha não é arbitragem: o resultado sai com `disputed=False`, e não pede
+experimento para diferenciar a claim dela mesma.
 
 Spec: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`

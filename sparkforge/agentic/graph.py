@@ -260,24 +260,26 @@ def build_graph_from_case(
 
     # Add claim nodes
     for c in claims:
-        graph.add_node(
-            GraphNode(
-                node_type=NodeType.CLAIM,
-                ref_id=c.get("id", ""),
-                label=c.get("statement", "")[:80],
-                metadata={"claimant": c.get("claimant", ""), "claim_type": c.get("claim_type", "")},
-            )
+        # O nó desta claim, nomeado — nunca `get_nodes_by_type(CLAIM)[-1]`.
+        # `add_node` deduplica por id, então "o último da lista" pode ser
+        # outra claim quando esta já existia, e a edge do agente colava na
+        # claim errada (defeito até 2026-09-03).
+        claim_node = GraphNode(
+            node_type=NodeType.CLAIM,
+            ref_id=c.get("id", ""),
+            label=c.get("statement", "")[:80],
+            metadata={"claimant": c.get("claimant", ""), "claim_type": c.get("claim_type", "")},
         )
+        graph.add_node(claim_node)
         # Edge: agent produces claim
         claimant = c.get("claimant", "")
         if claimant:
-            agent_node = graph.get_nodes_by_type(NodeType.AGENT)
-            for an in agent_node:
+            for an in graph.get_nodes_by_type(NodeType.AGENT):
                 if an.ref_id == claimant:
                     graph.add_edge(
                         GraphEdge(
                             source=an.id,
-                            target=graph.get_nodes_by_type(NodeType.CLAIM)[-1].id,
+                            target=claim_node.id,
                             edge_type=EdgeType.PRODUCES,
                         )
                     )
