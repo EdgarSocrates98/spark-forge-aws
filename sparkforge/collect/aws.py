@@ -96,13 +96,53 @@ CLOUDWATCH_METRIC_NAMES: tuple[str, ...] = tuple(n for n, _ in CLOUDWATCH_METRIC
 # permissao no sentido usual -- e uma restricao do proprio Athena para metadata
 # tables sob esses filtros. Quem receber esse erro deve olhar o Lake Formation,
 # nao a policy de IAM, e o erro deste coletor diz isso.
+# MEDIDO CONTRA O ATHENA REAL em 2026-09-03, numa tabela Iceberg criada para
+# isto (conta 702561771161, us-east-1, destruida depois):
+#
+#   $files       EXISTE  14 colunas, com `content`
+#   $snapshots   EXISTE   6 colunas
+#   $manifests   EXISTE  11 colunas
+#   $partitions  EXISTE   5 colunas
+#   $history     EXISTE   (nao consultada por este coletor)
+#   $refs        EXISTE   (nao consultada por este coletor)
+#
+#   $delete_files       NAO EXISTE  -- TABLE_REDIRECTION_ERROR
+#   $all_files          NAO EXISTE
+#   $all_delete_files   NAO EXISTE
+#   $data_files         NAO EXISTE
+#   $entries            NAO EXISTE
+#   $statistics         NAO EXISTE
+#   $position_deletes   NAO EXISTE
+#
+# `delete_files` ESTAVA NESTA LISTA e nao podia funcionar: o Athena responde
+# `TABLE_REDIRECTION_ERROR: ... the target table does not exist`. Toda coleta
+# via Athena falhava naquela secao, e o extrator recebia o dump sem ela --
+# indistinguivel de uma tabela sem deletes.
+#
+# ONDE OS DELETES APARECEM: em `$files`, pela coluna `content` (0 data,
+# 1 position, 2 equality). E a mesma coluna que o censo de
+# `iceberg_metadata.py` le. `iceberg-diagnostics.sql` ja fazia
+# `WHERE content = 0` para os data files -- a evidencia estava escrita ali
+# desde antes, e ninguem a ligou a esta lista.
 ICEBERG_METADATA_SECTIONS: tuple[str, ...] = (
     "files",
-    "delete_files",
     "snapshots",
     "manifests",
     "partitions",
 )
+
+# Secoes que o Athena NAO expoe, com o que cada uma custaria destravar. Sao
+# listadas para que a proxima pessoa nao as acrescente de novo achando que a
+# ausencia foi esquecimento.
+ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA: dict[str, str] = {
+    "delete_files": (
+        "os deletes vem de `$files` com `content` em (1, 2); consultar "
+        "`$delete_files` da TABLE_REDIRECTION_ERROR"
+    ),
+    "entries": "exigiria Spark; o Athena nao a expoe",
+    "statistics": "Puffin -- exigiria Spark ou leitura do metadata.json",
+    "all_files": "so a variante nao-`all_` existe",
+}
 
 
 # Estados em que um job run nao muda mais. So estes viram artefato: gravar um

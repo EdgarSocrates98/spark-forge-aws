@@ -6708,6 +6708,59 @@ O trabalho que decide, e que **não** foi feito: varrer cada uma por padrão de 
 (`must`, `cannot`, `is not supported`, `up to N`), como a entrega de Control-M fez. Até lá,
 acrescentá-las compraria treze alarmes anuais sem nenhuma regra em troca.
 
+## Iceberg — medido contra o Athena real, e o que o fake escondia (2026-09-03)
+
+Sétimo incremento. Primeira medição deste repositório contra **AWS de verdade**: uma
+tabela Iceberg criada na conta 702561771161, consultada, e destruída. Custo ~7 KB
+escaneados.
+
+### O defeito que só o artefato real revelaria
+
+**`delete_files` estava em `ICEBERG_METADATA_SECTIONS` e não podia funcionar.** O Athena
+**não expõe** `$delete_files` — responde `TABLE_REDIRECTION_ERROR`. Toda coleta via Athena
+falhava naquela seção, e o extrator recebia o dump sem ela, **indistinguível de uma tabela
+sem deletes**.
+
+**E o fake era o que escondia isso.** `FakeAthenaClient` respondia `$delete_files` de bom
+grado, e `test_queries_all_five_sections_with_dollar_syntax` ficava verde sobre uma
+consulta impossível.
+
+> Um fake que aceita tudo prova que o código chama o que ele espera, nunca que o serviço
+> responde.
+
+Os deletes vêm de **`$files` pela coluna `content`** — a mesma que o censo de 2026-09-02
+lê, e a mesma que `knowledge/iceberg-diagnostics.sql` já usava em `WHERE content = 0`. A
+evidência estava no repositório desde antes; ninguém a ligou à lista de seções.
+
+### O que o Athena expõe, medido
+
+`$files` (14 colunas, **com `content`**), `$snapshots` (6), `$manifests` (11),
+`$partitions` (5), `$history` e `$refs`. **Não existem:** `$delete_files`, `$all_files`,
+`$all_delete_files`, `$data_files`, `$entries`, `$statistics`, `$position_deletes`.
+
+Isso muda duas linhas do mapa: `statistics` e `entries` continuam bloqueadas, mas agora
+**por medição** — destravá-las exige **Spark**, não uma coluna a mais no `SELECT`.
+
+### `format-version` não é declarável no Athena
+
+`TBLPROPERTIES ('format-version'='2')` falha com *"Unsupported table property key"*; com
+underscore também. Isso **confirma pelo lado do artefato** a correção de `SF-ENV-002`: numa
+tabela criada por Athena a propriedade **nunca** existe, e a regra — enquanto lia a
+propriedade — ficava calada em toda tabela criada por lá.
+
+### O extrator passou
+
+Sobre o dump verdadeiro, com a coerção de tipo do coletor: `files_summary` com
+`total_bytes 3256` e `p50 651`, `manifests_summary` com `avg_data_files_per_manifest 1.4`,
+`snapshots_summary` com `operations [append, overwrite]`, e `format_version` com a **recusa
+nomeada** — que é a resposta certa, porque o Athena não fornece o campo.
+
+### O que o roteiro NÃO conseguiu produzir, e fica declarado
+
+**Nenhum delete file.** O `DELETE` do Athena é copy-on-write, e `write.delete.mode` não é
+aceito como table property. O censo por `content` está **certo e não exercitado contra
+produção** — a medida que o destravaria é um job Spark com merge-on-read, não outra query.
+
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.
 3. Escreva o par spec + plan em `specs/` e `plans/` com a data do merge.

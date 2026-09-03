@@ -485,13 +485,27 @@ class TestCloudWatchPeriod:
 
 
 class TestCollectIcebergMetadata:
-    def test_queries_all_five_sections_with_dollar_syntax(self, tmp_path, monkeypatch):
+    def test_queries_as_quatro_secoes_que_o_athena_EXPOE(self, tmp_path, monkeypatch):
+        """Quatro, e nao cinco -- MEDIDO contra o Athena real em 2026-09-03.
+
+        `delete_files` estava nesta lista e NAO PODIA FUNCIONAR: o Athena
+        responde `TABLE_REDIRECTION_ERROR: ... the target table does not
+        exist`. Toda coleta falhava naquela secao, e o extrator recebia o dump
+        sem ela -- indistinguivel de uma tabela sem deletes.
+
+        E O FAKE ERA O QUE ESCONDIA ISSO. `FakeAthenaClient` respondia
+        `$delete_files` de bom grado, entao o teste ficava verde sobre uma
+        consulta impossivel. Um fake que aceita tudo prova que o codigo chama o
+        que ele espera, nunca que o servico responde.
+
+        Os deletes vem de `$files` pela coluna `content` (0 data, 1 position,
+        2 equality) -- a mesma que `iceberg_metadata.py` conta.
+        """
         rows_by_query = {
             'SELECT * FROM "db"."tbl$files"': _rows(
                 ["file_path", "file_size_in_bytes", "record_count"],
                 [["s3://b/f1.parquet", "1024", "10"]],
             ),
-            'SELECT * FROM "db"."tbl$delete_files"': [],
             'SELECT * FROM "db"."tbl$snapshots"': [],
             'SELECT * FROM "db"."tbl$manifests"': [],
             'SELECT * FROM "db"."tbl$partitions"': [],
@@ -513,7 +527,9 @@ class TestCollectIcebergMetadata:
         assert payload["files"] == [
             {"file_path": "s3://b/f1.parquet", "file_size_in_bytes": 1024, "record_count": 10}
         ]
-        assert payload["delete_files"] == []
+        assert "delete_files" not in payload, (
+            "`$delete_files` nao existe no Athena; pedi-la e TABLE_REDIRECTION_ERROR"
+        )
 
         queries = {c[1]["QueryString"] for c in athena.calls if c[0] == "start_query_execution"}
         assert queries == set(rows_by_query)

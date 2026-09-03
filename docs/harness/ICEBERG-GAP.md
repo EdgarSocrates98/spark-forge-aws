@@ -147,6 +147,80 @@ de cinco regras inventadas.
 Até que essa leitura aconteça, acrescentar as treze ao `sources.lock.json` compraria treze
 alarmes anuais sem nenhuma regra em troca.
 
+## O que o Athena REAL respondeu (2026-09-03)
+
+Tudo acima foi medido sobre o repositório. Esta seção foi medida contra uma **tabela
+Iceberg de verdade**, criada na conta 702561771161 (`us-east-1`) e destruída depois. Custo:
+~7 KB escaneados.
+
+### As metadata tables que existem, e as que não
+
+| | |
+|---|---|
+| `$files` | **existe** — 14 colunas, **com `content`** |
+| `$snapshots` | **existe** — 6 colunas |
+| `$manifests` | **existe** — 11 colunas |
+| `$partitions` | **existe** — 5 colunas |
+| `$history`, `$refs` | **existem**, e este coletor não as consulta |
+| `$delete_files` | **NÃO EXISTE** — `TABLE_REDIRECTION_ERROR` |
+| `$all_files`, `$all_delete_files`, `$data_files`, `$entries`, `$statistics`, `$position_deletes` | **não existem** |
+
+**`delete_files` estava em `ICEBERG_METADATA_SECTIONS` e não podia funcionar.** Toda coleta
+via Athena falhava naquela seção, e o extrator recebia o dump sem ela — indistinguível de
+uma tabela sem deletes.
+
+**O fake era o que escondia isso.** `FakeAthenaClient` respondia `$delete_files` de bom
+grado, e o teste ficava verde sobre uma consulta impossível. Um fake que aceita tudo prova
+que o código chama o que ele espera, nunca que o serviço responde.
+
+Os deletes vêm de **`$files` pela coluna `content`** — a mesma que o censo de 2026-09-02
+lê, e a mesma que `knowledge/iceberg-diagnostics.sql` já usava em `WHERE content = 0`. A
+evidência estava escrita desde antes; ninguém a ligou à lista de seções.
+
+### `format-version` não é declarável no Athena
+
+`CREATE TABLE ... TBLPROPERTIES ('format-version'='2')` falha com *"Unsupported table
+property key"*. Com underscore também. `write.delete.mode` idem.
+
+Isso **confirma pelo lado do artefato** a decisão de ler o `format_version` do metadata em
+vez da propriedade: numa tabela criada por Athena a propriedade **nunca** existe — e
+`SF-ENV-002`, enquanto a lia, ficava calada em toda tabela criada por lá.
+
+### O extrator funciona contra artefato real
+
+Rodado sobre o dump verdadeiro, com a coerção de tipo de `collect/aws.py`
+(`_coerce_athena_value` — o Athena devolve toda célula como string):
+
+    iceberg.files_summary        data_file_count 5, total_bytes 3256, p50 651
+    iceberg.manifests_summary    manifest_count 5, avg_data_files_per_manifest 1.4
+    iceberg.partitions_summary   partition_count 3
+    iceberg.snapshots_summary    snapshot_count 5, operations [append, overwrite]
+    iceberg.format_version       resolved: false, format_version_ausente_no_dump
+    iceberg.table_analyzed       section_count 4, unresolved_count 0
+
+**A recusa de `format_version` é a resposta certa**, e não um defeito: o Athena não fornece
+o campo, e o extrator diz isso em vez de inferir da propriedade.
+
+Sem a coerção de tipo o `total_bytes` some — `isinstance(size, int|float)` reprova a string
+`"1234"`. O coletor já a fazia, e o comentário dele já dizia por quê.
+
+### O que isto mudou nas seis camadas bloqueadas pelo artefato
+
+`statistics` e `entries` continuam bloqueadas, e agora **por medição e não por leitura de
+documentação**: o Athena responde `TABLE_REDIRECTION_ERROR` para as duas. Destravá-las
+exige **Spark**, não uma coluna a mais no `SELECT`.
+
+### O que este roteiro não conseguiu produzir
+
+**Nenhum delete file.** O `DELETE` do Athena é copy-on-write por padrão, e
+`write.delete.mode` não é aceito como table property no `CREATE TABLE` nem no `ALTER`.
+Depois de dois `DELETE`, `$files` continuou com `content = 0` em cinco linhas e nada mais.
+
+Consequência para o censo por `content`: ele está **certo e não exercitado contra
+produção**. Uma tabela escrita por Spark com merge-on-read produziria `content = 1`; uma
+criada e deletada só por Athena, aparentemente, nunca. Isso é limite declarado, não defeito
+— e a medida que o destravaria é um job Spark, não outra query.
+
 ## O que este mapa sustenta como próximo passo
 
 Em ordem de valor por custo:
