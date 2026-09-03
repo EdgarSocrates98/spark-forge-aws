@@ -58,8 +58,8 @@ arquivo ganha.
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Skills | **46** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases`) | `skills/*/SKILL.md` |
-| Skills que declaram despacho | **23 de 46**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
+| Skills | **57** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases` + `provision-s3-tables-table` + `harden-s3-bucket` + 9 skills AWS oficiais adaptadas: `aws-storage`, `aws-database`, `aws-serverless`, `aws-iam`, `aws-observability`, `aws-billing-and-cost-management`, `aws-messaging-and-streaming`, `aws-security`, `aws-sdk-python-usage`) | `skills/*/SKILL.md` |
+| Skills que declaram despacho | **23 de 57**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase). `provision-s3-tables-table`, `harden-s3-bucket` e as 9 skills AWS adaptadas são as onze não-despacháveis — procedimento operacional que pode mutar infra AWS ao vivo, fronteira `## Não faz` exige confirmação do operador, inalcancável em subagente | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **290** em 33 domínios — recontado em 2026-09-02; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). A 289ª é `consumers/v3_sem_propriedade_com_athena` (2026-09-02), e ela prova um **falso negativo** que `SF-ENV-002` tinha: a regra lia a table property `format-version`, que é OPCIONAL, em vez do `format_version` do metadata, que é autoritativo. Tabela v3 sem a propriedade não disparava — e o modo de falha é o mesmo da fixture irmã: o job migra verde e o dashboard do outro time quebra dias depois. As duas juntas são o contrafactual: apontar a regra de volta para a propriedade cala esta e mantém a outra. A 290ª é `iceberg/delete_content_separado` (2026-09-02): os **três** estados do censo por `content` no mesmo dump — 4 position, 3 equality e 3 sem a coluna, somando os 10 delete files. Antes, os dois tipos entravam no mesmo `delete_file_count` e um dump sem a coluna era indistinguível de um em que todos fossem do mesmo tipo. `SF-ICE-002` continua disparando pelo mesmo número: o censo **acrescenta** medida, não muda a que a regra já usava. |
 | Ramos de severidade com golden que os produz | **119 de 119** — recontado em 2026-09-02 (o sub-número **15 deles nas 7 regras com `severity_by`** continua certo; nenhuma das cinco `SF-CTM` de 2026-09-02 declara `severity_by`, então cada uma acrescenta um ramo só, o de `severity_default`. `SF-GRAPH` também não tem nenhuma, ver `V-GR-3`). A leitura anterior publicava 113 e já estava defasada em 1 antes desta entrega | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
@@ -6760,6 +6760,51 @@ nomeada** — que é a resposta certa, porque o Athena não fornece o campo.
 **Nenhum delete file.** O `DELETE` do Athena é copy-on-write, e `write.delete.mode` não é
 aceito como table property. O censo por `content` está **certo e não exercitado contra
 produção** — a medida que o destravaria é um job Spark com merge-on-read, não outra query.
+
+## Auditoria dos fakes de coleta — o CloudWatch tinha o mesmo defeito (2026-09-03)
+
+Oitavo incremento. Motivada pelo achado do PR #38: `FakeAthenaClient` respondia
+`$delete_files` de bom grado e mantinha verde um teste sobre uma consulta impossível.
+
+> Um fake que aceita tudo prova que o código chama o que ele espera, nunca que o serviço
+> responde.
+
+A pergunta desta auditoria: **os outros oito fakes escondem a mesma coisa?**
+
+### O que cada um respondeu
+
+| | |
+|---|---|
+| **S3** | pagina por `ContinuationToken`, e `EmptyS3Client` cobre o prefixo vazio — **sem defeito** |
+| **Glue** e **Glue runs** | paginam por `NextToken` — **sem defeito** |
+| **EMR**, **EMR Serverless**, **EMR on EKS** | `_pagina_emr` segue `Marker`, e o coletor já trata a falha cruzada de `list_instance_fleets` contra cluster de instance groups — **sem defeito** |
+| **CloudWatch** | **dois defeitos** |
+
+### Os dois defeitos do CloudWatch
+
+**Não paginava.** `get_metric_data` devolve até 100 800 pontos por chamada e o resto atrás
+de `NextToken`. Com **17 métricas** e período fino, um run longo estoura isso — e a série
+truncada saía **indistinguível da completa**.
+
+**Não conferia o que voltou.** A API pode devolver menos resultados do que se pediu, e o
+payload sairia com a mesma cara de um completo. Agora sai com `metrics_requested`,
+`metrics_returned` e `metrics_missing` — o buraco **declarado**, não um erro.
+
+**E o fake era o que escondia os dois:** devolvia **um** resultado para as 17 consultas.
+Nenhum dos comportamentos era exercitado.
+
+O teto de 20 páginas existe para que uma janela absurda **falhe dizendo o que aconteceu**,
+em vez de gravar um parcial silencioso.
+
+### O guard que fecha a classe
+
+`tests/test_fakes_de_coleta.py` trava o que dá para travar sem AWS: **todo serviço precisa
+ter um fake com caminho de recusa**. Um fake sem forma de dizer "não" não exercita o ramo
+de erro do coletor — e é nesse ramo que esta classe de defeito mora.
+
+Também trava a raiz do defeito original: nenhuma seção de
+`ICEBERG_SECOES_INDISPONIVEIS_NO_ATHENA` pode reaparecer em
+`ICEBERG_METADATA_SECTIONS`.
 
 1. Atualize a tabela **Números correntes** rodando os comandos da coluna direita.
 2. Marque a fase e cole a faixa de commits.

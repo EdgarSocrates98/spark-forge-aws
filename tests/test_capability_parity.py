@@ -175,6 +175,43 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "disco seria a unica destrutiva do catalogo, e nenhuma capacidade "
             "de investigacao precisa dela: reconstruir e `code sync`."
         ),
+        # Agentic CLI verbs (FASE K da evolução agentic): leitura-only,
+        # não extraem facts nem julgam regras. São superfícies de inspeção
+        # do blackboard/memory/autonomy — um cliente MCP já tem o payload
+        # estruturado via tools existentes. As entidades agentic (Claim,
+        # Evidence, etc.) são manipuladas via API Python, não via CLI/MCP.
+        "agents list": (
+            "lista arquivos .md em agents/ — leitura de diretório, "
+            "sem extração de facts nem julgamento."
+        ),
+        "agents inspect": (
+            "lê um arquivo .md de agente — leitura de arquivo, "
+            "sem extração de facts nem julgamento."
+        ),
+        "blackboard summary": (
+            "conta entidades no blackboard JSONL — leitura de estado, "
+            "sem extração de facts nem julgamento."
+        ),
+        "blackboard list": (
+            "lista entidades de um tipo do blackboard — leitura de estado, "
+            "sem extração de facts nem julgamento."
+        ),
+        "decisions list": (
+            "lista decisões do blackboard e memória — leitura de estado, "
+            "sem extração de facts nem julgamento."
+        ),
+        "decisions explain": (
+            "explica uma decisão por id — leitura de estado, "
+            "sem extração de facts nem julgamento."
+        ),
+        "budget show": (
+            "mostra template de budget do case — leitura de config, "
+            "sem extração de facts nem julgamento."
+        ),
+        "autonomy show": (
+            "mostra perfil de nível de autonomia L0-L5 — leitura de config, "
+            "sem extração de facts nem julgamento."
+        ),
     }
 
     def _subcomandos(self, parser):

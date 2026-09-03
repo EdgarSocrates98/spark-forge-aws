@@ -9,6 +9,7 @@ venv/
 # `vendor/caveman/dist/`, que E codigo vendorizado e precisa ser commitado.
 /build/
 /dist/
+tmp_skills/
 
 # Por maquina, nunca commitado: guarda o allowlist de permissoes de quem
 # trabalha ali -- caminhos e comandos que aquele operador autorizou a rodar sem

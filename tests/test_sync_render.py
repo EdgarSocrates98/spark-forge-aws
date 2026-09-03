@@ -498,8 +498,37 @@ class TestRelacaoDerivada:
 
     def test_toda_skill_do_disco_esta_na_relacao(self):
         """Skill que nenhum coordenador declara nao teria de onde derivar
-        `agent:`."""
-        orfas = [p.name for p in SKILL_DIRS if p.name not in RELACAO_MEDIDA]
+        `agent:`.
+
+        Excecao: skills nao-despachaveis que sao procedimento operacional,
+        nao gatilho do motor -- `provision-s3-tables-table` e `harden-s3-bucket`
+        mutam infra AWS ao vivo e nenhum coordenador as declara, porque elas
+        nao sao investigacao fechada. `agent:` so se deriva para despachaveis,
+        e essas duas estao em `NON_DISPATCHABLE_SKILLS` por motivo escrito.
+        """
+        nao_despachaveis_sem_coordenador = {
+            "provision-s3-tables-table",
+            "harden-s3-bucket",
+            # As nove skills oficiais AWS adaptadas (aws/agent-toolkit-for-aws,
+            # commit 10b28af8): procedimento operacional AWS, nao gatilho do
+            # motor SparkForge. Nenhum coordenador as declara porque elas nao
+            # sao investigacao fechada -- sao referencia de servico AWS.
+            "aws-storage",
+            "aws-database",
+            "aws-serverless",
+            "aws-iam",
+            "aws-observability",
+            "aws-billing-and-cost-management",
+            "aws-messaging-and-streaming",
+            "aws-security",
+            "aws-sdk-python-usage",
+        }
+        orfas = [
+            p.name
+            for p in SKILL_DIRS
+            if p.name not in RELACAO_MEDIDA
+            and p.name not in nao_despachaveis_sem_coordenador
+        ]
         assert not orfas, orfas
 
     def test_o_caso_ambiguo_existe_e_e_a_maioria(self):
