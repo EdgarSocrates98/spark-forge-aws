@@ -180,8 +180,12 @@ def aggregate_strength(
     """Calcula força agregada de um conjunto de evidências.
 
     Lógica:
-    - has_sufficient_authority: pelo menos uma T1-T4 presente.
-    - has_fresh_in_scope: pelo menos uma T1-T4 fresca e em scope.
+    - has_sufficient_authority: pelo menos uma T1-T4 presente (só o tier).
+    - has_fresh_in_scope: pelo menos uma T1-T4 fresca e em scope (tier +
+      verificação). É estritamente mais forte que o campo acima: uma T1 com
+      version mismatch dá `has_sufficient_authority=True` e
+      `has_fresh_in_scope=False`, e é essa diferença que nomeia por que a
+      evidência não sustenta a claim.
     - sufficient_for_high_confidence: has_fresh_in_scope AND not conflict.
     - conflict_detected: evidências suportam e contradizem a mesma claim.
     """
@@ -206,9 +210,14 @@ def aggregate_strength(
     else:
         max_tier = EvidenceAuthority.T6_CONJECTURE
 
+    # `has_sufficient_authority` olha SO o tier: existe evidencia T1-T4 no
+    # conjunto, fresca ou nao. `has_fresh_in_scope` exige o tier E a
+    # verificacao (fresca e em scope). As duas eram a mesma expressao ate
+    # 2026-09-03, o que fazia a docstring prometer uma distincao que o codigo
+    # nao tinha: evidencia T1 com version mismatch reportava authority
+    # ausente, e o campo mais fraco nunca podia ser verdadeiro sozinho.
     has_sufficient = any(
         v.authority not in (EvidenceAuthority.T5_LLM_KNOWLEDGE, EvidenceAuthority.T6_CONJECTURE)
-        and v.is_usable
         for v in verifications
     )
     has_fresh_in_scope = any(

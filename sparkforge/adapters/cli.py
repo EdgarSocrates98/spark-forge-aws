@@ -9,6 +9,7 @@ Toda saida e JSON em stdout (`json.dumps(..., indent=2, ensure_ascii=False)`).
 Erros nunca sao genericos: cada um carrega a causa e o comando que resolve,
 via `_core.AdapterError`, tratado uma unica vez em `main()`.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -126,9 +127,7 @@ def _apply_detail_level(payload: dict[str, Any], detail_level: str) -> dict[str,
     aplicada aqui tambem -- o `detail_level` que o `_core` recebe nao alcanca
     esta pagina.
     """
-    payload["items"], procedencias, versao = _core.project_items(
-        payload["items"], detail_level
-    )
+    payload["items"], procedencias, versao = _core.project_items(payload["items"], detail_level)
     return _core.declarar_no_envelope(payload, procedencias, versao)
 
 
@@ -248,7 +247,7 @@ def build_parser() -> argparse.ArgumentParser:
         "plan",
         help=(
             "Extrai facts do texto de um plano fisico "
-            "(`df.explain(\"formatted\")` / EXPLAIN FORMATTED)."
+            '(`df.explain("formatted")` / EXPLAIN FORMATTED).'
         ),
     )
     plan_p.add_argument("--path", required=True, help="Arquivo de texto com a saida de explain.")
@@ -400,9 +399,7 @@ def build_parser() -> argparse.ArgumentParser:
         "Expectations e validacao artesanal): onde o check roda, se tem consequencia, "
         "e quantas passadas custa.",
     )
-    dq_p.add_argument(
-        "--path", required=True, help="Arquivo .py ou diretorio com codigo PySpark."
-    )
+    dq_p.add_argument("--path", required=True, help="Arquivo .py ou diretorio com codigo PySpark.")
     dq_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
     dq_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     dq_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
@@ -509,9 +506,7 @@ def build_parser() -> argparse.ArgumentParser:
     migrate_glue_p.add_argument(
         "--to", dest="to_runtime", required=True, help="Versao de Glue alvo."
     )
-    migrate_glue_p.add_argument(
-        "--out", help="Escreve o assessment completo (JSON) neste arquivo."
-    )
+    migrate_glue_p.add_argument("--out", help="Escreve o assessment completo (JSON) neste arquivo.")
 
     # DOIS VERBOS, E NAO UM `--platform` EM `migrate glue`.
     #
@@ -563,9 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Release alvo, com ou sem o prefixo `emr-`.",
     )
-    migrate_emr_p.add_argument(
-        "--out", help="Escreve o assessment completo (JSON) neste arquivo."
-    )
+    migrate_emr_p.add_argument("--out", help="Escreve o assessment completo (JSON) neste arquivo.")
 
     # TERCEIRO VERBO, pela mesma logica que separou `glue` de `emr`.
     #
@@ -731,19 +724,27 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     release_diff_p.add_argument(
-        "--left-platform", dest="left_platform", required=True,
+        "--left-platform",
+        dest="left_platform",
+        required=True,
         help="Plataforma do lado de ONDE o operador sai.",
     )
     release_diff_p.add_argument(
-        "--left-release", dest="left_release", required=True,
+        "--left-release",
+        dest="left_release",
+        required=True,
         help="Release do lado de ONDE o operador sai.",
     )
     release_diff_p.add_argument(
-        "--right-platform", dest="right_platform", required=True,
+        "--right-platform",
+        dest="right_platform",
+        required=True,
         help="Plataforma do lado PARA ONDE o operador vai.",
     )
     release_diff_p.add_argument(
-        "--right-release", dest="right_release", required=True,
+        "--right-release",
+        dest="right_release",
+        required=True,
         help="Release do lado PARA ONDE o operador vai.",
     )
 
@@ -777,11 +778,15 @@ def build_parser() -> argparse.ArgumentParser:
     # com o mesmo valor devolve `same_runtime_label`, porque comparar um runtime
     # consigo mesmo nao prova nada sobre trocar de runtime.
     benchmark_p.add_argument(
-        "--before-runtime", dest="before_runtime", default="",
+        "--before-runtime",
+        dest="before_runtime",
+        default="",
         help="Versao de runtime em que a execucao ANTES rodou (ex.: 5.1).",
     )
     benchmark_p.add_argument(
-        "--after-runtime", dest="after_runtime", default="",
+        "--after-runtime",
+        dest="after_runtime",
+        default="",
         help="Versao de runtime em que a execucao DEPOIS rodou (ex.: 6.0).",
     )
     benchmark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
@@ -796,13 +801,9 @@ def build_parser() -> argparse.ArgumentParser:
         "workload",
         help="Perfil de workload por eixos, a partir de facts ja extraidos.",
     )
-    workload_p.add_argument(
-        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
-    )
+    workload_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
     workload_p.add_argument("--job-name", required=True)
-    workload_p.add_argument(
-        "--job-run", required=True, help="Id do run que este perfil descreve."
-    )
+    workload_p.add_argument("--job-run", required=True, help="Id do run que este perfil descreve.")
     workload_p.add_argument(
         "--history",
         help=(
@@ -810,9 +811,7 @@ def build_parser() -> argparse.ArgumentParser:
             "(`analyze glue-job-runs --out`), para a escala."
         ),
     )
-    workload_p.add_argument(
-        "--out", help="Escreve o fingerprint completo (JSON) neste arquivo."
-    )
+    workload_p.add_argument("--out", help="Escreve o fingerprint completo (JSON) neste arquivo.")
 
     # capacity -----------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`, `fuse` e `workload`: nao
@@ -824,13 +823,9 @@ def build_parser() -> argparse.ArgumentParser:
             "que o job JA rodou. Nunca aplica a mudanca."
         ),
     )
-    capacity_p.add_argument(
-        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
-    )
+    capacity_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
     capacity_p.add_argument("--job-name", required=True)
-    capacity_p.add_argument(
-        "--job-run", required=True, help="Id do run que este plano descreve."
-    )
+    capacity_p.add_argument("--job-run", required=True, help="Id do run que este plano descreve.")
     capacity_p.add_argument(
         "--history",
         help=(
@@ -838,9 +833,7 @@ def build_parser() -> argparse.ArgumentParser:
             "(`analyze glue-job-runs --out`), para as capacidades observadas."
         ),
     )
-    capacity_p.add_argument(
-        "--out", help="Escreve o plano completo (JSON) neste arquivo."
-    )
+    capacity_p.add_argument("--out", help="Escreve o plano completo (JSON) neste arquivo.")
 
     # finops -------------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload` e
@@ -853,13 +846,9 @@ def build_parser() -> argparse.ArgumentParser:
             "alavanca esta -- capacidade ou codigo."
         ),
     )
-    finops_p.add_argument(
-        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
-    )
+    finops_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
     finops_p.add_argument("--job-name", required=True)
-    finops_p.add_argument(
-        "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
-    )
+    finops_p.add_argument("--out", help="Escreve o relatorio completo (JSON) neste arquivo.")
 
     # tune ---------------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `capacity` e `finops`: nao extrai de
@@ -873,12 +862,8 @@ def build_parser() -> argparse.ArgumentParser:
             "propriedade. Nunca aplica a mudanca."
         ),
     )
-    tune_p.add_argument(
-        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
-    )
-    tune_p.add_argument(
-        "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
-    )
+    tune_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
+    tune_p.add_argument("--out", help="Escreve o relatorio completo (JSON) neste arquivo.")
 
     # economy ------------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `capacity`, `finops` e `tune`: compoe
@@ -927,8 +912,17 @@ def build_parser() -> argparse.ArgumentParser:
     bb_list_p.add_argument(
         "--type",
         required=True,
-        choices=["claims", "evidence", "hypotheses", "objections", "rebuttals",
-                 "contradictions", "experiments", "decisions", "unknowns"],
+        choices=[
+            "claims",
+            "evidence",
+            "hypotheses",
+            "objections",
+            "rebuttals",
+            "contradictions",
+            "experiments",
+            "decisions",
+            "unknowns",
+        ],
     )
 
     # agentic: decisions ----------------------------------------------------
@@ -951,6 +945,15 @@ def build_parser() -> argparse.ArgumentParser:
     budget_sub = budget_p.add_subparsers(dest="budget_action", required=True)
     budget_show_p = budget_sub.add_parser("show", help="Mostra budget do case.")
     budget_show_p.add_argument("--repo", default=".")
+    budget_show_p.add_argument(
+        "--template",
+        action="store_true",
+        help=(
+            "Mostra os valores PADRAO do codigo, rotulados como template. "
+            "Nao e o estado do case -- sem esta flag, budget nao declarado "
+            "sai como unresolved."
+        ),
+    )
 
     # agentic: autonomy -----------------------------------------------------
     autonomy_p = sub.add_parser(
@@ -1463,9 +1466,7 @@ def build_parser() -> argparse.ArgumentParser:
     code_read_p.add_argument("--start-line", type=int)
     code_read_p.add_argument("--end-line", type=int)
     code_read_p.add_argument("--context-lines", type=int, default=3)
-    code_read_p.add_argument(
-        "--max-tokens", type=int, default=_core.CODE_READ_DEFAULT_TOKENS
-    )
+    code_read_p.add_argument("--max-tokens", type=int, default=_core.CODE_READ_DEFAULT_TOKENS)
 
     code_context_p = _code_comum(
         code_sub.add_parser(
@@ -1496,8 +1497,7 @@ def build_parser() -> argparse.ArgumentParser:
         code_sub.add_parser(
             "purge",
             help=(
-                "Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro "
-                "diretorio e recusado."
+                "Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro diretorio e recusado."
             ),
         )
     )
@@ -1960,9 +1960,7 @@ def _cmd_analyze_consumers(args: argparse.Namespace) -> int:
 
 
 def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
-    full = _core.analyze_terraform_diff(
-        args.before, args.after, kind=args.kind, limit=None
-    )
+    full = _core.analyze_terraform_diff(args.before, args.after, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -2018,9 +2016,7 @@ def _cmd_glue_dependency_audit(args: argparse.Namespace) -> int:
 
 
 def _cmd_iceberg_assess_upgrade(args: argparse.Namespace) -> int:
-    _print(
-        _core.iceberg_assess_upgrade(args.path, source=args.from_spec, target=args.to_spec)
-    )
+    _print(_core.iceberg_assess_upgrade(args.path, source=args.from_spec, target=args.to_spec))
     return 0
 
 
@@ -2110,9 +2106,7 @@ def _cmd_analyze_emr_eks(args: argparse.Namespace) -> int:
 
 
 def _cmd_analyze_controlm_jobs(args: argparse.Namespace) -> int:
-    full = _core.analyze_controlm_jobs(
-        args.path, version=args.version, kind=args.kind, limit=None
-    )
+    full = _core.analyze_controlm_jobs(args.path, version=args.version, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -2808,10 +2802,25 @@ def _cmd_agents_list(args: argparse.Namespace) -> int:
 
 
 def _cmd_agents_inspect(args: argparse.Namespace) -> int:
-    """Inspeciona um agente específico."""
+    """Inspeciona um agente específico.
+
+    O `--id` vira nome de arquivo, então ele não pode conter separador nem
+    `..`: sem isso, `--id ../../etc/passwd` leria fora de `agents/`.
+    """
     from pathlib import Path
 
-    agent_file = Path(args.repo) / "agents" / f"{args.id}.md"
+    if "/" in args.id or "\\" in args.id or args.id in ("", ".", ".."):
+        print(
+            f"id invalido: {args.id!r} — esperado o nome do agente, sem caminho.",
+            file=sys.stderr,
+        )
+        return 1
+
+    agents_dir = (Path(args.repo) / "agents").resolve()
+    agent_file = (agents_dir / f"{args.id}.md").resolve()
+    if agents_dir not in agent_file.parents:
+        print(f"id invalido: {args.id!r} — resolve fora de {agents_dir}.", file=sys.stderr)
+        return 1
     if not agent_file.exists():
         print(f"Agent not found: {args.id}", file=sys.stderr)
         return 1
@@ -2826,20 +2835,22 @@ def _cmd_blackboard_summary(args: argparse.Namespace) -> int:
     from sparkforge.agentic.blackboard import summarize
 
     s = summarize(args.repo)
-    _print({
-        "claims": s.claims,
-        "evidence": s.evidence,
-        "hypotheses": s.hypotheses,
-        "objections": s.objections,
-        "rebuttals": s.rebuttals,
-        "contradictions": s.contradictions,
-        "experiments": s.experiments,
-        "decisions": s.decisions,
-        "unknowns": s.unknowns,
-        "open_unknowns": s.open_unknowns,
-        "open_hypotheses": s.open_hypotheses,
-        "unresolved_contradictions": s.unresolved_contradictions,
-    })
+    _print(
+        {
+            "claims": s.claims,
+            "evidence": s.evidence,
+            "hypotheses": s.hypotheses,
+            "objections": s.objections,
+            "rebuttals": s.rebuttals,
+            "contradictions": s.contradictions,
+            "experiments": s.experiments,
+            "decisions": s.decisions,
+            "unknowns": s.unknowns,
+            "open_unknowns": s.open_unknowns,
+            "open_hypotheses": s.open_hypotheses,
+            "unresolved_contradictions": s.unresolved_contradictions,
+        }
+    )
     return 0
 
 
@@ -2876,12 +2887,14 @@ def _cmd_decisions_list(args: argparse.Namespace) -> int:
     bb_decisions = read_decisions(args.repo)
     mem_decisions = get_decision_history(args.repo)
 
-    _print({
-        "blackboard_decisions": bb_decisions,
-        "blackboard_count": len(bb_decisions),
-        "institutional_decisions": mem_decisions,
-        "institutional_count": len(mem_decisions),
-    })
+    _print(
+        {
+            "blackboard_decisions": bb_decisions,
+            "blackboard_count": len(bb_decisions),
+            "institutional_decisions": mem_decisions,
+            "institutional_count": len(mem_decisions),
+        }
+    )
     return 0
 
 
@@ -2899,13 +2912,75 @@ def _cmd_decisions_explain(args: argparse.Namespace) -> int:
 
 
 def _cmd_budget_show(args: argparse.Namespace) -> int:
-    """Mostra estado do budget do case."""
-    from sparkforge.agentic.budget import CaseBudget
+    """Mostra o budget DECLARADO do case, ou `unresolved` nomeando a lacuna.
 
-    # For now, return default budget template
-    # In a real case, this would read from case state
-    budget = CaseBudget()
-    _print(budget.to_dict())
+    Nunca devolve o default do codigo como se fosse estado do case: ate
+    2026-09-03 este verbo imprimia `CaseBudget()` com `tokens_used: 0` e
+    `status: within` sem nenhuma marca de que o numero era de fabrica. Fake
+    de leitura e o defeito que os dois commits anteriores deste branch
+    removeram da coleta.
+
+    Consumo tambem nao e inventado: ele vive no ledger de spans, e quem o le e
+    `sparkforge economy report --run-id <id>`. Token de provider so existe com
+    transcript do host (regra 24), e custo em dolar exige `cost_basis`
+    (regra 25) -- por isso os dois saem `unresolved` aqui.
+    """
+    from sparkforge.agentic.budget import CASE_BUDGET_KEY, CaseBudget, case_budget_from_case
+    from sparkforge.case.store import CaseError, case_path, load_case
+
+    if args.template:
+        _print(
+            {
+                "kind": "template",
+                "note": (
+                    "Valores padrao do codigo (CaseBudget). NAO e o estado de "
+                    "nenhum case -- para o estado, rode sem --template."
+                ),
+                "limits": CaseBudget().to_dict(),
+            }
+        )
+        return 0
+
+    try:
+        case = load_case(args.repo)
+    except (CaseError, FileNotFoundError) as exc:
+        print(f"case ausente ou invalido em {case_path(args.repo)}: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        declared = case_budget_from_case(case)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if declared is None:
+        limits: dict[str, Any] = {
+            "status": "unresolved",
+            "reason": (
+                f"case.yaml nao declara o bloco `{CASE_BUDGET_KEY}:`. Sem teto "
+                f"declarado nao ha budget deste case -- o default do codigo e "
+                f"template, nao medida. Veja `budget show --template`."
+            ),
+        }
+    else:
+        limits = {"status": "declared", "source": str(case_path(args.repo))}
+        limits.update(
+            {k: v for k, v in declared.to_dict().items() if k.startswith("max_")},
+        )
+
+    _print(
+        {
+            "case_id": case.get("case_id", ""),
+            "limits": limits,
+            "consumption": {
+                "status": "unresolved",
+                "payload_bytes": "medido por run, nao por case: "
+                "`sparkforge economy report --run-id <run_id>`",
+                "tokens": "tokens_unresolved -- exige transcript do host (regra 24)",
+                "cost_usd": "unresolved -- exige cost_basis nomeado (regra 25)",
+            },
+        }
+    )
     return 0
 
 
@@ -2927,20 +3002,22 @@ def _cmd_autonomy_show(args: argparse.Namespace) -> int:
         return 1
 
     profile = get_profile(level)
-    _print({
-        "level": profile.level.value,
-        "name": profile.name,
-        "description": profile.description,
-        "allowed_actions": profile.allowed_actions,
-        "forbidden_actions": profile.forbidden_actions,
-        "max_budget_tokens": profile.max_budget_tokens,
-        "max_agents": profile.max_agents,
-        "max_debates": profile.max_debates,
-        "max_experiments": profile.max_experiments,
-        "approval_policy": profile.approval_policy,
-        "required_validation": profile.required_validation,
-        "risk_level": profile.risk_level,
-    })
+    _print(
+        {
+            "level": profile.level.value,
+            "name": profile.name,
+            "description": profile.description,
+            "allowed_actions": profile.allowed_actions,
+            "forbidden_actions": profile.forbidden_actions,
+            "max_budget_tokens": profile.max_budget_tokens,
+            "max_agents": profile.max_agents,
+            "max_debates": profile.max_debates,
+            "max_experiments": profile.max_experiments,
+            "approval_policy": profile.approval_policy,
+            "required_validation": profile.required_validation,
+            "risk_level": profile.risk_level,
+        }
+    )
     return 0
 
 

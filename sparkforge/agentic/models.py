@@ -111,10 +111,16 @@ class Claim:
     confidence: str = "low"  # high/medium/low — declarada, não confiável
     falsifiable: bool = True
     created_at: str = ""  # ISO 8601, injetado pelo caller
+    # claim_id da versão que esta revisão substitui. Opcional: revisão sem
+    # `supersedes` é claim nova, não correção — a diferença precisa ser
+    # declarada por quem revisa, e não inferida do texto.
+    supersedes: str | None = None
 
     def __post_init__(self) -> None:
         if not self.statement.strip():
             raise ValueError("Claim: statement vazio.")
+        if self.supersedes is not None and not self.supersedes.strip():
+            raise ValueError("Claim: supersedes vazio — use None quando não há versão anterior.")
         if self.confidence not in CONFIDENCE_VALUES:
             raise ValueError(
                 f"Claim: confidence {self.confidence!r} inválida "
@@ -127,10 +133,27 @@ class Claim:
 
     @property
     def id(self) -> str:
+        """Content-addressed sobre o que DEFINE a claim, não só sobre o texto.
+
+        `evidence_refs`, `assumptions` e `confidence` entram no hash desde
+        2026-09-03. Antes o id era `claimant + tipo + statement`, e a
+        consequência era medida: a mesma afirmação **revisada** — a mesma
+        frase agora sustentada por uma evidência nova — colidia com a versão
+        anterior, e `blackboard.append_claim` a recusava como duplicata. Não
+        havia como registrar revisão nenhuma.
+
+        Duas claims idênticas em tudo continuam com o mesmo id, que é o
+        propósito do content-addressing. O que mudou é o que conta como
+        "idêntica": afirmar a mesma coisa com evidência diferente é outra
+        claim, e `supersedes` liga uma à outra quando a revisão é deliberada.
+        """
         payload = {
             "claimant": self.claimant,
             "claim_type": self.claim_type.value,
             "statement": self.statement,
+            "evidence_refs": sorted(self.evidence_refs),
+            "assumptions": sorted(self.assumptions),
+            "confidence": self.confidence,
         }
         return _digest("claim", payload)
 
@@ -145,6 +168,7 @@ class Claim:
             "confidence": self.confidence,
             "falsifiable": self.falsifiable,
             "created_at": self.created_at,
+            "supersedes": self.supersedes,
         }
 
 

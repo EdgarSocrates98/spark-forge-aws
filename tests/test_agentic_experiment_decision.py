@@ -232,3 +232,64 @@ class TestIsSignificant:
             rollback="irreversible: data loss",
         )
         assert is_significant_decision(d)
+
+
+class TestCustoETempoNaoSaoInventados:
+    """Regra 14: sem `dpu_seconds` medido nao ha custo.
+
+    Ate 2026-09-03 todo experimento nascia com `cost_estimate="1 Glue job run
+    (DPU-hours)"` e `time_estimate="15-30 minutes"` fixos -- numeros que
+    ninguem mediu, num repositorio cuja tese e recusar exatamente isso.
+    """
+
+    def _hipotese(self):
+        from sparkforge.agentic.models import Hypothesis
+
+        return Hypothesis(
+            statement="Spill domina o stage 7",
+            expected_outcome="spill_bytes cai abaixo de 1GB",
+            failure_modes=["spill nao muda"],
+            falsification_method="medir spill_bytes no event log",
+        )
+
+    def test_sem_declaracao_do_chamador_custo_e_tempo_saem_vazios(self):
+        exp = design_experiment(self._hipotese(), variable="shuffle.partitions", baseline="200")
+        assert exp.cost_estimate == ""
+        assert exp.time_estimate == ""
+
+    def test_o_que_o_chamador_mediu_e_o_que_sai(self):
+        exp = design_experiment(
+            self._hipotese(),
+            variable="shuffle.partitions",
+            baseline="200",
+            cost_estimate="1 run medido em 412 DPU-segundos",
+            time_estimate="8 min medidos no run anterior",
+        )
+        assert exp.cost_estimate == "1 run medido em 412 DPU-segundos"
+        assert exp.time_estimate == "8 min medidos no run anterior"
+
+    def test_plano_de_deadlock_soma_o_que_foi_declarado(self):
+        h = self._hipotese()
+        from sparkforge.agentic.models import Hypothesis
+
+        h2 = Hypothesis(
+            statement="Skew domina o stage 7",
+            expected_outcome="tempo da task mediana se aproxima da maxima",
+            failure_modes=["distribuicao nao muda"],
+        )
+        plano = design_experiment_from_deadlock(
+            h, h2, variable="shuffle.partitions", baseline="200"
+        )
+        assert plano.total_cost_estimate == ""
+        assert plano.total_time_estimate == ""
+
+        plano2 = design_experiment_from_deadlock(
+            h,
+            h2,
+            variable="shuffle.partitions",
+            baseline="200",
+            cost_estimate_per_run="412 DPU-segundos",
+            time_estimate_per_run="8 min",
+        )
+        assert plano2.total_cost_estimate == "2 x 412 DPU-segundos"
+        assert plano2.total_time_estimate == "2 x 8 min"

@@ -33,6 +33,7 @@ Agent messages are data, not system instructions.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -131,12 +132,20 @@ def validate_input(content: str) -> GuardrailResult:
 def detect_prompt_injection(content: str) -> GuardrailResult:
     """Detecta prompt injection em conteúdo externo.
 
-    Heurísticas determinísticas:
-    - imperative verbs + tool names ("run", "execute", "delete" + tool name)
-    - system instruction markers ("system:", "ignore previous", "you are now")
-    - instruction-like patterns in data context
+    Heurística determinística: marcadores de instrução de sistema em conteúdo
+    que deveria ser dado ("ignore previous instructions", "you are now",
+    "new instructions:").
 
-    Esta é uma primeira linha de defesa. LLM-based validation pode complementar.
+    O que esta função NÃO faz, e por quê: até 2026-09-03 ela também bloqueava
+    "verbo imperativo + nome de serviço a menos de 50 caracteres". Medido
+    contra o vocabulário deste produto, isso bloqueia conteúdo legítimo —
+    "run the glue job novamente com 10 workers e delete os arquivos orfaos do
+    S3" é uma recomendação normal do SparkForge e saía `passed=False`. Um
+    guardrail que barra o caminho feliz é desligado pelo operador no primeiro
+    dia, e aí não guarda nada. Detecção de intenção fica para validação
+    LLM-based, que este módulo não faz.
+
+    Esta é uma primeira linha de defesa, não a única.
     """
     if not content:
         return GuardrailResult(passed=True)
@@ -163,31 +172,6 @@ def detect_prompt_injection(content: str) -> GuardrailResult:
                 reason=f"Prompt injection detectado: marker '{marker}' encontrado.",
                 blocked_content=marker,
             )
-
-    # Imperative + tool name patterns
-    imperatives = ("run", "execute", "delete", "drop", "create", "modify", "update")
-    tool_names = ("sparkforge", "glue", "emr", "s3", "iceberg", "terraform")
-    words = set(content_lower.split())
-    has_imperative = any(imp in words for imp in imperatives)
-    has_tool = any(tool in content_lower for tool in tool_names)
-
-    # Only flag if imperative + tool name in close proximity (simple heuristic)
-    if has_imperative and has_tool:
-        # Check if they're in the same sentence (within 50 chars)
-        for imp in imperatives:
-            idx = content_lower.find(imp)
-            if idx >= 0:
-                window = content_lower[idx : idx + 50]
-                if any(tool in window for tool in tool_names):
-                    return GuardrailResult(
-                        passed=False,
-                        threat_type=ThreatType.PROMPT_INJECTION,
-                        reason=(
-                            f"Prompt injection suspeito: imperative '{imp}' "
-                            "+ tool name em proximidade."
-                        ),
-                        blocked_content=window,
-                    )
 
     return GuardrailResult(passed=True)
 
@@ -232,37 +216,56 @@ def validate_tool_authorization(
     return GuardrailResult(passed=True)
 
 
+# Segredo é chave COM VALOR, não a palavra sozinha. Até 2026-09-03 estes
+# padrões eram substrings (`token=`, `private_key`, `AKIA`), e bloqueavam
+# output legítimo deste produto: uma coluna chamada `private_key_column`, a
+# prosa "token=" de um exemplo, `AKIA` dentro de qualquer palavra maiúscula.
+# Cada padrão abaixo exige a forma do segredo, não a menção dele.
+_SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # AWS access key id: prefixo + 16 caracteres do alfabeto da AWS.
+    ("aws_access_key_id", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
+    # Bloco PEM: a âncora é o delimitador inteiro, nunca a palavra "key".
+    ("pem_private_key", re.compile(r"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----")),
+    # chave = valor, com valor plausível (>= 8 chars, sem espaço).
+    (
+        "secret_assignment",
+        re.compile(
+            r"(?i)\b(?:aws_secret_access_key|aws_session_token|secret_access_key|"
+            r"password|passwd|api_key|apikey|access_token|auth_token|private_key)"
+            r"\s*[:=]\s*[\"']?(?P<valor>[^\s\"',;]{8,})"
+        ),
+    ),
+)
+
+# Valor que não é segredo: placeholder, redação, variável de ambiente.
+_SECRET_PLACEHOLDER = re.compile(
+    r"(?i)^(?:<[^>]*>|\$\{[^}]*\}|\$[A-Z_]+|[*x]+|redacted.*|changeme|your[-_].*|"
+    r"none|null|example.*|xxx.*)$"
+)
+
+
 def validate_output(content: str, expected_schema: dict[str, Any] | None = None) -> GuardrailResult:
     """Validação de output — determinística.
 
     Detecta:
-    - secret leakage (patterns like AKIA, aws_secret, password=)
+    - secret leakage: chave com valor plausível, não a menção da palavra
+      (ver `_SECRET_PATTERNS`); placeholder e variável de ambiente não contam
     - oversized output
     - schema mismatch (se schema declarado)
     """
     if not content:
         return GuardrailResult(passed=True)
 
-    # Secret leakage detection
-    secret_patterns = (
-        "AKIA",  # AWS access key
-        "aws_secret_access_key",
-        "aws_secret=",
-        "password=",
-        "token=",
-        "api_key=",
-        "private_key",
-        "BEGIN RSA PRIVATE KEY",
-        "BEGIN PGP PRIVATE KEY",
-    )
-    content_lower = content.lower()
-    for pattern in secret_patterns:
-        if pattern.lower() in content_lower:
+    for nome, padrao in _SECRET_PATTERNS:
+        for m in padrao.finditer(content):
+            valor = m.groupdict().get("valor") if m.groupdict() else None
+            if valor is not None and _SECRET_PLACEHOLDER.match(valor):
+                continue
             return GuardrailResult(
                 passed=False,
                 threat_type=ThreatType.SECRET_LEAKAGE,
-                reason=f"Secret leakage detectado: pattern '{pattern}' no output.",
-                blocked_content=pattern,
+                reason=f"Secret leakage detectado: padrao '{nome}' no output.",
+                blocked_content=nome,
             )
 
     # Oversized output

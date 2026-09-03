@@ -198,11 +198,15 @@ class TestMirrors:
     def test_sync_check_passes_after_sync(self):
         subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "sync_skills.py")],
-            check=True, capture_output=True, cwd=ROOT,
+            check=True,
+            capture_output=True,
+            cwd=ROOT,
         )
         result = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "sync_skills.py"), "--check"],
-            capture_output=True, text=True, cwd=ROOT,
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
         )
         assert result.returncode == 0, result.stdout
 
@@ -281,9 +285,7 @@ class TestGatePegaEspelhoEditadoAMao:
             alvo.write_bytes(original)
         assert f"DIVERGENTE {alvo}" in problemas, problemas
 
-    def test_copia_literal_da_fonte_no_espelho_do_devin_vira_divergente(
-        self, espelhos_em_dia
-    ):
+    def test_copia_literal_da_fonte_no_espelho_do_devin_vira_divergente(self, espelhos_em_dia):
         """O teste que o gate ANTIGO nao poderia passar. `filecmp.cmp` exigia
         exatamente isto -- o espelho byte a byte igual a fonte -- e e justamente
         o estado errado hoje: o espelho do Devin sairia com `tools:`.
@@ -485,7 +487,9 @@ class TestInstalacaoPublicaOEspelhoRenderizado:
         alvo = tmp_path_factory.mktemp("devin-target")
         subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "install_skills.py"), "--devin"],
-            check=True, capture_output=True, cwd=alvo,
+            check=True,
+            capture_output=True,
+            cwd=alvo,
         )
         return alvo
 
@@ -528,15 +532,39 @@ class TestNoPlatformKnowledge:
 
     FORBIDDEN = ("threshold:", "runtime_scope:", "retrieved:")
 
+    # Skills ADAPTADAS de `aws/agent-toolkit-for-aws` (Apache-2.0, commit
+    # 10b28af8): o `references/` delas e documentacao de servico AWS, onde
+    # "threshold:" aparece em prosa legitima (limiar de alarme CloudWatch),
+    # nao como metadado de regra SparkForge vazando para diretorio de
+    # plataforma. A isencao vale SO para essas skills, nomeadas uma a uma:
+    # `if "references" in path.parts` isentaria qualquer `references/` de
+    # qualquer skill futura, inclusive as nossas, e ai o gate pararia de
+    # pegar exatamente o drift que ele existe para pegar.
+    ADAPTADAS_DO_UPSTREAM_AWS = (
+        "aws-billing-and-cost-management",
+        "aws-database",
+        "aws-iam",
+        "aws-messaging-and-streaming",
+        "aws-observability",
+        "aws-sdk-python-usage",
+        "aws-security",
+        "aws-serverless",
+        "aws-storage",
+        "harden-s3-bucket",
+        "provision-s3-tables-table",
+    )
+
+    def _isenta(self, path: Path) -> bool:
+        partes = path.parts
+        if "references" not in partes:
+            return False
+        return any(skill in partes for skill in self.ADAPTADAS_DO_UPSTREAM_AWS)
+
     def test_platform_dirs_carry_no_thresholds_or_sources(self):
         offenders = []
         for platform in (".claude", ".agents", ".github"):
             for path in (ROOT / platform).rglob("*.md"):
-                # references/ das skills AWS adaptadas contem documentacao
-                # de servico que usa "threshold:" em prosa legitima (ex:
-                # CloudWatch alarm thresholds), nao metadados de regra
-                # SparkForge vazando para diretorio de plataforma.
-                if "references" in path.parts:
+                if self._isenta(path):
                     continue
                 text = path.read_text(encoding="utf-8")
                 for marker in self.FORBIDDEN:

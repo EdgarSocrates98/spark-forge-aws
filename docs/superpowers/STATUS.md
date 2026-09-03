@@ -41,7 +41,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **9486** passando, **7** skipped, **remedido em 2026-09-02** na entrega de dependência e janela do Control-M — os 156 acrescidos desde os 9201 saem de três arquivos: `tests/test_fixtures_golden_controlm.py` (93, entre as 9 fixtures novas do `parametrize` e as cinco classes adversariais do incremento) e o crescimento por parametrização de regra nos gates de catálogo, que ganham um caso por regra nova | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **rodados um a um em 2026-09-02**: 1503 (+2 skipped), 173, 1745, 865, 443, 202, 106, 352, 3968 (+5 skipped). Soma: 9364, e ela fecha com a suíte — 9357 passando mais 7 skipped **Recontado em 2026-09-02** ao fechar a pilha de cinco incrementos de `prompt_evo_graph_economy.md`: os nove lotes, rodados um a um no topo da pilha, somam 1554 (+2 skipped), 202, 1746, 887, 443, 202, 106, 352 e 3994 (+5 skipped) — **9486 passando e 7 skipped**. Os 129 acrescidos desde os 9357 vêm dos cinco arquivos novos (`test_economy_goldset`, `test_economy_recall`, `test_codeintel_graph_caminho`, `test_codeintel_graph_comunidades`, `test_codeintel_export`, `test_fixtures_golden_bridge`) e do crescimento por parametrização nos gates de catálogo e de tools, que ganham um caso por regra e por tool nova. |
+| Testes | **9954** passando, **9** skipped, **remedido em 2026-09-03** na auditoria da camada agentica. Os nove lotes, rodados um a um: 1834 (+2 skipped), 202, 1761 (+2 skipped), 893, 443, 232, 106, 352, 4131 (+5 skipped). Soma: 9954 + 9 = **9963**, e ela fecha com `pytest tests/ --collect-only` (9963). Os 468 acrescidos desde os 9486 sao **261** da camada agentica (206 da entrega + 55 de regressao da auditoria) e o resto do crescimento por parametrizacao nos gates de catalogo, de tools e de skills, que ganham um caso por skill AWS nova. **A entrega original publicou tres numeros diferentes para a mesma base** -- 9486 na spec, 9881 no relatorio e 9897 na mensagem de commit --, e nenhum deles era o medido; ver a secao 17 (desvio D-1) do spec da camada agentica | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **rodados um a um em 2026-09-02**: 1503 (+2 skipped), 173, 1745, 865, 443, 202, 106, 352, 3968 (+5 skipped). Soma: 9364, e ela fecha com a suíte — 9357 passando mais 7 skipped **Recontado em 2026-09-02** ao fechar a pilha de cinco incrementos de `prompt_evo_graph_economy.md`: os nove lotes, rodados um a um no topo da pilha, somam 1554 (+2 skipped), 202, 1746, 887, 443, 202, 106, 352 e 3994 (+5 skipped) — **9486 passando e 7 skipped**. Os 129 acrescidos desde os 9357 vêm dos cinco arquivos novos (`test_economy_goldset`, `test_economy_recall`, `test_codeintel_graph_caminho`, `test_codeintel_graph_comunidades`, `test_codeintel_export`, `test_fixtures_golden_bridge`) e do crescimento por parametrização nos gates de catálogo e de tools, que ganham um caso por regra e por tool nova. |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **112 de 147 têm `validation`** — as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, da entrega de dependência e janela do Control-M (2026-09-02), e cada uma declara os eixos de resultado que a mudança dela pode mover: conjunto de datas ordenadas em `SF-CTM-002` e `SF-CTM-003`, conjunto de jobs publicado em `SF-CTM-004` e `SF-CTM-006`, e conjunto de eventos esperados mais ordem de execução em `SF-CTM-005`. `SF-CTM-001` foi a 106ª, com os três eixos dela explícitos (mesma contagem de jobs, mesmas dependências item a item, mesmo artefato produzido); recontado em 2026-09-01. **O número anterior ("62 de 116") não tinha produtor**: a coluna ao lado aponta `tests/test_rules_result_axis.py`, que tem três testes e guarda só as regras que propõem trocar UDF Python por função nativa. Ele nunca contou 62 nem 116. Número publicado sem comando que o produza é a mesma família de defeito que a regra 5 do `AGENT_PROTOCOL.md` fechou para o `benchmark_ref` — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` A entrega da ponte (2026-09-02) fez **112 de 147**: `SF-BRIDGE-001` acrescentou um eixo de resultado que nenhuma outra regra tem — além de contagem, schema e agregados, ela pede que **o stage daquele callsite suma ou troque de método no próximo event log**, que é a confirmação de que a mudança chegou à EXECUÇÃO e não só ao código. |
 | Regras com `runtime_scope` não-vazio | **18 de 146** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados*. **`SF-CTM-001` também não entra, e o caso dela é o mais claro dos três**: a regra é inteiramente sobre versão, e mesmo assim declara `{}` — `runtime_scope` guarda a versão do `RuntimeContext` (Glue, Spark, Python, Iceberg), e nada alimenta o `RuntimeContext` com `9.0.2x.yyy`. A versão do Control-M é **dado do artefato**, e viaja dentro do achado em `ctm.version_declared` e em `attrs.declared_version`. **As cinco `SF-CTM` de 2026-09-02 também declaram `{}`**, e uma delas pelo caminho mais interessante: `SF-CTM-006` cita, no `explanation`, uma fronteira de versão que a própria fonte publica (`Control-M/Enterprise Manager 9.0.21 or higher`) e **não a julga** — o defeito dela é um `must not` verificável no artefato em qualquer versão, e a fronteira é de um produto que nenhuma matriz deste repositório cobre (veto `V-CTM-6`) | `load_catalog()` |
@@ -67,6 +67,8 @@ arquivo ganha.
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
+| Módulos da camada agêntica | **13** (+ `__init__.py`) — `models`, `runtime`, `evidence`, `blackboard`, `debate`, `arbitration`, `experiment`, `decision`, `memory`, `budget`, `security`, `autonomy`, `graph`. **É biblioteca, não pipeline**: nenhum extrator, regra, tool ou coordenador escreve `Claim`/`Evidence`/`Decision`, e num repositório de trabalho `blackboard summary` devolve zero em tudo. `AGENTS.md` publicou "12 módulos" sobre uma tabela de 13 até a auditoria de 2026-09-03 | `sparkforge/agentic/*.py` |
+| Testes da camada agêntica | **261** — 206 da entrega mais **55** de regressão da auditoria de 2026-09-03, um conjunto por defeito corrigido. Os 206 originais passavam **fixando o comportamento defeituoso**: o teste do L5 afirmava que ação de alto risco era autorizada, e o de `budget show` só conferia `exit_code == 0` sobre uma saída de fábrica | `pytest tests/test_agentic_*.py` |
 
 Regras por área, **recontado com `load_catalog()` em 2026-09-01** e a soma
 fecha em 146 — **recontado em 2026-09-02**, quando `SF-CTM` saiu de 1 para 6 com
@@ -6811,3 +6813,105 @@ Também trava a raiz do defeito original: nenhuma seção de
 3. Escreva o par spec + plan em `specs/` e `plans/` com a data do merge.
 4. Se um número de um spec antigo ficou obsoleto, **não edite o spec** — acrescente
    a linha na seção de desvios dele (§18 no caso da Fase 0) e aponte para cá.
+
+---
+
+## Camada agêntica — entregue como biblioteca, e a auditoria que a corrigiu (2026-09-03)
+
+Duas sessões no mesmo dia: a entrega (Devin, commits `6cd10b1` e `79242f5`) e a
+auditoria dela. Esta seção registra as duas, porque a segunda mudou o que a
+primeira publicava sobre si mesma.
+
+### O que foi entregue
+
+`sparkforge/agentic/` com **13 módulos** (+ `__init__.py`), 9 entidades frozen
+com id content-addressed, `AgentManifest` estendido com 12 campos opcionais,
+8 verbos de CLI de leitura, e 11 skills AWS adaptadas de
+`aws/agent-toolkit-for-aws` (Apache-2.0, commit `10b28af8`).
+
+### O que ela NÃO é, e isso governa tudo o mais
+
+**É biblioteca, não pipeline.** Nenhum extrator, regra, tool MCP ou coordenador
+escreve `Claim`/`Evidence`/`Decision`; não existe executor de debate. Num
+repositório de trabalho `sparkforge blackboard summary` devolve zero em todas as
+contagens, e esse é o estado correto. O relatório de entrega publicava o
+desenho `USER → CASE MANAGER → … → DECISION MEMORY` sem essa coluna, o que fazia
+o alvo parecer entregue.
+
+Consequência direta: **as Fases 51-53 do prompt de origem (benchmark da
+arquitetura nova contra a antiga) não têm como rodar** — só existe um lado para
+medir. Nenhuma afirmação de ganho foi publicada, e a regra 30 do `CLAUDE.md`
+agora diz isso por escrito.
+
+### Os 14 defeitos, e por que os 206 testes não os pegaram
+
+Os testes da entrega **fixavam o comportamento defeituoso**: o do L5 afirmava
+que ação de alto risco saía autorizada (`# L5 has human_approval in
+required_validation, so it should be allowed`), e o de `budget show` só conferia
+`exit_code == 0` sobre uma saída de fábrica. Verde não é o mesmo que certo
+quando o teste é escrito depois do código e a partir dele.
+
+O mais grave era o mesmo defeito que os dois commits anteriores deste branch
+tinham removido da coleta: **`sparkforge budget show` imprimia `CaseBudget()` do
+código como se fosse o estado do case**, com `tokens_used: 0` e `status:
+within`, sem nenhuma marca de que o número era template. Hoje ele lê o bloco
+`budget:` do `case.yaml`, sai `unresolved` nomeando a lacuna quando não há
+bloco, e os defaults só aparecem sob `--template`.
+
+Os outros treze, com teste de regressão para cada um, estão tabelados em
+`docs/agentic-evolution-report.md`, seção *Auditoria de 2026-09-03*: arbitragem
+de claim única pedindo experimento contra si mesma; `evidence_weight` agregando
+o conjunto inteiro e não a claim; `has_sufficient_authority` e
+`has_fresh_in_scope` sendo a mesma expressão; `AgentBudget`/`CaseBudget` com
+tempo, retries e tool calls declarados e nunca lidos; `detect_waste` com
+parâmetro morto e três campos sempre vazios; guardrail de injeção bloqueando o
+vocabulário do próprio produto; detector de segredo por substring pegando nome
+de coluna; guardrail de L5 tautológico; custo e tempo de experimento fixos em
+texto; edge de grafo colando na claim errada.
+
+**As duas decisões de projeto foram tomadas, e mudam contrato.** O
+`independence_score` media a média entre diversidade de agente e de fonte —
+dois agentes citando a MESMA fonte davam 0,75 sobre limiar 0,3, e o falso
+consenso nunca disparava; hoje vale o elo fraco (`min`), a fonte conta por
+ligação `supports`, e linhagem idêntica é sinal próprio. E `Claim.id` passou a
+cobrir `evidence_refs`, `assumptions` e `confidence`, com `supersedes` opcional:
+antes, revisar uma claim colidia com a versão anterior e o blackboard a recusava
+como duplicata — não havia como registrar revisão. Ver o desvio D-5 do spec.
+
+### O que a auditoria descobriu fora da camada
+
+- **`VNX-741` dividia um numerador literal.** A razão "o índice economiza 649,5x"
+  vinha de `print(round(1435300 / 2210, 1))` — constante que já não batia com a
+  medição de `VNX-666` (1461410). A prova hoje reexecuta a travessia e imprime
+  **661,3**.
+- **`VNX-651` estava mal ancorada**: a entrada morava na linha de
+  `iter_source_files` e a prova media `project_items`. As duas contagens valiam
+  1, então a troca era invisível — só apareceu quando o índice passou a achar 2
+  para `iter_source_files`.
+- **A medida de corpus não honra `.gitignore`.** `tmp_skills/` (sobra do import
+  das skills AWS, 57 arquivos `.py`, ignorado pelo git) fazia a mesma prova
+  devolver 581 na workstation e 524 no CI. Registrado em
+  `docs/gates-por-mudanca.md`.
+- **Catorze alegações liam prompts apagados** (`prompt_evo_harness.md` e
+  `prompt_glue_harness.md`, removidos em `083a038`) e reprovavam pelo único
+  motivo de o arquivo não existir mais. Convertidas para `proof.kind:
+  historical` com `commit: 386d402`.
+- **Um gate foi afrouxado pela entrega e foi estreitado de volta**:
+  `TestNoPlatformKnowledge` passou a pular qualquer `references/` em diretório
+  de plataforma para acomodar as skills AWS. Hoje a isenção nomeia as onze
+  skills, uma a uma — a versão larga isentaria também as nossas, e aí o gate
+  pararia de pegar o drift que existe para pegar.
+- **`RuntimeCapabilities` duplicava `parity.yaml`** com um comentário dizendo que
+  o YAML era canônico e nada verificando. Hoje
+  `tests/test_agentic_runtime.py::TestParityBinding` amarra os dois campos
+  derriváveis (`spawn_agent` ↔ mecanismo `subagent`, `tool_calling` ↔ `mcp`) e
+  declara que os demais não existem no manifesto.
+
+### Estado dos gates ao fechar
+
+`ruff check` e `ruff format --check` limpos; `sync_skills --check` OK;
+`check_surface_lock` 0; `check_status_numbers --strict` 0;
+`check_vnext_claims` **0** (estava em 23 divergências antes desta sessão, com o
+gate de lastro nem citado na mensagem de commit da entrega); os nove lotes da
+suíte rodados um a um, **9954 passando e 9 skipped** (soma 9963, e ela fecha
+com a coleta).

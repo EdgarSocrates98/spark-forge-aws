@@ -74,3 +74,81 @@ class TestExecutionStrategy:
     def test_claude_too_many_becomes_sequential(self):
         # max_concurrent=10, ask for 15 -> sequential
         assert execution_strategy(RuntimeName.CLAUDE_CODE, 15) == "sequential"
+
+
+class TestParityBinding:
+    """`parity.yaml` e `_MEASURED_CAPABILITIES` nao podem divergir em silencio.
+
+    O modulo `runtime.py` declarava "parity.yaml e a fonte canonica" num
+    comentario, e nada verificava: as duas fontes podiam divergir para sempre
+    sem que nenhum teste caisse. Este teste amarra os DOIS campos que sao
+    derivaveis do manifesto, e so eles:
+
+    - `spawn_agent`  <-> a plataforma declara o mecanismo `subagent`
+    - `tool_calling` <-> a plataforma declara o mecanismo `mcp`
+
+    Os demais campos nao existem em `parity.yaml` (ele fala de mecanismo de
+    entrega, nao de propriedade de harness) e por isso nao sao amarrados aqui
+    -- afirmar que sao seria a mesma divergencia com outro nome.
+    """
+
+    @staticmethod
+    def _plataformas_por_mecanismo(mecanismo: str) -> set[str]:
+        import pathlib
+
+        import yaml
+
+        raiz = pathlib.Path(__file__).resolve().parents[1]
+        manifesto = yaml.safe_load((raiz / "parity.yaml").read_text(encoding="utf-8"))
+        encontradas: set[str] = set()
+        for capacidade in manifesto["capabilities"]:
+            for plataforma, mecanismos in (capacidade.get("platforms") or {}).items():
+                if mecanismo in (mecanismos or []):
+                    encontradas.add(plataforma)
+        return encontradas
+
+    def test_spawn_agent_casa_com_o_mecanismo_subagent(self):
+        declara_subagent = self._plataformas_por_mecanismo("subagent")
+        for runtime in RuntimeName:
+            if runtime is RuntimeName.GENERIC:
+                continue  # GENERIC nao e plataforma do manifesto: e o piso
+            caps = get_capabilities(runtime)
+            assert caps.spawn_agent == (runtime.value in declara_subagent), (
+                f"{runtime.value}: runtime.py diz spawn_agent={caps.spawn_agent}, "
+                f"parity.yaml {'declara' if runtime.value in declara_subagent else 'nao declara'} "
+                f"o mecanismo `subagent`"
+            )
+
+    def test_tool_calling_casa_com_o_mecanismo_mcp(self):
+        declara_mcp = self._plataformas_por_mecanismo("mcp")
+        for runtime in RuntimeName:
+            if runtime is RuntimeName.GENERIC:
+                continue
+            caps = get_capabilities(runtime)
+            assert caps.tool_calling == (runtime.value in declara_mcp), (
+                f"{runtime.value}: runtime.py diz tool_calling={caps.tool_calling}, "
+                f"parity.yaml {'declara' if runtime.value in declara_mcp else 'nao declara'} "
+                f"o mecanismo `mcp`"
+            )
+
+    def test_todo_runtime_menos_generic_e_plataforma_do_manifesto(self):
+        import pathlib
+
+        import yaml
+
+        raiz = pathlib.Path(__file__).resolve().parents[1]
+        manifesto = yaml.safe_load((raiz / "parity.yaml").read_text(encoding="utf-8"))
+        plataformas = set(manifesto["platforms"])
+        for runtime in RuntimeName:
+            if runtime is RuntimeName.GENERIC:
+                continue
+            assert runtime.value in plataformas, (
+                f"{runtime.value} existe em RuntimeName e nao em parity.yaml.platforms"
+            )
+
+    def test_paralelismo_exige_spawn(self):
+        # Invariante interna: nao ha agente paralelo sem despacho de agente.
+        for runtime in RuntimeName:
+            caps = get_capabilities(runtime)
+            if caps.parallel_agents:
+                assert caps.spawn_agent, f"{runtime.value}: parallel_agents sem spawn_agent"

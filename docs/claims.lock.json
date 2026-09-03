@@ -529,18 +529,18 @@
       "doc": "docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md",
       "id": "VNX-726",
       "line": 90,
-      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido na auditoria dos fakes de coleta (2026-09-03): tests/test_fakes_de_coleta.py entrou na arvore.",
+      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido na auditoria dos fakes de coleta (2026-09-03): tests/test_fakes_de_coleta.py entrou na arvore. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c \"import collections, pathlib, tempfile\nfrom sparkforge.codeintel.db import abrir\nfrom sparkforge.codeintel.index import indexar\nfrom sparkforge.codeintel.refs import extrair_referencias\nfrom sparkforge.codeintel.resolve import catalogo_do_banco, resolver\nfrom sparkforge.facts.scan import iter_source_files\nR = pathlib.Path('.').resolve()\nb = pathlib.Path(tempfile.mkdtemp()) / 'g.sqlite3'\nindexar(R, b)\ncat = catalogo_do_banco(abrir(b))\nrefs = {}\nfor p in iter_source_files(R, '*.py'):\n    rel = p.resolve().relative_to(R).as_posix()\n    try:\n        refs[rel] = extrair_referencias(p.read_text(encoding='utf-8'), rel)\n    except (OSError, UnicodeDecodeError, SyntaxError):\n        continue\nr = resolver(refs, cat)\nu = collections.Counter(n.reason for n in r.nao_resolvidas)['UNKNOWN_RECEIVER']\nprint('unknownreceiver=%s%%' % str(round(100 * u / len(r.nao_resolvidas), 1)).replace('.', ','))\"\n",
         "expect": {
           "kind": "contains",
-          "value": "unknownreceiver=91,6%"
+          "value": "unknownreceiver=91,1%"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "91,6%",
+      "text": "91,1%",
       "type": "number"
     },
     {
@@ -2915,7 +2915,7 @@
       "type": "number"
     },
     {
-      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão ",
+      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão de cada um é diferente: código-fonte tem teto de 1 MiB, pela regra de não montar AST de arquivo gerado; artefato de dados tem teto de 128 MiB, porque o operador apontou para ele de propósito. Extensão desconhecida cai no teto de dados, e esse é o único ponto fail-open do módulo, declarado onde acontece. Falta a outra metade da linha: **detecção de binário** não existe, nem piso de tamanho | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-641",
       "line": 103,
@@ -2935,7 +2935,7 @@
       "type": "number"
     },
     {
-      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão ",
+      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão de cada um é diferente: código-fonte tem teto de 1 MiB, pela regra de não montar AST de arquivo gerado; artefato de dados tem teto de 128 MiB, porque o operador apontou para ele de propósito. Extensão desconhecida cai no teto de dados, e esse é o único ponto fail-open do módulo, declarado onde acontece. Falta a outra metade da linha: **detecção de binário** não existe, nem piso de tamanho | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-705",
       "line": 103,
@@ -2969,43 +2969,43 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega do rollback escalar (2026-09-02): o corpus de *.py cresceu com tests/test_rules_campos_de_lista.py, varrido por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code export` (2026-09-02): `sparkforge_code_export` levou o catalogo de 67 para 68 tools, e o corpus de *.py cresceu com sparkforge/codeintel/export.py e tests/test_codeintel_export.py. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido ao escrever ICEBERG-GAP.md (2026-09-02): scripts/count_iceberg_gap.py entrou na arvore. Remedido na auditoria dos fakes de coleta (2026-09-03): tests/test_fakes_de_coleta.py entrou na arvore.",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega do gate de recall e economia (2026-09-02): o corpus de *.py cresceu com sparkforge/economy/{goldset,recall}.py, scripts/check_recall_economy.py e tests/test_economy_{goldset,recall}.py, os cinco varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code path` (2026-09-02): `sparkforge_code_path` levou o catalogo de 65 para 66 tools e a setima de Code Intelligence, e o corpus de *.py cresceu com tests/test_codeintel_graph_caminho.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega do rollback escalar (2026-09-02): o corpus de *.py cresceu com tests/test_rules_campos_de_lista.py, varrido por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code export` (2026-09-02): `sparkforge_code_export` levou o catalogo de 67 para 68 tools, e o corpus de *.py cresceu com sparkforge/codeintel/export.py e tests/test_codeintel_export.py. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido na entrega de `iceberg.format_version` (2026-09-02): o corpus de *.py cresceu com tests/test_iceberg_format_version.py, e quatro fixtures entraram em fixtures/iceberg/. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido ao escrever ICEBERG-GAP.md (2026-09-02): scripts/count_iceberg_gap.py entrou na arvore. Remedido na auditoria dos fakes de coleta (2026-09-03): tests/test_fakes_de_coleta.py entrou na arvore. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao. ATENCAO ao medir esta alegacao numa workstation: `iter_source_files` percorre o que esta EM DISCO e nao honra `.gitignore` -- um diretorio ignorado com `.py` dentro (foi `tmp_skills/`, sobra do import das skills AWS) desloca o corpus e faz a medicao local divergir do CI sem que nada no repositorio tenha mudado. Medido em 2026-09-03 com a arvore limpa.",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 501
+          "value": 524
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "501",
+      "text": "524",
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 2 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-651",
       "line": 213,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Relida em 2026-09-03: o indice acha tambem o teste que exercita o simbolo (`test_iter_source_files_continua_devolvendo_so_caminho`), porque `buscar` casa nome que CONTEM o termo -- a coluna era 1 e a medicao devolve 2. Defeito de ancoragem encontrado em 2026-09-03: a entrada mora na linha de `iter_source_files` e a prova media `project_items`. As duas contagens valiam 1, entao a troca era invisivel -- ela so apareceu quando o indice passou a achar 2 para `iter_source_files`. Prova reapontada para o simbolo da propria linha.",
       "proof": {
-        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"project_items\")))'",
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"iter_source_files\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1
+          "value": 2
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1",
+      "text": "2",
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 2 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-642",
       "line": 213,
@@ -3025,7 +3025,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 2 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-643",
       "line": 213,
@@ -3045,7 +3045,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 2 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-644",
       "line": 213,
@@ -3065,7 +3065,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 2 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-645",
       "line": 213,
@@ -3185,7 +3185,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2201 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-656",
       "line": 215,
@@ -3205,7 +3205,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2201 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-652",
       "line": 215,
@@ -3225,7 +3225,7 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2201 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-653",
       "line": 215,
@@ -3245,27 +3245,27 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2201 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-654",
       "line": 215,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 2170
+          "value": 2201
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "2170",
+      "text": "2201",
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 240954 | 2170 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 240954 | 2201 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-655",
       "line": 215,
@@ -3385,7 +3385,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4953 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-661",
       "line": 217,
@@ -3405,7 +3405,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4953 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-662",
       "line": 217,
@@ -3425,7 +3425,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4953 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-663",
       "line": 217,
@@ -3445,11 +3445,11 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4953 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-664",
       "line": 217,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
@@ -3465,7 +3465,7 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 317005 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 317005 | 4953 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-665",
       "line": 217,
@@ -3529,19 +3529,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-667",
       "line": 220,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 20821
+          "value": 20852
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "20821",
+      "text": "20852",
       "type": "number"
     },
     {
@@ -3589,18 +3589,18 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-741",
       "line": 229,
-      "note": "A razao entre o denominador do plano (soma dos arquivos lidos) e a resposta do indice. Os dois numeradores tem entrada propria no manifesto e prova propria; esta alegacao e a divisao deles, e a prova a reexecuta em vez de reafirmar os dois. Criada em 2026-09-02 ao substituir VNX-669, cujo `text` era a expressao inteira e deixou de casar quando o extrator passou a ver os numeros separados.",
+      "note": "A razao entre o denominador do plano (soma dos arquivos lidos) e a resposta do indice. Os dois numeradores tem entrada propria no manifesto e prova propria; esta alegacao e a divisao deles, e a prova a reexecuta em vez de reafirmar os dois. Criada em 2026-09-02 ao substituir VNX-669, cujo `text` era a expressao inteira e deixou de casar quando o extrator passou a ver os numeros separados. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao. Remedido em 2026-09-03: a prova dividia um numerador LITERAL (1435300) que ja nao batia com a medicao de VNX-666 (1461410) -- numero de cima calculado sobre constante velha e exatamente o que este gate existe para pegar. Hoje ela reexecuta a mesma travessia de VNX-737 e imprime a razao medida.",
       "proof": {
-        "cmd": "python -c \"print(round(1435300 / 2210, 1))\"",
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(round(total / com, 1))'",
         "expect": {
           "kind": "contains",
-          "value": "649.5"
+          "value": "661.3"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "649.5",
+      "text": "661.3",
       "type": "number"
     },
     {
@@ -3608,12 +3608,12 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-670",
       "line": 230,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova.",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "20821 / 2210 = 9.4"
+          "value": "20852 / 2210 = 9.4"
         },
         "kind": "command",
         "tier": "fast"
@@ -3646,19 +3646,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-672",
       "line": 247,
-      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"source\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 44
+          "value": 47
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "44",
+      "text": "47",
       "type": "number"
     },
     {
@@ -3666,19 +3666,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-673",
       "line": 247,
-      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"source\")], ensure_ascii=False).encode(\"utf-8\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 11589
+          "value": 12252
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "11589",
+      "text": "12252",
       "type": "number"
     },
     {
@@ -3686,19 +3686,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega do rollback escalar (2026-09-02): o corpus de *.py cresceu com tests/test_rules_campos_de_lista.py, varrido por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code export` (2026-09-02): `sparkforge_code_export` levou o catalogo de 67 para 68 tools, e o corpus de *.py cresceu com sparkforge/codeintel/export.py e tests/test_codeintel_export.py. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido na auditoria dos fakes de coleta (2026-09-03): tests/test_fakes_de_coleta.py entrou na arvore.",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido no sub-projeto MigrationAssessment para EMR (2026-09-01): `sparkforge_migration_assess` ganhou o parametro `platform` e a saida ganhou `coverage`, `component_diff` e `component_diff_unresolved`, entao `tools.py` (schema e descricao), `_core.py`, `sparkforge/migration/*.py` e os testes cresceram. Nenhuma tool nova: 63 antes e 63 depois. Numero relido pela propria prova. Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega de dependencia e janela do Control-M (2026-09-02): as cinco regras SF-CTM-002..006 fizeram `sparkforge/facts/controlm_jobs.py` e `tests/test_fixtures_golden_controlm.py` crescerem, e os dois sao varridos por iter_source_files. Nenhuma tool nova: 65 antes e 65 depois, e a superficie de `docs/surface.lock.json` nao se moveu. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega de comunidades e grau (2026-09-02): `sparkforge_code_shape` levou o catalogo de 66 para 67 tools, e o corpus de *.py cresceu com tests/test_codeintel_graph_comunidades.py -- os dois varridos pelas provas. Numero relido pela propria prova. Remedido na entrega do rollback escalar (2026-09-02): o corpus de *.py cresceu com tests/test_rules_campos_de_lista.py, varrido por iter_source_files. Numero relido pela propria prova. Remedido na entrega de `code export` (2026-09-02): `sparkforge_code_export` levou o catalogo de 67 para 68 tools, e o corpus de *.py cresceu com sparkforge/codeintel/export.py e tests/test_codeintel_export.py. Numero relido pela propria prova. Remedido na entrega de migracao de Control-M (2026-09-02): o corpus de *.py cresceu com sparkforge/controlm/migration.py e tests/test_controlm_migracao.py. Numero relido pela propria prova. Remedido ao derivar o plano de manutencao do catalogo (2026-09-02): tests/test_iceberg_maintenance.py entrou na arvore. Numero relido pela propria prova. Remedido na auditoria dos fakes de coleta (2026-09-03): tests/test_fakes_de_coleta.py entrou na arvore. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 141141
+          "value": 151056
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "141141",
+      "text": "151056",
       "type": "number"
     },
     {
@@ -3706,19 +3706,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
       "line": 249,
-      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova.",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na entrega de conhecimento do Control-M (2026-09-01): `sparkforge_controlm_describe` levou o catalogo de 63 para 64 tools, e o corpus de *.py cresceu com sparkforge/controlm/{__init__,matrix,descriptor}.py e tests/test_controlm_matrix.py, varridos por iter_source_files. Numero relido pela propria prova. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 8474
+          "value": 8713
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "8474",
+      "text": "8713",
       "type": "number"
     },
     {
@@ -3837,7 +3837,7 @@
       "type": "number"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-557",
       "line": 305,
@@ -3857,7 +3857,7 @@
       "type": "number"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-558",
       "line": 305,
@@ -3969,7 +3969,7 @@
       "type": "number"
     },
     {
-      "context": "| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `",
+      "context": "| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `dist/` já aprovado pelo gate de paridade, e `.github/workflows/release.yml` o anexa ao release em rascunho ao lado do wheel e do sdist. Os cinco campos que a SPEC enumera têm cada um sua fonte declarada: pacote e versão vêm do lock resolvido, o sha256 vem do mesmo lock, a licença foi colhida da API do PyPI na geração dele, e a origem é o `purl` mais a URL do projeto no índice. O componente raiz carrega o sha256 do wheel e do sdist, então o documento descreve **um** release e não uma versão no abstrato. Só biblioteca padrão, pela mesma razão que pôs `build` no extra `dev`: ferramenta de CycloneDX ausente viraria `skip` permanente no teste | `tests/test_supply_chain.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-723",
       "line": 399,
@@ -3987,7 +3987,7 @@
       "type": "number"
     },
     {
-      "context": "| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `tes",
+      "context": "| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `test` para que a consulta a uma base externa não decida a cor do gate de teste. Ele audita o **lock**, e não os pisos: `PyYAML>=6.0` não tem CVE, a versão instalada é que tem. A política está escrita em `scripts/audit_policy.py`, e tem quatro ramos: vulnerabilidade com correção publicada derruba o job; sem correção publicada só reporta, e migra sozinha para o ramo de cima no dia em que ganhar correção; base não consultada (relatório ausente, ilegível ou com todos os pacotes pulados) derruba, porque ausência não é aprovação; e relatório que **não cobre o lock** derruba, que é o único ramo que compara a saída com o alvo em vez de olhar só para dentro dela — um relatório bem formado sobre outra coisa passaria por todos os outros sem ter respondido nada. A política é função pura sobre JSON, e por isso tem gate offline com relatórios sintéticos | `tests/test_supply_chain.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-724",
       "line": 401,
@@ -4067,16 +4067,16 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-298",
       "line": 3,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"prompt_evo_harness.md\").read_text(encoding=\"utf-8\").splitlines()))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 3366
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "3366",
@@ -4127,16 +4127,16 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-302",
       "line": 42,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"40. TOOL POLICY\"); j=t.index(\"41. CLAUDE CODE HOOKS\"); section=t[i:j]; labels=[\"READ_ONLY\",\"LOCAL_MUTATION\",\"CLOUD_READ\",\"CLOUD_MUTATION\",\"DESTRUCTIVE\"]; print(sum(1 for l in labels if l in section))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 5
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "5",
@@ -4247,16 +4247,16 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-305",
       "line": 44,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 5
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "5",
@@ -4345,15 +4345,15 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-310",
       "line": 54,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); print(\"agents = 0\" in t)'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "True"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "0",
@@ -4364,15 +4364,15 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-311",
       "line": 54,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); print(\"agents <= 2\" in t)'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "True"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "2",
@@ -4483,15 +4483,15 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-319",
       "line": 76,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); print(\"Glue 4.0\" in t[i:j])'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "True"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "4.0",
@@ -4502,15 +4502,15 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-320",
       "line": 76,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); print(\"Glue 5.1\" in t[i:j])'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "True"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "5.1",
@@ -4521,16 +4521,16 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-321",
       "line": 76,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 5
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "5",
@@ -4599,19 +4599,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-325",
       "line": 83,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica. Atualizado na fase de skills AWS.",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica. Atualizado na fase de skills AWS. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"tests/test_agents_parity.py\").read_text(encoding=\"utf-8\").splitlines()))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 545
+          "value": 573
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "545",
+      "text": "573",
       "type": "number"
     },
     {
@@ -4639,19 +4639,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-327",
       "line": 83,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic + skills AWS.",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real. Atualizado na fase K agentic + skills AWS. Remedido na auditoria da camada agentica (2026-09-03): o corpus Python cresceu com `sparkforge/agentic/` e `tests/test_agentic_*`, e a alegacao foi RELIDA pela propria prova, nunca ajustada a mao.",
       "proof": {
         "cmd": "python -c 'import pathlib; files=[\"tests/test_capability_parity.py\",\"tests/test_agents_parity.py\",\"tests/test_platform_divergence.py\"]; print(sum(len(pathlib.Path(f).read_text(encoding=\"utf-8\").splitlines()) for f in files))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 1628
+          "value": 1656
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1628",
+      "text": "1656",
       "type": "number"
     },
     {
@@ -4679,16 +4679,16 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-328",
       "line": 112,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 5
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "5",
@@ -4719,15 +4719,15 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "id": "VNX-359",
       "line": 3,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "AWS Glue 6.0"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "6.0",
@@ -4738,15 +4738,15 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "id": "VNX-360",
       "line": 3,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "Apache Spark 4.1"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "4.1",
@@ -4757,15 +4757,15 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "id": "VNX-361",
       "line": 3,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
+        "commit": "386d402",
         "expect": {
           "kind": "contains",
           "value": "Apache Iceberg 1.11"
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "1.11",
@@ -4776,16 +4776,16 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "id": "VNX-362",
       "line": 4,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"Glue 4.0 \" + chr(8594) + \" 5.1\"); alvos = [l.split()[-1] for l in ls[i:i + 5]]; print(alvos.count(\"5.1\"))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^([0-9]+)$",
           "value": 2
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "5.1",
@@ -4796,16 +4796,16 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "id": "VNX-363",
       "line": 4,
-      "note": "classificacao pendente",
+      "note": "classificacao pendente Convertida para `historical` em 2026-09-03: `prompt_evo_harness.md` e `prompt_glue_harness.md` foram REMOVIDOS da arvore no commit 083a038 (`remocao de prompt`). A alegacao continua verdadeira sobre o artefato que existiu -- ela e o que o prompt PEDIA, e o gap medido contra ele nao muda por o arquivo ter saido. Reexecutar no HEAD reprovaria pelo unico motivo de o arquivo nao existir mais, que e o caso de uso que `proof.kind: historical` cobre. `cmd` fica como receita: reproduza com `git checkout 386d402` primeiro.",
       "proof": {
         "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"Glue 4.0 \" + chr(8594) + \" 5.1\"); alvos = [l.split()[-1] for l in ls[i:i + 5]]; print(alvos.count(\"6.0\"))'",
+        "commit": "386d402",
         "expect": {
           "kind": "number",
           "pattern": "^([0-9]+)$",
           "value": 3
         },
-        "kind": "command",
-        "tier": "fast"
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "6.0",
@@ -6797,7 +6797,7 @@
       "type": "number"
     },
     {
-      "context": "| Conteúdo de repositório é dado não confiável, nunca instrução | EXISTE, com teste | É literalmente o invariante da fas",
+      "context": "| Conteúdo de repositório é dado não confiável, nunca instrução | EXISTE, com teste | É literalmente o invariante da fase I2, escrito em [`UNTRUSTED-CONTENT.md`](UNTRUSTED-CONTENT.md) e travado no código: `Fact.attrs` não entra no `Finding`, e `Finding.evidence` carrega só ids, nunca texto. O teste deriva o conjunto de extratores que carregam texto de terceiro executando os extratores, não relendo uma lista | `tests/test_harness_untrusted.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-560",
       "line": 66,
@@ -6812,7 +6812,7 @@
       "type": "capability"
     },
     {
-      "context": "| Fail closed em controle de segurança | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` faz eixo sem ",
+      "context": "| Fail closed em controle de segurança | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` faz eixo sem evidência nascer `BLOCKED` e nunca `PASS`; gate em `FAIL` força `NO_GO`. Dúvida entre permitir e bloquear já resolve para bloquear em todo o motor de avaliação | `tests/test_migration_assessment.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-561",
       "line": 67,
@@ -6827,7 +6827,7 @@
       "type": "capability"
     },
     {
-      "context": "| Descrição de tool nunca derivada do projeto analisado | EXISTE, com teste | Toda descrição é literal em `sparkforge/ad",
+      "context": "| Descrição de tool nunca derivada do projeto analisado | EXISTE, com teste | Toda descrição é literal em `sparkforge/adapters/tools.py`; nenhuma é montada a partir de arquivo lido | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-562",
       "line": 68,
@@ -6842,7 +6842,7 @@
       "type": "capability"
     },
     {
-      "context": "| Nenhuma tool aceita comando de shell | EXISTE, com teste | O catálogo inteiro declara `properties` explícitas, e nenhu",
+      "context": "| Nenhuma tool aceita comando de shell | EXISTE, com teste | O catálogo inteiro declara `properties` explícitas, e nenhuma delas é `command`. O teste cobra a declaração de propriedades por tool, o que impede schema de objeto nu por onde uma chave arbitrária entraria | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-563",
       "line": 69,
@@ -6857,7 +6857,7 @@
       "type": "capability"
     },
     {
-      "context": "| Nenhuma tool aceita SQL arbitrário para execução | EXISTE, com teste | Mesmo mecanismo: nenhuma propriedade do catálog",
+      "context": "| Nenhuma tool aceita SQL arbitrário para execução | EXISTE, com teste | Mesmo mecanismo: nenhuma propriedade do catálogo recebe SQL para executar. `sparkforge/facts/sql_literal.py` **lê** SQL como literal de código, e nunca o executa | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-564",
       "line": 70,
@@ -6872,7 +6872,7 @@
       "type": "capability"
     },
     {
-      "context": "| Nenhum código descoberto no repositório é executado | EXISTE, com teste | A extração é `ast.parse` sobre texto, nunca ",
+      "context": "| Nenhum código descoberto no repositório é executado | EXISTE, com teste | A extração é `ast.parse` sobre texto, nunca `import`, `eval` ou `exec` do módulo analisado. `sparkforge/facts/pyspark_ast.py:extract_tree()` percorre a árvore e nunca carrega o que leu | `tests/test_fixtures_golden.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-565",
       "line": 71,
@@ -6887,7 +6887,7 @@
       "type": "capability"
     },
     {
-      "context": "| Superfície de execução do próprio repositório fechada e auditada | EXISTE, com teste | `tests/test_execution_surface.p",
+      "context": "| Superfície de execução do próprio repositório fechada e auditada | EXISTE, com teste | `tests/test_execution_surface.py` fixa a lista de hooks, recusa construção de execução arbitrária, e cobra que todo servidor MCP seja spawn de argv sem metacaractere de shell | `tests/test_execution_surface.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-566",
       "line": 72,
@@ -6902,7 +6902,7 @@
       "type": "capability"
     },
     {
-      "context": "| Source read-only | EXISTE PARCIAL | Nenhum extrator abre arquivo do repositório analisado para escrita, e há teste med",
+      "context": "| Source read-only | EXISTE PARCIAL | Nenhum extrator abre arquivo do repositório analisado para escrita, e há teste medindo que uma tool sem `out_path` não escreve nada. Mas isso prova a **tool**, não o **invariante**: não existe checagem que varra a superfície inteira e afirme que nada escreve no source | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-567",
       "line": 73,
@@ -6917,7 +6917,7 @@
       "type": "capability"
     },
     {
-      "context": "| Zero network egress | EXISTE PARCIAL | `ExecutionProfile.OFFLINE` é teto, não conselho: `sparkforge/agents/autonomy.py",
+      "context": "| Zero network egress | EXISTE PARCIAL | `ExecutionProfile.OFFLINE` é teto, não conselho: `sparkforge/agents/autonomy.py:authorize()` recusa tool de rede sob esse perfil em qualquer grafia, e aprovação explícita **não** fura o teto. O que falta é enforcement de runtime — nenhum audit hook, nenhum bloqueio de socket, nenhuma sanitização de ambiente. O teto vale para quem passa por `authorize()`; um `import requests` dentro de um extrator não passa por lugar nenhum | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-568",
       "line": 74,
@@ -6932,7 +6932,7 @@
       "type": "capability"
     },
     {
-      "context": "| Confinamento ao root autorizado | EXISTE PARCIAL | O algoritmo deixou de ser cópia: `sparkforge/paths.py:resolve_withi",
+      "context": "| Confinamento ao root autorizado | EXISTE PARCIAL | O algoritmo deixou de ser cópia: `sparkforge/paths.py:resolve_within()` é a implementação única, e `rules/loader.py`, `knowledge_ref.py` e `agents/autonomy.py` chamam ela. `authorize()` passou a receber `arguments` e `root` e recusa argumento de caminho que escape da raiz do case, inclusive `~` e lista de caminhos item a item. `facts/scan.py:iter_source_files()` confina cada arquivo visitado sob a raiz varrida. O que falta é o outro lado da mesma pergunta: nenhum dos quatro caminhos de execução chama `authorize()`, então a verificação existe e está desligada — e a **raiz** apontada de fora não é confinada por nada, porque não há raiz autorizada contra a qual compará-la | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-569",
       "line": 75,
@@ -6947,7 +6947,7 @@
       "type": "capability"
     },
     {
-      "context": "| Sem telemetria conversacional | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace d",
+      "context": "| Sem telemetria conversacional | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace da execução do próprio SparkForge, e nada no repositório lê histórico de agente de terceiro. A ressalva que esta linha registrava — `.sparkforge/traces.db` fora do `.gitignore` — foi fechada pela fase J0: `git check-ignore` reconhece hoje `traces.db`, `cache/` e `local/`, cada um com a razão escrita ao lado da regra | `tests/test_observability.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-570",
       "line": 76,
@@ -6962,7 +6962,7 @@
       "type": "capability"
     },
     {
-      "context": "| Política de retenção de source (corpo de função e cache) | EXISTE PARCIAL | O banco existe desde a fase J3, e a decisã",
+      "context": "| Política de retenção de source (corpo de função e cache) | EXISTE PARCIAL | O banco existe desde a fase J3, e a decisão que esta linha cobrava foi tomada **no schema**: `sparkforge/codeintel/db.py` não tem coluna de corpo, e `nodes.normalized_signature` chega já sanitizada. Dois testes medem que o corpo não passa — `test_corpo_da_funcao_nao_chega_ao_banco` e `test_nenhum_no_carrega_corpo`. O que falta é a política **escrita**: nada declara por quanto tempo o índice vale, quando ele é apagado, nem o que muda no dia em que a recuperação de trecho de código existir e o snippet passar a ser material a reter | `tests/test_codeintel_index.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-707",
       "line": 78,
@@ -6978,7 +6978,7 @@
       "type": "capability"
     },
     {
-      "context": "| Perfil de execução como vocabulário canônico | EXISTE, com teste | `ExecutionProfile` em `sparkforge/registry/models.p",
+      "context": "| Perfil de execução como vocabulário canônico | EXISTE, com teste | `ExecutionProfile` em `sparkforge/registry/models.py`, com `OFFLINE` entre os membros; perfil não reconhecido **recusa** em vez de virar default | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-571",
       "line": 85,
@@ -6993,7 +6993,7 @@
       "type": "capability"
     },
     {
-      "context": "| Classe de tool derivada da anotação, não de uma lista | EXISTE, com teste | `sparkforge/agents/autonomy.py:tool_class(",
+      "context": "| Classe de tool derivada da anotação, não de uma lista | EXISTE, com teste | `sparkforge/agents/autonomy.py:tool_class()` deriva de `readOnlyHint`, `openWorldHint` e `destructiveHint`; trocar a anotação troca a classe, e tool desconhecida falha fechada | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-572",
       "line": 86,
@@ -7008,7 +7008,7 @@
       "type": "capability"
     },
     {
-      "context": "| Aprovação por classe, e não booleano global | EXISTE, com teste | Aprovar mutação local não libera tool de nuvem, e ca",
+      "context": "| Aprovação por classe, e não booleano global | EXISTE, com teste | Aprovar mutação local não libera tool de nuvem, e cada classe exige a sua própria aprovação nomeada | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-573",
       "line": 87,
@@ -7023,7 +7023,7 @@
       "type": "capability"
     },
     {
-      "context": "| `offline-strict` como perfil com matriz ALLOW/DENY declarada | EXISTE PARCIAL | O teto existe e morde (`_teto_recusa_r",
+      "context": "| `offline-strict` como perfil com matriz ALLOW/DENY declarada | EXISTE PARCIAL | O teto existe e morde (`_teto_recusa_rede`), mas a matriz da SPEC — Code Intelligence, Rules, Facts, Case, AWS, Internet, Shell, Source writes, Repo execution, cada um ALLOW ou DENY — não existe como dado. O que existe é uma regra: perfil offline recusa tool de nuvem | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-574",
       "line": 88,
@@ -7038,7 +7038,7 @@
       "type": "capability"
     },
     {
-      "context": "| `aws-readonly` como perfil | EXISTE PARCIAL | `ToolClass.CLOUD_READ` existe e é distinta de `CLOUD_MUTATION`, o que é ",
+      "context": "| `aws-readonly` como perfil | EXISTE PARCIAL | `ToolClass.CLOUD_READ` existe e é distinta de `CLOUD_MUTATION`, o que é metade do que o perfil pede. A outra metade — *raw source retrieval DENY* quando a capacidade AWS está ligada — não existe, porque não há recuperação de source para negar | `tests/test_harness_authorization.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-575",
       "line": 89,
@@ -7053,7 +7053,7 @@
       "type": "capability"
     },
     {
-      "context": "| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | O algoritmo mora em `sparkforge/paths.py:resolve_within()`",
+      "context": "| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | O algoritmo mora em `sparkforge/paths.py:resolve_within()`, uma vez só, e a varredura acrescentou o que vinha depois dele na SPEC: arquivo regular, recusa de atalho, denylist, teto de tamanho por tipo e confinamento — tudo em `sparkforge/facts/scan.py:iter_source_files()`. Falta o item da SPEC que continua sem existir em lugar nenhum: **detecção de conteúdo binário** antes de decodificar. E falta o sinal: pular por denylist, por teto ou por poda é silencioso, e o próprio módulo registra essa pendência na docstring | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-576",
       "line": 98,
@@ -7068,7 +7068,7 @@
       "type": "capability"
     },
     {
-      "context": "| Confinamento de caminho vindo de fora do processo | EXISTE PARCIAL | Fechado por dentro, aberto por fora. Por dentro: ",
+      "context": "| Confinamento de caminho vindo de fora do processo | EXISTE PARCIAL | Fechado por dentro, aberto por fora. Por dentro: `iter_source_files()` resolve cada arquivo visitado e descarta o que cair fora da raiz varrida, mesmo com componente intermediário trocado durante a varredura. Por fora: `authorize()` sabe recusar argumento de caminho que escape da raiz do case, mas nenhum dos quatro caminhos de execução — `adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`, `agents/supervisor.py` — chama `authorize()`, então as tools de análise continuam recebendo o `path` que quiserem passar. A raiz apontada é confinada em relação a si mesma, e a nada mais | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-708",
       "line": 99,
@@ -7084,7 +7084,7 @@
       "type": "capability"
     },
     {
-      "context": "| Symlink recusado por padrão | EXISTE, com teste | `sparkforge/facts/scan.py:_e_atalho()` recusa symlink de arquivo, sy",
+      "context": "| Symlink recusado por padrão | EXISTE, com teste | `sparkforge/facts/scan.py:_e_atalho()` recusa symlink de arquivo, symlink de pasta e reparse point em geral — inclusive **junction do Windows**, que `os.path.islink` não vê e que `mklink /J` cria sem privilégio de administrador. Recusar é diferente de resolver e conferir contenção: symlink apontando para dentro da raiz também é pulado, e há teste para esse caso exato | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-709",
       "line": 100,
@@ -7100,7 +7100,7 @@
       "type": "capability"
     },
     {
-      "context": "| Denylist de caminho sensível | EXISTE, com teste | Quatro listas em `sparkforge/facts/scan.py`, separadas por razão: `",
+      "context": "| Denylist de caminho sensível | EXISTE, com teste | Quatro listas em `sparkforge/facts/scan.py`, separadas por razão: `DIRETORIOS_SENSIVEIS` (`.aws`, `.ssh`, `.gnupg`, `.kube`, `secrets`, `cdk.out`, …), `TALOS_SENSIVEIS` (`.env`, `id_rsa`, `credentials`, `kubeconfig`, `.netrc`, …), `SUFIXOS_SENSIVEIS` (`.pem`, `.key`, `.tfstate`, `.tfvars`, …) e `SUFIXOS_SENSIVEIS_COMPOSTOS`, que pega `terraform.tfstate.json`. O casamento é por componente delimitado, nunca por prefixo: `secrets.json` é recusado e `secrets_manager.tf` não, e há teste para os dois lados | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-710",
       "line": 101,
@@ -7116,7 +7116,7 @@
       "type": "capability"
     },
     {
-      "context": "| Exclusão de árvore de dependência e de artefato | EXISTE, com teste | `DIRETORIOS_IGNORADOS` em `sparkforge/facts/scan",
+      "context": "| Exclusão de árvore de dependência e de artefato | EXISTE, com teste | `DIRETORIOS_IGNORADOS` em `sparkforge/facts/scan.py` poda `.venv`, `venv`, `site-packages`, `node_modules`, `vendor`, `build`, `dist`, `target`, `.git`, `.terraform`, `.sparkforge` e os caches de ferramenta. A poda é feita **no lugar**, sobre a lista de subpastas do `os.walk`, então a varredura nem desce nelas — filtrar no fim daria a mesma lista tendo pago para listar o `.venv` inteiro. Os catorze `rglob` soltos dos extratores passaram todos por aqui, e um gate estrutural recusa o décimo quinto | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-711",
       "line": 102,
@@ -7132,7 +7132,7 @@
       "type": "capability"
     },
     {
-      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão ",
+      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão de cada um é diferente: código-fonte tem teto de 1 MiB, pela regra de não montar AST de arquivo gerado; artefato de dados tem teto de 128 MiB, porque o operador apontou para ele de propósito. Extensão desconhecida cai no teto de dados, e esse é o único ponto fail-open do módulo, declarado onde acontece. Falta a outra metade da linha: **detecção de binário** não existe, nem piso de tamanho | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-712",
       "line": 103,
@@ -7148,7 +7148,7 @@
       "type": "capability"
     },
     {
-      "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, com teste | `sparkforge/facts/secrets.py:looks_like_secr",
+      "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, com teste | `sparkforge/facts/secrets.py:looks_like_secret()` é o módulo canônico, e **a fase J0 fechou a dívida que esta linha registrava**. Quando o mapa foi escrito nenhum arquivo de `tests/` o importava; hoje `tests/test_facts_secrets.py` o exercita. O detector deixou de depender do nome da chave: PAT do GitHub, JWT, chave privada PEM e token do Slack passam a ser reconhecidos pelo valor | `tests/test_facts_secrets.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-577",
       "line": 109,
@@ -7164,7 +7164,7 @@
       "type": "capability"
     },
     {
-      "context": "| Redação registrada no próprio fato | EXISTE, com teste | O par vira `<redigido>` e `attrs[\"redacted\"] = True`: a evidê",
+      "context": "| Redação registrada no próprio fato | EXISTE, com teste | O par vira `<redigido>` e `attrs[\"redacted\"] = True`: a evidência mostra que havia credencial sem mostrar a credencial. É a distinção que a SPEC exige entre `{\"sensitive\": true}` e `{\"secret\": \"AKIA...\"}` | `tests/test_facts_terraform.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-578",
       "line": 110,
@@ -7179,7 +7179,7 @@
       "type": "capability"
     },
     {
-      "context": "| O scanner nunca registra o segredo | EXISTE, com teste | Mesma disciplina no caminho de EMR: a propriedade sai redigid",
+      "context": "| O scanner nunca registra o segredo | EXISTE, com teste | Mesma disciplina no caminho de EMR: a propriedade sai redigida no golden, e o teste mede a redação, não a detecção | `tests/test_facts_emr_cluster.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-579",
       "line": 111,
@@ -7194,7 +7194,7 @@
       "type": "capability"
     },
     {
-      "context": "| Uma implementação só | EXISTE, com teste | **Fechado pela fase J0.** As cópias privadas `_looks_like_secret` de `spark",
+      "context": "| Uma implementação só | EXISTE, com teste | **Fechado pela fase J0.** As cópias privadas `_looks_like_secret` de `sparkforge/facts/terraform.py`, `emr_cluster.py` e `emr_serverless.py` foram removidas, e um gate estrutural por AST impede a próxima: `test_existe_um_unico_detector_de_segredo_no_pacote` quebra quando a segunda é escrita, não quando ela diverge — porque divergir é o momento em que o conserto já é caro | `tests/test_facts_secrets.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-556",
       "line": 112,
@@ -7210,7 +7210,7 @@
       "type": "capability"
     },
     {
-      "context": "| Detectores que a SPEC enumera | EXISTE PARCIAL | A fase J0 acrescentou os padrões **por valor**, e eles não olham o no",
+      "context": "| Detectores que a SPEC enumera | EXISTE PARCIAL | A fase J0 acrescentou os padrões **por valor**, e eles não olham o nome da chave: access key da AWS, token clássico e fine-grained do GitHub, JWT, cabeçalho PEM de chave privada em qualquer variante, token do Slack — mais senha embutida em URL, que é o caso do DSN com credencial. O gatilho por nome de chave continua existindo ao lado, para segredo proprietário que não tem prefixo publicado. O que a SPEC pede e não está lá: **OAuth client secret**, **Bearer token** solto e **alta entropia como gatilho independente** — entropia hoje só dispara acompanhada de nome de chave suspeito, de propósito, porque sozinha ela redige sha, caminho de S3 e nome de classe Java | `tests/test_facts_secrets.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-580",
       "line": 113,
@@ -7225,7 +7225,7 @@
       "type": "capability"
     },
     {
-      "context": "| Arquivo classificado sensível sai inteiro do índice | EXISTE PARCIAL | A decisão anterior passou a existir, e ela acon",
+      "context": "| Arquivo classificado sensível sai inteiro do índice | EXISTE PARCIAL | A decisão anterior passou a existir, e ela acontece **antes da leitura**: `sparkforge/facts/scan.py:_e_sensivel()` recusa o arquivo inteiro, então nem fato nem símbolo nem metadado nascem dele — nenhum extrator chega a abri-lo. Duas coisas faltam para a linha fechar. A classificação é por **nome**, nunca por conteúdo: um `config.py` com chave privada colada dentro é indexado como qualquer outro arquivo. E a recusa é muda: quem lê a saída não distingue \"não havia nada\" de \"havia e eu recusei\" | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-713",
       "line": 114,
@@ -7241,7 +7241,7 @@
       "type": "capability"
     },
     {
-      "context": "| Corpus de injeção exercitado ponta a ponta | EXISTE PARCIAL | `tests/test_harness_untrusted.py` monta um cenário com t",
+      "context": "| Corpus de injeção exercitado ponta a ponta | EXISTE PARCIAL | `tests/test_harness_untrusted.py` monta um cenário com texto de injeção plantado no artefato, roda a extração e mede que o texto chega aos fatos **e** que nenhum campo de catálogo o carrega. É um corpus de um caso, e ele prova a fronteira certa | `tests/test_harness_untrusted.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-581",
       "line": 120,
@@ -7256,7 +7256,7 @@
       "type": "capability"
     },
     {
-      "context": "| Comentário e docstring fora do dado devolvido | EXISTE PARCIAL | Na prática nenhum extrator emite comentário ou docstr",
+      "context": "| Comentário e docstring fora do dado devolvido | EXISTE PARCIAL | Na prática nenhum extrator emite comentário ou docstring: `Fact.subject.snippet` é a linha exata do nó analisado. Mas isso é consequência do que os extratores escolheram observar, não uma política com chave — não existe `include_comments` nem `include_docstrings` para desligar, porque não existe o caminho que os ligaria | `tests/test_harness_untrusted.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-582",
       "line": 121,
@@ -7271,7 +7271,7 @@
       "type": "capability"
     },
     {
-      "context": "| Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge/` já é isso: `case.yaml`, `facts.json",
+      "context": "| Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge/` já é isso: `case.yaml`, `facts.json`, `findings.json`, `handoff.md` e `artifacts/manifest.json`, escritos por `sparkforge/case/store.py` | `tests/test_case_store.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-583",
       "line": 129,
@@ -7286,7 +7286,7 @@
       "type": "capability"
     },
     {
-      "context": "| Banco SQLite local já em uso | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` cria e escreve",
+      "context": "| Banco SQLite local já em uso | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` cria e escreve `.sparkforge/traces.db`. O precedente de \"SparkForge tem banco local\" já existe; o que não existe é a política sobre ele | `tests/test_observability.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-584",
       "line": 130,
@@ -7301,7 +7301,7 @@
       "type": "capability"
     },
     {
-      "context": "| Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifest",
+      "context": "| Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifesto e ignora `.sparkforge/artifacts/*`, com a razão escrita ali: artefato bruto pode ter dado de negócio. A disciplina de auditar o que o repositório ignora tem teste | `tests/test_execution_surface.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-585",
       "line": 131,
@@ -7316,7 +7316,7 @@
       "type": "capability"
     },
     {
-      "context": "| `.sparkforge/local/` fora do git | EXISTE, sem teste | As três linhas entraram no `.gitignore` no commit `715a657`, e ",
+      "context": "| `.sparkforge/local/` fora do git | EXISTE, sem teste | As três linhas entraram no `.gitignore` no commit `715a657`, e `git check-ignore -v` confirma as três: `.sparkforge/traces.db`, `.sparkforge/cache/` e `.sparkforge/local/`. `sparkforge/codeintel/db.py:BANCO_PADRAO` aponta o índice para dentro de `local/`, e `tests/test_codeintel_search.py::test_o_banco_padrao_mora_sob_o_estado_local_ignorado_pelo_git` tranca **essa** metade. A metade que ninguém tranca é a regra em si: apagar a entrada `.sparkforge/local/` do `.gitignore` não quebra teste nenhum, ao contrário de `.claude/settings.local.json`, que tem gate próprio em `tests/test_execution_surface.py` | — |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-714",
       "line": 132,
@@ -7335,7 +7335,7 @@
       "type": "capability"
     },
     {
-      "context": "| Ponto cego como cidadão de primeira classe | EXISTE, com teste | É lei da casa antes de ser pedido da SPEC: onze extra",
+      "context": "| Ponto cego como cidadão de primeira classe | EXISTE, com teste | É lei da casa antes de ser pedido da SPEC: onze extratores emitem um kind `*.unresolved` com vocabulário fechado de razão, e o envelope das tools conta `unresolved` sobre o conjunto inteiro — filtrar por kind **não** faz o ponto cego sumir do relatório. Fonte limpa reporta zero, nunca ausência | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-586",
       "line": 139,
@@ -7350,7 +7350,7 @@
       "type": "capability"
     },
     {
-      "context": "| Id determinístico de nó, derivado de conteúdo | EXISTE, com teste | O nó passou a existir, e o id dele também: `sparkf",
+      "context": "| Id determinístico de nó, derivado de conteúdo | EXISTE, com teste | O nó passou a existir, e o id dele também: `sparkforge/codeintel/ids.py:node_id()` deriva BLAKE2b de caminho, kind, nome qualificado e assinatura, com separador `\\x00` entre campos para que fronteira de campo não vire ambiguidade. Reindexar sem mudança produz os mesmos ids, e há teste medindo isso ponta a ponta. O nome precisa ser mesmo qualificado, e isso é contrato de quem chama: com nome simples, `adapters/platforms/targets.py` sozinho já colide quatro vezes | `tests/test_codeintel_ids.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-587",
       "line": 140,
@@ -7365,7 +7365,7 @@
       "type": "capability"
     },
     {
-      "context": "| Taxonomia de aresta | EXISTE PARCIAL | `pyspark.callgraph_edge` (chamador → chamado) mais os quatro kinds `callgraph.*",
+      "context": "| Taxonomia de aresta | EXISTE PARCIAL | `pyspark.callgraph_edge` (chamador → chamado) mais os quatro kinds `callgraph.*` cobrem a aresta de chamada e o que se deriva dela. `import`, `herança`, `referência de tipo` e `escrita/leitura de tabela como aresta de grafo` não existem como aresta — leitura e escrita existem como **fato**, com o alvo literal dentro | `tests/test_fixtures_golden_callgraph.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-588",
       "line": 141,
@@ -7380,7 +7380,7 @@
       "type": "capability"
     },
     {
-      "context": "| Banco com schema versionado, migrations e locking | EXISTE PARCIAL | `sparkforge/codeintel/db.py` cria `metadata`, `fi",
+      "context": "| Banco com schema versionado, migrations e locking | EXISTE PARCIAL | `sparkforge/codeintel/db.py` cria `metadata`, `files`, `nodes`, `edges`, `unresolved_refs` e `symbols_fts`, grava `schema_version` em `metadata` e confere `PRAGMA foreign_keys` relendo o valor efetivo, porque esse pragma falha calado e a falha dele deixa `ON DELETE CASCADE` declarado sem acontecer. Das três coisas que faltavam nesta linha, duas mudaram de estado. **Migration** existe na forma que o módulo escolheu, e a escolha está registrada: `criar_schema()` lê `schema_version` do `metadata` e, quando ela não é a corrente, **descarta e refaz** o schema em vez de migrar — o arquivo é descartável, nada no motor determinístico depende dele para responder, e banco da versão corrente sai intacto. **`edges`** entrou no schema ao lado de `unresolved_refs`, com CASCADE nas duas pontas, e as duas são gravadas por `index.py` na mesma transação. O que continua faltando é **locking** de índice: há `busy_timeout` de conexão, que é espera de escritor do SQLite, e não guarda contra duas indexações concorrentes da mesma árvore | `tests/test_codeintel_db.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-715",
       "line": 142,
@@ -7396,7 +7396,7 @@
       "type": "capability"
     },
     {
-      "context": "| Índice FTS sobre símbolo e signature | EXISTE PARCIAL | A metade do símbolo existe: `symbols_fts` é FTS5 com `name` e ",
+      "context": "| Índice FTS sobre símbolo e signature | EXISTE PARCIAL | A metade do símbolo existe: `symbols_fts` é FTS5 com `name` e `qualified_name`, e o tokenizador default é o que faz `iter_source_files` ser achável por `source`. A metade da **signature não existe**: `normalized_signature` mora em `nodes`, como coluna comum, e não é coluna do FTS — buscar por tipo de parâmetro ou por anotação de retorno não tem por onde. As colunas foram lidas do banco criado, não da DDL: `node_id`, `name`, `qualified_name` | `tests/test_codeintel_db.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-716",
       "line": 143,
@@ -7412,7 +7412,7 @@
       "type": "capability"
     },
     {
-      "context": "| Sanitização de signature antes de armazenar | EXISTE, com teste | `sparkforge/codeintel/ids.py:normalizar_assinatura()",
+      "context": "| Sanitização de signature antes de armazenar | EXISTE, com teste | `sparkforge/codeintel/ids.py:normalizar_assinatura()` troca valor literal de default pelo marcador `<literal>` e preserva nome, ordem dos parâmetros e anotação de retorno. É varredor com profundidade e não substituição por expressão regular, porque default abre parêntese, aninha chamada e carrega vírgula dentro de aspas. `codeintel/extract.py` aplica antes de o nó existir, então nenhum valor literal chega ao banco por esse caminho | `tests/test_codeintel_ids.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-717",
       "line": 144,
@@ -7428,7 +7428,7 @@
       "type": "capability"
     },
     {
-      "context": "| Arquitetura de extractor com identidade e versão | EXISTE, com teste | Todo extrator declara `EXTRACTOR_ID` e o grava ",
+      "context": "| Arquitetura de extractor com identidade e versão | EXISTE, com teste | Todo extrator declara `EXTRACTOR_ID` e o grava em `provenance` de cada fato, ao lado do artefato e do sha256 dele. É a procedência que a SPEC pede por nó, já entregue por fato | `tests/test_fixtures_golden.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-589",
       "line": 150,
@@ -7443,7 +7443,7 @@
       "type": "capability"
     },
     {
-      "context": "| Extractor PySpark | EXISTE, com teste | `sparkforge/facts/pyspark_ast.py:extract_source()` cobre leitura, escrita, cac",
+      "context": "| Extractor PySpark | EXISTE, com teste | `sparkforge/facts/pyspark_ast.py:extract_source()` cobre leitura, escrita, cache, join, explode, window, `conf.set`, UDF, dedup, coleta no driver, laço, particionamento e cadeia de método, com golden por fixture | `tests/test_fixtures_golden.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-590",
       "line": 151,
@@ -7458,7 +7458,7 @@
       "type": "capability"
     },
     {
-      "context": "| Grafo de dados tabela → job → tabela | EXISTE PARCIAL | `pyspark.read` e `pyspark.write` carregam o alvo literal quand",
+      "context": "| Grafo de dados tabela → job → tabela | EXISTE PARCIAL | `pyspark.read` e `pyspark.write` carregam o alvo literal quando ele é literal, e `sparkforge/facts/consumers.py` cruza produção com inventário de consumidor. O que falta é o grafo: os dois lados existem como fato solto, ninguém liga um ao outro numa estrutura consultável | `tests/test_fixtures_golden.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-591",
       "line": 152,
@@ -7473,7 +7473,7 @@
       "type": "capability"
     },
     {
-      "context": "| Call graph com ciclo e alcançabilidade a partir de entrypoint | EXISTE, com teste | `sparkforge/facts/call_graph.py` d",
+      "context": "| Call graph com ciclo e alcançabilidade a partir de entrypoint | EXISTE, com teste | `sparkforge/facts/call_graph.py` deriva quais funções existem, quanto trabalho Spark cada uma concentra, o que é alcançável de cada entrypoint e a que profundidade mínima, quais ciclos existem e o que ninguém referencia. É função pura sobre fatos: nunca lê arquivo, nunca reparseia | `tests/test_fixtures_golden_callgraph.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-592",
       "line": 153,
@@ -7488,7 +7488,7 @@
       "type": "capability"
     },
     {
-      "context": "| Lineage dinâmico declarado em vez de silenciado | EXISTE, com teste | O que o extrator não resolve vira `pyspark.unres",
+      "context": "| Lineage dinâmico declarado em vez de silenciado | EXISTE, com teste | O que o extrator não resolve vira `pyspark.unresolved` com razão de vocabulário fechado, e o filtro por kind não consegue esconder isso do envelope | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-593",
       "line": 154,
@@ -7503,7 +7503,7 @@
       "type": "capability"
     },
     {
-      "context": "| Extractor de SQL com predicado e projeção | EXISTE, com teste | `sparkforge/facts/sql_literal.py` lê SQL embutido em l",
+      "context": "| Extractor de SQL com predicado e projeção | EXISTE, com teste | `sparkforge/facts/sql_literal.py` lê SQL embutido em literal de código e emite `sql.predicate`, `sql.projection`, `sql.predicate.partition_filter` e as formas enriquecidas | `tests/test_fixtures_golden_sql.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-594",
       "line": 155,
@@ -7518,7 +7518,7 @@
       "type": "capability"
     },
     {
-      "context": "| Símbolos gerais de Python | EXISTE PARCIAL | Duas metades dessa linha fecharam na fase J3, num extrator novo: `sparkfo",
+      "context": "| Símbolos gerais de Python | EXISTE PARCIAL | Duas metades dessa linha fecharam na fase J3, num extrator novo: `sparkforge/codeintel/extract.py` emite **nó de classe** e **nome qualificado** com a pilha de escopo inteira, distingue `method` de `function` pelo tipo do escopo imediato, e não perde `def` dentro de `if TYPE_CHECKING` porque herda de `NodeVisitor` em vez de percorrer só o corpo das definições. Continuam sem existir: **grafo de import** e **hierarquia de tipo** — a assinatura de classe guarda o texto das bases, e ninguém as resolve em nó. Do lado dos fatos, `pyspark.function_def` continua sendo a tabela de símbolo com forma de PySpark, e as duas visões ainda não se falam | `tests/test_codeintel_extract.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-595",
       "line": 156,
@@ -7533,7 +7533,7 @@
       "type": "capability"
     },
     {
-      "context": "| Manifesto de conteúdo verificável, com detecção de adulteração | EXISTE, com teste | `knowledge/offline-manifest.json`",
+      "context": "| Manifesto de conteúdo verificável, com detecção de adulteração | EXISTE, com teste | `knowledge/offline-manifest.json` mais `sparkforge/tools/offline.py:OfflineKnowledgeIndex.verify()` conferem SHA-256 documento a documento e separam ausência de divergência. O hash normaliza fim de linha porque o contrário fazia o gate depender da plataforma — a lição vale inteira para um índice de código | `tests/test_offline_expansion.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-596",
       "line": 164,
@@ -7548,7 +7548,7 @@
       "type": "capability"
     },
     {
-      "context": "| Sinal de staleness por arquivo | EXISTE PARCIAL | O material passou a estar guardado: `files` grava `content_sha256`, ",
+      "context": "| Sinal de staleness por arquivo | EXISTE PARCIAL | O material passou a estar guardado: `files` grava `content_sha256`, `size_bytes`, `modified_ns` e `indexed_at` por arquivo indexado, ao lado do `provenance.artifact_sha256` que todo fato já carregava. O que continua não existindo é a **comparação**: nada relê o disco para conferir se o sha mudou, e `code status` devolve quando o índice foi feito sem dizer se ele ainda vale. Índice velho responde \"nenhum símbolo\" com a mesma cara com que responde sobre símbolo inexistente | `tests/test_codeintel_index.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-597",
       "line": 165,
@@ -7563,7 +7563,7 @@
       "type": "capability"
     },
     {
-      "context": "| Git lido sem executar hook | EXISTE, com teste | A superfície de execução do repositório é uma lista fechada e auditad",
+      "context": "| Git lido sem executar hook | EXISTE, com teste | A superfície de execução do repositório é uma lista fechada e auditada, e nenhum hook usa construção de execução arbitrária | `tests/test_execution_surface.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-598",
       "line": 166,
@@ -7578,7 +7578,7 @@
       "type": "capability"
     },
     {
-      "context": "| Índice persistente, completo e incremental | EXISTE PARCIAL | Completo existe desde a fase J3: `sparkforge/codeintel/i",
+      "context": "| Índice persistente, completo e incremental | EXISTE PARCIAL | Completo existe desde a fase J3: `sparkforge/codeintel/index.py:indexar()` varre pela mesma fronteira de leitura de `facts/scan.py`, extrai por `ast` e persiste em SQLite com FTS5. Incremental **não**: `indexar` apaga `files` e `symbols_fts` e recarrega tudo, de propósito — reaproveitar exigiria saber o que mudou, e construir isso de improviso deixaria nó fantasma no banco enquanto isso | `tests/test_codeintel_index.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-677",
       "line": 167,
@@ -7594,7 +7594,7 @@
       "type": "capability"
     },
     {
-      "context": "| Busca local determinística, sem embedding e sem rede | EXISTE, com teste | `OfflineKnowledgeIndex.search()` é busca po",
+      "context": "| Busca local determinística, sem embedding e sem rede | EXISTE, com teste | `OfflineKnowledgeIndex.search()` é busca por frequência de termo sobre `knowledge/`, deliberadamente burra: sem índice invertido, sem embedding, sem chamada externa. É a proibição da SPEC já cumprida — no corpo errado, porque busca conhecimento e não código | `tests/test_offline_expansion.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-599",
       "line": 175,
@@ -7609,7 +7609,7 @@
       "type": "capability"
     },
     {
-      "context": "| Seleção de contexto com escore por termo e orçamento | EXISTE, com teste | `sparkforge/agents/budget.py:select_context",
+      "context": "| Seleção de contexto com escore por termo e orçamento | EXISTE, com teste | `sparkforge/agents/budget.py:select_context()` deduplica por fingerprint, pontua por termo da query, dá peso a tipos preservados e corta pelo orçamento de token. É ranking mais orçamento, no formato que a SPEC descreve — sobre registros de conversa de agente, não sobre símbolo de código | `tests/test_agent_runtime.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-600",
       "line": 176,
@@ -7624,7 +7624,7 @@
       "type": "capability"
     },
     {
-      "context": "| Empacotamento com prioridade por tipo e corte reportado | EXISTE, com teste | `sparkforge/tools/context.py:pack_contex",
+      "context": "| Empacotamento com prioridade por tipo e corte reportado | EXISTE, com teste | `sparkforge/tools/context.py:pack_context()` prioriza fato e decisão sobre snapshot e tarefa, deduplica e reporta `truncated` em vez de cortar em silêncio — contexto descartado sem aviso vira evidência que some | `tests/test_offline_expansion.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-601",
       "line": 177,
@@ -7639,7 +7639,7 @@
       "type": "capability"
     },
     {
-      "context": "| Funil de contexto com deduplicação por hash e corte por orçamento | EXISTE, com teste | `sparkforge/context/funnel.py:",
+      "context": "| Funil de contexto com deduplicação por hash e corte por orçamento | EXISTE, com teste | `sparkforge/context/funnel.py:ContextFunnel.build_minimal_context()` ordena por relevância, deduplica por hash de conteúdo e encaixa no orçamento. Limite declarado: a relevância é **entrada**, com valor padrão fixo — nada no módulo a deriva | `tests/test_context_funnel.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-602",
       "line": 178,
@@ -7654,7 +7654,7 @@
       "type": "capability"
     },
     {
-      "context": "| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/",
+      "context": "| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/agents/budget.py:estimate_tokens()`, `sparkforge/tools/cost.py:estimate_tokens()`, e mais duas cópias em linha dentro de `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py`. As duas primeiras arredondam para cima; as duas em linha truncam. A mesma pergunta, quatro implementações, e essas **divergem** — ao contrário das quatro de segredo | `tests/test_economy_engine.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-603",
       "line": 179,
@@ -7669,7 +7669,7 @@
       "type": "capability"
     },
     {
-      "context": "| Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres p",
+      "context": "| Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres por token é heurística e devolve `is_estimate: True` em todo retorno; `sparkforge/agents/observability.py` devolve `None` quando o total é desconhecido, em vez de somar zero | `tests/test_agent_runtime.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-604",
       "line": 180,
@@ -7684,7 +7684,7 @@
       "type": "capability"
     },
     {
-      "context": "| Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_cou",
+      "context": "| Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_count` e `next_cursor`, e o arquivo escrito carrega a comparação inteira, nunca a página. Quem extrai `items` sem conferir `next_cursor` julga a primeira página — e há teste medindo exatamente isso | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-605",
       "line": 181,
@@ -7699,7 +7699,7 @@
       "type": "capability"
     },
     {
-      "context": "| Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()`",
+      "context": "| Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()` casa nome e nome qualificado pelo FTS5. O termo nunca chega cru ao `MATCH` — passa por `construir_consulta()`, que é o construtor de consulta que a SPEC exige em lugar de interpolar texto de terceiro. A ordem é `(rank, path, start_line, node_id)`: sem o desempate, empate de relevância deixaria a ordem por conta do SQLite e o teste de determinismo falharia de forma intermitente | `tests/test_codeintel_search.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-678",
       "line": 182,
@@ -7715,7 +7715,7 @@
       "type": "capability"
     },
     {
-      "context": "| Núcleo comum entre CLI e MCP | EXISTE, com teste | `sparkforge/adapters/_core.py` é o núcleo; `cli.py` e `tools.py` sã",
+      "context": "| Núcleo comum entre CLI e MCP | EXISTE, com teste | `sparkforge/adapters/_core.py` é o núcleo; `cli.py` e `tools.py` são casca. Há teste medindo que as duas superfícies declaram a mesma opcionalidade — é exatamente o que a SPEC pede para as tools novas | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-606",
       "line": 300,
@@ -7730,7 +7730,7 @@
       "type": "capability"
     },
     {
-      "context": "| Schema de saída declarado e validado contra a saída real | EXISTE, com teste | Toda tool declara `outputSchema`, e há ",
+      "context": "| Schema de saída declarado e validado contra a saída real | EXISTE, com teste | Toda tool declara `outputSchema`, e há teste que roda a tool e valida a saída real contra o schema declarado, inclusive no caminho de erro | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-607",
       "line": 301,
@@ -7745,7 +7745,7 @@
       "type": "capability"
     },
     {
-      "context": "| Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as ",
+      "context": "| Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as tools de coleta são de mundo aberto, e toda tool de mundo aberto também escreve localmente | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-608",
       "line": 302,
@@ -7760,7 +7760,7 @@
       "type": "capability"
     },
     {
-      "context": "| Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma u",
+      "context": "| Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma usa objeto nu | `tests/test_adapters_tools.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-609",
       "line": 303,
@@ -7775,7 +7775,7 @@
       "type": "capability"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **30** das **68** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-629",
       "line": 305,
@@ -7790,7 +7790,7 @@
       "type": "capability"
     },
     {
-      "context": "| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge code index`, `sparkforge code search <termo>` e `sparkforge",
+      "context": "| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge code index`, `sparkforge code search <termo>` e `sparkforge code status`, em `sparkforge/adapters/cli.py`. É a única entrada do CLI cujo payload não vem de `_core` — só o tipo de erro vem —, e a razão está escrita ao lado dela: o índice não devolve fato nem achado, e atravessar o núcleo obrigaria a inventar procedência para uma linha que só tem caminho e número de linha. O banco default é `.sparkforge/local/codeintel/graph.sqlite3`, já ignorado pelo git | `tests/test_codeintel_search.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-679",
       "line": 309,
@@ -7806,7 +7806,7 @@
       "type": "capability"
     },
     {
-      "context": "| Motor de regras determinístico que consumiria o grafo | EXISTE, com teste | `sparkforge/rules/engine.py:judge()` casa ",
+      "context": "| Motor de regras determinístico que consumiria o grafo | EXISTE, com teste | `sparkforge/rules/engine.py:judge()` casa fato contra catálogo YAML com `runtime_scope`, e o avaliador de expressão de `sparkforge/rules/expr.py` é fechado, nunca `eval` | `tests/test_fixtures_golden.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-610",
       "line": 317,
@@ -7821,7 +7821,7 @@
       "type": "capability"
     },
     {
-      "context": "| Case como estado retomável, com gate que recusa avanço | EXISTE, com teste | `sparkforge/case/store.py` declara fases ",
+      "context": "| Case como estado retomável, com gate que recusa avanço | EXISTE, com teste | `sparkforge/case/store.py` declara fases e gates, e avançar com gate aberto é recusado, não avisado | `tests/test_case_store.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-611",
       "line": 318,
@@ -7836,7 +7836,7 @@
       "type": "capability"
     },
     {
-      "context": "| Contexto de runtime como dado de julgamento | EXISTE, com teste | `RuntimeContext` em `sparkforge/findings/models.py` ",
+      "context": "| Contexto de runtime como dado de julgamento | EXISTE, com teste | `RuntimeContext` em `sparkforge/findings/models.py` carrega Glue, Spark, Python e Iceberg, e é ele que decide se uma regra sequer se aplica | `tests/test_findings_models.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-612",
       "line": 319,
@@ -7851,7 +7851,7 @@
       "type": "capability"
     },
     {
-      "context": "| Gold set com resultado esperado por cenário | EXISTE, com teste | `fixtures/scenarios/` guarda cenário inteiro com `ex",
+      "context": "| Gold set com resultado esperado por cenário | EXISTE, com teste | `fixtures/scenarios/` guarda cenário inteiro com `expected/`, e há holdout. É a forma que a SPEC pede para o gold set de recuperação, aplicada a diagnóstico | `tests/test_fixtures_scenarios.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-613",
       "line": 320,
@@ -7866,7 +7866,7 @@
       "type": "capability"
     },
     {
-      "context": "| Integração sem criar um segundo sistema de julgamento | EXISTE, com teste | O catálogo de regras é o único julgador, e",
+      "context": "| Integração sem criar um segundo sistema de julgamento | EXISTE, com teste | O catálogo de regras é o único julgador, e o carregador recusa regra malformada na carga em vez de deixá-la nunca disparar em silêncio | `tests/test_rules_loader.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-614",
       "line": 321,
@@ -7881,7 +7881,7 @@
       "type": "capability"
     },
     {
-      "context": "| Política estática: nada de execução de Spark para analisar | EXISTE, com teste | Toda a extração é `ast.parse` e leitu",
+      "context": "| Política estática: nada de execução de Spark para analisar | EXISTE, com teste | Toda a extração é `ast.parse` e leitura de artefato coletado. Nenhum caminho do repositório sobe sessão Spark, e os goldens provam que o resultado sai da leitura, não da execução | `tests/test_fixtures_golden_plan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-615",
       "line": 327,
@@ -7896,7 +7896,7 @@
       "type": "capability"
     },
     {
-      "context": "| Identificador de tabela reconhecido no código | EXISTE PARCIAL | `catalog.table_schema` traz o schema do catálogo, e `",
+      "context": "| Identificador de tabela reconhecido no código | EXISTE PARCIAL | `catalog.table_schema` traz o schema do catálogo, e `pyspark.read`/`pyspark.write` trazem o alvo literal. Não existe **nó de tabela** ligando as duas coisas nem consulta por tabela | `tests/test_fixtures_golden_catalog.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-616",
       "line": 328,
@@ -7911,7 +7911,7 @@
       "type": "capability"
     },
     {
-      "context": "| Armazenamento local de métrica de execução | EXISTE, com teste | `SQLiteTraceStore` guarda trace e span com token e cu",
+      "context": "| Armazenamento local de métrica de execução | EXISTE, com teste | `SQLiteTraceStore` guarda trace e span com token e custo por execução | `tests/test_observability.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-617",
       "line": 335,
@@ -7926,7 +7926,7 @@
       "type": "capability"
     },
     {
-      "context": "| Detector de desperdício de token | EXISTE, com teste | `sparkforge/economy/waste_detector.py:TokenWasteDetector`, junt",
+      "context": "| Detector de desperdício de token | EXISTE, com teste | `sparkforge/economy/waste_detector.py:TokenWasteDetector`, junto com `TaskBudgetGuardrail` e `ArtifactCache` com chave por hash de conteúdo | `tests/test_economy_engine.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-618",
       "line": 336,
@@ -7941,7 +7941,7 @@
       "type": "capability"
     },
     {
-      "context": "| Teste de traversal de caminho | EXISTE PARCIAL | A matriz encheu pela metade. Cobertos hoje, cada um com teste: caminh",
+      "context": "| Teste de traversal de caminho | EXISTE PARCIAL | A matriz encheu pela metade. Cobertos hoje, cada um com teste: caminho absoluto (`/etc/passwd`, `C:/Windows/x`), `..` encadeado (`a/../../fora.yaml`), symlink de arquivo e de pasta, junction do Windows, e caminho entregue de fora da raiz varrida. Continuam sem caso: **caminho UNC**, **byte nulo** e **unicode** — as três formas que dependem de como o sistema de arquivos normaliza, e que nenhum dos testes de hoje exercita | `tests/test_facts_scan.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-619",
       "line": 385,
@@ -7956,7 +7956,7 @@
       "type": "capability"
     },
     {
-      "context": "| Robustez a arquivo malformado e a encoding inválido | EXISTE, com teste | Falha por arquivo nunca é fatal: `SyntaxErro",
+      "context": "| Robustez a arquivo malformado e a encoding inválido | EXISTE, com teste | Falha por arquivo nunca é fatal: `SyntaxError` e `UnicodeDecodeError` viram um fato `unresolved` para aquele arquivo e a varredura continua. Perder a árvore inteira por causa de um arquivo ruim seria o pior modo de falha de um analisador | `tests/test_fixtures_golden_graph.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-620",
       "line": 386,
@@ -7971,7 +7971,7 @@
       "type": "capability"
     },
     {
-      "context": "| Teste de vazamento do banco | EXISTE PARCIAL | O banco existe, e três testes medem o que ele **não** guarda: `test_cor",
+      "context": "| Teste de vazamento do banco | EXISTE PARCIAL | O banco existe, e três testes medem o que ele **não** guarda: `test_corpo_da_funcao_nao_chega_ao_banco`, `test_nenhum_no_carrega_corpo` e `test_schema_grava_a_versao_e_nao_grava_caminho_absoluto` — corpo de função, e caminho absoluto que nomearia o usuário e o diretório num arquivo copiável. O que falta é o teste adversarial: nenhum caso indexa uma árvore com segredo plantado num arquivo de nome inocente e depois procura esse segredo dentro do `.sqlite3` | `tests/test_codeintel_index.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-718",
       "line": 388,
@@ -7987,7 +7987,7 @@
       "type": "capability"
     },
     {
-      "context": "| Corpus de segredo | EXISTE, com teste | Fechado pela fase J0. `tests/test_facts_secrets.py` é corpus parametrizado com",
+      "context": "| Corpus de segredo | EXISTE, com teste | Fechado pela fase J0. `tests/test_facts_secrets.py` é corpus parametrizado com positivo, positivo embutido no meio do valor, quase-positivo e dado legítimo, e ele cobra três invariantes que uma lista de casos sozinha não cobraria: todo padrão por valor tem positivo no corpus, `detectores()` nunca devolve o valor detectado, e `detectores()` e `looks_like_secret()` nunca divergem sobre o mesmo par | `tests/test_facts_secrets.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-719",
       "line": 389,
@@ -8003,7 +8003,7 @@
       "type": "capability"
     },
     {
-      "context": "| Dependência mínima como controle de segurança | EXISTE, com teste | O pacote core depende de `PyYAML` e `jsonschema`, ",
+      "context": "| Dependência mínima como controle de segurança | EXISTE, com teste | O pacote core depende de `PyYAML` e `jsonschema`, e nada mais; AWS, HTTP e SDK MCP são extras. O espelho de requisitos é conferido byte a byte contra o `pyproject.toml`, então uma dependência nova não entra por um caminho e some pelo outro | `tests/test_requirements_mirror.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-621",
       "line": 396,
@@ -8018,7 +8018,7 @@
       "type": "capability"
     },
     {
-      "context": "| Integridade de artefato vendorizado | EXISTE, com teste | `vendor/` tem manifesto com sha por projeto, licença origina",
+      "context": "| Integridade de artefato vendorizado | EXISTE, com teste | `vendor/` tem manifesto com sha por projeto, licença original preservada, e caminho que escape do diretório é recusado no código, não só no teste | `tests/test_vendor_caveman.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-622",
       "line": 397,
@@ -8033,7 +8033,7 @@
       "type": "capability"
     },
     {
-      "context": "| Verificação do artefato instalado | EXISTE, com teste | `scripts/verify_wheel.py` roda os módulos golden dentro de um ",
+      "context": "| Verificação do artefato instalado | EXISTE, com teste | `scripts/verify_wheel.py` roda os módulos golden dentro de um ambiente isolado, com `PYTHONPATH` vazio e o Python do ambiente virtual, não o corrente | `tests/test_verify_wheel.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-623",
       "line": 398,
@@ -8048,7 +8048,7 @@
       "type": "capability"
     },
     {
-      "context": "| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `",
+      "context": "| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `dist/` já aprovado pelo gate de paridade, e `.github/workflows/release.yml` o anexa ao release em rascunho ao lado do wheel e do sdist. Os cinco campos que a SPEC enumera têm cada um sua fonte declarada: pacote e versão vêm do lock resolvido, o sha256 vem do mesmo lock, a licença foi colhida da API do PyPI na geração dele, e a origem é o `purl` mais a URL do projeto no índice. O componente raiz carrega o sha256 do wheel e do sdist, então o documento descreve **um** release e não uma versão no abstrato. Só biblioteca padrão, pela mesma razão que pôs `build` no extra `dev`: ferramenta de CycloneDX ausente viraria `skip` permanente no teste | `tests/test_supply_chain.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-721",
       "line": 399,
@@ -8063,7 +8063,7 @@
       "type": "capability"
     },
     {
-      "context": "| Lock reprodutível e instalação frozen no CI | EXISTE, com teste | `locks/py3.10.txt` e `locks/py3.11.txt`, gerados por",
+      "context": "| Lock reprodutível e instalação frozen no CI | EXISTE, com teste | `locks/py3.10.txt` e `locks/py3.11.txt`, gerados por `scripts/gen_lock.py`: versão exata mais o sha256 de cada distribuição publicada daquela versão, incluindo o backend de build. O CI instala com `pip install --require-hashes`, que trata como **erro** qualquer dependência que não esteja pinada e hasheada no arquivo — inclusive as que entram por transitividade —, de modo que o ambiente instalado é idêntico ao commitado ou a instalação falha dizendo o que faltou. O install editável usa `--no-deps --no-build-isolation`, e sem o segundo o pip baixaria hatchling do índice em tempo de CI. São dois arquivos porque a resolução diverge de verdade entre as duas entradas da matriz — `rpds-py` resolve para versões diferentes, e `tomli`, `importlib-metadata` e `zipp` só existem na linha mais antiga. Conferir é offline; regenerar exige rede e `uv`, que é ferramenta de geração e não entra em lugar nenhum do pacote | `tests/test_supply_chain.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-720",
       "line": 400,
@@ -8078,7 +8078,7 @@
       "type": "capability"
     },
     {
-      "context": "| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `tes",
+      "context": "| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `test` para que a consulta a uma base externa não decida a cor do gate de teste. Ele audita o **lock**, e não os pisos: `PyYAML>=6.0` não tem CVE, a versão instalada é que tem. A política está escrita em `scripts/audit_policy.py`, e tem quatro ramos: vulnerabilidade com correção publicada derruba o job; sem correção publicada só reporta, e migra sozinha para o ramo de cima no dia em que ganhar correção; base não consultada (relatório ausente, ilegível ou com todos os pacotes pulados) derruba, porque ausência não é aprovação; e relatório que **não cobre o lock** derruba, que é o único ramo que compara a saída com o alvo em vez de olhar só para dentro dela — um relatório bem formado sobre outra coisa passaria por todos os outros sem ter respondido nada. A política é função pura sobre JSON, e por isso tem gate offline com relatórios sintéticos | `tests/test_supply_chain.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-722",
       "line": 401,

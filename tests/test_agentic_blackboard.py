@@ -231,3 +231,69 @@ class TestJsonlFormat:
         assert len(lines) == 1
         record = json.loads(lines[0])
         assert record["id"] == c.id
+
+
+class TestRevisaoDeClaim:
+    """A mesma afirmacao com evidencia nova e outra claim, e o blackboard aceita.
+
+    Ate 2026-09-03 o id era `claimant + tipo + statement`: revisar uma claim --
+    a mesma frase, agora sustentada por uma evidencia que apareceu depois --
+    colidia com a versao anterior e `append_claim` a recusava como duplicata.
+    Nao havia como registrar revisao nenhuma.
+    """
+
+    def _claim(self, root: Path, **kw):
+        from sparkforge.agentic.models import Claim, ClaimType
+
+        return Claim(
+            claimant="sf-spark-specialist",
+            claim_type=ClaimType.INFERENCE,
+            statement="Shuffle domina o stage 7",
+            **kw,
+        )
+
+    def test_revisao_com_evidencia_nova_entra(self, tmp_path: Path):
+        original = self._claim(tmp_path)
+        append_claim(original, tmp_path)
+
+        revisada = self._claim(
+            tmp_path,
+            evidence_refs=["ev_1a2b3c4d"],
+            confidence="high",
+            supersedes=original.id,
+        )
+        assert revisada.id != original.id
+        append_claim(revisada, tmp_path)
+
+        registros = read_claims(tmp_path)
+        assert len(registros) == 2
+        assert registros[1]["supersedes"] == original.id
+
+    def test_claim_identica_continua_sendo_duplicata(self, tmp_path: Path):
+        c = self._claim(tmp_path, evidence_refs=["ev_1a2b3c4d"])
+        append_claim(c, tmp_path)
+        with pytest.raises(ValueError, match="já existe"):
+            append_claim(self._claim(tmp_path, evidence_refs=["ev_1a2b3c4d"]), tmp_path)
+
+    def test_ordem_de_evidence_refs_nao_muda_o_id(self):
+        """Id e sobre o CONJUNTO de evidencias, nao sobre a ordem em que o
+        chamador as listou -- senao a mesma claim teria dois ids."""
+        a = self._claim(Path("."), evidence_refs=["ev_b", "ev_a"])
+        b = self._claim(Path("."), evidence_refs=["ev_a", "ev_b"])
+        assert a.id == b.id
+
+    def test_supersedes_apontando_para_claim_inexistente_falha(self, tmp_path: Path):
+        orfa = self._claim(tmp_path, evidence_refs=["ev_x"], supersedes="claim_deadbeef")
+        with pytest.raises(ValueError, match="supersedes"):
+            append_claim(orfa, tmp_path)
+
+    def test_supersedes_vazio_e_recusado_na_entidade(self):
+        from sparkforge.agentic.models import Claim, ClaimType
+
+        with pytest.raises(ValueError, match="supersedes"):
+            Claim(
+                claimant="a",
+                claim_type=ClaimType.OBSERVATION,
+                statement="x",
+                supersedes="   ",
+            )

@@ -691,15 +691,20 @@ pelo Devin CLI sem o repositório declará-las.
 
 ## Agentic Engineering Runtime
 
-O SparkForge evoluiu de "repositório de skills" para **Agentic Engineering
-Runtime**: especialistas independentes formam equipes, compartilham evidências,
-desafiam hipóteses, debatem, realizam experimentos, validam soluções, registram
-decisões e executam trabalho de forma auditável, econômica, segura e
-independente do LLM/runtime.
+O SparkForge ganhou uma **biblioteca agêntica**: entidades de primeira classe,
+protocolo de debate, arbitragem, experimento, decisão auditável, memória
+institucional, budget e níveis de autonomia — tudo runtime-independente.
+
+**Leia isto antes de usar**: a camada é biblioteca com verbos de LEITURA, não um
+pipeline em execução. Nenhum extrator, regra, tool MCP ou coordenador escreve
+`Claim`, `Evidence` ou `Decision` hoje; num repositório de trabalho
+`sparkforge blackboard summary` devolve zero em tudo, e vai continuar devolvendo
+até existir um produtor. Quem quiser produzir entidades chama a API Python.
+`docs/agentic-evolution-report.md` tem o status por componente.
 
 ### Pacote `sparkforge/agentic/`
 
-12 módulos com entidades de primeira classe e engines:
+13 módulos (+ `__init__.py`) com entidades de primeira classe e engines:
 
 | Módulo | Função |
 |---|---|
@@ -711,7 +716,7 @@ independente do LLM/runtime.
 | `arbitration.py` | Arbitration independente + false consensus detection (independence score) |
 | `experiment.py` | Experiment Designer: uma variável, baseline, controls, success/failure criteria, rollback |
 | `decision.py` | Decision Engine + ADR automático (Architecture Decision Record em Markdown) |
-| `memory.py` | Decision Memory跨-case: working/case/institutional, `find_similar_decisions` |
+| `memory.py` | Decision Memory cross-case: working/case/institutional, `find_similar_decisions` |
 | `budget.py` | Unified token economics: `AgentBudget`, `CaseBudget`, `DebateBudget`, waste detection |
 | `security.py` | Threat model (12 threat types) + guardrails: input/output/injection/identity/tool auth |
 | `autonomy.py` | L0-L5 autonomy levels: deterministic → specialist → cooperative → debate → experimental → autonomous |
@@ -724,8 +729,13 @@ independente do LLM/runtime.
   contestação adversarial e validação.
 - Unknown nunca vira fact por conveniência — retorna `UNRESOLVED`.
 - Toda decisão é auditável e reversível (ou declara irreversível).
-- Budget é finito e enforced — não aumenta infinitamente.
+- Budget é finito e enforçado nos QUATRO limites (tokens, tool calls, tempo,
+  retries) — não aumenta infinitamente, e limite declarado é limite lido.
+- Custo e tempo não são inventados: sem medida do chamador, o campo fica vazio
+  (regra 14 — sem `dpu_seconds` não há custo).
 - Runtime-independente: Claude, Devin, Copilot, Codex executam o mesmo protocolo.
+  `parity.yaml` é a fonte de quem despacha subagente, e
+  `tests/test_agentic_runtime.py::TestParityBinding` amarra as duas fontes.
 
 ### Evidence Authority Tiers
 
@@ -747,18 +757,31 @@ sparkforge blackboard summary    # resumo do blackboard
 sparkforge blackboard list --type <tipo>  # lista entidades
 sparkforge decisions list        # lista decisões
 sparkforge decisions explain <id>  # explica uma decisão
-sparkforge budget show           # mostra budget do case
+sparkforge budget show           # budget DECLARADO do case (bloco `budget:`)
+sparkforge budget show --template  # defaults do codigo, rotulados como template
 sparkforge autonomy show --level L3  # mostra perfil de autonomia
 ```
 
+`budget show` sem o bloco `budget:` no `case.yaml` responde
+`limits.status = "unresolved"` nomeando a lacuna — nunca o default do código
+como se fosse estado do case. Consumo sai `unresolved` e aponta
+`sparkforge economy report --run-id <id>`, que é onde ele é medido.
+
 ### Status de implementação
 
-- **IMPLEMENTED**: models, runtime, evidence, blackboard, debate, arbitration,
-  experiment, decision, memory, budget, security, autonomy, graph
-- **PARTIALLY IMPLEMENTED**: CLI commands (leitura only, escrita via API Python)
-- **EXPERIMENTAL**: debate execution real (protocolo definido, execução
-  depende do runtime spawn capability)
-- **NOT IMPLEMENTED**: semantic cache (embedding-based), L5 autonomous
-  self-modification, cross-case memory retrieval automático
+- **IMPLEMENTED** (existe e tem teste): models, runtime, evidence, blackboard,
+  arbitration, experiment, decision, memory, budget, security, autonomy, graph
+- **PARTIAL**: `debate` — protocolo, triggers e budget existem; **não há
+  executor** que rode as rodadas. Nada consulta `budget_exhausted`.
+- **PARTIAL**: CLI — leitura apenas; escrita via API Python.
+- **MISSING, e é a lacuna que governa as outras**: produtor de entidades.
+  Nenhum componente do produto escreve no blackboard.
+- **MISSING**: checkpoint/resume, adaptive model routing, agent reputation,
+  solution tournament, agentes adversariais `sf-*`.
+- **NOT IMPLEMENTED**: semantic cache (embedding-based), auto-modificação L5,
+  consulta automática à memória cross-case.
+- **SEM BENCHMARK**: comparar arquitetura nova com antiga exige os dois lados
+  rodando o mesmo caso, e o lado novo ainda não roda. Nenhuma afirmação de
+  ganho está publicada.
 
 Spec completa: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`

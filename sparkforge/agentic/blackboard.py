@@ -112,7 +112,21 @@ def _entity_file(root: Path | str, entity_type: str) -> Path:
 
 
 def append_claim(claim: Claim, root: Path | str) -> Path:
+    """Anexa uma claim. Revisão é claim nova com `supersedes` apontando a anterior.
+
+    O id cobre `evidence_refs`, `assumptions` e `confidence` desde 2026-09-03,
+    então revisar uma claim produz id diferente e o append passa. `supersedes`
+    é conferido contra o que já está no blackboard: apontar para claim que não
+    existe seria linhagem quebrada gravada como se fosse boa.
+    """
     _validate_no_duplicate(claim.id, root, "claim")
+    if claim.supersedes:
+        existentes = {r.get("id") for r in read_claims(root)}
+        if claim.supersedes not in existentes:
+            raise ValueError(
+                f"Claim {claim.id!r} declara supersedes={claim.supersedes!r}, "
+                f"que não existe no blackboard."
+            )
     _append_jsonl(_entity_file(root, "claim"), claim.to_dict())
     return _entity_file(root, "claim")
 

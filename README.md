@@ -516,6 +516,55 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 | `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
 | `compare-releases` | precisar saber o que muda de **componente** entre dois runtimes (release contra release, ou o mesmo rótulo entre duas plataformas) — ela lê matriz de versão e **não** avalia compatibilidade |
 
+### Skills AWS complementares — procedimento de serviço, não diagnóstico
+
+Onze skills de procedimento operacional AWS vivem aqui **adaptadas** de
+[`aws/agent-toolkit-for-aws`](https://github.com/aws/agent-toolkit-for-aws)
+(Apache-2.0, commit `10b28af8`, 2026-09-02): `provision-s3-tables-table`,
+`harden-s3-bucket`, `aws-storage`, `aws-database`, `aws-serverless`, `aws-iam`,
+`aws-observability`, `aws-billing-and-cost-management`,
+`aws-messaging-and-streaming`, `aws-security` e `aws-sdk-python-usage`.
+
+Elas respondem sobre o **serviço AWS** — qual storage escolher, como configurar
+IAM, como ler CUR. Não diagnosticam job PySpark: para gargalo, plano físico,
+Iceberg, event log e code review, use as skills determinísticas acima.
+
+São **não-despacháveis**: podem mutar infraestrutura ao vivo, e a fronteira
+`## Não faz` de cada uma exige confirmação explícita do operador por comando de
+escrita. Procedência e licença em [`vendor/CREDITS.md`](vendor/CREDITS.md),
+seção *Adaptado, não vendorizado*.
+
+## Camada agêntica — biblioteca, e o que ela ainda não é
+
+`sparkforge/agentic/` (13 módulos) traz entidades de primeira classe e engines
+para trabalho agêntico auditável: `Claim`, `Evidence` (com tiers de autoridade
+T1-T6), `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`,
+`Objection`, `Rebuttal`; mais blackboard JSONL, protocolo de debate, arbitragem
+com detecção de falso consenso, ADR automático, memória institucional,
+budget e níveis de autonomia L0-L5.
+
+**O que ela é hoje: biblioteca mais oito verbos de leitura na CLI.** Nenhum
+extrator, regra, tool MCP ou coordenador escreve essas entidades — num
+repositório de trabalho `sparkforge blackboard summary` devolve zero em todas
+as contagens, e isso é o estado correto. Não existe executor de debate: existem
+o protocolo, os gatilhos e o budget. Quem quiser produzir entidades chama a API
+Python.
+
+Por isso **não há afirmação de ganho** publicada em lugar nenhum: comparar a
+arquitetura nova com a antiga exigiria os dois lados rodando o mesmo caso, e o
+lado novo ainda não roda.
+
+```bash
+sparkforge blackboard summary --repo .        # contagem do blackboard do case
+sparkforge decisions list --repo .            # decisões do case e da memória
+sparkforge budget show --repo .               # budget DECLARADO no case.yaml
+sparkforge budget show --template             # defaults do código, rotulados
+sparkforge autonomy show --level L3           # perfil de autonomia
+```
+
+Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que
+falta: [`docs/agentic-evolution-report.md`](docs/agentic-evolution-report.md).
+
 ## Coordenadores e executores
 
 Além das Skills (procedimento) e da camada determinística (extração e julgamento), o

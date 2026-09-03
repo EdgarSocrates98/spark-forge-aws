@@ -42,11 +42,19 @@ def design_experiment(
     baseline: str,
     controls: list[str] | None = None,
     proposed_by: str = "",
+    cost_estimate: str = "",
+    time_estimate: str = "",
 ) -> Experiment:
     """Design um experimento para testar uma hipótese.
 
     Uma variável mudada. Baseline e controls explícitos.
     Success e failure criteria derivados da hipótese.
+
+    `cost_estimate` e `time_estimate` vêm de QUEM CHAMA, e ficam vazios se
+    ninguém mediu. Até 2026-09-03 esta função escrevia "1 Glue job run
+    (DPU-hours)" e "15-30 minutes" fixos em todo experimento — números
+    inventados dentro de um repositório cuja regra 14 diz que sem
+    `dpu_seconds` não há custo. Vazio é `unresolved`; texto fixo é ficção.
     """
     if not hypothesis.expected_outcome:
         raise ValueError("design_experiment: hipótese deve ter expected_outcome declarado")
@@ -63,8 +71,8 @@ def design_experiment(
             f"{hypothesis.failure_modes[0] if hypothesis.failure_modes else 'outcome not observed'}"
         ),
         rollback=f"Revert {variable} to baseline: {baseline}",
-        cost_estimate="1 Glue job run (DPU-hours)",
-        time_estimate="15-30 minutes",
+        cost_estimate=cost_estimate,
+        time_estimate=time_estimate,
         proposed_by=proposed_by,
     )
 
@@ -76,14 +84,36 @@ def design_experiment_from_deadlock(
     baseline: str,
     controls: list[str] | None = None,
     proposed_by: str = "",
+    cost_estimate_per_run: str = "",
+    time_estimate_per_run: str = "",
 ) -> ExperimentPlan:
     """Design experimentos para resolver deadlock entre duas hipóteses.
 
     Gera dois experimentos: um para cada hipótese, mesma variável,
     mesmo baseline. O que reproduzir o expected_outcome confirma a hipótese.
+
+    Custo e tempo, quando o chamador os declara, aparecem por execução e no
+    total como "2 × <o que ele declarou>" — a soma é aritmética sobre o que
+    ele mediu, nunca um número novo inventado aqui.
     """
-    exp_a = design_experiment(hypothesis_a, variable, baseline, controls, proposed_by)
-    exp_b = design_experiment(hypothesis_b, variable, baseline, controls, proposed_by)
+    exp_a = design_experiment(
+        hypothesis_a,
+        variable,
+        baseline,
+        controls,
+        proposed_by,
+        cost_estimate_per_run,
+        time_estimate_per_run,
+    )
+    exp_b = design_experiment(
+        hypothesis_b,
+        variable,
+        baseline,
+        controls,
+        proposed_by,
+        cost_estimate_per_run,
+        time_estimate_per_run,
+    )
 
     return ExperimentPlan(
         hypothesis_id=hypothesis_a.id,
@@ -93,8 +123,8 @@ def design_experiment_from_deadlock(
             f"whichever reproduces its expected_outcome wins."
         ),
         experiments=[exp_a, exp_b],
-        total_cost_estimate="2 Glue job runs (DPU-hours)",
-        total_time_estimate="30-60 minutes",
+        total_cost_estimate=f"2 x {cost_estimate_per_run}" if cost_estimate_per_run else "",
+        total_time_estimate=f"2 x {time_estimate_per_run}" if time_estimate_per_run else "",
         risk_level="low",
     )
 

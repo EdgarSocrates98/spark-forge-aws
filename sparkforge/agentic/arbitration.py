@@ -37,6 +37,9 @@ class ArbitrationResult:
     counterexamples_found: list[str] = field(default_factory=list)
     unknowns_remaining: list[str] = field(default_factory=list)
     recommendation: str = ""  # "accept" | "reject" | "experiment" | "escalate"
+    # False quando havia UMA claim só: não houve disputa, e
+    # `evidence_quality_loser` sai 0.0 por não existir segundo colocado.
+    disputed: bool = True
 
 
 @dataclass
@@ -69,12 +72,23 @@ def assess_claim(
     - runtime_applicable: evidência se aplica ao runtime alvo
     - version_applicable: evidência se aplica à versão alvo
     - score: weighted aggregate (evidence 40%, authority 30%, specificity 20%, applicability 10%)
-    """
-    strength = aggregate_strength(evidences, target_runtime)
 
+    Os quatro pesos e a normalização `total_weight / 2.0` são CONVENÇÃO desta
+    engine, não medida: nenhum experimento deste repositório os calibrou. Eles
+    ordenam claims entre si dentro de uma mesma arbitragem — o valor absoluto
+    de `score` não significa nada fora dessa comparação, e não deve ser
+    publicado como "confiança medida".
+
+    `evidence_weight` agrega SÓ as evidências que suportam esta claim. Agregar
+    o conjunto inteiro faria toda claim da mesma arbitragem — inclusive a que
+    não tem evidência nenhuma — reportar o mesmo peso, e o campo deixaria de
+    distinguir vencedor de perdedor (era o defeito até 2026-09-03).
+    """
     # Filtra evidências que suportam esta claim
     supporting = [e for e in evidences if claim.id in e.supports]
     contradicting = [e for e in evidences if claim.id in e.contradicts]
+
+    strength = aggregate_strength(supporting, target_runtime)
 
     # Verifica each supporting evidence
     usable_supporting: list[Evidence] = []
@@ -178,10 +192,21 @@ def compute_independence_score(
     - claimants (agentes distintos)
     - statement diversity (statements não são paráfrases)
 
-    Heurística simples:
-    - claimants únicos / total claims
-    - evidence sources únicos / total evidences
-    - Média dos dois
+    Duas medidas, e o resultado é a MAIS FRACA das duas — não a média:
+
+    - `claimant_diversity`: claimants únicos / total de claims.
+    - `source_diversity`: fontes distintas que sustentam as claims, dividido
+      pelo número de LIGAÇÕES (claim, fonte). Uma fonte única sustentando N
+      claims dá 1/N; cada claim com fonte própria dá 1.0. Claim sem evidência
+      não tem base independente e conta como ligação sem fonte distinta.
+
+    A média escondia exatamente o caso que a detecção existe para pegar: dois
+    agentes distintos citando a MESMA fonte davam `(1.0 + 0.5) / 2 = 0.75`, e
+    passavam por independentes sobre um limiar de 0.3. Consenso é independente
+    quando as DUAS dimensões são — o elo fraco manda, e por isso `min`.
+
+    O que esta função continua não medindo, e não finge medir: paráfrase.
+    Dois statements diferentes que dizem a mesma coisa contam como dois.
     """
     if not claims:
         return 0.0
@@ -189,15 +214,20 @@ def compute_independence_score(
     unique_claimants = len({c.claimant for c in claims})
     claimant_diversity = unique_claimants / len(claims)
 
-    if evidences:
-        unique_sources = len({e.source for e in evidences})
-        # Source diversity relative to claims: if 1 source backs N claims,
-        # diversity is 1/N, not 1/1.
-        source_diversity = unique_sources / max(len(claims), len(evidences))
-    else:
-        source_diversity = 0.0
+    ligacoes = 0
+    fontes: set[str] = set()
+    for c in claims:
+        suportes = {e.source for e in evidences if c.id in e.supports}
+        if suportes:
+            ligacoes += len(suportes)
+            fontes |= suportes
+        else:
+            # Claim sem evidência: uma ligação, nenhuma fonte distinta.
+            ligacoes += 1
 
-    return (claimant_diversity + source_diversity) / 2.0
+    source_diversity = len(fontes) / ligacoes if ligacoes else 0.0
+
+    return min(claimant_diversity, source_diversity)
 
 
 def detect_false_consensus(
@@ -205,20 +235,35 @@ def detect_false_consensus(
     evidences: list[Evidence],
     threshold: float = 0.3,
 ) -> bool:
-    """Detecta falso consenso.
+    """Detecta falso consenso. Dois sinais, e qualquer um basta.
 
-    Falso consenso: múltiplos agentes concordam mas:
-    - baixa independence score (< threshold)
-    - mesma fonte de evidência
-    - mesmos claimants ou claimants derivados
+    1. `independence_score < threshold` — o elo fraco entre diversidade de
+       agente e de fonte.
+    2. **Linhagem idêntica**: duas ou mais claims sustentadas exatamente pelo
+       MESMO conjunto de fontes. Esse é o caso literal que a docstring sempre
+       prometeu ("same source, same hypothesis lineage") e que o score sozinho
+       não pegava: com dois agentes distintos e uma fonte só, o número ficava
+       em 0.5 e passava por qualquer limiar razoável. Concordância derivada da
+       mesma leitura não é confirmação independente, por mais agentes que a
+       repitam.
 
-    Retorna True se independence_score < threshold.
+    Claim sem evidência nenhuma não entra no sinal 2: ausência de fonte não é
+    fonte compartilhada, e tratá-la assim faria toda rodada sem evidência
+    parecer conluio.
     """
     if len(claims) < 2:
         return False
 
     independence = compute_independence_score(claims, evidences)
-    return independence < threshold
+    if independence < threshold:
+        return True
+
+    linhagens: list[frozenset[str]] = []
+    for c in claims:
+        suportes = frozenset(e.source for e in evidences if c.id in e.supports)
+        if suportes:
+            linhagens.append(suportes)
+    return any(linhagens.count(linhagem) >= 2 for linhagem in linhagens)
 
 
 def arbitrate(
@@ -251,6 +296,7 @@ def arbitrate(
             evidence_quality_winner=0.0,
             evidence_quality_loser=0.0,
             recommendation="reject",
+            disputed=False,
         )
 
     # Assess each claim
@@ -260,7 +306,12 @@ def arbitrate(
     assessments.sort(key=lambda a: a.score, reverse=True)
 
     winner = assessments[0]
-    loser = assessments[-1]
+    # Com uma claim só não há segundo colocado: `loser` seria a própria
+    # vencedora, a diferença daria 0, e o ramo de "scores próximos" pediria
+    # experimento para diferenciar uma claim dela mesma (defeito até
+    # 2026-09-03). `disputed` separa arbitragem de avaliação isolada.
+    disputed = len(assessments) >= 2
+    loser = assessments[-1] if disputed else None
 
     # Independence check
     independence = compute_independence_score(claims, evidences)
@@ -291,13 +342,21 @@ def arbitrate(
             f"Experiment needed to resolve contradiction."
         )
         confidence = "medium"
-    elif winner.score - loser.score < 0.1:
+    elif disputed and loser is not None and winner.score - loser.score < 0.1:
         recommendation = "experiment"
         reasoning = (
             f"Claims are close in score (winner={winner.score:.2f}, "
             f"loser={loser.score:.2f}). Experiment needed to differentiate."
         )
         confidence = "medium"
+    elif not disputed:
+        recommendation = "accept"
+        reasoning = (
+            f"Claim {winner.claim_id} avaliada sozinha, sem claim rival: "
+            f"score {winner.score:.2f}, sem contraexemplo. Isto NAO e "
+            f"arbitragem — nenhuma alternativa foi contestada."
+        )
+        confidence = "high" if winner.score > 0.7 else "medium"
     else:
         recommendation = "accept"
         reasoning = (
@@ -314,7 +373,8 @@ def arbitrate(
         independence_score=independence,
         false_consensus_detected=false_consensus,
         evidence_quality_winner=winner.evidence_weight,
-        evidence_quality_loser=loser.evidence_weight,
+        evidence_quality_loser=loser.evidence_weight if loser is not None else 0.0,
         counterexamples_found=counterexamples,
         recommendation=recommendation,
+        disputed=disputed,
     )

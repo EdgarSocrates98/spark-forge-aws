@@ -424,3 +424,84 @@ sparkforge tokens report
 5. Documentação (AGENTS.md, CLAUDE.md, payload Devin)
 6. Spec de evolução (este arquivo)
 7. Relatório final (`docs/agentic-evolution-report.md`)
+
+---
+
+## 17. Desvios registrados (2026-09-03, auditoria da entrega)
+
+Convenção deste repositório: spec é **registro histórico**. O que está acima
+não é reescrito quando a medição derruba parte dele — o desvio entra aqui, com
+o que caiu e o que sobrou. `docs/superpowers/STATUS.md` e
+`docs/agentic-evolution-report.md` são a fonte da verdade do estado atual.
+
+### D-1 — "9486 testes existentes" (seção 15) não é o número de base
+
+A spec publicou 9486, o relatório de entrega publicou 9881 e a mensagem de
+commit publicou 9897: **três números para a mesma base**, e nenhum deles bate
+com a medição. Medido em 2026-09-03 com a suíte inteira coletada:
+`pytest tests/ --collect-only` → **9 952 testes**, dos quais **252** são da
+camada agêntica. O que sobrou da frase: a suíte continua passando, e nenhuma
+regressão foi introduzida. O que caiu: o número.
+
+### D-2 — "12 módulos" (seção 16) é 13
+
+`sparkforge/agentic/` tem 13 módulos mais `__init__.py`. `AGENTS.md` chegou a
+publicar "12 módulos" sobre uma tabela que listava 13. Corrigido nos dois.
+
+### D-3 — a arquitetura-alvo da seção 4 não está ligada
+
+A seção 4 desenha `CASE MANAGER → CONTEXT ENGINE → ... → DECISION MEMORY`. O
+que foi entregue são as **peças**: nenhum extrator, regra, tool MCP ou
+coordenador escreve `Claim`/`Evidence`/`Decision`, e não existe executor de
+debate. A camada é biblioteca com verbos de leitura. O desenho continua sendo o
+alvo; ele não é o estado. Status por componente:
+`docs/agentic-evolution-report.md`.
+
+Consequência que decorre disso, e que a spec não previu: **as Fases 51-53 do
+prompt de origem (benchmark da arquitetura nova contra a antiga) não têm como
+ser executadas**, porque só existe um lado para medir. Nenhuma afirmação de
+ganho foi publicada.
+
+### D-4 — a seção 14 ("Não faz") foi violada em cinco pontos pela própria entrega
+
+Medido na auditoria, com teste de regressão para cada um:
+
+| "Não faz" da seção 14 | O que a entrega fez | Onde |
+|---|---|---|
+| Não confiar em confidence declarada | `budget show` devolvia `CaseBudget()` de fábrica como estado do case | `cli.py::_cmd_budget_show` |
+| Não permitir budget infinito | `max_time_seconds`, `max_retries`, `max_total_tool_calls` e `max_total_time_seconds` eram declarados e nunca lidos | `budget.py` |
+| Não usar consenso majoritário ingênuo | com uma claim só, a arbitragem recomendava experimento para diferenciar a claim dela mesma; e `evidence_weight` era o mesmo para toda claim da rodada | `arbitration.py` |
+| Não tratar LLM knowledge como evidence | `has_sufficient_authority` e `has_fresh_in_scope` eram a mesma expressão, então a distinção entre "tem autoridade" e "sustenta a claim" não existia | `evidence.py` |
+| (implícito em "não permitir budget infinito") | guardrail de L5 lia a exigência do próprio perfil estático e nunca disparava | `autonomy.py` |
+
+Mais sete defeitos mecânicos na mesma auditoria (custo e tempo de experimento
+fixos, guardrails de injeção e de segredo com falso positivo sobre o
+vocabulário do próprio produto, edge de grafo colando na claim errada,
+`detect_waste` com parâmetro morto, `agents inspect` aceitando caminho,
+`RuntimeCapabilities` duplicando `parity.yaml` sem teste que amarrasse). A
+tabela completa está em `docs/agentic-evolution-report.md`, seção "Auditoria de
+2026-09-03".
+
+### D-5 — as duas decisões de projeto, tomadas
+
+Elas foram levantadas como "vistas e não corrigidas" e resolvidas na mesma
+auditoria, depois de decididas. Ficam aqui porque **mudam contrato**, e contrato
+mudado sem registro é o que esta seção existe para impedir:
+
+1. **Falso consenso passou a medir linhagem.** A seção 11 promete detectar
+   "same source, same hypothesis lineage", e `compute_independence_score` media
+   a média entre diversidade de agente e de fonte: dois agentes citando a mesma
+   fonte única davam 0,75 contra limiar 0,3, e nada disparava. Hoje o score é o
+   **elo fraco** (`min`) das duas dimensões, a fonte conta por ligação
+   `supports` (evidência solta na lista não sustenta claim nenhuma), e
+   `detect_false_consensus` tem um segundo sinal independente do score: duas ou
+   mais claims com conjunto de fontes IDÊNTICO. Ausência de fonte não entra
+   nesse sinal — ausência não é fonte compartilhada.
+2. **`Claim.id` cobre o que define a claim.** Era hash de
+   `claimant + tipo + statement`, e a consequência era medida: revisar uma
+   claim — a mesma frase, agora sustentada por evidência nova — colidia com a
+   versão anterior e `append_claim` a recusava como duplicata. Não havia como
+   registrar revisão nenhuma. Hoje `evidence_refs`, `assumptions` e
+   `confidence` entram no hash, e o campo opcional `supersedes` liga a revisão
+   à versão anterior, conferido contra o blackboard. Claims idênticas em tudo
+   continuam com o mesmo id — o que mudou é o que conta como "idêntica".
