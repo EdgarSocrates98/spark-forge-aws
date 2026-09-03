@@ -2985,7 +2985,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-651",
       "line": 213,
@@ -3005,7 +3005,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-642",
       "line": 213,
@@ -3045,7 +3045,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-644",
       "line": 213,
@@ -3065,7 +3065,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 670385 | 8940 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 676195 | 8940 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-645",
       "line": 213,
@@ -3485,7 +3485,7 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1459759**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1461410**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-737",
       "line": 219,
@@ -3505,7 +3505,7 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1459759**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1461410**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-666",
       "line": 219,
@@ -3682,7 +3682,7 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **141071** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **141072** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
@@ -3692,13 +3692,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 141071
+          "value": 141072
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "141071",
+      "text": "141072",
       "type": "number"
     },
     {
@@ -6108,10 +6108,26 @@
       "type": "number"
     },
     {
-      "context": "2. **§2–7, a auditoria das fontes** (Fase B do prompt). Seis camadas estão paradas por",
+      "context": "Iceberg de verdade**, criada na conta 702561771161 (`us-east-1`) e destruída depois. Custo:",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-772",
+      "line": 153,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "702561771161",
+      "type": "number"
+    },
+    {
+      "context": "~7 KB escaneados.",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-765",
-      "line": 156,
+      "line": 154,
       "note": "o numero da secao §2-7 do prompt de origem",
       "proof": {
         "kind": "source",
@@ -6123,10 +6139,314 @@
       "type": "number"
     },
     {
+      "context": "| `$files` | **existe** — 14 colunas, **com `content`** |",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-773",
+      "line": 160,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "14",
+      "type": "number"
+    },
+    {
+      "context": "| `$snapshots` | **existe** — 6 colunas |",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-774",
+      "line": 161,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "6",
+      "type": "number"
+    },
+    {
+      "context": "| `$manifests` | **existe** — 11 colunas |",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-775",
+      "line": 162,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "11",
+      "type": "number"
+    },
+    {
+      "context": "| `$partitions` | **existe** — 5 colunas |",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-776",
+      "line": 163,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "lê, e a mesma que `knowledge/iceberg-diagnostics.sql` já usava em `WHERE content = 0`. A",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-777",
+      "line": 177,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "`CREATE TABLE ... TBLPROPERTIES ('format-version'='2')` falha com *\"Unsupported table",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-778",
+      "line": 182,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "2",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.files_summary        data_file_count 5, total_bytes 3256, p50 651",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-779",
+      "line": 194,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.files_summary        data_file_count 5, total_bytes 3256, p50 651",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-780",
+      "line": 194,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "3256",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.files_summary        data_file_count 5, total_bytes 3256, p50 651",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-781",
+      "line": 194,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "651",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.manifests_summary    manifest_count 5, avg_data_files_per_manifest 1.4",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-782",
+      "line": 195,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.manifests_summary    manifest_count 5, avg_data_files_per_manifest 1.4",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-783",
+      "line": 195,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "1.4",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.partitions_summary   partition_count 3",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-784",
+      "line": 196,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "3",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.snapshots_summary    snapshot_count 5, operations [append, overwrite]",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-785",
+      "line": 197,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.table_analyzed       section_count 4, unresolved_count 0",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-786",
+      "line": 199,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "4",
+      "type": "number"
+    },
+    {
+      "context": "iceberg.table_analyzed       section_count 4, unresolved_count 0",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-787",
+      "line": 199,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "`\"1234\"`. O coletor já a fazia, e o comentário dele já dizia por quê.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-788",
+      "line": 205,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "1234",
+      "type": "number"
+    },
+    {
+      "context": "Depois de dois `DELETE`, `$files` continuou com `content = 0` em cinco linhas e nada mais.",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-789",
+      "line": 217,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "produção**. Uma tabela escrita por Spark com merge-on-read produziria `content = 1`; uma",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-790",
+      "line": 220,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "2. **§2–7, a auditoria das fontes** (Fase B do prompt). Seis camadas estão paradas por",
+      "doc": "docs/harness/ICEBERG-GAP.md",
+      "id": "VNX-791",
+      "line": 230,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "criar tabela Iceberg no Athena (scripts/provisionar_iceberg_de_teste.sql) e consultar as metadata tables; medido em 2026-09-03 na conta 702561771161, us-east-1, destruida em seguida",
+        "commit": "5b5977d",
+        "kind": "historical",
+        "note": "medicao contra a AWS real, feita UMA vez. Nao e reexecutavel sem uma conta e uma tabela Iceberg -- por isso `historical`, que documenta o metodo e nao roda no HEAD."
+      },
+      "state": "PROVADA",
+      "text": "7",
+      "type": "number"
+    },
+    {
       "context": "**O que não fazer:** escrever regra para camada sem fonte. Seis das 27 estão exatamente",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-766",
-      "line": 163,
+      "line": 237,
       "note": "a SOMA das categorias. Se ela nao der 27, o documento se contradiz: alguma camada esta em duas categorias ou em nenhuma.",
       "proof": {
         "cmd": "python scripts/count_iceberg_gap.py",
@@ -11568,6 +11888,6 @@
       "type": "capability"
     }
   ],
-  "extracted_from": "e90f41f4c713e350a7d25a4427b853754a0afaf0",
+  "extracted_from": "4c15cf6e5d141b99118e284bf57faf1aa5e6fe3e",
   "schema_version": 1
 }
