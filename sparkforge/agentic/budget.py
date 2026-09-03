@@ -12,6 +12,7 @@ Princípios:
 - Minimum sufficient context, agents, rounds, tool calls, model capability.
 - Mas correctness, safety, evidence, auditability > token savings.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -21,7 +22,7 @@ from typing import Any
 
 class BudgetStatus(str, Enum):
     WITHIN = "within"  # dentro do budget
-    WARNING = "warning"  #接近 do limite (80%+)
+    WARNING = "warning"  # 接近 do limite (80%+)
     EXCEEDED = "exceeded"  # excedeu
     EXHAUSTED = "exhausted"  # totalmente consumido
 
@@ -141,27 +142,21 @@ class CaseBudget:
 
     def consume_agent(self, tokens: int = 0) -> None:
         if not self.can_spawn_agent():
-            raise BudgetExceededError(
-                f"CaseBudget: max_agents {self.max_agents} reached"
-            )
+            raise BudgetExceededError(f"CaseBudget: max_agents {self.max_agents} reached")
         self.agents_spawned += 1
         if tokens:
             self.consume_tokens(tokens)
 
     def consume_debate(self, tokens: int = 0) -> None:
         if not self.can_start_debate():
-            raise BudgetExceededError(
-                f"CaseBudget: max_debates {self.max_debates} reached"
-            )
+            raise BudgetExceededError(f"CaseBudget: max_debates {self.max_debates} reached")
         self.debates_held += 1
         if tokens:
             self.consume_tokens(tokens)
 
     def consume_experiment(self, cost_usd: float = 0.0) -> None:
         if not self.can_run_experiment():
-            raise BudgetExceededError(
-                f"CaseBudget: max_experiments {self.max_experiments} reached"
-            )
+            raise BudgetExceededError(f"CaseBudget: max_experiments {self.max_experiments} reached")
         self.experiments_run += 1
         self.cost_incurred_usd += cost_usd
 
@@ -312,27 +307,37 @@ def compare_budget(estimate: BudgetEstimate, actual: BudgetActual) -> dict[str, 
         "agents": {
             "estimated": estimate.estimated_agents,
             "actual": actual.actual_agents,
-            "utilization": actual.actual_agents / estimate.estimated_agents if estimate.estimated_agents > 0 else 0,
+            "utilization": actual.actual_agents / estimate.estimated_agents
+            if estimate.estimated_agents > 0
+            else 0,
         },
         "calls": {
             "estimated": estimate.estimated_calls,
             "actual": actual.actual_calls,
-            "utilization": actual.actual_calls / estimate.estimated_calls if estimate.estimated_calls > 0 else 0,
+            "utilization": actual.actual_calls / estimate.estimated_calls
+            if estimate.estimated_calls > 0
+            else 0,
         },
         "tokens": {
             "estimated": estimate.estimated_tokens,
             "actual": actual.actual_tokens,
-            "utilization": actual.actual_tokens / estimate.estimated_tokens if estimate.estimated_tokens > 0 else 0,
+            "utilization": actual.actual_tokens / estimate.estimated_tokens
+            if estimate.estimated_tokens > 0
+            else 0,
             "waste": max(0, actual.actual_tokens - estimate.estimated_tokens),
         },
         "latency_seconds": {
             "estimated": estimate.estimated_latency_seconds,
             "actual": actual.actual_latency_seconds,
-            "utilization": actual.actual_latency_seconds / estimate.estimated_latency_seconds if estimate.estimated_latency_seconds > 0 else 0,
+            "utilization": actual.actual_latency_seconds / estimate.estimated_latency_seconds
+            if estimate.estimated_latency_seconds > 0
+            else 0,
         },
         "cost_usd": {
             "estimated": estimate.estimated_cost_usd,
             "actual": actual.actual_cost_usd,
-            "utilization": actual.actual_cost_usd / estimate.estimated_cost_usd if estimate.estimated_cost_usd > 0 else 0,
+            "utilization": actual.actual_cost_usd / estimate.estimated_cost_usd
+            if estimate.estimated_cost_usd > 0
+            else 0,
         },
     }

@@ -1,8 +1,8 @@
 """Testes do runtime abstraction."""
+
 from __future__ import annotations
 
 from sparkforge.agentic.runtime import (
-    RuntimeCapabilities,
     RuntimeName,
     can_debate,
     can_spawn_parallel,

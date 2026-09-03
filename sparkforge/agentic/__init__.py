@@ -30,6 +30,7 @@ Módulos:
 - autonomy: L0-L5 autonomy levels
 - graph: Agent Execution Graph (typed nodes/edges)
 """
+
 from __future__ import annotations
 
 from sparkforge.agentic.models import (

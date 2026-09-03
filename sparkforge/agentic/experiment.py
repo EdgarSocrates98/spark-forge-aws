@@ -13,10 +13,10 @@ O engine gera experimentos a partir de:
 - debates deadlockados
 - unknowns blocking
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 from sparkforge.agentic.models import Experiment, ExperimentStatus, Hypothesis
 
@@ -49,9 +49,7 @@ def design_experiment(
     Success e failure criteria derivados da hipótese.
     """
     if not hypothesis.expected_outcome:
-        raise ValueError(
-            "design_experiment: hipótese deve ter expected_outcome declarado"
-        )
+        raise ValueError("design_experiment: hipótese deve ter expected_outcome declarado")
 
     return Experiment(
         hypothesis_id=hypothesis.id,
@@ -60,7 +58,10 @@ def design_experiment(
         controls=controls or [],
         expected_results=hypothesis.expected_outcome,
         success_criteria=f"Measure: {hypothesis.expected_outcome}",
-        failure_criteria=f"Negation: {hypothesis.failure_modes[0] if hypothesis.failure_modes else 'outcome not observed'}",
+        failure_criteria=(
+            f"Negation: "
+            f"{hypothesis.failure_modes[0] if hypothesis.failure_modes else 'outcome not observed'}"
+        ),
         rollback=f"Revert {variable} to baseline: {baseline}",
         cost_estimate="1 Glue job run (DPU-hours)",
         time_estimate="15-30 minutes",
@@ -81,12 +82,8 @@ def design_experiment_from_deadlock(
     Gera dois experimentos: um para cada hipótese, mesma variável,
     mesmo baseline. O que reproduzir o expected_outcome confirma a hipótese.
     """
-    exp_a = design_experiment(
-        hypothesis_a, variable, baseline, controls, proposed_by
-    )
-    exp_b = design_experiment(
-        hypothesis_b, variable, baseline, controls, proposed_by
-    )
+    exp_a = design_experiment(hypothesis_a, variable, baseline, controls, proposed_by)
+    exp_b = design_experiment(hypothesis_b, variable, baseline, controls, proposed_by)
 
     return ExperimentPlan(
         hypothesis_id=hypothesis_a.id,

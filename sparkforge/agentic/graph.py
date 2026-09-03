@@ -14,6 +14,7 @@ CASE → hypotheses → agents → evidence → debate → experiments → decis
 Não substitui o ExecutionDAG existente (workflows/dag.py) — o estende
 com tipos de nó/edge agênticos.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -249,58 +250,73 @@ def build_graph_from_case(
 
     # Add agent nodes
     for agent_id in agents:
-        graph.add_node(GraphNode(
-            node_type=NodeType.AGENT,
-            ref_id=agent_id,
-            label=agent_id,
-        ))
+        graph.add_node(
+            GraphNode(
+                node_type=NodeType.AGENT,
+                ref_id=agent_id,
+                label=agent_id,
+            )
+        )
 
     # Add claim nodes
     for c in claims:
-        graph.add_node(GraphNode(
-            node_type=NodeType.CLAIM,
-            ref_id=c.get("id", ""),
-            label=c.get("statement", "")[:80],
-            metadata={"claimant": c.get("claimant", ""), "claim_type": c.get("claim_type", "")},
-        ))
+        graph.add_node(
+            GraphNode(
+                node_type=NodeType.CLAIM,
+                ref_id=c.get("id", ""),
+                label=c.get("statement", "")[:80],
+                metadata={"claimant": c.get("claimant", ""), "claim_type": c.get("claim_type", "")},
+            )
+        )
         # Edge: agent produces claim
         claimant = c.get("claimant", "")
         if claimant:
             agent_node = graph.get_nodes_by_type(NodeType.AGENT)
             for an in agent_node:
                 if an.ref_id == claimant:
-                    graph.add_edge(GraphEdge(
-                        source=an.id,
-                        target=graph.get_nodes_by_type(NodeType.CLAIM)[-1].id,
-                        edge_type=EdgeType.PRODUCES,
-                    ))
+                    graph.add_edge(
+                        GraphEdge(
+                            source=an.id,
+                            target=graph.get_nodes_by_type(NodeType.CLAIM)[-1].id,
+                            edge_type=EdgeType.PRODUCES,
+                        )
+                    )
 
     # Add evidence nodes
     for e in evidence:
-        graph.add_node(GraphNode(
-            node_type=NodeType.EVIDENCE,
-            ref_id=e.get("id", ""),
-            label=e.get("source", "")[:80],
-            metadata={"authority": e.get("authority", "")},
-        ))
+        graph.add_node(
+            GraphNode(
+                node_type=NodeType.EVIDENCE,
+                ref_id=e.get("id", ""),
+                label=e.get("source", "")[:80],
+                metadata={"authority": e.get("authority", "")},
+            )
+        )
 
     # Add hypothesis nodes
     for h in hypotheses:
-        graph.add_node(GraphNode(
-            node_type=NodeType.HYPOTHESIS,
-            ref_id=h.get("id", ""),
-            label=h.get("statement", "")[:80],
-            metadata={"status": h.get("status", ""), "confidence": h.get("confidence", "")},
-        ))
+        graph.add_node(
+            GraphNode(
+                node_type=NodeType.HYPOTHESIS,
+                ref_id=h.get("id", ""),
+                label=h.get("statement", "")[:80],
+                metadata={"status": h.get("status", ""), "confidence": h.get("confidence", "")},
+            )
+        )
 
     # Add decision nodes
     for d in decisions:
-        graph.add_node(GraphNode(
-            node_type=NodeType.DECISION,
-            ref_id=d.get("id", ""),
-            label=d.get("problem", "")[:80],
-            metadata={"selected": d.get("selected_option", ""), "confidence": d.get("confidence", "")},
-        ))
+        graph.add_node(
+            GraphNode(
+                node_type=NodeType.DECISION,
+                ref_id=d.get("id", ""),
+                label=d.get("problem", "")[:80],
+                metadata={
+                    "selected": d.get("selected_option", ""),
+                    "confidence": d.get("confidence", ""),
+                },
+            )
+        )
 
     # Build edges: evidence supports/contradicts claims
     ev_nodes = graph.get_nodes_by_type(NodeType.EVIDENCE)
@@ -312,18 +328,22 @@ def build_graph_from_case(
         for claim_id in ev_data.get("supports", []):
             for cn in claim_nodes:
                 if cn.ref_id == claim_id:
-                    graph.add_edge(GraphEdge(
-                        source=ev_node.id,
-                        target=cn.id,
-                        edge_type=EdgeType.VALIDATES,
-                    ))
+                    graph.add_edge(
+                        GraphEdge(
+                            source=ev_node.id,
+                            target=cn.id,
+                            edge_type=EdgeType.VALIDATES,
+                        )
+                    )
         for claim_id in ev_data.get("contradicts", []):
             for cn in claim_nodes:
                 if cn.ref_id == claim_id:
-                    graph.add_edge(GraphEdge(
-                        source=ev_node.id,
-                        target=cn.id,
-                        edge_type=EdgeType.CONTRADICTS,
-                    ))
+                    graph.add_edge(
+                        GraphEdge(
+                            source=ev_node.id,
+                            target=cn.id,
+                            edge_type=EdgeType.CONTRADICTS,
+                        )
+                    )
 
     return graph

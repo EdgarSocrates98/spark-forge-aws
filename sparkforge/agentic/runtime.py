@@ -7,6 +7,7 @@ abstração que cada runtime adapta.
 Princípio: o protocolo é o contrato, o runtime é a implementação.
 Um runtime que não suporta `spawn_agent` usa `playbook` como floor.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

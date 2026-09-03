@@ -1,4 +1,5 @@
 """Testes do Shared Blackboard."""
+
 from __future__ import annotations
 
 import json
@@ -8,13 +9,13 @@ import pytest
 
 from sparkforge.agentic.blackboard import (
     append_claim,
+    append_contradiction,
     append_decision,
     append_evidence,
     append_experiment,
     append_hypothesis,
     append_objection,
     append_rebuttal,
-    append_contradiction,
     append_unknown,
     blackboard_path,
     get_entity_by_id,

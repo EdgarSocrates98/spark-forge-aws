@@ -9,10 +9,11 @@ Institutional memory é um índice de decisões passadas que pode ser consultado
 para evitar repetir erros e reusar soluções provadas. É armazenado em
 `.sparkforge/memory/decisions.jsonl` no root do repositório.
 """
+
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -59,9 +60,7 @@ def record_decision(decision: Decision, root: Path | str, case_id: str = "") -> 
     existing = _read_decisions(root)
     for e in existing:
         if e.get("id") == decision.id:
-            raise ValueError(
-                f"Decision {decision.id!r} já existe na memória institucional."
-            )
+            raise ValueError(f"Decision {decision.id!r} já existe na memória institucional.")
 
     line = json.dumps(record, ensure_ascii=True, sort_keys=True)
     with path.open("a", encoding="utf-8") as f:
@@ -90,9 +89,7 @@ def update_outcome(
             break
 
     if not updated:
-        raise ValueError(
-            f"Decision {decision_id!r} não encontrada na memória institucional."
-        )
+        raise ValueError(f"Decision {decision_id!r} não encontrada na memória institucional.")
 
     # Rewrite file
     path = decisions_file_path(root)
@@ -167,7 +164,11 @@ def memory_stats(root: Path | str) -> MemoryStats:
     decisions = _read_decisions(root)
     total = len(decisions)
     with_outcome = sum(1 for d in decisions if d.get("outcome"))
-    successful = sum(1 for d in decisions if "success" in d.get("outcome", "").lower() or "worked" in d.get("outcome", "").lower())
+    successful = sum(
+        1
+        for d in decisions
+        if "success" in d.get("outcome", "").lower() or "worked" in d.get("outcome", "").lower()
+    )
     failed = sum(1 for d in decisions if "fail" in d.get("outcome", "").lower())
     reverted = sum(1 for d in decisions if "revert" in d.get("outcome", "").lower())
     problems = {d.get("problem", "") for d in decisions}

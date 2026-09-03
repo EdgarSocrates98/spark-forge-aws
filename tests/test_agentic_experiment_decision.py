@@ -1,4 +1,5 @@
 """Testes do Experiment Engine e Decision Engine."""
+
 from __future__ import annotations
 
 import pytest
@@ -10,17 +11,16 @@ from sparkforge.agentic.decision import (
     make_decision,
 )
 from sparkforge.agentic.experiment import (
+    ExperimentPlan,
     design_experiment,
     design_experiment_for_unknown,
     design_experiment_from_deadlock,
     evaluate_experiment_result,
-    ExperimentPlan,
 )
 from sparkforge.agentic.models import (
     Experiment,
     ExperimentStatus,
     Hypothesis,
-    HypothesisStatus,
 )
 
 
@@ -61,7 +61,8 @@ class TestDesignFromDeadlock:
             expected_outcome="Increasing partitions eliminates OOM",
         )
         plan = design_experiment_from_deadlock(
-            h_a, h_b,
+            h_a,
+            h_b,
             variable="broadcast_enabled",
             baseline="broadcast on",
         )

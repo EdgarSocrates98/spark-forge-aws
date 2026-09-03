@@ -22,6 +22,7 @@ Não aumenta rounds infinitamente. Se deadlock:
 4. Design an experiment
 5. Escalate if needed
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -64,9 +65,7 @@ class DebateBudget:
         if self.max_rounds < 1:
             raise ValueError("DebateBudget: max_rounds deve ser >= 1")
         if self.max_rounds > 10:
-            raise ValueError(
-                "DebateBudget: max_rounds > 10 é irracional — debate não converge"
-            )
+            raise ValueError("DebateBudget: max_rounds > 10 é irracional — debate não converge")
 
 
 @dataclass
@@ -108,9 +107,7 @@ class Debate:
         if not self.topic.strip():
             raise ValueError("Debate: topic vazio.")
         if len(self.participants) < 2:
-            raise ValueError(
-                f"Debate: requer >= 2 participantes, tem {len(self.participants)}"
-            )
+            raise ValueError(f"Debate: requer >= 2 participantes, tem {len(self.participants)}")
         if not isinstance(self.trigger, DebateTrigger):
             raise ValueError("Debate: trigger deve ser DebateTrigger")
         if not isinstance(self.status, DebateStatus):
@@ -120,6 +117,7 @@ class Debate:
     def id(self) -> str:
         import hashlib
         import json
+
         payload = json.dumps(
             {"topic": self.topic, "participants": sorted(self.participants)},
             sort_keys=True,
@@ -219,9 +217,7 @@ def should_trigger_debate(
 
     # Low confidence → debate apenas se há recomendação
     if confidence == "low":
-        has_recommendation = any(
-            f.get("proposed_change") for f in findings
-        )
+        has_recommendation = any(f.get("proposed_change") for f in findings)
         if has_recommendation:
             return DebateTrigger.LOW_CONFIDENCE
 
@@ -239,8 +235,7 @@ def deadlock_resolution(debate: Debate) -> dict[str, Any]:
     """
     if debate.status != DebateStatus.DEADLOCKED:
         raise ValueError(
-            f"deadlock_resolution: debate status={debate.status.value}, "
-            f"esperado=deadlocked"
+            f"deadlock_resolution: debate status={debate.status.value}, esperado=deadlocked"
         )
 
     # Coleta claims não contestadas (potential consensus)

@@ -1,4 +1,5 @@
 """Testes do Debate Engine."""
+
 from __future__ import annotations
 
 import pytest
@@ -12,7 +13,6 @@ from sparkforge.agentic.debate import (
     deadlock_resolution,
     should_trigger_debate,
 )
-from sparkforge.agentic.models import Claim, ClaimType
 
 
 class TestDebateBudget:

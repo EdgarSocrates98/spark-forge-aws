@@ -21,6 +21,7 @@ Cada arquivo é append-only JSONL. Agentes leem apenas o que precisam,
 não o transcript completo. O `case.yaml` existente continua válido e
 não é modificado — o blackboard é uma camada adicional.
 """
+
 from __future__ import annotations
 
 import json

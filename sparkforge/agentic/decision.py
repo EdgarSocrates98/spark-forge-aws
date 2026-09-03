@@ -12,6 +12,7 @@ Toda decisão registra:
 ADR (Architecture Decision Record) é gerado automaticamente para decisões
 significativas. Decisões triviais não geram ADR.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -74,9 +75,7 @@ def make_decision(
         Decision dataclass
     """
     if selected_option not in ctx.options:
-        raise ValueError(
-            f"make_decision: selected_option {selected_option!r} não está em options"
-        )
+        raise ValueError(f"make_decision: selected_option {selected_option!r} não está em options")
 
     if not rollback.strip():
         raise ValueError(

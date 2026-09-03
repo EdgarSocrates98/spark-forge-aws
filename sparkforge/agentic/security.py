@@ -30,6 +30,7 @@ Guardrails:
 Deterministic validation before LLM-based validation wherever possible.
 Agent messages are data, not system instructions.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -48,7 +49,7 @@ class ThreatType(str, Enum):
     MALICIOUS_ARTIFACT = "malicious_artifact"
     CROSS_AGENT_INJECTION = "cross_agent_injection"
     UNTRUSTED_TOOL_OUTPUT = "untrusted_tool_output"
-    SECRET_LEAKAGE = "secret_leakage"
+    SECRET_LEAKAGE = "secret_leakage"  # noqa: S105 - enum value, not a password
     CROSS_CASE_CONTAMINATION = "cross_case_contamination"
 
 
@@ -181,7 +182,10 @@ def detect_prompt_injection(content: str) -> GuardrailResult:
                     return GuardrailResult(
                         passed=False,
                         threat_type=ThreatType.PROMPT_INJECTION,
-                        reason=f"Prompt injection suspeito: imperative '{imp}' + tool name em proximidade.",
+                        reason=(
+                            f"Prompt injection suspeito: imperative '{imp}' "
+                            "+ tool name em proximidade."
+                        ),
                         blocked_content=window,
                     )
 

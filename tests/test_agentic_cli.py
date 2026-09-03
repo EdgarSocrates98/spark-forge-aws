@@ -1,14 +1,14 @@
 """Testes dos CLI commands agênticos."""
+
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
 
+from sparkforge.adapters.cli import main
 from sparkforge.agentic.blackboard import append_decision, init_blackboard
 from sparkforge.agentic.models import Decision
-from sparkforge.adapters.cli import main
 
 
 class TestAgentsList:
@@ -16,11 +16,17 @@ class TestAgentsList:
         agents_dir = tmp_path / "agents"
         agents_dir.mkdir()
         (agents_dir / "spark-performance-architect.md").write_text(
-            "---\nname: spark-performance-architect\ndescription: Spark performance architect\n---\n",
+            "---\n"
+            "name: spark-performance-architect\n"
+            "description: Spark performance architect\n"
+            "---\n",
             encoding="utf-8",
         )
         (agents_dir / "iceberg-performance-engineer.md").write_text(
-            "---\nname: iceberg-performance-engineer\ndescription: Iceberg specialist\n---\n",
+            "---\n"
+            "name: iceberg-performance-engineer\n"
+            "description: Iceberg specialist\n"
+            "---\n",
             encoding="utf-8",
         )
 

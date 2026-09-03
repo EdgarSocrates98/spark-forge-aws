@@ -1,4 +1,5 @@
 """Testes do Evidence Engine."""
+
 from __future__ import annotations
 
 from sparkforge.agentic.evidence import (
@@ -12,19 +13,36 @@ from sparkforge.agentic.models import Evidence, EvidenceAuthority
 
 class TestClassifySource:
     def test_apache_spark_docs_is_t1(self):
-        assert classify_source("https://spark.apache.org/docs/latest/") == EvidenceAuthority.T1_OFFICIAL_DOCS
+        assert (
+            classify_source("https://spark.apache.org/docs/latest/")
+            == EvidenceAuthority.T1_OFFICIAL_DOCS
+        )
 
     def test_aws_docs_is_t1(self):
-        assert classify_source("https://docs.aws.amazon.com/glue/") == EvidenceAuthority.T1_OFFICIAL_DOCS
+        assert (
+            classify_source("https://docs.aws.amazon.com/glue/")
+            == EvidenceAuthority.T1_OFFICIAL_DOCS
+        )
 
     def test_iceberg_docs_is_t1(self):
-        assert classify_source("https://iceberg.apache.org/docs/latest/") == EvidenceAuthority.T1_OFFICIAL_DOCS
+        assert (
+            classify_source("https://iceberg.apache.org/docs/latest/")
+            == EvidenceAuthority.T1_OFFICIAL_DOCS
+        )
 
     def test_release_notes_is_t2(self):
-        assert classify_source("https://github.com/apache/spark/releases/tag/v3.5.0") == EvidenceAuthority.T2_SOURCE_CODE
+        assert (
+            classify_source("https://github.com/apache/spark/releases/tag/v3.5.0")
+            == EvidenceAuthority.T2_SOURCE_CODE
+        )
 
     def test_source_code_blob_is_t2(self):
-        assert classify_source("https://github.com/apache/spark/blob/main/core/src/main/scala/SparkContext.scala") == EvidenceAuthority.T2_SOURCE_CODE
+        assert (
+            classify_source(
+                "https://github.com/apache/spark/blob/main/core/src/main/scala/SparkContext.scala"
+            )
+            == EvidenceAuthority.T2_SOURCE_CODE
+        )
 
     def test_llm_output_is_t5(self):
         assert classify_source("gpt-4 says this is correct") == EvidenceAuthority.T5_LLM_KNOWLEDGE
@@ -33,7 +51,10 @@ class TestClassifySource:
         assert classify_source("i think this is the issue") == EvidenceAuthority.T6_CONJECTURE
 
     def test_blog_defaults_t4(self):
-        assert classify_source("https://medium.com/@engineer/spark-tuning") == EvidenceAuthority.T4_RECOGNIZED_AUTHORITY
+        assert (
+            classify_source("https://medium.com/@engineer/spark-tuning")
+            == EvidenceAuthority.T4_RECOGNIZED_AUTHORITY
+        )
 
 
 class TestVerifyEvidence:

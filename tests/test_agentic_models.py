@@ -6,6 +6,7 @@ Cobre:
 - serialização to_dict
 - invariantes do contrato (evidence obrigatória, rollback obrigatório, etc.)
 """
+
 from __future__ import annotations
 
 import pytest

@@ -13,6 +13,7 @@ Arbitragem não é votação majoritária. O árbitro avalia:
 False consensus: 5 agentes independentes > 5 agentes derivados do mesmo
 contexto. independence_score mede se conclusões são correlacionadas.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -85,7 +86,10 @@ def assess_claim(
     # Best authority among usable supporting
     if usable_supporting:
         best_authority = max(
-            (verify_evidence(e, target_runtime, target_version).authority for e in usable_supporting),
+            (
+                verify_evidence(e, target_runtime, target_version).authority
+                for e in usable_supporting
+            ),
             key=lambda a: _TIER_ORDER.get(a, 0),
         )
     else:
@@ -94,7 +98,11 @@ def assess_claim(
     # Specificity: 1.0 se evidência declara scope matching runtime, 0.5 se genérica
     if target_runtime and any(e.scope for e in usable_supporting):
         runtime_keys = {k.lower() for k in target_runtime}
-        scoped = [e for e in usable_supporting if e.scope and any(k in e.scope.lower() for k in runtime_keys)]
+        scoped = [
+            e
+            for e in usable_supporting
+            if e.scope and any(k in e.scope.lower() for k in runtime_keys)
+        ]
         specificity = 1.0 if scoped else 0.5
     else:
         specificity = 0.5 if usable_supporting else 0.0
@@ -102,14 +110,16 @@ def assess_claim(
     has_counterexample = len(contradicting) > 0
 
     # Runtime/version applicability
-    runtime_applicable = all(
-        verify_evidence(e, target_runtime, target_version).in_scope
-        for e in usable_supporting
-    ) if usable_supporting else False
-    version_applicable = all(
-        verify_evidence(e, target_runtime, target_version).is_fresh
-        for e in usable_supporting
-    ) if usable_supporting else False
+    runtime_applicable = (
+        all(verify_evidence(e, target_runtime, target_version).in_scope for e in usable_supporting)
+        if usable_supporting
+        else False
+    )
+    version_applicable = (
+        all(verify_evidence(e, target_runtime, target_version).is_fresh for e in usable_supporting)
+        if usable_supporting
+        else False
+    )
 
     # Score: weighted aggregate
     evidence_score = min(strength.total_weight / 2.0, 1.0)  # normalize
@@ -244,10 +254,7 @@ def arbitrate(
         )
 
     # Assess each claim
-    assessments = [
-        assess_claim(c, evidences, target_runtime, target_version)
-        for c in claims
-    ]
+    assessments = [assess_claim(c, evidences, target_runtime, target_version) for c in claims]
 
     # Sort by score descending
     assessments.sort(key=lambda a: a.score, reverse=True)
@@ -260,14 +267,15 @@ def arbitrate(
     false_consensus = detect_false_consensus(claims, evidences)
 
     # Counterexamples
-    counterexamples = [
-        a.claim_id for a in assessments if a.has_counterexample
-    ]
+    counterexamples = [a.claim_id for a in assessments if a.has_counterexample]
 
     # Determine recommendation
     if winner.score < 0.3:
         recommendation = "escalate"
-        reasoning = f"Best claim score {winner.score:.2f} below threshold. Insufficient evidence for any claim."
+        reasoning = (
+            f"Best claim score {winner.score:.2f} below threshold. "
+            "Insufficient evidence for any claim."
+        )
         confidence = "low"
     elif false_consensus:
         recommendation = "experiment"

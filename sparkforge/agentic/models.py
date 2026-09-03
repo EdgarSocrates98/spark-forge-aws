@@ -10,6 +10,7 @@ Estas entidades **não substituem** ``Fact``/``Finding``. Elas operam acima:
 ``Claim``/``Hypothesis``/``Decision`` são juízos agênticos que referenciam
 ``Fact`` e ``Finding`` por id quando disponíveis.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -75,9 +76,7 @@ CONFIDENCE_VALUES = frozenset({"high", "medium", "low"})
 
 def _canonical(value: Any) -> str:
     """JSON canônico: chaves ordenadas, sem espaços. Base do id estável."""
-    return json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-    )
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
 def _digest(prefix: str, payload: dict[str, Any]) -> str:
@@ -176,8 +175,7 @@ class Evidence:
             raise ValueError("Evidence: source vazio.")
         if not isinstance(self.authority, EvidenceAuthority):
             raise ValueError(
-                f"Evidence: authority deve ser EvidenceAuthority, "
-                f"recebido {type(self.authority)}"
+                f"Evidence: authority deve ser EvidenceAuthority, recebido {type(self.authority)}"
             )
 
     @property
@@ -241,13 +239,9 @@ class Hypothesis:
         if not self.statement.strip():
             raise ValueError("Hypothesis: statement vazio.")
         if self.confidence not in CONFIDENCE_VALUES:
-            raise ValueError(
-                f"Hypothesis: confidence {self.confidence!r} inválida"
-            )
+            raise ValueError(f"Hypothesis: confidence {self.confidence!r} inválida")
         if not isinstance(self.status, HypothesisStatus):
-            raise ValueError(
-                f"Hypothesis: status deve ser HypothesisStatus"
-            )
+            raise ValueError("Hypothesis: status deve ser HypothesisStatus")
 
     @property
     def id(self) -> str:
@@ -383,9 +377,7 @@ class Decision:
                 f"Decision: selected_option {self.selected_option!r} não está em options"
             )
         if self.confidence not in CONFIDENCE_VALUES:
-            raise ValueError(
-                f"Decision: confidence {self.confidence!r} inválida"
-            )
+            raise ValueError(f"Decision: confidence {self.confidence!r} inválida")
         if not self.rollback.strip():
             raise ValueError(
                 "Decision: rollback vazio — toda decisão declara rollback ou "

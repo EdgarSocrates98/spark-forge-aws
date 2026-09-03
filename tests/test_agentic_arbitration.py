@@ -1,4 +1,5 @@
 """Testes do Arbitration Engine."""
+
 from __future__ import annotations
 
 from sparkforge.agentic.arbitration import (
@@ -53,7 +54,9 @@ class TestAssessClaim:
     def test_claim_with_no_evidence_scores_zero(self):
         c = Claim(
             claimant="agent_a",
-            claim_type=ClaimType.CONJECTURE if hasattr(ClaimType, 'CONJECTURE') else ClaimType.OBSERVATION,
+            claim_type=ClaimType.CONJECTURE
+            if hasattr(ClaimType, "CONJECTURE")
+            else ClaimType.OBSERVATION,
             statement="test",
         )
         a = assess_claim(c, [])

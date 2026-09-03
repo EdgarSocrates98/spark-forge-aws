@@ -10,11 +10,11 @@ Cada nível declara:
 L5 (autonomous engineering) não é permitido automaticamente para high-risk
 actions sem guardrails.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 
 
 class AutonomyLevel(str, Enum):
@@ -82,48 +82,99 @@ _PROFILES: dict[AutonomyLevel, AutonomyProfile] = {
         max_budget_tokens=16000,
         max_agents=3,
         approval_policy="none",
-        required_validation=["schema_validation", "evidence_validation", "output_validation", "scope_validation"],
+        required_validation=[
+            "schema_validation",
+            "evidence_validation",
+            "output_validation",
+            "scope_validation",
+        ],
         risk_level="medium",
     ),
     AutonomyLevel.L3_DEBATE: AutonomyProfile(
         level=AutonomyLevel.L3_DEBATE,
         name="Debate",
         description="Debate multi-agente. Revisão adversarial.",
-        allowed_actions=["analyze", "extract_facts", "judge_rules", "recommend", "spawn_agent", "debate"],
+        allowed_actions=[
+            "analyze",
+            "extract_facts",
+            "judge_rules",
+            "recommend",
+            "spawn_agent",
+            "debate",
+        ],
         forbidden_actions=["experiment", "deploy", "destructive_action"],
         max_budget_tokens=32000,
         max_agents=5,
         max_debates=2,
         approval_policy="post_hoc",
-        required_validation=["schema_validation", "evidence_validation", "output_validation", "scope_validation", "debate_validation"],
+        required_validation=[
+            "schema_validation",
+            "evidence_validation",
+            "output_validation",
+            "scope_validation",
+            "debate_validation",
+        ],
         risk_level="medium",
     ),
     AutonomyLevel.L4_EXPERIMENTAL: AutonomyProfile(
         level=AutonomyLevel.L4_EXPERIMENTAL,
         name="Experimental",
         description="Executa experimentos para resolver desacordo.",
-        allowed_actions=["analyze", "extract_facts", "judge_rules", "recommend", "spawn_agent", "debate", "experiment"],
+        allowed_actions=[
+            "analyze",
+            "extract_facts",
+            "judge_rules",
+            "recommend",
+            "spawn_agent",
+            "debate",
+            "experiment",
+        ],
         forbidden_actions=["deploy", "destructive_action", "production_change"],
         max_budget_tokens=64000,
         max_agents=5,
         max_debates=3,
         max_experiments=3,
         approval_policy="pre_approval",
-        required_validation=["schema_validation", "evidence_validation", "output_validation", "scope_validation", "debate_validation", "experiment_validation"],
+        required_validation=[
+            "schema_validation",
+            "evidence_validation",
+            "output_validation",
+            "scope_validation",
+            "debate_validation",
+            "experiment_validation",
+        ],
         risk_level="high",
     ),
     AutonomyLevel.L5_AUTONOMOUS: AutonomyProfile(
         level=AutonomyLevel.L5_AUTONOMOUS,
         name="Autonomous Engineering",
         description="Auto-modifica agentes/código. Máxima autonomia com guardrails.",
-        allowed_actions=["analyze", "extract_facts", "judge_rules", "recommend", "spawn_agent", "debate", "experiment", "modify_code"],
+        allowed_actions=[
+            "analyze",
+            "extract_facts",
+            "judge_rules",
+            "recommend",
+            "spawn_agent",
+            "debate",
+            "experiment",
+            "modify_code",
+        ],
         forbidden_actions=["deploy_without_approval", "destructive_action_without_approval"],
         max_budget_tokens=128000,
         max_agents=10,
         max_debates=5,
         max_experiments=10,
         approval_policy="pre_approval",
-        required_validation=["schema_validation", "evidence_validation", "output_validation", "scope_validation", "debate_validation", "experiment_validation", "security_validation", "human_approval"],
+        required_validation=[
+            "schema_validation",
+            "evidence_validation",
+            "output_validation",
+            "scope_validation",
+            "debate_validation",
+            "experiment_validation",
+            "security_validation",
+            "human_approval",
+        ],
         risk_level="critical",
     ),
 }

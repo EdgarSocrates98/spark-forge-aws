@@ -11,13 +11,13 @@ Esta engine:
 4. Detecta conflitos entre evidências.
 5. Calcula força agregada de um conjunto de evidências.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
 from sparkforge.agentic.models import Evidence, EvidenceAuthority
-
 
 # Peso numérico por tier — usado em aggregate_strength, não como nota absoluta.
 # T1 > T2 > T3 > T4 >> T5 > T6 (T5/T6 não confirmam sozinhos).
@@ -145,9 +145,7 @@ def verify_evidence(
     if evidence.version and target_version:
         if evidence.version != target_version:
             is_fresh = False
-            issues.append(
-                f"version mismatch: evidence={evidence.version}, target={target_version}"
-            )
+            issues.append(f"version mismatch: evidence={evidence.version}, target={target_version}")
 
     # Scope: se a evidência declara scope e o target_runtime tem componentes,
     # verifica sobreposição. Sem scope, assume in_scope.

@@ -1,4 +1,5 @@
 """Testes de Memory, Budget, Security, Autonomy, Graph."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,8 +9,6 @@ import pytest
 from sparkforge.agentic.autonomy import (
     AutonomyLevel,
     can_perform_action,
-    get_profile,
-    requires_approval_for_action,
     validate_autonomy_boundary,
 )
 from sparkforge.agentic.budget import (
@@ -32,16 +31,13 @@ from sparkforge.agentic.graph import (
 from sparkforge.agentic.memory import (
     find_similar_decisions,
     get_decision_history,
-    init_memory,
     memory_stats,
     record_decision,
     update_outcome,
 )
 from sparkforge.agentic.models import Decision
 from sparkforge.agentic.security import (
-    GuardrailResult,
     RiskLevel,
-    ToolRiskProfile,
     detect_prompt_injection,
     requires_human_approval,
     validate_agent_identity,
@@ -133,7 +129,7 @@ class TestCompareBudget:
             actual_cost_usd=0.4,
         )
         result = compare_budget(est, actual)
-        assert result["agents"]["utilization"] == pytest.approx(2/3)
+        assert result["agents"]["utilization"] == pytest.approx(2 / 3)
         assert result["tokens"]["waste"] == 0
 
 
@@ -256,7 +252,9 @@ class TestSecurityToolAuth:
         assert r.passed
 
     def test_denied_tool(self):
-        r = validate_tool_authorization("agent", "tool_x", allowed_tools=[], denied_tools=["tool_x"])
+        r = validate_tool_authorization(
+            "agent", "tool_x", allowed_tools=[], denied_tools=["tool_x"]
+        )
         assert not r.passed
 
     def test_not_in_allowed(self):
@@ -388,7 +386,12 @@ class TestExecutionGraph:
         g = build_graph_from_case(
             case_id="case_1",
             claims=[
-                {"id": "claim_1", "statement": "test", "claimant": "agent_a", "claim_type": "hypothesis"},
+                {
+                    "id": "claim_1",
+                    "statement": "test",
+                    "claimant": "agent_a",
+                    "claim_type": "hypothesis",
+                },
             ],
             evidence=[
                 {"id": "ev_1", "source": "doc", "authority": "T1", "supports": ["claim_1"]},
