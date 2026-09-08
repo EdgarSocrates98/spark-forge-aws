@@ -53,7 +53,15 @@
         "url": "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "glue.worker_type",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-UI-006",
@@ -107,6 +115,7 @@
         "origin": "field-heuristic",
         "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

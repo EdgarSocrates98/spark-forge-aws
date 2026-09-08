@@ -48,6 +48,17 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "orchestration.restrict_run_policy",
+      "target": "glue.max_concurrent_runs",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

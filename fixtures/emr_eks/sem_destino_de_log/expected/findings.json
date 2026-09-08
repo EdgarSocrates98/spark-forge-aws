@@ -74,6 +74,18 @@
         "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html",
         "retrieved": "2026-08-31"
       }
-    ]
+    ],
+    "action": {
+      "kind": "observability.enable_telemetry",
+      "target": "emrc.monitoring_configuration",
+      "direction": "add",
+      "requires_absent": [
+        "emrc.pod_template.unresolved"
+      ],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
   }
 ]

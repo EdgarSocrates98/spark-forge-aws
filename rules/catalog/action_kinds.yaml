@@ -291,3 +291,36 @@ kinds:
   orchestration.split_into_separate_job:
     axis: orquestracao
     description: Mover a etapa para um job separado, fora do caminho critico.
+
+# Vocabulario fechado de `action.moves`. Sem ele cada lote escreveria o eixo por
+# conta propria -- `runtime.wall_clock` num, `wall_clock` noutro -- e a restricao
+# que o executor precisa (duas acoes que compartilham eixo nao entram no mesmo
+# run) nunca dispararia, sem nada acusar.
+#
+# O eixo e O QUE SE MEDE, nao o que se espera que aconteca. `cost.dpu_seconds` e
+# eixo; `cost.savings` nao e -- economia e contrafactual, e a regra 13 do
+# CLAUDE.md a proibe. Nenhuma `description` promete resultado.
+#
+# Acrescentado no lote A (glue-infra, emr-infra, emr-serverless, emr-eks,
+# waste). Os lotes seguintes acrescentam o que faltar.
+axes:
+  cost.dpu_seconds:
+    description: DPU-segundos medidos do run.
+  cost.provisioned_capacity_time:
+    description: Tempo em que a capacidade fica provisionada e faturavel, com ou sem trabalho rodando.
+  runtime.wall_clock:
+    description: Duracao de relogio do job.
+  capacity.worker_count:
+    description: Numero de workers ou nos que a definicao declara.
+  capacity.executor_footprint:
+    description: Memoria, cores e numero de executores efetivos.
+  shuffle.partition_count:
+    description: Numero de particoes do shuffle e o paralelismo default derivado dele.
+  correctness.write_result:
+    description: As linhas que a escrita deixa no destino.
+  availability.interruption_exposure:
+    description: Quais papeis de no rodam em capacidade que o provedor pode reclamar.
+  observability.diagnostic_artifacts:
+    description: Os artefatos de execucao que sobrevivem ao job -- event log, log de container, UI de aplicacao.
+  security.secret_exposure:
+    description: As superficies de API e de IaC que devolvem o literal do segredo.

@@ -57,7 +57,17 @@
         "origin": "field-heuristic",
         "note": "A fonte oficial sustenta a metade de `Configurations`: o Warning nomeia as operações Describe e List e a palavra plaintext. Para `Args` de bootstrap action a sustentação é INDIRETA -- `ListBootstrapActions` devolve `Args` como parte da mesma superfície de leitura, mas nenhuma página da AWS nomeia esse campo no aviso. A metade de bootstrap é heurística de campo, e o mecanismo é o mesmo: o valor viaja na resposta da API. LIMITE DO RECONHECIMENTO, medido e nao suposto: o gatilho de nome de chave NAO acusa valor que seja identificador segmentado -- tres ou mais palavras de letras puras unidas por `.`, `-` ou `_`. Ele acusava, e isso fazia a regra apontar a propria correcao: `credentials.provider = com.amazonaws.auth.InstanceProfileCredentialsProvider` e `serviceAccountName = emr-containers-sa-spark` casavam o alfabeto de material criptografico porque esse alfabeto inclui `.` e `-`. A exclusao e de FORMA, nao lista de nome de chave, e o que ela abre esta escrito em `facts/secrets.py`: um segredo com essa mesma forma -- senha de letras puras com dois ou mais delimitadores -- escapa."
       }
-    ]
+    ],
+    "action": {
+      "kind": "security.move_secret_to_manager",
+      "target": "emr.configuration",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "security.secret_exposure"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-EMR-005",
@@ -122,7 +132,19 @@
         "origin": "field-heuristic",
         "note": "As páginas da AWS sustentam: que o default é `static`; que `dynamic` faz o write sobrescrever apenas as partições recebidas; e que o commit protocol otimizado cobre o caso dinâmico da 5.30.0/6.2.0 em diante, o que MATA o argumento de performance. O que elas NÃO afirmam em nenhuma linha é a metade oposta da semântica -- que `static` apaga o caminho de destino inteiro --, que é comportamento do Apache Spark e está aqui como leitura de campo. É essa metade que sustenta o risco de perda de dado ao remover a propriedade, e por isso ela precisa ser declarada em vez de assumida."
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.narrow_property_scope",
+      "target": "spark.sql.sources.partitionOverwriteMode",
+      "direction": "replace",
+      "requires_absent": [
+        "emr.configuration.unapplied"
+      ],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-EMR-008",
@@ -191,6 +213,16 @@
         "origin": "field-heuristic",
         "note": "A página de tipos de nó sustenta o mecanismo e o recorte de release: o AM roda em core E task por default a partir da série 6.x, porque as node labels passaram a vir desligadas. A página de managed scaling sustenta as restrições operacionais e confirma o comportamento na série 7.x -- o EMR não rotula nós de task, `We don't recommend using Spot nodes for application primary processes`, labels criadas no provisionamento e não adicionáveis por reconfiguração, e o par maximum-am-resource-percent/decommissioning.timeout. O que NENHUMA das duas afirma é INCIDÊNCIA: com que frequência o AM efetivamente cai num nó task, ou com que frequência aquele Spot é reclamado. Nada aqui diz isso, e o P1 vem do TAMANHO da consequência -- a aplicação inteira falha, não uma task --, nunca de uma taxa."
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_purchasing_option",
+      "target": "yarn.node-labels.am.default-node-label-expression",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "availability.interruption_exposure"
+      ],
+      "depends_on": []
+    }
   }
 ]

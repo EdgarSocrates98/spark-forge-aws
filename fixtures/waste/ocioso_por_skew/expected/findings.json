@@ -58,6 +58,14 @@
         "origin": "field-heuristic",
         "note": "O limiar de skew 3.0 é o mesmo de `SF-UI-001` e o mesmo da `SF-WASTE-001`, pela razão registrada lá: a fronteira precisa ser única no catálogo.\n"
       }
-    ]
+    ],
+    "action": {
+      "kind": "skew.classify_type",
+      "target": "spark.stage",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

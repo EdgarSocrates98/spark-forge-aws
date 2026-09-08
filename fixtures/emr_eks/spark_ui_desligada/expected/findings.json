@@ -71,6 +71,18 @@
         "url": "https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html",
         "retrieved": "2026-08-31"
       }
-    ]
+    ],
+    "action": {
+      "kind": "observability.enable_application_ui",
+      "target": "emrc.monitoring.persistent_app_ui",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": [
+        "SF-EMRK-002"
+      ]
+    }
   }
 ]

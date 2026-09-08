@@ -48,6 +48,16 @@
         "origin": "field-heuristic",
         "note": "Prática de segurança padrão; a superfície de exposição de default arguments é documentada no comportamento da API do Glue."
       }
-    ]
+    ],
+    "action": {
+      "kind": "security.move_secret_to_manager",
+      "target": "glue.default_arguments",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "security.secret_exposure"
+      ],
+      "depends_on": []
+    }
   }
 ]

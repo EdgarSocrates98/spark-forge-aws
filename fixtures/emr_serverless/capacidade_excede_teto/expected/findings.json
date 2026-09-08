@@ -73,6 +73,16 @@
         "origin": "field-heuristic",
         "note": "A ARITMÉTICA tem fonte inteira: `WorkerResourceConfig` e `MaximumAllowedResources` usam os MESMOS patterns para `cpu`, `memory` e `disk`, o conjunto de unidades é fechado e minúsculo (vCPU em três grafias, GB em quatro), `MB` não é expressável e o número é inteiro positivo sem decimal — então a comparação numérica é segura e a armadilha de unidades não pode ocorrer neste artefato. O que é heurística de campo é a REACHABILITY do estado acusado: nenhuma página declara que a API aceite `initialCapacity` acima de `maximumCapacity`, e nenhuma declara que a rejeite. A consequência plausível -- a application não alcançar `STARTED` -- é leitura de campo em cima de uma frase que fala de outro caso ('an application moves to the STARTED state only if the requested pre-initialized capacity has been created and is ready to use'). Por isso a fixture positiva do corpus é CONSTRUÍDA e não observada, e por isso a severidade é P1 e não P0: o mecanismo do dano não está declarado, só o número que se contradiz."
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_preinitialized_capacity",
+      "target": "emrs.initial_capacity",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
   }
 ]

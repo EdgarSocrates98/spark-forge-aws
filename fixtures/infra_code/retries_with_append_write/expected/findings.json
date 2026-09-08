@@ -51,6 +51,16 @@
         "origin": "field-heuristic",
         "note": "Idempotência de escrita sob retry é requisito de desenho; a regra apenas expõe a combinação de risco."
       }
-    ]
+    ],
+    "action": {
+      "kind": "code.make_write_idempotent",
+      "target": "pyspark.write",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

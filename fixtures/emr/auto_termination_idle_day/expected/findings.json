@@ -69,6 +69,16 @@
         "origin": "field-heuristic",
         "note": "A fonte sustenta TODOS os números citados: default de 3600 s, mínimo de 60 s, máximo de 604800 s (7 dias), a auto-terminação ligada por default no console da 6.4.0 em diante, os critérios de ociosidade por série de release, o arquivo `/emr/metricscollector/isbusy` da 6.4.0 em diante, a não-suportabilidade com Presto/Trino/HBase e as duas restrições de rede. O que ela NÃO declara é um ponto a partir do qual a janela passa a ser larga demais -- esse ponto não existe na documentação, e o limiar de 86400 s é escolha de campo. Ele é um dia inteiro, e a razão da escolha é estrutural, não estatística: qualquer intervalo ocioso INTRADIÁRIO -- fim de expediente, madrugada, janela entre cargas -- é menor que 24 h, então uma política de um dia ou mais não pode ser alcançada por nenhum deles e existe sem nunca agir. O ramo P1 em 604800 s, esse sim, é o valor da fonte: é o teto da API. Nenhuma taxa de incidência é afirmada aqui, e a severidade P2 do caso geral vem de ser custo puro, sem efeito sobre correção de resultado."
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_idle_shutdown",
+      "target": "emr.cluster.idle_timeout_seconds",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
   }
 ]

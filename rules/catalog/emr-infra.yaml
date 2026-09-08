@@ -205,6 +205,16 @@ rules:
       - Remover maximizeResourceAllocation da classificação spark e declarar spark.executor.memory, spark.executor.cores e spark.executor.instances explicitamente em spark-defaults.
       - Dimensionar o executor pelo MENOR tipo de instância que o core fleet aceita, que é o único que todos os provisionamentos possíveis conseguem hospedar.
       - Ou reduzir a heterogeneidade do core fleet aos tipos com a mesma razão vCPU/memória, e só então manter o cálculo automático.
+    action:
+      kind: capacity.size_executor_explicitly
+      target: spark.executor.memory
+      direction: add
+      requires_absent:
+        - emr.configuration.unapplied
+      moves:
+        - capacity.executor_footprint
+        - shuffle.partition_count
+      depends_on: []
     risks:
       - Valores explícitos deixam de acompanhar uma troca futura de tipo de instância; ficam registrados na definição do cluster e precisam ser revisados junto com ela.
       - Dimensionar pelo menor tipo deixa capacidade ociosa quando o fleet provisiona os tipos maiores.
@@ -263,6 +273,14 @@ rules:
       - Rotacionar o segredo exposto; ele deve ser considerado comprometido, porque não há como saber quem chamou DescribeCluster desde a criação do cluster.
       - Revisar o IaC e o histórico do repositório que criou o cluster, onde o literal costuma persistir depois de removido da definição.
       - Revisar quem tem elasticmapreduce:DescribeCluster, ListInstanceGroups, ListInstanceFleets e ListBootstrapActions na conta.
+    action:
+      kind: security.move_secret_to_manager
+      target: emr.configuration
+      direction: replace
+      requires_absent: []
+      moves:
+        - security.secret_exposure
+      depends_on: []
     risks:
       - Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o job.
       - Configurations de cluster EMR não é editável em cluster em execução; corrigir exige provisionar um cluster novo.
@@ -334,6 +352,15 @@ rules:
       - Remover spark.dynamicAllocation.enabled=false do spark-defaults do cluster; o default do EMR já é true desde a release 4.4.0, com o shuffle service configurado automaticamente.
       - Se algum job específico precisa de executores fixos, declarar spark.dynamicAllocation.enabled=false no submit daquele job, não no cluster, para que o alcance seja o job e não toda carga que roda ali.
       - Conferir MinimumCapacityUnits e MaximumCapacityUnits contra a demanda observada depois de religar a alocação dinâmica; um teto dimensionado para a demanda estática anterior fica grande demais.
+    action:
+      kind: config.remove_property
+      target: spark.dynamicAllocation.enabled
+      direction: remove
+      requires_absent: []
+      moves:
+        - capacity.executor_footprint
+        - cost.provisioned_capacity_time
+      depends_on: []
     risks:
       - Job que dependia de número fixo de executores para paralelismo previsível pode mudar de perfil de duração até a alocação dinâmica estabilizar.
       - Religar a alocação dinâmica exige o external shuffle service ativo; ele é o default do EMR, mas uma configuração customizada de yarn-site pode tê-lo desligado.
@@ -388,6 +415,15 @@ rules:
       - "Decidir de qual linha da tabela o cluster é: se o trabalho tolera terminação súbita, levar o core também para Spot; se não tolera, levar o primary para On-Demand."
       - Se a motivação for custo e o cluster for longo, avaliar primary On-Demand com três primary nodes (alta disponibilidade, EMR 5.23.0 ou superior) e Spot só no task, que é a linha "long-running clusters and data warehouses".
       - Confirmar que o resultado do job sobrevive à perda do cluster — persistência em S3 a cada etapa, e não só no fim — antes de escolher a opção Spot.
+    action:
+      kind: capacity.change_purchasing_option
+      target: emr.instance_capacity.purchasing_option
+      direction: replace
+      requires_absent: []
+      moves:
+        - availability.interruption_exposure
+        - cost.provisioned_capacity_time
+      depends_on: []
     risks:
       - Levar o primary para On-Demand aumenta o custo fixo do cluster pelo tempo inteiro em que ele existe.
       - Levar o core para Spot expõe HDFS a perda parcial de dados; só é aceitável quando os dados intermediários são reconstituíveis.
@@ -453,6 +489,15 @@ rules:
       - "Em cada job que precisa de overwrite por partição, declarar a intenção no próprio write: .option(\"partitionOverwriteMode\", \"dynamic\"), que vale só para aquela escrita."
       - "Antes de remover, inventariar os jobs que rodam no cluster e classificar cada write com mode overwrite: os que dependem de dynamic recebem a opção; os que supõem static passam a se comportar como o autor escreveu."
       - Para tabela Iceberg, nenhuma das duas opções é o mecanismo certo — o overwrite por partição é MERGE INTO ou overwrite dinâmico do próprio Iceberg, e a propriedade de fonte de dados de arquivo não se aplica.
+    action:
+      kind: config.narrow_property_scope
+      target: spark.sql.sources.partitionOverwriteMode
+      direction: replace
+      requires_absent:
+        - emr.configuration.unapplied
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - "Este é o risco central: remover a propriedade devolve os jobs ao default static, e um job que dependia de dynamic passará a apagar o caminho de destino INTEIRO. Sem o inventário do item anterior, a remoção causa perda de dado."
       - Configurations de cluster EMR não é editável em cluster em execução; a mudança acontece no próximo provisionamento, e a janela entre a decisão e o provisionamento precisa ser coberta pela opção no job.
@@ -521,6 +566,14 @@ rules:
       - Avaliar a criptografia dos logs com chave gerenciada pelo cliente (EMR 5.30.0 ou superior, exceto 6.0.0), concedendo kms:GenerateDataKey ao perfil de instância EC2 e kms:DescribeKey ao papel de serviço do EMR.
       - Para releases 6.9.0 ou superiores, confirmar que o arquivamento durante scale-down está chegando ao prefixo, e não só o arquivamento de término.
       - Se o cluster já está em execução e é crítico, coletar os logs de /mnt/var/log/ nos nós por SSH ANTES de terminá-lo; essa é a única cópia que existe.
+    action:
+      kind: observability.enable_telemetry
+      target: emr.cluster.log_uri
+      direction: add
+      requires_absent: []
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on: []
     risks:
       - Logs consomem armazenamento S3 continuamente; sem política de ciclo de vida o custo cresce sem teto.
       - Log de container pode conter dado de aplicação; o prefixo precisa da mesma política de acesso do dado que o cluster processa.
@@ -577,6 +630,14 @@ rules:
       - Revisar os argumentos de cada script; argumento errado costuma produzir exit code não-zero cedo, antes de qualquer log útil.
       - Fazer o script sair com código explícito e mensagem em cada caminho de erro, para que a próxima falha seja legível sem SSH.
       - "Reduzir o trabalho do bootstrap ao mínimo: dependência pesada instalada por bootstrap é ponto de falha em cada provisionamento e em cada nó adicionado por scaling."
+    action:
+      kind: provisioning.diagnose_bootstrap_failure
+      target: emr.bootstrap_action
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-EMR-006
     risks:
       - Um bootstrap que agora sai com zero em caminho de erro para de derrubar o cluster e passa a produzir nó silenciosamente incompleto, que é pior. Sair com zero só depois de verificar o efeito, nunca para suprimir a falha.
     tradeoffs:
@@ -655,6 +716,14 @@ rules:
       - As node labels são criadas no provisionamento, e o EMR não aceita adicioná-las ao reconfigurar um cluster em execução. A correção é o próximo provisionamento, não uma reconfiguração.
       - Com labels e managed scaling, revisar yarn.scheduler.capacity.maximum-am-resource-percent quando houver aplicações em paralelo, e deixar yarn.resourcemanager.decommissioning.timeout maior que a aplicação mais longa.
       - Se prender o AM não for aceitável, a alternativa é assumir a terminação explicitamente — pipeline idempotente, checkpoint em S3 a cada etapa, e reprocessamento barato — em vez de deixar a escolha implícita no default.
+    action:
+      kind: capacity.change_purchasing_option
+      target: yarn.node-labels.am.default-node-label-expression
+      direction: add
+      requires_absent: []
+      moves:
+        - availability.interruption_exposure
+      depends_on: []
     risks:
       - "Este é o risco central da correção: prender o AM em CORE reduz o pool onde ele pode ser escalonado. Num cluster com core pequeno e task grande, os AMs passam a disputar a capacidade do core e aplicações ficam na fila esperando container de AM. A mitigação documentada é yarn.scheduler.capacity.maximum-am-resource-percent."
       - "Não existe a direção oposta: o EMR não rotula nós de task, então não há como restringir o AM apenas ao task. As únicas âncoras possíveis são CORE e, da 7.0 em diante, ON_DEMAND."
@@ -750,6 +819,14 @@ rules:
       - "Confirmar que o cluster é YARN: a auto-terminação não é suportada com aplicações não-YARN (Presto, Trino, HBase), e num cluster desses a política não termina nada, qualquer que seja o valor. Ali a correção é outra — orquestrar a terminação fora do EMR."
       - Para cluster que roda uma carga por dia com folga longa entre execuções, avaliar cluster transiente (AutoTerminate) em vez de política de ociosidade; a política é a ferramenta do cluster de longa duração, não substituta do transiente.
       - "Se a auto-terminação não estiver funcionando com a janela atual, conferir as duas restrições de rede documentadas antes de mexer no número: endpoint público da API Gateway alcançável pelo metrics-collector, e conectividade TCP na porta 9443 entre o security group primário e o de service access."
+    action:
+      kind: capacity.change_idle_shutdown
+      target: emr.cluster.idle_timeout_seconds
+      direction: decrease
+      requires_absent: []
+      moves:
+        - cost.provisioned_capacity_time
+      depends_on: []
     risks:
       - "Este é o risco central: encurtar a janela termina o cluster no meio de trabalho que os critérios de ociosidade do EMR não enxergam. Script de shell e aplicação não-YARN rodando no nó primário não contam como atividade; a saída documentada, da release 6.4.0 em diante, é o arquivo /emr/metricscollector/isbusy, que o processo deve tocar periodicamente."
       - Terminar o cluster destrói o HDFS dele. Qualquer dado intermediário que só existisse ali precisa estar em S3 antes de a janela encurtar, e essa verificação vem antes da mudança, não depois.

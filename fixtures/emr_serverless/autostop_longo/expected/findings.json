@@ -72,6 +72,16 @@
         "origin": "field-heuristic",
         "note": "A fonte sustenta TODOS os números citados: o default de `enabled` (`true`), o default de 15 minutos, o mínimo de 1 e o máximo de 10080 (sete dias), e o modelo de cobrança por worker existente. O que ela NÃO declara é um ponto a partir do qual a janela passa a ser larga demais — esse ponto não existe na documentação, e o limiar de 1440 minutos é escolha de campo. Ele é um dia inteiro, e a razão da escolha é estrutural, não estatística: qualquer intervalo ocioso INTRADIÁRIO -- fim de expediente, madrugada, janela entre cargas -- é menor que 24 h, então uma janela de um dia ou mais não pode ser alcançada por nenhum deles e existe sem nunca agir. É o mesmo argumento e o mesmo número do limiar de 86400 s do SF-EMR-009, em minutos. O ramo P1 em 10080, esse sim, é o valor da fonte: é o teto da API. E o segundo termo da condição -- exigir pré-init -- apoia-se numa DEDUÇÃO declarada como tal no cabeçalho deste arquivo, item 2: que uma application ociosa sem pré-init não tenha worker faturável segue do modelo de cobrança, e não de uma frase da AWS."
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_idle_shutdown",
+      "target": "emrs.auto_stop_configuration.idle_timeout_minutes",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
   }
 ]

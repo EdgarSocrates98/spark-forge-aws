@@ -50,7 +50,20 @@
         "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html",
         "retrieved": "2026-08-01"
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.size_executor_explicitly",
+      "target": "spark.executor.memory",
+      "direction": "add",
+      "requires_absent": [
+        "emr.configuration.unapplied"
+      ],
+      "moves": [
+        "capacity.executor_footprint",
+        "shuffle.partition_count"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-EMR-004",
@@ -104,7 +117,18 @@
         "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html",
         "retrieved": "2026-08-01"
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_purchasing_option",
+      "target": "emr.instance_capacity.purchasing_option",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "availability.interruption_exposure",
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-EMR-006",
@@ -160,6 +184,16 @@
         "origin": "field-heuristic",
         "note": "A fonte sustenta que os logs morrem com os nós em release <= 6.8.0, que o arquivamento precisa ser habilitado no lançamento nessas releases, e que a configuração de logging S3 introduzida na 7.13.0 'can only be set at cluster creation time and cannot be modified for running clusters'. Que o próprio `LogUri` não tenha conserto retroativo em NENHUMA release é inferência da ausência de qualquer operação de modificação na API de cluster, não citação."
       }
-    ]
+    ],
+    "action": {
+      "kind": "observability.enable_telemetry",
+      "target": "emr.cluster.log_uri",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
   }
 ]

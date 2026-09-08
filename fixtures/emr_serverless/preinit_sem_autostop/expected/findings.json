@@ -66,6 +66,16 @@
         "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html",
         "retrieved": "2026-08-04"
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_idle_shutdown",
+      "target": "emrs.auto_stop_configuration",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
   }
 ]

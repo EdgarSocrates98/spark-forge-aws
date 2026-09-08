@@ -96,6 +96,14 @@ rules:
     proposed_change:
       - Remover max_capacity e manter worker_type e number_of_workers.
       - Se o job depende de max_capacity por alguma razão de compatibilidade, remover worker_type e number_of_workers em vez do inverso -- nunca manter os dois.
+    action:
+      kind: config.remove_property
+      target: glue.max_capacity
+      direction: remove
+      requires_absent: []
+      moves:
+        - capacity.worker_count
+      depends_on: []
     risks: [O job pode estar rodando hoje sob um dos dois campos sendo ignorado silenciosamente pela API; remover o errado sem confirmar qual prevalece muda a capacidade em produção sem aviso.]
     tradeoffs: [Nenhum. Os dois campos não coexistem na API para esta versão; a única decisão real é qual dos dois manter.]
     validation:
@@ -154,6 +162,14 @@ rules:
       - Habilitar --enable-spark-ui e definir --spark-event-logs-path para um prefixo S3 com retenção adequada.
       - Habilitar --enable-observability-metrics em Glue 4.0 ou superior, confirmando que glueContext é inicializado no código.
       - Habilitar --enable-continuous-cloudwatch-log para não depender de log apenas no encerramento.
+    action:
+      kind: observability.enable_application_ui
+      target: glue.enable_spark_ui
+      direction: add
+      requires_absent: []
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on: []
     risks: [Event logs consomem armazenamento S3; definir política de retenção.]
     tradeoffs: [Custo marginal de armazenamento contra capacidade de diagnóstico.]
     validation:
@@ -188,6 +204,15 @@ rules:
     proposed_change:
       - Reduzir max_concurrent_runs para 1, ou desabilitar bookmarks e adotar controle de incremental explícito.
       - Se a fonte é Iceberg, migrar para leitura incremental por snapshot.
+    action:
+      kind: orchestration.restrict_run_policy
+      target: glue.max_concurrent_runs
+      direction: decrease
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
     risks: [Reduzir concorrência pode afetar o SLA se havia dependência real de paralelismo entre runs.]
     tradeoffs: [Controle explícito de incremental é mais código e mais confiável que bookmark.]
     validation:
@@ -219,6 +244,14 @@ rules:
     proposed_change:
       - Tornar a escrita idempotente, por merge com chave, por overwrite de partição, ou por controle de execução.
       - Ou reduzir max_retries para zero e tratar a falha explicitamente.
+    action:
+      kind: code.make_write_idempotent
+      target: pyspark.write
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks: [Reduzir retries expõe o pipeline a falhas transitórias que antes eram absorvidas.]
     tradeoffs: [Idempotência custa desenho e, em merge, custo de escrita maior que append.]
     validation:
@@ -279,6 +312,13 @@ rules:
       - Coletar os sete números do baseline antes de mudar capacidade.
       - "Classificar o gargalo por eixo: CPU, memória, disco, skew, driver, I/O."
       - Se for memória comprovada, avaliar a série R, que dobra a memória com o mesmo vCPU, antes de subir na série G.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.worker_type
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks: [Aumentar capacidade sem diagnóstico eleva o custo sem reduzir o runtime.]
     tradeoffs: [Coletar baseline atrasa a mudança em um ciclo de execução.]
     validation:
@@ -310,6 +350,14 @@ rules:
       - Mover para AWS Secrets Manager ou Parameter Store, referenciando por nome no argumento.
       - Rotacionar o segredo exposto, porque ele deve ser considerado comprometido.
       - Revisar histórico do repositório de IaC, onde o valor pode persistir.
+    action:
+      kind: security.move_secret_to_manager
+      target: glue.default_arguments
+      direction: replace
+      requires_absent: []
+      moves:
+        - security.secret_exposure
+      depends_on: []
     risks: [Rotacionar segredo em uso exige coordenação com os consumidores.]
     tradeoffs: [Nenhum. Não há justificativa de performance para manter segredo em argumento.]
     validation:

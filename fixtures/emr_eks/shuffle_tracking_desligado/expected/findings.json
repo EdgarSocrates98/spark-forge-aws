@@ -67,6 +67,16 @@
         "url": "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html",
         "retrieved": "2026-08-31"
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.remove_property",
+      "target": "spark.dynamicAllocation.shuffleTracking.enabled",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint"
+      ],
+      "depends_on": []
+    }
   }
 ]

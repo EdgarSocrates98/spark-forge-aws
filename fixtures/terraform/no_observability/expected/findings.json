@@ -50,6 +50,16 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "observability.enable_application_ui",
+      "target": "glue.enable_spark_ui",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
   }
 ]

@@ -20,10 +20,7 @@ from sparkforge.rules.loader import CatalogError, _validate_action, catalog_dir,
 # Arquivos ainda sem `action`. Encolhe a cada lote; vazio ao fim da Fase 2.
 PENDENTES = {
     "pyspark.yaml",
-    "emr-infra.yaml",
     "controlm.yaml",
-    "emr-serverless.yaml",
-    "glue-infra.yaml",
     "graph.yaml",
     "spark-ui.yaml",
     "athena.yaml",
@@ -33,14 +30,12 @@ PENDENTES = {
     "parquet.yaml",
     "benchmark.yaml",
     "data-quality.yaml",
-    "emr-eks.yaml",
     "glue-migration.yaml",
     "spark-plan.yaml",
     "spark4.yaml",
     "glue-kms.yaml",
     "lakeformation.yaml",
     "timeout.yaml",
-    "waste.yaml",
     "bridge.yaml",
     "callgraph.yaml",
     "glue-cross-account.yaml",
@@ -93,6 +88,33 @@ class TestActionField:
         usados = {r["action"]["kind"] for r in load_catalog() if "action" in r}
         mortos = sorted(vocab - usados)
         assert mortos == [], f"kind no vocabulario sem regra que o use: {mortos}"
+
+    def test_eixo_esta_no_vocabulario(self):
+        """Sem vocabulario fechado de eixo, um lote escreve `runtime.wall_clock` e
+        outro escreve `wall_clock`, e a restricao do executor -- duas acoes que
+        compartilham eixo nao entram no mesmo run -- nunca dispara."""
+        vocab = set(_vocabulary()["axes"])
+        fora = [
+            (r["id"], eixo)
+            for r in load_catalog()
+            if "action" in r
+            for eixo in r["action"].get("moves") or []
+            if eixo not in vocab
+        ]
+        assert fora == [], f"eixo fora do vocabulario: {fora}"
+
+    def test_todo_eixo_do_vocabulario_tem_regra(self):
+        if PENDENTES:
+            return  # so vale com o catalogo inteiro preenchido
+        vocab = set(_vocabulary()["axes"])
+        usados = {
+            eixo
+            for r in load_catalog()
+            if "action" in r
+            for eixo in r["action"].get("moves") or []
+        }
+        mortos = sorted(vocab - usados)
+        assert mortos == [], f"eixo no vocabulario sem regra que o mova: {mortos}"
 
 
 class TestActionShape:
