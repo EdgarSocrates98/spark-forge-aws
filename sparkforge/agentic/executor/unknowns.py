@@ -30,16 +30,32 @@ parece decidir.
 
 ## Medido sobre o corpus (253 fixtures com `facts.json` e `findings.json`)
 
-90 `Unknown`, dos quais 87 de origem 1 e 3 de origem 2; 3 bloqueantes, 3
-experimentos.
+**O denominador decide o numero, e ele sai junto.** A entrada do executor e a
+UNIAO dos facts do case -- `input/facts.json` mais `expected/facts.json`, sem
+`fact.id` repetido (secao 12.9 do spec). Sobre ela, remedido em 2026-09-08:
+**61 `Unknown`, todos de origem 1, nenhum bloqueante, nenhum experimento.**
 
-O numero que interessa e o zero implicito: **nenhum dos 87 facts `*.unresolved`
-do corpus e citado por finding nenhum**, e por isso nenhum deles e bloqueante.
-E o mesmo achado que `conflict.py` registrou sobre as guardas `requires_absent`
--- kind de recusa diz *nao deu para ler*, e regra nao dispara sobre "nao li".
-Os tres experimentos vem todos da origem 2: `SF-UI-005` (duas vezes) e
-`SF-UI-001` em `fixtures/timeout/`, findings que citam `fact.id` que a entrega
-nao carrega.
+Sobre `expected/facts.json` sozinho saem 90, e os 29 de diferenca nao sao lacuna
+a mais:
+
+- **26 sao o mesmo `fact.id` contado duas vezes.** O corpus tem 92 ids repetidos
+  dentro de `expected/facts.json`, e o mesmo id e uma medida so.
+- **3 sao claims que PARECEM desancoradas e nao estao** -- `SF-UI-005` em
+  `timeout/heartbeat_perdido` e em `timeout/heartbeat_vence_wall_clock`,
+  `SF-UI-001` em `timeout/timeout_com_spill_e_skew`. As tres citam `fact.id` que
+  mora no `input/facts.json` da propria fixture: `f_c77ad7` e o id
+  content-addressed de `spark.executor.lost`. Errada estava a ENTRADA da medida,
+  nao o corpus e nao o executor -- e uma medida anterior deste modulo as
+  publicou como "claims desancoradas reais", o que era falso.
+
+**Origem 2 nao tem caso no corpus de hoje, e isso sai escrito.** O ramo tem
+teste sintetico e continua valendo; mecanismo sem caso e `unresolved` nomeado,
+nunca funcionalidade entregue.
+
+O zero que interessa e o mesmo de antes: **nenhum fact `*.unresolved` do corpus
+e citado por finding nenhum**, e por isso nenhum deles e bloqueante. E o mesmo
+achado que `conflict.py` registrou sobre as guardas `requires_absent` -- kind de
+recusa diz *nao deu para ler*, e regra nao dispara sobre "nao li".
 
 `test_no_corpus_nenhuma_recusa_e_citada_por_finding` trava essa medida. Se ela
 cair, o corpus ganhou o caso que hoje nao tem, e a remediacao e atualizar a nota

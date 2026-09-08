@@ -19,10 +19,10 @@
 `test_nenhum_campo_preve_ganho` varre TODOS os campos de string de todo
 `Unknown` e todo `Experiment` gerados sobre o corpus inteiro, procurando `%`,
 `econom` e `melhor`. Ela nao prova que o modulo nunca preveria ganho -- prova
-que, sobre as 264 fixtures que existem hoje, nenhuma previsao vazou por
-interpolacao de `attrs` do fact. Essa e a rota plausivel de vazamento: o texto
-que entra em `evidence_needed` e `resolution_method` vem do artefato, e nao
-deste modulo.
+que, sobre as 253 fixtures que hoje tem o par de arquivos, nenhuma previsao
+vazou por interpolacao de `attrs` do fact. Essa e a rota plausivel de
+vazamento: o texto que entra em `evidence_needed` e `resolution_method` vem do
+artefato, e nao deste modulo.
 
 ## Por que "bloqueante" nao e uma escolha estilistica
 
@@ -45,6 +45,7 @@ import pytest
 
 from sparkforge.agentic.executor.unknowns import experiments_from, unknowns_from
 from sparkforge.agentic.models import Experiment, Unknown, UnknownStatus
+from sparkforge.findings.models import Fact
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -64,10 +65,16 @@ def _finding(rule_id: str, evidence: list[str]) -> dict[str, Any]:
 
 
 def _fixtures_com_facts_e_findings() -> list[tuple[Path, list[dict], list[dict]]]:
-    """As fixtures que tem os dois arquivos, ja carregadas.
+    """As fixtures que tem os dois arquivos, com a UNIAO dos facts.
 
     Fixture com so um dos dois nao entra: `unknowns_from` cruza as duas listas, e
     medir sobre metade do par mediria outra coisa.
+
+    Os facts sao a uniao de `input/facts.json` e `expected/facts.json`, sem id
+    repetido, porque e esse o conjunto que `judge` recebeu para produzir aqueles
+    findings (secao 12.9 do spec). Medir sobre `expected/` sozinho fabricava
+    tres claims desancoradas que a execucao real nao produz -- e uma medida
+    anterior deste arquivo as publicou como reais.
     """
     corpus: list[tuple[Path, list[dict], list[dict]]] = []
     for pasta in sorted((RAIZ / "fixtures").glob("*/*/expected")):
@@ -77,11 +84,48 @@ def _fixtures_com_facts_e_findings() -> list[tuple[Path, list[dict], list[dict]]
         corpus.append(
             (
                 pasta,
-                _lista(json.loads(arquivo_facts.read_text(encoding="utf-8")), "facts"),
+                _uniao_de_facts(pasta.parent),
                 _lista(json.loads(arquivo_findings.read_text(encoding="utf-8")), "findings"),
             )
         )
     return corpus
+
+
+def _uniao_de_facts(caso: Path) -> list[dict]:
+    """`input/facts.json` mais `expected/facts.json`, sem `fact.id` repetido.
+
+    Os ids da entrada nao vem no artefato: eles sao computados por `Fact.id`,
+    content-addressed sobre kind, subject e measures. Escreve-los a mao aqui os
+    congelaria, e fixture e teste divergiriam no dia em que uma medida mudasse.
+    """
+    brutos: list[dict] = []
+    entrada = caso / "input" / "facts.json"
+    if entrada.exists():
+        for bruto in _lista(json.loads(entrada.read_text(encoding="utf-8")), "facts"):
+            if not isinstance(bruto, dict):
+                continue
+            fact = Fact(
+                kind=str(bruto.get("kind") or ""),
+                subject=bruto.get("subject") or {},
+                measures=bruto.get("measures") or {},
+                attrs=bruto.get("attrs") or {},
+                provenance=bruto.get("provenance") or {},
+            )
+            brutos.append({**bruto, "id": bruto.get("id") or fact.id})
+    esperados = caso / "expected" / "facts.json"
+    if esperados.exists():
+        brutos += _lista(json.loads(esperados.read_text(encoding="utf-8")), "facts")
+
+    vistos: set[str] = set()
+    uniao: list[dict] = []
+    for fact_bruto in brutos:
+        fact_id = str(fact_bruto.get("id") or "").strip()
+        if fact_id and fact_id in vistos:
+            continue
+        if fact_id:
+            vistos.add(fact_id)
+        uniao.append(fact_bruto)
+    return uniao
 
 
 def _lista(documento: Any, chave: str) -> list[dict]:
@@ -312,8 +356,9 @@ def test_no_corpus_nenhuma_recusa_e_citada_por_finding() -> None:
 
     E o mesmo achado que `conflict.py` registrou sobre as guardas
     `requires_absent`: kind de recusa diz *nao deu para ler*, e regra nao
-    dispara sobre "nao li". Consequencia -- os 87 `Unknown` de origem 1 que o
-    corpus produz sao todos NAO bloqueantes, e nenhum experimento sai deles.
+    dispara sobre "nao li". Consequencia -- os 61 `Unknown` de origem 1 que o
+    corpus produz sobre a uniao dos facts sao todos NAO bloqueantes, e nenhum
+    experimento sai deles.
 
     Se este teste cair, o corpus ganhou o caso que hoje nao tem. A remediacao e
     atualizar a nota, nunca afrouxar o criterio de `blocking`.
@@ -330,24 +375,35 @@ def test_no_corpus_nenhuma_recusa_e_citada_por_finding() -> None:
     )
 
 
-def test_o_corpus_tem_ancora_ausente_de_verdade() -> None:
-    """Origem 2 tem caso real, entao o ramo bloqueante nao e mecanismo vazio.
+def test_no_corpus_com_a_uniao_nenhuma_claim_fica_desancorada() -> None:
+    """A correcao da secao 12.9, travada -- e o que ela substitui.
 
-    Tres findings do corpus citam fact que a entrega nao carrega -- dois
-    `SF-UI-005` e um `SF-UI-001`, todos em `fixtures/timeout/`. Sao as tres
-    claims desancoradas que viram experimento.
+    Ate 2026-09-08 este arquivo media `unknowns_from` sobre `expected/facts.json`
+    sozinho e publicava tres "claims desancoradas reais": dois `SF-UI-005` e um
+    `SF-UI-001`, em `fixtures/timeout/`. **A afirmacao era falsa.** `f_c77ad7` e
+    o id content-addressed de `spark.executor.lost`, que mora no
+    `input/facts.json` daquelas fixtures; `expected/facts.json` guarda apenas o
+    que o extrator daquele dominio emite, enquanto `expected/findings.json` e o
+    julgamento sobre a UNIAO. Errada estava a entrada do teste.
+
+    Com a uniao, origem 2 nao tem caso nenhum no corpus de hoje. O ramo continua
+    coberto pelos testes sinteticos acima -- mecanismo sem caso e `unresolved`
+    nomeado, e o lugar de dize-lo e aqui, nao um numero inflado.
+
+    Se este teste cair, um finding passou a citar fact que nem a entrada nem os
+    derivados carregam, e ai a lacuna e real: a remediacao e olhar a fixture,
+    nunca voltar a medir sobre o subconjunto.
     """
     desancoradas = [
-        unknown
-        for _, facts, findings in _fixtures_com_facts_e_findings()
+        (pasta.parent.name, unknown.question)
+        for pasta, facts, findings in _fixtures_com_facts_e_findings()
         for unknown in unknowns_from(findings, facts)
         if unknown.question.startswith("finding ")
     ]
 
-    assert desancoradas
-    assert all(u.blocking for u in desancoradas)
-    assert all(len(u.evidence_needed) == 1 for u in desancoradas)
-    assert len(experiments_from(desancoradas)) == len(desancoradas)
+    assert not desancoradas, (
+        "finding citando fact que a uniao do case nao carrega: " f"{desancoradas[:3]}"
+    )
 
 
 def test_o_corpus_produz_unknown_de_verdade() -> None:
