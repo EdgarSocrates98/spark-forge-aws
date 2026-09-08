@@ -57,6 +57,16 @@
         "note": "P2 e nao P1: o defeito e custo, nao correcao -- o dado publicado esta certo, so foi pago duas vezes. Nenhum fact disponivel mede o tamanho do lineage recomputado."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.change_persistence",
+      "target": "dq.check.target",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "shuffle.spill_bytes"
+      ],
+      "depends_on": []
+    }
   }
 ]

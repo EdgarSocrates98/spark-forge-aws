@@ -63,7 +63,16 @@
         "note": "P2: o custo é real e proporcional ao número de checks, mas nenhum dado disponível mede o tamanho do lineage varrido."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "validation.merge_checks_into_single_pass",
+      "target": "dq.check",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-DQ-004",
@@ -129,6 +138,15 @@
         "note": "P2: o custo é real e proporcional ao número de checks, mas nenhum dado disponível mede o tamanho do lineage varrido."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "validation.merge_checks_into_single_pass",
+      "target": "dq.check",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": []
+    }
   }
 ]

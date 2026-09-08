@@ -160,6 +160,21 @@ rules:
       - "Isolar a etapa: rodar a contagem imediatamente antes do write nos dois lados. Se a divergência já existe ali, ela é da transformação; se não, é da escrita (modo, partição sobrescrita, commit parcial)."
       - Conferir o tipo de join e a lista de colunas de qualquer `dropDuplicates`/`distinct` que a mudança tocou — são as duas origens que movem contagem sem mover agregado nem schema.
       - "Confirmar que as duas execuções leram o mesmo recorte: mesma partição, mesmo intervalo, mesmo filtro. Divergência de recorte fabrica este achado sem que o código tenha mudado nada."
+    # `moves` vazio e DECLARACAO, nao lacuna: a acao isola em que etapa a
+    # divergencia nasce e nao muda nada no job analisado -- o que ela move e a
+    # qualidade da afirmacao, e qualidade de afirmacao nao e eixo. Mesmo
+    # precedente de SF-BENCH-001..004.
+    # `depends_on` CITADO LITERALMENTE: a `explanation` manda ler o resto do
+    # relatorio antes de acusar o codigo, e nomeia `SF-FVAL-005` -- plano parcial
+    # deixa a foto incompleta.
+    action:
+      kind: measurement.localize_divergence
+      target: funcval.comparison
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-FVAL-005
     risks:
       - "Aceitar a divergência porque 'são poucas linhas' é a decisão que este achado existe para impedir: a proporção não diz nada sobre a natureza da diferença, e duas linhas órfãs de um join quebrado escalam com o dado."
       - Reverter a mudança sem antes localizar a etapa devolve a contagem certa e apaga a evidência de qual transformação a movia — o mesmo defeito volta na próxima tentativa.
@@ -225,6 +240,22 @@ rules:
       - "Se a mudança de schema é intencional, ela não é efeito colateral de tuning: separá-la em outra entrega, com aviso ao consumidor, em vez de embarcá-la numa mudança de performance."
       - "Localizar a origem do tipo: `cast` explícito, inferência de schema na leitura, `mergeSchema`, evolução de schema Iceberg e mudança de versão de Glue trocam tipo sem que nenhuma linha de transformação mude."
       - "Levantar quem consome o alvo antes de aceitar coluna removida — `sparkforge analyze consumers` responde isso com artefato, e ausência de consumidor conhecido não é ausência de consumidor."
+    # A acao DOMINANTE e a do bullet 2 -- tirar a mudanca de schema desta entrega
+    # --, e ela e a unica PRESCRITIVA das quatro: o bullet 1 le o fact, o 3
+    # localiza a origem do tipo e o 4 levanta consumidor. As duas alternativas
+    # ficam nomeadas e fora do bloco: `measurement.localize_divergence` (bullet 3)
+    # e `measurement.inventory_consumers` (bullet 4). O `rollback` descreve o
+    # estado APLICADO -- "os tres conjuntos ficam vazios" --, e nao uma medida.
+    # `moves` vazio porque nao ha eixo de schema no vocabulario, e criar um para
+    # uma regra so seria eixo que nasce neste arquivo: `correctness.write_result`
+    # e sobre LINHAS, e coluna nao e linha.
+    action:
+      kind: schema.split_change_into_own_delivery
+      target: catalog.table_schema
+      direction: remove
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - "Aceitar coluna nova como inofensiva ignora o custo de leitura e o efeito em consumidor com `SELECT *` e schema fixo; aceitar coluna removida quebra o consumidor na leitura seguinte, e não nesta escrita — o incidente chega depois, sem ligação óbvia com a mudança."
       - Mudança de tipo que estreita a precisão (decimal com menos casas, `bigint` para `int`) trunca em silêncio, e o dado truncado não é recuperável a partir do alvo.
@@ -306,6 +337,20 @@ rules:
       - "Procurar normalização introduzida pela mudança sobre as colunas da chave — `trim`, `lower`/`upper`, `cast`, `coalesce`, remoção de acento. É a causa que duplica chave sem mexer em contagem, agregado nem schema."
       - "Se a contagem TAMBÉM divergiu (`SF-FVAL-001` no mesmo relatório), a história é outra: um join que passou a casar mais de uma linha do lado direito. Investigar a cardinalidade do lado direito antes da chave."
       - "Extrair os valores duplicados no lado depois e comparar com os valores originais no lado antes: a colisão nomeia a transformação que a causou melhor do que qualquer leitura de código."
+    # `funcval.plan.key` e nao `funcval.comparison`: a acao dominante refaz a
+    # DECLARACAO da chave, que vive no plano e nao na comparacao. Declarar a
+    # chave de negocio nao move eixo de custo nem de relogio -- ela torna a
+    # comparacao possivel --, e por isso `moves` vazio aqui e declaracao.
+    # `depends_on` CITADO LITERALMENTE no bullet 3: quando SF-FVAL-001 tambem
+    # acendeu, "investigar a cardinalidade do lado direito ANTES da chave".
+    action:
+      kind: validation.correct_declared_key
+      target: funcval.plan.key
+      direction: replace
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-FVAL-001
     risks:
       - "Tratar o achado como defeito de código sem conferir a declaração da chave corrige o que não estava quebrado — é o modo de falha próprio desta regra, e é por isso que a procedência declarada fica gravada no plano."
       - "Resolver a duplicata com `dropDuplicates` esconde a colisão em vez de desfazê-la: as linhas colididas não são iguais, e escolher uma delas em silêncio é perda de dado com cara de correção."
@@ -403,6 +448,20 @@ rules:
       - "Conferir a contagem no mesmo relatório: agregado e contagem divergindo juntos é uma causa só, e a contagem é o eixo mais barato de investigar."
       - "Com a contagem parada, procurar o que mudou o VALOR dentro das linhas: `cast`, mudança de precisão decimal, `round`, tratamento de nulo (`sum` ignora nulo, `+` propaga), e regra de negócio que a mudança tocou de passagem."
       - "Refazer a medição do agregado com `sum` sobre a coluna convertida para decimal nos dois lados, quando a coluna for de ponto flutuante e a divergência estiver perto do limiar: decimal remove a reassociação da conta e responde se a diferença é de aritmética ou de dado."
+    # Mesmo par (kind, target) de SF-FVAL-001, e a colisao e honesta: as duas
+    # isolam onde a divergencia nasce sobre a MESMA comparacao -- uma na etapa,
+    # outra na coluna --, e rodar as duas no mesmo run confunde o que se mede.
+    # `depends_on` tem o id citado literalmente na `explanation` ("ler junto com
+    # SF-FVAL-001"); a ORDEM e INFERIDA do bullet 2 ("a contagem e o eixo mais
+    # barato de investigar") e do bullet 3 ("com a contagem parada").
+    action:
+      kind: measurement.localize_divergence
+      target: funcval.comparison
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-FVAL-001
     risks:
       - "Baixar a tolerância para calar a dúvida transforma toda mudança de particionamento num achado, e o custo é a área inteira perder credibilidade — o falso positivo aqui recai justamente sobre as mudanças que a fase deve aprovar."
       - "Subir a tolerância para calar este achado é o inverso, e mais grave: ela é o único mecanismo que separa reassociação de erro de valor, e afrouxá-la sem evidência apaga essa separação em vez de resolvê-la."
@@ -481,6 +540,19 @@ rules:
       - "Rodar os checks que faltaram nos DOIS lados — um lado só não vira comparação e continua contando como cobertura faltante."
       - "Se um check não pode ser medido no ambiente de origem, dizer isso por escrito no resultado (`value: null` com `unavailable_reason`) em vez de omitir a chave: os dois estados são diferentes, e a omissão faz o motor não saber se houve tentativa."
       - "Conferir `undeclared_axes` na sentinela: eixo que o plano nunca pediu não é contado aqui, e pode ser justamente o que faltava — chave de negócio só entra no plano se alguém a declarar com `funcval plan --key`."
+    # `direction: add` e nao `investigate`: a acao ACRESCENTA aos dois resultados
+    # os checks que faltaram, e o `rollback` da regra ja diz que nao ha o que
+    # desfazer no sistema analisado. `target` e o RESULTADO que o operador
+    # produziu, e nao o plano: o bullet 4 toca o plano (`funcval plan --key`) e e
+    # a alternativa nomeada, nao a dominante. `moves` vazio -- cobertura de
+    # medicao nao e eixo do job.
+    action:
+      kind: validation.complete_check_coverage
+      target: funcval.result
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - "Fechar o relatório com este achado aberto entrega uma validação parcial com aparência de completa, e é o modo de falha que esta regra existe para tornar visível."
       - "Preencher os checks que faltam com zero ou com um valor plausível para calar o achado é pior que a lacuna: passa a existir um número que ninguém mediu, e ele não se distingue de um número medido."

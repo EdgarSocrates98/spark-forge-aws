@@ -21,8 +21,6 @@ from sparkforge.rules.loader import CatalogError, _validate_action, catalog_dir,
 PENDENTES = {
     "controlm.yaml",
     "env.yaml",
-    "funcval.yaml",
-    "data-quality.yaml",
     "glue-migration.yaml",
     "spark4.yaml",
     "glue-kms.yaml",

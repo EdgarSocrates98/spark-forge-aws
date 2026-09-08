@@ -53,7 +53,16 @@
         "note": "P1 e não P0: o defeito é a garantia inexistente, não um dado comprovadamente inválido — o motor não sabe se o check reprovaria. A ressalva sobre `assert` e `-O` está apurada, com URL e data, em knowledge/dq/validation-frameworks.md seção 3."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "validation.enforce_check_result",
+      "target": "dq.enforcement",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-DQ-003",
@@ -113,6 +122,16 @@
         "note": "P2 e nao P1: o defeito e custo, nao correcao -- o dado publicado esta certo, so foi pago duas vezes. Nenhum fact disponivel mede o tamanho do lineage recomputado."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.change_persistence",
+      "target": "dq.check.target",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "shuffle.spill_bytes"
+      ],
+      "depends_on": []
+    }
   }
 ]
