@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from sparkforge.findings.models import Finding
 from sparkforge.rules.loader import CatalogError, _validate_action, catalog_dir, load_catalog
 
 # Arquivos ainda sem `action`. Encolhe a cada lote; vazio ao fim da Fase 2.
@@ -128,3 +129,34 @@ class TestActionShape:
 
     def test_ausencia_de_action_passa(self):
         _validate_action("SF-X-001", {})
+
+
+class TestFindingCarregaAction:
+    def test_finding_tem_campo_action(self):
+        f = Finding(
+            rule_id="SF-WASTE-001",
+            title="t",
+            severity="P2",
+            confidence="medium",
+            status="confirmed",
+            subject={"job": "x"},
+            evidence=["f_abc123"],
+            action={
+                "kind": "capacity.investigate_sizing",
+                "target": "glue.number_of_workers",
+                "direction": "investigate",
+            },
+        )
+        assert f.to_dict()["action"]["direction"] == "investigate"
+
+    def test_action_ausente_e_dict_vazio(self):
+        f = Finding(
+            rule_id="SF-X-001",
+            title="t",
+            severity="P2",
+            confidence="medium",
+            status="confirmed",
+            subject={},
+            evidence=["f_abc123"],
+        )
+        assert f.to_dict()["action"] == {}
