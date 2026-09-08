@@ -53,6 +53,16 @@
         "origin": "field-heuristic",
         "note": "P0 pela mesma razão de SF-ENV-001: o defeito não invalida um achado, invalida a âncora de todo o eixo de infraestrutura do relatório. Severidade menor faria o operador ler os achados antes de resolver a ambiguidade."
       }
-    ]
+    ],
+    "action": {
+      "kind": "measurement.recollect_comparable_artifacts",
+      "target": "env.collected_artifacts",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version"
+      ],
+      "depends_on": []
+    }
   }
 ]

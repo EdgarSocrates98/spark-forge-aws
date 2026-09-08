@@ -859,6 +859,18 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     contagem, e nao no conjunto. A tool tem tambem um parametro `version`, que
     NAO e caminho e nao entra na conta -- ela e declaracao do operador, e o
     predicado reconhece nome de caminho, nao qualquer parametro.
+
+    `sparkforge_arbitrate` (executor agentico, 2026-09-08) e o caso em que a
+    escolha de nome MUDA a autorizacao, e por isso vale escrito. Ela recebe
+    findings e facts, como `sparkforge_judge`, e podia te-los batizado so
+    `findings` e `facts` -- inline, sem caminho nenhum. Nesse desenho ela cairia
+    no conjunto de EXCECAO, e a excecao seria falsa: ao contrario de
+    `release_describe` e `controlm_describe`, que so leem matriz do proprio
+    pacote, esta tool ESCREVE no disco do operador (`.sparkforge/blackboard/`
+    mais um ADR por decisao). Uma tool de mutacao local fora da verificacao de
+    confinamento e um buraco, nao uma simplificacao.
+    Ela declara os TRES: `repo` (a raiz onde grava), `findings_path` e
+    `facts_path`. Move a CONTAGEM de 63 para 64 e nao toca no conjunto.
     """
 
     SEM_CAMINHO = frozenset(
@@ -883,10 +895,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        # 63 desde `code_export` (2026-09-02): 61 com `code_path`, 62 com
-        # `code_shape`. As tres declaram `repo`, como as outras de Code
-        # Intelligence -- a cadeia de autorizacao as ve pelo mesmo caminho.
-        assert len(TOOLS) - len(sem_caminho) == 63
+        # 64 desde `arbitrate` (2026-09-08): 61 com `code_path`, 62 com
+        # `code_shape`, 63 com `code_export`. Todas declaram `repo` -- a cadeia
+        # de autorizacao as ve pelo mesmo caminho.
+        assert len(TOOLS) - len(sem_caminho) == 64
 
 
 class TestAImposicaoNoDespacho:

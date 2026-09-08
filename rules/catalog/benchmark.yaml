@@ -163,6 +163,13 @@ rules:
       - "Refazer as duas execuções sobre o mesmo recorte de dado: mesma partição, mesmo intervalo, mesmo filtro, mesma origem."
       - "Conferir se o lado depois não avançou de bookmark, de watermark ou de janela relativa a `now()` entre as duas coletas — é a causa mais comum, e ela não aparece no código que mudou."
       - "Se o volume não puder ser fixado, comparar medidas normalizadas por byte lido em vez de totais, e dizer isso no relatório: comparação normalizada é uma afirmação mais fraca, e apresentá-la como se fosse a mesma coisa é o defeito que esta regra acusa."
+    action:
+      kind: measurement.recollect_comparable_artifacts
+      target: bench.comparison
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Fixar o recorte pode esconder o efeito da mudança sobre volume variável, que às vezes é justamente o efeito procurado.
       - "Repetir a execução sobre o recorte original custa tempo de cluster, e em ambiente compartilhado pode não ser reprodutível: outra carga concorrente muda o resultado sem mudar o volume."
@@ -220,6 +227,15 @@ rules:
       - "Confirmar a duração de relógio das duas execuções antes de decidir qualquer coisa — esta medida não a contém, e reverter uma mudança que melhorou o relógio por causa dela seria o defeito que este texto existe para evitar."
       - Comparar `total_task_count` dos dois lados; se as tasks aumentaram na mesma ordem do tempo somado, o que mudou foi o particionamento e não o custo do trabalho.
       - "Se a piora concentra num stage de shuffle, seguir o caminho de skew e de tamanho de partição (`SF-UI-001`, `SF-UI-002`) sobre o event log do lado depois, que é onde há detalhe por task."
+    action:
+      kind: measurement.localize_divergence
+      target: bench.comparison
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-BENCH-001
+        - SF-BENCH-004
     risks:
       - "Reverter a mudança com base só nesta medida pode devolver um job que termina DEPOIS no relógio: as duas coisas não são a mesma, e a reversão precisa da confirmação de relógio."
       - "A mudança pode ter custado tempo de task de propósito, em troca de correção, de resiliência ou de custo de memória — o benchmark mede uma dimensão e a decisão tem mais de uma."
@@ -293,6 +309,15 @@ rules:
       - "Identificar nos `bench.stage_delta` em qual símbolo o spill ou o GC subiu, e conferir o que mudou ali — número de partições, broadcast, cache, largura de janela."
       - "Se o ganho veio de reduzir partições, medir a alternativa que preserva memória: manter o número de partições e atacar o custo por task, em vez de concentrar mais dado por task."
       - "Confirmar no event log do lado depois se há executor perdido ou task com falha de memória (`SF-UI-003`, `SF-UI-004`): spill em disco é o degrau anterior ao OOM, não um custo estável."
+    action:
+      kind: measurement.recollect_comparable_artifacts
+      target: bench.comparison
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-BENCH-001
+        - SF-BENCH-004
     risks:
       - Manter a mudança porque o número de tempo melhorou é aceitar um job que funciona no volume de hoje e falha no de amanhã, sem aviso entre os dois estados.
       - "Desfazer a mudança devolve o tempo anterior, que era pior: a decisão certa raramente é reverter, e sim obter o mesmo ganho sem a pressão de memória."
@@ -360,6 +385,13 @@ rules:
       - "Se os órfãos são renomeações conhecidas da própria mudança, dizer isso no relatório e usar os `bench.stage_delta` que casaram, em vez dos totais do run."
       - "Para medir uma refatoração ampla, comparar antes de renomear e depois de renomear em passos separados: uma medição por mudança de nome, outra por mudança de comportamento."
       - Confirmar que os dois lados são a mesma etapa do pipeline e não jobs diferentes — os artefatos de cada lado estão em `attrs.before_artifacts` e `attrs.after_artifacts` do mesmo fact.
+    action:
+      kind: measurement.narrow_claim_scope
+      target: bench.comparison
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Tomar decisão sobre os totais deste benchmark quando a taxa é alta é decidir sobre a soma de trabalhos diferentes, e o erro daí não tem sinal previsível.
       - Ignorar o achado por parecer burocrático é o modo de falha comum. Ele não acusa o código, acusa a validade da comparação — que é o insumo de todas as outras três.

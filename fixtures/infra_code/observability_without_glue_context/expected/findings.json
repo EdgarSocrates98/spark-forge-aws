@@ -46,6 +46,16 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.satisfy_property_precondition",
+      "target": "pyspark.glue_context_init",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
   }
 ]

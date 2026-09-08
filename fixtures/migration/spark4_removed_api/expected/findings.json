@@ -52,6 +52,16 @@
         "url": "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html",
         "retrieved": "2026-08-22"
       }
-    ]
+    ],
+    "action": {
+      "kind": "dependency.migrate_to_successor_api",
+      "target": "job.source.pandas_on_spark_api",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

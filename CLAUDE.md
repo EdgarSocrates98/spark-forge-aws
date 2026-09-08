@@ -30,6 +30,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
+| Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
 
 Regras que valem para todos eles:
 
@@ -105,7 +106,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**68 tools, 31 com `detail_level`.** Os niveis sao `summary`, `normal` e `full`. A
+**69 tools, 31 com `detail_level`.** Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
@@ -388,16 +389,37 @@ Designer), `decision` (Decision Engine + ADR automático), `memory` (Decision
 Memory cross-case), `budget` (token economics), `security` (threat model +
 guardrails), `autonomy` (L0-L5), `graph` (Agent Execution Graph).
 
-29. **A camada agêntica é BIBLIOTECA, não pipeline em execução.** Nenhum
-    extrator, regra, tool ou coordenador escreve `Claim`/`Evidence`/`Decision`:
-    num repositório de trabalho `blackboard summary` devolve zero em tudo, e
-    isso é o estado correto, não bug. Antes de dizer que o SparkForge "debate"
-    ou "arbitra" um caso, lembre que não existe executor de debate — existe o
-    protocolo, o budget e as entidades. Status por componente em
-    `docs/agentic-evolution-report.md`.
+`sparkforge/agentic/executor/` acrescenta **7 módulos** (2573 linhas com o
+`__init__.py`, 105 810 bytes, 163 testes): `authority` (mapa de autoridade de
+fonte e vigência de escopo), `claims` (finding julgado vira `Claim`, fact que o
+ancora vira `Evidence`), `conflict` (contradição lida do bloco `action`),
+`ordering` (ordem de aplicação por `depends_on` e por eixo de medida),
+`unknowns` (lacuna vira `Unknown`, e o que a mede vira `Experiment`), `plan`
+(`DebatePlan` quando a arbitragem não fecha) e `run` (os seis degraus num verbo
+só). Ele é o **produtor** que faltava — a lacuna que a auditoria de 2026-09-03
+declarava governar todas as outras.
+
+29. **A camada agêntica tem executor determinístico, e não tem executor de
+    debate.** `sparkforge arbitrate` roda depois de `judge` e produz
+    `Claim`/`Evidence`/`Contradiction`/`Unknown`/`Decision` no blackboard do
+    case — num case rodado, `blackboard summary` deixa de devolver zero.
+    Medido em 2026-09-08 sobre `fixtures/graph/import_sem_jar_no_iac` unida a
+    `fixtures/infra_code/fgac_com_jar_extra` (3 findings, 60 facts): antes,
+    zero em tudo; depois, **3 claims, 11 evidências, 1 contradição e 1
+    contradição não resolvida**. O que continua não existindo é o executor de
+    **debate**: quando a arbitragem não fecha, o verbo emite um `DebatePlan` e
+    para, com `debate.unresolved`. Nenhum `AgentRuntime` concreto mora neste
+    pacote, e nada aqui chama provider (regra 23). O executor é **L0**:
+    `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
+    obrigatório. Status por componente em `docs/agentic-evolution-report.md`.
 30. **Não há benchmark da camada agêntica, e por isso não há afirmação de
     ganho.** Comparar arquitetura nova com antiga exige os dois lados rodando o
-    mesmo caso; o lado novo não roda. Regra 28 vale aqui igual.
+    mesmo caso. A justificativa desta regra **encolheu em 2026-09-08 e a
+    conclusão não**: o executor determinístico passou a rodar, e o que continua
+    sem rodar é o **debate** — que é exatamente o lado que a comparação mediria.
+    Nenhuma medida de ganho de token, latência, custo ou qualidade foi publicada
+    por esta entrega, e nenhuma pode ser até que o outro lado exista. Regra 28
+    vale aqui igual.
 
 ### CLI commands agênticos
 
@@ -411,7 +433,17 @@ sparkforge decisions explain <id>  # explica decisao
 sparkforge budget show           # budget DECLARADO do case
 sparkforge budget show --template  # defaults do codigo, rotulados
 sparkforge autonomy show --level L3  # perfil de autonomia
+sparkforge arbitrate --findings <path> --facts <path> --repo .  # o unico que ESCREVE
 ```
+
+`arbitrate` é o único verbo agêntico que escreve, e por isso a tool MCP
+`sparkforge_arbitrate` é `LOCAL_MUTATION`. `--facts` é **repetível, e a
+repetição é o contrato**: o executor recebe a UNIÃO dos facts do case, o mesmo
+conjunto que `judge` recebeu para produzir aqueles findings (§12.9 do spec).
+Alimentá-lo com um subconjunto fabrica claim desancorada que a execução real não
+produz. Ela **não estima ganho**, **não publica score como confiança medida** e
+**não executa debate** — as três recusas estão na descrição da tool, e um teste
+varre o `outputSchema` inteiro por substring.
 
 `budget show` lê o bloco `budget:` do `case.yaml`. Sem o bloco, sai
 `limits.status = "unresolved"` nomeando a lacuna — o default do código só

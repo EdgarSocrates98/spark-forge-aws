@@ -1,0 +1,456 @@
+# Vocabulario fechado de `action.kind`. Derivado da leitura dos 112
+# `proposed_change`, nao inventado: ver `scripts/derive_action_kinds.py`.
+#
+# `direction: investigate` existe para a regra que propoe MEDIDA e nao mudanca.
+# Forcar SF-WASTE-001 a declarar `decrease` inventaria uma recomendacao que o
+# proprio `proposed_change` dela recusa por escrito.
+#
+# Criterio de separacao usado na leitura: dois `kind` sao diferentes quando as
+# acoes que descrevem tocam coisas diferentes ou vao em direcoes diferentes.
+# Onde as 112 so propuseram UMA direcao para uma alavanca, o nome carrega a
+# direcao (`reduce_workers`, `increase_limit`); onde propuseram as duas, o nome
+# e neutro (`change_persistence`) e a direcao mora no campo `direction` que cada
+# regra vai declarar.
+#
+# Nenhum `kind` promete resultado. Descricao que dissesse "reduz o custo" seria
+# previsao de ganho, e a regra 13 do CLAUDE.md a proibe.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE FOI APAGADO NO LOTE G, E POR QUE APAGAR E A CORRECAO CERTA
+#
+# Fechada a Fase 2 (112 de 112 regras com `action:`), os dois gates de
+# vocabulario morto de `tests/test_rules_action_field.py` acordaram e listaram
+# dez `kind` que nenhuma regra usa. A correcao e APAGAR, nunca forcar uma regra
+# a usa-los: um `kind` amarrado a uma regra que nao o propoe inventaria a
+# recomendacao que a regra recusa por escrito, que e exatamente o defeito que
+# o gate existe para impedir.
+#
+# Os dez sairam por dois motivos, e vale distinguir:
+#
+# NUNCA FOI A ACAO DOMINANTE DE NENHUMA REGRA
+#   capacity.reduce_workers        SF-WASTE-001 propoe MEDIR (`investigate`), e a
+#                                  regra 17 do CLAUDE.md proibe o numero.
+#   capacity.change_worker_type    SF-GLUE-005 propoe coletar baseline, nao trocar.
+#   timeout.increase_limit         SF-TIMEOUT-001 propoe INVESTIGAR o sintoma, e
+#                                  SF-TIMEOUT-002 restaura a relacao entre duas
+#                                  propriedades. Nenhuma manda subir limite.
+#   observability.make_failure_legible  SF-EMR-007 diagnostica o bootstrap.
+#   security.remediate_leaked_secret    as quatro regras de segredo propoem
+#   security.restrict_access_permissions  `security.move_secret_to_manager`.
+#
+# ERA ALTERNATIVA EXCLUIDA, PRE-CONDICAO OU BULLET SECUNDARIO
+#   storage.change_write_mode      MoR contra CoW aparece so como bullet secundario.
+#   maintenance.schedule_periodic_maintenance  periodicidade e atributo de
+#                                  agendamento, nao acao sobre o passivo.
+#   security.change_access_control_mechanism   e a alternativa EXCLUIDA de
+#                                  SF-LF-001 e SF-LF-002, e as duas registram isso
+#                                  no comentario do proprio `action:`.
+#   measurement.inventory_consumers  e pre-condicao (SF-ENV-002, SF-FVAL-002,
+#                                  SF-CTM-006), nunca dominante.
+#
+# Os comentarios de `env.yaml`, `funcval.yaml` e `lakeformation.yaml` que
+# nomeiam `measurement.inventory_consumers` e
+# `security.change_access_control_mechanism` continuam validos: eles registram
+# POR QUE aquela regra nao os usou, e e essa leitura que os matou.
+#
+# 76 -> 66 `kind`.
+schema_version: 1
+directions:
+  - increase
+  - decrease
+  - replace
+  - remove
+  - add
+  - investigate
+
+kinds:
+  # --- capacidade -----------------------------------------------------------
+  capacity.investigate_sizing:
+    axis: capacidade
+    description: Rodar o verbo de capacidade contra o SLA declarado, sem propor numero.
+  capacity.size_executor_explicitly:
+    axis: capacidade
+    description: Declarar memoria, cores e instancias do executor em vez de deixar o calculo derivado.
+  capacity.increase_memory_overhead:
+    axis: capacidade
+    description: Aumentar a memoria fora do heap do executor, sem mexer no heap.
+  capacity.change_purchasing_option:
+    axis: capacidade
+    description: Mudar em que capacidade um papel de no roda -- opcao de compra, ou node label que prende o driver.
+  capacity.change_idle_shutdown:
+    axis: capacidade
+    description: Ligar ou apertar a janela de ociosidade que desliga o cluster ou a application.
+  capacity.change_preinitialized_capacity:
+    axis: capacidade
+    description: Mudar ou remover a capacidade pre-inicializada declarada da application.
+
+  # --- provisionamento ------------------------------------------------------
+  provisioning.diagnose_bootstrap_failure:
+    axis: provisionamento
+    description: Ler os logs, as permissoes e os argumentos do bootstrap antes de reprovisionar.
+
+  # --- timeout --------------------------------------------------------------
+  timeout.investigate_symptom_first:
+    axis: timeout
+    description: Ler a categoria do timeout e os sintomas medidos ao lado antes de tocar em limite.
+  timeout.restore_interval_relation:
+    axis: timeout
+    description: Restaurar a folga entre duas propriedades de timeout que se referenciam.
+
+  # --- shuffle --------------------------------------------------------------
+  shuffle.reduce_bytes:
+    axis: shuffle
+    description: Reduzir os bytes que atravessam o shuffle por filtro, projecao ou pre-agregacao.
+  shuffle.change_partition_count:
+    axis: shuffle
+    description: Mudar o numero de particoes do shuffle ou da escrita, por configuracao ou por hint.
+
+  # --- skew -----------------------------------------------------------------
+  skew.classify_type:
+    axis: skew
+    description: Cruzar duracao e bytes de entrada por task para classificar o tipo de skew.
+  skew.apply_treatment:
+    axis: skew
+    description: Aplicar o tratamento de skew correspondente ao tipo classificado.
+
+  # --- join -----------------------------------------------------------------
+  join.restore_equi_condition:
+    axis: join
+    description: Recuperar ou derivar a condicao de igualdade que falta no join.
+  join.change_broadcast_decision:
+    axis: join
+    description: Remover ou rever o hint de broadcast e a estrategia de join que ele fixa.
+
+  # --- leitura --------------------------------------------------------------
+  scan.project_columns:
+    axis: leitura
+    description: Ler apenas as colunas usadas, em vez de projecao total.
+  scan.add_partition_filter:
+    axis: leitura
+    description: Acrescentar filtro sobre coluna de particao para restringir o escaneamento.
+  scan.push_filter_earlier:
+    axis: leitura
+    description: Mover filtro ou projecao para antes do join, do explode ou da UDF.
+
+  # --- codigo ---------------------------------------------------------------
+  code.replace_udf_with_native:
+    axis: codigo
+    description: Trocar UDF Python por funcao Spark SQL nativa, higher-order function ou UDF vetorizada.
+  code.replace_driver_collection:
+    axis: codigo
+    description: Trocar coleta para o driver por escrita distribuida, agregacao ou limite explicito.
+  code.restructure_loop:
+    axis: codigo
+    description: Tirar do laco ou da recursao o trabalho Spark que se repete, ou uni-lo numa acao so.
+  code.change_persistence:
+    axis: codigo
+    description: Persistir o DataFrame reusado, ou remover o cache sem reuso e liberar com unpersist.
+  code.rewrite_expression:
+    axis: codigo
+    description: Reescrever a expressao preservando a semantica -- select unico, chave explicita, cast guardado.
+  code.make_write_idempotent:
+    axis: codigo
+    description: Tornar a escrita idempotente por merge com chave, overwrite de particao ou controle de execucao.
+
+  # --- configuracao ---------------------------------------------------------
+  config.remove_property:
+    axis: configuracao
+    description: Remover a propriedade que nao deveria estar declarada, ou a declaracao que conflita com outra.
+  config.narrow_property_scope:
+    axis: configuracao
+    description: Mover a propriedade do escopo de cluster para o job ou para a escrita que a exige.
+  config.replace_property_key:
+    axis: configuracao
+    description: Trocar a chave pelo nome ou equivalente que o runtime alvo reconhece, preservando o valor.
+  config.align_value_to_supported_range:
+    axis: configuracao
+    description: Levar o valor da propriedade para a faixa que a fonte publica.
+  config.satisfy_property_precondition:
+    axis: configuracao
+    description: Cumprir a pre-condicao que a propriedade ou a API exige para ter efeito.
+  config.verify_effective_value:
+    axis: configuracao
+    description: Confirmar o valor efetivo e a procedencia da propriedade antes de mudar qualquer coisa.
+
+  # --- armazenamento --------------------------------------------------------
+  storage.change_partition_scheme:
+    axis: armazenamento
+    description: Mudar como a particao da tabela e definida ou resolvida -- coluna, cardinalidade, bucket, projection.
+  storage.change_storage_format:
+    axis: armazenamento
+    description: Trocar o formato de arquivo, o formato de tabela ou a versao de formato da tabela.
+  storage.set_write_layout_property:
+    axis: armazenamento
+    description: Definir propriedade de escrita da tabela -- distribution mode, tamanho-alvo de arquivo, sort order, retencao de metadata.
+
+  # --- manutencao -----------------------------------------------------------
+  maintenance.rewrite_data_files:
+    axis: manutencao
+    description: Reescrever os data files do passivo, por binpack ou por sort/zorder.
+  maintenance.compact_delete_files:
+    axis: manutencao
+    description: Compactar os delete files da tabela merge-on-read.
+  maintenance.expire_snapshots:
+    axis: manutencao
+    description: Expirar snapshots e metadata files acumulados, com retencao acordada.
+
+  # --- seguranca ------------------------------------------------------------
+  security.move_secret_to_manager:
+    axis: seguranca
+    description: Tirar o literal da definicao e referenciar o segredo pelo mecanismo que o servico sustenta.
+  security.verify_access_chain:
+    axis: seguranca
+    description: Confirmar cada elo da cadeia de concessao entre contas antes de ler qualquer achado.
+  security.enable_encryption_at_rest:
+    axis: seguranca
+    description: Habilitar a encriptacao em repouso na camada que a configuracao atual nao cobre.
+
+  # --- rede -----------------------------------------------------------------
+  network.provide_service_route:
+    axis: rede
+    description: Prover a rota da subnet ate o servico -- endpoint de VPC ou NAT gateway.
+  network.fix_security_group_rule:
+    axis: rede
+    description: Corrigir a regra do security group que a conexao exige.
+
+  # --- observabilidade ------------------------------------------------------
+  observability.enable_telemetry:
+    axis: observabilidade
+    description: Ligar o destino de log ou a metrica de runtime que a definicao nao declara.
+  observability.enable_application_ui:
+    axis: observabilidade
+    description: Ligar o event log ou o armazenamento que faz a UI de aplicacao existir.
+
+  # --- versao ---------------------------------------------------------------
+  version.upgrade_runtime:
+    axis: versao
+    description: Levar o job para a versao de runtime, engine ou plataforma que sustenta a capacidade pedida.
+  version.align_declared_runtime:
+    axis: versao
+    description: Alinhar as fontes que declaram o runtime ao valor efetivo observado.
+  version.run_migration_assessment:
+    axis: versao
+    description: Rodar a avaliacao de migracao sobre o par de versoes antes de tratar a mudanca como ajuste.
+
+  # --- dependencia ----------------------------------------------------------
+  dependency.align_version_with_runtime:
+    axis: dependencia
+    description: Levar a dependencia ao build ou ao piso de versao que o runtime alvo exige.
+  dependency.declare_in_iac:
+    axis: dependencia
+    description: Declarar a dependencia no IaC, apontando para o caminho versionado do artefato.
+  dependency.migrate_to_successor_api:
+    axis: dependencia
+    description: Trocar a API removida pelo substituto declarado, conferindo a assinatura.
+  dependency.remove_library:
+    axis: dependencia
+    description: Remover a biblioteca, reescrevendo nativamente o que ela fazia.
+
+  # --- schema ---------------------------------------------------------------
+  schema.align_types:
+    axis: schema
+    description: Alinhar o tipo do literal ao da coluna, ou corrigir o tipo na definicao da tabela.
+  schema.split_change_into_own_delivery:
+    axis: schema
+    description: Separar a mudanca de schema em outra entrega, com aviso ao consumidor.
+
+  # --- validacao ------------------------------------------------------------
+  validation.move_before_write:
+    axis: validacao
+    description: Mover a validacao para antes da escrita, ou escrever em staging e promover depois.
+  validation.enforce_check_result:
+    axis: validacao
+    description: Ler o resultado do check e abortar o job quando ele reprovar, com excecao explicita.
+  validation.merge_checks_into_single_pass:
+    axis: validacao
+    description: Reunir os checks numa unica agregacao sobre o dado.
+  validation.correct_declared_key:
+    axis: validacao
+    description: Refazer o plano com a chave de negocio certa quando a chave declarada nao e a chave.
+  validation.complete_check_coverage:
+    axis: validacao
+    description: Medir nos dois lados os checks que faltaram, ou declarar por escrito por que nao ha valor.
+
+  # --- medicao --------------------------------------------------------------
+  measurement.collect_baseline:
+    axis: medicao
+    description: Coletar a medida ou o artefato que falta antes de mudar ou de afirmar.
+  measurement.recollect_comparable_artifacts:
+    axis: medicao
+    description: Refazer a coleta ou a execucao ate que os dois lados sejam comparaveis.
+  measurement.localize_divergence:
+    axis: medicao
+    description: Isolar a etapa, o stage ou a coluna em que a divergencia nasce, antes de corrigir.
+  measurement.narrow_claim_scope:
+    axis: medicao
+    description: Declarar a afirmacao mais fraca que a medida sustenta, em vez de apresentar o total.
+
+  # --- orquestracao ---------------------------------------------------------
+  orchestration.replace_unsupported_capability:
+    axis: orquestracao
+    description: Trocar a capacidade que a versao do orquestrador nao tem pela alternativa que ela publica.
+  orchestration.fix_schedule_declaration:
+    axis: orquestracao
+    description: Corrigir a declaracao de agendamento -- anular os eixos concorrentes, ou trocar enumeracao por calendario.
+  orchestration.change_job_definition:
+    axis: orquestracao
+    description: Mudar a forma da definicao do job ou do folder -- tipo, estrutura, expressao de eventos, uso de template.
+  orchestration.restrict_run_policy:
+    axis: orquestracao
+    description: Restringir a politica de execucao do job -- concorrencia, retries.
+  orchestration.split_into_separate_job:
+    axis: orquestracao
+    description: Mover a etapa para um job separado, fora do caminho critico.
+
+# Vocabulario fechado de `action.moves`. Sem ele cada lote escreveria o eixo por
+# conta propria -- `runtime.wall_clock` num, `wall_clock` noutro -- e a restricao
+# que o executor precisa (duas acoes que compartilham eixo nao entram no mesmo
+# run) nunca dispararia, sem nada acusar.
+#
+# O eixo e O QUE SE MEDE, nao o que se espera que aconteca. `cost.dpu_seconds` e
+# eixo; `cost.savings` nao e -- economia e contrafactual, e a regra 13 do
+# CLAUDE.md a proibe. Nenhuma `description` promete resultado.
+#
+# Acrescentado no lote A (glue-infra, emr-infra, emr-serverless, emr-eks,
+# waste). Os lotes seguintes acrescentam o que faltar.
+#
+# `nature` foi acrescentado depois que `correctness.write_result` -- presente
+# em 33 das 112 regras -- se provou eixo-guarda-chuva: sendo tratado como
+# grandeza medida, ele inflava o maior grupo de restricao de sequenciamento
+# para 33 regras. Na mesma tarefa, filtrar contradicao direta por `nature:
+# measure` parecia matar tambem o par falso SF-PLAN-003 x SF-PY-009 (mesmo
+# `target: pyspark.join`, mesmo eixo, coisas diferentes) -- mas o defeito
+# daquele par nunca foi o eixo: era `target: pyspark.join` grosso demais para
+# duas regras que tocam partes distintas do mesmo join (a condicao de
+# igualdade e o hint de broadcast). Filtrar por eixo escondia o par falso e,
+# junto, um par real (SF-GRAPH-005 x SF-LF-001), porque o unico eixo que os
+# dois compartilham -- `dependency.delivered_artifacts` -- e `nature: risk`.
+# Refinar os `target` (`pyspark.join.condition`, `pyspark.join.hint`) corrigiu
+# a causa; a contradicao direta voltou a ser so `target` + direcao oposta, sem
+# filtro de eixo. `nature` continua certo -- so que so para a restricao de
+# sequenciamento abaixo, que precisa mesmo de grandeza comparavel.
+#
+# `measure` = grandeza medida por algum fact deste repositorio, comparavel
+# antes/depois (entra no campo `measures` de um `Fact`, nunca em `kind` ou
+# `attrs` sozinho). `risk` = a acao pode alterar o que o job entrega ou expoe
+# -- resultado, classpath, segredo, versao, janela de agendamento -- sem que
+# exista uma grandeza numerica comparavel para atribuir o efeito a ela. Todo
+# eixo cai numa das duas: nao ha terceira categoria.
+axes:
+  cost.dpu_seconds:
+    nature: measure
+    description: DPU-segundos medidos do run.
+  cost.provisioned_capacity_time:
+    nature: measure
+    description: Tempo em que a capacidade fica provisionada e faturavel, com ou sem trabalho rodando.
+  runtime.wall_clock:
+    nature: measure
+    description: Duracao de relogio do job.
+  capacity.worker_count:
+    nature: measure
+    description: Numero de workers ou nos que a definicao declara.
+  capacity.executor_footprint:
+    nature: measure
+    description: Memoria, cores e numero de executores efetivos.
+  shuffle.partition_count:
+    nature: measure
+    description: Numero de particoes do shuffle e o paralelismo default derivado dele.
+  correctness.write_result:
+    # A UNICA certeza de partida deste lote: linhas na saida nao sao grandeza
+    # que se compare por subtracao entre duas acoes -- sao o resultado em si.
+    # Ver o comentario acima do bloco `axes` para o defeito que isso corrigiu.
+    nature: risk
+    description: As linhas que a escrita deixa no destino.
+  availability.interruption_exposure:
+    # `emr.instance_group.market` e `emr.instance_fleet` guardam SPOT/ON_DEMAND
+    # como `attrs` categorico (`market`, `has_spot_capacity`), nunca como
+    # `measures`. Trocar a opcao de compra muda QUAL capacidade o papel de no
+    # ocupa, nao produz um numero que se compare antes/depois.
+    nature: risk
+    description: Quais papeis de no rodam em capacidade que o provedor pode reclamar.
+  observability.diagnostic_artifacts:
+    # `_check_observability` (sparkforge/facts/terraform.py) devolve
+    # confirmed/unknown/absent como `kind` -- ternario categorico, no mesmo
+    # molde de `_check_graphframes_jar`. Existir ou nao existir o artefato de
+    # diagnostico nao e grandeza medida.
+    nature: risk
+    description: Os artefatos de execucao que sobrevivem ao job -- event log, log de container, UI de aplicacao.
+  security.secret_exposure:
+    # Exposicao de segredo e estado binario -- o literal aparece ou nao aparece
+    # numa superficie --, detectado por heuristica (`_is_secret_reference` e
+    # pares), nunca contado como grandeza.
+    nature: risk
+    description: As superficies de API e de IaC que devolvem o literal do segredo.
+
+  # Acrescentado no lote B (spark-ui, spark-plan, timeout, benchmark).
+  skew.task_duration_ratio:
+    nature: measure
+    description: Razao entre a duracao da task mais lenta e a mediana do stage.
+  shuffle.spill_bytes:
+    nature: measure
+    description: Bytes derramados em disco e em memoria pelos stages do shuffle.
+  availability.executor_loss:
+    nature: measure
+    description: Executores removidos durante o run, medidos no event log.
+
+  # Acrescentado no lote C (pyspark, graph, callgraph, bridge). Os dois eixos
+  # sao da area de grafo: nenhuma regra dos lotes A e B trocava de runtime nem
+  # mexia no que o IaC entrega ao classpath.
+  runtime.engine_version:
+    # Versao e rotulo ordinal (2, 3, ...), nao grandeza que se subtrai. O uso
+    # em `measures.engine_version < 3` (athena.yaml) e um GATE de elegibilidade
+    # da regra, nao uma comparacao de efeito entre duas acoes -- e a propria
+    # SF-ATH-004 move este eixo JUNTO com `correctness.write_result`,
+    # nomeando por escrito que a troca de engine pode alterar o resultado.
+    nature: risk
+    description: Versao de runtime, engine e plataforma que a execucao ou a definicao declara.
+  dependency.delivered_artifacts:
+    # `_check_graphframes_jar` devolve declared/unknown/absent como `kind`
+    # ternario -- nunca uma contagem em `measures`. E o mesmo padrao de
+    # `security.secret_exposure` e `observability.diagnostic_artifacts`:
+    # presenca de artefato no classpath e estado, nao grandeza. Ver o
+    # comentario de cabecalho sobre o que isso faz com a contradicao direta
+    # entre SF-GRAPH-005 e SF-LF-001.
+    nature: risk
+    description: Os artefatos que a definicao do job entrega ao classpath -- jars e arquivos declarados no IaC.
+
+  # Acrescentado no lote D (iceberg, parquet, athena). Sao os eixos de
+  # ARMAZENAMENTO e de LEITURA que os lotes A, B e C nao tinham: nenhuma regra
+  # anterior reescrevia o passivo de uma tabela, nem media byte escaneado por
+  # uma query. Cada um sai nomeado na `validation` da regra que o move -- nao
+  # ha eixo aqui que so exista neste arquivo.
+  storage.file_layout:
+    nature: measure
+    description: Contagem e tamanho dos data files que a tabela ou o prefixo tem.
+  storage.delete_file_count:
+    nature: measure
+    description: Delete files da tabela merge-on-read, contados contra os data files.
+  storage.snapshot_count:
+    nature: measure
+    description: Snapshots e metadata files acumulados na tabela.
+  scan.bytes_read:
+    nature: measure
+    description: Bytes que a leitura escaneia, medidos no plano fisico ou nas estatisticas de execucao da query.
+  scan.task_count:
+    nature: measure
+    description: Numero de tasks do stage de leitura, limitado pela splitabilidade dos arquivos de entrada.
+  metadata.partition_resolution_time:
+    nature: measure
+    description: Tempo gasto resolvendo as particoes da tabela antes do scan.
+
+  # Acrescentado no lote G (controlm). E o eixo de AGENDAMENTO que nenhuma area
+  # anterior movia: as regras de A a F mudam o QUE o job faz ou com que recurso,
+  # e nenhuma delas muda QUANDO ele e ordenado. `SF-CTM-002` e `SF-CTM-003` sao
+  # as duas que o movem, podem casar no MESMO `ctm.schedule`, e as duas o nomeiam
+  # como EIXO DE RESULTADO na propria `validation` -- que e o criterio dos lotes
+  # anteriores para um eixo existir.
+  #
+  # Ele NAO e `correctness.write_result`, e `SF-CTM-002` separa os dois em voz
+  # alta: "mexer em `When` e mudanca de QUANDO, e nao pode mover o QUE".
+  schedule.ordered_dates:
+    # `_specific_dates` (sparkforge/facts/controlm_jobs.py) escreve
+    # `specific_dates_count` em `measures`, com o comentario do proprio
+    # extrator: "Contar aqui e medir; decidir se 401 e demais e limiar, e
+    # limiar mora na regra." E grandeza, com fact que a produz.
+    nature: measure
+    description: Conjunto de datas em que o orquestrador ordena o job.

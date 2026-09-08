@@ -52,6 +52,16 @@
         "url": "https://iceberg.apache.org/docs/latest/spark-procedures/",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "maintenance.expire_snapshots",
+      "target": "iceberg.table.snapshots",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "storage.snapshot_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

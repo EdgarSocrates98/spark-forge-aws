@@ -68,6 +68,16 @@
         "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm",
         "retrieved": "2026-09-01"
       }
-    ]
+    ],
+    "action": {
+      "kind": "orchestration.replace_unsupported_capability",
+      "target": "controlm.job.capability",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

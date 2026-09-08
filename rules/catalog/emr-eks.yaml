@@ -279,6 +279,14 @@ rules:
       - "NÃO usar a anotação EMR.secret@{{NomeDoSegredo}}: ela está documentada para EMR on EC2 e para EMR Serverless, e a página que enumera as integrações com o Secrets Manager não tem seção para EMR on EKS. Se for testá-la mesmo assim, trate como não suportada até provar num job run real que o valor foi resolvido."
       - Rotacionar o segredo exposto. Ele deve ser considerado comprometido, porque não há como saber quem chamou DescribeJobRun ou ListJobRuns desde que a submissão aconteceu — e a submissão já ocorreu, diferente de uma definição que ainda pode ser corrigida antes do primeiro uso.
       - Revisar o código, o IaC e o orquestrador que MONTAM o start-job-run, onde o literal costuma persistir depois de removido de um lugar só, e revisar quem tem emr-containers:DescribeJobRun e ListJobRuns na conta.
+    action:
+      kind: security.move_secret_to_manager
+      target: emrc.configuration_overrides
+      direction: replace
+      requires_absent: []
+      moves:
+        - security.secret_exposure
+      depends_on: []
     risks:
       - Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o próximo job.
       - "Montar Secret do Kubernetes muda o pod template, e o pod template é a superfície que este extrator declaradamente NÃO lê (emrc.pod_template.unresolved). Depois da correção, a ausência do literal aqui deixa de provar que ele não está em lugar nenhum — ela passa a provar só que não está nesta superfície."
@@ -387,6 +395,15 @@ rules:
       - "Declarar persistentAppUI: ENABLED junto — é ele que faz o event log existir, e os três exemplos de start-job-run do guia o escrevem explicitamente. Destino de log sem event log dá log de container e nenhuma Spark UI."
       - "Antes de mudar, perguntar por que não havia destino: dado de aplicação no log de container é a razão legítima mais comum, e a resposta para ela é política de acesso no prefixo e no log group, não ausência de log."
       - "Corrigir onde a submissão é montada, não neste job run: o artefato é uma execução que já aconteceu, e não há update-job-run."
+    action:
+      kind: observability.enable_telemetry
+      target: emrc.monitoring_configuration
+      direction: add
+      requires_absent:
+        - emrc.pod_template.unresolved
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on: []
     risks:
       - Log de container pode conter dado de aplicação; o destino precisa da mesma política de acesso do dado que o job processa.
       - "Logs consomem armazenamento continuamente; sem política de ciclo de vida no prefixo S3 ou sem retenção no log group, o custo cresce sem teto — e o EMR on EKS não publica retenção para nenhum destino, então nada expira sozinho."
@@ -488,6 +505,15 @@ rules:
       - "Se a retenção do event log pela AWS é o que se quer evitar, declarar encryptionKeyArn em managedLogs para que o log guardado use chave própria — a fonte declara esse campo exatamente para isso — e registrar a decisão junto com o custo de diagnóstico, em vez de desligar a UI."
       - "Se a residência do dado proíbe qualquer retenção pela AWS, manter DISABLED é a decisão certa, e nesse caso configurar spark.eventLog.dir para um prefixo próprio no pod template passa a ser o caminho — com a ressalva de que o pod template é a superfície que este extrator não lê, então nenhum achado desta área vai confirmar que funcionou."
       - "Verificar que existe destino de log declarado de qualquer forma: sem persistentAppUI e sem s3/CloudWatch, o job run cai também em SF-EMRK-002, que é outra ordem de problema."
+    action:
+      kind: observability.enable_application_ui
+      target: emrc.monitoring.persistent_app_ui
+      direction: investigate
+      requires_absent: []
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on:
+        - SF-EMRK-002
     risks:
       - "Ligar persistentAppUI autoriza a AWS a guardar o event log, e nenhuma retenção é publicada para EMR on EKS — nem para esse armazenamento, nem para os outros destinos. Em ambiente com requisito de residência ou de chave própria, isso precisa ser conferido antes, não depois."
       - "Event log de job longo cresce, e é para isso que existe rotação (containerLogRotationConfiguration). Ligar a UI sem rotação num job de horas troca um problema de diagnóstico por um de tamanho de arquivo."
@@ -635,6 +661,14 @@ rules:
       - "Se nenhum estiver, remover --conf spark.dynamicAllocation.shuffleTracking.enabled=false da linha de submit e deixar o default do Spark 3.x valer, que é true na versão fixada. Remover é preferível a escrever true: o default é o que a documentação sustenta, e uma propriedade escrita à mão com o valor do próprio default é o sintoma de procedência que a regra 19 do CLAUDE.md manda caçar."
       - "Se a alocação dinâmica não for requisito deste job — carga de tamanho estável, executores fixos —, remover --conf spark.dynamicAllocation.enabled=true é a mudança menor e resolve a relação inteira."
       - "Conferir também se as duas propriedades não estão sendo escritas em applicationConfiguration ao mesmo tempo, com valores diferentes: a linha de submit vence, e um override que discorda dela é ruído que a próxima pessoa vai ler como verdade."
+    action:
+      kind: config.remove_property
+      target: spark.dynamicAllocation.shuffleTracking.enabled
+      direction: remove
+      requires_absent: []
+      moves:
+        - capacity.executor_footprint
+      depends_on: []
     risks:
       - "Ligar shuffle tracking muda quando o executor é liberado: a fonte diz que a opção 'will try to keep alive executors that are storing shuffle data for active jobs'. Executores que hoje somem passam a ficar de pé mais tempo, e isso aparece na fatura antes de aparecer no tempo de execução."
       - "Remover a alocação dinâmica fixa o paralelismo no que estiver declarado em spark.executor.instances. Num job cuja carga varia entre execuções, isso troca um problema por outro — e o outro só aparece no dia do pico."

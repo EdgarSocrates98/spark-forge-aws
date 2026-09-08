@@ -47,6 +47,16 @@
         "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "schema.align_types",
+      "target": "sql.query.predicate",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": []
+    }
   }
 ]

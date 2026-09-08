@@ -52,7 +52,17 @@
         "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "storage.change_partition_scheme",
+      "target": "catalog.table_property.projection_enabled",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "metadata.partition_resolution_time"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-ATH-003",
@@ -107,6 +117,16 @@
         "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "storage.change_partition_scheme",
+      "target": "catalog.table_property.projection_enabled",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "metadata.partition_resolution_time"
+      ],
+      "depends_on": []
+    }
   }
 ]

@@ -64,7 +64,19 @@
         "url": "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "maintenance.rewrite_data_files",
+      "target": "iceberg.table.data_files",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.file_layout"
+      ],
+      "depends_on": [
+        "SF-ICE-005"
+      ]
+    }
   },
   {
     "rule_id": "SF-ICE-005",
@@ -115,6 +127,16 @@
         "retrieved": "2026-07-29",
         "note": "comportamento exato por versão não reconfirmado nesta coleta"
       }
-    ]
+    ],
+    "action": {
+      "kind": "storage.set_write_layout_property",
+      "target": "iceberg.table_property.write.distribution-mode",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.file_layout"
+      ],
+      "depends_on": []
+    }
   }
 ]

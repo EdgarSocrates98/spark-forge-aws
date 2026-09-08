@@ -280,6 +280,14 @@ rules:
       - "Chamar `spark.sparkContext.setCheckpointDir(\"s3://.../checkpoints/\")` uma vez, na construção da sessão, antes de qualquer chamada de algoritmo."
       - "Se o diretório já vem da submissão ou do IaC (`spark.checkpoint.dir`), registrar isso no código ou no README do job — o achado é sobre o que o arquivo declara."
       - "Se o grafo é pequeno e o custo de I/O do checkpoint não se justifica, declarar a saída explicitamente: `connectedComponents(algorithm=\"graphx\")` ou `use_local_checkpoints=True` na linhagem `io.graphframes`."
+    action:
+      kind: config.satisfy_property_precondition
+      target: spark.checkpoint.dir
+      direction: add
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+      depends_on: []
     risks:
       - Diretório de checkpoint em S3 acumula dados entre execuções e não é limpo pelo Spark; sem política de expiração o custo de armazenamento cresce em silêncio.
       - "`localCheckpoints` dispensa o diretório mas grava no disco do executor: a documentação declara que são mais rápidos e MENOS confiáveis, e a perda de um executor força recomputação."
@@ -357,6 +365,15 @@ rules:
       - "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, ou EMR 6.12.0+ / 7.x — onde há artefato publicado e mantido."
       - "Se o runtime não pode mudar, tratar a dependência como build próprio: compilar GraphFrames contra o Spark do runtime, publicar o jar num repositório interno e declará-lo no IaC, assumindo a manutenção."
       - "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência."
+    action:
+      kind: version.upgrade_runtime
+      target: runtime.version
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.engine_version
+        - correctness.write_result
+      depends_on: []
     risks:
       - Trocar de runtime muda a versão de Spark, de Python e de Iceberg de uma vez, e cada uma delas pode quebrar outra parte do job.
       - Jar construído localmente contra um minor diferente pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança.
@@ -436,6 +453,15 @@ rules:
     proposed_change:
       - "Persistir as arestas antes de construir o `GraphFrame`, com o nível de storage adequado ao tamanho (`MEMORY_AND_DISK` para grafos que não cabem em memória), e liberar com `unpersist` depois da última action."
       - "Se as arestas já vêm de uma tabela pequena e o algoritmo faz uma passada só (`bfs`, `find`, `triangleCount`), medir antes: persistir aqui pode custar mais do que economiza."
+    action:
+      kind: code.change_persistence
+      target: graph.construction
+      direction: add
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - shuffle.spill_bytes
+      depends_on: []
     risks:
       - Persistir arestas de um grafo grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.
       - "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
@@ -502,6 +528,15 @@ rules:
       - "Unir os grafos das iterações num só, com uma coluna que identifique a partição lógica (a data, o cliente, a região), e rodar o algoritmo uma vez — quando os grafos são disjuntos, o resultado é idêntico."
       - "Se os grafos precisam mesmo ser separados, tirar do laço tudo que não depende da iteração: a criação da sessão, o `setCheckpointDir`, a leitura de dimensões estáveis."
       - "Se o laço fica, medir uma iteração isolada na Spark UI antes de multiplicar — o custo total é o custo de uma vezes N, e é isso que decide se vale consolidar."
+    action:
+      kind: code.restructure_loop
+      target: graph.algorithm
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
     risks:
       - Unir grafos disjuntos num só aumenta o volume de um único job e pode levar a shuffle e a pressão de memória que as execuções separadas não tinham.
       - "Se os grafos NÃO são disjuntos — há vértices com o mesmo id em iterações diferentes —, unir muda o resultado: componentes que eram separados passam a ser um só."
@@ -603,6 +638,15 @@ rules:
       - "Declarar o jar de GraphFrames em `--extra-jars` no `default_arguments` do job, apontando para um caminho S3 versionado do artefato da linhagem compatível com o Spark do runtime."
       - "Se a biblioteca já chega por outro caminho — jar renomeado, fat jar interno, `--conf spark.jars.packages` montado fora do IaC —, trazer essa declaração para o Terraform, para que a definição versionada diga a verdade sobre a dependência do job."
       - "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência — aí não há jar a declarar."
+    action:
+      kind: dependency.declare_in_iac
+      target: glue.default_arguments
+      direction: add
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on:
+        - SF-GRAPH-002
     risks:
       - "Apontar `--extra-jars` para um jar construído contra outro minor de Spark pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança."
       - "Acrescentar jar ao classpath do job muda o classpath inteiro: uma dependência transitiva do jar pode entrar em conflito com uma que o runtime já provê."
@@ -707,6 +751,14 @@ rules:
       - "Levar `checkpointInterval` para `1` ou `2` — `2` é o default e é o teto recomendado pela documentação."
       - "Se o intervalo alto existia para economizar I/O de checkpoint, medir antes de mudar: o custo que ele evita é escrita em S3, e o custo que ele cria é tempo de planejamento no driver, que aparece como driver ocupado e cluster ocioso."
       - "Se o objetivo era desligar o checkpoint num algoritmo que não é `connectedComponents`, avaliar se o grafo é mesmo pequeno o bastante para o lineage não crescer — a alternativa suportada é `use_local_checkpoints=True` na linhagem `io.graphframes`, que trunca sem exigir diretório persistente."
+    action:
+      kind: config.align_value_to_supported_range
+      target: graph.algorithm.checkpoint_interval
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+      depends_on: []
     risks:
       - "Baixar o intervalo aumenta a frequência de checkpoint e, com ela, escrita em S3 e I/O por iteração: o remédio de um gargalo do driver pode virar gargalo de escrita."
       - "Diretório de checkpoint em S3 acumula dados entre execuções e não é limpo pelo Spark; aumentar a frequência sem política de expiração faz o custo de armazenamento crescer em silêncio."

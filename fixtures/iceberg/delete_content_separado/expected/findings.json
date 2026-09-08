@@ -60,6 +60,16 @@
         "retrieved": "2026-07-29",
         "note": "deletion vectors em Iceberg 1.10.0"
       }
-    ]
+    ],
+    "action": {
+      "kind": "maintenance.compact_delete_files",
+      "target": "iceberg.table.delete_files",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.delete_file_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

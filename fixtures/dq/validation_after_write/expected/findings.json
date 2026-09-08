@@ -53,6 +53,16 @@
         "origin": "field-heuristic",
         "note": "A severidade P1 é decisão de campo: o custo depende de haver consumidor a jusante, e nenhum fact disponível mede isso. Contexto e alcance dos frameworks em knowledge/dq/validation-frameworks.md."
       }
-    ]
+    ],
+    "action": {
+      "kind": "validation.move_before_write",
+      "target": "dq.check",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

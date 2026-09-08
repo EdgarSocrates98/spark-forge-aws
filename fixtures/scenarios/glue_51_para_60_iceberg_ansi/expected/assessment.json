@@ -59,7 +59,17 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
           "retrieved": "2026-08-21"
         }
-      ]
+      ],
+      "action": {
+        "kind": "code.rewrite_expression",
+        "target": "job.source.cast_expression",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     }
   ],
   "by_step": [
@@ -114,7 +124,17 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -174,7 +194,17 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [

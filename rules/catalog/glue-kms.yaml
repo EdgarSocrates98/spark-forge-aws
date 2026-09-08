@@ -96,6 +96,27 @@ rules:
       - >-
         Registrar qual das duas foi escolhida junto com o job, e não só na conta:
         o próximo a ler este Terraform tem a mesma pergunta.
+    # `add` e nao `investigate`, apesar dos dois bullets comecarem em
+    # "confirmar": o `rollback` descreve o estado APLICADO ("se o endpoint foi
+    # criado e precisa ser desfeito"), e o `kind` que a derivacao tirou destes
+    # bullets carrega o conserto no nome.
+    #
+    # `depends_on: [SF-NET-001]` -- o proprio bullet 1 exige que o endpoint use
+    # "o mesmo security group (de regra self-referencing) que a conexao usa", e
+    # essa regra e o que SF-NET-001 conserta. As duas sempre disparam juntas:
+    # `connections` esta nas duas condicoes.
+    #
+    # `moves: []` -- nenhum eixo do vocabulario mede alcancabilidade de rede, e
+    # criar um serviria a esta regra e as duas vizinhas sem nada medindo do lado
+    # de ca. Fica declarado vazio em vez de inventado.
+    action:
+      kind: network.provide_service_route
+      target: vpc.route_to_kms
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on:
+        - SF-NET-001
     risks:
       - >-
         O modo de falha é um timeout em runtime, não um erro de plano: o
@@ -159,6 +180,16 @@ rules:
       - >-
         Registrar as duas configurações juntas onde a tabela é declarada, para
         que a próxima leitura não repita a mesma conclusão parcial.
+    # Aqui o bullet 1 e imperativo ("habilitar"), e nao "confirmar", e o
+    # `rollback` fecha o estado aplicado ("desabilitar a configuracao de SSE do
+    # Iceberg reverte a decisao para os arquivos NOVOS").
+    action:
+      kind: security.enable_encryption_at_rest
+      target: iceberg.table.encryption
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - >-
         A ausência não gera erro: os dados são escritos, e a diferença só

@@ -56,6 +56,14 @@
         "origin": "field-heuristic",
         "note": "Não há limiar: o gatilho é a desigualdade de dois mapas coluna→tipo que o operador coletou, e o comparador já a observou. A decisão de campo é a SEVERIDADE, e o P0 vem do alcance, não do tamanho: divergência de schema atravessa a fronteira do job e chega ao consumidor, e o incidente aparece numa leitura futura sem ligação visível com a mudança que o causou. As três divergências (coluna nova, coluna removida, tipo mudado) compartilham a severidade porque nenhuma measure do fact as ordena por gravidade; quando houver corpus que sustente o corte, converter para `severity_by` sobre `measures.removed_column_count` e `measures.type_changed_column_count`."
       }
-    ]
+    ],
+    "action": {
+      "kind": "schema.split_change_into_own_delivery",
+      "target": "catalog.table_schema",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

@@ -52,6 +52,16 @@
         "origin": "field-heuristic",
         "note": "P1 e não P0: o defeito é a garantia inexistente, não um dado comprovadamente inválido — o motor não sabe se o check reprovaria. A ressalva sobre `assert` e `-O` está apurada, com URL e data, em knowledge/dq/validation-frameworks.md seção 3."
       }
-    ]
+    ],
+    "action": {
+      "kind": "validation.enforce_check_result",
+      "target": "dq.enforcement",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

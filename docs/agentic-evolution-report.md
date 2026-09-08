@@ -2,8 +2,10 @@
 
 **Entrega:** 2026-09-03
 **Auditoria e correções:** 2026-09-03 (mesma data, sessão seguinte)
+**Executor determinístico:** 2026-09-08, branch `feat/executor-agentico-spec`
 **Branch:** `audit/fakes-de-coleta`
 **Spec:** `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
+**Spec do executor:** `docs/superpowers/specs/2026-09-08-sparkforge-executor-agentico-design.md`
 
 ## Resumo executivo
 
@@ -13,13 +15,34 @@ com detecção de falso consenso, desenho de experimentos, decisões auditáveis
 ADR, memória institucional cross-case, budget unificado, threat model com 12
 tipos, níveis de autonomia L0-L5 e Agent Execution Graph.
 
-**O que ela ainda não é, e a distinção é o ponto desta página:** a camada é uma
-**biblioteca com verbos de leitura**, não um pipeline em execução. Nenhum
-extrator, regra, tool MCP ou coordenador escreve `Claim`, `Evidence` ou
-`Decision` hoje. Quem quiser produzir essas entidades chama a API Python. A
-consequência medida: `sparkforge blackboard summary` num repositório de trabalho
-devolve zero em todas as contagens, e vai continuar devolvendo até existir um
-produtor. Ver **Status por componente** abaixo.
+**Em 2026-09-08 a camada ganhou um produtor, e ele é determinístico.**
+`sparkforge/agentic/executor/` — 7 módulos, 163 testes — lê os findings que
+`judge` produziu e a UNIÃO dos facts do case, e escreve `Claim`, `Evidence`,
+`Contradiction`, `Unknown` e `Decision` no blackboard. Exposto por
+`sparkforge arbitrate` e pela tool `sparkforge_arbitrate`.
+
+**O que ela ainda não é, e a distinção é o ponto desta página:** não existe
+executor de **debate**. Quando a arbitragem não fecha, o verbo emite um
+`DebatePlan` e para, com `debate.unresolved`; nenhum laço roda as rodadas e nada
+consulta `budget_exhausted`. Nenhum `AgentRuntime` concreto mora no pacote,
+nada aqui chama provider (regra 23), e o executor é **L0** — `applied_changes`
+sai sempre `false`, e o ADR é proposta com `rollback` obrigatório. Ver
+**Status por componente** abaixo.
+
+**A medida que fecha a lacuna, e como reproduzi-la.** Sobre
+`fixtures/graph/import_sem_jar_no_iac` unida a
+`fixtures/infra_code/fgac_com_jar_extra` — 3 findings, 60 facts, o case que a
+única contradição direta do catálogo descreve:
+
+| `blackboard summary` | claims | evidence | contradictions | unresolved |
+|---|---|---|---|---|
+| antes de `arbitrate` | 0 | 0 | 0 | 0 |
+| depois | **3** | **11** | **1** | **1** |
+
+E a arbitragem **não fecha**: `recommendation: experiment`, plano de debate com
+`debate.unresolved`. É o desfecho correto — `SF-GRAPH-005` e `SF-LF-001` citam
+documentação oficial da AWS, e o que está medido no case não separa uma da
+outra.
 
 A camada determinística existente (Fact, Finding, Rule, Case, Gates) **não foi
 substituída** — foi acrescentada ao lado.
@@ -44,6 +67,24 @@ por teste), `PARTIAL`, `DOCUMENTED ONLY`, `MISSING`.
 | `security.py` | 340 | parte de `infra` | IMPLEMENTED | nada fora dos testes |
 | `autonomy.py` | 253 | parte de `infra` | IMPLEMENTED | CLI (`autonomy show`) |
 | `graph.py` | 351 | parte de `infra` | IMPLEMENTED | nada fora dos testes |
+
+O subpacote `executor/`, medido em 2026-09-08 (`wc -l` sobre os arquivos,
+`pytest --collect-only` por arquivo de teste):
+
+| Módulo | Linhas | Testes | Status | Quem consome hoje |
+|---|---|---|---|---|
+| `executor/authority.py` | 186 | 27 | IMPLEMENTED | `claims.py` |
+| `executor/claims.py` | 284 | 23 | IMPLEMENTED | `run.py` |
+| `executor/conflict.py` | 163 | 20 | IMPLEMENTED | `run.py` |
+| `executor/ordering.py` | 320 | 31 | IMPLEMENTED | `run.py` |
+| `executor/unknowns.py` | 306 | 24 | IMPLEMENTED | `run.py` |
+| `executor/plan.py` | 290 | 19 | IMPLEMENTED | `run.py` |
+| `executor/run.py` | 1005 | 19 | IMPLEMENTED | CLI (`arbitrate`) e MCP (`sparkforge_arbitrate`) |
+
+`executor/__init__.py` tem 19 linhas. Total do subpacote: **2573 linhas em 8
+arquivos**, **105 810 bytes**, **163 testes**. Com ele, o `debate.py` continua
+PARTIAL pelo mesmo motivo de sempre — o **plano** de debate passou a ter
+produtor, a **execução** dele não.
 
 `__init__.py` tem 68 linhas. Total do pacote: **4 210 linhas em 14 arquivos**,
 **148 841 bytes**. As linhas vêm de `wc -l`, não de estimativa — a tabela
@@ -72,13 +113,25 @@ publicada na primeira versão desta página estava errada em todos os módulos
 `outputs`, `evidence_requirements`, `confidence_policy`, `escalation_policy`,
 `time_budget`, `compatible_runtimes`, `evaluation_profile`.
 
-## CLI — 8 verbos, todos de leitura
+## CLI — 9 verbos, oito de leitura e UM que escreve
 
 - `sparkforge agents list` / `agents inspect <id>`
 - `sparkforge blackboard summary` / `blackboard list --type <tipo>`
 - `sparkforge decisions list` / `decisions explain <id>`
 - `sparkforge budget show` (+ `--template`)
 - `sparkforge autonomy show --level <L0-L5>`
+- **`sparkforge arbitrate --findings <path> --facts <path> --repo <dir>`** — o
+  único que escreve
+
+`arbitrate` segue a forma dos verbos agênticos existentes (`--repo`, nunca
+`--case <id>`), porque o blackboard mora em `<repo>/.sparkforge/blackboard/`.
+`--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO
+dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
+findings (§12.9 do spec do executor). Alimentá-lo com um subconjunto fabrica
+claim desancorada que a execução real não produz. Fact sem `id` tem o id
+computado por `Fact.id`. O `budget` do plano de debate sai do bloco `budget:` do
+`case.yaml`, nunca do default do código: sem case, `budget.status` sai
+`unresolved` nomeando a lacuna.
 
 `budget show` lê o bloco `budget:` de `.sparkforge/case.yaml`. Sem esse bloco a
 resposta é `limits.status = "unresolved"` **nomeando a lacuna**; os defaults do
@@ -89,12 +142,18 @@ código só saem sob `--template`, rotulados como template. Consumo sai
 
 ## O que NÃO foi implementado — declarado por nome
 
-- **MISSING — produtor de entidades.** Nada no produto escreve no blackboard.
-  Sem isso, debate, arbitragem, experimento e decisão são API disponível, não
-  comportamento do sistema. É a lacuna que governa todas as outras.
+- **RESOLVIDO em 2026-09-08 — produtor de entidades.** Era *a lacuna que governa
+  todas as outras*, e `sparkforge/agentic/executor/` a fechou:
+  `sparkforge arbitrate` escreve `Claim`, `Evidence`, `Contradiction`, `Unknown`
+  e `Decision`. Fica registrado por ter governado o desenho desta página por
+  cinco dias, não apagado.
 - **MISSING — executor de debate.** `should_trigger_debate()` decide *se* um
   debate cabe e `DebateBudget` limita rodadas, mas nenhum laço executa as
-  rodadas. Nada consulta `budget_exhausted`.
+  rodadas. Nada consulta `budget_exhausted`. O executor determinístico **emite**
+  o `DebatePlan` — participantes, contexto por fact e budget — e para ali, com
+  `debate.unresolved`. Plano não é execução.
+- **MISSING — `AgentRuntime` concreto.** Nada neste pacote faz spawn de agente,
+  e nada aqui chama provider. Quem gasta token é o host.
 - **MISSING — Fase 35 (checkpoint/resume).** Só existe a *flag*
   `RuntimeCapabilities.checkpointing`; não há persistência de estado de execução
   nem retomada.
@@ -118,10 +177,12 @@ código só saem sob `--template`, rotulados como template. Consumo sai
 
 As Fases 51-53 do prompt de origem pediam medir arquitetura nova contra antiga
 (tokens, latência, custo, número de agentes, qualidade, taxa de falha), e a
-Fase 63 pedia uma seção `Benchmarks` neste relatório. **Não há benchmark, e a
-razão é a lacuna acima**: não existe execução agêntica para medir. Comparar
-"antes" com "depois" exigiria os dois lados rodando o mesmo caso, e o lado novo
-ainda não roda.
+Fase 63 pedia uma seção `Benchmarks` neste relatório. **Continua não havendo
+benchmark, e a entrega do executor determinístico não muda isso.** O que as
+Fases 51-53 comparam é a arquitetura de **debate** — vários agentes discutindo o
+mesmo caso — contra a determinística. O executor não debate: ele arbitra por
+regra e emite plano quando não fecha. Comparar "antes" com "depois" continua
+exigindo os dois lados rodando o mesmo caso, e o lado do debate não roda.
 
 O que **é** mensurável hoje, e foi medido:
 
@@ -129,7 +190,8 @@ O que **é** mensurável hoje, e foi medido:
 |---|---|---|
 | Peso do pacote agêntico | 148 841 bytes, 4 210 linhas | `wc -c`/`wc -l` sobre `sparkforge/agentic/*.py` |
 | Custo em contexto para comando não-agêntico | 0 byte | import é lazy: só o handler do verbo agêntico importa o módulo |
-| Testes da camada | 261 | `pytest tests/test_agentic_*.py` |
+| Testes da camada | 441 | `pytest tests/test_agentic_*.py --collect-only` em 2026-09-08 — 261 antes do executor, mais 163 dele, 15 do verbo `arbitrate` e 2 em `test_agentic_models.py` |
+| Peso do subpacote `executor/` | 105 810 bytes, 2573 linhas | `wc -c`/`wc -l` sobre `sparkforge/agentic/executor/*.py` |
 | Crescimento da superfície de skills | 321 678 → 457 985 bytes (+42,4%) | `docs/surface.lock.json`, pelas 11 skills AWS |
 
 Enquanto não houver produtor, "a arquitetura nova é melhor" continua sem
@@ -206,17 +268,17 @@ o alvo parecer entregue.
 | CASE MANAGER | `sparkforge.case.store` | existente, em uso |
 | CONTEXT ENGINE | `sparkforge.context.funnel/progressive` | existente, em uso |
 | DOMAIN ROUTER | `sparkforge.case.router` + `routing.yaml` | existente, em uso |
-| SPECIALIST TEAM | `agentic.runtime` | protocolo, sem adapter |
-| SHARED BLACKBOARD | `agentic.blackboard` | biblioteca + leitura por CLI, sem produtor |
-| HYPOTHESIS ENGINE | `agentic.models.Hypothesis` | entidade, sem gerador |
-| ADVERSARIAL REVIEW / ARBITRATOR | `agentic.arbitration` | biblioteca |
-| DEBATE ENGINE | `agentic.debate` | protocolo e budget, sem executor |
-| EXPERIMENT ENGINE | `agentic.experiment` | biblioteca |
+| SPECIALIST TEAM | `agentic.runtime` | protocolo, sem adapter — nenhum `AgentRuntime` concreto no pacote |
+| SHARED BLACKBOARD | `agentic.blackboard` | biblioteca, leitura por CLI e **produtor** (`agentic.executor.run`) |
+| HYPOTHESIS ENGINE | `agentic.models.Hypothesis` | entidade, sem gerador — o executor produz `Unknown` e `Experiment`, não `Hypothesis` |
+| ADVERSARIAL REVIEW / ARBITRATOR | `agentic.arbitration` | biblioteca, consumida por `agentic.executor.conflict` |
+| DEBATE ENGINE | `agentic.debate` | protocolo, budget e **plano** (`agentic.executor.plan`); sem executor das rodadas |
+| EXPERIMENT ENGINE | `agentic.experiment` | biblioteca, consumida por `agentic.executor.unknowns` |
 | VALIDATION | `adapters._core.validate_output` | existente, em uso |
-| DECISION ENGINE | `agentic.decision` | biblioteca |
+| DECISION ENGINE | `agentic.decision` | biblioteca, consumida por `agentic.executor.run` (L0: propõe, nunca aplica) |
 | DECISION MEMORY | `agentic.memory` | biblioteca + leitura por CLI |
 | EXECUTION | CLI/MCP adapters | existente, em uso |
-| OBSERVABILITY | `sparkforge.observability` | existente, em uso (traces do blackboard: só o arquivo, sem produtor) |
+| OBSERVABILITY | `sparkforge.observability` | existente, em uso; o `trace` da arbitragem passou a ter produtor |
 | LEARNING/EVALUATION | `agentic.memory` + waste detection | biblioteca |
 
 ## Princípios preservados
@@ -242,8 +304,18 @@ o alvo parecer entregue.
 
 ## Próximo passo, na ordem que a lacuna impõe
 
-1. Decidir se existe produtor de entidades e qual é o tier de uma `Evidence`
-   derivada de `Fact`/`Finding` determinístico — é escolha de semântica, e
-   escolha se registra antes de codificar.
-2. Só depois: executor de debate, e então os benchmarks das Fases 51-53, que
-   passam a ter os dois lados para comparar.
+1. ~~Decidir se existe produtor de entidades e qual é o tier de uma `Evidence`
+   derivada de `Fact`/`Finding` determinístico.~~ **Feito em 2026-09-08.** O
+   produtor é `sparkforge arbitrate`, e o tier sai de
+   `knowledge/source_authority.yaml` por host da fonte citada pela regra —
+   nunca inventado. Medido sobre as 253 fixtures do corpus: T1 170, T4 20,
+   T2 16; T3, T5 e T6 não aparecem, porque host não prova reprodutibilidade nem
+   afirma nada sobre o conteúdo (§12.8 do spec do executor).
+2. Executor de debate, e só então os benchmarks das Fases 51-53, que passam a
+   ter os dois lados para comparar. Até lá, **nenhuma afirmação de ganho** —
+   regra 30 do `CLAUDE.md`.
+3. Destravar a contradição **condicional**: ela não tem caso no catálogo de
+   hoje, e a medida que a destrava é um fact kind emitido só acima do limiar
+   (`glue.utilization.skew_high` ou equivalente por stage), ou um
+   `requires_absent` que saiba cruzar por `attrs` além do kind. Entrega própria,
+   no extrator.

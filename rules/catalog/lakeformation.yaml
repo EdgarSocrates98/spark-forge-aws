@@ -117,6 +117,33 @@ rules:
         Conferir o classpath inteiro na mesma passada, e não só o JAR que
         motivou o achado -- `--extra-jars` costuma carregar mais de um artefato,
         e cada um é uma decisão separada de reescrever ou abandonar.
+    # ESCOLHA EXCLUSIVA DECLARADA, e o bloco e UM SO. O bullet 1 e a decisao
+    # ("decidir qual das duas fica"), e nao uma acao; os bullets 2 e 3 sao os
+    # dois ramos, e o dominante e o PRIMEIRO deles -- manter FGAC e remover o
+    # JAR.
+    #
+    # FICA DE FORA: manter a dependencia e remover
+    # `--enable-lakeformation-fine-grained-access`, trocando o controle de
+    # acesso por permissao IAM sobre o caminho S3 do runtime role
+    # (`security.change_access_control_mechanism`). E tambem a opcao dos
+    # `tradeoffs` -- partir o job em dois. As duas continuam no texto da regra,
+    # que e onde o operador as le.
+    #
+    # `target: glue.default_arguments` de proposito: e o mesmo alvo da regra de
+    # grafo que DECLARA `--extra-jars` no IaC. As duas tocam a mesma coisa em
+    # direcoes opostas, e o executor precisa ver a colisao.
+    #
+    # `correctness.write_result` porque a propria regra diz que o resultado
+    # pode se mover: "a saida pode mudar de valor sem levantar erro".
+    action:
+      kind: dependency.remove_library
+      target: glue.default_arguments
+      direction: remove
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+        - correctness.write_result
+      depends_on: []
     risks:
       - >-
         Remover `--enable-lakeformation-fine-grained-access` para manter o JAR
@@ -237,6 +264,31 @@ rules:
         uma vez por hora sobre um lote fechado é um batch com o comando errado,
         e nesse caso a correção é trocar o comando para `glueetl` -- o que
         resolve a incompatibilidade sem abrir mão de nada.
+    # ESCOLHA EXCLUSIVA DECLARADA, mesma forma de SF-LF-001: o bullet 1 e a
+    # decisao, e o dominante e o primeiro ramo -- mover a leitura governada para
+    # um job BATCH sob FGAC, com o streaming operando sobre a saida dele. A
+    # `validation` confirma esse lado ao dizer "se FGAC foi mantido no lado
+    # batch", e o `rollback` nomeia o bloco `command` como o que se restaura.
+    #
+    # FICA DE FORA: manter o streaming e remover FGAC, trocando o controle por
+    # permissao IAM (`security.change_access_control_mechanism`); e o bullet 4,
+    # trocar `gluestreaming` por `glueetl` quando o job nao e streaming de
+    # verdade (`orchestration.change_job_definition`) -- que resolve sem abrir
+    # mao de nada, mas e condicional a uma confirmacao no codigo que este
+    # artefato nao tem.
+    #
+    # `correctness.write_result` pelo texto da regra: a `validation` exige
+    # provar "que a troca de modelo de execucao nao perdeu nem duplicou
+    # registro", e o `rollback` diz que e na lacuna de janela "que registro se
+    # perde".
+    action:
+      kind: orchestration.split_into_separate_job
+      target: glue.command.name
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - >-
         Trocar streaming por batch muda a LATÊNCIA do pipeline, e latência

@@ -54,6 +54,16 @@
         "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
         "retrieved": "2026-09-02"
       }
-    ]
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "controlm.subfolder.explicit_jobs",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

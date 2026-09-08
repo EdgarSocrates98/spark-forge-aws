@@ -51,6 +51,18 @@
         "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "storage.change_storage_format",
+      "target": "iceberg.table.format_version",
+      "direction": "replace",
+      "requires_absent": [
+        "env.unresolved"
+      ],
+      "moves": [],
+      "depends_on": [
+        "SF-ENV-001"
+      ]
+    }
   }
 ]

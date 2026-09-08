@@ -112,6 +112,7 @@
     "sparkforge_analyze_sql_metrics",
     "sparkforge_analyze_terraform",
     "sparkforge_analyze_terraform_diff",
+    "sparkforge_arbitrate",
     "sparkforge_benchmark",
     "sparkforge_capacity",
     "sparkforge_case_get",

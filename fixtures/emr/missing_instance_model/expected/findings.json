@@ -49,6 +49,16 @@
         "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html",
         "retrieved": "2026-08-01"
       }
-    ]
+    ],
+    "action": {
+      "kind": "provisioning.diagnose_bootstrap_failure",
+      "target": "emr.bootstrap_action",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": [
+        "SF-EMR-006"
+      ]
+    }
   }
 ]

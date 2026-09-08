@@ -65,6 +65,23 @@ rules:
       - Conferir se o valor ainda é o desejado antes de renomear -- uma chave
         inerte pode estar carregando um valor que ninguém revisa desde que ela
         parou de ter efeito.
+    # `replace` e nao `remove`: o bullet 1 manda RENOMEAR preservando o valor. Os
+    # `tradeoffs` nomeiam remover a chave como a alternativa mais barata, e ela
+    # fica de fora -- assumir o default do Spark 4 e a decisao oposta a preservar
+    # a intencao de quem a escreveu.
+    #
+    # `correctness.write_result` porque a propria regra diz que renomear LIGA uma
+    # configuracao que estava inerte -- "o rebase de timestamp volta a acontecer
+    # e a saida muda" -- e a `validation` manda medir min e max da coluna de
+    # timestamp afetada antes e depois.
+    action:
+      kind: config.replace_property_key
+      target: job.configuration.renamed_key
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Renomear a chave LIGA uma configuração que estava inerte. Se o job
         passou a depender do comportamento default enquanto a chave não valia,
@@ -150,6 +167,25 @@ rules:
         antes de trocar.
       - Rodar o job de ponta a ponta num ambiente com Spark 4 antes do corte,
         para que o caminho de código seja de fato executado e não só compilado.
+    # A descricao de `dependency.migrate_to_successor_api` no vocabulario --
+    # "trocar a API removida pelo substituto declarado, conferindo a assinatura"
+    # -- saiu do bullet 1 desta regra.
+    #
+    # FICA DE FORA a alternativa dos `tradeoffs`: reescrever a etapa fora de
+    # pandas-on-Spark, em DataFrame nativo. Ela resolve a classe inteira, e a
+    # propria regra a condiciona ao numero de chamadas removidas.
+    #
+    # `correctness.write_result` porque a `validation` manda comparar contagem
+    # por chave, schema, ordem de colunas e contagem de nulos: `ps.concat` no
+    # lugar de `.append` "pode mudar o resultado sem levantar erro".
+    action:
+      kind: dependency.migrate_to_successor_api
+      target: job.source.pandas_on_spark_api
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - >-
         `ps.concat` no lugar de `.append` muda o tratamento de índice e a ordem
@@ -227,6 +263,22 @@ rules:
       - Onde o pin existe para contornar um defeito conhecido de uma versão
         mais nova, registrar o motivo no próprio `requirements.txt` antes de
         subir, para que a decisão não seja refeita às cegas.
+    # `increase` porque a acao e SUBIR o pin ate o piso que o Spark 4.1 declara.
+    # FICA DE FORA remover o pin, que os `tradeoffs` nomeiam como a outra escolha
+    # -- ela entrega a versao ao runtime, e e o oposto de fixa-la.
+    #
+    # `correctness.write_result` porque a propria regra diz que subir PyArrow
+    # "muda o comportamento de conversao de tipos temporais e decimais em pandas
+    # UDF; o job pode passar a produzir valores diferentes sem levantar erro", e
+    # a `validation` manda comparar contagem de nulos e agregados de controle.
+    action:
+      kind: dependency.align_version_with_runtime
+      target: job.requirements.pyarrow_pin
+      direction: increase
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Subir PyArrow muda o comportamento de conversão de tipos temporais e
         decimais em pandas UDF; o job pode passar a produzir valores diferentes
@@ -319,6 +371,30 @@ rules:
       - Conferir o classpath inteiro na mesma passada, e nao so o JAR acusado --
         `--extra-jars` costuma carregar mais de um artefato, e um unico
         remanescente de 2.12 derruba o job igual.
+    # Mesmo `kind` de `SF-SPARK4-003` e alvo diferente: as duas levam uma
+    # dependencia ao que o runtime alvo exige, uma pelo piso de versao e outra
+    # pelo build binario. `direction: replace` porque o artefato e TROCADO por
+    # outro, e nao levado a um numero maior.
+    #
+    # Os bullets 2 e 4 -- trocar `JavaConversions`, conferir o classpath inteiro
+    # -- sao parte da mesma recompilacao. O bullet 3 e PRE-CONDICAO para JAR de
+    # terceiro, e quando ela falha a regra registra que nao ha conserto local.
+    #
+    # FICA DE FORA a alternativa dos `tradeoffs`: remover a dependencia do JAR,
+    # reescrevendo em PySpark nativo (`dependency.remove_library`).
+    #
+    # Dois eixos, e os dois estao na `validation`: o artefato entregue ao
+    # classpath muda (`--extra-jars`), e "para JAR de terceiro trocado por outra
+    # versao, comparacao de VALOR das colunas que ele produz".
+    action:
+      kind: dependency.align_version_with_runtime
+      target: job.extra_jars.scala_binary
+      direction: replace
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+        - correctness.write_result
+      depends_on: []
     risks:
       - Recompilar um JAR de terceiro sem o codigo-fonte NAO e possivel. Quando
         o mantenedor nao publica build para 2.13, nao existe conserto local, e

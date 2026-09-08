@@ -49,6 +49,16 @@
         "url": "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html",
         "retrieved": "2026-08-28"
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.remove_property",
+      "target": "glue.max_capacity",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "capacity.worker_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

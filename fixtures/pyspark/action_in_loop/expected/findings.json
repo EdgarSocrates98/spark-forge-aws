@@ -54,6 +54,17 @@
         "origin": "field-heuristic",
         "note": "Consequência do modelo lazy; medível por N jobs quase idênticos no Spark UI com o mesmo primeiro stage."
       }
-    ]
+    ],
+    "action": {
+      "kind": "code.restructure_loop",
+      "target": "pyspark.loop",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

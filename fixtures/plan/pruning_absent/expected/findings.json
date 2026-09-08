@@ -55,7 +55,18 @@
         "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "scan.push_filter_earlier",
+      "target": "plan.file_scan.partition_filters",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-PLAN-004",
@@ -106,6 +117,14 @@
         "retrieved": "2026-07-31",
         "note": "AQE default no Glue 4.0; no Glue 3.0 exige spark.sql.adaptive.enabled=true."
       }
-    ]
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "spark.plan.final",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

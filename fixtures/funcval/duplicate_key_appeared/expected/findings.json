@@ -55,6 +55,16 @@
         "origin": "field-heuristic",
         "note": "Não há limiar numérico: o gatilho é a transição de zero para não-zero, fixada na §6 do spec desta fase, e ela é observação sobre dois inteiros que o operador mediu. As duas decisões de campo são a ESTRITEZA e a SEVERIDADE. A estriteza (não acusar `depois > antes > 0`) separa afirmação sobre a mudança de afirmação sobre o dado, que é a fronteira desta área com `SF-DQ`. O P0 vem de a unicidade de chave ser a premissa de que `MERGE`, `latest-per-key` e junções a jusante dependem — quebrá-la falha longe, depois, e sem ligação visível com a mudança. A severidade convive com o fato de a chave ser declarada: um P0 que pode vir de declaração errada é o preço de a pergunta ter caminho honesto em vez de nenhum, e a procedência fica gravada no `funcval.plan` para que o achado seja auditável."
       }
-    ]
+    ],
+    "action": {
+      "kind": "validation.correct_declared_key",
+      "target": "funcval.plan.key",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": [
+        "SF-FVAL-001"
+      ]
+    }
   }
 ]

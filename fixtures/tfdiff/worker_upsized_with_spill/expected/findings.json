@@ -51,6 +51,16 @@
         "origin": "field-heuristic",
         "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
       }
-    ]
+    ],
+    "action": {
+      "kind": "shuffle.change_partition_count",
+      "target": "spark.sql.shuffle.partitions",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.partition_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

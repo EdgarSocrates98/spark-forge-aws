@@ -55,6 +55,16 @@
         "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "scan.project_columns",
+      "target": "plan.file_scan.read_schema",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": []
+    }
   }
 ]

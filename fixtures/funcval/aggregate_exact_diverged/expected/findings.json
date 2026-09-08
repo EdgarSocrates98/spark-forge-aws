@@ -58,6 +58,16 @@
         "origin": "field-heuristic",
         "note": "`relative_tolerance: 1.0e-9` é decisão de campo. Não há fonte oficial que diga a partir de quantos ULP uma diferença de soma deixa de ser reassociação, e o valor certo depende do número de partições, do tamanho da redução e da magnitude dos termos. A ordem de grandeza vem de uma conta: `double` tem epsilon de máquina da ordem de 2e-16, e o erro de uma redução em árvore sobre N termos cresce aproximadamente com epsilon vezes a raiz de N — para um bilhão de linhas isso dá algo em torno de 1e-11, e o limiar escolhido deixa cerca de duas ordens de grandeza de folga. Ele está aqui para ser ajustado com evidência, não para ser citado como autoridade. ARMADILHA DE FORMATO, medida: o valor está escrito `1.0e-9` e não `1e-9` porque o resolver de float do `yaml.safe_load` exige PONTO DECIMAL na mantissa — `1e-9`, `1e+9` e `1E9` voltam como STRING, `1.0e-9` volta como float. Um limiar em string não falha na carga; ele falha na avaliação, e pior que ficar inerte: `float > str` levanta `TypeError`, que `_expr_matches` não engole. A severidade P1 é de campo: divergência de agregado é acionável e admite explicação benigna que contagem e schema não admitem, e não há measure que distinga divergência marginal de divergência grosseira; quando houver corpus que sustente o corte, converter para `severity_by` sobre `measures.relative_delta`."
       }
-    ]
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "funcval.comparison",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": [
+        "SF-FVAL-001"
+      ]
+    }
   }
 ]

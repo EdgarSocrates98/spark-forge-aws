@@ -288,6 +288,14 @@ rules:
       - "Se a pré-init existe para latência de start-up e a application precisa mesmo ficar de pé, medir se ela está sendo usada: a fonte recomenda dimensioná-la 'for optimal utilization of resources', e pré-init subdimensionada é paga e não usada — o memory da capacidade inicial precisa ser maior que o pedido do job mais o overhead de 10% do Spark."
       - Se a latência de start-up não é requisito, remover initialCapacity inteira e deixar a application escalar sob demanda; sem pré-init a application vai de CREATED a STARTED sem provisionar worker.
       - "Conferir o outro lado da conta antes de mexer: a modificação de capacidade é TOTAL, não parcial — 'because you can't make partial modifications, specify all compute configurations when you change values'."
+    action:
+      kind: capacity.change_idle_shutdown
+      target: emrs.auto_stop_configuration
+      direction: add
+      requires_absent: []
+      moves:
+        - cost.provisioned_capacity_time
+      depends_on: []
     risks:
       - "Religar o auto-stop faz a application parar quando ociosa, e a pré-init fica inativa junto: o próximo job paga o tempo de provisionamento que a pré-init existia para evitar. Se a janela ficar curta demais, troca-se fatura por latência sem ninguém ter decidido isso."
       - "initialCapacity e maximumCapacity só mudam com a application em CREATED ou STOPPED. Mexer neles exige parar a application, então a mudança não é aplicável no meio de um turno de trabalho — diferente do auto-stop, que é alterável a qualquer momento."
@@ -360,6 +368,14 @@ rules:
       - "Conceder ao papel de execução do job a permissão de leitura sobre o segredo; a resolução acontece na hora da execução do job, então é o papel do job que precisa dela, não o de quem criou a application."
       - Revisar o IaC e o histórico do repositório que criou a application, onde o literal costuma persistir depois de removido da definição.
       - Revisar quem tem emr-serverless:GetApplication e ListApplications na conta.
+    action:
+      kind: security.move_secret_to_manager
+      target: emrs.runtime_configuration
+      direction: replace
+      requires_absent: []
+      moves:
+        - security.secret_exposure
+      depends_on: []
     risks:
       - Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o job.
       - "runtimeConfiguration só é alterável com a application em CREATED ou STOPPED, então a correção exige uma janela de parada — menos que o EMR on EC2, onde Configurations não é editável e corrigir significa cluster novo, mas não é imediato."
@@ -432,6 +448,14 @@ rules:
       - "Se a retenção de 30 dias do armazenamento gerenciado não basta, acrescentar s3MonitoringConfiguration com um prefixo S3 e política de ciclo de vida — e manter o gerenciado ligado junto, porque S3 sozinho não sustenta a UI de aplicação."
       - "Avaliar cloudWatchLoggingConfiguration quando a operação já vive no CloudWatch; ele nasce desligado e é o único dos três que precisa ser pedido explicitamente."
       - "Antes de mudar, perguntar por que os três foram desligados: dado de aplicação no log é a razão legítima mais comum, e a resposta para ela é política de acesso no prefixo, não ausência de log."
+    action:
+      kind: observability.enable_telemetry
+      target: emrs.monitoring_configuration
+      direction: add
+      requires_absent: []
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on: []
     risks:
       - Log de container pode conter dado de aplicação; o destino precisa da mesma política de acesso do dado que o job processa.
       - Logs consomem armazenamento continuamente; sem política de ciclo de vida no prefixo S3 o custo cresce sem teto. O armazenamento gerenciado não tem esse risco, e também não tem como estender os 30 dias.
@@ -497,6 +521,14 @@ rules:
       - "Religar managedPersistenceMonitoringConfiguration e manter o destino S3: a tabela da AWS marca 'Both managed storage and S3' como suportado para a UI de aplicação, então não há escolha a fazer entre os dois."
       - "Se o motivo de ter desligado foi custo, medi-lo antes de reverter: o armazenamento gerenciado tem retenção máxima de 30 dias, então o volume é limitado por construção, diferente do prefixo S3 sem ciclo de vida."
       - Se o motivo foi política de dados — não querer log de aplicação fora do bucket controlado —, a decisão pode estar certa, e o que este achado pede é que ela fique declarada junto com a perda da UI, não que seja revertida.
+    action:
+      kind: observability.enable_application_ui
+      target: emrs.managed_persistence_monitoring
+      direction: investigate
+      requires_absent: []
+      moves:
+        - observability.diagnostic_artifacts
+      depends_on: []
     risks:
       - Religar o armazenamento gerenciado passa a duplicar o log de container, que vai para os dois destinos.
       - Log em armazenamento gerenciado sai do controle direto do bucket da conta, e em ambiente com requisito de residência ou de criptografia por chave própria isso precisa ser conferido antes.
@@ -577,6 +609,14 @@ rules:
       - "Se a janela larga existe para evitar o tempo de provisionamento da pré-init entre execuções, tornar isso explícito: nomear quantas vezes por dia esse ganho é usado, e comparar com o custo do worker parado no resto do tempo."
       - Para application que roda uma carga por dia com folga longa entre execuções, avaliar remover a pré-init em vez de alargar a janela; sem pré-init não há o que manter quente, e o auto-stop deixa de ser o controle de custo principal.
       - "Conferir o piso antes de encurtar: a referência declara 'minimum value of 1' minuto, e uma janela de um minuto derruba a pré-init entre dois jobs do mesmo lote."
+    action:
+      kind: capacity.change_idle_shutdown
+      target: emrs.auto_stop_configuration.idle_timeout_minutes
+      direction: decrease
+      requires_absent: []
+      moves:
+        - cost.provisioned_capacity_time
+      depends_on: []
     risks:
       - "Este é o risco central: encurtar a janela para a application no intervalo entre dois jobs de um mesmo processamento, e o job seguinte paga o provisionamento inteiro da pré-init. O intervalo entre submissões precisa ser medido antes, não depois."
       - Application parada com auto-start ligado volta sozinha ao receber job, mas com a latência de start-up completa. Onde há requisito de latência declarado, encurtar a janela pode violá-lo sem nenhum sinal de erro.
@@ -654,6 +694,14 @@ rules:
       - "Corrigir com update-application, especificando TODAS as configurações de compute de uma vez — 'because you can't make partial modifications, specify all compute configurations when you change values' — e com a application em CREATED ou STOPPED."
       - "Se o teto existe como guarda de custo, subi-lo derruba a guarda: nesse caso a correção é reduzir a pré-init, não alargar o teto."
       - "Conferir o estado da application depois da mudança: ela precisa alcançar STARTED, e a fonte condiciona isso à pré-init inteira estar criada e pronta."
+    action:
+      kind: capacity.change_preinitialized_capacity
+      target: emrs.initial_capacity
+      direction: investigate
+      requires_absent: []
+      moves:
+        - cost.provisioned_capacity_time
+      depends_on: []
     risks:
       - "Subir maximumCapacity remove o limite que impedia a application de escalar sem teto; o custo passa a ser limitado só pela demanda dos jobs."
       - "Reduzir a pré-init muda a latência de start-up dos jobs que a usavam, e isso costuma ser reportado como lentidão do produto."

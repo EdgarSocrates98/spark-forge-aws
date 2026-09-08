@@ -72,7 +72,18 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
           "retrieved": "2026-08-22"
         }
-      ]
+      ],
+      "action": {
+        "kind": "dependency.align_version_with_runtime",
+        "target": "job.extra_jars.scala_binary",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "dependency.delivered_artifacts",
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -128,7 +139,15 @@
           "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -184,7 +203,15 @@
           "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -240,7 +267,15 @@
           "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-003",
@@ -291,7 +326,17 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
           "retrieved": "2026-08-21"
         }
-      ]
+      ],
+      "action": {
+        "kind": "code.rewrite_expression",
+        "target": "job.source.cast_expression",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-SPARK4-003",
@@ -350,7 +395,17 @@
           "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
           "retrieved": "2026-08-22"
         }
-      ]
+      ],
+      "action": {
+        "kind": "dependency.align_version_with_runtime",
+        "target": "job.requirements.pyarrow_pin",
+        "direction": "increase",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -402,7 +457,15 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -454,7 +517,15 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -506,7 +577,15 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     }
   ],
   "by_step": [
@@ -565,7 +644,15 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "4.0",
@@ -623,7 +710,15 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "4.0",
@@ -685,7 +780,15 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.0",
@@ -743,7 +846,15 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.0",
@@ -806,7 +917,18 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.extra_jars.scala_binary",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "dependency.delivered_artifacts",
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -868,7 +990,15 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -925,7 +1055,17 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -990,7 +1130,17 @@
             "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.requirements.pyarrow_pin",
+          "direction": "increase",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -1048,7 +1198,15 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -1113,7 +1271,18 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.extra_jars.scala_binary",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "dependency.delivered_artifacts",
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1177,7 +1346,15 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1244,7 +1421,17 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1311,7 +1498,17 @@
             "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.requirements.pyarrow_pin",
+          "direction": "increase",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1371,7 +1568,15 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [

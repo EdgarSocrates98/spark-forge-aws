@@ -211,6 +211,48 @@ def _validate_executability(rule_id: str, rule: dict[str, Any]) -> None:
         )
 
 
+_ACTION_DIRECTIONS = (
+    "increase",
+    "decrease",
+    "replace",
+    "remove",
+    "add",
+    "investigate",
+)
+_ACTION_KEYS = {"kind", "target", "direction", "requires_absent", "moves", "depends_on"}
+
+
+def _validate_action(rule_id: str, rule: dict[str, Any]) -> None:
+    """Valida a FORMA do bloco `action`. O vocabulario de `kind` e conferido
+    por `tests/test_rules_action_field.py`, contra `action_kinds.yaml` --
+    aqui carregar o vocabulario a cada regra custaria uma leitura por regra."""
+    action = rule.get("action")
+    if action is None:
+        return
+    if not isinstance(action, dict):
+        raise CatalogError(f"{rule_id}: `action` precisa ser um mapa")
+    desconhecidas = sorted(set(action) - _ACTION_KEYS)
+    if desconhecidas:
+        raise CatalogError(f"{rule_id}: chaves desconhecidas em `action`: {desconhecidas}")
+    for obrigatoria in ("kind", "target", "direction"):
+        if not str(action.get(obrigatoria) or "").strip():
+            raise CatalogError(f"{rule_id}: `action.{obrigatoria}` ausente ou vazio")
+    if action["direction"] not in _ACTION_DIRECTIONS:
+        raise CatalogError(
+            f"{rule_id}: `action.direction` {action['direction']!r} invalido "
+            f"(esperado: {', '.join(_ACTION_DIRECTIONS)})"
+        )
+    for lista in ("requires_absent", "moves", "depends_on"):
+        valor = action.get(lista, [])
+        if not isinstance(valor, list):
+            raise CatalogError(f"{rule_id}: `action.{lista}` precisa ser lista")
+    if not rule.get("executable", True) and action:
+        raise CatalogError(
+            f"{rule_id}: regra nao executavel nao pode declarar `action` -- "
+            "ela nao produz finding, e acao sem finding e afirmacao sobre nada"
+        )
+
+
 def _collect_exprs(rule: dict[str, Any]) -> list[str]:
     found: list[str] = []
     when = rule.get("when") or {}
@@ -293,6 +335,7 @@ def load_catalog(
             # estrutural, da mesma classe de campo obrigatorio ausente.
             _validate_conditions(rule_id, rule)
             _validate_executability(rule_id, rule)
+            _validate_action(rule_id, rule)
 
             if validate_exprs:
                 for expr in _collect_exprs(rule):

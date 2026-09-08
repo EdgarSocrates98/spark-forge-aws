@@ -44,6 +44,17 @@
         "url": "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "version.upgrade_runtime",
+      "target": "athena.workgroup.engine_version",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

@@ -56,6 +56,16 @@
         "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "maintenance.rewrite_data_files",
+      "target": "s3.prefix.data_files",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.file_layout"
+      ],
+      "depends_on": []
+    }
   }
 ]

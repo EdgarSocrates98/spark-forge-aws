@@ -52,6 +52,16 @@
         "origin": "field-heuristic",
         "note": "Limiar 10 é ponto de partida. O custo real depende da complexidade de cada expressão, não só da contagem."
       }
-    ]
+    ],
+    "action": {
+      "kind": "code.rewrite_expression",
+      "target": "pyspark.withcolumn_run",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

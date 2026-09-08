@@ -56,6 +56,14 @@
         "origin": "field-heuristic",
         "note": "Não há limiar: o gatilho é `reported_check_count < planned_check_count`, duas contagens que o próprio comparador produziu, e qualquer margem aqui seria um número dizendo quantos checks é aceitável não medir — que não é pergunta que tenha resposta de campo. A decisão de campo é a SEVERIDADE. P1, e não P0, porque o achado não afirma que algo está errado no sistema analisado: ele afirma que a validação não cobre o que se propôs a cobrir. Lido junto com um relatório sem nenhum outro achado desta área, porém, ele é o mais importante dos cinco — é o que distingue 'os proxies bateram' de 'os proxies que rodaram bateram'."
       }
-    ]
+    ],
+    "action": {
+      "kind": "validation.complete_check_coverage",
+      "target": "funcval.result",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

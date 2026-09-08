@@ -56,6 +56,16 @@
         "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
         "retrieved": "2026-08-22"
       }
-    ]
+    ],
+    "action": {
+      "kind": "dependency.align_version_with_runtime",
+      "target": "job.requirements.pyarrow_pin",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

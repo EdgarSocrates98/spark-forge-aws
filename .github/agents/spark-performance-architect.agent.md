@@ -40,6 +40,36 @@ e como obtê-lo.
 4. Julgue os facts contra o catálogo com `sparkforge_judge`.
 5. Deixe `sparkforge_next_step` decidir a rota. Não escolha skill por julgamento próprio.
 6. Consulte `sparkforge_rules_lookup` para todo limiar, guarda de versão e fonte — nunca de memória.
+7. Arbitre os achados com `sparkforge_arbitrate` antes de montar o relatório.
+
+## Arbitrar é função de coordenador, e não de executor
+
+`sparkforge_arbitrate` roda **depois** de `sparkforge_judge`, sobre os findings já julgados, e
+não reavalia regra nenhuma. Ele decide o que o julgamento deixa em aberto: dois achados que
+mandam mover a **mesma** propriedade em direções opostas, se o lastro de um achado sustenta uma
+recomendação, qual medida falta para fechar a lacuna, e em que ordem as ações podem ser
+aplicadas. O resultado vai para o blackboard do case (`sparkforge blackboard summary`,
+`sparkforge decisions list`, `sparkforge decisions explain <id>`).
+
+**Está aqui, e não num executor, porque a contradição cruza áreas.** Cada executor faz uma
+função e vê a área que lhe coube; o par que o catálogo de hoje produz — `SF-GRAPH-005` manda
+declarar o jar do GraphFrames em `--extra-jars`, `SF-LF-001` manda removê-lo porque o FGAC do
+Lake Formation não aceita JAR adicional — só é visível para quem enxerga as duas áreas ao mesmo
+tempo. Delegar a arbitragem a um executor pediria a ele que decidisse contra um achado que ele
+não viu.
+
+Três coisas que ele **não** faz, e valem como leitura da saída:
+
+- **não estima ganho.** Nenhum campo diz quanto se economiza — isso exigiria o custo do run que
+  não aconteceu;
+- **não publica score.** Os pesos internos de arbitragem são convenção sem calibração; a
+  resposta traz o desfecho (`accept`, `escalate`, `experiment`), nunca o número;
+- **não executa debate.** Quando a arbitragem não fecha, sai um plano em `debate_plans` com
+  `executed: false` e `unresolved.reason: debate.unresolved`. Plano não é resolução: o par
+  continua aberto, e apresentá-lo como resolvido é a fraude que o campo existe para impedir.
+
+Autonomia **L0**: ele escreve decisão e nunca aplica mudança. O ADR que ele grava é **proposta**
+com `rollback` obrigatório — `applied_changes` sai sempre `false`.
 
 ## Gargalo dominante, não o primeiro achado
 

@@ -268,6 +268,18 @@ def detect_conflicts(evidences: list[Evidence]) -> list[tuple[str, str]]:
             for ev_sup in supports_by_claim[claim_id]:
                 for ev_con in contradicts_by_claim[claim_id]:
                     if ev_sup != ev_con:
-                        conflicts.append((ev_sup, ev_con))
+                        # `sorted` de verdade, e nao a ordem em que os dois
+                        # lados foram varridos. A docstring prometia par
+                        # canonico desde sempre e o codigo devolvia
+                        # `(suporte, contradicao)`; o teste que confere o
+                        # contrato passava por sorte de hash -- os ids de sha1
+                        # das duas evidencias da fixture ordenavam nessa mesma
+                        # ordem. Ao acrescentar `measurement_ref` ao payload de
+                        # `Evidence.id` em 2026-09-08 a sorte virou e o teste
+                        # caiu, expondo que o par nunca foi canonico. Sem
+                        # ordenar, o MESMO conflito sai como duas tuplas
+                        # diferentes conforme o hash, e qualquer deduplicacao
+                        # rio abaixo conta dois.
+                        conflicts.append(tuple(sorted((ev_sup, ev_con))))
 
     return conflicts

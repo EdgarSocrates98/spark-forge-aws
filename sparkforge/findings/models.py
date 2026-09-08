@@ -88,6 +88,7 @@ class Finding:
     validation: list[str] = field(default_factory=list)
     rollback: list[str] = field(default_factory=list)
     sources: list[dict[str, Any]] = field(default_factory=list)
+    action: dict[str, Any] = field(default_factory=dict)
     catalog_version: int = 1
     schema_version: int = SCHEMA_VERSION
 
@@ -134,6 +135,7 @@ class Finding:
             "validation": list(self.validation),
             "rollback": list(self.rollback),
             "sources": list(self.sources),
+            "action": dict(self.action),
         }
 
 

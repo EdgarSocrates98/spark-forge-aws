@@ -56,6 +56,16 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
         "retrieved": "2026-08-22"
       }
-    ]
+    ],
+    "action": {
+      "kind": "orchestration.split_into_separate_job",
+      "target": "glue.command.name",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

@@ -65,6 +65,16 @@
         "origin": "field-heuristic",
         "note": "A página de tipos de nó sustenta o mecanismo e o recorte de release: o AM roda em core E task por default a partir da série 6.x, porque as node labels passaram a vir desligadas. A página de managed scaling sustenta as restrições operacionais e confirma o comportamento na série 7.x -- o EMR não rotula nós de task, `We don't recommend using Spot nodes for application primary processes`, labels criadas no provisionamento e não adicionáveis por reconfiguração, e o par maximum-am-resource-percent/decommissioning.timeout. O que NENHUMA das duas afirma é INCIDÊNCIA: com que frequência o AM efetivamente cai num nó task, ou com que frequência aquele Spot é reclamado. Nada aqui diz isso, e o P1 vem do TAMANHO da consequência -- a aplicação inteira falha, não uma task --, nunca de uma taxa."
       }
-    ]
+    ],
+    "action": {
+      "kind": "capacity.change_purchasing_option",
+      "target": "yarn.node-labels.am.default-node-label-expression",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "availability.interruption_exposure"
+      ],
+      "depends_on": []
+    }
   }
 ]

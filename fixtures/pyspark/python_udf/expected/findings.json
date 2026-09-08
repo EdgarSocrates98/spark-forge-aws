@@ -51,6 +51,16 @@
         "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "code.replace_udf_with_native",
+      "target": "pyspark.udf",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

@@ -1111,6 +1111,54 @@ def build_parser() -> argparse.ArgumentParser:
     judge_p.add_argument("--cursor")
     judge_p.add_argument("--show-skipped", action="store_true")
 
+    # arbitrate --------------------------------------------------------
+    # Verbo de TOPO, e nao um `agentic arbitrate`: ele nao extrai de artefato
+    # (roda sobre findings que `judge` ja produziu) e nao e inspecao de estado
+    # como `blackboard` e `decisions`. A forma dos argumentos segue os verbos
+    # agenticos -- `--repo`, nunca `--case <id>` --, porque o blackboard mora
+    # em `<repo>/.sparkforge/blackboard/` e nao ha id de case em CLI nenhuma
+    # deste pacote.
+    arbitrate_p = sub.add_parser(
+        "arbitrate",
+        help=(
+            "Executor agentico deterministico: arbitra findings ja julgados e grava "
+            "claim, evidencia, contradicao, lacuna e decisao no blackboard do case. "
+            "Nao estima ganho, nao publica score, nao executa debate."
+        ),
+    )
+    arbitrate_p.add_argument(
+        "--findings",
+        required=True,
+        help=(
+            "Arquivo de findings (JSON) gerado por `judge --out`. Aceita a lista nua "
+            "e o objeto com a chave `findings` (ou `items`)."
+        ),
+    )
+    arbitrate_p.add_argument(
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Arquivo de facts (JSON). Repetivel, e a repeticao e o ponto: o executor "
+            "recebe a UNIAO dos facts do case -- o MESMO conjunto que `judge` recebeu "
+            "para produzir aqueles findings. Alimenta-lo com um subconjunto fabrica "
+            "claim desancorada que a execucao real nao produz. Aceita a lista nua e o "
+            "objeto com a chave `facts` (ou `items`); fact sem `id` tem o id computado "
+            "pelo conteudo."
+        ),
+    )
+    arbitrate_p.add_argument(
+        "--repo",
+        default=".",
+        help="Raiz do case. O blackboard fica em <repo>/.sparkforge/blackboard/.",
+    )
+    arbitrate_p.add_argument("--glue")
+    arbitrate_p.add_argument("--emr", help=_EMR_FLAG_HELP)
+    arbitrate_p.add_argument("--spark")
+    arbitrate_p.add_argument("--python")
+    arbitrate_p.add_argument("--iceberg")
+    arbitrate_p.add_argument("--athena")
+
     # case ------------------------------------------------------------
     case_p = sub.add_parser("case", help="Gerencia o estado do case em .sparkforge/case.yaml.")
     case_sub = case_p.add_subparsers(dest="case_action", required=True)
@@ -2412,6 +2460,33 @@ def _cmd_judge(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_arbitrate(args: argparse.Namespace) -> int:
+    """Arbitra findings ja julgados e grava no blackboard do case.
+
+    Sem escrita aqui: quem grava e `run_executor`, dentro do `--repo`. A CLI so
+    imprime o pacote, e ele sai identico pela CLI e pelo MCP -- a gravacao e o
+    produto do verbo, nao um `--out` que so uma das superficies conhece.
+
+    `persisted: false` NAO e falha da chamada (regra 27): o pacote e montado
+    antes da gravacao e sai igual com o blackboard indisponivel. O que falhou
+    aparece nomeado em `persistence.errors`.
+    """
+    _print(
+        _core.arbitrate_findings(
+            args.repo,
+            findings_path=args.findings,
+            facts_path=args.facts,
+            glue=args.glue,
+            emr=args.emr,
+            spark=args.spark,
+            python=args.python,
+            iceberg=args.iceberg,
+            athena=args.athena,
+        )
+    )
+    return 0
+
+
 def _cmd_case_open(args: argparse.Namespace) -> int:
     case = _core.case_open(
         args.repo,
@@ -3061,6 +3136,7 @@ _DISPATCH = {
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
+    ("arbitrate", None): _cmd_arbitrate,
     ("case", "open"): _cmd_case_open,
     ("case", "get"): _cmd_case_get,
     ("case", "update"): _cmd_case_update,

@@ -61,6 +61,13 @@ rules:
       - Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.
       - Investigar o sintoma medido que disparou esta regra, na ordem em que as measures aparecem no fact.
       - Só depois de descartar os sintomas, avaliar se o limite é pequeno para o trabalho legítimo do job.
+    action:
+      kind: timeout.investigate_symptom_first
+      target: spark.timeout.limit
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Subir o timeout com skew ou spill presente troca uma falha rápida por uma falha cara — o run consome recurso por mais tempo e termina no mesmo lugar.
       - Reduzir o timeout para "falhar rápido" pode matar run legítimo em dia de volume maior.
@@ -116,6 +123,14 @@ rules:
       - Restaurar a folga entre as duas — o heartbeat precisa caber várias vezes dentro da espera do driver.
       - Se a intenção era tolerar rede lenta, mexer em `spark.network.timeout`, e não no intervalo de heartbeat.
       - Conferir se alguma das duas veio de configuração de cluster ou de `--conf` sem quem a explique — as duas são propriedades que raramente precisam sair do default.
+    action:
+      kind: timeout.restore_interval_relation
+      target: spark.executor.heartbeatInterval
+      direction: decrease
+      requires_absent: []
+      moves:
+        - availability.executor_loss
+      depends_on: []
     risks:
       - Executor vivo declarado morto faz o Spark recomputar trabalho já feito, e o run fica mais lento e mais caro sem erro visível.
       - Aumentar `network.timeout` sem olhar a causa mascara pressão de memória e GC, que é o que a `SF-TIMEOUT-001` recusa.

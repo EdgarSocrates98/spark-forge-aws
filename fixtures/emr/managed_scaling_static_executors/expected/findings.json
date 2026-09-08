@@ -58,6 +58,17 @@
         "origin": "field-heuristic",
         "note": "A fonte sustenta o gatilho, o efeito (escalar acima do necessário, até o teto de compute) e a recomendação (manter DRA ligada). Ela NÃO descreve o encadeamento passo a passo -- executores fixos pedidos no início e nunca devolvidos, lidos pelo scaling como pressão persistente. Essa é a leitura de campo do mecanismo, e está aqui como leitura, não como citação."
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.remove_property",
+      "target": "spark.dynamicAllocation.enabled",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint",
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
   }
 ]

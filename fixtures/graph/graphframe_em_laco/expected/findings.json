@@ -52,6 +52,17 @@
         "origin": "field-heuristic",
         "note": "Nenhuma fonte de GraphFrames trata de chamada em laço, e não há número publicado para o custo fixo de submissão de um job Spark. O gatilho é estrutural — `inside_loop: true` no fact do algoritmo — e a forma é a mesma de `SF-PY-004`, que acusa action dentro de laço sobre outro sujeito. A severidade é P2 e não maior justamente porque o laço pode ser a forma correta quando os grafos são independentes, e a análise estática não distingue.\n"
       }
-    ]
+    ],
+    "action": {
+      "kind": "code.restructure_loop",
+      "target": "graph.algorithm",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

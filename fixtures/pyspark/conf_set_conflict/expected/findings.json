@@ -48,6 +48,14 @@
         "origin": "field-heuristic",
         "note": "A ordem de precedência deve ser verificada na aba Environment do runtime em uso, não assumida."
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "pyspark.conf_set",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

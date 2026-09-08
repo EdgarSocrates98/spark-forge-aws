@@ -70,6 +70,16 @@ rules:
       - Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.
       - Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.
       - Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos.
+    action:
+      kind: skew.apply_treatment
+      target: spark.stage
+      direction: replace
+      requires_absent: []
+      moves:
+        - skew.task_duration_ratio
+        - correctness.write_result
+      depends_on:
+        - SF-UI-002
     risks:
       - Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls.
     tradeoffs:
@@ -115,6 +125,13 @@ rules:
     proposed_change:
       - Se input é uniforme e duração não é, investigar UDF e explode, não a distribuição da chave.
       - Se input é desigual, seguir o caminho de skew de dados.
+    action:
+      kind: skew.classify_type
+      target: spark.stage
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks: [Classificar errado leva a aplicar o tratamento inútil e concluir que "nada funciona".]
     tradeoffs: [Nenhum; é medição.]
     validation: [Nova razão max/p50 de input após a mudança.]
@@ -147,6 +164,14 @@ rules:
       - Aumentar o número de partições, reduzindo o tamanho de cada uma.
       - Verificar e corrigir skew antes de mexer em memória.
       - Só então avaliar worker da série R, que dobra a memória com o mesmo vCPU.
+    action:
+      kind: shuffle.reduce_bytes
+      target: spark.stage.shuffle
+      direction: decrease
+      requires_absent: []
+      moves:
+        - shuffle.spill_bytes
+      depends_on: []
     risks: [Aumentar partições em excesso troca spill por overhead de agendamento.]
     tradeoffs: [Worker R custa mais por vCPU efetivo; só se justifica com memória comprovadamente limitante.]
     validation:
@@ -182,6 +207,13 @@ rules:
       - Cruzar com a série temporal de heap dos executores para classificar a causa.
       - Se heap não está cheio, eliminar UDF Python e conversões por linha.
       - Se heap está cheio, reduzir dado por executor ou usar worker com mais memória.
+    action:
+      kind: measurement.collect_baseline
+      target: spark.executor.memory
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Aumentar memória quando a causa é alocação de objetos não resolve e encarece.
       - "Das três ações propostas, duas não tocam o resultado (heap, worker) e UMA toca: eliminar UDF Python troca a implementação que produz o valor. Nulo, precisão decimal, fuso, ordenação de string e comportamento de borda diferem entre a UDF e a função nativa que a substitui, e a diferença não aparece no tempo de GC — que é justamente o que esta regra mede."
@@ -220,6 +252,15 @@ rules:
       - Reduzir o tamanho de batch de pandas_udf, se houver.
       - Eliminar UDF Python, que é a fonte mais comum de consumo fora do heap.
       - Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar.
+    action:
+      kind: capacity.increase_memory_overhead
+      target: spark.executor.memoryOverhead
+      direction: increase
+      requires_absent: []
+      moves:
+        - capacity.executor_footprint
+        - availability.executor_loss
+      depends_on: []
     risks:
       - Aumentar overhead reduz a memória disponível para o heap dentro do mesmo container.
       - "Duas das quatro ações propostas mudam o resultado, e nenhuma delas falha ao mudá-lo. Eliminar UDF Python troca nulo, precisão, fuso e borda pela semântica da função nativa. E reduzir o tamanho de batch de pandas_udf muda o resultado de toda UDF vetorizada que NÃO seja linha a linha — normalização, ranking, preenchimento por vizinho e qualquer coisa que olhe o batch inteiro devolvem outro valor com outro tamanho de batch. Nada no plano físico nem no event log acusa isso: o nó continua sendo ArrowEvalPython."
@@ -264,6 +305,14 @@ rules:
       - Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.
       - Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.
       - Reduzir o número de workers se o paralelismo real não pode aumentar.
+    action:
+      kind: shuffle.change_partition_count
+      target: spark.sql.shuffle.partitions
+      direction: increase
+      requires_absent: []
+      moves:
+        - shuffle.partition_count
+      depends_on: []
     risks: [Aumentar partições em job pequeno cria overhead de agendamento sem ganho.]
     tradeoffs: [Converter formato de entrada é mudança no produtor, não no consumidor.]
     validation:

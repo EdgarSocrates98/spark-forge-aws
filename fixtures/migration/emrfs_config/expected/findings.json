@@ -49,6 +49,14 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.replace_property_key",
+      "target": "job.configuration.emrfs_key",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

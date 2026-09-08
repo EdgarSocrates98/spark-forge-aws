@@ -56,7 +56,18 @@
         "origin": "field-heuristic",
         "note": "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."
       }
-    ]
+    ],
+    "action": {
+      "kind": "join.restore_equi_condition",
+      "target": "pyspark.join.condition",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-PLAN-003",
@@ -115,6 +126,17 @@
         "origin": "field-heuristic",
         "note": "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."
       }
-    ]
+    ],
+    "action": {
+      "kind": "join.restore_equi_condition",
+      "target": "pyspark.join.condition",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

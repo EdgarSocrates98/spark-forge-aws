@@ -51,7 +51,15 @@
         "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
         "retrieved": "2026-09-02"
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "controlm.system_setting.allowDuplicateJobNames",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-CTM-004",
@@ -105,6 +113,14 @@
         "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
         "retrieved": "2026-09-02"
       }
-    ]
+    ],
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "controlm.system_setting.allowDuplicateJobNames",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

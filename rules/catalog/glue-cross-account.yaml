@@ -76,6 +76,16 @@ rules:
       - >-
         Se os dados estão encriptados com chave gerenciada pelo cliente,
         confirmar que a política da chave autoriza o papel da conta consumidora.
+    # Os QUATRO bullets comecam em "confirmar", e o `rollback` recusa ser
+    # rollback ("e decisao de arquitetura, nao rollback"). Nao ha estado
+    # aplicado nenhum a apontar -- `investigate` e o que a regra propoe.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.cross_account_grant
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - >-
         A falha típica é assimétrica e por isso confunde: o job passa e o

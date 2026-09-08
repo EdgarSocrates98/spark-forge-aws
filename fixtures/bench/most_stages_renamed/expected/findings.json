@@ -55,6 +55,14 @@
         "origin": "field-heuristic",
         "note": "0,3 é decisão de campo, e a escolha é estrutural e não estatística: acima de um terço da população sem par, os totais do run passam a somar majoritariamente trabalho que só existe de um lado, e o percentual deixa de ter leitura simples. Não há fonte oficial sobre isso — não há fonte oficial sobre casamento de stage entre execuções, porque a prática documentada de benchmark de Spark compara jobs inteiros, não stages. A severidade P2 vem de o achado ser sobre método, e não sobre defeito no sistema analisado."
       }
-    ]
+    ],
+    "action": {
+      "kind": "measurement.narrow_claim_scope",
+      "target": "bench.comparison",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

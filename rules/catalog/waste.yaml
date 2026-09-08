@@ -59,6 +59,15 @@ rules:
       - Rodar `sparkforge capacity` com o SLA declarado, e ler a capacidade mais barata que o cumpre entre as observadas.
       - Conferir se o job já rodou em capacidade menor; se nunca rodou, a redução é experimento e não escolha — o `capacity` recusa extrapolar de propósito.
       - Reavaliar depois de qualquer mudança de layout ou de código, porque folga medida hoje é sobre o trabalho de hoje.
+    action:
+      kind: capacity.investigate_sizing
+      target: glue.number_of_workers
+      direction: investigate
+      requires_absent: []
+      moves:
+        - capacity.worker_count
+        - cost.dpu_seconds
+      depends_on: []
     risks:
       - Reduzir capacidade sem histórico na capacidade menor troca custo por risco de SLA, e o risco não aparece até o dia de volume maior.
       - "Utilização média esconde pico: o `p50` diz o dia normal, e o run que estoura é o outro."
@@ -114,6 +123,13 @@ rules:
     proposed_change:
       - Tratar o skew antes de tocar em capacidade — `SF-UI-001` e `SF-UI-002` classificam o tipo, e o tratamento difere.
       - Depois do skew tratado, medir a utilização de novo; a folga que sobrar aí é a folga real.
+    action:
+      kind: skew.classify_type
+      target: spark.stage
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Reduzir capacidade com skew presente aumenta a duração e pode estourar o SLA, trocando custo por atraso.
       - Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls — a mesma ressalva de `SF-UI-001`.

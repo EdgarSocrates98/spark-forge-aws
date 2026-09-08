@@ -84,6 +84,14 @@ rules:
         Se a inspecao e mesmo necessaria, `limit(n)` explicito antes, ou
         `take(n)`. `toLocalIterator` reduz o pico de memoria as custas de mais
         round-trips.
+    action:
+      kind: code.replace_driver_collection
+      target: pyspark.driver_collect
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - >
         Logica downstream pode assumir uma lista Python em memoria, e trocar por

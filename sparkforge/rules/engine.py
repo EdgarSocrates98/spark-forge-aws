@@ -207,6 +207,7 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
         validation=list(rule.get("validation") or []),
         rollback=list(rule.get("rollback") or []),
         sources=list(rule.get("sources") or []),
+        action=dict(rule.get("action") or {}),
     )
 
 

@@ -113,6 +113,15 @@ rules:
       - Ajustar write.target-file-size-bytes ao alvo desejado.
       - Compactar o passivo com rewrite_data_files, estratégia binpack se o problema é contagem.
       - Se o pruning também é ruim, usar estratégia sort com a coluna de filtro dominante em vez de binpack.
+    action:
+      kind: maintenance.rewrite_data_files
+      target: iceberg.table.data_files
+      direction: replace
+      requires_absent: []
+      moves:
+        - storage.file_layout
+      depends_on:
+        - SF-ICE-005
     risks:
       - Compactação reescreve dados e cria um novo snapshot, consumindo DPU e armazenamento temporário.
       - Alterar write.distribution-mode adiciona shuffle na escrita, aumentando o custo de cada run.
@@ -159,6 +168,14 @@ rules:
       - Estabelecer manutenção periódica, não pontual.
       - Reavaliar a escolha MoR versus copy-on-write com base na razão real entre leitura e escrita da tabela.
       - Em Iceberg 1.10, avaliar deletion vectors.
+    action:
+      kind: maintenance.compact_delete_files
+      target: iceberg.table.delete_files
+      direction: replace
+      requires_absent: []
+      moves:
+        - storage.delete_file_count
+      depends_on: []
     risks: [Compactação de delete files é reescrita e consome DPU; agendar fora do horário crítico.]
     tradeoffs:
       - Copy-on-write encarece a escrita e mantém a leitura rápida sem manutenção recorrente.
@@ -196,6 +213,14 @@ rules:
       - Reduzir o número de commits, agrupando lotes ou escrevendo numa única action.
       - Habilitar write.metadata.delete-after-commit.enabled e definir write.metadata.previous-versions-max.
       - Estabelecer expire_snapshots periódico com retenção acordada.
+    action:
+      kind: maintenance.expire_snapshots
+      target: iceberg.table.snapshots
+      direction: remove
+      requires_absent: []
+      moves:
+        - storage.snapshot_count
+      depends_on: []
     risks:
       - expire_snapshots é destrutivo e remove capacidade de time travel para os snapshots expirados.
       - Reduzir commits diminui a granularidade de recuperação parcial após falha.
@@ -298,6 +323,14 @@ rules:
       - Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.
       - Se os filtros variam entre duas ou três colunas, avaliar zorder em vez de sort.
       - Confirmar o ganho medindo bytes lidos por uma query de referência, não pela duração.
+    action:
+      kind: maintenance.rewrite_data_files
+      target: iceberg.table.data_files
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+      depends_on: []
     risks: [Rewrite de tabela grande é caro em DPU e cria um snapshot volumoso.]
     tradeoffs: [Zorder custa mais que sort e só se justifica com evidência de filtros multi-coluna.]
     validation:
@@ -338,6 +371,14 @@ rules:
       - Definir write.distribution-mode como hash, ou range quando há sort order.
       - Confirmar o comportamento exato do modo escolhido na documentação da versão embarcada.
       - Medir o número de arquivos por partição antes e depois.
+    action:
+      kind: storage.set_write_layout_property
+      target: iceberg.table_property.write.distribution-mode
+      direction: replace
+      requires_absent: []
+      moves:
+        - storage.file_layout
+      depends_on: []
     risks: [Adicionar shuffle na escrita aumenta o custo de cada run; o ganho está no consumo, não na escrita.]
     tradeoffs: [Escrita mais cara contra leitura mais barata e menos manutenção.]
     validation:

@@ -172,6 +172,22 @@ rules:
       - Mover a validação para antes do `write`, sobre o DataFrame já transformado.
       - Se a validação precisa do dado escrito (contagem no destino, por exemplo), escrever primeiro numa área de staging e só promover ao destino final depois de a validação passar.
       - Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior.
+    # `moves` declara `correctness.write_result` porque a propria regra diz que o
+    # conteudo do destino muda: "abortar antes do write deixa o destino com o
+    # conteudo do ciclo anterior; abortar depois deixa o destino com dado que
+    # reprovou" (tradeoffs). O custo de S3 do staging aparece nos tradeoffs e NAO
+    # entra em `moves`: nenhum eixo do vocabulario mede byte escrito, e inventar
+    # um aqui seria eixo que so existe neste arquivo. `target` colide de proposito
+    # com SF-DQ-004 -- mover o check e reuni-lo numa agregacao tocam o mesmo
+    # construto, e as duas no mesmo run confundem a medida.
+    action:
+      kind: validation.move_before_write
+      target: dq.check
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Validar antes do write adiciona uma action antes da escrita; sobre DataFrame não persistido isso recomputa o lineage inteiro.
       - Promoção a partir de staging muda o instante em que o dado fica visível para o consumidor, e quem depende do horário de publicação precisa saber.
@@ -254,6 +270,21 @@ rules:
       - Ler o resultado do check e abortar o job quando ele reprovar, com exceção explícita — `raise`, e não `assert`, quando a proteção precisa sobreviver a um interpretador otimizado.
       - Se o job deve seguir com dado parcial de propósito, registrar a decisão em métrica ou log estruturado e declarar o contrato — validação que só observa precisa dizer que só observa, no código e para quem consome.
       - Se a consequência já existe noutro módulo, ou atrás de uma cadeia de helpers mais longa que um salto (procurar `dq.unresolved` com reason `enforcement_beyond_one_hop` no mesmo lote), confirmar que ela roda neste caminho antes de mudar qualquer coisa — este achado lê apenas o corpus passado na linha de comando.
+    # `requires_absent` vazio, e a lacuna tem nome. O candidato era `dq.unresolved`
+    # com reason `enforcement_beyond_one_hop`, que a propria `explanation` aponta
+    # como o falso positivo desta regra. O cruzamento do executor e por KIND, e
+    # `dq.unresolved` tambem sai por `unresolved_target`, que nao tem relacao
+    # nenhuma com consequencia: amplo demais, pelo mesmo criterio que ja recusou
+    # `iceberg.unresolved` e `s3.unresolved`. O que destravaria e um kind proprio
+    # para a cadeia interrompida, ou guarda que leia `attrs.reason`.
+    action:
+      kind: validation.enforce_check_result
+      target: dq.enforcement
+      direction: add
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       # Aspas obrigatorias: `texto: texto` num item de lista vira MAPA em YAML, e
       # o `risks` chegaria ao operador como um dicionario de uma chave so.
@@ -328,6 +359,21 @@ rules:
     proposed_change:
       - Persistir o DataFrame antes do check, com o nível de storage adequado ao tamanho, e liberar com `unpersist` depois da última action.
       - "Alternativa sem cache: calcular a métrica de validação junto do resultado, numa única agregação, em vez de numa passada separada."
+    # Mesmo par de eixos de SF-GRAPH-003, que tambem ACRESCENTA persistencia:
+    # relogio pela `validation` ("tempo de execucao com o volume de producao") e
+    # spill pelo risco declarado ("cache de DataFrame grande pressiona memoria de
+    # executor e pode causar spill ou OOM"). `correctness.write_result` fica FORA:
+    # a `validation` desta regra exige contagem e schema INALTERADOS, que e
+    # preservacao de semantica e nao movimento de eixo.
+    action:
+      kind: code.change_persistence
+      target: dq.check.target
+      direction: add
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - shuffle.spill_bytes
+      depends_on: []
     risks:
       - Cache de DataFrame grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.
       - "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
@@ -398,6 +444,20 @@ rules:
     proposed_change:
       - "Reunir os checks numa única agregação, com uma expressão por regra (`sum(when(cond, 1).otherwise(0))` por violação), e ler todas as contagens de uma linha só. Esta é a mudança que não depende de biblioteca nenhuma, e por isso vem primeiro."
       - "Alternativa, com guarda de versão obrigatória — uma suíte que compartilha varredura. PyDeequ não instala em Glue 3.0 nem em nenhuma release EMR 6.x, e o Spark 3.4 está fora do mapa de `pydeequ/configs.py` (EMR 6.12.0 a 6.15.0); Great Expectations 1.x exige Python 3.10 ou maior. Conferir o alcance medido em knowledge/dq/validation-frameworks.md §2.2 e §1.4 antes de recomendar a alguém, e não recomendar suíte nenhuma sem antes saber em qual release o job roda."
+    # NAO ha eixo de "custo da passada", e isso e medida e nao esquecimento:
+    # nenhum fact desta area mede o tamanho do lineage varrido -- a nota de
+    # `sources` diz exatamente isso. O que sobra e medivel e ja esta escrito na
+    # regra: "cada check artesanal e uma action, e cada action e uma varredura do
+    # dado", e o risco declarado fala de "colunas de arquivos diferentes", que e
+    # byte lido. Por isso `scan.bytes_read`, e nao um eixo novo.
+    action:
+      kind: validation.merge_checks_into_single_pass
+      target: dq.check
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+      depends_on: []
     risks:
       - "Agregação única muda a mensagem de erro: em vez de falhar no primeiro check, o job passa a reportar todas as violações juntas. É melhor para diagnóstico e diferente do que a equipe está acostumada a ler."
       - Uma agregação com muitas expressões sobre um DataFrame largo pode ficar mais cara que as passadas separadas quando os checks tocam colunas de arquivos diferentes; medir antes de assumir o ganho.

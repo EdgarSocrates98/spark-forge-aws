@@ -2911,6 +2911,205 @@ def judge_findings(
 
 
 # --------------------------------------------------------------------------- #
+# arbitrate -- o executor agentico deterministico sobre findings ja julgados
+# --------------------------------------------------------------------------- #
+
+# As formas em que este repositorio publica uma colecao. A saida de
+# `judge --out` e `analyze --out` e uma LISTA nua; o payload impresso pelos
+# mesmos verbos embrulha a lista em `items`, e parte do corpus usa a chave do
+# dominio (`findings`, `facts`). Aceitar as tres e o que evita o operador ter de
+# desembrulhar JSON a mao antes de chamar o verbo -- e desembrulhar a mao e onde
+# ele erra o conjunto, que e justamente o defeito que a secao 12.9 do spec
+# mediu.
+_CHAVES_DE_COLECAO = ("items",)
+
+
+def _colecao_de(payload: Any, chave: str, origem: str) -> list[Any]:
+    """A lista dentro de `payload`, aceitando lista nua ou objeto embrulhado."""
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        for candidata in (chave, *_CHAVES_DE_COLECAO):
+            valor = payload.get(candidata)
+            if isinstance(valor, list):
+                return valor
+    raise AdapterError(
+        f"{origem}: esperado uma lista de {chave}, ou um objeto com a chave "
+        f"`{chave}` (ou `items`). Veio {type(payload).__name__}.",
+        exit_code=2,
+    )
+
+
+def _load_findings_document(findings_path: str) -> list[dict[str, Any]]:
+    """Findings de arquivo, nas duas formas que o repositorio produz.
+
+    Nao reusa `_load_findings_file` de proposito: aquele existe para a
+    ASSINATURA de relatorio, exige lista nua e recusa o objeto embrulhado. Aqui
+    o arquivo tanto pode ser a saida de `judge --out` (lista) quanto o
+    `expected/findings.json` de uma fixture.
+    """
+    path = Path(findings_path)
+    if not path.is_file():
+        raise AdapterError(
+            f"Arquivo de findings nao encontrado: {findings_path}\n"
+            f"  Rode o verbo que produz este arquivo:\n"
+            f"    {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+            exit_code=2,
+        )
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise AdapterError(f"{findings_path}: JSON invalido: {exc}", exit_code=2) from exc
+    return [f for f in _colecao_de(raw, "findings", findings_path) if isinstance(f, dict)]
+
+
+def _load_facts_document(facts_path: str) -> list[Fact]:
+    """Facts de arquivo, nas duas formas, com o `id` COMPUTADO por `Fact.id`.
+
+    O `input/facts.json` de uma fixture nao carrega `id` -- ele e derivado do
+    conteudo na hora em que o motor constroi o `Fact`. Passar aquele artefato
+    adiante sem reconstruir o fact entregaria ao executor uma lacuna que a
+    execucao real nao tem: a claim citaria um `fact_id` ausente do conjunto, e o
+    gate de lastro da secao 5.2 do spec a reprovaria por ausencia de medida
+    (secao 12.9).
+    """
+    path = Path(facts_path)
+    if not path.is_file():
+        raise AdapterError(
+            f"Arquivo de facts nao encontrado: {facts_path}\n"
+            f"  Rode o verbo que produz este arquivo:\n"
+            f"    {_FACTS_FROM_PYSPARK.format(path=facts_path)}",
+            exit_code=2,
+        )
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise AdapterError(f"{facts_path}: JSON invalido: {exc}", exit_code=2) from exc
+    return _facts_from_dicts(_colecao_de(raw, "facts", facts_path))
+
+
+def _uniao_de_facts(fact_lists: list[list[Fact]]) -> list[Fact]:
+    """A UNIAO dos facts do case, deduplicada por id e ordenada.
+
+    Deduplicar na porta evita que a mesma medida vire duas lacunas: o corpus
+    tem id repetido entre `input/` e `expected/` da mesma fixture, e o `id` e
+    content-addressed -- dois facts com o mesmo id afirmam a mesma coisa.
+    """
+    seen: set[str] = set()
+    merged: list[Fact] = []
+    for lista in fact_lists:
+        for fact in lista:
+            if fact.id in seen:
+                continue
+            seen.add(fact.id)
+            merged.append(fact)
+    return sort_facts(merged)
+
+
+def _budget_declarado(repo: str) -> dict[str, Any] | None:
+    """O bloco `budget:` do `case.yaml`, ou `None` -- nunca o default do codigo.
+
+    Case ausente ou ilegivel devolve `None`, e nao levanta: o produto deste
+    verbo e a arbitragem, e o blackboard vive em `<repo>/.sparkforge/` mesmo
+    onde nunca houve `case.yaml`. Sem bloco declarado o plano de debate sai com
+    `budget.status: unresolved` nomeando a lacuna, que e a saida certa -- o
+    default do codigo e template, nao medida (`budget show --template`).
+    """
+    try:
+        case = store.load_case(repo)
+    except Exception:
+        return None
+    bloco = case.get("budget")
+    return bloco if isinstance(bloco, dict) else None
+
+
+def arbitrate_findings(
+    repo: str,
+    findings: list[dict[str, Any]] | None = None,
+    findings_path: str | None = None,
+    facts: list[dict[str, Any]] | None = None,
+    facts_path: str | list[str] | None = None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+) -> dict[str, Any]:
+    """Roda o executor agentico deterministico e grava no blackboard de `repo`.
+
+    Corre DEPOIS de `judge`, sobre findings ja julgados, e nao reavalia regra
+    nenhuma: o que ele decide e o que o julgamento deixou em aberto -- conflito
+    entre achados, lastro suficiente para virar recomendacao, medida que falta,
+    e ordem de aplicacao.
+
+    Os facts recebidos sao a UNIAO do case, o mesmo conjunto que `judge` recebeu
+    para produzir aqueles findings. Por isso `facts_path` aceita varios
+    caminhos: o corpus mede que alimentar o executor com um subconjunto fabrica
+    claim desancorada que a execucao real nao produz (secao 12.9 do spec).
+
+    O runtime sai dos PROPRIOS facts quando eles o carregam, e so entao das
+    flags -- mesma precedencia de `judge_findings`, e pelo mesmo motivo: e ele
+    que decide se a fonte de uma regra esta VIGENTE no escopo do case, e uma T1
+    fora da versao alvo tem autoridade e nao sustenta a claim.
+    """
+    if findings is not None:
+        finding_list = [f for f in findings if isinstance(f, dict)]
+    elif findings_path is not None:
+        finding_list = _load_findings_document(findings_path)
+    else:
+        raise AdapterError(
+            "informe `findings` (lista inline) ou `findings_path` (arquivo gerado por "
+            "`sparkforge judge --facts <facts.json> --out <findings.json>`).",
+            exit_code=2,
+        )
+
+    if facts is not None:
+        fact_list = _uniao_de_facts([_facts_from_dicts(facts)])
+    elif facts_path is not None:
+        paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+        if not paths:
+            raise AdapterError(
+                "informe ao menos um `facts_path` (arquivo gerado por "
+                "`sparkforge analyze pyspark --path <dir> --out <arquivo>`).",
+                exit_code=2,
+            )
+        fact_list = _uniao_de_facts([_load_facts_document(p) for p in paths])
+    else:
+        raise AdapterError(
+            "informe `facts` (lista inline de facts) ou `facts_path` (arquivo gerado por "
+            "`sparkforge analyze pyspark --path <dir> --out <arquivo>`). O executor "
+            "recebe a UNIAO dos facts do case -- o mesmo conjunto que `judge` recebeu.",
+            exit_code=2,
+        )
+
+    context = build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+    )
+    runtime = context.to_dict()
+
+    # Import local, e nao no topo: `sparkforge.agentic.executor` arrasta
+    # `arbitration`, `blackboard`, `decision` e `budget` inteiros, e quem
+    # importa `_core` para rodar `analyze pyspark` nao paga por eles.
+    from sparkforge.agentic.executor import run_executor
+
+    resposta = run_executor(
+        finding_list,
+        [fact.to_dict() for fact in fact_list],
+        repo,
+        runtime=runtime,
+        budget=_budget_declarado(repo),
+    )
+    # O runtime EFETIVAMENTE usado, pela mesma razao de `judge_findings`: ele e
+    # a unica coisa que explica por que uma fonte contou como vigente e outra
+    # nao, e `divergences` mostra flag e fact discordando em vez de resolver a
+    # discordancia em silencio.
+    resposta["runtime"] = runtime
+    resposta["repo"] = str(repo)
+    return resposta
+
+
+# --------------------------------------------------------------------------- #
 # runtime detect
 # --------------------------------------------------------------------------- #
 

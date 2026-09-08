@@ -32,9 +32,11 @@ Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constrain
 
 **AWS Glue 6.0** é suportado e analisado: matriz de runtime com procedência por fonte, áreas de regra para a fronteira do Spark 4 (`SF-SPARK4`) e para o Lake Formation FGAC (`SF-LF`), compatibilidade de feature Iceberg por engine como dado, e cenários de migração por par de versões. A documentação dedicada — incluindo o guia de decisão e o que a ferramenta **não** sabe — está em [`docs/aws/glue/6.0/`](docs/aws/glue/6.0/).
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 81 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: **147** regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data — **112 delas executáveis**; as outras **35** são declarações de área de coordenação (`executable: false`, `when: {all: []}`), que existem para a área ter nome e rota, não para julgar —, mais **99** rotas determinísticas em `routing.yaml`. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md). Os números correntes ficam na tabela *Números correntes* de [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md), e `python scripts/check_status_numbers.py --strict` reprova linha que nenhuma medida produz.
 
-As 81 regras se distribuem em 15 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-GRAPH` 4 (processamento de grafo com GraphFrames), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 112 executáveis se distribuem em 26 áreas (medido em 2026-09-08): `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-CTM` 6 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-GRAPH` 6 (grafo com GraphFrames), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-MIG` 4 (migração entre versões), `SF-PLAN` 4 (plano físico), `SF-SPARK4` 4 (fronteira do Spark 4), `SF-KMS` 2, `SF-LF` 2 (Lake Formation FGAC), `SF-TIMEOUT` 2, `SF-WASTE` 2, e uma cada em `SF-BRIDGE`, `SF-CG`, `SF-NET` e `SF-XACC`. **Conte área com `area_of`, nunca somando lista escrita à mão** — `SF-EMR` é prefixo de `SF-EMRS` e de `SF-EMRK`, e comparar por `startswith` mede a fronteira ao contrário. A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+
+Cada uma das 112 carrega um bloco **`action:`** — `kind` (66 no vocabulário fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`), `requires_absent`, `moves` (22 eixos, cada um `nature: measure` ou `risk`) e `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem MCP e sem Python. O vocabulário é travado **nas duas direções**: `kind`, eixo ou direção que o catálogo não declara reprova o gate, e `kind` declarado que regra nenhuma usa também — dez foram apagados por não serem ação dominante de regra nenhuma. `expected_gain` é **recusado pelo schema**: afirmar quanto se economizaria exige o custo do run que não aconteceu.
 
 ## Camada determinística (Fase 0)
 
@@ -534,7 +536,7 @@ São **não-despacháveis**: podem mutar infraestrutura ao vivo, e a fronteira
 escrita. Procedência e licença em [`vendor/CREDITS.md`](vendor/CREDITS.md),
 seção *Adaptado, não vendorizado*.
 
-## Camada agêntica — biblioteca, e o que ela ainda não é
+## Camada agêntica — executor determinístico, e o que ela ainda não é
 
 `sparkforge/agentic/` (13 módulos) traz entidades de primeira classe e engines
 para trabalho agêntico auditável: `Claim`, `Evidence` (com tiers de autoridade
@@ -543,24 +545,37 @@ T1-T6), `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`,
 com detecção de falso consenso, ADR automático, memória institucional,
 budget e níveis de autonomia L0-L5.
 
-**O que ela é hoje: biblioteca mais oito verbos de leitura na CLI.** Nenhum
-extrator, regra, tool MCP ou coordenador escreve essas entidades — num
-repositório de trabalho `sparkforge blackboard summary` devolve zero em todas
-as contagens, e isso é o estado correto. Não existe executor de debate: existem
-o protocolo, os gatilhos e o budget. Quem quiser produzir entidades chama a API
-Python.
+`sparkforge/agentic/executor/` (7 módulos, 163 testes) é o **produtor** dessas
+entidades, e ele é determinístico. `sparkforge arbitrate` roda depois de `judge`
+e escreve no blackboard do case — num case rodado, `blackboard summary` deixa de
+devolver zero.
+
+**O que ela NÃO é, e isso governa o resto.** Não existe executor de **debate**:
+quando a arbitragem não fecha, o verbo emite um `DebatePlan` e para, com
+`debate.unresolved`. Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui
+chama provider — quem gasta token é o host que executa os agents. O executor é
+**L0**: `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
+obrigatório, nunca registro de coisa feita.
 
 Por isso **não há afirmação de ganho** publicada em lugar nenhum: comparar a
 arquitetura nova com a antiga exigiria os dois lados rodando o mesmo caso, e o
-lado novo ainda não roda.
+lado que a comparação media — o debate — não roda.
 
 ```bash
+sparkforge arbitrate --findings f.json --facts a.json --facts b.json --repo .
 sparkforge blackboard summary --repo .        # contagem do blackboard do case
 sparkforge decisions list --repo .            # decisões do case e da memória
+sparkforge decisions explain <id> --repo .    # rollback e falsification_condition
 sparkforge budget show --repo .               # budget DECLARADO no case.yaml
 sparkforge budget show --template             # defaults do código, rotulados
 sparkforge autonomy show --level L3           # perfil de autonomia
 ```
+
+`--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO
+dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
+findings. Alimentá-lo com um subconjunto fabrica claim desancorada que a execução
+real não produz. A tool MCP equivalente é `sparkforge_arbitrate`, e ela é
+`LOCAL_MUTATION` — a única do pacote que grava no disco de quem chama.
 
 Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que
 falta: [`docs/agentic-evolution-report.md`](docs/agentic-evolution-report.md).

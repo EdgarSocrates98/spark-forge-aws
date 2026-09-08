@@ -28,6 +28,13 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
   explanation: >
     ...
   proposed_change: [...]
+  action:                          # o que a regra PROPOE, em vocabulario fechado
+    kind: code.restructure_loop
+    target: pyspark.loop
+    direction: replace
+    requires_absent: []
+    moves: [runtime.wall_clock, correctness.write_result]
+    depends_on: []
   risks: [...]
   tradeoffs: [...]
   validation: [...]
@@ -51,6 +58,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 | `runtime_scope` | sim | Guarda de **versão**, nunca etiqueta de serviço. Fora do range: regra **skipped por versão**, com motivo no relatório. Falha **fechada**: chave ausente ou vazia no runtime reprova a regra, então só declare o que a regra realmente precisa — ver "O que `runtime_scope` é, e o que ele não é" |
 | `explanation` | sim | Por que custa. Aponta para `knowledge/` quando há profundidade |
 | `proposed_change` | sim | Ações concretas |
+| `action` | sim, nas executáveis | O que a regra **propõe**, em vocabulário fechado, para que contradição e ordem de aplicação sejam legíveis sem MCP e sem Python. Seis campos: `kind` (um dos 66 de `action_kinds.yaml`), `target` (a propriedade que a mudança toca), `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`), `requires_absent` (fact kinds que vetam a ação), `moves` (os eixos que a ação move, dos 22 de `axes:` — **16** com `nature: measure`, grandeza comparável, e **6** com `risk`, que é o resultado podendo se mover; só os de medida entram na restrição de sequenciamento, e a contradição direta **não** filtra por eixo) e `depends_on` (ids de regra a aplicar antes). O vocabulário é travado **nas duas direções**: valor não declarado reprova o gate, e valor declarado que regra nenhuma usa reprova também. **`expected_gain` é recusado pelo schema** — afirmar quanto se economizaria exige o custo do run que não aconteceu |
 | `risks`, `tradeoffs` | sim | Sem isso não é recomendação, é opinião |
 | `validation` | sim | Como provar que a semântica não mudou |
 | `rollback` | sim | Como voltar |

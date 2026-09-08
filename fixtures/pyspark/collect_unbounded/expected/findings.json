@@ -48,6 +48,16 @@
         "origin": "field-heuristic",
         "note": "Consequência direta do modelo de execução; ver knowledge/spark/memory-and-oom.md secao 2, classe driver heap."
       }
-    ]
+    ],
+    "action": {
+      "kind": "code.replace_driver_collection",
+      "target": "pyspark.driver_collect",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

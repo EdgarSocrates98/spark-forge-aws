@@ -46,6 +46,18 @@
         "url": "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {
+      "kind": "scan.project_columns",
+      "target": "sql.query.projection",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": [
+        "SF-ATH-004"
+      ]
+    }
   }
 ]
