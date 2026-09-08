@@ -28,6 +28,66 @@ forma nova.
 hoje; o STATUS publica 111 e está defasado em um desde `SF-BRIDGE-001`. O plano
 usa 112, e a Tarefa 22 remedia o STATUS.
 
+**D-4 — decidido na Tarefa 1, e vale para os lotes 4-10.** A leitura das 112
+produziu **76 `kind` em 20 `axis`**, acima da faixa de 25-50 que este plano
+estimava. A faixa era estimativa; o critério publicado — dois `kind` diferem
+quando as ações tocam coisas diferentes ou vão em direções diferentes — foi
+aplicado contra as 112 reais, e a fusão seguinte juntaria alavancas que
+conflitam entre si (`capacity.reduce_workers` com
+`capacity.change_worker_type`), que é exatamente o cruzamento que o executor
+existe para fazer. Fica em 76.
+
+**D-5 — `action:` é UM bloco, e descreve a ação DOMINANTE.** A leitura achou
+regras cujo `proposed_change` oferece alternativas mutuamente excludentes:
+`SF-LF-001` e `SF-LF-002` (o texto delas diz que não existe meio-termo),
+`SF-ATH-003` (três alternativas em eixos diferentes) e `SF-UI-004` (a
+classificação da causa decide entre duas ações opostas). Elas declaram a
+dominante, e a alternativa fica **fora desta entrega**, como limite declarado.
+Razão: contradição e ordem operam sobre a ação que a regra propõe aplicar;
+alternativa dentro de uma regra é escolha do operador, e a arbitragem deste
+executor escolhe entre CLAIMS, nunca dentro de uma.
+
+**D-6 — não existe `direction: hold`.** `SF-EMRS-004` e `SF-EMRK-003` admitem
+por escrito que **não** mudar pode ser a decisão certa. Isso é `investigate`: a
+regra pede que a política seja declarada antes de mexer, e `investigate` já
+significa medir ou decidir antes de mudar. Criar `hold` faria o executor
+ordenar uma não-ação, e ordenar o nada não é ordem. `SF-UI-004`,
+`SF-BENCH-001` e `SF-BENCH-004` também são `investigate` — a ação delas é
+medida ou escopo de afirmação, não mudança no job.
+
+**D-7 — `moves` tambem precisa de vocabulario fechado, e o plano nao previa.**
+Os exemplos deste plano escrevem `cost.dpu_seconds`, `runtime.wall_clock`,
+`scan.bytes_read` sem nada que os feche. Sete lotes escrevendo eixo por conta
+propria produziriam `runtime.wall_clock` num e `wall_clock` noutro, e a
+restricao da §5.4 — duas acoes que compartilham eixo nao entram no mesmo run —
+**nunca dispararia**, sem que nada acusasse. E o mesmo modo de falha que o
+literal repetido de `routing.yaml` teve no gate de area.
+
+`rules/catalog/action_kinds.yaml` ganha uma chave `axes:` no mesmo molde de
+`kinds:`, e o gate de `tests/test_rules_action_field.py` cobra as duas direcoes:
+todo eixo citado em `moves` esta no vocabulario, e todo eixo do vocabulario e
+citado por alguma regra. A Tarefa 4 abre a chave; os lotes seguintes acrescentam
+o que faltar.
+
+**D-8 — a Tarefa 3 deixou 96 goldens vermelhos, e a verificacao dela nao olhou.**
+Medido em 2026-09-08, depois do lote A: o corpus tem **125** goldens com
+findings; **29** carregam a chave `action` (os que o lote A regenerou) e **96**
+nao. Eles sao anteriores a Tarefa 3, que pos `action` em `Finding.to_dict()`, e
+falham com ou sem lote nenhum.
+
+A causa nao foi o implementador: a verificacao que este plano mandou rodar na
+Tarefa 3 nomeava quatro arquivos de teste, e **nenhum deles era
+`test_fixtures_golden_*`**. E o modo de falha que o proprio STATUS deste
+repositorio ja registra por escrito -- fase que fecha verde nao prova que esta
+certa, prova que a suite olhou para onde alguem mandou olhar.
+
+**Tarefa 3b, inserida entre o lote A e o lote B:** saneamento unico dos 96. Ela
+acrescenta a chave `action` que `to_dict()` hoje produz, e **nada mais** -- o
+criterio de aceite e que o diff de cada golden toque **so** essa chave. Golden
+que mudar qualquer outra coisa na regeneracao e achado, e para a tarefa.
+
+Depois dela, cada lote regenera apenas os goldens das areas que ele preencheu.
+
 ---
 
 ## Estrutura de arquivos
@@ -544,28 +604,26 @@ Run: `python scripts/derive_action_kinds.py | grep -A6 -E "^## SF-(UI|PLAN|TIMEO
 
 - [ ] **Step 2: Escrever o bloco `action` em cada regra**
 
-Este lote carrega o `requires_absent` mais importante da entrega. Em
-`rules/catalog/timeout.yaml`, dentro de `SF-TIMEOUT-001`:
+**Este passo estava errado no plano original, e a correção é o achado.** Ele
+mandava dar a `SF-TIMEOUT-001` a ação `timeout.increase_limit` com
+`requires_absent: [spark.stage.skew, spark.stage.spill, ...]`.
 
-```yaml
-    action:
-      kind: timeout.increase_limit
-      target: spark.network.timeout
-      direction: increase
-      requires_absent:
-        - spark.stage.skew
-        - spark.stage.spill
-        - spark.executor.gc_high
-        - spark.executor.lost
-      moves:
-        - runtime.wall_clock
-      depends_on: []
-```
+Medido em `rules/catalog/timeout.yaml`: `SF-TIMEOUT-001` **não propõe aumentar
+limite nenhum**. O título dela é *"Timeout com sintoma medido ao lado — aumentar
+o limite mascara a causa"*, o `when` dispara **só** com skew, spill, GC ou
+executor perdido acima do limiar, e o `proposed_change` manda ler
+`attrs.category`, investigar o sintoma, e **só depois** avaliar o limite. A
+guarda que o plano queria mover para `requires_absent` já está no `when`.
 
-Os quatro `requires_absent` são exatamente os que a regra 15 do `CLAUDE.md`
-publica em prosa e que `attrs.also_seen` já mede. Conferir os nomes de kind
-contra `EMITTED_KINDS` do extrator antes de escrever — nome de fact inventado
-aqui vira contradição que nunca dispara.
+Ela é `direction: investigate`, com `kind` do eixo de timeout que descreva
+*investigar o sintoma medido ao lado* — não `increase`.
+
+`SF-TIMEOUT-002` julga a relação entre duas propriedades
+(`heartbeatInterval >= network.timeout`, que é errado sempre) e é a que tem
+ação de mudança de verdade neste par.
+
+Vale para o lote inteiro: **o `proposed_change` manda, e o plano não.** Onde
+este documento e a regra discordarem, a regra vence e o desvio vai no relatório.
 
 Run para conferir: `python -c "from sparkforge.facts.event_log import EMITTED_KINDS; print(sorted(EMITTED_KINDS))"`
 
@@ -822,7 +880,7 @@ Expected: `112 112`
 
 - [ ] **Step 2: Rodar os lotes de teste que tocam catálogo**
 
-Run: `python -m pytest tests/test_rules_catalog.py tests/test_fixtures_kind_coverage.py tests/test_rules_action_field.py -q`
+Run: `python -m pytest tests/test_rules_loader.py tests/test_fixtures_kind_coverage.py tests/test_rules_action_field.py -q`
 Expected: PASS. Se um golden de finding comparar `to_dict()` inteiro, ele agora
 tem `action` preenchido — atualizar o golden, que é a mudança correta.
 
@@ -2524,8 +2582,22 @@ Expected: todos verdes. Anotar a soma e conferir com
 
 - [ ] **Step 5: Rodar lint**
 
-Run: `ruff check . && ruff format --check .`
+Run: `python -m ruff check sparkforge scripts tests`
 Expected: sem apontamento.
+
+**Este e o comando que o CI roda** (`.github/workflows/ci.yml:63`), e e o unico
+criterio de lint desta entrega. `ruff format --check` **nao** entra: medido em
+2026-09-08, ele reprova **396 arquivos que esta branch nao tocou** --
+`sparkforge/facts/event_log.py` e `sparkforge/rules/engine.py` entre eles. A
+causa e o pin sem teto (`ruff>=0.6` em `requirements.txt:21` e
+`pyproject.toml:61`): o repositorio foi formatado com uma versao anterior, e a
+0.16.0 formata diferente. Exigi-lo aqui reprovaria a entrega por mudanca de
+ambiente, e roda-lo reformataria 396 arquivos alheios ao escopo.
+
+**Achado registrado, e nao consertado aqui:** o STATUS publica que
+`ruff format --check` fechou limpo em 2026-09-03. Isso deixou de valer com a
+versao instalada hoje, e o pin sem teto e a razao. Fechar isso e por o teto no
+pin ou reformatar o repositorio inteiro -- as duas coisas sao entrega propria.
 
 - [ ] **Step 6: Commit**
 

@@ -373,3 +373,134 @@ agrupar, e só então travar o gate.
 testes verdes sobre catorze defeitos na entrega original. As fixtures desta
 entrega são escritas como par positivo/negativo **antes** da implementação de
 cada caminho, e o par é o que prova que o limiar é o que se diz que é.
+
+
+---
+
+## 12. Desvios medidos durante a implementação
+
+Esta seção é acréscimo, não reescrita. O corpo acima fica como foi aprovado, e
+o que a execução mediu contra o catálogo real entra aqui.
+
+### 12.1 O exemplo canônico da §3.1 e da §4 está invertido
+
+O spec usa, nas duas seções, `timeout.increase_limit` sobre
+`spark.network.timeout` com `requires_absent: [spark.stage.skew,
+spark.stage.spill]` como o caso que `requires_absent` existe para pegar.
+
+**Medido em 2026-09-08, contra `rules/catalog/timeout.yaml`:** `SF-TIMEOUT-001`
+não propõe aumentar limite nenhum. O título dela é *"Timeout com sintoma medido
+ao lado — aumentar o limite mascara a causa"*, o `when` dispara **apenas** com
+skew, spill, GC ou executor perdido acima do limiar, e o `proposed_change` manda
+ler `attrs.category`, investigar o sintoma, e só depois avaliar o limite. Ela é
+`direction: investigate`.
+
+A guarda que a §3.1 queria mover para `requires_absent` **já está no `when` da
+regra**. Não existe, no catálogo de hoje, regra que proponha
+`timeout.increase_limit` — logo o par que a §4 chama de contradição condicional
+não tem produtor.
+
+### 12.2 `requires_absent` cruza por kind, e o sintoma costuma ser measure
+
+O lote A mediu a razão estrutural: `requires_absent` compara **fact kinds**, e
+o sintoma que desaconselha uma ação costuma ser uma **measure dentro de um
+kind** que sai sempre. `glue.utilization.summary` carrega
+`measures.skew_p95_over_p50` em toda coleta; `spark.stage.spill` e
+`spark.stage.gc` são emitidos para todo stage analisado, inclusive com zero
+byte — o comentário de `event_log.py:826` registra isso. Presença de kind não é
+sintoma, e a guarda por kind não vale.
+
+Consequência: 24 das 27 regras do lote A saíram com `requires_absent: []`, e as
+três que receberam guarda usam kinds de recusa (`emr.configuration.unapplied`,
+`emrc.pod_template.unresolved`), não de sintoma.
+
+### 12.3 O que fica decidido
+
+`requires_absent` **permanece** no schema. Ele custa uma chave opcional e é o
+que o executor vai usar no dia em que uma regra propuser mudança que outra
+desaconselhe por medida própria.
+
+O que muda é a **afirmação**: ao fim da Fase 2, a entrega mede quantas das 112
+declaram `requires_absent` não vazio e publica o número. Se a contradição
+condicional não tiver caso no catálogo de hoje, isso sai escrito — mecanismo sem
+caso é `unresolved` nomeado, não funcionalidade entregue. A contradição
+**direta** (mesmo `target`, direções opostas) é medida no mesmo passo, e pela
+mesma régua.
+
+Destravar a guarda por sintoma exige um kind emitido só acima do limiar
+(`glue.utilization.skew_high` ou equivalente por stage). Isso é entrega própria,
+no extrator, e não entra aqui.
+
+
+### 12.4 A Fase 2 fechou, e as medidas mudam o motor
+
+Catálogo completo em `d8cd9c2`: **112 de 112** com bloco `action`, vocabulário de
+**66 `kind`** (dez apagados por não serem ação dominante de regra nenhuma) e
+**22 eixos**.
+
+**A ação é de mudança em 89 das 112; `investigate` são 23.** A leitura dos dois
+primeiros lotes sugeria o contrário, e estava errada — os lotes A e B são as
+áreas onde o catálogo mais manda medir antes de mexer. No conjunto, ele
+prescreve.
+
+**A contradição direta tem exatamente UM caso, e ele é melhor que o exemplo que
+este spec inventou.** `SF-GRAPH-005` manda declarar o jar de GraphFrames em
+`--extra-jars` do `default_arguments`; `SF-LF-001` manda removê-lo, porque
+**a AWS não oferece modo de FGAC que aceite JAR adicional** e o texto da regra
+diz que não existe meio-termo. Um job que usa GraphFrames e tem controle de
+acesso fino do Lake Formation dispara as duas, e elas são incompatíveis por
+limitação de plataforma **documentada** — não por heurística. É o caso canônico
+que a §4 procurava e a §12.1 mostrou não existir no timeout.
+
+**`correctness.write_result` não é eixo de medida, e tratá-lo como um quebra as
+duas coisas que dependem de `moves`.** Ele aparece em 33 das 112 — é o eixo que
+diz *o resultado pode se mover*, ou seja, **risco semântico**, não grandeza
+comparável. Duas consequências medidas:
+
+- **Contradição:** com ele no teste, `SF-PLAN-003` (acrescentar a equi-condição
+  que falta) e `SF-PY-009` (remover hint de broadcast) saem como par contraditório
+  — mesmo `target: pyspark.join`, direções opostas, `correctness` em comum. São
+  coisas diferentes no mesmo construto, e o par é falso positivo. Excluindo-o,
+  sobra só o caso real.
+- **Sequenciamento:** a restrição da §5.4 (duas ações no mesmo eixo não entram no
+  mesmo run, porque o antes/depois fica inatribuível) produziria um grupo de
+  **33 regras**. Isso é ruído. Sem ele, são 15 eixos e o maior grupo tem 10.
+
+A razão é principiada, não conveniência: a restrição existe por causa da regra 13
+— aplicar duas mudanças que movem a mesma **medida** torna a atribuição
+impossível. Duas mudanças que ambas *podem alterar o resultado* não têm esse
+problema; o que elas exigem é validação funcional de cada uma, que é outro
+mecanismo (`funcval`).
+
+**Decidido:** `axes:` ganha `nature: measure | risk`. `conflict.py` e
+`ordering.py` consideram **só** os de `nature: measure`.
+
+### 12.5 `requires_absent`: 4 em 112, nenhuma de sintoma
+
+Confirmado sobre o catálogo inteiro. As quatro guardas são
+`emr.configuration.unapplied` (duas), `emrc.pod_template.unresolved` e
+`env.unresolved` — todas **kinds de recusa**, que dizem *não deu para ler*, não
+*o problema está presente*.
+
+Onze candidatas foram medidas e recusadas ao longo dos sete lotes, sempre por um
+de dois motivos: o kind **sai sempre** (`spark.stage.spill` e `spark.stage.gc`
+saem para todo stage, inclusive com zero byte —
+`sparkforge/facts/event_log.py:826`), ou **sai por motivos sem relação**
+(`iceberg.unresolved` cobre `read_error`, `malformed_json` e três de
+`format_version` no mesmo kind).
+
+**A contradição condicional não tem caso no catálogo de hoje.** Isso sai
+publicado assim, com a medida que a destravaria nomeada — um kind emitido só
+acima do limiar, ou um `requires_absent` que saiba cruzar por `attrs` além do
+kind. Mecanismo sem caso é `unresolved` nomeado, nunca funcionalidade entregue.
+
+### 12.6 `depends_on` é o que tem mais lastro
+
+**17 arestas em 15 regras**, a maioria citada literalmente no texto das regras
+(`SF-ATH-001/-002/-005 → SF-ATH-004`, "antes de *qualquer* reescrita de SQL";
+`SF-UI-001 → SF-UI-002`, classificar o skew antes de tratá-lo;
+`SF-ICE-001 → SF-ICE-005`, corrigir na origem primeiro).
+
+A decisão 4 do spec — ordem de aplicação — é a que chega à Fase 3 com mais caso
+real. A decisão 1 (conflito) chega com um. As duas continuam no escopo, e o
+relatório publica os dois números lado a lado.
