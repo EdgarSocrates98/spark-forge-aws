@@ -73,6 +73,7 @@ class TestToolSurface:
             "sparkforge_tune",
             "sparkforge_economy_report",
             "sparkforge_judge",
+            "sparkforge_arbitrate",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
             "sparkforge_report_sign",
@@ -218,6 +219,14 @@ class TestToolSurface:
         de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
         assert writers - de_rede == {
+            # `sparkforge_arbitrate` escreve o blackboard do case
+            # (`.sparkforge/blackboard/*.jsonl` mais um ADR por decisao
+            # significativa), e por isso nao e `readOnlyHint`. Ela tambem nao e
+            # idempotente, e a diferenca e medida: as ENTIDADES tem id
+            # content-addressed e a segunda execucao as pula, mas o `trace` da
+            # arbitragem nao tem id -- ele registra que a arbitragem
+            # ACONTECEU, e duas execucoes sao dois acontecimentos.
+            "sparkforge_arbitrate",
             "sparkforge_case_open",
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
@@ -1610,6 +1619,26 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             {"facts": facts["items"], "glue": "5.0", "show_skipped": True},
         )
 
+    if name == "sparkforge_arbitrate":
+        # Encadeada de proposito, e nao com findings escritos a mao: o executor
+        # roda DEPOIS de `judge`, sobre os findings que ele produziu, e sobre a
+        # UNIAO dos facts que ele recebeu. Montar os dois lados aqui a mao
+        # validaria o schema contra uma entrada que a execucao real nao tem.
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_judge", {"facts": facts["items"], "glue": "5.0"})
+        repo = tmp_path / "case_arbitrate"
+        repo.mkdir()
+        return call_tool(
+            "sparkforge_arbitrate",
+            {
+                "repo": str(repo),
+                "findings": judged["items"],
+                "facts": facts["items"],
+                "glue": "5.0",
+            },
+        )
+
     if name == "sparkforge_rules_lookup":
         return call_tool("sparkforge_rules_lookup", {"id": ["SF-PY-007"]})
 
@@ -2138,6 +2167,14 @@ class TestErrorShapesValidateToo:
             "sparkforge_report_verify",
             {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
         ),
+        (
+            "sparkforge_arbitrate",
+            {
+                "repo": "<tmp>",
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+            },
+        ),
     )
 
     @staticmethod
@@ -2241,3 +2278,88 @@ class TestFinopsTool:
 
         assert "sparkforge_finops" in tools.TOOLS
         assert "sparkforge_finops" in tools._HANDLERS
+
+class TestArbitrateTool:
+    """`sparkforge_arbitrate` -- a superficie MCP do executor agentico.
+
+    A descricao dela declara TRES coisas que a tool nao faz, e isso nao e
+    decoracao: e o contrato. Sem elas escritas, quem le a superficie assume que
+    uma tool chamada "arbitrate" resolve a disputa, mede o ganho e publica uma
+    confianca -- e nenhuma das tres e verdade.
+    """
+
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_arbitrate" in tools.TOOLS
+        assert "sparkforge_arbitrate" in tools._HANDLERS
+
+    def test_a_descricao_declara_o_que_ela_nao_faz(self):
+        descricao = TOOLS["sparkforge_arbitrate"]["description"].lower()
+        # Nao estima ganho (regra 13: atribuir custo a uma causa exige o custo
+        # do run que nao aconteceu).
+        assert "nao estima ganho" in descricao
+        # Nao publica score como confianca medida: os pesos de `assess_claim`
+        # sao convencao e nenhum experimento os calibrou.
+        assert "convencao" in descricao
+        assert "score" in descricao
+        # Nao executa debate: quando a arbitragem nao fecha, sai o plano.
+        assert "debate.unresolved" in descricao
+
+    def test_ela_declara_caminho_e_por_isso_cai_na_cadeia_de_autorizacao(self):
+        """`repo`, `findings_path` e `facts_path` sao nomes de caminho.
+
+        A cadeia de `sparkforge.agents.autonomy` confina TODO argumento cujo
+        nome nomeia caminho dentro da raiz do case. Uma tool que grava no disco
+        e nao declarasse nenhum cairia no conjunto de excecao -- e sairia da
+        verificacao de confinamento sem que nada acusasse.
+        """
+        from sparkforge.agents.autonomy import _e_chave_de_caminho
+
+        propriedades = TOOLS["sparkforge_arbitrate"]["inputSchema"]["properties"]
+        assert _e_chave_de_caminho("repo")
+        assert {"repo", "findings_path", "facts_path"} <= set(propriedades)
+
+    def test_ela_e_local_mutation_e_nao_read_only(self):
+        """Ela GRAVA: `.sparkforge/blackboard/*.jsonl` mais o ADR."""
+        from sparkforge.agents.autonomy import ToolClass, tool_class
+
+        assert tool_class("sparkforge_arbitrate") is ToolClass.LOCAL_MUTATION
+
+    def test_o_score_de_arbitragem_nao_aparece_no_output_schema(self):
+        """O desfecho sai; o numero nao.
+
+        `assess_claim` pontua evidencia 40%, autoridade 30%, especificidade 20%
+        e aplicabilidade 10% -- pesos de convencao, sem calibracao. Eles ordenam
+        claims DENTRO de uma arbitragem; publicar o valor absoluto num schema o
+        transformaria em confianca medida, que ele nao e.
+        """
+        schema = json.dumps(TOOLS["sparkforge_arbitrate"]["outputSchema"])
+        for proibido in ("confidence_score", "evidence_quality", "independence_score"):
+            assert proibido not in schema, proibido
+
+    def test_a_tool_grava_o_blackboard_que_os_verbos_de_leitura_liam_vazio(self, tmp_path):
+        from sparkforge.agentic.blackboard import read_claims
+
+        lib = tmp_path / "lib"
+        lib.mkdir()
+        (lib / "loader.py").write_text(JOB, encoding="utf-8")
+        facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_judge", {"facts": facts["items"], "glue": "5.0"})
+        repo = tmp_path / "case"
+        repo.mkdir()
+
+        resultado = call_tool(
+            "sparkforge_arbitrate",
+            {
+                "repo": str(repo),
+                "findings": judged["items"],
+                "facts": facts["items"],
+                "glue": "5.0",
+            },
+        )
+
+        assert resultado["kind"] == "executor.run"
+        assert resultado["persisted"] is True
+        assert resultado["claims"]
+        assert len(read_claims(repo)) == len(resultado["claims"])

@@ -514,6 +514,22 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # Roda DEPOIS de `judge`, sobre os findings dele, e nao reavalia regra: decide
+  # conflito entre achados, lastro, medida que falta e ordem de aplicacao. O
+  # terceiro degrau e o proprio catalogo -- o bloco `action:` de cada regra
+  # (`kind`, `target`, `direction`, `depends_on`, `requires_absent`) e o que
+  # torna a contradicao e a ordem legiveis sem MCP e sem Python.
+  - name: arbitrate already-judged findings and decide what the judgement left open
+    tools: [sparkforge_arbitrate]
+    cli: [arbitrate]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: locate the version-controlled knowledge files
     tools: [sparkforge_knowledge_path]
     cli: [knowledge path]

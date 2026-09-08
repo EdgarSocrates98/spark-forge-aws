@@ -1102,6 +1102,274 @@ _JUDGE_SCHEMA: dict[str, Any] = {
     "oneOf": [_JUDGE_SUCCESS_SCHEMA, _ERROR_SCHEMA],
 }
 
+
+# --------------------------------------------------------------------------- #
+# arbitrate -- o executor agentico deterministico
+# --------------------------------------------------------------------------- #
+
+# O que sai de cada entidade e o id mais o que identifica o achado; o CORPO
+# inteiro fica no blackboard, que e onde ele e auditavel sem inflar a resposta.
+# Nenhum campo carrega o score de arbitragem: os pesos de `assess_claim` sao
+# convencao sem calibracao, ordenam claims DENTRO de uma arbitragem, e o valor
+# absoluto nao e confianca medida.
+_ARBITRATE_CLAIM_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["id", "claimant", "statement", "confidence", "evidence_refs"],
+    "properties": {
+        "id": {"type": "string"},
+        "claimant": {"type": "string", "description": "O `rule_id` que afirma."},
+        "statement": {"type": "string"},
+        "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+        "evidence_refs": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Os `fact_id` que ancoram a claim -- medida, nunca prosa.",
+        },
+        "supersedes": {
+            "type": ["string", "null"],
+            "description": (
+                "A claim ANTERIOR que esta revisa, quando o mesmo case ja foi "
+                "arbitrado com facts diferentes. Revisao e acrescimo, nunca "
+                "reescrita."
+            ),
+        },
+    },
+}
+
+_ARBITRATE_EVIDENCE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["id", "source", "authority", "scope", "measurement_ref", "supports"],
+    "properties": {
+        "id": {"type": "string"},
+        "source": {"type": "string"},
+        "authority": {
+            "type": "string",
+            "description": (
+                "Tier de autoridade da fonte: T1 (docs oficial) > T2 "
+                "(source/changelog) > T3 (benchmark reproduzivel) > T4 "
+                "(autoridade reconhecida) >> T5 (LLM) > T6 (conjectura). Tier "
+                "ALTO fora do escopo de versao tem autoridade e NAO sustenta a "
+                "claim -- por isso `scope` sai ao lado."
+            ),
+        },
+        "scope": {"type": "string", "description": "O `runtime_scope` da regra, como texto."},
+        "measurement_ref": {"type": ["string", "null"]},
+        "supports": {"type": "array", "items": {"type": "string"}},
+    },
+}
+
+_ARBITRATE_CONTRADICTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["id", "claim_a", "claim_b", "rules", "target", "description", "resolution"],
+    "properties": {
+        "id": {"type": "string"},
+        "claim_a": {"type": "string"},
+        "claim_b": {"type": "string"},
+        "rules": {"type": "array", "items": {"type": "string"}},
+        "target": {
+            "type": "string",
+            "description": "A propriedade que as duas acoes movem em direcoes opostas.",
+        },
+        "description": {"type": "string"},
+        "resolution": {
+            "type": ["string", "null"],
+            "description": (
+                "A decisao que a resolveu, ou `null` quando a arbitragem nao "
+                "fechou -- e ai o par sai em `debate_plans`."
+            ),
+        },
+    },
+}
+
+_ARBITRATE_OBJECTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["id", "target_claim", "kind", "fact_id", "statement"],
+    "properties": {
+        "id": {"type": "string"},
+        "target_claim": {"type": "string"},
+        "kind": {
+            "type": "string",
+            "description": "O fact kind que a acao declarou em `requires_absent` e esta MEDIDO.",
+        },
+        "fact_id": {"type": "string"},
+        "statement": {"type": "string"},
+    },
+}
+
+_ARBITRATE_UNKNOWN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["id", "question", "impact", "blocking", "evidence_needed"],
+    "properties": {
+        "id": {"type": "string"},
+        "question": {"type": "string"},
+        "impact": {"type": "string"},
+        "blocking": {"type": "boolean"},
+        "evidence_needed": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "A MEDIDA que destravaria a lacuna, nomeada -- nunca 'faltam dados'.",
+        },
+    },
+}
+
+_ARBITRATE_EXPERIMENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["id", "variable", "success_criteria", "cost_estimate", "time_estimate"],
+    "properties": {
+        "id": {"type": "string"},
+        "variable": {"type": "string"},
+        "success_criteria": {"type": "array", "items": {"type": "string"}},
+        "cost_estimate": {"type": ["string", "number", "null"]},
+        "time_estimate": {"type": ["string", "number", "null"]},
+    },
+}
+
+_ARBITRATE_DECISION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "id",
+        "problem",
+        "selected_option",
+        "rejected_options",
+        "confidence",
+        "rollback",
+        "validation",
+        "significant",
+    ],
+    "properties": {
+        "id": {"type": "string"},
+        "problem": {"type": "string"},
+        "selected_option": {"type": "string"},
+        "rejected_options": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Contra o que a decisao foi tomada. Registrar so a escolhida "
+                "esconderia metade da decisao."
+            ),
+        },
+        "confidence": {"type": "string"},
+        "rollback": {
+            "type": "string",
+            "description": (
+                "Obrigatorio: `make_decision` recusa decisao sem ele. O ADR e "
+                "PROPOSTA com rollback, nao registro de coisa feita."
+            ),
+        },
+        "validation": {"type": "string"},
+        "significant": {
+            "type": "boolean",
+            "description": "Verdadeiro quando a decisao ganha um ADR gravado dentro do case.",
+        },
+    },
+}
+
+_ARBITRATE_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "kind",
+        "autonomy",
+        "claims",
+        "evidence",
+        "contradictions",
+        "objections",
+        "unknowns",
+        "experiments",
+        "decisions",
+        "debate_plans",
+        "order",
+        "persisted",
+        "persistence",
+        "runtime",
+        "repo",
+    ],
+    "properties": {
+        "kind": {"type": "string", "enum": ["executor.run"]},
+        "autonomy": {
+            "type": "object",
+            "required": ["level", "applied_changes", "note"],
+            "properties": {
+                "level": {"type": "string"},
+                "applied_changes": {
+                    "type": "boolean",
+                    "description": (
+                        "Sempre `false`. O executor escreve decisao e NUNCA "
+                        "aplica mudanca -- L0."
+                    ),
+                },
+                "note": {"type": "string"},
+            },
+        },
+        "claims": {"type": "array", "items": _ARBITRATE_CLAIM_SCHEMA},
+        "evidence": {"type": "array", "items": _ARBITRATE_EVIDENCE_SCHEMA},
+        "contradictions": {"type": "array", "items": _ARBITRATE_CONTRADICTION_SCHEMA},
+        "objections": {
+            "type": "array",
+            "items": _ARBITRATE_OBJECTION_SCHEMA,
+            "description": (
+                "A contradicao CONDICIONAL: ela liga uma claim a uma MEDIDA, e "
+                "nao duas claims. Por isso e `Objection`, com o `fact_id` da "
+                "medida ao lado, e nao `Contradiction`."
+            ),
+        },
+        "unknowns": {"type": "array", "items": _ARBITRATE_UNKNOWN_SCHEMA},
+        "experiments": {"type": "array", "items": _ARBITRATE_EXPERIMENT_SCHEMA},
+        "decisions": {"type": "array", "items": _ARBITRATE_DECISION_SCHEMA},
+        "debate_plans": {
+            "type": "array",
+            "items": {"type": "object"},
+            "description": (
+                "O que sai quando a arbitragem NAO fecha: participantes, budget "
+                "e criterios de parada, com `executed: false` e "
+                "`unresolved.reason: debate.unresolved`. Este pacote nao tem "
+                "executor de debate -- ele emite o plano e para."
+            ),
+        },
+        "order": {
+            "type": "object",
+            "required": ["sequence", "constraints", "unresolved"],
+            "properties": {
+                "sequence": {"type": "array", "items": {"type": "string"}},
+                "constraints": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {
+                    "type": "object",
+                    "description": (
+                        "Ciclo em `depends_on`, ou duas acoes no mesmo eixo de "
+                        "MEDIDA -- ordem que nao da para afirmar sai nomeada, "
+                        "nunca chutada."
+                    ),
+                },
+            },
+        },
+        "persisted": {
+            "type": "boolean",
+            "description": (
+                "Falso NAO e falha da chamada: a resposta e montada ANTES da "
+                "gravacao e sai igual com o blackboard indisponivel. O que "
+                "falhou aparece em `persistence.errors`."
+            ),
+        },
+        "persistence": {
+            "type": "object",
+            "description": "Onde gravou, o que gravou, o que pulou por id repetido, e os ADRs.",
+        },
+        "runtime": {
+            "type": "object",
+            "description": (
+                "O runtime EFETIVAMENTE usado, com `divergences`. E ele que "
+                "decide se a fonte de uma regra esta vigente no escopo do case."
+            ),
+        },
+        "repo": {"type": "string"},
+    },
+}
+
+_ARBITRATE_SCHEMA: dict[str, Any] = _may_fail(
+    _ARBITRATE_SUCCESS_SCHEMA,
+    "Sucesso (o pacote do executor) OU erro de fronteira quando `findings_path` "
+    "ou `facts_path` nao existe no disco.",
+)
+
 # --------------------------------------------------------------------------- #
 # release describe / release diff
 # --------------------------------------------------------------------------- #
@@ -5170,6 +5438,81 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _JUDGE_SCHEMA,
         "annotations": _READ_ONLY,
     },
+    "sparkforge_arbitrate": {
+        "description": (
+            "Executor agentico DETERMINISTICO. Roda DEPOIS de `sparkforge_judge`, sobre "
+            "findings ja julgados, e nao reavalia regra nenhuma: o que ele decide e o "
+            "que o julgamento deixou em aberto -- conflito entre dois achados que movem "
+            "a MESMA propriedade em direcoes opostas, lastro suficiente para uma "
+            "afirmacao virar recomendacao, qual medida falta para fechar a lacuna, e em "
+            "que ordem as acoes podem ser aplicadas. Grava `Claim`, `Evidence`, "
+            "`Contradiction`, `Objection`, `Unknown`, `Experiment` e `Decision` no "
+            "blackboard do case (`<repo>/.sparkforge/blackboard/`), mais um ADR por "
+            "decisao significativa. "
+            "Recebe `findings` inline ou `findings_path`, e `facts` inline ou "
+            "`facts_path` -- que aceita uma LISTA de caminhos, e a lista e o ponto: o "
+            "executor precisa da UNIAO dos facts do case, o MESMO conjunto que `judge` "
+            "recebeu. Alimenta-lo com um subconjunto fabrica claim desancorada que a "
+            "execucao real nao produz, e o gate de lastro a reprova por ausencia de "
+            "medida. Fact sem `id` tem o id computado pelo conteudo. "
+            "O QUE ELA NAO FAZ, e isto e contrato e nao ressalva: "
+            "(1) nao estima ganho -- afirmar quanto se economiza exige o custo do run "
+            "que NAO aconteceu, e ele nao existe; "
+            "(2) nao publica score de arbitragem como confianca medida -- os pesos de "
+            "`assess_claim` (evidencia 40%, autoridade 30%, especificidade 20%, "
+            "aplicabilidade 10%) sao CONVENCAO e nenhum experimento os calibrou; eles "
+            "ordenam claims dentro de uma arbitragem e o valor absoluto nao sai na "
+            "resposta, so o desfecho; "
+            "(3) nao executa debate -- quando a arbitragem nao fecha, sai um PLANO em "
+            "`debate_plans`, com `executed: false` e `unresolved.reason: "
+            "debate.unresolved`. Quem debateria e um `AgentRuntime` concreto, do host: "
+            "`sparkforge/` nao chama provider nenhum. "
+            "Autonomia L0: escreve decisao e NUNCA aplica mudanca. O ADR e proposta com "
+            "`rollback` obrigatorio, nao registro de coisa feita -- `applied_changes` "
+            "sai sempre `false`. "
+            "`persisted: false` nao e falha da chamada: a resposta e montada antes da "
+            "gravacao e o que falhou sai nomeado em `persistence.errors`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {
+                "repo": {
+                    "type": "string",
+                    "description": (
+                        "Raiz do case. O blackboard e os ADRs ficam em "
+                        "`<repo>/.sparkforge/blackboard/` -- ADR de case viaja com o "
+                        "case, nunca em `docs/`."
+                    ),
+                },
+                "findings": {"type": "array", "items": {"type": "object"}},
+                "findings_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo gerado por `sparkforge judge --out`. Aceita a lista "
+                        "nua e o objeto com a chave `findings` (ou `items`)."
+                    ),
+                },
+                "facts": {"type": "array", "items": {"type": "object"}},
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Um caminho, ou varios: os facts sao unidos e deduplicados por "
+                        "id antes de arbitrar. A UNIAO e obrigatoria -- ver a descricao."
+                    ),
+                },
+                "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
+                "spark": {"type": "string"},
+                "python": {"type": "string"},
+                "iceberg": {"type": "string"},
+                "athena": {"type": "string"},
+            },
+        },
+        "outputSchema": _ARBITRATE_SCHEMA,
+        "annotations": _WRITE_NOT_IDEMPOTENT,
+    },
     "sparkforge_rules_lookup": {
         "description": (
             "Consulta o catalogo de regras determinístico por id ou categoria, devolvendo "
@@ -6069,6 +6412,22 @@ def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_arbitrate(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.arbitrate_findings(
+        args["repo"],
+        findings=args.get("findings"),
+        findings_path=args.get("findings_path"),
+        facts=args.get("facts"),
+        facts_path=args.get("facts_path"),
+        glue=args.get("glue"),
+        emr=args.get("emr"),
+        spark=args.get("spark"),
+        python=args.get("python"),
+        iceberg=args.get("iceberg"),
+        athena=args.get("athena"),
+    )
+
+
 def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
     return _core.rules_lookup(
         id=args.get("id"),
@@ -6625,6 +6984,7 @@ _HANDLERS = {
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
+    "sparkforge_arbitrate": _h_arbitrate,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
     "sparkforge_report_sign": _h_report_sign,
