@@ -65,6 +65,7 @@
         "url": "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/apache/spark/sql/graphframes/GraphFramesConf.scala",
         "retrieved": "2026-08-05"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

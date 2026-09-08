@@ -54,6 +54,7 @@
         "origin": "field-heuristic",
         "note": "Não há limiar: o gatilho é a desigualdade exata de dois inteiros que o operador mediu, e o comparador já a observou sobre o valor cru. A decisão de campo aqui é a SEVERIDADE. P0 vem de a contagem ser a única dimensão desta área em que qualquer divergência é, por construção, perda ou duplicação de linha — não há reordenação, reassociação nem diferença de precisão que a mova. As outras dimensões admitem explicação benigna; esta não."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

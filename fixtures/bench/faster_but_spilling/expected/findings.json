@@ -69,6 +69,7 @@
         "origin": "field-heuristic",
         "note": "Os dois números são decisão de campo. `improvement_pct: 5` existe só para separar ganho de ruído — abaixo disso a palavra ganho não se sustenta numa medição única. `growth_factor: 1.1` exige 10% de crescimento na degradação pelo mesmo motivo, e com base ZERO ele degenera para \"qualquer byte derramado\", que é o comportamento desejado: spill que nasce do nada não precisa de margem de ruído. Nenhuma fonte oficial declara esses cortes. A severidade P1 vem da natureza do achado: ele não diz que algo está quebrado hoje, diz que o ganho medido não é o ganho que vai valer em produção."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

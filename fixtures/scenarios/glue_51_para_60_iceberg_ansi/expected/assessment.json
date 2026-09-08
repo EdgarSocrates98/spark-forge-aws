@@ -59,7 +59,8 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
           "retrieved": "2026-08-21"
         }
-      ]
+      ],
+      "action": {}
     }
   ],
   "by_step": [
@@ -114,7 +115,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.1",
@@ -174,7 +176,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {}
       },
       "steps": [
         [

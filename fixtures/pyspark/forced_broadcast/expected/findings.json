@@ -62,6 +62,7 @@
         "origin": "field-heuristic",
         "note": "A página do Spark sustenta o lado do PLANO: que o hint força o broadcast, que autoBroadcastJoinThreshold decide sem hint, e que o AQE converte estratégia com estatística de runtime. O que ela NÃO afirma é a metade que sustenta o risco de resultado -- que a troca de estratégia troca o particionamento e a ordem da saída, e que os operadores não determinísticos a jusante mudam de valor com a MESMA contagem. Essa metade é leitura de campo, e está declarada porque é ela que o `validation` cobra: sem ela, a regra recomendaria remover um hint medindo só tempo e heap, que foi o estado desta regra até esta rodada."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

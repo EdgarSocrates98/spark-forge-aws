@@ -54,6 +54,7 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
         "retrieved": "2026-08-22"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

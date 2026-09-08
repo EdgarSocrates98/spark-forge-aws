@@ -54,6 +54,7 @@
         "origin": "field-heuristic",
         "note": "Consequência do modelo lazy; medível por N jobs quase idênticos no Spark UI com o mesmo primeiro stage."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

@@ -46,7 +46,8 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html",
         "retrieved": "2026-08-23"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-KMS-002",
@@ -94,7 +95,8 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html",
         "retrieved": "2026-08-23"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-NET-001",
@@ -148,7 +150,8 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html",
         "retrieved": "2026-08-23"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-XACC-001",
@@ -198,6 +201,7 @@
         "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html",
         "retrieved": "2026-08-23"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

@@ -49,6 +49,7 @@
         "origin": "field-heuristic",
         "note": "Fan-out de cardinalidade é o mecanismo; a assimetria do tamanho de array é a causa do skew de computação."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

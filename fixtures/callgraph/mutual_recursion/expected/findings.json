@@ -56,6 +56,7 @@
         "origin": "field-heuristic",
         "note": "A severidade P1 é decisão de campo. Não há measure que distinga recursão de profundidade 2 de recursão sobre hierarquia profunda; quando houver, converter para severity_by sobre measures.length."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

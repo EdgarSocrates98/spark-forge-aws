@@ -48,6 +48,7 @@
         "origin": "field-heuristic",
         "note": "Consequência direta do modelo de execução; ver knowledge/spark/memory-and-oom.md secao 2, classe driver heap."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

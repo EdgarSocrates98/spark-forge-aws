@@ -72,7 +72,8 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
           "retrieved": "2026-08-22"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-001",
@@ -128,7 +129,8 @@
           "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-001",
@@ -184,7 +186,8 @@
           "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-001",
@@ -240,7 +243,8 @@
           "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-003",
@@ -291,7 +295,8 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
           "retrieved": "2026-08-21"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-SPARK4-003",
@@ -350,7 +355,8 @@
           "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
           "retrieved": "2026-08-22"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-002",
@@ -402,7 +408,8 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-002",
@@ -454,7 +461,8 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {}
     },
     {
       "rule_id": "SF-MIG-002",
@@ -506,7 +514,8 @@
           "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
           "retrieved": "2026-07-29"
         }
-      ]
+      ],
+      "action": {}
     }
   ],
   "by_step": [
@@ -565,7 +574,8 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "4.0",
@@ -623,7 +633,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "4.0",
@@ -685,7 +696,8 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.0",
@@ -743,7 +755,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.0",
@@ -806,7 +819,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.1",
@@ -868,7 +882,8 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.1",
@@ -925,7 +940,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.1",
@@ -990,7 +1006,8 @@
             "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.1",
@@ -1048,7 +1065,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "step": [
         "5.1",
@@ -1113,7 +1131,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {}
       },
       "steps": [
         [
@@ -1177,7 +1196,8 @@
             "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "steps": [
         [
@@ -1244,7 +1264,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
             "retrieved": "2026-08-21"
           }
-        ]
+        ],
+        "action": {}
       },
       "steps": [
         [
@@ -1311,7 +1332,8 @@
             "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
             "retrieved": "2026-08-22"
           }
-        ]
+        ],
+        "action": {}
       },
       "steps": [
         [
@@ -1371,7 +1393,8 @@
             "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
             "retrieved": "2026-07-29"
           }
-        ]
+        ],
+        "action": {}
       },
       "steps": [
         [

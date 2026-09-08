@@ -58,6 +58,7 @@
         "retrieved": "2026-07-29",
         "note": "deletion vectors em Iceberg 1.10.0"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

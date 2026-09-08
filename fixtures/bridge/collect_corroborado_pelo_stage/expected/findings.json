@@ -58,7 +58,8 @@
         "origin": "field-heuristic",
         "note": "Consequencia de `collect()` sem limite: serializa no driver o que era distribuido, e o pico de heap cresce com o resultado. Esta regra nao acrescenta essa heuristica -- ela acrescenta a evidencia de que o caminho executou.\n"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-PY-002",
@@ -109,6 +110,7 @@
         "origin": "field-heuristic",
         "note": "Consequência direta do modelo de execução; ver knowledge/spark/memory-and-oom.md secao 2, classe driver heap."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

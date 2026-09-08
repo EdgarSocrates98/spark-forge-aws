@@ -50,6 +50,7 @@
         "origin": "field-heuristic",
         "note": "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

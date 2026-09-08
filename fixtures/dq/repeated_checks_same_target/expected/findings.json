@@ -62,7 +62,8 @@
         "origin": "field-heuristic",
         "note": "P2: o custo é real e proporcional ao número de checks, mas nenhum dado disponível mede o tamanho do lineage varrido."
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-DQ-004",
@@ -127,6 +128,7 @@
         "origin": "field-heuristic",
         "note": "P2: o custo é real e proporcional ao número de checks, mas nenhum dado disponível mede o tamanho do lineage varrido."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

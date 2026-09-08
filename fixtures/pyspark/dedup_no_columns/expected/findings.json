@@ -49,6 +49,7 @@
         "origin": "field-heuristic",
         "note": "O ponto sobre determinismo na escolha da linha sobrevivente é a razão principal desta regra."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

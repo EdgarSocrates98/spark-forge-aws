@@ -61,7 +61,8 @@
         "origin": "field-heuristic",
         "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-UI-005",
@@ -114,7 +115,8 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-UI-003",
@@ -169,7 +171,8 @@
         "origin": "field-heuristic",
         "note": "Razão 1.0 é limiar de campo, escolhido por ser interpretável: escreveu mais do que leu."
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-UI-004",
@@ -222,7 +225,8 @@
         "origin": "field-heuristic",
         "note": "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-UI-002",
@@ -275,7 +279,8 @@
         "origin": "field-heuristic",
         "note": "A comparação entre razão de duração e razão de input é o discriminador; não há limiar oficial."
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-UI-006",
@@ -330,6 +335,7 @@
         "origin": "field-heuristic",
         "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

@@ -55,7 +55,8 @@
         "url": "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html",
         "retrieved": "2026-07-31"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-PLAN-002",
@@ -105,6 +106,7 @@
         "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html",
         "retrieved": "2026-07-31"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

@@ -77,7 +77,8 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html",
         "retrieved": "2026-08-05"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-GRAPH-005",
@@ -146,6 +147,7 @@
         "url": "https://graphframes.io/02-quick-start/01-installation.html",
         "retrieved": "2026-08-05"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

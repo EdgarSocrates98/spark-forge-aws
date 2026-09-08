@@ -45,6 +45,7 @@
         "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

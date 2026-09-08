@@ -56,6 +56,7 @@
         "origin": "field-heuristic",
         "note": "P2 e nao P1: o defeito e custo, nao correcao -- o dado publicado esta certo, so foi pago duas vezes. Nenhum fact disponivel mede o tamanho do lineage recomputado."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

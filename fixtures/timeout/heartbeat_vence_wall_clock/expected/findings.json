@@ -50,7 +50,8 @@
         "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
         "retrieved": "2026-07-29"
       }
-    ]
+    ],
+    "action": {}
   },
   {
     "rule_id": "SF-TIMEOUT-001",
@@ -113,6 +114,7 @@
         "origin": "field-heuristic",
         "note": "Os limiares 3.0 (skew), 0.1 (spill sobre input) e 0.1 (GC sobre tempo de task) são heurística de campo, na mesma faixa que `SF-UI-001` já usa para skew. O limiar de executor removido é 1 porque a ocorrência é o sinal: um executor perdido já muda a ordem de investigação.\n"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

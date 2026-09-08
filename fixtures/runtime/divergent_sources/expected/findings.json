@@ -60,6 +60,7 @@
         "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html",
         "retrieved": "2026-08-01"
       }
-    ]
+    ],
+    "action": {}
   }
 ]

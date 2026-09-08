@@ -65,6 +65,7 @@
         "origin": "field-heuristic",
         "note": "10% é decisão de campo. Não há fonte oficial que declare a partir de quanto uma variação de tempo de task somado deixa de ser ruído de execução, e ela depende do cluster, da contenção e do tamanho do job. O número está aqui para ser ajustado com evidência. A severidade P1 também é de campo: regressão de custo agregado é acionável e não é urgência de produção, e não há measure que distinga regressão de 11% de regressão de 300% — quando houver corpus que sustente o corte, converter para severity_by sobre `measures.total_task_ms_delta_pct`."
       }
-    ]
+    ],
+    "action": {}
   }
 ]

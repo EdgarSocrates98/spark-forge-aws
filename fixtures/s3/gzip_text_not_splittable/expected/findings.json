@@ -57,6 +57,7 @@
         "origin": "field-heuristic",
         "note": "Não splitabilidade de gzip em arquivo de texto é propriedade do codec, não configurável."
       }
-    ]
+    ],
+    "action": {}
   }
 ]
