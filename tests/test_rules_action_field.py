@@ -20,13 +20,8 @@ from sparkforge.rules.loader import CatalogError, _validate_action, catalog_dir,
 # Arquivos ainda sem `action`. Encolhe a cada lote; vazio ao fim da Fase 2.
 PENDENTES = {
     "controlm.yaml",
-    "env.yaml",
     "glue-migration.yaml",
     "spark4.yaml",
-    "glue-kms.yaml",
-    "lakeformation.yaml",
-    "glue-cross-account.yaml",
-    "glue-network.yaml",
 }
 
 

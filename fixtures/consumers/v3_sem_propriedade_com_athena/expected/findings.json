@@ -52,6 +52,17 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "storage.change_storage_format",
+      "target": "iceberg.table.format_version",
+      "direction": "replace",
+      "requires_absent": [
+        "env.unresolved"
+      ],
+      "moves": [],
+      "depends_on": [
+        "SF-ENV-001"
+      ]
+    }
   }
 ]

@@ -61,6 +61,20 @@ rules:
       - >-
         Se o job também tem security configuration, ver `SF-KMS-001`: o KMS
         precisa da própria rota, e é um endpoint diferente do S3.
+    # DOMINANTE E O SECURITY GROUP, e nao a rota do titulo. Dois sinais
+    # apontam junto: o bullet 1 do `proposed_change` e a regra self-referencing,
+    # e o `risks` abre pela falha dela -- "os componentes do Glue nao se falam,
+    # e o job falha na inicializacao, antes de qualquer linha do script rodar".
+    # A rota ate o S3 (bullet 2) e a alternativa excluida pelo bloco unico, e
+    # ela tem `kind` proprio (`network.provide_service_route`), que SF-KMS-001
+    # declara para o endpoint do KMS.
+    action:
+      kind: network.fix_security_group_rule
+      target: vpc.security_group.self_referencing_rule
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - >-
         Sem a regra self-referencing os componentes do Glue não se falam, e o

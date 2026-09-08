@@ -47,7 +47,16 @@
         "retrieved": "2026-08-23"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "network.provide_service_route",
+      "target": "vpc.route_to_kms",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": [
+        "SF-NET-001"
+      ]
+    }
   },
   {
     "rule_id": "SF-KMS-002",
@@ -96,7 +105,14 @@
         "retrieved": "2026-08-23"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "security.enable_encryption_at_rest",
+      "target": "iceberg.table.encryption",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-NET-001",
@@ -151,7 +167,14 @@
         "retrieved": "2026-08-23"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "network.fix_security_group_rule",
+      "target": "vpc.security_group.self_referencing_rule",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-XACC-001",
@@ -202,6 +225,13 @@
         "retrieved": "2026-08-23"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.cross_account_grant",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

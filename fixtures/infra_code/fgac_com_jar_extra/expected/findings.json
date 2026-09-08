@@ -56,6 +56,16 @@
         "retrieved": "2026-08-22"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "dependency.remove_library",
+      "target": "glue.default_arguments",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

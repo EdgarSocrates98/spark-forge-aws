@@ -61,6 +61,15 @@
         "retrieved": "2026-08-01"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "version.align_declared_runtime",
+      "target": "runtime.declared_version",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version"
+      ],
+      "depends_on": []
+    }
   }
 ]

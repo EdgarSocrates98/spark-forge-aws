@@ -45,6 +45,15 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "spark.sql.adaptive.enabled",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": [
+        "SF-ENV-001"
+      ]
+    }
   }
 ]
