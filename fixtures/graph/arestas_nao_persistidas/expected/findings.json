@@ -52,6 +52,16 @@
         "note": "Nenhuma fonte oficial quantifica o custo de recomputação de vértices ou arestas não persistidos: a documentação menciona `storage_level` e avisa que o DataFrame devolvido é persistido e deve ser liberado, mas não declara em lugar nenhum quantas passadas um algoritmo faz sobre a entrada (`knowledge/graph/graphframes-api.md` §8). O gatilho aqui é a laziness do Spark, que é comportamento do motor e não da biblioteca, e a forma da regra é herdada de `SF-DQ-003`. Sem limiar numérico, e nenhuma das páginas de GraphFrames é citada como se a sustentasse.\n"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.change_persistence",
+      "target": "graph.construction",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "shuffle.spill_bytes"
+      ],
+      "depends_on": []
+    }
   }
 ]

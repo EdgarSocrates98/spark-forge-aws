@@ -50,6 +50,16 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.change_persistence",
+      "target": "pyspark.cache",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "shuffle.spill_bytes"
+      ],
+      "depends_on": []
+    }
   }
 ]

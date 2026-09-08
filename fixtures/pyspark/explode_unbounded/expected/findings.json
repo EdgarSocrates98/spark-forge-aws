@@ -50,6 +50,15 @@
         "note": "Fan-out de cardinalidade é o mecanismo; a assimetria do tamanho de array é a causa do skew de computação."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "scan.push_filter_earlier",
+      "target": "pyspark.explode",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

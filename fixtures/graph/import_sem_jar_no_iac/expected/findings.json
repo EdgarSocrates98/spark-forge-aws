@@ -78,7 +78,17 @@
         "retrieved": "2026-08-05"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "version.upgrade_runtime",
+      "target": "runtime.version",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-GRAPH-005",
@@ -148,6 +158,17 @@
         "retrieved": "2026-08-05"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "dependency.declare_in_iac",
+      "target": "glue.default_arguments",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts"
+      ],
+      "depends_on": [
+        "SF-GRAPH-002"
+      ]
+    }
   }
 ]

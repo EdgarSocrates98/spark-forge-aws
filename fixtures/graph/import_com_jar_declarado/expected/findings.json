@@ -78,6 +78,16 @@
         "retrieved": "2026-08-05"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "version.upgrade_runtime",
+      "target": "runtime.version",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

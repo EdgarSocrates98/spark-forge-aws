@@ -55,6 +55,16 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "scan.push_filter_earlier",
+      "target": "pyspark.chain",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.spill_bytes",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

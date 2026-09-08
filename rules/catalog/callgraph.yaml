@@ -63,6 +63,15 @@ rules:
       - Confirmar se a recursão tem condição de parada que dependa de dado, e qual é a profundidade máxima possível com o volume de produção.
       - Se a recursão existe para processar níveis de uma hierarquia, substituir por iteração com número de níveis conhecido, materializando o resultado de cada nível antes do próximo.
       - Se o trabalho Spark dentro do ciclo é o mesmo em toda iteração, movê-lo para fora do ciclo.
+    action:
+      kind: code.restructure_loop
+      target: callgraph.cycle
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
     risks:
       - Trocar recursão por iteração com limite fixo muda o resultado se algum dado exceder o número de níveis assumido.
     tradeoffs:

@@ -52,6 +52,15 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "shuffle.change_partition_count",
+      "target": "pyspark.partitioning",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.partition_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

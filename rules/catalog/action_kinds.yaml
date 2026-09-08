@@ -332,3 +332,11 @@ axes:
     description: Bytes derramados em disco e em memoria pelos stages do shuffle.
   availability.executor_loss:
     description: Executores removidos durante o run, medidos no event log.
+
+  # Acrescentado no lote C (pyspark, graph, callgraph, bridge). Os dois eixos
+  # sao da area de grafo: nenhuma regra dos lotes A e B trocava de runtime nem
+  # mexia no que o IaC entrega ao classpath.
+  runtime.engine_version:
+    description: Versao de runtime, engine e plataforma que a execucao ou a definicao declara.
+  dependency.delivered_artifacts:
+    description: Os artefatos que a definicao do job entrega ao classpath -- jars e arquivos declarados no IaC.

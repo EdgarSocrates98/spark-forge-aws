@@ -70,6 +70,15 @@
         "retrieved": "2026-08-05"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.align_value_to_supported_range",
+      "target": "graph.algorithm.checkpoint_interval",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
   }
 ]

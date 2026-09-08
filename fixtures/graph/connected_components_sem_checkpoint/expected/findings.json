@@ -66,6 +66,15 @@
         "retrieved": "2026-08-05"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.satisfy_property_precondition",
+      "target": "spark.checkpoint.dir",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
   }
 ]

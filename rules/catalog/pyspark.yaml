@@ -71,6 +71,14 @@ rules:
       - Reescrever com funções Spark SQL nativas.
       - Se envolve array/map, usar higher-order functions (transform, filter, aggregate).
       - Se realmente inevitável, medir pandas_udf (Arrow, vetorizado por batch) antes de manter Python UDF.
+    action:
+      kind: code.replace_udf_with_native
+      target: pyspark.udf
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Reescrita pode alterar tratamento de null ou de tipo em borda.
       - Precisão de ponto flutuante pode diferir entre implementação Python e nativa.
@@ -107,6 +115,14 @@ rules:
       - Substituir por escrita distribuída (write) ou por agregação que devolva poucas linhas.
       - Se precisa mesmo inspecionar, usar limit(n) explícito antes, ou take(n).
       - Para iterar sobre resultado grande, toLocalIterator reduz o pico de memória.
+    action:
+      kind: code.replace_driver_collection
+      target: pyspark.driver_collect
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Lógica downstream pode assumir uma lista Python em memória.
     tradeoffs:
@@ -140,6 +156,15 @@ rules:
       - Mover filter para antes do join, garantindo que chegue ao pushdown (verificar PushedFilters no plano).
       - Adicionar select das colunas efetivamente usadas antes do join.
       - Avaliar pré-agregação quando o join é seguido de groupBy.
+    action:
+      kind: scan.push_filter_earlier
+      target: pyspark.chain
+      direction: replace
+      requires_absent: []
+      moves:
+        - shuffle.spill_bytes
+        - correctness.write_result
+      depends_on: []
     risks:
       - Filtro movido para antes de um outer join altera o resultado. Verificar o tipo de join antes de mover.
     tradeoffs:
@@ -179,6 +204,15 @@ rules:
       - Escrever tudo numa única action, usando partitionBy pela coluna de lote quando o objetivo é separar a saída.
       - Se o loop é inevitável, materializar o DataFrame caro uma vez antes dele (tabela intermediária ou checkpoint).
       - Reduzir na origem, com filtro que chegue ao pushdown, em vez de filtrar um DAG caro já construído.
+    action:
+      kind: code.restructure_loop
+      target: pyspark.loop
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
     risks:
       - Escrita única muda o perfil de commit; em Iceberg reduz o número de snapshots, o que é desejável, mas altera a granularidade de recuperação parcial.
       - Materialização intermediária consome armazenamento e adiciona uma etapa a gerenciar.
@@ -220,6 +254,14 @@ rules:
       - Se o objetivo é reduzir contagem de arquivos, usar repartition(n) com n calculado a partir do volume e do tamanho-alvo por arquivo.
       - Preferir o hint REBALANCE, que produz partições equilibradas e coopera com o AQE. Exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 o hint não existe, e a ação equivalente é o repartition(n) dimensionado pelo volume descrito acima.
       - Se o objetivo é literalmente um arquivo único para consumo externo, fazer isso como etapa separada de compactação, fora do caminho crítico.
+    action:
+      kind: shuffle.change_partition_count
+      target: pyspark.partitioning
+      direction: increase
+      requires_absent: []
+      moves:
+        - shuffle.partition_count
+      depends_on: []
     risks:
       - Mudar a contagem de arquivos altera o layout físico consumido downstream.
     tradeoffs:
@@ -254,6 +296,14 @@ rules:
       - Estimar o fan-out medindo o tamanho médio, p95 e máximo do array antes de explodir.
       - Filtrar e projetar antes do explode, para não multiplicar colunas e linhas que serão descartadas.
       - Avaliar higher-order functions (transform, filter, aggregate) quando o objetivo é agregar o array sem materializar uma linha por elemento.
+    action:
+      kind: scan.push_filter_earlier
+      target: pyspark.explode
+      direction: add
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - explode descarta linhas com array vazio ou nulo; explode_outer as preserva. Trocar um pelo outro altera o resultado.
     tradeoffs:
@@ -288,6 +338,14 @@ rules:
     proposed_change:
       - Substituir a sequência por um único select contendo todas as colunas.
       - Se as colunas são geradas programaticamente, construir a lista de expressões e passar num único select.
+    action:
+      kind: code.rewrite_expression
+      target: pyspark.withcolumn_run
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - withColumn em sequência permite referenciar a coluna criada no passo anterior; um select único exige reescrever essas dependências.
     tradeoffs:
@@ -323,6 +381,15 @@ rules:
       - Verificar se há reuso real em duas ou mais actions distintas. Se não há, remover o cache.
       - Se há reuso, adicionar unpersist quando o DataFrame deixa de ser necessário.
       - Confirmar na aba Storage do Spark UI que a fração cacheada é alta; fração baixa indica cache inútil.
+    action:
+      kind: code.change_persistence
+      target: pyspark.cache
+      direction: remove
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - shuffle.spill_bytes
+      depends_on: []
     risks:
       - Remover cache com reuso real aumenta a recomputação.
     tradeoffs:
@@ -366,6 +433,14 @@ rules:
       - Medir o tamanho serializado real do lado pequeno, não o estimado.
       - Remover o hint e verificar se o AQE converte sozinho para BroadcastHashJoin. Em Spark 3.0 e 3.1, confirmar antes que spark.sql.adaptive.enabled esteja true; sem AQE não há conversão em runtime, e o lado pequeno precisa caber em autoBroadcastJoinThreshold para o broadcast acontecer.
       - Se o broadcast é necessário e o lado é estável, documentar o limite de tamanho assumido e monitorá-lo.
+    action:
+      kind: join.change_broadcast_decision
+      target: pyspark.join
+      direction: remove
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Remover o hint pode fazer o Spark escolher sort-merge join, aumentando o shuffle, se a estatística estiver ausente ou ruim.
       - "O que NÃO muda, e dizer isto é metade do risco: o conjunto de linhas do equi-join é o mesmo em BroadcastHashJoin e em SortMergeJoin, e nulo e cardinalidade se comportam igual nos dois. Quem procurar a divergência na contagem não vai achar."
@@ -415,6 +490,14 @@ rules:
       - Se o objetivo é equilibrar a saída, usar o hint REBALANCE, que coopera com o AQE. Exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 o hint não existe, e a ação equivalente é calcular n a partir do volume estimado e do tamanho-alvo.
       - Se o objetivo é atingir um tamanho de arquivo, calcular n a partir do volume estimado e do tamanho-alvo.
       - Se o objetivo é corrigir skew, repartition por chave não resolve; ver knowledge/spark/shuffle-join-skew.md secao 3.
+    action:
+      kind: shuffle.change_partition_count
+      target: pyspark.partitioning
+      direction: replace
+      requires_absent: []
+      moves:
+        - shuffle.partition_count
+      depends_on: []
     risks:
       - Remover o repartition pode alterar a contagem de arquivos de saída.
     tradeoffs:
@@ -450,6 +533,14 @@ rules:
       - Identificar a chave de negócio real e deduplicar por ela explicitamente.
       - Investigar a origem da duplicação; se vem de join, corrigir a cardinalidade do join.
       - Se a intenção é latest-per-key, usar a estratégia adequada, não distinct.
+    action:
+      kind: code.rewrite_expression
+      target: pyspark.dedup
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Deduplicar por subconjunto de colunas escolhe uma linha arbitrária entre as duplicatas, salvo ordenação explícita. Isso pode alterar o resultado de forma não determinística.
     tradeoffs:
@@ -485,6 +576,13 @@ rules:
       - Comparar cada chave definida no código com os default arguments do IaC e resolver a divergência num único lugar.
       - Mover configuração de infraestrutura para os default arguments; deixar no código apenas o que precisa variar por execução.
       - Confirmar o valor efetivo na aba Environment do Spark UI.
+    action:
+      kind: config.verify_effective_value
+      target: pyspark.conf_set
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Remover a chamada no código pode desativar uma configuração que só existia ali.
     tradeoffs:

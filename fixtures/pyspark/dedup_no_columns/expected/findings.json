@@ -50,6 +50,15 @@
         "note": "O ponto sobre determinismo na escolha da linha sobrevivente é a razão principal desta regra."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.rewrite_expression",
+      "target": "pyspark.dedup",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]
