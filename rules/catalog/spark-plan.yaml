@@ -171,7 +171,14 @@ rules:
       - Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case.
     action:
       kind: join.restore_equi_condition
-      target: pyspark.join
+      # Target fino de propósito: esta regra toca a CONDIÇÃO do join (falta
+      # equi-condição -> CartesianProduct/BroadcastNestedLoopJoin), não o join
+      # inteiro. `pyspark.join` genérico colidia em falso positivo de
+      # contradição direta com SF-PY-009, que mexe no HINT do mesmo join --
+      # coisas diferentes do mesmo construto. Não engrossar de volta sem medir
+      # de novo com o script da tarefa "eb7c991 seguinte" (varredura de targets
+      # compartilhados em rules/catalog).
+      target: pyspark.join.condition
       direction: add
       requires_absent: []
       moves:

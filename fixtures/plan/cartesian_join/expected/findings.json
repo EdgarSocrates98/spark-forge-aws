@@ -59,7 +59,7 @@
     ],
     "action": {
       "kind": "join.restore_equi_condition",
-      "target": "pyspark.join",
+      "target": "pyspark.join.condition",
       "direction": "add",
       "requires_absent": [],
       "moves": [
@@ -129,7 +129,7 @@
     ],
     "action": {
       "kind": "join.restore_equi_condition",
-      "target": "pyspark.join",
+      "target": "pyspark.join.condition",
       "direction": "add",
       "requires_absent": [],
       "moves": [

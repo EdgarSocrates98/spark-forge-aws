@@ -65,7 +65,7 @@
     ],
     "action": {
       "kind": "join.change_broadcast_decision",
-      "target": "pyspark.join",
+      "target": "pyspark.join.hint",
       "direction": "remove",
       "requires_absent": [],
       "moves": [

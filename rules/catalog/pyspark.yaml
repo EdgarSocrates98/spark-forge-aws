@@ -435,7 +435,12 @@ rules:
       - Se o broadcast é necessário e o lado é estável, documentar o limite de tamanho assumido e monitorá-lo.
     action:
       kind: join.change_broadcast_decision
-      target: pyspark.join
+      # Target fino de propósito: esta regra toca o HINT de broadcast do
+      # join, não o join inteiro. `pyspark.join` genérico colidia em falso
+      # positivo de contradição direta com SF-PLAN-003, que mexe na CONDIÇÃO
+      # de igualdade do mesmo join -- coisas diferentes do mesmo construto.
+      # Não engrossar de volta sem medir de novo.
+      target: pyspark.join.hint
       direction: remove
       requires_absent: []
       moves:

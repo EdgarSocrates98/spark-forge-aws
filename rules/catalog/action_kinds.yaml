@@ -316,9 +316,19 @@ kinds:
 #
 # `nature` foi acrescentado depois que `correctness.write_result` -- presente
 # em 33 das 112 regras -- se provou eixo-guarda-chuva: sendo tratado como
-# grandeza medida, ele produzia par de contradicao falso (SF-PLAN-003 x
-# SF-PY-009, mesmo `target: pyspark.join`, mesmo eixo, coisas diferentes) e
-# inflava o maior grupo de restricao de sequenciamento para 33 regras.
+# grandeza medida, ele inflava o maior grupo de restricao de sequenciamento
+# para 33 regras. Na mesma tarefa, filtrar contradicao direta por `nature:
+# measure` parecia matar tambem o par falso SF-PLAN-003 x SF-PY-009 (mesmo
+# `target: pyspark.join`, mesmo eixo, coisas diferentes) -- mas o defeito
+# daquele par nunca foi o eixo: era `target: pyspark.join` grosso demais para
+# duas regras que tocam partes distintas do mesmo join (a condicao de
+# igualdade e o hint de broadcast). Filtrar por eixo escondia o par falso e,
+# junto, um par real (SF-GRAPH-005 x SF-LF-001), porque o unico eixo que os
+# dois compartilham -- `dependency.delivered_artifacts` -- e `nature: risk`.
+# Refinar os `target` (`pyspark.join.condition`, `pyspark.join.hint`) corrigiu
+# a causa; a contradicao direta voltou a ser so `target` + direcao oposta, sem
+# filtro de eixo. `nature` continua certo -- so que so para a restricao de
+# sequenciamento abaixo, que precisa mesmo de grandeza comparavel.
 #
 # `measure` = grandeza medida por algum fact deste repositorio, comparavel
 # antes/depois (entra no campo `measures` de um `Fact`, nunca em `kind` ou

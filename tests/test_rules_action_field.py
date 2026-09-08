@@ -6,12 +6,30 @@ vocabulario incha com entrada morta e ninguem percebe.
 
 `PENDENTES` encolhe a cada lote da Fase 2 e chega a conjunto vazio na Tarefa 10.
 
-`TestAxisNature` e `TestExecutorInvariants` guardam o defeito medido de
-`correctness.write_result`: tratado como grandeza, ele produzia par de
-contradicao falso (SF-PLAN-003 x SF-PY-009) e inflava o maior grupo de
-restricao de sequenciamento para 33 regras. `nature` fecha os dois -- e estes
-testes travam o resultado de hoje para que um eixo-guarda-chuva futuro nao
-volte a passar em silencio.
+`TestAxisNature` guarda dois defeitos medidos, e sao defeitos diferentes com
+correcoes diferentes:
+
+- O par falso SF-PLAN-003 x SF-PY-009 nao vinha de `correctness.write_result`
+  tratado como grandeza -- vinha de `target: pyspark.join` grosso demais para
+  as duas regras, que tocam partes distintas do mesmo join (a condicao de
+  igualdade e o hint de broadcast). Filtrar por `nature: measure` escondia o
+  sintoma sem corrigir a causa, e um par real (SF-GRAPH-005 x SF-LF-001,
+  incompatibilidade documentada entre JAR extra e Lake Formation FGAC)
+  desaparecia junto. Refinar os `target` (`pyspark.join.condition` e
+  `pyspark.join.hint`) resolveu os dois ao mesmo tempo: o par falso some por
+  nao compartilhar mais `target`, e o par real volta a aparecer porque a
+  contradicao direta agora e so `target` + direcoes opostas, sem filtro de
+  eixo algum.
+- `correctness.write_result` como `nature: risk` (nao `measure`) continua
+  certo para a OUTRA restricao -- a de sequenciamento do executor, que so
+  faz sentido para grandeza comparavel (duas acoes que movem o mesmo
+  `runtime.wall_clock`, por exemplo). Duas acoes que ambas podem alterar o
+  RESULTADO nao tem esse problema; o mecanismo que cobre isso e `funcval`,
+  nao o sequenciador.
+
+O segundo teste de `TestAxisNature` trava esta segunda medida (o maior grupo
+de eixo `nature: measure`) para que um eixo-guarda-chuva futuro nao volte a
+inflar o grupo em silencio.
 """
 
 from __future__ import annotations
@@ -205,13 +223,15 @@ def _acoes_por_regra() -> dict[str, dict]:
     return {r["id"]: r["action"] for r in load_catalog() if r.get("action")}
 
 
-def _pares_de_contradicao_direta(
-    acoes: dict[str, dict], medida: set[str]
-) -> list[tuple[str, str, list[str]]]:
-    """Mesmo `target`, direcoes opostas, interseccao de `moves` restrita a
-    eixos `nature: measure` nao vazia. Espelha o calculo do item 5 do prompt
-    de tarefa -- `correctness.write_result` (nature: risk) nao participa, e e
-    essa exclusao que evita o par falso SF-PLAN-003 x SF-PY-009."""
+def _pares_de_contradicao_direta(acoes: dict[str, dict]) -> list[tuple[str, str]]:
+    """Mesmo `target`, direcoes opostas -- sem filtro de eixo. Duas acoes que
+    tocam o mesmo alvo em direcoes que se desfazem sao contradicao direta
+    mesmo sem `moves` em comum: e o `target` que decide se as duas mexem na
+    MESMA coisa, nao o eixo que elas movem ao mexer. Filtrar por
+    `nature: measure` aqui escondia o par real (SF-GRAPH-005 x SF-LF-001) tanto
+    quanto o falso (SF-PLAN-003 x SF-PY-009) -- o defeito estava no `target`
+    grosso das duas ultimas, corrigido refinando `pyspark.join` em
+    `pyspark.join.condition` e `pyspark.join.hint`."""
     pares = []
     for a, b in combinations(sorted(acoes), 2):
         acao_a, acao_b = acoes[a], acoes[b]
@@ -219,9 +239,7 @@ def _pares_de_contradicao_direta(
             continue
         if frozenset({acao_a["direction"], acao_b["direction"]}) not in _OPOSTAS:
             continue
-        compartilhado = sorted((set(acao_a["moves"]) & set(acao_b["moves"])) & medida)
-        if compartilhado:
-            pares.append((a, b, compartilhado))
+        pares.append((a, b))
     return pares
 
 
@@ -234,20 +252,29 @@ class TestAxisNature:
     """
 
     def test_contradicao_direta_produz_exatamente_os_pares_de_hoje(self):
-        """`dependency.delivered_artifacts` e `nature: risk` (estado ternario
-        declared/unknown/absent no extrator de Terraform, nunca uma contagem
-        em `measures` -- ver o comentario do eixo em `action_kinds.yaml`), e
-        e o UNICO eixo que SF-GRAPH-005 (declarar o jar de GraphFrames) e
-        SF-LF-001 (remove-lo por FGAC) compartilham. Com `nature` aplicado de
-        verdade -- e nao so excluindo `correctness.write_result` a mao --, a
-        interseccao de `moves` restrita a `measure` fica vazia entre as duas,
-        e a contradicao direta de hoje e a lista vazia. Isto e o resultado
-        medido, nao o resultado desejado: se um lote futuro passar a medir
-        artefato entregue como contagem (`measures`), este teste e quem deve
-        mudar primeiro, com o motivo escrito no commit.
+        """Mesmo `target` + direcoes opostas, sem filtro de eixo: hoje o
+        catalogo produz exatamente UM par, SF-GRAPH-005 x SF-LF-001 sobre
+        `glue.default_arguments`. E contradicao REAL, nao ruido -- a primeira
+        manda declarar o jar de GraphFrames em `--extra-jars`, a segunda manda
+        remove-lo porque a AWS nao oferece um modo de FGAC do Lake Formation
+        que aceite JAR adicional (incompatibilidade de plataforma documentada
+        no `explanation` de SF-LF-001, sem meio-termo).
+
+        O par SF-PLAN-003 x SF-PY-009 que motivou o filtro por
+        `nature: measure` (antes desta tarefa) era falso positivo, mas o
+        defeito era outro: `target: pyspark.join` grosso demais para as duas
+        regras, que tocam partes diferentes do mesmo join (a condicao de
+        igualdade e o hint de broadcast forcado). Filtrar por eixo escondia o
+        sintoma junto com a causa -- e escondia o par real tambem, porque a
+        interseccao de `moves` restrita a `measure` entre SF-GRAPH-005 e
+        SF-LF-001 tambem dava vazio (o eixo que as duas compartilham,
+        `dependency.delivered_artifacts`, e `nature: risk`). Refinar os
+        `target` (`pyspark.join.condition`, `pyspark.join.hint`) elimina o
+        falso positivo na fonte e permite que o criterio volte a ser so
+        `target` + direcao, sem precisar adivinhar qual eixo conta.
         """
-        pares = _pares_de_contradicao_direta(_acoes_por_regra(), _measure_axes())
-        assert pares == [], f"contradicao direta mudou: {pares}"
+        pares = _pares_de_contradicao_direta(_acoes_por_regra())
+        assert pares == [("SF-GRAPH-005", "SF-LF-001")], f"contradicao direta mudou: {pares}"
 
     def test_maior_grupo_de_eixo_medida_nao_cresce_sem_aviso(self):
         """Publica o maior grupo de regras que compartilham um eixo
