@@ -72,7 +72,7 @@ O executor **não** chama provider. `sparkforge/` não importa `anthropic`,
 
 ## 3. O campo `action:`
 
-Cada uma das 111 regras executáveis ganha um bloco `action:`. A forma:
+Cada uma das 112 regras executáveis ganha um bloco `action:`. A forma:
 
 ```yaml
 action:
@@ -110,7 +110,7 @@ atribuível.
 ### 3.2 O vocabulário de `kind`
 
 O vocabulário é fechado e o gate recusa `kind` fora dele. **A lista final não é
-inventada neste spec**: ela é produzida na implementação lendo os 111
+inventada neste spec**: ela é produzida na implementação lendo os 112
 `proposed_change` e agrupando por eixo, e só então travada. Inventar a lista aqui
 e depois torcer as regras para caberem nela é o defeito que `EMR_MATRIX` literal
 em código tinha contra a matriz em YAML.
@@ -264,8 +264,12 @@ implementado fora do pacote pelo host.
 
 ## 7. Superfície e gravação
 
-**CLI:** verbo novo `sparkforge arbitrate --case <id>`. `decisions list` e
-`decisions explain`, que já existem, passam a ler o que ele escreveu.
+**CLI:** verbo novo `sparkforge arbitrate --findings <path> --facts <path>
+--repo .`. A forma dos argumentos segue `sparkforge_judge` (findings e facts
+vêm de arquivo, `--repo` diz onde fica o blackboard), e não `--case <id>`:
+nenhum verbo agêntico existente recebe id de case, todos recebem `--repo`.
+`decisions list` e `decisions explain`, que já existem, passam a ler o que ele
+escreveu.
 
 **MCP:** tool nova `sparkforge_arbitrate`. Contagem 68 → **69**, e o crescimento
 de superfície vai medido e declarado na mensagem de commit
@@ -354,7 +358,7 @@ limiar, no molde de `janela_no_teto_de_datas` contra
 
 ## 11. Riscos
 
-**O maior é o tamanho de 3.** Declarar `action:` em 111 regras é a parte que
+**O maior é o tamanho de 3.** Declarar `action:` em 112 regras é a parte que
 domina a entrega, e é trabalho de leitura — cada `proposed_change` em prosa
 precisa virar `kind`/`target`/`direction` sem que a regra passe a propor coisa
 que ela não propunha. O modo de falha é declarar `decrease` onde o
@@ -362,7 +366,7 @@ que ela não propunha. O modo de falha é declarar `decrease` onde o
 impedir isso.
 
 **O segundo é o vocabulário fechado cedo demais.** Travar a lista antes de ler
-as 111 forçaria regras a caberem em `kind` errado. A ordem obrigatória é ler,
+as 112 forçaria regras a caberem em `kind` errado. A ordem obrigatória é ler,
 agrupar, e só então travar o gate.
 
 **O terceiro é o teste escrito a partir do código.** Foi o que produziu os 206
