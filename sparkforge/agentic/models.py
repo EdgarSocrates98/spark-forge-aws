@@ -190,6 +190,15 @@ class Evidence:
     freshness: str = ""  # ISO date ou versão
     version: str | None = None
     scope: str = ""  # a que versão/runtime esta evidência se aplica
+    # `fact.id` da medida que casou com o `when` da regra. Ele NÃO se funde com
+    # `authority`, e a separação é deliberada: os tiers T1-T6 graduam **fonte de
+    # conhecimento**, e não existe tier para **medida do artefato do cliente**.
+    # Inventar um produziria um número que não mede nada — mesma família da
+    # regra 22 do `CLAUDE.md`, onde byte de payload e token de provider aparecem
+    # lado a lado e nunca num total comum. Então `authority` responde "quanto
+    # pesa a fonte que sustenta o limiar" e `measurement_ref` responde "qual
+    # medida disparou a regra", e as duas respostas ficam legíveis separadas.
+    measurement_ref: str = ""
     applicability: str = ""  # condições de aplicabilidade
     supports: list[str] = field(default_factory=list)  # claim_ids
     contradicts: list[str] = field(default_factory=list)  # claim_ids
@@ -204,10 +213,24 @@ class Evidence:
 
     @property
     def id(self) -> str:
+        """Content-addressed sobre fonte, tier, escopo **e medida ancorada**.
+
+        `measurement_ref` entra no payload por decisão: a mesma página oficial
+        sustentando duas medidas diferentes são evidências **diferentes**, e
+        omiti-la faria as duas colidirem num id só — o mesmo defeito que a
+        auditoria de 2026-09-03 mediu em `Claim.id`, onde a afirmação revisada
+        colidia com a anterior e o blackboard a recusava como duplicata.
+
+        A mudança é segura porque medida: nenhum teste nem fixture do
+        repositório fixa hash literal de `ev_` (só o prefixo e a igualdade
+        entre duas evidências iguais), então o payload novo não quebra
+        expectativa nenhuma.
+        """
         payload = {
             "source": self.source,
             "authority": self.authority.value,
             "scope": self.scope,
+            "measurement_ref": self.measurement_ref,
         }
         return _digest("ev", payload)
 
@@ -227,6 +250,9 @@ class Evidence:
             "freshness": self.freshness,
             "version": self.version,
             "scope": self.scope,
+            # Sai ao lado de `authority`, nunca fundido nele: fonte e medida são
+            # duas perguntas, e quem lê o pacote precisa ver as duas respostas.
+            "measurement_ref": self.measurement_ref,
             "applicability": self.applicability,
             "supports": list(self.supports),
             "contradicts": list(self.contradicts),

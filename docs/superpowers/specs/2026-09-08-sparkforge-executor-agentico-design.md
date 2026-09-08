@@ -504,3 +504,48 @@ kind. Mecanismo sem caso é `unresolved` nomeado, nunca funcionalidade entregue.
 A decisão 4 do spec — ordem de aplicação — é a que chega à Fase 3 com mais caso
 real. A decisão 1 (conflito) chega com um. As duas continuam no escopo, e o
 relatório publica os dois números lado a lado.
+
+### 12.7 `measurement_ref` expôs que o par de `detect_conflicts` nunca foi canônico
+
+A §3.4 mandou acrescentar `measurement_ref` à `Evidence`, e a entrega o pôs
+**dentro do payload do `id`**: a mesma página oficial ancorada em duas medidas
+diferentes são evidências diferentes, e omiti-la faria as duas colidirem num id
+só — o mesmo defeito que a auditoria de 2026-09-03 mediu em `Claim.id`.
+
+Antes de mudar, foi medido que nenhum teste nem fixture do repositório fixa hash
+literal de `ev_` (só o prefixo e a igualdade entre duas evidências iguais).
+Ainda assim **um teste caiu**, e o motivo é o achado:
+`sparkforge/agentic/evidence.py::detect_conflicts` prometia na docstring
+"retorna pares ordenados canonicamente (sorted)" e devolvia
+`(evidência_que_suporta, evidência_que_contradiz)` — sem ordenar nada. O teste
+que confere o contrato (`tuple(sorted([e1.id, e2.id]))`) passava **por sorte de
+hash**: os sha1 daquelas duas evidências ordenavam nessa mesma ordem. O payload
+novo virou a sorte e a promessa quebrou.
+
+Consequência que a sorte escondia: o **mesmo** conflito saía como duas tuplas
+diferentes conforme o hash, e qualquer deduplicação rio abaixo contaria dois. A
+correção é uma linha — `tuple(sorted(...))` — e o valor da medida é que ela só
+apareceu porque o id mudou. Nenhum caller em `sparkforge/` usava a função ainda;
+o defeito estava esperando o primeiro.
+
+### 12.8 A distribuição de `confidence` sobre o corpus real
+
+Medido em 2026-09-08, rodando `claims_from_findings` sobre as **253** fixtures de
+`fixtures/*/*/expected/` que têm `facts.json` e `findings.json`, com runtime
+`{"glue": "5.0", "spark": "3.5.4"}`:
+
+| `confidence` | claims |
+|---|---|
+| `high` | 89 |
+| `low` | 50 |
+| `medium` | 18 |
+
+Tier das evidências emitidas: **T1** 170, **T4** 20, **T2** 16. T3, T5 e T6 não
+aparecem, e não por acaso: `knowledge/source_authority.yaml` não mapeia host
+nenhum para eles, porque host não prova reprodutibilidade nem afirma nada sobre
+o conteúdo.
+
+O número não é meta nem nota. Ele diz o que o catálogo de hoje sustenta quando a
+tabela da §5.1 é aplicada campo a campo — e os 50 `low` são a lista de onde
+falta medida ou falta fonte de referência, não uma falha do executor.
+

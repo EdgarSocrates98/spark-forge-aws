@@ -108,6 +108,40 @@ class TestEvidence:
         with pytest.raises(ValueError, match="source vazio"):
             Evidence(source="", authority=EvidenceAuthority.T1_OFFICIAL_DOCS)
 
+    def test_measurement_ref_muda_o_id(self):
+        """Mesma fonte, medidas diferentes -> evidencias diferentes.
+
+        O `authority` grada a FONTE que sustenta o limiar; o `measurement_ref`
+        nomeia a MEDIDA que casou com o `when` da regra. A mesma pagina oficial
+        ancorada em dois facts nao e a mesma evidencia, e por isso o campo
+        entra no payload do id.
+        """
+        base = dict(
+            source="https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+            authority=EvidenceAuthority.T1_OFFICIAL_DOCS,
+        )
+        e1 = Evidence(**base, measurement_ref="f_681614")
+        e2 = Evidence(**base, measurement_ref="f_999999")
+        assert e1.id != e2.id
+        assert e1.id == Evidence(**base, measurement_ref="f_681614").id
+
+    def test_to_dict_traz_authority_e_measurement_ref_separados(self):
+        """Os dois campos nunca se fundem num tier so.
+
+        Nao ha tier para medida do artefato do cliente, e inventar um produziria
+        um numero que nao mede nada -- mesma familia da regra 22 do `CLAUDE.md`,
+        onde byte e token aparecem lado a lado e nunca somados.
+        """
+        e = Evidence(
+            source="https://spark.apache.org/docs/latest/sql-performance-tuning.html",
+            authority=EvidenceAuthority.T1_OFFICIAL_DOCS,
+            measurement_ref="f_681614",
+        )
+        d = e.to_dict()
+        assert d["authority"] == "T1"
+        assert d["measurement_ref"] == "f_681614"
+        assert d["id"] == e.id
+
     def test_t5_llm_not_sufficient_alone(self):
         e = Evidence(
             source="gpt-4 says so",
