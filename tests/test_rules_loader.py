@@ -9,6 +9,13 @@ from sparkforge.rules.loader import CatalogError, catalog_dir, load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# `rules/catalog/` guarda dois arquivos que NAO sao area de regra: `routing.yaml`
+# (as rotas) e `action_kinds.yaml` (o vocabulario de `action.kind`). Nenhum dos
+# dois tem a chave `rules:`, e os dois pontos abaixo precisam da mesma isencao.
+# O literal repetido era o defeito: `action_kinds.yaml` derrubou este gate no
+# commit que o criou, e nada apontava para os dois lugares que precisavam mudar.
+NAO_SAO_AREA = {"routing.yaml", "action_kinds.yaml"}
+
 
 class TestCatalogDiscovery:
     def test_finds_repo_root_catalog(self):
@@ -31,7 +38,7 @@ class TestLoadCommittedCatalog:
         """
         declared = 0
         for path in sorted((ROOT / "rules" / "catalog").glob("*.yaml")):
-            if path.name == "routing.yaml":
+            if path.name in NAO_SAO_AREA:
                 continue
             document = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
             declared += len(document.get("rules") or [])
@@ -45,7 +52,7 @@ class TestLoadCommittedCatalog:
         on_disk = {
             p.name
             for p in (ROOT / "rules" / "catalog").glob("*.yaml")
-            if p.name != "routing.yaml"
+            if p.name not in NAO_SAO_AREA
         }
         assert areas == on_disk
 
