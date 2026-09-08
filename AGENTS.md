@@ -153,7 +153,7 @@ Read PROMPT_INICIAL_MESTRE.md and use the glue-incremental-performance-architect
 
 ## Economy: measure before claiming a saving
 
-**68 tools, 31 with `detail_level`** (`summary`, `normal`, `full`). Rule 28 of
+**69 tools, 31 with `detail_level`** (`summary`, `normal`, `full`). Rule 28 of
 `CLAUDE.md` applies to all three: *read the number before claiming `detail_level`
 reduces anything*. `sparkforge_economy_report` returns `detail_level_effect` with
 the bytes of each level requested — it shows both sides and does not conclude for
@@ -203,16 +203,51 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Twenty-seven extractors, all offline — they read artifacts already on disk and
-never call AWS. Each has a CLI verb and an MCP tool with the same name, and
-together they emit 158 distinct fact kinds. The catalogue that judges them has
-134 rules across 58 areas, and the MCP surface is 59 tools.
+Thirty extractors, all offline — they read artifacts already on disk and never
+call AWS. Each has a CLI verb and an MCP tool with the same name, and together
+they emit **187** distinct fact kinds. The catalogue that judges them has **147**
+rules (**112** executable), and the MCP surface is **69** tools. Count areas with
+`area_of`, never by summing a hand-written list — `rules/catalog/README.md` says
+why. The live figures live in the *Números correntes* table of
+`docs/superpowers/STATUS.md`, and `scripts/check_status_numbers.py --strict`
+refuses a row no measurement produces.
 
 Those last numbers are no longer estimates. `sparkforge economy report` measures
-the surface at rest in bytes: **59 tool schemas = 306,845 bytes**, **44 skills =
-278,218 bytes**, **47 knowledge documents = 350,557 bytes**. Everything a client
-loads before asking a single question has a number now, and `docs/surface.lock.json`
-holds it.
+the surface at rest in bytes: **69 tool schemas = 376,854 bytes**, **57 skills =
+457,985 bytes**, **50 knowledge documents = 460,219 bytes** (measured 2026-09-08
+by `scripts/check_surface_lock.py`). Everything a client loads before asking a
+single question has a number, and `docs/surface.lock.json` holds it with a hash
+of the composition.
+
+### The `action:` block — what the rule PROPOSES, in closed vocabulary
+
+Every one of the **112** executable rules carries an `action:` block, and it is
+what makes contradiction and application order readable without MCP and without
+Python:
+
+```yaml
+# SF-WASTE-001, verbatim from rules/catalog/waste.yaml
+action:
+  kind: capacity.investigate_sizing            # one of 66, closed vocabulary, gate-checked
+  target: glue.number_of_workers               # the property the change touches
+  direction: investigate                       # increase|decrease|add|remove|replace|investigate
+  requires_absent: []                          # fact kinds that veto this action
+  moves: [capacity.worker_count, cost.dpu_seconds]  # measurement axes it moves (22, `nature: measure|risk`)
+  depends_on: []                               # rule ids that must be applied first
+```
+
+The vocabulary is locked **in both directions**: a `kind`, axis or direction the
+catalogue does not declare fails the gate, and a declared `kind` that no rule
+uses fails it too — ten were deleted for being nobody's dominant action.
+`expected_gain` is **refused by schema**: asserting how much you would save
+requires the cost of the run that did not happen (rule 13).
+
+Measured over the whole catalogue on 2026-09-08: **89** of the 112 propose a
+change and **23** are `investigate`; there is exactly **one** direct
+contradiction (`SF-GRAPH-005` × `SF-LF-001`, GraphFrames against Lake Formation
+FGAC — a documented platform incompatibility); **zero** conditional
+contradictions, with all four `requires_absent` guards being refusal kinds and
+none a symptom; and **17** `depends_on` edges.
 
 The table splits on a boundary that matters: an `analyze *` verb **extracts**
 from an artifact, and a top-level verb **composes** over facts other verbs
@@ -693,13 +728,17 @@ pelo Devin CLI sem o repositório declará-las.
 
 O SparkForge ganhou uma **biblioteca agêntica**: entidades de primeira classe,
 protocolo de debate, arbitragem, experimento, decisão auditável, memória
-institucional, budget e níveis de autonomia — tudo runtime-independente.
+institucional, budget e níveis de autonomia — tudo runtime-independente. E, em
+2026-09-08, o **executor determinístico** que a consome.
 
-**Leia isto antes de usar**: a camada é biblioteca com verbos de LEITURA, não um
-pipeline em execução. Nenhum extrator, regra, tool MCP ou coordenador escreve
-`Claim`, `Evidence` ou `Decision` hoje; num repositório de trabalho
-`sparkforge blackboard summary` devolve zero em tudo, e vai continuar devolvendo
-até existir um produtor. Quem quiser produzir entidades chama a API Python.
+**Leia isto antes de usar**: existe UM produtor de entidades, e ele é
+determinístico. `sparkforge arbitrate` roda depois de `judge` e escreve
+`Claim`, `Evidence`, `Contradiction`, `Unknown` e `Decision` no blackboard do
+case — num case rodado, `sparkforge blackboard summary` deixa de devolver zero.
+O que **não** existe é executor de **debate**: quando a arbitragem não fecha, o
+verbo emite um `DebatePlan` e para, com `debate.unresolved`. Nenhum
+`AgentRuntime` concreto mora neste pacote, nada aqui chama provider, e o
+executor é **L0** — `applied_changes` sai sempre `false`.
 `docs/agentic-evolution-report.md` tem o status por componente.
 
 ### Pacote `sparkforge/agentic/`
@@ -721,6 +760,20 @@ até existir um produtor. Quem quiser produzir entidades chama a API Python.
 | `security.py` | Threat model (12 threat types) + guardrails: input/output/injection/identity/tool auth |
 | `autonomy.py` | L0-L5 autonomy levels: deterministic → specialist → cooperative → debate → experimental → autonomous |
 | `graph.py` | Agent Execution Graph: nós tipados (agent/claim/evidence/debate/decision) + edges tipadas |
+
+### Subpacote `sparkforge/agentic/executor/` — o produtor
+
+7 módulos, 2573 linhas (com o `__init__.py`), 105 810 bytes, 163 testes:
+
+| Módulo | Função |
+|---|---|
+| `authority.py` | Mapa de autoridade de fonte (`knowledge/source_authority.yaml`) e vigência de escopo — tier **mais** freshness, nunca só o tier |
+| `claims.py` | Finding julgado vira `Claim`; o fact que o ancora vira `Evidence` com `measurement_ref` no payload do id |
+| `conflict.py` | Contradição lida do bloco `action:` — mesmo `target`, direções opostas. **Não** filtra por eixo, e o cabeçalho do módulo registra por quê |
+| `ordering.py` | Ordem de aplicação por `depends_on` e por eixo de medida (duas ações no mesmo eixo não entram no mesmo run — regra 13) |
+| `unknowns.py` | Lacuna vira `Unknown`; a medida que a fecharia vira `Experiment` |
+| `plan.py` | `DebatePlan` com participantes, contexto e budget — emitido, nunca executado |
+| `run.py` | Os seis degraus num verbo só; recebe a **UNIÃO** dos facts do case |
 
 ### Princípios
 
@@ -760,7 +813,25 @@ sparkforge decisions explain <id>  # explica uma decisão
 sparkforge budget show           # budget DECLARADO do case (bloco `budget:`)
 sparkforge budget show --template  # defaults do codigo, rotulados como template
 sparkforge autonomy show --level L3  # mostra perfil de autonomia
+sparkforge arbitrate --findings <path> --facts <path> --repo .  # o unico que ESCREVE
 ```
+
+`arbitrate` é o único verbo agêntico que escreve, e a tool MCP
+`sparkforge_arbitrate` é por isso `LOCAL_MUTATION` (`readOnlyHint: false`), e
+não idempotente — as entidades têm id content-addressed e a segunda execução as
+pula, mas o `trace` registra que a arbitragem ACONTECEU, e duas execuções são
+dois acontecimentos.
+
+`--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO
+dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
+findings. Alimentá-lo com um subconjunto fabrica claim desancorada que a
+execução real não produz. Findings e facts são aceitos nas duas formas que o
+repositório produz — a lista nua de `judge --out` e o objeto com a chave do
+domínio (`{"findings": [...]}`, `{"facts": [...]}`, `items`).
+
+Ela **não estima ganho** (regra 13), **não publica score como confiança medida**
+(os pesos de `assess_claim` são convenção e nenhum experimento os calibrou) e
+**não executa debate**.
 
 `budget show` sem o bloco `budget:` no `case.yaml` responde
 `limits.status = "unresolved"` nomeando a lacuna — nunca o default do código
@@ -771,17 +842,18 @@ como se fosse estado do case. Consumo sai `unresolved` e aponta
 
 - **IMPLEMENTED** (existe e tem teste): models, runtime, evidence, blackboard,
   arbitration, experiment, decision, memory, budget, security, autonomy, graph
-- **PARTIAL**: `debate` — protocolo, triggers e budget existem; **não há
-  executor** que rode as rodadas. Nada consulta `budget_exhausted`.
-- **PARTIAL**: CLI — leitura apenas; escrita via API Python.
-- **MISSING, e é a lacuna que governa as outras**: produtor de entidades.
-  Nenhum componente do produto escreve no blackboard.
+- **IMPLEMENTED**: `executor/` — produtor determinístico, 7 módulos, 163 testes,
+  exposto por `sparkforge arbitrate` e `sparkforge_arbitrate`.
+- **PARTIAL**: `debate` — protocolo, triggers, budget e **plano** existem; **não
+  há executor** que rode as rodadas. Nada consulta `budget_exhausted`.
+- **PARTIAL**: CLI — um verbo escreve (`arbitrate`), os outros oito leem.
 - **MISSING**: checkpoint/resume, adaptive model routing, agent reputation,
   solution tournament, agentes adversariais `sf-*`.
 - **NOT IMPLEMENTED**: semantic cache (embedding-based), auto-modificação L5,
   consulta automática à memória cross-case.
 - **SEM BENCHMARK**: comparar arquitetura nova com antiga exige os dois lados
-  rodando o mesmo caso, e o lado novo ainda não roda. Nenhuma afirmação de
-  ganho está publicada.
+  rodando o mesmo caso. O executor determinístico roda; o **debate** não, e é
+  ele que a comparação media. Nenhuma afirmação de ganho está publicada — nem
+  de tokens, nem de latência, nem de qualidade.
 
 Spec completa: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
