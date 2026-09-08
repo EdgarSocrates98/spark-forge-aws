@@ -549,3 +549,32 @@ O número não é meta nem nota. Ele diz o que o catálogo de hoje sustenta quan
 tabela da §5.1 é aplicada campo a campo — e os 50 `low` são a lista de onde
 falta medida ou falta fonte de referência, não uma falha do executor.
 
+
+
+### 12.9 A entrada do executor é a UNIÃO dos facts, e o corpus ensinou isso
+
+Ao medir `unknowns_from` sobre as 253 fixtures, três findings apareceram citando
+`fact.id` ausente do `expected/facts.json` da própria fixture —
+`SF-UI-005` em `fixtures/timeout/heartbeat_perdido` e
+`heartbeat_vence_wall_clock`, `SF-UI-001` em `timeout/timeout_com_spill_e_skew`.
+Lidos como claim desancorada, seriam defeito do produto.
+
+**Medido: não são.** `f_c77ad7` é o id content-addressed de
+`spark.executor.lost`, que mora no `input/facts.json` daquela fixture. O
+`expected/facts.json` guarda **apenas o que o extrator daquele domínio emite**
+— dois facts derivados, no caso do timeout — enquanto o `expected/findings.json`
+é o julgamento sobre a **união** de entrada e derivados.
+
+Nem o corpus nem o executor estavam errados. Errada estava a **entrada do
+teste**: alimentar o executor só com `expected/facts.json` fabrica uma claim
+desancorada que a execução real não produz.
+
+**Consequência de contrato, e ela vale para o verbo:** `run_executor` recebe
+**a união dos facts do case**, no mesmo conjunto que `judge` recebeu para
+produzir aqueles findings. Alimentá-lo com um subconjunto faz o gate de lastro
+da §5.2 reprovar claims que estão ancoradas — e reprovar por ausência de medida
+é exatamente a saída que a §5.3 reserva para lacuna real.
+
+Em teste sobre fixture, a união se monta somando `input/facts.json` (cujos ids
+são computados por `Fact.id`, porque o artefato de entrada não os carrega) ao
+`expected/facts.json`.

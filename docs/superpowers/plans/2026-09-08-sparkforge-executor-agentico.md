@@ -1611,7 +1611,9 @@ from typing import Any
 
 def order_actions(
     findings: list[dict[str, Any]],
+    eixos_de_medida: set[str] | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], dict[str, Any]]:
+    eixos_de_medida = eixos_de_medida if eixos_de_medida is not None else load_measure_axes()
     com_acao = [f for f in findings if f.get("action")]
     ids = [str(f["rule_id"]) for f in com_acao]
     acao = {str(f["rule_id"]): f["action"] for f in com_acao}
@@ -1643,6 +1645,17 @@ def order_actions(
     por_eixo: dict[str, list[str]] = defaultdict(list)
     for rid, a in acao.items():
         for eixo in a.get("moves") or []:
+            # SO eixo de `nature: measure`. Medido em 2026-09-08:
+            # `correctness.write_result` e `nature: risk` e aparece em 33 das
+            # 112 -- incluindo os de risco, o maior grupo tem 33 regras e a
+            # restricao vira ruido; so com os de medida, 15 eixos e o maior
+            # grupo tem 10. A razao e principiada: a restricao existe porque
+            # duas mudancas que movem a mesma MEDIDA tornam o antes/depois
+            # inatribuivel (regra 13). Duas que ambas podem alterar o resultado
+            # nao tem esse problema -- o que elas exigem e validacao funcional,
+            # que e `funcval` e nao isto.
+            if str(eixo) not in eixos_de_medida:
+                continue
             por_eixo[str(eixo)].append(rid)
 
     restricoes = [
