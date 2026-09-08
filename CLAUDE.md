@@ -414,7 +414,12 @@ declarava governar todas as outras.
     obrigatório. Status por componente em `docs/agentic-evolution-report.md`.
 30. **Não há benchmark da camada agêntica, e por isso não há afirmação de
     ganho.** Comparar arquitetura nova com antiga exige os dois lados rodando o
-    mesmo caso; o lado novo não roda. Regra 28 vale aqui igual.
+    mesmo caso. A justificativa desta regra **encolheu em 2026-09-08 e a
+    conclusão não**: o executor determinístico passou a rodar, e o que continua
+    sem rodar é o **debate** — que é exatamente o lado que a comparação mediria.
+    Nenhuma medida de ganho de token, latência, custo ou qualidade foi publicada
+    por esta entrega, e nenhuma pode ser até que o outro lado exista. Regra 28
+    vale aqui igual.
 
 ### CLI commands agênticos
 
