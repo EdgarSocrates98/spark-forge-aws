@@ -54,6 +54,15 @@
         "retrieved": "2026-09-02"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "orchestration.fix_schedule_declaration",
+      "target": "controlm.job.when.schedule",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "schedule.ordered_dates"
+      ],
+      "depends_on": []
+    }
   }
 ]

@@ -14,6 +14,46 @@
 #
 # Nenhum `kind` promete resultado. Descricao que dissesse "reduz o custo" seria
 # previsao de ganho, e a regra 13 do CLAUDE.md a proibe.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE FOI APAGADO NO LOTE G, E POR QUE APAGAR E A CORRECAO CERTA
+#
+# Fechada a Fase 2 (112 de 112 regras com `action:`), os dois gates de
+# vocabulario morto de `tests/test_rules_action_field.py` acordaram e listaram
+# dez `kind` que nenhuma regra usa. A correcao e APAGAR, nunca forcar uma regra
+# a usa-los: um `kind` amarrado a uma regra que nao o propoe inventaria a
+# recomendacao que a regra recusa por escrito, que e exatamente o defeito que
+# o gate existe para impedir.
+#
+# Os dez sairam por dois motivos, e vale distinguir:
+#
+# NUNCA FOI A ACAO DOMINANTE DE NENHUMA REGRA
+#   capacity.reduce_workers        SF-WASTE-001 propoe MEDIR (`investigate`), e a
+#                                  regra 17 do CLAUDE.md proibe o numero.
+#   capacity.change_worker_type    SF-GLUE-005 propoe coletar baseline, nao trocar.
+#   timeout.increase_limit         SF-TIMEOUT-001 propoe INVESTIGAR o sintoma, e
+#                                  SF-TIMEOUT-002 restaura a relacao entre duas
+#                                  propriedades. Nenhuma manda subir limite.
+#   observability.make_failure_legible  SF-EMR-007 diagnostica o bootstrap.
+#   security.remediate_leaked_secret    as quatro regras de segredo propoem
+#   security.restrict_access_permissions  `security.move_secret_to_manager`.
+#
+# ERA ALTERNATIVA EXCLUIDA, PRE-CONDICAO OU BULLET SECUNDARIO
+#   storage.change_write_mode      MoR contra CoW aparece so como bullet secundario.
+#   maintenance.schedule_periodic_maintenance  periodicidade e atributo de
+#                                  agendamento, nao acao sobre o passivo.
+#   security.change_access_control_mechanism   e a alternativa EXCLUIDA de
+#                                  SF-LF-001 e SF-LF-002, e as duas registram isso
+#                                  no comentario do proprio `action:`.
+#   measurement.inventory_consumers  e pre-condicao (SF-ENV-002, SF-FVAL-002,
+#                                  SF-CTM-006), nunca dominante.
+#
+# Os comentarios de `env.yaml`, `funcval.yaml` e `lakeformation.yaml` que
+# nomeiam `measurement.inventory_consumers` e
+# `security.change_access_control_mechanism` continuam validos: eles registram
+# POR QUE aquela regra nao os usou, e e essa leitura que os matou.
+#
+# 76 -> 66 `kind`.
 schema_version: 1
 directions:
   - increase
@@ -28,12 +68,6 @@ kinds:
   capacity.investigate_sizing:
     axis: capacidade
     description: Rodar o verbo de capacidade contra o SLA declarado, sem propor numero.
-  capacity.reduce_workers:
-    axis: capacidade
-    description: Reduzir contagem de worker para capacidade ja observada.
-  capacity.change_worker_type:
-    axis: capacidade
-    description: Trocar o tipo de worker por outro com razao memoria/vCPU diferente.
   capacity.size_executor_explicitly:
     axis: capacidade
     description: Declarar memoria, cores e instancias do executor em vez de deixar o calculo derivado.
@@ -59,9 +93,6 @@ kinds:
   timeout.investigate_symptom_first:
     axis: timeout
     description: Ler a categoria do timeout e os sintomas medidos ao lado antes de tocar em limite.
-  timeout.increase_limit:
-    axis: timeout
-    description: Aumentar limite de timeout de rede, broadcast ou heartbeat.
   timeout.restore_interval_relation:
     axis: timeout
     description: Restaurar a folga entre duas propriedades de timeout que se referenciam.
@@ -151,9 +182,6 @@ kinds:
   storage.set_write_layout_property:
     axis: armazenamento
     description: Definir propriedade de escrita da tabela -- distribution mode, tamanho-alvo de arquivo, sort order, retencao de metadata.
-  storage.change_write_mode:
-    axis: armazenamento
-    description: Rever a escolha entre merge-on-read e copy-on-write da tabela.
 
   # --- manutencao -----------------------------------------------------------
   maintenance.rewrite_data_files:
@@ -165,29 +193,17 @@ kinds:
   maintenance.expire_snapshots:
     axis: manutencao
     description: Expirar snapshots e metadata files acumulados, com retencao acordada.
-  maintenance.schedule_periodic_maintenance:
-    axis: manutencao
-    description: Estabelecer a manutencao como rotina periodica, e nao como acao pontual.
 
   # --- seguranca ------------------------------------------------------------
   security.move_secret_to_manager:
     axis: seguranca
     description: Tirar o literal da definicao e referenciar o segredo pelo mecanismo que o servico sustenta.
-  security.remediate_leaked_secret:
-    axis: seguranca
-    description: Rotacionar o segredo exposto e remove-lo do IaC e do historico onde o literal persiste.
-  security.restrict_access_permissions:
-    axis: seguranca
-    description: Restringir quem le o recurso que expoe o valor ou o dado.
   security.verify_access_chain:
     axis: seguranca
     description: Confirmar cada elo da cadeia de concessao entre contas antes de ler qualquer achado.
   security.enable_encryption_at_rest:
     axis: seguranca
     description: Habilitar a encriptacao em repouso na camada que a configuracao atual nao cobre.
-  security.change_access_control_mechanism:
-    axis: seguranca
-    description: Trocar o mecanismo de controle de acesso por outro, registrando a granularidade que muda.
 
   # --- rede -----------------------------------------------------------------
   network.provide_service_route:
@@ -204,9 +220,6 @@ kinds:
   observability.enable_application_ui:
     axis: observabilidade
     description: Ligar o event log ou o armazenamento que faz a UI de aplicacao existir.
-  observability.make_failure_legible:
-    axis: observabilidade
-    description: Fazer o script ou a etapa sair com codigo e mensagem explicitos em cada caminho de erro.
 
   # --- versao ---------------------------------------------------------------
   version.upgrade_runtime:
@@ -271,9 +284,6 @@ kinds:
   measurement.narrow_claim_scope:
     axis: medicao
     description: Declarar a afirmacao mais fraca que a medida sustenta, em vez de apresentar o total.
-  measurement.inventory_consumers:
-    axis: medicao
-    description: Levantar quem consome o alvo antes de mudar formato, schema ou particionamento.
 
   # --- orquestracao ---------------------------------------------------------
   orchestration.replace_unsupported_capability:
@@ -358,3 +368,15 @@ axes:
     description: Numero de tasks do stage de leitura, limitado pela splitabilidade dos arquivos de entrada.
   metadata.partition_resolution_time:
     description: Tempo gasto resolvendo as particoes da tabela antes do scan.
+
+  # Acrescentado no lote G (controlm). E o eixo de AGENDAMENTO que nenhuma area
+  # anterior movia: as regras de A a F mudam o QUE o job faz ou com que recurso,
+  # e nenhuma delas muda QUANDO ele e ordenado. `SF-CTM-002` e `SF-CTM-003` sao
+  # as duas que o movem, podem casar no MESMO `ctm.schedule`, e as duas o nomeiam
+  # como EIXO DE RESULTADO na propria `validation` -- que e o criterio dos lotes
+  # anteriores para um eixo existir.
+  #
+  # Ele NAO e `correctness.write_result`, e `SF-CTM-002` separa os dois em voz
+  # alta: "mexer em `When` e mudanca de QUANDO, e nao pode mover o QUE".
+  schedule.ordered_dates:
+    description: Conjunto de datas em que o orquestrador ordena o job.

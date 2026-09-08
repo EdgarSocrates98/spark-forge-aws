@@ -54,6 +54,13 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "dependency.migrate_to_successor_api",
+      "target": "job.source.sdk_import",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

@@ -55,6 +55,16 @@
         "retrieved": "2026-08-22"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "dependency.align_version_with_runtime",
+      "target": "job.extra_jars.scala_binary",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

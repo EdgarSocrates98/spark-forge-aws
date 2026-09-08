@@ -53,6 +53,15 @@
         "retrieved": "2026-08-22"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "dependency.migrate_to_successor_api",
+      "target": "job.source.pandas_on_spark_api",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

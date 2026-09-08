@@ -17,12 +17,14 @@ import yaml
 from sparkforge.findings.models import Finding
 from sparkforge.rules.loader import CatalogError, _validate_action, catalog_dir, load_catalog
 
-# Arquivos ainda sem `action`. Encolhe a cada lote; vazio ao fim da Fase 2.
-PENDENTES = {
-    "controlm.yaml",
-    "glue-migration.yaml",
-    "spark4.yaml",
-}
+# Arquivos ainda sem `action`. Encolheu a cada lote da Fase 2 e chegou a vazio no
+# lote G (Tarefa 10): as 112 regras executaveis declaram `action`. Conjunto vazio
+# ACORDA `test_todo_kind_do_vocabulario_tem_regra` e
+# `test_todo_eixo_do_vocabulario_tem_regra`, que so valem com o catalogo inteiro
+# preenchido -- e foram eles que mandaram apagar dez `kind` mortos do
+# vocabulario. Se um lote futuro precisar reabrir a lista, saiba que reabri-la
+# desliga os dois gates junto.
+PENDENTES: set[str] = set()
 
 
 def _vocabulary() -> dict:

@@ -68,7 +68,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -125,7 +132,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -178,7 +192,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -231,7 +252,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     }
   ],
   "by_step": [
@@ -291,7 +319,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "4.0",
@@ -350,7 +385,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "4.0",
@@ -413,7 +455,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.0",
@@ -472,7 +521,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.0",
@@ -537,7 +593,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -602,7 +665,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [

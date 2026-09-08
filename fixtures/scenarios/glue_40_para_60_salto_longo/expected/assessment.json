@@ -73,7 +73,17 @@
           "retrieved": "2026-08-22"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.align_version_with_runtime",
+        "target": "job.extra_jars.scala_binary",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "dependency.delivered_artifacts",
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -130,7 +140,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -187,7 +204,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-001",
@@ -244,7 +268,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-003",
@@ -296,7 +327,16 @@
           "retrieved": "2026-08-21"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "code.rewrite_expression",
+        "target": "job.source.cast_expression",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-SPARK4-003",
@@ -356,7 +396,16 @@
           "retrieved": "2026-08-22"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "dependency.align_version_with_runtime",
+        "target": "job.requirements.pyarrow_pin",
+        "direction": "increase",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -409,7 +458,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -462,7 +518,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-MIG-002",
@@ -515,7 +578,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     }
   ],
   "by_step": [
@@ -575,7 +645,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "4.0",
@@ -634,7 +711,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "4.0",
@@ -697,7 +781,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.0",
@@ -756,7 +847,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.0",
@@ -820,7 +918,17 @@
             "retrieved": "2026-08-22"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.extra_jars.scala_binary",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "dependency.delivered_artifacts",
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -883,7 +991,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -941,7 +1056,16 @@
             "retrieved": "2026-08-21"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -1007,7 +1131,16 @@
             "retrieved": "2026-08-22"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.requirements.pyarrow_pin",
+          "direction": "increase",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -1066,7 +1199,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -1132,7 +1272,17 @@
             "retrieved": "2026-08-22"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.extra_jars.scala_binary",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "dependency.delivered_artifacts",
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1197,7 +1347,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1265,7 +1422,16 @@
             "retrieved": "2026-08-21"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1333,7 +1499,16 @@
             "retrieved": "2026-08-22"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "dependency.align_version_with_runtime",
+          "target": "job.requirements.pyarrow_pin",
+          "direction": "increase",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -1394,7 +1569,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [

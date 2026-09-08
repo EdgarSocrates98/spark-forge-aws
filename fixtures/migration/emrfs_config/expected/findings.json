@@ -50,6 +50,13 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.replace_property_key",
+      "target": "job.configuration.emrfs_key",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

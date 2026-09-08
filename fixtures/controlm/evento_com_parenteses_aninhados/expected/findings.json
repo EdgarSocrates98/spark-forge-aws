@@ -58,6 +58,15 @@
         "retrieved": "2026-09-02"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "controlm.job.wait_for_events.expression",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

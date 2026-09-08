@@ -54,6 +54,15 @@
         "retrieved": "2026-08-22"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.replace_property_key",
+      "target": "job.configuration.renamed_key",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

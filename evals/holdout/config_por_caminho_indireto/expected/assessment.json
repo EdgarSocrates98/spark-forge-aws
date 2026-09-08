@@ -59,7 +59,14 @@
           "retrieved": "2026-07-29"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
     },
     {
       "rule_id": "SF-SPARK4-001",
@@ -115,7 +122,16 @@
           "retrieved": "2026-08-22"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.renamed_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     }
   ],
   "by_step": [
@@ -170,7 +186,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -232,7 +255,16 @@
             "retrieved": "2026-08-22"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.renamed_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -292,7 +324,14 @@
             "retrieved": "2026-07-29"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
       },
       "steps": [
         [
@@ -356,7 +395,16 @@
             "retrieved": "2026-08-22"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.renamed_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [

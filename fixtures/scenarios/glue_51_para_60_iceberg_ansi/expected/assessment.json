@@ -60,7 +60,16 @@
           "retrieved": "2026-08-21"
         }
       ],
-      "action": {}
+      "action": {
+        "kind": "code.rewrite_expression",
+        "target": "job.source.cast_expression",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [
+          "correctness.write_result"
+        ],
+        "depends_on": []
+      }
     }
   ],
   "by_step": [
@@ -116,7 +125,16 @@
             "retrieved": "2026-08-21"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "step": [
         "5.1",
@@ -177,7 +195,16 @@
             "retrieved": "2026-08-21"
           }
         ],
-        "action": {}
+        "action": {
+          "kind": "code.rewrite_expression",
+          "target": "job.source.cast_expression",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [
+            "correctness.write_result"
+          ],
+          "depends_on": []
+        }
       },
       "steps": [
         [

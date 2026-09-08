@@ -51,6 +51,13 @@
         "retrieved": "2026-08-21"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "version.run_migration_assessment",
+      "target": "runtime.version",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

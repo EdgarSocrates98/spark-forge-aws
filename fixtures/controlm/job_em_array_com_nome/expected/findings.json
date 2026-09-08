@@ -52,7 +52,14 @@
         "retrieved": "2026-09-02"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "controlm.system_setting.allowDuplicateJobNames",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-CTM-004",
@@ -107,6 +114,13 @@
         "retrieved": "2026-09-02"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "controlm.system_setting.allowDuplicateJobNames",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

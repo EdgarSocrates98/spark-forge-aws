@@ -57,6 +57,15 @@
         "retrieved": "2026-08-22"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "dependency.align_version_with_runtime",
+      "target": "job.requirements.pyarrow_pin",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

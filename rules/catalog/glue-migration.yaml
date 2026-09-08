@@ -46,6 +46,24 @@ rules:
         cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.
       - Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor
         se há build compatível com SDK v2 antes de migrar o job.
+    # O bullet 1 e a acao dominante: migrar o import para o SDK v2. O bullet 2 e
+    # PRE-CONDICAO ("confirmar com o mantenedor se ha build compativel") e nao
+    # acao propria -- quando a resposta e nao, nao ha conserto local, e e isso
+    # que o `rollback` registra ao mandar manter o job no Glue 4.0.
+    #
+    # `moves` VAZIO de proposito. A `validation` desta regra mede AUSENCIA de
+    # `NoClassDefFoundError` num run completo e ausencia de `com.amazonaws` no
+    # classpath -- ela nao compara contagem, schema nem agregado. O risco de
+    # mudanca de comportamento esta escrito em `risks` e nao tem medida ao lado:
+    # declarar `correctness.write_result` aqui afirmaria um eixo que a propria
+    # regra nao manda medir.
+    action:
+      kind: dependency.migrate_to_successor_api
+      target: job.source.sdk_import
+      direction: replace
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica
         sem revisão de comportamento pode trocar um erro silencioso por outro.
@@ -87,6 +105,23 @@ rules:
       - Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A,
         como consistência forçada, revisar se a garantia ainda é necessária -- o S3A
         sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum.
+    # `config.replace_property_key` e nao `config.remove_property`: o bullet 1
+    # diz "remover ... e SUBSTITUIR pelo equivalente S3A quando existir", e o
+    # `rollback` confirma que restaurar a chave EMRFS nao tem efeito no S3A. A
+    # acao e a troca de chave; remover sem substituto e o caso degenerado dela,
+    # quando equivalente nao existe.
+    #
+    # `moves` VAZIO: a `validation` mede a ausencia da chave `fs.s3.*` na
+    # configuracao efetiva e confirma SSE por `head-object`. Nenhum dos eixos do
+    # vocabulario mede criptografia de objeto, e criar um para uma regra so
+    # deixaria eixo que nada mais move.
+    action:
+      kind: config.replace_property_key
+      target: job.configuration.emrfs_key
+      direction: replace
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Remover a chave sem verificar o equivalente S3A pode desligar de fato uma
         configuração de segurança (SSE) que só parecia ativa antes.
@@ -136,6 +171,27 @@ rules:
       - Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido,
         tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um
         problema real, não criando um.
+    # `code.rewrite_expression` carrega "cast guardado" na propria descricao do
+    # vocabulario, e foi desta regra que ela saiu. O bullet 2 -- tratar a origem
+    # do dado em vez de guardar o cast -- e a alternativa EXCLUDENTE e fica fora:
+    # guardar o cast e corrigir o dado sujo sao decisoes opostas sobre o mesmo
+    # valor, e a regra condiciona a escolha a o `NULL` ser esperado ou nao.
+    #
+    # FICA DE FORA tambem `spark.sql.ansi.enabled=false`, que aparece nos
+    # `tradeoffs` como o atalho que a regra RECUSA -- "mascara o problema no
+    # nivel errado e adia a descoberta para producao".
+    #
+    # `correctness.write_result` porque a `validation` manda contar linhas com
+    # `NULL` na coluna do cast antes e depois: o resultado pode se mover, e a
+    # regra nomeia a medida que o mostra.
+    action:
+      kind: code.rewrite_expression
+      target: job.source.cast_expression
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha
         visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI
@@ -218,6 +274,26 @@ rules:
         real do job nos dois runtimes.
       - Versionar a definição antiga do job (script e Terraform) antes do merge, para
         que o rollback seja uma reversão de commit e não uma reconstrução.
+    # `investigate` e nao `replace`: esta regra NAO propoe mudar `glue_version`
+    # -- a mudanca ja esta no diff que a disparou. O que ela propoe e rodar a
+    # avaliacao de migracao sobre o par (`previous_value` -> `value`). O `target`
+    # e `runtime.version`, o mesmo que `SF-GRAPH-002` toca com `replace`: as duas
+    # tocam a mesma coisa em papeis diferentes, e o executor precisa ver isso.
+    #
+    # Os bullets 2 e 3 -- tratar os gates como trabalho do PR, versionar a
+    # definicao antiga antes do merge -- sao disciplina de entrega em volta da
+    # avaliacao, e nao acao sobre outro alvo.
+    #
+    # `moves` VAZIO: avaliacao PRODUZ achado, nao move eixo. Declarar
+    # `runtime.engine_version` aqui atribuiria a esta acao um movimento que quem
+    # escreveu o diff ja fez.
+    action:
+      kind: version.run_migration_assessment
+      target: runtime.version
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Aprovar a mudança de versão sem avaliar o código do job troca uma quebra
         visível no deploy por uma quebra silenciosa em runtime, depois de minutos de

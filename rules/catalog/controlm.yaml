@@ -258,6 +258,36 @@ rules:
       - "Se a alternativa não existe, atualizar o Control-M do ambiente alvo até a versão que a fronteira nomeia — e tratar isso como mudança de plataforma, com janela e plano próprios, nunca como parte do merge do job."
       - "Consultar `sparkforge controlm describe --version <alvo>` para ver o que a versão alvo sustenta nos DOIS eixos antes de escolher: capacidade com fronteira, e exigência de componente (Java, Python, pip). Trocar o job type e esbarrar na exigência de Java seria descobrir a segunda barreira depois de já ter pago a primeira."
       - "Se o achado for falso — a capacidade existe no ambiente e a matriz não sabe —, a correção é a MATRIZ: leia a página What's New da versão e acrescente ou corrija a entrada em knowledge/controlm/automation-api-matrix.yaml. Não silencie a regra."
+    # O bullet 1 -- confirmar a versao real do Automation API -- e PRE-CONDICAO,
+    # e a propria regra o escreve assim: "antes de qualquer edicao". A acao
+    # dominante e o bullet 2, trocar a capacidade pela alternativa que a versao
+    # alvo tem, e e ela que a `validation` inteira mede: `ctm build` sobre o JSON
+    # CORRIGIDO, mesmo conjunto de jobs, mesma `Sequence`.
+    #
+    # FICA DE FORA o bullet 3, atualizar o Control-M do ambiente alvo. A propria
+    # regra manda trata-lo "como mudanca de plataforma, com janela e plano
+    # proprios, nunca como parte do merge do job" -- e o que nao esta no artefato
+    # nao e a acao deste achado. FICA DE FORA tambem o bullet 5, corrigir a
+    # matriz: ele e o conserto do achado FALSO, nao do achado.
+    #
+    # `requires_absent` VAZIO, e a busca foi feita. `ctm.capability_unresolved` e
+    # kind de recusa, mas sai POR CAPACIDADE: uma capacidade que nao pode ser
+    # sondada nao invalida a troca desta, que foi sondada -- guarda amplo demais,
+    # o mesmo motivo que recusou as nove candidatas dos lotes anteriores.
+    # `ctm.unresolved` e mais amplo ainda: sai para qualquer objeto do arquivo
+    # que nao deu para ler.
+    #
+    # `correctness.write_result` porque a `validation` nomeia o eixo com o modo
+    # de falha junto: "job type novo que roda sem erro e escreve outra coisa e a
+    # falha que este eixo existe para pegar".
+    action:
+      kind: orchestration.replace_unsupported_capability
+      target: controlm.job.capability
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - "A versão é declarada pelo operador. Uma declaração desatualizada — o ambiente foi atualizado e ninguém trocou o parâmetro — produz achado sobre uma barreira que já não existe."
       - "Trocar o job type muda o modelo de execução, não só o nome: `Job:EmbeddedScript` roda em primeiro plano e o Control-M espera o fim; `Job:DetachedEmbeddedScript` desacopla. Trocar sem tratar isso muda o tempo de ocupação do Agent e a semântica de conclusão do job."
@@ -389,6 +419,27 @@ rules:
       - "Acrescentar as três opções com valor NONE ao bloco `When`, na forma que a própria página usa: `\"WeekDays\": [\"NONE\"], \"Months\": [\"NONE\"], \"MonthDays\": [\"NONE\"]`. É a correção literal que a fonte prescreve, e vale igualmente para a opção omitida e para a escrita com outro valor."
       - "Se o agendamento pretendido era mesmo por dia da semana ou por dia do mês, remover `SpecificDates` em vez de anular as outras três — as duas formas de agendar são alternativas, e manter as duas no arquivo deixa a intenção ambígua para o próximo leitor."
       - "Se o job precisa das duas coisas — datas fixas E uma regra semanal —, são dois agendamentos e a fonte não os junta num bloco só: avaliar dois jobs, ou um calendário predefinido no Control-M referenciado por `MonthDaysCalendar`, que é o mecanismo que a página publica para regra composta."
+    # `add` porque a correcao literal que a fonte prescreve e ACRESCENTAR as tres
+    # opcoes com valor `NONE` ao bloco `When`. O bullet 2 -- remover
+    # `SpecificDates` -- e o ramo oposto, e a regra diz por escrito que as duas
+    # formas de agendar sao alternativas.
+    #
+    # `target` igual ao de `SF-CTM-003`: as duas tocam a declaracao de
+    # agendamento do mesmo bloco `When`, podem casar no MESMO `ctm.schedule`, e o
+    # executor precisa ver a colisao.
+    #
+    # `schedule.ordered_dates` e NAO `correctness.write_result`, e a regra separa
+    # os dois em voz alta: "mexer em `When` e mudanca de QUANDO, e nao pode mover
+    # o QUE". O que se move e o conjunto de datas em que o job e ordenado, e a
+    # `validation` o nomeia como EIXO DE RESULTADO.
+    action:
+      kind: orchestration.fix_schedule_declaration
+      target: controlm.job.when.schedule
+      direction: add
+      requires_absent: []
+      moves:
+        - schedule.ordered_dates
+      depends_on: []
     risks:
       - "Acrescentar `NONE` às três opções muda o conjunto de dias em que o job é ordenado se o autor de fato dependia do default `ALL` de alguma delas. O achado diz que a definição é inválida segundo a fonte, não que o comportamento atual é indesejado — confirme a intenção antes de editar."
       - "A correção é no bloco `When`, que folder e job compartilham: um `When` de folder é herdado pelos jobs que não têm o seu próprio, então anular as opções no folder muda o agendamento de todos os jobs que herdam dele."
@@ -463,6 +514,25 @@ rules:
       - "Trocar a enumeração por uma regra de calendário: `MonthDaysCalendar` referencia um calendário predefinido no Control-M, e a página publica esse mecanismo exatamente para o caso em que a lista de datas é grande. Um calendário nomeado também é revisável por quem não lê JSON."
       - "Se as datas são de mais de um ano, separar em jobs ou folders por período — o formato `MM/DD` não carrega ano, então uma lista longa está enumerando o mesmo dia do calendário repetidas vezes, não datas diferentes."
       - "Se a lista longa existe porque o agendamento real é por dia da semana ou dia do mês com exceções, escrever o agendamento por regra (`WeekDays`/`MonthDays`, com a sintaxe de dia relativo que a página publica) e reservar `SpecificDates` para as exceções."
+    # `replace` porque a acao dominante e trocar a enumeracao por uma regra de
+    # calendario (`MonthDaysCalendar`), o mecanismo que a propria pagina publica
+    # para lista grande. Os bullets 2 e 3 sao outras formas do mesmo movimento --
+    # sair da enumeracao.
+    #
+    # FICA DE FORA cortar a lista para caber no teto: ela aparece so nos `risks`,
+    # e a regra a trata como modo de falha -- "muda o conjunto de dias em que o
+    # job roda, e a diferenca pode passar despercebida por meses" --, nunca como
+    # recomendacao.
+    #
+    # Mesmo `target` e mesmo eixo de `SF-CTM-002`, pelo mesmo motivo.
+    action:
+      kind: orchestration.fix_schedule_declaration
+      target: controlm.job.when.schedule
+      direction: replace
+      requires_absent: []
+      moves:
+        - schedule.ordered_dates
+      depends_on: []
     risks:
       - "Trocar enumeração por calendário move a definição do agendamento para FORA do repositório: o calendário vive no Control-M e deixa de ser código versionado, então a revisão por pull request deixa de cobri-lo."
       - "Cortar a lista para caber no teto muda o conjunto de dias em que o job roda, e a diferença pode passar despercebida por meses — o job simplesmente não é ordenado numa data que ninguém está observando."
@@ -552,6 +622,31 @@ rules:
       - "Confirmar `allowDuplicateJobNames` no ambiente alvo antes de qualquer edição: é configuração de `automation-api.properties`, o default é `true`, e se ele estiver ligado a definição está correta como está — o achado terá cumprido o papel de tornar a dependência visível."
       - "Registrar a dependência onde ela é revisável: um comentário no README do repositório de jobs, ou uma checagem no pipeline que valide o setting do endpoint antes do `ctm deploy`. A definição depende de algo que o pull request não mostra, e é isso que a torna frágil."
       - "Se os nomes duplicados não são necessários — os jobs do array têm nomes distintos —, avaliar a forma de objeto nomeado, em que cada job é uma chave do folder. Ela não depende do setting, e é a forma que o resto do corpus usa."
+    # DESVIO DO PALPITE OBVIO, E A REGRA MANDA. `orchestration.change_job_definition`
+    # seria a leitura do bullet 3 -- converter a forma de array em objetos
+    # nomeados --, mas esse bullet e CONDICIONAL ("se os nomes duplicados nao sao
+    # necessarios") e a propria regra o desautoriza como acao dominante: o bullet
+    # 1 diz que, com o setting ligado, "a definicao esta correta como esta -- o
+    # achado tera cumprido o papel de tornar a dependencia visivel". A
+    # `explanation` fecha: "confirme o valor antes de decidir; o achado e sobre o
+    # que a definicao depende, nunca sobre o que o ambiente tem". Isso e
+    # `config.verify_effective_value`, o mesmo kind de `SF-PY-012` e
+    # `SF-ENV-004`, e a severidade P3 e coerente com ele.
+    #
+    # `target` e o SETTING e nao o JSON, porque e o valor efetivo dele que a acao
+    # vai buscar: ele vive em `automation-api.properties`, fora do repositorio, e
+    # este motor nao o le.
+    #
+    # `moves` VAZIO: confirmar um valor nao move eixo nenhum. Os eixos de
+    # resultado da `validation` -- mesmo conjunto de jobs, mesma `Sequence` --
+    # guardam a conversao que FICOU DE FORA, e nao esta acao.
+    action:
+      kind: config.verify_effective_value
+      target: controlm.system_setting.allowDuplicateJobNames
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - "Trocar a forma de array por objetos nomeados EXIGE que os nomes sejam únicos dentro do folder: se dois jobs do array compartilham nome, a conversão perde um deles em silêncio, porque a segunda chave sobrescreve a primeira no JSON."
       - "Desligar `allowDuplicateJobNames` no ambiente para forçar disciplina de nomes quebra toda definição em array já publicada, e não só esta — é mudança de plataforma, com alcance muito maior que o deste achado."
@@ -642,6 +737,26 @@ rules:
       - "Achatar a expressão para um nível: escrever os grupos como irmãos, na forma que o exemplo da própria página usa — dois grupos entre parênteses ligados por um operador, sem parêntese dentro de parêntese. É a correção literal, e mantém a lista num bloco só."
       - "Se a lógica pretendida realmente precisa de dois níveis, ela não cabe numa expressão de eventos: introduzir um evento intermediário, adicionado por um job que represente o grupo interno, e esperar por ele no lugar do parêntese aninhado. O agrupamento passa a ser um objeto do fluxo, visível no Control-M, em vez de sintaxe."
       - "Se o aninhamento existia só para deixar a intenção legível, remover os parênteses redundantes: a fonte declara que o relacionamento default é `AND`, então um grupo que só contém `AND` não precisa de parênteses nenhum."
+    # `orchestration.change_job_definition` cobre "expressao de eventos" na
+    # propria descricao. `replace` porque a acao dominante e ACHATAR a expressao
+    # para um nivel -- a correcao literal, que mantem a lista num bloco so.
+    #
+    # FICA DE FORA introduzir um evento intermediario (bullet 2): a regra o
+    # condiciona a logica que "realmente precisa de dois niveis", e ele
+    # acrescenta um job ao fluxo -- mudanca de topologia, nao de sintaxe.
+    #
+    # `correctness.write_result` porque a `validation` nomeia o eixo com o modo
+    # de falha junto: "job que passa a rodar antes da hora roda sobre dado
+    # incompleto e termina em OK -- e essa falha que este eixo existe para
+    # pegar".
+    action:
+      kind: orchestration.change_job_definition
+      target: controlm.job.wait_for_events.expression
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - "Achatar a expressão MUDA a condição de espera se a lógica original dependia mesmo do agrupamento — `A OR (B AND C)` e `A OR B AND C` não são a mesma pergunta. Confirme a intenção antes de editar; a fonte não publica como o aninhamento é interpretado hoje, então não há como derivar o comportamento atual do arquivo."
       - "Introduzir um evento intermediário acrescenta um job ao fluxo e, com ele, um ponto de falha e uma dependência a mais para operar. O ganho é a lógica ficar explícita; o custo é o fluxo crescer."
@@ -743,6 +858,28 @@ rules:
       - "Tirar os jobs explícitos do sub-folder que tem `ReferencePath`: ou eles pertencem ao template referenciado — e então vão para lá, onde todas as instâncias os herdam —, ou pertencem a este fluxo em particular, e então vão para um sub-folder irmão, sem `ReferencePath`."
       - "Se o job explícito existia para variar o comportamento da instância, usar o mecanismo que a página publica para isso: sobrescrever variáveis do job ou folder referenciado a partir do sub-folder que referencia. É o que `ReferencePath` foi desenhado para permitir, e mantém uma definição só."
       - "Se o template não serve mais para este caso, abandonar `ReferencePath` neste sub-folder e escrever as definições completas — a fonte não obriga a usar template, e um sub-folder normal com jobs explícitos é forma válida."
+    # `remove` porque a acao dominante e TIRAR os jobs explicitos do sub-folder
+    # que tem `ReferencePath` -- a proibicao literal da fonte, "must not contain
+    # any explicit job objects" --, e o `target` e exatamente o que a medida
+    # conta (`measures.explicit_job_count`).
+    #
+    # FICAM DE FORA os bullets 2 e 3: sobrescrever variaveis do objeto
+    # referenciado, e abandonar `ReferencePath` escrevendo as definicoes
+    # completas. Sao os dois ramos alternativos, e a regra os condiciona a por
+    # que o job explicito existia.
+    #
+    # `correctness.write_result` porque mover o job para o folder referenciado o
+    # entrega a TODAS as instancias daquele template, e a `validation` nomeia o
+    # eixo: "sub-folder que ganhou um job sem ter pedido -- a falha que este eixo
+    # existe para pegar".
+    action:
+      kind: orchestration.change_job_definition
+      target: controlm.subfolder.explicit_jobs
+      direction: remove
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - "Mover o job para o folder referenciado o entrega a TODAS as instâncias daquele template, e não só a esta. Confira quem mais referencia o mesmo caminho antes de mover, ou um sub-folder que não pedia nada passa a executar um job a mais."
       - "Trocar job explícito por sobrescrita de variável muda o mecanismo de variação: a diferença deixa de ser visível como um objeto no fluxo e passa a ser um valor — mais compacto, e mais difícil de descobrir por quem opera o Control-M pela interface."
