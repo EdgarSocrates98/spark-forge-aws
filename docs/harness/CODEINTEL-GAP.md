@@ -244,9 +244,9 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-  `buscar(banco, "source")` devolve **47** símbolos em **12252** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **151056** bytes. O `grep` pela definição contendo o fragmento continua menor
-  (**8713** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+  `buscar(banco, "source")` devolve **47** símbolos em **12253** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **151058** bytes. O `grep` pela definição contendo o fragmento continua menor
+  (**8714** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
