@@ -115,6 +115,14 @@ rules:
       - Compactar o passivo num job de manutenção separado.
       - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita. O hint exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 ele não existe, e a ação equivalente é um repartition(n) dimensionado pelo volume antes da escrita."
       - Nunca usar coalesce(1) para isso.
+    action:
+      kind: maintenance.rewrite_data_files
+      target: s3.prefix.data_files
+      direction: replace
+      requires_absent: []
+      moves:
+        - storage.file_layout
+      depends_on: []
     risks: [Compactação altera o layout físico consumido downstream; validar com os consumidores.]
     tradeoffs: [Arquivos maiores facilitam a leitura em paralelo e dificultam a escrita incremental frequente.]
     validation:
@@ -156,6 +164,15 @@ rules:
       - Alinhar o tipo do literal ao tipo da coluna de partição.
       - Remover UDF do caminho do filtro.
       - Se a leitura é via DynamicFrame, usar push_down_predicate ou catalogPartitionPredicate.
+    action:
+      kind: scan.push_filter_earlier
+      target: plan.file_scan.partition_filters
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+        - correctness.write_result
+      depends_on: []
     risks: [Mover filtro para antes de outer join altera o resultado; verificar o tipo de join.]
     tradeoffs: []
     validation:
@@ -197,6 +214,14 @@ rules:
       - Converter a entrada para Parquet, o que resolve splitabilidade e pruning de coluna ao mesmo tempo.
       - Se a conversão não é possível, dividir os arquivos na origem em pedaços menores.
       - Se nada é possível, reconhecer o teto de paralelismo e reduzir os workers ociosos.
+    action:
+      kind: storage.change_storage_format
+      target: s3.prefix.file_format
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.task_count
+      depends_on: []
     risks: [Conversão é mudança no produtor do dado, fora do controle de quem consome.]
     tradeoffs: [Uma etapa de conversão adiciona custo e latência, e reduz o custo de todas as leituras seguintes.]
     validation:
@@ -236,6 +261,14 @@ rules:
       - Adicionar select das colunas usadas, o mais cedo possível na cadeia.
       - Remover SELECT star.
       - Se uma UDF recebe a linha inteira, passar apenas as colunas necessárias.
+    action:
+      kind: scan.project_columns
+      target: plan.file_scan.read_schema
+      direction: add
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+      depends_on: []
     risks: [Projeção explícita exige manutenção na evolução de schema.]
     tradeoffs: []
     validation:
@@ -276,6 +309,15 @@ rules:
       - Escolher a coluna de partição a partir dos filtros que os consumidores realmente usam, o que exige inventariar as queries em Athena e nos jobs downstream.
       - Para chave de alta cardinalidade usada em lookup, usar bucket em Iceberg em vez de partição.
       - Reservar sort order para os filtros de alta cardinalidade.
+    action:
+      kind: storage.change_partition_scheme
+      target: catalog.table.partition_keys
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+        - storage.file_layout
+      depends_on: []
     risks:
       - Mudar o particionamento de uma tabela existente exige reescrita ou partition evolution.
       - "Em Iceberg, partition evolution não reescreve dados antigos: a tabela passa a ter specs mistos, e o planejamento fica permanentemente mais complexo."

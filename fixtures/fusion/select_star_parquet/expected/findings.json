@@ -47,6 +47,17 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "scan.project_columns",
+      "target": "sql.query.projection",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": [
+        "SF-ATH-004"
+      ]
+    }
   }
 ]

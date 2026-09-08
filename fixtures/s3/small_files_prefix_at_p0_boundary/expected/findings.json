@@ -57,6 +57,15 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "maintenance.rewrite_data_files",
+      "target": "s3.prefix.data_files",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.file_layout"
+      ],
+      "depends_on": []
+    }
   }
 ]

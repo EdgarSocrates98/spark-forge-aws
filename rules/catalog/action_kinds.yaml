@@ -340,3 +340,21 @@ axes:
     description: Versao de runtime, engine e plataforma que a execucao ou a definicao declara.
   dependency.delivered_artifacts:
     description: Os artefatos que a definicao do job entrega ao classpath -- jars e arquivos declarados no IaC.
+
+  # Acrescentado no lote D (iceberg, parquet, athena). Sao os eixos de
+  # ARMAZENAMENTO e de LEITURA que os lotes A, B e C nao tinham: nenhuma regra
+  # anterior reescrevia o passivo de uma tabela, nem media byte escaneado por
+  # uma query. Cada um sai nomeado na `validation` da regra que o move -- nao
+  # ha eixo aqui que so exista neste arquivo.
+  storage.file_layout:
+    description: Contagem e tamanho dos data files que a tabela ou o prefixo tem.
+  storage.delete_file_count:
+    description: Delete files da tabela merge-on-read, contados contra os data files.
+  storage.snapshot_count:
+    description: Snapshots e metadata files acumulados na tabela.
+  scan.bytes_read:
+    description: Bytes que a leitura escaneia, medidos no plano fisico ou nas estatisticas de execucao da query.
+  scan.task_count:
+    description: Numero de tasks do stage de leitura, limitado pela splitabilidade dos arquivos de entrada.
+  metadata.partition_resolution_time:
+    description: Tempo gasto resolvendo as particoes da tabela antes do scan.

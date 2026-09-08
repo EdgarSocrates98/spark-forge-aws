@@ -46,6 +46,18 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "scan.add_partition_filter",
+      "target": "sql.query.predicate",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read",
+        "correctness.write_result"
+      ],
+      "depends_on": [
+        "SF-ATH-004"
+      ]
+    }
   }
 ]

@@ -65,6 +65,17 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "maintenance.rewrite_data_files",
+      "target": "iceberg.table.data_files",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.file_layout"
+      ],
+      "depends_on": [
+        "SF-ICE-005"
+      ]
+    }
   }
 ]

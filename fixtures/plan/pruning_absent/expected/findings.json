@@ -56,7 +56,17 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "scan.push_filter_earlier",
+      "target": "plan.file_scan.partition_filters",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-PLAN-004",

@@ -45,6 +45,16 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "version.upgrade_runtime",
+      "target": "athena.workgroup.engine_version",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   }
 ]

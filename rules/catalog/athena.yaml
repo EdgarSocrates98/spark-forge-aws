@@ -75,6 +75,15 @@ rules:
     proposed_change:
       - Listar explicitamente as colunas usadas.
       - Se a query é exploratória, limitar as colunas e usar LIMIT junto de um WHERE sobre coluna de partição.
+    action:
+      kind: scan.project_columns
+      target: sql.query.projection
+      direction: add
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+      depends_on:
+        - SF-ATH-004
     risks: [Projeção explícita quebra quando o schema evolui e a query não é atualizada.]
     tradeoffs: [Conveniência de exploração contra custo por execução.]
     validation:
@@ -135,6 +144,16 @@ rules:
     proposed_change:
       - Adicionar WHERE sobre coluna de partição para restringir o escaneamento.
       - Para amostragem, filtrar por uma partição específica em vez de confiar no LIMIT.
+    action:
+      kind: scan.add_partition_filter
+      target: sql.query.predicate
+      direction: add
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+        - correctness.write_result
+      depends_on:
+        - SF-ATH-004
     risks: [Filtro por partição muda o conjunto amostrado; não é amostra aleatória.]
     tradeoffs: []
     validation: [Bytes escaneados antes e depois.]
@@ -181,6 +200,14 @@ rules:
       - Avaliar partition projection, desde que o layout seja denso e previsível.
       - Se o layout é esparso, não usar projection; reduzir a cardinalidade do particionamento.
       - Considerar migrar a tabela para Iceberg, cuja resolução de partição não depende do lookup Hive.
+    action:
+      kind: storage.change_partition_scheme
+      target: catalog.table_property.projection_enabled
+      direction: add
+      requires_absent: []
+      moves:
+        - metadata.partition_resolution_time
+      depends_on: []
     risks:
       - Projection assume que toda partição do padrão existe. Layout esparso gera trabalho inútil.
       - Range de data com fim fixo que não é atualizado faz partições novas desaparecerem silenciosamente das queries. É falha por dado faltante, não por erro.
@@ -218,6 +245,15 @@ rules:
     proposed_change:
       - Confirmar a engine version do workgroup antes de qualquer reescrita de SQL.
       - Planejar a migração para v3, validando as queries existentes contra as mudanças de comportamento de SQL.
+    action:
+      kind: version.upgrade_runtime
+      target: athena.workgroup.engine_version
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.engine_version
+        - correctness.write_result
+      depends_on: []
     risks: [Mudança de engine altera comportamento de algumas funções e de conversão de tipo; requer teste das queries existentes.]
     tradeoffs: []
     validation:
@@ -261,6 +297,14 @@ rules:
     proposed_change:
       - Alinhar o tipo do literal do filtro ao tipo da coluna de partição.
       - Ou corrigir o tipo da coluna de partição na definição da tabela, o que exige reescrita ou recriação.
+    action:
+      kind: schema.align_types
+      target: sql.query.predicate
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+      depends_on: []
     risks: [Alterar o tipo da coluna de partição afeta todos os consumidores da tabela.]
     tradeoffs: [Ajustar o filtro é imediato; ajustar o schema resolve para todos os consumidores.]
     validation:

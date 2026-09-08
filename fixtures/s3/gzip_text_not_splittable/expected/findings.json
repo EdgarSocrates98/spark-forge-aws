@@ -58,6 +58,15 @@
         "note": "Não splitabilidade de gzip em arquivo de texto é propriedade do codec, não configurável."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "storage.change_storage_format",
+      "target": "s3.prefix.file_format",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.task_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

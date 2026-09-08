@@ -56,6 +56,16 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "storage.change_partition_scheme",
+      "target": "catalog.table.partition_keys",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read",
+        "storage.file_layout"
+      ],
+      "depends_on": []
+    }
   }
 ]
