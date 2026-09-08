@@ -62,6 +62,18 @@
         "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "skew.apply_treatment",
+      "target": "spark.stage",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "skew.task_duration_ratio",
+        "correctness.write_result"
+      ],
+      "depends_on": [
+        "SF-UI-002"
+      ]
+    }
   }
 ]

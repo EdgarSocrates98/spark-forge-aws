@@ -56,7 +56,16 @@
         "retrieved": "2026-07-31"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.replace_udf_with_native",
+      "target": "pyspark.udf",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-PLAN-002",
@@ -107,6 +116,13 @@
         "retrieved": "2026-07-31"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "code.replace_udf_with_native",
+      "target": "pyspark.udf",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

@@ -108,6 +108,13 @@
         "note": "AQE default no Glue 4.0; no Glue 3.0 exige spark.sql.adaptive.enabled=true."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "spark.plan.final",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

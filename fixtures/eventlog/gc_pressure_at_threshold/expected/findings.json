@@ -51,6 +51,13 @@
         "note": "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "spark.executor.memory",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

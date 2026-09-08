@@ -52,6 +52,15 @@
         "note": "A documentação do Spark declara que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`, e documenta os defaults das duas.\n"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "timeout.restore_interval_relation",
+      "target": "spark.executor.heartbeatInterval",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "availability.executor_loss"
+      ],
+      "depends_on": []
+    }
   }
 ]

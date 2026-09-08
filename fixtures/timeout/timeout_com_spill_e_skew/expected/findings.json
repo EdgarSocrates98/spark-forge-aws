@@ -60,7 +60,19 @@
         "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "skew.apply_treatment",
+      "target": "spark.stage",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "skew.task_duration_ratio",
+        "correctness.write_result"
+      ],
+      "depends_on": [
+        "SF-UI-002"
+      ]
+    }
   },
   {
     "rule_id": "SF-TIMEOUT-001",
@@ -127,6 +139,13 @@
         "note": "Os limiares 3.0 (skew), 0.1 (spill sobre input) e 0.1 (GC sobre tempo de task) são heurística de campo, na mesma faixa que `SF-UI-001` já usa para skew. O limiar de executor removido é 1 porque a ocorrência é o sinal: um executor perdido já muda a ordem de investigação.\n"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "timeout.investigate_symptom_first",
+      "target": "spark.timeout.limit",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

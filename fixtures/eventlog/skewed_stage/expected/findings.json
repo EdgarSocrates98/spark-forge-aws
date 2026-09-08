@@ -62,7 +62,19 @@
         "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "skew.apply_treatment",
+      "target": "spark.stage",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "skew.task_duration_ratio",
+        "correctness.write_result"
+      ],
+      "depends_on": [
+        "SF-UI-002"
+      ]
+    }
   },
   {
     "rule_id": "SF-UI-005",
@@ -116,7 +128,17 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "capacity.increase_memory_overhead",
+      "target": "spark.executor.memoryOverhead",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint",
+        "availability.executor_loss"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-UI-003",
@@ -172,7 +194,16 @@
         "note": "Razão 1.0 é limiar de campo, escolhido por ser interpretável: escreveu mais do que leu."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "shuffle.reduce_bytes",
+      "target": "spark.stage.shuffle",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.spill_bytes"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-UI-004",
@@ -226,7 +257,14 @@
         "note": "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "spark.executor.memory",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-UI-002",
@@ -280,7 +318,14 @@
         "note": "A comparação entre razão de duração e razão de input é o discriminador; não há limiar oficial."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "skew.classify_type",
+      "target": "spark.stage",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-UI-006",
@@ -336,6 +381,15 @@
         "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "shuffle.change_partition_count",
+      "target": "spark.sql.shuffle.partitions",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.partition_count"
+      ],
+      "depends_on": []
+    }
   }
 ]

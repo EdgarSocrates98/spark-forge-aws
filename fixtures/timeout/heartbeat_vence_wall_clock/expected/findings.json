@@ -51,7 +51,17 @@
         "retrieved": "2026-07-29"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "capacity.increase_memory_overhead",
+      "target": "spark.executor.memoryOverhead",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint",
+        "availability.executor_loss"
+      ],
+      "depends_on": []
+    }
   },
   {
     "rule_id": "SF-TIMEOUT-001",
@@ -115,6 +125,13 @@
         "note": "Os limiares 3.0 (skew), 0.1 (spill sobre input) e 0.1 (GC sobre tempo de task) são heurística de campo, na mesma faixa que `SF-UI-001` já usa para skew. O limiar de executor removido é 1 porque a ocorrência é o sinal: um executor perdido já muda a ordem de investigação.\n"
       }
     ],
-    "action": {}
+    "action": {
+      "kind": "timeout.investigate_symptom_first",
+      "target": "spark.timeout.limit",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
   }
 ]

@@ -77,6 +77,14 @@ rules:
       - Substituir por função Spark SQL nativa equivalente; é a forma mais rápida das três medidas pela AWS.
       - Se a lógica for vetorizável sobre batch, migrar para `pandas_udf`, que aparece como ArrowEvalPython.
       - Se a UDF for inevitável, isolá-la depois dos filtros e projeções, para que processe o menor número de linhas possível.
+    action:
+      kind: code.replace_udf_with_native
+      target: pyspark.udf
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
     risks:
       - Reescrita nativa pode divergir da UDF no tratamento de null, de tipo em borda e de precisão de ponto flutuante.
       - pandas_udf muda a granularidade de execução para batch; lógica que dependa de estado por linha quebra.
@@ -114,6 +122,13 @@ rules:
     proposed_change:
       - Verificar se a lógica é expressável com funções nativas ou higher-order functions sobre array/map.
       - Se não for, manter — pandas_udf já é a escolha certa.
+    action:
+      kind: code.replace_udf_with_native
+      target: pyspark.udf
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks:
       - Reescrita nativa pode divergir no tratamento de null e de tipo em borda.
     tradeoffs:
@@ -154,6 +169,15 @@ rules:
       - Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.
       - Se a comparação for por faixa (BETWEEN, >=/<=), derivar uma chave de bucket discreta dos dois lados, fazer equi-join por ela e aplicar a comparação de faixa como filtro depois.
       - Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case.
+    action:
+      kind: join.restore_equi_condition
+      target: pyspark.join
+      direction: add
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+        - correctness.write_result
+      depends_on: []
     risks:
       - Introduzir chave de bucket muda a cardinalidade intermediária e pode duplicar linhas se o bucket não for determinístico.
       - Promover um filtro a condição de join altera a semântica quando há outer join envolvido.
@@ -201,6 +225,13 @@ rules:
     proposed_change:
       - Para afirmar estratégia de join ou número de partições, usar o plano final da Spark UI (aba SQL, query concluída) ou o event log, não este.
       - Reservar recomendação de join hint para depois de confirmar a estratégia no plano final.
+    action:
+      kind: measurement.collect_baseline
+      target: spark.plan.final
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
     risks: []
     tradeoffs:
       - Obter o plano final exige executar o job, o que custa tempo e DPU.

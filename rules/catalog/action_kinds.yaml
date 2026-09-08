@@ -324,3 +324,11 @@ axes:
     description: Os artefatos de execucao que sobrevivem ao job -- event log, log de container, UI de aplicacao.
   security.secret_exposure:
     description: As superficies de API e de IaC que devolvem o literal do segredo.
+
+  # Acrescentado no lote B (spark-ui, spark-plan, timeout, benchmark).
+  skew.task_duration_ratio:
+    description: Razao entre a duracao da task mais lenta e a mediana do stage.
+  shuffle.spill_bytes:
+    description: Bytes derramados em disco e em memoria pelos stages do shuffle.
+  availability.executor_loss:
+    description: Executores removidos durante o run, medidos no event log.
