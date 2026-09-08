@@ -1,0 +1,293 @@
+# Vocabulario fechado de `action.kind`. Derivado da leitura dos 112
+# `proposed_change`, nao inventado: ver `scripts/derive_action_kinds.py`.
+#
+# `direction: investigate` existe para a regra que propoe MEDIDA e nao mudanca.
+# Forcar SF-WASTE-001 a declarar `decrease` inventaria uma recomendacao que o
+# proprio `proposed_change` dela recusa por escrito.
+#
+# Criterio de separacao usado na leitura: dois `kind` sao diferentes quando as
+# acoes que descrevem tocam coisas diferentes ou vao em direcoes diferentes.
+# Onde as 112 so propuseram UMA direcao para uma alavanca, o nome carrega a
+# direcao (`reduce_workers`, `increase_limit`); onde propuseram as duas, o nome
+# e neutro (`change_persistence`) e a direcao mora no campo `direction` que cada
+# regra vai declarar.
+#
+# Nenhum `kind` promete resultado. Descricao que dissesse "reduz o custo" seria
+# previsao de ganho, e a regra 13 do CLAUDE.md a proibe.
+schema_version: 1
+directions:
+  - increase
+  - decrease
+  - replace
+  - remove
+  - add
+  - investigate
+
+kinds:
+  # --- capacidade -----------------------------------------------------------
+  capacity.investigate_sizing:
+    axis: capacidade
+    description: Rodar o verbo de capacidade contra o SLA declarado, sem propor numero.
+  capacity.reduce_workers:
+    axis: capacidade
+    description: Reduzir contagem de worker para capacidade ja observada.
+  capacity.change_worker_type:
+    axis: capacidade
+    description: Trocar o tipo de worker por outro com razao memoria/vCPU diferente.
+  capacity.size_executor_explicitly:
+    axis: capacidade
+    description: Declarar memoria, cores e instancias do executor em vez de deixar o calculo derivado.
+  capacity.increase_memory_overhead:
+    axis: capacidade
+    description: Aumentar a memoria fora do heap do executor, sem mexer no heap.
+  capacity.change_purchasing_option:
+    axis: capacidade
+    description: Mudar em que capacidade um papel de no roda -- opcao de compra, ou node label que prende o driver.
+  capacity.change_idle_shutdown:
+    axis: capacidade
+    description: Ligar ou apertar a janela de ociosidade que desliga o cluster ou a application.
+  capacity.change_preinitialized_capacity:
+    axis: capacidade
+    description: Mudar ou remover a capacidade pre-inicializada declarada da application.
+
+  # --- provisionamento ------------------------------------------------------
+  provisioning.diagnose_bootstrap_failure:
+    axis: provisionamento
+    description: Ler os logs, as permissoes e os argumentos do bootstrap antes de reprovisionar.
+
+  # --- timeout --------------------------------------------------------------
+  timeout.investigate_symptom_first:
+    axis: timeout
+    description: Ler a categoria do timeout e os sintomas medidos ao lado antes de tocar em limite.
+  timeout.increase_limit:
+    axis: timeout
+    description: Aumentar limite de timeout de rede, broadcast ou heartbeat.
+  timeout.restore_interval_relation:
+    axis: timeout
+    description: Restaurar a folga entre duas propriedades de timeout que se referenciam.
+
+  # --- shuffle --------------------------------------------------------------
+  shuffle.reduce_bytes:
+    axis: shuffle
+    description: Reduzir os bytes que atravessam o shuffle por filtro, projecao ou pre-agregacao.
+  shuffle.change_partition_count:
+    axis: shuffle
+    description: Mudar o numero de particoes do shuffle ou da escrita, por configuracao ou por hint.
+
+  # --- skew -----------------------------------------------------------------
+  skew.classify_type:
+    axis: skew
+    description: Cruzar duracao e bytes de entrada por task para classificar o tipo de skew.
+  skew.apply_treatment:
+    axis: skew
+    description: Aplicar o tratamento de skew correspondente ao tipo classificado.
+
+  # --- join -----------------------------------------------------------------
+  join.restore_equi_condition:
+    axis: join
+    description: Recuperar ou derivar a condicao de igualdade que falta no join.
+  join.change_broadcast_decision:
+    axis: join
+    description: Remover ou rever o hint de broadcast e a estrategia de join que ele fixa.
+
+  # --- leitura --------------------------------------------------------------
+  scan.project_columns:
+    axis: leitura
+    description: Ler apenas as colunas usadas, em vez de projecao total.
+  scan.add_partition_filter:
+    axis: leitura
+    description: Acrescentar filtro sobre coluna de particao para restringir o escaneamento.
+  scan.push_filter_earlier:
+    axis: leitura
+    description: Mover filtro ou projecao para antes do join, do explode ou da UDF.
+
+  # --- codigo ---------------------------------------------------------------
+  code.replace_udf_with_native:
+    axis: codigo
+    description: Trocar UDF Python por funcao Spark SQL nativa, higher-order function ou UDF vetorizada.
+  code.replace_driver_collection:
+    axis: codigo
+    description: Trocar coleta para o driver por escrita distribuida, agregacao ou limite explicito.
+  code.restructure_loop:
+    axis: codigo
+    description: Tirar do laco ou da recursao o trabalho Spark que se repete, ou uni-lo numa acao so.
+  code.change_persistence:
+    axis: codigo
+    description: Persistir o DataFrame reusado, ou remover o cache sem reuso e liberar com unpersist.
+  code.rewrite_expression:
+    axis: codigo
+    description: Reescrever a expressao preservando a semantica -- select unico, chave explicita, cast guardado.
+  code.make_write_idempotent:
+    axis: codigo
+    description: Tornar a escrita idempotente por merge com chave, overwrite de particao ou controle de execucao.
+
+  # --- configuracao ---------------------------------------------------------
+  config.remove_property:
+    axis: configuracao
+    description: Remover a propriedade que nao deveria estar declarada, ou a declaracao que conflita com outra.
+  config.narrow_property_scope:
+    axis: configuracao
+    description: Mover a propriedade do escopo de cluster para o job ou para a escrita que a exige.
+  config.replace_property_key:
+    axis: configuracao
+    description: Trocar a chave pelo nome ou equivalente que o runtime alvo reconhece, preservando o valor.
+  config.align_value_to_supported_range:
+    axis: configuracao
+    description: Levar o valor da propriedade para a faixa que a fonte publica.
+  config.satisfy_property_precondition:
+    axis: configuracao
+    description: Cumprir a pre-condicao que a propriedade ou a API exige para ter efeito.
+  config.verify_effective_value:
+    axis: configuracao
+    description: Confirmar o valor efetivo e a procedencia da propriedade antes de mudar qualquer coisa.
+
+  # --- armazenamento --------------------------------------------------------
+  storage.change_partition_scheme:
+    axis: armazenamento
+    description: Mudar como a particao da tabela e definida ou resolvida -- coluna, cardinalidade, bucket, projection.
+  storage.change_storage_format:
+    axis: armazenamento
+    description: Trocar o formato de arquivo, o formato de tabela ou a versao de formato da tabela.
+  storage.set_write_layout_property:
+    axis: armazenamento
+    description: Definir propriedade de escrita da tabela -- distribution mode, tamanho-alvo de arquivo, sort order, retencao de metadata.
+  storage.change_write_mode:
+    axis: armazenamento
+    description: Rever a escolha entre merge-on-read e copy-on-write da tabela.
+
+  # --- manutencao -----------------------------------------------------------
+  maintenance.rewrite_data_files:
+    axis: manutencao
+    description: Reescrever os data files do passivo, por binpack ou por sort/zorder.
+  maintenance.compact_delete_files:
+    axis: manutencao
+    description: Compactar os delete files da tabela merge-on-read.
+  maintenance.expire_snapshots:
+    axis: manutencao
+    description: Expirar snapshots e metadata files acumulados, com retencao acordada.
+  maintenance.schedule_periodic_maintenance:
+    axis: manutencao
+    description: Estabelecer a manutencao como rotina periodica, e nao como acao pontual.
+
+  # --- seguranca ------------------------------------------------------------
+  security.move_secret_to_manager:
+    axis: seguranca
+    description: Tirar o literal da definicao e referenciar o segredo pelo mecanismo que o servico sustenta.
+  security.remediate_leaked_secret:
+    axis: seguranca
+    description: Rotacionar o segredo exposto e remove-lo do IaC e do historico onde o literal persiste.
+  security.restrict_access_permissions:
+    axis: seguranca
+    description: Restringir quem le o recurso que expoe o valor ou o dado.
+  security.verify_access_chain:
+    axis: seguranca
+    description: Confirmar cada elo da cadeia de concessao entre contas antes de ler qualquer achado.
+  security.enable_encryption_at_rest:
+    axis: seguranca
+    description: Habilitar a encriptacao em repouso na camada que a configuracao atual nao cobre.
+  security.change_access_control_mechanism:
+    axis: seguranca
+    description: Trocar o mecanismo de controle de acesso por outro, registrando a granularidade que muda.
+
+  # --- rede -----------------------------------------------------------------
+  network.provide_service_route:
+    axis: rede
+    description: Prover a rota da subnet ate o servico -- endpoint de VPC ou NAT gateway.
+  network.fix_security_group_rule:
+    axis: rede
+    description: Corrigir a regra do security group que a conexao exige.
+
+  # --- observabilidade ------------------------------------------------------
+  observability.enable_telemetry:
+    axis: observabilidade
+    description: Ligar o destino de log ou a metrica de runtime que a definicao nao declara.
+  observability.enable_application_ui:
+    axis: observabilidade
+    description: Ligar o event log ou o armazenamento que faz a UI de aplicacao existir.
+  observability.make_failure_legible:
+    axis: observabilidade
+    description: Fazer o script ou a etapa sair com codigo e mensagem explicitos em cada caminho de erro.
+
+  # --- versao ---------------------------------------------------------------
+  version.upgrade_runtime:
+    axis: versao
+    description: Levar o job para a versao de runtime, engine ou plataforma que sustenta a capacidade pedida.
+  version.align_declared_runtime:
+    axis: versao
+    description: Alinhar as fontes que declaram o runtime ao valor efetivo observado.
+  version.run_migration_assessment:
+    axis: versao
+    description: Rodar a avaliacao de migracao sobre o par de versoes antes de tratar a mudanca como ajuste.
+
+  # --- dependencia ----------------------------------------------------------
+  dependency.align_version_with_runtime:
+    axis: dependencia
+    description: Levar a dependencia ao build ou ao piso de versao que o runtime alvo exige.
+  dependency.declare_in_iac:
+    axis: dependencia
+    description: Declarar a dependencia no IaC, apontando para o caminho versionado do artefato.
+  dependency.migrate_to_successor_api:
+    axis: dependencia
+    description: Trocar a API removida pelo substituto declarado, conferindo a assinatura.
+  dependency.remove_library:
+    axis: dependencia
+    description: Remover a biblioteca, reescrevendo nativamente o que ela fazia.
+
+  # --- schema ---------------------------------------------------------------
+  schema.align_types:
+    axis: schema
+    description: Alinhar o tipo do literal ao da coluna, ou corrigir o tipo na definicao da tabela.
+  schema.split_change_into_own_delivery:
+    axis: schema
+    description: Separar a mudanca de schema em outra entrega, com aviso ao consumidor.
+
+  # --- validacao ------------------------------------------------------------
+  validation.move_before_write:
+    axis: validacao
+    description: Mover a validacao para antes da escrita, ou escrever em staging e promover depois.
+  validation.enforce_check_result:
+    axis: validacao
+    description: Ler o resultado do check e abortar o job quando ele reprovar, com excecao explicita.
+  validation.merge_checks_into_single_pass:
+    axis: validacao
+    description: Reunir os checks numa unica agregacao sobre o dado.
+  validation.correct_declared_key:
+    axis: validacao
+    description: Refazer o plano com a chave de negocio certa quando a chave declarada nao e a chave.
+  validation.complete_check_coverage:
+    axis: validacao
+    description: Medir nos dois lados os checks que faltaram, ou declarar por escrito por que nao ha valor.
+
+  # --- medicao --------------------------------------------------------------
+  measurement.collect_baseline:
+    axis: medicao
+    description: Coletar a medida ou o artefato que falta antes de mudar ou de afirmar.
+  measurement.recollect_comparable_artifacts:
+    axis: medicao
+    description: Refazer a coleta ou a execucao ate que os dois lados sejam comparaveis.
+  measurement.localize_divergence:
+    axis: medicao
+    description: Isolar a etapa, o stage ou a coluna em que a divergencia nasce, antes de corrigir.
+  measurement.narrow_claim_scope:
+    axis: medicao
+    description: Declarar a afirmacao mais fraca que a medida sustenta, em vez de apresentar o total.
+  measurement.inventory_consumers:
+    axis: medicao
+    description: Levantar quem consome o alvo antes de mudar formato, schema ou particionamento.
+
+  # --- orquestracao ---------------------------------------------------------
+  orchestration.replace_unsupported_capability:
+    axis: orquestracao
+    description: Trocar a capacidade que a versao do orquestrador nao tem pela alternativa que ela publica.
+  orchestration.fix_schedule_declaration:
+    axis: orquestracao
+    description: Corrigir a declaracao de agendamento -- anular os eixos concorrentes, ou trocar enumeracao por calendario.
+  orchestration.change_job_definition:
+    axis: orquestracao
+    description: Mudar a forma da definicao do job ou do folder -- tipo, estrutura, expressao de eventos, uso de template.
+  orchestration.restrict_run_policy:
+    axis: orquestracao
+    description: Restringir a politica de execucao do job -- concorrencia, retries.
+  orchestration.split_into_separate_job:
+    axis: orquestracao
+    description: Mover a etapa para um job separado, fora do caminho critico.
