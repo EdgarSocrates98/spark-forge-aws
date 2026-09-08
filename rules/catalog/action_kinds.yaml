@@ -313,42 +313,95 @@ kinds:
 #
 # Acrescentado no lote A (glue-infra, emr-infra, emr-serverless, emr-eks,
 # waste). Os lotes seguintes acrescentam o que faltar.
+#
+# `nature` foi acrescentado depois que `correctness.write_result` -- presente
+# em 33 das 112 regras -- se provou eixo-guarda-chuva: sendo tratado como
+# grandeza medida, ele produzia par de contradicao falso (SF-PLAN-003 x
+# SF-PY-009, mesmo `target: pyspark.join`, mesmo eixo, coisas diferentes) e
+# inflava o maior grupo de restricao de sequenciamento para 33 regras.
+#
+# `measure` = grandeza medida por algum fact deste repositorio, comparavel
+# antes/depois (entra no campo `measures` de um `Fact`, nunca em `kind` ou
+# `attrs` sozinho). `risk` = a acao pode alterar o que o job entrega ou expoe
+# -- resultado, classpath, segredo, versao, janela de agendamento -- sem que
+# exista uma grandeza numerica comparavel para atribuir o efeito a ela. Todo
+# eixo cai numa das duas: nao ha terceira categoria.
 axes:
   cost.dpu_seconds:
+    nature: measure
     description: DPU-segundos medidos do run.
   cost.provisioned_capacity_time:
+    nature: measure
     description: Tempo em que a capacidade fica provisionada e faturavel, com ou sem trabalho rodando.
   runtime.wall_clock:
+    nature: measure
     description: Duracao de relogio do job.
   capacity.worker_count:
+    nature: measure
     description: Numero de workers ou nos que a definicao declara.
   capacity.executor_footprint:
+    nature: measure
     description: Memoria, cores e numero de executores efetivos.
   shuffle.partition_count:
+    nature: measure
     description: Numero de particoes do shuffle e o paralelismo default derivado dele.
   correctness.write_result:
+    # A UNICA certeza de partida deste lote: linhas na saida nao sao grandeza
+    # que se compare por subtracao entre duas acoes -- sao o resultado em si.
+    # Ver o comentario acima do bloco `axes` para o defeito que isso corrigiu.
+    nature: risk
     description: As linhas que a escrita deixa no destino.
   availability.interruption_exposure:
+    # `emr.instance_group.market` e `emr.instance_fleet` guardam SPOT/ON_DEMAND
+    # como `attrs` categorico (`market`, `has_spot_capacity`), nunca como
+    # `measures`. Trocar a opcao de compra muda QUAL capacidade o papel de no
+    # ocupa, nao produz um numero que se compare antes/depois.
+    nature: risk
     description: Quais papeis de no rodam em capacidade que o provedor pode reclamar.
   observability.diagnostic_artifacts:
+    # `_check_observability` (sparkforge/facts/terraform.py) devolve
+    # confirmed/unknown/absent como `kind` -- ternario categorico, no mesmo
+    # molde de `_check_graphframes_jar`. Existir ou nao existir o artefato de
+    # diagnostico nao e grandeza medida.
+    nature: risk
     description: Os artefatos de execucao que sobrevivem ao job -- event log, log de container, UI de aplicacao.
   security.secret_exposure:
+    # Exposicao de segredo e estado binario -- o literal aparece ou nao aparece
+    # numa superficie --, detectado por heuristica (`_is_secret_reference` e
+    # pares), nunca contado como grandeza.
+    nature: risk
     description: As superficies de API e de IaC que devolvem o literal do segredo.
 
   # Acrescentado no lote B (spark-ui, spark-plan, timeout, benchmark).
   skew.task_duration_ratio:
+    nature: measure
     description: Razao entre a duracao da task mais lenta e a mediana do stage.
   shuffle.spill_bytes:
+    nature: measure
     description: Bytes derramados em disco e em memoria pelos stages do shuffle.
   availability.executor_loss:
+    nature: measure
     description: Executores removidos durante o run, medidos no event log.
 
   # Acrescentado no lote C (pyspark, graph, callgraph, bridge). Os dois eixos
   # sao da area de grafo: nenhuma regra dos lotes A e B trocava de runtime nem
   # mexia no que o IaC entrega ao classpath.
   runtime.engine_version:
+    # Versao e rotulo ordinal (2, 3, ...), nao grandeza que se subtrai. O uso
+    # em `measures.engine_version < 3` (athena.yaml) e um GATE de elegibilidade
+    # da regra, nao uma comparacao de efeito entre duas acoes -- e a propria
+    # SF-ATH-004 move este eixo JUNTO com `correctness.write_result`,
+    # nomeando por escrito que a troca de engine pode alterar o resultado.
+    nature: risk
     description: Versao de runtime, engine e plataforma que a execucao ou a definicao declara.
   dependency.delivered_artifacts:
+    # `_check_graphframes_jar` devolve declared/unknown/absent como `kind`
+    # ternario -- nunca uma contagem em `measures`. E o mesmo padrao de
+    # `security.secret_exposure` e `observability.diagnostic_artifacts`:
+    # presenca de artefato no classpath e estado, nao grandeza. Ver o
+    # comentario de cabecalho sobre o que isso faz com a contradicao direta
+    # entre SF-GRAPH-005 e SF-LF-001.
+    nature: risk
     description: Os artefatos que a definicao do job entrega ao classpath -- jars e arquivos declarados no IaC.
 
   # Acrescentado no lote D (iceberg, parquet, athena). Sao os eixos de
@@ -357,16 +410,22 @@ axes:
   # uma query. Cada um sai nomeado na `validation` da regra que o move -- nao
   # ha eixo aqui que so exista neste arquivo.
   storage.file_layout:
+    nature: measure
     description: Contagem e tamanho dos data files que a tabela ou o prefixo tem.
   storage.delete_file_count:
+    nature: measure
     description: Delete files da tabela merge-on-read, contados contra os data files.
   storage.snapshot_count:
+    nature: measure
     description: Snapshots e metadata files acumulados na tabela.
   scan.bytes_read:
+    nature: measure
     description: Bytes que a leitura escaneia, medidos no plano fisico ou nas estatisticas de execucao da query.
   scan.task_count:
+    nature: measure
     description: Numero de tasks do stage de leitura, limitado pela splitabilidade dos arquivos de entrada.
   metadata.partition_resolution_time:
+    nature: measure
     description: Tempo gasto resolvendo as particoes da tabela antes do scan.
 
   # Acrescentado no lote G (controlm). E o eixo de AGENDAMENTO que nenhuma area
@@ -379,4 +438,9 @@ axes:
   # Ele NAO e `correctness.write_result`, e `SF-CTM-002` separa os dois em voz
   # alta: "mexer em `When` e mudanca de QUANDO, e nao pode mover o QUE".
   schedule.ordered_dates:
+    # `_specific_dates` (sparkforge/facts/controlm_jobs.py) escreve
+    # `specific_dates_count` em `measures`, com o comentario do proprio
+    # extrator: "Contar aqui e medir; decidir se 401 e demais e limiar, e
+    # limiar mora na regra." E grandeza, com fact que a produz.
+    nature: measure
     description: Conjunto de datas em que o orquestrador ordena o job.
