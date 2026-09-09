@@ -42,6 +42,7 @@ from sparkforge.facts import (
     graph,
     iceberg_metadata,
     migration,
+    parquet_footer,
     pyspark_ast,
     run_cost,
     runtime_detect,
@@ -155,6 +156,12 @@ EXTRACTORS = {
     # agora por `runtime_scope` (Glue 5.0, abaixo da fronteira) em vez de
     # `blocked_on`.
     "migration": migration,
+    # `parquet_footer` entra nas DUAS listas manuais no MESMO commit do
+    # extrator, e a segunda e ESTE dicionario: sem ele, os cinco kinds
+    # `parquet.*` aparecem nos goldens e nao constam de `EMITTABLE`, e
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` os acusa de
+    # orfaos -- que e exatamente o aviso certo pela razao errada.
+    "parquet_footer": parquet_footer,
     "pyspark_ast": pyspark_ast,
     # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` nao sao

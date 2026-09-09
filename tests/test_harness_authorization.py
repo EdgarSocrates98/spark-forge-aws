@@ -914,7 +914,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # chaves diferentes -- `path` no verbo que le o artefato de log,
         # `facts_path` no que deriva sobre a uniao dos facts --, e as duas caem
         # do lado certo do predicado sem tocar no conjunto de excecao.
-        assert len(TOOLS) - len(sem_caminho) == 67
+        # 68 desde `analyze_parquet_footer` (2026-09-09), que declara `path` e
+        # e `_READ_ONLY` como as duas anteriores.
+        assert len(TOOLS) - len(sem_caminho) == 68
 
 
 class TestAImposicaoNoDespacho:

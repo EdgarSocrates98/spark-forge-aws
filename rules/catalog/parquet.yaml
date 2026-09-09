@@ -329,3 +329,424 @@ rules:
     rollback: [Time travel em Iceberg, ou manter a tabela antiga até validar a nova.]
     sources:
       - {url: "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena", retrieved: 2026-07-29}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS QUATRO DO FOOTER (2026-09-09)
+  #
+  # As cinco acima julgam por LISTAGEM S3 (tamanho de objeto) e por PLANO
+  # FISICO (filtros declarados). Nenhuma abre um arquivo. Estas quatro leem o
+  # RODAPE -- `sparkforge/facts/parquet_footer.py` --, e e ele que carrega o que
+  # `knowledge/storage/parquet-layout.md` §2 declara como a alavanca: row group,
+  # estatistica por coluna, dicionario, page index, bloom e codec.
+  #
+  # POR QUE ELAS NAO SE SOBREPOEM AS CINCO. `SF-PQ-001` conta arquivos pequenos
+  # NO PREFIXO; `SF-PQ-006` mede row group DENTRO do arquivo, e as duas erram em
+  # direcoes opostas -- um arquivo de 512 MB com um row group de 512 MB passa na
+  # primeira e reprova na segunda. `SF-PQ-002` e `SF-PQ-004` leem o filtro que o
+  # plano DECLAROU; `SF-PQ-008` mede se aquele filtro CONSEGUE podar. Um job com
+  # `PartitionFilters` presente e cobertura de faixa perto de 1 satisfaz a
+  # segunda e le a tabela inteira -- e e exatamente esse falso negativo que
+  # motivou a frente.
+  #
+  # PAGE INDEX E BLOOM FILTER NAO VIRAM REGRA, e a ausencia e deliberada. Os
+  # dois sao MEDIDOS e publicados em `parquet.column_profile`
+  # (`page_index_coverage`, `bloom_coverage`), e param ai: o custo de grava-los
+  # e o ganho de te-los dependem do predicado real do consumidor, e nenhuma
+  # fonte deste repositorio declara o limiar. Publicar a medida sem a regra e a
+  # diferenca entre relatar e acusar.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-PQ-006
+    category: parquet-layout
+    title: Row group fora da faixa que sustenta paralelismo e memória
+    requires_facts: [parquet.row_group]
+    when:
+      any:
+        - fact: parquet.row_group
+          expr: "measures.total_byte_size < threshold.piso_bytes"
+        - fact: parquet.row_group
+          expr: "measures.total_byte_size > threshold.teto_bytes"
+    # 8 MB e 512 MB, e os dois sao HEURISTICA DE CAMPO -- nao ha valor
+    # normativo do Apache nem da AWS, e `sources` diz isso com todas as letras.
+    # A faixa e larga de propósito: o alvo usual de ~128 MB citado pelo
+    # `knowledge/` fica no meio dela, e uma regra que acusasse tudo fora de
+    # 128 MB reprovaria layout saudável.
+    threshold: {piso_bytes: 8388608, teto_bytes: 536870912}
+    status: structural
+    severity_default: P2
+    # ESCOPO VAZIO, pelo mesmo critério das cinco acima: o gatilho é LAYOUT DE
+    # ARMAZENAMENTO, e um row group de 4 KB custa o mesmo em Spark 3.0 e em 4.0.
+    runtime_scope: {}
+    explanation: >
+      O row group é a unidade de paralelismo de leitura E a unidade de
+      estatística. Row group pequeno demais multiplica metadados e overhead de
+      task; grande demais aumenta a memória por task e reduz o número de
+      unidades que podem ser descartadas pelo pruning.
+
+
+      **Esta regra é diferente de `SF-PQ-001`, e as duas erram em direções
+      opostas.** `SF-PQ-001` conta arquivos pequenos no prefixo, lendo a
+      listagem S3; esta mede o row group DENTRO do arquivo, lendo o footer. Um
+      arquivo de 512 MB com um único row group de 512 MB passa na primeira e
+      reprova nesta — e o modo de falha dele é real: cada task carrega meio giga
+      para memória, e nenhuma parte do arquivo pode ser pulada.
+
+
+      Os limiares são heurística de campo, e a faixa é larga de propósito. O
+      alvo de ~128 MB que `knowledge/storage/parquet-layout.md` cita fica no
+      meio dela; uma regra que acusasse tudo fora de 128 MB reprovaria layout
+      saudável.
+    proposed_change:
+      - >-
+        Ajustar `parquet.block.size` (escrita via Hadoop/Spark) para a faixa
+        alvo, e reescrever os arquivos afetados — a propriedade vale para o que
+        for escrito DEPOIS dela, e não reorganiza o que já existe.
+      - >-
+        Para row group grande demais, conferir antes se ele é consequência de um
+        arquivo único gigante; nesse caso o conserto é o número de arquivos, não
+        o row group.
+      - >-
+        Medir de novo depois da reescrita — `sparkforge collect parquet-footer`
+        sobre o prefixo, e comparar a distribuição.
+    action:
+      kind: storage.set_write_layout_property
+      target: parquet.block_size
+      direction: replace
+      requires_absent: []
+      moves:
+        - storage.file_layout
+        - scan.task_count
+      depends_on: []
+    risks:
+      - >-
+        Reduzir o row group aumenta o volume de metadados no footer, e o custo
+        de planejamento sobe com ele — em tabela com muitos arquivos, o ganho de
+        paralelismo pode ser comido pelo tempo de leitura de footer.
+      - >-
+        Reescrever arquivos é reprocessamento, não ajuste de configuração: o
+        conteúdo precisa sair idêntico, e isso não é grátis nem instantâneo.
+      - >-
+        A medida vem da AMOSTRA que o coletor leu. Com `partial: true` no
+        `parquet.footer_analyzed`, a distribuição observada pode não representar
+        o prefixo inteiro.
+    tradeoffs:
+      - >-
+        Row group menor melhora pruning e paralelismo ao custo de metadados;
+        maior reduz metadados ao custo de memória por task. Não há valor certo
+        sem o perfil de leitura.
+    validation:
+      - >-
+        `parquet.row_group.total_byte_size` dentro da faixa no censo seguinte,
+        sobre o mesmo prefixo.
+      - >-
+        Número de tasks do stage de leitura, antes e depois — é o eixo que a
+        mudança move.
+      - >-
+        Contagem total de linhas e agregados de controle idênticos: reescrever
+        arquivo é reescrever dado, e contagem igual com valor diferente é o modo
+        de falha que só o eixo de valor pega.
+    rollback:
+      - >-
+        Reverter `parquet.block.size` e manter os arquivos antigos até validar
+        os novos. A reescrita em si não tem rollback barato.
+    sources:
+      - url: https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html
+        retrieved: 2026-07-29
+        note: >
+          Referência do lado do Spark (`maxPartitionBytes`, `openCostInBytes`).
+          Os limiares de 8 MB e 512 MB são heurística de campo — mesma ressalva
+          que `knowledge/storage/parquet-layout.md` registra para o alvo de
+          128 MB.
+
+  - id: SF-PQ-007
+    category: parquet-layout
+    title: Estatística ausente ou parcial — pruning por row group é impossível
+    requires_facts: [parquet.column_profile]
+    when:
+      all:
+        - fact: parquet.column_profile
+          expr: "measures.min_max_coverage < threshold.cobertura_minima"
+    # Estritamente menor que 1.0: cobertura parcial JA quebra o pruning, porque
+    # o row group sem estatistica nunca pode ser descartado. Nao ha faixa
+    # aceitavel aqui -- ou a estatistica existe em todos, ou o pruning tem um
+    # buraco do tamanho dos que faltam.
+    threshold: {cobertura_minima: 1.0}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Sem `min`/`max` no footer, o motor de leitura não tem como decidir que um
+      row group não contém a linha procurada — ele lê todos. A estatística é o
+      que torna o pruming possível; sem ela, nenhum predicado poda nada, por
+      mais seletivo que seja.
+
+
+      Cobertura PARCIAL já é defeito, e é por isso que o limiar é estritamente
+      1.0: um row group sem estatística é um row group que sempre será lido, e o
+      buraco tem o tamanho dos que faltam.
+
+
+      A causa mais comum é `parquet.enable.dictionary`/`write.statistics`
+      desligados na escrita, ou um writer antigo. A segunda mais comum é coluna
+      de tipo que o writer não estatística — e essa não tem conserto de
+      configuração.
+    proposed_change:
+      - >-
+        Confirmar que a escrita não desliga estatística
+        (`parquet.enable.summary-metadata`, `write.statistics` conforme o
+        writer), e reescrever os arquivos afetados.
+      - >-
+        Conferir o `created_by` do arquivo em `parquet.file` — writer antigo
+        pode não gravar estatística para tipos que os atuais gravam.
+      - >-
+        Se a coluna não é filtrada por ninguém, a ausência não custa nada, e o
+        achado pode ser aceito com a razão registrada. Estatística existe para
+        pruning; coluna que ninguém filtra não precisa dela.
+    action:
+      kind: storage.set_write_layout_property
+      target: parquet.column_statistics
+      direction: add
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+      depends_on: []
+    risks:
+      - >-
+        Gravar estatística aumenta o footer, e footer maior custa mais para
+        planejar em tabela com muitos arquivos.
+      - >-
+        Reescrever para adicionar estatística é reprocessamento, com o mesmo
+        custo e o mesmo risco de qualquer reescrita.
+    tradeoffs:
+      - >-
+        Estatística por coluna custa bytes de footer e ganha pruning. Em coluna
+        que ninguém filtra, o custo existe e o ganho não.
+    validation:
+      - >-
+        `parquet.column_profile.min_max_coverage` igual a 1.0 no censo seguinte.
+      - >-
+        Bytes lidos por uma query de referência que filtre a coluna, antes e
+        depois — é o eixo que a mudança move, e sem ele o achado não fecha.
+      - >-
+        Contagem total de linhas idêntica, se houve reescrita.
+    rollback:
+      - >-
+        Manter os arquivos antigos até validar os novos. Reverter a propriedade
+        de escrita não desfaz o que já foi reescrito.
+    sources:
+      - url: https://parquet.apache.org/docs/file-format/metadata/
+        retrieved: 2026-09-09
+        note: >
+          O formato define `Statistics` (min, max, null_count, distinct_count)
+          por column chunk, e a presença é opcional — é por isso que a medida é
+          cobertura e não booleano.
+
+  - id: SF-PQ-008
+    category: parquet-layout
+    title: >-
+      Estatística presente e inútil — row groups cobrem quase todo o domínio da
+      coluna filtrada
+    # `sql.predicate` é o companheiro, e ele é o ponto da regra: cobertura alta
+    # numa coluna que NINGUÉM filtra não é defeito nenhum. Sem ele, a regra é
+    # pulada com o que falta nomeado -- mesma disciplina de `SF-ERR-003`.
+    requires_facts: [parquet.column_profile, sql.predicate]
+    when:
+      all:
+        - fact: parquet.column_profile
+          expr: "measures.avg_range_coverage > threshold.cobertura_maxima"
+        - fact: sql.predicate
+    # 0.5: acima disso, metade ou mais do domínio está em cada row group, e o
+    # pruning descarta menos da metade das unidades. É heurística de campo, e
+    # `sources` diz isso -- o que NÃO é heurística é a medida em si, que é
+    # aritmética sobre o min/max do footer.
+    threshold: {cobertura_maxima: 0.5}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A estatística existe e não serve. `knowledge/storage/parquet-layout.md` §2
+      declara por quê: min/max só é útil se os valores estiverem AGRUPADOS. Dado
+      espalhado faz cada row group cobrir quase todo o domínio, nenhum pode ser
+      descartado, e o pruning é inútil apesar de a estatística estar lá.
+
+
+      É o falso negativo que motivou esta área. Um job com arquivos de 512 MB
+      passa por `SF-PQ-001`, tem `PartitionFilters` no plano e passa por
+      `SF-PQ-002`, e lê a tabela inteira — porque `SF-PQ-002` lê o filtro que o
+      plano DECLAROU, e esta mede se aquele filtro CONSEGUE podar.
+
+
+      **O que esta regra NÃO afirma:** que o job vai ler muito.
+      `avg_range_coverage` assume o predicado uniformemente distribuído sobre o
+      domínio observado, e é propriedade do LAYOUT — um filtro que sempre pede o
+      último dia de uma tabela ordenada por data lê pouco mesmo com cobertura
+      alta. Ela nomeia layout que NÃO PODE podar.
+
+
+      **E ela não recomenda a chave de ordenação.** Qual coluna ordenar depende
+      dos outros consumidores da tabela, e essa é decisão do operador — a regra
+      aponta a coluna filtrada cuja estatística não poda.
+    proposed_change:
+      - >-
+        Ordenar a escrita pela coluna filtrada (`sortWithinPartitions` no Spark,
+        `write.sort-order` em Iceberg) e reescrever — é a mudança que agrupa os
+        valores e faz o min/max separar row groups.
+      - >-
+        Antes de escolher a coluna, levantar os OUTROS consumidores da tabela:
+        ordenar por uma coluna melhora o pruning dela e não muda o das demais, e
+        a tabela tem uma ordem só.
+      - >-
+        Medir de novo depois — `avg_range_coverage` da mesma coluna no censo
+        seguinte é o número que fecha o achado.
+      - >-
+        Se a coluna filtrada é de altíssima cardinalidade e o predicado é de
+        igualdade, avaliar bloom filter como alternativa à ordenação; ele poda
+        sem exigir ordem, ao custo de bytes de footer.
+    # `storage.set_write_layout_property` e nao `storage.change_partition_scheme`:
+    # sort order e particao sao alavancas DIFERENTES sobre o mesmo dado, e o
+    # comentario de `SF-PQ-005` ja separa as duas. Particao decide QUAIS
+    # arquivos ler; ordenacao decide quais ROW GROUPS dentro deles.
+    action:
+      kind: storage.set_write_layout_property
+      target: parquet.sort_order
+      direction: replace
+      requires_absent: []
+      moves:
+        - scan.bytes_read
+        - storage.file_layout
+      depends_on: []
+    risks:
+      - >-
+        A tabela tem UMA ordem. Ordenar pela coluna de um consumidor pode piorar
+        o pruning de outro, e o segundo só descobre em produção.
+      - >-
+        Ordenar na escrita acrescenta um shuffle ao job que escreve: o custo vai
+        para quem escreve, e o ganho para quem lê. Quando são times diferentes,
+        essa transferência precisa ser combinada, não imposta.
+      - >-
+        A medida vem da AMOSTRA lida. Com `partial: true`, a cobertura observada
+        pode não representar o prefixo inteiro.
+      - >-
+        Reescrever a tabela para reordenar é reprocessamento completo.
+    tradeoffs:
+      - >-
+        Ordenação custa shuffle na escrita e ganha pruning na leitura. Vale
+        quando a tabela é lida muito mais vezes do que escrita, e não vale no
+        inverso.
+      - >-
+        Bloom filter poda igualdade de alta cardinalidade sem exigir ordem, ao
+        custo de bytes de footer e de nenhum ganho para predicado de faixa.
+    validation:
+      - >-
+        `parquet.column_profile.avg_range_coverage` da MESMA coluna, no censo
+        seguinte — é a medida que a mudança move, e publicá-la antes e depois é
+        o que separa "reordenei" de "melhorou".
+      - >-
+        Bytes lidos por uma query de referência que filtre a coluna, antes e
+        depois.
+      - >-
+        Contagem total de linhas, contagem de nulos por coluna e agregados de
+        controle idênticos: reordenar é reescrever, e a ordem das linhas mudar é
+        esperado — o CONTEÚDO mudar não é.
+    rollback:
+      - >-
+        Manter a tabela anterior até validar a nova, ou time travel em Iceberg.
+        Reordenar não tem rollback barato.
+    sources:
+      - url: https://parquet.apache.org/docs/file-format/metadata/
+        retrieved: 2026-09-09
+        note: >
+          O formato define a estatística por column chunk; que ela só poda com
+          dado agrupado é consequência aritmética, e está em
+          `knowledge/storage/parquet-layout.md` §2. O limiar de 0.5 é heurística
+          de campo — a MEDIDA não é.
+
+  # `parquet.footer_analyzed` e nao `parquet.column_profile`, e o ESCOPO e o
+  # ponto: o perfil agrega sobre os row groups de UM arquivo, e dois arquivos
+  # escritos por caminhos diferentes so se comparam no escopo que os contem. O
+  # censo e desse escopo -- ele ve o prefixo inteiro que a coleta leu.
+  - id: SF-PQ-009
+    category: parquet-layout
+    title: Codec de compressão divergente entre arquivos do mesmo prefixo
+    requires_facts: [parquet.footer_analyzed]
+    when:
+      all:
+        # `measures.distinct_codecs` e nao `len(attrs.codecs)`: o avaliador de
+        # `expr` recusa chamada de funcao (`rules/expr.py`), e o extrator
+        # publica a contagem pronta. A lista continua em `attrs.codecs`, para o
+        # operador ler QUAIS sao.
+        - fact: parquet.footer_analyzed
+          expr: "measures.distinct_codecs > 1"
+    status: structural
+    severity_default: P3
+    runtime_scope: {}
+    explanation: >
+      A mesma coluna, no mesmo prefixo, aparece com mais de um codec. Isso não
+      quebra leitura nenhuma — o Parquet carrega o codec por column chunk, e o
+      leitor resolve cada um. O que ele indica é que os arquivos foram escritos
+      por caminhos diferentes: um backfill com outra configuração, um job
+      antigo que ninguém atualizou, ou duas escritas concorrentes com propriedades
+      distintas.
+
+
+      A severidade é P3 porque o custo é indireto: razão de compressão e custo
+      de CPU por leitura passam a variar entre arquivos, e qualquer medida
+      agregada sobre o prefixo mistura dois regimes. É sinal de PROCEDÊNCIA, não
+      de defeito de performance.
+
+
+      **Esta regra não diz qual codec é o certo.** Snappy e ZSTD trocam CPU por
+      tamanho em direções opostas, e a escolha depende do perfil de leitura —
+      nada aqui mediu isso.
+    proposed_change:
+      - >-
+        Identificar quais arquivos usam cada codec — `parquet.column_profile`
+        traz a lista, e `parquet.file.created_by` costuma separar as duas
+        origens.
+      - >-
+        Decidir um codec para o prefixo e declará-lo na configuração de escrita
+        de TODOS os caminhos que escrevem nele, incluindo backfill e correção
+        manual.
+      - >-
+        Uniformizar os arquivos existentes só se houver motivo além da
+        consistência: reescrever para trocar codec é reprocessamento, e o ganho
+        costuma ser pequeno.
+    action:
+      kind: config.verify_effective_value
+      target: parquet.compression_codec
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Uniformizar por reescrita custa reprocessamento completo por um ganho
+        que ninguém mediu — é a correção que parece óbvia e raramente se paga.
+      - >-
+        A divergência pode ser INTENCIONAL: dado quente em Snappy e frio em
+        ZSTD no mesmo prefixo é decisão legítima, e a regra não a distingue de
+        descuido.
+    tradeoffs:
+      - >-
+        Um codec só simplifica a medida agregada e a previsão de custo; dois
+        codecs permitem otimizar por faixa de dado, ao custo de qualquer
+        agregado sobre o prefixo misturar dois regimes.
+    validation:
+      - >-
+        `parquet.footer_analyzed.attrs.codecs` com um elemento só no censo
+        seguinte, se a decisão foi uniformizar.
+      - >-
+        Nenhum eixo de dado é exigido, e declarar isso é parte da validação:
+        trocar codec não muda o conteúdo lido. Se houve reescrita, contagem e
+        agregados de controle contra a tabela anterior.
+    rollback:
+      - >-
+        Reverter a propriedade de compressão na escrita. Os arquivos já escritos
+        continuam com o codec que tinham, e isso é inofensivo.
+    sources:
+      - url: https://parquet.apache.org/docs/file-format/data-pages/compression/
+        retrieved: 2026-09-09
+        note: >
+          O formato registra o codec por column chunk, e é por isso que dois
+          codecs no mesmo prefixo são lidos sem erro — o que torna a divergência
+          um sinal de procedência, não uma falha.

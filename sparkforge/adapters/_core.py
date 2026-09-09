@@ -94,6 +94,10 @@ from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
+from sparkforge.facts.parquet_footer import (
+    extract_parquet_footer_path,
+    extract_parquet_footer_tree,
+)
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
@@ -1141,6 +1145,50 @@ def analyze_error_signatures(
     return _facts_page(
         derived, "error.signature.unresolved", kind, limit, cursor, detail_level
     )
+
+
+# --------------------------------------------------------------------------- #
+# analyze parquet-footer
+# --------------------------------------------------------------------------- #
+
+
+def _extract_parquet_footer_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect "
+            f"parquet-footer`, ou para o DIRETORIO deles:\n"
+            f"    sparkforge analyze parquet-footer "
+            f"--path .sparkforge/artifacts/parquet_footer/",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_parquet_footer_tree(target, repo_root=target)
+    return extract_parquet_footer_path(target)
+
+
+def analyze_parquet_footer(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts do FOOTER ja coletado, e nunca abre arquivo Parquet.
+
+    A leitura do rodape mora em `sparkforge/collect/parquet_footer.py`, que
+    depende de pyarrow; este verbo parte do artefato JSON e nao depende de nada
+    alem do nucleo. E a mesma divisao de `collect cloudwatch-logs` /
+    `analyze cloudwatch-logs`.
+
+    A medida que so existe aqui e `avg_range_coverage`: a sobreposicao de
+    min/max entre row groups, que separa "sem estatistica" de "estatistica
+    inutil". Ela e propriedade do LAYOUT e assume o predicado uniforme sobre o
+    dominio -- nomeia layout que NAO PODE podar, nunca job que vai ler muito.
+    """
+    facts = _extract_parquet_footer_facts(path)
+    return _facts_page(facts, "parquet.unresolved", kind, limit, cursor, detail_level)
 
 
 def analyze_glue_job_runs(

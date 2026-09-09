@@ -54,6 +54,7 @@ from sparkforge.facts import (
     graph,
     iceberg_metadata,
     migration,
+    parquet_footer,
     pyspark_ast,
     run_cost,
     runtime_detect,
@@ -155,6 +156,7 @@ EXTRACTORS = (
     # para os OITO kinds de `EMITTED_KINDS` assim que o modulo entra la tambem;
     # essa fixture e trabalho da Task 9, nao desta.
     migration,
+    parquet_footer,
     pyspark_ast,
     # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` contam
@@ -178,6 +180,11 @@ EXTRACTORS = (
     # `SF-WASTE-001` e `SF-WASTE-002` seriam forcadas a `blocked_on` sobre um
     # extrator que ja esta no repositorio.
     utilization,
+    # `parquet_footer` entra nas DUAS listas no mesmo commit em que
+    # `SF-PQ-006` a `SF-PQ-009` entram no catalogo: sem ele aqui, os cinco
+    # kinds `parquet.*` contam como orfaos e as quatro regras novas seriam
+    # forcadas a `blocked_on` sobre um extrator que ja esta no repositorio.
+    parquet_footer,
     # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*`
     # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)

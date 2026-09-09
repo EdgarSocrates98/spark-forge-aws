@@ -42,6 +42,13 @@ ARTIFACT_KINDS = (
     "emr_cluster",
     "emr_serverless",
     "emr_eks",
+    # `parquet_footer` e artefato SEPARADO de `iceberg_metadata`, e a razao e a
+    # mesma que separou `cloudwatch_logs` de `cloudwatch`: um e o dump das
+    # metadata tables do Iceberg (arquivos, snapshots, manifests), o outro o
+    # RODAPE de arquivos Parquet -- row group, estatistica por coluna,
+    # dicionario, page index e bloom. Uma tabela Iceberg e feita de arquivos
+    # Parquet, e os dois artefatos coexistem para a MESMA tabela.
+    "parquet_footer",
     "source",
 )
 

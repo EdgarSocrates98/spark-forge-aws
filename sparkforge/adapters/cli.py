@@ -259,6 +259,21 @@ def build_parser() -> argparse.ArgumentParser:
     sig_analyze_p.add_argument("--cursor")
     _add_detail_level(sig_analyze_p)
 
+    pqf_analyze_p = analyze_sub.add_parser(
+        "parquet-footer",
+        help="Extrai facts do FOOTER do Parquet ja coletado.",
+    )
+    pqf_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Artefato JSON de `collect parquet-footer`, ou o DIRETORIO deles.",
+    )
+    pqf_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    pqf_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    pqf_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    pqf_analyze_p.add_argument("--cursor")
+    _add_detail_level(pqf_analyze_p)
+
     runs_analyze_p = analyze_sub.add_parser(
         "glue-job-runs",
         help="Extrai facts de historico do diretorio de artefatos de run Glue.",
@@ -1897,6 +1912,11 @@ def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
+    full = _core.analyze_parquet_footer(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_cloudwatch_logs(args: argparse.Namespace) -> int:
     full = _core.analyze_cloudwatch_logs(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -3239,6 +3259,7 @@ _DISPATCH = {
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
     ("analyze", "cloudwatch-logs"): _cmd_analyze_cloudwatch_logs,
+    ("analyze", "parquet-footer"): _cmd_analyze_parquet_footer,
     ("analyze", "error-signatures"): _cmd_analyze_error_signatures,
     ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
     ("analyze", "plan"): _cmd_analyze_plan,

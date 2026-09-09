@@ -1,0 +1,15 @@
+name: sem_estatistica
+proves: >
+  O POSITIVO de `SF-PQ-007`: `write_statistics=False` na escrita, e o footer sai
+  sem min/max nenhum. `min_max_coverage` e 0.0, e sem min/max o motor de leitura
+  nao tem como descartar row group -- ele le todos.
+
+  E a fixture que separa as duas regras de estatistica: `SF-PQ-007` dispara aqui
+  (a estatistica FALTA) e `SF-PQ-008` NAO (ela precisa da estatistica que esta
+  faltando, e sai como recusa `estatistica_incompleta` no
+  `parquet.unresolved`). As duas nunca disparam sobre o mesmo arquivo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

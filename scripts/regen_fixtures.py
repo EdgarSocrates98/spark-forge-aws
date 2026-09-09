@@ -46,6 +46,7 @@ from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_tree,
 )
 from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
+from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
 from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
@@ -86,6 +87,7 @@ FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
 FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
 FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
 FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
+FIXTURES_PARQUET_FOOTER = ROOT / "fixtures" / "parquet_footer"
 FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
 # Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
 # `evals/holdout/README.md` e `regen_scenario`.
@@ -524,6 +526,37 @@ def regen_cloudwatch_logs(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_parquet_footer(directory: Path) -> None:
+    """Corpus do FOOTER do Parquet: um `*.json` sob input/, e mais nada.
+
+    UM extrator e ZERO derivadores -- e a diferenca para `regen_exception` e
+    `regen_cloudwatch_logs` e o ponto: o footer nao alimenta derivacao nenhuma
+    hoje. As quatro regras de `SF-PQ-006..009` consomem `parquet.row_group` e
+    `parquet.column_profile` direto.
+
+    O `.parquet` binario NAO mora no corpus. O input e o artefato JSON que
+    `collect parquet-footer` gravaria, gerado a partir de Parquet real por
+    `scripts/` e committado so nessa forma -- binario num corpus de fixture e
+    irrevisavel em diff.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for artefato in sorted(input_dir.glob("*.json")):
+        payload = json.loads(artefato.read_text(encoding="utf-8"))
+        rel = artefato.relative_to(input_dir).as_posix()
+        facts.extend(extract_parquet_footer(payload, rel))
+    # O `.sql` entra sob GUARDA DE EXISTENCIA, e nao por default: `SF-PQ-008`
+    # exige `sql.predicate` em `requires_facts`, e o par que prova esse contrato
+    # e a fixture COM a query contra a fixture SEM ela. Extrair sempre apagaria
+    # a diferenca que o par existe para medir -- mesma disciplina de
+    # `regen_exception` com o `.jar`.
+    for consulta in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(consulta, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_scenario(directory: Path) -> None:
     """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
 
@@ -753,6 +786,7 @@ def main() -> int:
                 (FIXTURES_MIGRATION / name, regen_migration),
                 (FIXTURES_EXCEPTION / name, regen_exception),
                 (FIXTURES_CW_LOGS / name, regen_cloudwatch_logs),
+                (FIXTURES_PARQUET_FOOTER / name, regen_parquet_footer),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -851,6 +885,14 @@ def main() -> int:
             regen_exception(directory)
     for directory in sorted(p for p in FIXTURES_CW_LOGS.iterdir() if p.is_dir()):
         regen_cloudwatch_logs(directory)
+    # Mesma guarda dos dois corpus anteriores, e pelo mesmo intervalo:
+    # `fixtures/parquet_footer/` nasce depois das regras de `SF-PQ-006..009`, e
+    # a regeneracao completa roda entre as duas coisas.
+    if FIXTURES_PARQUET_FOOTER.is_dir():
+        for directory in sorted(
+            p for p in FIXTURES_PARQUET_FOOTER.iterdir() if p.is_dir()
+        ):
+            regen_parquet_footer(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.

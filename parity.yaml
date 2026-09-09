@@ -125,6 +125,23 @@ capabilities:
   # `analyze error-signatures` mora aqui e nao numa capacidade de "julgamento"
   # porque ele NAO julga: ele constata que a assinatura casou. O juizo e das
   # regras `SF-ERR-*`, que a capacidade de `judge` ja cobre.
+  # Capacidade PROPRIA, e nao uma linha na de layout S3: `SF-PQ-001` a
+  # `SF-PQ-005` julgam por LISTAGEM (tamanho de objeto) e por PLANO (filtros
+  # declarados); esta le o RODAPE do arquivo, que e artefato separado e exige
+  # uma dependencia que o nucleo nao tem.
+  - name: read the Parquet footer and measure whether its statistics can prune
+    tools:
+      - sparkforge_analyze_parquet_footer
+    cli:
+      - analyze parquet-footer
+    knowledge: [knowledge/storage/parquet-layout.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: read the error from a run and match it against the signature catalog
     tools:
       - sparkforge_analyze_cloudwatch_logs

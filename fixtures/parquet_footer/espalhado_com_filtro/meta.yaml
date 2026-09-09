@@ -1,0 +1,26 @@
+name: espalhado_com_filtro
+proves: >
+  O POSITIVO de `SF-PQ-008`, e o par dele e `espalhado_nao_poda`: MESMO footer
+  byte a byte, mais UM arquivo -- a query que filtra a coluna.
+
+  E o contrato de `requires_facts` medido com um arquivo. Sem `sql.predicate` no
+  case, `SF-PQ-008` e PULADA com `missing: ["sql.predicate"]`, e a razao esta na
+  regra: cobertura alta numa coluna que NINGUEM filtra nao e defeito nenhum. Com
+  a query ao lado, a mesma cobertura vira achado.
+
+  E o falso negativo que motivou a frente inteira, agora com o cruzamento que o
+  torna acionavel: `avg_range_coverage` perto de 1.0 significa que nenhum row
+  group pode ser descartado, e a query prova que alguem depende justamente
+  daquela coluna para podar.
+
+  A query filtra `id`, que e a coluna cujo perfil tem cobertura alta. Se ela
+  filtrasse `cat`, o achado nao deveria sair -- e essa distincao e a lacuna que
+  a fixture registra em vez de esconder: `SF-PQ-008` exige que exista
+  `sql.predicate` no case, e NAO cruza o nome da coluna. Cruzar exigiria
+  resolver a tabela do predicado contra o prefixo do footer, e nada no case liga
+  os dois hoje.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

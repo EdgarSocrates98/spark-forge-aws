@@ -2139,6 +2139,27 @@
         "SF-ERR-005"
       ]
     },
+    "https://parquet.apache.org/docs/file-format/data-pages/compression/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-PQ-009"
+      ]
+    },
+    "https://parquet.apache.org/docs/file-format/metadata/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-PQ-007",
+        "SF-PQ-008"
+      ]
+    },
     "https://pypi.org/pypi/graphframes-py/json": {
       "docs": [
         "knowledge/graph/availability.md"
@@ -2478,6 +2499,7 @@
         "SF-PQ-001",
         "SF-PQ-002",
         "SF-PQ-004",
+        "SF-PQ-006",
         "SF-PY-001",
         "SF-PY-003",
         "SF-PY-005",

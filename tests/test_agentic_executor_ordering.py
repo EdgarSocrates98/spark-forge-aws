@@ -406,14 +406,23 @@ class TestCatalogoInteiro:
         assert _antes(ordem, "SF-ATH-004", "SF-ATH-001")
         assert _antes(ordem, "SF-UI-002", "SF-UI-001")
 
-    def test_o_maior_grupo_de_restricao_e_wall_clock_com_dez_regras(self, findings_do_catalogo):
+    def test_os_maiores_grupos_de_restricao_tem_dez_regras_cada(self, findings_do_catalogo):
         """O numero que a decisao de `nature` comprou.
 
         Com `correctness.write_result` tratado como medida, o maior grupo teria
-        33 regras. So com os eixos de medida sao 10, em `runtime.wall_clock`.
+        34 regras. So com os eixos de medida o topo cai para 10.
+
+        **Sao DOIS eixos empatados em 10, e o empate e informacao**:
+        `runtime.wall_clock` e `scan.bytes_read`. O teste afirmava so o primeiro
+        e usava `max`, cujo desempate por nome escolheria um dos dois em
+        silencio -- entao a entrega do footer do Parquet (2026-09-09), que levou
+        `scan.bytes_read` de 8 para 10 com `SF-PQ-007` e `SF-PQ-008`, o
+        derrubou. Afirmar o CONJUNTO em vez do vencedor e o que faz o teste
+        medir a distribuicao, e nao a ordem alfabetica.
         """
         _, restricoes, _ = order_actions(findings_do_catalogo)
-        maior = max(restricoes, key=lambda r: (len(r["rules"]), r["axis"]))
-        assert maior["axis"] == "runtime.wall_clock"
-        assert len(maior["rules"]) == 10
+        maior = max(len(r["rules"]) for r in restricoes)
+        no_topo = {r["axis"] for r in restricoes if len(r["rules"]) == maior}
+        assert maior == 10
+        assert no_topo == {"runtime.wall_clock", "scan.bytes_read"}
         assert all(r["axis"] != "correctness.write_result" for r in restricoes)

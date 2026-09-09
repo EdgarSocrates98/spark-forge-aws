@@ -1,0 +1,14 @@
+name: row_group_minusculo
+proves: >
+  O POSITIVO de `SF-PQ-006` pelo lado de BAIXO: row group de 50 linhas produz
+  alguns KB, muito abaixo do piso de 8 MB.
+
+  E a fixture que separa `SF-PQ-006` de `SF-PQ-001`: o ARQUIVO aqui e um so, e
+  `SF-PQ-001` conta arquivos pequenos no prefixo lendo a listagem S3 -- ela nao
+  ve row group nenhum. As duas erram em direcoes opostas, e esta prova que a
+  segunda enxerga o que a primeira nao alcanca.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

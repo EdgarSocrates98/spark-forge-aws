@@ -44,6 +44,7 @@ class TestToolSurface:
             "sparkforge_analyze_cloudwatch_logs",
             "sparkforge_analyze_error_signatures",
             "sparkforge_analyze_glue_job_runs",
+            "sparkforge_analyze_parquet_footer",
             "sparkforge_analyze_plan",
             "sparkforge_analyze_terraform",
             "sparkforge_analyze_iceberg",
@@ -698,6 +699,75 @@ _CLOUDWATCH_ARTIFACT = json.dumps(
                 "Label": "glue.driver.workerUtilization",
                 "Timestamps": ["t1", "t2", "t3"],
                 "Values": [0.3, 0.9, 0.6],
+            }
+        ],
+    }
+)
+
+# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# DOIS row groups com faixas disjuntas, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico`.
+# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a
+# tool existe para publicar.
+def _pqf_coluna(minimo: int, maximo: int) -> dict:
+    """Um column chunk no shape que o coletor grava."""
+    return {
+        "path": "id",
+        "physical_type": "INT64",
+        "compression": "SNAPPY",
+        "encodings": ["PLAIN", "RLE_DICTIONARY"],
+        "has_dictionary_page": True,
+        "is_stats_set": True,
+        "has_min_max": True,
+        "min": minimo,
+        "max": maximo,
+        "null_count": 0,
+        "num_values": 1000,
+        "total_compressed_size": 4000,
+        "total_uncompressed_size": 12000,
+        "has_column_index": False,
+        "has_offset_index": False,
+        "bloom_filter_offset": None,
+    }
+
+
+# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a tool
+# existe para publicar.
+_PARQUET_FOOTER_ARTIFACT = json.dumps(
+    {
+        "prefix": "s3://lake/curated/pedidos/",
+        "status": "ok",
+        "files_seen": 1,
+        "files_read": 1,
+        "sampling": "first_n_by_name",
+        "max_files": 20,
+        "files": [
+            {
+                "path": "s3://lake/curated/pedidos/part-00000.parquet",
+                "file_bytes": 268435456,
+                "num_rows": 2000,
+                "num_row_groups": 2,
+                "num_columns": 1,
+                "created_by": "parquet-mr version 1.13.1",
+                "format_version": "2.6",
+                "row_groups": [
+                    {
+                        "index": 0,
+                        "num_rows": 1000,
+                        "total_byte_size": 134217728,
+                        "columns": [_pqf_coluna(0, 999)],
+                    },
+                    {
+                        "index": 1,
+                        "num_rows": 1000,
+                        "total_byte_size": 134217728,
+                        "columns": [_pqf_coluna(1000, 1999)],
+                    },
+                ],
             }
         ],
     }
@@ -1782,6 +1852,25 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert any(
             item["kind"] == "error.signature_match" for item in resultado["items"]
         ), "a amostra precisa casar pelo menos uma assinatura pelo caminho de log"
+        return resultado
+
+    if name == "sparkforge_analyze_parquet_footer":
+        # A amostra e um FOOTER, nao um `.parquet`: a tool parte do artefato
+        # JSON e nao depende de pyarrow. Dois row groups com faixas DISJUNTAS,
+        # para que `avg_range_coverage` saia -- com um row group so a medida
+        # recusaria com `row_group_unico`, e a amostra nao exercitaria o que a
+        # tool existe para publicar.
+        pqf_dir = tmp_path / "parquet_footer"
+        pqf_dir.mkdir()
+        (pqf_dir / "curated.json").write_text(
+            _PARQUET_FOOTER_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_parquet_footer", {"path": str(pqf_dir)}
+        )
+        assert any(
+            item["kind"] == "parquet.column_profile" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos um perfil de coluna"
         return resultado
 
     if name == "sparkforge_analyze_glue_job_runs":

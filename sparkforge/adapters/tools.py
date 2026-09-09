@@ -4054,6 +4054,51 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_parquet_footer": {
+        "description": (
+            "Extrai facts do FOOTER de arquivos Parquet ja coletado por "
+            "`collect parquet-footer`: row group, estatistica por coluna, "
+            "dicionario, page index, bloom filter e codec. NAO abre arquivo "
+            "Parquet -- parte do artefato JSON. A medida que so existe aqui e "
+            "`avg_range_coverage`, a sobreposicao de min/max entre row groups, "
+            "que separa 'sem estatistica' de 'estatistica INUTIL': cobertura "
+            "perto de 1 significa que cada row group cobre quase todo o dominio "
+            "e nenhum pode ser descartado, apesar de a estatistica existir. Ela "
+            "e propriedade do LAYOUT e assume o predicado uniforme sobre o "
+            "dominio observado -- nomeia layout que NAO PODE podar, nunca job "
+            "que vai ler muito, e nao estima custo nem ganho. Onde ela nao se "
+            "sustenta sai `parquet.unresolved` com a razao "
+            "(`tipo_sem_dominio_numerico`, `estatistica_incompleta`, "
+            "`row_group_unico`, `dominio_degenerado`). Censo parcial se anuncia: "
+            "`partial: true` quando a coleta leu menos arquivos do que viu."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect parquet-footer`, "
+                        "ou o diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_glue_job_runs": {
         "description": (
             "Extrai facts de historico do DIRETORIO de artefatos de run Glue: um "
@@ -6825,6 +6870,16 @@ def _h_analyze_error_signatures(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_parquet_footer(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_parquet_footer(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_glue_job_runs(
         args["path"],
@@ -7307,6 +7362,7 @@ _HANDLERS = {
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
     "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
     "sparkforge_analyze_cloudwatch_logs": _h_analyze_cloudwatch_logs,
+    "sparkforge_analyze_parquet_footer": _h_analyze_parquet_footer,
     "sparkforge_analyze_error_signatures": _h_analyze_error_signatures,
     "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
     "sparkforge_analyze_plan": _h_analyze_plan,
