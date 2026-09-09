@@ -1,0 +1,214 @@
+[
+  {
+    "id": "f_c31fe6",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-fato",
+      "job_run_id": "jr_ice1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ice1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:07:59,003 ERROR [main] iceberg.SparkWrite: org.apache.iceberg.exceptions.CommitFailedException: Commit failed: Table was updated concurrently by another writer",
+      "log_stream": "jr_ice1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-fato_jr_ice1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_866fcf",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-fato",
+      "job_run_id": "jr_ice1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ice1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_ice1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-fato_jr_ice1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_e2f1c5",
+    "schema_version": 1,
+    "kind": "iceberg.delete_files_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.fato_vendas"
+    },
+    "measures": {
+      "delete_file_count": 0,
+      "data_file_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "9af9aefc794ed1047081eb17817a9ebfedcea061b27a418864e9f9db1c8690fa",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_1230fa",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.fato_vendas"
+    },
+    "measures": {
+      "data_file_count": 1,
+      "total_bytes": 268435456,
+      "avg_file_bytes": 268435456.0,
+      "p50_file_bytes": 268435456,
+      "p95_file_bytes": 268435456,
+      "min_file_bytes": 268435456,
+      "max_file_bytes": 268435456,
+      "total_records": 800000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "9af9aefc794ed1047081eb17817a9ebfedcea061b27a418864e9f9db1c8690fa",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_eaeddf",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.fato_vendas"
+    },
+    "measures": {
+      "version": 2
+    },
+    "attrs": {
+      "resolved": true,
+      "declared": "2"
+    },
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "9af9aefc794ed1047081eb17817a9ebfedcea061b27a418864e9f9db1c8690fa",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_5b7046",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.fato_vendas"
+    },
+    "measures": {
+      "snapshot_count": 3,
+      "span_hours": 0.13277777777777777
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-09-09T10:00:00+00:00",
+      "newest": "2026-09-09T10:07:58+00:00"
+    },
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "9af9aefc794ed1047081eb17817a9ebfedcea061b27a418864e9f9db1c8690fa",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_6ab6d7",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.fato_vendas"
+    },
+    "measures": {
+      "section_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "9af9aefc794ed1047081eb17817a9ebfedcea061b27a418864e9f9db1c8690fa",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_3d22ed",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.fato_vendas"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "9af9aefc794ed1047081eb17817a9ebfedcea061b27a418864e9f9db1c8690fa",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f515d7",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-fato",
+      "job_run_id": "jr_ice1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ice1",
+      "event": 0,
+      "signature_id": "ERR-ICE-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-ICE-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:07:59,003 ERROR [main] iceberg.SparkWrite: org.apache.iceberg.exceptions.CommitFailedException: Commit failed: Table was updated concurrently by another writer"
+    },
+    "provenance": {
+      "artifact": "logs/etl-fato_jr_ice1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

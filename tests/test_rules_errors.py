@@ -184,6 +184,26 @@ def _regras_da_area() -> list[dict]:
     return [r for r in load_catalog() if r["id"].startswith("SF-ERR-")]
 
 
+def _kinds_emitidos() -> set[str]:
+    """Todo kind que algum extrator do motor declara em `EMITTED_KINDS`.
+
+    Varre `sparkforge/facts/*.py` E `sparkforge/errors/matcher.py`, porque o
+    matcher mora fora de `facts/` e as varreduras automaticas do repositorio
+    nao o alcancam -- ele so e visto pelas listas manuais.
+    """
+    import importlib
+    import pkgutil
+
+    import sparkforge.facts as pacote
+    from sparkforge.errors.matcher import EMITTED_KINDS as MATCHER_KINDS
+
+    kinds: set[str] = set(MATCHER_KINDS)
+    for modulo in pkgutil.iter_modules(pacote.__path__):
+        alvo = importlib.import_module(f"sparkforge.facts.{modulo.name}")
+        kinds |= set(getattr(alvo, "EMITTED_KINDS", ()) or ())
+    return kinds
+
+
 # ---------------------------------------------------------------------------
 # O teste que decide a entrega.
 # ---------------------------------------------------------------------------
@@ -364,19 +384,54 @@ class TestOQueAAreaNaoCarrega:
             assert not isinstance(confianca, (int, float)), regra["id"]
 
     def test_toda_regra_da_area_e_confirmed(self):
-        """Elas afirmam que a falha ACONTECEU, com o fact do event log ao lado."""
-        assert [r["status"] for r in _regras_da_area()] == ["confirmed", "confirmed"]
+        """Elas afirmam que a falha ACONTECEU, com o artefato ao lado."""
+        assert [r["status"] for r in _regras_da_area()] == ["confirmed"] * 6
 
-    def test_toda_regra_da_area_exige_o_match_e_a_evidencia_da_assinatura(self):
+    def test_toda_regra_da_area_exige_o_match_MAIS_um_companheiro(self):
+        """O contrato da area inteira, e o ponto da frente.
+
+        A assinatura casada NAO basta em regra nenhuma: uma linha de log ou uma
+        classe de excecao dizem que o texto apareceu, nunca que a acusacao se
+        sustenta. Toda regra daqui exige `error.signature_match` E pelo menos um
+        fact de OUTRO extrator -- o companheiro que a assinatura declara em
+        `evidence_required`, ou o substituto medido quando o nome que ela
+        declara nao existe neste motor.
+
+        A assercao e generica de proposito. A anterior cobrava literalmente
+        `mig.jar_binary` e `tf.attribute`, que sao os companheiros das DUAS
+        primeiras -- e teria de crescer a cada regra nova, virando uma copia da
+        tabela em vez de uma afirmacao sobre ela.
+        """
         for regra in _regras_da_area():
             exigidos = set(regra["requires_facts"])
             assert "error.signature_match" in exigidos, regra["id"]
-            assert {"mig.jar_binary", "tf.attribute"} <= exigidos, regra["id"]
+            assert exigidos - {"error.signature_match"}, regra["id"]
+
+    def test_o_companheiro_de_cada_regra_e_kind_que_o_motor_EMITE(self):
+        """A armadilha que esta area quase caiu, medida.
+
+        Das SEIS assinaturas, so `ERR-GLUE-002`, `ERR-GLUE-003` e `ERR-ATH-001`
+        declaram `evidence_required` cujos nomes existem como kind. As outras
+        tres nomeiam `pyspark.skew_join`, `eventlog.executor_oom`,
+        `spark.plan.cartesian_product`, `iceberg.commit_conflict`,
+        `iceberg.concurrent_writer`, `lakeformation.missing_grant` e
+        `ram.unaccepted_share` -- e NENHUM deles e emitido por este motor.
+
+        Copiar esses nomes para `requires_facts` produziria regra que nunca
+        dispara: `requires_facts` insatisfeito para sempre, `when` mudo,
+        relatorio limpo. Este teste e o que impede a proxima regra da area de
+        cair nisso.
+        """
+        emitidos = _kinds_emitidos()
+        for regra in _regras_da_area():
+            for kind in regra["requires_facts"]:
+                assert kind in emitidos, f"{regra['id']}: {kind} nao e emitido por ninguem"
 
 
 # ---------------------------------------------------------------------------
-# A LACUNA DECLARADA: quatro das seis assinaturas nao viraram regra, e o motivo
-# e medido aqui em vez de afirmado de memoria.
+# A LACUNA FECHOU: as SEIS assinaturas tem regra (2026-09-09). O que continua
+# medido aqui e a razao de as quatro de mensagem precisarem do caminho de LOG --
+# por `spark.exception` elas nao casariam nunca, e a regra delas seria muda.
 # ---------------------------------------------------------------------------
 
 
@@ -402,23 +457,35 @@ def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
     assert len(_assinaturas()) == 6, [s["id"] for s in _assinaturas()]
 
 
-def test_exatamente_duas_assinaturas_tem_regra_hoje():
-    assert _ids_referenciados_pelas_regras() == {"ERR-GLUE-002", "ERR-GLUE-003"}
+def test_as_seis_assinaturas_tem_regra():
+    """A lacuna que a T3 declarou, fechada e medida.
+
+    Uma assinatura sem regra e conhecimento que o motor carrega e nao usa: o
+    match sai no `facts.json` e nenhum achado o le. O numero e SEIS, e ele e
+    cobrado contra o catalogo de assinaturas e contra o de regras ao mesmo
+    tempo -- acrescentar assinatura sem regra volta a derrubar este teste, que
+    e exatamente o aviso que se quer.
+    """
+    assert _ids_referenciados_pelas_regras() == {s["id"] for s in _assinaturas()}
+
+
+SO_PELO_LOG = {"ERR-ATH-001", "ERR-GLUE-001", "ERR-ICE-001", "ERR-LF-001"}
 
 
 @pytest.mark.parametrize(
     "sig",
-    [s for s in _assinaturas() if s["id"] not in {"ERR-GLUE-002", "ERR-GLUE-003"}],
+    [s for s in _assinaturas() if s["id"] in SO_PELO_LOG],
     ids=lambda s: s["id"],
 )
-def test_a_assinatura_sem_regra_e_trecho_de_mensagem_e_nao_casa_por_classe(sig):
-    """O motivo de nao existir regra para as outras QUATRO, medido.
+def test_a_assinatura_de_mensagem_nao_casa_por_classe(sig):
+    """POR QUE as quatro precisam do caminho de LOG, medido e nao lembrado.
 
     `build_signature_matches` casa a assinatura contra `attrs.exception_class` e
     contra `attrs.caused_by` -- CLASSE de excecao. Estas quatro sao trecho de
-    MENSAGEM de log, entao por este caminho elas nunca produzem
-    `error.signature_match`, e uma regra escrita sobre elas hoje seria regra que
-    nao dispara nunca. O caminho delas e o coletor de CloudWatch Logs.
+    MENSAGEM de log, entao por ESTE caminho elas nunca produzem
+    `error.signature_match`, e `SF-ERR-003` a `SF-ERR-006` seriam mudas se
+    dependessem dele. Elas dependem de `cloudwatch.log_event`, e
+    `fixtures/cloudwatch_logs/` e onde isso vira golden.
 
     O teste alimenta a excecao com o proprio texto da assinatura na cabeca da
     mensagem -- que e onde ele aparece num log real -- e confirma que ela cai em

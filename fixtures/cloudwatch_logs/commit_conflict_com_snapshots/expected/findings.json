@@ -1,0 +1,68 @@
+[
+  {
+    "rule_id": "SF-ERR-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Commit do Iceberg falhou por escrita concorrente, com o histórico de snapshots da tabela ao lado",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-fato",
+      "job_run_id": "jr_ice1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ice1",
+      "event": 0,
+      "signature_id": "ERR-ICE-001"
+    },
+    "evidence": [
+      "f_f515d7",
+      "f_5b7046"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O commit FALHOU com `CommitFailedException: Commit failed: Table was updated concurrently`, e o dump da tabela traz o histórico de snapshots do mesmo alvo. A mensagem é do próprio Iceberg dizendo o que aconteceu: outro escritor commitou entre a leitura do snapshot base e a tentativa de commit deste job.\n\n**O que a regra NÃO afirma:** QUEM foi o outro escritor. A assinatura `ERR-ICE-001` declara `iceberg.commit_conflict` e `iceberg.concurrent_writer` em `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que este motor emite -- nada aqui lê o conjunto de jobs que escreve numa tabela. `iceberg.snapshots_summary` traz a contagem, a janela e as operações dos snapshots, o que ancora a acusação na tabela certa e dá a base de comparação; não identifica o concorrente.\n\nEsta é a única das quatro SEM irmã estrutural, e a razão é da natureza da coisa: conflito de commit é propriedade da EXECUÇÃO CONCORRENTE, e nada no artefato parado o prevê. Um job que escreve numa tabela é indistinguível, no código e no Terraform, de um job que escreve nela sozinho.",
+    "proposed_change": [
+      "Declarar `commit.retry.num-retries` e `commit.retry.min-wait-ms` nas table properties -- o retry do Iceberg relê o snapshot base e refaz o commit, que é o conserto para conflito legítimo e ocasional.",
+      "Levantar quais jobs escrevem nesta tabela e em que janela -- a medida que decide se o conflito é ocasional (retry resolve) ou estrutural (retry só adia).",
+      "Se as escritas são estruturalmente concorrentes, separá-las: partições disjuntas por escritor, ou tabelas de staging com merge posterior."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Retry esconde conflito estrutural em vez de resolvê-lo: com dois jobs escrevendo sempre na mesma partição, o retry transforma falha rápida em run longo que falha no fim, e o custo sobe sem o sintoma mudar.",
+      "Cada retry relê o snapshot base e refaz o planejamento do commit; com metadata grande isso não é barato, e `commit.retry.num-retries` alto multiplica esse custo.",
+      "A saída parcial do run falho continua no local da tabela como arquivo órfão -- o commit não aconteceu, mas os arquivos de dado foram escritos. Eles não entram em nenhum snapshot e não são lidos, e continuam ocupando espaço até uma manutenção removê-los."
+    ],
+    "tradeoffs": [
+      "Separar as escritas em partições disjuntas elimina o conflito na raiz, ao custo de amarrar a orquestração ao esquema de partição -- e de precisar reescrever o particionamento se ele mudar.",
+      "Tabelas de staging com merge posterior tiram a concorrência do caminho crítico, ao custo de uma passada a mais sobre o dado."
+    ],
+    "validation": [
+      "Ausência de `CommitFailedException` na janela de log dos runs seguintes, com a mesma concorrência de antes -- retry validado sem concorrência não valida nada.",
+      "`iceberg.snapshots_summary.measures.snapshot_count` crescendo um por commit bem-sucedido, e a operação de cada snapshot conferida contra o que cada job deveria ter escrito.",
+      "Contagem e agregados de controle da tabela depois do commit que passou, contra o esperado do lote -- um commit que falhou e foi reexecutado é candidato natural a escrever duas vezes o mesmo lote."
+    ],
+    "rollback": [
+      "Remover as table properties de retry devolve o comportamento anterior; é propriedade de tabela, não dado.",
+      "Os arquivos órfãos do commit que falhou não voltam sozinhos: eles precisam de manutenção própria, e removê-los é operação destrutiva que exige escopo e retenção declarados."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-writes/",
+        "retrieved": "2026-08-15",
+        "note": "Fonte declarada por `knowledge/errors/iceberg/commit_conflict.json` (`ERR-ICE-001`), com `last_verified: 2026-08-15`.\n"
+      }
+    ],
+    "action": {
+      "kind": "storage.set_write_layout_property",
+      "target": "iceberg.table_property.commit.retry",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

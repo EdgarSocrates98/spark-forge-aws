@@ -472,17 +472,53 @@ def regen_exception(directory: Path) -> None:
 
 
 def regen_cloudwatch_logs(directory: Path) -> None:
-    """Corpus do LOG do CloudWatch: `*.json` sob input/, mais o matcher.
+    """Corpus do LOG do CloudWatch: o log, os COMPANHEIROS que a assinatura
+    exige, e o matcher.
 
-    UM extrator de artefato e UM derivador puro, nesta ordem, porque a ordem e a
-    dependencia: `extract_cloudwatch_logs_tree` produz os `cloudwatch.log_event`
-    ja redigidos, e `build_signature_matches` casa cada linha contra
-    `knowledge/errors/`. E o mesmo desenho de `regen_exception`, com a fonte
-    trocada -- e e essa troca que destrava as quatro assinaturas de mensagem.
+    O nucleo continua sendo UM extrator de artefato e UM derivador puro, nesta
+    ordem, porque a ordem e a dependencia: `extract_cloudwatch_logs_tree`
+    produz os `cloudwatch.log_event` ja redigidos, e `build_signature_matches`
+    casa cada linha contra `knowledge/errors/`. E o mesmo desenho de
+    `regen_exception`, com a fonte trocada -- e e essa troca que destrava as
+    quatro assinaturas de mensagem.
+
+    ## Por que ha companheiros, e por que eles moram em SUBDIRETORIO
+
+    As quatro regras `SF-ERR-003..006` fazem com as quatro assinaturas de
+    mensagem o que `SF-ERR-001`/`SF-ERR-002` fizeram com as duas de classe:
+    exigem em `requires_facts` o `evidence_required` que a propria assinatura
+    declara. A linha de log casada NAO basta -- ela diz que a mensagem
+    apareceu, nunca que a acusacao se sustenta. Por isso o event log
+    (`*.jsonl`), o Terraform (`*.tf`), o dump Iceberg (`iceberg/*.json`) e o
+    inventario de consumidores (`*.yaml`) entram aqui.
+
+    O log do CloudWatch e o dump Iceberg sao os DOIS `*.json`, e por isso o
+    corpus ganhou pasta: quando `input/logs/` existe, e dela que sai o log, e
+    `input/iceberg/` guarda o dump. Sem as pastas, o comportamento e o de
+    antes -- `input/*.json` inteiro e log --, e e assim que as nove fixtures
+    originais continuam valendo byte a byte.
+
+    Cada companheiro entra sob GUARDA DE EXISTENCIA e nao por default, pela
+    mesma razao de `regen_exception`: o par positivo/negativo que prova
+    `requires_facts` e a fixture COM o companheiro contra a fixture SEM ele.
+    Extrair sempre que o diretorio existisse apagaria a diferenca que o par
+    existe para medir.
     """
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
-    facts = extract_cloudwatch_logs_tree(input_dir, repo_root=input_dir)
+    logs_dir = input_dir / "logs"
+    facts = extract_cloudwatch_logs_tree(
+        logs_dir if logs_dir.is_dir() else input_dir, repo_root=input_dir
+    )
+    for jsonl in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    iceberg_dir = input_dir / "iceberg"
+    if iceberg_dir.is_dir():
+        facts.extend(extract_iceberg_metadata_tree(iceberg_dir, repo_root=input_dir))
+    for inventory in sorted(input_dir.glob("*.yaml")):
+        facts.extend(extract_consumers_path(inventory, repo_root=input_dir))
     facts.extend(build_signature_matches(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)

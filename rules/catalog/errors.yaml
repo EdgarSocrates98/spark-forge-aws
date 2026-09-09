@@ -29,11 +29,89 @@
 # falso negativo silencioso que `_validate_conditions` (`rules/loader.py`)
 # existe para matar, só que uma camada acima, onde nenhuma validação alcança.
 #
-# O caminho das quatro é o coletor de CloudWatch Logs (§2.4 do desenho
+# O caminho das quatro era o coletor de CloudWatch Logs (§2.4 do desenho
 # `docs/superpowers/specs/2026-09-08-stacktrace-intelligence-design.md`), que
-# traz o texto de log que o event log não carrega. Elas entram quando ele
-# entrar, não antes. **Escrever regra que nunca dispara é pior que não
+# traz o texto de log que o event log não carrega. Elas entrariam quando ele
+# entrasse, não antes. **Escrever regra que nunca dispara é pior que não
 # escrever.**
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O CAMINHO ABRIU, E AS QUATRO ENTRARAM (2026-09-09)
+#
+# O coletor entrou (`sparkforge/collect/cloudwatch_logs.py` e
+# `sparkforge/facts/cloudwatch_logs.py`), e `build_signature_matches` passou a
+# casar a mesma assinatura contra o TEXTO DA LINHA, com
+# `matched_on: "log_line"`. As quatro produzem `error.signature_match` hoje, e
+# `fixtures/cloudwatch_logs/quatro_assinaturas_de_log/` é onde isso está medido.
+#
+# `SF-ERR-003` a `SF-ERR-006` são as regras delas, e a disciplina é a mesma das
+# duas primeiras: **a linha casada não basta**. Ela diz que a mensagem apareceu,
+# nunca que a acusação se sustenta -- um log é texto, e texto casado é o começo
+# da pergunta, não a resposta. Cada uma exige, em `requires_facts`, um
+# COMPANHEIRO que ancore a acusação em artefato:
+#
+#   SF-ERR-003  ERR-ATH-001   + `iceberg.format_version` + `env.consumer`
+#   SF-ERR-004  ERR-GLUE-001  + `spark.executor.lost`
+#   SF-ERR-005  ERR-ICE-001   + `iceberg.snapshots_summary`
+#   SF-ERR-006  ERR-LF-001    + `tf.spark_conf`
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O `evidence_required` DAS QUATRO NOMEIA KIND QUE NÃO EXISTE, e isso é MEDIDO
+#
+# Medido em 2026-09-09, contra os 195 kinds que `sparkforge/facts/*.py` e
+# `sparkforge/errors/matcher.py` declaram em `EMITTED_KINDS`:
+#
+#   ERR-ATH-001   `iceberg.table_property`, `env.consumer`        OS DOIS EXISTEM
+#   ERR-GLUE-001  `pyspark.skew_join`, `eventlog.executor_oom`,
+#                 `spark.plan.cartesian_product`                  NENHUM EXISTE
+#   ERR-ICE-001   `iceberg.commit_conflict`,
+#                 `iceberg.concurrent_writer`                     NENHUM EXISTE
+#   ERR-LF-001    `lakeformation.missing_grant`,
+#                 `ram.unaccepted_share`                          NENHUM EXISTE
+#
+# As assinaturas foram escritas antes do motor ter esses extratores, e os nomes
+# delas são o que alguém ESPERAVA que existisse. Copiá-los para `requires_facts`
+# produziria exatamente a regra que o bloco de cima condena: `requires_facts`
+# nunca satisfeito, regra pulada para sempre, relatório limpo.
+#
+# O que estas quatro fazem é declarar o companheiro que EXISTE e que sustenta a
+# mesma acusação, e dizer no `explanation` o que ele NÃO prova. `SF-ERR-004` não
+# afirma que houve skew -- ela afirma que o container morreu e manda classificar
+# antes de tocar em capacidade (regra 17 do `CLAUDE.md`). `SF-ERR-006` não
+# afirma qual concessão falta -- nenhum extrator lê Lake Formation, e a ação é
+# `investigate`, não `replace`.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AS QUATRO TÊM IRMÃ ESTRUTURAL, E ISSO NÃO É DUPLICATA
+#
+# O par `SF-ERR-001`/`SF-SPARK4-004` -- confirmada e estrutural sobre o mesmo
+# defeito -- se repete em três das quatro novas:
+#
+#   SF-ERR-003 × SF-ENV-002   tabela v3 com consumidor Athena
+#   SF-ERR-004 × SF-UI-005    executor perdido por memória de container
+#   SF-ERR-006 × SF-XACC-001  cadeia de concessão entre contas
+#
+# A estrutural afirma o risco a partir do artefato parado; a confirmada afirma
+# que ele ACONTECEU, neste run, com a linha de log ao lado. Uma é migração a
+# planejar, a outra é run a reprocessar. `SF-ERR-005` é a exceção: não há regra
+# estrutural sobre conflito de commit concorrente, porque nada no artefato
+# parado prevê concorrência.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `runtime_scope` DAS QUATRO É `{}`, E A ÁREA DEIXOU DE SUMIR
+#
+# `SF-ERR-001` e `SF-ERR-002` são guardadas por `{glue: ">=6.0"}` porque a
+# afirmação delas é sobre uma fronteira de EMPACOTAMENTO do Glue 6.0. As quatro
+# novas não têm fronteira nenhuma: tabela v3 não é lida pelo Athena em qualquer
+# runtime, container morre por memória em qualquer runtime, commit do Iceberg
+# conflita em qualquer runtime, e concessão de Lake Formation falta em qualquer
+# runtime. Guardá-las por Glue seria etiqueta de serviço disfarçada de guarda de
+# versão -- o defeito que `tests/test_rule_scope_by_nature.py` existe para pegar.
+#
+# Consequência medida, e ela é acréscimo: a área `SF-ERR` **deixou de sumir**
+# num runtime sem Glue, e por isso a entrada `"SF-ERR"` saiu de
+# `AREA_MAY_VANISH_WHEN` naquele teste. Quem gateia as quatro é
+# `requires_facts`, não versão.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # O QUE ESTAS DUAS AFIRMAM, E O QUE JÁ ERA AFIRMADO SEM ELAS
@@ -374,3 +452,493 @@ rules:
           (`ERR-GLUE-003`), com `last_verified: 2026-08-23`. Ela registra o AWS
           SDK for Java 2.44.6 que o Glue 6.0 empacota e o efeito de
           `--user-jars-first` sobre a precedência do classpath.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS QUATRO DE MENSAGEM, pelo caminho de log (2026-09-09)
+  #
+  # Todas casam `error.signature_match` com `matched_on: log_line` -- a
+  # condição NÃO exige `matched_on`, e a omissão é deliberada: `NoSuchMethodError`
+  # entra pelas duas portas, e amarrar a porta faria a regra emudecer no dia em
+  # que a mesma mensagem chegasse pela outra. O que a regra julga é a
+  # assinatura casada, não por onde ela entrou.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-003
+    category: runtime-error
+    title: >-
+      Leitura em Athena falhou sobre tabela Iceberg em format version 3, com
+      consumidor Athena declarado no inventário
+    # `iceberg.format_version` e não `iceberg.table_property`, pela MESMA razão
+    # que SF-ENV-002 trocou os dois em 2026-09-02: a table property
+    # `format-version` é opcional e pode ficar para trás de um upgrade que
+    # mudou o `format_version` do `metadata.json`. O autoritativo é o metadata,
+    # e `attrs.resolved: true` no mesmo `where` é o que impede a regra de
+    # disparar sobre uma recusa.
+    requires_facts:
+      - error.signature_match
+      - iceberg.format_version
+      - env.consumer
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-ATH-001"}
+        - fact: iceberg.format_version
+          where: {attrs.resolved: true, attrs.declared: "3"}
+        - fact: env.consumer
+          where: {attrs.service: athena}
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO, e a razão está no cabeçalho: o Athena não lê v3 em runtime
+    # nenhum, e a afirmação não depende da versão de Glue que escreveu a
+    # tabela. Quem gateia é `requires_facts` -- sem o dump da tabela e sem o
+    # inventário de consumidores, a regra não dispara.
+    runtime_scope: {}
+    explanation: >
+      A query em Athena FALHOU com `Cannot read unsupported version 3`, a
+      tabela declara `format_version: 3` no metadata, e o inventário registra
+      pelo menos um consumidor Athena. As três evidências juntas são o que a
+      assinatura `ERR-ATH-001` declara precisar -- e ela é uma das duas únicas,
+      das seis assinaturas, cujo `evidence_required` nomeia kind que este motor
+      realmente emite.
+
+
+      O modo de falha é o mais perverso do catálogo porque a causa fica a
+      semanas de distância do sintoma: a migração de runtime passa, o job de
+      escrita roda e reporta sucesso, e o que quebra é o dashboard de outro
+      time, dias depois, sem que ninguém tenha tocado na query.
+
+
+      Esta regra é `confirmed` e tem uma irmã em `SF-ENV-002`, que afirma o
+      mesmo defeito a partir do artefato parado -- tabela em v3 mais consumidor
+      Athena declarado, sem nenhuma falha registrada. As duas juntas não se
+      contradizem: a segunda previu, a primeira registrou. A diferença muda a
+      decisão, porque aqui já há consumidor quebrado esperando.
+    proposed_change:
+      - >-
+        Reescrever a tabela em format version 2. Fixar apenas a table property
+        `format-version` NÃO basta -- o `format_version` do metadata é o que a
+        engine lê, e `iceberg.format_version` reporta os dois lado a lado com
+        `attrs.diverges`.
+      - >-
+        Ou manter v3 e mover os consumidores Athena para uma engine que o leia,
+        com os donos daqueles consumidores concordando com a mudança ANTES.
+      - >-
+        Inventariar todos os consumidores da tabela antes de qualquer mudança
+        de format version -- o log traz o que falhou, nunca o que ainda não
+        rodou hoje.
+    # Mesmo `kind`, mesmo `target` e mesma `direction` de SF-ENV-002, e isso é
+    # deliberado: a ação é literalmente a mesma, e direções iguais não formam
+    # contradição. O que difere entre as duas é o status do achado.
+    #
+    # `requires_absent: [env.unresolved]` pela mesma razão de SF-ENV-002: as
+    # quatro razões de recusa do inventário dizem a mesma coisa -- parte dos
+    # consumidores não foi lida --, e mudar format version com o inventário
+    # incompleto é o que o terceiro bullet manda não fazer.
+    action:
+      kind: storage.change_storage_format
+      target: iceberg.table.format_version
+      direction: replace
+      requires_absent:
+        - env.unresolved
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Fixar v2 renuncia às capacidades novas do v3, incluindo deletion
+        vectors e row lineage.
+      - >-
+        A saída que o job de escrita já produziu em v3 continua lá. Reescrever
+        a tabela em v2 é reprocessamento, não ajuste de configuração, e o
+        intervalo entre a escrita em v3 e a correção é dado que os consumidores
+        Athena não leram.
+      - >-
+        O log traz o consumidor que FALHOU. Consumidores que não rodaram na
+        janela coletada não aparecem nele, e concluir "só o Athena quebrou" a
+        partir do log é conclusão sobre o que não foi medido.
+    tradeoffs:
+      - >-
+        V3 traz ganhos reais em merge-on-read; o custo é perder o consumo por
+        Athena enquanto ele não o suportar.
+    validation:
+      - >-
+        Query de smoke test em Athena sobre a tabela, executada com sucesso --
+        a mesma query que falhou, não uma equivalente.
+      - >-
+        `iceberg.format_version.attrs.declared` igual a `2` no dump seguinte, e
+        `attrs.diverges: false` entre o metadata e a table property.
+      - >-
+        Comparação de VALOR entre a tabela reescrita e a anterior -- contagem,
+        contagem de nulos por coluna e agregados de controle. Reescrever em v2
+        é reescrever dado, e contagem igual com valor diferente é o modo de
+        falha que só o eixo de valor pega.
+    rollback:
+      - >-
+        Reverter format version NÃO é trivial depois de escritas em v3.
+        Verificar a documentação da versão de Iceberg em uso antes de assumir
+        que é reversível, e tratar a mudança para v3 como decisão de ida.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html
+        retrieved: 2026-08-23
+        note: >
+          Fonte declarada por `knowledge/errors/athena/iceberg_v3_unsupported.json`
+          (`ERR-ATH-001`), com `last_verified: 2026-08-23`.
+
+  - id: SF-ERR-004
+    category: runtime-error
+    title: >-
+      Container morto por YARN por estouro de memória, confirmado no log e no
+      event log do mesmo run
+    requires_facts:
+      - error.signature_match
+      - spark.executor.lost
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-GLUE-001"}
+        # SEM `where` sobre `attrs.heap_oom_in_log`, ao contrário de SF-UI-005.
+        # A pergunta dela é "o executor sumiu SEM OOM de heap?", e a resposta
+        # decide a recomendação de overhead. A pergunta desta é outra: as DUAS
+        # fontes registram a mesma morte de container. Filtrar por
+        # `heap_oom_in_log` aqui apagaria o caso em que o heap TAMBÉM estourou,
+        # que é o caso em que classificar antes de mexer importa mais.
+        - fact: spark.executor.lost
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: container morre por memória em qualquer runtime, e o gate é
+    # `spark.executor.lost` (event log) mais a linha de log. Mesma escolha de
+    # SF-UI-005.
+    runtime_scope: {}
+    explanation: >
+      O log do CloudWatch traz `Container killed by YARN for exceeding memory
+      limits` COM os números do container, e o event log do mesmo run traz o
+      executor perdido. Nenhuma outra regra deste catálogo afirma as duas
+      fontes juntas -- e é isso que esta afirma, nada além.
+
+
+      **O que ela NÃO afirma:** que houve skew, que o join foi mal planejado,
+      ou que a memória está subdimensionada. A assinatura `ERR-GLUE-001`
+      declara `pyspark.skew_join`, `eventlog.executor_oom` e
+      `spark.plan.cartesian_product` em `evidence_required`, e MEDIDO em
+      2026-09-09 nenhum dos três é kind que este motor emite. Escrevê-los em
+      `requires_facts` produziria regra que nunca dispara; copiar a conclusão
+      deles sem a medida produziria acusação sem evidência. As duas saídas
+      erradas foram recusadas, e o que sobrou é o que está medido.
+
+
+      Por isso a ação é CLASSIFICAR, não consertar. Utilização baixa não é
+      sinônimo de capacidade sobrando (regra 17 do `CLAUDE.md`), e memória
+      estourada não é sinônimo de memória insuficiente: com skew, o container
+      morre porque UMA task carrega o que era para ser dividido, e subir a
+      memória de todos paga o preço da task grande em todos os executores sem
+      tocar na causa.
+
+
+      A irmã é `SF-UI-005`, que lê só o event log e propõe
+      `spark.executor.memoryOverhead` quando não houve OOM de heap. Quando as
+      duas aparecem juntas elas não se contradizem -- a ordem é classificar,
+      depois dimensionar.
+    proposed_change:
+      - >-
+        Cruzar duração e bytes de entrada por task no stage que falhou, para
+        classificar o tipo: input desigual é skew de dados; input uniforme com
+        duração desigual aponta para UDF, explode ou produto cartesiano.
+      - >-
+        Ler o plano físico do stage e conferir a decisão de join -- broadcast
+        de tabela que deixou de ser pequena é a causa que some do código e
+        aparece só no plano.
+      - >-
+        Só depois de classificado, aplicar o tratamento correspondente. Subir
+        memória antes da classificação é a mudança que "não funcionou" com mais
+        frequência, e ela custa em todos os executores.
+    # `investigate` e não `increase`: a regra não propõe número nenhum. Mesmo
+    # `kind` e mesmo `target` de SF-UI-001 e de SF-WASTE-002, que também mandam
+    # classificar antes de agir -- três regras propondo a MESMA medida não é
+    # contradição, é convergência, e o motor as trata como uma ação só.
+    action:
+      kind: skew.classify_type
+      target: spark.stage
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Classificar errado leva a aplicar o tratamento inútil e concluir que
+        "nada funciona" -- o modo de falha que esta regra existe para evitar.
+      - >-
+        A saída parcial que o run falho deixou no destino continua lá.
+        Reprocessar por cima dela sem decidir o que fazer com o que já foi
+        escrito é como um dado duplicado nasce.
+      - >-
+        O log coletado é uma JANELA. Um `Container killed` fora dela não
+        aparece, e ausência de linha não é ausência de morte de container.
+    tradeoffs:
+      - >-
+        Classificar custa uma passada de análise sobre o event log antes de
+        qualquer mudança; a alternativa é mudar capacidade e medir depois, que
+        é mais rápido por run e mais caro por ciclo.
+    validation:
+      - >-
+        Razão entre a duração máxima e a mediana das tasks do stage, e a mesma
+        razão sobre bytes de entrada -- é o par que classifica, e publicar um
+        sem o outro não classifica nada.
+      - >-
+        Ausência de `spark.executor.lost` no run seguinte, e ausência da linha
+        `Container killed by YARN` na mesma janela de log.
+      - >-
+        Se o tratamento aplicado tocar a chave de join (salting, filtro de
+        nulos, mudança de estratégia): contagem total, contagem por chave e
+        agregados de controle comparados com o último run bem-sucedido --
+        tratamento de skew pode duplicar ou descartar linha, e nada no plano
+        físico acusa isso.
+    rollback:
+      - >-
+        Classificar não muda estado nenhum e não tem rollback. O rollback é do
+        tratamento que vier depois, e ele depende de qual tratamento foi.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html
+        retrieved: 2026-08-15
+        note: >
+          Fonte declarada por `knowledge/errors/glue/oom_executor.json`
+          (`ERR-GLUE-001`), com `last_verified: 2026-08-15`.
+
+  - id: SF-ERR-005
+    category: runtime-error
+    title: >-
+      Commit do Iceberg falhou por escrita concorrente, com o histórico de
+      snapshots da tabela ao lado
+    requires_facts:
+      - error.signature_match
+      - iceberg.snapshots_summary
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-ICE-001"}
+        - fact: iceberg.snapshots_summary
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: commit do Iceberg conflita em qualquer runtime, e o gate é
+    # `iceberg.snapshots_summary`. Mesma escolha de SF-ICE-003, que também é
+    # guardada pelo fact e não pela versão.
+    runtime_scope: {}
+    explanation: >
+      O commit FALHOU com `CommitFailedException: Commit failed: Table was
+      updated concurrently`, e o dump da tabela traz o histórico de snapshots
+      do mesmo alvo. A mensagem é do próprio Iceberg dizendo o que aconteceu:
+      outro escritor commitou entre a leitura do snapshot base e a tentativa de
+      commit deste job.
+
+
+      **O que a regra NÃO afirma:** QUEM foi o outro escritor. A assinatura
+      `ERR-ICE-001` declara `iceberg.commit_conflict` e
+      `iceberg.concurrent_writer` em `evidence_required`, e MEDIDO em
+      2026-09-09 nenhum dos dois é kind que este motor emite -- nada aqui lê o
+      conjunto de jobs que escreve numa tabela. `iceberg.snapshots_summary` traz
+      a contagem, a janela e as operações dos snapshots, o que ancora a acusação
+      na tabela certa e dá a base de comparação; não identifica o concorrente.
+
+
+      Esta é a única das quatro SEM irmã estrutural, e a razão é da natureza da
+      coisa: conflito de commit é propriedade da EXECUÇÃO CONCORRENTE, e nada
+      no artefato parado o prevê. Um job que escreve numa tabela é
+      indistinguível, no código e no Terraform, de um job que escreve nela
+      sozinho.
+    proposed_change:
+      - >-
+        Declarar `commit.retry.num-retries` e `commit.retry.min-wait-ms` nas
+        table properties -- o retry do Iceberg relê o snapshot base e refaz o
+        commit, que é o conserto para conflito legítimo e ocasional.
+      - >-
+        Levantar quais jobs escrevem nesta tabela e em que janela -- a medida
+        que decide se o conflito é ocasional (retry resolve) ou estrutural
+        (retry só adia).
+      - >-
+        Se as escritas são estruturalmente concorrentes, separá-las: partições
+        disjuntas por escritor, ou tabelas de staging com merge posterior.
+    # `add` e não `replace`: as duas propriedades de retry tipicamente não
+    # existem na tabela, e a ação é acrescentá-las. `target` próprio
+    # (`iceberg.table_property.commit.retry`) e não o
+    # `iceberg.table_property.write.distribution-mode` de SF-ICE-005 -- as duas
+    # são propriedade de escrita da mesma tabela, e um `target` grosso demais
+    # inventaria contradição entre regras que não se desfazem.
+    #
+    # FICA DE FORA separar as escritas, que é o bullet 3 e mora nos
+    # `tradeoffs`: ela muda a ORQUESTRAÇÃO, não a tabela, e é a outra escolha,
+    # não a mesma.
+    action:
+      kind: storage.set_write_layout_property
+      target: iceberg.table_property.commit.retry
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Retry esconde conflito estrutural em vez de resolvê-lo: com dois jobs
+        escrevendo sempre na mesma partição, o retry transforma falha rápida em
+        run longo que falha no fim, e o custo sobe sem o sintoma mudar.
+      - >-
+        Cada retry relê o snapshot base e refaz o planejamento do commit; com
+        metadata grande isso não é barato, e `commit.retry.num-retries` alto
+        multiplica esse custo.
+      - >-
+        A saída parcial do run falho continua no local da tabela como arquivo
+        órfão -- o commit não aconteceu, mas os arquivos de dado foram
+        escritos. Eles não entram em nenhum snapshot e não são lidos, e
+        continuam ocupando espaço até uma manutenção removê-los.
+    tradeoffs:
+      - >-
+        Separar as escritas em partições disjuntas elimina o conflito na raiz,
+        ao custo de amarrar a orquestração ao esquema de partição -- e de
+        precisar reescrever o particionamento se ele mudar.
+      - >-
+        Tabelas de staging com merge posterior tiram a concorrência do caminho
+        crítico, ao custo de uma passada a mais sobre o dado.
+    validation:
+      - >-
+        Ausência de `CommitFailedException` na janela de log dos runs
+        seguintes, com a mesma concorrência de antes -- retry validado sem
+        concorrência não valida nada.
+      - >-
+        `iceberg.snapshots_summary.measures.snapshot_count` crescendo um por
+        commit bem-sucedido, e a operação de cada snapshot conferida contra o
+        que cada job deveria ter escrito.
+      - >-
+        Contagem e agregados de controle da tabela depois do commit que passou,
+        contra o esperado do lote -- um commit que falhou e foi reexecutado é
+        candidato natural a escrever duas vezes o mesmo lote.
+    rollback:
+      - >-
+        Remover as table properties de retry devolve o comportamento anterior;
+        é propriedade de tabela, não dado.
+      - >-
+        Os arquivos órfãos do commit que falhou não voltam sozinhos: eles
+        precisam de manutenção própria, e removê-los é operação destrutiva que
+        exige escopo e retenção declarados.
+    sources:
+      - url: https://iceberg.apache.org/docs/latest/spark-writes/
+        retrieved: 2026-08-15
+        note: >
+          Fonte declarada por `knowledge/errors/iceberg/commit_conflict.json`
+          (`ERR-ICE-001`), com `last_verified: 2026-08-15`.
+
+  - id: SF-ERR-006
+    category: runtime-error
+    title: >-
+      Permissão do Lake Formation negada em runtime, num job que lê o Data
+      Catalog de outra conta
+    requires_facts:
+      - error.signature_match
+      - tf.spark_conf
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-LF-001"}
+        # Mesma condição de SF-XACC-001, e sem `attrs.present` pela mesma
+        # razão: `tf.spark_conf` nasce da decomposição de um `--conf` que já
+        # existe, e o campo `present` é do `tf.attribute` bruto.
+        - fact: tf.spark_conf
+          where:
+            attrs.key: spark.hadoop.hive.metastore.glue.catalogid
+          expr: 'attrs.value != ""'
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: a assinatura `ERR-LF-001` declara `versions: ["all"]`, e a
+    # cadeia de concessão entre contas não tem fronteira de versão de Glue.
+    # Quem gateia é `requires_facts` -- sem o `--conf` de catálogo de outra
+    # conta no Terraform, a regra não dispara.
+    runtime_scope: {}
+    explanation: >
+      O job FALHOU com `Insufficient Lake Formation permission(s) on`, e o
+      Terraform declara `spark.hadoop.hive.metastore.glue.catalogid` apontando
+      para outra conta. As duas evidências juntas dizem que a cadeia de
+      concessão entre contas -- convite do AWS RAM aceito, resource link no
+      catálogo da conta consumidora, `SELECT` concedido na conta produtora --
+      tem um elo faltando, e que ele já custou este run.
+
+
+      **O que a regra NÃO afirma:** QUAL elo. A assinatura `ERR-LF-001` declara
+      `lakeformation.missing_grant` e `ram.unaccepted_share` em
+      `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que
+      este motor emite -- nada aqui lê Lake Formation nem AWS RAM, e o estado
+      dos dois vive em recursos de OUTRA conta, fora do alcance do `.tf` do
+      job. Por isso a ação é `investigate`: a regra localiza a cadeia a
+      conferir, e é o operador que a percorre.
+
+
+      A irmã é `SF-XACC-001`, que marca a mesma dependência a partir do
+      Terraform parado e diz explicitamente que NÃO afirma que ela está
+      quebrada. Esta afirma -- porque o log do run diz.
+    proposed_change:
+      - >-
+        Confirmar o estado do compartilhamento no AWS RAM da conta consumidora:
+        convite aceito, não pendente.
+      - >-
+        Confirmar o `DESCRIBE` no resource link da conta consumidora e o
+        `SELECT` na tabela alvo da conta produtora -- os dois lados, porque um
+        sozinho produz exatamente esta mensagem.
+      - >-
+        Ler o nome do recurso na própria linha de log: a mensagem nomeia a
+        tabela ou o banco negado, e é por ele que a conferência começa.
+      - >-
+        Se os dados estão encriptados com chave gerenciada pelo cliente,
+        confirmar que a política da chave autoriza o papel da conta consumidora
+        -- a falha de KMS chega com outra mensagem, mas a cadeia é a mesma.
+    # Mesmo `kind`, mesmo `target` e mesma `direction` de SF-XACC-001, e é
+    # deliberado: a ação é literalmente percorrer a mesma cadeia. O que difere
+    # é o status do achado -- lá é dependência a conferir, aqui é elo que já
+    # falhou.
+    #
+    # FICA DE FORA conceder `Super` no catálogo a `IAMAllowedPrincipals`, que a
+    # assinatura nomeia em `unsafe_fixes` e os `risks` repetem: é o conserto que
+    # faz a mensagem sumir abrindo o acesso para todo mundo.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.cross_account_grant
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Conceder `Super` no catálogo a `IAMAllowedPrincipals` faz a mensagem
+        sumir e abre o catálogo inteiro -- é o conserto que troca um job
+        quebrado por um controle de acesso que deixou de existir.
+      - >-
+        A falha é assimétrica e por isso confunde: o job Spark pode enxergar a
+        tabela e um consumidor de BI da mesma conta não enxergar, porque o
+        resource link é exigido por Athena e Redshift Spectrum e não pelo job.
+        Conferir só o lado que falhou deixa o outro quebrado.
+      - >-
+        Conceder a permissão que falta resolve o run e não registra por que ela
+        faltava. Compartilhamento entre contas que muda sem rastro é o que
+        produz a próxima falha igual.
+    tradeoffs:
+      - >-
+        Copiar os dados para a conta consumidora elimina a cadeia inteira, ao
+        custo de duplicar armazenamento e de criar uma segunda verdade que
+        precisa ser sincronizada.
+    validation:
+      - >-
+        Re-executar o job e confirmar que a leitura passa -- exercitando a
+        MESMA tabela nomeada na linha de log, não uma equivalente.
+      - >-
+        Estado do convite no AWS RAM da conta consumidora, e as duas concessões
+        (`DESCRIBE` no resource link, `SELECT` na tabela alvo) lidas depois da
+        mudança.
+      - >-
+        Nenhum eixo de dado é exigido, e declarar isso é parte da validação:
+        conceder permissão não muda o conteúdo lido, muda quem consegue lê-lo.
+        Se a leitura passou a devolver linhas onde antes falhava, a contagem
+        contra o esperado do lote é a conferência, não o eixo da mudança.
+    rollback:
+      - >-
+        Revogar as concessões acrescentadas devolve o estado anterior. Não é
+        rollback de dado, e o run que falhou continua tendo falhado.
+    sources:
+      - url: https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html
+        retrieved: 2026-08-15
+        note: >
+          Fonte declarada por
+          `knowledge/errors/lakeformation/access_denied_cross_account.json`
+          (`ERR-LF-001`), com `last_verified: 2026-08-15`.

@@ -1,0 +1,34 @@
+name: commit_conflict_com_snapshots
+proves: >
+  O POSITIVO de `SF-ERR-005`, a UNICA das quatro de mensagem sem irma
+  estrutural -- e a razao esta na natureza da coisa: conflito de commit e
+  propriedade da EXECUCAO CONCORRENTE, e nada no artefato parado o preve.
+
+    * `error.signature_match` com `signature_id: ERR-ICE-001` e
+      `matched_on: log_line`;
+    * `iceberg.snapshots_summary` com tres snapshots numa janela de oito
+      minutos -- a base de comparacao que ancora a acusacao na tabela certa.
+
+  O `evidence_required` de `ERR-ICE-001` nomeia `iceberg.commit_conflict` e
+  `iceberg.concurrent_writer`, e MEDIDO em 2026-09-09 nenhum dos dois e kind
+  que este motor emite: nada aqui le o conjunto de jobs que escreve numa
+  tabela. Por isso a regra NAO afirma quem foi o outro escritor -- ela afirma
+  que o commit falhou, e o `proposed_change` manda levantar quem escreve antes
+  de decidir entre retry e separacao das escritas.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - iceberg.delete_files_summary
+  - iceberg.files_summary
+  - iceberg.format_version
+  - iceberg.snapshots_summary
+  - iceberg.table_analyzed
+  - iceberg.table_property
+expects_rules:
+  - SF-ERR-005

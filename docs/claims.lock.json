@@ -6024,7 +6024,7 @@
       "type": "number"
     },
     {
-      "context": "`knowledge/sources.lock.json`, que vigia **225** fontes no total:",
+      "context": "`knowledge/sources.lock.json`, que vigia **228** fontes no total (relido em",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-767",
       "line": 116,
@@ -6034,13 +6034,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 225
+          "value": 228
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "225",
+      "text": "228",
       "type": "number"
     },
     {

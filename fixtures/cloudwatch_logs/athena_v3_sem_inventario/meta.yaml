@@ -1,0 +1,29 @@
+name: athena_v3_sem_inventario
+proves: >
+  O NEGATIVO de `athena_v3_confirmado_no_log`, e o contrato que ele mede e
+  `requires_facts`: MESMO log byte a byte, MESMO dump Iceberg em v3, e o
+  `consumers.yaml` a menos.
+
+  Sem `env.consumer`, o motor PULA `SF-ERR-003` com `missing: ["env.consumer"]`
+  -- um item so, nomeado. A tabela continua em v3 e a query continua tendo
+  falhado; o que falta e a resposta a "quem mais consome esta tabela", e a
+  regra recusa acusar sem ela. `SF-ENV-002` cala pela mesma razao.
+
+  E a diferenca entre "nao sei" e "nao perguntei" (regra 20 do `CLAUDE.md`),
+  medida com um arquivo.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - iceberg.delete_files_summary
+  - iceberg.files_summary
+  - iceberg.format_version
+  - iceberg.snapshots_summary
+  - iceberg.table_analyzed
+  - iceberg.table_property
+expects_rules: []

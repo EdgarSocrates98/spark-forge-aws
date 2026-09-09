@@ -32,6 +32,29 @@ las num corpus so misturaria duas fontes de artefato (event log e
   * `log_group_inexistente` / `sem_permissao` / `janela_vazia` /
     `sem_credencial` -- as QUATRO recusas nomeadas, e o teste que cobra que elas
     sejam distinguiveis entre si.
+
+## O eixo do JULGAMENTO, acrescentado em 2026-09-09
+
+As quatro assinaturas de mensagem ganharam regra (`SF-ERR-003` a `SF-ERR-006`),
+e regra exige o COMPANHEIRO que a assinatura declara -- a linha casada nao
+basta. Por isso este corpus deixou de ser so log: sete fixtures novas trazem o
+dump Iceberg, o event log, o inventario de consumidores e o Terraform ao lado
+do log, cada um sob guarda de existencia.
+
+  * `athena_v3_confirmado_no_log` x `athena_v3_sem_inventario` -- SF-ERR-003, e
+    o par difere pelo `consumers.yaml`.
+  * `yarn_kill_nas_duas_fontes` x `yarn_kill_so_no_log` -- SF-ERR-004, e o par
+    difere pelo event log.
+  * `commit_conflict_com_snapshots` -- SF-ERR-005, sem par negativo proprio: o
+    dump da tabela e o unico companheiro, e a fixture sem ele seria
+    `nenhuma_assinatura_no_log` com outra linha.
+  * `lf_negado_com_catalogo_de_outra_conta` x `lf_negado_sem_catalogo_declarado`
+    -- SF-ERR-006, e o par difere por UMA linha do mesmo `main.tf`.
+
+O log do CloudWatch e o dump Iceberg sao os dois `*.json`, e por isso as
+fixtures novas usam pasta: `input/logs/` para o log, `input/iceberg/` para o
+dump. Sem as pastas o comportamento e o de antes, e e assim que as nove
+originais continuam valendo byte a byte.
 """
 
 from __future__ import annotations
@@ -45,6 +68,10 @@ import yaml
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts.cloudwatch_logs import EMITTED_KINDS as CW_LOG_KINDS
 from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
+from sparkforge.facts.consumers import extract_consumers_path
+from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
+from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
@@ -62,6 +89,16 @@ REQUIRED_FIXTURES = {
     "sem_permissao",
     "janela_vazia",
     "sem_credencial",
+    # As sete do eixo de JULGAMENTO (2026-09-09), quatro positivas e tres
+    # negativas. `commit_conflict_com_snapshots` e a unica sem par proprio, e o
+    # motivo esta no cabecalho.
+    "athena_v3_confirmado_no_log",
+    "athena_v3_sem_inventario",
+    "yarn_kill_nas_duas_fontes",
+    "yarn_kill_so_no_log",
+    "commit_conflict_com_snapshots",
+    "lf_negado_com_catalogo_de_outra_conta",
+    "lf_negado_sem_catalogo_declarado",
 }
 
 # As QUATRO de `knowledge/errors/` que sao trecho de MENSAGEM e nao classe de
@@ -77,15 +114,31 @@ def fixture_dirs():
 
 
 def _derive(directory: Path):
-    """O extrator de artefato, mais o degrau de derivacao pura.
+    """O extrator de artefato, os companheiros sob guarda, e a derivacao pura.
 
     Byte a byte o que `scripts/regen_fixtures.py::regen_cloudwatch_logs` faz. A
     duplicacao e deliberada e e a mesma de todos os `test_fixtures_golden_*`: o
     script GRAVA o golden e este modulo o CONFERE, e um dos dois lendo o outro
     apagaria a conferencia.
+
+    Os companheiros entram sob guarda de EXISTENCIA, e e isso que faz o par
+    positivo/negativo medir `requires_facts`: a fixture sem o arquivo produz o
+    case sem o fact, e o motor pula a regra nomeando o que falta.
     """
     entrada = directory / "input"
-    facts = extract_cloudwatch_logs_tree(entrada, repo_root=entrada)
+    logs = entrada / "logs"
+    facts = extract_cloudwatch_logs_tree(
+        logs if logs.is_dir() else entrada, repo_root=entrada
+    )
+    for jsonl in sorted(entrada.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=entrada))
+    if any(entrada.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(entrada, repo_root=entrada))
+    iceberg = entrada / "iceberg"
+    if iceberg.is_dir():
+        facts.extend(extract_iceberg_metadata_tree(iceberg, repo_root=entrada))
+    for inventario in sorted(entrada.glob("*.yaml")):
+        facts.extend(extract_consumers_path(inventario, repo_root=entrada))
     facts.extend(build_signature_matches(facts))
     return facts
 

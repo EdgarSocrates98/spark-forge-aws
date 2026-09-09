@@ -113,7 +113,10 @@ limiar — o defeito que `V-ICE-1` recusou para manifests, e que
 
 A §2 do prompt manda auditar as fontes oficiais **antes de implementar qualquer coisa**, e
 lista dezesseis páginas da documentação do Iceberg. Medido em 2026-09-02 contra
-`knowledge/sources.lock.json`, que vigia **225** fontes no total:
+`knowledge/sources.lock.json`, que vigia **228** fontes no total (relido em
+2026-09-09, depois de as regras das assinaturas de mensagem passarem a citar
+`troubleshooting.html` do Glue, `spark-writes` do Iceberg e
+`cross-account.html` do Lake Formation):
 
 **Três** páginas específicas de Iceberg estão vigiadas: a Table Specification,
 `spark-procedures` e `spark-queries#inspecting-tables`.

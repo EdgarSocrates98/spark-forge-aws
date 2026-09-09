@@ -85,6 +85,22 @@ tem confiança, tem procedência.
 Regras `SF-ERR-*` em `rules/catalog/errors.yaml`, uma por assinatura, com
 `requires_facts: [error.signature_match, <o que a assinatura declara>]`.
 
+> **Estado em 2026-09-09: as SEIS assinaturas têm regra.** A T3 entregou duas
+> (`SF-ERR-001` e `SF-ERR-002`, as de classe de exceção) e nomeou a lacuna em
+> D-1/D-2; `SF-ERR-003` a `SF-ERR-006` fecharam as quatro de mensagem depois que
+> o coletor de log abriu o caminho delas.
+>
+> **O que esta seção não previa, e a entrega mediu:** o `evidence_required` de
+> TRÊS das quatro nomeia kind que este motor não emite — `pyspark.skew_join`,
+> `eventlog.executor_oom`, `spark.plan.cartesian_product`,
+> `iceberg.commit_conflict`, `iceberg.concurrent_writer`,
+> `lakeformation.missing_grant` e `ram.unaccepted_share`. O mapeamento
+> `evidence_required → requires_facts` da tabela abaixo é 1:1 apenas quando o
+> nome declarado existe; quando não existe, a regra declara o companheiro
+> medido que sustenta a mesma acusação e diz no `explanation` o que ele NÃO
+> prova. Copiar o nome inexistente produziria regra que nunca dispara, que é o
+> defeito que a D-1 já havia recusado.
+
 **O `evidence_required` que a assinatura já declara e o matcher hoje ignora
 passa a ser verificado.** Hoje `ERR-GLUE-002` casa a palavra `NoSuchMethodError`
 em qualquer log e afirma 98%. Depois, a regra só dispara com `mig.jar_binary` e

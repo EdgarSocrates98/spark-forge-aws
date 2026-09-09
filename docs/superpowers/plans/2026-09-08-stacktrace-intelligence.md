@@ -571,6 +571,31 @@ fact não é ter a regra: cada uma exige `evidence_required` próprio, `sources`
 `validation` e `rollback`, mais o par positivo/negativo de fixture — o mesmo
 trabalho que `SF-ERR-001` e `SF-ERR-002` custaram.
 
+#### D-2 FECHADA em 2026-09-09 — `SF-ERR-003` a `SF-ERR-006`
+
+A entrega própria que este desvio nomeava aconteceu, e o degrau acima fica como
+foi escrito: as quatro regras existem, e as SEIS assinaturas de
+`knowledge/errors/` têm regra.
+
+O que a entrega descobriu, e que este desvio não previa: **três das quatro
+assinaturas declaram `evidence_required` cujos nomes não são kind deste motor**
+— `pyspark.skew_join`, `eventlog.executor_oom`, `spark.plan.cartesian_product`,
+`iceberg.commit_conflict`, `iceberg.concurrent_writer`,
+`lakeformation.missing_grant` e `ram.unaccepted_share`, medidos contra os 195
+kinds emitidos. Copiá-los para `requires_facts` produziria a mesma regra muda
+que a D-1 recusou escrever. Cada regra declara o companheiro que EXISTE e diz no
+`explanation` o que ele não prova, e um teste novo
+(`test_o_companheiro_de_cada_regra_e_kind_que_o_motor_EMITE`) impede a próxima
+de cair nisso.
+
+Consequência de escopo, também medida: as quatro declaram `runtime_scope: {}` —
+nenhuma tem fronteira de versão —, e por isso **a área `SF-ERR` deixou de sumir**
+num runtime sem Glue. Duas declarações de sumiço caíram vermelhas e foram
+corrigidas: `AREA_MAY_VANISH_WHEN` em `tests/test_rule_scope_by_nature.py` e
+`AREA_FULLY_OUT_OF_SCOPE` em `tests/test_runtime_glue_versions.py`.
+
+Detalhes e números em `STATUS.md`, seção *As seis assinaturas viram seis regras*.
+
 ### D-3 — as recusas do log são QUATRO, não três
 
 O plano (Step 2 da Task 5) e a §3 do spec listavam três: log group inexistente,

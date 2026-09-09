@@ -255,14 +255,22 @@ class TestRuleScopeOnTheCurrentRuntimes:
     # nas entradas deles -- excecao que nao se realiza reprova em
     # `test_every_area_of_the_catalog_survives_the_version_guard`.
     #
-    # SF-ERR ENTROU AQUI com a mesma forma de SF-SPARK4: as duas regras da area
-    # sao guardadas por `glue: ">=6.0"`, fronteira que nenhuma das tres
-    # correntes cruza -- a area some nas tres, e o guard de Glue 6.0 (fora de
-    # `CURRENT`) e onde ela volta a ser avaliada.
+    # SF-ERR SAIU DAQUI em 2026-09-09, e a saida e a medida de uma mudanca real
+    # na area. Ela entrou com a forma de SF-SPARK4 -- as DUAS regras de entao
+    # guardadas por `glue: ">=6.0"`, fronteira que nenhuma das tres correntes
+    # cruza --, e as QUATRO acrescentadas (SF-ERR-003 a SF-ERR-006, as regras
+    # das assinaturas que so o log do CloudWatch alcanca) declaram
+    # `runtime_scope: {}`: o Athena nao le Iceberg v3 em runtime nenhum,
+    # container morre por memoria em qualquer runtime, commit do Iceberg
+    # conflita em qualquer runtime, e concessao do Lake Formation falta em
+    # qualquer runtime.
+    #
+    # A area passou a sobreviver nas tres versoes correntes, e excecao que nao
+    # se realiza REPROVA aqui -- que e exatamente como esta linha caiu.
     AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {
-        "4.0": {"SF-ERR", "SF-LF", "SF-SPARK4"},
-        "5.0": {"SF-ERR", "SF-SPARK4"},
-        "5.1": {"SF-ERR", "SF-SPARK4"},
+        "4.0": {"SF-LF", "SF-SPARK4"},
+        "5.0": {"SF-SPARK4"},
+        "5.1": {"SF-SPARK4"},
     }
 
     @pytest.mark.parametrize("version", CURRENT)

@@ -1,0 +1,44 @@
+name: athena_v3_confirmado_no_log
+proves: >
+  O POSITIVO de `SF-ERR-003`, com as tres evidencias que a assinatura
+  `ERR-ATH-001` declara precisar, no mesmo case:
+
+    * `error.signature_match` com `signature_id: ERR-ATH-001` e
+      `matched_on: log_line` -- a query em Athena FALHOU, e a linha esta no log
+      do CloudWatch. E isso que separa `status: confirmed` de uma afirmacao
+      estrutural;
+    * `iceberg.format_version` com `declared: "3"` e `resolved: true`, lido do
+      metadata e nao da table property;
+    * `env.consumer` com `service: athena`, do inventario declarado.
+
+  `ERR-ATH-001` e uma das DUAS assinaturas, das seis, cujo `evidence_required`
+  nomeia kind que este motor realmente emite -- as outras tres de mensagem
+  nomeiam kind que nao existe, e as regras delas declaram companheiro proprio.
+
+  `SF-ENV-002` dispara JUNTO, e as duas nao sao duplicata: ela afirma o risco a
+  partir do artefato parado (tabela em v3 mais consumidor Athena declarado), e
+  esta afirma que o consumidor JA quebrou. Uma e migracao a planejar, a outra e
+  dashboard esperando.
+
+  O NEGATIVO deste fixture e `athena_v3_sem_inventario`: mesmo log, mesmo dump,
+  um arquivo a menos.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - env.consumer
+  - env.consumers_analyzed
+  - error.signature_match
+  - iceberg.delete_files_summary
+  - iceberg.files_summary
+  - iceberg.format_version
+  - iceberg.snapshots_summary
+  - iceberg.table_analyzed
+  - iceberg.table_property
+expects_rules:
+  - SF-ENV-002
+  - SF-ERR-003

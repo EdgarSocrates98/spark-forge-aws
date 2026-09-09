@@ -1450,6 +1450,7 @@
       "rules": [
         "SF-ERR-001",
         "SF-ERR-002",
+        "SF-ERR-003",
         "SF-MIG-003",
         "SF-MIG-004",
         "SF-SPARK4-004"
@@ -1524,6 +1525,16 @@
         "SF-NET-001"
       ]
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-15"
+      ],
+      "rules": [
+        "SF-ERR-004"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -1556,6 +1567,16 @@
       ],
       "rules": [
         "SF-XACC-001"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-15"
+      ],
+      "rules": [
+        "SF-ERR-006"
       ]
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
@@ -2107,6 +2128,16 @@
         "2026-07-30"
       ],
       "rules": []
+    },
+    "https://iceberg.apache.org/docs/latest/spark-writes/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-15"
+      ],
+      "rules": [
+        "SF-ERR-005"
+      ]
     },
     "https://pypi.org/pypi/graphframes-py/json": {
       "docs": [
