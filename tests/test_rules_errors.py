@@ -459,11 +459,25 @@ def _ids_referenciados_pelas_regras() -> set[str]:
 
 
 def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
-    # 8 desde 2026-09-09: `ERR-SPARK-001` (FetchFailedException) e
-    # `ERR-SPARK-002` (Python worker exited unexpectedly) sao as duas
-    # primeiras com `service: spark` -- elas nao falam de servico da AWS
-    # nenhum, e acontecem igual em EMR, Databricks ou cluster on-prem.
-    assert len(_assinaturas()) == 8, [s["id"] for s in _assinaturas()]
+    # 11 desde 2026-09-09. As CINCO com `service: spark` nao falam de servico
+    # da AWS nenhum -- elas acontecem igual em EMR, Databricks ou cluster
+    # on-prem, e por isso a fonte delas e a documentacao do Apache:
+    #
+    #   ERR-SPARK-001  FetchFailedException
+    #   ERR-SPARK-002  Python worker exited unexpectedly
+    #   ERR-SPARK-003  ClassNotFoundException
+    #   ERR-SPARK-004  NoClassDefFoundError
+    #   ERR-SPARK-005  AbstractMethodError
+    #
+    # As tres ultimas sao a MESMA familia -- classpath -- e o que as separa
+    # decide o conserto: classe que nunca esteve, classe que estava na
+    # compilacao, e classe presente na versao errada.
+    #   ERR-SPARK-005  AbstractMethodError         /  separa decide o conserto
+    #
+    # O numero e FIXADO aqui de proposito, ao contrario dos outros testes desta
+    # area: acrescentar assinatura sem regra precisa derrubar alguma coisa, e e
+    # esta linha que faz isso.
+    assert len(_assinaturas()) == 11, [s["id"] for s in _assinaturas()]
 
 
 def test_toda_assinatura_tem_regra():

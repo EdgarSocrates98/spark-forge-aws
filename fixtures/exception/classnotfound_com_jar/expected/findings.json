@@ -1,0 +1,148 @@
+[
+  {
+    "rule_id": "SF-ERR-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Classe ausente do classpath em runtime, com JAR declarado no job",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "signature_id": "ERR-SPARK-003"
+    },
+    "evidence": [
+      "f_859551",
+      "f_373682",
+      "f_72c7bc",
+      "f_009dc3",
+      "f_1cd586",
+      "f_c339d7",
+      "f_50899f",
+      "f_db23d6",
+      "f_5944be",
+      "f_c173b7",
+      "f_a8b696",
+      "f_052643",
+      "f_2ff738",
+      "f_2969c4",
+      "f_42c3a1",
+      "f_b4d61b",
+      "f_b31495",
+      "f_8d3e16"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job LANÇOU `ClassNotFoundException`, e há JAR declarado no diretório do job mais o IaC dele no case. A classe nomeada nunca chegou ao classpath — esta é a mais simples das três desta família, e a única em que \"falta um jar\" é a leitura certa.\n\n**O que a distingue de `SF-ERR-010`:** ali a classe ESTAVA presente na compilação. Aqui ela nunca esteve, e por isso o conserto é entregar o artefato que a carrega.\n\nA causa mais comum não é esquecer o jar principal — é a dependência declarada para o BUILD e não para o runtime, ou um conector que o runtime não empacota sob o nome que o código espera.",
+    "proposed_change": [
+      "Listar os JARs efetivamente entregues ao job e conferir qual deles deveria carregar a classe nomeada — o nome do arquivo não responde isso, o conteúdo responde.",
+      "Ler `spark.jars` e as entradas de classpath extra em `spark.conf_effective`, e comparar com o que o job declara no IaC: o que vale é o efetivo, não o declarado.",
+      "Se a classe vem de um conector que o runtime empacota sob outro nome, usar o mecanismo do próprio runtime em vez de enviar uma segunda cópia."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Enviar uma segunda cópia de um JAR que o runtime já empacota troca uma classe ausente por uma duplicada, e a falha MUDA DE LUGAR em vez de sumir — é assim que `AbstractMethodError` nasce.",
+      "A saída parcial do run falho continua no destino, e reprocessar por cima dela sem decidir o que fazer com o que já foi escrito é como um dado duplicado nasce."
+    ],
+    "tradeoffs": [
+      "Empacotar a dependência dentro do artefato do job elimina a entrega separada, ao custo de um artefato maior e de um build que precisa resolver conflito de versão sozinho."
+    ],
+    "validation": [
+      "Rodar o job exercitando o caminho de código que CARREGA a classe — a submissão passar não prova nada, porque a classe só é procurada quando usada.",
+      "`mig.jar_binary` do diretório do job depois da entrega, confirmando que o artefato novo está lá e que nenhum antigo ficou junto.",
+      "Nenhum eixo de dado é exigido se a entrega for só de classpath, e declarar isso é parte da validação. Para JAR de terceiro novo, comparação de VALOR das colunas que ele produz contra o último run bem-sucedido."
+    ],
+    "rollback": [
+      "Reverter `--extra-jars` para o conjunto anterior. É mudança de classpath, não de dado — mas a saída parcial do run que falhou precisa ser descartada ou reconciliada à parte."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/classpath_class_not_found.json` (`ERR-SPARK-003`). Ela registra `spark.jars` e as entradas de classpath extra que o `proposed_change` manda ler.\n"
+      }
+    ],
+    "action": {
+      "kind": "dependency.declare_in_iac",
+      "target": "job.extra_jars",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-SPARK4-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "JAR compilado contra Scala anterior ao 2.13 no classpath de um runtime Spark 4",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "conector_2.12-1.4.0.jar",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_373682"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=4.0.0"
+    },
+    "explanation": "O Spark 4 subiu o Scala de 2.12 para 2.13, e 2.12 e 2.13 NAO sao compativeis em bytecode -- nao e uma questao de API depreciada, e a fronteira binaria da propria linguagem. A documentacao da AWS para o Glue 6.0 declara isso como breaking change textual: JARs customizados compilados contra Scala 2.12 nao funcionam, e qualquer `--extra-jars` de 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. Esta e a unica regra P0 da area, e a diferenca e categoria, nao grau -- as outras tres descrevem degradacao, silencio ou risco de comportamento; esta descreve FALHA CERTA. O job nao roda. E nao falha na submissao, que nao carrega classe nenhuma do JAR: falha em RUNTIME, na primeira vez que aquela classe e carregada, possivelmente depois de minutos de processamento e de parte da saida ja ter sido escrita -- e passa em qualquer smoke test que nao exercite aquele caminho exato. As tres APIs que a AWS nomeia como mudanca de codigo estao em `knowledge/spark/spark4-migration.md` Sec 6.",
+    "proposed_change": [
+      "Recompilar o JAR contra Scala 2.13.17 e publicar o artefato novo antes de trocar o runtime -- o binario e pre-requisito da migracao, nao consequencia dela.",
+      "Trocar `JavaConversions`, removido em 2.13, por `CollectionConverters`; trocar `MutableList`, tambem removido, por `ListBuffer`; e acrescentar o import proprio que coleccoes paralelas passaram a exigir.",
+      "Se o JAR vem de terceiro, confirmar com o mantenedor se existe build para 2.13 ANTES de planejar a migracao. Sem ele a migracao esta BLOQUEADA, nao atrasada -- e a diferenca decide se o plano tem data ou tem dependencia externa em aberto.",
+      "Conferir o classpath inteiro na mesma passada, e nao so o JAR acusado -- `--extra-jars` costuma carregar mais de um artefato, e um unico remanescente de 2.12 derruba o job igual."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Recompilar um JAR de terceiro sem o codigo-fonte NAO e possivel. Quando o mantenedor nao publica build para 2.13, nao existe conserto local, e tratar isso como tarefa de engenharia produz um plano que nao fecha.",
+      "Trocar o artefato por uma versao 2.13 de outra linha de release muda mais que o binario -- comportamento, defaults e assinaturas podem ter mudado junto, e a diferenca nao aparece no nome do arquivo.",
+      "A substituicao de `JavaConversions` por `CollectionConverters` troca conversao IMPLICITA por explicita; onde o codigo dependia da implicita para uma coercao silenciosa, o comportamento muda antes de compilar, e onde compila e porque alguem escolheu a conversao -- possivelmente a errada."
+    ],
+    "tradeoffs": [
+      "Fixar o job num runtime com Spark 3.5 evita a recompilacao e congela a migracao inteira, inclusive as correcoes que nao dependem do JAR; recompilar custa build, publicacao e teste agora, com o job ainda rodando na versao antiga para comparar.",
+      "Remover a dependencia do JAR -- reescrevendo em PySpark nativo o que ele fazia -- elimina a fronteira binaria para sempre e e muito mais trabalho que recompilar. Vale quando o JAR e pequeno e mal mantido, e nao vale quando ele carrega logica de negocio que ninguem mais entende."
+    ],
+    "validation": [
+      "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de codigo que carrega a classe do JAR. Submissao bem-sucedida NAO e validacao aqui -- a submissao nao carrega a classe, e e exatamente por isso que a falha escapa do smoke test.",
+      "Contagem total de linhas, contagem por chave e schema identicos aos do runtime anterior sobre o mesmo lote de entrada, para separar \"o JAR novo carrega\" de \"o JAR novo faz a mesma coisa\".",
+      "Para JAR de terceiro trocado por outra versao, comparacao de valor das colunas que ele produz, e nao so de contagem -- e ali que a diferenca de release aparece."
+    ],
+    "rollback": [
+      "Voltar o artefato de 2.12 e manter o job no runtime com Spark 3.5, onde ele carrega. O rollback e de artefato e de runtime, nao de dado, desde que a saida parcial do run que falhou seja descartada antes -- e ela existe, porque a falha e em runtime e nao na submissao."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+        "retrieved": "2026-08-22"
+      }
+    ],
+    "action": {
+      "kind": "dependency.align_version_with_runtime",
+      "target": "job.extra_jars.scala_binary",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

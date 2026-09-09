@@ -1,0 +1,151 @@
+[
+  {
+    "rule_id": "SF-ERR-011",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Método abstrato não implementado -- há DUAS versões do mesmo artefato no classpath",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "signature_id": "ERR-SPARK-005"
+    },
+    "evidence": [
+      "f_20b252",
+      "f_373682",
+      "f_72c7bc",
+      "f_009dc3",
+      "f_1cd586",
+      "f_c339d7",
+      "f_50899f",
+      "f_db23d6",
+      "f_5944be",
+      "f_c173b7",
+      "f_a8b696",
+      "f_052643",
+      "f_2ff738",
+      "f_2969c4",
+      "f_42c3a1",
+      "f_b4d61b",
+      "f_b31495",
+      "f_8d3e16"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job LANÇOU `AbstractMethodError`, e essa é a única das três desta família em que **adicionar JAR piora**. A classe está presente; o método não. Nenhuma explicação de ausência cobre isso — o que cobre é haver DUAS versões do mesmo artefato, e a que venceu o classpath não implementa um método que a interface ganhou depois.\n\nÉ a assinatura de duplicata, não de falta. E o modo de aparecer é característico: depois de uma migração de runtime, sem nenhuma mudança no código do job, num método de interface que o job nunca chama diretamente.\n\nA precedência importa aqui, e a documentação do Apache a descreve: `spark.driver.userClassPathFirst` e `spark.executor.userClassPathFirst` têm default `false` e são declarados **experimentais**. Ligá-los é o que permite a implementação mais antiga vencer.\n\n**O que esta regra NÃO afirma:** qual das duas cópias está no classpath, e nem que a precedência está ligada. Nenhum extrator lê o conteúdo de um JAR — `mig.jar_binary` lê o NOME do arquivo. Listar as duas é o primeiro passo de `proposed_change`, e é o operador que o executa.",
+    "proposed_change": [
+      "Listar todo JAR do classpath e procurar DOIS que carreguem o mesmo pacote — este erro é assinatura de duplicata, e a duplicata é o que precisa ser encontrado antes de qualquer mudança.",
+      "Ler se os JARs do usuário têm precedência: `spark.driver.userClassPathFirst` e `spark.executor.userClassPathFirst` têm default `false` e a documentação do Apache os marca como experimentais.",
+      "Remover a cópia mais antiga, de modo que sobre uma implementação só.",
+      "Ou reconstruir o conector contra a interface que o runtime atual fornece, quando o código-fonte estiver disponível."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Ligar a precedência de JARs do usuário para forçar o artefato antigo a vencer faz esta falha sumir movendo o conflito: o runtime passa a não receber o que esperava da interface nova.",
+      "Remover a cópia errada quebra quem dependia dela. Descobrir QUAL das duas remover exige saber quem usa cada uma, e o nome do arquivo não responde.",
+      "Trocar o artefato por outra linha de release muda mais que o binário — comportamento, defaults e assinaturas podem ter mudado junto, e a diferença não aparece no nome."
+    ],
+    "tradeoffs": [
+      "Sombrear (`shade`) o artefato conflitante isola as duas versões e evita a escolha, ao custo de um build mais complicado e de um artefato maior."
+    ],
+    "validation": [
+      "Rodar o job exercitando o caminho que CHAMA o método, e confirmar que sobrou uma cópia só do artefato no classpath.",
+      "`mig.jar_binary` do diretório do job depois da remoção: nenhum par de artefatos do mesmo pacote.",
+      "Comparação de VALOR das colunas que o artefato produz — contagem, nulos por coluna e agregados de controle — contra a saída do último run bem-sucedido. Remover uma versão e ficar com a outra é trocar implementação, e implementação diferente devolve valor diferente."
+    ],
+    "rollback": [
+      "Restaurar o classpath anterior. É mudança de classpath, não de dado -- mas a saída produzida entre a remoção e o rollback foi gerada por outra implementação, e precisa ser reconciliada à parte."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/classpath_abstract_method.json` (`ERR-SPARK-005`). Ela registra `spark.driver.userClassPathFirst` e `spark.executor.userClassPathFirst` com default `false` e o rótulo \"(Experimental)\" que o `explanation` cita.\n"
+      }
+    ],
+    "action": {
+      "kind": "dependency.remove_library",
+      "target": "job.extra_jars.duplicate",
+      "direction": "remove",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-SPARK4-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "JAR compilado contra Scala anterior ao 2.13 no classpath de um runtime Spark 4",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "conector_2.12-1.4.0.jar",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_373682"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=4.0.0"
+    },
+    "explanation": "O Spark 4 subiu o Scala de 2.12 para 2.13, e 2.12 e 2.13 NAO sao compativeis em bytecode -- nao e uma questao de API depreciada, e a fronteira binaria da propria linguagem. A documentacao da AWS para o Glue 6.0 declara isso como breaking change textual: JARs customizados compilados contra Scala 2.12 nao funcionam, e qualquer `--extra-jars` de 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. Esta e a unica regra P0 da area, e a diferenca e categoria, nao grau -- as outras tres descrevem degradacao, silencio ou risco de comportamento; esta descreve FALHA CERTA. O job nao roda. E nao falha na submissao, que nao carrega classe nenhuma do JAR: falha em RUNTIME, na primeira vez que aquela classe e carregada, possivelmente depois de minutos de processamento e de parte da saida ja ter sido escrita -- e passa em qualquer smoke test que nao exercite aquele caminho exato. As tres APIs que a AWS nomeia como mudanca de codigo estao em `knowledge/spark/spark4-migration.md` Sec 6.",
+    "proposed_change": [
+      "Recompilar o JAR contra Scala 2.13.17 e publicar o artefato novo antes de trocar o runtime -- o binario e pre-requisito da migracao, nao consequencia dela.",
+      "Trocar `JavaConversions`, removido em 2.13, por `CollectionConverters`; trocar `MutableList`, tambem removido, por `ListBuffer`; e acrescentar o import proprio que coleccoes paralelas passaram a exigir.",
+      "Se o JAR vem de terceiro, confirmar com o mantenedor se existe build para 2.13 ANTES de planejar a migracao. Sem ele a migracao esta BLOQUEADA, nao atrasada -- e a diferenca decide se o plano tem data ou tem dependencia externa em aberto.",
+      "Conferir o classpath inteiro na mesma passada, e nao so o JAR acusado -- `--extra-jars` costuma carregar mais de um artefato, e um unico remanescente de 2.12 derruba o job igual."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Recompilar um JAR de terceiro sem o codigo-fonte NAO e possivel. Quando o mantenedor nao publica build para 2.13, nao existe conserto local, e tratar isso como tarefa de engenharia produz um plano que nao fecha.",
+      "Trocar o artefato por uma versao 2.13 de outra linha de release muda mais que o binario -- comportamento, defaults e assinaturas podem ter mudado junto, e a diferenca nao aparece no nome do arquivo.",
+      "A substituicao de `JavaConversions` por `CollectionConverters` troca conversao IMPLICITA por explicita; onde o codigo dependia da implicita para uma coercao silenciosa, o comportamento muda antes de compilar, e onde compila e porque alguem escolheu a conversao -- possivelmente a errada."
+    ],
+    "tradeoffs": [
+      "Fixar o job num runtime com Spark 3.5 evita a recompilacao e congela a migracao inteira, inclusive as correcoes que nao dependem do JAR; recompilar custa build, publicacao e teste agora, com o job ainda rodando na versao antiga para comparar.",
+      "Remover a dependencia do JAR -- reescrevendo em PySpark nativo o que ele fazia -- elimina a fronteira binaria para sempre e e muito mais trabalho que recompilar. Vale quando o JAR e pequeno e mal mantido, e nao vale quando ele carrega logica de negocio que ninguem mais entende."
+    ],
+    "validation": [
+      "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de codigo que carrega a classe do JAR. Submissao bem-sucedida NAO e validacao aqui -- a submissao nao carrega a classe, e e exatamente por isso que a falha escapa do smoke test.",
+      "Contagem total de linhas, contagem por chave e schema identicos aos do runtime anterior sobre o mesmo lote de entrada, para separar \"o JAR novo carrega\" de \"o JAR novo faz a mesma coisa\".",
+      "Para JAR de terceiro trocado por outra versao, comparacao de valor das colunas que ele produz, e nao so de contagem -- e ali que a diferenca de release aparece."
+    ],
+    "rollback": [
+      "Voltar o artefato de 2.12 e manter o job no runtime com Spark 3.5, onde ele carrega. O rollback e de artefato e de runtime, nao de dado, desde que a saida parcial do run que falhou seja descartada antes -- e ela existe, porque a falha e em runtime e nao na submissao."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+        "retrieved": "2026-08-22"
+      }
+    ],
+    "action": {
+      "kind": "dependency.align_version_with_runtime",
+      "target": "job.extra_jars.scala_binary",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "dependency.delivered_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

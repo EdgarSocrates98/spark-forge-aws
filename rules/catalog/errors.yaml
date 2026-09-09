@@ -1182,3 +1182,324 @@ rules:
           (`ERR-SPARK-002`). Ela registra `spark.python.worker.memory` com
           default `512m` e a descricao que esta regra cita: o valor governa o
           spill durante agregacao, nao o processo inteiro.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS TRÊS DE CLASSPATH (2026-09-09)
+  #
+  # `ClassNotFoundException`, `NoClassDefFoundError` e `AbstractMethodError` são
+  # a mesma FAMÍLIA de `SF-ERR-001`/`SF-ERR-002` -- classe de exceção, casada
+  # por `spark.exception`, com o mesmo par de companheiros (`mig.jar_binary` e
+  # `tf.attribute`). O que as separa é o que cada uma AFIRMA, e a diferença
+  # decide o conserto:
+  #
+  #   ClassNotFoundException   a classe NUNCA esteve lá        -> falta jar
+  #   NoClassDefFoundError     ela ESTAVA na compilação        -> sumiu, ou o
+  #                                                               inicializador
+  #                                                               dela falhou
+  #   AbstractMethodError      ela está lá, na versão ERRADA   -> há DUAS
+  #
+  # Tratar as três como "falta jar" é o erro que elas existem para evitar: na
+  # segunda, adicionar o jar não muda nada quando o inicializador falhou; na
+  # terceira, adicionar jar PIORA, porque o problema é justamente haver dois.
+  #
+  # `runtime_scope: {}` nas três, ao contrário de `SF-ERR-001`/`SF-ERR-002`: a
+  # fronteira daquelas é o empacotamento do Glue 6.0, e estas são da JVM --
+  # acontecem igual em EMR, Databricks ou cluster on-prem.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-009
+    category: runtime-error
+    title: Classe ausente do classpath em runtime, com JAR declarado no job
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-003"}
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `ClassNotFoundException`, e há JAR declarado no diretório do
+      job mais o IaC dele no case. A classe nomeada nunca chegou ao classpath —
+      esta é a mais simples das três desta família, e a única em que "falta um
+      jar" é a leitura certa.
+
+
+      **O que a distingue de `SF-ERR-010`:** ali a classe ESTAVA presente na
+      compilação. Aqui ela nunca esteve, e por isso o conserto é entregar o
+      artefato que a carrega.
+
+
+      A causa mais comum não é esquecer o jar principal — é a dependência
+      declarada para o BUILD e não para o runtime, ou um conector que o
+      runtime não empacota sob o nome que o código espera.
+    proposed_change:
+      - >-
+        Listar os JARs efetivamente entregues ao job e conferir qual deles
+        deveria carregar a classe nomeada — o nome do arquivo não responde isso,
+        o conteúdo responde.
+      - >-
+        Ler `spark.jars` e as entradas de classpath extra em
+        `spark.conf_effective`, e comparar com o que o job declara no IaC: o
+        que vale é o efetivo, não o declarado.
+      - >-
+        Se a classe vem de um conector que o runtime empacota sob outro nome,
+        usar o mecanismo do próprio runtime em vez de enviar uma segunda cópia.
+    action:
+      kind: dependency.declare_in_iac
+      target: job.extra_jars
+      direction: add
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on: []
+    risks:
+      - >-
+        Enviar uma segunda cópia de um JAR que o runtime já empacota troca uma
+        classe ausente por uma duplicada, e a falha MUDA DE LUGAR em vez de
+        sumir — é assim que `AbstractMethodError` nasce.
+      - >-
+        A saída parcial do run falho continua no destino, e reprocessar por
+        cima dela sem decidir o que fazer com o que já foi escrito é como um
+        dado duplicado nasce.
+    tradeoffs:
+      - >-
+        Empacotar a dependência dentro do artefato do job elimina a entrega
+        separada, ao custo de um artefato maior e de um build que precisa
+        resolver conflito de versão sozinho.
+    validation:
+      - >-
+        Rodar o job exercitando o caminho de código que CARREGA a classe — a
+        submissão passar não prova nada, porque a classe só é procurada quando
+        usada.
+      - >-
+        `mig.jar_binary` do diretório do job depois da entrega, confirmando que
+        o artefato novo está lá e que nenhum antigo ficou junto.
+      - >-
+        Nenhum eixo de dado é exigido se a entrega for só de classpath, e
+        declarar isso é parte da validação. Para JAR de terceiro novo,
+        comparação de VALOR das colunas que ele produz contra o último run
+        bem-sucedido.
+    rollback:
+      - >-
+        Reverter `--extra-jars` para o conjunto anterior. É mudança de
+        classpath, não de dado — mas a saída parcial do run que falhou precisa
+        ser descartada ou reconciliada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/classpath_class_not_found.json`
+          (`ERR-SPARK-003`). Ela registra `spark.jars` e as entradas de
+          classpath extra que o `proposed_change` manda ler.
+
+  - id: SF-ERR-010
+    category: runtime-error
+    title: >-
+      Classe presente na compilação e ausente em runtime -- ou o inicializador
+      dela falhou
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-004"}
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `NoClassDefFoundError`, e essa mensagem afirma algo que
+      `ClassNotFoundException` não afirma: **a classe existia quando o código
+      foi compilado**. O build a resolveu; o runtime não a encontrou.
+
+
+      **E há um segundo caminho para a mesma mensagem, que é o mais mal
+      diagnosticado desta família.** Quando o inicializador estático de uma
+      classe lança, a JVM marca a classe como inutilizável, e TODA referência
+      posterior a ela reporta `NoClassDefFoundError` — a classe está lá, e
+      adicionar o JAR de novo não muda absolutamente nada. A distinção está no
+      log: um `ExceptionInInitializerError` ANTERIOR é a evidência, e é por isso
+      que o primeiro passo é ler o log e não o classpath.
+
+
+      Quando é mesmo ausência, a causa mais comum é a dependência TRANSITIVA de
+      um JAR enviado sozinho — o artefato de topo chegou, e o que ele precisa
+      não.
+    proposed_change:
+      - >-
+        Procurar um `ExceptionInInitializerError` anterior no mesmo log ANTES de
+        mexer em classpath. Se ele está lá, a classe existe e o problema é
+        outro, e caçar JAR é caçar o que não falta.
+      - >-
+        Comparar os JARs entregues ao runtime com as dependências que o build
+        resolveu, **incluindo as transitivas** — é onde a diferença costuma
+        estar.
+      - >-
+        Entregar a dependência transitiva junto, ou construir um artefato
+        sombreado (`shade`) que a contenha.
+    action:
+      kind: dependency.declare_in_iac
+      target: job.extra_jars.transitive
+      direction: add
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on: []
+    risks:
+      - >-
+        Tratar a mensagem como JAR faltando sem ler o log manda o operador
+        procurar um artefato que já está lá, e o tempo gasto não produz nada.
+      - >-
+        Sombrear (`shade`) a dependência muda quais classes o artefato carrega,
+        e pode esconder um conflito de versão em vez de resolvê-lo.
+      - >-
+        A saída parcial do run falho continua no destino.
+    tradeoffs:
+      - >-
+        Artefato sombreado resolve o conflito de uma vez, ao custo de tamanho e
+        de um build mais difícil de auditar — quem lê o `pom` deixa de ver o que
+        está lá dentro.
+    validation:
+      - >-
+        Rodar o job exercitando o caminho que carrega a classe; se a causa era
+        o inicializador, confirmar que ELE completa — não basta a classe
+        resolver.
+      - >-
+        Ausência de `ExceptionInInitializerError` no log do run seguinte.
+      - >-
+        Nenhum eixo de dado é exigido se a correção for só de classpath, e
+        declarar isso é parte da validação.
+    rollback:
+      - >-
+        Reverter o conjunto de JARs entregues. A saída parcial do run que
+        falhou precisa ser tratada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/classpath_no_class_def.json`
+          (`ERR-SPARK-004`). Ela registra `spark.jars` e as entradas de
+          classpath extra; a distinção entre ausência e inicializador falho é
+          semântica da JVM, e está no `explanation` como leitura do log, não
+          como afirmação sobre configuração.
+
+  - id: SF-ERR-011
+    category: runtime-error
+    title: >-
+      Método abstrato não implementado -- há DUAS versões do mesmo artefato no
+      classpath
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-005"}
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `AbstractMethodError`, e essa é a única das três desta
+      família em que **adicionar JAR piora**. A classe está presente; o método
+      não. Nenhuma explicação de ausência cobre isso — o que cobre é haver DUAS
+      versões do mesmo artefato, e a que venceu o classpath não implementa um
+      método que a interface ganhou depois.
+
+
+      É a assinatura de duplicata, não de falta. E o modo de aparecer é
+      característico: depois de uma migração de runtime, sem nenhuma mudança no
+      código do job, num método de interface que o job nunca chama diretamente.
+
+
+      A precedência importa aqui, e a documentação do Apache a descreve:
+      `spark.driver.userClassPathFirst` e `spark.executor.userClassPathFirst`
+      têm default `false` e são declarados **experimentais**. Ligá-los é o que
+      permite a implementação mais antiga vencer.
+
+
+      **O que esta regra NÃO afirma:** qual das duas cópias está no classpath, e
+      nem que a precedência está ligada. Nenhum extrator lê o conteúdo de um
+      JAR — `mig.jar_binary` lê o NOME do arquivo. Listar as duas é o primeiro
+      passo de `proposed_change`, e é o operador que o executa.
+    proposed_change:
+      - >-
+        Listar todo JAR do classpath e procurar DOIS que carreguem o mesmo
+        pacote — este erro é assinatura de duplicata, e a duplicata é o que
+        precisa ser encontrado antes de qualquer mudança.
+      - >-
+        Ler se os JARs do usuário têm precedência: `spark.driver.userClassPathFirst`
+        e `spark.executor.userClassPathFirst` têm default `false` e a
+        documentação do Apache os marca como experimentais.
+      - >-
+        Remover a cópia mais antiga, de modo que sobre uma implementação só.
+      - >-
+        Ou reconstruir o conector contra a interface que o runtime atual
+        fornece, quando o código-fonte estiver disponível.
+    # `remove` e nao `add`: e a UNICA das tres em que a acao tira artefato do
+    # classpath em vez de acrescentar. Um `target` proprio pela mesma razao de
+    # `SF-ERR-002` -- `job.extra_jars.duplicate` e o que se remove, e confundi-lo
+    # com `job.extra_jars` inventaria contradicao com `SF-ERR-009`, cuja acao e
+    # `add` sobre o mesmo alvo.
+    action:
+      kind: dependency.remove_library
+      target: job.extra_jars.duplicate
+      direction: remove
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Ligar a precedência de JARs do usuário para forçar o artefato antigo a
+        vencer faz esta falha sumir movendo o conflito: o runtime passa a não
+        receber o que esperava da interface nova.
+      - >-
+        Remover a cópia errada quebra quem dependia dela. Descobrir QUAL das
+        duas remover exige saber quem usa cada uma, e o nome do arquivo não
+        responde.
+      - >-
+        Trocar o artefato por outra linha de release muda mais que o binário —
+        comportamento, defaults e assinaturas podem ter mudado junto, e a
+        diferença não aparece no nome.
+    tradeoffs:
+      - >-
+        Sombrear (`shade`) o artefato conflitante isola as duas versões e evita
+        a escolha, ao custo de um build mais complicado e de um artefato maior.
+    validation:
+      - >-
+        Rodar o job exercitando o caminho que CHAMA o método, e confirmar que
+        sobrou uma cópia só do artefato no classpath.
+      - >-
+        `mig.jar_binary` do diretório do job depois da remoção: nenhum par de
+        artefatos do mesmo pacote.
+      - >-
+        Comparação de VALOR das colunas que o artefato produz — contagem, nulos
+        por coluna e agregados de controle — contra a saída do último run
+        bem-sucedido. Remover uma versão e ficar com a outra é trocar
+        implementação, e implementação diferente devolve valor diferente.
+    rollback:
+      - >-
+        Restaurar o classpath anterior. É mudança de classpath, não de dado --
+        mas a saída produzida entre a remoção e o rollback foi gerada por outra
+        implementação, e precisa ser reconciliada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/classpath_abstract_method.json`
+          (`ERR-SPARK-005`). Ela registra `spark.driver.userClassPathFirst` e
+          `spark.executor.userClassPathFirst` com default `false` e o rótulo
+          "(Experimental)" que o `explanation` cita.

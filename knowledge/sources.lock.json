@@ -2559,6 +2559,9 @@
       "rules": [
         "SF-ERR-007",
         "SF-ERR-008",
+        "SF-ERR-009",
+        "SF-ERR-010",
+        "SF-ERR-011",
         "SF-TIMEOUT-002"
       ]
     },

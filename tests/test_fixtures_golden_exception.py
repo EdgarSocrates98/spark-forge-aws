@@ -74,6 +74,12 @@ REQUIRED_FIXTURES = {
     "nosuchmethod_com_jar_e_terraform",
     "nosuchmethod_sem_jar",
     "nosuchfield_com_user_jars_first",
+    # As TRES de classpath (2026-09-09): mesma familia de `SF-ERR-001`, e o que
+    # as separa e o que cada uma afirma -- classe que nunca esteve, classe que
+    # estava na compilacao, e classe presente na versao errada.
+    "classnotfound_com_jar",
+    "noclassdef_com_jar",
+    "abstractmethod_com_jar",
 }
 
 
