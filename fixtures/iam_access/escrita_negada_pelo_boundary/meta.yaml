@@ -1,0 +1,39 @@
+name: escrita_negada_pelo_boundary
+proves: >
+  As QUATRO respostas de `EvalDecision` no mesmo artefato, e por que colapsa-las
+  num booleano `autorizado` apagaria o que decide o conserto.
+
+  `glue:GetTable` e `lakeformation:GetDataAccess` saem `allowed` -- a leitura da
+  tabela atravessa. `s3:PutObject` sai `implicitDeny` COM
+  `AllowedByPermissionsBoundary: false`, e `kms:GenerateDataKey` sai
+  `explicitDeny` COM `AllowedByOrganizations: false`.
+
+  Tres consertos DIFERENTES no mesmo role, e nenhum deles e "adicione a
+  permissao":
+
+    * o `s3:PutObject` e negado pelo PERMISSION BOUNDARY, e alargar a policy do
+      role nao muda nada -- o boundary recorta o que ela concede;
+    * o `kms:GenerateDataKey` e negado pela SERVICE CONTROL POLICY da
+      organizacao, que decide acima do role inteiro;
+    * `denied_by` nomeia a camada nos dois, e e por isso que este extrator
+      existe.
+
+  E o par leitura/escrita que reproduz a classe de sintoma desta area: o job LE
+  a tabela e falha ao ESCREVER, e a resposta nao esta na policy que todo mundo
+  vai abrir primeiro.
+
+  A recusa `policy_de_recurso_nao_avaliada` sai junto, e sai SEMPRE: bucket
+  policy, key policy e Glue resource policy sao avaliacao separada, e um
+  `allowed` aqui com bucket policy negando ainda falha.
+
+  Fixture SINTETICA: nenhuma conta, role ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - iam.access.analyzed
+  - iam.access.unresolved
+  - iam.access_decision
+expects_rules: []

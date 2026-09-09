@@ -212,7 +212,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 35 extratores emitem 207 kinds distintos de fact (recontado em 2026-09-09),
+Os 36 extratores emitem 210 kinds distintos de fact (recontado em 2026-09-09),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -249,6 +249,7 @@ anterior.
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
 | **Rodapé do Parquet** | `analyze parquet-footer` | dump de `collect parquet-footer` — row group, estatística por coluna, dicionário, page index, bloom filter e codec |
 | **Log do CloudWatch** | `analyze cloudwatch-logs` | resposta de `filter_log_events` já em disco — artefato SEPARADO do de `analyze cloudwatch`, que lê `get_metric_data` |
+| **Decisao de IAM** | `analyze iam-access` | artefato de `collect iam-access` — a resposta de `SimulatePrincipalPolicy`, com a CAMADA que negou (boundary, SCP, deny explícito ou implícito). Simulação, não parse de policy |
 | **Permissao do Lake Formation** | `analyze lakeformation-grants` | artefato de `collect lakeformation` — grant por principal, registro da localização S3, e o data lake settings da conta. É o único artefato que descreve **quem pode o quê** em vez de o que o job faz |
 | **Assinatura de erro** | `analyze error-signatures` | derivado de `spark.exception` e de `cloudwatch.log_event`: casa a exceção contra as 17 assinaturas de `knowledge/errors/`, por três portas (`exception_class`, `message_head`, `log_line`) |
 | Métricas do CloudWatch | `analyze cloudwatch` | artefato de `collect cloudwatch` já em disco |
@@ -346,7 +347,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 207 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 210 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

@@ -55,6 +55,11 @@ ARTIFACT_KINDS = (
     # descreve o job -- descreve quem pode o que sobre a tabela que o job
     # le ou escreve, e por isso responde perguntas que nenhum outro alcanca.
     "lakeformation",
+    # `iam_access` e artefato de DECISAO, e nao de policy: ele guarda o que
+    # `iam:SimulatePrincipalPolicy` respondeu, nao o documento que alguem
+    # escreveu. A diferenca e o ponto do coletor -- boundary, SCP, deny
+    # explicito e condicao nao aparecem no documento do role.
+    "iam_access",
     "source",
 )
 

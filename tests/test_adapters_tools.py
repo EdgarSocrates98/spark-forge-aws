@@ -43,6 +43,7 @@ class TestToolSurface:
             "sparkforge_analyze_cloudwatch",
             "sparkforge_analyze_cloudwatch_logs",
             "sparkforge_analyze_lakeformation_grants",
+            "sparkforge_analyze_iam_access",
             "sparkforge_analyze_error_signatures",
             "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_parquet_footer",
@@ -87,6 +88,7 @@ class TestToolSurface:
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
+            "sparkforge_collect_iam_access",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -141,6 +143,7 @@ class TestToolSurface:
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
+            "sparkforge_collect_iam_access",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -1436,6 +1439,40 @@ class _FakeLakeFormationClient:
         }
 
 
+class _FakeIamClient:
+    """`simulate_principal_policy` com as respostas que dao sentido ao verbo.
+
+    `allowed` e `implicitDeny`, e a segunda com
+    `AllowedByPermissionsBoundary: False` -- a camada que decide e o boundary, e
+    nao a policy do role. Uma amostra so de `allowed` passaria no schema sem
+    exercitar o campo que separa tres consertos diferentes.
+    """
+
+    def simulate_principal_policy(self, **kwargs):
+        return {
+            "EvaluationResults": [
+                {
+                    "EvalActionName": "s3:PutObject",
+                    "EvalResourceName": "arn:aws:s3:::lake/curated/*",
+                    "EvalDecision": "allowed",
+                    "MatchedStatements": [{"SourcePolicyId": "inline"}],
+                    "MissingContextValues": [],
+                },
+                {
+                    "EvalActionName": "kms:GenerateDataKey",
+                    "EvalResourceName": "arn:aws:kms:us-east-1:111111111111:key/abc",
+                    "EvalDecision": "implicitDeny",
+                    "MatchedStatements": [],
+                    "MissingContextValues": [],
+                    "PermissionsBoundaryDecisionDetail": {
+                        "AllowedByPermissionsBoundary": False
+                    },
+                },
+            ],
+            "IsTruncated": False,
+        }
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -1448,11 +1485,44 @@ class _FakeBoto3ForCollect:
             "emr-containers": _FakeEmrContainersClient(),
             "logs": _FakeLogsClient(),
             "lakeformation": _FakeLakeFormationClient(),
+            "iam": _FakeIamClient(),
         }
 
     def client(self, name, **kwargs):
         return self._clients[name]
 
+
+_IAM_ACCESS_ARTIFACT = json.dumps(
+    {
+        "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+        "status": "ok",
+        "actions_requested": ["s3:PutObject", "kms:GenerateDataKey"],
+        "resource_arns": ["arn:aws:s3:::lake/curated/*"],
+        "scoped_to_resource": True,
+        "results": [
+            {
+                "action": "s3:PutObject",
+                "resource": "arn:aws:s3:::lake/curated/*",
+                "decision": "allowed",
+                "matched_statements": 1,
+                "missing_context_values": [],
+                "allowed_by_organizations": None,
+                "allowed_by_permissions_boundary": None,
+            },
+            {
+                "action": "kms:GenerateDataKey",
+                "resource": "arn:aws:kms:us-east-1:111111111111:key/abc",
+                "decision": "implicitDeny",
+                "matched_statements": 0,
+                "missing_context_values": [],
+                "allowed_by_organizations": None,
+                "allowed_by_permissions_boundary": False,
+            },
+        ],
+        "results_collected": 2,
+        "truncated": False,
+    }
+)
 
 _LAKEFORMATION_ARTIFACT = json.dumps(
     {
@@ -1657,12 +1727,14 @@ def _fake_collect_boto3(monkeypatch):
     from sparkforge.collect import aws as collect_aws
     from sparkforge.collect import cloudwatch_logs as collect_cw_logs
     from sparkforge.collect import lakeformation as collect_lf
+    from sparkforge.collect import iam_access as collect_iam
 
     # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
     # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_lf, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_iam, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
 _CODE_JOB = (
@@ -1917,6 +1989,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert any(item["kind"] == "cloudwatch.log_event" for item in resultado["items"]), (
             "a amostra precisa render pelo menos uma linha de log"
         )
+        return resultado
+
+    if name == "sparkforge_analyze_iam_access":
+        iam_dir = tmp_path / "iam_access"
+        iam_dir.mkdir()
+        (iam_dir / "111111111111_glue-curated.json").write_text(
+            _IAM_ACCESS_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool("sparkforge_analyze_iam_access", {"path": str(iam_dir)})
+        assert any(
+            item["kind"] == "iam.access_decision" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos uma decisao"
         return resultado
 
     if name == "sparkforge_analyze_lakeformation_grants":
@@ -2248,6 +2332,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_cloudwatch",
         "sparkforge_collect_cloudwatch_logs",
         "sparkforge_collect_lakeformation",
+        "sparkforge_collect_iam_access",
         "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
@@ -2285,6 +2370,12 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "log_group": "/aws-glue/jobs/error",
                 "start": "2026-07-29T00:00:00Z",
                 "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_iam_access": {
+                "repo": str(tmp_path),
+                "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+                "resource_arns": ["arn:aws:s3:::lake/curated/*"],
                 "now": "2026-07-30T00:00:00Z",
             },
             "sparkforge_collect_lakeformation": {

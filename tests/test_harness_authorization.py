@@ -921,7 +921,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # tocar no conjunto de excecao: a primeira e `_READ_ONLY` e declara
         # `path` (o artefato de permissao, ou o diretorio deles); a segunda e
         # `_WRITE_LOCAL_OPEN_WORLD` e declara `repo`, como todo `collect_*`.
-        assert len(TOOLS) - len(sem_caminho) == 70
+        # 72 desde `analyze_iam_access` e `collect_iam_access` (2026-09-09),
+        # pelo mesmo par de lados: a de analise e `_READ_ONLY` com `path`, a de
+        # coleta e `_WRITE_LOCAL_OPEN_WORLD` com `repo`.
+        assert len(TOOLS) - len(sem_caminho) == 72
 
 
 class TestAImposicaoNoDespacho:

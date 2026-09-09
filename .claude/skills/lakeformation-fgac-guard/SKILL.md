@@ -135,7 +135,29 @@ As tools MCP de mesmo nome são `sparkforge_collect_lakeformation` e `sparkforge
 - **`registered` é ternário** — verdadeiro, falso, ou **ausente quando ninguém mediu**. É exatamente sobre localização registrada que a documentação da AWS se contradiz (§6), e afirmar "não registrada" sobre uma pergunta que não foi feita é sair do conflito pela porta errada;
 - **`IAM_ALLOWED_PRINCIPALS` não é um role** — é a ausência de governança fina, e o fact o marca em vez de normalizá-lo para um ARN qualquer.
 
-**O terceiro artefato continua faltando: a policy do runtime role.** E quando ele existir, o caminho é `iam:SimulatePrincipalPolicy`, não parse do documento — simular devolve a resposta da AWS com permission boundary, SCP, deny explícito e condição já resolvidos; parsear devolve uma opinião sobre um JSON, e erra exatamente nos casos que importam.
+### O terceiro artefato: a decisão de IAM, simulada
+
+```
+sparkforge collect iam-access --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey
+sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/
+```
+
+Tools MCP: `sparkforge_collect_iam_access` e `sparkforge_analyze_iam_access`.
+
+**Simular e não parsear**, e a diferença decide o conselho. `iam:SimulatePrincipalPolicy` devolve a resposta da AWS com permission boundary, service control policy, `Deny` explícito e `Condition` já resolvidos. Parsear o documento do role devolve uma opinião sobre um JSON, e erra exatamente nos quatro casos que importam — porque nenhum deles aparece nesse documento.
+
+**`EvalDecision` tem quatro respostas, e as três de negação exigem consertos diferentes:**
+
+| `denied_by` | O que fazer |
+|---|---|
+| `implicit_deny` | nenhuma policy concede — **acrescentar** resolve |
+| `explicit_deny` | alguma policy nega — acrescentar **não** resolve; ache o `Deny` |
+| `permissions_boundary` | o boundary recorta o que a policy concede — mexer nela não muda nada |
+| `service_control_policy` | a organização nega acima do role — decisão de plataforma |
+
+Colapsar as quatro num booleano faz *"adicione a permissão"* virar o conselho único, e ele é **errado em três dos quatro casos**.
+
+**Duas leituras que o fact preserva:** `allowed` **sem** `--resource-arn` é `allowed` sobre `*`, não sobre aquela tabela — `scoped_to_resource` diz qual pergunta foi feita. E `policy_de_recurso_nao_avaliada` sai em **todo** artefato: bucket policy, key policy do KMS e Glue resource policy são avaliação separada, e um `allowed` aqui com bucket policy negando ainda falha.
 
 Aprofundamento sob demanda: [`knowledge/glue/lakeformation-fgac.md`](../../knowledge/glue/lakeformation-fgac.md) traz o que a documentação declara e o que ela não declara; [`docs/aws/glue/6.0/lakeformation.md`](../../docs/aws/glue/6.0/lakeformation.md) é a leitura pelo lado do runtime 6.0.
 

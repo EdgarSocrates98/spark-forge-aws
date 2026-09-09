@@ -54,6 +54,7 @@ from sparkforge.controlm.matrix import (
     covers as controlm_covered_range,
 )
 from sparkforge.economy.report import build_context_report
+from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts.athena_workgroup import (
@@ -62,6 +63,10 @@ from sparkforge.facts.athena_workgroup import (
 )
 from sparkforge.facts.benchmark import build_benchmark
 from sparkforge.facts.call_graph import build_call_graph
+from sparkforge.facts.iam_access import (
+    extract_iam_access_path,
+    extract_iam_access_tree,
+)
 from sparkforge.facts.lakeformation_grants import (
     extract_lakeformation_path,
     extract_lakeformation_tree,
@@ -1162,6 +1167,45 @@ def analyze_lakeformation_grants(
     return _facts_page(
         facts, "lakeformation.grants.unresolved", kind, limit, cursor, detail_level
     )
+
+
+def _extract_iam_access_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}" + chr(10) +
+            "  Aponte para um artefato gravado por `sparkforge collect iam-access`, "
+            "ou para o DIRETORIO deles:" + chr(10) +
+            "    sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_iam_access_tree(target, repo_root=target)
+    return extract_iam_access_path(target)
+
+
+def analyze_iam_access(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a DECISAO de IAM ja simulada, com a CAMADA que decidiu.
+
+    `EvalDecision` tem quatro respostas, e as tres de negacao exigem consertos
+    diferentes: `implicitDeny` se conserta acrescentando, `explicitDeny` nao --
+    e quando a negacao vem de service control policy ou de permissions
+    boundary, mexer na policy do role nao muda nada. `attrs.denied_by` nomeia a
+    camada, e e a razao de este verbo existir.
+
+    Ele NAO afirma que a operacao real vai passar (a AWS avalia policies, nao
+    tenta a chamada) e NAO cobre policy de RECURSO -- bucket policy, key policy
+    do KMS e Glue resource policy sao avaliacao separada, e o limite sai em
+    `iam.access.unresolved` em TODO artefato.
+    """
+    facts = _extract_iam_access_facts(path)
+    return _facts_page(facts, "iam.access.unresolved", kind, limit, cursor, detail_level)
 
 
 _FACTS_FROM_EXCEPTION_OR_LOG = (
@@ -4650,6 +4694,34 @@ def collect_lakeformation(
             now=now,
             catalog_id=catalog_id,
             resource_arn=resource_arn,
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_iam_access(
+    repo: str,
+    *,
+    role_arn: str,
+    now: str,
+    actions: list[str] | None = None,
+    resource_arns: list[str] | None = None,
+) -> dict[str, Any]:
+    """Simula as acoes contra o role e grava a DECISAO da AWS.
+
+    Simular e nao parsear e a decisao de desenho: permission boundary, service
+    control policy, `Deny` explicito e `Condition` nao aparecem no documento do
+    role, e um parser erra exatamente nesses casos.
+    """
+    rel_path = collect_iam.iam_access_path(role_arn)
+    try:
+        entry = collect_iam.collect_iam_access(
+            role_arn,
+            Path(repo),
+            now=now,
+            actions=actions,
+            resource_arns=resource_arns,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc

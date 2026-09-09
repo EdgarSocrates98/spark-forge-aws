@@ -54,6 +54,10 @@ from sparkforge.facts import (
     # `lakeformation.access_model`/`iceberg_catalog`/`filesystem`, o outro
     # `lakeformation.grant`/`registered_location`/`data_lake_settings`. Sem ele
     # aqui, os cinco kinds de permissao contam como orfaos.
+    iam_access,
+    # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
+    # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
+    # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     lakeformation_grants,
     funcval,
     fusion,

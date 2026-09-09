@@ -240,6 +240,20 @@ def build_parser() -> argparse.ArgumentParser:
     cwlog_analyze_p.add_argument("--cursor")
     _add_detail_level(cwlog_analyze_p)
 
+    iam_analyze_p = analyze_sub.add_parser(
+        "iam-access",
+        help="Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.",
+    )
+    iam_analyze_p.add_argument(
+        "--path", required=True,
+        help="Artefato JSON de `collect iam-access`, ou o DIRETORIO deles.",
+    )
+    iam_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    iam_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    iam_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    iam_analyze_p.add_argument("--cursor")
+    _add_detail_level(iam_analyze_p)
+
     lfg_analyze_p = analyze_sub.add_parser(
         "lakeformation-grants",
         help="Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings).",
@@ -1730,6 +1744,29 @@ def build_parser() -> argparse.ArgumentParser:
     cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
     cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    iam_p = collect_sub.add_parser(
+        "iam-access",
+        help="Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao.",
+    )
+    iam_p.add_argument("--repo", required=True)
+    iam_p.add_argument(
+        "--role-arn", required=True,
+        help="ARN do role a simular -- tipicamente o runtime role do job.",
+    )
+    iam_p.add_argument(
+        "--action", action="append", dest="actions",
+        help=(
+            "Acao a simular. Repetivel. Sem ela, a lista default de Lake Formation e "
+            "Glue -- e passar a lista inteira quando a pergunta e sobre UMA escrita "
+            "produz decisoes que nao dizem nada sobre o caso."
+        ),
+    )
+    iam_p.add_argument(
+        "--resource-arn", action="append", dest="resource_arns",
+        help="Recurso contra o qual simular. Repetivel. Sem ele a resposta e sobre `*`.",
+    )
+    iam_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     lf_p = collect_sub.add_parser(
         "lakeformation",
         help="Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela.",
@@ -1960,6 +1997,11 @@ def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_cloudwatch_logs(args: argparse.Namespace) -> int:
     full = _core.analyze_cloudwatch_logs(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_iam_access(args: argparse.Namespace) -> int:
+    full = _core.analyze_iam_access(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
 
 
@@ -2861,6 +2903,18 @@ def _cmd_collect_cloudwatch_logs(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_iam_access(args: argparse.Namespace) -> int:
+    payload = _core.collect_iam_access(
+        args.repo,
+        role_arn=args.role_arn,
+        actions=args.actions,
+        resource_arns=args.resource_arns,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_lakeformation(args: argparse.Namespace) -> int:
     payload = _core.collect_lakeformation(
         args.repo,
@@ -3319,6 +3373,7 @@ _DISPATCH = {
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
     ("analyze", "cloudwatch-logs"): _cmd_analyze_cloudwatch_logs,
     ("analyze", "lakeformation-grants"): _cmd_analyze_lakeformation_grants,
+    ("analyze", "iam-access"): _cmd_analyze_iam_access,
     ("analyze", "parquet-footer"): _cmd_analyze_parquet_footer,
     ("analyze", "error-signatures"): _cmd_analyze_error_signatures,
     ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
@@ -3390,6 +3445,7 @@ _DISPATCH = {
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
     ("collect", "cloudwatch-logs"): _cmd_collect_cloudwatch_logs,
     ("collect", "lakeformation"): _cmd_collect_lakeformation,
+    ("collect", "iam-access"): _cmd_collect_iam_access,
     ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
