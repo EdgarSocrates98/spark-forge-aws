@@ -521,6 +521,11 @@ def regen_cloudwatch_logs(directory: Path) -> None:
         facts.extend(extract_iceberg_metadata_tree(iceberg_dir, repo_root=input_dir))
     for inventory in sorted(input_dir.glob("*.yaml")):
         facts.extend(extract_consumers_path(inventory, repo_root=input_dir))
+    # O `.py` e o quinto companheiro, e ele entrou com `SF-ERR-008`: a regra
+    # exige `pyspark.udf` ao lado da linha de log, porque "Python worker exited
+    # unexpectedly" sozinho nao diz que ha UDF no caminho.
+    if any(input_dir.glob("*.py")):
+        facts.extend(extract_tree(input_dir, repo_root=input_dir))
     facts.extend(build_signature_matches(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)

@@ -71,6 +71,7 @@ from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
 from sparkforge.facts.consumers import extract_consumers_path
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
+from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
 from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge
@@ -99,6 +100,11 @@ REQUIRED_FIXTURES = {
     "commit_conflict_com_snapshots",
     "lf_negado_com_catalogo_de_outra_conta",
     "lf_negado_sem_catalogo_declarado",
+    # As tres de `service: spark` (2026-09-09) -- as primeiras assinaturas que
+    # nao falam de servico da AWS nenhum.
+    "fetch_failed_com_executor_perdido",
+    "fetch_failed_so_no_log",
+    "python_worker_morreu_com_udf",
 }
 
 # As QUATRO de `knowledge/errors/` que sao trecho de MENSAGEM e nao classe de
@@ -139,6 +145,8 @@ def _derive(directory: Path):
         facts.extend(extract_iceberg_metadata_tree(iceberg, repo_root=entrada))
     for inventario in sorted(entrada.glob("*.yaml")):
         facts.extend(extract_consumers_path(inventario, repo_root=entrada))
+    if any(entrada.glob("*.py")):
+        facts.extend(extract_pyspark_tree(entrada, repo_root=entrada))
     facts.extend(build_signature_matches(facts))
     return facts
 

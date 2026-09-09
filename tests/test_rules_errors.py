@@ -385,7 +385,12 @@ class TestOQueAAreaNaoCarrega:
 
     def test_toda_regra_da_area_e_confirmed(self):
         """Elas afirmam que a falha ACONTECEU, com o artefato ao lado."""
-        assert [r["status"] for r in _regras_da_area()] == ["confirmed"] * 6
+        # Contagem DERIVADA e nao fixada: uma regra nova na area nao pode
+        # quebrar este teste por acidente de numero -- o que ele afirma e que
+        # TODAS sao `confirmed`, nao quantas sao.
+        regras = _regras_da_area()
+        assert regras, "a area precisa existir para o teste medir algo"
+        assert [r["status"] for r in regras] == ["confirmed"] * len(regras)
 
     def test_toda_regra_da_area_exige_o_match_MAIS_um_companheiro(self):
         """O contrato da area inteira, e o ponto da frente.
@@ -454,10 +459,14 @@ def _ids_referenciados_pelas_regras() -> set[str]:
 
 
 def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
-    assert len(_assinaturas()) == 6, [s["id"] for s in _assinaturas()]
+    # 8 desde 2026-09-09: `ERR-SPARK-001` (FetchFailedException) e
+    # `ERR-SPARK-002` (Python worker exited unexpectedly) sao as duas
+    # primeiras com `service: spark` -- elas nao falam de servico da AWS
+    # nenhum, e acontecem igual em EMR, Databricks ou cluster on-prem.
+    assert len(_assinaturas()) == 8, [s["id"] for s in _assinaturas()]
 
 
-def test_as_seis_assinaturas_tem_regra():
+def test_toda_assinatura_tem_regra():
     """A lacuna que a T3 declarou, fechada e medida.
 
     Uma assinatura sem regra e conhecimento que o motor carrega e nao usa: o
@@ -467,6 +476,14 @@ def test_as_seis_assinaturas_tem_regra():
     e exatamente o aviso que se quer.
     """
     assert _ids_referenciados_pelas_regras() == {s["id"] for s in _assinaturas()}
+
+
+def test_toda_regra_da_area_referencia_assinatura_QUE_EXISTE():
+    """A reciproca, e ela pega o erro oposto: regra que aponta para um
+    `signature_id` inexistente e regra que nunca dispara, e o gate de cobertura
+    de fixture so a pegaria se alguem escrevesse a fixture."""
+    existentes = {s["id"] for s in _assinaturas()}
+    assert _ids_referenciados_pelas_regras() <= existentes
 
 
 SO_PELO_LOG = {"ERR-ATH-001", "ERR-GLUE-001", "ERR-ICE-001", "ERR-LF-001"}

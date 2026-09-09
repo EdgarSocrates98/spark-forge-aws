@@ -1,0 +1,34 @@
+name: python_worker_morreu_com_udf
+proves: >
+  O POSITIVO de `SF-ERR-008`, e o que ele mede e o lado do processo que a
+  mensagem NAO nomeia.
+
+  A linha diz `Python worker exited unexpectedly`, e o codigo do case declara
+  uma UDF Python. As duas juntas apontam para fora da JVM: o worker Python roda
+  em outro processo, e a memoria que acabou nao e a do heap.
+
+  E o OOM que mais resiste ao conserto obvio -- `spark.executor.memory` faz o
+  heap crescer DENTRO do mesmo container e tira espaco justamente de quem ficou
+  sem. A assinatura de que o diagnostico esta errado e "aumentei a memoria e
+  continuou".
+
+  A regra NAO afirma que a UDF e a causa: ela afirma que ha UDF no caminho e que
+  o worker morreu. Distinguir batch grande de `pandas_udf`, container morto por
+  fora e worker que estourou o proprio limite e o que o `proposed_change` manda
+  fazer.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - pyspark.chain
+  - pyspark.function_def
+  - pyspark.module_analyzed
+  - pyspark.udf
+expects_rules:
+  - SF-ERR-008
+  - SF-PY-001

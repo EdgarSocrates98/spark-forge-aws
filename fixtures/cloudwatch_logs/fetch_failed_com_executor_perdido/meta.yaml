@@ -1,0 +1,52 @@
+name: fetch_failed_com_executor_perdido
+proves: >
+  O POSITIVO de `SF-ERR-007`, e o ponto dele e a LEITURA que as duas fontes
+  juntas mudam.
+
+  A linha de log traz `FetchFailedException` nomeando um host e uma porta -- o
+  que faz o erro parecer de rede. O event log do mesmo run traz
+  `spark.executor.lost`, e com ele a leitura vira outra: o fetch nao falhou por
+  causa da rede, falhou porque o bloco de shuffle sumiu junto com quem o
+  guardava.
+
+  E a confusao mais cara desta area. Subir `spark.shuffle.io.maxRetries` com um
+  executor morrendo ao lado troca falha rapida por falha lenta, e esconde a
+  razao de o executor ter morrido -- por isso a acao e `investigate` sobre
+  `spark.executor.lost.reason`, e nao um numero de retry.
+
+  O NEGATIVO deste fixture e `fetch_failed_so_no_log`: mesmo log, sem o event
+  log. Ali a regra e PULADA, e a razao esta na propria regra -- um
+  `FetchFailedException` sozinho pode ser transitorio de verdade, e nesse caso
+  retry E a resposta certa.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.executor.lost
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.gc
+  - spark.stage.shuffle
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.unresolved
+expects_rules:
+  - SF-ERR-007
+  - SF-UI-001
+  - SF-UI-002
+  - SF-UI-003
+  - SF-UI-004
+  - SF-UI-005
+  - SF-UI-006

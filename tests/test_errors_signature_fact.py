@@ -100,8 +100,15 @@ class TestProcedenciaDoCatalogoDeAssinaturas:
         TODA excecao cair em `nenhuma_assinatura_casou`, e o relatorio fica
         limpo justamente onde deveria acusar."""
         from sparkforge.errors.matcher import DeterministicErrorMatcher
+        from sparkforge.knowledge_ref import knowledge_dir
 
-        assert len(DeterministicErrorMatcher().signatures) == 6
+        # Contagem DERIVADA do disco, e nao fixada: acrescentar assinatura nao
+        # pode quebrar este teste, cujo assunto e a PROCEDENCIA do diretorio.
+        # Quem cobra o NUMERO e `tests/test_rules_errors.py`, e la o numero e a
+        # afirmacao.
+        no_disco = len(list((knowledge_dir() / "errors").rglob("*.json")))
+        assert no_disco > 0, "o catalogo de assinaturas nao pode estar vazio"
+        assert len(DeterministicErrorMatcher().signatures) == no_disco
 
     def test_SPARKFORGE_KNOWLEDGE_redireciona_o_catalogo(self, tmp_path, monkeypatch):
         """A consequencia de usar `knowledge_dir()`: o override de ambiente
