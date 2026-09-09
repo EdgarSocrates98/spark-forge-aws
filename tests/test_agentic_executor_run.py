@@ -617,3 +617,54 @@ def test_a_resposta_declara_autonomia_l0(tmp_path: Path) -> None:
 
     assert resposta["autonomy"]["level"] == "L0"
     assert resposta["autonomy"]["applied_changes"] is False
+
+
+# --------------------------------------------------------------------------
+# O `judge` e o `arbitrate` nao divergem
+# --------------------------------------------------------------------------
+
+
+class TestJudgeEArbitrateNaoDivergem:
+    def test_ordem_e_contradicoes_batem_com_o_digest(self, tmp_path: Path) -> None:
+        """O `judge` publica o que `plan_digest` monta; o `arbitrate` grava a
+        partir do MESMO calculo. Se estes dois numeros divergirem, o operador ve
+        o `judge` afirmar uma ordem e o `arbitrate` outra sobre o mesmo case.
+
+        O teste vale contra a divergencia FUTURA: hoje as duas leituras
+        concordam, e e a concordancia que ele trava.
+        """
+        from sparkforge.agentic.executor.digest import plan_digest
+
+        findings = _carrega(CASO_DE_FIXTURE / "expected" / "findings.json", "findings")
+        facts = uniao_de_facts(CASO_DE_FIXTURE)
+
+        bloco, _lastro = plan_digest(findings, facts, RUNTIME)
+        saida = run_executor(findings, facts, tmp_path, runtime=RUNTIME)
+
+        assert saida["order"]["sequence"] == bloco["order"]
+        assert saida["order"]["constraints"] == bloco["constraints"]
+        assert saida["order"]["unresolved"] == bloco["order_unresolved"]
+        assert len(saida["contradictions"]) == len(bloco["contradictions"])
+        assert len(saida["unknowns"]) == len(bloco["unresolved"])
+
+    def test_o_par_que_se_contradiz_bate_nos_dois(self, tmp_path: Path) -> None:
+        """A fixture de timeout nao tem contradicao nenhuma, e por isso ela
+        sozinha nao provaria a igualdade das contradicoes -- zero e zero.
+
+        O unico par direto do catalogo (`SF-GRAPH-005` contra `SF-LF-001`) da o
+        lado nao vazio: o `judge` nomeia o mesmo par que o `arbitrate` grava.
+        """
+        from sparkforge.agentic.executor.digest import plan_digest
+
+        findings, facts = _par_de_contradicao()
+
+        bloco, _lastro = plan_digest(findings, facts, RUNTIME)
+        saida = run_executor(findings, facts, tmp_path, runtime=RUNTIME)
+
+        assert bloco["contradictions"], "o catalogo perdeu o par direto"
+        assert len(saida["contradictions"]) == len(bloco["contradictions"])
+        assert [c["rules"] for c in saida["contradictions"]] == [
+            c["rules"] for c in bloco["contradictions"]
+        ]
+        assert saida["order"]["sequence"] == bloco["order"]
+        assert saida["order"]["constraints"] == bloco["constraints"]
