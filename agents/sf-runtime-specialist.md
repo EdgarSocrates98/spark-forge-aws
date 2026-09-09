@@ -60,11 +60,33 @@ Duas coisas decidem se a resposta vale:
   regra sai em `judge --show-skipped` com `reason: requires_facts`. Colete os
   dois antes de concluir que a exceção não casou com nada.
 
-**Só duas das seis assinaturas de `knowledge/errors/` têm regra hoje**, e o
-motivo está no cabeçalho de `rules/catalog/errors.yaml`: quatro delas casam por
-TRECHO DE MENSAGEM de log, não por classe de exceção, e o caminho delas é o
-coletor de CloudWatch Logs. Ausência de achado `SF-ERR` nunca significa que a
-falha é desconhecida.
+**As 17 assinaturas de `knowledge/errors/` têm regra** (`SF-ERR-001` a
+`SF-ERR-017`, recontado em 2026-09-09), e o matcher tem TRÊS portas —
+`exception_class`, `message_head` e `log_line`. `matched_on` diz por qual delas
+a assinatura entrou, e a distinção importa: assinatura que é trecho de mensagem
+de log só chega pelo coletor de CloudWatch Logs, e sem ele o case não a alcança.
+**Ausência de achado `SF-ERR` nunca significa que a falha é desconhecida** —
+significa que a assinatura não casou, ou que o companheiro não foi coletado.
+
+**As quatro últimas são a família de Lake Formation** (`SF-ERR-014` a
+`SF-ERR-017`), e elas são as primeiras da área cujo companheiro é um fact
+DERIVADO e não um extrator de artefato: `lakeformation.access_model` e
+`lakeformation.filesystem`, de `sparkforge/facts/lakeformation.py`. Duas coisas
+a saber antes de usá-las:
+
+- **a procedência do texto é declarada.** A página de troubleshooting do AWS
+  Glue não publica string de erro literal — publica título de sintoma. Três das
+  quatro casam por NOME DE AÇÃO IAM ou de API, que é a parte publicada; só
+  `Security validation exception` é frase que a AWS escreve;
+- **elas dizem em qual PLANO a operação parou, nunca qual permissão falta.**
+  Nenhuma concessão do Lake Formation e nenhuma policy de IAM entra em artefato
+  que este motor colete, e `lakeformation.unresolved` nomeia a lacuna em todo
+  case que declara modelo de acesso.
+
+`SF-ERR-016` é a que mais muda conversa: a negação nomeia uma ação da API do
+Glue, e a documentação da AWS declara que ter `SELECT` no Lake Formation não
+salva uma operação sem a permissão de IAM sobre `glue:Get*`. São dois planos de
+autorização, e "eu já dei SELECT" não responde ao achado.
 
 ## Control-M (BMC) — conhecimento versionado, e a fronteira dele
 

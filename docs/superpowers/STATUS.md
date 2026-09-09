@@ -7388,6 +7388,82 @@ footer, e nada no case liga os dois hoje —
 esconder.
 
 
+## A varredura de documentação, e os números que ninguém recontava (2026-09-09)
+
+Branch `feat/executor-agentico-spec`.
+
+Nove documentos vivos citavam capacidade que mudou. **Três classes de defasagem,
+e só a primeira era das entregas desta sessão.**
+
+### O que era desta sessão
+
+`skills/lakeformation-fgac-guard/SKILL.md` conhecia **somente** `SF-LF-001` —
+JAR contra FGAC. A área tem quatro regras estruturais e cinco de exceção. Ele
+ganhou a decisão FGAC contra Full Table Access (que vem antes de todas as
+outras), o eixo de versão 4.0/5.0/5.1, a seção *a API de escrita não é o caminho
+de autorização*, os quatro kinds `lakeformation.*` com o que eles **não**
+afirmam, e cinco red flags novas — uma por confusão que a área produz na prática.
+
+`agents/sf-lake-formation-specialist.md` era um agente **sem corpo**: só
+frontmatter e o bloco *Não faz*. `agents/sf-runtime-specialist.md` publicava
+*"só duas das seis assinaturas têm regra"*, e são **17 de 17**.
+`docs/aws/glue/6.0/lakeformation.md` publicava *"duas incompatibilidades"*, e são
+quatro.
+
+`docs/gates-por-mudanca.md` ganhou o passo que faltava, e ele é o que esta
+sessão descobriu na prática: **extrator DERIVADO precisa ser chamado.** Um módulo
+com `EMITTED_KINDS` correto e nenhuma chamada emite zero facts em produção e
+**passa nos dois testes do gate**, porque os dois leem o módulo e não o pipeline.
+O runner do golden e o `regen_*` são um par: se um deriva e o outro não, o golden
+nunca fecha.
+
+### O que NÃO era desta sessão
+
+| Documento | Publicava | Mede |
+|---|---:|---:|
+| `README.md` | 27 extratores | **34** |
+| `README.md` (dois lugares) | 158 kinds | **202** |
+| `GUIA_DE_USO.md` | 44 tools | **73** |
+| `.devin/README.md` | 63 tools | **73** |
+| `AGENTS.md` e `CLAUDE.md` | 70 tools, 31 com `detail_level` | **73** e **32** |
+
+A tabela de verbos do `README.md` também não tinha `analyze parquet-footer`,
+`analyze cloudwatch-logs` nem `analyze error-signatures` — três verbos entregues
+em 2026-09-09, antes desta frente.
+
+**O `detail_level` foi RECONTADO e não copiado:** 32, medido por
+`inspect.signature` sobre a função de cada tool em `sparkforge/adapters/_core.py`.
+O número publicado era 31, e a diferença é de um — que é exatamente o tipo de
+defasagem que sobrevive porque parece plausível.
+
+### `CLAUDE.md` ganhou três regras
+
+As três saem de defeito real desta sessão, não de generalidade:
+
+- **31** — Lake Formation são DOIS modelos, e a versão muda o significado.
+  Afirmar "FGAC não escreve" sem dizer a versão é erro de versão.
+- **32** — escrita em tabela REGISTRADA sob FGAC é conflito declarado, não
+  resposta. E a API de escrita não é o caminho de autorização.
+- **33** — predicado que o `where` não alcança vira FACT, nunca um `expr` mais
+  permissivo. `_CMP_OPS` tem seis comparadores e nenhuma função, e `ast.Call`
+  levanta `ExprError` por desenho de segurança.
+
+### Custo declarado
+
+Superfície de skills: **457 985 → 463 924 bytes** (+5 939). Espelhos por
+`python scripts/sync_skills.py` — `.claude/`, `.agents/` e `.github/` não são
+editados à mão.
+
+### Lacuna nomeada
+
+`README.md`, `GUIA_DE_USO.md`, `AGENTS.md` e `CLAUDE.md` **não estão em
+`audited_roots()`** de `scripts/check_vnext_claims.py`, que audita `docs/vnext/`
+e `docs/harness/` e mais nada. Os números corrigidos acima ficaram errados por
+várias entregas porque **nenhum gate os confere**, e continuam sem gate depois
+desta correção. A tabela *Números correntes* deste documento tem produtor
+(`check_status_numbers.py --strict`); os quatro arquivos acima não têm.
+
+
 ## As quatro assinaturas de Lake Formation, e a procedência que a fonte não sustenta (2026-09-09)
 
 Branch `feat/executor-agentico-spec`.
