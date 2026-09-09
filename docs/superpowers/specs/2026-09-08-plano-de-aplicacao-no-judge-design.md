@@ -256,3 +256,112 @@ o desenho volta à mesa.
   entrega.
 - Decisões, ADR e `DebatePlan` completo na resposta de `judge`.
 - Qualquer afirmação de ganho — de token, de tempo, de qualidade de decisão.
+
+---
+
+## 10. O custo medido — os três cases, e o comando que os produz
+
+Medido em 2026-09-08, sobre o corpus de fixtures, runtime `{glue 5.0, spark
+3.5.4}`. **Antes** é a resposta de `judge_findings` sem o bloco `plan` e sem
+`evidence_standing` nos itens; **depois** é a resposta como ela sai hoje.
+
+| Case | findings | antes | depois | delta | pct |
+|---|---|---|---|---|---|
+| `fixtures/timeout/heartbeat_perdido/input` | 1 | 3501 | 3921 | +420 | **+12,0%** |
+| `fixtures/terraform/plataforma_kms_rede_conta/expected` | 4 | 12157 | 13002 | +845 | **+7,0%** |
+| `fixtures/eventlog/skewed_stage/expected` | 6 | 14172 | 15460 | +1288 | **+9,1%** |
+| união dos três maiores do corpus | 15 | 47383 | 50506 | +3123 | **+6,6%** |
+
+**O percentual varia de 12,0% a 6,6%, e a maior porcentagem cai no menor case.**
+Publicar um número só teria sido a média que esconde a distribuição — é a mesma
+armadilha que a regra 28 já documenta para `detail_level`, e ela aparece aqui
+com o sinal invertido: lá o envelope fixo do pacote fazia a redução parecer
+nula; aqui o envelope fixo do bloco `plan` faz o crescimento parecer grande.
+
+A decomposição diz por quê:
+
+| Case | findings | bloco `plan` | soma dos `evidence_standing` |
+|---|---|---|---|
+| `heartbeat_perdido` | 1 | 283 | 104 |
+| `plataforma_kms_rede_conta` | 4 | 327 | 416 |
+| `skewed_stage` | 6 | 492 | 648 |
+| união | 15 | 1160 | 1608 |
+
+`evidence_standing` custa **104 a 108 bytes por achado** e cresce linear com
+eles. O bloco `plan` tem piso — `scope`, `persisted` e `note` saem sempre, mesmo
+com um achado só — e daí o 12,0% do case de um achado: ali o denominador é
+pequeno e o piso do bloco domina. Somados, os dois campos explicam o delta
+inteiro menos ~33 bytes, que são as chaves e vírgulas do JSON.
+
+**Nenhuma afirmação de que o plano compensa esse custo.** Não há os dois lados
+medidos — decisão tomada com o bloco contra decisão tomada sem ele —, e a regra
+30 vale aqui igual. O que está medido é o preço; o valor não está.
+
+**O crescimento NÃO muda a conclusão do desenho**, e a base para dizer isso é a
+direção da curva, não o tamanho do número: o percentual **cai** conforme o case
+cresce, e o pior caso medido é o menor payload do corpus (3921 bytes), onde 420
+bytes a mais não pressionam janela de contexto nenhuma. Se a curva subisse com o
+tamanho, a decisão de sair sem opt-in voltaria ao operador.
+
+**O corpus não tem case maior que 6 achados.** Varridos os **264** arquivos
+`fixtures/*/*/expected/facts.json` e os **41** `fixtures/*/*/input/facts.json`,
+a distribuição por `total_count` é `{0: 147, 1: 99, 2: 13, 3: 2, 4: 2, 6: 1}` no
+primeiro conjunto e `{0: 36, 1: 5}` no segundo. A quarta linha
+das tabelas é uma **união** de três fixtures pelo contrato repetível de `facts`,
+e está rotulada como tal: ela mede a tendência além do teto do corpus, não uma
+execução que alguém observou.
+
+### O comando
+
+```bash
+python - <<'PY'
+import json
+
+from sparkforge.adapters._core import judge_findings
+
+CASOS = [
+    ["fixtures/timeout/heartbeat_perdido/input/facts.json"],
+    ["fixtures/terraform/plataforma_kms_rede_conta/expected/facts.json"],
+    ["fixtures/eventlog/skewed_stage/expected/facts.json"],
+    [
+        "fixtures/eventlog/skewed_stage/expected/facts.json",
+        "fixtures/terraform/plataforma_kms_rede_conta/expected/facts.json",
+        "fixtures/graph/dois_grafos_no_mesmo_arquivo/expected/facts.json",
+    ],
+]
+
+for alvo in CASOS:
+    r = judge_findings(facts_path=alvo, glue="5.0", spark="3.5.4")
+    depois = len(json.dumps(r, ensure_ascii=False))
+    sem = {k: v for k, v in r.items() if k != "plan"}
+    sem["items"] = [
+        {k: v for k, v in i.items() if k != "evidence_standing"} for i in sem["items"]
+    ]
+    antes = len(json.dumps(sem, ensure_ascii=False))
+    plano = len(json.dumps(r["plan"], ensure_ascii=False))
+    lastro = sum(
+        len(json.dumps(i["evidence_standing"], ensure_ascii=False))
+        for i in r["items"]
+        if "evidence_standing" in i
+    )
+    print(
+        f"{'+'.join(alvo)}\n  findings={r['total_count']} antes={antes} "
+        f"depois={depois} delta={depois - antes} "
+        f"pct={round((depois - antes) / antes * 100, 1)} "
+        f"plan={plano} standing={lastro}"
+    )
+PY
+```
+
+### A superfície, já medida na T5
+
+`docs/surface.lock.json`: tools de **376 854 para 380 762 bytes**, **+3908**
+(**+1,04%**), com `tool_count` parado em **69** — o `outputSchema` de
+`sparkforge_judge` cresceu, nenhuma tool nova entrou. Skills (57, 457 985 bytes)
+e knowledge (50, 460 219 bytes) não se moveram.
+
+**Byte de payload e byte de superfície não se somam num total.** O primeiro é o
+que cada resposta carrega; o segundo é o que a tool pesa em repouso, uma vez por
+sessão. São as mesmas unidades e grandezas diferentes, e juntá-los daria um
+número que não mede nada — a mesma família de erro que a regra 22 recusa entre
+byte e token.

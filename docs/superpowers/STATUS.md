@@ -7081,3 +7081,139 @@ nunca ajustadas à mão); `check_surface_lock.py` **0**;
 regressão; a suíte inteira nos nove lotes de `tests/test_suite_batches.py`,
 **10159 passando e 9 skipped** — soma 10168, e ela fecha com
 `pytest tests/ --collect-only -q` (10168), relido nesta sessão.
+
+## O custo do plano na resposta do `judge` — o percentual que varia, e o gate que não olha para o `CLAUDE.md` (2026-09-08)
+
+Branch `feat/executor-agentico-spec`. Spec:
+`docs/superpowers/specs/2026-09-08-plano-de-aplicacao-no-judge-design.md`
+(a §10 tem as tabelas e o comando). Plano:
+`docs/superpowers/plans/2026-09-08-plano-de-aplicacao-no-judge.md`, Tarefa 6.
+
+O bloco `plan` e o campo `evidence_standing` saem **em toda resposta** de
+`sparkforge_judge`, sem opt-in. O operador escolheu assim, e escolheu junto que
+o custo iria medido — o que faz da medição entrega, não observação posterior
+(regra 28).
+
+### Os três cases, e o quarto que mede a tendência
+
+Runtime `{glue 5.0, spark 3.5.4}`. **Antes** é a resposta sem `plan` e sem
+`evidence_standing`; **depois** é a resposta como ela sai hoje.
+
+| Case | findings | antes | depois | delta | pct |
+|---|---|---|---|---|---|
+| `fixtures/timeout/heartbeat_perdido/input` | 1 | 3501 | 3921 | +420 | **+12,0%** |
+| `fixtures/terraform/plataforma_kms_rede_conta/expected` | 4 | 12157 | 13002 | +845 | **+7,0%** |
+| `fixtures/eventlog/skewed_stage/expected` | 6 | 14172 | 15460 | +1288 | **+9,1%** |
+| união dos três maiores do corpus | 15 | 47383 | 50506 | +3123 | **+6,6%** |
+
+**O percentual varia quase pela metade — 12,0% a 6,6% — e a maior porcentagem
+cai no menor case.** Um número só, sobre um case, teria sido a média que esconde
+a distribuição. É a mesma armadilha que a regra 28 já documenta para
+`detail_level`, com o sinal invertido: lá o envelope fixo do pacote fazia a
+redução parecer nula (1,3%); aqui o piso do bloco `plan` faz o crescimento
+parecer grande.
+
+A decomposição diz por quê. `evidence_standing` custa **104 a 108 bytes por
+achado** e cresce linear com eles; o bloco `plan` tem piso — `scope`, `persisted`
+e `note` saem mesmo com um achado só —, e são 283 bytes de piso contra um
+payload de 3501. Somados, os dois campos explicam o delta inteiro menos ~33
+bytes de chave e vírgula do JSON.
+
+| Case | findings | bloco `plan` | soma dos `evidence_standing` |
+|---|---|---|---|
+| `heartbeat_perdido` | 1 | 283 | 104 |
+| `plataforma_kms_rede_conta` | 4 | 327 | 416 |
+| `skewed_stage` | 6 | 492 | 648 |
+| união | 15 | 1160 | 1608 |
+
+**O corpus não tem case maior que 6 achados.** Varridos os **264** arquivos
+`fixtures/*/*/expected/facts.json` e os **41** `fixtures/*/*/input/facts.json`,
+a distribuição por `total_count` é `{0: 147, 1: 99, 2: 13, 3: 2, 4: 2, 6: 1}` no
+primeiro conjunto e `{0: 36, 1: 5}` no segundo. A quarta linha
+é uma **união** de três fixtures pelo contrato repetível de `facts`, rotulada
+como tal: ela mede a tendência além do teto do corpus, não uma execução
+observada.
+
+### O que a medida decide, e o que ela não decide
+
+**O crescimento não muda a conclusão do desenho.** A base para dizer isso é a
+direção da curva, não o tamanho do número: o percentual **cai** conforme o case
+cresce, e o pior caso medido é o menor payload do corpus — 420 bytes sobre 3921,
+que não pressionam janela de contexto nenhuma. Se a curva subisse com o tamanho,
+a decisão de sair sem opt-in voltaria ao operador, e esta seção diria isso em vez
+desta.
+
+**Nenhuma afirmação de que o plano compensa o custo.** Não existem os dois lados
+medidos — decisão tomada com o bloco contra decisão tomada sem ele —, e a
+regra 30 vale aqui igual. Está medido o preço; o valor não está.
+
+**Byte de payload e byte de superfície não se somam.** O primeiro é o que cada
+resposta carrega; o segundo é o que a tool pesa em repouso, uma vez por sessão.
+Mesma unidade, grandezas diferentes — a mesma família de erro que a regra 22
+recusa entre byte e token.
+
+### Superfície
+
+`docs/surface.lock.json`: tools de **376 854 para 380 762 bytes**, **+3908**
+(**+1,04%**), com `tool_count` parado em **69**. Cresceu o `outputSchema` de
+`sparkforge_judge`; tool nova não entrou. Skills (57, 457 985 bytes) e knowledge
+(50, 460 219 bytes) não se moveram.
+
+### O buraco que a entrega descobriu: `CLAUDE.md` publica número que gate nenhum audita
+
+`CLAUDE.md` publicava **661,3x** para a razão do índice de código contra ler os
+arquivos, e **9,4x** contra a saída de um `grep` pelo nome. O documento
+**auditado** — `docs/harness/CODEINTEL-GAP.md` §10 — publica **675,6** e **9,6**,
+e o gate de lastro fecha verde sobre ele. Os dois números do `CLAUDE.md` foram
+relidos do documento auditado nesta entrega.
+
+**A causa é estrutural, e sobrevive à correção.** `audited_roots()` do
+`scripts/check_vnext_claims.py` devolve `(docs/vnext, docs/harness)` e mais nada:
+o arquivo de instrução que governa o projeto — e que todo agente lê antes de
+qualquer coisa — está **fora** do alcance do gate que existe para pegar
+exatamente esse defeito. Nada acusou a divergência; ela apareceu porque uma
+entrega adjacente foi ler o documento auditado por outro motivo.
+
+**`CLAUDE.md` NÃO foi acrescentado a `audited_roots()`, e isso é deliberado.**
+Ampliar o escopo do gate tem custo próprio: todo número do arquivo passaria a
+exigir entrada no manifesto de lastro, incluindo os que são narrativa histórica
+(`8662` e `8572`, a coleta e a soma dos lotes na época em que a receita era
+prosa) e os que medem outro subsistema. É decisão de escopo, e é do operador.
+Aqui ela fica **nomeada**, não resolvida — que é a diferença entre "não sei" e
+"não perguntei" (regra 20).
+
+**Outros quatro números do `CLAUDE.md` estavam defasados, e foram remedidos por
+comando** — todos no parágrafo do executor agêntico, defasados por esta própria
+pilha, que acrescentou `digest.py`:
+
+| Publicava | É | Prova |
+|---|---|---|
+| `7 módulos` | **8** | `ls sparkforge/agentic/executor/*.py` menos `__init__.py` |
+| `2573 linhas` | **2727** | `cat sparkforge/agentic/executor/*.py \| wc -l` |
+| `105 810 bytes` | **112 092** | `wc -c sparkforge/agentic/executor/*.py` |
+| `163 testes` | **176** | `pytest tests/test_agentic_executor*.py --collect-only -q` |
+
+Conferidos por comando e **corretos**, sem mexer: `69 tools` e `31 com
+detail_level` (`len(TOOLS)` e as que declaram a propriedade no `inputSchema` —
+uma trigésima segunda cita `detail_level` só na descrição, e não conta),
+`46 488`/`45 878`/`1,3%`/`840 bytes`/`0 de 27` (saída de
+`scripts/check_recall_economy.py`), `13 módulos` em `sparkforge/agentic/`
+(o subpacote `executor/` é outro nível), `11 skills` AWS em `skills/`, e os
+`90 testes` de `tests/test_fixtures_golden.py`.
+
+**Listado e NÃO corrigido, por estar fora do arquivo e fora do escopo desta
+tarefa:** `scripts/check_recall_economy.py` monta a linha `destrava` citando
+*"a secao 10 de docs/harness/CODEINTEL-GAP.md, que sobre 479 arquivos mediu
+645x a favor do indice"* — e nem `479` nem `645` aparecem em
+`CODEINTEL-GAP.md` hoje (`grep -n "479\|645"` não devolve linha), onde a razão
+publicada é **675,6**. É a mesma defasagem, num terceiro lugar: número copiado
+para dentro de um script, onde `check_vnext_claims.py` também não olha. `15 skills AWS restantes` no nível
+usuário não tem comando que o confira daqui, e ficou como está.
+
+### Estado dos gates ao fechar
+
+`check_vnext_claims.py` **0 divergência(s)**; `check_status_numbers.py --strict`
+**0 divergência(s)**; `check_surface_lock.py` **0**;
+`ruff check sparkforge scripts tests` limpo;
+`tests/test_adapters_judge_plan.py` e `tests/test_agentic_executor_digest.py`
+passando.
