@@ -21,6 +21,7 @@ from pathlib import Path
 
 import pytest
 
+from sparkforge.errors import matcher
 from sparkforge.facts import (
     athena_workgroup,
     benchmark,
@@ -34,6 +35,7 @@ from sparkforge.facts import (
     emr_eks,
     emr_serverless,
     event_log,
+    exception,
     funcval,
     fusion,
     graph,
@@ -55,13 +57,24 @@ from sparkforge.facts import (
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
 
-# AUSENTE DE PROPOSITO, e a lacuna e nomeada aqui em vez de ficar em silencio:
-# `sparkforge/errors/matcher.py` ganhou `EMITTED_KINDS` e emite
-# `error.signature_match` e `error.signature.unresolved`, mas o criterio DESTE
-# arquivo e golden por kind, e o corpus nao tem nenhum. Registra-lo agora
-# trocaria uma lacuna declarada por um teste vermelho que nao mede nada -- a
-# fixture e trabalho da Task 4 desta frente, e e la que ele entra. Mesmo
-# tratamento que `exception` recebeu na Task 1, pela mesma razao.
+# `matcher` (`sparkforge/errors/matcher.py`) e `exception`
+# (`sparkforge/facts/exception.py`) entram nesta lista no MESMO commit de
+# `fixtures/exception/`, e a divida que os mantinha fora esta paga aqui.
+#
+# A lacuna era declarada e datada: os dois modulos ja estavam na outra lista
+# manual (`tests/test_rules_catalog_reachability.py`), onde o criterio e "o kind
+# tem extrator"; aqui o criterio e "o kind aparece em algum golden", e medido em
+# 2026-09-08 o corpus tinha UM `spark.stage.failure` e ZERO `spark.exception*`.
+# Registra-los antes da fixture teria pintado
+# `test_every_kind_of_every_extractor_appears_in_some_golden` e
+# `test_every_unresolved_kind_is_exercised` de vermelho sem medir nada sobre
+# extrator nenhum.
+#
+# Os dois sao o PRIMEIRO caso desta lista em que o extrator nao le artefato:
+# `build_exceptions` deriva de `spark.stage.failure` e `build_signature_matches`
+# deriva de `spark.exception`. O criterio nao muda por isso -- kind emitido e
+# kind que precisa de golden, venha ele de arquivo ou de outro fact --, e
+# `tests/test_fixtures_golden_exception.py` e quem monta a cadeia inteira.
 EXTRACTORS = {
     "athena_workgroup": athena_workgroup,
     "benchmark": benchmark,
@@ -96,19 +109,7 @@ EXTRACTORS = {
     # que falhar.
     "emr_serverless": emr_serverless,
     "event_log": event_log,
-    # `exception` (`sparkforge/facts/exception.py`) NAO esta nesta lista, e a
-    # ausencia e deliberada e datada. Ele ja entrou na outra lista manual
-    # (`tests/test_rules_catalog_reachability.py`), onde o criterio e "o kind
-    # tem extrator"; aqui o criterio e "o kind aparece em algum golden", e
-    # medido em 2026-09-08 o corpus tem UM `spark.stage.failure` e ZERO
-    # `spark.exception*` -- porque nenhum coordenador chama `build_exceptions`
-    # ainda. Registrar aqui antes da fixture pintaria
-    # `test_every_kind_of_every_extractor_appears_in_some_golden[exception]` e
-    # `test_every_unresolved_kind_is_exercised` de vermelho sem medir nada
-    # sobre o extrator. A fixture e a Task 4 desta frente, e este comentario e
-    # a divida nomeada ate la.
-    # Lista manual, duplicada em `tests/test_rules_catalog_reachability.py`:
-    # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
+    "exception": exception,
     "funcval": funcval,
     "fusion": fusion,
     # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES
@@ -120,6 +121,12 @@ EXTRACTORS = {
     # nomeando os seis.
     "graph": graph,
     "iceberg_metadata": iceberg_metadata,
+    # `matcher` e o unico modulo desta lista que NAO mora em `sparkforge/facts/`
+    # -- ele e `sparkforge/errors/matcher.py`, e o import dele vem separado la
+    # em cima por isso. A lista e manual e duplicada em
+    # `tests/test_rules_catalog_reachability.py`: extrator novo entra nas DUAS,
+    # e esquecer uma nao quebra nada aqui.
+    "matcher": matcher,
     # `migration` entra nas DUAS listas no mesmo commit da Task 7 da Fase 6b,
     # junto com `rules/catalog/glue-migration.yaml`: sem ele aqui os oito kinds
     # `mig.*` nao sao verificados por ninguem. Este modulo VAI cobrar golden

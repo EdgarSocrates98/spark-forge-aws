@@ -1,0 +1,474 @@
+[
+  {
+    "id": "f_784783",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {
+      "available_cores": 8,
+      "executor_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_784010",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.app.name"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.app.name",
+      "value": "exception_simples_job",
+      "app_id": "application_1699000000000_0042",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_93d162",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.cores"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.cores",
+      "value": "4",
+      "app_id": "application_1699000000000_0042",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f3132e",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.instances"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.instances",
+      "value": "2",
+      "app_id": "application_1699000000000_0042",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_00b1ed",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.master"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.master",
+      "value": "yarn",
+      "app_id": "application_1699000000000_0042",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_315411",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.version"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.version",
+      "value": "3.5.4",
+      "app_id": "application_1699000000000_0042",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_596ef5",
+    "schema_version": 1,
+    "kind": "spark.conf_excluded",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {
+      "extracted_property_count": 5,
+      "excluded_section_count": 1,
+      "excluded_entry_count": 2
+    },
+    "attrs": {
+      "extracted_section": "Spark Properties",
+      "excluded_sections": {
+        "JVM Information": 2
+      }
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_e86330",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {
+      "stages_with_spill": 0,
+      "total_memory_spill_bytes": 0,
+      "total_disk_spill_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_3a237e",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 15,
+      "event_count": 15,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f55918",
+    "schema_version": 1,
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0042"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.4",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_d8d2e9",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "arquivo_nao_python",
+      "file": "Etl.scala"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_5edb84",
+    "schema_version": 1,
+    "kind": "spark.stage.failure",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "java.lang.IllegalArgumentException: requirement failed: coluna de particao dt ausente no schema de entrada\n\tat scala.Predef$.require(Predef.scala:337)\n\tat org.apache.spark.sql.Dataset.resolve(Dataset.scala:281)\n\tat org.apache.spark.sql.Dataset.col(Dataset.scala:1420)\n"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_6726ec",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {
+      "gc_ms": 160,
+      "executor_run_ms": 8000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_115da0",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {
+      "memory_spill_bytes": 0,
+      "disk_spill_bytes": 0,
+      "input_bytes": 32768
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_1b34a9",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {
+      "task_count": 8,
+      "available_cores": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f79674",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 1000,
+      "max_ms": 1000,
+      "mean_ms": 1000.0,
+      "task_count": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_6e316d",
+    "schema_version": 1,
+    "kind": "spark.stage.task_input",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {
+      "min_bytes": 4096,
+      "p50_bytes": 4096,
+      "p95_bytes": 4096,
+      "max_bytes": 4096,
+      "total_bytes": 32768
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_db5dc6",
+    "schema_version": 1,
+    "kind": "spark.exception",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "exception_class": "java.lang.IllegalArgumentException",
+      "message_head": "requirement failed: coluna de particao dt ausente no schema de entrada",
+      "is_chained": false,
+      "caused_by": []
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_f96301",
+    "schema_version": 1,
+    "kind": "spark.exception.frame",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "frame": 0
+    },
+    "measures": {},
+    "attrs": {
+      "class": "scala.Predef$",
+      "method": "require",
+      "file": "Predef.scala",
+      "line": 337
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_fda741",
+    "schema_version": 1,
+    "kind": "spark.exception.frame",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "frame": 1
+    },
+    "measures": {},
+    "attrs": {
+      "class": "org.apache.spark.sql.Dataset",
+      "method": "resolve",
+      "file": "Dataset.scala",
+      "line": 281
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_ef4b08",
+    "schema_version": 1,
+    "kind": "spark.exception.frame",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "frame": 2
+    },
+    "measures": {},
+    "attrs": {
+      "class": "org.apache.spark.sql.Dataset",
+      "method": "col",
+      "file": "Dataset.scala",
+      "line": 1420
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_ecc0b8",
+    "schema_version": 1,
+    "kind": "error.signature.unresolved",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "nenhuma_assinatura_casou",
+      "exception_class": "java.lang.IllegalArgumentException"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

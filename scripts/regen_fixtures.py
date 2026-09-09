@@ -19,6 +19,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sparkforge.errors.matcher import build_signature_matches  # noqa: E402
 from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
 from sparkforge.facts.benchmark import build_benchmark  # noqa: E402
 from sparkforge.facts.call_graph import build_call_graph  # noqa: E402
@@ -33,6 +34,7 @@ from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
 from sparkforge.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
 from sparkforge.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge.facts.exception import build_exceptions  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
@@ -79,6 +81,7 @@ FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
 FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
+FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
 FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
 # Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
 # `evals/holdout/README.md` e `regen_scenario`.
@@ -430,6 +433,40 @@ def regen_migration(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_exception(directory: Path) -> None:
+    """Corpus da excecao: event log obrigatorio, `.jar` e `.tf` quando o caso
+    precisa deles.
+
+    Tres extratores de artefato e DOIS derivadores puros, nesta ordem, porque a
+    ordem e a dependencia: `extract_event_log_path` produz o
+    `spark.stage.failure` que `build_exceptions` estrutura, e o
+    `spark.exception` que ele emite e o que `build_signature_matches` casa
+    contra `knowledge/errors/`. Nenhum dos dois derivadores le artefato -- eles
+    leem a UNIAO dos facts, no molde de `regen_bench` e de `_derive` em
+    `tests/test_fixtures_golden_bridge.py`.
+
+    `.jar` e `.tf` entram sob guarda de existencia e nao por default: as duas
+    regras de `rules/catalog/errors.yaml` declaram `mig.jar_binary` e
+    `tf.attribute` em `requires_facts`, e o par positivo/negativo que prova esse
+    contrato e exatamente a fixture COM o jar contra a fixture SEM ele. Extrair
+    os dois sempre que o diretorio existisse apagaria a diferenca que o par
+    existe para medir.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for jsonl in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    if any(input_dir.rglob("*.jar")):
+        facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    facts.extend(build_exceptions(facts))
+    facts.extend(build_signature_matches(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_scenario(directory: Path) -> None:
     """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
 
@@ -657,6 +694,7 @@ def main() -> int:
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),
                 (FIXTURES_MIGRATION / name, regen_migration),
+                (FIXTURES_EXCEPTION / name, regen_exception),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -747,6 +785,12 @@ def main() -> int:
     if FIXTURES_MIGRATION.is_dir():
         for directory in sorted(p for p in FIXTURES_MIGRATION.iterdir() if p.is_dir()):
             regen_migration(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/exception/`
+    # nasce na Task 4 da frente de stacktrace intelligence, e a regeneracao
+    # completa roda ENTRE a Task 3 e ela.
+    if FIXTURES_EXCEPTION.is_dir():
+        for directory in sorted(p for p in FIXTURES_EXCEPTION.iterdir() if p.is_dir()):
+            regen_exception(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.
