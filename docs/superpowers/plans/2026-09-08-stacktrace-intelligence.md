@@ -352,14 +352,14 @@ Expected: PASS, sem regressão no teste antigo.
 
 ---
 
-## Task 3: regras `SF-ERR-*`
+## Task 3: regras `SF-ERR-*` — ENTREGUE (2026-09-08)
 
 **Files:**
 - Create: `rules/catalog/errors.yaml`
-- Modify: `rules/catalog/routing.yaml`, `agents/<coordenador>.md`
+- Modify: `rules/catalog/routing.yaml`, `agents/sf-runtime-specialist.md`
 - Test: `tests/test_rules_errors.py`
 
-- [ ] **Step 1: Ler as seis assinaturas**
+- [x] **Step 1: Ler as seis assinaturas**
 
 ```bash
 for f in knowledge/errors/*/*.json; do echo "== $f"; python -c "
@@ -368,52 +368,80 @@ print(' id',d['id'],'| sig',d['signature'],'| evidence',d.get('evidence_required
 "; done
 ```
 
-- [ ] **Step 2: Escrever UMA regra primeiro, e o teste dela**
+- [x] **Step 2: Escrever UMA regra primeiro, e o teste dela**
 
-Comece por `ERR-GLUE-002` (Scala 2.12 sob Spark 4), que é a que tem
+`SF-ERR-001`, de `ERR-GLUE-002` (Scala 2.12 sob Glue 6.0), que é a que tem
 `evidence_required` mais rico (`mig.jar_binary`, `tf.attribute`).
 
-O teste que prova a integração:
+O teste que prova a integração está em
+`tests/test_rules_errors.py::TestRegraExigeAEvidenciaDaAssinatura`. Duas
+diferenças em relação ao esboço deste plano, e as duas são deliberadas:
 
-```python
-class TestRegraExigeAEvidenciaDaAssinatura:
-    def test_nao_dispara_so_com_a_excecao(self):
-        """Hoje o matcher casa a palavra `NoSuchMethodError` em qualquer log e
-        afirma 98%. A regra so pode disparar com os facts que a propria
-        assinatura declara em `evidence_required`."""
-        facts = [_exception("java.lang.NoSuchMethodError"), _signature_match("ERR-GLUE-002")]
-        findings = _judge(facts)
-        assert not [f for f in findings if f.rule_id == "SF-ERR-002"]
+- o `error.signature_match` **não é escrito à mão** — ele sai de
+  `build_signature_matches` sobre um `spark.exception` construído no teste,
+  lendo o catálogo real de `knowledge/errors/`. Um fact fabricado provaria que
+  o YAML da regra casa com o YAML do teste; passar pelo matcher prova que a
+  regra casa com o que o extrator REALMENTE emite;
+- o esboço afirmava sobre `SF-ERR-002` no par de `ERR-GLUE-002`. O id certo é
+  `SF-ERR-001` — `SF-ERR-002` é a regra de `ERR-GLUE-003`.
 
-    def test_dispara_com_a_evidencia_completa(self):
-        facts = [
-            _exception("java.lang.NoSuchMethodError"),
-            _signature_match("ERR-GLUE-002"),
-            _jar_binary(scala_minor="2.12"),
-            _tf_attribute(glue_version="6.0"),
-        ]
-        findings = _judge(facts)
-        assert [f for f in findings if f.rule_id == "SF-ERR-002"]
-```
+O teste declara `runtime={"glue": "6.0"}` de propósito: sem runtime as duas
+regras são puladas por `runtime_scope`, e toda asserção de fronteira passaria
+por SKIP — verde sem nunca ter olhado para a regra.
 
-- [ ] **Step 3: Migrar as outras cinco**, uma por vez, com par
-      positivo/negativo cada.
+- [x] **Step 3: ~~Migrar as outras cinco~~ — DESVIO, e o motivo é medido**
 
-- [ ] **Step 4: Rota e coordenador**
+**Duas regras, não seis.** O campo `signature` das seis foi lido, e ele não é
+da mesma natureza:
 
-Área `SF-ERR` precisa de rota em `routing.yaml` **e** de coordenador que a
-declare, senão `tests/test_agent_coverage.py` reprova.
+| id | `signature` | natureza |
+|---|---|---|
+| **ERR-GLUE-002** | `NoSuchMethodError` | **classe de exceção** |
+| **ERR-GLUE-003** | `NoSuchFieldError` | **classe de exceção** |
+| ERR-ATH-001 | `Cannot read unsupported version 3` | trecho de mensagem |
+| ERR-GLUE-001 | `Container killed by YARN for exceeding memory limits` | trecho de mensagem |
+| ERR-ICE-001 | `CommitFailedException: Commit failed: ...` | trecho de mensagem |
+| ERR-LF-001 | `Insufficient Lake Formation permission(s) on` | trecho de mensagem |
 
-- [ ] **Step 5: Rodar os gates de catálogo**
+`build_signature_matches` (Task 2) casa a assinatura contra
+`attrs.exception_class` e `attrs.caused_by` — CLASSE, nunca texto corrido de
+log. As quatro de mensagem **nunca produzem `error.signature_match` por este
+caminho**, e regra escrita sobre elas hoje seria regra que não dispara nunca:
+`requires_facts` satisfeito, `when` mudo, relatório limpo. O caminho delas é o
+coletor de CloudWatch Logs da Task 5.
+
+O motivo está escrito no cabeçalho de `rules/catalog/errors.yaml` e é
+**medido por teste**, não afirmado de memória:
+`tests/test_rules_errors.py::test_a_assinatura_sem_regra_e_trecho_de_mensagem_e_nao_casa_por_classe`
+alimenta cada uma das quatro como cabeça de mensagem e confirma que ela cai em
+`error.signature.unresolved`.
+
+- [x] **Step 4: Rota e coordenador**
+
+`AGENT-084` em `routing.yaml` (`findings_area: SF-ERR`) e `SF-ERR` em
+`rule_areas` de `agents/sf-runtime-specialist.md`, que já declara `SF-SPARK4`
+e `SF-MIG` e traz as skills `migrate-glue-6` e `spark4-compatibility` — as duas
+regras novas são a metade `confirmed` do que `SF-SPARK4-004` já afirma de forma
+estrutural.
+
+- [x] **Step 5: Rodar os gates de catálogo**
 
 ```bash
-python -m pytest tests/test_rules_loader.py tests/test_rules_action_field.py \
-  tests/test_fixtures_kind_coverage.py tests/test_agent_coverage.py -q
+python -m pytest tests/test_rules_loader.py tests/test_rules_action_field.py   tests/test_agent_coverage.py tests/test_rules_catalog_reachability.py -q
 ```
 
-As regras novas precisam de bloco `action:` como as outras 112.
+684 passando. `tests/test_fixtures_kind_coverage.py` fica **vermelho de
+propósito** em dois testes — `test_every_rule_has_a_fixture_that_fires_it` e
+`test_every_severity_branch_has_a_golden_that_produces_it` — porque as duas
+regras novas ainda não têm golden. A fixture é a Task 4, e forçar o gate agora
+trocaria uma lacuna nomeada por um verde que não mede nada.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
+
+Catálogo: **149** regras, **114** executáveis. `STATUS.md` remedido em quatro
+linhas (regras de diagnóstico, `runtime_scope` não-vazio, eixo de resultado no
+`validation`, rotas determinísticas), e o gate de lastro em três ids
+(`VNX-640`, `VNX-674`, `VNX-430`), relidos pela própria prova.
 
 ---
 

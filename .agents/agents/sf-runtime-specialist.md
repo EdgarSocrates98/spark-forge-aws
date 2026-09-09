@@ -6,7 +6,7 @@ skills:
   - compare-releases
   - migrate-glue-6
   - spark4-compatibility
-rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4, SF-CTM]
+rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4, SF-CTM, SF-ERR]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -37,6 +37,33 @@ sob Glue 5.1 e quebra sob 6.0, e um piso de dependencia so e piso a partir da
 versao de Spark que o exige. A saida traz a dependencia observada ao lado do
 achado que ela produziu, e o runtime que decidiu quais regras avaliaram -- sem
 ele, achado ausente e indistinguivel de regra pulada por versao.
+
+## A exceção que o job LANÇOU — `SF-ERR`, e o que a separa de `SF-SPARK4`
+
+Quando o case traz event log com `spark.stage.failure`, o extrator
+`sparkforge/facts/exception.py` estrutura a razão da falha em `spark.exception`
+(classe, cabeça da mensagem, `caused_by`) e o matcher casa aquela CLASSE contra
+`knowledge/errors/`, emitindo `error.signature_match`. A área `SF-ERR` julga
+esse par.
+
+Duas coisas decidem se a resposta vale:
+
+- **`SF-ERR` é a metade `confirmed` do que `SF-SPARK4-004` já afirma de forma
+  estrutural.** A estrutural lê só o binário e o runtime alvo e diz que a falha
+  é certa; a de erro diz que ela ACONTECEU, com o event log ao lado. Ver as duas
+  no mesmo relatório não é duplicata -- uma é migração a planejar, a outra é run
+  a reprocessar.
+- **A regra não dispara com a exceção sozinha, e isso é o ponto.** O
+  `evidence_required` da assinatura (`mig.jar_binary` e `tf.attribute`) é
+  `requires_facts` de verdade: sem o binário do diretório do job e sem o IaC, a
+  regra sai em `judge --show-skipped` com `reason: requires_facts`. Colete os
+  dois antes de concluir que a exceção não casou com nada.
+
+**Só duas das seis assinaturas de `knowledge/errors/` têm regra hoje**, e o
+motivo está no cabeçalho de `rules/catalog/errors.yaml`: quatro delas casam por
+TRECHO DE MENSAGEM de log, não por classe de exceção, e o caminho delas é o
+coletor de CloudWatch Logs. Ausência de achado `SF-ERR` nunca significa que a
+falha é desconhecida.
 
 ## Control-M (BMC) — conhecimento versionado, e a fronteira dele
 

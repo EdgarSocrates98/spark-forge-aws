@@ -1,0 +1,376 @@
+# Catálogo de regras — o julgamento sobre a exceção que o job LANÇOU.
+#
+# A camada de fato já existe e não mora aqui: `sparkforge/facts/exception.py`
+# estrutura `spark.stage.failure.attrs.reason` em `spark.exception`
+# (`exception_class`, `message_head`, `is_chained`, `caused_by`), e
+# `sparkforge/errors/matcher.py::build_signature_matches` constata que aquela
+# exceção casa com uma assinatura de `knowledge/errors/`
+# (`error.signature_match`, com `signature_id` e `matched_on`). Nenhum dos dois
+# julga. O julgamento é este arquivo.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# POR QUE DUAS REGRAS E NÃO SEIS, e o motivo é medido
+#
+# `knowledge/errors/` tem SEIS assinaturas. O campo `signature` de cada uma foi
+# lido, e ele não é da mesma natureza nas seis:
+#
+#   ERR-GLUE-002  `NoSuchMethodError`                                    CLASSE
+#   ERR-GLUE-003  `NoSuchFieldError`                                     CLASSE
+#   ERR-ATH-001   `Cannot read unsupported version 3`                  MENSAGEM
+#   ERR-GLUE-001  `Container killed by YARN for exceeding memory ...`  MENSAGEM
+#   ERR-ICE-001   `CommitFailedException: Commit failed: ...`          MENSAGEM
+#   ERR-LF-001    `Insufficient Lake Formation permission(s) on`       MENSAGEM
+#
+# `build_signature_matches` casa a assinatura contra `attrs.exception_class` e
+# contra `attrs.caused_by` — CLASSE de exceção, nunca texto corrido de log. As
+# quatro de mensagem, portanto, **nunca produzem `error.signature_match` por
+# este caminho**, e uma regra escrita sobre elas hoje seria regra que não
+# dispara nunca: `requires_facts` satisfeito, `when` mudo, relatório limpo — o
+# falso negativo silencioso que `_validate_conditions` (`rules/loader.py`)
+# existe para matar, só que uma camada acima, onde nenhuma validação alcança.
+#
+# O caminho das quatro é o coletor de CloudWatch Logs (§2.4 do desenho
+# `docs/superpowers/specs/2026-09-08-stacktrace-intelligence-design.md`), que
+# traz o texto de log que o event log não carrega. Elas entram quando ele
+# entrar, não antes. **Escrever regra que nunca dispara é pior que não
+# escrever.**
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE ESTAS DUAS AFIRMAM, E O QUE JÁ ERA AFIRMADO SEM ELAS
+#
+# `SF-SPARK4-004` já existe e lê o MESMO `mig.jar_binary` com o MESMO limiar
+# (`attrs.scala_minor < 13`). Ela é `status: structural`: o jar é 2.12, o
+# runtime alvo é Spark 4, e a falha é CERTA — mas ainda não aconteceu. Ela
+# dispara sobre um repositório parado, antes de qualquer execução.
+#
+# `SF-ERR-001` é a irmã `confirmed` dela: a falha ACONTECEU, e a prova é
+# `error.signature_match` derivado de `spark.exception`, que por sua vez só
+# existe porque houve `spark.stage.failure` num event log real. As duas não são
+# duplicata — elas dizem coisas diferentes sobre o mesmo defeito, e a diferença
+# muda a decisão: uma é migração a planejar, a outra é run a reprocessar.
+#
+# O que NENHUMA das duas afirma: quanto custou a falha, nem quanto se
+# economizaria consertando (regra 13 do `CLAUDE.md`). E nenhuma carrega
+# `confidence`: o `0.98` literal do caminho antigo do matcher morreu na T2, e
+# não ressuscita aqui — regra tem status e severidade, não score.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `evidence_required` DA ASSINATURA VIRA `requires_facts` DE VERDADE
+#
+# Este é o ponto inteiro da frente. O matcher antigo casava a palavra
+# `NoSuchMethodError` em qualquer log e afirmava 98% de confiança, IGNORANDO o
+# `evidence_required` que a própria assinatura declara. Aqui os dois facts que
+# ERR-GLUE-002 e ERR-GLUE-003 exigem — `mig.jar_binary` e `tf.attribute` —
+# entram em `requires_facts`, e o motor (`rules/engine.py::judge`) pula a regra
+# nomeando o que falta enquanto qualquer um dos três não estiver presente. Sem
+# o binário e sem o IaC, a exceção casada não sustenta a acusação, e a recusa
+# sai listada em `skipped` com `reason: requires_facts` — que é a diferença
+# entre "não sei" e "não perguntei".
+catalog_version: 1
+schema_version: 1
+area: SF-ERR
+retrieved: 2026-09-08
+
+rules:
+
+  # `runtime_scope` é por GLUE e não por Spark, ao contrário de `SF-SPARK4-004`,
+  # e a diferença é deliberada: a fronteira BINÁRIA do Scala é do Apache (Spark
+  # 4 subiu 2.12 -> 2.13, e vale igual num EMR), mas ESTA regra não fala da
+  # fronteira — fala da assinatura `ERR-GLUE-002`, que declara `service: glue` e
+  # `versions: ["6.0"]`, e cuja evidência inclui o `glue_version` do Terraform.
+  # A afirmação estrutural mais ampla já é a de SF-SPARK4-004; guardar as duas
+  # pela mesma chave apagaria a diferença entre elas.
+  #
+  # `">=6.0"` e não `"==6.0"`: a fronteira ABRE no Glue 6.0 e não fecha depois.
+  # `==6.0` faria a regra emudecer no dia em que a AWS publicar 6.1, com a mesma
+  # falha acontecendo. Mesmo critério de `SF-MIG-003`.
+  - id: SF-ERR-001
+    category: runtime-error
+    title: >-
+      NoSuchMethodError confirmado em runtime com JAR de Scala anterior ao 2.13
+      no classpath de um job Glue 6.0
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-GLUE-002"}
+        # O limiar mora aqui, como em SF-SPARK4-004: o extrator só observa o
+        # número escrito no nome do artefato. `attrs.scala_minor` NÃO existe
+        # quando o nome não encodifica a versão, e caminho ausente vira
+        # `ExprError` no avaliador, logo `False` -- a regra fica muda sobre um
+        # jar que pode ser Java puro, em vez de mandar recompilar contra 2.13
+        # um artefato que nunca teve Scala nenhum.
+        - fact: mig.jar_binary
+          expr: "attrs.scala_minor < 13"
+        # `block: root` porque `glue_version` é atributo de raiz de
+        # `aws_glue_job`; casar em qualquer bloco aceitaria uma chave de mesmo
+        # nome dentro de `command {}` ou `default_arguments {}`. NÃO se confere
+        # o VALOR aqui: a versão efetiva é assunto de `runtime_scope`, e casar
+        # `attrs.value: "6.0"` faria a regra emudecer sobre um job que declara
+        # "6.1" e falha igual. O que esta condição exige é que o IaC do job
+        # esteja no case -- que é o `tf.attribute` que a assinatura pede.
+        - fact: tf.attribute
+          where: {attrs.key: "glue_version", attrs.block: "root"}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: ">=6.0"}
+    explanation: >
+      O job LANÇOU `NoSuchMethodError` e há, no mesmo case, um `.jar` cujo nome
+      encodifica Scala anterior ao 2.13 e um `aws_glue_job` declarado no
+      Terraform. As três evidências juntas são o que a assinatura `ERR-GLUE-002`
+      declara precisar, e é por isso que esta regra não dispara com a exceção
+      sozinha: a palavra `NoSuchMethodError` num log não distingue incompatibilidade
+      binária de Scala de uma dúzia de outras causas de erro de linkagem.
+
+
+      O AWS Glue 6.0 roda Scala 2.13.17. Scala 2.12 e 2.13 NÃO são compatíveis
+      em bytecode -- não é API depreciada, é a fronteira binária da própria
+      linguagem, e a documentação de migração da AWS a declara como breaking
+      change textual. Um JAR de 2.12 em `--extra-jars` falha em RUNTIME, na
+      primeira vez que aquela classe é carregada, possivelmente depois de
+      minutos de processamento e de parte da saída já ter sido escrita -- e
+      passa em qualquer smoke test que não exercite aquele caminho exato.
+
+
+      Uma dependência TRANSITIVA do JAR customizado carrega o sufixo `_2.12`
+      com a mesma facilidade que o artefato de topo, e o nome do arquivo que
+      você declarou não denuncia isso.
+
+
+      Esta regra é `confirmed` e tem uma irmã `structural`: `SF-SPARK4-004`
+      afirma o mesmo defeito ANTES da execução, lendo só o binário e o runtime
+      alvo. Quando as duas aparecem no mesmo relatório elas não se contradizem
+      -- a segunda previu, a primeira registrou.
+    proposed_change:
+      - >-
+        Recompilar todo JAR Scala/Java customizado contra Scala 2.13.17 e
+        republicar o artefato, apontando `--extra-jars` para a versão nova.
+      - >-
+        Conferir o sufixo de artefato de cada JAR E das dependências
+        transitivas dele (`_2.12` contra `_2.13`) -- um único remanescente de
+        2.12 derruba o job igual, e ele não aparece no nome do que você
+        declarou.
+      - >-
+        Trocar `JavaConversions` por `CollectionConverters` e `MutableList` por
+        `ListBuffer`; coleções paralelas passaram a exigir import próprio em
+        2.13.
+      - >-
+        Rodar `sparkforge glue dependency-audit <dir> --glue 6.0` sobre o
+        diretório do job para ler `mig.jar_binary.scala_minor` de todos os JARs
+        de uma vez, em vez de conferir o acusado sozinho.
+    # Mesmo `kind` e mesmo `target` de `SF-SPARK4-004`, e a mesma `direction`:
+    # as duas trocam o artefato do classpath pelo build que o runtime alvo
+    # exige. Direções IGUAIS não formam contradição -- e não deveriam formar,
+    # porque a ação é literalmente a mesma; o que difere entre as duas regras é
+    # o status do achado, não o que fazer.
+    #
+    # FICA DE FORA `--user-jars-first`, que os `risks` nomeiam como o conserto
+    # que troca um erro de linkagem por outro.
+    #
+    # Os dois eixos são `nature: risk` e os dois estão na `validation`: o
+    # artefato entregue ao classpath muda, e um JAR de terceiro trocado por
+    # outra linha de release pode mudar o VALOR do que ele produz.
+    action:
+      kind: dependency.align_version_with_runtime
+      target: job.extra_jars.scala_binary
+      direction: replace
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Forçar o JAR de 2.12 à frente do classpath com `--user-jars-first` não
+        conserta nada: o runtime em si é 2.13, então isso troca um erro de
+        linkagem por outro -- e abre a porta do defeito que `SF-ERR-002`
+        descreve.
+      - >-
+        Recompilar um JAR de terceiro sem o código-fonte NÃO é possível. Quando
+        o mantenedor não publica build para 2.13 não existe conserto local, e
+        tratar isso como tarefa de engenharia produz um plano que não fecha.
+      - >-
+        Trocar o artefato por uma versão 2.13 de outra linha de release muda
+        mais que o binário -- comportamento, defaults e assinaturas podem ter
+        mudado junto, e a diferença não aparece no nome do arquivo.
+      - >-
+        A saída parcial que o run falho deixou no destino continua lá. Corrigir
+        o classpath não a remove, e reprocessar por cima dela sem decidir o que
+        fazer com o que já foi escrito é como um dado duplicado nasce.
+    tradeoffs:
+      - >-
+        Permanecer no Glue 5.1, onde o runtime é Scala 2.12.18 e o JAR funciona
+        sem mudança, é escolha legítima -- mas precisa ser DECLARADA, com data
+        e motivo, ou vira dívida que ninguém sabe que existe.
+      - >-
+        Remover a dependência do JAR e reescrever nativamente em PySpark
+        elimina a fronteira binária de vez, ao custo de reimplementar o que ele
+        fazia.
+    validation:
+      - >-
+        Rodar o job no AWS Glue 6.0 com o JAR recompilado e confirmar que a
+        classe que falhou agora carrega -- exercitando o caminho de código que
+        a usa, não só a submissão.
+      - >-
+        `mig.jar_binary.attrs.scala_minor` de TODOS os JARs do diretório do
+        job, depois da troca: nenhum abaixo de 13.
+      - >-
+        Para JAR de terceiro trocado por outra linha de release, comparação de
+        VALOR das colunas que ele produz -- contagem, nulos por coluna e
+        agregados de controle -- contra a saída do último run bem-sucedido.
+    rollback:
+      - >-
+        Reverter `glue_version` para 5.1, onde o runtime é Scala 2.12.18 e o
+        JAR de 2.12 funciona sem mudança.
+      - >-
+        Reverter `--extra-jars` para o artefato anterior. É mudança de
+        classpath, não de dado -- mas a saída parcial do run que falhou
+        precisa ser descartada ou reconciliada à parte.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html
+        retrieved: 2026-08-23
+        note: >
+          Fonte declarada por `knowledge/errors/glue/scala_212_jar_under_spark4.json`
+          (`ERR-GLUE-002`), com `last_verified: 2026-08-23`. Ela registra o
+          Scala 2.13.17 do Glue 6.0 e nomeia JAR customizado de 2.12 como
+          breaking change.
+
+  # `--user-jars-first` é o que separa esta regra da anterior: sem ele o SDK do
+  # runtime vence o classpath e o defeito não existe. Por isso ele é condição, e
+  # não nota de rodapé.
+  - id: SF-ERR-002
+    category: runtime-error
+    title: >-
+      NoSuchFieldError confirmado em runtime com JAR customizado à frente do
+      classpath por --user-jars-first
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-GLUE-003"}
+        # SEM `expr`. O extrator lê a versão de SCALA escrita no nome do
+        # arquivo; a versão do AWS SDK EMPACOTADA dentro do jar não está no
+        # nome e ninguém a mediu. Exigir aqui um limiar sobre 2.44.6 seria
+        # julgar um número que não existe no fact -- a condição é a PRESENÇA de
+        # um JAR customizado, e a comparação com o piso vira passo de
+        # `proposed_change`, onde o operador a executa e mede.
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+          where:
+            attrs.key: "--user-jars-first"
+            attrs.value: "true"
+            attrs.block: "default_arguments"
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: ">=6.0"}
+    explanation: >
+      O job LANÇOU `NoSuchFieldError`, há um `.jar` customizado no diretório do
+      job, e o `aws_glue_job` declara `--user-jars-first: true`. As três
+      evidências juntas são o que a assinatura `ERR-GLUE-003` declara precisar.
+
+
+      `--user-jars-first` põe os JARs do usuário À FRENTE do classpath do
+      runtime. Quando o JAR customizado empacota o AWS SDK for Java 2.x numa
+      versão anterior à 2.44.6 que o AWS Glue 6.0 traz, é o SDK antigo que
+      vence -- e o runtime do Glue depende de classes, campos e métodos que
+      aquele SDK não tem. O sintoma é campo, classe ou método faltando num
+      pacote `software.amazon.awssdk`, e ele aparece SÓ com a flag ligada: sem
+      ela o mesmo JAR convive com o runtime sem reclamar.
+
+
+      **Esta regra NÃO afirma qual versão do SDK está empacotada dentro do
+      JAR.** Isso não está no nome do arquivo e nenhum extrator a leu -- o que
+      está medido é que existe JAR customizado, que a flag está ligada, e que
+      a exceção aconteceu. Comparar o SDK empacotado contra 2.44.6 é o primeiro
+      passo de `proposed_change`, e é o operador que o executa.
+    proposed_change:
+      - >-
+        Listar a versão do AWS SDK for Java 2.x empacotada dentro de cada JAR
+        customizado e compará-la com a 2.44.6 que o Glue 6.0 traz -- esta é a
+        medida que a regra não tem e que decide o resto.
+      - >-
+        Reconstruir o JAR contra o AWS SDK for Java 2.x 2.44.6 ou posterior, se
+        ele precisa mesmo empacotar o SDK.
+      - >-
+        Ou parar de empacotar o SDK dentro do JAR e deixar o runtime fornecê-lo
+        -- isso remove a razão de existir de `--user-jars-first`.
+      - >-
+        Ou remover `--user-jars-first` se ela foi ligada por um motivo que já
+        não vale; confirmar antes qual dependência dependia da precedência,
+        porque removê-la muda o classpath inteiro e não só o SDK.
+    # `increase` e não `replace`: a ação é levar a dependência empacotada ao
+    # PISO que o runtime declara (2.44.6), o mesmo movimento de `SF-SPARK4-003`
+    # sobre o pin de PyArrow. `target` próprio (`job.extra_jars.sdk_version`) e
+    # não o `job.extra_jars.scala_binary` de SF-ERR-001: são duas coisas
+    # diferentes dentro do mesmo artefato, e um `target` grosso demais
+    # inventaria contradição entre regras que não se desfazem (o defeito que o
+    # comentário de `tests/test_rules_action_field.py` registra sobre
+    # `pyspark.join`).
+    #
+    # FICA DE FORA remover `--user-jars-first`, que é a alternativa dos
+    # `tradeoffs` -- ela desliga a precedência em vez de alinhar a versão, e é
+    # a outra escolha, não a mesma.
+    action:
+      kind: dependency.align_version_with_runtime
+      target: job.extra_jars.sdk_version
+      direction: increase
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on: []
+    risks:
+      - >-
+        Manter `--user-jars-first` e prender o runtime a uma versão mais velha
+        de Glue para casar com o SDK empacotado adia a migração sem registrar
+        por quê -- a dívida fica, e o motivo dela some.
+      - >-
+        Remover `--user-jars-first` muda a precedência de TODO o classpath, não
+        só a do SDK. Alguma outra dependência do job pode ter sido a razão de a
+        flag existir, e ela passa a perder para o runtime sem aviso.
+      - >-
+        Subir o SDK empacotado troca o comportamento das chamadas de serviço
+        AWS que o JAR faz -- defaults de retry, paginação e assinatura mudaram
+        entre linhas do 2.x.
+    tradeoffs:
+      - >-
+        Deixar o runtime fornecer o SDK elimina o conflito para sempre, ao
+        custo de a versão passar a mudar quando a AWS mudar o runtime, sem o
+        job pedir -- previsibilidade contra manutenção.
+      - >-
+        Empacotar e sombrear (`shade`) o SDK dentro do JAR mantém o controle de
+        versão e evita o conflito de classpath, ao custo de um artefato maior e
+        de um build mais complicado de manter.
+    validation:
+      - >-
+        Rodar o job no AWS Glue 6.0 com `--user-jars-first` AINDA ligado e o
+        JAR reconstruído, e confirmar que o campo resolve -- rodar com a flag
+        desligada testaria outro classpath, não o consertado.
+      - >-
+        Versão do AWS SDK efetivamente carregada em runtime, lida de dentro do
+        job, contra a 2.44.6 do runtime -- o build declara a intenção, o
+        classpath é o fato.
+      - >-
+        `tf.attribute` de `--user-jars-first` no run seguinte, para registrar
+        se a flag sobreviveu à correção ou foi removida junto.
+    rollback:
+      - >-
+        Remover `--user-jars-first` para que o SDK do próprio runtime vença o
+        classpath, e re-executar.
+      - >-
+        Reverter `--extra-jars` para o artefato anterior. É mudança de
+        classpath, não de dado -- mas a saída parcial do run que falhou precisa
+        ser descartada ou reconciliada à parte.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html
+        retrieved: 2026-08-23
+        note: >
+          Fonte declarada por `knowledge/errors/glue/sdk_v2_user_jars_first.json`
+          (`ERR-GLUE-003`), com `last_verified: 2026-08-23`. Ela registra o AWS
+          SDK for Java 2.44.6 que o Glue 6.0 empacota e o efeito de
+          `--user-jars-first` sobre a precedência do classpath.
