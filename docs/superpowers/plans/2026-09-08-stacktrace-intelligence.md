@@ -1,6 +1,6 @@
 # Stacktrace intelligence — plano de implementação
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Fazer o erro entrar no motor: estruturar a exceção que já está coletada, transformar o matcher de juiz paralelo em extrator, e mover o julgamento para o catálogo.
 
@@ -37,13 +37,13 @@
 
 ---
 
-## Task 1: `spark.exception` — estruturar o texto que já existe
+## Task 1: `spark.exception` — estruturar o texto que já existe — ENTREGUE (2026-09-08, `deb08f2`)
 
 **Files:**
 - Create: `sparkforge/facts/exception.py`
 - Test: `tests/test_facts_exception.py`
 
-- [ ] **Step 1: Medir o artefato real antes de escrever**
+- [x] **Step 1: Medir o artefato real antes de escrever**
 
 ```bash
 python -c "
@@ -60,7 +60,7 @@ for p in pathlib.Path('fixtures').rglob('expected/facts.json'):
 Se o corpus não tiver `spark.stage.failure`, **diga no relatório** — a fixture
 da Tarefa 4 terá de criá-lo, e o extrator nasce sem corpus real para exercitar.
 
-- [ ] **Step 2: Escrever o teste que falha**
+- [x] **Step 2: Escrever o teste que falha**
 
 ```python
 """`spark.exception` estrutura o texto que `spark.stage.failure` ja carrega.
@@ -136,12 +136,12 @@ class TestRecusaNomeada:
         assert build_exceptions([]) == []
 ```
 
-- [ ] **Step 3: Rodar e ver falhar**
+- [x] **Step 3: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_facts_exception.py -v`
 Expected: FAIL com `ModuleNotFoundError`
 
-- [ ] **Step 4: Escrever o extrator**
+- [x] **Step 4: Escrever o extrator**
 
 `sparkforge/facts/exception.py`, no molde de `bridge.py` — **derivação pura
 sobre facts, sem ler artefato**:
@@ -242,12 +242,12 @@ def _unresolved(subject: dict[str, Any], reason: str) -> Fact:
 **Confirme a assinatura de `sort_facts` e de `Fact`** antes de rodar — as reais
 mandam.
 
-- [ ] **Step 5: Rodar**
+- [x] **Step 5: Rodar**
 
 Run: `python -m pytest tests/test_facts_exception.py -v`
 Expected: PASS nos seis.
 
-- [ ] **Step 6: Registrar nas listas manuais**
+- [x] **Step 6: Registrar nas listas manuais**
 
 Extrator novo entra em **duas listas manuais de teste** e na medida de snippet.
 Encontre-as:
@@ -256,7 +256,7 @@ Encontre-as:
 TOKENSAVE_DISABLE_GREP_HOOK=1 grep -rln "bridge" tests/test_facts_*.py tests/test_harness_*.py | head
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add sparkforge/facts/exception.py tests/test_facts_exception.py
@@ -265,13 +265,13 @@ git commit -F <arquivo>
 
 ---
 
-## Task 2: o matcher vira extrator
+## Task 2: o matcher vira extrator — ENTREGUE (2026-09-08, `d07a161`)
 
 **Files:**
 - Modify: `sparkforge/errors/matcher.py`
 - Test: `tests/test_errors_signature_fact.py`
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 """O matcher emite FATO, nao juizo.
@@ -322,12 +322,12 @@ class TestMatcherEmiteFato:
         assert build_signature_matches([]) == []
 ```
 
-- [ ] **Step 2: Rodar e ver falhar**
+- [x] **Step 2: Rodar e ver falhar**
 
 Run: `python -m pytest tests/test_errors_signature_fact.py -v`
 Expected: FAIL com `ImportError: cannot import name 'build_signature_matches'`
 
-- [ ] **Step 3: Reescrever o matcher**
+- [x] **Step 3: Reescrever o matcher**
 
 Acrescentar `EMITTED_KINDS = frozenset({"error.signature_match", "error.signature.unresolved"})`
 e `build_signature_matches(facts) -> list[Fact]`, que:
@@ -343,12 +343,12 @@ e `build_signature_matches(facts) -> list[Fact]`, que:
 acrescente comentário sobre `confidence=0.98` dizendo que ele é constante
 literal, que a regra 28 o fecha, e que o caminho de fact não o carrega.
 
-- [ ] **Step 4: Rodar**
+- [x] **Step 4: Rodar**
 
 Run: `python -m pytest tests/test_errors_signature_fact.py tests/test_error_matcher.py -v`
 Expected: PASS, sem regressão no teste antigo.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -445,12 +445,12 @@ linhas (regras de diagnóstico, `runtime_scope` não-vazio, eixo de resultado no
 
 ---
 
-## Task 4: fixtures
+## Task 4: fixtures — ENTREGUE (2026-09-08, `33b7393`; testes reparados em `2e0f1eb`)
 
 **Files:**
 - Create: `fixtures/exception/*/`
 
-- [ ] **Step 1: Criar o corpus**
+- [x] **Step 1: Criar o corpus**
 
 Um par por caminho: exceção simples, exceção encadeada, texto sem forma,
 texto redigido, assinatura que casa, assinatura que não casa.
@@ -458,28 +458,28 @@ texto redigido, assinatura que casa, assinatura que não casa.
 Siga a forma dominante: `input/`, `expected/facts.json`,
 `expected/findings.json`, `meta.yaml` com `name`, `runtime` e `proves`.
 
-- [ ] **Step 2: Rodar o gate de fixture**
+- [x] **Step 2: Rodar o gate de fixture**
 
 ```bash
 python -m pytest tests/test_fixtures_kind_coverage.py tests/test_fixtures_golden.py -q
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ---
 
-## Task 5: coletor de CloudWatch Logs
+## Task 5: coletor de CloudWatch Logs — ENTREGUE (2026-09-09, `d35d5d4` e `2407005`)
 
 **Files:**
 - Create: `sparkforge/collect/cloudwatch_logs.py`
 - Modify: `sparkforge/adapters/_core.py`, `sparkforge/adapters/tools.py`
 
-- [ ] **Step 1: Ler o coletor de métricas como molde**
+- [x] **Step 1: Ler o coletor de métricas como molde**
 
 `sparkforge/facts/cloudwatch.py` e `_core.collect_cloudwatch` (linha ~4370).
 **Medido: ele lê só métricas (`CLOUDWATCH_METRICS`), nunca log group.**
 
-- [ ] **Step 2: Escrever o coletor**
+- [x] **Step 2: Escrever o coletor**
 
 Traz o que o event log não carrega: falha de driver antes do primeiro stage,
 `Py4JJavaError` de código Python, OOM de container.
@@ -490,7 +490,7 @@ carrega credencial com a mesma facilidade que configuração.
 Recusa nomeada: log group inexistente, sem permissão ou vazio →
 `cloudwatch.logs.unresolved` com a razão. **Nunca lista vazia silenciosa.**
 
-- [ ] **Step 3: Tool e surface lock**
+- [x] **Step 3: Tool e surface lock**
 
 ```bash
 python scripts/check_surface_lock.py          # antes, anote os bytes
@@ -498,13 +498,13 @@ python scripts/check_surface_lock.py --update # depois
 python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))"  # 70
 ```
 
-- [ ] **Step 4: Commit** declarando o crescimento em bytes.
+- [x] **Step 4: Commit** declarando o crescimento em bytes.
 
 ---
 
-## Task 6: fechamento
+## Task 6: fechamento — ENTREGUE (2026-09-09)
 
-- [ ] **Step 1: Gates**
+- [x] **Step 1: Gates**
 
 ```bash
 python scripts/check_vnext_claims.py
@@ -514,13 +514,13 @@ python -m ruff check sparkforge scripts tests
 python -m pytest tests/test_suite_batches.py -q
 ```
 
-- [ ] **Step 2: Lotes afetados**, um por vez.
+- [x] **Step 2: Lotes afetados**, um por vez.
 
-- [ ] **Step 3: Docs** — STATUS com os números medidos (fact kinds, tools 70,
+- [x] **Step 3: Docs** — STATUS com os números medidos (fact kinds, tools 70,
       regras, fixtures), e o que a frente **não** entregou: seguem **6**
       assinaturas, não 24.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -536,3 +536,75 @@ python -m pytest tests/test_suite_batches.py -q
 | §4 o que fica de fora | nenhuma tarefa infere causa sem assinatura, cria score, ou amplia para 24 |
 | §5 gates | 1 (listas manuais), 3 (rota, coordenador), 5 (surface lock), 6 |
 | §6 testes | 1, 2, 3, 4 |
+
+---
+
+## Desvios medidos, registrados no fechamento (2026-09-09)
+
+O plano foi executado inteiro, e em quatro pontos o escopo mudou **por medição**.
+Nenhum deles foi reescrito acima para casar com o resultado: o degrau fica como
+foi planejado, e o desvio é acréscimo.
+
+### D-1 — a T3 entregou DUAS regras, não seis
+
+Planejado: uma regra `SF-ERR-*` por assinatura, seis no total. Entregue:
+**`SF-ERR-001` e `SF-ERR-002`**.
+
+A medição está no Step 3 da própria Task 3 e é cobrada por teste. Das seis
+assinaturas de `knowledge/errors/`, só **duas** — `NoSuchMethodError`
+(`ERR-GLUE-002`) e `NoSuchFieldError` (`ERR-GLUE-003`) — são **classe de
+exceção**; as outras quatro são trecho de mensagem de log.
+`build_signature_matches` casava, na T2, contra `attrs.exception_class` e
+`attrs.caused_by` — CLASSE, nunca texto corrido. Regra escrita sobre as quatro
+naquele momento seria regra que nunca dispara: `requires_facts` satisfeito,
+`when` mudo, relatório limpo.
+
+### D-2 — o caminho das quatro abriu na T5, e ele NÃO virou regra
+
+A T5 acrescentou `cloudwatch.log_event`, e `build_signature_matches` passou a
+casar a mesma assinatura contra o TEXTO DA LINHA, com `matched_on: "log_line"`.
+As quatro de mensagem produzem `error.signature_match` hoje
+(`fixtures/cloudwatch_logs/quatro_assinaturas_de_log/`).
+
+**Regra `SF-ERR` sobre elas continua não existindo, e é entrega própria.** Ter o
+fact não é ter a regra: cada uma exige `evidence_required` próprio, `sources`,
+`validation` e `rollback`, mais o par positivo/negativo de fixture — o mesmo
+trabalho que `SF-ERR-001` e `SF-ERR-002` custaram.
+
+### D-3 — as recusas do log são QUATRO, não três
+
+O plano (Step 2 da Task 5) e a §3 do spec listavam três: log group inexistente,
+sem permissão, vazio. A entrega separou **`sem_credencial`**, porque ali **a
+requisição nunca saiu** — gravar `vazio` seria afirmar que o log estava vazio sem
+nunca o ter consultado.
+
+Desvio de forma junto: os quatro **não levantam exceção**. Viram `status` no
+artefato, e o extrator os traduz em `cloudwatch.logs.unresolved`.
+`CollectionFailed` ficou reservado ao que impede até a recusa de ser gravada
+(paginação que não termina). O spec já carrega esta seção de desvio.
+
+### D-4 — a Task 6 fechou com duas lacunas nomeadas em vez de fechadas
+
+- **Não há verbo `analyze cloudwatch-logs`.** `extract_cloudwatch_logs_tree` é
+  referenciado por `scripts/regen_fixtures.py` e mais nada: o extrator é
+  alcançado pelo golden, não por tool. Entrega própria.
+- **O parser não alcança `classe_no_meio_da_linha`** — a forma que o
+  `DAGScheduler` escreve em toda falha de task repetida. Ela sai como
+  `spark.exception.unresolved`, e `fixtures/exception/classe_no_meio_da_linha/`
+  prende o comportamento ATUAL para que alargar o parser vire diff de golden. O
+  caminho proposto é um SEGUNDO padrão, sem tocar a âncora `^` do primeiro.
+
+### O que a Task 6 remediou fora do escopo original
+
+Duas linhas de *Números correntes* do `STATUS.md` que a própria frente deixou
+defasadas, ambas em `SEM_MEDIDA` e portanto invisíveis para
+`check_status_numbers.py`:
+
+| Linha | Publicava | É |
+|---|---|---|
+| Tools alcançáveis a partir de algum coordenador | 69 de 69 | **70 de 70**, zero órfã |
+| Testes | 10168 coletados | **10462** coletados |
+
+O número de **passantes** por lote **não** foi remedido: rodar os nove lotes um a
+um não estava no escopo desta tarefa, e publicá-lo sem tê-los rodado seria número
+sem produtor.

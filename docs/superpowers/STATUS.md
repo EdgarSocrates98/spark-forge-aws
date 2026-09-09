@@ -41,7 +41,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **10159** passando, **9** skipped, **remedido em 2026-09-08** ao fechar o executor agentico: os nove lotes rodados um a um, e a soma (10168) fecha com `pytest tests/ --collect-only -q` (10168), relido nesta sessao. Os 205 acrescidos desde os 9954 sao 163 do executor, 15 do verbo `arbitrate`, 6 da tool `sparkforge_arbitrate`, 2 em `test_agentic_models.py` e o resto por parametrizacao nos gates de catalogo e de tools, que ganham um caso por regra e por tool nova. **Leitura anterior, de 2026-09-03:** 9954 passando, 9 skipped, na auditoria da camada agentica. Os nove lotes, rodados um a um: 1834 (+2 skipped), 202, 1761 (+2 skipped), 893, 443, 232, 106, 352, 4131 (+5 skipped). Soma: 9954 + 9 = **9963**, e ela fecha com `pytest tests/ --collect-only` (9963). Os 468 acrescidos desde os 9486 sao **261** da camada agentica (206 da entrega + 55 de regressao da auditoria) e o resto do crescimento por parametrizacao nos gates de catalogo, de tools e de skills, que ganham um caso por skill AWS nova. **A entrega original publicou tres numeros diferentes para a mesma base** -- 9486 na spec, 9881 no relatorio e 9897 na mensagem de commit --, e nenhum deles era o medido; ver a secao 17 (desvio D-1) do spec da camada agentica | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **rodados um a um em 2026-09-02**: 1503 (+2 skipped), 173, 1745, 865, 443, 202, 106, 352, 3968 (+5 skipped). Soma: 9364, e ela fecha com a suíte — 9357 passando mais 7 skipped **Recontado em 2026-09-02** ao fechar a pilha de cinco incrementos de `prompt_evo_graph_economy.md`: os nove lotes, rodados um a um no topo da pilha, somam 1554 (+2 skipped), 202, 1746, 887, 443, 202, 106, 352 e 3994 (+5 skipped) — **9486 passando e 7 skipped**. Os 129 acrescidos desde os 9357 vêm dos cinco arquivos novos (`test_economy_goldset`, `test_economy_recall`, `test_codeintel_graph_caminho`, `test_codeintel_graph_comunidades`, `test_codeintel_export`, `test_fixtures_golden_bridge`) e do crescimento por parametrização nos gates de catálogo e de tools, que ganham um caso por regra e por tool nova. |
+| Testes | **10462** COLETADOS, recontados em 2026-09-09 na T6 da frente de stacktrace (`python -m pytest tests/ --collect-only -q`). **O número de PASSANTES não foi remedido nesta leitura**: rodar os nove lotes um a um não estava no escopo da tarefa de documentação, e publicar "passando" sem tê-los rodado seria número sem produtor. Os **294** acrescidos desde os 10168 têm produtor — **246** dos seis arquivos novos da frente (`test_fixtures_golden_cloudwatch_logs.py` 101, `test_fixtures_golden_exception.py` 85, `test_rules_errors.py` 25, `test_collect_cloudwatch_logs.py` 24, `test_facts_exception.py` 6 e `test_errors_signature_fact.py` 5) e **48** por parametrização nos gates de catálogo, de tools e de cobertura de kind, que ganham um caso por regra, por tool e por fixture nova. **Leitura anterior:** **10159** passando, **9** skipped, **remedido em 2026-09-08** ao fechar o executor agentico: os nove lotes rodados um a um, e a soma (10168) fecha com `pytest tests/ --collect-only -q` (10168), relido nesta sessao. Os 205 acrescidos desde os 9954 sao 163 do executor, 15 do verbo `arbitrate`, 6 da tool `sparkforge_arbitrate`, 2 em `test_agentic_models.py` e o resto por parametrizacao nos gates de catalogo e de tools, que ganham um caso por regra e por tool nova. **Leitura anterior, de 2026-09-03:** 9954 passando, 9 skipped, na auditoria da camada agentica. Os nove lotes, rodados um a um: 1834 (+2 skipped), 202, 1761 (+2 skipped), 893, 443, 232, 106, 352, 4131 (+5 skipped). Soma: 9954 + 9 = **9963**, e ela fecha com `pytest tests/ --collect-only` (9963). Os 468 acrescidos desde os 9486 sao **261** da camada agentica (206 da entrega + 55 de regressao da auditoria) e o resto do crescimento por parametrizacao nos gates de catalogo, de tools e de skills, que ganham um caso por skill AWS nova. **A entrega original publicou tres numeros diferentes para a mesma base** -- 9486 na spec, 9881 no relatorio e 9897 na mensagem de commit --, e nenhum deles era o medido; ver a secao 17 (desvio D-1) do spec da camada agentica | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **rodados um a um em 2026-09-02**: 1503 (+2 skipped), 173, 1745, 865, 443, 202, 106, 352, 3968 (+5 skipped). Soma: 9364, e ela fecha com a suíte — 9357 passando mais 7 skipped **Recontado em 2026-09-02** ao fechar a pilha de cinco incrementos de `prompt_evo_graph_economy.md`: os nove lotes, rodados um a um no topo da pilha, somam 1554 (+2 skipped), 202, 1746, 887, 443, 202, 106, 352 e 3994 (+5 skipped) — **9486 passando e 7 skipped**. Os 129 acrescidos desde os 9357 vêm dos cinco arquivos novos (`test_economy_goldset`, `test_economy_recall`, `test_codeintel_graph_caminho`, `test_codeintel_graph_comunidades`, `test_codeintel_export`, `test_fixtures_golden_bridge`) e do crescimento por parametrização nos gates de catálogo e de tools, que ganham um caso por regra e por tool nova. |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **114 de 149 têm `validation`** — remedido em 2026-09-08 na entrega da área `SF-ERR` (stacktrace intelligence, T3): `SF-ERR-001` e `SF-ERR-002` são as duas últimas, e cada uma declara os eixos que a mudança dela move — o artefato entregue ao classpath em `--extra-jars`, e o VALOR das colunas que um JAR de terceiro trocado por outra linha de release produz. Leitura anterior, de **112 de 147** — as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, da entrega de dependência e janela do Control-M (2026-09-02), e cada uma declara os eixos de resultado que a mudança dela pode mover: conjunto de datas ordenadas em `SF-CTM-002` e `SF-CTM-003`, conjunto de jobs publicado em `SF-CTM-004` e `SF-CTM-006`, e conjunto de eventos esperados mais ordem de execução em `SF-CTM-005`. `SF-CTM-001` foi a 106ª, com os três eixos dela explícitos (mesma contagem de jobs, mesmas dependências item a item, mesmo artefato produzido); recontado em 2026-09-01. **O número anterior ("62 de 116") não tinha produtor**: a coluna ao lado aponta `tests/test_rules_result_axis.py`, que tem três testes e guarda só as regras que propõem trocar UDF Python por função nativa. Ele nunca contou 62 nem 116. Número publicado sem comando que o produza é a mesma família de defeito que a regra 5 do `AGENT_PROTOCOL.md` fechou para o `benchmark_ref` — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` A entrega da ponte (2026-09-02) fez **112 de 147**: `SF-BRIDGE-001` acrescentou um eixo de resultado que nenhuma outra regra tem — além de contagem, schema e agregados, ela pede que **o stage daquele callsite suma ou troque de método no próximo event log**, que é a confirmação de que a mudança chegou à EXECUÇÃO e não só ao código. |
 | Regras com `runtime_scope` não-vazio | **20 de 149** — remedido em 2026-09-08 na entrega da área `SF-ERR`: **15** guardadas por `glue` (as duas `SF-ERR` entre elas, com `{glue: ">=6.0"}`) e **5** por versão de Spark. O denominador anterior (`146`) já estava defasado antes desta entrega. **`SF-ERR-001` é guardada por `glue` e não por `spark`, ao contrário de `SF-SPARK4-004`, que julga o mesmo binário**: a fronteira BINÁRIA do Scala é do Apache e vale em qualquer runtime, mas a regra de erro fala da assinatura `ERR-GLUE-002`, que declara `service: glue` e `versions: ["6.0"]` — guardar as duas pela mesma chave apagaria a diferença entre elas. Leitura anterior, de **18 de 146** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados*. **`SF-CTM-001` também não entra, e o caso dela é o mais claro dos três**: a regra é inteiramente sobre versão, e mesmo assim declara `{}` — `runtime_scope` guarda a versão do `RuntimeContext` (Glue, Spark, Python, Iceberg), e nada alimenta o `RuntimeContext` com `9.0.2x.yyy`. A versão do Control-M é **dado do artefato**, e viaja dentro do achado em `ctm.version_declared` e em `attrs.declared_version`. **As cinco `SF-CTM` de 2026-09-02 também declaram `{}`**, e uma delas pelo caminho mais interessante: `SF-CTM-006` cita, no `explanation`, uma fronteira de versão que a própria fonte publica (`Control-M/Enterprise Manager 9.0.21 or higher`) e **não a julga** — o defeito dela é um `must not` verificável no artefato em qualquer versão, e a fronteira é de um produto que nenhuma matriz deste repositório cobre (veto `V-CTM-6`) | `load_catalog()` |
@@ -54,7 +54,7 @@ arquivo ganha.
 | Regras com golden que dispara | **112 de 112 executáveis** — remedido em 2026-09-08 sobre `_judgeable_rules()`, que devolve 112 e cujo cruzamento com `_rules_fired_in_goldens()` deixa **zero** regra sem golden. **A linha publicava 111 e estava defasada desde `SF-BRIDGE-001`**, a regra que cruza código e execução, entregue em 2026-09-02: a leitura anterior foi escrita antes dela e nunca remedida. O gate `check_status_numbers.py` **não pega este defeito por desenho** — a linha está em `SEM_MEDIDA`, porque duplicar aqui a travessia de `tests/test_fixtures_kind_coverage.py` seria segundo mecanismo para a mesma pergunta; a consequência é que a defasagem só aparece quando alguém remede à mão, e este é o registro de que aconteceu. Leitura anterior, de 2026-09-02: 111, recontada sobre `_executable_rules()`; as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, e cada uma tem golden positivo **e** negativo. A leitura anterior publicava 105 e já estava defasada em 1 antes desta entrega. `_executable_rules()` filtra por `executable`, **nunca** por `status` | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **100** — a `AGENT-084` da entrega de `SF-ERR` (2026-09-08) é a centésima, e ela é rota **própria** pela mesma razão que `SF-SPARK4` e `SF-LF` ganharam as delas: declarar a área em `rule_areas` do agente NÃO roteia, e `findings_area` conta por prefixo exato do `rule_id` até o último hífen. Destino `sf-runtime-specialist`, e a posição é depois da `AGENT-002` — um case com `SF-GLUE` junto continua indo para `glue-infra-reviewer`. Leitura anterior: **99** — a `AGENT-082` da entrega de Control-M é a nonagésima oitava, e ela é rota **própria** e não uma linha a mais num `any:` existente: Control-M não é EMR, não roda Spark e não tem cluster, então enfiá-la na `AGENT-007` mandaria o case para um coordenador cujo vocabulário inteiro não descreve o artefato. A fase de EMR on EKS, ao contrário, **não** moveu esta linha: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` `AGENT-083` e a 99ª, da entrega da ponte (2026-09-02). Ela **nao** herda a rota de nenhuma das duas metades que cruza: `SF-PY` iria para quem le codigo e `SF-SPARK` para quem le event log, e o caso precisa de alguem que saiba pedir OS DOIS. Destino `spark-performance-architect`, e a posicao e antes de `AGENT-082` porque a leitura com execucao ao lado e a mais forte. |
 | Tools MCP | **70** — `sparkforge_collect_cloudwatch_logs` é a septuagésima (T5 da frente de stacktrace, 2026-09-09), e ela é a **décima** `CLOUD_MUTATION`: coleta de API AWS viva E grava artefato mais manifesto no disco do operador, então `readOnlyHint: False` e `openWorldHint: True` pela mesma anotação das outras nove `collect_*`. Crescimento de superfície declarado: **+2 848 bytes** (380 762 → 383 610), medido por `scripts/check_surface_lock.py`. Leitura anterior de **69** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` A entrega de `code path` (2026-09-02) levou de 65 para **66**: `sparkforge_code_path` e a setima tool de Code Intelligence, e a superficie de tools cresceu 4103 bytes (355071 para 359174). O schema proprio existe porque a resposta tem uma forma que nenhuma outra tem: `reason` obrigatorio e ANULAVEL, com tres razoes de recusa que nao querem dizer a mesma coisa (`node_not_indexed`, `depth_exhausted`, `no_resolved_path`). Numero relido pela propria prova. A entrega de `code shape` (2026-09-02) levou de 66 para **67**: `sparkforge_code_shape` é a oitava tool de Code Intelligence, e traz **duas** medidas na mesma resposta porque a entrada é a mesma (o índice inteiro) e a pergunta é a mesma — *como este código está organizado*. Duas tools cobririam o mesmo contrato duas vezes nos gates de paridade, para sempre. O schema obriga `communities.algorithm` no corpo, e isso **não** é decorativo: a partição é reproduzível e não única, e publicá-la sem o método ao lado convidaria a lê-la como canônica. A entrega de `code export` (2026-09-02) levou de 67 para **68**, e o escopo dela veio de uma **medição da fonte, não do prompt**: `prompt_evo_graph_economy.md` pede um adaptador que importe e exporte o `graph.json` do Graphify, e medido em `Graphify-Labs/graphify@v8` esse formato **não é publicado** — o `README.md` não o especifica e o `ARCHITECTURE.md` diz literalmente que o schema que mostra é o da *extração*, anterior a `build()`. Exportar contra o formato final seria inventá-lo e chamar isso de compatibilidade. A tool exporta o formato que a fonte publica e declara no próprio artefato o que não faz. A entrega da superfície do executor agêntico (2026-09-08) levou de 68 para **69**: `sparkforge_arbitrate` é a única tool nova, e a superfície de tools cresceu **9952 bytes** (366902 para 376854). Ela leva a classe `LOCAL_MUTATION` de 14 para 15 porque grava o blackboard do case, e declara `repo`, `findings_path` e `facts_path` — por isso NÃO entra no conjunto de exceção de `tests/test_harness_authorization.py`, que foi de 63 para 64 tools com caminho declarado. |
-| Tools alcançáveis a partir de algum coordenador | **69 de 69** — remedido em 2026-09-08 pela própria travessia de `tests/test_agent_coverage.py` (`_corpus_of` sobre `coordinators()`), que devolve **zero** órfã. **A linha publicava 65 e estava defasada em quatro** — `code_path`, `code_shape`, `code_export` e `arbitrate` entraram sem que ela fosse relida, pela mesma razão da linha *Regras com golden que dispara*: ela está em `SEM_MEDIDA`, e o gate que a cobre é o teste, não este script. `sparkforge_arbitrate` chega por `agents/spark-performance-architect.md`, o **coordenador** de diagnóstico — e no coordenador, não num executor, porque a contradição cruza áreas: o único par direto do catálogo (`SF-GRAPH-005` × `SF-LF-001`) só é visível para quem enxerga as duas ao mesmo tempo. Leitura anterior, de 2026-09-01: 65 de 65, e as quatro daquela vez chegavam por `sf-runtime-specialist`: as duas de `ReleaseDiff` pela skill `compare-releases`, e `sparkforge_controlm_describe` por citacao direta no proprio coordenador. Nao ha skill de Control-M, e a razao esta escrita la: a fronteira da pergunta e **versao**, a mesma que ja separa `migrate-glue-6` de `spark4-compatibility`. `sparkforge_analyze_controlm_jobs` chega pelo mesmo caminho, e `tests/test_agent_coverage.py` ganhou a classe que cobra as TRES metades do despacho de `SF-CTM` juntas -- rota, coordenador que declara a area, e as duas tools alcancaveis -- porque `SF-EMRS` ja ficou declarada num coordenador e sem rota nenhuma por uma fase inteira, com cada invariante generico passando sozinho | `tests/test_agent_coverage.py` |
+| Tools alcançáveis a partir de algum coordenador | **70 de 70** — remedido em 2026-09-09 na T6 da frente de stacktrace, pela mesma travessia de `tests/test_agent_coverage.py` (`_corpus_of` sobre `coordinators()`), que devolve **zero** órfã: `sparkforge_collect_cloudwatch_logs` chega por `sf-runtime-specialist`, o mesmo coordenador da rota `AGENT-084`. **A linha publicava 69 de 69, e a tool nova a deixou defasada** — pela mesma razão de sempre: ela está em `SEM_MEDIDA`, e o gate que a cobre é o teste, não este script. Leitura anterior, de 2026-09-08: **69 de 69**, remedido pela própria travessia de `tests/test_agent_coverage.py` (`_corpus_of` sobre `coordinators()`), que devolve **zero** órfã. **A linha publicava 65 e estava defasada em quatro** — `code_path`, `code_shape`, `code_export` e `arbitrate` entraram sem que ela fosse relida, pela mesma razão da linha *Regras com golden que dispara*: ela está em `SEM_MEDIDA`, e o gate que a cobre é o teste, não este script. `sparkforge_arbitrate` chega por `agents/spark-performance-architect.md`, o **coordenador** de diagnóstico — e no coordenador, não num executor, porque a contradição cruza áreas: o único par direto do catálogo (`SF-GRAPH-005` × `SF-LF-001`) só é visível para quem enxerga as duas ao mesmo tempo. Leitura anterior, de 2026-09-01: 65 de 65, e as quatro daquela vez chegavam por `sf-runtime-specialist`: as duas de `ReleaseDiff` pela skill `compare-releases`, e `sparkforge_controlm_describe` por citacao direta no proprio coordenador. Nao ha skill de Control-M, e a razao esta escrita la: a fronteira da pergunta e **versao**, a mesma que ja separa `migrate-glue-6` de `spark4-compatibility`. `sparkforge_analyze_controlm_jobs` chega pelo mesmo caminho, e `tests/test_agent_coverage.py` ganhou a classe que cobra as TRES metades do despacho de `SF-CTM` juntas -- rota, coordenador que declara a area, e as duas tools alcancaveis -- porque `SF-EMRS` ja ficou declarada num coordenador e sem rota nenhuma por uma fase inteira, com cada invariante generico passando sozinho | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
@@ -7217,3 +7217,262 @@ usuário não tem comando que o confira daqui, e ficou como está.
 `ruff check sparkforge scripts tests` limpo;
 `tests/test_adapters_judge_plan.py` e `tests/test_agentic_executor_digest.py`
 passando.
+
+---
+
+## Stacktrace intelligence — o erro entra no motor, e as quatro assinaturas que só o log alcança (2026-09-09)
+
+Branch `feat/executor-agentico-spec`, oito commits (`deb08f2`..`2407005`). Spec:
+`docs/superpowers/specs/2026-09-08-stacktrace-intelligence-design.md` — a §3 dele
+tem o desvio registrado na T5, em que as recusas do log passaram de três para
+**quatro**. Plano: `docs/superpowers/plans/2026-09-08-stacktrace-intelligence.md`.
+
+O motor lia código, plano físico, event log, IaC, catálogo, S3 e métrica.
+**Não lia o erro.** `spark.stage.failure.attrs.reason` é o campo `Failure Reason`
+do event log, que num job Spark **é** a exceção com a pilha — já redigida por
+`secrets.redact` — e nada o estruturava. O artefato não faltava; faltava o erro
+entrar no motor.
+
+**O que a frente entrega, dito sem folga: o SparkForge passa a estruturar a
+exceção e a casar SEIS assinaturas.** Ele não "entende erros", e esta seção não
+afirma ganho nenhum — de detecção, de cobertura ou de qualidade. Não existem os
+dois lados medidos (regra 30).
+
+### As três camadas
+
+| Camada | Onde | O que emite |
+|---|---|---|
+| extrator de exceção | `sparkforge/facts/exception.py` (`deb08f2`) | `spark.exception`, `spark.exception.frame`, `spark.exception.unresolved` |
+| matcher como extrator | `sparkforge/errors/matcher.py::build_signature_matches` (`d07a161`) | `error.signature_match`, `error.signature.unresolved` |
+| julgamento | `rules/catalog/errors.yaml` (`9cf336f`) | `SF-ERR-001`, `SF-ERR-002`, rota `AGENT-084` → `sf-runtime-specialist` |
+
+`exception.py` **não lê artefato**: é derivação pura sobre a união dos facts, no
+molde de `bridge.py`. `matcher.py` também não — ele consome `spark.exception` e
+`cloudwatch.log_event`, nunca texto cru.
+
+O coletor de CloudWatch Logs (`d35d5d4`) trouxe o quarto módulo:
+`sparkforge/collect/cloudwatch_logs.py`, `sparkforge/facts/cloudwatch_logs.py` e
+a tool `sparkforge_collect_cloudwatch_logs`.
+
+### O que a frente NÃO entregou, e é o mais importante
+
+**Seguem SEIS assinaturas em `knowledge/errors/`, não 24.** Medido:
+`ls knowledge/errors/*/*.json | wc -l` devolve **6**, em quatro serviços
+(`athena`, `glue`, `iceberg`, `lakeformation`). A §7 do documento de origem
+enumera 24.
+
+A frente entregou o **mecanismo** — o caminho que vai do `Failure Reason` até um
+achado com evidência. Escrever assinatura nova é **pesquisa de fonte**, com
+`sources` e `last_verified` cobrados por teste, e é **entrega própria**. O número
+de hoje sai publicado como o que é, e não como o que se pretendia.
+
+### Só DUAS das seis casam por classe de exceção — e é por isso que o catálogo tem duas regras, não seis
+
+Medido lendo o campo `signature` das seis:
+
+| id | `signature` | natureza | regra |
+|---|---|---|---|
+| `ERR-GLUE-002` | `NoSuchMethodError` | **classe de exceção** | `SF-ERR-001` |
+| `ERR-GLUE-003` | `NoSuchFieldError` | **classe de exceção** | `SF-ERR-002` |
+| `ERR-ATH-001` | `Cannot read unsupported version 3` | trecho de mensagem | — |
+| `ERR-GLUE-001` | `Container killed by YARN for exceeding memory limits` | trecho de mensagem | — |
+| `ERR-ICE-001` | `CommitFailedException: Commit failed: ...` | trecho de mensagem | — |
+| `ERR-LF-001` | `Insufficient Lake Formation permission(s) on` | trecho de mensagem | — |
+
+`spark.exception` carrega **classe**, e as quatro de mensagem nunca casam por
+ele. Escrever regra sobre elas na T3 teria produzido regra que não dispara nunca:
+`requires_facts` satisfeito, `when` mudo, relatório limpo. O motivo está no
+cabeçalho de `rules/catalog/errors.yaml` e é **medido por teste** —
+`tests/test_rules_errors.py::test_a_assinatura_sem_regra_e_trecho_de_mensagem_e_nao_casa_por_classe`
+alimenta cada uma das quatro como cabeça de mensagem e confirma que ela cai em
+`error.signature.unresolved`.
+
+**O caminho das quatro é o log**, e a T5 o abriu: `cloudwatch.log_event` casa a
+mesma assinatura contra o TEXTO DA LINHA, com `matched_on: "log_line"` dizendo
+por onde ela entrou. As duas de classe passam a casar pelos dois caminhos — e é
+por isso que `matched_on` existe: sem ele, dois matches do mesmo `signature_id`
+seriam indistinguíveis. `fixtures/cloudwatch_logs/quatro_assinaturas_de_log/`
+casa as quatro de uma vez, e
+`fixtures/cloudwatch_logs/assinatura_de_classe_pelas_duas_portas/` prende a
+distinção.
+
+**Regra `SF-ERR` sobre as quatro continua sendo entrega própria.** Ter o fact não
+é ter a regra, e a T3 fechou antes de o caminho de log existir.
+
+### `confidence=0.98` saiu do caminho de fact — e não do repositório
+
+O matcher publicava `confidence=0.98` como **constante literal**, e casava
+substring de log cru ignorando o `evidence_required` que a própria assinatura
+declara. O caminho de fact não carrega `confidence` nenhum, porque não finge
+julgar — `tests/test_errors_signature_fact.py` varre campo a campo e cobra a
+ausência de `confidence`, `fixes`, `likely_causes` e `diagnostic_steps`.
+
+`match_log` e `ErrorMatchResult` **continuam existindo**, porque
+`sparkforge forge errors match` os usa e a CLI não era escopo desta frente. O
+comentário de cabeça de `matcher.py` diz o que a constante é: número sem medida,
+que é o que a regra 28 fecha — *antes de afirmar, leia o número; aqui não há
+número para ler*.
+
+**O que a integração com o catálogo destravou, medido pelo par de fixtures:**
+`fixtures/exception/nosuchmethod_com_jar_e_terraform/` e
+`fixtures/exception/nosuchmethod_sem_jar/` têm o **mesmo event log byte a byte** e
+o mesmo `main.tf`; a única diferença no corpus inteiro é o
+`conector_2.12-1.4.0.jar`. A exceção acontece nas duas, `error.signature_match`
+com `ERR-GLUE-002` sai nas duas — e o achado **só sai numa**, com a outra pulada
+por `{"reason": "requires_facts", "missing": ["mig.jar_binary"]}`. Era esse o
+defeito do caminho antigo: casar a palavra `NoSuchMethodError` num log e afirmar
+98%.
+
+### `matcher.py` tem `EMITTED_KINDS` e nenhuma varredura automática o conta
+
+As duas varreduras — `tests/test_harness_untrusted.py` e
+`scripts/check_status_numbers.py` — enumeram por `pkgutil.iter_modules` sobre
+`sparkforge/facts/`. `matcher.py` mora em `sparkforge/errors/`, e por isso:
+
+- ele **não entra** nas contagens de *Extratores de facts* (**32**) nem de
+  *Fact kinds distintos emitidos* (**193**) — as duas linhas já dizem isso;
+- a guarda fail-closed de `test_harness_untrusted` **não o cobraria**: ele está
+  na lista manual porque a medida de snippet precisa vê-lo, não porque algo o
+  obrigue. A entrada dele é encadeada de propósito
+  (`matcher.build_signature_matches(exception.build_exceptions(pool))`), para que
+  propagação de snippet por `spark.exception` seja percebida.
+
+Isso é registro de **fragilidade conhecida**, não de defeito corrigido: um
+extrator futuro fora de `sparkforge/facts/` some das duas varreduras do mesmo
+jeito, e só a lista manual o pega.
+
+### As quatro recusas do log, e por que são quatro e não três
+
+O spec listava três (`log group inexistente, sem permissão, ou vazio` numa linha
+só). A entrega separou **quatro**, e o quarto é o que a tabela não nomeava:
+
+| razão | o que aconteceu |
+|---|---|
+| `log_group_inexistente` | a requisição saiu e o grupo não existe |
+| `sem_permissao` | a requisição saiu e a IAM negou |
+| `vazio` | a requisição saiu, a janela respondeu, e não havia linha |
+| `sem_credencial` | **a requisição nunca saiu** |
+
+Gravar `vazio` no quarto caso seria afirmar que o log estava vazio sem nunca
+tê-lo consultado. Os quatro produzem a mesma lista vazia de eventos, e é por isso
+que `tests/test_fixtures_golden_cloudwatch_logs.py` cobra que sejam
+**distinguíveis entre si**: duas recusas colapsadas na mesma razão são uma recusa
+que não nomeia nada (regra 20).
+
+**Desvio de forma, também registrado no spec:** os quatro **não levantam
+exceção**. Uma `CollectionFailed` mataria o artefato, e sem artefato não há fact,
+e sem fact a recusa vira silêncio — exatamente o que a regra proíbe. Eles viram
+`status` no artefato, e o extrator os traduz em `cloudwatch.logs.unresolved`.
+`CollectionFailed` ficou reservado ao que impede até a recusa de ser gravada
+(paginação que não termina, teto de **50** páginas).
+
+### O limite do parser, prendido por fixture: `classe_no_meio_da_linha`
+
+`_CABECA` é ancorada em `^`. A forma que o `DAGScheduler` escreve em **toda**
+falha de task repetida põe a classe no MEIO da primeira linha:
+
+```
+Job aborted due to stage failure: Task 3 in stage 5.0 failed 4 times, [...]
+executor 2): java.lang.OutOfMemoryError: Java heap space
+```
+
+Hoje isso sai como `spark.exception.unresolved` com
+`reason: sem_forma_de_stacktrace`. **É provavelmente o `Failure Reason` mais
+comum que existe**, e o parser não o alcança.
+
+A âncora não é acidente: sem ela, qualquer `chave.pontuada: valor` de mensagem
+livre viraria classe de exceção que ninguém lançou.
+`fixtures/exception/classe_no_meio_da_linha/` **não afirma que a recusa é o
+comportamento desejado** — afirma que é o comportamento ATUAL, e o prende, para
+que alargar o parser vire diff de golden em vez de mudança silenciosa.
+
+**O caminho proposto, e não entregue:** um SEGUNDO padrão, que reconheça a classe
+depois do prefixo do escalonador, **sem tocar a âncora `^` do primeiro**. Mexer
+na âncora existente troca uma lacuna nomeada por falsos positivos em mensagem
+livre. É entrega própria.
+
+Ela divide kind e `reason` com `fixtures/exception/texto_sem_forma_de_stacktrace/`
+de propósito: aquela não tem exceção nenhuma no texto, esta TEM e o parser não a
+alcança — e não distinguir os dois casos é justamente o limite registrado.
+
+### O que o fake do coletor ainda esconde
+
+`FakeLogsClient` pagina por `nextToken`, serve eventos distintos por página, e
+registra `self.calls` para que o teste cobre o token da segunda chamada. **Dois
+comportamentos da API real ele NÃO reproduz**, e o cabeçalho do teste os nomeia:
+
+- **o limite de 1 MB por resposta** — a API real pagina por TAMANHO, não por
+  contagem;
+- **a ordenação por `timestamp` entre streams**.
+
+Nenhum dos dois muda o laço de paginação (os dois chegam como `nextToken`), e é
+por isso que o buraco está declarado em vez de simulado. É a mesma disciplina da
+auditoria de fakes de 2026-09-03: um fake que aceita tudo prova que o código
+chama o que ele espera, nunca que o serviço responde.
+
+### Não há verbo `analyze cloudwatch-logs`
+
+Medido: `sparkforge/facts/cloudwatch_logs.py::extract_cloudwatch_logs_tree` é
+referenciado por **`scripts/regen_fixtures.py` e mais nada**. Existe
+`collect cloudwatch-logs` (CLI) e `sparkforge_collect_cloudwatch_logs` (tool);
+**não existe** `analyze cloudwatch-logs` em `sparkforge/adapters/_core.py`, em
+`cli.py` nem em `TOOLS`.
+
+O extrator é alcançado pelo golden e pelo `regen_fixtures`, não por tool. Isso é
+**lacuna nomeada, e entrega própria** — um operador que colete o log hoje precisa
+do golden para ver o fact.
+
+### Números medidos nesta sessão
+
+Todos por comando:
+
+| Medida | Valor | Produtor |
+|---|---|---|
+| Tools MCP | **70**, **31** com `detail_level` | `len(TOOLS)` |
+| Regras | **149**, **114** executáveis | `load_catalog()` |
+| Módulos em `sparkforge/facts/` | **38**, **32** com `EMITTED_KINDS`, **193** kinds | `pkgutil.iter_modules` |
+| Kinds do matcher | `error.signature_match`, `error.signature.unresolved` | `errors.matcher.EMITTED_KINDS` |
+| Assinaturas | **6** | `ls knowledge/errors/*/*.json` |
+| Fixtures | **307** cases em **36** domínios; **8** em `fixtures/exception/`, **9** em `fixtures/cloudwatch_logs/` | `ls -d fixtures/*/*/` |
+| Suíte | **10462** coletados | `pytest tests/ --collect-only -q` |
+| Commits da frente | **8** (`deb08f2`..`2407005`) | `git log --oneline` |
+
+**A suíte foi RECONTADA e a linha de *Números correntes* remediada**: a leitura
+anterior publicava **10168** coletados (2026-09-08), e são **10462**. Os **294**
+acrescidos têm produtor: **246** dos seis arquivos novos —
+`test_fixtures_golden_cloudwatch_logs.py` (101),
+`test_fixtures_golden_exception.py` (85), `test_rules_errors.py` (25),
+`test_collect_cloudwatch_logs.py` (24), `test_facts_exception.py` (6) e
+`test_errors_signature_fact.py` (5) — e os **48** restantes por parametrização
+nos gates de catálogo, de tools e de cobertura de kind, que ganham um caso por
+regra, por tool e por fixture nova. **O número de PASSANTES por lote não foi
+remedido nesta sessão**: rodar os nove lotes um a um não estava no escopo da
+tarefa de documentação, e a linha diz de onde vem cada leitura.
+
+`tests/test_suite_batches.py` passa nos quatro: os seis arquivos novos caem em
+lote, nenhum cai em dois, e a soma fecha com a suíte.
+
+**Também remediada a linha *Tools alcançáveis a partir de algum coordenador***:
+publicava **69 de 69**, e a tool nova a deixou defasada. Medido pela própria
+travessia de `tests/test_agent_coverage.py` (`_corpus_of` sobre
+`coordinators()`): **70 de 70**, zero órfã.
+`sparkforge_collect_cloudwatch_logs` chega por `sf-runtime-specialist`, o mesmo
+coordenador da rota `AGENT-084`.
+
+### Superfície
+
+`docs/surface.lock.json`: tools de **380 762 para 383 610 bytes**, **+2 848**
+(**+0,75%**), `tool_count` de **69 para 70**. Skills (57, 457 985 bytes) e
+knowledge (50, 460 219 bytes) não se moveram — a frente não acrescentou skill nem
+documento de `knowledge/`; as seis assinaturas já existiam.
+
+### Estado dos gates ao fechar
+
+`check_status_numbers.py --strict` **0 divergência(s)**;
+`check_vnext_claims.py` **0 divergência(s)**; `check_surface_lock.py` **0**;
+`ruff check sparkforge scripts tests` limpo;
+`check_recall_economy.py` **0 problema(s)** (27/27 nominal, 0/27 conceitual,
+economia `UNRESOLVED` — os três inalterados pela frente);
+`tests/test_facts_exception.py`, `tests/test_errors_signature_fact.py`,
+`tests/test_rules_errors.py`, `tests/test_collect_cloudwatch_logs.py` e
+`tests/test_rule_scope_by_nature.py` — **558 passando**.
