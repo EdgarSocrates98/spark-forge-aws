@@ -393,10 +393,16 @@ class TestFixturesReais:
 
 
 class TestCatalogoInteiro:
-    def test_as_112_regras_ordenam_sem_ciclo(self, findings_do_catalogo):
+    def test_o_catalogo_inteiro_ordena_sem_ciclo(self, findings_do_catalogo):
+        """O catalogo inteiro ordena sem ciclo, e nenhuma regra fica pra tras.
+
+        O tamanho esperado e derivado do proprio fixture (todas as regras
+        executaveis com `action`), nao fixado a mao -- assim uma regra nova
+        no catalogo nao quebra este teste por acidente de contagem.
+        """
         ordem, _, unresolved = order_actions(findings_do_catalogo)
         assert unresolved == {}
-        assert len(ordem) == 112
+        assert len(ordem) == len(findings_do_catalogo)
         assert _antes(ordem, "SF-ATH-004", "SF-ATH-001")
         assert _antes(ordem, "SF-UI-002", "SF-UI-001")
 

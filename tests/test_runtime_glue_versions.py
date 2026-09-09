@@ -94,9 +94,17 @@ CURRENT = ("4.0", "5.0", "5.1")
 #             ficam corretamente fora de escopo -- mesma forma de SF-MIG-001/002.
 #             Em 5.0 e 5.1 elas SAO avaliadas, e por isso nao aparecem nas duas
 #             entradas de baixo.
+#
+# SF-ERR-001/002 `glue: ">=6.0"` -- o juizo da excecao (categoria estrutural do
+#             erro) so vale a partir do Glue 6.0, mesma fronteira de SF-MIG-003.
+#             Nenhuma das tres correntes chega la, entao as duas ficam fora de
+#             escopo nas tres -- e sao avaliadas em Glue 6.0, que esta na
+#             matriz mas fora de `CURRENT`.
 EXPECTED_OUT_OF_SCOPE = {
     "4.0": {
         "SF-ENV-002",
+        "SF-ERR-001",
+        "SF-ERR-002",
         "SF-LF-001",
         "SF-LF-002",
         "SF-MIG-001",
@@ -109,6 +117,8 @@ EXPECTED_OUT_OF_SCOPE = {
     },
     "5.0": {
         "SF-ENV-002",
+        "SF-ERR-001",
+        "SF-ERR-002",
         "SF-GRAPH-002",
         "SF-MIG-003",
         "SF-SPARK4-001",
@@ -117,6 +127,8 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-SPARK4-004",
     },
     "5.1": {
+        "SF-ERR-001",
+        "SF-ERR-002",
         "SF-GRAPH-002",
         "SF-MIG-003",
         "SF-SPARK4-001",
@@ -242,10 +254,15 @@ class TestRuleScopeOnTheCurrentRuntimes:
     # correntes (5.0 e 5.1) a area sobrevive, e por isso a excecao nao aparece
     # nas entradas deles -- excecao que nao se realiza reprova em
     # `test_every_area_of_the_catalog_survives_the_version_guard`.
+    #
+    # SF-ERR ENTROU AQUI com a mesma forma de SF-SPARK4: as duas regras da area
+    # sao guardadas por `glue: ">=6.0"`, fronteira que nenhuma das tres
+    # correntes cruza -- a area some nas tres, e o guard de Glue 6.0 (fora de
+    # `CURRENT`) e onde ela volta a ser avaliada.
     AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {
-        "4.0": {"SF-LF", "SF-SPARK4"},
-        "5.0": {"SF-SPARK4"},
-        "5.1": {"SF-SPARK4"},
+        "4.0": {"SF-ERR", "SF-LF", "SF-SPARK4"},
+        "5.0": {"SF-ERR", "SF-SPARK4"},
+        "5.1": {"SF-ERR", "SF-SPARK4"},
     }
 
     @pytest.mark.parametrize("version", CURRENT)

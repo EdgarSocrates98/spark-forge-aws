@@ -210,8 +210,14 @@ class TestContradicaoDireta:
 
         Se alguem reintroduzir o filtro por `nature: measure`, este par some --
         o unico eixo que os dois compartilham e `nature: risk`.
+
+        O tamanho do fixture nao e fixado a mao: e derivado do mesmo criterio
+        (`action` presente) usado para montar `findings_do_catalogo`, contra o
+        conjunto de ids sem duplicata -- assim uma regra nova no catalogo nao
+        quebra este teste, so a contagem de conflitos abaixo importa.
         """
-        assert len(findings_do_catalogo) == 112
+        esperado = {regra["id"] for regra in load_catalog() if regra.get("action")}
+        assert len(findings_do_catalogo) == len(esperado)
         assert direct_conflicts(findings_do_catalogo) == [("SF-GRAPH-005", "SF-LF-001")]
 
 
