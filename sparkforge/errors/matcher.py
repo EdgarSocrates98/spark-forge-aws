@@ -48,6 +48,7 @@ from typing import Any
 
 from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
+from sparkforge.knowledge_ref import knowledge_dir
 
 EXTRACTOR_ID = "error_signature@0.1.0"
 
@@ -73,9 +74,24 @@ class DeterministicErrorMatcher:
     """Matches stacktraces and logs against local Error KB signatures with zero LLM calls."""
 
     def __init__(self, errors_dir: Path | None = None) -> None:
-        self.errors_dir = errors_dir or (
-            Path(__file__).parent.parent.parent / "knowledge" / "errors"
-        )
+        # `knowledge_dir()` e nao `Path(__file__).parent.parent.parent`, e a
+        # diferenca so aparece no WHEEL. No repositorio os dois resolvem para
+        # `<raiz>/knowledge/errors` e o defeito e invisivel; instalado por pip,
+        # o caminho relativo aponta para `site-packages/knowledge/errors`,
+        # que nao existe -- o `force-include` do `pyproject.toml` poe o
+        # diretorio em `sparkforge/knowledge`, e e por isso que
+        # `sparkforge/knowledge_ref.py` existe.
+        #
+        # O modo de falha era SILENCIOSO e por isso caro: `_load_signatures`
+        # devolve cedo quando o diretorio nao existe, `self.signatures` fica
+        # vazia, e `build_signature_matches` passa a emitir
+        # `error.signature.unresolved` para TUDO. Um operador com o pacote
+        # instalado veria "nenhuma assinatura conhecida cobre isto" sobre um
+        # `NoSuchMethodError` que o catalogo conhece. Quem pegou foi o
+        # `Artifact parity gate` do CI (`scripts/verify_wheel.py`), que roda o
+        # corpus contra o wheel instalado -- e e exatamente para isso que ele
+        # existe.
+        self.errors_dir = errors_dir or (knowledge_dir() / "errors")
         self.signatures: list[dict[str, Any]] = []
         self._load_signatures()
 
