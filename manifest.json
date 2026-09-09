@@ -129,6 +129,7 @@
     "sparkforge_code_sync",
     "sparkforge_collect_athena_workgroup",
     "sparkforge_collect_cloudwatch",
+    "sparkforge_collect_cloudwatch_logs",
     "sparkforge_collect_emr_cluster",
     "sparkforge_collect_emr_eks",
     "sparkforge_collect_emr_serverless",

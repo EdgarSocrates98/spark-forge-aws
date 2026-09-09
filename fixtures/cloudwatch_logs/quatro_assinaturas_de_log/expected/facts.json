@@ -1,0 +1,249 @@
+[
+  {
+    "id": "f_3e4350",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:03:11,204 INFO [main] glue.ProcessLauncher: Loading job script",
+      "log_stream": "jr_a1b2c3"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_c71b44",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 1
+    },
+    "measures": {
+      "timestamp_ms": 1788948000137.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:07:42,881 ERROR [Executor task launch worker for task 12] executor.Executor: Container killed by YARN for exceeding memory limits. 10.4 GB of 10 GB physical memory used",
+      "log_stream": "jr_a1b2c3_g-abc"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_b32f7c",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 2
+    },
+    "measures": {
+      "timestamp_ms": 1788948000274.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:07:59,003 ERROR [main] iceberg.SparkWrite: org.apache.iceberg.exceptions.CommitFailedException: Commit failed: Table was updated concurrently by another writer",
+      "log_stream": "jr_a1b2c3"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_283ca3",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 3
+    },
+    "measures": {
+      "timestamp_ms": 1788948000411.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:08:01,442 ERROR [main] athena.Reader: HIVE_UNSUPPORTED_FORMAT: Cannot read unsupported version 3 of the Iceberg table metadata",
+      "log_stream": "jr_a1b2c3_g-abc"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_0fb6b8",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 4
+    },
+    "measures": {
+      "timestamp_ms": 1788948000548.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on default.dim_cliente",
+      "log_stream": "jr_a1b2c3"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_59505a",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3"
+    },
+    "measures": {
+      "events": 5.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_a1b2c3"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_421f68",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 1,
+      "signature_id": "ERR-GLUE-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-GLUE-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:07:42,881 ERROR [Executor task launch worker for task 12] executor.Executor: Container killed by YARN for exceeding memory limits. 10.4 GB of 10 GB physical memory used"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  },
+  {
+    "id": "f_c75a8c",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 2,
+      "signature_id": "ERR-ICE-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-ICE-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:07:59,003 ERROR [main] iceberg.SparkWrite: org.apache.iceberg.exceptions.CommitFailedException: Commit failed: Table was updated concurrently by another writer"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  },
+  {
+    "id": "f_bb1538",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 3,
+      "signature_id": "ERR-ATH-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-ATH-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:08:01,442 ERROR [main] athena.Reader: HIVE_UNSUPPORTED_FORMAT: Cannot read unsupported version 3 of the Iceberg table metadata"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  },
+  {
+    "id": "f_5f75e0",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_a1b2c3",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_a1b2c3",
+      "event": 4,
+      "signature_id": "ERR-LF-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-LF-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on default.dim_cliente"
+    },
+    "provenance": {
+      "artifact": "etl-vendas_jr_a1b2c3_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

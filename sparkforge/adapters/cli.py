@@ -1666,6 +1666,36 @@ def build_parser() -> argparse.ArgumentParser:
     cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
     cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    cw_logs_p = collect_sub.add_parser(
+        "cloudwatch-logs",
+        help="Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem).",
+    )
+    cw_logs_p.add_argument("--repo", required=True)
+    cw_logs_p.add_argument("--job-name", required=True)
+    cw_logs_p.add_argument("--job-run", required=True)
+    cw_logs_p.add_argument(
+        "--log-group",
+        required=True,
+        help=(
+            "Log group. Sem default -- `/aws-glue/jobs/error`, `/aws-glue/jobs/output` e "
+            "`/aws-glue/jobs/logs-v2` tem conteudo diferente."
+        ),
+    )
+    cw_logs_p.add_argument("--start", required=True, help="Inicio ISO 8601.")
+    cw_logs_p.add_argument("--end", required=True, help="Fim ISO 8601.")
+    cw_logs_p.add_argument(
+        "--filter-pattern",
+        default="",
+        help="Filtro do CloudWatch Logs, aplicado no servidor. Declara a relevancia.",
+    )
+    cw_logs_p.add_argument(
+        "--max-events",
+        type=int,
+        default=500,
+        help="Teto de eventos. Quando morde, o artefato sai com truncated: true.",
+    )
+    cw_logs_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     job_runs_p = collect_sub.add_parser(
         "glue-job-runs",
         help="Baixa o historico de execucoes de um job, um artefato por run terminal.",
@@ -2679,6 +2709,22 @@ def _cmd_collect_cloudwatch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_cloudwatch_logs(args: argparse.Namespace) -> int:
+    payload = _core.collect_cloudwatch_logs(
+        args.repo,
+        job_name=args.job_name,
+        job_run_id=args.job_run,
+        log_group=args.log_group,
+        start=args.start,
+        end=args.end,
+        filter_pattern=args.filter_pattern,
+        max_events=args.max_events,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_glue_job_runs(args: argparse.Namespace) -> int:
     payload = _core.collect_glue_job_runs(
         args.repo, job_name=args.job_name, max_runs=args.max_runs, now=args.now
@@ -3189,6 +3235,7 @@ _DISPATCH = {
     ("collect", "event-log"): _cmd_collect_event_log,
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
+    ("collect", "cloudwatch-logs"): _cmd_collect_cloudwatch_logs,
     ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,

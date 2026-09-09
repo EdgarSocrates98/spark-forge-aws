@@ -81,6 +81,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -133,6 +134,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -1258,6 +1260,28 @@ class _FakeEmrContainersClient:
         }
 
 
+class _FakeLogsClient:
+    """`filter_log_events` de uma pagina so -- e AQUI o suficiente, e o motivo
+    esta escrito para nao ser confundido com o defeito que a auditoria de fakes
+    de 2026-09-03 achou: este arquivo mede SCHEMA DE SAIDA da tool, nao o laco
+    de paginacao do coletor. Quem prova a paginacao com paginas distintas e
+    `tests/test_collect_cloudwatch_logs.py`, e e la que um fake de pagina unica
+    seria o fake errado."""
+
+    def filter_log_events(self, **kwargs):
+        return {
+            "events": [
+                {
+                    "logStreamName": kwargs.get("logStreamNamePrefix", "jr_1"),
+                    "timestamp": 1_788_948_000_000,
+                    "message": (
+                        "ERROR Container killed by YARN for exceeding memory limits."
+                    ),
+                }
+            ]
+        }
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -1268,6 +1292,7 @@ class _FakeBoto3ForCollect:
             "emr": _FakeEmrClient(),
             "emr-serverless": _FakeEmrServerlessClient(),
             "emr-containers": _FakeEmrContainersClient(),
+            "logs": _FakeLogsClient(),
         }
 
     def client(self, name, **kwargs):
@@ -1437,7 +1462,12 @@ def _fake_collect_boto3(monkeypatch):
     """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
+    from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+
+    # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
+    # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
 _CODE_JOB = (
@@ -1948,6 +1978,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
         "sparkforge_collect_cloudwatch",
+        "sparkforge_collect_cloudwatch_logs",
         "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
@@ -1974,6 +2005,15 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "repo": str(tmp_path),
                 "job_name": "etl-job",
                 "job_run_id": "jr_1",
+                "start": "2026-07-29T00:00:00Z",
+                "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_cloudwatch_logs": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
+                "job_run_id": "jr_1",
+                "log_group": "/aws-glue/jobs/error",
                 "start": "2026-07-29T00:00:00Z",
                 "end": "2026-07-30T00:00:00Z",
                 "now": "2026-07-30T00:00:00Z",

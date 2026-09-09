@@ -28,6 +28,7 @@ from sparkforge.facts import (
     bridge,
     call_graph,
     catalog_schema,
+    cloudwatch_logs,
     consumers,
     controlm_jobs,
     data_quality,
@@ -81,6 +82,14 @@ EXTRACTORS = {
     "bridge": bridge,
     "call_graph": call_graph,
     "catalog_schema": catalog_schema,
+    # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
+    # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
+    # `cloudwatch` -- `filter_log_events` contra `get_metric_data` --, e por isso
+    # modulo separado com `EXTRACTOR_ID` proprio; o nome parecido nao os torna o
+    # mesmo extrator. Sem ele aqui, os tres kinds `cloudwatch.log*` nao sao verificados
+    # por ninguem e o criterio de golden -- todo kind de `EMITTED_KINDS` em algum
+    # golden -- passa sem ser avaliado, que e pior do que falhar.
+    "cloudwatch_logs": cloudwatch_logs,
     "consumers": consumers,
     # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
     # SF-CTM -- a outra e `tests/test_rules_catalog_reachability.py` --, e

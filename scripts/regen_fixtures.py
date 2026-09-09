@@ -27,6 +27,9 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
+from sparkforge.facts.cloudwatch_logs import (  # noqa: E402
+    extract_cloudwatch_logs_tree,
+)
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
 from sparkforge.facts.controlm_jobs import extract_controlm_jobs_tree  # noqa: E402
 from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
@@ -82,6 +85,7 @@ FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
 FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
 FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
+FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
 FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
 # Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
 # `evals/holdout/README.md` e `regen_scenario`.
@@ -467,6 +471,23 @@ def regen_exception(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_cloudwatch_logs(directory: Path) -> None:
+    """Corpus do LOG do CloudWatch: `*.json` sob input/, mais o matcher.
+
+    UM extrator de artefato e UM derivador puro, nesta ordem, porque a ordem e a
+    dependencia: `extract_cloudwatch_logs_tree` produz os `cloudwatch.log_event`
+    ja redigidos, e `build_signature_matches` casa cada linha contra
+    `knowledge/errors/`. E o mesmo desenho de `regen_exception`, com a fonte
+    trocada -- e e essa troca que destrava as quatro assinaturas de mensagem.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_cloudwatch_logs_tree(input_dir, repo_root=input_dir)
+    facts.extend(build_signature_matches(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_scenario(directory: Path) -> None:
     """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
 
@@ -695,6 +716,7 @@ def main() -> int:
                 (FIXTURES_GRAPH / name, regen_graph),
                 (FIXTURES_MIGRATION / name, regen_migration),
                 (FIXTURES_EXCEPTION / name, regen_exception),
+                (FIXTURES_CW_LOGS / name, regen_cloudwatch_logs),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -791,6 +813,8 @@ def main() -> int:
     if FIXTURES_EXCEPTION.is_dir():
         for directory in sorted(p for p in FIXTURES_EXCEPTION.iterdir() if p.is_dir()):
             regen_exception(directory)
+    for directory in sorted(p for p in FIXTURES_CW_LOGS.iterdir() if p.is_dir()):
+        regen_cloudwatch_logs(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.

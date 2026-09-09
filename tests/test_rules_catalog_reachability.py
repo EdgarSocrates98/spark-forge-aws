@@ -39,6 +39,7 @@ from sparkforge.facts import (
     call_graph,
     catalog_schema,
     cloudwatch,
+    cloudwatch_logs,
     consumers,
     controlm_jobs,
     data_quality,
@@ -86,6 +87,14 @@ EXTRACTORS = (
     # repositorio. `cloudwatch` e `glue_job_run` chegaram com o coletor de
     # historico de runs Glue; `sql_metrics`, com a metrica por no do plano.
     cloudwatch,
+    # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
+    # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
+    # `cloudwatch` -- `filter_log_events` contra `get_metric_data` --, e por isso
+    # modulo separado com `EXTRACTOR_ID` proprio; o nome parecido nao os torna o
+    # mesmo extrator. Sem ele aqui, os tres kinds `cloudwatch.log*` contam como orfaos, e a
+    # primeira regra que os consumir seria forcada a `blocked_on` sobre um
+    # extrator que ja esta no repositorio.
+    cloudwatch_logs,
     consumers,
     # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
     # SF-CTM -- esta e a de `tests/test_fixtures_kind_coverage.py` --, e esquecer

@@ -1,0 +1,27 @@
+name: quatro_assinaturas_de_log
+proves: >
+  As QUATRO assinaturas de `knowledge/errors/` que sao trecho de MENSAGEM e nao
+  classe de excecao -- ERR-ATH-001, ERR-GLUE-001, ERR-ICE-001, ERR-LF-001 --,
+  casadas de uma vez pelo caminho de log. Nenhuma delas casa por
+  `spark.exception`: o event log so carrega a excecao DO STAGE, e nenhuma das
+  quatro e nome de classe. Esta fixture e a medida de que o caminho novo
+  destrava exatamente as quatro.
+
+  A linha INFO no meio prova o outro lado: ela nao casa assinatura nenhuma e
+  nao produz `unresolved` nenhum, porque a recusa deste caminho e AGREGADA por
+  (run, log group). Um log de 500 linhas com um match nao produz 499 pontos
+  cegos.
+
+  `filter_pattern` sai gravado no `cloudwatch.logs.analyzed`: a relevancia foi
+  DECLARADA pelo operador no servidor, e o extrator nao adivinhou linha
+  interessante nenhuma.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules: []

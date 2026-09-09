@@ -1,0 +1,24 @@
+name: linha_com_credencial
+proves: >
+  A amarra da redacao, medida. A primeira linha carrega senha embutida numa URL
+  de JDBC; ela sai `<redigido>` com `redacted: true`, e `events_redacted` conta
+  1. `facts.json` e committado como barramento de handoff, e log de driver
+  carrega credencial com a mesma facilidade que configuracao.
+
+  A segunda linha e o par que impede a redacao de virar apagador: ela nao e
+  segredo, sai inteira, e casa ERR-GLUE-001. Uma fixture so com a linha redigida
+  passaria igual se `redact` redigisse TUDO.
+
+  A linha redigida NAO e examinada contra assinatura nenhuma -- casar assinatura
+  contra `<redigido>` seria casar contra a propria redacao --, mas ela conta em
+  `lines_examined` mesmo assim.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules: []

@@ -31,6 +31,11 @@ ARTIFACT_KINDS = (
     "terraform",
     "explain",
     "cloudwatch",
+    # `cloudwatch_logs` e artefato SEPARADO de `cloudwatch`, e nao um detalhe do
+    # mesmo: um e a resposta de `get_metric_data` (serie numerica), o outro a de
+    # `filter_log_events` (linhas de texto). Compartilhar o kind faria a segunda
+    # coleta sobrescrever a primeira no manifesto.
+    "cloudwatch_logs",
     "glue_job_run",
     "iceberg_metadata",
     "athena_workgroup",

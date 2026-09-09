@@ -6,6 +6,29 @@ texto que a assinatura declara, ou nao contem. O que fazer a respeito --
 `likely_causes`, `fixes`, `diagnostic_steps`, `unsafe_fixes` -- e JUIZO, e juizo
 mora no catalogo de regras, nao aqui.
 
+## Ele consome DUAS fontes, e a segunda destrava quatro assinaturas
+
+MEDIDO em 2026-09-09 sobre `knowledge/errors/`: das SEIS assinaturas, apenas
+duas -- `NoSuchMethodError` (ERR-GLUE-002) e `NoSuchFieldError` (ERR-GLUE-003)
+-- sao nome de classe de excecao. As outras QUATRO sao trecho de mensagem de
+LOG, e por `spark.exception` nunca casavam:
+
+    ERR-ATH-001   Cannot read unsupported version 3
+    ERR-GLUE-001  Container killed by YARN for exceeding memory limits
+    ERR-ICE-001   CommitFailedException: Commit failed: Table was updated concurrently
+    ERR-LF-001    Insufficient Lake Formation permission(s) on
+
+`cloudwatch.log_event` (de `sparkforge/facts/cloudwatch_logs.py`) e o caminho
+delas: a mesma assinatura, casada contra o TEXTO DA LINHA em vez da classe, e
+`matched_on: "log_line"` diz por onde ela entrou. As duas de classe continuam
+casando pelos dois caminhos -- `NoSuchMethodError` aparece tanto no
+`exception_class` quanto na linha de log que o imprime --, e e por isso que
+`matched_on` existe: sem ele, dois matches do mesmo id seriam indistinguiveis.
+
+A linha ja chega REDIGIDA do extrator, e uma linha redigida vira `<redigido>`
+inteiro: ela nao casa assinatura nenhuma, e nao deve casar. Ela entra na
+contagem de linhas examinadas e nada mais.
+
 `match_log` e `ErrorMatchResult` continuam existindo porque
 `sparkforge forge errors match` os usa. Eles casam SUBSTRING de log cru e
 carregam o juizo junto -- e e por isso que precisam de `confidence=0.98`, que e
@@ -106,22 +129,32 @@ class DeterministicErrorMatcher:
 
 
 def build_signature_matches(facts: Sequence[Fact]) -> list[Fact]:
-    """Casa `spark.exception` contra `knowledge/errors/`, e nada mais.
+    """Casa `spark.exception` E `cloudwatch.log_event` contra `knowledge/errors/`.
 
-    Funcao PURA sobre Facts: consome a excecao ja ESTRUTURADA por
-    `sparkforge/facts/exception.py`, nunca texto de log cru. `attrs.caused_by`
-    entra na busca junto com `attrs.exception_class`, porque a assinatura que
-    importa costuma estar na causa raiz e nao no `SparkException` que a
-    embrulha -- e `matched_on` diz por qual dos dois ela entrou, para que a
-    regra que consumir isso saiba do que esta falando.
+    Funcao PURA sobre Facts: nunca le artefato e nunca reparseia texto cru de
+    arquivo. As duas fontes chegam ja estruturadas -- a excecao por
+    `sparkforge/facts/exception.py`, a linha de log por
+    `sparkforge/facts/cloudwatch_logs.py`, que a redigiu antes de emiti-la.
 
-    Lista vazia so acontece quando NAO HA `spark.exception` no case. Havendo,
-    sai `error.signature_match` ou sai `error.signature.unresolved`: a
-    diferenca entre "nenhuma assinatura conhecida cobre esta excecao" e
-    "ninguem perguntou" e o que a recusa nomeada guarda.
+    No caminho da EXCECAO, `attrs.caused_by` entra na busca junto com
+    `attrs.exception_class`, porque a assinatura que importa costuma estar na
+    causa raiz e nao no `SparkException` que a embrulha -- e `matched_on` diz
+    por qual dos dois ela entrou.
+
+    No caminho do LOG, a assinatura e casada contra `attrs.message`, e
+    `matched_on` sai `log_line`. A recusa e AGREGADA por (run, log group) e nao
+    por linha: emitir um `unresolved` por linha que nao casa transformaria um
+    log de 500 linhas em 500 facts de ponto cego, e o ponto cego e um so --
+    "nenhuma assinatura conhecida aparece neste log".
+
+    Lista vazia so acontece quando NAO HA nenhuma das duas fontes no case.
+    Havendo, sai `error.signature_match` ou sai `error.signature.unresolved`: a
+    diferenca entre "nenhuma assinatura conhecida cobre isto" e "ninguem
+    perguntou" e o que a recusa nomeada guarda.
     """
     assinaturas = DeterministicErrorMatcher().signatures
     saida: list[Fact] = []
+    saida.extend(_casar_log(facts, assinaturas))
     for fact in facts:
         if fact.kind != "spark.exception":
             continue
@@ -179,6 +212,86 @@ def build_signature_matches(facts: Sequence[Fact]) -> list[Fact]:
                 )
             )
     return sort_facts(saida)
+
+
+# Teto do trecho de linha gravado em `attrs.matched_line`. Mesmo numero de
+# `message_head` em `facts/exception.py`, pela mesma razao: o fact guarda o que
+# identifica o casamento, nao o log inteiro.
+_TRECHO = 200
+
+
+def _casar_log(
+    facts: Sequence[Fact], assinaturas: list[dict[str, Any]]
+) -> list[Fact]:
+    """O caminho de LOG, separado do de excecao porque a recusa dele e agregada.
+
+    Uma linha `redacted` nao e examinada contra assinatura nenhuma -- o texto
+    dela e `<redigido>`, e casar assinatura contra isso seria casar contra a
+    propria redacao. Ela conta em `lines_examined` mesmo assim: o operador
+    precisa saber que havia linha ali.
+    """
+    saida: list[Fact] = []
+    # (job, run, log group) -> [linhas examinadas, houve match, subject, provenance]
+    escopos: dict[tuple[str, str, str], list[Any]] = {}
+
+    for fact in facts:
+        if fact.kind != "cloudwatch.log_event":
+            continue
+        subject = dict(fact.subject)
+        attrs = fact.attrs or {}
+        provenance = _fact_provenance(fact)
+        chave = (
+            str(subject.get("job_name") or ""),
+            str(subject.get("job_run_id") or ""),
+            str(subject.get("log_group") or ""),
+        )
+        escopo = escopos.setdefault(chave, [0, False, subject, provenance])
+        escopo[0] += 1
+
+        if attrs.get("redacted"):
+            continue
+        mensagem = str(attrs.get("message") or "")
+        if not mensagem:
+            continue
+        alvo_linha = mensagem.lower()
+        for sig in assinaturas:
+            padrao = str(sig.get("signature") or "")
+            if not padrao or padrao.lower() not in alvo_linha:
+                continue
+            escopo[1] = True
+            saida.append(
+                Fact(
+                    kind="error.signature_match",
+                    subject={**subject, "signature_id": str(sig["id"])},
+                    measures={},
+                    attrs={
+                        "signature_id": str(sig["id"]),
+                        "matched_on": "log_line",
+                        "matched_line": mensagem[:_TRECHO],
+                    },
+                    provenance=provenance,
+                )
+            )
+
+    for (_, _, _), (linhas, casou, subject, provenance) in escopos.items():
+        if casou:
+            continue
+        # O subject da recusa e o do ESCOPO, sem o `event`: o ponto cego e do
+        # log inteiro, nao da linha 37.
+        escopo_subject = {k: v for k, v in subject.items() if k != "event"}
+        saida.append(
+            Fact(
+                kind="error.signature.unresolved",
+                subject=escopo_subject,
+                measures={"lines_examined": float(linhas)},
+                attrs={
+                    "reason": "nenhuma_assinatura_casou_no_log",
+                    "source": "cloudwatch.log_event",
+                },
+                provenance=provenance,
+            )
+        )
+    return saida
 
 
 def _fact_provenance(fact: Fact) -> dict[str, Any]:

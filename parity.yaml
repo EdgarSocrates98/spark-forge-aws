@@ -631,6 +631,7 @@ capabilities:
       - sparkforge_collect_event_log
       - sparkforge_collect_glue_job
       - sparkforge_collect_cloudwatch
+      - sparkforge_collect_cloudwatch_logs
       - sparkforge_collect_glue_job_runs
       - sparkforge_collect_iceberg_metadata
       - sparkforge_collect_athena_workgroup
@@ -642,6 +643,7 @@ capabilities:
       - collect event-log
       - collect glue-job
       - collect cloudwatch
+      - collect cloudwatch-logs
       - collect glue-job-runs
       - collect iceberg-metadata
       - collect athena-workgroup

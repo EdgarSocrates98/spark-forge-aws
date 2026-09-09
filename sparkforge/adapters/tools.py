@@ -5907,6 +5907,62 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_cloudwatch_logs": {
+        "description": (
+            "Baixa o LOG do run no CloudWatch Logs via `logs.filter_log_events` e registra "
+            "no manifesto. E o caminho das assinaturas de `knowledge/errors/` que sao trecho "
+            "de MENSAGEM e nao classe de excecao -- quatro das seis --, e do que o event log "
+            "nao tem: falha de driver antes do primeiro stage, `Py4JJavaError` de codigo "
+            "Python, e OOM de container morto pelo YARN. `log_group` e obrigatorio e nao tem "
+            "default: `/aws-glue/jobs/error`, `/aws-glue/jobs/output` e `/aws-glue/jobs/logs-v2` "
+            "(Glue 4.0+) sao grupos com conteudo diferente. Log group inexistente, permissao "
+            "negada, janela vazia e credencial ausente NAO viram erro: viram `status` no "
+            "artefato e `cloudwatch.logs.unresolved` no fact, com a razao. Mesma politica "
+            "offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_name", "job_run_id", "log_group", "start", "end", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "job_name": {"type": "string"},
+                "job_run_id": {"type": "string"},
+                "log_group": {
+                    "type": "string",
+                    "description": (
+                        "Nome do log group. Sem default: grupo errado devolve vazio, e "
+                        "vazio se parece com 'o job nao logou nada'."
+                    ),
+                },
+                "start": {"type": "string", "description": "Inicio ISO 8601."},
+                "end": {"type": "string", "description": "Fim ISO 8601."},
+                "filter_pattern": {
+                    "type": "string",
+                    "default": "",
+                    "description": (
+                        "Filtro do CloudWatch Logs, aplicado no servidor. E aqui que a "
+                        "RELEVANCIA e declarada -- o extrator nao adivinha linha "
+                        "interessante."
+                    ),
+                },
+                "max_events": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 500,
+                    "description": (
+                        "Teto de eventos gravados. Quando morde, o artefato sai com "
+                        "`truncated: true` -- corte declarado, nunca silencioso."
+                    ),
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_glue_job_runs": {
         "description": (
             "Baixa o historico de execucoes de um job via `glue.get_job_runs` e grava UM "
@@ -6986,6 +7042,20 @@ def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_cloudwatch_logs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_cloudwatch_logs(
+        args["repo"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        log_group=args["log_group"],
+        start=args["start"],
+        end=args["end"],
+        filter_pattern=args.get("filter_pattern", ""),
+        max_events=args.get("max_events", 500),
+        now=args["now"],
+    )
+
+
 def _h_collect_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_glue_job_runs(
         args["repo"],
@@ -7175,6 +7245,7 @@ _HANDLERS = {
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
+    "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,

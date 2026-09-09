@@ -135,6 +135,24 @@ Três recusas, nomeadas e nunca silenciosas:
 A redação vem **antes** do parse, e o parse não a desfaz. Um texto redigido não
 vira exceção estruturada — vira recusa nomeada.
 
+### Desvio medido na T5 (2026-09-09): as recusas do log são QUATRO, não três
+
+A tabela acima junta "log group inexistente, sem permissão, ou vazio" numa linha
+só e não nomeia o quarto estado. A entrega o separou, e a razão é a mesma que
+justifica os outros três: **sem credencial a requisição nunca saiu**, e gravar
+`vazio` ali seria afirmar que o log estava vazio sem nunca tê-lo consultado.
+`cloudwatch.logs.unresolved` sai com `reason` em
+`log_group_inexistente | sem_permissao | vazio | sem_credencial`, e
+`tests/test_fixtures_golden_cloudwatch_logs.py` cobra que as quatro sejam
+**distinguíveis entre si** — as quatro produzem a mesma lista vazia de eventos, e
+duas colapsadas na mesma razão seriam uma recusa que não nomeia nada.
+
+Desvio de forma, também medido: os quatro estados **não levantam exceção**. Uma
+`CollectionFailed` mataria o artefato, e sem artefato não há fact, e sem fact a
+recusa vira silêncio — exatamente o que a seção proíbe. Eles viram `status` no
+artefato, e o extrator os traduz. `CollectionFailed` ficou reservado ao que
+impede até a recusa de ser gravada (paginação que não termina).
+
 ---
 
 ## 4. O que fica de fora

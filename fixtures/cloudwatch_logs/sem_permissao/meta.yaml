@@ -1,0 +1,14 @@
+name: sem_permissao
+proves: >
+  Recusa nomeada 2 de 4. Sem `logs:FilterLogEvents`, a resposta e indistinguivel
+  de um grupo vazio -- e e por isso que a razao entra no fact em vez de virar
+  lista vazia.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.logs.analyzed
+  - cloudwatch.logs.unresolved
+expects_rules: []

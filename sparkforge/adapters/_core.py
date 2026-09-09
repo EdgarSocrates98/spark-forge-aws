@@ -35,6 +35,7 @@ from sparkforge.codeintel import search as _codeintel_search
 from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
+from sparkforge.collect import cloudwatch_logs as collect_cw_logs
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
@@ -4374,6 +4375,43 @@ def collect_cloudwatch(
     try:
         entry = collect_aws.collect_cloudwatch(
             job_name, job_run_id, Path(repo), now=now, start=start, end=end
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_cloudwatch_logs(
+    repo: str,
+    *,
+    job_name: str,
+    job_run_id: str,
+    log_group: str,
+    start: str,
+    end: str,
+    now: str,
+    filter_pattern: str = "",
+    max_events: int = 500,
+) -> dict[str, Any]:
+    """Baixa o LOG do run no CloudWatch Logs. Ver `collect/cloudwatch_logs.py`.
+
+    Log group inexistente, permissao negada, janela vazia e credencial ausente
+    NAO sobem como erro de fronteira: eles viram `status` no artefato e
+    `cloudwatch.logs.unresolved` no fact. Erro aqui e so o que impede ate a
+    recusa de ser gravada.
+    """
+    rel_path = collect_cw_logs.cloudwatch_logs_path(job_name, job_run_id, log_group)
+    try:
+        entry = collect_cw_logs.collect_cloudwatch_logs(
+            job_name,
+            job_run_id,
+            Path(repo),
+            now=now,
+            log_group=log_group,
+            start=start,
+            end=end,
+            filter_pattern=filter_pattern,
+            max_events=max_events,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc

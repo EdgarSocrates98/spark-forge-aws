@@ -871,6 +871,17 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     confinamento e um buraco, nao uma simplificacao.
     Ela declara os TRES: `repo` (a raiz onde grava), `findings_path` e
     `facts_path`. Move a CONTAGEM de 63 para 64 e nao toca no conjunto.
+
+    `sparkforge_collect_cloudwatch_logs` (T5 de `stacktrace-intelligence`,
+    2026-09-09) e o caso simples, e vale registrado porque a tentacao era a
+    outra: ela COLETA DE API AWS VIVA e grava no disco do operador, entao e
+    `CLOUD_MUTATION` pela mesma anotacao `_WRITE_LOCAL_OPEN_WORLD` das outras
+    nove `collect_*` -- `readOnlyHint: False` porque escreve artefato e
+    manifesto, `openWorldHint: True` porque sai para a rede. Classifica-la como
+    leitura por "so faz `filter_log_events`" seria olhar a chamada AWS e ignorar
+    a escrita local, e a cadeia autoriza as duas coisas separadamente. Ela
+    declara `repo` (a raiz onde grava), cai do lado certo do predicado, e move a
+    CONTAGEM de 64 para 65 sem tocar no conjunto de excecao.
     """
 
     SEM_CAMINHO = frozenset(
@@ -895,10 +906,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        # 64 desde `arbitrate` (2026-09-08): 61 com `code_path`, 62 com
-        # `code_shape`, 63 com `code_export`. Todas declaram `repo` -- a cadeia
-        # de autorizacao as ve pelo mesmo caminho.
-        assert len(TOOLS) - len(sem_caminho) == 64
+        # 65 desde `collect_cloudwatch_logs` (2026-09-09): 61 com `code_path`,
+        # 62 com `code_shape`, 63 com `code_export`, 64 com `arbitrate`. Todas
+        # declaram `repo` -- a cadeia de autorizacao as ve pelo mesmo caminho.
+        assert len(TOOLS) - len(sem_caminho) == 65
 
 
 class TestAImposicaoNoDespacho:
