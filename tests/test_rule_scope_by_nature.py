@@ -127,6 +127,14 @@ GLUE_VERSIONED = {
     "SF-GLUE-007",
     "SF-LF-001",
     "SF-LF-002",
+    # SF-LF-003 entra com o extrator `lakeformation`, e SF-LF-004 com a
+    # fronteira de conector S3 do Glue 5.1. As duas sao GLUE_VERSIONED pela
+    # mesma razao das irmas: leem definicao de `aws_glue_job`, e o que as
+    # guarda e VERSAO, nao a existencia da infraestrutura. A de 5.1 e o caso
+    # mais claro disso -- num Glue 5.0 a mesma configuracao esta CORRETA,
+    # porque o default de filesystem ainda e EMRFS.
+    "SF-LF-003",
+    "SF-LF-004",
     "SF-MIG-001",
     "SF-MIG-002",
     "SF-MIG-003",

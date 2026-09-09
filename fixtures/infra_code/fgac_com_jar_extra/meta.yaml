@@ -19,9 +19,11 @@ runtime:
   python: "3.11"
   iceberg: "1.7.1"
 expects_kinds:
-  - tf.module_analyzed
-  - tf.resource
+  - lakeformation.access_model
+  - lakeformation.unresolved
   - tf.attribute
+  - tf.module_analyzed
   - tf.observability.spark_ui
+  - tf.resource
 expects_rules:
   - SF-LF-001

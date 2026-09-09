@@ -27,6 +27,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.pyspark_ast import extract_tree
 from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
@@ -37,8 +38,10 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "infra_code"
 
 REQUIRED_FIXTURES = {
+    "fgac_com_catalogo_nomeado",
     "fgac_com_jar_extra",
     "fgac_em_job_streaming",
+    "fta_sem_emrfs_no_51",
     "observability_without_glue_context",
     "retries_with_append_write",
 }
@@ -52,6 +55,14 @@ def _extract(directory: Path):
     input_dir = directory / "input"
     facts = list(extract_terraform_tree(input_dir, repo_root=input_dir))
     facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # `build_lakeformation` deriva sobre a UNIAO, e por isso vem depois das duas
+    # extracoes -- ele le `tf.attribute` (o argumento de job) junto com
+    # `tf.spark_conf` e `pyspark.conf_set` (as confs de catalogo e de
+    # filesystem), e nenhum dos dois lados sozinho responde o que ele afirma.
+    # Chamada direta, no molde de `test_fixtures_golden_exception.py`: a
+    # producao passa por `fuse`, e trazer `fuse` para ca acrescentaria
+    # `fusion.summary` a quatro goldens que nao tem SQL nenhum para fundir.
+    facts.extend(build_lakeformation(facts))
     return facts
 
 

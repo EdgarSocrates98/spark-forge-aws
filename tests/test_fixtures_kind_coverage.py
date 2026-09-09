@@ -37,6 +37,7 @@ from sparkforge.facts import (
     emr_serverless,
     event_log,
     exception,
+    lakeformation,
     funcval,
     fusion,
     graph,
@@ -120,6 +121,14 @@ EXTRACTORS = {
     "emr_serverless": emr_serverless,
     "event_log": event_log,
     "exception": exception,
+    # `lakeformation` entra nas DUAS listas manuais no MESMO commit de
+    # `fixtures/infra_code/fgac_com_catalogo_nomeado/`, que e a fixture que
+    # traz os quatro kinds `lakeformation.*` para algum golden. Ele e o
+    # SEGUNDO extrator desta lista que nao le artefato: deriva de
+    # `tf.attribute`, `tf.spark_conf`, `pyspark.conf_set` e
+    # `spark.conf_effective`, e existe porque o DSL de regra compara
+    # igualdade e o nome do catalogo Iceberg mora DENTRO da chave de conf.
+    "lakeformation": lakeformation,
     "funcval": funcval,
     "fusion": fusion,
     # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES

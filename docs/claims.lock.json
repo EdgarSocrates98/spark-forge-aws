@@ -2975,13 +2975,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 560
+          "value": 562
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "560",
+      "text": "562",
       "type": "number"
     },
     {
@@ -3652,13 +3652,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 48
+          "value": 49
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "48",
+      "text": "49",
       "type": "number"
     },
     {
@@ -3672,13 +3672,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12525
+          "value": 12729
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "12525",
+      "text": "12729",
       "type": "number"
     },
     {
@@ -3692,13 +3692,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 158946
+          "value": 161179
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "158946",
+      "text": "161179",
       "type": "number"
     },
     {
@@ -3712,13 +3712,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 9049
+          "value": 9146
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "9049",
+      "text": "9146",
       "type": "number"
     },
     {
@@ -6024,7 +6024,7 @@
       "type": "number"
     },
     {
-      "context": "`knowledge/sources.lock.json`, que vigia **230** fontes no total (relido em",
+      "context": "`knowledge/sources.lock.json`, que vigia **234** fontes no total (relido em",
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-767",
       "line": 116,
@@ -6034,13 +6034,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 230
+          "value": 234
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "230",
+      "text": "234",
       "type": "number"
     },
     {

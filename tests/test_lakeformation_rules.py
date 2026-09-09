@@ -30,6 +30,7 @@ import copy
 
 import pytest
 
+from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.terraform import extract_terraform, extract_terraform_tree
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
@@ -231,3 +232,128 @@ class TestTheAreaIsSkippedBelowGlue5:
         assert rule_id not in {f.rule_id for f in findings}
         bloqueio = next(s for s in skipped if s["rule_id"] == rule_id)
         assert bloqueio["reason"] == "runtime_scope"
+
+
+# ---------------------------------------------------------------------------
+# SF-LF-003 e SF-LF-004 entraram em 2026-09-09, junto com
+# `sparkforge/facts/lakeformation.py`. As duas sao o PRIMEIRO caso desta area em
+# que a regra nao le `tf.attribute` cru: o predicado que elas comparam por
+# igualdade foi derivado num fact, porque o DSL de regra nao alcanca "o nome do
+# catalogo esta dentro da chave".
+# ---------------------------------------------------------------------------
+
+RUNTIME_GLUE_51 = {"glue": "5.1", "spark": "3.5.6", "python": "3.11", "iceberg": "1.10.0"}
+
+
+def _judge_source_em(src: str, runtime: dict) -> set[str]:
+    facts = list(extract_terraform(src, "main.tf"))
+    facts.extend(build_lakeformation(facts))
+    return {f.rule_id for f in judge(facts, load_catalog(), runtime)}
+
+
+_TF_CATALOGO = """
+resource "aws_glue_job" "unico" {{
+  glue_version = "5.1"
+  command {{
+    name = "glueetl"
+  }}
+  default_arguments = {{
+    "--enable-lakeformation-fine-grained-access" = "{fgac}"
+    "--conf"                                     = "spark.sql.catalog.{catalogo}=org.apache.iceberg.spark.SparkSessionCatalog"
+  }}
+}}
+"""
+
+_TF_RESOLVER = """
+resource "aws_glue_job" "unico" {{
+  glue_version = "5.1"
+  command {{
+    name = "glueetl"
+  }}
+  default_arguments = {{
+    "--conf" = "spark.hadoop.fs.s3.credentialsResolverClass=com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver{emrfs}"
+  }}
+}}
+"""
+
+_EMRFS_RESTAURADO = " --conf spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem"
+
+
+class TestSFLF003IcebergCatalogUnderFGAC:
+    def test_o_catalogo_nomeado_com_fgac_acusa(self):
+        achados = _judge_source_em(
+            _TF_CATALOGO.format(fgac="true", catalogo="glue_catalog"), RUNTIME_GLUE_51
+        )
+        assert "SF-LF-003" in achados
+
+    def test_o_session_catalog_com_fgac_NAO_acusa(self):
+        """A metade que impede a regra de acusar todo job com FGAC.
+
+        Sem este par, uma regra que ignorasse `is_session_catalog` e disparasse
+        so pela presenca do argumento passaria igual -- e acusaria exatamente a
+        configuracao que a AWS publica.
+        """
+        achados = _judge_source_em(
+            _TF_CATALOGO.format(fgac="true", catalogo="spark_catalog"), RUNTIME_GLUE_51
+        )
+        assert "SF-LF-003" not in achados
+
+    def test_o_catalogo_nomeado_SEM_fgac_NAO_acusa(self):
+        """O par cruzado: `glue_catalog` fora de FGAC e configuracao correta, e
+        a propria AWS a publica nos exemplos de Full Table Access."""
+        achados = _judge_source_em(
+            _TF_CATALOGO.format(fgac="false", catalogo="glue_catalog"), RUNTIME_GLUE_51
+        )
+        assert "SF-LF-003" not in achados
+
+    def test_ela_exige_os_dois_facts_derivados(self):
+        exigidos = set(_rule("SF-LF-003")["requires_facts"])
+        assert exigidos == {"lakeformation.access_model", "lakeformation.iceberg_catalog"}
+
+    def test_ela_NAO_declara_same_subject_e_o_risco_esta_escrito(self):
+        """A ausencia e deliberada e medida: `tf.spark_conf` tem subject
+        `<recurso>#<chave>` e o argumento de job tem `<recurso>`, entao os dois
+        nunca cairiam no mesmo grupo. O falso positivo que isso abre tem de
+        estar declarado em `risks`, senao a regra esconde o proprio limite."""
+        regra = _rule("SF-LF-003")
+        assert "same_subject" not in regra["when"]
+        assert any("same_subject" in r for r in regra["risks"])
+
+
+class TestSFLF004FTASemEMRFS:
+    def test_resolver_sem_emrfs_no_51_acusa(self):
+        achados = _judge_source_em(_TF_RESOLVER.format(emrfs=""), RUNTIME_GLUE_51)
+        assert "SF-LF-004" in achados
+
+    def test_resolver_COM_emrfs_restaurado_NAO_acusa(self):
+        achados = _judge_source_em(
+            _TF_RESOLVER.format(emrfs=_EMRFS_RESTAURADO), RUNTIME_GLUE_51
+        )
+        assert "SF-LF-004" not in achados
+
+    def test_no_glue_50_a_MESMA_configuracao_esta_CORRETA(self):
+        """A fronteira e de VERSAO, e este teste e o que prova que ela e real.
+
+        Ate o Glue 5.0 o conector S3 default e o EMRFS, e
+        `fs.s3.credentialsResolverClass` vale sem que ninguem restaure nada.
+        Acusar aqui seria acusar configuracao correta -- e e por isso que o
+        `runtime_scope` desta regra e `>=5.1` e nao `>=5.0` como o das irmas.
+        """
+        achados = _judge_source_em(_TF_RESOLVER.format(emrfs=""), RUNTIME_GLUE_50)
+        assert "SF-LF-004" not in achados
+
+    def test_guardada_por_glue_5_1(self):
+        regra = _rule("SF-LF-004")
+        assert regra["runtime_scope"] == {"glue": ">=5.1"}
+        assert in_scope(regra["runtime_scope"], RUNTIME_GLUE_51)
+        assert not in_scope(regra["runtime_scope"], RUNTIME_GLUE_50)
+
+    def test_outro_resolver_nao_e_o_do_lake_formation(self):
+        """A regra fala do resolver do Lake Formation, nao de qualquer resolver
+        customizado -- um `credentialsResolverClass` proprio nao pede credencial
+        ao Lake Formation e nao tem a pre-condicao de EMRFS."""
+        src = _TF_RESOLVER.format(emrfs="").replace(
+            "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver",
+            "com.exemplo.MeuResolver",
+        )
+        assert "SF-LF-004" not in _judge_source_em(src, RUNTIME_GLUE_51)

@@ -45,6 +45,7 @@ from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
+from sparkforge.facts.lakeformation import build_lakeformation  # noqa: E402
 from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
 from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
@@ -218,6 +219,10 @@ def regen_infra_code(directory: Path) -> None:
     input_dir = directory / "input"
     facts = list(extract_terraform_tree(input_dir, repo_root=input_dir))
     facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # Mesma ordem de `tests/test_fixtures_golden_infra_code.py::_extract`:
+    # `build_lakeformation` deriva sobre a UNIAO das duas extracoes, e o golden
+    # tem de sair do mesmo caminho que o teste percorre.
+    facts.extend(build_lakeformation(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 

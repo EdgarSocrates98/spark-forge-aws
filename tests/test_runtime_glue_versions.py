@@ -100,6 +100,16 @@ CURRENT = ("4.0", "5.0", "5.1")
 #             Nenhuma das tres correntes chega la, entao as duas ficam fora de
 #             escopo nas tres -- e sao avaliadas em Glue 6.0, que esta na
 #             matriz mas fora de `CURRENT`.
+#
+# SF-LF-003 `glue: ">=5.0"` -- mesma fronteira das duas primeiras: o recorte de
+#             session catalog para Iceberg e uma limitacao de FGAC, e FGAC em job
+#             Spark do Glue comeca no 5.0.
+#
+# SF-LF-004 `glue: ">=5.1"` -- fronteira PROPRIA, e ela nao e de Lake Formation:
+#             e o breaking change de conector S3. Ate o Glue 5.0 o default e
+#             EMRFS e `fs.s3.credentialsResolverClass` vale; no 5.1 o default
+#             passou a ser S3A e a mesma chave deixou de ter efeito. Acusar a
+#             ausencia de EMRFS num 5.0 seria acusar configuracao correta.
 EXPECTED_OUT_OF_SCOPE = {
     "4.0": {
         "SF-ENV-002",
@@ -107,6 +117,8 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-ERR-002",
         "SF-LF-001",
         "SF-LF-002",
+        "SF-LF-003",
+        "SF-LF-004",
         "SF-MIG-001",
         "SF-MIG-002",
         "SF-MIG-003",
@@ -120,6 +132,7 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-ERR-001",
         "SF-ERR-002",
         "SF-GRAPH-002",
+        "SF-LF-004",
         "SF-MIG-003",
         "SF-SPARK4-001",
         "SF-SPARK4-002",

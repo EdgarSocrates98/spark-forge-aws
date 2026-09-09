@@ -7,9 +7,58 @@ trabalho do usuário. Este documento está organizado por consequência prática
 que FGAC exige, o que ele proíbe, o que ele custa em capacidade, e o recorte
 próprio de Iceberg — e não pela ordem da página de origem.
 
-Toda afirmação daqui vem de *Considerations and limitations* do AWS Glue
-Developer Guide, lida em 2026-08-22. O que essa página não diz não está escrito
-aqui; o que ela não cobre está no fim, marcado como a verificar.
+As afirmações daqui vêm de cinco páginas do AWS Glue Developer Guide, e **cada
+seção nomeia a sua**. A coleta original é de 2026-08-22, sobre *Considerations
+and limitations* apenas; as seções 0, 5 e 6 entraram em 2026-09-09, com as
+páginas de FGAC, de Full Table Access e as duas de migração. O que essas páginas
+não dizem não está escrito aqui; o que elas não cobrem está no fim, marcado como
+a verificar.
+
+## 0. O eixo de versão, e por que ele vem antes de tudo
+
+A página de *Considerations and limitations* **não tem eixo de versão**: ela fala
+de "AWS Glue com Lake Formation" sem dizer de qual runtime. Ler as seções abaixo
+sem esta tabela produz o erro que mais engana nesta área — aplicar a um Glue 5.1
+uma limitação que era do 5.0, ou o contrário.
+
+| | Glue 4.0 | Glue 5.0 | Glue 5.1 |
+|---|---|---|---|
+| Spark | 3.3.0-amzn-1 | 3.5.4 | 3.5.6 |
+| Iceberg | 1.0.0 | 1.7.1 | 1.10.0 |
+| Filesystem S3 default | EMRFS | EMRFS | **S3A** |
+| FGAC via `GlueContext`/DynamicFrame | suportado | **removido** | removido |
+| FGAC Spark-native (leitura) | não existe | suportado | suportado |
+| FGAC Spark-native (escrita de dado) | não existe | **não suportado** | **suportado** |
+| FGAC DDL/DML (CREATE/ALTER/DELETE/DROP) | — | não declarado | suportado |
+| FTA Spark-native | não existe | Hive e Iceberg | + Hudi e Delta |
+| FTA via `GlueContext`/DynamicFrame | suportado | só tabela não-OTF | só tabela não-OTF |
+
+As três linhas que decidem, com a citação:
+
+**Glue 5.0 removeu o modelo do 4.0.** *"`GlueContext`-based table-level access
+control with AWS Lake Formation permissions supported in Glue 4.0 or before is
+not supported in Glue 5.0."* Um job de 4.0 que lia tabela protegida por
+`create_dynamic_frame.from_catalog` **não tem tradução direta** para FGAC no 5.x:
+o caminho é migrar para DataFrame do Spark.
+
+**Glue 5.0 não escrevia sob FGAC.** A página de migração para o 5.0 diz, nas
+considerações do Spark-native FGAC: *"Currently data writes are not supported"* e
+*"Writing into Iceberg through `GlueContext` using Lake Formation requires use of
+IAM access control instead"*.
+
+**Glue 5.1 passou a escrever.** A página de migração para o 5.1 declara
+*"Spark native fine-grained access control (FGAC) support using AWS Lake
+Formation - DDL/DML operations (like CREATE, ALTER, DELETE, DROP) with fine
+grained access control for Apache Hive, Apache Iceberg and Delta Lake tables
+registered in AWS Lake Formation"*, e no bloco do Iceberg: *"Support
+Spark-native FGAC writes on AWS Lake Formation registered tables."*
+
+**Isso NÃO diz que a permissão do Lake Formation passou a autorizar a escrita.**
+Ver a seção 6.
+
+**A quarta linha, e ela é breaking change de filesystem:** *"S3A filesystem has
+replaced EMRFS as the default S3 connector"* no Glue 5.1. A consequência para
+esta área está na seção 5.
 
 ## 1. O que FGAC exige
 
@@ -35,6 +84,26 @@ outra conta só é suportada quando compartilhada por resource link, e o resourc
 link **precisa ter o mesmo nome do recurso na conta de origem**. Um link com nome
 próprio, ainda que aponte para o lugar certo, está fora do que a AWS declara
 suportado.
+
+**Mínimo de 4 workers.** *"Jobs with FGAC require a minimum of 4 workers: one
+user driver, one system driver, one system executor, and one standby user
+executor."* É o dobro do mínimo de 2 de um job Glue comum, e é fronteira dura:
+não é recomendação de dimensionamento, é o piso da alocação descrita na seção 3.
+
+**A configuração precisa existir ANTES da sessão.** *"Specifying it later using
+the calls `SparkSession.builder().conf("").get()` or
+`SparkSession.builder().conf("").create()` will not be enough. This is a change
+from the AWS Glue 4.0 behavior."* Configuração de catálogo aplicada com
+`spark.conf.set(...)` depois de a sessão existir — padrão herdado de job 4.0 —
+não é lida pelo caminho de FGAC, e o job segue rodando com o catálogo que ele
+tinha.
+
+**Permissão do Lake Formation não substitui permissão de IAM na API.**
+*"Although you might have the Lake Formation permission to access a table in the
+Data Catalog (SELECT), your operation fails if you don't have the IAM permission
+on the `glue:Get*` API operation."* São dois planos de autorização, e falhar em
+qualquer um derruba a operação. A policy de exemplo da AWS concede `glue:Get*`,
+`glue:Create*`, `glue:Update*` e `lakeformation:GetDataAccess`.
 
 ## 2. O que FGAC proíbe
 
@@ -109,8 +178,24 @@ que é, em parte, capacidade que mudou de papel.
 
 Iceberg é suportado sob FGAC, mas com um recorte próprio que não vale para Hive:
 
-- **Só session catalog.** Tabela Iceberg registrada num catálogo de nome
-  arbitrário não entra; o caminho suportado é o session catalog.
+- **Só session catalog.** *"You can only use Apache Iceberg with session catalog
+  and not arbitrarily named catalogs."* Tabela Iceberg registrada num catálogo de
+  nome arbitrário não entra. O nome do session catalog em Spark é
+  `spark_catalog`, e a configuração que a AWS publica para rodar Iceberg sob
+  FGAC é literalmente esta:
+
+  ```
+  spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog
+  spark.sql.catalog.spark_catalog.warehouse=<S3_DATA_LOCATION>
+  spark.sql.catalog.spark_catalog.glue.account-id=<ACCOUNT_ID>
+  spark.sql.catalog.spark_catalog.client.region=<REGION>
+  spark.sql.catalog.spark_catalog.glue.endpoint=https://glue.<REGION>.amazonaws.com
+  ```
+
+  Um job que declara `spark.sql.catalog.glue_catalog=...` — padrão herdado de
+  Glue 4.0, e o mais comum de todos — está fora desse recorte. **Isto vale para
+  FGAC e não vale para FTA:** a própria AWS publica exemplo de FTA com
+  `glue_catalog`, e a restrição de nome não aparece na página de FTA.
 - **Metadata tables reduzidas.** Uma tabela registrada expõe apenas `history`,
   `metadata_log_entries`, `snapshots`, `files`, `manifests` e `refs`. O Glue
   **esconde** `partitions`, `path` e `summaries`. Diagnóstico de layout que
@@ -119,7 +204,99 @@ Iceberg é suportado sob FGAC, mas com um recorte próprio que não vale para Hi
   tabela nenhuma, não só para as registradas no Lake Formation.
 - **A AWS recomenda `DataFrameWriterV2`** em vez da API V1 de escrita.
 
-## 5. A verificar
+## 5. Full Table Access (FTA) — o outro modelo, e o que ele quebra no Glue 5.1
+
+FGAC e FTA não são graus do mesmo controle; são dois modelos, e a AWS proíbe
+os dois no mesmo job: *"Only one AWS Lake Formation permission method can be
+enabled for a given AWS Glue job. A job cannot simultaneously run Full Table
+Access (FTA) and Fine-Grained Access Control (FGAC) at the same time."*
+
+**A diferença que decide não é granularidade — é QUEM vende a credencial.** Sob
+FTA, *"AWS Lake Formation credentials are used to read/write Amazon S3 data for
+AWS Lake Formation registered tables, while the job's runtime role credentials
+will be used to read/write tables not registered with AWS Lake Formation."* Isto
+é o oposto do FGAC, onde a escrita é do runtime role (seção 2). É por isso que
+"trocar de modelo" muda o resultado de uma escrita que não muda de código.
+
+**O que FTA exige, e a lista não é só de permissão:**
+
+- na conta: *application integration for full table access* — permitir que query
+  engines de terceiro acessem o dado sem a validação de session tag do IAM;
+- no IAM do runtime role: `lakeformation:GetDataAccess`;
+- no Lake Formation: `SELECT` para ler; **`ALL` para escrever ou apagar**;
+  `DESCRIBE`, `ALTER`, `DROP` conforme a interação com o catálogo. A frase é
+  literal: *"AWS Glue Spark jobs that write/delete data in Amazon S3 require AWS
+  Lake Formation ALL permission."* Um grant de `SELECT` + `DESCRIBE` — que basta
+  para ler — **não autoriza escrita sob FTA**;
+- no Spark: `spark.sql.catalog.<catalog>.glue.lakeformation-enabled=true`, mais
+  `spark.hadoop.fs.s3.credentialsResolverClass=com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver`
+  e o par `useDirectoryHeaderAsFolderObject` / `folderObject.autoAction.disabled`.
+
+**E aqui está a armadilha do Glue 5.1, que é de filesystem e não de permissão.**
+A página de FTA declara: *"Full Table Access works exclusively with EMR
+Filesystem (EMRFS). S3A filesystem is not compatible."* A página de migração para
+o 5.1 declara: *"S3A filesystem has replaced EMRFS as the default S3 connector."*
+
+As duas juntas dizem que **FTA num Glue 5.1 de configuração default não
+funciona**. Pior que não funcionar: `fs.s3.credentialsResolverClass` é chave de
+EMRFS, e sob S3A ela é **ignorada sem erro**. A credencial do Lake Formation
+nunca é pedida, o acesso cai no runtime role, e o `AccessDenied` que sai disso
+parece problema de Lake Formation quando é de filesystem. Restaurar EMRFS exige
+as três chaves:
+
+```
+spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem
+spark.hadoop.fs.s3n.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem
+spark.hadoop.fs.AbstractFileSystem.s3.impl=org.apache.hadoop.fs.s3.EMRFSDelegate
+```
+
+**Outros limites de FTA:** não suporta Spark Streaming; job que referencia tabela
+com regra de FGAC ou Glue Data Catalog View **falha**; e tabela Hive criada por
+job sem FTA e sem nenhuma linha inserida quebra leitura e escrita posteriores
+com FTA, porque o Glue sem FTA cria a pasta com sufixo `$folder$` e *"AWS Lake
+Formation credentials do not allow reading table folders with `$folder$`
+suffix"*.
+
+## 6. Conflito declarado: escrita em tabela registrada sob FGAC
+
+Quatro frases da documentação atual, lidas em 2026-09-09. **Elas não fecham, e
+este documento não escolhe uma.**
+
+| | Página | Frase |
+|---|---|---|
+| A | migração 5.1 | *"Support Spark-native FGAC writes on AWS Lake Formation registered tables."* |
+| B | FGAC (tabela de operações) | DDL e DML INSERT/UPDATE/DELETE: *"With IAM permissions only"* |
+| C | considerations | não suportado: *"Write with Lake Formation granted permissions"* |
+| D | considerations | *"If you registered a table location with Lake Formation, the data access path goes through the Lake Formation stored credentials **regardless** of the IAM permission for the AWS Glue job runtime role."* |
+
+**A, B e C fecham entre si** sob uma leitura só: a operação de escrita passou a
+rodar no 5.1 (A), e quem a autoriza é o IAM do runtime role (B), porque grant do
+Lake Formation não autoriza escrita (C). É a mesma coisa que a seção 2 já dizia.
+
+**C e D não fecham.** D afirma que, para localização **registrada**, o caminho de
+dado usa a credencial armazenada do Lake Formation *independentemente* do IAM do
+role — e C afirma que o grant do Lake Formation não autoriza escrita. Para uma
+tabela registrada, a escrita fica sem caminho declarado: o do role não é usado
+(D), e o do Lake Formation não autoriza (C). A frase que parece resolver —
+*"If your job runtime role has the necessary S3 permissions, you can use it to
+run write operations"* — é a mesma que D contradiz para o caso registrado.
+
+**Consequência para o diagnóstico:** um job FGAC que lê tabela protegida e falha
+ao escrever em tabela **registrada** está numa combinação que a documentação não
+resolve. As saídas que a própria documentação sustenta são três, e todas mudam o
+desenho em vez de mudar a API de escrita:
+
+1. o alvo **não** ser registrado no Lake Formation — aí a escrita é do runtime
+   role, e o que resta é `s3:PutObject`, `s3:DeleteObject` e KMS;
+2. trocar o job para **FTA** — aí quem escreve é a credencial do Lake Formation,
+   com `ALL` no grant, e valem os requisitos da seção 5, EMRFS incluído;
+3. **separar** leitura e escrita em dois jobs, porque FGAC e FTA não coexistem
+   num job só.
+
+Nenhuma delas é "trocar `writeTo` por `INSERT INTO`": a API de escrita não é o
+caminho de autorização, e mudá-la não muda nem A, nem B, nem C, nem D.
+
+## 7. A verificar
 
 O que a fonte desta coleta não afirma, e por isso não está escrito acima:
 
@@ -133,6 +310,21 @@ O que a fonte desta coleta não afirma, e por isso não está escrito acima:
 - Se a lista de metadata tables escondidas muda com a versão do Iceberg
   empacotada pelo runtime não é declarado. A verificar.
 
+- Se a escrita sob FGAC em tabela **registrada** tem caminho suportado é
+  exatamente o que a seção 6 mede como não declarado. A verificar contra uma
+  execução real, ou contra uma revisão futura das duas páginas.
+- Se `spark.sql.catalog.spark_catalog.glue.lakeformation-enabled` tem efeito sob
+  FGAC — a chave aparece na página de FTA e não na de FGAC — não é declarado.
+  A verificar.
+- Se o Glue 5.1 mudou a lista de operações da tabela "With IAM permissions only"
+  da página de FGAC não é declarado: a página não tem eixo de versão, e a de
+  migração do 5.1 não a reescreve.
+
 ## Fontes
 
-- Considerations and limitations — AWS Glue with Lake Formation fine-grained access control. https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html (retrieved 2026-08-22)
+- Considerations and limitations — AWS Glue with Lake Formation fine-grained access control. https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html (retrieved 2026-08-22, relida 2026-09-09)
+- Using AWS Glue with AWS Lake Formation for fine-grained access control. https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html (retrieved 2026-09-09)
+- Using AWS Glue with AWS Lake Formation for Full Table Access. https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html (retrieved 2026-09-09)
+- Migrating AWS Glue for Spark jobs to AWS Glue version 5.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html (retrieved 2026-09-09)
+- Migrating AWS Glue for Spark jobs to AWS Glue version 5.1. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html (retrieved 2026-09-09)
+- Troubleshooting — AWS Glue with Lake Formation. https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html (retrieved 2026-09-09)

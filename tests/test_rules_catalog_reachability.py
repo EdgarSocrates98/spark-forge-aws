@@ -48,6 +48,7 @@ from sparkforge.facts import (
     emr_serverless,
     event_log,
     exception,
+    lakeformation,
     funcval,
     fusion,
     glue_job_run,
@@ -133,6 +134,11 @@ EXTRACTORS = (
     # Task 4 desta frente, e entrar antes dela trocaria uma lacuna nomeada por
     # um teste vermelho que nao mede nada.
     exception,
+    # `lakeformation` entra com `SF-LF-003`, a primeira regra que exige um kind
+    # derivado desta area. Sem ele aqui, os quatro `lakeformation.*` contam como
+    # orfaos e a regra seria FORCADA a `blocked_on` sobre um extrator que esta no
+    # repositorio e roda.
+    lakeformation,
     # `funcval` entra nas DUAS listas no mesmo commit da Fase 4c: sem ele aqui,
     # os quatro kinds `funcval.*` contam como orfaos e as cinco regras SF-FVAL
     # da Task 6 seriam obrigadas a declarar `blocked_on` sobre um modulo que ja
