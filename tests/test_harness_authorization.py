@@ -906,10 +906,15 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        # 65 desde `collect_cloudwatch_logs` (2026-09-09): 61 com `code_path`,
-        # 62 com `code_shape`, 63 com `code_export`, 64 com `arbitrate`. Todas
-        # declaram `repo` -- a cadeia de autorizacao as ve pelo mesmo caminho.
-        assert len(TOOLS) - len(sem_caminho) == 65
+        # 67 desde `analyze_cloudwatch_logs` e `analyze_error_signatures`
+        # (2026-09-09): 61 com `code_path`, 62 com `code_shape`, 63 com
+        # `code_export`, 64 com `arbitrate`, 65 com `collect_cloudwatch_logs`.
+        #
+        # As duas ultimas sao LEITURA (`_READ_ONLY`) e declaram caminho por
+        # chaves diferentes -- `path` no verbo que le o artefato de log,
+        # `facts_path` no que deriva sobre a uniao dos facts --, e as duas caem
+        # do lado certo do predicado sem tocar no conjunto de excecao.
+        assert len(TOOLS) - len(sem_caminho) == 67
 
 
 class TestAImposicaoNoDespacho:

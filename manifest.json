@@ -95,6 +95,8 @@
     "sparkforge_analyze_call_graph",
     "sparkforge_analyze_catalog_schema",
     "sparkforge_analyze_cloudwatch",
+    "sparkforge_analyze_cloudwatch_logs",
+    "sparkforge_analyze_error_signatures",
     "sparkforge_analyze_consumers",
     "sparkforge_analyze_controlm_jobs",
     "sparkforge_analyze_data_quality",

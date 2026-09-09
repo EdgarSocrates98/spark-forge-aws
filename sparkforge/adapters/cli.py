@@ -225,6 +225,40 @@ def build_parser() -> argparse.ArgumentParser:
     cw_analyze_p.add_argument("--cursor")
     _add_detail_level(cw_analyze_p)
 
+    cwlog_analyze_p = analyze_sub.add_parser(
+        "cloudwatch-logs",
+        help="Extrai facts do LOG do run ja coletado do CloudWatch Logs.",
+    )
+    cwlog_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Artefato JSON de `collect cloudwatch-logs`, ou o DIRETORIO deles.",
+    )
+    cwlog_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    cwlog_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    cwlog_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    cwlog_analyze_p.add_argument("--cursor")
+    _add_detail_level(cwlog_analyze_p)
+
+    sig_analyze_p = analyze_sub.add_parser(
+        "error-signatures",
+        help="Casa knowledge/errors/ contra os facts do case. Derivacao pura.",
+    )
+    sig_analyze_p.add_argument(
+        "--facts",
+        required=True,
+        help=(
+            "Arquivo de facts com a UNIAO do case -- `spark.exception` do event log E "
+            "`cloudwatch.log_event` do log. Metade dos facts nao produz metade das "
+            "respostas: produz ponto cego que nao aparece."
+        ),
+    )
+    sig_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    sig_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sig_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sig_analyze_p.add_argument("--cursor")
+    _add_detail_level(sig_analyze_p)
+
     runs_analyze_p = analyze_sub.add_parser(
         "glue-job-runs",
         help="Extrai facts de historico do diretorio de artefatos de run Glue.",
@@ -1863,6 +1897,42 @@ def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_cloudwatch_logs(args: argparse.Namespace) -> int:
+    full = _core.analyze_cloudwatch_logs(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_error_signatures(args: argparse.Namespace) -> int:
+    full = _core.analyze_error_signatures(args.facts, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _emit_facts_page(full: dict, args: argparse.Namespace) -> int:
+    """A paginacao e o `--out` dos dois verbos novos, numa funcao so.
+
+    Os verbos antigos repetem este bloco cada um, e nao foram tocados: reescreve-
+    los seria mudanca sem medida num caminho que ninguem pediu. Os dois novos
+    nascem sem a repeticao.
+    """
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
 def _cmd_analyze_cloudwatch(args: argparse.Namespace) -> int:
     full = _core.analyze_cloudwatch(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -3168,6 +3238,8 @@ _DISPATCH = {
     ("analyze", "event-log"): _cmd_analyze_event_log,
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
+    ("analyze", "cloudwatch-logs"): _cmd_analyze_cloudwatch_logs,
+    ("analyze", "error-signatures"): _cmd_analyze_error_signatures,
     ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
     ("analyze", "plan"): _cmd_analyze_plan,
     ("analyze", "terraform"): _cmd_analyze_terraform,

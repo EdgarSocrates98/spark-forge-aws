@@ -613,6 +613,15 @@ artefato, e o extrator os traduz em `cloudwatch.logs.unresolved`.
 - **Não há verbo `analyze cloudwatch-logs`.** `extract_cloudwatch_logs_tree` é
   referenciado por `scripts/regen_fixtures.py` e mais nada: o extrator é
   alcançado pelo golden, não por tool. Entrega própria.
+
+  **FECHADA em 2026-09-09, com DOIS verbos e não um.**
+  `analyze cloudwatch-logs` lê o artefato; `analyze error-signatures` é
+  derivação pura sobre a UNIÃO dos facts, no molde de `analyze call-graph`.
+  Juntá-los quebraria a recusa: `build_signature_matches` recusa por ESCOPO —
+  um `error.signature.unresolved` por (run, log group) —, e rodando o matcher
+  dentro do verbo do log uma exceção do event log ausente daquele arquivo não
+  produziria recusa nenhuma. Superfície 70 → **72** tools, **+14 764 bytes**,
+  e 21 alegações remediadas pela lista de ids da saída do gate.
 - **O parser não alcança `classe_no_meio_da_linha`** — a forma que o
   `DAGScheduler` escreve em toda falha de task repetida. Ela sai como
   `spark.exception.unresolved`, e `fixtures/exception/classe_no_meio_da_linha/`

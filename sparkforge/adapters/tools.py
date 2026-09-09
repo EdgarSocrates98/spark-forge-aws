@@ -3973,6 +3973,87 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_cloudwatch_logs": {
+        "description": (
+            "Extrai facts do LOG do run ja coletado por `collect cloudwatch-logs`. "
+            "Aceita um artefato ou o DIRETORIO deles, porque o operador que baixou "
+            "`error` e `output` do mesmo run tem dois. Toda linha ja chega REDIGIDA: "
+            "a redacao roda antes de o texto virar fact, e linha redigida vale "
+            "`<redigido>` inteiro. Log group inexistente, sem permissao, janela vazia "
+            "e sem credencial viram `cloudwatch.logs.unresolved` com a razao -- as "
+            "quatro produzem a mesma lista vazia de eventos, e colapsa-las numa razao "
+            "so seria uma recusa que nao nomeia nada. NAO casa assinatura: para isso "
+            "existe `sparkforge_analyze_error_signatures`, que precisa da UNIAO dos "
+            "facts do case."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect cloudwatch-logs`, "
+                        "ou o diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_error_signatures": {
+        "description": (
+            "Casa as assinaturas de `knowledge/errors/` contra os facts do case e "
+            "emite `error.signature_match` com `matched_on` (`exception_class`, "
+            "`caused_by` ou `log_line`). Derivacao PURA sobre facts: nunca le "
+            "artefato. A UNIAO E O CONTRATO -- o arquivo precisa trazer "
+            "`spark.exception` do event log E `cloudwatch.log_event` do log, porque a "
+            "recusa deste caminho e por ESCOPO e nao por linha, e metade dos facts "
+            "produz um ponto cego que nao aparece. Ele NAO julga: nao devolve "
+            "`likely_causes`, nem `fixes`, nem `confidence`. O juizo mora nas regras "
+            "`SF-ERR-001` a `SF-ERR-006`, e cada uma exige, alem do match, o "
+            "companheiro que a assinatura declara."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts com a UNIAO do case, tipicamente produzido "
+                        "por `analyze event-log --out` e `analyze cloudwatch-logs "
+                        "--out` no mesmo arquivo."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Matches e recusas nomeadas, ou erro se o arquivo de facts nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_glue_job_runs": {
         "description": (
             "Extrai facts de historico do DIRETORIO de artefatos de run Glue: um "
@@ -6724,6 +6805,26 @@ def _h_analyze_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_cloudwatch_logs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_cloudwatch_logs(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_error_signatures(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_error_signatures(
+        args["facts_path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_glue_job_runs(
         args["path"],
@@ -7205,6 +7306,8 @@ _HANDLERS = {
     "sparkforge_analyze_event_log": _h_analyze_event_log,
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
     "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
+    "sparkforge_analyze_cloudwatch_logs": _h_analyze_cloudwatch_logs,
+    "sparkforge_analyze_error_signatures": _h_analyze_error_signatures,
     "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
     "sparkforge_analyze_plan": _h_analyze_plan,
     "sparkforge_analyze_terraform": _h_analyze_terraform,

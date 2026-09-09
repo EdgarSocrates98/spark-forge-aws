@@ -41,6 +41,8 @@ class TestToolSurface:
             "sparkforge_analyze_event_log",
             "sparkforge_analyze_sql_metrics",
             "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_cloudwatch_logs",
+            "sparkforge_analyze_error_signatures",
             "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_plan",
             "sparkforge_analyze_terraform",
@@ -696,6 +698,38 @@ _CLOUDWATCH_ARTIFACT = json.dumps(
                 "Label": "glue.driver.workerUtilization",
                 "Timestamps": ["t1", "t2", "t3"],
                 "Values": [0.3, 0.9, 0.6],
+            }
+        ],
+    }
+)
+
+# Artefato do LOG de UM run no shape que `sparkforge collect cloudwatch-logs`
+# grava. A linha carrega a assinatura `ERR-GLUE-001` de proposito: e ela que faz
+# a amostra de `sparkforge_analyze_error_signatures` casar por `log_line`.
+_CLOUDWATCH_LOGS_ARTIFACT = json.dumps(
+    {
+        "job_name": "etl-job",
+        "job_run_id": "jr_1",
+        "log_group": "/aws-glue/jobs/error",
+        "log_stream_prefix": "jr_1",
+        "start": "2026-09-09T10:00:00Z",
+        "end": "2026-09-09T11:00:00Z",
+        "filter_pattern": "?ERROR",
+        "max_events": 500,
+        "status": "ok",
+        "truncated": False,
+        "events_collected": 1,
+        "events": [
+            {
+                "eventId": "e0",
+                "ingestionTime": 1788948000500,
+                "logStreamName": "jr_1",
+                "message": (
+                    "2026-09-09 10:07:42,881 ERROR [Executor task launch worker] "
+                    "executor.Executor: Container killed by YARN for exceeding "
+                    "memory limits. 10.4 GB of 10 GB physical memory used"
+                ),
+                "timestamp": 1788948000000,
             }
         ],
     }
@@ -1709,6 +1743,46 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         cw_path = tmp_path / "cw.json"
         cw_path.write_text(_CLOUDWATCH_ARTIFACT, encoding="utf-8")
         return call_tool("sparkforge_analyze_cloudwatch", {"path": str(cw_path)})
+
+    if name == "sparkforge_analyze_cloudwatch_logs":
+        cw_logs_dir = tmp_path / "cloudwatch_logs"
+        cw_logs_dir.mkdir()
+        (cw_logs_dir / "etl_jr1_error.json").write_text(
+            _CLOUDWATCH_LOGS_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_cloudwatch_logs", {"path": str(cw_logs_dir)}
+        )
+        assert any(item["kind"] == "cloudwatch.log_event" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos uma linha de log"
+        )
+        return resultado
+
+    if name == "sparkforge_analyze_error_signatures":
+        # A UNIAO do case num arquivo so, que e o contrato desta tool. Aqui ela
+        # e produzida pelo proprio verbo do log -- a outra metade (o
+        # `spark.exception` do event log) nao entra de proposito: o que esta
+        # amostra exercita e o caminho `matched_on: log_line`.
+        cw_logs_dir = tmp_path / "cloudwatch_logs_sig"
+        cw_logs_dir.mkdir()
+        (cw_logs_dir / "etl_jr1_error.json").write_text(
+            _CLOUDWATCH_LOGS_ARTIFACT, encoding="utf-8"
+        )
+        extraido = call_tool(
+            "sparkforge_analyze_cloudwatch_logs",
+            {"path": str(cw_logs_dir), "limit": 1000},
+        )
+        facts_path = tmp_path / "facts_uniao.json"
+        facts_path.write_text(
+            json.dumps(extraido["items"], ensure_ascii=False), encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_error_signatures", {"facts_path": str(facts_path)}
+        )
+        assert any(
+            item["kind"] == "error.signature_match" for item in resultado["items"]
+        ), "a amostra precisa casar pelo menos uma assinatura pelo caminho de log"
+        return resultado
 
     if name == "sparkforge_analyze_glue_job_runs":
         runs_dir = tmp_path / "glue_job_run"

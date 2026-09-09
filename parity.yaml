@@ -116,6 +116,30 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # Capacidade PROPRIA e nao uma linha a mais na de cima, e a razao e a fonte:
+  # o event log e o log do CloudWatch sao artefatos SEPARADOS, coletados por
+  # verbos diferentes, e o que o segundo carrega -- falha de driver antes do
+  # primeiro stage, `Py4JJavaError` de codigo Python, OOM de container -- nao
+  # esta no primeiro.
+  #
+  # `analyze error-signatures` mora aqui e nao numa capacidade de "julgamento"
+  # porque ele NAO julga: ele constata que a assinatura casou. O juizo e das
+  # regras `SF-ERR-*`, que a capacidade de `judge` ja cobre.
+  - name: read the error from a run and match it against the signature catalog
+    tools:
+      - sparkforge_analyze_cloudwatch_logs
+      - sparkforge_analyze_error_signatures
+    cli:
+      - analyze cloudwatch-logs
+      - analyze error-signatures
+    knowledge: [knowledge/spark/memory-and-oom.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from a Spark physical plan
     tools: [sparkforge_analyze_plan]
     cli: [analyze plan]
