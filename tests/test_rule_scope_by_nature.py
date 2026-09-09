@@ -130,6 +130,21 @@ GLUE_VERSIONED = {
     "SF-MIG-001",
     "SF-MIG-002",
     "SF-MIG-003",
+    # SF-ERR-001 e SF-ERR-002 ENTRARAM aqui com a area SF-ERR
+    # (`rules/catalog/errors.yaml`, commit `9cf336f`). Mesma natureza de
+    # SF-MIG-001/002/003: leem `tf.attribute` (glue_version na raiz do
+    # `aws_glue_job`, ou `--user-jars-first` em `default_arguments`) junto com
+    # `mig.jar_binary`, e declaram `runtime_scope: {glue: ">=6.0"}` real -- nao
+    # e GLUE_INFRA porque o gate nao e "existe infraestrutura Glue", e sim uma
+    # fronteira de VERSAO: o Glue 6.0 sobe o runtime para Scala 2.13.17 e o AWS
+    # SDK for Java 2.x para 2.44.6, e e so cruzando essa fronteira que um JAR
+    # de Scala 2.12 (SF-ERR-001) ou um SDK empacotado abaixo de 2.44.6 sob
+    # `--user-jars-first` (SF-ERR-002) quebra em runtime. Num Glue 5.1 ou
+    # abaixo -- e num EMR ou cluster on-prem com Scala 2.12 -- o mesmo JAR
+    # convive com o runtime sem incompatibilidade nenhuma, entao a afirmacao
+    # das duas regras e literalmente FALSA ali, nao "nao verificada".
+    "SF-ERR-001",
+    "SF-ERR-002",
 }
 
 # Estas leem infraestrutura Glue do Terraform mas declaram `{glue: "*"}`, que
@@ -482,6 +497,16 @@ def _glue_below_5(runtime: dict[str, str]) -> bool:
         return True
 
 
+def _glue_below_6(runtime: dict[str, str]) -> bool:
+    """Glue ausente ou abaixo de 6.0 -- a condicao em que SF-ERR nao tem nada a
+    afirmar. Ausente conta como abaixo porque `in_scope` falha fechada."""
+    partes = (runtime.get("glue") or "").split(".")
+    try:
+        return (int(partes[0]), int(partes[1])) < (6, 0)
+    except (ValueError, IndexError):
+        return True
+
+
 AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-GLUE": (lambda runtime: not runtime.get("glue"), "runtime sem `glue` detectado"),
     # SF-LF entrou aqui com a area, e o criterio escrito acima e satisfeito na
@@ -539,6 +564,36 @@ AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-SPARK4": (
         _spark_below_4,
         "runtime com Spark abaixo de 4.0, ou sem Spark detectado",
+    ),
+    # SF-ERR entrou aqui com a area, e o criterio do topo deste mapa e
+    # satisfeito na leitura que importa: a area nao e sobre uma versao que NAO
+    # FOI DETECTADA, e sobre uma fronteira de EMPACOTAMENTO que este runtime
+    # comprovadamente NAO CRUZOU. SF-ERR-001 e SF-ERR-002 afirmam "o Glue 6.0
+    # subiu o runtime para Scala 2.13.17 / AWS SDK for Java 2.x 2.44.6, e o
+    # artefato do case ainda esta na versao de baixo" -- num Glue 5.1 ou
+    # abaixo, e em qualquer runtime nao-Glue com Scala 2.12, essa fronteira
+    # simplesmente nao existe: um JAR de Scala 2.12 convive com o classpath
+    # sem `NoSuchMethodError`/`NoSuchFieldError` nenhum, entao a acusacao
+    # seria falsa ali, nao "nao verificada".
+    #
+    # O contraste com SF-ICE, que motivou o criterio: tabela Iceberg EXISTE
+    # num EMR, e a area sumia so porque ninguem detecta a versao de Iceberg
+    # fora do Glue -- falso negativo por deteccao. Aqui `glue` E detectado
+    # pela mesma fonte que produz o fact das duas regras (`tf.attribute` sobre
+    # `aws_glue_job`), entao a area sobrevive em qualquer analise real de um
+    # Terraform de Glue 6.0 ou acima com a assinatura de erro casada.
+    #
+    # O RESIDUO, declarado porque nao some: no runtime `vazio-cli` -- e em
+    # qualquer runtime EMR/on-prem, onde `glue` nunca e detectado -- a area
+    # some por falta de deteccao, nao por afirmacao falsa. E o fail-closed do
+    # `runtime_scope`, e aparece para o operador como PULADA com
+    # `reason: runtime_scope`, nunca como "revisei e esta tudo bem". A saida
+    # NAO e trocar o guarda por `runtime_scope: {}`: sem guarda as duas
+    # acusariam todo JAR de Scala 2.12 em qualquer Glue -- inclusive um Glue
+    # 4.0, onde 2.12 e o CERTO --, que e o erro mais caro dos dois.
+    "SF-ERR": (
+        _glue_below_6,
+        "runtime com Glue abaixo de 6.0, ou sem Glue detectado",
     ),
     # SF-MIG SAIU DAQUI quando SF-MIG-004 entrou no catalogo.
     #
