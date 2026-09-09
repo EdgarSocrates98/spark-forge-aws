@@ -283,3 +283,91 @@ class TestContratoDoModulo:
         proibidos = {"severity", "confidence", "fixes", "likely_causes", "recommendation"}
         for fact in saida:
             assert not proibidos & set(fact.attrs), fact.kind
+
+
+class TestOEstadoBOTH:
+    """FGAC e Full Table Access declarados juntos -- a AWS proibe os dois."""
+
+    def test_fgac_com_resolver_de_fta_sai_both(self):
+        saida = build_lakeformation(
+            [
+                _tf_attr(FGAC_ARGUMENT, "true"),
+                _tf_conf(
+                    "spark.hadoop.fs.s3.credentialsResolverClass",
+                    "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver",
+                ),
+            ]
+        )
+        modelo = _de(saida, "lakeformation.access_model")[0]
+        assert modelo.attrs["model"] == "both"
+        assert modelo.attrs["fta_markers"] == ["spark.hadoop.fs.s3.credentialsResolverClass"]
+
+    def test_fgac_com_lakeformation_enabled_no_catalogo_tambem_sai_both(self):
+        saida = build_lakeformation(
+            [
+                _tf_attr(FGAC_ARGUMENT, "true"),
+                _tf_conf("spark.sql.catalog.glue_catalog.glue.lakeformation-enabled", "true"),
+            ]
+        )
+        modelo = _de(saida, "lakeformation.access_model")[0]
+        assert modelo.attrs["model"] == "both"
+
+    def test_fgac_sozinho_continua_fgac(self):
+        """A metade que impede `both` de virar o default silencioso."""
+        saida = build_lakeformation([_tf_attr(FGAC_ARGUMENT, "true")])
+        modelo = _de(saida, "lakeformation.access_model")[0]
+        assert modelo.attrs["model"] == "fgac"
+        assert modelo.attrs["fta_markers"] == []
+
+    def test_marcador_de_fta_DESLIGADO_nao_conta(self):
+        saida = build_lakeformation(
+            [
+                _tf_attr(FGAC_ARGUMENT, "true"),
+                _tf_conf("spark.sql.catalog.glue_catalog.glue.lakeformation-enabled", "false"),
+            ]
+        )
+        assert _de(saida, "lakeformation.access_model")[0].attrs["model"] == "fgac"
+
+    def test_resolver_de_OUTRO_fornecedor_nao_conta(self):
+        saida = build_lakeformation(
+            [
+                _tf_attr(FGAC_ARGUMENT, "true"),
+                _tf_conf(
+                    "spark.hadoop.fs.s3.credentialsResolverClass", "com.exemplo.MeuResolver"
+                ),
+            ]
+        )
+        assert _de(saida, "lakeformation.access_model")[0].attrs["model"] == "fgac"
+
+    def test_flag_desligada_com_marcador_de_fta_NAO_e_both(self):
+        """`false` mais FTA e um job de FTA, nao uma contradicao."""
+        saida = build_lakeformation(
+            [
+                _tf_attr(FGAC_ARGUMENT, "false"),
+                _tf_conf(
+                    "spark.hadoop.fs.s3.credentialsResolverClass",
+                    "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver",
+                ),
+            ]
+        )
+        modelo = _de(saida, "lakeformation.access_model")[0]
+        assert modelo.attrs["model"] == "none"
+        assert modelo.attrs["fta_markers"] == []
+
+    def test_job_SO_de_fta_nao_produz_access_model(self):
+        """O limite declarado no docstring: FTA nao tem argumento que o ligue.
+
+        A superficie dele e `lakeformation.filesystem`, e inventar um
+        `model: "fta"` ancorado numa chave de conf qualquer daria ao FTA uma
+        declaracao que ele nao tem.
+        """
+        saida = build_lakeformation(
+            [
+                _tf_conf(
+                    "spark.hadoop.fs.s3.credentialsResolverClass",
+                    "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver",
+                )
+            ]
+        )
+        assert not _de(saida, "lakeformation.access_model")
+        assert _de(saida, "lakeformation.filesystem")

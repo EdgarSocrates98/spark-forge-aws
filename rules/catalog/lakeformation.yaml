@@ -588,3 +588,228 @@ rules:
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-005 e SF-LF-006 -- as duas que ja eram escreviveis quando o extrator
+  # entrou, e nao foram escritas. Nenhuma das duas precisou de fact novo.
+  #
+  # A de `both` le UMA condicao so, e isso e desenho: quem decidiu que FGAC mais
+  # marcador de FTA e um estado proprio foi o extrator (`model: "both"`), nao o
+  # `when`. O DSL nao tem grupo aninhado -- `all` com um `any` dentro nao existe
+  # --, e escrever "FGAC E (resolver OU chave de catalogo)" aqui seria impossivel.
+  # Derivar o predicado foi o que tornou a regra de uma linha.
+  - id: SF-LF-005
+    category: lakeformation-fgac
+    title: >-
+      Controle de acesso fino e Full Table Access declarados no mesmo job
+    requires_facts: [lakeformation.access_model]
+    when:
+      all:
+        - fact: lakeformation.access_model
+          where:
+            attrs.model: "both"
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A AWS declara: *"Only one AWS Lake Formation permission method can be
+      enabled for a given AWS Glue job. A job cannot simultaneously run Full
+      Table Access (FTA) and Fine-Grained Access Control (FGAC) at the same
+      time."* Este job declara os dois.
+
+
+      **A diferença entre eles não é granularidade — é quem vende a
+      credencial.** Sob controle de acesso fino a leitura passa pelo Lake
+      Formation e a **escrita usa IAM do runtime role**. Sob Full Table Access a
+      credencial do Lake Formation lê e escreve o S3 das tabelas **registradas**,
+      e o runtime role lê e escreve tudo o que não está registrado. Declarar os
+      dois não soma os dois comportamentos: pede uma combinação que a plataforma
+      não oferece.
+
+
+      `attrs.fta_markers` no fact traz a chave que ativou o lado FTA, e é ela
+      que decide qual dos dois foi declarado por engano. As duas que contam são
+      `spark.hadoop.fs.s3.credentialsResolverClass` com o resolver do Lake
+      Formation, e `spark.sql.catalog.<nome>.glue.lakeformation-enabled = true`.
+      Ver `knowledge/glue/lakeformation-fgac.md` §5.
+    proposed_change:
+      - >-
+        Decidir qual modelo o job usa, e a pergunta que decide é sobre o DADO,
+        não sobre o job: se a tabela tem regra de linha, coluna ou célula no Lake
+        Formation, o caminho é FGAC — sob Full Table Access, job que referencia
+        tabela com regra de FGAC **falha**.
+      - >-
+        Para ficar com FGAC — remover as chaves de credencial do Lake Formation
+        do `--conf`. Elas não ligam nada sob FGAC, e mantê-las declaradas faz o
+        próximo leitor acreditar que o caminho de credencial está ativo.
+      - >-
+        Para ficar com FTA — remover
+        `--enable-lakeformation-fine-grained-access`, e então valem os requisitos
+        próprios de FTA: `ALL` no Lake Formation para escrever (não `SELECT`),
+        `lakeformation:GetDataAccess` no IAM, o passo de conta de *application
+        integration*, e EMRFS restaurado quando o runtime for Glue 5.1.
+      - >-
+        Quando a leitura precisa de FGAC e a escrita precisa de credencial do
+        Lake Formation, **um job só não resolve** — a saída é separar em dois, e
+        essa é decisão de desenho, não de configuração.
+    action:
+      kind: config.remove_property
+      target: glue.lakeformation.access_model
+      direction: remove
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Escolher o modelo errado muda o que o job enxerga. Sair de FGAC para FTA
+        remove os controles de linha, coluna e célula; sair de FTA para FGAC
+        muda quem escreve o S3. Nos dois sentidos é mudança de postura de
+        segurança, e precisa de dono declarado.
+      - >-
+        A regra lê o que está DECLARADO no artefato. Um job que ligue o lado FTA
+        por outro caminho — conexão, script de bootstrap, argumento fora do
+        Terraform — não é visto, e a ausência de achado não prova ausência da
+        combinação.
+      - >-
+        A regra **não** afirma qual dos dois foi o engano. `attrs.fta_markers`
+        mostra a evidência do lado FTA, e a decisão de qual fica é de quem
+        responde pela governança do dado.
+    tradeoffs:
+      - >-
+        FTA tem menos overhead — dispensa o system driver e os system executors
+        — e menos granularidade. FGAC dá controle de linha, coluna e célula e
+        custa dois drivers mais a reserva de user executors. Não há terceira
+        opção.
+    validation:
+      - >-
+        Contagem de linhas e conjunto de colunas do resultado, antes e depois: os
+        dois modelos filtram coisas diferentes, e trocar de modelo pode mudar o
+        que a leitura devolve sem que nada acuse.
+      - >-
+        A configuração efetiva do run seguinte, lida do event log
+        (`spark.conf_effective`), e não a declarada no Terraform.
+      - >-
+        Se o job passou a usar FTA — uma leitura de controle sobre tabela
+        REGISTRADA, com o runtime role sem permissão S3 direta no caminho: é o
+        único teste que prova que a credencial do Lake Formation está sendo
+        usada.
+    rollback:
+      - >-
+        Restaurar as chaves removidas devolve o job ao estado não suportado. Só
+        é rollback válido junto de uma decisão sobre qual modelo fica.
+      - >-
+        Se alguma escrita aconteceu sob o modelo novo, o rollback é de dado e não
+        de configuração — o destino precisa ser comparado antes.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+
+  # SF-LF-006 usa `same_subject: true`, e aqui ele FUNCIONA -- ao contrario de
+  # SF-LF-003, onde nao funcionava. A diferenca e medida: `lakeformation.access_model`
+  # herda o subject do `tf.attribute` que declara a flag, cujo `symbol` e o
+  # RECURSO (`aws_glue_job.x`), e `number_of_workers` e outro `tf.attribute` do
+  # mesmo recurso, com o mesmo symbol. Ja `tf.spark_conf` tem symbol
+  # `<recurso>#<chave>`, e e por isso que a regra do catalogo nao pode agrupar.
+  - id: SF-LF-006
+    category: lakeformation-fgac
+    title: >-
+      Job com controle de acesso fino abaixo do mínimo de quatro workers
+    requires_facts: [lakeformation.access_model, tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: lakeformation.access_model
+          where:
+            attrs.fgac_enabled: true
+        - fact: tf.attribute
+          where:
+            attrs.key: number_of_workers
+            attrs.block: root
+          expr: 'measures.value < 4'
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A AWS declara: *"Jobs with FGAC require a minimum of 4 workers: one user
+      driver, one system driver, one system executor, and one standby user
+      executor."* É o dobro do mínimo de 2 de um job Glue comum, e não é
+      recomendação de dimensionamento: é o piso da alocação que o modelo exige.
+
+
+      **Sob controle de acesso fino o job deixa de ter um driver e N
+      executores.** A alocação passa a ter quatro papéis, e dois deles são
+      drivers. Um job declarado com menos de quatro workers não tem como
+      preencher os quatro papéis, e o que acontece com ele não é escolha de quem
+      escreveu o Terraform.
+
+
+      Este é um achado que se lê **antes de qualquer execução** — está no
+      Terraform, e a severidade é P0 pela mesma razão de `SF-LF-001` e
+      `SF-LF-002`: não é risco de degradação, é configuração que a documentação
+      declara insuficiente. Ver `knowledge/glue/lakeformation-fgac.md` §1 e §3.
+    proposed_change:
+      - >-
+        Subir `number_of_workers` para no mínimo 4. Este é um dos raros casos em
+        que o número vem da documentação da AWS e não de medição — é piso
+        declarado, não alvo de tuning.
+      - >-
+        Reler o dimensionamento inteiro depois de subir, e não só o mínimo. Sob
+        controle de acesso fino, de N workers pagos dois são drivers e uma
+        fração é reservada para user executors, então **a contagem de workers
+        deixa de ser comparável com a do mesmo job sem FGAC**. Comparar runtime
+        antes e depois de ligar FGAC sem levar isso em conta atribui ao controle
+        de acesso uma lentidão que é, em parte, capacidade que mudou de papel.
+      - >-
+        A proporção reservada para user executors é ajustável por
+        `--conf spark.dynamicAllocation.maxExecutorsRatio`, e mexer nela é
+        decisão separada — o mínimo de quatro vale de qualquer forma.
+    action:
+      kind: capacity.investigate_sizing
+      target: glue.number_of_workers
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Subir o número de workers sobe o custo do run, e este achado **não**
+        estima quanto: `dpu_seconds` do run que não aconteceu não existe. O que
+        ele afirma é que abaixo de quatro a configuração está fora do que a AWS
+        declara suportado.
+      - >-
+        Quatro é o PISO, não o dimensionamento. Um job que precisava de dez
+        workers sem FGAC não passa a caber em quatro por ter subido para o
+        mínimo.
+      - >-
+        A regra lê `number_of_workers` do Terraform. Um job que declare
+        `max_capacity` em vez de `number_of_workers`, ou que receba a contagem
+        por variável interpolada, não é visto — valor interpolado vira
+        `tf.unresolved`, e a regra fica calada.
+    tradeoffs:
+      - >-
+        Controle de acesso fino custa capacidade em papéis que não rodam
+        trabalho do usuário. Quando o dado não precisa de controle de linha,
+        coluna ou célula, Full Table Access dispensa o system driver e os system
+        executors — mas os dois modelos não coexistem no mesmo job.
+    validation:
+      - >-
+        O job completa a execução no runtime alvo. Submissão bem-sucedida não é
+        validação: a alocação dos quatro papéis acontece na execução.
+      - >-
+        Contagem de linhas na saída, antes e depois, sobre o mesmo recorte de
+        entrada — mudança de capacidade não deve mover o resultado, e provar que
+        não moveu é parte da entrega.
+      - >-
+        Nenhum eixo de dado é exigido além do acima, porque a mudança é de
+        capacidade e não de conteúdo. Declarar isso é parte da validação.
+    rollback:
+      - >-
+        Restaurar `number_of_workers` e reaplicar. É rollback de configuração,
+        não de dado.
+      - >-
+        Rollback que devolva o job para menos de quatro workers o devolve ao
+        estado que a AWS declara insuficiente.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}

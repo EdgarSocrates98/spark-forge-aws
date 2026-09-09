@@ -78,6 +78,8 @@ A AWS declara que FGAC **não** é suportado com coluna VARIANT no Glue 6.0. Se 
 | `SF-LF-002` | FGAC **e** `command { name = "gluestreaming" }` | `glue >=5.0` |
 | `SF-LF-003` | FGAC **e** catálogo Iceberg de nome arbitrário (não `spark_catalog`) | `glue >=5.0` |
 | `SF-LF-004` | resolver de credencial do Lake Formation **sem** EMRFS restaurado | `glue >=5.1` |
+| `SF-LF-005` | FGAC **e** Full Table Access declarados no mesmo job | `glue >=5.0` |
+| `SF-LF-006` | FGAC com `number_of_workers` abaixo de 4 | `glue >=5.0` |
 
 **Da exceção — exigem a linha de log casada MAIS o companheiro derivado:**
 

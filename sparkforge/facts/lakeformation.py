@@ -144,6 +144,30 @@ def _conf_facts(facts: Sequence[Fact]) -> list[tuple[Fact, str]]:
     return saida
 
 
+def _marcadores_de_fta(facts: Sequence[Fact]) -> list[str]:
+    """As chaves de conf que pedem credencial do Lake Formation -- o lado FTA.
+
+    Full Table Access nao tem um argumento de job que o ligue, ao contrario de
+    FGAC: ele e um CONJUNTO de configuracoes de Spark. As duas que a
+    documentacao da AWS publica como sendo o pedido de credencial sao o resolver
+    do filesystem e a chave por catalogo, e sao essas que este predicado procura.
+    """
+    marcadores: list[str] = []
+    for fact, _origem in _conf_facts(facts):
+        attrs = fact.attrs or {}
+        key = str(attrs["key"])
+        valor = str(attrs.get("value", ""))
+        if key == _RESOLVER_KEY and _LF_RESOLVER in valor:
+            marcadores.append(key)
+        elif (
+            key.startswith(_CATALOG_PREFIX)
+            and key.endswith(_LF_ENABLED_SUFFIX)
+            and valor == "true"
+        ):
+            marcadores.append(key)
+    return sorted(set(marcadores))
+
+
 def _access_models(facts: Sequence[Fact]) -> list[Fact]:
     """Um fact por recurso que DECLARA o argumento de FGAC.
 
@@ -152,7 +176,26 @@ def _access_models(facts: Sequence[Fact]) -> list[Fact]:
     que ausente: o primeiro e uma decisao que alguem escreveu, e ha regra que
     precisa distinguir os dois (o molde e `SF-ERR-002`, que separa a flag
     desligada da flag ausente).
+
+    ## `both` e um estado REAL, e o fact precisa nomea-lo
+
+    A AWS declara: *"A job cannot simultaneously run Full Table Access (FTA) and
+    Fine-Grained Access Control (FGAC) at the same time."* Um case que declare
+    FGAC E marcador de FTA esta pedindo os dois, e dizer `model: "fgac"` ali
+    seria o fact ESCOLHENDO um lado de uma configuracao contraditoria -- juizo
+    disfarcado de observacao. `attrs.fta_markers` lista o que foi visto, para
+    que o achado mostre a evidencia em vez de afirmar.
+
+    ## O que ele NAO emite, e a razao
+
+    **Job so de FTA nao produz `access_model`.** FGAC tem um argumento que o
+    liga (`--enable-lakeformation-fine-grained-access`) e FTA nao tem: ele e um
+    conjunto de configuracoes de Spark. Inventar um `model: "fta"` ancorado numa
+    chave de conf qualquer daria ao FTA uma declaracao que ele nao tem, e o
+    subject sairia de um lugar arbitrario. A superficie de FTA e
+    `lakeformation.filesystem`, e e por ela que as regras de FTA perguntam.
     """
+    marcadores = _marcadores_de_fta(facts)
     saida: list[Fact] = []
     for fact in facts:
         if fact.kind != "tf.attribute":
@@ -163,15 +206,23 @@ def _access_models(facts: Sequence[Fact]) -> list[Fact]:
         if attrs.get("block") != "default_arguments":
             continue
         valor = str(attrs.get("value", ""))
+        ligado = valor == "true"
+        if not ligado:
+            model = "none"
+        elif marcadores:
+            model = "both"
+        else:
+            model = "fgac"
         saida.append(
             Fact(
                 kind="lakeformation.access_model",
                 subject=dict(fact.subject or {}),
                 measures={},
                 attrs={
-                    "model": "fgac" if valor == "true" else "none",
-                    "fgac_enabled": valor == "true",
+                    "model": model,
+                    "fgac_enabled": ligado,
                     "declared_value": valor,
+                    "fta_markers": marcadores if ligado else [],
                     "source": "terraform",
                     "extractor": EXTRACTOR_ID,
                 },

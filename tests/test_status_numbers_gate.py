@@ -35,8 +35,13 @@ def _status_falso(tmp_path: Path, filas: str) -> Path:
 
 
 def test_o_repositorio_de_verdade_passa():
-    """O gate roda no corpo real e sai limpo, inclusive em `--strict`."""
+    """O gate roda no corpo real e sai limpo, inclusive em `--strict`.
+
+    Os DOIS recortes, porque `main()` soma os dois: a tabela do `STATUS.md` e as
+    alegacoes de prosa dos quatro arquivos que nenhum outro gate audita.
+    """
     assert gate.auditar(strict=True) == []
+    assert gate.auditar_prosa() == []
 
 
 def test_reprova_quando_o_numero_publicado_diverge(tmp_path, monkeypatch):
@@ -110,3 +115,107 @@ def test_toda_recusa_tem_linha_no_status(dimensao):
 def test_toda_recusa_carrega_razao():
     vazias = [d for d, razao in gate.SEM_MEDIDA.items() if not (razao or "").strip()]
     assert not vazias, f"recusa sem razao escrita: {vazias}"
+
+
+# ---------------------------------------------------------------------------
+# O SEGUNDO RECORTE: numero publicado em PROSA, fora do `STATUS.md`.
+#
+# Motivo medido em 2026-09-09: sete numeros errados em quatro arquivos --
+# `README.md` (27 extratores quando eram 34, 158 kinds quando eram 202, em DOIS
+# lugares), `GUIA_DE_USO.md` (44 tools quando eram 73), `.devin/README.md` (63)
+# e `AGENTS.md`/`CLAUDE.md` (70 tools e 31 com `detail_level`, quando eram 73 e
+# 32). Nenhum gate os conferia.
+# ---------------------------------------------------------------------------
+
+
+def _arquivo_falso(tmp_path: Path, nome: str, texto: str) -> None:
+    (tmp_path / nome).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / nome).write_text(texto, encoding="utf-8")
+
+
+def test_prosa_no_repositorio_de_verdade_passa():
+    assert gate.auditar_prosa() == []
+
+
+def test_prosa_reprova_quando_o_numero_diverge(tmp_path, monkeypatch):
+    _arquivo_falso(tmp_path, "d.md", "sao **7 tools** hoje")
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "MEDIDAS_PROSA", {"Coisas": lambda: 9})
+    monkeypatch.setattr(
+        gate, "PROSA", (gate.Alegacao("d.md", r"\*\*(\d+) tools\*\*", "Coisas"),)
+    )
+    problemas = gate.auditar_prosa()
+    assert len(problemas) == 1
+    assert "publica 7, medido 9" in problemas[0]
+
+
+def test_prosa_nao_reprova_quando_bate(tmp_path, monkeypatch):
+    _arquivo_falso(tmp_path, "d.md", "sao **9 tools** hoje")
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "MEDIDAS_PROSA", {"Coisas": lambda: 9})
+    monkeypatch.setattr(
+        gate, "PROSA", (gate.Alegacao("d.md", r"\*\*(\d+) tools\*\*", "Coisas"),)
+    )
+    assert gate.auditar_prosa() == []
+
+
+def test_prosa_reprova_quando_a_ancora_NAO_casa(tmp_path, monkeypatch):
+    """A metade que faz disto um gate e nao um linter.
+
+    Reescrever a frase e apagar a alegacao sao a mesma coisa para o leitor: o
+    numero deixa de ser conferido. Passar em silencio aqui devolveria o defeito
+    de origem -- numero publicado sem lastro -- por um caminho novo.
+    """
+    _arquivo_falso(tmp_path, "d.md", "a frase foi reescrita e nao fala mais de tools")
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "MEDIDAS_PROSA", {"Coisas": lambda: 9})
+    monkeypatch.setattr(
+        gate, "PROSA", (gate.Alegacao("d.md", r"\*\*(\d+) tools\*\*", "Coisas"),)
+    )
+    problemas = gate.auditar_prosa()
+    assert len(problemas) == 1
+    assert "nao casa" in problemas[0]
+
+
+def test_prosa_reprova_ancora_AMBIGUA(tmp_path, monkeypatch):
+    """O caso real: `README.md` publicava `158 kinds` em DOIS lugares.
+
+    Ancora que casa duas vezes audita a primeira e deixa a segunda apodrecer --
+    e foi exatamente assim que a segunda ocorrencia sobreviveu a varias
+    entregas.
+    """
+    _arquivo_falso(tmp_path, "d.md", "**9 tools** aqui, e **9 tools** ali")
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "MEDIDAS_PROSA", {"Coisas": lambda: 9})
+    monkeypatch.setattr(
+        gate, "PROSA", (gate.Alegacao("d.md", r"\*\*(\d+) tools\*\*", "Coisas"),)
+    )
+    problemas = gate.auditar_prosa()
+    assert len(problemas) == 1
+    assert "ambigua" in problemas[0]
+
+
+def test_prosa_reprova_arquivo_ausente(tmp_path, monkeypatch):
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "MEDIDAS_PROSA", {"Coisas": lambda: 9})
+    monkeypatch.setattr(
+        gate, "PROSA", (gate.Alegacao("sumiu.md", r"\*\*(\d+)\*\*", "Coisas"),)
+    )
+    problemas = gate.auditar_prosa()
+    assert len(problemas) == 1
+    assert "arquivo ausente" in problemas[0]
+
+
+@pytest.mark.parametrize("alegacao", gate.PROSA, ids=lambda a: f"{a.arquivo}:{a.dimensao}")
+def test_toda_alegacao_de_prosa_tem_medida(alegacao):
+    """Alegacao sem medida e o mesmo defeito de linha sem produtor na tabela."""
+    assert gate._medida_de(alegacao.dimensao) is not None, alegacao.dimensao
+
+
+@pytest.mark.parametrize("alegacao", gate.PROSA, ids=lambda a: f"{a.arquivo}:{a.dimensao}")
+def test_toda_ancora_de_prosa_tem_UM_grupo_de_captura(alegacao):
+    """Sem grupo, `re.findall` devolve a linha inteira e a comparacao com o
+    numero medido levantaria `ValueError` em vez de reprovar com mensagem."""
+    import re as _re
+
+    assert _re.compile(alegacao.padrao).groups == 1, alegacao.padrao

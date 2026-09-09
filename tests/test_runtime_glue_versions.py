@@ -119,6 +119,8 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-LF-002",
         "SF-LF-003",
         "SF-LF-004",
+        "SF-LF-005",
+        "SF-LF-006",
         "SF-MIG-001",
         "SF-MIG-002",
         "SF-MIG-003",

@@ -135,6 +135,12 @@ GLUE_VERSIONED = {
     # porque o default de filesystem ainda e EMRFS.
     "SF-LF-003",
     "SF-LF-004",
+    # SF-LF-005 (FGAC e FTA no mesmo job) e SF-LF-006 (FGAC abaixo do minimo
+    # de quatro workers) entram com a mesma natureza das irmas: leem definicao
+    # de `aws_glue_job`, e o que as guarda e VERSAO -- os dois modelos de acesso
+    # do Lake Formation dentro de job Spark do Glue so existem a partir do 5.0.
+    "SF-LF-005",
+    "SF-LF-006",
     "SF-MIG-001",
     "SF-MIG-002",
     "SF-MIG-003",

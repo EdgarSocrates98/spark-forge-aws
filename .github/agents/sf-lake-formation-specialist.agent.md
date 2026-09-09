@@ -28,7 +28,7 @@ artefato nenhum que este motor colete**. Um achado da área diz em qual PLANO a
 operação parou — concessão, API, credencial ou filesystem —, e nunca qual
 permissão falta. Reportar `lakeformation.unresolved` faz parte da resposta.
 
-## As quatro perguntas que a área responde hoje
+## As seis perguntas que a área responde hoje
 
 | Regra | A pergunta |
 |---|---|
@@ -36,6 +36,8 @@ permissão falta. Reportar `lakeformation.unresolved` faz parte da resposta.
 | `SF-LF-002` | streaming sob FGAC — não suportado |
 | `SF-LF-003` | catálogo Iceberg de nome arbitrário sob FGAC — só session catalog é suportado |
 | `SF-LF-004` | resolver de credencial declarado sem EMRFS no Glue 5.1 — configuração inerte, sem erro |
+| `SF-LF-005` | FGAC e Full Table Access no mesmo job — a AWS declara que não coexistem |
+| `SF-LF-006` | FGAC com menos de 4 workers — piso declarado, não alvo de tuning |
 
 **A quarta é de VERSÃO e não de permissão**, e é a mais fácil de diagnosticar
 errado: Full Table Access exige EMRFS, o Glue 5.1 trocou o conector S3 default

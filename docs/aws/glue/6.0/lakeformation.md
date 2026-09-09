@@ -11,7 +11,7 @@ deixa de rodar trabalho do usuário.
 
 ## A área `SF-LF`
 
-`rules/catalog/lakeformation.yaml` declara a área **`SF-LF`**, com quatro
+`rules/catalog/lakeformation.yaml` declara a área **`SF-LF`**, com seis
 incompatibilidades **declaradas pela AWS** — nenhuma inferida:
 
 | Regra | O que ela acusa | Escopo |
@@ -20,6 +20,8 @@ incompatibilidades **declaradas pela AWS** — nenhuma inferida:
 | `SF-LF-002` | FGAC habilitado num job de streaming | `glue >=5.0` |
 | `SF-LF-003` | catálogo Iceberg de nome arbitrário sob FGAC | `glue >=5.0` |
 | `SF-LF-004` | resolver de credencial do Lake Formation sem EMRFS restaurado | `glue >=5.1` |
+| `SF-LF-005` | FGAC e Full Table Access declarados no mesmo job | `glue >=5.0` |
+| `SF-LF-006` | FGAC com `number_of_workers` abaixo de 4 | `glue >=5.0` |
 
 As duas primeiras nascem da mesma fronteira: o Glue **bloqueia** fornecimento de JAR
 adicional para preservar o isolamento completo do system driver, e streaming está na lista de

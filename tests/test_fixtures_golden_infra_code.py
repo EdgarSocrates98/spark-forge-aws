@@ -38,7 +38,9 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "infra_code"
 
 REQUIRED_FIXTURES = {
+    "fgac_abaixo_do_minimo_de_workers",
     "fgac_com_catalogo_nomeado",
+    "fgac_com_fta_no_mesmo_job",
     "fgac_com_jar_extra",
     "fgac_em_job_streaming",
     "fta_sem_emrfs_no_51",
