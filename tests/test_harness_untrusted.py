@@ -84,6 +84,7 @@ def _derivados_de_facts(pool):
     medida pulava 5 dos 20 modulos em silencio -- `alvos` ficava vazio, `any([])`
     dava False, e o modulo entrava como "sem snippet" por nao ter rodado nada.
     """
+    from sparkforge.errors import matcher
     from sparkforge.facts import (
         benchmark,
         bridge,
@@ -119,6 +120,13 @@ def _derivados_de_facts(pool):
     # esta chamada que faz a medida perceber. Sem ela, a guarda fail-closed
     # acima para com o nome do modulo, que foi o que aconteceu ao acrescenta-lo.
     yield "exception", exception.build_exceptions(pool)
+    # `matcher` deriva de `spark.exception`, e nao de caminho -- e ele mora em
+    # `sparkforge/errors/`, fora do `iter_modules(facts_pkg)` que monta `todos`
+    # acima. A guarda fail-closed portanto NAO o cobraria: ele esta aqui porque
+    # a medida de snippet precisa ve-lo, nao porque algo o obrigaria. A entrada
+    # e encadeada de proposito: se um dia `spark.exception` propagar snippet, e
+    # esta chamada que faz a medida perceber que `matcher` propaga junto.
+    yield "matcher", matcher.build_signature_matches(exception.build_exceptions(pool))
 
 
 def extratores_com_snippet() -> set[str]:

@@ -55,6 +55,13 @@ from sparkforge.facts import (
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
 
+# AUSENTE DE PROPOSITO, e a lacuna e nomeada aqui em vez de ficar em silencio:
+# `sparkforge/errors/matcher.py` ganhou `EMITTED_KINDS` e emite
+# `error.signature_match` e `error.signature.unresolved`, mas o criterio DESTE
+# arquivo e golden por kind, e o corpus nao tem nenhum. Registra-lo agora
+# trocaria uma lacuna declarada por um teste vermelho que nao mede nada -- a
+# fixture e trabalho da Task 4 desta frente, e e la que ele entra. Mesmo
+# tratamento que `exception` recebeu na Task 1, pela mesma razao.
 EXTRACTORS = {
     "athena_workgroup": athena_workgroup,
     "benchmark": benchmark,

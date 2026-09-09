@@ -23,6 +23,15 @@ from pathlib import Path
 
 import pytest
 
+# `matcher` NAO mora em `sparkforge/facts/`, e essa e a diferenca que importa
+# aqui: as duas varreduras automaticas do repositorio -- a de
+# `tests/test_harness_untrusted.py` (`pkgutil.iter_modules(facts_pkg)`) e a de
+# `scripts/check_status_numbers.py` (`glob` em `sparkforge/facts/*.py`) --
+# enumeram por DIRETORIO e nunca vao ve-lo. Esta lista e manual, entao ela o
+# ve; as outras duas nao. Sem ele aqui, os dois kinds `error.signature*`
+# contam como orfaos e a primeira regra da area SF-ERR seria forcada a
+# `blocked_on` sobre um modulo que ja esta no repositorio.
+from sparkforge.errors import matcher
 from sparkforge.facts import (
     athena_workgroup,
     benchmark,
@@ -60,6 +69,12 @@ from sparkforge.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (
     athena_workgroup,
+    # `matcher` (`sparkforge/errors/matcher.py`) e o unico desta tupla fora de
+    # `sparkforge/facts/`. Ele emite `error.signature_match` e
+    # `error.signature.unresolved` a partir de `spark.exception` -- fato, nao
+    # juizo: o que fazer com a assinatura casada e regra, e regra mora no
+    # catalogo.
+    matcher,
     benchmark,
     bridge,
     call_graph,
