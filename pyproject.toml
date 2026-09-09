@@ -31,6 +31,16 @@ Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
 
 [project.optional-dependencies]
 aws = ["boto3>=1.34"]
+# `parquet` e o TERCEIRO extra, e o primeiro fora de `aws`/`mcp`. Ele existe
+# porque `sparkforge/collect/parquet_footer.py` le o RODAPE de arquivos Parquet,
+# e ler o footer exige um parser do formato -- nao ha caminho puro-Python
+# razoavel para isso. pyarrow entra sob demanda por `require_pyarrow()`, no
+# molde de `require_boto3()`: o nucleo determinístico continua com PyYAML +
+# jsonschema, e quem roda `judge` sobre um artefato ja coletado nao instala nada.
+#
+# `sparkforge analyze parquet-footer` NAO precisa deste extra: ele parte do
+# artefato JSON, e e por isso que a leitura e a extracao sao dois modulos.
+parquet = ["pyarrow>=14.0"]
 # `<2` e deliberado: o SDK 2.x removeu os decoradores que `adapters/mcp.py`
 # usa para registrar os tools. Ver a docstring daquele modulo.
 # starlette e uvicorn sao do transporte HTTP (Devin Desktop); stdio nao precisa
