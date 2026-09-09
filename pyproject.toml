@@ -40,16 +40,27 @@ aws = ["boto3>=1.34"]
 #
 # `sparkforge analyze parquet-footer` NAO precisa deste extra: ele parte do
 # artefato JSON, e e por isso que a leitura e a extracao sao dois modulos.
-# `>=14.0.1` e NAO `>=14.0`, e o `.1` e o ponto: pyarrow 14.0.0 carrega
-# CVE-2023-47248 -- execucao remota de codigo ao ler dados Arrow IPC ou Parquet
-# de origem nao confiavel, corrigida em 14.0.1. Um piso em `>=14.0` deixaria
-# `pip install 'sparkforge-aws[parquet]'` resolver para a versao vulneravel.
+# `>=23.0.1`, e o piso subiu por CVE -- duas faixas, medidas, sem intervalo
+# livre entre elas:
 #
-# E o CVE incide EXATAMENTE no caminho deste extra: `collect parquet-footer` le
-# o rodape de arquivos que o operador aponta, e um prefixo de dado de terceiro e
-# precisamente a entrada nao confiavel que o aviso descreve. O lock pina 20.0.0,
-# mas quem instala o extra sem o lock so tem este piso.
-parquet = ["pyarrow>=14.0.1"]
+#   CVE-2023-47248   ate 14.0.0        RCE ao ler dados Arrow IPC/Parquet
+#   CVE-2024-52338   14.0.1 .. 16.1.0  RCE por desserializacao de IPC/Feather/
+#                                      PARQUET de fonte nao confiavel
+#   CVE-2026-25087   15.0.0 .. 23.0.0  use-after-free ao ler IPC com
+#                                      pre-buffering
+#
+# A primeira versao limpa e 23.0.1. Nao ha faixa intermediaria segura: a segunda
+# e a terceira se sobrepoem e cobrem tudo de 14.0.1 a 23.0.0.
+#
+# Os tres CVEs incidem no caminho DESTE extra: `collect parquet-footer` le o
+# rodape de arquivos que o operador aponta, e um prefixo de dado de terceiro E a
+# "fonte nao confiavel" que os avisos descrevem.
+#
+# Consequencia declarada: pyarrow >= 21 so publica wheel `manylinux_2_28`, entao
+# este piso obrigou `scripts/gen_lock.py` a subir a plataforma-alvo do lock. A
+# razao esta escrita la, e o custo tambem -- o ambiente reproduzivel passa a
+# exigir glibc >= 2.28.
+parquet = ["pyarrow>=23.0.1"]
 # `<2` e deliberado: o SDK 2.x removeu os decoradores que `adapters/mcp.py`
 # usa para registrar os tools. Ver a docstring daquele modulo.
 # starlette e uvicorn sao do transporte HTTP (Devin Desktop); stdio nao precisa
