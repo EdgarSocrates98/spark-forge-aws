@@ -49,6 +49,12 @@ from sparkforge.facts import (
     event_log,
     exception,
     lakeformation,
+    # `lakeformation_grants` LE ARTEFATO, ao contrario de `lakeformation`, que e
+    # derivacao. Os dois convivem e o namespace nao colide: um emite
+    # `lakeformation.access_model`/`iceberg_catalog`/`filesystem`, o outro
+    # `lakeformation.grant`/`registered_location`/`data_lake_settings`. Sem ele
+    # aqui, os cinco kinds de permissao contam como orfaos.
+    lakeformation_grants,
     funcval,
     fusion,
     glue_job_run,

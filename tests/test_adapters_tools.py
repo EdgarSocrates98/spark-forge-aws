@@ -42,6 +42,7 @@ class TestToolSurface:
             "sparkforge_analyze_sql_metrics",
             "sparkforge_analyze_cloudwatch",
             "sparkforge_analyze_cloudwatch_logs",
+            "sparkforge_analyze_lakeformation_grants",
             "sparkforge_analyze_error_signatures",
             "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_parquet_footer",
@@ -85,6 +86,7 @@ class TestToolSurface:
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
+            "sparkforge_collect_lakeformation",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -138,6 +140,7 @@ class TestToolSurface:
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
+            "sparkforge_collect_lakeformation",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -1386,6 +1389,53 @@ class _FakeLogsClient:
         }
 
 
+class _FakeLakeFormationClient:
+    """As TRES chamadas do coletor, cada uma respondendo o seu bloco.
+
+    A tabela tem UM grant de `SELECT`+`DESCRIBE` e a localizacao esta
+    registrada -- o par que interessa a esta area: grant de leitura sobre
+    localizacao registrada nao autoriza escrita sob Full Table Access, que
+    exige `ALL`.
+    """
+
+    def list_permissions(self, **kwargs):
+        return {
+            "PrincipalResourcePermissions": [
+                {
+                    "Principal": {
+                        "DataLakePrincipalIdentifier": "arn:aws:iam::111111111111:role/glue"
+                    },
+                    "Permissions": ["SELECT", "DESCRIBE"],
+                    "PermissionsWithGrantOption": [],
+                    "Resource": {
+                        "Table": {"DatabaseName": "curated", "Name": "fato_venda"}
+                    },
+                }
+            ]
+        }
+
+    def describe_resource(self, **kwargs):
+        return {
+            "ResourceInfo": {
+                "ResourceArn": kwargs.get("ResourceArn", ""),
+                "RoleArn": "arn:aws:iam::111111111111:role/lf-registration",
+                "HybridAccessEnabled": False,
+                "WithFederation": False,
+            }
+        }
+
+    def get_data_lake_settings(self, **kwargs):
+        return {
+            "DataLakeSettings": {
+                "AllowFullTableExternalDataAccess": True,
+                "AllowExternalDataFiltering": True,
+                "ExternalDataFilteringAllowList": [
+                    {"DataLakePrincipalIdentifier": "111111111111"}
+                ],
+            }
+        }
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -1397,11 +1447,50 @@ class _FakeBoto3ForCollect:
             "emr-serverless": _FakeEmrServerlessClient(),
             "emr-containers": _FakeEmrContainersClient(),
             "logs": _FakeLogsClient(),
+            "lakeformation": _FakeLakeFormationClient(),
         }
 
     def client(self, name, **kwargs):
         return self._clients[name]
 
+
+_LAKEFORMATION_ARTIFACT = json.dumps(
+    {
+        "catalog_id": "111111111111",
+        "database": "curated",
+        "table": "fato_venda",
+        "status": "ok",
+        "permissions": {
+            "status": "ok",
+            "principals": [
+                {
+                    "Principal": {
+                        "DataLakePrincipalIdentifier": "arn:aws:iam::111111111111:role/glue"
+                    },
+                    "Permissions": ["SELECT", "DESCRIBE"],
+                    "PermissionsWithGrantOption": [],
+                    "Resource": {"Table": {"DatabaseName": "curated", "Name": "fato_venda"}},
+                }
+            ],
+            "grants_collected": 1,
+            "truncated": False,
+        },
+        "registered_location": {
+            "status": "ok",
+            "resource_arn": "arn:aws:s3:::lake/curated/fato_venda",
+            "registered": True,
+            "role_arn": "arn:aws:iam::111111111111:role/lf-registration",
+            "hybrid_access_enabled": False,
+            "with_federation": False,
+        },
+        "data_lake_settings": {
+            "status": "ok",
+            "allow_full_table_external_data_access": True,
+            "allow_external_data_filtering": True,
+            "external_data_filtering_allow_list": ["111111111111"],
+        },
+    }
+)
 
 _S3_LISTING = json.dumps(
     {
@@ -1567,11 +1656,13 @@ def _fake_collect_boto3(monkeypatch):
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
     from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+    from sparkforge.collect import lakeformation as collect_lf
 
     # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
     # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_lf, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
 _CODE_JOB = (
@@ -1825,6 +1916,20 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
         assert any(item["kind"] == "cloudwatch.log_event" for item in resultado["items"]), (
             "a amostra precisa render pelo menos uma linha de log"
+        )
+        return resultado
+
+    if name == "sparkforge_analyze_lakeformation_grants":
+        lf_dir = tmp_path / "lakeformation"
+        lf_dir.mkdir()
+        (lf_dir / "111111111111_curated_fato_venda.json").write_text(
+            _LAKEFORMATION_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_lakeformation_grants", {"path": str(lf_dir)}
+        )
+        assert any(item["kind"] == "lakeformation.grant" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos um grant"
         )
         return resultado
 
@@ -2142,6 +2247,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_glue_job",
         "sparkforge_collect_cloudwatch",
         "sparkforge_collect_cloudwatch_logs",
+        "sparkforge_collect_lakeformation",
         "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
@@ -2179,6 +2285,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "log_group": "/aws-glue/jobs/error",
                 "start": "2026-07-29T00:00:00Z",
                 "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_lakeformation": {
+                "repo": str(tmp_path),
+                "database": "curated",
+                "table": "fato_venda",
+                "catalog_id": "111111111111",
+                "resource_arn": "arn:aws:s3:::lake/curated/fato_venda",
                 "now": "2026-07-30T00:00:00Z",
             },
             "sparkforge_collect_glue_job_runs": {

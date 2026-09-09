@@ -106,7 +106,36 @@ Severidade, escopo de versão e o texto completo: `sparkforge rules lookup --id 
 
 **`is_session_catalog: false` é observação, nunca acusação.** A restrição de session catalog é de FGAC, e a AWS publica exemplo de FTA com catálogo de nome arbitrário. Quem cruza as duas coisas é a regra.
 
-**`lakeformation.unresolved` é a metade honesta de todo achado desta área:** nenhuma concessão do Lake Formation e nenhuma policy de IAM entra em artefato que este motor colete. Um achado daqui diz em qual **plano** a operação parou; ele não diz qual permissão falta.
+**`lakeformation.unresolved` é a metade honesta de todo achado desta área:** ele nomeia três artefatos que o motor não tinha — grant do Lake Formation, policy do runtime role, e registro da localização S3.
+
+## Fechando a lacuna: colete a permissão
+
+**Dois dos três já são coletáveis**, e é isso que separa "em qual plano parou" de "qual permissão falta":
+
+```
+sparkforge collect lakeformation --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela>
+sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
+```
+
+Três chamadas, e cada uma responde uma pergunta que nenhum artefato do job responde:
+
+| Chamada | O que ela decide |
+|---|---|
+| `list_permissions` | quem tem o quê sobre a tabela — e `SELECT` não é `ALL` |
+| `describe_resource` | a localização S3 está **registrada**, e com qual role |
+| `get_data_lake_settings` | se a conta permite query engine de terceiro sem validação de session tag — o passo de **conta** que precede qualquer grant sob FTA |
+
+As tools MCP de mesmo nome são `sparkforge_collect_lakeformation` e `sparkforge_analyze_lakeformation_grants`.
+
+**`--catalog-id` é obrigatório em cross-account**: a mesma `db.tabela` existe em contas diferentes, e sem ele as duas coletas se sobrescrevem no manifesto.
+
+**Três leituras que o fact preserva e que é fácil perder:**
+
+- **três estados produzem a mesma lista vazia de grants** — tabela sem grant, sem permissão para *ler* os grants, e sem credencial. Os três saem em `lakeformation.grants.unresolved` com a razão. Tratá-los igual acusa a tabela governada corretamente e a que ninguém inspecionou do mesmo jeito;
+- **`registered` é ternário** — verdadeiro, falso, ou **ausente quando ninguém mediu**. É exatamente sobre localização registrada que a documentação da AWS se contradiz (§6), e afirmar "não registrada" sobre uma pergunta que não foi feita é sair do conflito pela porta errada;
+- **`IAM_ALLOWED_PRINCIPALS` não é um role** — é a ausência de governança fina, e o fact o marca em vez de normalizá-lo para um ARN qualquer.
+
+**O terceiro artefato continua faltando: a policy do runtime role.** E quando ele existir, o caminho é `iam:SimulatePrincipalPolicy`, não parse do documento — simular devolve a resposta da AWS com permission boundary, SCP, deny explícito e condição já resolvidos; parsear devolve uma opinião sobre um JSON, e erra exatamente nos casos que importam.
 
 Aprofundamento sob demanda: [`knowledge/glue/lakeformation-fgac.md`](../../knowledge/glue/lakeformation-fgac.md) traz o que a documentação declara e o que ela não declara; [`docs/aws/glue/6.0/lakeformation.md`](../../docs/aws/glue/6.0/lakeformation.md) é a leitura pelo lado do runtime 6.0.
 

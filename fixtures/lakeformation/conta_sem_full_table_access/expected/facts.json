@@ -1,0 +1,104 @@
+[
+  {
+    "id": "f_b2f052",
+    "schema_version": 1,
+    "kind": "lakeformation.data_lake_settings",
+    "subject": {
+      "type": "table",
+      "file": "local_analytics_dim_cliente.json",
+      "symbol": "analytics.dim_cliente",
+      "catalog_id": ""
+    },
+    "measures": {},
+    "attrs": {
+      "allow_full_table_external_data_access": false,
+      "allow_external_data_filtering": true,
+      "external_data_filtering_allow_list": [],
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "local_analytics_dim_cliente.json"
+    }
+  },
+  {
+    "id": "f_d5426a",
+    "schema_version": 1,
+    "kind": "lakeformation.grant",
+    "subject": {
+      "type": "table",
+      "file": "local_analytics_dim_cliente.json",
+      "symbol": "analytics.dim_cliente#arn:aws:iam::111111111111:role/glue-analytics",
+      "catalog_id": ""
+    },
+    "measures": {
+      "permission_count": 1
+    },
+    "attrs": {
+      "principal": "arn:aws:iam::111111111111:role/glue-analytics",
+      "is_iam_allowed_principals": false,
+      "permissions": [
+        "ALL"
+      ],
+      "permissions_with_grant_option": [
+        "ALL"
+      ],
+      "has_select": false,
+      "has_all": true,
+      "has_describe": false,
+      "resource_database": "analytics",
+      "resource_table": "dim_cliente",
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "local_analytics_dim_cliente.json"
+    }
+  },
+  {
+    "id": "f_e50555",
+    "schema_version": 1,
+    "kind": "lakeformation.grants.analyzed",
+    "subject": {
+      "type": "table",
+      "file": "local_analytics_dim_cliente.json",
+      "symbol": "analytics.dim_cliente",
+      "catalog_id": ""
+    },
+    "measures": {
+      "facts_emitted": 3
+    },
+    "attrs": {
+      "status": "ok",
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "local_analytics_dim_cliente.json"
+    }
+  },
+  {
+    "id": "f_381f8c",
+    "schema_version": 1,
+    "kind": "lakeformation.registered_location",
+    "subject": {
+      "type": "table",
+      "file": "local_analytics_dim_cliente.json",
+      "symbol": "analytics.dim_cliente",
+      "catalog_id": ""
+    },
+    "measures": {},
+    "attrs": {
+      "registered": false,
+      "resource_arn": "arn:aws:s3:::sparkforge-demo/analytics/dim_cliente",
+      "role_arn": "",
+      "hybrid_access_enabled": null,
+      "with_federation": null,
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "local_analytics_dim_cliente.json"
+    }
+  }
+]

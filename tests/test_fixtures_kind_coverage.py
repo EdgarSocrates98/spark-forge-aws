@@ -38,6 +38,10 @@ from sparkforge.facts import (
     event_log,
     exception,
     lakeformation,
+    # `lakeformation_grants` entra nas DUAS listas no MESMO commit da fixture
+    # `fixtures/lakeformation/`. Ele e o extrator que fecha DOIS dos tres itens
+    # que `lakeformation.unresolved` nomeia -- grant e registro de localizacao.
+    lakeformation_grants,
     funcval,
     fusion,
     graph,
@@ -129,6 +133,7 @@ EXTRACTORS = {
     # `spark.conf_effective`, e existe porque o DSL de regra compara
     # igualdade e o nome do catalogo Iceberg mora DENTRO da chave de conf.
     "lakeformation": lakeformation,
+    "lakeformation_grants": lakeformation_grants,
     "funcval": funcval,
     "fusion": fusion,
     # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES

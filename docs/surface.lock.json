@@ -2,14 +2,14 @@
   "schema_version": 1,
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
-    "tool_count": 73,
-    "total_bytes": 405997,
-    "by_name_sha256": "73465ef11e58378e46fe19f6e5f24b8c125d02b526dedb3a6545d8b9cf518162"
+    "tool_count": 75,
+    "total_bytes": 416402,
+    "by_name_sha256": "27378537e80890fa1870e5b4cb91560c6111bece92edbdfdb35fb1a2caeea59e"
   },
   "skills": {
     "document_count": 57,
-    "total_bytes": 464084,
-    "by_name_sha256": "72c6d6436b1e5075d4cc9a103462c27f63f016ec191f82711e8a4e4ceb829602"
+    "total_bytes": 466322,
+    "by_name_sha256": "5faca2c3736e83e346a7460b88a95a7d3fdc860da8f4855025e78cf3c4d105fb"
   },
   "knowledge": {
     "document_count": 50,

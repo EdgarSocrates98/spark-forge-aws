@@ -1,0 +1,34 @@
+name: grant_de_leitura_em_local_registrado
+proves: >
+  O corpus da PERMISSAO, e o que ele preserva que nenhum outro artefato carrega.
+
+  Um grant de `SELECT`+`DESCRIBE` para o role do job, e um segundo grant de `ALL`
+  para `IAM_ALLOWED_PRINCIPALS` -- que NAO e um role: e a ausencia de governanca
+  fina, e o fact o marca em vez de normaliza-lo para um ARN qualquer. Sem essa
+  distincao, uma regra leria "existe ALL sobre a tabela" e concluiria que a
+  escrita esta autorizada para o job.
+
+  A localizacao esta REGISTRADA, e e sobre localizacao registrada que a §6 de
+  `knowledge/glue/lakeformation-fgac.md` declara conflito entre quatro frases da
+  AWS: o caminho do runtime role nao e usado, e o grant do Lake Formation nao
+  autoriza escrita sob FGAC.
+
+  O bloco de data lake settings sai `sem_permissao`, de proposito: as TRES
+  chamadas do coletor falham por motivos independentes, e a fixture prova que
+  uma falhar nao apaga as outras duas. A recusa sai nomeada em
+  `lakeformation.grants.unresolved` com `block: data_lake_settings`, e o `status`
+  de topo do artefato continua `ok` porque os outros dois blocos responderam --
+  o que este corpus mede e que o topo nao esconde o bloco que falhou.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - lakeformation.grant
+  - lakeformation.grants.analyzed
+  - lakeformation.grants.unresolved
+  - lakeformation.registered_location
+expects_rules: []

@@ -54,6 +54,7 @@ from sparkforge.controlm.matrix import (
     covers as controlm_covered_range,
 )
 from sparkforge.economy.report import build_context_report
+from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
@@ -61,6 +62,10 @@ from sparkforge.facts.athena_workgroup import (
 )
 from sparkforge.facts.benchmark import build_benchmark
 from sparkforge.facts.call_graph import build_call_graph
+from sparkforge.facts.lakeformation_grants import (
+    extract_lakeformation_path,
+    extract_lakeformation_tree,
+)
 from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
@@ -1108,6 +1113,54 @@ def analyze_cloudwatch_logs(
     facts = _extract_cloudwatch_logs_facts(path)
     return _facts_page(
         facts, "cloudwatch.logs.unresolved", kind, limit, cursor, detail_level
+    )
+
+
+def _extract_lakeformation_grants_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect "
+            f"lakeformation`, ou para o DIRETORIO deles:\n"
+            f"    sparkforge analyze lakeformation-grants "
+            f"--path .sparkforge/artifacts/lakeformation/",
+            exit_code=2,
+        )
+    # Arquivo OU diretorio, pela mesma razao do log: o coletor grava um por
+    # (catalogo, banco, tabela), e um job que le de uma tabela e escreve noutra
+    # tem DOIS. Ler os dois e uma chamada so.
+    if target.is_dir():
+        return extract_lakeformation_tree(target, repo_root=target)
+    return extract_lakeformation_path(target)
+
+
+def analyze_lakeformation_grants(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a PERMISSAO do Lake Formation ja coletada, e nada alem dela.
+
+    Tres estados produzem a mesma lista vazia de grants -- tabela sem grant,
+    sem permissao para LER os grants, e sem credencial --, e so o `status` do
+    artefato os separa. Os tres viram `lakeformation.grants.unresolved` com a
+    razao nomeada, nunca lista vazia silenciosa.
+
+    `registered` da localizacao e TERNARIO: `true`, `false`, ou ausente quando
+    ninguem mediu. Tratar o ausente como `false` faria o motor afirmar "nao
+    registrada" sobre uma pergunta que nao foi feita -- e e exatamente sobre
+    localizacao registrada que a §6 de `knowledge/glue/lakeformation-fgac.md`
+    declara conflito entre quatro frases da AWS.
+
+    Ele NAO decide se a permissao basta: `SELECT` bastar ou nao depende da
+    operacao e do modelo de acesso, e isso e juizo -- mora nas regras `SF-LF`.
+    """
+    facts = _extract_lakeformation_grants_facts(path)
+    return _facts_page(
+        facts, "lakeformation.grants.unresolved", kind, limit, cursor, detail_level
     )
 
 
@@ -4565,6 +4618,38 @@ def collect_cloudwatch_logs(
             end=end,
             filter_pattern=filter_pattern,
             max_events=max_events,
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_lakeformation(
+    repo: str,
+    *,
+    database: str,
+    table: str,
+    now: str,
+    catalog_id: str = "",
+    resource_arn: str = "",
+) -> dict[str, Any]:
+    """Coleta grant, registro de localizacao e data lake settings de UMA tabela.
+
+    As TRES chamadas falham por motivos independentes, e cada bloco do artefato
+    carrega o seu `status` -- permissao negada para ler grant nao e o mesmo que
+    tabela sem grant, e nenhuma das duas e "sem credencial". Nada disso sobe
+    como erro de fronteira: erro aqui e so o que impede ate a recusa de ser
+    gravada.
+    """
+    rel_path = collect_lf.lakeformation_path(catalog_id, database, table)
+    try:
+        entry = collect_lf.collect_lakeformation(
+            database,
+            table,
+            Path(repo),
+            now=now,
+            catalog_id=catalog_id,
+            resource_arn=resource_arn,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc

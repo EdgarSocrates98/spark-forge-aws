@@ -46,6 +46,9 @@ from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_tree,
 )
 from sparkforge.facts.lakeformation import build_lakeformation  # noqa: E402
+from sparkforge.facts.lakeformation_grants import (  # noqa: E402
+    extract_lakeformation_tree,
+)
 from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
 from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
@@ -82,6 +85,7 @@ FIXTURES_S3 = ROOT / "fixtures" / "s3"
 FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
 FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
+FIXTURES_LAKEFORMATION = ROOT / "fixtures" / "lakeformation"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
@@ -223,6 +227,20 @@ def regen_infra_code(directory: Path) -> None:
     # `build_lakeformation` deriva sobre a UNIAO das duas extracoes, e o golden
     # tem de sair do mesmo caminho que o teste percorre.
     facts.extend(build_lakeformation(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_lakeformation(directory: Path) -> None:
+    """Artefato de `collect lakeformation` -- grant, registro e data lake settings.
+
+    Um `input/*.json` por (catalogo, banco, tabela). Nao ha companheiro: este
+    corpus prende o CONTRATO do extrator de permissao, e nenhuma regra o consome
+    ainda -- `expects_rules` sai vazio de proposito.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_lakeformation_tree(input_dir, repo_root=input_dir)
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -792,6 +810,7 @@ def main() -> int:
                 (FIXTURES_CONSUMERS / name, regen_consumers),
                 (FIXTURES_TFDIFF / name, regen_tfdiff),
                 (FIXTURES_INFRA_CODE / name, regen_infra_code),
+                (FIXTURES_LAKEFORMATION / name, regen_lakeformation),
                 (FIXTURES_BENCH / name, regen_bench),
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),

@@ -916,7 +916,12 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # do lado certo do predicado sem tocar no conjunto de excecao.
         # 68 desde `analyze_parquet_footer` (2026-09-09), que declara `path` e
         # e `_READ_ONLY` como as duas anteriores.
-        assert len(TOOLS) - len(sem_caminho) == 68
+        # 70 desde `analyze_lakeformation_grants` e `collect_lakeformation`
+        # (2026-09-09), e as duas caem em lados DIFERENTES do predicado sem
+        # tocar no conjunto de excecao: a primeira e `_READ_ONLY` e declara
+        # `path` (o artefato de permissao, ou o diretorio deles); a segunda e
+        # `_WRITE_LOCAL_OPEN_WORLD` e declara `repo`, como todo `collect_*`.
+        assert len(TOOLS) - len(sem_caminho) == 70
 
 
 class TestAImposicaoNoDespacho:
