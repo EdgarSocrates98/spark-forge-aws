@@ -7388,6 +7388,82 @@ footer, e nada no case liga os dois hoje —
 esconder.
 
 
+## A decisão de IAM vira fact, e ela diz QUEM negou (2026-09-09)
+
+Branch `feat/executor-agentico-spec`, commit `ff8476c`.
+
+Fecha o **terceiro e último** item que `lakeformation.unresolved` nomeia: a
+policy do runtime role. E fecha por **simulação**, não por parse.
+
+### Por que simular e não parsear
+
+O caminho óbvio seria ler o JSON da policy e decidir. Ele erra exatamente nos
+casos que importam, e os quatro têm em comum **não aparecer no documento do
+role**: permission boundary recorta o que a policy concede; service control
+policy nega acima do role; `Deny` explícito em qualquer policy anexada vence
+todo `Allow`; e `Condition` depende de contexto que um parser não tem.
+
+`iam:SimulatePrincipalPolicy` avalia tudo isso do lado da AWS. O que sai daqui é
+**medida**, não inferência.
+
+### As quatro respostas, e as três de negação exigem consertos diferentes
+
+| `denied_by` | O conserto |
+|---|---|
+| — (`allowed`) | passa |
+| `implicit_deny` | nenhuma policy concede — **acrescentar** resolve |
+| `explicit_deny` | alguma policy nega — acrescentar **não** resolve |
+| `permissions_boundary` | o boundary recorta — mexer na policy do role não muda nada |
+| `service_control_policy` | a organização nega acima do role |
+
+A ordem de precedência — SCP antes de boundary antes da policy — está no código
+e no teste. **Colapsar as quatro num booleano faria "adicione a permissão" virar
+o conselho único, e ele é errado em três dos quatro casos.**
+
+### Duas recusas que saem SEMPRE
+
+**`allowed` sem recurso simulado não é `allowed` naquele recurso.** Sem
+`--resource-arn` a AWS responde sobre `*`, e `scoped_to_resource` diz qual das
+duas perguntas foi feita.
+
+**`policy_de_recurso_nao_avaliada` sai em todo artefato**, inclusive com tudo
+`ok`: a simulação avalia policies de **identidade** mais boundary e SCP. Bucket
+policy, key policy do KMS e Glue resource policy são avaliação separada, e um
+`allowed` aqui com bucket policy negando ainda falha.
+
+### A fixture: três camadas num role só
+
+| ação | decisão | camada |
+|---|---|---|
+| `glue:GetTable` | allowed | — |
+| `lakeformation:GetDataAccess` | allowed | — |
+| `s3:PutObject` | implicitDeny | **permissions_boundary** |
+| `kms:GenerateDataKey` | explicitDeny | **service_control_policy** |
+
+É o par leitura-passa/escrita-falha, com a resposta **fora** da policy que todo
+mundo abre primeiro — a mesma classe de sintoma que abriu esta frente.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| Tools MCP | 75 | **77** |
+| Extratores | 35 | **36** |
+| Fact kinds | 207 | **210** |
+| Fixtures golden | 339 | **340**, em **39** domínios |
+
+**27 alegações de lastro remediadas por id** — 24 de contagem e 3 de razão, e as
+três saíram da própria prova reexecutada.
+
+### Os três artefatos que faltavam, agora completos
+
+`lakeformation.unresolved` nomeava grant, registro de localização S3 e policy do
+runtime role. **Os três são coletáveis.** O que continua sem existir é **regra
+que os consuma**: os oito kinds novos entregam o material, e transformá-los em
+achado exige decidir o que `SELECT` bastar significa por operação e por modelo
+de acesso — que é juízo, e juízo mora na regra.
+
+
 ## A permissão vira artefato, e o motor deixa de só dizer em qual plano parou (2026-09-09)
 
 Branch `feat/executor-agentico-spec`, commit `c84dd0e`.
