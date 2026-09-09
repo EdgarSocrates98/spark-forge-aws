@@ -423,6 +423,11 @@ class TestCatalogoInteiro:
         _, restricoes, _ = order_actions(findings_do_catalogo)
         maior = max(len(r["rules"]) for r in restricoes)
         no_topo = {r["axis"] for r in restricoes if len(r["rules"]) == maior}
-        assert maior == 10
-        assert no_topo == {"runtime.wall_clock", "scan.bytes_read"}
+        # 11 desde `SF-ERR-013` (2026-09-09), que acrescentou
+        # `runtime.wall_clock` e desempatou o par que este teste mediu por um
+        # dia. O NUMERO e afirmado, e o CONJUNTO tambem: as duas metades juntas
+        # e que fazem o teste medir a distribuicao, e nao a ordem alfabetica que
+        # o `max` usaria para escolher sozinho.
+        assert maior == 11
+        assert no_topo == {"runtime.wall_clock"}
         assert all(r["axis"] != "correctness.write_result" for r in restricoes)

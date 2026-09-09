@@ -80,6 +80,12 @@ REQUIRED_FIXTURES = {
     "classnotfound_com_jar",
     "noclassdef_com_jar",
     "abstractmethod_com_jar",
+    # As duas de memoria de HEAP (2026-09-09) -- `SF-ERR-004` trata o
+    # container, e estas tratam o lado de dentro. Elas exigiram a terceira
+    # porta do matcher (`message_head`), porque as duas sao
+    # `java.lang.OutOfMemoryError` e o que as separa esta na mensagem.
+    "heap_oom_com_distribuicao",
+    "gc_overhead_com_tempo",
 }
 
 
@@ -310,17 +316,30 @@ class TestAsRecusas:
         assert excecoes[0].attrs["parsed_by"] == "after_executor"
         assert _by_kind(facts, "spark.exception.unresolved") == []
 
-    def test_estruturar_a_excecao_NAO_inventa_assinatura(self):
-        """A outra metade da medida, e ela e o que separa alargar o parser de
-        alargar a acusacao: `java.lang.OutOfMemoryError` nao casa NENHUMA das
-        seis assinaturas de `knowledge/errors/`, entao o ponto cego continua
-        nomeado em `error.signature.unresolved`."""
+    def test_a_excecao_estruturada_agora_CASA_e_a_mudanca_e_de_catalogo(self):
+        """Esta assercao era o oposto ate 2026-09-09, e as duas versoes estao
+        certas -- o que mudou nao foi o parser, foi o CATALOGO.
+
+        Quando `classe_no_meio_da_linha` nasceu, `java.lang.OutOfMemoryError`
+        nao casava assinatura nenhuma, e o teste media que estruturar a excecao
+        NAO inventava acusacao. Isso continua sendo a garantia certa; o que
+        mudou e que `ERR-SPARK-006` passou a existir, e ela descreve exatamente
+        esta excecao.
+
+        Entao o achado de hoje nao e invencao: ele e uma assinatura nova
+        alcancando um texto que ja estava no corpus. A garantia sobrevive na
+        forma correta -- o que casa e o que o catalogo DESCREVE, e
+        `test_a_assinatura_de_mensagem_nao_casa_quando_o_texto_NAO_esta_la`
+        prende o outro lado.
+        """
         _, facts, achados, _ = run_fixture(_fixture("classe_no_meio_da_linha"))
-        assert _by_kind(facts, "error.signature_match") == []
-        recusa = _by_kind(facts, "error.signature.unresolved")
-        assert len(recusa) == 1
-        assert recusa[0].attrs["reason"] == "nenhuma_assinatura_casou"
-        assert [a.rule_id for a in achados if a.rule_id.startswith("SF-ERR")] == []
+        casados = _by_kind(facts, "error.signature_match")
+        assert [f.attrs["signature_id"] for f in casados] == ["ERR-SPARK-006"]
+        assert [f.attrs["matched_on"] for f in casados] == ["message_head"]
+        assert _by_kind(facts, "error.signature.unresolved") == []
+        assert [a.rule_id for a in achados if a.rule_id.startswith("SF-ERR")] == [
+            "SF-ERR-012"
+        ]
 
     def test_a_pilha_normal_continua_entrando_pelo_primeiro_padrao(self):
         """A precedencia, medida no corpus e nao so no teste de unidade."""

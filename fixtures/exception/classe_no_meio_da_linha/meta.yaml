@@ -27,10 +27,11 @@ proves: >
   e exatamente esse: o `unresolved` virou `spark.exception` com dois
   `spark.exception.frame`.
 
-  `error.signature.unresolved` continua saindo, e ele e a outra metade da
-  medida: `java.lang.OutOfMemoryError` nao casa NENHUMA das seis assinaturas de
-  `knowledge/errors/`. Estruturar a excecao nao inventa assinatura, e o ponto
-  cego continua nomeado.
+  O `error.signature.unresolved` que esta fixture publicava ate 2026-09-09 SUMIU,
+  e a mudanca nao foi do parser -- foi do CATALOGO. `ERR-SPARK-006` passou a
+  existir e descreve exatamente esta excecao, entao o match de hoje e uma
+  assinatura nova alcancando um texto que ja estava no corpus, e nao invencao.
+  `SF-ERR-012` dispara em consequencia.
 
   `texto_sem_forma_de_stacktrace` continua sendo a recusa deste corpus, e agora
   as duas fixtures nao dividem mais kind: aquela nao tem excecao NENHUMA no
@@ -41,7 +42,7 @@ runtime:
   python: "3.11"
   iceberg: "1.7.1"
 expects_kinds:
-  - error.signature.unresolved
+  - error.signature_match
   - spark.cluster.cores
   - spark.conf_effective
   - spark.conf_excluded
@@ -57,4 +58,5 @@ expects_kinds:
   - spark.stage.task_count
   - spark.stage.task_duration
   - spark.stage.task_input
-expects_rules: []
+expects_rules:
+  - SF-ERR-012

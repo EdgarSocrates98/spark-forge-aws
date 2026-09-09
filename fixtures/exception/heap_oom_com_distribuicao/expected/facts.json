@@ -29,7 +29,7 @@
     "measures": {},
     "attrs": {
       "key": "spark.app.name",
-      "value": "exception_classe_no_meio_job",
+      "value": "exception_nosuchmethod_job",
       "app_id": "application_1699000000000_0042",
       "source_event": "SparkListenerEnvironmentUpdate"
     },
@@ -113,7 +113,7 @@
     "measures": {},
     "attrs": {
       "key": "spark.version",
-      "value": "3.5.4",
+      "value": "4.0.0",
       "app_id": "application_1699000000000_0042",
       "source_event": "SparkListenerEnvironmentUpdate"
     },
@@ -203,7 +203,7 @@
     "measures": {},
     "attrs": {
       "component": "spark",
-      "version": "3.5.4",
+      "version": "4.0.0",
       "source_event": "SparkListenerLogStart"
     },
     "provenance": {
@@ -213,13 +213,13 @@
     }
   },
   {
-    "id": "f_2486e8",
+    "id": "f_d8d2e9",
     "schema_version": 1,
     "kind": "spark.stage.callsite",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {},
     "attrs": {
@@ -234,17 +234,17 @@
     }
   },
   {
-    "id": "f_cac734",
+    "id": "f_5edb84",
     "schema_version": 1,
     "kind": "spark.stage.failure",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {},
     "attrs": {
-      "reason": "Job aborted due to stage failure: Task 3 in stage 5.0 failed 4 times, most recent failure: Lost task 3.3 in stage 5.0 (TID 88) (ip-10-0-4-21.ec2.internal executor 2): java.lang.OutOfMemoryError: Java heap space\n\tat java.base.java.util.Arrays.copyOf(Arrays.java:3745)\n\tat org.apache.spark.util.collection.CompactBuffer.growToSize(CompactBuffer.scala:143)\n"
+      "reason": "java.lang.OutOfMemoryError: Java heap space\n\tat com.exemplo.conector.Escritor.escrever(Escritor.scala:88)\n\tat com.exemplo.conector.Pipeline.executar(Pipeline.scala:45)\n\tat org.apache.spark.sql.execution.datasources.v2.V2TableWriteExec.writeWithV2(WriteToDataSourceV2Exec.scala:377)\n"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",
@@ -253,13 +253,13 @@
     }
   },
   {
-    "id": "f_e81fd4",
+    "id": "f_6726ec",
     "schema_version": 1,
     "kind": "spark.stage.gc",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {
       "gc_ms": 160,
@@ -273,13 +273,13 @@
     }
   },
   {
-    "id": "f_b717ed",
+    "id": "f_115da0",
     "schema_version": 1,
     "kind": "spark.stage.spill",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {
       "memory_spill_bytes": 0,
@@ -294,13 +294,13 @@
     }
   },
   {
-    "id": "f_79721e",
+    "id": "f_1b34a9",
     "schema_version": 1,
     "kind": "spark.stage.task_count",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {
       "task_count": 8,
@@ -314,13 +314,13 @@
     }
   },
   {
-    "id": "f_3cf04f",
+    "id": "f_f79674",
     "schema_version": 1,
     "kind": "spark.stage.task_duration",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {
       "min_ms": 1000,
@@ -338,13 +338,13 @@
     }
   },
   {
-    "id": "f_bfd5c8",
+    "id": "f_6e316d",
     "schema_version": 1,
     "kind": "spark.stage.task_input",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {
       "min_bytes": 4096,
@@ -361,13 +361,13 @@
     }
   },
   {
-    "id": "f_508652",
+    "id": "f_db5dc6",
     "schema_version": 1,
     "kind": "spark.exception",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5
+      "stage_id": 4
     },
     "measures": {},
     "attrs": {
@@ -375,7 +375,7 @@
       "message_head": "Java heap space",
       "is_chained": false,
       "caused_by": [],
-      "parsed_by": "after_executor"
+      "parsed_by": "head_of_line"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",
@@ -384,21 +384,21 @@
     }
   },
   {
-    "id": "f_a23f1b",
+    "id": "f_f96301",
     "schema_version": 1,
     "kind": "spark.exception.frame",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5,
+      "stage_id": 4,
       "frame": 0
     },
     "measures": {},
     "attrs": {
-      "class": "java.base.java.util.Arrays",
-      "method": "copyOf",
-      "file": "Arrays.java",
-      "line": 3745
+      "class": "com.exemplo.conector.Escritor",
+      "method": "escrever",
+      "file": "Escritor.scala",
+      "line": 88
     },
     "provenance": {
       "artifact": "eventlog.jsonl",
@@ -407,21 +407,21 @@
     }
   },
   {
-    "id": "f_9d041f",
+    "id": "f_fda741",
     "schema_version": 1,
     "kind": "spark.exception.frame",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5,
+      "stage_id": 4,
       "frame": 1
     },
     "measures": {},
     "attrs": {
-      "class": "org.apache.spark.util.collection.CompactBuffer",
-      "method": "growToSize",
-      "file": "CompactBuffer.scala",
-      "line": 143
+      "class": "com.exemplo.conector.Pipeline",
+      "method": "executar",
+      "file": "Pipeline.scala",
+      "line": 45
     },
     "provenance": {
       "artifact": "eventlog.jsonl",
@@ -430,13 +430,36 @@
     }
   },
   {
-    "id": "f_38d0d7",
+    "id": "f_ef4b08",
+    "schema_version": 1,
+    "kind": "spark.exception.frame",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "frame": 2
+    },
+    "measures": {},
+    "attrs": {
+      "class": "org.apache.spark.sql.execution.datasources.v2.V2TableWriteExec",
+      "method": "writeWithV2",
+      "file": "WriteToDataSourceV2Exec.scala",
+      "line": 377
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_cfa00c",
     "schema_version": 1,
     "kind": "error.signature_match",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
-      "stage_id": 5,
+      "stage_id": 4,
       "signature_id": "ERR-SPARK-006"
     },
     "measures": {},

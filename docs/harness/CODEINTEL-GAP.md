@@ -210,13 +210,13 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **56
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 2 | 466 | 727237 | 9866 | 102 |
+| `iter_source_files` | 2 | 466 | 728577 | 9866 | 102 |
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 258034 | 2201 | 52 |
 | `tool_class` | 1 | 188 | 28525 | 2984 | 74 |
 | `authorize` | 4 | 897 | 349748 | 4426 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1562275**;
+Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1563615**;
 a saída do `grep` pelo nome, **22199**; a saída do `grep` pela definição, **420**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 706.9 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 707.5 vezes.** Contra a saída de um `grep`
 pelo nome, **10.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **5.3** vezes o que aquele `grep` custaria.
 

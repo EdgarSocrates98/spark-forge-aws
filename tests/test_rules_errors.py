@@ -477,7 +477,7 @@ def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
     # O numero e FIXADO aqui de proposito, ao contrario dos outros testes desta
     # area: acrescentar assinatura sem regra precisa derrubar alguma coisa, e e
     # esta linha que faz isso.
-    assert len(_assinaturas()) == 11, [s["id"] for s in _assinaturas()]
+    assert len(_assinaturas()) == 13, [s["id"] for s in _assinaturas()]
 
 
 def test_toda_assinatura_tem_regra():
@@ -508,19 +508,21 @@ SO_PELO_LOG = {"ERR-ATH-001", "ERR-GLUE-001", "ERR-ICE-001", "ERR-LF-001"}
     [s for s in _assinaturas() if s["id"] in SO_PELO_LOG],
     ids=lambda s: s["id"],
 )
-def test_a_assinatura_de_mensagem_nao_casa_por_classe(sig):
-    """POR QUE as quatro precisam do caminho de LOG, medido e nao lembrado.
+def test_a_assinatura_de_mensagem_casa_por_message_head_e_NAO_por_classe(sig):
+    """POR QUE as quatro precisam da cabeca da mensagem, medido.
 
-    `build_signature_matches` casa a assinatura contra `attrs.exception_class` e
-    contra `attrs.caused_by` -- CLASSE de excecao. Estas quatro sao trecho de
-    MENSAGEM de log, entao por ESTE caminho elas nunca produzem
-    `error.signature_match`, e `SF-ERR-003` a `SF-ERR-006` seriam mudas se
-    dependessem dele. Elas dependem de `cloudwatch.log_event`, e
-    `fixtures/cloudwatch_logs/` e onde isso vira golden.
+    ATE 2026-09-09 este teste afirmava o oposto -- que elas NAO casavam por
+    `spark.exception` de forma nenhuma --, e a afirmacao era verdadeira: o
+    matcher so comparava `attrs.exception_class` e `attrs.caused_by`. A terceira
+    porta (`message_head`) estava no desenho da frente desde o inicio e nunca
+    tinha sido implementada, porque nenhuma assinatura precisava dela.
 
-    O teste alimenta a excecao com o proprio texto da assinatura na cabeca da
-    mensagem -- que e onde ele aparece num log real -- e confirma que ela cai em
-    `error.signature.unresolved`, nao em match.
+    `ERR-SPARK-006` e `ERR-SPARK-007` a exigiram: as duas sao
+    `java.lang.OutOfMemoryError`, e o que as separa esta na MENSAGEM. Com a
+    porta aberta, estas quatro passaram a casar por ela tambem -- e a distincao
+    que continua valendo, e que este teste passou a medir, e que elas casam por
+    `message_head` e NUNCA por `exception_class`: nenhuma delas e nome de
+    classe.
     """
     excecao = Fact(
         kind="spark.exception",
@@ -535,5 +537,34 @@ def test_a_assinatura_de_mensagem_nao_casa_por_classe(sig):
         provenance=PROV,
     )
     saida = build_signature_matches([excecao])
+    casados = [f for f in saida if f.kind == "error.signature_match"]
+    assert [f.attrs["signature_id"] for f in casados] == [sig["id"]]
+    assert [f.attrs["matched_on"] for f in casados] == ["message_head"]
+
+
+@pytest.mark.parametrize(
+    "sig",
+    [s for s in _assinaturas() if s["id"] in SO_PELO_LOG],
+    ids=lambda s: s["id"],
+)
+def test_a_assinatura_de_mensagem_nao_casa_quando_o_texto_NAO_esta_la(sig):
+    """A outra metade: sem o texto da assinatura na mensagem, nao ha match.
+
+    Sem este teste, o anterior passaria com um matcher que casasse qualquer
+    coisa -- ele mede que o casamento depende do TEXTO, e nao do fato de haver
+    uma excecao.
+    """
+    excecao = Fact(
+        kind="spark.exception",
+        subject={"type": "spark_stage", "stage": 1},
+        measures={},
+        attrs={
+            "exception_class": "org.apache.spark.SparkException",
+            "message_head": "Job aborted for a reason no signature describes",
+            "is_chained": False,
+            "caused_by": [],
+        },
+        provenance=PROV,
+    )
+    saida = build_signature_matches([excecao])
     assert [f.kind for f in saida] == ["error.signature.unresolved"]
-    assert saida[0].attrs["reason"] == "nenhuma_assinatura_casou"

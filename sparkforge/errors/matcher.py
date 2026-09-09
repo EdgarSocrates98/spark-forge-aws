@@ -180,6 +180,10 @@ def build_signature_matches(facts: Sequence[Fact]) -> list[Fact]:
 
         classe = str(attrs.get("exception_class") or "")
         causas = [str(c) for c in (attrs.get("caused_by") or [])]
+        # A cabeca da mensagem, com a classe na frente: e assim que a assinatura
+        # a escreve (`java.lang.OutOfMemoryError: Java heap space`), e casar so
+        # contra `message_head` cru perderia o prefixo.
+        cabeca = f"{classe}: {attrs.get('message_head') or ''}".strip()
 
         casados: list[tuple[str, str, str]] = []
         for sig in assinaturas:
@@ -193,6 +197,23 @@ def build_signature_matches(facts: Sequence[Fact]) -> list[Fact]:
             causa = next((c for c in causas if alvo in c.lower()), None)
             if causa is not None:
                 casados.append((str(sig["id"]), "caused_by", causa))
+                continue
+            # `message_head` e a TERCEIRA porta, e o desenho da frente ja a
+            # previa (`matched_on: exception_class | message_head | frame`) --
+            # ela so nao tinha sido implementada porque nenhuma assinatura
+            # precisava dela ate 2026-09-09.
+            #
+            # Quem a exigiu foram `ERR-SPARK-006` e `ERR-SPARK-007`: as duas sao
+            # `java.lang.OutOfMemoryError`, e o que as separa esta na MENSAGEM
+            # -- "Java heap space" contra "GC overhead limit exceeded". Casar so
+            # por classe as tornaria indistinguiveis, e os dois consertos
+            # divergem (distribuicao por task contra conjunto vivo).
+            #
+            # Ela vem DEPOIS das outras duas de proposito: uma assinatura que
+            # case pela classe deve reportar `exception_class`, e nao
+            # `message_head`, mesmo quando o texto tambem aparece na mensagem.
+            if alvo in cabeca.lower():
+                casados.append((str(sig["id"]), "message_head", cabeca))
 
         if not casados:
             saida.append(

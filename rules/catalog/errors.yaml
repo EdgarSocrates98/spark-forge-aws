@@ -1503,3 +1503,227 @@ rules:
           (`ERR-SPARK-005`). Ela registra `spark.driver.userClassPathFirst` e
           `spark.executor.userClassPathFirst` com default `false` e o rótulo
           "(Experimental)" que o `explanation` cita.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS DUAS DE MEMÓRIA DE HEAP (2026-09-09)
+  #
+  # `SF-ERR-004` já trata `Container killed by YARN` -- memória FORA do heap,
+  # medida no log do CloudWatch. Estas duas tratam o lado de DENTRO, e a
+  # separação é a mesma que `knowledge/spark/memory-and-oom.md` faz: heap e
+  # overhead de container são dois orçamentos, e o conserto de um não é o do
+  # outro.
+  #
+  # O que separa as duas entre si é a MEDIDA que cada uma exige:
+  #
+  #   SF-ERR-012  heap estourou     -> distribuição de INPUT por task decide se
+  #                                    é skew ou dimensionamento
+  #   SF-ERR-013  GC dominando      -> RAZÃO de tempo em coleta decide, e não o
+  #                                    tamanho do heap
+  #
+  # Nenhuma das duas propõe número. Subir heap com skew ao lado paga o custo da
+  # maior task em TODOS os executores, e é o conserto que "não funcionou" com
+  # mais frequência.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-012
+    category: runtime-error
+    title: >-
+      Heap do executor estourou -- a distribuição de input por task decide se é
+      skew ou dimensionamento
+    requires_facts:
+      - error.signature_match
+      - spark.stage.task_input
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-006"}
+        - fact: spark.stage.task_input
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `OutOfMemoryError: Java heap space`, e o event log traz a
+      distribuição de bytes de entrada por task. As duas juntas separam os dois
+      diagnósticos que a mensagem sozinha não separa: heap que estourou com
+      distribuição EVEN é dimensionamento; com distribuição desigual é skew, e
+      o heap não é a causa.
+
+
+      A diferença muda o conserto por inteiro. Com skew, subir
+      `spark.executor.memory` paga o custo da MAIOR task em todos os
+      executores — o cluster fica mais caro e a task grande continua sendo a
+      grande. É o conserto que "não funcionou" com mais frequência nesta área.
+
+
+      **Esta regra é do heap, e `SF-ERR-004` é do container.**
+      `Container killed by YARN` é memória FORA do heap, e o conserto dela é
+      `memoryOverhead`; aqui a JVM reporta a própria falha, e o orçamento é
+      outro. `knowledge/spark/memory-and-oom.md` faz a mesma separação.
+
+
+      **O que ela NÃO afirma:** qual é a distribuição. Ela exige
+      `spark.stage.task_input` no case e manda comparar máximo com mediana — a
+      comparação é o primeiro passo do `proposed_change`, e é o operador que a
+      lê.
+    proposed_change:
+      - >-
+        Comparar bytes de entrada MÁXIMO e MEDIANO por task no stage que
+        falhou. É esse par que decide, e nenhuma das duas medidas sozinha
+        decide.
+      - >-
+        Se a distribuição for desigual, tratar o skew — ver `SF-UI-001` e
+        `SF-UI-002`, que classificam o tipo antes do tratamento.
+      - >-
+        Ler a decisão de join no plano físico: broadcast de tabela que deixou
+        de ser pequena é a causa que some do código e aparece só no plano.
+      - >-
+        Subir `spark.executor.memory` só depois de a distribuição ter sido
+        medida e encontrada uniforme. O default do Apache é `1g`.
+    action:
+      kind: skew.classify_type
+      target: spark.stage
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Subir heap com skew presente move a falha sem tocar a causa, e o custo
+        sobe em todos os executores.
+      - >-
+        Aumentar `spark.memory.fraction` acima do default: a documentação do
+        Apache recomenda deixá-lo como está e avisa que subi-lo exige ajustar a
+        coleta de lixo da JVM junto.
+      - >-
+        Tratamento de skew que mexe na chave de join pode duplicar ou descartar
+        linha, e nada no plano físico acusa isso.
+      - >-
+        A saída parcial do run falho continua no destino.
+    tradeoffs:
+      - >-
+        Medir a distribuição custa uma passada sobre o event log antes de
+        qualquer mudança; a alternativa é subir memória e medir depois, mais
+        rápida por run e mais cara por ciclo.
+    validation:
+      - >-
+        Razão entre bytes de entrada máximo e mediano por task, antes e depois
+        — é a medida que classifica, e publicá-la nos dois momentos é o que
+        separa "aumentei memória" de "resolvi".
+      - >-
+        Ausência de `OutOfMemoryError` no run seguinte com o MESMO volume de
+        entrada.
+      - >-
+        Se o tratamento tocar a chave de join: contagem total, contagem por
+        chave e agregados de controle contra o último run bem-sucedido.
+      - >-
+        Se a ação foi só `spark.executor.memory`: nenhum eixo de dado é
+        exigido, e declarar isso é parte da validação.
+    rollback:
+      - >-
+        Reverter o valor de memória. Se a correção mudou distribuição ou chave,
+        a saída precisa ser comparada antes de a versão anterior ser
+        descartada.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/heap_out_of_memory.json`
+          (`ERR-SPARK-006`). Ela registra `spark.executor.memory` com default
+          `1g` e `spark.memory.fraction` com default `0.6` de (heap - 300MB),
+          mais a recomendação explícita de deixar o segundo no default.
+
+  - id: SF-ERR-013
+    category: runtime-error
+    title: >-
+      Coleta de lixo dominando o executor -- é a RAZÃO de tempo que decide, não
+      o tamanho do heap
+    requires_facts:
+      - error.signature_match
+      - spark.stage.gc
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-007"}
+        - fact: spark.stage.gc
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `GC overhead limit exceeded`, e o event log traz o tempo de
+      coleta de lixo do stage. Essa mensagem não diz que faltou memória — diz
+      que a JVM passou a maior parte do tempo coletando e recuperando pouco.
+      O conjunto VIVO quase preenche o heap, e o coletor roda sem parar.
+
+
+      É por isso que a medida que decide é uma RAZÃO — tempo em coleta sobre
+      tempo de executor —, e não o tamanho do heap. Um heap grande com conjunto
+      vivo proporcionalmente grande falha igual, e é por isso que subir memória
+      aqui costuma adiar em vez de resolver: o sintoma volta assim que a
+      entrada cresce.
+
+
+      **Esta regra é irmã de `SF-ERR-012` e não a mesma.** Lá o heap estourou
+      numa alocação; aqui ele não estourou — o custo de mantê-lo é que passou a
+      dominar. Os dois consertos divergem: um reduz o dado por task, o outro
+      reduz o conjunto vivo.
+    proposed_change:
+      - >-
+        Ler a fração do tempo de executor gasta em coleta de lixo no stage que
+        falhou — é a razão que decide, e o valor absoluto não decide nada.
+      - >-
+        Reduzir o conjunto vivo: descartar cache que já não é lido, e estreitar
+        as colunas carregadas pelo stage.
+      - >-
+        Reduzir a criação de objetos curtos por registro, onde o job os
+        constrói em volume.
+      - >-
+        Subir heap apenas quando o conjunto vivo for genuinamente grande e o
+        coletor simplesmente não tiver espaço.
+    action:
+      kind: code.change_persistence
+      target: spark.cache.live_set
+      direction: decrease
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+      depends_on: []
+    risks:
+      - >-
+        Subir heap sem medir a razão de coleta compra tempo e devolve o
+        problema assim que a entrada crescer.
+      - >-
+        Aumentar `spark.memory.fraction` é desaconselhado pela documentação do
+        Apache, que pede para deixá-lo no default e avisa que subi-lo exige
+        ajustar a coleta de lixo junto.
+      - >-
+        Descartar cache que OUTRO ponto do job relê troca pressão de memória
+        por releitura, e o job fica mais lento sem que a coleta melhore.
+    tradeoffs:
+      - >-
+        Menos cache reduz o conjunto vivo e aumenta releitura; o ponto de
+        equilíbrio depende de quantas vezes o dado é lido, e nada aqui mede
+        isso.
+    validation:
+      - >-
+        Fração do tempo de executor em coleta de lixo no mesmo stage, antes e
+        depois, sobre o MESMO volume de entrada — é a medida que a mudança move.
+      - >-
+        Ausência de `GC overhead limit exceeded` no run seguinte.
+      - >-
+        Nenhum eixo de dado é exigido se a mudança for de cache ou de memória,
+        e declarar isso é parte da validação. Se a mudança estreitar as colunas
+        carregadas, o schema de saída precisa ser comparado — coluna que deixa
+        de ser lida e era escrita muda o resultado.
+    rollback:
+      - >-
+        Restaurar o cache descartado ou reverter o valor de memória. Se colunas
+        deixaram de ser carregadas, a saída precisa ser comparada antes de o
+        código anterior ser descartado.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/gc_overhead_limit.json`
+          (`ERR-SPARK-007`). Ela registra `spark.memory.fraction` com default
+          `0.6` de (heap - 300MB) e a recomendação de mantê-lo, que os `risks`
+          desta regra citam.
