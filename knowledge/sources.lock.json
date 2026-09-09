@@ -1445,7 +1445,9 @@
       "retrieved": [
         "2026-09-09"
       ],
-      "rules": []
+      "rules": [
+        "SF-LF-004"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
       "docs": [
@@ -1522,7 +1524,11 @@
       "retrieved": [
         "2026-09-09"
       ],
-      "rules": []
+      "rules": [
+        "SF-ERR-015",
+        "SF-LF-003",
+        "SF-LF-004"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
       "docs": [
@@ -1530,11 +1536,15 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-22"
+        "2026-08-22",
+        "2026-09-09"
       ],
       "rules": [
+        "SF-ERR-014",
+        "SF-ERR-017",
         "SF-LF-001",
-        "SF-LF-002"
+        "SF-LF-002",
+        "SF-LF-003"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html": {
@@ -1545,7 +1555,10 @@
       "retrieved": [
         "2026-09-09"
       ],
-      "rules": []
+      "rules": [
+        "SF-ERR-016",
+        "SF-LF-003"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html": {
       "docs": [
@@ -1555,7 +1568,9 @@
       "retrieved": [
         "2026-09-09"
       ],
-      "rules": []
+      "rules": [
+        "SF-ERR-017"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html": {
       "docs": [],
@@ -1599,6 +1614,16 @@
       ],
       "rules": [
         "SF-GLUE-007"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/APIReference/API_GetTemporaryGlueTableCredentials.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-014"
       ]
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {

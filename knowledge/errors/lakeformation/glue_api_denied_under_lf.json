@@ -1,0 +1,37 @@
+{
+  "id": "ERR-LF-004",
+  "signature": "glue:GetTable",
+  "service": "lakeformation",
+  "versions": ["all"],
+  "symptoms": [
+    "The Lake Formation grant on the table is in place and the job still fails on an authorization error",
+    "The error names a Glue API action and not a Lake Formation one",
+    "The failure happens while resolving the table, before any data is read"
+  ],
+  "likely_causes": [
+    "The job runtime role has the Lake Formation permission on the table but not the IAM permission on the Glue API operation that reads it",
+    "The IAM policy grants the Glue action on a resource ARN that does not cover the catalog, the database or the table being resolved",
+    "The table lives in another account and the Glue resource policy of the producer account does not allow the consumer role"
+  ],
+  "evidence_required": ["lakeformation.access_model"],
+  "diagnostic_steps": [
+    "Separate the two authorization planes before touching anything: Lake Formation permissions control access to the catalog resources and to the data, and IAM permissions control access to the Lake Formation and Glue APIs. The AWS documentation states that holding SELECT in Lake Formation does not save an operation that lacks the IAM permission on the Glue Get API operations",
+    "Read the IAM policy of the runtime role for the Glue actions and for the three resource ARNs the AWS example names: the catalog, the database and the table",
+    "When the table is in another account, read the Glue resource policy of the producer account and the resource link in the consumer account"
+  ],
+  "fixes": [
+    "Grant the Glue API actions the operation needs to the job runtime role, on the catalog, database and table ARNs it resolves",
+    "For a cross-account table, allow the consumer role in the Glue resource policy of the producer account, and confirm the resource link is named identically to the source resource, which is what the AWS documentation requires for Lake Formation cross-account table queries"
+  ],
+  "unsafe_fixes": [
+    "Granting every Glue action on every resource to make the resolution succeed, which authorizes catalog mutation the job never needed",
+    "Granting the missing Lake Formation permission instead: the failing plane is IAM, and adding a data grant does not change an API authorization"
+  ],
+  "verification": "Re-run and confirm the table resolves. Then confirm the Lake Formation control still applies by running with a principal that lacks the data grant: it must still be refused, because the IAM fix should not have widened the data plane",
+  "rollback": "Remove the IAM statements that were added. A Glue resource policy change in the producer account affects every consumer of that catalog and is not rolled back per job",
+  "sources": [
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html",
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+  ],
+  "last_verified": "2026-09-09"
+}

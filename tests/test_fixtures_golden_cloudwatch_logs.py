@@ -70,6 +70,7 @@ from sparkforge.facts.cloudwatch_logs import EMITTED_KINDS as CW_LOG_KINDS
 from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
 from sparkforge.facts.consumers import extract_consumers_path
 from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
 from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
 from sparkforge.facts.terraform import extract_terraform_tree
@@ -105,6 +106,13 @@ REQUIRED_FIXTURES = {
     "fetch_failed_com_executor_perdido",
     "fetch_failed_so_no_log",
     "python_worker_morreu_com_udf",
+    # As QUATRO da familia de Lake Formation (2026-09-09). Cada uma traz o
+    # `main.tf` do lado, porque o companheiro que a regra exige e derivado
+    # dele por `sparkforge/facts/lakeformation.py`.
+    "credencial_vendida_negada_com_fgac",
+    "get_data_access_negado_com_resolver",
+    "glue_api_negada_com_fgac",
+    "validacao_de_seguranca_com_fgac",
 }
 
 # As QUATRO de `knowledge/errors/` que sao trecho de MENSAGEM e nao classe de
@@ -112,7 +120,30 @@ REQUIRED_FIXTURES = {
 # nao parecem classe Java" de uma heuristica seria um segundo parser inventado
 # aqui para conferir o primeiro. Se uma assinatura nova entrar no catalogo, esta
 # lista nao muda sozinha -- e e isso que faz o teste ser uma afirmacao.
-SO_PELO_LOG = {"ERR-ATH-001", "ERR-GLUE-001", "ERR-ICE-001", "ERR-LF-001"}
+SO_PELO_LOG = {
+    "ERR-ATH-001",
+    "ERR-GLUE-001",
+    "ERR-ICE-001",
+    "ERR-LF-001",
+    # As quatro de 2026-09-09. Nenhuma e nome de classe Java: duas sao
+    # NOME DE ACAO IAM (`lakeformation:GetDataAccess`, `glue:GetTable`),
+    # uma e NOME DE API (`GetTemporaryGlueTableCredentials`) e a quarta e
+    # frase (`Security validation exception`).
+    "ERR-LF-002",
+    "ERR-LF-003",
+    "ERR-LF-004",
+    "ERR-LF-005",
+}
+
+
+# As QUATRO que a fixture `quatro_assinaturas_de_log` CARREGA. E um conjunto
+# diferente de `SO_PELO_LOG`, e a diferenca apareceu em 2026-09-09 quando a
+# familia de Lake Formation entrou: `SO_PELO_LOG` afirma uma propriedade das
+# ASSINATURAS (nenhuma delas e nome de classe Java), e este afirma o CONTEUDO
+# daquele artefato. Os dois eram o mesmo enquanto so existiam quatro assinaturas
+# de mensagem, e usar um pelo outro fazia a entrega de quatro assinaturas novas
+# derrubar um teste sobre um log que ninguem tocou.
+NA_FIXTURE_DAS_QUATRO = {"ERR-ATH-001", "ERR-GLUE-001", "ERR-ICE-001", "ERR-LF-001"}
 
 
 def fixture_dirs():
@@ -147,6 +178,11 @@ def _derive(directory: Path):
         facts.extend(extract_consumers_path(inventario, repo_root=entrada))
     if any(entrada.glob("*.py")):
         facts.extend(extract_pyspark_tree(entrada, repo_root=entrada))
+    # `build_lakeformation` vem ANTES do matcher e depois dos extratores de
+    # artefato: ele deriva o companheiro que as regras da familia de Lake
+    # Formation exigem (`lakeformation.access_model`,
+    # `lakeformation.filesystem`), e o matcher nao depende dele.
+    facts.extend(build_lakeformation(facts))
     facts.extend(build_signature_matches(facts))
     return facts
 
@@ -247,7 +283,7 @@ class TestAsQuatroQueSoOLogAlcanca:
         casados = {
             f.attrs["signature_id"] for f in _by_kind(facts, "error.signature_match")
         }
-        assert casados == SO_PELO_LOG
+        assert casados == NA_FIXTURE_DAS_QUATRO
 
     def test_todas_elas_entram_por_log_line_e_nao_por_classe(self):
         _, facts, _, _ = run_fixture(_fixture("quatro_assinaturas_de_log"))

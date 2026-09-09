@@ -1727,3 +1727,435 @@ rules:
           (`ERR-SPARK-007`). Ela registra `spark.memory.fraction` com default
           `0.6` de (heap - 300MB) e a recomendação de mantê-lo, que os `risks`
           desta regra citam.
+
+  # ---------------------------------------------------------------------------
+  # SF-ERR-014 a SF-ERR-017 -- a familia de Lake Formation, e o que mudou desde
+  # `SF-ERR-006`.
+  #
+  # `ERR-LF-001` declarava `evidence_required: [lakeformation.missing_grant,
+  # ram.unaccepted_share]`, e NENHUM dos dois e kind emitido -- por isso
+  # `SF-ERR-006` teve de usar `tf.spark_conf` como substituto medido. As quatro
+  # novas nao repetem isso: elas declaram `lakeformation.access_model` e
+  # `lakeformation.filesystem`, que `sparkforge/facts/lakeformation.py` EMITE, e
+  # o `evidence_required` da assinatura e o `requires_facts` da regra passam a
+  # dizer a mesma coisa.
+  #
+  # PROCEDENCIA DO TEXTO, dita sem folga: a pagina de troubleshooting do AWS
+  # Glue NAO publica string de erro literal -- ela publica TITULO DE SINTOMA.
+  # Das quatro assinaturas, so `Security validation exception` e frase que a AWS
+  # escreve; as outras tres sao NOME DE ACAO IAM
+  # (`lakeformation:GetDataAccess`, `glue:GetTable`) ou NOME DE API
+  # (`GetTemporaryGlueTableCredentials`), e esses a AWS publica -- na referencia
+  # de API e nas policies de exemplo. O que NAO esta publicado e o texto exato
+  # da mensagem de negacao que os carrega. Casar por nome de acao e o mais forte
+  # que a fonte sustenta, e e por isso que nenhuma das quatro dispara sem o
+  # companheiro.
+  - id: SF-ERR-014
+    category: runtime-error
+    title: >-
+      Credencial temporária do Lake Formation negada num job que declara
+      controle de acesso fino
+    requires_facts:
+      - error.signature_match
+      - lakeformation.access_model
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-LF-002"}
+        - fact: lakeformation.access_model
+          where: {attrs.fgac_enabled: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A operação parou no ponto em que o Lake Formation entrega a credencial
+      temporária que dá acesso ao dado da tabela, e o job declara controle de
+      acesso fino. **Esses dois fatos juntos dizem em qual plano o problema
+      está, e é o plano que a maioria das tentativas não toca.**
+
+
+      O acesso a uma tabela governada atravessa camadas distintas: a permissão
+      concedida no Lake Formation, a permissão de IAM sobre as APIs do Lake
+      Formation e do Glue, e a credencial que o Lake Formation vende para o
+      caminho de dado. Uma negação nomeando a API de credencial diz que as duas
+      primeiras podem estar corretas e a terceira não completou.
+
+
+      **Trocar a API de escrita não muda nada aqui.** `writeTo`, `insertInto` e
+      `INSERT INTO` chegam ao mesmo caminho de credencial, e é por isso que
+      falham juntas quando é ele que falha. Ver
+      `knowledge/glue/lakeformation-fgac.md` §2 e §6.
+    proposed_change:
+      - >-
+        Ler a policy do runtime role à procura de `lakeformation:GetDataAccess`,
+        que é a permissão de IAM que autoriza o Lake Formation a vender a
+        credencial. A AWS a concede na policy de exemplo tanto de controle de
+        acesso fino quanto de Full Table Access.
+      - >-
+        Separar `DESCRIBE` de `SELECT` nas concessões do Lake Formation sobre a
+        tabela: descrever uma tabela não é lê-la, e sob Full Table Access
+        escrever ou apagar exige `ALL`, não `SELECT`.
+      - >-
+        Ler se a localização da tabela está registrada no Lake Formation.
+        Localização não registrada não tem credencial armazenada para ser
+        vendida, e a operação nunca chega a usar esse caminho.
+      - >-
+        Não trocar a API de escrita antes de fechar as três leituras acima. A
+        API não é o caminho de autorização.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.credential_vending
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Alargar a policy S3 do runtime role para contornar o caminho de
+        credencial não funciona para localização REGISTRADA: a documentação
+        declara que ali o caminho de dado usa a credencial armazenada do Lake
+        Formation independentemente do IAM do role. A permissão a mais fica, e o
+        efeito não vem.
+      - >-
+        Conceder `Super` no catálogo a `IAMAllowedPrincipals` faz o erro sumir
+        removendo a governança que o job tinha. É decisão de governança, nunca
+        conserto.
+      - >-
+        A regra afirma que a negação aconteceu num job que declara o modelo de
+        acesso. Ela **não** afirma qual das quatro causas prováveis é a
+        verdadeira: nenhuma policy de IAM e nenhuma concessão do Lake Formation
+        entra em artefato que este motor colete.
+    tradeoffs:
+      - >-
+        Conceder a permissão que falta pode alargar o que o job enxerga. Sob
+        controle de acesso fino isso muda linhas e colunas do resultado, e é por
+        isso que a validação abaixo pede o teste com dois principais.
+    validation:
+      - >-
+        Reexecutar e confirmar que a mesma tabela é lida.
+      - >-
+        Executar com um principal que **não** tem a concessão e confirmar que a
+        leitura continua sendo recusada. Conserto que funciona para todo mundo
+        removeu o controle em vez de corrigi-lo, e sem este segundo teste os
+        dois desfechos são indistinguíveis.
+      - >-
+        Contagem de linhas e conjunto de colunas do resultado, antes e depois:
+        sob controle de acesso fino, mudar concessão muda o que a consulta
+        devolve.
+    rollback:
+      - >-
+        Revogar a permissão de IAM e a concessão do Lake Formation que foram
+        acrescentadas.
+      - >-
+        Registrar uma localização no Lake Formation muda o caminho de acesso de
+        **todo** consumidor daquela localização. Desregistrar não é rollback
+        deste job, e exige inventário de quem mais a lê.
+    sources:
+      - url: https://docs.aws.amazon.com/lake-formation/latest/APIReference/API_GetTemporaryGlueTableCredentials.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por
+          `knowledge/errors/lakeformation/credential_vending_denied.json`
+          (`ERR-LF-002`). A referência publica o NOME da API e a permissão de
+          IAM que a autoriza; o texto exato da mensagem de negação não é
+          publicado por ela nem por nenhuma outra página da AWS.
+      - url: https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html
+        retrieved: 2026-09-09
+        note: >
+          É desta página que sai o `risks` sobre localização registrada: "the
+          data access path goes through the Lake Formation stored credentials
+          regardless of the IAM permission for the AWS Glue job runtime role".
+
+  - id: SF-ERR-015
+    category: runtime-error
+    title: >-
+      `lakeformation:GetDataAccess` negado num job configurado para credencial
+      do Lake Formation
+    requires_facts:
+      - error.signature_match
+      - lakeformation.filesystem
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-LF-003"}
+        - fact: lakeformation.filesystem
+          where: {attrs.lf_credentials_resolver_declared: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job declara o resolver de credencial do Lake Formation no filesystem --
+      quer dizer, pediu que o acesso ao S3 use a credencial que o Lake Formation
+      vende -- e a permissão de IAM que autoriza essa venda foi negada.
+
+
+      **Sob Full Table Access as duas metades do mesmo job falham por motivos
+      diferentes, e é isso que confunde:** a documentação declara que a
+      credencial do Lake Formation lê e escreve o S3 das tabelas
+      **registradas**, enquanto a credencial do runtime role lê e escreve tudo o
+      que **não** está registrado. Um job que lê tabela não registrada com
+      sucesso e falha na registrada não tem problema de rede nem de bucket: tem
+      duas credenciais, e só uma delas foi autorizada.
+
+
+      Ver `knowledge/glue/lakeformation-fgac.md` §5.
+    proposed_change:
+      - >-
+        Conceder `lakeformation:GetDataAccess` ao runtime role, na forma que a
+        documentação de Full Table Access publica.
+      - >-
+        Conferir o passo de CONTA, que não é configuração de job: permitir que
+        query engines de terceiro acessem o dado sem a validação de session tag
+        do IAM. É o passo 1 do procedimento da AWS, e sem ele nenhuma concessão
+        importa.
+      - >-
+        Conferir se um permission boundary ou uma service control policy nega a
+        ação acima da policy do role -- a negação nesse caso não está na policy
+        que se está lendo.
+    action:
+      kind: security.verify_access_chain
+      target: iam.lakeformation.get_data_access
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Anexar uma policy administrativa ampla ao runtime role faz o erro sumir
+        concedendo muito mais do que a ação de credencial que o job precisa.
+      - >-
+        A regra lê o resolver DECLARADO. Um job que declare o resolver e não use
+        Full Table Access de fato é acusado sem estar errado, e a evidência do
+        achado é o que permite ver isso.
+      - >-
+        Sob Glue 5.1 o resolver pode estar declarado e **inerte**, porque o
+        conector S3 default passou a ser o S3A e a chave é de EMRFS. Se
+        `SF-LF-004` também disparou no mesmo case, ele é o achado a tratar
+        primeiro: conceder a permissão não liga um caminho que nem está ativo.
+    tradeoffs:
+      - >-
+        A integração de conta para full table access vale para toda a conta, não
+        para este job. Ligá-la é decisão de plataforma.
+    validation:
+      - >-
+        Reexecutar sobre uma tabela que **está** registrada no Lake Formation.
+        Tabela não registrada não prova nada aqui, porque ela nunca usou a
+        credencial vendida.
+      - >-
+        Contagem de linhas no destino antes e depois, sobre o mesmo recorte de
+        entrada.
+    rollback:
+      - >-
+        Remover o statement de IAM acrescentado.
+      - >-
+        A integração de conta é compartilhada por todos os engines da conta e não
+        é revertida por job.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por
+          `knowledge/errors/lakeformation/get_data_access_denied.json`
+          (`ERR-LF-003`). Dela saem a exigência de `lakeformation:GetDataAccess`,
+          a divisão entre credencial do Lake Formation e credencial do runtime
+          role, e o passo de conta.
+
+  - id: SF-ERR-016
+    category: runtime-error
+    title: >-
+      API do Glue negada num job com controle de acesso -- é o plano de IAM, e
+      não o de concessão
+    requires_facts:
+      - error.signature_match
+      - lakeformation.access_model
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-LF-004"}
+        - fact: lakeformation.access_model
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A negação nomeia uma ação da API do Glue, não uma do Lake Formation, e o
+      job declara modelo de acesso do Lake Formation. **São dois planos de
+      autorização, e falhar em qualquer um derruba a operação.**
+
+
+      A documentação da AWS é explícita: ter a permissão do Lake Formation para
+      acessar a tabela no Data Catalog não salva uma operação que não tem a
+      permissão de IAM sobre a operação de API do Glue. Concessão do Lake
+      Formation governa o recurso e o dado; IAM governa a chamada.
+
+
+      **É por isso que "eu já dei SELECT" não é resposta para este achado.** O
+      plano que falhou é o outro, e acrescentar concessão de dado não muda
+      autorização de API. Ver `knowledge/glue/lakeformation-fgac.md` §1.
+    proposed_change:
+      - >-
+        Conceder ao runtime role as ações da API do Glue que a operação usa,
+        sobre os três ARNs que o exemplo da AWS nomeia: o catálogo, o banco e a
+        tabela. Um ARN que não cobre o recurso resolvido produz exatamente esta
+        negação.
+      - >-
+        Quando a tabela é de outra conta, ler a resource policy do Glue da conta
+        produtora e o resource link na conta consumidora. A documentação exige
+        que o resource link tenha **o mesmo nome** do recurso na conta de origem.
+      - >-
+        Não conceder a permissão do Lake Formation que "parece faltar": o plano
+        que falhou é o de IAM.
+    action:
+      kind: security.verify_access_chain
+      target: iam.glue.catalog_api
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Conceder toda ação do Glue sobre todo recurso faz a resolução passar
+        autorizando mutação de catálogo que o job nunca precisou.
+      - >-
+        Mexer na resource policy do Glue da conta produtora afeta **todo**
+        consumidor daquele catálogo, e não só este job.
+      - >-
+        A regra afirma que a negação nomeou uma ação do Glue num job com modelo
+        de acesso declarado. Ela **não** decide qual das três causas prováveis é
+        a verdadeira -- policy do role, ARN que não cobre, ou resource policy da
+        outra conta --, porque nenhuma delas entra em artefato coletado.
+    tradeoffs:
+      - >-
+        Restringir por ARN é mais seguro e mais frágil: cada banco ou tabela nova
+        exige a policy ser revisitada. Conceder por curinga é o oposto nos dois
+        eixos.
+    validation:
+      - >-
+        Reexecutar e confirmar que a tabela resolve.
+      - >-
+        Executar com um principal que **não** tem a concessão de dado e
+        confirmar que ele continua sendo recusado: o conserto de IAM não pode ter
+        alargado o plano de dado, e este é o teste que separa os dois.
+    rollback:
+      - >-
+        Remover os statements de IAM acrescentados.
+      - >-
+        Alteração de resource policy na conta produtora não é rollback deste job
+        -- exige inventário de quem mais depende dela.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por
+          `knowledge/errors/lakeformation/glue_api_denied_under_lf.json`
+          (`ERR-LF-004`). É desta página que sai a separação entre os dois planos
+          de autorização e a policy de exemplo com os três ARNs.
+
+  - id: SF-ERR-017
+    category: runtime-error
+    title: >-
+      Erro de validação de segurança sob controle de acesso fino -- e o log que
+      explicaria está fechado por desenho
+    requires_facts:
+      - error.signature_match
+      - lakeformation.access_model
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-LF-005"}
+        - fact: lakeformation.access_model
+          where: {attrs.fgac_enabled: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      Não é erro de autorização. Sob controle de acesso fino o AWS Glue separa a
+      execução em dois perfis -- um system driver com identidade privilegiada,
+      que aplica as políticas do Lake Formation, e um user driver que roda o
+      código submetido --, e esta mensagem diz que a validação dessa separação
+      falhou.
+
+
+      **O log que explicaria está fechado por desenho**, e isso é parte do
+      diagnóstico e não um contratempo: a AWS declara que restringe o acesso aos
+      logs do system driver em aplicações habilitadas para Lake Formation,
+      porque eventos do perfil privilegiado podem conter dado sensível. Nenhuma
+      coleta de log alcança essa metade.
+
+
+      **A própria documentação prescreve contatar o suporte da AWS**, e não
+      publica as condições que produzem a mensagem. Este achado é P0 e termina
+      numa recomendação de suporte -- o que ele acrescenta é a lista do que
+      **pode** ser lido antes de abrir o chamado. Ver
+      `knowledge/glue/lakeformation-fgac.md` §2.
+    proposed_change:
+      - >-
+        Inventariar, no código e nos argumentos do job, o que o AWS Glue BLOQUEIA
+        sob controle de acesso fino para preservar o isolamento do system driver:
+        UDTs, HiveUDFs e qualquer função com classe customizada, data sources
+        customizados, JAR adicional para extensão do Spark, conector ou
+        metastore, e o comando `ANALYZE TABLE`.
+      - >-
+        Conferir que o job usa uma ÚNICA sessão Spark de ponta a ponta. Código
+        que encerra a sessão e abre outra -- padrão comum para "resetar"
+        configuração no meio do pipeline -- não é suportado sob controle de
+        acesso fino.
+      - >-
+        Abrir chamado no suporte da AWS quando o inventário não achar nada, que é
+        o que a página de troubleshooting prescreve. Não há remediação
+        self-service publicada.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.system_driver_isolation
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Desligar o controle de acesso fino faz a mensagem sumir removendo os
+        controles de linha, coluna e célula a que o job estava submetido. É
+        decisão de governança, nunca conserto, e exige quem responda por ela.
+      - >-
+        Reexecutar com mais workers não toca o isolamento de que a mensagem
+        fala, e gasta capacidade para chegar ao mesmo lugar.
+      - >-
+        A regra **não** afirma causa. A fonte não publica as condições que
+        produzem a mensagem, e inventar uma lista de causas prováveis aqui seria
+        preencher com conjectura o que a documentação deixou em branco.
+    tradeoffs:
+      - >-
+        Remover a funcionalidade bloqueada devolve o job ao suportado e pode
+        custar reescrever em Spark SQL nativo o que uma função customizada fazia.
+        A alternativa -- trocar de modelo de acesso -- muda quem enxerga o quê.
+    validation:
+      - >-
+        Se funcionalidade bloqueada foi removida: reexecutar e confirmar que o
+        job alcança a leitura que executava.
+      - >-
+        Se a mudança substituiu função customizada por expressão nativa,
+        comparação VALOR A VALOR sobre a chave de negócio declarada. Duas
+        implementações da mesma transformação podem contar igual e devolver
+        diferente.
+      - >-
+        Não há validação de um conserto que o suporte da AWS ainda não descreveu,
+        e declarar isso é parte da validação.
+    rollback:
+      - >-
+        Restaurar a funcionalidade removida devolve o job ao estado não
+        suportado. Só é rollback válido junto de uma decisão sobre o modelo de
+        acesso.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por
+          `knowledge/errors/lakeformation/security_validation_exception.json`
+          (`ERR-LF-005`). É a única das quatro assinaturas desta família cujo
+          texto a AWS escreve -- as outras três são nome de ação de IAM ou de
+          API. A página prescreve contatar o suporte e não enumera as condições.
+      - url: https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html
+        retrieved: 2026-09-09
+        note: >
+          Dela saem a lista do que o AWS Glue bloqueia para preservar o
+          isolamento do system driver, a exigência de sessão Spark única, e a
+          declaração de que os logs do system driver são inacessíveis.

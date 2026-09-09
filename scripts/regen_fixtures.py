@@ -531,6 +531,8 @@ def regen_cloudwatch_logs(directory: Path) -> None:
     # unexpectedly" sozinho nao diz que ha UDF no caminho.
     if any(input_dir.glob("*.py")):
         facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # Mesma ordem de `tests/test_fixtures_golden_cloudwatch_logs.py::_derive`.
+    facts.extend(build_lakeformation(facts))
     facts.extend(build_signature_matches(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)

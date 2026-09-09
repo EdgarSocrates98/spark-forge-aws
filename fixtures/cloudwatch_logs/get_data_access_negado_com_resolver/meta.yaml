@@ -1,0 +1,31 @@
+name: get_data_access_negado_com_resolver
+proves: >
+  O POSITIVO de `SF-ERR-015`, e o companheiro dele NAO e o modelo de acesso: e
+  `lakeformation.filesystem`.
+
+  O job pede o resolver de credencial do Lake Formation
+  (`fs.s3.credentialsResolverClass`) e restaura o EMRFS na mesma linha de
+  `--conf` -- as duas chaves juntas, que e a forma suportada num Glue 5.0. Sem o
+  EMRFS restaurado esta fixture disparia `SF-LF-004` junto, e provaria duas
+  coisas ao mesmo tempo.
+
+  NAO ha `--enable-lakeformation-fine-grained-access` aqui, e a ausencia e o par
+  negativo embutido de toda a familia: sem ela nenhum `lakeformation.access_model`
+  e emitido, e as tres regras que o exigem ficam mudas sobre o mesmo log.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - lakeformation.filesystem
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-ERR-015

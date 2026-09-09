@@ -477,7 +477,14 @@ def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
     # O numero e FIXADO aqui de proposito, ao contrario dos outros testes desta
     # area: acrescentar assinatura sem regra precisa derrubar alguma coisa, e e
     # esta linha que faz isso.
-    assert len(_assinaturas()) == 13, [s["id"] for s in _assinaturas()]
+    # 17 desde 2026-09-09. As QUATRO acrescidas sao a familia de Lake
+    # Formation -- ERR-LF-002 a ERR-LF-005 --, e elas sao as primeiras do
+    # catalogo cujo `evidence_required` nomeia kind que o motor EMITE
+    # (`lakeformation.access_model`, `lakeformation.filesystem`). ERR-LF-001,
+    # a mais antiga da familia, nomeia `lakeformation.missing_grant` e
+    # `ram.unaccepted_share`, que nao existem -- e por isso `SF-ERR-006` teve
+    # de usar um substituto medido.
+    assert len(_assinaturas()) == 17, [s["id"] for s in _assinaturas()]
 
 
 def test_toda_assinatura_tem_regra():
@@ -500,7 +507,20 @@ def test_toda_regra_da_area_referencia_assinatura_QUE_EXISTE():
     assert _ids_referenciados_pelas_regras() <= existentes
 
 
-SO_PELO_LOG = {"ERR-ATH-001", "ERR-GLUE-001", "ERR-ICE-001", "ERR-LF-001"}
+SO_PELO_LOG = {
+    "ERR-ATH-001",
+    "ERR-GLUE-001",
+    "ERR-ICE-001",
+    "ERR-LF-001",
+    # As quatro de 2026-09-09. Nenhuma e nome de classe Java: duas sao
+    # NOME DE ACAO IAM (`lakeformation:GetDataAccess`, `glue:GetTable`),
+    # uma e NOME DE API (`GetTemporaryGlueTableCredentials`) e a quarta e
+    # frase (`Security validation exception`).
+    "ERR-LF-002",
+    "ERR-LF-003",
+    "ERR-LF-004",
+    "ERR-LF-005",
+}
 
 
 @pytest.mark.parametrize(
