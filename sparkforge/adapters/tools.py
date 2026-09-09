@@ -1020,6 +1020,182 @@ _JUDGE_SKIPPED_ITEM: dict[str, Any] = {
     },
 }
 
+# O lastro por achado, e os TRES insumos que o produziram. O valor nunca viaja
+# sozinho: rotulo de confianca sem os insumos e exatamente o que este repositorio
+# recusou ao nao publicar o score de `assess_claim`. Com eles, quem le refaz a
+# conta -- `high` exige os tres; `medium` e autoridade fora do escopo de versao;
+# `low` e tier fraco ou medida ausente.
+#
+# O nome e proprio de proposito. `Finding.confidence` ja existe, vem da REGRA, e
+# continua onde esta; o lastro e computado pelo executor a partir de tier da
+# fonte, escopo de versao e presenca da medida. Dois campos `confidence` na
+# mesma resposta seriam ambiguidade publicada.
+_EVIDENCE_STANDING_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["value", "source_tier", "in_version_scope", "measures_present"],
+    "properties": {
+        "value": {"type": "string", "enum": ["high", "medium", "low"]},
+        "source_tier": {
+            "type": "string",
+            "description": (
+                "Tier da MELHOR fonte da regra: T1 (docs oficial) > T2 "
+                "(source/changelog) > T3 (benchmark reproduzivel) > T4 "
+                "(autoridade reconhecida) >> T5 (LLM) > T6 (conjectura)."
+            ),
+        },
+        "in_version_scope": {
+            "type": "boolean",
+            "description": (
+                "Se o `runtime_scope` da regra cobre o runtime do case. Uma T1 "
+                "FORA do escopo tem autoridade e NAO sustenta a claim -- e essa "
+                "diferenca que este campo nomeia."
+            ),
+        },
+        "measures_present": {
+            "type": "boolean",
+            "description": (
+                "Se todo `fact_id` que o achado declara em `evidence` esta "
+                "presente nos facts recebidos."
+            ),
+        },
+    },
+}
+
+# O item de `judge` e o finding MAIS o lastro. `_FINDING_ITEM` fica como esta
+# porque outras tools o declaram (`migration_assess`, `report`, `code_context`)
+# e nenhuma delas computa lastro -- declara-lo la seria prometer um campo que
+# aquelas respostas nao carregam.
+_JUDGE_FINDING_ITEM: dict[str, Any] = {
+    **_FINDING_ITEM,
+    "properties": {
+        **_FINDING_ITEM["properties"],
+        "evidence_standing": _EVIDENCE_STANDING_SCHEMA,
+    },
+}
+
+# O plano de aplicacao sobre o CONJUNTO de achados. As nove chaves saem SEMPRE,
+# mesmo vazias: forma estavel e o que permite ao consumidor confiar na chave em
+# vez de testar se ela existe.
+_JUDGE_PLAN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": (
+        "Ordem de aplicacao, restricoes de sequenciamento, contradicoes e "
+        "lacunas nomeadas -- sobre o conjunto de achados DEPOIS do filtro de "
+        "severidade e ANTES da paginacao. CALCULADO e NAO GRAVADO."
+    ),
+    "required": [
+        "scope",
+        "order",
+        "order_unresolved",
+        "constraints",
+        "contradictions",
+        "objections",
+        "unresolved",
+        "persisted",
+        "note",
+    ],
+    "properties": {
+        "scope": {
+            "type": "string",
+            "description": (
+                "Diz que a ordem e do CASO e nao da pagina, com a contagem. Sem "
+                "ele um consumidor que recebeu 20 de 60 achados leria a ordem "
+                "como completa."
+            ),
+        },
+        "order": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Os `rule_id` em ordem topologica sobre `action.depends_on`.",
+        },
+        "order_unresolved": {
+            "type": "object",
+            "description": (
+                "O que a ordenacao NAO conseguiu resolver -- ciclo ou dependencia "
+                "ausente --, nomeado em vez de descartado em silencio."
+            ),
+        },
+        "constraints": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["axis", "rules", "reason"],
+                "properties": {
+                    "axis": {"type": "string"},
+                    "rules": {"type": "array", "items": {"type": "string"}},
+                    "reason": {"type": "string"},
+                },
+            },
+            "description": (
+                "Grupos que compartilham eixo de medida: aplicar juntas torna o "
+                "antes/depois inatribuivel."
+            ),
+        },
+        "contradictions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rules", "target", "directions"],
+                "properties": {
+                    "rules": {"type": "array", "items": {"type": "string"}},
+                    "target": {"type": "string"},
+                    "directions": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "description": (
+                "Dois achados que movem a MESMA propriedade em direcoes opostas. "
+                "Da existencia de um plano de debate sai so a contradicao que o "
+                "motivou; quem quer o plano chama `sparkforge_arbitrate`."
+            ),
+        },
+        "objections": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule", "blocked_by_kind", "fact_id"],
+                "properties": {
+                    "rule": {"type": "string"},
+                    "blocked_by_kind": {"type": "string"},
+                    "fact_id": {"type": "string"},
+                },
+            },
+            "description": (
+                "Acao bloqueada por um kind que ela declarou em `requires_absent` "
+                "e esta MEDIDO. Vazia no catalogo de hoje: as guardas existentes "
+                "sao todas de RECUSA (`env.unresolved` e irmas), e regra nao "
+                "dispara sobre 'nao deu para ler'."
+            ),
+        },
+        "unresolved": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["question", "evidence_needed"],
+                "properties": {
+                    "question": {"type": "string"},
+                    "evidence_needed": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "A MEDIDA que destravaria a lacuna, nomeada -- nunca "
+                            "'faltam dados'."
+                        ),
+                    },
+                },
+            },
+        },
+        "persisted": {
+            "type": "boolean",
+            "description": (
+                "SEMPRE `false`. E a fronteira escrita na propria resposta: quem "
+                "le o JSON sabe que nada foi registrado, sem consultar spec "
+                "nenhum. `sparkforge_judge` e READ_ONLY e nada aqui toca o disco."
+            ),
+        },
+        "note": {"type": "string"},
+    },
+}
+
 _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -1030,6 +1206,7 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
         "by_severity",
         "runtime",
         "items",
+        "plan",
     ],
     "properties": {
         **_PAGE_PROPERTIES,
@@ -1046,7 +1223,8 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
             "additionalProperties": {"type": "integer"},
             "description": "Contagem sobre o conjunto completo apos filtro de severidade.",
         },
-        "items": {"type": "array", "items": _FINDING_ITEM},
+        "items": {"type": "array", "items": _JUDGE_FINDING_ITEM},
+        "plan": _JUDGE_PLAN_SCHEMA,
         "runtime": {
             **_RUNTIME_CONTEXT,
             "description": (
@@ -5401,6 +5579,11 @@ TOOLS: dict[str, dict[str, Any]] = {
             "um dict de erro com o comando de recoleta, nunca uma excecao. Regra fora de escopo de "
             "versao ou sem fact requerido aparece em `skipped` com o motivo, quando "
             "`show_skipped` e verdadeiro -- nunca descartada em silencio. "
+            "Devolve tambem `plan`: ordem de aplicacao, restricoes de sequenciamento, "
+            "contradicoes e lacunas nomeadas, sobre o CONJUNTO de achados e nao a "
+            "pagina. Cada item traz `evidence_standing` com o lastro e os tres insumos "
+            "que o produziram -- tier da fonte, escopo de versao e presenca da medida. "
+            "O `judge` CALCULA e NAO GRAVA: o registro auditavel e `sparkforge_arbitrate`."
             "Cada achado mistura DUAS procedencias, e elas nao tem a mesma autoridade: "
             "`subject`, `measured` e `evidence` vem do ARTEFATO; nenhum outro campo "
             "vem de la -- a maior parte (`explanation`, `proposed_change`, `sources`, "

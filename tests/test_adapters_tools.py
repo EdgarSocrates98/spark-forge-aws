@@ -2363,3 +2363,33 @@ class TestArbitrateTool:
         assert resultado["persisted"] is True
         assert resultado["claims"]
         assert len(read_claims(repo)) == len(resultado["claims"])
+
+
+class TestJudgeDeclaraOPlano:
+    """O bloco `plan` e o `evidence_standing` chegaram na resposta na T4 e nao
+    estavam no `outputSchema`. Campo que o payload carrega e o schema nao
+    declara e campo que o cliente MCP nao tem como saber que existe -- o mesmo
+    defeito que `emr` teve em `_RUNTIME_CONTEXT`."""
+
+    def test_outputschema_declara_plan_e_evidence_standing(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        schema = json.dumps(TOOLS["sparkforge_judge"])
+        assert "plan" in schema
+        assert "evidence_standing" in schema
+
+    def test_a_descricao_diz_que_nao_grava(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        desc = TOOLS["sparkforge_judge"]["description"].lower()
+        assert "nao grava" in desc or "não grava" in desc
+        assert "arbitrate" in desc
+
+    def test_o_judge_continua_read_only(self):
+        """A fronteira da secao 2 do spec, exercitada e nao so escrita: publicar
+        o plano NAO podia mover a classe da tool. Se ela virasse
+        `LOCAL_MUTATION`, a cadeia de autorizacao de um verbo que muitas skills
+        chamam mudaria em silencio."""
+        from sparkforge.agents.autonomy import ToolClass, tool_class
+
+        assert tool_class("sparkforge_judge") is ToolClass.READ_ONLY

@@ -2437,6 +2437,14 @@ def _cmd_judge(args: argparse.Namespace) -> int:
         show_skipped=args.show_skipped,
     )
     if args.out:
+        # O arquivo grava o item COMPLETO, e desde a T4 isso inclui
+        # `evidence_standing`. Ele e REGISTRO do que o `judge` viu naquele
+        # momento, nunca ENTRADA de quem le o arquivo depois: `arbitrate`
+        # RECOMPUTA o lastro por `claims.standing_for_finding`, a partir de
+        # `sources`, `runtime_scope` e dos `fact_id` que o achado declara em
+        # `evidence` -- ele nao le esta chave em lugar nenhum. Editar o campo no
+        # arquivo a mao nao move decisao nenhuma rio abaixo, e por isso o campo
+        # extra e inocuo para `arbitrate` e para `report sign`.
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
         )
@@ -2452,6 +2460,18 @@ def _cmd_judge(args: argparse.Namespace) -> int:
         # apareceu?" nao tem resposta -- e uma divergencia entre flag e fact
         # seria resolvida em silencio para quem le a CLI.
         "runtime": full["runtime"],
+        # O bloco sai tambem pela CLI, e nao so pelo MCP. `TestCliMcpEquivalence`
+        # fixa a garantia da Fase 1 -- mesmo input, payload identico, "nunca um
+        # subconjunto de campos" --, e `parity.yaml` declara `judge` para
+        # `codex` e `copilot_ci` como `[cli, files]`, sem `mcp`: plano so no MCP
+        # seria capacidade que duas das cinco plataformas nao alcancam por
+        # caminho nenhum.
+        #
+        # Ele NAO e recortado pela paginacao, de proposito: a ordem e do CASO,
+        # e `full` foi julgado com `limit=None`. Ordem parcial apresentada como
+        # ordem e a familia de afirmacao que este projeto recusa -- por isso
+        # `plan.scope` carrega a contagem do conjunto, e nao a da pagina.
+        "plan": full["plan"],
         "items": page,
     }
     if args.show_skipped:
