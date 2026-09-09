@@ -7388,6 +7388,101 @@ footer, e nada no case liga os dois hoje —
 esconder.
 
 
+## A permissão vira artefato, e o motor deixa de só dizer em qual plano parou (2026-09-09)
+
+Branch `feat/executor-agentico-spec`, commit `c84dd0e`.
+
+`lakeformation.unresolved` nomeia **três** artefatos que o motor não tinha.
+Esta entrega coleta **dois**: o grant do Lake Formation e o registro da
+localização S3. O terceiro — a policy do runtime role — continua faltando, e a
+seção *Lacuna nomeada* diz por que ele é coletor próprio.
+
+### Três chamadas, três status, e o topo é o pior dos três
+
+| Chamada | O que ela decide |
+|---|---|
+| `list_permissions` | quem tem o quê sobre a tabela |
+| `describe_resource` | a localização S3 está **registrada**, e com qual role |
+| `get_data_lake_settings` | se a conta permite query engine de terceiro sem validação de session tag |
+
+**As três falham por motivos independentes** — um principal pode ler grant e não
+ler data lake settings, uma tabela pode existir sem localização registrada, e a
+conta pode negar as três. Cada bloco carrega o **seu** status, e o de topo é o
+**pior** dos três: um artefato cujo topo diga `ok` porque duas das três
+funcionaram esconderia justamente a que o operador precisa saber que falhou.
+
+**O recurso é obrigatório.** `list_permissions` sem recurso devolve o inventário
+inteiro do data lake, que é dado de governança de terceiros e não tem por que
+entrar num `facts.json` committado.
+
+### As três distinções que o fact preserva
+
+1. **Três estados produzem a mesma lista vazia de grants** — tabela sem grant,
+   sem permissão para LER os grants, e sem credencial. Tratá-los igual acusaria
+   a tabela governada corretamente e a que ninguém conseguiu inspecionar do
+   mesmo jeito.
+2. **`registered` é ternário** — verdadeiro, falso, ou **ausente quando ninguém
+   mediu**. Tratar o ausente como falso faria o motor afirmar "não registrada"
+   sobre uma pergunta que não foi feita, e é exatamente sobre localização
+   **registrada** que a §6 do documento de conhecimento declara conflito.
+3. **`IAM_ALLOWED_PRINCIPALS` não é normalizado** — ele não é um role, é a
+   ausência de governança fina. Uma regra que leia *"existe `ALL` sobre a
+   tabela"* sem olhar o principal concluiria que a escrita está autorizada para
+   o job.
+
+### O par de fixtures inverte os três eixos
+
+`grant_de_leitura_em_local_registrado` tem `SELECT`+`DESCRIBE` para o role,
+`ALL` para `IAM_ALLOWED_PRINCIPALS`, localização **registrada**, e o bloco de
+settings recusado.
+
+`conta_sem_full_table_access` tem `ALL` **com grant option**, localização
+**não** registrada, e o bloco de settings respondendo `ok` com
+`allow_full_table_external_data_access` **desligado**. **É o achado que nenhum
+artefato do job revela**: a permissão está completa e a escrita sob Full Table
+Access não acontece assim mesmo, porque o passo de **conta** precede qualquer
+concessão.
+
+`expects_rules` sai vazio nas duas, de propósito: nenhuma regra consome
+`lakeformation.grant` ainda, e amarrar uma regra aqui antes de ela existir seria
+escrever o golden de um achado que ninguém produz.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| Tools MCP | 73 | **75** |
+| Extratores de facts | 34 | **35** |
+| Fact kinds | 202 | **207** |
+| Fixtures golden | 337 | **339**, em **38** domínios |
+| Superfície de skills | 464 084 B | **466 322 B** (+2 238) |
+
+**29 alegações de lastro remediadas por id**, nunca por varredura — o maior lote
+que uma entrega desta sessão moveu. A composição explica: 2 tools novas (sete
+alegações derivam de `len(TOOLS)`), 5 arquivos `.py` novos entre `sparkforge/` e
+`tests/`, e um domínio de fixture. **Quatro delas são razão e não contagem**, e
+saíram da própria prova reexecutada.
+
+### O gate de prosa se pagou de novo
+
+Ele pegou os **13** desvios desta entrega sozinho. Seis moram em `README.md`,
+`GUIA_DE_USO.md`, `AGENTS.md` e `CLAUDE.md` — os quatro arquivos que, até dois
+commits atrás, nenhum gate cobria.
+
+### Lacuna nomeada
+
+**A policy do runtime role continua sem coletor**, e quando ele existir o
+caminho é `iam:SimulatePrincipalPolicy` e **não** parse do documento. Ler o JSON
+e formar opinião sobre ele erra exatamente nos casos que importam — permission
+boundary, service control policy, deny explícito e condição. Simular devolve a
+resposta da AWS; parsear devolve uma leitura nossa.
+
+**Nenhuma regra consome os cinco kinds novos ainda.** O extrator entrega o
+material; transformá-lo em achado é entrega própria, e ela precisa decidir o que
+`SELECT` bastar significa por operação e por modelo de acesso — que é juízo, e
+juízo mora na regra.
+
+
 ## O número em prosa ganha lastro, e as duas regras que já eram escrevíveis (2026-09-09)
 
 Branch `feat/executor-agentico-spec`.
