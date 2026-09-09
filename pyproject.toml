@@ -40,7 +40,16 @@ aws = ["boto3>=1.34"]
 #
 # `sparkforge analyze parquet-footer` NAO precisa deste extra: ele parte do
 # artefato JSON, e e por isso que a leitura e a extracao sao dois modulos.
-parquet = ["pyarrow>=14.0"]
+# `>=14.0.1` e NAO `>=14.0`, e o `.1` e o ponto: pyarrow 14.0.0 carrega
+# CVE-2023-47248 -- execucao remota de codigo ao ler dados Arrow IPC ou Parquet
+# de origem nao confiavel, corrigida em 14.0.1. Um piso em `>=14.0` deixaria
+# `pip install 'sparkforge-aws[parquet]'` resolver para a versao vulneravel.
+#
+# E o CVE incide EXATAMENTE no caminho deste extra: `collect parquet-footer` le
+# o rodape de arquivos que o operador aponta, e um prefixo de dado de terceiro e
+# precisamente a entrada nao confiavel que o aviso descreve. O lock pina 20.0.0,
+# mas quem instala o extra sem o lock so tem este piso.
+parquet = ["pyarrow>=14.0.1"]
 # `<2` e deliberado: o SDK 2.x removeu os decoradores que `adapters/mcp.py`
 # usa para registrar os tools. Ver a docstring daquele modulo.
 # starlette e uvicorn sao do transporte HTTP (Devin Desktop); stdio nao precisa

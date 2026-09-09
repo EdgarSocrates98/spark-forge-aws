@@ -133,10 +133,16 @@ arquivo:
 | o grafo no formato de extracao do Graphify | `sparkforge_code_export` |
 
 **O denominador decide o sinal, e ele precisa sair junto.** Medido na secao 10 de
-`docs/harness/CODEINTEL-GAP.md`, e relido dela em 2026-09-08: contra ler os
-arquivos o indice economiza **675,6x**; contra a saida de um `grep` pelo nome,
-**9,6x**; contra um `grep` cirurgico pela definicao ele **custa 5,3x mais**. As
+`docs/harness/CODEINTEL-GAP.md`, e relido dela em 2026-09-09: contra ler os
+arquivos o indice economiza **706,9x**; contra a saida de um `grep` pelo nome,
+**10,0x**; contra um `grep` cirurgico pela definicao ele **custa 5,3x mais**. As
 tres medidas sao verdadeiras e citar so a primeira escolheria o resultado.
+
+**Os dois primeiros numeros MUDAM a cada arquivo `.py` novo**, porque o
+denominador deles e o tamanho da arvore. Eram 675,6x e 9,6x em 2026-09-08, e a
+entrega do footer do Parquet os moveu -- nao porque o indice melhorou, e sim
+porque ha mais codigo para nao ler. Citar qualquer um dos dois sem a data e
+citar uma medida que ja mudou.
 
 Este paragrafo publicava **661,3x** e **9,4x**. Nenhum dos dois reproduz a
 partir dos numeros que a secao 10 sustenta hoje — 1 493 002 sobre 2210 da 675,6,
