@@ -2883,6 +2883,26 @@ def judge_findings(
         wanted = set(severity)
         finding_dicts = [f for f in finding_dicts if f["severity"] in wanted]
 
+    # O plano cobre os findings DEPOIS do filtro de severidade e ANTES da
+    # paginacao: ele e do conjunto que o operador pediu, nao da pagina que
+    # coube. Ordem parcial apresentada como ordem e a familia de afirmacao que
+    # este projeto recusa -- por isso `scope` carrega a contagem.
+    #
+    # `plan_digest` CALCULA e nao grava: `sparkforge_judge` e READ_ONLY e
+    # continua sendo. O registro auditavel e `sparkforge arbitrate`.
+    #
+    # Import local pelo mesmo motivo que `arbitrate_findings` usa: o subsistema
+    # agentico so e carregado por quem o chama, e este modulo ja custa 243 KB.
+    from sparkforge.agentic.executor.digest import plan_digest
+
+    plano, lastro = plan_digest(
+        finding_dicts, [f.to_dict() for f in fact_list], runtime
+    )
+    for item in finding_dicts:
+        standing = lastro.get(item.get("rule_id"))
+        if standing is not None:
+            item["evidence_standing"] = standing
+
     by_severity = _count_by(finding_dicts, lambda f: f["severity"])
     page, next_cursor = paginate_items(finding_dicts, limit, cursor)
 
@@ -2903,6 +2923,7 @@ def judge_findings(
         # flag e fact discordando, a precedencia escolhe o valor reportado, mas
         # a discordancia aparece aqui em vez de ser resolvida em silencio.
         "runtime": runtime,
+        "plan": plano,
         "items": page,
     }
     if show_skipped:
