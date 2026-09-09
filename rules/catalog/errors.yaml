@@ -1,0 +1,1729 @@
+# Catálogo de regras — o julgamento sobre a exceção que o job LANÇOU.
+#
+# A camada de fato já existe e não mora aqui: `sparkforge/facts/exception.py`
+# estrutura `spark.stage.failure.attrs.reason` em `spark.exception`
+# (`exception_class`, `message_head`, `is_chained`, `caused_by`), e
+# `sparkforge/errors/matcher.py::build_signature_matches` constata que aquela
+# exceção casa com uma assinatura de `knowledge/errors/`
+# (`error.signature_match`, com `signature_id` e `matched_on`). Nenhum dos dois
+# julga. O julgamento é este arquivo.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# POR QUE DUAS REGRAS E NÃO SEIS, e o motivo é medido
+#
+# `knowledge/errors/` tem SEIS assinaturas. O campo `signature` de cada uma foi
+# lido, e ele não é da mesma natureza nas seis:
+#
+#   ERR-GLUE-002  `NoSuchMethodError`                                    CLASSE
+#   ERR-GLUE-003  `NoSuchFieldError`                                     CLASSE
+#   ERR-ATH-001   `Cannot read unsupported version 3`                  MENSAGEM
+#   ERR-GLUE-001  `Container killed by YARN for exceeding memory ...`  MENSAGEM
+#   ERR-ICE-001   `CommitFailedException: Commit failed: ...`          MENSAGEM
+#   ERR-LF-001    `Insufficient Lake Formation permission(s) on`       MENSAGEM
+#
+# `build_signature_matches` casa a assinatura contra `attrs.exception_class` e
+# contra `attrs.caused_by` — CLASSE de exceção, nunca texto corrido de log. As
+# quatro de mensagem, portanto, **nunca produzem `error.signature_match` por
+# este caminho**, e uma regra escrita sobre elas hoje seria regra que não
+# dispara nunca: `requires_facts` satisfeito, `when` mudo, relatório limpo — o
+# falso negativo silencioso que `_validate_conditions` (`rules/loader.py`)
+# existe para matar, só que uma camada acima, onde nenhuma validação alcança.
+#
+# O caminho das quatro era o coletor de CloudWatch Logs (§2.4 do desenho
+# `docs/superpowers/specs/2026-09-08-stacktrace-intelligence-design.md`), que
+# traz o texto de log que o event log não carrega. Elas entrariam quando ele
+# entrasse, não antes. **Escrever regra que nunca dispara é pior que não
+# escrever.**
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O CAMINHO ABRIU, E AS QUATRO ENTRARAM (2026-09-09)
+#
+# O coletor entrou (`sparkforge/collect/cloudwatch_logs.py` e
+# `sparkforge/facts/cloudwatch_logs.py`), e `build_signature_matches` passou a
+# casar a mesma assinatura contra o TEXTO DA LINHA, com
+# `matched_on: "log_line"`. As quatro produzem `error.signature_match` hoje, e
+# `fixtures/cloudwatch_logs/quatro_assinaturas_de_log/` é onde isso está medido.
+#
+# `SF-ERR-003` a `SF-ERR-006` são as regras delas, e a disciplina é a mesma das
+# duas primeiras: **a linha casada não basta**. Ela diz que a mensagem apareceu,
+# nunca que a acusação se sustenta -- um log é texto, e texto casado é o começo
+# da pergunta, não a resposta. Cada uma exige, em `requires_facts`, um
+# COMPANHEIRO que ancore a acusação em artefato:
+#
+#   SF-ERR-003  ERR-ATH-001   + `iceberg.format_version` + `env.consumer`
+#   SF-ERR-004  ERR-GLUE-001  + `spark.executor.lost`
+#   SF-ERR-005  ERR-ICE-001   + `iceberg.snapshots_summary`
+#   SF-ERR-006  ERR-LF-001    + `tf.spark_conf`
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O `evidence_required` DAS QUATRO NOMEIA KIND QUE NÃO EXISTE, e isso é MEDIDO
+#
+# Medido em 2026-09-09, contra os 195 kinds que `sparkforge/facts/*.py` e
+# `sparkforge/errors/matcher.py` declaram em `EMITTED_KINDS`:
+#
+#   ERR-ATH-001   `iceberg.table_property`, `env.consumer`        OS DOIS EXISTEM
+#   ERR-GLUE-001  `pyspark.skew_join`, `eventlog.executor_oom`,
+#                 `spark.plan.cartesian_product`                  NENHUM EXISTE
+#   ERR-ICE-001   `iceberg.commit_conflict`,
+#                 `iceberg.concurrent_writer`                     NENHUM EXISTE
+#   ERR-LF-001    `lakeformation.missing_grant`,
+#                 `ram.unaccepted_share`                          NENHUM EXISTE
+#
+# As assinaturas foram escritas antes do motor ter esses extratores, e os nomes
+# delas são o que alguém ESPERAVA que existisse. Copiá-los para `requires_facts`
+# produziria exatamente a regra que o bloco de cima condena: `requires_facts`
+# nunca satisfeito, regra pulada para sempre, relatório limpo.
+#
+# O que estas quatro fazem é declarar o companheiro que EXISTE e que sustenta a
+# mesma acusação, e dizer no `explanation` o que ele NÃO prova. `SF-ERR-004` não
+# afirma que houve skew -- ela afirma que o container morreu e manda classificar
+# antes de tocar em capacidade (regra 17 do `CLAUDE.md`). `SF-ERR-006` não
+# afirma qual concessão falta -- nenhum extrator lê Lake Formation, e a ação é
+# `investigate`, não `replace`.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AS QUATRO TÊM IRMÃ ESTRUTURAL, E ISSO NÃO É DUPLICATA
+#
+# O par `SF-ERR-001`/`SF-SPARK4-004` -- confirmada e estrutural sobre o mesmo
+# defeito -- se repete em três das quatro novas:
+#
+#   SF-ERR-003 × SF-ENV-002   tabela v3 com consumidor Athena
+#   SF-ERR-004 × SF-UI-005    executor perdido por memória de container
+#   SF-ERR-006 × SF-XACC-001  cadeia de concessão entre contas
+#
+# A estrutural afirma o risco a partir do artefato parado; a confirmada afirma
+# que ele ACONTECEU, neste run, com a linha de log ao lado. Uma é migração a
+# planejar, a outra é run a reprocessar. `SF-ERR-005` é a exceção: não há regra
+# estrutural sobre conflito de commit concorrente, porque nada no artefato
+# parado prevê concorrência.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `runtime_scope` DAS QUATRO É `{}`, E A ÁREA DEIXOU DE SUMIR
+#
+# `SF-ERR-001` e `SF-ERR-002` são guardadas por `{glue: ">=6.0"}` porque a
+# afirmação delas é sobre uma fronteira de EMPACOTAMENTO do Glue 6.0. As quatro
+# novas não têm fronteira nenhuma: tabela v3 não é lida pelo Athena em qualquer
+# runtime, container morre por memória em qualquer runtime, commit do Iceberg
+# conflita em qualquer runtime, e concessão de Lake Formation falta em qualquer
+# runtime. Guardá-las por Glue seria etiqueta de serviço disfarçada de guarda de
+# versão -- o defeito que `tests/test_rule_scope_by_nature.py` existe para pegar.
+#
+# Consequência medida, e ela é acréscimo: a área `SF-ERR` **deixou de sumir**
+# num runtime sem Glue, e por isso a entrada `"SF-ERR"` saiu de
+# `AREA_MAY_VANISH_WHEN` naquele teste. Quem gateia as quatro é
+# `requires_facts`, não versão.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE ESTAS DUAS AFIRMAM, E O QUE JÁ ERA AFIRMADO SEM ELAS
+#
+# `SF-SPARK4-004` já existe e lê o MESMO `mig.jar_binary` com o MESMO limiar
+# (`attrs.scala_minor < 13`). Ela é `status: structural`: o jar é 2.12, o
+# runtime alvo é Spark 4, e a falha é CERTA — mas ainda não aconteceu. Ela
+# dispara sobre um repositório parado, antes de qualquer execução.
+#
+# `SF-ERR-001` é a irmã `confirmed` dela: a falha ACONTECEU, e a prova é
+# `error.signature_match` derivado de `spark.exception`, que por sua vez só
+# existe porque houve `spark.stage.failure` num event log real. As duas não são
+# duplicata — elas dizem coisas diferentes sobre o mesmo defeito, e a diferença
+# muda a decisão: uma é migração a planejar, a outra é run a reprocessar.
+#
+# O que NENHUMA das duas afirma: quanto custou a falha, nem quanto se
+# economizaria consertando (regra 13 do `CLAUDE.md`). E nenhuma carrega
+# `confidence`: o `0.98` literal do caminho antigo do matcher morreu na T2, e
+# não ressuscita aqui — regra tem status e severidade, não score.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `evidence_required` DA ASSINATURA VIRA `requires_facts` DE VERDADE
+#
+# Este é o ponto inteiro da frente. O matcher antigo casava a palavra
+# `NoSuchMethodError` em qualquer log e afirmava 98% de confiança, IGNORANDO o
+# `evidence_required` que a própria assinatura declara. Aqui os dois facts que
+# ERR-GLUE-002 e ERR-GLUE-003 exigem — `mig.jar_binary` e `tf.attribute` —
+# entram em `requires_facts`, e o motor (`rules/engine.py::judge`) pula a regra
+# nomeando o que falta enquanto qualquer um dos três não estiver presente. Sem
+# o binário e sem o IaC, a exceção casada não sustenta a acusação, e a recusa
+# sai listada em `skipped` com `reason: requires_facts` — que é a diferença
+# entre "não sei" e "não perguntei".
+catalog_version: 1
+schema_version: 1
+area: SF-ERR
+retrieved: 2026-09-08
+
+rules:
+
+  # `runtime_scope` é por GLUE e não por Spark, ao contrário de `SF-SPARK4-004`,
+  # e a diferença é deliberada: a fronteira BINÁRIA do Scala é do Apache (Spark
+  # 4 subiu 2.12 -> 2.13, e vale igual num EMR), mas ESTA regra não fala da
+  # fronteira — fala da assinatura `ERR-GLUE-002`, que declara `service: glue` e
+  # `versions: ["6.0"]`, e cuja evidência inclui o `glue_version` do Terraform.
+  # A afirmação estrutural mais ampla já é a de SF-SPARK4-004; guardar as duas
+  # pela mesma chave apagaria a diferença entre elas.
+  #
+  # `">=6.0"` e não `"==6.0"`: a fronteira ABRE no Glue 6.0 e não fecha depois.
+  # `==6.0` faria a regra emudecer no dia em que a AWS publicar 6.1, com a mesma
+  # falha acontecendo. Mesmo critério de `SF-MIG-003`.
+  - id: SF-ERR-001
+    category: runtime-error
+    title: >-
+      NoSuchMethodError confirmado em runtime com JAR de Scala anterior ao 2.13
+      no classpath de um job Glue 6.0
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-GLUE-002"}
+        # O limiar mora aqui, como em SF-SPARK4-004: o extrator só observa o
+        # número escrito no nome do artefato. `attrs.scala_minor` NÃO existe
+        # quando o nome não encodifica a versão, e caminho ausente vira
+        # `ExprError` no avaliador, logo `False` -- a regra fica muda sobre um
+        # jar que pode ser Java puro, em vez de mandar recompilar contra 2.13
+        # um artefato que nunca teve Scala nenhum.
+        - fact: mig.jar_binary
+          expr: "attrs.scala_minor < 13"
+        # `block: root` porque `glue_version` é atributo de raiz de
+        # `aws_glue_job`; casar em qualquer bloco aceitaria uma chave de mesmo
+        # nome dentro de `command {}` ou `default_arguments {}`. NÃO se confere
+        # o VALOR aqui: a versão efetiva é assunto de `runtime_scope`, e casar
+        # `attrs.value: "6.0"` faria a regra emudecer sobre um job que declara
+        # "6.1" e falha igual. O que esta condição exige é que o IaC do job
+        # esteja no case -- que é o `tf.attribute` que a assinatura pede.
+        - fact: tf.attribute
+          where: {attrs.key: "glue_version", attrs.block: "root"}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: ">=6.0"}
+    explanation: >
+      O job LANÇOU `NoSuchMethodError` e há, no mesmo case, um `.jar` cujo nome
+      encodifica Scala anterior ao 2.13 e um `aws_glue_job` declarado no
+      Terraform. As três evidências juntas são o que a assinatura `ERR-GLUE-002`
+      declara precisar, e é por isso que esta regra não dispara com a exceção
+      sozinha: a palavra `NoSuchMethodError` num log não distingue incompatibilidade
+      binária de Scala de uma dúzia de outras causas de erro de linkagem.
+
+
+      O AWS Glue 6.0 roda Scala 2.13.17. Scala 2.12 e 2.13 NÃO são compatíveis
+      em bytecode -- não é API depreciada, é a fronteira binária da própria
+      linguagem, e a documentação de migração da AWS a declara como breaking
+      change textual. Um JAR de 2.12 em `--extra-jars` falha em RUNTIME, na
+      primeira vez que aquela classe é carregada, possivelmente depois de
+      minutos de processamento e de parte da saída já ter sido escrita -- e
+      passa em qualquer smoke test que não exercite aquele caminho exato.
+
+
+      Uma dependência TRANSITIVA do JAR customizado carrega o sufixo `_2.12`
+      com a mesma facilidade que o artefato de topo, e o nome do arquivo que
+      você declarou não denuncia isso.
+
+
+      Esta regra é `confirmed` e tem uma irmã `structural`: `SF-SPARK4-004`
+      afirma o mesmo defeito ANTES da execução, lendo só o binário e o runtime
+      alvo. Quando as duas aparecem no mesmo relatório elas não se contradizem
+      -- a segunda previu, a primeira registrou.
+    proposed_change:
+      - >-
+        Recompilar todo JAR Scala/Java customizado contra Scala 2.13.17 e
+        republicar o artefato, apontando `--extra-jars` para a versão nova.
+      - >-
+        Conferir o sufixo de artefato de cada JAR E das dependências
+        transitivas dele (`_2.12` contra `_2.13`) -- um único remanescente de
+        2.12 derruba o job igual, e ele não aparece no nome do que você
+        declarou.
+      - >-
+        Trocar `JavaConversions` por `CollectionConverters` e `MutableList` por
+        `ListBuffer`; coleções paralelas passaram a exigir import próprio em
+        2.13.
+      - >-
+        Rodar `sparkforge glue dependency-audit <dir> --glue 6.0` sobre o
+        diretório do job para ler `mig.jar_binary.scala_minor` de todos os JARs
+        de uma vez, em vez de conferir o acusado sozinho.
+    # Mesmo `kind` e mesmo `target` de `SF-SPARK4-004`, e a mesma `direction`:
+    # as duas trocam o artefato do classpath pelo build que o runtime alvo
+    # exige. Direções IGUAIS não formam contradição -- e não deveriam formar,
+    # porque a ação é literalmente a mesma; o que difere entre as duas regras é
+    # o status do achado, não o que fazer.
+    #
+    # FICA DE FORA `--user-jars-first`, que os `risks` nomeiam como o conserto
+    # que troca um erro de linkagem por outro.
+    #
+    # Os dois eixos são `nature: risk` e os dois estão na `validation`: o
+    # artefato entregue ao classpath muda, e um JAR de terceiro trocado por
+    # outra linha de release pode mudar o VALOR do que ele produz.
+    action:
+      kind: dependency.align_version_with_runtime
+      target: job.extra_jars.scala_binary
+      direction: replace
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Forçar o JAR de 2.12 à frente do classpath com `--user-jars-first` não
+        conserta nada: o runtime em si é 2.13, então isso troca um erro de
+        linkagem por outro -- e abre a porta do defeito que `SF-ERR-002`
+        descreve.
+      - >-
+        Recompilar um JAR de terceiro sem o código-fonte NÃO é possível. Quando
+        o mantenedor não publica build para 2.13 não existe conserto local, e
+        tratar isso como tarefa de engenharia produz um plano que não fecha.
+      - >-
+        Trocar o artefato por uma versão 2.13 de outra linha de release muda
+        mais que o binário -- comportamento, defaults e assinaturas podem ter
+        mudado junto, e a diferença não aparece no nome do arquivo.
+      - >-
+        A saída parcial que o run falho deixou no destino continua lá. Corrigir
+        o classpath não a remove, e reprocessar por cima dela sem decidir o que
+        fazer com o que já foi escrito é como um dado duplicado nasce.
+    tradeoffs:
+      - >-
+        Permanecer no Glue 5.1, onde o runtime é Scala 2.12.18 e o JAR funciona
+        sem mudança, é escolha legítima -- mas precisa ser DECLARADA, com data
+        e motivo, ou vira dívida que ninguém sabe que existe.
+      - >-
+        Remover a dependência do JAR e reescrever nativamente em PySpark
+        elimina a fronteira binária de vez, ao custo de reimplementar o que ele
+        fazia.
+    validation:
+      - >-
+        Rodar o job no AWS Glue 6.0 com o JAR recompilado e confirmar que a
+        classe que falhou agora carrega -- exercitando o caminho de código que
+        a usa, não só a submissão.
+      - >-
+        `mig.jar_binary.attrs.scala_minor` de TODOS os JARs do diretório do
+        job, depois da troca: nenhum abaixo de 13.
+      - >-
+        Para JAR de terceiro trocado por outra linha de release, comparação de
+        VALOR das colunas que ele produz -- contagem, nulos por coluna e
+        agregados de controle -- contra a saída do último run bem-sucedido.
+    rollback:
+      - >-
+        Reverter `glue_version` para 5.1, onde o runtime é Scala 2.12.18 e o
+        JAR de 2.12 funciona sem mudança.
+      - >-
+        Reverter `--extra-jars` para o artefato anterior. É mudança de
+        classpath, não de dado -- mas a saída parcial do run que falhou
+        precisa ser descartada ou reconciliada à parte.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html
+        retrieved: 2026-08-23
+        note: >
+          Fonte declarada por `knowledge/errors/glue/scala_212_jar_under_spark4.json`
+          (`ERR-GLUE-002`), com `last_verified: 2026-08-23`. Ela registra o
+          Scala 2.13.17 do Glue 6.0 e nomeia JAR customizado de 2.12 como
+          breaking change.
+
+  # `--user-jars-first` é o que separa esta regra da anterior: sem ele o SDK do
+  # runtime vence o classpath e o defeito não existe. Por isso ele é condição, e
+  # não nota de rodapé.
+  - id: SF-ERR-002
+    category: runtime-error
+    title: >-
+      NoSuchFieldError confirmado em runtime com JAR customizado à frente do
+      classpath por --user-jars-first
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-GLUE-003"}
+        # SEM `expr`. O extrator lê a versão de SCALA escrita no nome do
+        # arquivo; a versão do AWS SDK EMPACOTADA dentro do jar não está no
+        # nome e ninguém a mediu. Exigir aqui um limiar sobre 2.44.6 seria
+        # julgar um número que não existe no fact -- a condição é a PRESENÇA de
+        # um JAR customizado, e a comparação com o piso vira passo de
+        # `proposed_change`, onde o operador a executa e mede.
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+          where:
+            attrs.key: "--user-jars-first"
+            attrs.value: "true"
+            attrs.block: "default_arguments"
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: ">=6.0"}
+    explanation: >
+      O job LANÇOU `NoSuchFieldError`, há um `.jar` customizado no diretório do
+      job, e o `aws_glue_job` declara `--user-jars-first: true`. As três
+      evidências juntas são o que a assinatura `ERR-GLUE-003` declara precisar.
+
+
+      `--user-jars-first` põe os JARs do usuário À FRENTE do classpath do
+      runtime. Quando o JAR customizado empacota o AWS SDK for Java 2.x numa
+      versão anterior à 2.44.6 que o AWS Glue 6.0 traz, é o SDK antigo que
+      vence -- e o runtime do Glue depende de classes, campos e métodos que
+      aquele SDK não tem. O sintoma é campo, classe ou método faltando num
+      pacote `software.amazon.awssdk`, e ele aparece SÓ com a flag ligada: sem
+      ela o mesmo JAR convive com o runtime sem reclamar.
+
+
+      **Esta regra NÃO afirma qual versão do SDK está empacotada dentro do
+      JAR.** Isso não está no nome do arquivo e nenhum extrator a leu -- o que
+      está medido é que existe JAR customizado, que a flag está ligada, e que
+      a exceção aconteceu. Comparar o SDK empacotado contra 2.44.6 é o primeiro
+      passo de `proposed_change`, e é o operador que o executa.
+    proposed_change:
+      - >-
+        Listar a versão do AWS SDK for Java 2.x empacotada dentro de cada JAR
+        customizado e compará-la com a 2.44.6 que o Glue 6.0 traz -- esta é a
+        medida que a regra não tem e que decide o resto.
+      - >-
+        Reconstruir o JAR contra o AWS SDK for Java 2.x 2.44.6 ou posterior, se
+        ele precisa mesmo empacotar o SDK.
+      - >-
+        Ou parar de empacotar o SDK dentro do JAR e deixar o runtime fornecê-lo
+        -- isso remove a razão de existir de `--user-jars-first`.
+      - >-
+        Ou remover `--user-jars-first` se ela foi ligada por um motivo que já
+        não vale; confirmar antes qual dependência dependia da precedência,
+        porque removê-la muda o classpath inteiro e não só o SDK.
+    # `increase` e não `replace`: a ação é levar a dependência empacotada ao
+    # PISO que o runtime declara (2.44.6), o mesmo movimento de `SF-SPARK4-003`
+    # sobre o pin de PyArrow. `target` próprio (`job.extra_jars.sdk_version`) e
+    # não o `job.extra_jars.scala_binary` de SF-ERR-001: são duas coisas
+    # diferentes dentro do mesmo artefato, e um `target` grosso demais
+    # inventaria contradição entre regras que não se desfazem (o defeito que o
+    # comentário de `tests/test_rules_action_field.py` registra sobre
+    # `pyspark.join`).
+    #
+    # FICA DE FORA remover `--user-jars-first`, que é a alternativa dos
+    # `tradeoffs` -- ela desliga a precedência em vez de alinhar a versão, e é
+    # a outra escolha, não a mesma.
+    action:
+      kind: dependency.align_version_with_runtime
+      target: job.extra_jars.sdk_version
+      direction: increase
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on: []
+    risks:
+      - >-
+        Manter `--user-jars-first` e prender o runtime a uma versão mais velha
+        de Glue para casar com o SDK empacotado adia a migração sem registrar
+        por quê -- a dívida fica, e o motivo dela some.
+      - >-
+        Remover `--user-jars-first` muda a precedência de TODO o classpath, não
+        só a do SDK. Alguma outra dependência do job pode ter sido a razão de a
+        flag existir, e ela passa a perder para o runtime sem aviso.
+      - >-
+        Subir o SDK empacotado troca o comportamento das chamadas de serviço
+        AWS que o JAR faz -- defaults de retry, paginação e assinatura mudaram
+        entre linhas do 2.x.
+    tradeoffs:
+      - >-
+        Deixar o runtime fornecer o SDK elimina o conflito para sempre, ao
+        custo de a versão passar a mudar quando a AWS mudar o runtime, sem o
+        job pedir -- previsibilidade contra manutenção.
+      - >-
+        Empacotar e sombrear (`shade`) o SDK dentro do JAR mantém o controle de
+        versão e evita o conflito de classpath, ao custo de um artefato maior e
+        de um build mais complicado de manter.
+    validation:
+      - >-
+        Rodar o job no AWS Glue 6.0 com `--user-jars-first` AINDA ligado e o
+        JAR reconstruído, e confirmar que o campo resolve -- rodar com a flag
+        desligada testaria outro classpath, não o consertado.
+      - >-
+        Versão do AWS SDK efetivamente carregada em runtime, lida de dentro do
+        job, contra a 2.44.6 do runtime -- o build declara a intenção, o
+        classpath é o fato.
+      - >-
+        `tf.attribute` de `--user-jars-first` no run seguinte, para registrar
+        se a flag sobreviveu à correção ou foi removida junto.
+    rollback:
+      - >-
+        Remover `--user-jars-first` para que o SDK do próprio runtime vença o
+        classpath, e re-executar.
+      - >-
+        Reverter `--extra-jars` para o artefato anterior. É mudança de
+        classpath, não de dado -- mas a saída parcial do run que falhou precisa
+        ser descartada ou reconciliada à parte.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html
+        retrieved: 2026-08-23
+        note: >
+          Fonte declarada por `knowledge/errors/glue/sdk_v2_user_jars_first.json`
+          (`ERR-GLUE-003`), com `last_verified: 2026-08-23`. Ela registra o AWS
+          SDK for Java 2.44.6 que o Glue 6.0 empacota e o efeito de
+          `--user-jars-first` sobre a precedência do classpath.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS QUATRO DE MENSAGEM, pelo caminho de log (2026-09-09)
+  #
+  # Todas casam `error.signature_match` com `matched_on: log_line` -- a
+  # condição NÃO exige `matched_on`, e a omissão é deliberada: `NoSuchMethodError`
+  # entra pelas duas portas, e amarrar a porta faria a regra emudecer no dia em
+  # que a mesma mensagem chegasse pela outra. O que a regra julga é a
+  # assinatura casada, não por onde ela entrou.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-003
+    category: runtime-error
+    title: >-
+      Leitura em Athena falhou sobre tabela Iceberg em format version 3, com
+      consumidor Athena declarado no inventário
+    # `iceberg.format_version` e não `iceberg.table_property`, pela MESMA razão
+    # que SF-ENV-002 trocou os dois em 2026-09-02: a table property
+    # `format-version` é opcional e pode ficar para trás de um upgrade que
+    # mudou o `format_version` do `metadata.json`. O autoritativo é o metadata,
+    # e `attrs.resolved: true` no mesmo `where` é o que impede a regra de
+    # disparar sobre uma recusa.
+    requires_facts:
+      - error.signature_match
+      - iceberg.format_version
+      - env.consumer
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-ATH-001"}
+        - fact: iceberg.format_version
+          where: {attrs.resolved: true, attrs.declared: "3"}
+        - fact: env.consumer
+          where: {attrs.service: athena}
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO, e a razão está no cabeçalho: o Athena não lê v3 em runtime
+    # nenhum, e a afirmação não depende da versão de Glue que escreveu a
+    # tabela. Quem gateia é `requires_facts` -- sem o dump da tabela e sem o
+    # inventário de consumidores, a regra não dispara.
+    runtime_scope: {}
+    explanation: >
+      A query em Athena FALHOU com `Cannot read unsupported version 3`, a
+      tabela declara `format_version: 3` no metadata, e o inventário registra
+      pelo menos um consumidor Athena. As três evidências juntas são o que a
+      assinatura `ERR-ATH-001` declara precisar -- e ela é uma das duas únicas,
+      das seis assinaturas, cujo `evidence_required` nomeia kind que este motor
+      realmente emite.
+
+
+      O modo de falha é o mais perverso do catálogo porque a causa fica a
+      semanas de distância do sintoma: a migração de runtime passa, o job de
+      escrita roda e reporta sucesso, e o que quebra é o dashboard de outro
+      time, dias depois, sem que ninguém tenha tocado na query.
+
+
+      Esta regra é `confirmed` e tem uma irmã em `SF-ENV-002`, que afirma o
+      mesmo defeito a partir do artefato parado -- tabela em v3 mais consumidor
+      Athena declarado, sem nenhuma falha registrada. As duas juntas não se
+      contradizem: a segunda previu, a primeira registrou. A diferença muda a
+      decisão, porque aqui já há consumidor quebrado esperando.
+    proposed_change:
+      - >-
+        Reescrever a tabela em format version 2. Fixar apenas a table property
+        `format-version` NÃO basta -- o `format_version` do metadata é o que a
+        engine lê, e `iceberg.format_version` reporta os dois lado a lado com
+        `attrs.diverges`.
+      - >-
+        Ou manter v3 e mover os consumidores Athena para uma engine que o leia,
+        com os donos daqueles consumidores concordando com a mudança ANTES.
+      - >-
+        Inventariar todos os consumidores da tabela antes de qualquer mudança
+        de format version -- o log traz o que falhou, nunca o que ainda não
+        rodou hoje.
+    # Mesmo `kind`, mesmo `target` e mesma `direction` de SF-ENV-002, e isso é
+    # deliberado: a ação é literalmente a mesma, e direções iguais não formam
+    # contradição. O que difere entre as duas é o status do achado.
+    #
+    # `requires_absent: [env.unresolved]` pela mesma razão de SF-ENV-002: as
+    # quatro razões de recusa do inventário dizem a mesma coisa -- parte dos
+    # consumidores não foi lida --, e mudar format version com o inventário
+    # incompleto é o que o terceiro bullet manda não fazer.
+    action:
+      kind: storage.change_storage_format
+      target: iceberg.table.format_version
+      direction: replace
+      requires_absent:
+        - env.unresolved
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Fixar v2 renuncia às capacidades novas do v3, incluindo deletion
+        vectors e row lineage.
+      - >-
+        A saída que o job de escrita já produziu em v3 continua lá. Reescrever
+        a tabela em v2 é reprocessamento, não ajuste de configuração, e o
+        intervalo entre a escrita em v3 e a correção é dado que os consumidores
+        Athena não leram.
+      - >-
+        O log traz o consumidor que FALHOU. Consumidores que não rodaram na
+        janela coletada não aparecem nele, e concluir "só o Athena quebrou" a
+        partir do log é conclusão sobre o que não foi medido.
+    tradeoffs:
+      - >-
+        V3 traz ganhos reais em merge-on-read; o custo é perder o consumo por
+        Athena enquanto ele não o suportar.
+    validation:
+      - >-
+        Query de smoke test em Athena sobre a tabela, executada com sucesso --
+        a mesma query que falhou, não uma equivalente.
+      - >-
+        `iceberg.format_version.attrs.declared` igual a `2` no dump seguinte, e
+        `attrs.diverges: false` entre o metadata e a table property.
+      - >-
+        Comparação de VALOR entre a tabela reescrita e a anterior -- contagem,
+        contagem de nulos por coluna e agregados de controle. Reescrever em v2
+        é reescrever dado, e contagem igual com valor diferente é o modo de
+        falha que só o eixo de valor pega.
+    rollback:
+      - >-
+        Reverter format version NÃO é trivial depois de escritas em v3.
+        Verificar a documentação da versão de Iceberg em uso antes de assumir
+        que é reversível, e tratar a mudança para v3 como decisão de ida.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html
+        retrieved: 2026-08-23
+        note: >
+          Fonte declarada por `knowledge/errors/athena/iceberg_v3_unsupported.json`
+          (`ERR-ATH-001`), com `last_verified: 2026-08-23`.
+
+  - id: SF-ERR-004
+    category: runtime-error
+    title: >-
+      Container morto por YARN por estouro de memória, confirmado no log e no
+      event log do mesmo run
+    requires_facts:
+      - error.signature_match
+      - spark.executor.lost
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-GLUE-001"}
+        # SEM `where` sobre `attrs.heap_oom_in_log`, ao contrário de SF-UI-005.
+        # A pergunta dela é "o executor sumiu SEM OOM de heap?", e a resposta
+        # decide a recomendação de overhead. A pergunta desta é outra: as DUAS
+        # fontes registram a mesma morte de container. Filtrar por
+        # `heap_oom_in_log` aqui apagaria o caso em que o heap TAMBÉM estourou,
+        # que é o caso em que classificar antes de mexer importa mais.
+        - fact: spark.executor.lost
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: container morre por memória em qualquer runtime, e o gate é
+    # `spark.executor.lost` (event log) mais a linha de log. Mesma escolha de
+    # SF-UI-005.
+    runtime_scope: {}
+    explanation: >
+      O log do CloudWatch traz `Container killed by YARN for exceeding memory
+      limits` COM os números do container, e o event log do mesmo run traz o
+      executor perdido. Nenhuma outra regra deste catálogo afirma as duas
+      fontes juntas -- e é isso que esta afirma, nada além.
+
+
+      **O que ela NÃO afirma:** que houve skew, que o join foi mal planejado,
+      ou que a memória está subdimensionada. A assinatura `ERR-GLUE-001`
+      declara `pyspark.skew_join`, `eventlog.executor_oom` e
+      `spark.plan.cartesian_product` em `evidence_required`, e MEDIDO em
+      2026-09-09 nenhum dos três é kind que este motor emite. Escrevê-los em
+      `requires_facts` produziria regra que nunca dispara; copiar a conclusão
+      deles sem a medida produziria acusação sem evidência. As duas saídas
+      erradas foram recusadas, e o que sobrou é o que está medido.
+
+
+      Por isso a ação é CLASSIFICAR, não consertar. Utilização baixa não é
+      sinônimo de capacidade sobrando (regra 17 do `CLAUDE.md`), e memória
+      estourada não é sinônimo de memória insuficiente: com skew, o container
+      morre porque UMA task carrega o que era para ser dividido, e subir a
+      memória de todos paga o preço da task grande em todos os executores sem
+      tocar na causa.
+
+
+      A irmã é `SF-UI-005`, que lê só o event log e propõe
+      `spark.executor.memoryOverhead` quando não houve OOM de heap. Quando as
+      duas aparecem juntas elas não se contradizem -- a ordem é classificar,
+      depois dimensionar.
+    proposed_change:
+      - >-
+        Cruzar duração e bytes de entrada por task no stage que falhou, para
+        classificar o tipo: input desigual é skew de dados; input uniforme com
+        duração desigual aponta para UDF, explode ou produto cartesiano.
+      - >-
+        Ler o plano físico do stage e conferir a decisão de join -- broadcast
+        de tabela que deixou de ser pequena é a causa que some do código e
+        aparece só no plano.
+      - >-
+        Só depois de classificado, aplicar o tratamento correspondente. Subir
+        memória antes da classificação é a mudança que "não funcionou" com mais
+        frequência, e ela custa em todos os executores.
+    # `investigate` e não `increase`: a regra não propõe número nenhum. Mesmo
+    # `kind` e mesmo `target` de SF-UI-001 e de SF-WASTE-002, que também mandam
+    # classificar antes de agir -- três regras propondo a MESMA medida não é
+    # contradição, é convergência, e o motor as trata como uma ação só.
+    action:
+      kind: skew.classify_type
+      target: spark.stage
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Classificar errado leva a aplicar o tratamento inútil e concluir que
+        "nada funciona" -- o modo de falha que esta regra existe para evitar.
+      - >-
+        A saída parcial que o run falho deixou no destino continua lá.
+        Reprocessar por cima dela sem decidir o que fazer com o que já foi
+        escrito é como um dado duplicado nasce.
+      - >-
+        O log coletado é uma JANELA. Um `Container killed` fora dela não
+        aparece, e ausência de linha não é ausência de morte de container.
+    tradeoffs:
+      - >-
+        Classificar custa uma passada de análise sobre o event log antes de
+        qualquer mudança; a alternativa é mudar capacidade e medir depois, que
+        é mais rápido por run e mais caro por ciclo.
+    validation:
+      - >-
+        Razão entre a duração máxima e a mediana das tasks do stage, e a mesma
+        razão sobre bytes de entrada -- é o par que classifica, e publicar um
+        sem o outro não classifica nada.
+      - >-
+        Ausência de `spark.executor.lost` no run seguinte, e ausência da linha
+        `Container killed by YARN` na mesma janela de log.
+      - >-
+        Se o tratamento aplicado tocar a chave de join (salting, filtro de
+        nulos, mudança de estratégia): contagem total, contagem por chave e
+        agregados de controle comparados com o último run bem-sucedido --
+        tratamento de skew pode duplicar ou descartar linha, e nada no plano
+        físico acusa isso.
+    rollback:
+      - >-
+        Classificar não muda estado nenhum e não tem rollback. O rollback é do
+        tratamento que vier depois, e ele depende de qual tratamento foi.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html
+        retrieved: 2026-08-15
+        note: >
+          Fonte declarada por `knowledge/errors/glue/oom_executor.json`
+          (`ERR-GLUE-001`), com `last_verified: 2026-08-15`.
+
+  - id: SF-ERR-005
+    category: runtime-error
+    title: >-
+      Commit do Iceberg falhou por escrita concorrente, com o histórico de
+      snapshots da tabela ao lado
+    requires_facts:
+      - error.signature_match
+      - iceberg.snapshots_summary
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-ICE-001"}
+        - fact: iceberg.snapshots_summary
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: commit do Iceberg conflita em qualquer runtime, e o gate é
+    # `iceberg.snapshots_summary`. Mesma escolha de SF-ICE-003, que também é
+    # guardada pelo fact e não pela versão.
+    runtime_scope: {}
+    explanation: >
+      O commit FALHOU com `CommitFailedException: Commit failed: Table was
+      updated concurrently`, e o dump da tabela traz o histórico de snapshots
+      do mesmo alvo. A mensagem é do próprio Iceberg dizendo o que aconteceu:
+      outro escritor commitou entre a leitura do snapshot base e a tentativa de
+      commit deste job.
+
+
+      **O que a regra NÃO afirma:** QUEM foi o outro escritor. A assinatura
+      `ERR-ICE-001` declara `iceberg.commit_conflict` e
+      `iceberg.concurrent_writer` em `evidence_required`, e MEDIDO em
+      2026-09-09 nenhum dos dois é kind que este motor emite -- nada aqui lê o
+      conjunto de jobs que escreve numa tabela. `iceberg.snapshots_summary` traz
+      a contagem, a janela e as operações dos snapshots, o que ancora a acusação
+      na tabela certa e dá a base de comparação; não identifica o concorrente.
+
+
+      Esta é a única das quatro SEM irmã estrutural, e a razão é da natureza da
+      coisa: conflito de commit é propriedade da EXECUÇÃO CONCORRENTE, e nada
+      no artefato parado o prevê. Um job que escreve numa tabela é
+      indistinguível, no código e no Terraform, de um job que escreve nela
+      sozinho.
+    proposed_change:
+      - >-
+        Declarar `commit.retry.num-retries` e `commit.retry.min-wait-ms` nas
+        table properties -- o retry do Iceberg relê o snapshot base e refaz o
+        commit, que é o conserto para conflito legítimo e ocasional.
+      - >-
+        Levantar quais jobs escrevem nesta tabela e em que janela -- a medida
+        que decide se o conflito é ocasional (retry resolve) ou estrutural
+        (retry só adia).
+      - >-
+        Se as escritas são estruturalmente concorrentes, separá-las: partições
+        disjuntas por escritor, ou tabelas de staging com merge posterior.
+    # `add` e não `replace`: as duas propriedades de retry tipicamente não
+    # existem na tabela, e a ação é acrescentá-las. `target` próprio
+    # (`iceberg.table_property.commit.retry`) e não o
+    # `iceberg.table_property.write.distribution-mode` de SF-ICE-005 -- as duas
+    # são propriedade de escrita da mesma tabela, e um `target` grosso demais
+    # inventaria contradição entre regras que não se desfazem.
+    #
+    # FICA DE FORA separar as escritas, que é o bullet 3 e mora nos
+    # `tradeoffs`: ela muda a ORQUESTRAÇÃO, não a tabela, e é a outra escolha,
+    # não a mesma.
+    action:
+      kind: storage.set_write_layout_property
+      target: iceberg.table_property.commit.retry
+      direction: add
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Retry esconde conflito estrutural em vez de resolvê-lo: com dois jobs
+        escrevendo sempre na mesma partição, o retry transforma falha rápida em
+        run longo que falha no fim, e o custo sobe sem o sintoma mudar.
+      - >-
+        Cada retry relê o snapshot base e refaz o planejamento do commit; com
+        metadata grande isso não é barato, e `commit.retry.num-retries` alto
+        multiplica esse custo.
+      - >-
+        A saída parcial do run falho continua no local da tabela como arquivo
+        órfão -- o commit não aconteceu, mas os arquivos de dado foram
+        escritos. Eles não entram em nenhum snapshot e não são lidos, e
+        continuam ocupando espaço até uma manutenção removê-los.
+    tradeoffs:
+      - >-
+        Separar as escritas em partições disjuntas elimina o conflito na raiz,
+        ao custo de amarrar a orquestração ao esquema de partição -- e de
+        precisar reescrever o particionamento se ele mudar.
+      - >-
+        Tabelas de staging com merge posterior tiram a concorrência do caminho
+        crítico, ao custo de uma passada a mais sobre o dado.
+    validation:
+      - >-
+        Ausência de `CommitFailedException` na janela de log dos runs
+        seguintes, com a mesma concorrência de antes -- retry validado sem
+        concorrência não valida nada.
+      - >-
+        `iceberg.snapshots_summary.measures.snapshot_count` crescendo um por
+        commit bem-sucedido, e a operação de cada snapshot conferida contra o
+        que cada job deveria ter escrito.
+      - >-
+        Contagem e agregados de controle da tabela depois do commit que passou,
+        contra o esperado do lote -- um commit que falhou e foi reexecutado é
+        candidato natural a escrever duas vezes o mesmo lote.
+    rollback:
+      - >-
+        Remover as table properties de retry devolve o comportamento anterior;
+        é propriedade de tabela, não dado.
+      - >-
+        Os arquivos órfãos do commit que falhou não voltam sozinhos: eles
+        precisam de manutenção própria, e removê-los é operação destrutiva que
+        exige escopo e retenção declarados.
+    sources:
+      - url: https://iceberg.apache.org/docs/latest/spark-writes/
+        retrieved: 2026-08-15
+        note: >
+          Fonte declarada por `knowledge/errors/iceberg/commit_conflict.json`
+          (`ERR-ICE-001`), com `last_verified: 2026-08-15`.
+
+  - id: SF-ERR-006
+    category: runtime-error
+    title: >-
+      Permissão do Lake Formation negada em runtime, num job que lê o Data
+      Catalog de outra conta
+    requires_facts:
+      - error.signature_match
+      - tf.spark_conf
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-LF-001"}
+        # Mesma condição de SF-XACC-001, e sem `attrs.present` pela mesma
+        # razão: `tf.spark_conf` nasce da decomposição de um `--conf` que já
+        # existe, e o campo `present` é do `tf.attribute` bruto.
+        - fact: tf.spark_conf
+          where:
+            attrs.key: spark.hadoop.hive.metastore.glue.catalogid
+          expr: 'attrs.value != ""'
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: a assinatura `ERR-LF-001` declara `versions: ["all"]`, e a
+    # cadeia de concessão entre contas não tem fronteira de versão de Glue.
+    # Quem gateia é `requires_facts` -- sem o `--conf` de catálogo de outra
+    # conta no Terraform, a regra não dispara.
+    runtime_scope: {}
+    explanation: >
+      O job FALHOU com `Insufficient Lake Formation permission(s) on`, e o
+      Terraform declara `spark.hadoop.hive.metastore.glue.catalogid` apontando
+      para outra conta. As duas evidências juntas dizem que a cadeia de
+      concessão entre contas -- convite do AWS RAM aceito, resource link no
+      catálogo da conta consumidora, `SELECT` concedido na conta produtora --
+      tem um elo faltando, e que ele já custou este run.
+
+
+      **O que a regra NÃO afirma:** QUAL elo. A assinatura `ERR-LF-001` declara
+      `lakeformation.missing_grant` e `ram.unaccepted_share` em
+      `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que
+      este motor emite -- nada aqui lê Lake Formation nem AWS RAM, e o estado
+      dos dois vive em recursos de OUTRA conta, fora do alcance do `.tf` do
+      job. Por isso a ação é `investigate`: a regra localiza a cadeia a
+      conferir, e é o operador que a percorre.
+
+
+      A irmã é `SF-XACC-001`, que marca a mesma dependência a partir do
+      Terraform parado e diz explicitamente que NÃO afirma que ela está
+      quebrada. Esta afirma -- porque o log do run diz.
+    proposed_change:
+      - >-
+        Confirmar o estado do compartilhamento no AWS RAM da conta consumidora:
+        convite aceito, não pendente.
+      - >-
+        Confirmar o `DESCRIBE` no resource link da conta consumidora e o
+        `SELECT` na tabela alvo da conta produtora -- os dois lados, porque um
+        sozinho produz exatamente esta mensagem.
+      - >-
+        Ler o nome do recurso na própria linha de log: a mensagem nomeia a
+        tabela ou o banco negado, e é por ele que a conferência começa.
+      - >-
+        Se os dados estão encriptados com chave gerenciada pelo cliente,
+        confirmar que a política da chave autoriza o papel da conta consumidora
+        -- a falha de KMS chega com outra mensagem, mas a cadeia é a mesma.
+    # Mesmo `kind`, mesmo `target` e mesma `direction` de SF-XACC-001, e é
+    # deliberado: a ação é literalmente percorrer a mesma cadeia. O que difere
+    # é o status do achado -- lá é dependência a conferir, aqui é elo que já
+    # falhou.
+    #
+    # FICA DE FORA conceder `Super` no catálogo a `IAMAllowedPrincipals`, que a
+    # assinatura nomeia em `unsafe_fixes` e os `risks` repetem: é o conserto que
+    # faz a mensagem sumir abrindo o acesso para todo mundo.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.cross_account_grant
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Conceder `Super` no catálogo a `IAMAllowedPrincipals` faz a mensagem
+        sumir e abre o catálogo inteiro -- é o conserto que troca um job
+        quebrado por um controle de acesso que deixou de existir.
+      - >-
+        A falha é assimétrica e por isso confunde: o job Spark pode enxergar a
+        tabela e um consumidor de BI da mesma conta não enxergar, porque o
+        resource link é exigido por Athena e Redshift Spectrum e não pelo job.
+        Conferir só o lado que falhou deixa o outro quebrado.
+      - >-
+        Conceder a permissão que falta resolve o run e não registra por que ela
+        faltava. Compartilhamento entre contas que muda sem rastro é o que
+        produz a próxima falha igual.
+    tradeoffs:
+      - >-
+        Copiar os dados para a conta consumidora elimina a cadeia inteira, ao
+        custo de duplicar armazenamento e de criar uma segunda verdade que
+        precisa ser sincronizada.
+    validation:
+      - >-
+        Re-executar o job e confirmar que a leitura passa -- exercitando a
+        MESMA tabela nomeada na linha de log, não uma equivalente.
+      - >-
+        Estado do convite no AWS RAM da conta consumidora, e as duas concessões
+        (`DESCRIBE` no resource link, `SELECT` na tabela alvo) lidas depois da
+        mudança.
+      - >-
+        Nenhum eixo de dado é exigido, e declarar isso é parte da validação:
+        conceder permissão não muda o conteúdo lido, muda quem consegue lê-lo.
+        Se a leitura passou a devolver linhas onde antes falhava, a contagem
+        contra o esperado do lote é a conferência, não o eixo da mudança.
+    rollback:
+      - >-
+        Revogar as concessões acrescentadas devolve o estado anterior. Não é
+        rollback de dado, e o run que falhou continua tendo falhado.
+    sources:
+      - url: https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html
+        retrieved: 2026-08-15
+        note: >
+          Fonte declarada por
+          `knowledge/errors/lakeformation/access_denied_cross_account.json`
+          (`ERR-LF-001`), com `last_verified: 2026-08-15`.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS DUAS DO SPARK PURO (2026-09-09)
+  #
+  # Diferem das seis anteriores num ponto: `service: spark`, e nao `glue`,
+  # `athena`, `iceberg` ou `lakeformation`. Elas nao falam de nenhum servico da
+  # AWS -- `FetchFailedException` e `Python worker exited unexpectedly`
+  # acontecem igual num EMR, num Databricks ou num cluster on-prem, e por isso
+  # `runtime_scope` e `{}` e a fonte e a documentacao do Apache.
+  #
+  # As duas exigem companheiro do EVENT LOG, e nao do IaC: o que distingue um
+  # `FetchFailedException` transitorio de um executor que morreu esta em
+  # `spark.executor.lost`, e o que distingue um Python worker que estourou de um
+  # erro de codigo esta em `pyspark.udf`.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-007
+    category: runtime-error
+    title: >-
+      Fetch de shuffle falhou com executor perdido no mesmo run -- a rede é
+      sintoma, não causa
+    requires_facts:
+      - error.signature_match
+      - spark.executor.lost
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-001"}
+        - fact: spark.executor.lost
+    status: confirmed
+    severity_default: P0
+    # ESCOPO VAZIO: `FetchFailedException` e do Apache Spark, e acontece igual
+    # em qualquer runtime. Guardar por `glue` amarraria a afirmacao a um
+    # servico que nao a produz.
+    runtime_scope: {}
+    explanation: >
+      O job FALHOU com `FetchFailedException` e o event log do mesmo run traz um
+      executor perdido. As duas evidências juntas mudam a leitura do erro: o
+      fetch não falhou por causa da rede, falhou porque o bloco de shuffle
+      desapareceu junto com quem o guardava.
+
+
+      É a confusão mais cara desta área. A mensagem nomeia um bloco remoto e um
+      host, e não a linha de código do job — o que faz parecer problema de rede.
+      Subir `spark.shuffle.io.maxRetries` com um executor morrendo ao lado troca
+      uma falha rápida por uma lenta, e esconde a razão de o executor ter
+      morrido.
+
+
+      **O que esta regra NÃO afirma:** por que o executor morreu. `OOM`,
+      preempção de spot, GC longo e o platform matando o container produzem o
+      mesmo `spark.executor.lost`, e distinguir os quatro é a investigação que o
+      `proposed_change` manda fazer antes de tocar em configuração.
+
+
+      Sem `spark.executor.lost` no case a regra é pulada com o que falta
+      nomeado, e a razão é a mesma: um `FetchFailedException` sozinho pode ser
+      transitório de verdade, e ali retry é a resposta certa.
+    proposed_change:
+      - >-
+        Ler a razão de remoção em `spark.executor.lost` ANTES de mexer em
+        qualquer configuração de shuffle — é ela que separa OOM de preempção, e
+        os dois pedem consertos opostos.
+      - >-
+        Se a razão for memória, o conserto é do executor e não do fetch: ver
+        `SF-UI-005` e `SF-ERR-004`, que tratam o mesmo sintoma pela causa.
+      - >-
+        Se a falha concentra num host, avaliar um teto para
+        `spark.reducer.maxReqsInFlight` — o default do Apache é `Int.MaxValue`,
+        e um cluster grande satura as conexões de entrada de um nó.
+      - >-
+        Subir `spark.shuffle.io.maxRetries` ou `spark.shuffle.io.retryWait`
+        **só** depois de a causa ter sido diagnosticada como transitória, e
+        registrar esse diagnóstico junto com a mudança.
+    # `investigate` e nao `increase`: a regra nao propoe numero nenhum. O eixo
+    # que ela move e `observability.diagnostic_artifacts` -- ler a razao da
+    # remocao e producao de evidencia, nao mudanca de estado.
+    action:
+      kind: capacity.investigate_sizing
+      target: spark.executor.lost.reason
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Aumentar o retry com executor morrendo converte falha rápida em falha
+        cara: o stage roda mais tempo antes de desistir, e o custo sobe sem o
+        sintoma mudar.
+      - >-
+        Limitar `spark.reducer.maxReqsInFlight` com número arbitrário serializa
+        o fetch e desacelera TODOS os stages saudáveis, não só o que falhou.
+      - >-
+        A saída parcial do run falho continua no destino. Reprocessar por cima
+        dela sem decidir o que fazer com o que já foi escrito é como um dado
+        duplicado nasce.
+    tradeoffs:
+      - >-
+        Diagnosticar a morte do executor custa uma passada de análise antes de
+        qualquer mudança; a alternativa é subir retry e medir depois, que é mais
+        rápido por run e mais caro por ciclo.
+    validation:
+      - >-
+        Ausência de `spark.executor.lost` E de `FetchFailedException` no run
+        seguinte, com o mesmo volume de shuffle — validar com volume menor não
+        valida nada.
+      - >-
+        `spark.stage.shuffle` do stage que falhou, antes e depois, para
+        registrar se o volume mudou junto com a correção.
+      - >-
+        Nenhum eixo de dado é exigido se a correção for de capacidade ou de
+        configuração de shuffle, e declarar isso é parte da validação. Se a
+        correção mexer no particionamento do shuffle, contagem total e
+        agregados de controle contra o último run bem-sucedido.
+    rollback:
+      - >-
+        Reverter os overrides de shuffle: são configuração de runtime e não
+        mudam dado. A saída parcial do run que falhou precisa ser descartada ou
+        reconciliada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/fetch_failed_shuffle.json`
+          (`ERR-SPARK-001`). Ela registra os defaults do Apache que esta regra
+          cita: `spark.shuffle.io.maxRetries` 3, `spark.shuffle.io.retryWait`
+          5s e `spark.reducer.maxReqsInFlight` `Int.MaxValue`.
+
+  - id: SF-ERR-008
+    category: runtime-error
+    title: >-
+      Python worker morreu num stage que roda UDF -- a memória que acabou está
+      fora do heap da JVM
+    requires_facts:
+      - error.signature_match
+      - pyspark.udf
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-002"}
+        - fact: pyspark.udf
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job FALHOU com `Python worker exited unexpectedly`, e o código do case
+      declara ao menos uma UDF Python. As duas evidências juntas apontam para o
+      lado do processo que a mensagem não nomeia: o worker Python roda FORA da
+      JVM, e a memória que acabou não é a do heap.
+
+
+      É o OOM que mais resiste ao conserto óbvio. `spark.executor.memory` faz o
+      heap crescer DENTRO do mesmo container, e tira espaço justamente de quem
+      ficou sem — por isso a assinatura de que o diagnóstico está errado é
+      *"aumentei a memória e continuou"*.
+
+
+      **O que esta regra NÃO afirma:** que a UDF é a causa. Ela afirma que há
+      UDF no caminho e que o worker morreu; um `pandas_udf` que materializa um
+      batch grande, um container morto por fora e um worker que estourou o
+      próprio limite produzem a mesma mensagem, e o `proposed_change` separa os
+      três.
+    proposed_change:
+      - >-
+        Trocar a UDF Python por expressão nativa de Spark SQL quando houver
+        equivalente — isso tira o worker Python do caminho, em vez de dar mais
+        memória a ele.
+      - >-
+        Aumentar a memória FORA do heap do executor (o overhead do container),
+        e não `spark.executor.memory`.
+      - >-
+        Reduzir o tamanho de batch do `pandas_udf`, depois de confirmar que a
+        função é linha a linha.
+      - >-
+        Ler o valor efetivo de `spark.python.worker.memory` — o default do
+        Apache é `512m`, e ele governa o spill de agregação, não o worker
+        inteiro; tratá-lo como o limite do processo leva ao ajuste errado.
+    action:
+      kind: capacity.increase_memory_overhead
+      target: spark.executor.memoryOverhead
+      direction: increase
+      requires_absent: []
+      moves:
+        - capacity.executor_footprint
+        - availability.executor_loss
+      depends_on: []
+    risks:
+      - >-
+        Aumentar `spark.executor.memory` piora o problema: o heap cresce dentro
+        do mesmo container e tira espaço do worker Python.
+      - >-
+        Eliminar a UDF Python MUDA O RESULTADO. Nulo, precisão, fuso e borda
+        passam a seguir a semântica da função nativa, e nada no plano físico
+        acusa isso.
+      - >-
+        Reduzir o batch do `pandas_udf` muda o resultado de toda UDF vetorizada
+        que NÃO seja linha a linha — normalização, ranking e preenchimento por
+        vizinho devolvem outro valor com outro tamanho de batch. O nó continua
+        sendo `ArrowEvalPython` nos dois casos.
+      - >-
+        Aumentar o overhead reduz a memória disponível para o heap dentro do
+        mesmo container.
+    tradeoffs:
+      - >-
+        Expressão nativa elimina o worker Python e o custo de serialização, ao
+        preço de reescrever a lógica e de validar a equivalência valor a valor.
+      - >-
+        Em algum ponto, worker maior é mais simples do que rebalancear heap e
+        overhead.
+    validation:
+      - >-
+        Ausência de `Python worker exited unexpectedly` no run seguinte, com o
+        mesmo volume de entrada.
+      - >-
+        Se a ação foi eliminar a UDF Python: resultado comparado linha a linha
+        numa amostra que inclua nulos e valores de borda, mais contagem total e
+        contagem de nulos da coluna resultado idênticas — a mesma validação que
+        `SF-PY-001`, `SF-PLAN-001` e `SF-UI-005` exigem para a mesma troca.
+      - >-
+        Se a ação foi reduzir o batch do `pandas_udf`: a coluna produzida
+        comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma
+        entrada. Contagem e schema são iguais por construção nos dois, então os
+        eixos baratos não dizem nada aqui.
+      - >-
+        Se a ação foi só memória fora do heap: nenhum eixo de dado é exigido, e
+        declarar isso é parte da validação — é a única das três que não mexe em
+        semântica.
+    rollback:
+      - >-
+        Reverter o valor de overhead, ou restaurar a UDF Python. Se a UDF foi
+        substituída, a saída precisa ser comparada antes de o código antigo ser
+        descartado.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/python_worker_exited.json`
+          (`ERR-SPARK-002`). Ela registra `spark.python.worker.memory` com
+          default `512m` e a descricao que esta regra cita: o valor governa o
+          spill durante agregacao, nao o processo inteiro.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS TRÊS DE CLASSPATH (2026-09-09)
+  #
+  # `ClassNotFoundException`, `NoClassDefFoundError` e `AbstractMethodError` são
+  # a mesma FAMÍLIA de `SF-ERR-001`/`SF-ERR-002` -- classe de exceção, casada
+  # por `spark.exception`, com o mesmo par de companheiros (`mig.jar_binary` e
+  # `tf.attribute`). O que as separa é o que cada uma AFIRMA, e a diferença
+  # decide o conserto:
+  #
+  #   ClassNotFoundException   a classe NUNCA esteve lá        -> falta jar
+  #   NoClassDefFoundError     ela ESTAVA na compilação        -> sumiu, ou o
+  #                                                               inicializador
+  #                                                               dela falhou
+  #   AbstractMethodError      ela está lá, na versão ERRADA   -> há DUAS
+  #
+  # Tratar as três como "falta jar" é o erro que elas existem para evitar: na
+  # segunda, adicionar o jar não muda nada quando o inicializador falhou; na
+  # terceira, adicionar jar PIORA, porque o problema é justamente haver dois.
+  #
+  # `runtime_scope: {}` nas três, ao contrário de `SF-ERR-001`/`SF-ERR-002`: a
+  # fronteira daquelas é o empacotamento do Glue 6.0, e estas são da JVM --
+  # acontecem igual em EMR, Databricks ou cluster on-prem.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-009
+    category: runtime-error
+    title: Classe ausente do classpath em runtime, com JAR declarado no job
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-003"}
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `ClassNotFoundException`, e há JAR declarado no diretório do
+      job mais o IaC dele no case. A classe nomeada nunca chegou ao classpath —
+      esta é a mais simples das três desta família, e a única em que "falta um
+      jar" é a leitura certa.
+
+
+      **O que a distingue de `SF-ERR-010`:** ali a classe ESTAVA presente na
+      compilação. Aqui ela nunca esteve, e por isso o conserto é entregar o
+      artefato que a carrega.
+
+
+      A causa mais comum não é esquecer o jar principal — é a dependência
+      declarada para o BUILD e não para o runtime, ou um conector que o
+      runtime não empacota sob o nome que o código espera.
+    proposed_change:
+      - >-
+        Listar os JARs efetivamente entregues ao job e conferir qual deles
+        deveria carregar a classe nomeada — o nome do arquivo não responde isso,
+        o conteúdo responde.
+      - >-
+        Ler `spark.jars` e as entradas de classpath extra em
+        `spark.conf_effective`, e comparar com o que o job declara no IaC: o
+        que vale é o efetivo, não o declarado.
+      - >-
+        Se a classe vem de um conector que o runtime empacota sob outro nome,
+        usar o mecanismo do próprio runtime em vez de enviar uma segunda cópia.
+    action:
+      kind: dependency.declare_in_iac
+      target: job.extra_jars
+      direction: add
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on: []
+    risks:
+      - >-
+        Enviar uma segunda cópia de um JAR que o runtime já empacota troca uma
+        classe ausente por uma duplicada, e a falha MUDA DE LUGAR em vez de
+        sumir — é assim que `AbstractMethodError` nasce.
+      - >-
+        A saída parcial do run falho continua no destino, e reprocessar por
+        cima dela sem decidir o que fazer com o que já foi escrito é como um
+        dado duplicado nasce.
+    tradeoffs:
+      - >-
+        Empacotar a dependência dentro do artefato do job elimina a entrega
+        separada, ao custo de um artefato maior e de um build que precisa
+        resolver conflito de versão sozinho.
+    validation:
+      - >-
+        Rodar o job exercitando o caminho de código que CARREGA a classe — a
+        submissão passar não prova nada, porque a classe só é procurada quando
+        usada.
+      - >-
+        `mig.jar_binary` do diretório do job depois da entrega, confirmando que
+        o artefato novo está lá e que nenhum antigo ficou junto.
+      - >-
+        Nenhum eixo de dado é exigido se a entrega for só de classpath, e
+        declarar isso é parte da validação. Para JAR de terceiro novo,
+        comparação de VALOR das colunas que ele produz contra o último run
+        bem-sucedido.
+    rollback:
+      - >-
+        Reverter `--extra-jars` para o conjunto anterior. É mudança de
+        classpath, não de dado — mas a saída parcial do run que falhou precisa
+        ser descartada ou reconciliada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/classpath_class_not_found.json`
+          (`ERR-SPARK-003`). Ela registra `spark.jars` e as entradas de
+          classpath extra que o `proposed_change` manda ler.
+
+  - id: SF-ERR-010
+    category: runtime-error
+    title: >-
+      Classe presente na compilação e ausente em runtime -- ou o inicializador
+      dela falhou
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-004"}
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `NoClassDefFoundError`, e essa mensagem afirma algo que
+      `ClassNotFoundException` não afirma: **a classe existia quando o código
+      foi compilado**. O build a resolveu; o runtime não a encontrou.
+
+
+      **E há um segundo caminho para a mesma mensagem, que é o mais mal
+      diagnosticado desta família.** Quando o inicializador estático de uma
+      classe lança, a JVM marca a classe como inutilizável, e TODA referência
+      posterior a ela reporta `NoClassDefFoundError` — a classe está lá, e
+      adicionar o JAR de novo não muda absolutamente nada. A distinção está no
+      log: um `ExceptionInInitializerError` ANTERIOR é a evidência, e é por isso
+      que o primeiro passo é ler o log e não o classpath.
+
+
+      Quando é mesmo ausência, a causa mais comum é a dependência TRANSITIVA de
+      um JAR enviado sozinho — o artefato de topo chegou, e o que ele precisa
+      não.
+    proposed_change:
+      - >-
+        Procurar um `ExceptionInInitializerError` anterior no mesmo log ANTES de
+        mexer em classpath. Se ele está lá, a classe existe e o problema é
+        outro, e caçar JAR é caçar o que não falta.
+      - >-
+        Comparar os JARs entregues ao runtime com as dependências que o build
+        resolveu, **incluindo as transitivas** — é onde a diferença costuma
+        estar.
+      - >-
+        Entregar a dependência transitiva junto, ou construir um artefato
+        sombreado (`shade`) que a contenha.
+    action:
+      kind: dependency.declare_in_iac
+      target: job.extra_jars.transitive
+      direction: add
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+      depends_on: []
+    risks:
+      - >-
+        Tratar a mensagem como JAR faltando sem ler o log manda o operador
+        procurar um artefato que já está lá, e o tempo gasto não produz nada.
+      - >-
+        Sombrear (`shade`) a dependência muda quais classes o artefato carrega,
+        e pode esconder um conflito de versão em vez de resolvê-lo.
+      - >-
+        A saída parcial do run falho continua no destino.
+    tradeoffs:
+      - >-
+        Artefato sombreado resolve o conflito de uma vez, ao custo de tamanho e
+        de um build mais difícil de auditar — quem lê o `pom` deixa de ver o que
+        está lá dentro.
+    validation:
+      - >-
+        Rodar o job exercitando o caminho que carrega a classe; se a causa era
+        o inicializador, confirmar que ELE completa — não basta a classe
+        resolver.
+      - >-
+        Ausência de `ExceptionInInitializerError` no log do run seguinte.
+      - >-
+        Nenhum eixo de dado é exigido se a correção for só de classpath, e
+        declarar isso é parte da validação.
+    rollback:
+      - >-
+        Reverter o conjunto de JARs entregues. A saída parcial do run que
+        falhou precisa ser tratada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/classpath_no_class_def.json`
+          (`ERR-SPARK-004`). Ela registra `spark.jars` e as entradas de
+          classpath extra; a distinção entre ausência e inicializador falho é
+          semântica da JVM, e está no `explanation` como leitura do log, não
+          como afirmação sobre configuração.
+
+  - id: SF-ERR-011
+    category: runtime-error
+    title: >-
+      Método abstrato não implementado -- há DUAS versões do mesmo artefato no
+      classpath
+    requires_facts:
+      - error.signature_match
+      - mig.jar_binary
+      - tf.attribute
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-005"}
+        - fact: mig.jar_binary
+        - fact: tf.attribute
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `AbstractMethodError`, e essa é a única das três desta
+      família em que **adicionar JAR piora**. A classe está presente; o método
+      não. Nenhuma explicação de ausência cobre isso — o que cobre é haver DUAS
+      versões do mesmo artefato, e a que venceu o classpath não implementa um
+      método que a interface ganhou depois.
+
+
+      É a assinatura de duplicata, não de falta. E o modo de aparecer é
+      característico: depois de uma migração de runtime, sem nenhuma mudança no
+      código do job, num método de interface que o job nunca chama diretamente.
+
+
+      A precedência importa aqui, e a documentação do Apache a descreve:
+      `spark.driver.userClassPathFirst` e `spark.executor.userClassPathFirst`
+      têm default `false` e são declarados **experimentais**. Ligá-los é o que
+      permite a implementação mais antiga vencer.
+
+
+      **O que esta regra NÃO afirma:** qual das duas cópias está no classpath, e
+      nem que a precedência está ligada. Nenhum extrator lê o conteúdo de um
+      JAR — `mig.jar_binary` lê o NOME do arquivo. Listar as duas é o primeiro
+      passo de `proposed_change`, e é o operador que o executa.
+    proposed_change:
+      - >-
+        Listar todo JAR do classpath e procurar DOIS que carreguem o mesmo
+        pacote — este erro é assinatura de duplicata, e a duplicata é o que
+        precisa ser encontrado antes de qualquer mudança.
+      - >-
+        Ler se os JARs do usuário têm precedência: `spark.driver.userClassPathFirst`
+        e `spark.executor.userClassPathFirst` têm default `false` e a
+        documentação do Apache os marca como experimentais.
+      - >-
+        Remover a cópia mais antiga, de modo que sobre uma implementação só.
+      - >-
+        Ou reconstruir o conector contra a interface que o runtime atual
+        fornece, quando o código-fonte estiver disponível.
+    # `remove` e nao `add`: e a UNICA das tres em que a acao tira artefato do
+    # classpath em vez de acrescentar. Um `target` proprio pela mesma razao de
+    # `SF-ERR-002` -- `job.extra_jars.duplicate` e o que se remove, e confundi-lo
+    # com `job.extra_jars` inventaria contradicao com `SF-ERR-009`, cuja acao e
+    # `add` sobre o mesmo alvo.
+    action:
+      kind: dependency.remove_library
+      target: job.extra_jars.duplicate
+      direction: remove
+      requires_absent: []
+      moves:
+        - dependency.delivered_artifacts
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Ligar a precedência de JARs do usuário para forçar o artefato antigo a
+        vencer faz esta falha sumir movendo o conflito: o runtime passa a não
+        receber o que esperava da interface nova.
+      - >-
+        Remover a cópia errada quebra quem dependia dela. Descobrir QUAL das
+        duas remover exige saber quem usa cada uma, e o nome do arquivo não
+        responde.
+      - >-
+        Trocar o artefato por outra linha de release muda mais que o binário —
+        comportamento, defaults e assinaturas podem ter mudado junto, e a
+        diferença não aparece no nome.
+    tradeoffs:
+      - >-
+        Sombrear (`shade`) o artefato conflitante isola as duas versões e evita
+        a escolha, ao custo de um build mais complicado e de um artefato maior.
+    validation:
+      - >-
+        Rodar o job exercitando o caminho que CHAMA o método, e confirmar que
+        sobrou uma cópia só do artefato no classpath.
+      - >-
+        `mig.jar_binary` do diretório do job depois da remoção: nenhum par de
+        artefatos do mesmo pacote.
+      - >-
+        Comparação de VALOR das colunas que o artefato produz — contagem, nulos
+        por coluna e agregados de controle — contra a saída do último run
+        bem-sucedido. Remover uma versão e ficar com a outra é trocar
+        implementação, e implementação diferente devolve valor diferente.
+    rollback:
+      - >-
+        Restaurar o classpath anterior. É mudança de classpath, não de dado --
+        mas a saída produzida entre a remoção e o rollback foi gerada por outra
+        implementação, e precisa ser reconciliada à parte.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/classpath_abstract_method.json`
+          (`ERR-SPARK-005`). Ela registra `spark.driver.userClassPathFirst` e
+          `spark.executor.userClassPathFirst` com default `false` e o rótulo
+          "(Experimental)" que o `explanation` cita.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS DUAS DE MEMÓRIA DE HEAP (2026-09-09)
+  #
+  # `SF-ERR-004` já trata `Container killed by YARN` -- memória FORA do heap,
+  # medida no log do CloudWatch. Estas duas tratam o lado de DENTRO, e a
+  # separação é a mesma que `knowledge/spark/memory-and-oom.md` faz: heap e
+  # overhead de container são dois orçamentos, e o conserto de um não é o do
+  # outro.
+  #
+  # O que separa as duas entre si é a MEDIDA que cada uma exige:
+  #
+  #   SF-ERR-012  heap estourou     -> distribuição de INPUT por task decide se
+  #                                    é skew ou dimensionamento
+  #   SF-ERR-013  GC dominando      -> RAZÃO de tempo em coleta decide, e não o
+  #                                    tamanho do heap
+  #
+  # Nenhuma das duas propõe número. Subir heap com skew ao lado paga o custo da
+  # maior task em TODOS os executores, e é o conserto que "não funcionou" com
+  # mais frequência.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: SF-ERR-012
+    category: runtime-error
+    title: >-
+      Heap do executor estourou -- a distribuição de input por task decide se é
+      skew ou dimensionamento
+    requires_facts:
+      - error.signature_match
+      - spark.stage.task_input
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-006"}
+        - fact: spark.stage.task_input
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `OutOfMemoryError: Java heap space`, e o event log traz a
+      distribuição de bytes de entrada por task. As duas juntas separam os dois
+      diagnósticos que a mensagem sozinha não separa: heap que estourou com
+      distribuição EVEN é dimensionamento; com distribuição desigual é skew, e
+      o heap não é a causa.
+
+
+      A diferença muda o conserto por inteiro. Com skew, subir
+      `spark.executor.memory` paga o custo da MAIOR task em todos os
+      executores — o cluster fica mais caro e a task grande continua sendo a
+      grande. É o conserto que "não funcionou" com mais frequência nesta área.
+
+
+      **Esta regra é do heap, e `SF-ERR-004` é do container.**
+      `Container killed by YARN` é memória FORA do heap, e o conserto dela é
+      `memoryOverhead`; aqui a JVM reporta a própria falha, e o orçamento é
+      outro. `knowledge/spark/memory-and-oom.md` faz a mesma separação.
+
+
+      **O que ela NÃO afirma:** qual é a distribuição. Ela exige
+      `spark.stage.task_input` no case e manda comparar máximo com mediana — a
+      comparação é o primeiro passo do `proposed_change`, e é o operador que a
+      lê.
+    proposed_change:
+      - >-
+        Comparar bytes de entrada MÁXIMO e MEDIANO por task no stage que
+        falhou. É esse par que decide, e nenhuma das duas medidas sozinha
+        decide.
+      - >-
+        Se a distribuição for desigual, tratar o skew — ver `SF-UI-001` e
+        `SF-UI-002`, que classificam o tipo antes do tratamento.
+      - >-
+        Ler a decisão de join no plano físico: broadcast de tabela que deixou
+        de ser pequena é a causa que some do código e aparece só no plano.
+      - >-
+        Subir `spark.executor.memory` só depois de a distribuição ter sido
+        medida e encontrada uniforme. O default do Apache é `1g`.
+    action:
+      kind: skew.classify_type
+      target: spark.stage
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Subir heap com skew presente move a falha sem tocar a causa, e o custo
+        sobe em todos os executores.
+      - >-
+        Aumentar `spark.memory.fraction` acima do default: a documentação do
+        Apache recomenda deixá-lo como está e avisa que subi-lo exige ajustar a
+        coleta de lixo da JVM junto.
+      - >-
+        Tratamento de skew que mexe na chave de join pode duplicar ou descartar
+        linha, e nada no plano físico acusa isso.
+      - >-
+        A saída parcial do run falho continua no destino.
+    tradeoffs:
+      - >-
+        Medir a distribuição custa uma passada sobre o event log antes de
+        qualquer mudança; a alternativa é subir memória e medir depois, mais
+        rápida por run e mais cara por ciclo.
+    validation:
+      - >-
+        Razão entre bytes de entrada máximo e mediano por task, antes e depois
+        — é a medida que classifica, e publicá-la nos dois momentos é o que
+        separa "aumentei memória" de "resolvi".
+      - >-
+        Ausência de `OutOfMemoryError` no run seguinte com o MESMO volume de
+        entrada.
+      - >-
+        Se o tratamento tocar a chave de join: contagem total, contagem por
+        chave e agregados de controle contra o último run bem-sucedido.
+      - >-
+        Se a ação foi só `spark.executor.memory`: nenhum eixo de dado é
+        exigido, e declarar isso é parte da validação.
+    rollback:
+      - >-
+        Reverter o valor de memória. Se a correção mudou distribuição ou chave,
+        a saída precisa ser comparada antes de a versão anterior ser
+        descartada.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/heap_out_of_memory.json`
+          (`ERR-SPARK-006`). Ela registra `spark.executor.memory` com default
+          `1g` e `spark.memory.fraction` com default `0.6` de (heap - 300MB),
+          mais a recomendação explícita de deixar o segundo no default.
+
+  - id: SF-ERR-013
+    category: runtime-error
+    title: >-
+      Coleta de lixo dominando o executor -- é a RAZÃO de tempo que decide, não
+      o tamanho do heap
+    requires_facts:
+      - error.signature_match
+      - spark.stage.gc
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-007"}
+        - fact: spark.stage.gc
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job LANÇOU `GC overhead limit exceeded`, e o event log traz o tempo de
+      coleta de lixo do stage. Essa mensagem não diz que faltou memória — diz
+      que a JVM passou a maior parte do tempo coletando e recuperando pouco.
+      O conjunto VIVO quase preenche o heap, e o coletor roda sem parar.
+
+
+      É por isso que a medida que decide é uma RAZÃO — tempo em coleta sobre
+      tempo de executor —, e não o tamanho do heap. Um heap grande com conjunto
+      vivo proporcionalmente grande falha igual, e é por isso que subir memória
+      aqui costuma adiar em vez de resolver: o sintoma volta assim que a
+      entrada cresce.
+
+
+      **Esta regra é irmã de `SF-ERR-012` e não a mesma.** Lá o heap estourou
+      numa alocação; aqui ele não estourou — o custo de mantê-lo é que passou a
+      dominar. Os dois consertos divergem: um reduz o dado por task, o outro
+      reduz o conjunto vivo.
+    proposed_change:
+      - >-
+        Ler a fração do tempo de executor gasta em coleta de lixo no stage que
+        falhou — é a razão que decide, e o valor absoluto não decide nada.
+      - >-
+        Reduzir o conjunto vivo: descartar cache que já não é lido, e estreitar
+        as colunas carregadas pelo stage.
+      - >-
+        Reduzir a criação de objetos curtos por registro, onde o job os
+        constrói em volume.
+      - >-
+        Subir heap apenas quando o conjunto vivo for genuinamente grande e o
+        coletor simplesmente não tiver espaço.
+    action:
+      kind: code.change_persistence
+      target: spark.cache.live_set
+      direction: decrease
+      requires_absent: []
+      moves:
+        - runtime.wall_clock
+      depends_on: []
+    risks:
+      - >-
+        Subir heap sem medir a razão de coleta compra tempo e devolve o
+        problema assim que a entrada crescer.
+      - >-
+        Aumentar `spark.memory.fraction` é desaconselhado pela documentação do
+        Apache, que pede para deixá-lo no default e avisa que subi-lo exige
+        ajustar a coleta de lixo junto.
+      - >-
+        Descartar cache que OUTRO ponto do job relê troca pressão de memória
+        por releitura, e o job fica mais lento sem que a coleta melhore.
+    tradeoffs:
+      - >-
+        Menos cache reduz o conjunto vivo e aumenta releitura; o ponto de
+        equilíbrio depende de quantas vezes o dado é lido, e nada aqui mede
+        isso.
+    validation:
+      - >-
+        Fração do tempo de executor em coleta de lixo no mesmo stage, antes e
+        depois, sobre o MESMO volume de entrada — é a medida que a mudança move.
+      - >-
+        Ausência de `GC overhead limit exceeded` no run seguinte.
+      - >-
+        Nenhum eixo de dado é exigido se a mudança for de cache ou de memória,
+        e declarar isso é parte da validação. Se a mudança estreitar as colunas
+        carregadas, o schema de saída precisa ser comparado — coluna que deixa
+        de ser lida e era escrita muda o resultado.
+    rollback:
+      - >-
+        Restaurar o cache descartado ou reverter o valor de memória. Se colunas
+        deixaram de ser carregadas, a saída precisa ser comparada antes de o
+        código anterior ser descartado.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/gc_overhead_limit.json`
+          (`ERR-SPARK-007`). Ela registra `spark.memory.fraction` com default
+          `0.6` de (heap - 300MB) e a recomendação de mantê-lo, que os `risks`
+          desta regra citam.

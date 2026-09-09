@@ -21,12 +21,14 @@ from pathlib import Path
 
 import pytest
 
+from sparkforge.errors import matcher
 from sparkforge.facts import (
     athena_workgroup,
     benchmark,
     bridge,
     call_graph,
     catalog_schema,
+    cloudwatch_logs,
     consumers,
     controlm_jobs,
     data_quality,
@@ -34,11 +36,13 @@ from sparkforge.facts import (
     emr_eks,
     emr_serverless,
     event_log,
+    exception,
     funcval,
     fusion,
     graph,
     iceberg_metadata,
     migration,
+    parquet_footer,
     pyspark_ast,
     run_cost,
     runtime_detect,
@@ -55,12 +59,38 @@ from sparkforge.facts import (
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
 
+# `matcher` (`sparkforge/errors/matcher.py`) e `exception`
+# (`sparkforge/facts/exception.py`) entram nesta lista no MESMO commit de
+# `fixtures/exception/`, e a divida que os mantinha fora esta paga aqui.
+#
+# A lacuna era declarada e datada: os dois modulos ja estavam na outra lista
+# manual (`tests/test_rules_catalog_reachability.py`), onde o criterio e "o kind
+# tem extrator"; aqui o criterio e "o kind aparece em algum golden", e medido em
+# 2026-09-08 o corpus tinha UM `spark.stage.failure` e ZERO `spark.exception*`.
+# Registra-los antes da fixture teria pintado
+# `test_every_kind_of_every_extractor_appears_in_some_golden` e
+# `test_every_unresolved_kind_is_exercised` de vermelho sem medir nada sobre
+# extrator nenhum.
+#
+# Os dois sao o PRIMEIRO caso desta lista em que o extrator nao le artefato:
+# `build_exceptions` deriva de `spark.stage.failure` e `build_signature_matches`
+# deriva de `spark.exception`. O criterio nao muda por isso -- kind emitido e
+# kind que precisa de golden, venha ele de arquivo ou de outro fact --, e
+# `tests/test_fixtures_golden_exception.py` e quem monta a cadeia inteira.
 EXTRACTORS = {
     "athena_workgroup": athena_workgroup,
     "benchmark": benchmark,
     "bridge": bridge,
     "call_graph": call_graph,
     "catalog_schema": catalog_schema,
+    # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
+    # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
+    # `cloudwatch` -- `filter_log_events` contra `get_metric_data` --, e por isso
+    # modulo separado com `EXTRACTOR_ID` proprio; o nome parecido nao os torna o
+    # mesmo extrator. Sem ele aqui, os tres kinds `cloudwatch.log*` nao sao verificados
+    # por ninguem e o criterio de golden -- todo kind de `EMITTED_KINDS` em algum
+    # golden -- passa sem ser avaliado, que e pior do que falhar.
+    "cloudwatch_logs": cloudwatch_logs,
     "consumers": consumers,
     # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
     # SF-CTM -- a outra e `tests/test_rules_catalog_reachability.py` --, e
@@ -89,8 +119,7 @@ EXTRACTORS = {
     # que falhar.
     "emr_serverless": emr_serverless,
     "event_log": event_log,
-    # Lista manual, duplicada em `tests/test_rules_catalog_reachability.py`:
-    # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
+    "exception": exception,
     "funcval": funcval,
     "fusion": fusion,
     # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES
@@ -102,6 +131,12 @@ EXTRACTORS = {
     # nomeando os seis.
     "graph": graph,
     "iceberg_metadata": iceberg_metadata,
+    # `matcher` e o unico modulo desta lista que NAO mora em `sparkforge/facts/`
+    # -- ele e `sparkforge/errors/matcher.py`, e o import dele vem separado la
+    # em cima por isso. A lista e manual e duplicada em
+    # `tests/test_rules_catalog_reachability.py`: extrator novo entra nas DUAS,
+    # e esquecer uma nao quebra nada aqui.
+    "matcher": matcher,
     # `migration` entra nas DUAS listas no mesmo commit da Task 7 da Fase 6b,
     # junto com `rules/catalog/glue-migration.yaml`: sem ele aqui os oito kinds
     # `mig.*` nao sao verificados por ninguem. Este modulo VAI cobrar golden
@@ -121,6 +156,12 @@ EXTRACTORS = {
     # agora por `runtime_scope` (Glue 5.0, abaixo da fronteira) em vez de
     # `blocked_on`.
     "migration": migration,
+    # `parquet_footer` entra nas DUAS listas manuais no MESMO commit do
+    # extrator, e a segunda e ESTE dicionario: sem ele, os cinco kinds
+    # `parquet.*` aparecem nos goldens e nao constam de `EMITTABLE`, e
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` os acusa de
+    # orfaos -- que e exatamente o aviso certo pela razao errada.
+    "parquet_footer": parquet_footer,
     "pyspark_ast": pyspark_ast,
     # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` nao sao

@@ -1,0 +1,39 @@
+name: lf_negado_com_catalogo_de_outra_conta
+proves: >
+  O POSITIVO de `SF-ERR-006`:
+
+    * `error.signature_match` com `signature_id: ERR-LF-001` e
+      `matched_on: log_line` -- a permissao do Lake Formation foi negada em
+      RUNTIME, e a mensagem nomeia o recurso (`default.dim_cliente`);
+    * `tf.spark_conf` com `spark.hadoop.hive.metastore.glue.catalogid` apontando
+      para outra conta, decomposto do `--conf` do `default_arguments`.
+
+  O `evidence_required` de `ERR-LF-001` nomeia `lakeformation.missing_grant` e
+  `ram.unaccepted_share`, e MEDIDO em 2026-09-09 nenhum dos dois e kind que
+  este motor emite -- o estado dos dois vive em recursos de OUTRA conta, fora
+  do alcance do `.tf` do job. Por isso a acao e
+  `security.verify_access_chain` com `direction: investigate`: a regra localiza
+  a cadeia, e o operador a percorre.
+
+  `SF-XACC-001` dispara junto e diz explicitamente que NAO afirma que a cadeia
+  esta quebrada. Esta afirma, porque o log do run diz.
+
+  O NEGATIVO deste fixture e `lf_negado_sem_catalogo_declarado`: mesmo log,
+  mesmo `main.tf` menos uma linha.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-ERR-006
+  - SF-XACC-001

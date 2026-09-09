@@ -1,0 +1,19 @@
+name: ordenado_poda
+proves: >
+  O NEGATIVO de `SF-PQ-008`, e a metade saudavel do par que sustenta a frente.
+
+  `id` escrito EM ORDEM: cada row group cobre a sua fatia do dominio, e o
+  min/max do footer separa os tres. `avg_range_coverage` fica perto de 1/3, e
+  `expected_row_groups_scanned` perto de 1 -- um predicado de igualdade descarta
+  dois dos tres row groups.
+
+  `SF-PQ-008` CALA aqui, e e isso que a fixture prova: a regra nao acusa "tem
+  estatistica", ela acusa "a estatistica nao poda".
+
+  O POSITIVO deste fixture e `espalhado_nao_poda`: MESMO numero de linhas, MESMO
+  row_group_size, MESMOS valores. So a ordem muda.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

@@ -203,6 +203,28 @@ class TestJudge:
         assert payload["skipped"]
         assert {"requires_facts", "runtime_scope"} & {s["reason"] for s in payload["skipped"]}
 
+    def test_a_cli_publica_o_mesmo_bloco_de_plano_que_o_mcp(self, repo, capsys):
+        """`TestCliMcpEquivalence` fixa a garantia: para o mesmo input o payload
+        e identico, "nunca um subconjunto de campos". `judge` nao entra na
+        comparacao byte-a-byte porque a CLI pagina por conta propria e monta
+        `filters_applied` a partir dos args -- mas o bloco `plan` cai
+        exatamente na clausula do subconjunto.
+
+        E nao e simetria decorativa: `parity.yaml` declara `judge` para `codex`
+        e `copilot_ci` como `[cli, files]`, sem `mcp`. Um plano que so saisse
+        pelo MCP seria capacidade que duas das cinco plataformas declaradas nao
+        alcancam por caminho nenhum.
+        """
+        facts_path = self._facts(repo, capsys)
+        _, output = run(["judge", "--facts", str(facts_path), "--glue", "5.0"], capsys)
+        cli = json.loads(output)["plan"]
+
+        mcp = call_tool(
+            "sparkforge_judge", {"facts_path": str(facts_path), "glue": "5.0"}
+        )["plan"]
+        assert cli == mcp
+        assert cli["persisted"] is False
+
 
 TF_WITH_RETRIES = '''resource "aws_glue_job" "etl" {
   name         = "etl"

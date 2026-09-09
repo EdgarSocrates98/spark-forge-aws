@@ -1,0 +1,29 @@
+name: lf_negado_sem_catalogo_declarado
+proves: >
+  O NEGATIVO de `lf_negado_com_catalogo_de_outra_conta`: MESMO log, MESMO
+  `main.tf` com UMA linha a menos -- o `--conf` de
+  `spark.hadoop.hive.metastore.glue.catalogid`.
+
+  A permissao continua tendo sido negada, e `ERR-LF-001` continua casando. O
+  que some e `tf.spark_conf`, e com ele a afirmacao de que o job le o catalogo
+  de OUTRA conta -- que e a cadeia inteira que `SF-ERR-006` manda conferir.
+  Sem ela, o mesmo `AccessDeniedException` pode ser permissao da propria conta,
+  e a regra pula com `missing: ["tf.spark_conf"]` em vez de mandar o operador
+  procurar um convite de AWS RAM que talvez nem exista.
+
+  `SF-XACC-001` cala pela mesma razao, e o par mede que as duas leem o MESMO
+  sinal.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

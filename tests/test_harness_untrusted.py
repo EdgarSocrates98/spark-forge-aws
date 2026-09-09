@@ -84,10 +84,12 @@ def _derivados_de_facts(pool):
     medida pulava 5 dos 20 modulos em silencio -- `alvos` ficava vazio, `any([])`
     dava False, e o modulo entrava como "sem snippet" por nao ter rodado nada.
     """
+    from sparkforge.errors import matcher
     from sparkforge.facts import (
         benchmark,
         bridge,
         call_graph,
+        exception,
         funcval,
         fusion,
         run_cost,
@@ -112,6 +114,19 @@ def _derivados_de_facts(pool):
     # `spark.stage.failure` e `spark.conf_effective` ja extraidos.
     yield "timeout_diagnosis", timeout_diagnosis.extract_timeout_diagnosis(pool, "<pool>")
     yield "utilization", utilization.extract_utilization(pool, "<pool>")
+    # `exception` deriva de `spark.stage.failure.attrs.reason`, e nao de
+    # caminho. Ele COPIA o `subject` do fact de origem -- entao se um dia
+    # `spark.stage.failure` passar a carregar snippet, `exception` propaga, e e
+    # esta chamada que faz a medida perceber. Sem ela, a guarda fail-closed
+    # acima para com o nome do modulo, que foi o que aconteceu ao acrescenta-lo.
+    yield "exception", exception.build_exceptions(pool)
+    # `matcher` deriva de `spark.exception`, e nao de caminho -- e ele mora em
+    # `sparkforge/errors/`, fora do `iter_modules(facts_pkg)` que monta `todos`
+    # acima. A guarda fail-closed portanto NAO o cobraria: ele esta aqui porque
+    # a medida de snippet precisa ve-lo, nao porque algo o obrigaria. A entrada
+    # e encadeada de proposito: se um dia `spark.exception` propagar snippet, e
+    # esta chamada que faz a medida perceber que `matcher` propaga junto.
+    yield "matcher", matcher.build_signature_matches(exception.build_exceptions(pool))
 
 
 def extratores_com_snippet() -> set[str]:

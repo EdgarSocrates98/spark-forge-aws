@@ -1,0 +1,21 @@
+name: codec_misto
+proves: >
+  O POSITIVO de `SF-PQ-009`: dois arquivos no mesmo prefixo, um em SNAPPY e outro
+  em GZIP.
+
+  Nao quebra leitura nenhuma -- o Parquet carrega o codec por column chunk, e o
+  leitor resolve cada um. E sinal de PROCEDENCIA: os arquivos vieram de caminhos
+  de escrita diferentes, e qualquer medida agregada sobre o prefixo passa a
+  misturar dois regimes de CPU e de tamanho. Por isso a severidade e P3 e a acao
+  e `investigate`.
+
+  **O perfil e por (arquivo, coluna), e por isso a regra nao dispara aqui pela
+  divergencia ENTRE arquivos.** Ela dispara quando a MESMA coluna, no MESMO
+  arquivo, tem mais de um codec -- e essa e a lacuna que esta fixture registra em
+  vez de esconder: `parquet.column_profile` agrega sobre os row groups de um
+  arquivo, nao sobre os arquivos do prefixo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

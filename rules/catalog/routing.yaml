@@ -1205,6 +1205,39 @@ rules:
       operada por outro time. E decisao de governanca de dado compartilhado, a
       mesma familia de SF-LF.
 
+  # SF-ERR entrou com a frente de stacktrace intelligence e ganha ENTRADA
+  # PROPRIA, pelo mesmo motivo que SF-SPARK4 e SF-LF ganharam as delas:
+  # declarar a area em `rule_areas` do agente NAO roteia, e `findings_area`
+  # conta por prefixo exato do `rule_id` ate o ultimo hifen (`SF-ERR-001` ->
+  # `SF-ERR`). Sem esta entrada, um case cujo unico achado e a excecao
+  # confirmada voltaria de `next_step` com `recommended_agent: None`.
+  #
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-ERR, e a
+  # escolha nao e por eliminacao: as duas regras da area sao a metade
+  # `confirmed` do que SF-SPARK4-004 e a area SF-MIG ja afirmam de forma
+  # estrutural -- fronteira binaria de Scala e piso de SDK numa migracao para o
+  # Glue 6.0 --, e ele ja declara SF-SPARK4 e SF-MIG, com as skills
+  # `migrate-glue-6` e `spark4-compatibility`. O achado nao se resolve editando
+  # transformacao de negocio; resolve-se no artefato que o IaC entrega ao
+  # classpath.
+  #
+  # PRECEDENCIA: vem DEPOIS de AGENT-002 (`glue-infra-reviewer`), como
+  # SF-LF/SF-KMS/SF-NET/SF-XACC. Um case que tenha SF-GLUE junto continua indo
+  # para la, porque dimensionamento e observabilidade sao a conversa maior.
+  - id: AGENT-084
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em excecao confirmada em runtime
+    when:
+      all:
+        - {findings_area: SF-ERR, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      O job LANCOU a excecao, e a assinatura que casou aponta para a fronteira
+      de runtime da migracao -- JAR compilado contra um Scala que o Glue 6.0 nao
+      carrega, ou SDK empacotado abaixo do piso do runtime com
+      `--user-jars-first` ligado. Quem decide os dois e quem conhece o runtime e
+      o classpath que o IaC monta, nao quem conhece a regra de negocio.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

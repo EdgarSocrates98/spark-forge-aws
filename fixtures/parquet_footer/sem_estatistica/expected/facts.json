@@ -1,0 +1,270 @@
+[
+  {
+    "id": "f_f43fc4",
+    "schema_version": 1,
+    "kind": "parquet.column_profile",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "measures": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 351.0,
+      "stats_coverage": 0.0,
+      "min_max_coverage": 0.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 3.8461538461538463,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "column": "cat",
+      "physical_type": "BYTE_ARRAY",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "encodings": [
+        "PLAIN",
+        "RLE",
+        "RLE_DICTIONARY"
+      ]
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_a39e51",
+    "schema_version": 1,
+    "kind": "parquet.column_profile",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "id"
+    },
+    "measures": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 15954.0,
+      "stats_coverage": 0.0,
+      "min_max_coverage": 0.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 1.7485896953742008,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "column": "id",
+      "physical_type": "INT64",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "encodings": [
+        "PLAIN",
+        "RLE",
+        "RLE_DICTIONARY"
+      ]
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_a4a83c",
+    "schema_version": 1,
+    "kind": "parquet.file",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "file_bytes": 402653184.0,
+      "num_rows": 3000.0,
+      "num_row_groups": 3.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "created_by": "parquet-cpp-arrow version 25.0.1",
+      "format_version": "2.6"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_252139",
+    "schema_version": 1,
+    "kind": "parquet.footer_analyzed",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/curated/sem_estatistica/",
+      "file": "footer.json"
+    },
+    "measures": {
+      "files_seen": 1.0,
+      "files_read": 1.0,
+      "row_groups_read": 3.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "sampling": "first_n_by_name",
+      "max_files": 20,
+      "status": "ok",
+      "partial": false
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_fc427f",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 0
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_096ea4",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 1
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_d3e22b",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 2
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/sem_estatistica/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_2ac333",
+    "schema_version": 1,
+    "kind": "parquet.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "tipo_sem_dominio_numerico",
+      "column": "cat"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_f933a3",
+    "schema_version": 1,
+    "kind": "parquet.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "id"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "estatistica_incompleta",
+      "column": "id"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  }
+]

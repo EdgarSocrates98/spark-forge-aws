@@ -31,12 +31,24 @@ ARTIFACT_KINDS = (
     "terraform",
     "explain",
     "cloudwatch",
+    # `cloudwatch_logs` e artefato SEPARADO de `cloudwatch`, e nao um detalhe do
+    # mesmo: um e a resposta de `get_metric_data` (serie numerica), o outro a de
+    # `filter_log_events` (linhas de texto). Compartilhar o kind faria a segunda
+    # coleta sobrescrever a primeira no manifesto.
+    "cloudwatch_logs",
     "glue_job_run",
     "iceberg_metadata",
     "athena_workgroup",
     "emr_cluster",
     "emr_serverless",
     "emr_eks",
+    # `parquet_footer` e artefato SEPARADO de `iceberg_metadata`, e a razao e a
+    # mesma que separou `cloudwatch_logs` de `cloudwatch`: um e o dump das
+    # metadata tables do Iceberg (arquivos, snapshots, manifests), o outro o
+    # RODAPE de arquivos Parquet -- row group, estatistica por coluna,
+    # dicionario, page index e bloom. Uma tabela Iceberg e feita de arquivos
+    # Parquet, e os dois artefatos coexistem para a MESMA tabela.
+    "parquet_footer",
     "source",
 )
 

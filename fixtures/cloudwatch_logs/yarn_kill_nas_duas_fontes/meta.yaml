@@ -1,0 +1,57 @@
+name: yarn_kill_nas_duas_fontes
+proves: >
+  O POSITIVO de `SF-ERR-004`, e o que ele mede e a INTERSECCAO de duas fontes
+  que nenhuma outra regra deste catalogo cruza:
+
+    * `error.signature_match` com `signature_id: ERR-GLUE-001` e
+      `matched_on: log_line` -- a linha `Container killed by YARN` COM os
+      numeros do container, que so o log do CloudWatch carrega;
+    * `spark.executor.lost` do event log do mesmo run.
+
+  O `evidence_required` de `ERR-GLUE-001` nomeia `pyspark.skew_join`,
+  `eventlog.executor_oom` e `spark.plan.cartesian_product`, e MEDIDO em
+  2026-09-09 nenhum dos tres e kind que este motor emite. A regra declara o
+  companheiro que EXISTE e diz no `explanation` o que ele nao prova: ela NAO
+  afirma skew, e a acao e `skew.classify_type` com `direction: investigate` --
+  classificar antes de tocar em capacidade (regra 17 do `CLAUDE.md`).
+
+  `SF-UI-005` dispara junto, e a ordem entre as duas e a leitura certa:
+  classificar, depois dimensionar.
+
+  O event log e o de `fixtures/eventlog/skewed_stage/`, copiado sem alteracao:
+  ele ja traz o executor removido com razao de memoria de container, e
+  reescreve-lo produziria um segundo artefato dizendo a mesma coisa.
+
+  O NEGATIVO deste fixture e `yarn_kill_so_no_log`: mesmo log, sem o event log.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.executor.lost
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.gc
+  - spark.stage.shuffle
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.unresolved
+expects_rules:
+  - SF-ERR-004
+  - SF-UI-001
+  - SF-UI-002
+  - SF-UI-003
+  - SF-UI-004
+  - SF-UI-005
+  - SF-UI-006

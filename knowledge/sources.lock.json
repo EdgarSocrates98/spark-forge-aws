@@ -1444,9 +1444,13 @@
       "pinned": false,
       "retrieved": [
         "2026-08-21",
-        "2026-08-22"
+        "2026-08-22",
+        "2026-08-23"
       ],
       "rules": [
+        "SF-ERR-001",
+        "SF-ERR-002",
+        "SF-ERR-003",
         "SF-MIG-003",
         "SF-MIG-004",
         "SF-SPARK4-004"
@@ -1521,6 +1525,16 @@
         "SF-NET-001"
       ]
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-15"
+      ],
+      "rules": [
+        "SF-ERR-004"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -1553,6 +1567,16 @@
       ],
       "rules": [
         "SF-XACC-001"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-15"
+      ],
+      "rules": [
+        "SF-ERR-006"
       ]
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
@@ -2105,6 +2129,37 @@
       ],
       "rules": []
     },
+    "https://iceberg.apache.org/docs/latest/spark-writes/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-15"
+      ],
+      "rules": [
+        "SF-ERR-005"
+      ]
+    },
+    "https://parquet.apache.org/docs/file-format/data-pages/compression/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-PQ-009"
+      ]
+    },
+    "https://parquet.apache.org/docs/file-format/metadata/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-PQ-007",
+        "SF-PQ-008"
+      ]
+    },
     "https://pypi.org/pypi/graphframes-py/json": {
       "docs": [
         "knowledge/graph/availability.md"
@@ -2444,6 +2499,7 @@
         "SF-PQ-001",
         "SF-PQ-002",
         "SF-PQ-004",
+        "SF-PQ-006",
         "SF-PY-001",
         "SF-PY-003",
         "SF-PY-005",
@@ -2497,9 +2553,15 @@
       "pinned": false,
       "retrieved": [
         "2026-08-29",
-        "2026-08-31"
+        "2026-08-31",
+        "2026-09-09"
       ],
       "rules": [
+        "SF-ERR-007",
+        "SF-ERR-008",
+        "SF-ERR-009",
+        "SF-ERR-010",
+        "SF-ERR-011",
         "SF-TIMEOUT-002"
       ]
     },

@@ -1,0 +1,37 @@
+name: heap_oom_com_distribuicao
+proves: >
+  O POSITIVO de `SF-ERR-012`, e o que a fixture mede e a SEPARACAO que a
+  mensagem sozinha nao faz.
+
+  `OutOfMemoryError: Java heap space` casa `ERR-SPARK-006`, e o event log traz
+  `spark.stage.task_input` -- a distribuicao de bytes por task. E ela que decide
+  entre skew e dimensionamento, e por isso a acao e `skew.classify_type` com
+  `direction: investigate`, nunca um valor de memoria.
+
+  E do HEAP, e `SF-ERR-004` e do CONTAINER: `Container killed by YARN` e memoria
+  FORA do heap e se conserta com `memoryOverhead`. Os dois orcamentos sao
+  distintos, e `knowledge/spark/memory-and-oom.md` faz a mesma separacao.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+expects_rules:
+  - SF-ERR-012

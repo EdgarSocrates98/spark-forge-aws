@@ -1,0 +1,36 @@
+name: gc_overhead_com_tempo
+proves: >
+  O POSITIVO de `SF-ERR-013`, irma de `SF-ERR-012` e NAO a mesma coisa.
+
+  La o heap estourou numa alocacao; aqui ele nao estourou -- o custo de
+  mante-lo passou a dominar. A medida que decide e uma RAZAO (tempo em coleta
+  sobre tempo de executor), e por isso a regra exige `spark.stage.gc` e nao
+  `spark.stage.task_input`.
+
+  E por isso que subir heap aqui costuma ADIAR em vez de resolver: um heap
+  grande com conjunto vivo proporcionalmente grande falha igual, e o sintoma
+  volta quando a entrada cresce.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+expects_rules:
+  - SF-ERR-013

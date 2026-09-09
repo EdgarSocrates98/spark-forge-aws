@@ -1,0 +1,249 @@
+[
+  {
+    "id": "f_ade61f",
+    "schema_version": 1,
+    "kind": "parquet.column_profile",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "measures": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 387.0,
+      "stats_coverage": 1.0,
+      "min_max_coverage": 1.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 3.5813953488372094,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "column": "cat",
+      "physical_type": "BYTE_ARRAY",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "encodings": [
+        "PLAIN",
+        "RLE",
+        "RLE_DICTIONARY"
+      ]
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_27e7bc",
+    "schema_version": 1,
+    "kind": "parquet.column_profile",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "id"
+    },
+    "measures": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 16086.0,
+      "stats_coverage": 1.0,
+      "min_max_coverage": 1.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 1.7424468481909736,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0,
+      "avg_range_coverage": 0.33311103701233746,
+      "expected_row_groups_scanned": 0.9993331110370124
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "column": "id",
+      "physical_type": "INT64",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "encodings": [
+        "PLAIN",
+        "RLE",
+        "RLE_DICTIONARY"
+      ]
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_7c6a19",
+    "schema_version": 1,
+    "kind": "parquet.file",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "file_bytes": 402653184.0,
+      "num_rows": 3000.0,
+      "num_row_groups": 3.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "created_by": "parquet-cpp-arrow version 25.0.1",
+      "format_version": "2.6"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_32f02e",
+    "schema_version": 1,
+    "kind": "parquet.footer_analyzed",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/curated/ordenado_poda/",
+      "file": "footer.json"
+    },
+    "measures": {
+      "files_seen": 1.0,
+      "files_read": 1.0,
+      "row_groups_read": 3.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "sampling": "first_n_by_name",
+      "max_files": 20,
+      "status": "ok",
+      "partial": false
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_a76714",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 0
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_3a0d20",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 1
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_5ec3bf",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 2
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/ordenado_poda/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_a1cd11",
+    "schema_version": 1,
+    "kind": "parquet.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/ordenado_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "tipo_sem_dominio_numerico",
+      "column": "cat"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  }
+]

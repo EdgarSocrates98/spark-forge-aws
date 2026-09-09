@@ -19,12 +19,16 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sparkforge.errors.matcher import build_signature_matches  # noqa: E402
 from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
 from sparkforge.facts.benchmark import build_benchmark  # noqa: E402
 from sparkforge.facts.call_graph import build_call_graph  # noqa: E402
 from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
+)
+from sparkforge.facts.cloudwatch_logs import (  # noqa: E402
+    extract_cloudwatch_logs_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
 from sparkforge.facts.controlm_jobs import extract_controlm_jobs_tree  # noqa: E402
@@ -33,6 +37,7 @@ from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
 from sparkforge.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
 from sparkforge.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge.facts.exception import build_exceptions  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
@@ -41,6 +46,7 @@ from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_tree,
 )
 from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
+from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
 from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
@@ -79,6 +85,9 @@ FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
 FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
+FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
+FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
+FIXTURES_PARQUET_FOOTER = ROOT / "fixtures" / "parquet_footer"
 FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
 # Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
 # `evals/holdout/README.md` e `regen_scenario`.
@@ -430,6 +439,129 @@ def regen_migration(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_exception(directory: Path) -> None:
+    """Corpus da excecao: event log obrigatorio, `.jar` e `.tf` quando o caso
+    precisa deles.
+
+    Tres extratores de artefato e DOIS derivadores puros, nesta ordem, porque a
+    ordem e a dependencia: `extract_event_log_path` produz o
+    `spark.stage.failure` que `build_exceptions` estrutura, e o
+    `spark.exception` que ele emite e o que `build_signature_matches` casa
+    contra `knowledge/errors/`. Nenhum dos dois derivadores le artefato -- eles
+    leem a UNIAO dos facts, no molde de `regen_bench` e de `_derive` em
+    `tests/test_fixtures_golden_bridge.py`.
+
+    `.jar` e `.tf` entram sob guarda de existencia e nao por default: as duas
+    regras de `rules/catalog/errors.yaml` declaram `mig.jar_binary` e
+    `tf.attribute` em `requires_facts`, e o par positivo/negativo que prova esse
+    contrato e exatamente a fixture COM o jar contra a fixture SEM ele. Extrair
+    os dois sempre que o diretorio existisse apagaria a diferenca que o par
+    existe para medir.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for jsonl in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    if any(input_dir.rglob("*.jar")):
+        facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    facts.extend(build_exceptions(facts))
+    facts.extend(build_signature_matches(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_cloudwatch_logs(directory: Path) -> None:
+    """Corpus do LOG do CloudWatch: o log, os COMPANHEIROS que a assinatura
+    exige, e o matcher.
+
+    O nucleo continua sendo UM extrator de artefato e UM derivador puro, nesta
+    ordem, porque a ordem e a dependencia: `extract_cloudwatch_logs_tree`
+    produz os `cloudwatch.log_event` ja redigidos, e `build_signature_matches`
+    casa cada linha contra `knowledge/errors/`. E o mesmo desenho de
+    `regen_exception`, com a fonte trocada -- e e essa troca que destrava as
+    quatro assinaturas de mensagem.
+
+    ## Por que ha companheiros, e por que eles moram em SUBDIRETORIO
+
+    As quatro regras `SF-ERR-003..006` fazem com as quatro assinaturas de
+    mensagem o que `SF-ERR-001`/`SF-ERR-002` fizeram com as duas de classe:
+    exigem em `requires_facts` o `evidence_required` que a propria assinatura
+    declara. A linha de log casada NAO basta -- ela diz que a mensagem
+    apareceu, nunca que a acusacao se sustenta. Por isso o event log
+    (`*.jsonl`), o Terraform (`*.tf`), o dump Iceberg (`iceberg/*.json`) e o
+    inventario de consumidores (`*.yaml`) entram aqui.
+
+    O log do CloudWatch e o dump Iceberg sao os DOIS `*.json`, e por isso o
+    corpus ganhou pasta: quando `input/logs/` existe, e dela que sai o log, e
+    `input/iceberg/` guarda o dump. Sem as pastas, o comportamento e o de
+    antes -- `input/*.json` inteiro e log --, e e assim que as nove fixtures
+    originais continuam valendo byte a byte.
+
+    Cada companheiro entra sob GUARDA DE EXISTENCIA e nao por default, pela
+    mesma razao de `regen_exception`: o par positivo/negativo que prova
+    `requires_facts` e a fixture COM o companheiro contra a fixture SEM ele.
+    Extrair sempre que o diretorio existisse apagaria a diferenca que o par
+    existe para medir.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    logs_dir = input_dir / "logs"
+    facts = extract_cloudwatch_logs_tree(
+        logs_dir if logs_dir.is_dir() else input_dir, repo_root=input_dir
+    )
+    for jsonl in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    iceberg_dir = input_dir / "iceberg"
+    if iceberg_dir.is_dir():
+        facts.extend(extract_iceberg_metadata_tree(iceberg_dir, repo_root=input_dir))
+    for inventory in sorted(input_dir.glob("*.yaml")):
+        facts.extend(extract_consumers_path(inventory, repo_root=input_dir))
+    # O `.py` e o quinto companheiro, e ele entrou com `SF-ERR-008`: a regra
+    # exige `pyspark.udf` ao lado da linha de log, porque "Python worker exited
+    # unexpectedly" sozinho nao diz que ha UDF no caminho.
+    if any(input_dir.glob("*.py")):
+        facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    facts.extend(build_signature_matches(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_parquet_footer(directory: Path) -> None:
+    """Corpus do FOOTER do Parquet: um `*.json` sob input/, e mais nada.
+
+    UM extrator e ZERO derivadores -- e a diferenca para `regen_exception` e
+    `regen_cloudwatch_logs` e o ponto: o footer nao alimenta derivacao nenhuma
+    hoje. As quatro regras de `SF-PQ-006..009` consomem `parquet.row_group` e
+    `parquet.column_profile` direto.
+
+    O `.parquet` binario NAO mora no corpus. O input e o artefato JSON que
+    `collect parquet-footer` gravaria, gerado a partir de Parquet real por
+    `scripts/` e committado so nessa forma -- binario num corpus de fixture e
+    irrevisavel em diff.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for artefato in sorted(input_dir.glob("*.json")):
+        payload = json.loads(artefato.read_text(encoding="utf-8"))
+        rel = artefato.relative_to(input_dir).as_posix()
+        facts.extend(extract_parquet_footer(payload, rel))
+    # O `.sql` entra sob GUARDA DE EXISTENCIA, e nao por default: `SF-PQ-008`
+    # exige `sql.predicate` em `requires_facts`, e o par que prova esse contrato
+    # e a fixture COM a query contra a fixture SEM ela. Extrair sempre apagaria
+    # a diferenca que o par existe para medir -- mesma disciplina de
+    # `regen_exception` com o `.jar`.
+    for consulta in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(consulta, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_scenario(directory: Path) -> None:
     """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
 
@@ -657,6 +789,9 @@ def main() -> int:
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),
                 (FIXTURES_MIGRATION / name, regen_migration),
+                (FIXTURES_EXCEPTION / name, regen_exception),
+                (FIXTURES_CW_LOGS / name, regen_cloudwatch_logs),
+                (FIXTURES_PARQUET_FOOTER / name, regen_parquet_footer),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -747,6 +882,22 @@ def main() -> int:
     if FIXTURES_MIGRATION.is_dir():
         for directory in sorted(p for p in FIXTURES_MIGRATION.iterdir() if p.is_dir()):
             regen_migration(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/exception/`
+    # nasce na Task 4 da frente de stacktrace intelligence, e a regeneracao
+    # completa roda ENTRE a Task 3 e ela.
+    if FIXTURES_EXCEPTION.is_dir():
+        for directory in sorted(p for p in FIXTURES_EXCEPTION.iterdir() if p.is_dir()):
+            regen_exception(directory)
+    for directory in sorted(p for p in FIXTURES_CW_LOGS.iterdir() if p.is_dir()):
+        regen_cloudwatch_logs(directory)
+    # Mesma guarda dos dois corpus anteriores, e pelo mesmo intervalo:
+    # `fixtures/parquet_footer/` nasce depois das regras de `SF-PQ-006..009`, e
+    # a regeneracao completa roda entre as duas coisas.
+    if FIXTURES_PARQUET_FOOTER.is_dir():
+        for directory in sorted(
+            p for p in FIXTURES_PARQUET_FOOTER.iterdir() if p.is_dir()
+        ):
+            regen_parquet_footer(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.

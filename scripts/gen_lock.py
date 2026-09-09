@@ -121,7 +121,32 @@ LOCK_DIR = ROOT / "locks"
 PYTHON_VERSIONS = ("3.10", "3.11")
 
 # O alvo de `ubuntu-latest`, no vocabulario do `--python-platform` do uv.
-PLATFORM = "x86_64-manylinux2014"
+#
+# SUBIU de `manylinux2014` (= glibc 2.17) para `manylinux_2_28` em 2026-09-09, e
+# a razao NAO e preferencia -- e que nao havia versao segura de pyarrow do outro
+# lado. Medido:
+#
+#   CVE-2024-52338   14.0.1 .. 16.1.0   RCE ao ler IPC/Feather/PARQUET de fonte
+#                                       nao confiavel; fix em 17.0.0
+#   CVE-2026-25087   15.0.0 .. 23.0.0   use-after-free ao ler IPC com
+#                                       pre-buffering; fix em 23.0.1
+#
+# As duas faixas cobrem 14.0.1 ate 23.0.0 sem intervalo livre, entao a unica
+# versao limpa e `>= 23.0.1`. E pyarrow **deixou de publicar wheel
+# `manylinux_2_17` a partir da 21** -- so `manylinux_2_28`. Com
+# `--only-binary :all:`, o alvo antigo tornava a versao segura irresolvivel:
+# `uv` recusa com "pyarrow>=23.0.1 has no usable wheels".
+#
+# O CVE incide no caminho que `sparkforge/collect/parquet_footer.py` exercita --
+# ele le o rodape de arquivos que o operador aponta, e um prefixo de dado de
+# terceiro E a "fonte nao confiavel" que o aviso descreve. Ficar no alvo antigo
+# era escolher entre um lock que nao resolve e um lock com RCE conhecida.
+#
+# O QUE ISSO CUSTA, declarado: o ambiente reproduzivel passa a exigir glibc
+# >= 2.28. `ubuntu-latest` do GitHub Actions e 24.04 (glibc 2.39), entao o CI
+# nao muda; quem monta o ambiente em distro anterior a essa fronteira -- CentOS
+# 7, Ubuntu 16.04 -- perde o lock, e precisa resolver por conta propria.
+PLATFORM = "x86_64-manylinux_2_28"
 
 # `scope` no vocabulario do CycloneDX, que `scripts/gen_sbom.py` consome:
 #   required -- fecho das dependencias de nucleo declaradas em `[project]`

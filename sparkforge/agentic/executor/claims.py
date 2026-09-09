@@ -104,6 +104,38 @@ def confidence_for(
     return "medium"
 
 
+def standing_for_finding(
+    finding: dict[str, Any],
+    ids_presentes: set[str],
+    authority_map: dict[str, Any],
+    runtime: dict[str, Any],
+) -> dict[str, Any]:
+    """Os tres insumos do lastro, e o valor que eles produzem.
+
+    Existe como funcao propria porque DOIS consumidores precisam do mesmo
+    calculo: `claims_from_findings`, que o usa para o `confidence` da Claim, e
+    `digest.plan_digest`, que o publica na resposta do `judge`. Recomputa-lo no
+    segundo faria as duas leituras divergirem com o tempo -- e o operador veria
+    o `judge` afirmar um lastro e o `arbitrate` afirmar outro sobre o mesmo
+    achado.
+
+    O valor NUNCA viaja sozinho: rotulo de confianca sem os insumos que o
+    produziram e o que a §5.1 do spec do executor proibiu ao recusar publicar o
+    score de `assess_claim`.
+    """
+    refs = _fact_ids_declarados(finding)
+    medidas_presentes = bool(refs) and all(ref in ids_presentes for ref in refs)
+    escopo = dict(finding.get("runtime_scope") or {})
+    dentro = in_scope(escopo, runtime or {})
+    tier = _melhor_tier(list(finding.get("sources") or []), authority_map)
+    return {
+        "value": confidence_for(tier, dentro, medidas_presentes),
+        "source_tier": tier.name,
+        "in_version_scope": dentro,
+        "measures_present": medidas_presentes,
+    }
+
+
 def claims_from_findings(
     findings: list[dict],
     facts: list[dict],
@@ -145,13 +177,6 @@ def claims_from_findings(
         rule_id = str(finding.get("rule_id") or "").strip()
         refs = _fact_ids_declarados(finding)
 
-        # "Medida exigida presente" = todo id declarado pelo finding esta entre
-        # os facts do case. Finding que nao declarou fact nenhum tambem cai aqui:
-        # sem ancora nao ha o que conferir, e tratar a lista vazia como "todas
-        # presentes" (que e o que `all([])` faz) daria alta confianca a uma
-        # claim que nao mediu nada.
-        medidas_presentes = bool(refs) and all(ref in ids_presentes for ref in refs)
-
         # `measurement_ref` e um campo so, e o finding pode declarar mais de um
         # fact. Nomeamos o PRIMEIRO declarado -- a ancora que a regra listou
         # primeiro -- e a lista inteira fica em `Claim.evidence_refs`. Juntar os
@@ -160,17 +185,22 @@ def claims_from_findings(
         ancora = refs[0] if refs else ""
 
         escopo = finding.get("runtime_scope") or {}
-        dentro = in_scope(escopo, runtime or {})
+
+        # Os tres insumos do lastro (medida presente, escopo, tier) e o valor
+        # que eles produzem vem de `standing_for_finding` -- a mesma funcao que
+        # `digest.plan_digest` vai chamar para publicar o lastro na resposta do
+        # `judge`. Recalcula-los aqui por conta propria e a divergencia que a
+        # funcao existe para fechar.
+        lastro = standing_for_finding(finding, ids_presentes, authority_map, runtime or {})
 
         fontes = _fontes_com_url(finding)
-        tier = _melhor_tier(fontes, authority_map)
 
         claim = Claim(
             claimant=rule_id,
             claim_type=ClaimType.INFERENCE,
             statement=_statement(finding, rule_id),
             evidence_refs=refs,
-            confidence=confidence_for(tier, dentro, medidas_presentes),
+            confidence=lastro["value"],
             created_at=created_at,
         )
         claims.append(claim)

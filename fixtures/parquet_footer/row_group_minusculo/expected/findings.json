@@ -1,0 +1,86 @@
+[
+  {
+    "rule_id": "SF-PQ-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Row group fora da faixa que sustenta paralelismo e memória",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/row_group_minusculo/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 0
+    },
+    "evidence": [
+      "f_c549fa",
+      "f_dddba3",
+      "f_830e4d",
+      "f_3db492",
+      "f_d64f3c",
+      "f_62339b",
+      "f_27aa6f",
+      "f_706f6f",
+      "f_7a755b",
+      "f_ffc80f",
+      "f_ee824f",
+      "f_adabef"
+    ],
+    "measured": {
+      "num_rows": 50.0,
+      "total_byte_size": 633.0,
+      "num_columns": 2.0
+    },
+    "threshold": {
+      "piso_bytes": 8388608,
+      "teto_bytes": 536870912
+    },
+    "runtime_scope": {},
+    "explanation": "O row group é a unidade de paralelismo de leitura E a unidade de estatística. Row group pequeno demais multiplica metadados e overhead de task; grande demais aumenta a memória por task e reduz o número de unidades que podem ser descartadas pelo pruning.\n\n**Esta regra é diferente de `SF-PQ-001`, e as duas erram em direções opostas.** `SF-PQ-001` conta arquivos pequenos no prefixo, lendo a listagem S3; esta mede o row group DENTRO do arquivo, lendo o footer. Um arquivo de 512 MB com um único row group de 512 MB passa na primeira e reprova nesta — e o modo de falha dele é real: cada task carrega meio giga para memória, e nenhuma parte do arquivo pode ser pulada.\n\nOs limiares são heurística de campo, e a faixa é larga de propósito. O alvo de ~128 MB que `knowledge/storage/parquet-layout.md` cita fica no meio dela; uma regra que acusasse tudo fora de 128 MB reprovaria layout saudável.",
+    "proposed_change": [
+      "Ajustar `parquet.block.size` (escrita via Hadoop/Spark) para a faixa alvo, e reescrever os arquivos afetados — a propriedade vale para o que for escrito DEPOIS dela, e não reorganiza o que já existe.",
+      "Para row group grande demais, conferir antes se ele é consequência de um arquivo único gigante; nesse caso o conserto é o número de arquivos, não o row group.",
+      "Medir de novo depois da reescrita — `sparkforge collect parquet-footer` sobre o prefixo, e comparar a distribuição."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reduzir o row group aumenta o volume de metadados no footer, e o custo de planejamento sobe com ele — em tabela com muitos arquivos, o ganho de paralelismo pode ser comido pelo tempo de leitura de footer.",
+      "Reescrever arquivos é reprocessamento, não ajuste de configuração: o conteúdo precisa sair idêntico, e isso não é grátis nem instantâneo.",
+      "A medida vem da AMOSTRA que o coletor leu. Com `partial: true` no `parquet.footer_analyzed`, a distribuição observada pode não representar o prefixo inteiro."
+    ],
+    "tradeoffs": [
+      "Row group menor melhora pruning e paralelismo ao custo de metadados; maior reduz metadados ao custo de memória por task. Não há valor certo sem o perfil de leitura."
+    ],
+    "validation": [
+      "`parquet.row_group.total_byte_size` dentro da faixa no censo seguinte, sobre o mesmo prefixo.",
+      "Número de tasks do stage de leitura, antes e depois — é o eixo que a mudança move.",
+      "Contagem total de linhas e agregados de controle idênticos: reescrever arquivo é reescrever dado, e contagem igual com valor diferente é o modo de falha que só o eixo de valor pega."
+    ],
+    "rollback": [
+      "Reverter `parquet.block.size` e manter os arquivos antigos até validar os novos. A reescrita em si não tem rollback barato."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29",
+        "note": "Referência do lado do Spark (`maxPartitionBytes`, `openCostInBytes`). Os limiares de 8 MB e 512 MB são heurística de campo — mesma ressalva que `knowledge/storage/parquet-layout.md` registra para o alvo de 128 MB.\n"
+      }
+    ],
+    "action": {
+      "kind": "storage.set_write_layout_property",
+      "target": "parquet.block_size",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "storage.file_layout",
+        "scan.task_count"
+      ],
+      "depends_on": []
+    }
+  }
+]

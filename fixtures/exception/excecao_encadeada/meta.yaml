@@ -1,0 +1,44 @@
+name: excecao_encadeada
+proves: >
+  As DUAS coisas que a cadeia prova, e nenhuma delas aparece numa excecao simples.
+
+  Primeira: `caused_by` sai NA ORDEM em que o texto as escreveu --
+  `InvocationTargetException` antes de `NoSuchMethodError` --, porque a ordem e a
+  propria estrutura da cadeia: a ultima e a causa raiz, e trocar a ordem trocaria
+  qual excecao causou qual.
+
+  Segunda, e e o ponto do fixture: `error.signature_match` sai com
+  `matched_on: caused_by`, nao `exception_class`. A classe do topo e
+  `org.apache.spark.SparkException`, que nao casa assinatura nenhuma -- a classe
+  que IMPORTA mora na causa raiz, embrulhada. Um matcher que olhasse so
+  `exception_class` devolveria `nenhuma_assinatura_casou` sobre a MESMA falha que
+  `nosuchmethod_com_jar_e_terraform` casa, e o defeito passaria como excecao
+  desconhecida.
+
+  `SF-ERR-001` NAO dispara aqui, e a recusa e nomeada: `requires_facts` lista
+  `mig.jar_binary` e `tf.attribute`, e este case nao tem nenhum dos dois -- ele e
+  event log puro. A assinatura casada nao sustenta a acusacao sozinha, e o
+  negativo de UMA evidencia so e `nosuchmethod_sem_jar`.
+runtime:
+  glue: "6.0"
+  spark: "4.0.0"
+  python: "3.11"
+  iceberg: "1.9.1"
+expects_kinds:
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+expects_rules: []

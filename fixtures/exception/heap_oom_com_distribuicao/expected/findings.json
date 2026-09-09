@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-ERR-012",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Heap do executor estourou -- a distribuição de input por task decide se é skew ou dimensionamento",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 4,
+      "signature_id": "ERR-SPARK-006"
+    },
+    "evidence": [
+      "f_cfa00c",
+      "f_6e316d"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job LANÇOU `OutOfMemoryError: Java heap space`, e o event log traz a distribuição de bytes de entrada por task. As duas juntas separam os dois diagnósticos que a mensagem sozinha não separa: heap que estourou com distribuição EVEN é dimensionamento; com distribuição desigual é skew, e o heap não é a causa.\n\nA diferença muda o conserto por inteiro. Com skew, subir `spark.executor.memory` paga o custo da MAIOR task em todos os executores — o cluster fica mais caro e a task grande continua sendo a grande. É o conserto que \"não funcionou\" com mais frequência nesta área.\n\n**Esta regra é do heap, e `SF-ERR-004` é do container.** `Container killed by YARN` é memória FORA do heap, e o conserto dela é `memoryOverhead`; aqui a JVM reporta a própria falha, e o orçamento é outro. `knowledge/spark/memory-and-oom.md` faz a mesma separação.\n\n**O que ela NÃO afirma:** qual é a distribuição. Ela exige `spark.stage.task_input` no case e manda comparar máximo com mediana — a comparação é o primeiro passo do `proposed_change`, e é o operador que a lê.",
+    "proposed_change": [
+      "Comparar bytes de entrada MÁXIMO e MEDIANO por task no stage que falhou. É esse par que decide, e nenhuma das duas medidas sozinha decide.",
+      "Se a distribuição for desigual, tratar o skew — ver `SF-UI-001` e `SF-UI-002`, que classificam o tipo antes do tratamento.",
+      "Ler a decisão de join no plano físico: broadcast de tabela que deixou de ser pequena é a causa que some do código e aparece só no plano.",
+      "Subir `spark.executor.memory` só depois de a distribuição ter sido medida e encontrada uniforme. O default do Apache é `1g`."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir heap com skew presente move a falha sem tocar a causa, e o custo sobe em todos os executores.",
+      "Aumentar `spark.memory.fraction` acima do default: a documentação do Apache recomenda deixá-lo como está e avisa que subi-lo exige ajustar a coleta de lixo da JVM junto.",
+      "Tratamento de skew que mexe na chave de join pode duplicar ou descartar linha, e nada no plano físico acusa isso.",
+      "A saída parcial do run falho continua no destino."
+    ],
+    "tradeoffs": [
+      "Medir a distribuição custa uma passada sobre o event log antes de qualquer mudança; a alternativa é subir memória e medir depois, mais rápida por run e mais cara por ciclo."
+    ],
+    "validation": [
+      "Razão entre bytes de entrada máximo e mediano por task, antes e depois — é a medida que classifica, e publicá-la nos dois momentos é o que separa \"aumentei memória\" de \"resolvi\".",
+      "Ausência de `OutOfMemoryError` no run seguinte com o MESMO volume de entrada.",
+      "Se o tratamento tocar a chave de join: contagem total, contagem por chave e agregados de controle contra o último run bem-sucedido.",
+      "Se a ação foi só `spark.executor.memory`: nenhum eixo de dado é exigido, e declarar isso é parte da validação."
+    ],
+    "rollback": [
+      "Reverter o valor de memória. Se a correção mudou distribuição ou chave, a saída precisa ser comparada antes de a versão anterior ser descartada."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/heap_out_of_memory.json` (`ERR-SPARK-006`). Ela registra `spark.executor.memory` com default `1g` e `spark.memory.fraction` com default `0.6` de (heap - 300MB), mais a recomendação explícita de deixar o segundo no default.\n"
+      }
+    ],
+    "action": {
+      "kind": "skew.classify_type",
+      "target": "spark.stage",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

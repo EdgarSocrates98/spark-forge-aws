@@ -1,0 +1,40 @@
+name: texto_sem_forma_de_stacktrace
+proves: >
+  Recusa NOMEADA, e ela e o produto -- nao um erro.
+
+  `Stage cancelled because SparkContext was shut down` e um `Failure Reason` real
+  que o Spark escreve, e nao tem forma de stacktrace nenhuma: sem `Classe:
+  mensagem` no inicio de linha, sem frame. `_CABECA` nao casa, e o extrator emite
+  `spark.exception.unresolved` com `reason: sem_forma_de_stacktrace` em vez de
+  forcar o parse.
+
+  O que ele NAO faz e o que esta fixture prende: nao inventa `exception_class`,
+  nao emite `spark.exception`, e nao emite frame nenhum. Forcar a leitura aqui
+  produziria uma excecao que ninguem lancou, e uma regra que a consumisse acusaria
+  um defeito que nao existe.
+
+  `error.signature.unresolved` tambem NAO sai, e a ausencia e correta:
+  `build_signature_matches` itera sobre `spark.exception`, e nao ha nenhum. O
+  ponto cego ja esta contado uma vez, pelo extrator que o encontrou; conta-lo de
+  novo no matcher diria que duas coisas falharam onde falhou uma.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception.unresolved
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+expects_rules: []

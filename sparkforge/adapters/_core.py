@@ -35,6 +35,7 @@ from sparkforge.codeintel import search as _codeintel_search
 from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
+from sparkforge.collect import cloudwatch_logs as collect_cw_logs
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
@@ -53,6 +54,7 @@ from sparkforge.controlm.matrix import (
     covers as controlm_covered_range,
 )
 from sparkforge.economy.report import build_context_report
+from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
     extract_athena_workgroup_tree,
@@ -64,6 +66,10 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.cloudwatch import extract_cloudwatch_path
+from sparkforge.facts.cloudwatch_logs import (
+    extract_cloudwatch_logs_path,
+    extract_cloudwatch_logs_tree,
+)
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
 from sparkforge.facts.controlm_jobs import (
     extract_controlm_jobs_path,
@@ -87,6 +93,10 @@ from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
+)
+from sparkforge.facts.parquet_footer import (
+    extract_parquet_footer_path,
+    extract_parquet_footer_tree,
 )
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
@@ -1035,6 +1045,150 @@ def analyze_cloudwatch(
 ) -> dict[str, Any]:
     facts = _extract_cloudwatch_facts(path)
     return _facts_page(facts, "glue.metric.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze cloudwatch-logs / error-signatures
+#
+# DOIS verbos e nao um, e a divisao nao e estilo: sao camadas diferentes.
+#
+# `analyze cloudwatch-logs` LE ARTEFATO -- a resposta de `filter_log_events` que
+# `collect cloudwatch-logs` gravou -- e emite `cloudwatch.log_event`,
+# `cloudwatch.logs.analyzed` e `cloudwatch.logs.unresolved`.
+#
+# `analyze error-signatures` NAO le artefato: e derivacao pura sobre a UNIAO dos
+# facts do case, no molde de `analyze call-graph`. Ele casa
+# `knowledge/errors/` contra `spark.exception` (do event log) E contra
+# `cloudwatch.log_event` (do log), e as DUAS fontes precisam estar no mesmo
+# arquivo de facts.
+#
+# POR QUE o matcher NAO roda dentro do primeiro: ele recusa por ESCOPO, nao por
+# linha. `error.signature.unresolved` sai uma vez por (run, log group) e uma vez
+# por excecao que nao casou -- rodando so sobre os facts do log, uma excecao do
+# event log ausente do arquivo nao produziria recusa nenhuma, e o ponto cego
+# desapareceria em silencio. A uniao e o contrato, do mesmo jeito que
+# `--facts` repetido e o contrato de `arbitrate` (SS12.9 do spec).
+# --------------------------------------------------------------------------- #
+
+
+def _extract_cloudwatch_logs_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect "
+            f"cloudwatch-logs`, ou para o DIRETORIO deles:\n"
+            f"    sparkforge analyze cloudwatch-logs "
+            f"--path .sparkforge/artifacts/cloudwatch_logs/",
+            exit_code=2,
+        )
+    # Arquivo OU diretorio, e a razao e do artefato: o coletor grava um por
+    # (job, run, log group), e o operador que baixou `error` e `output` do mesmo
+    # run tem DOIS. Ler os dois e uma chamada so, em vez de duas -- e a mesma
+    # escolha que `extract_cloudwatch_logs_tree` ja fazia para o corpus.
+    if target.is_dir():
+        return extract_cloudwatch_logs_tree(target, repo_root=target)
+    return extract_cloudwatch_logs_path(target)
+
+
+def analyze_cloudwatch_logs(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts do LOG do run ja coletado.
+
+    Toda linha ja chega REDIGIDA do extrator: `secrets.redact` roda antes de o
+    texto virar fact, e uma linha redigida vale `<redigido>` inteiro. Log group
+    inexistente, sem permissao, janela vazia e sem credencial viram
+    `cloudwatch.logs.unresolved` com a razao -- nunca lista vazia silenciosa.
+    """
+    facts = _extract_cloudwatch_logs_facts(path)
+    return _facts_page(
+        facts, "cloudwatch.logs.unresolved", kind, limit, cursor, detail_level
+    )
+
+
+_FACTS_FROM_EXCEPTION_OR_LOG = (
+    "sparkforge analyze event-log --path <log> --out {path}  "
+    "# ou: sparkforge analyze cloudwatch-logs --path <dir> --out {path}"
+)
+
+
+def analyze_error_signatures(
+    facts_path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Casa `knowledge/errors/` contra os facts do case. Funcao PURA.
+
+    Consome `spark.exception` e `cloudwatch.log_event` do arquivo de facts, e
+    nunca reparseia artefato. `matched_on` diz por qual porta a assinatura
+    entrou (`exception_class`, `caused_by` ou `log_line`).
+
+    **A UNIAO e o contrato.** Alimentar so metade dos facts nao produz metade
+    das respostas: produz um ponto cego que nao aparece, porque a recusa deste
+    caminho e por ESCOPO e nao por linha.
+
+    Ele NAO julga: `likely_causes`, `fixes` e `confidence` nao saem daqui. O
+    juizo mora em `rules/catalog/errors.yaml`, e `SF-ERR-001` a `SF-ERR-006`
+    exigem, alem do match, o companheiro que cada assinatura declara.
+    """
+    fact_list = _load_facts_file(
+        facts_path, producer=_FACTS_FROM_EXCEPTION_OR_LOG, label="assinaturas de erro"
+    )
+    derived = build_signature_matches(fact_list)
+    return _facts_page(
+        derived, "error.signature.unresolved", kind, limit, cursor, detail_level
+    )
+
+
+# --------------------------------------------------------------------------- #
+# analyze parquet-footer
+# --------------------------------------------------------------------------- #
+
+
+def _extract_parquet_footer_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect "
+            f"parquet-footer`, ou para o DIRETORIO deles:\n"
+            f"    sparkforge analyze parquet-footer "
+            f"--path .sparkforge/artifacts/parquet_footer/",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_parquet_footer_tree(target, repo_root=target)
+    return extract_parquet_footer_path(target)
+
+
+def analyze_parquet_footer(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts do FOOTER ja coletado, e nunca abre arquivo Parquet.
+
+    A leitura do rodape mora em `sparkforge/collect/parquet_footer.py`, que
+    depende de pyarrow; este verbo parte do artefato JSON e nao depende de nada
+    alem do nucleo. E a mesma divisao de `collect cloudwatch-logs` /
+    `analyze cloudwatch-logs`.
+
+    A medida que so existe aqui e `avg_range_coverage`: a sobreposicao de
+    min/max entre row groups, que separa "sem estatistica" de "estatistica
+    inutil". Ela e propriedade do LAYOUT e assume o predicado uniforme sobre o
+    dominio -- nomeia layout que NAO PODE podar, nunca job que vai ler muito.
+    """
+    facts = _extract_parquet_footer_facts(path)
+    return _facts_page(facts, "parquet.unresolved", kind, limit, cursor, detail_level)
 
 
 def analyze_glue_job_runs(
@@ -2883,6 +3037,26 @@ def judge_findings(
         wanted = set(severity)
         finding_dicts = [f for f in finding_dicts if f["severity"] in wanted]
 
+    # O plano cobre os findings DEPOIS do filtro de severidade e ANTES da
+    # paginacao: ele e do conjunto que o operador pediu, nao da pagina que
+    # coube. Ordem parcial apresentada como ordem e a familia de afirmacao que
+    # este projeto recusa -- por isso `scope` carrega a contagem.
+    #
+    # `plan_digest` CALCULA e nao grava: `sparkforge_judge` e READ_ONLY e
+    # continua sendo. O registro auditavel e `sparkforge arbitrate`.
+    #
+    # Import local pelo mesmo motivo que `arbitrate_findings` usa: o subsistema
+    # agentico so e carregado por quem o chama, e este modulo ja custa 243 KB.
+    from sparkforge.agentic.executor.digest import plan_digest
+
+    plano, lastro = plan_digest(
+        finding_dicts, [f.to_dict() for f in fact_list], runtime
+    )
+    for item in finding_dicts:
+        standing = lastro.get(item.get("rule_id"))
+        if standing is not None:
+            item["evidence_standing"] = standing
+
     by_severity = _count_by(finding_dicts, lambda f: f["severity"])
     page, next_cursor = paginate_items(finding_dicts, limit, cursor)
 
@@ -2903,6 +3077,7 @@ def judge_findings(
         # flag e fact discordando, a precedencia escolhe o valor reportado, mas
         # a discordancia aparece aqui em vez de ser resolvida em silencio.
         "runtime": runtime,
+        "plan": plano,
         "items": page,
     }
     if show_skipped:
@@ -4353,6 +4528,43 @@ def collect_cloudwatch(
     try:
         entry = collect_aws.collect_cloudwatch(
             job_name, job_run_id, Path(repo), now=now, start=start, end=end
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_cloudwatch_logs(
+    repo: str,
+    *,
+    job_name: str,
+    job_run_id: str,
+    log_group: str,
+    start: str,
+    end: str,
+    now: str,
+    filter_pattern: str = "",
+    max_events: int = 500,
+) -> dict[str, Any]:
+    """Baixa o LOG do run no CloudWatch Logs. Ver `collect/cloudwatch_logs.py`.
+
+    Log group inexistente, permissao negada, janela vazia e credencial ausente
+    NAO sobem como erro de fronteira: eles viram `status` no artefato e
+    `cloudwatch.logs.unresolved` no fact. Erro aqui e so o que impede ate a
+    recusa de ser gravada.
+    """
+    rel_path = collect_cw_logs.cloudwatch_logs_path(job_name, job_run_id, log_group)
+    try:
+        entry = collect_cw_logs.collect_cloudwatch_logs(
+            job_name,
+            job_run_id,
+            Path(repo),
+            now=now,
+            log_group=log_group,
+            start=start,
+            end=end,
+            filter_pattern=filter_pattern,
+            max_events=max_events,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc

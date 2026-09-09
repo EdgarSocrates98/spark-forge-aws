@@ -1020,6 +1020,182 @@ _JUDGE_SKIPPED_ITEM: dict[str, Any] = {
     },
 }
 
+# O lastro por achado, e os TRES insumos que o produziram. O valor nunca viaja
+# sozinho: rotulo de confianca sem os insumos e exatamente o que este repositorio
+# recusou ao nao publicar o score de `assess_claim`. Com eles, quem le refaz a
+# conta -- `high` exige os tres; `medium` e autoridade fora do escopo de versao;
+# `low` e tier fraco ou medida ausente.
+#
+# O nome e proprio de proposito. `Finding.confidence` ja existe, vem da REGRA, e
+# continua onde esta; o lastro e computado pelo executor a partir de tier da
+# fonte, escopo de versao e presenca da medida. Dois campos `confidence` na
+# mesma resposta seriam ambiguidade publicada.
+_EVIDENCE_STANDING_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["value", "source_tier", "in_version_scope", "measures_present"],
+    "properties": {
+        "value": {"type": "string", "enum": ["high", "medium", "low"]},
+        "source_tier": {
+            "type": "string",
+            "description": (
+                "Tier da MELHOR fonte da regra: T1 (docs oficial) > T2 "
+                "(source/changelog) > T3 (benchmark reproduzivel) > T4 "
+                "(autoridade reconhecida) >> T5 (LLM) > T6 (conjectura)."
+            ),
+        },
+        "in_version_scope": {
+            "type": "boolean",
+            "description": (
+                "Se o `runtime_scope` da regra cobre o runtime do case. Uma T1 "
+                "FORA do escopo tem autoridade e NAO sustenta a claim -- e essa "
+                "diferenca que este campo nomeia."
+            ),
+        },
+        "measures_present": {
+            "type": "boolean",
+            "description": (
+                "Se todo `fact_id` que o achado declara em `evidence` esta "
+                "presente nos facts recebidos."
+            ),
+        },
+    },
+}
+
+# O item de `judge` e o finding MAIS o lastro. `_FINDING_ITEM` fica como esta
+# porque outras tools o declaram (`migration_assess`, `report`, `code_context`)
+# e nenhuma delas computa lastro -- declara-lo la seria prometer um campo que
+# aquelas respostas nao carregam.
+_JUDGE_FINDING_ITEM: dict[str, Any] = {
+    **_FINDING_ITEM,
+    "properties": {
+        **_FINDING_ITEM["properties"],
+        "evidence_standing": _EVIDENCE_STANDING_SCHEMA,
+    },
+}
+
+# O plano de aplicacao sobre o CONJUNTO de achados. As nove chaves saem SEMPRE,
+# mesmo vazias: forma estavel e o que permite ao consumidor confiar na chave em
+# vez de testar se ela existe.
+_JUDGE_PLAN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": (
+        "Ordem de aplicacao, restricoes de sequenciamento, contradicoes e "
+        "lacunas nomeadas -- sobre o conjunto de achados DEPOIS do filtro de "
+        "severidade e ANTES da paginacao. CALCULADO e NAO GRAVADO."
+    ),
+    "required": [
+        "scope",
+        "order",
+        "order_unresolved",
+        "constraints",
+        "contradictions",
+        "objections",
+        "unresolved",
+        "persisted",
+        "note",
+    ],
+    "properties": {
+        "scope": {
+            "type": "string",
+            "description": (
+                "Diz que a ordem e do CASO e nao da pagina, com a contagem. Sem "
+                "ele um consumidor que recebeu 20 de 60 achados leria a ordem "
+                "como completa."
+            ),
+        },
+        "order": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Os `rule_id` em ordem topologica sobre `action.depends_on`.",
+        },
+        "order_unresolved": {
+            "type": "object",
+            "description": (
+                "O que a ordenacao NAO conseguiu resolver -- ciclo ou dependencia "
+                "ausente --, nomeado em vez de descartado em silencio."
+            ),
+        },
+        "constraints": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["axis", "rules", "reason"],
+                "properties": {
+                    "axis": {"type": "string"},
+                    "rules": {"type": "array", "items": {"type": "string"}},
+                    "reason": {"type": "string"},
+                },
+            },
+            "description": (
+                "Grupos que compartilham eixo de medida: aplicar juntas torna o "
+                "antes/depois inatribuivel."
+            ),
+        },
+        "contradictions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rules", "target", "directions"],
+                "properties": {
+                    "rules": {"type": "array", "items": {"type": "string"}},
+                    "target": {"type": "string"},
+                    "directions": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "description": (
+                "Dois achados que movem a MESMA propriedade em direcoes opostas. "
+                "Da existencia de um plano de debate sai so a contradicao que o "
+                "motivou; quem quer o plano chama `sparkforge_arbitrate`."
+            ),
+        },
+        "objections": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule", "blocked_by_kind", "fact_id"],
+                "properties": {
+                    "rule": {"type": "string"},
+                    "blocked_by_kind": {"type": "string"},
+                    "fact_id": {"type": "string"},
+                },
+            },
+            "description": (
+                "Acao bloqueada por um kind que ela declarou em `requires_absent` "
+                "e esta MEDIDO. Vazia no catalogo de hoje: as guardas existentes "
+                "sao todas de RECUSA (`env.unresolved` e irmas), e regra nao "
+                "dispara sobre 'nao deu para ler'."
+            ),
+        },
+        "unresolved": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["question", "evidence_needed"],
+                "properties": {
+                    "question": {"type": "string"},
+                    "evidence_needed": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "A MEDIDA que destravaria a lacuna, nomeada -- nunca "
+                            "'faltam dados'."
+                        ),
+                    },
+                },
+            },
+        },
+        "persisted": {
+            "type": "boolean",
+            "description": (
+                "SEMPRE `false`. E a fronteira escrita na propria resposta: quem "
+                "le o JSON sabe que nada foi registrado, sem consultar spec "
+                "nenhum. `sparkforge_judge` e READ_ONLY e nada aqui toca o disco."
+            ),
+        },
+        "note": {"type": "string"},
+    },
+}
+
 _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -1030,6 +1206,7 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
         "by_severity",
         "runtime",
         "items",
+        "plan",
     ],
     "properties": {
         **_PAGE_PROPERTIES,
@@ -1046,7 +1223,8 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
             "additionalProperties": {"type": "integer"},
             "description": "Contagem sobre o conjunto completo apos filtro de severidade.",
         },
-        "items": {"type": "array", "items": _FINDING_ITEM},
+        "items": {"type": "array", "items": _JUDGE_FINDING_ITEM},
+        "plan": _JUDGE_PLAN_SCHEMA,
         "runtime": {
             **_RUNTIME_CONTEXT,
             "description": (
@@ -3795,6 +3973,132 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_cloudwatch_logs": {
+        "description": (
+            "Extrai facts do LOG do run ja coletado por `collect cloudwatch-logs`. "
+            "Aceita um artefato ou o DIRETORIO deles, porque o operador que baixou "
+            "`error` e `output` do mesmo run tem dois. Toda linha ja chega REDIGIDA: "
+            "a redacao roda antes de o texto virar fact, e linha redigida vale "
+            "`<redigido>` inteiro. Log group inexistente, sem permissao, janela vazia "
+            "e sem credencial viram `cloudwatch.logs.unresolved` com a razao -- as "
+            "quatro produzem a mesma lista vazia de eventos, e colapsa-las numa razao "
+            "so seria uma recusa que nao nomeia nada. NAO casa assinatura: para isso "
+            "existe `sparkforge_analyze_error_signatures`, que precisa da UNIAO dos "
+            "facts do case."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect cloudwatch-logs`, "
+                        "ou o diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_error_signatures": {
+        "description": (
+            "Casa as assinaturas de `knowledge/errors/` contra os facts do case e "
+            "emite `error.signature_match` com `matched_on` (`exception_class`, "
+            "`caused_by` ou `log_line`). Derivacao PURA sobre facts: nunca le "
+            "artefato. A UNIAO E O CONTRATO -- o arquivo precisa trazer "
+            "`spark.exception` do event log E `cloudwatch.log_event` do log, porque a "
+            "recusa deste caminho e por ESCOPO e nao por linha, e metade dos facts "
+            "produz um ponto cego que nao aparece. Ele NAO julga: nao devolve "
+            "`likely_causes`, nem `fixes`, nem `confidence`. O juizo mora nas regras "
+            "`SF-ERR-001` a `SF-ERR-006`, e cada uma exige, alem do match, o "
+            "companheiro que a assinatura declara."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts com a UNIAO do case, tipicamente produzido "
+                        "por `analyze event-log --out` e `analyze cloudwatch-logs "
+                        "--out` no mesmo arquivo."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Matches e recusas nomeadas, ou erro se o arquivo de facts nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_parquet_footer": {
+        "description": (
+            "Extrai facts do FOOTER de arquivos Parquet ja coletado por "
+            "`collect parquet-footer`: row group, estatistica por coluna, "
+            "dicionario, page index, bloom filter e codec. NAO abre arquivo "
+            "Parquet -- parte do artefato JSON. A medida que so existe aqui e "
+            "`avg_range_coverage`, a sobreposicao de min/max entre row groups, "
+            "que separa 'sem estatistica' de 'estatistica INUTIL': cobertura "
+            "perto de 1 significa que cada row group cobre quase todo o dominio "
+            "e nenhum pode ser descartado, apesar de a estatistica existir. Ela "
+            "e propriedade do LAYOUT e assume o predicado uniforme sobre o "
+            "dominio observado -- nomeia layout que NAO PODE podar, nunca job "
+            "que vai ler muito, e nao estima custo nem ganho. Onde ela nao se "
+            "sustenta sai `parquet.unresolved` com a razao "
+            "(`tipo_sem_dominio_numerico`, `estatistica_incompleta`, "
+            "`row_group_unico`, `dominio_degenerado`). Censo parcial se anuncia: "
+            "`partial: true` quando a coleta leu menos arquivos do que viu."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect parquet-footer`, "
+                        "ou o diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_glue_job_runs": {
         "description": (
             "Extrai facts de historico do DIRETORIO de artefatos de run Glue: um "
@@ -5401,6 +5705,11 @@ TOOLS: dict[str, dict[str, Any]] = {
             "um dict de erro com o comando de recoleta, nunca uma excecao. Regra fora de escopo de "
             "versao ou sem fact requerido aparece em `skipped` com o motivo, quando "
             "`show_skipped` e verdadeiro -- nunca descartada em silencio. "
+            "Devolve tambem `plan`: ordem de aplicacao, restricoes de sequenciamento, "
+            "contradicoes e lacunas nomeadas, sobre o CONJUNTO de achados e nao a "
+            "pagina. Cada item traz `evidence_standing` com o lastro e os tres insumos "
+            "que o produziram -- tier da fonte, escopo de versao e presenca da medida. "
+            "O `judge` CALCULA e NAO GRAVA: o registro auditavel e `sparkforge_arbitrate`."
             "Cada achado mistura DUAS procedencias, e elas nao tem a mesma autoridade: "
             "`subject`, `measured` e `evidence` vem do ARTEFATO; nenhum outro campo "
             "vem de la -- a maior parte (`explanation`, `proposed_change`, `sources`, "
@@ -5715,6 +6024,62 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "job_run_id": {"type": "string"},
                 "start": {"type": "string", "description": "Inicio ISO 8601."},
                 "end": {"type": "string", "description": "Fim ISO 8601."},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
+    "sparkforge_collect_cloudwatch_logs": {
+        "description": (
+            "Baixa o LOG do run no CloudWatch Logs via `logs.filter_log_events` e registra "
+            "no manifesto. E o caminho das assinaturas de `knowledge/errors/` que sao trecho "
+            "de MENSAGEM e nao classe de excecao -- quatro das seis --, e do que o event log "
+            "nao tem: falha de driver antes do primeiro stage, `Py4JJavaError` de codigo "
+            "Python, e OOM de container morto pelo YARN. `log_group` e obrigatorio e nao tem "
+            "default: `/aws-glue/jobs/error`, `/aws-glue/jobs/output` e `/aws-glue/jobs/logs-v2` "
+            "(Glue 4.0+) sao grupos com conteudo diferente. Log group inexistente, permissao "
+            "negada, janela vazia e credencial ausente NAO viram erro: viram `status` no "
+            "artefato e `cloudwatch.logs.unresolved` no fact, com a razao. Mesma politica "
+            "offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_name", "job_run_id", "log_group", "start", "end", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "job_name": {"type": "string"},
+                "job_run_id": {"type": "string"},
+                "log_group": {
+                    "type": "string",
+                    "description": (
+                        "Nome do log group. Sem default: grupo errado devolve vazio, e "
+                        "vazio se parece com 'o job nao logou nada'."
+                    ),
+                },
+                "start": {"type": "string", "description": "Inicio ISO 8601."},
+                "end": {"type": "string", "description": "Fim ISO 8601."},
+                "filter_pattern": {
+                    "type": "string",
+                    "default": "",
+                    "description": (
+                        "Filtro do CloudWatch Logs, aplicado no servidor. E aqui que a "
+                        "RELEVANCIA e declarada -- o extrator nao adivinha linha "
+                        "interessante."
+                    ),
+                },
+                "max_events": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 500,
+                    "description": (
+                        "Teto de eventos gravados. Quando morde, o artefato sai com "
+                        "`truncated: true` -- corte declarado, nunca silencioso."
+                    ),
+                },
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
             },
         },
@@ -6485,6 +6850,36 @@ def _h_analyze_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_cloudwatch_logs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_cloudwatch_logs(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_error_signatures(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_error_signatures(
+        args["facts_path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_parquet_footer(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_parquet_footer(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_glue_job_runs(
         args["path"],
@@ -6803,6 +7198,20 @@ def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_cloudwatch_logs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_cloudwatch_logs(
+        args["repo"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        log_group=args["log_group"],
+        start=args["start"],
+        end=args["end"],
+        filter_pattern=args.get("filter_pattern", ""),
+        max_events=args.get("max_events", 500),
+        now=args["now"],
+    )
+
+
 def _h_collect_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_glue_job_runs(
         args["repo"],
@@ -6952,6 +7361,9 @@ _HANDLERS = {
     "sparkforge_analyze_event_log": _h_analyze_event_log,
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
     "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
+    "sparkforge_analyze_cloudwatch_logs": _h_analyze_cloudwatch_logs,
+    "sparkforge_analyze_parquet_footer": _h_analyze_parquet_footer,
+    "sparkforge_analyze_error_signatures": _h_analyze_error_signatures,
     "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
     "sparkforge_analyze_plan": _h_analyze_plan,
     "sparkforge_analyze_terraform": _h_analyze_terraform,
@@ -6992,6 +7404,7 @@ _HANDLERS = {
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
+    "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,

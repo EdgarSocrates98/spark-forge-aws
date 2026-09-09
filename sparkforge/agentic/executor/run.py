@@ -1,8 +1,13 @@
 """A orquestracao -- os seis degraus viram um verbo, e o que ele grava.
 
 `run_executor` nao decide nada sozinho: ele chama `claims`, `conflict`,
-`ordering`, `unknowns` e `plan` na ordem da secao 7 do spec, arbitra os pares
+`digest`, `unknowns` e `plan` na ordem da secao 7 do spec, arbitra os pares
 que se contradizem, grava no blackboard do case e devolve o pacote.
+
+A ordenacao ele NAO calcula: ela vem de `digest.plan_digest`, que e o mesmo
+calculo que `sparkforge_judge` publica. Duas implementacoes da mesma ordem
+divergiriam com o tempo, e o operador leria uma ordem no `judge` e outra no
+`arbitrate` sobre o mesmo case.
 
 ## A entrada e a UNIAO dos facts do case
 
@@ -116,7 +121,7 @@ from sparkforge.agentic.decision import (
 from sparkforge.agentic.executor.authority import load_authority_map
 from sparkforge.agentic.executor.claims import claims_from_findings
 from sparkforge.agentic.executor.conflict import conditional_conflicts, direct_conflicts
-from sparkforge.agentic.executor.ordering import order_actions
+from sparkforge.agentic.executor.digest import plan_digest
 from sparkforge.agentic.executor.plan import debate_plan
 from sparkforge.agentic.executor.unknowns import experiments_from, unknowns_from
 from sparkforge.agentic.models import Claim, Contradiction, Decision, Objection
@@ -193,12 +198,30 @@ def run_executor(
     facts_unicos = _facts_unicos(facts)
     contexto = dict(runtime or {})
 
-    claims, evidences = claims_from_findings(
-        findings_validos, facts_unicos, load_authority_map(), contexto
-    )
+    mapa = load_authority_map()
+
+    claims, evidences = claims_from_findings(findings_validos, facts_unicos, mapa, contexto)
+
+    # A ordenacao vem do digest, e nao de `order_actions` chamado aqui. E o
+    # mesmo calculo que `sparkforge_judge` publica: duas implementacoes da mesma
+    # ordem divergiriam com o tempo -- cada uma com o seu teste passando -- e o
+    # operador veria o `judge` afirmar uma ordem e o `arbitrate` gravar outra
+    # sobre o MESMO case. O `authority_map` ja carregado viaja junto para o
+    # digest nao reler o YAML.
+    bloco, _lastro = plan_digest(findings_validos, facts_unicos, contexto, authority_map=mapa)
+    ordem = bloco["order"]
+    restricoes = bloco["constraints"]
+    ordem_unresolved = bloco["order_unresolved"]
+
+    # Contradicoes e objecoes continuam vindo de `direct_conflicts` e
+    # `conditional_conflicts` em forma de TUPLA de propositio. Aqui elas viram
+    # `Contradiction(claim_a, claim_b, ...)` e `Objection(target_claim, ...)`, o
+    # que exige os ids CRUS; o bloco os traz ja serializados em dicionario, e
+    # reparsear dicionario para reconstruir a tupla seria pior que chamar a
+    # funcao de novo. Mesma razao para `unknowns_from`: `experiments_from` e a
+    # gravacao precisam dos objetos `Unknown`, nao da forma publicada.
     diretas = direct_conflicts(findings_validos)
     condicionais = conditional_conflicts(findings_validos, facts_unicos)
-    ordem, restricoes, ordem_unresolved = order_actions(findings_validos)
     lacunas = unknowns_from(findings_validos, facts_unicos)
     experimentos = experiments_from(lacunas)
 

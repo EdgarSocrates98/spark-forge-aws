@@ -1,0 +1,249 @@
+[
+  {
+    "id": "f_1a54b9",
+    "schema_version": 1,
+    "kind": "parquet.column_profile",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "measures": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 387.0,
+      "stats_coverage": 1.0,
+      "min_max_coverage": 1.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 3.5813953488372094,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/",
+      "column": "cat",
+      "physical_type": "BYTE_ARRAY",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "encodings": [
+        "PLAIN",
+        "RLE",
+        "RLE_DICTIONARY"
+      ]
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_3242ba",
+    "schema_version": 1,
+    "kind": "parquet.column_profile",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "id"
+    },
+    "measures": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 16103.0,
+      "stats_coverage": 1.0,
+      "min_max_coverage": 1.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 1.740607340247159,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0,
+      "avg_range_coverage": 0.9993331110370124,
+      "expected_row_groups_scanned": 2.997999333111037
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/",
+      "column": "id",
+      "physical_type": "INT64",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "encodings": [
+        "PLAIN",
+        "RLE",
+        "RLE_DICTIONARY"
+      ]
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_bd50c4",
+    "schema_version": 1,
+    "kind": "parquet.file",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "file_bytes": 402653184.0,
+      "num_rows": 3000.0,
+      "num_row_groups": 3.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/",
+      "created_by": "parquet-cpp-arrow version 25.0.1",
+      "format_version": "2.6"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_553544",
+    "schema_version": 1,
+    "kind": "parquet.footer_analyzed",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/curated/espalhado_nao_poda/",
+      "file": "footer.json"
+    },
+    "measures": {
+      "files_seen": 1.0,
+      "files_read": 1.0,
+      "row_groups_read": 3.0,
+      "distinct_codecs": 1.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/",
+      "codecs": [
+        "SNAPPY"
+      ],
+      "sampling": "first_n_by_name",
+      "max_files": 20,
+      "status": "ok",
+      "partial": false
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_d139ea",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 0
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_68dcd0",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 1
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_591710",
+    "schema_version": 1,
+    "kind": "parquet.row_group",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "row_group": 2
+    },
+    "measures": {
+      "num_rows": 1000.0,
+      "total_byte_size": 134217728.0,
+      "num_columns": 2.0
+    },
+    "attrs": {
+      "prefix": "s3://lake/curated/espalhado_nao_poda/"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  },
+  {
+    "id": "f_3f8ea8",
+    "schema_version": 1,
+    "kind": "parquet.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_nao_poda/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "tipo_sem_dominio_numerico",
+      "column": "cat"
+    },
+    "provenance": {
+      "extractor": "parquet_footer@0.1.0",
+      "artifact": "footer.json"
+    }
+  }
+]

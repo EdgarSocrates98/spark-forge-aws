@@ -30,6 +30,17 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 | processamento de grafo (GraphFrames) | `sparkforge_analyze_graph` |
 | listagem S3 | `sparkforge_analyze_s3_listing` |
 | inventário de consumidores | `sparkforge_analyze_consumers` |
+| LOG do run no CloudWatch | `sparkforge_analyze_cloudwatch_logs` |
+| footer de arquivos Parquet | `sparkforge_analyze_parquet_footer` |
+
+Depois de ter o event log E o log do CloudWatch no mesmo arquivo de facts,
+`sparkforge_analyze_error_signatures` — ele casa as assinaturas de
+`knowledge/errors/` contra as duas fontes e emite `error.signature_match` com
+`matched_on` (`exception_class`, `caused_by` ou `log_line`). **A UNIÃO é o
+contrato**: alimentá-lo com metade dos facts não devolve metade das respostas,
+devolve um ponto cego que não aparece — a recusa dele é por ESCOPO, não por
+linha. Ele não julga; quem julga são as regras `SF-ERR-001` a `SF-ERR-006`, e
+cada uma exige, além do match, o companheiro que a assinatura declara.
 
 Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.

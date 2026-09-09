@@ -106,7 +106,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**69 tools, 31 com `detail_level`.** Os niveis sao `summary`, `normal` e `full`. A
+**70 tools, 31 com `detail_level`.** Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
@@ -133,12 +133,26 @@ arquivo:
 | o grafo no formato de extracao do Graphify | `sparkforge_code_export` |
 
 **O denominador decide o sinal, e ele precisa sair junto.** Medido na secao 10 de
-`docs/harness/CODEINTEL-GAP.md`: contra ler os arquivos o indice economiza
-**661,3x** (remedido em 2026-09-03: era 649,5x, e a prova dividia um numerador
-LITERAL que ja nao batia com a medicao ao lado); contra a saida de um `grep`
-pelo nome, **9,4x**; contra um `grep`
-cirurgico pela definicao ele **custa 5,3x mais**. As tres medidas sao verdadeiras
-e citar so a primeira escolheria o resultado.
+`docs/harness/CODEINTEL-GAP.md`, e relido dela em 2026-09-09: contra ler os
+arquivos o indice economiza **706,9x**; contra a saida de um `grep` pelo nome,
+**10,0x**; contra um `grep` cirurgico pela definicao ele **custa 5,3x mais**. As
+tres medidas sao verdadeiras e citar so a primeira escolheria o resultado.
+
+**Os dois primeiros numeros MUDAM a cada arquivo `.py` novo**, porque o
+denominador deles e o tamanho da arvore. Eram 675,6x e 9,6x em 2026-09-08, e a
+entrega do footer do Parquet os moveu -- nao porque o indice melhorou, e sim
+porque ha mais codigo para nao ler. Citar qualquer um dos dois sem a data e
+citar uma medida que ja mudou.
+
+Este paragrafo publicava **661,3x** e **9,4x**. Nenhum dos dois reproduz a
+partir dos numeros que a secao 10 sustenta hoje — 1 493 002 sobre 2210 da 675,6,
+e 21 273 sobre 2210 da 9,6 —, e o denominador que os produziria o documento
+auditado nao publica mais. Nao adivinho qual era: o que da para afirmar e que os
+dois estavam defasados, e a defasagem
+sobreviveu porque **`CLAUDE.md` esta fora de `audited_roots()` do
+`scripts/check_vnext_claims.py`**, que audita `docs/vnext/` e `docs/harness/` e
+mais nada. O arquivo de instrucao que governa o projeto publica numero que gate
+nenhum confere.
 
 ### O gate que torna "economizou" conferivel
 
@@ -389,15 +403,17 @@ Designer), `decision` (Decision Engine + ADR automático), `memory` (Decision
 Memory cross-case), `budget` (token economics), `security` (threat model +
 guardrails), `autonomy` (L0-L5), `graph` (Agent Execution Graph).
 
-`sparkforge/agentic/executor/` acrescenta **7 módulos** (2573 linhas com o
-`__init__.py`, 105 810 bytes, 163 testes): `authority` (mapa de autoridade de
-fonte e vigência de escopo), `claims` (finding julgado vira `Claim`, fact que o
-ancora vira `Evidence`), `conflict` (contradição lida do bloco `action`),
-`ordering` (ordem de aplicação por `depends_on` e por eixo de medida),
-`unknowns` (lacuna vira `Unknown`, e o que a mede vira `Experiment`), `plan`
-(`DebatePlan` quando a arbitragem não fecha) e `run` (os seis degraus num verbo
-só). Ele é o **produtor** que faltava — a lacuna que a auditoria de 2026-09-03
-declarava governar todas as outras.
+`sparkforge/agentic/executor/` acrescenta **8 módulos** (remedido em
+2026-09-08: eram 7 antes de `digest`; 2727 linhas com o `__init__.py`, 112 092
+bytes, 176 testes): `authority` (mapa de autoridade de fonte e vigência de
+escopo), `claims` (finding julgado vira `Claim`, fact que o ancora vira
+`Evidence`), `conflict` (contradição lida do bloco `action`), `ordering` (ordem
+de aplicação por `depends_on` e por eixo de medida), `unknowns` (lacuna vira
+`Unknown`, e o que a mede vira `Experiment`), `plan` (`DebatePlan` quando a
+arbitragem não fecha), `digest` (o mesmo plano CALCULADO e nunca gravado, para
+quem só lê) e `run` (os seis degraus num verbo só). Ele é o **produtor** que
+faltava — a lacuna que a auditoria de 2026-09-03 declarava governar todas as
+outras.
 
 29. **A camada agêntica tem executor determinístico, e não tem executor de
     debate.** `sparkforge arbitrate` roda depois de `judge` e produz

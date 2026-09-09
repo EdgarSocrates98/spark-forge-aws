@@ -97,9 +97,12 @@ SPARK_GUARDED_RULES = (
 # e `GLUE_JOB_TF` fixa `glue_version = "5.1"` -- abaixo da fronteira dela, ainda
 # que acima da de SF-MIG-001/002 (`>=5.0`). Testar "em escopo sem flag" com o
 # mesmo Terraform provaria o oposto do que a regra significa; a cobertura dela
-# mora em `test_terraform_glue_6_0_puts_sf_mig_003_in_scope_without_any_flag`
-# abaixo, com um Terraform proprio.
-GLUE_GUARDED_RULES_ABOVE_5_1 = ("SF-MIG-003",)
+# mora no parametrize logo abaixo, com um Terraform proprio.
+#
+# SF-ERR-001 e SF-ERR-002 entraram na mesma fronteira de SF-MIG-003
+# (`runtime_scope: {glue: ">=6.0"}`, o juizo da excecao so vale a partir do
+# Glue 6.0) e pela mesma razao entram aqui, nao em GLUE_GUARDED_RULES.
+GLUE_GUARDED_RULES_ABOVE_5_1 = ("SF-MIG-003", "SF-ERR-001", "SF-ERR-002")
 
 VERSION_GUARDED_RULES = GLUE_GUARDED_RULES + SPARK_GUARDED_RULES + GLUE_GUARDED_RULES_ABOVE_5_1
 
@@ -268,15 +271,17 @@ def test_terraform_glue_version_puts_a_glue_guarded_rule_in_scope_without_any_fl
     )
 
 
-def test_terraform_glue_6_0_puts_sf_mig_003_in_scope_without_any_flag(tmp_path):
-    """A contraparte de `GLUE_GUARDED_RULES_ABOVE_5_1`: SF-MIG-003 exige Glue
-    6.0, um degrau acima do que `GLUE_JOB_TF` declara. Com `glue_version = "6.0"`
-    ela avalia sem flag nenhuma, do mesmo jeito que as demais avaliam em 5.1."""
+@pytest.mark.parametrize("rule_id", GLUE_GUARDED_RULES_ABOVE_5_1)
+def test_terraform_glue_6_0_puts_a_60_guarded_rule_in_scope_without_any_flag(tmp_path, rule_id):
+    """A contraparte de `GLUE_GUARDED_RULES_ABOVE_5_1`: cada regra da lista exige
+    Glue 6.0, um degrau acima do que `GLUE_JOB_TF` declara. Com
+    `glue_version = "6.0"` ela avalia sem flag nenhuma, do mesmo jeito que as
+    demais avaliam em 5.1."""
     facts_path = _facts_file(tmp_path, "facts.json", _terraform_facts(tmp_path, GLUE_JOB_TF_60))
     payload = _core.judge_findings(facts_path=facts_path, limit=None, show_skipped=True)
 
-    assert "SF-MIG-003" not in _skipped_for_scope(payload), (
-        f"SF-MIG-003 foi pulada por runtime_scope mesmo com glue_version=6.0 observado no "
+    assert rule_id not in _skipped_for_scope(payload), (
+        f"{rule_id} foi pulada por runtime_scope mesmo com glue_version=6.0 observado no "
         f"Terraform. runtime detectado: {payload['runtime']}"
     )
 

@@ -23,6 +23,15 @@ from pathlib import Path
 
 import pytest
 
+# `matcher` NAO mora em `sparkforge/facts/`, e essa e a diferenca que importa
+# aqui: as duas varreduras automaticas do repositorio -- a de
+# `tests/test_harness_untrusted.py` (`pkgutil.iter_modules(facts_pkg)`) e a de
+# `scripts/check_status_numbers.py` (`glob` em `sparkforge/facts/*.py`) --
+# enumeram por DIRETORIO e nunca vao ve-lo. Esta lista e manual, entao ela o
+# ve; as outras duas nao. Sem ele aqui, os dois kinds `error.signature*`
+# contam como orfaos e a primeira regra da area SF-ERR seria forcada a
+# `blocked_on` sobre um modulo que ja esta no repositorio.
+from sparkforge.errors import matcher
 from sparkforge.facts import (
     athena_workgroup,
     benchmark,
@@ -30,6 +39,7 @@ from sparkforge.facts import (
     call_graph,
     catalog_schema,
     cloudwatch,
+    cloudwatch_logs,
     consumers,
     controlm_jobs,
     data_quality,
@@ -37,12 +47,14 @@ from sparkforge.facts import (
     emr_eks,
     emr_serverless,
     event_log,
+    exception,
     funcval,
     fusion,
     glue_job_run,
     graph,
     iceberg_metadata,
     migration,
+    parquet_footer,
     pyspark_ast,
     run_cost,
     runtime_detect,
@@ -59,6 +71,12 @@ from sparkforge.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (
     athena_workgroup,
+    # `matcher` (`sparkforge/errors/matcher.py`) e o unico desta tupla fora de
+    # `sparkforge/facts/`. Ele emite `error.signature_match` e
+    # `error.signature.unresolved` a partir de `spark.exception` -- fato, nao
+    # juizo: o que fazer com a assinatura casada e regra, e regra mora no
+    # catalogo.
+    matcher,
     benchmark,
     bridge,
     call_graph,
@@ -70,6 +88,14 @@ EXTRACTORS = (
     # repositorio. `cloudwatch` e `glue_job_run` chegaram com o coletor de
     # historico de runs Glue; `sql_metrics`, com a metrica por no do plano.
     cloudwatch,
+    # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
+    # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
+    # `cloudwatch` -- `filter_log_events` contra `get_metric_data` --, e por isso
+    # modulo separado com `EXTRACTOR_ID` proprio; o nome parecido nao os torna o
+    # mesmo extrator. Sem ele aqui, os tres kinds `cloudwatch.log*` contam como orfaos, e a
+    # primeira regra que os consumir seria forcada a `blocked_on` sobre um
+    # extrator que ja esta no repositorio.
+    cloudwatch_logs,
     consumers,
     # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
     # SF-CTM -- esta e a de `tests/test_fixtures_kind_coverage.py` --, e esquecer
@@ -97,6 +123,16 @@ EXTRACTORS = (
     # repositorio desde a Task 2 desta fase.
     emr_serverless,
     event_log,
+    # `exception` entra ANTES de a area SF-ERR existir, e de proposito: sem ele
+    # aqui, os tres kinds `spark.exception*` contam como orfaos, e a primeira
+    # regra que os consumir seria FORCADA a `blocked_on` sobre um extrator que
+    # ja esta no repositorio -- que e a mentira que este arquivo inteiro existe
+    # para impedir. Ele nao entra na lista de
+    # `tests/test_fixtures_kind_coverage.py` neste commit: la o criterio e
+    # golden por kind, e o corpus nao tem nenhum -- a fixture e trabalho da
+    # Task 4 desta frente, e entrar antes dela trocaria uma lacuna nomeada por
+    # um teste vermelho que nao mede nada.
+    exception,
     # `funcval` entra nas DUAS listas no mesmo commit da Fase 4c: sem ele aqui,
     # os quatro kinds `funcval.*` contam como orfaos e as cinco regras SF-FVAL
     # da Task 6 seriam obrigadas a declarar `blocked_on` sobre um modulo que ja
@@ -120,6 +156,7 @@ EXTRACTORS = (
     # para os OITO kinds de `EMITTED_KINDS` assim que o modulo entra la tambem;
     # essa fixture e trabalho da Task 9, nao desta.
     migration,
+    parquet_footer,
     pyspark_ast,
     # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` contam
@@ -143,6 +180,11 @@ EXTRACTORS = (
     # `SF-WASTE-001` e `SF-WASTE-002` seriam forcadas a `blocked_on` sobre um
     # extrator que ja esta no repositorio.
     utilization,
+    # `parquet_footer` entra nas DUAS listas no mesmo commit em que
+    # `SF-PQ-006` a `SF-PQ-009` entram no catalogo: sem ele aqui, os cinco
+    # kinds `parquet.*` contam como orfaos e as quatro regras novas seriam
+    # forcadas a `blocked_on` sobre um extrator que ja esta no repositorio.
+    parquet_footer,
     # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*`
     # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)

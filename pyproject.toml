@@ -31,6 +31,36 @@ Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
 
 [project.optional-dependencies]
 aws = ["boto3>=1.34"]
+# `parquet` e o TERCEIRO extra, e o primeiro fora de `aws`/`mcp`. Ele existe
+# porque `sparkforge/collect/parquet_footer.py` le o RODAPE de arquivos Parquet,
+# e ler o footer exige um parser do formato -- nao ha caminho puro-Python
+# razoavel para isso. pyarrow entra sob demanda por `require_pyarrow()`, no
+# molde de `require_boto3()`: o nucleo determinístico continua com PyYAML +
+# jsonschema, e quem roda `judge` sobre um artefato ja coletado nao instala nada.
+#
+# `sparkforge analyze parquet-footer` NAO precisa deste extra: ele parte do
+# artefato JSON, e e por isso que a leitura e a extracao sao dois modulos.
+# `>=23.0.1`, e o piso subiu por CVE -- duas faixas, medidas, sem intervalo
+# livre entre elas:
+#
+#   CVE-2023-47248   ate 14.0.0        RCE ao ler dados Arrow IPC/Parquet
+#   CVE-2024-52338   14.0.1 .. 16.1.0  RCE por desserializacao de IPC/Feather/
+#                                      PARQUET de fonte nao confiavel
+#   CVE-2026-25087   15.0.0 .. 23.0.0  use-after-free ao ler IPC com
+#                                      pre-buffering
+#
+# A primeira versao limpa e 23.0.1. Nao ha faixa intermediaria segura: a segunda
+# e a terceira se sobrepoem e cobrem tudo de 14.0.1 a 23.0.0.
+#
+# Os tres CVEs incidem no caminho DESTE extra: `collect parquet-footer` le o
+# rodape de arquivos que o operador aponta, e um prefixo de dado de terceiro E a
+# "fonte nao confiavel" que os avisos descrevem.
+#
+# Consequencia declarada: pyarrow >= 21 so publica wheel `manylinux_2_28`, entao
+# este piso obrigou `scripts/gen_lock.py` a subir a plataforma-alvo do lock. A
+# razao esta escrita la, e o custo tambem -- o ambiente reproduzivel passa a
+# exigir glibc >= 2.28.
+parquet = ["pyarrow>=23.0.1"]
 # `<2` e deliberado: o SDK 2.x removeu os decoradores que `adapters/mcp.py`
 # usa para registrar os tools. Ver a docstring daquele modulo.
 # starlette e uvicorn sao do transporte HTTP (Devin Desktop); stdio nao precisa

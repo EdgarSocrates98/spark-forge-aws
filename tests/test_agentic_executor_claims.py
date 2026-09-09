@@ -26,11 +26,17 @@ from typing import Any
 import pytest
 
 from sparkforge.agentic.executor.authority import load_authority_map
-from sparkforge.agentic.executor.claims import claims_from_findings, confidence_for
+from sparkforge.agentic.executor.claims import (
+    claims_from_findings,
+    confidence_for,
+    standing_for_finding,
+)
 from sparkforge.agentic.models import ClaimType, EvidenceAuthority
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures" / "waste" / "folga_medida_sem_skew" / "expected"
+
+_MAPA = load_authority_map()
 
 T1 = EvidenceAuthority.T1_OFFICIAL_DOCS
 T2 = EvidenceAuthority.T2_SOURCE_CODE
@@ -259,3 +265,58 @@ class TestBordas:
         """`Claim` recusa statement vazio -- e a recusa nao pode derrubar o pacote."""
         claims, _ = claims_from_findings([_finding(title="")], FACTS_PADRAO, mapa, {})
         assert "SF-TESTE-001" in claims[0].statement
+
+
+class TestStandingForFinding:
+    def test_devolve_os_tres_insumos_mais_o_valor(self):
+        finding = {
+            "rule_id": "SF-WASTE-001",
+            "evidence": ["f_aaa111"],
+            "runtime_scope": {},
+            "sources": [{"url": "https://docs.aws.amazon.com/glue/x.html"}],
+        }
+        s = standing_for_finding(finding, {"f_aaa111"}, _MAPA, {"glue": "5.0"})
+        assert s == {
+            "value": "high",
+            "source_tier": "T1_OFFICIAL_DOCS",
+            "in_version_scope": True,
+            "measures_present": True,
+        }
+
+    def test_fora_do_escopo_de_versao_e_medium(self):
+        finding = {
+            "rule_id": "SF-X-001",
+            "evidence": ["f_aaa111"],
+            "runtime_scope": {"glue": ["4.0"]},
+            "sources": [{"url": "https://docs.aws.amazon.com/glue/x.html"}],
+        }
+        s = standing_for_finding(finding, {"f_aaa111"}, _MAPA, {"glue": "6.0"})
+        assert s["value"] == "medium"
+        assert s["in_version_scope"] is False
+        assert s["source_tier"] == "T1_OFFICIAL_DOCS"
+
+    def test_medida_ausente_e_low_mesmo_com_t1(self):
+        finding = {
+            "rule_id": "SF-X-001",
+            "evidence": ["f_ausente"],
+            "runtime_scope": {},
+            "sources": [{"url": "https://docs.aws.amazon.com/glue/x.html"}],
+        }
+        s = standing_for_finding(finding, set(), _MAPA, {"glue": "5.0"})
+        assert s["value"] == "low"
+        assert s["measures_present"] is False
+
+    def test_o_valor_bate_com_o_confidence_da_claim(self):
+        """A funcao nova e a que `claims_from_findings` usa -- se as duas
+        divergirem, o `judge` diz uma coisa e o `arbitrate` outra."""
+        finding = {
+            "rule_id": "SF-WASTE-001",
+            "title": "t",
+            "evidence": ["f_aaa111"],
+            "runtime_scope": {},
+            "sources": [{"url": "https://docs.aws.amazon.com/glue/x.html"}],
+        }
+        facts = [{"id": "f_aaa111", "kind": "glue.utilization.summary"}]
+        claims, _ = claims_from_findings([finding], facts, _MAPA, {"glue": "5.0"})
+        s = standing_for_finding(finding, {"f_aaa111"}, _MAPA, {"glue": "5.0"})
+        assert claims[0].confidence == s["value"]

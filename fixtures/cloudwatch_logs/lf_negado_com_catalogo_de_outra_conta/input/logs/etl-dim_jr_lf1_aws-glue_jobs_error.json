@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_lf1",
+      "message": "2026-09-09 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on default.dim_cliente",
+      "timestamp": 1788948000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "etl-dim",
+  "job_run_id": "jr_lf1",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_lf1",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

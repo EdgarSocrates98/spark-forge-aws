@@ -1,0 +1,16 @@
+name: amostra_parcial
+proves: >
+  A AMOSTRAGEM DECLARADA: cinco arquivos no prefixo, dois lidos.
+
+  `files_seen: 5`, `files_read: 2`, `sampling: first_n_by_name`, e
+  `parquet.footer_analyzed.attrs.partial: true`. Um censo parcial que nao se
+  anuncia como parcial e pior que censo nenhum -- e aqui ele se anuncia.
+
+  A amostra e os N PRIMEIROS na ordem do nome, e nao N ao acaso: duas coletas do
+  mesmo prefixo precisam ler os MESMOS arquivos, ou dois `facts.json` do mesmo
+  lugar deixam de ser comparaveis.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"

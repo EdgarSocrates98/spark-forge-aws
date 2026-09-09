@@ -225,6 +225,55 @@ def build_parser() -> argparse.ArgumentParser:
     cw_analyze_p.add_argument("--cursor")
     _add_detail_level(cw_analyze_p)
 
+    cwlog_analyze_p = analyze_sub.add_parser(
+        "cloudwatch-logs",
+        help="Extrai facts do LOG do run ja coletado do CloudWatch Logs.",
+    )
+    cwlog_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Artefato JSON de `collect cloudwatch-logs`, ou o DIRETORIO deles.",
+    )
+    cwlog_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    cwlog_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    cwlog_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    cwlog_analyze_p.add_argument("--cursor")
+    _add_detail_level(cwlog_analyze_p)
+
+    sig_analyze_p = analyze_sub.add_parser(
+        "error-signatures",
+        help="Casa knowledge/errors/ contra os facts do case. Derivacao pura.",
+    )
+    sig_analyze_p.add_argument(
+        "--facts",
+        required=True,
+        help=(
+            "Arquivo de facts com a UNIAO do case -- `spark.exception` do event log E "
+            "`cloudwatch.log_event` do log. Metade dos facts nao produz metade das "
+            "respostas: produz ponto cego que nao aparece."
+        ),
+    )
+    sig_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    sig_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sig_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sig_analyze_p.add_argument("--cursor")
+    _add_detail_level(sig_analyze_p)
+
+    pqf_analyze_p = analyze_sub.add_parser(
+        "parquet-footer",
+        help="Extrai facts do FOOTER do Parquet ja coletado.",
+    )
+    pqf_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Artefato JSON de `collect parquet-footer`, ou o DIRETORIO deles.",
+    )
+    pqf_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    pqf_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    pqf_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    pqf_analyze_p.add_argument("--cursor")
+    _add_detail_level(pqf_analyze_p)
+
     runs_analyze_p = analyze_sub.add_parser(
         "glue-job-runs",
         help="Extrai facts de historico do diretorio de artefatos de run Glue.",
@@ -1666,6 +1715,36 @@ def build_parser() -> argparse.ArgumentParser:
     cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
     cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    cw_logs_p = collect_sub.add_parser(
+        "cloudwatch-logs",
+        help="Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem).",
+    )
+    cw_logs_p.add_argument("--repo", required=True)
+    cw_logs_p.add_argument("--job-name", required=True)
+    cw_logs_p.add_argument("--job-run", required=True)
+    cw_logs_p.add_argument(
+        "--log-group",
+        required=True,
+        help=(
+            "Log group. Sem default -- `/aws-glue/jobs/error`, `/aws-glue/jobs/output` e "
+            "`/aws-glue/jobs/logs-v2` tem conteudo diferente."
+        ),
+    )
+    cw_logs_p.add_argument("--start", required=True, help="Inicio ISO 8601.")
+    cw_logs_p.add_argument("--end", required=True, help="Fim ISO 8601.")
+    cw_logs_p.add_argument(
+        "--filter-pattern",
+        default="",
+        help="Filtro do CloudWatch Logs, aplicado no servidor. Declara a relevancia.",
+    )
+    cw_logs_p.add_argument(
+        "--max-events",
+        type=int,
+        default=500,
+        help="Teto de eventos. Quando morde, o artefato sai com truncated: true.",
+    )
+    cw_logs_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     job_runs_p = collect_sub.add_parser(
         "glue-job-runs",
         help="Baixa o historico de execucoes de um job, um artefato por run terminal.",
@@ -1814,6 +1893,47 @@ def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
     full = _core.analyze_sql_metrics(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
+    full = _core.analyze_parquet_footer(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_cloudwatch_logs(args: argparse.Namespace) -> int:
+    full = _core.analyze_cloudwatch_logs(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_error_signatures(args: argparse.Namespace) -> int:
+    full = _core.analyze_error_signatures(args.facts, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _emit_facts_page(full: dict, args: argparse.Namespace) -> int:
+    """A paginacao e o `--out` dos dois verbos novos, numa funcao so.
+
+    Os verbos antigos repetem este bloco cada um, e nao foram tocados: reescreve-
+    los seria mudanca sem medida num caminho que ninguem pediu. Os dois novos
+    nascem sem a repeticao.
+    """
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -2437,6 +2557,14 @@ def _cmd_judge(args: argparse.Namespace) -> int:
         show_skipped=args.show_skipped,
     )
     if args.out:
+        # O arquivo grava o item COMPLETO, e desde a T4 isso inclui
+        # `evidence_standing`. Ele e REGISTRO do que o `judge` viu naquele
+        # momento, nunca ENTRADA de quem le o arquivo depois: `arbitrate`
+        # RECOMPUTA o lastro por `claims.standing_for_finding`, a partir de
+        # `sources`, `runtime_scope` e dos `fact_id` que o achado declara em
+        # `evidence` -- ele nao le esta chave em lugar nenhum. Editar o campo no
+        # arquivo a mao nao move decisao nenhuma rio abaixo, e por isso o campo
+        # extra e inocuo para `arbitrate` e para `report sign`.
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
         )
@@ -2452,6 +2580,18 @@ def _cmd_judge(args: argparse.Namespace) -> int:
         # apareceu?" nao tem resposta -- e uma divergencia entre flag e fact
         # seria resolvida em silencio para quem le a CLI.
         "runtime": full["runtime"],
+        # O bloco sai tambem pela CLI, e nao so pelo MCP. `TestCliMcpEquivalence`
+        # fixa a garantia da Fase 1 -- mesmo input, payload identico, "nunca um
+        # subconjunto de campos" --, e `parity.yaml` declara `judge` para
+        # `codex` e `copilot_ci` como `[cli, files]`, sem `mcp`: plano so no MCP
+        # seria capacidade que duas das cinco plataformas nao alcancam por
+        # caminho nenhum.
+        #
+        # Ele NAO e recortado pela paginacao, de proposito: a ordem e do CASO,
+        # e `full` foi julgado com `limit=None`. Ordem parcial apresentada como
+        # ordem e a familia de afirmacao que este projeto recusa -- por isso
+        # `plan.scope` carrega a contagem do conjunto, e nao a da pagina.
+        "plan": full["plan"],
         "items": page,
     }
     if args.show_skipped:
@@ -2653,6 +2793,22 @@ def _cmd_collect_cloudwatch(args: argparse.Namespace) -> int:
         job_run_id=args.job_run,
         start=args.start,
         end=args.end,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_cloudwatch_logs(args: argparse.Namespace) -> int:
+    payload = _core.collect_cloudwatch_logs(
+        args.repo,
+        job_name=args.job_name,
+        job_run_id=args.job_run,
+        log_group=args.log_group,
+        start=args.start,
+        end=args.end,
+        filter_pattern=args.filter_pattern,
+        max_events=args.max_events,
         now=args.now,
     )
     _print(payload)
@@ -3102,6 +3258,9 @@ _DISPATCH = {
     ("analyze", "event-log"): _cmd_analyze_event_log,
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
+    ("analyze", "cloudwatch-logs"): _cmd_analyze_cloudwatch_logs,
+    ("analyze", "parquet-footer"): _cmd_analyze_parquet_footer,
+    ("analyze", "error-signatures"): _cmd_analyze_error_signatures,
     ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
     ("analyze", "plan"): _cmd_analyze_plan,
     ("analyze", "terraform"): _cmd_analyze_terraform,
@@ -3169,6 +3328,7 @@ _DISPATCH = {
     ("collect", "event-log"): _cmd_collect_event_log,
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
+    ("collect", "cloudwatch-logs"): _cmd_collect_cloudwatch_logs,
     ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,

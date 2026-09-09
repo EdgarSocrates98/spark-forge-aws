@@ -1,0 +1,460 @@
+[
+  {
+    "rule_id": "SF-ERR-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Fetch de shuffle falhou com executor perdido no mesmo run -- a rede é sintoma, não causa",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_sh1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_sh1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-001"
+    },
+    "evidence": [
+      "f_c599f3",
+      "f_3cf767"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job FALHOU com `FetchFailedException` e o event log do mesmo run traz um executor perdido. As duas evidências juntas mudam a leitura do erro: o fetch não falhou por causa da rede, falhou porque o bloco de shuffle desapareceu junto com quem o guardava.\n\nÉ a confusão mais cara desta área. A mensagem nomeia um bloco remoto e um host, e não a linha de código do job — o que faz parecer problema de rede. Subir `spark.shuffle.io.maxRetries` com um executor morrendo ao lado troca uma falha rápida por uma lenta, e esconde a razão de o executor ter morrido.\n\n**O que esta regra NÃO afirma:** por que o executor morreu. `OOM`, preempção de spot, GC longo e o platform matando o container produzem o mesmo `spark.executor.lost`, e distinguir os quatro é a investigação que o `proposed_change` manda fazer antes de tocar em configuração.\n\nSem `spark.executor.lost` no case a regra é pulada com o que falta nomeado, e a razão é a mesma: um `FetchFailedException` sozinho pode ser transitório de verdade, e ali retry é a resposta certa.",
+    "proposed_change": [
+      "Ler a razão de remoção em `spark.executor.lost` ANTES de mexer em qualquer configuração de shuffle — é ela que separa OOM de preempção, e os dois pedem consertos opostos.",
+      "Se a razão for memória, o conserto é do executor e não do fetch: ver `SF-UI-005` e `SF-ERR-004`, que tratam o mesmo sintoma pela causa.",
+      "Se a falha concentra num host, avaliar um teto para `spark.reducer.maxReqsInFlight` — o default do Apache é `Int.MaxValue`, e um cluster grande satura as conexões de entrada de um nó.",
+      "Subir `spark.shuffle.io.maxRetries` ou `spark.shuffle.io.retryWait` **só** depois de a causa ter sido diagnosticada como transitória, e registrar esse diagnóstico junto com a mudança."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar o retry com executor morrendo converte falha rápida em falha cara: o stage roda mais tempo antes de desistir, e o custo sobe sem o sintoma mudar.",
+      "Limitar `spark.reducer.maxReqsInFlight` com número arbitrário serializa o fetch e desacelera TODOS os stages saudáveis, não só o que falhou.",
+      "A saída parcial do run falho continua no destino. Reprocessar por cima dela sem decidir o que fazer com o que já foi escrito é como um dado duplicado nasce."
+    ],
+    "tradeoffs": [
+      "Diagnosticar a morte do executor custa uma passada de análise antes de qualquer mudança; a alternativa é subir retry e medir depois, que é mais rápido por run e mais caro por ciclo."
+    ],
+    "validation": [
+      "Ausência de `spark.executor.lost` E de `FetchFailedException` no run seguinte, com o mesmo volume de shuffle — validar com volume menor não valida nada.",
+      "`spark.stage.shuffle` do stage que falhou, antes e depois, para registrar se o volume mudou junto com a correção.",
+      "Nenhum eixo de dado é exigido se a correção for de capacidade ou de configuração de shuffle, e declarar isso é parte da validação. Se a correção mexer no particionamento do shuffle, contagem total e agregados de controle contra o último run bem-sucedido."
+    ],
+    "rollback": [
+      "Reverter os overrides de shuffle: são configuração de runtime e não mudam dado. A saída parcial do run que falhou precisa ser descartada ou reconciliada à parte."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/fetch_failed_shuffle.json` (`ERR-SPARK-001`). Ela registra os defaults do Apache que esta regra cita: `spark.shuffle.io.maxRetries` 3, `spark.shuffle.io.retryWait` 5s e `spark.reducer.maxReqsInFlight` `Int.MaxValue`.\n"
+      }
+    ],
+    "action": {
+      "kind": "capacity.investigate_sizing",
+      "target": "spark.executor.lost.reason",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-UI-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Skew de duração de task no stage",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "evidence": [
+      "f_dcc169"
+    ],
+    "measured": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 15000,
+      "max_ms": 15000,
+      "mean_ms": 3333.3333333333335,
+      "task_count": 6
+    },
+    "threshold": {
+      "ratio": 3.0
+    },
+    "runtime_scope": {},
+    "explanation": "O stage termina quando a última task termina. Uma task muito mais longa que a mediana significa que a maior parte do cluster está ociosa esperando por ela. Este achado sozinho não distingue skew de dados de skew de computação: cruzar com SF-UI-002 para separá-los, porque o tratamento é diferente. Ver knowledge/spark/shuffle-join-skew.md secao 3.",
+    "proposed_change": [
+      "Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.",
+      "Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.",
+      "Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls."
+    ],
+    "tradeoffs": [
+      "Salting adiciona complexidade permanente ao código e deve ser a última tentativa, não a primeira."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem de linhas com chave nula.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Agregados de controle por dimensão de negócio.",
+      "Nova razão max/p50 do stage após a mudança."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
+      }
+    ],
+    "action": {
+      "kind": "skew.apply_treatment",
+      "target": "spark.stage",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "skew.task_duration_ratio",
+        "correctness.write_result"
+      ],
+      "depends_on": [
+        "SF-UI-002"
+      ]
+    }
+  },
+  {
+    "rule_id": "SF-UI-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Executor removido sem OOM registrado no log",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "2"
+    },
+    "evidence": [
+      "f_3cf767"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace. A correção é spark.executor.memoryOverhead, não spark.executor.memory. É o OOM mais mal diagnosticado que existe, e a assinatura de que foi mal diagnosticado é \"aumentei a memória e continuou\". Ver knowledge/spark/memory-and-oom.md secao 2, classe container/overhead.",
+    "proposed_change": [
+      "Aumentar spark.executor.memoryOverhead, não spark.executor.memory.",
+      "Reduzir o tamanho de batch de pandas_udf, se houver.",
+      "Eliminar UDF Python, que é a fonte mais comum de consumo fora do heap.",
+      "Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar overhead reduz a memória disponível para o heap dentro do mesmo container.",
+      "Duas das quatro ações propostas mudam o resultado, e nenhuma delas falha ao mudá-lo. Eliminar UDF Python troca nulo, precisão, fuso e borda pela semântica da função nativa. E reduzir o tamanho de batch de pandas_udf muda o resultado de toda UDF vetorizada que NÃO seja linha a linha — normalização, ranking, preenchimento por vizinho e qualquer coisa que olhe o batch inteiro devolvem outro valor com outro tamanho de batch. Nada no plano físico nem no event log acusa isso: o nó continua sendo ArrowEvalPython."
+    ],
+    "tradeoffs": [
+      "Em algum ponto",
+      "worker maior é mais simples do que rebalancear heap e overhead."
+    ],
+    "validation": [
+      "Ausência de executores removidos no run seguinte.",
+      "glue.ALL.memory.non-heap.used.percentage abaixo do nível anterior.",
+      "Categoria de erro do Glue Observability sem OUT_OF_MEMORY_ERROR.",
+      "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas — a mesma validação que SF-PY-001 e SF-PLAN-001 exigem para a mesma troca.",
+      "Se a ação foi reduzir o batch de pandas_udf: a coluna produzida pela UDF comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui; é o valor que responde se a UDF era linha a linha ou não.",
+      "Se a ação foi só memoryOverhead: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das quatro que mexe em capacidade e não em semântica."
+    ],
+    "rollback": [
+      "Reverter o valor de memoryOverhead."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      }
+    ],
+    "action": {
+      "kind": "capacity.increase_memory_overhead",
+      "target": "spark.executor.memoryOverhead",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint",
+        "availability.executor_loss"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-UI-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Spill em disco maior que o input do stage",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "evidence": [
+      "f_5d4d23"
+    ],
+    "measured": {
+      "memory_spill_bytes": 50000000,
+      "disk_spill_bytes": 300000000,
+      "input_bytes": 250000000
+    },
+    "threshold": {
+      "ratio": 1.0
+    },
+    "runtime_scope": {},
+    "explanation": "Escrever em disco mais bytes do que leu indica que o algoritmo ou o tamanho de partição são inadequados, não apenas que falta memória. A correção começa por reduzir o volume que entra no shuffle, e só termina em mais memória. Aumentar memória primeiro trata o sintoma e mantém o custo. Ver knowledge/spark/memory-and-oom.md secao 4.",
+    "proposed_change": [
+      "Reduzir bytes no shuffle por filtro, projeção e pré-agregação.",
+      "Aumentar o número de partições, reduzindo o tamanho de cada uma.",
+      "Verificar e corrigir skew antes de mexer em memória.",
+      "Só então avaliar worker da série R, que dobra a memória com o mesmo vCPU."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar partições em excesso troca spill por overhead de agendamento."
+    ],
+    "tradeoffs": [
+      "Worker R custa mais por vCPU efetivo; só se justifica com memória comprovadamente limitante."
+    ],
+    "validation": [
+      "Razão spill/input após a mudança.",
+      "Runtime e DPU-hours antes e depois.",
+      "Resultado funcional idêntico."
+    ],
+    "rollback": [
+      "Reverter configuração de capacidade e de partições."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Razão 1.0 é limiar de campo, escolhido por ser interpretável: escreveu mais do que leu."
+      }
+    ],
+    "action": {
+      "kind": "shuffle.reduce_bytes",
+      "target": "spark.stage.shuffle",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.spill_bytes"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-UI-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "GC dominando o tempo de executor",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "evidence": [
+      "f_6d8b82"
+    ],
+    "measured": {
+      "gc_ms": 6250,
+      "executor_run_ms": 19750
+    },
+    "threshold": {
+      "ratio": 0.15
+    },
+    "runtime_scope": {},
+    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir.",
+    "proposed_change": [
+      "Cruzar com a série temporal de heap dos executores para classificar a causa.",
+      "Se heap não está cheio, eliminar UDF Python e conversões por linha.",
+      "Se heap está cheio, reduzir dado por executor ou usar worker com mais memória."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar memória quando a causa é alocação de objetos não resolve e encarece.",
+      "Das três ações propostas, duas não tocam o resultado (heap, worker) e UMA toca: eliminar UDF Python troca a implementação que produz o valor. Nulo, precisão decimal, fuso, ordenação de string e comportamento de borda diferem entre a UDF e a função nativa que a substitui, e a diferença não aparece no tempo de GC — que é justamente o que esta regra mede."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "Razão gc/run após a mudança.",
+      "Runtime e DPU-hours antes e depois.",
+      "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra representativa que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas. É a MESMA validação que SF-PY-001 e SF-PLAN-001 exigem para a MESMA troca, e ela não fica mais barata por a troca ter chegado aqui pela via do GC em vez da via do código.",
+      "Se a ação foi reduzir dado por executor ou trocar de worker: nenhum eixo de dado é exigido, e declarar isso é parte da validação — capacidade não move o resultado, e dizer qual das duas metades você aplicou é o que separa um run comparável de um experimento com duas variáveis."
+    ],
+    "rollback": [
+      "Reverter a mudança de código ou de capacidade."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "spark.executor.memory",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-UI-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Skew de input bytes no stage",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "evidence": [
+      "f_369c4f"
+    ],
+    "measured": {
+      "min_bytes": 10000000,
+      "p50_bytes": 10000000,
+      "p95_bytes": 200000000,
+      "max_bytes": 200000000,
+      "total_bytes": 250000000
+    },
+    "threshold": {
+      "ratio": 3.0
+    },
+    "runtime_scope": {},
+    "explanation": "Distingue skew de dados de skew de computação, e essa distinção muda a ação. Duração desigual com input uniforme indica computação desigual: UDF caro em certas linhas, explode com fan-out variável. Repartition não resolve esse caso. Duração desigual com input desigual é skew de dados clássico, tratável pelo skew join do AQE — ligado por default a partir do Spark 3.2, e em 3.0 e 3.1 só com spark.sql.adaptive.enabled=true —, por separação de nulls ou por isolamento de hot key; estes dois últimos não dependem de versão e são o caminho quando o AQE não está disponível.",
+    "proposed_change": [
+      "Se input é uniforme e duração não é, investigar UDF e explode, não a distribuição da chave.",
+      "Se input é desigual, seguir o caminho de skew de dados."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Classificar errado leva a aplicar o tratamento inútil e concluir que \"nada funciona\"."
+    ],
+    "tradeoffs": [
+      "Nenhum; é medição."
+    ],
+    "validation": [
+      "Nova razão max/p50 de input após a mudança."
+    ],
+    "rollback": [
+      "Não aplicável; regra de classificação."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "A comparação entre razão de duração e razão de input é o discriminador; não há limiar oficial."
+      }
+    ],
+    "action": {
+      "kind": "skew.classify_type",
+      "target": "spark.stage",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-UI-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Subparalelismo — tasks muito abaixo dos cores disponíveis",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_healthy_read",
+      "stage_id": 0
+    },
+    "evidence": [
+      "f_94cbcf",
+      "f_e30d05"
+    ],
+    "measured": {
+      "task_count": 2,
+      "available_cores": 8
+    },
+    "threshold": {
+      "factor": 0.5
+    },
+    "runtime_scope": {},
+    "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
+    "proposed_change": [
+      "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
+      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.",
+      "Reduzir o número de workers se o paralelismo real não pode aumentar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar partições em job pequeno cria overhead de agendamento sem ganho."
+    ],
+    "tradeoffs": [
+      "Converter formato de entrada é mudança no produtor",
+      "não no consumidor."
+    ],
+    "validation": [
+      "Contagem de tasks versus cores após a mudança.",
+      "glue.driver.workerUtilization antes e depois.",
+      "Runtime e DPU-hours antes e depois."
+    ],
+    "rollback": [
+      "Reverter configuração de partições e de capacidade."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
+      }
+    ],
+    "action": {
+      "kind": "shuffle.change_partition_count",
+      "target": "spark.sql.shuffle.partitions",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "shuffle.partition_count"
+      ],
+      "depends_on": []
+    }
+  }
+]

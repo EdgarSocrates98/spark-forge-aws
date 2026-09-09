@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_oom1",
+      "message": "2026-09-09 10:07:42,881 ERROR [Executor task launch worker for task 12] executor.Executor: Container killed by YARN for exceeding memory limits. 10.4 GB of 10 GB physical memory used",
+      "timestamp": 1788948000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "etl-vendas",
+  "job_run_id": "jr_oom1",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_oom1",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

@@ -41,7 +41,10 @@ class TestToolSurface:
             "sparkforge_analyze_event_log",
             "sparkforge_analyze_sql_metrics",
             "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_cloudwatch_logs",
+            "sparkforge_analyze_error_signatures",
             "sparkforge_analyze_glue_job_runs",
+            "sparkforge_analyze_parquet_footer",
             "sparkforge_analyze_plan",
             "sparkforge_analyze_terraform",
             "sparkforge_analyze_iceberg",
@@ -81,6 +84,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -133,6 +137,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -699,6 +704,107 @@ _CLOUDWATCH_ARTIFACT = json.dumps(
     }
 )
 
+# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# DOIS row groups com faixas disjuntas, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico`.
+# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a
+# tool existe para publicar.
+def _pqf_coluna(minimo: int, maximo: int) -> dict:
+    """Um column chunk no shape que o coletor grava."""
+    return {
+        "path": "id",
+        "physical_type": "INT64",
+        "compression": "SNAPPY",
+        "encodings": ["PLAIN", "RLE_DICTIONARY"],
+        "has_dictionary_page": True,
+        "is_stats_set": True,
+        "has_min_max": True,
+        "min": minimo,
+        "max": maximo,
+        "null_count": 0,
+        "num_values": 1000,
+        "total_compressed_size": 4000,
+        "total_uncompressed_size": 12000,
+        "has_column_index": False,
+        "has_offset_index": False,
+        "bloom_filter_offset": None,
+    }
+
+
+# Artefato do FOOTER no shape que `sparkforge collect parquet-footer` grava.
+# DOIS row groups com faixas DISJUNTAS, de proposito: com um so, a medida de
+# faixa recusaria com `row_group_unico` e a amostra nao exercitaria o que a tool
+# existe para publicar.
+_PARQUET_FOOTER_ARTIFACT = json.dumps(
+    {
+        "prefix": "s3://lake/curated/pedidos/",
+        "status": "ok",
+        "files_seen": 1,
+        "files_read": 1,
+        "sampling": "first_n_by_name",
+        "max_files": 20,
+        "files": [
+            {
+                "path": "s3://lake/curated/pedidos/part-00000.parquet",
+                "file_bytes": 268435456,
+                "num_rows": 2000,
+                "num_row_groups": 2,
+                "num_columns": 1,
+                "created_by": "parquet-mr version 1.13.1",
+                "format_version": "2.6",
+                "row_groups": [
+                    {
+                        "index": 0,
+                        "num_rows": 1000,
+                        "total_byte_size": 134217728,
+                        "columns": [_pqf_coluna(0, 999)],
+                    },
+                    {
+                        "index": 1,
+                        "num_rows": 1000,
+                        "total_byte_size": 134217728,
+                        "columns": [_pqf_coluna(1000, 1999)],
+                    },
+                ],
+            }
+        ],
+    }
+)
+
+# Artefato do LOG de UM run no shape que `sparkforge collect cloudwatch-logs`
+# grava. A linha carrega a assinatura `ERR-GLUE-001` de proposito: e ela que faz
+# a amostra de `sparkforge_analyze_error_signatures` casar por `log_line`.
+_CLOUDWATCH_LOGS_ARTIFACT = json.dumps(
+    {
+        "job_name": "etl-job",
+        "job_run_id": "jr_1",
+        "log_group": "/aws-glue/jobs/error",
+        "log_stream_prefix": "jr_1",
+        "start": "2026-09-09T10:00:00Z",
+        "end": "2026-09-09T11:00:00Z",
+        "filter_pattern": "?ERROR",
+        "max_events": 500,
+        "status": "ok",
+        "truncated": False,
+        "events_collected": 1,
+        "events": [
+            {
+                "eventId": "e0",
+                "ingestionTime": 1788948000500,
+                "logStreamName": "jr_1",
+                "message": (
+                    "2026-09-09 10:07:42,881 ERROR [Executor task launch worker] "
+                    "executor.Executor: Container killed by YARN for exceeding "
+                    "memory limits. 10.4 GB of 10 GB physical memory used"
+                ),
+                "timestamp": 1788948000000,
+            }
+        ],
+    }
+)
+
 # Artefato de UM run Glue no shape que `sparkforge collect glue-job-runs` grava
 # -- um JSON por run terminal, nomeado `<job>_<run_id>.json`.
 _GLUE_JOB_RUN_ARTIFACT = json.dumps(
@@ -1258,6 +1364,28 @@ class _FakeEmrContainersClient:
         }
 
 
+class _FakeLogsClient:
+    """`filter_log_events` de uma pagina so -- e AQUI o suficiente, e o motivo
+    esta escrito para nao ser confundido com o defeito que a auditoria de fakes
+    de 2026-09-03 achou: este arquivo mede SCHEMA DE SAIDA da tool, nao o laco
+    de paginacao do coletor. Quem prova a paginacao com paginas distintas e
+    `tests/test_collect_cloudwatch_logs.py`, e e la que um fake de pagina unica
+    seria o fake errado."""
+
+    def filter_log_events(self, **kwargs):
+        return {
+            "events": [
+                {
+                    "logStreamName": kwargs.get("logStreamNamePrefix", "jr_1"),
+                    "timestamp": 1_788_948_000_000,
+                    "message": (
+                        "ERROR Container killed by YARN for exceeding memory limits."
+                    ),
+                }
+            ]
+        }
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -1268,6 +1396,7 @@ class _FakeBoto3ForCollect:
             "emr": _FakeEmrClient(),
             "emr-serverless": _FakeEmrServerlessClient(),
             "emr-containers": _FakeEmrContainersClient(),
+            "logs": _FakeLogsClient(),
         }
 
     def client(self, name, **kwargs):
@@ -1437,7 +1566,12 @@ def _fake_collect_boto3(monkeypatch):
     """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
+    from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+
+    # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
+    # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
 _CODE_JOB = (
@@ -1679,6 +1813,65 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         cw_path = tmp_path / "cw.json"
         cw_path.write_text(_CLOUDWATCH_ARTIFACT, encoding="utf-8")
         return call_tool("sparkforge_analyze_cloudwatch", {"path": str(cw_path)})
+
+    if name == "sparkforge_analyze_cloudwatch_logs":
+        cw_logs_dir = tmp_path / "cloudwatch_logs"
+        cw_logs_dir.mkdir()
+        (cw_logs_dir / "etl_jr1_error.json").write_text(
+            _CLOUDWATCH_LOGS_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_cloudwatch_logs", {"path": str(cw_logs_dir)}
+        )
+        assert any(item["kind"] == "cloudwatch.log_event" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos uma linha de log"
+        )
+        return resultado
+
+    if name == "sparkforge_analyze_error_signatures":
+        # A UNIAO do case num arquivo so, que e o contrato desta tool. Aqui ela
+        # e produzida pelo proprio verbo do log -- a outra metade (o
+        # `spark.exception` do event log) nao entra de proposito: o que esta
+        # amostra exercita e o caminho `matched_on: log_line`.
+        cw_logs_dir = tmp_path / "cloudwatch_logs_sig"
+        cw_logs_dir.mkdir()
+        (cw_logs_dir / "etl_jr1_error.json").write_text(
+            _CLOUDWATCH_LOGS_ARTIFACT, encoding="utf-8"
+        )
+        extraido = call_tool(
+            "sparkforge_analyze_cloudwatch_logs",
+            {"path": str(cw_logs_dir), "limit": 1000},
+        )
+        facts_path = tmp_path / "facts_uniao.json"
+        facts_path.write_text(
+            json.dumps(extraido["items"], ensure_ascii=False), encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_error_signatures", {"facts_path": str(facts_path)}
+        )
+        assert any(
+            item["kind"] == "error.signature_match" for item in resultado["items"]
+        ), "a amostra precisa casar pelo menos uma assinatura pelo caminho de log"
+        return resultado
+
+    if name == "sparkforge_analyze_parquet_footer":
+        # A amostra e um FOOTER, nao um `.parquet`: a tool parte do artefato
+        # JSON e nao depende de pyarrow. Dois row groups com faixas DISJUNTAS,
+        # para que `avg_range_coverage` saia -- com um row group so a medida
+        # recusaria com `row_group_unico`, e a amostra nao exercitaria o que a
+        # tool existe para publicar.
+        pqf_dir = tmp_path / "parquet_footer"
+        pqf_dir.mkdir()
+        (pqf_dir / "curated.json").write_text(
+            _PARQUET_FOOTER_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool(
+            "sparkforge_analyze_parquet_footer", {"path": str(pqf_dir)}
+        )
+        assert any(
+            item["kind"] == "parquet.column_profile" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos um perfil de coluna"
+        return resultado
 
     if name == "sparkforge_analyze_glue_job_runs":
         runs_dir = tmp_path / "glue_job_run"
@@ -1948,6 +2141,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
         "sparkforge_collect_cloudwatch",
+        "sparkforge_collect_cloudwatch_logs",
         "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
@@ -1974,6 +2168,15 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "repo": str(tmp_path),
                 "job_name": "etl-job",
                 "job_run_id": "jr_1",
+                "start": "2026-07-29T00:00:00Z",
+                "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_cloudwatch_logs": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
+                "job_run_id": "jr_1",
+                "log_group": "/aws-glue/jobs/error",
                 "start": "2026-07-29T00:00:00Z",
                 "end": "2026-07-30T00:00:00Z",
                 "now": "2026-07-30T00:00:00Z",
@@ -2363,3 +2566,33 @@ class TestArbitrateTool:
         assert resultado["persisted"] is True
         assert resultado["claims"]
         assert len(read_claims(repo)) == len(resultado["claims"])
+
+
+class TestJudgeDeclaraOPlano:
+    """O bloco `plan` e o `evidence_standing` chegaram na resposta na T4 e nao
+    estavam no `outputSchema`. Campo que o payload carrega e o schema nao
+    declara e campo que o cliente MCP nao tem como saber que existe -- o mesmo
+    defeito que `emr` teve em `_RUNTIME_CONTEXT`."""
+
+    def test_outputschema_declara_plan_e_evidence_standing(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        schema = json.dumps(TOOLS["sparkforge_judge"])
+        assert "plan" in schema
+        assert "evidence_standing" in schema
+
+    def test_a_descricao_diz_que_nao_grava(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        desc = TOOLS["sparkforge_judge"]["description"].lower()
+        assert "nao grava" in desc or "não grava" in desc
+        assert "arbitrate" in desc
+
+    def test_o_judge_continua_read_only(self):
+        """A fronteira da secao 2 do spec, exercitada e nao so escrita: publicar
+        o plano NAO podia mover a classe da tool. Se ela virasse
+        `LOCAL_MUTATION`, a cadeia de autorizacao de um verbo que muitas skills
+        chamam mudaria em silencio."""
+        from sparkforge.agents.autonomy import ToolClass, tool_class
+
+        assert tool_class("sparkforge_judge") is ToolClass.READ_ONLY
