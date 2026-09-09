@@ -88,6 +88,7 @@ def _derivados_de_facts(pool):
         benchmark,
         bridge,
         call_graph,
+        exception,
         funcval,
         fusion,
         run_cost,
@@ -112,6 +113,12 @@ def _derivados_de_facts(pool):
     # `spark.stage.failure` e `spark.conf_effective` ja extraidos.
     yield "timeout_diagnosis", timeout_diagnosis.extract_timeout_diagnosis(pool, "<pool>")
     yield "utilization", utilization.extract_utilization(pool, "<pool>")
+    # `exception` deriva de `spark.stage.failure.attrs.reason`, e nao de
+    # caminho. Ele COPIA o `subject` do fact de origem -- entao se um dia
+    # `spark.stage.failure` passar a carregar snippet, `exception` propaga, e e
+    # esta chamada que faz a medida perceber. Sem ela, a guarda fail-closed
+    # acima para com o nome do modulo, que foi o que aconteceu ao acrescenta-lo.
+    yield "exception", exception.build_exceptions(pool)
 
 
 def extratores_com_snippet() -> set[str]:

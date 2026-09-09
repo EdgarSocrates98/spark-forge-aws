@@ -89,6 +89,17 @@ EXTRACTORS = {
     # que falhar.
     "emr_serverless": emr_serverless,
     "event_log": event_log,
+    # `exception` (`sparkforge/facts/exception.py`) NAO esta nesta lista, e a
+    # ausencia e deliberada e datada. Ele ja entrou na outra lista manual
+    # (`tests/test_rules_catalog_reachability.py`), onde o criterio e "o kind
+    # tem extrator"; aqui o criterio e "o kind aparece em algum golden", e
+    # medido em 2026-09-08 o corpus tem UM `spark.stage.failure` e ZERO
+    # `spark.exception*` -- porque nenhum coordenador chama `build_exceptions`
+    # ainda. Registrar aqui antes da fixture pintaria
+    # `test_every_kind_of_every_extractor_appears_in_some_golden[exception]` e
+    # `test_every_unresolved_kind_is_exercised` de vermelho sem medir nada
+    # sobre o extrator. A fixture e a Task 4 desta frente, e este comentario e
+    # a divida nomeada ate la.
     # Lista manual, duplicada em `tests/test_rules_catalog_reachability.py`:
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
     "funcval": funcval,

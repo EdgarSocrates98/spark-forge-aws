@@ -37,6 +37,7 @@ from sparkforge.facts import (
     emr_eks,
     emr_serverless,
     event_log,
+    exception,
     funcval,
     fusion,
     glue_job_run,
@@ -97,6 +98,16 @@ EXTRACTORS = (
     # repositorio desde a Task 2 desta fase.
     emr_serverless,
     event_log,
+    # `exception` entra ANTES de a area SF-ERR existir, e de proposito: sem ele
+    # aqui, os tres kinds `spark.exception*` contam como orfaos, e a primeira
+    # regra que os consumir seria FORCADA a `blocked_on` sobre um extrator que
+    # ja esta no repositorio -- que e a mentira que este arquivo inteiro existe
+    # para impedir. Ele nao entra na lista de
+    # `tests/test_fixtures_kind_coverage.py` neste commit: la o criterio e
+    # golden por kind, e o corpus nao tem nenhum -- a fixture e trabalho da
+    # Task 4 desta frente, e entrar antes dela trocaria uma lacuna nomeada por
+    # um teste vermelho que nao mede nada.
+    exception,
     # `funcval` entra nas DUAS listas no mesmo commit da Fase 4c: sem ele aqui,
     # os quatro kinds `funcval.*` contam como orfaos e as cinco regras SF-FVAL
     # da Task 6 seriam obrigadas a declarar `blocked_on` sobre um modulo que ja
