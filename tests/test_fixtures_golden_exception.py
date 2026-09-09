@@ -286,22 +286,42 @@ class TestAsRecusas:
             != _by_kind(sem_forma, "spark.exception.unresolved")[0].attrs["reason"]
         )
 
-    def test_classe_no_meio_da_linha_e_o_limite_atual_e_esta_registrado(self):
-        """NAO afirma que a recusa e o comportamento desejado -- afirma que e o
-        comportamento de hoje, e o prende. `_CABECA` e ancorada em `^` de
-        proposito: sem a ancora, qualquer `chave.pontuada: valor` de mensagem
-        livre viraria classe de excecao que ninguem lancou. Alargar a ancora e
-        outra Task, e este golden e o que ela tem de mudar em vez de mudar o
-        comportamento em silencio."""
+    def test_classe_no_meio_da_linha_agora_e_alcancada_pelo_SEGUNDO_padrao(self):
+        """O limite que esta fixture registrava CAIU em 2026-09-09, e o golden
+        dela e o diff que a queda produziu -- exatamente o que o `proves`
+        original prometia.
+
+        `_CABECA` continua ancorada em `^`. Quem alcanca esta forma e
+        `_CABECA_APOS_EXECUTOR`, com ancora propria no prefixo literal do
+        `DAGScheduler` (`executor <algo>):`), e `attrs.parsed_by` diz por qual
+        dos dois a excecao entrou."""
         _, facts, _, _ = run_fixture(_fixture("classe_no_meio_da_linha"))
         falha = _by_kind(facts, "spark.stage.failure")[0]
-        assert "java.lang.OutOfMemoryError" in falha.attrs["reason"], (
-            "a classe ESTA no texto; e o parser que nao a alcanca"
+        assert "java.lang.OutOfMemoryError" in falha.attrs["reason"]
+        excecoes = _by_kind(facts, "spark.exception")
+        assert len(excecoes) == 1
+        assert excecoes[0].attrs["exception_class"] == "java.lang.OutOfMemoryError"
+        assert excecoes[0].attrs["parsed_by"] == "after_executor"
+        assert _by_kind(facts, "spark.exception.unresolved") == []
+
+    def test_estruturar_a_excecao_NAO_inventa_assinatura(self):
+        """A outra metade da medida, e ela e o que separa alargar o parser de
+        alargar a acusacao: `java.lang.OutOfMemoryError` nao casa NENHUMA das
+        seis assinaturas de `knowledge/errors/`, entao o ponto cego continua
+        nomeado em `error.signature.unresolved`."""
+        _, facts, achados, _ = run_fixture(_fixture("classe_no_meio_da_linha"))
+        assert _by_kind(facts, "error.signature_match") == []
+        recusa = _by_kind(facts, "error.signature.unresolved")
+        assert len(recusa) == 1
+        assert recusa[0].attrs["reason"] == "nenhuma_assinatura_casou"
+        assert [a.rule_id for a in achados if a.rule_id.startswith("SF-ERR")] == []
+
+    def test_a_pilha_normal_continua_entrando_pelo_primeiro_padrao(self):
+        """A precedencia, medida no corpus e nao so no teste de unidade."""
+        _, facts, _, _ = run_fixture(_fixture("excecao_simples"))
+        assert _by_kind(facts, "spark.exception")[0].attrs["parsed_by"] == (
+            "head_of_line"
         )
-        recusas = _by_kind(facts, "spark.exception.unresolved")
-        assert len(recusas) == 1
-        assert recusas[0].attrs["reason"] == "sem_forma_de_stacktrace"
-        assert _by_kind(facts, "spark.exception") == []
 
 
 class TestOParDeRequiresFacts:

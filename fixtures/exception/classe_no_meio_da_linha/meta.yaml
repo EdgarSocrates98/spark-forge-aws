@@ -1,41 +1,52 @@
 name: classe_no_meio_da_linha
 proves: >
-  O LIMITE ATUAL do parser, registrado como recusa nomeada em vez de ficar
-  implicito no codigo.
+  A forma que o `DAGScheduler` escreve quando uma task falha N vezes, e o
+  SEGUNDO padrao do parser que a alcanca (2026-09-09).
 
-  O `Failure Reason` aqui e a forma que o `DAGScheduler` escreve quando uma task
-  falha N vezes:
+  O `Failure Reason` aqui e:
 
       Job aborted due to stage failure: Task 3 in stage 5.0 failed 4 times, [...]
       executor 2): java.lang.OutOfMemoryError: Java heap space
 
-  A classe que importa -- `java.lang.OutOfMemoryError` -- esta no MEIO da primeira
-  linha, depois do prefixo do escalonador. `_CABECA` e ancorada em `^` de
-  proposito: sem a ancora, qualquer `chave.pontuada: valor` de mensagem livre
-  viraria classe de excecao que ninguem lancou. Com ela, esta forma sai como
-  `spark.exception.unresolved` com `reason: sem_forma_de_stacktrace`.
+  A classe que importa -- `java.lang.OutOfMemoryError` -- esta no MEIO da
+  primeira linha, depois do prefixo do escalonador. `_CABECA` e ancorada em `^` e
+  CONTINUA ancorada: afrouxa-la faria qualquer `chave.pontuada: valor` de
+  mensagem livre virar classe de excecao que ninguem lancou. Quem alcanca esta
+  forma e `_CABECA_APOS_EXECUTOR`, um segundo padrao com ancora PROPRIA --
+  `executor <algo>):` e prefixo literal do `DAGScheduler`, nao forma generica.
 
-  Esta fixture NAO afirma que a recusa e o comportamento desejado -- afirma que e
-  o comportamento ATUAL, e o prende. `sparkforge/facts/exception.py` ja nomeava
-  essa lacuna em prosa desde a T1, dizendo que alargar a ancora exigia a fixture
-  que provasse a forma. A fixture agora existe. Quando alguem alargar o parser,
-  este golden e o que muda, e o diff dele e a discussao -- em vez de o
-  comportamento mudar em silencio para os dois lados.
+  `attrs.parsed_by: after_executor` diz por qual dos dois a excecao entrou, pela
+  mesma razao que `matched_on` existe no matcher: sem ele, duas procedencias
+  ficariam indistinguiveis dentro do mesmo fact.
 
-  Ela divide o kind com `texto_sem_forma_de_stacktrace` e o mesmo `reason`, e as
-  duas nao sao duplicata: aquela nao tem excecao NENHUMA no texto, esta TEM e o
-  parser nao a alcanca. O kind e o mesmo porque o extrator nao distingue os dois
-  casos -- e nao distinguir e justamente o limite que se esta registrando.
+  A HISTORIA desta fixture e o ponto dela. Ela nasceu na T5 registrando a
+  RECUSA (`spark.exception.unresolved: sem_forma_de_stacktrace`) como
+  comportamento ATUAL, e o `proves` de entao dizia: *quando alguem alargar o
+  parser, este golden e o que muda, e o diff dele e a discussao -- em vez de o
+  comportamento mudar em silencio para os dois lados*. O golden mudou, e o diff
+  e exatamente esse: o `unresolved` virou `spark.exception` com dois
+  `spark.exception.frame`.
+
+  `error.signature.unresolved` continua saindo, e ele e a outra metade da
+  medida: `java.lang.OutOfMemoryError` nao casa NENHUMA das seis assinaturas de
+  `knowledge/errors/`. Estruturar a excecao nao inventa assinatura, e o ponto
+  cego continua nomeado.
+
+  `texto_sem_forma_de_stacktrace` continua sendo a recusa deste corpus, e agora
+  as duas fixtures nao dividem mais kind: aquela nao tem excecao NENHUMA no
+  texto, esta TEM e o parser passou a alcanca-la.
 runtime:
   glue: "5.0"
   spark: "3.5.4"
   python: "3.11"
   iceberg: "1.7.1"
 expects_kinds:
+  - error.signature.unresolved
   - spark.cluster.cores
   - spark.conf_effective
   - spark.conf_excluded
-  - spark.exception.unresolved
+  - spark.exception
+  - spark.exception.frame
   - spark.job.spill_summary
   - spark.log_analyzed
   - spark.runtime_version

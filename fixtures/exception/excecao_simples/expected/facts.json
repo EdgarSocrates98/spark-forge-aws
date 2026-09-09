@@ -374,7 +374,8 @@
       "exception_class": "java.lang.IllegalArgumentException",
       "message_head": "requirement failed: coluna de particao dt ausente no schema de entrada",
       "is_chained": false,
-      "caused_by": []
+      "caused_by": [],
+      "parsed_by": "head_of_line"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",

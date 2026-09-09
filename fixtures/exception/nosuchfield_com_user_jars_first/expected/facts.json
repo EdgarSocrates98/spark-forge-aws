@@ -877,7 +877,8 @@
       "exception_class": "java.lang.NoSuchFieldError",
       "message_head": "Class software.amazon.awssdk.core.SdkSystemSetting does not have member field software.amazon.awssdk.core.SdkSystemSetting SYNC_HTTP_SERVICE_IMPL",
       "is_chained": false,
-      "caused_by": []
+      "caused_by": [],
+      "parsed_by": "head_of_line"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",

@@ -377,7 +377,8 @@
       "caused_by": [
         "java.lang.reflect.InvocationTargetException",
         "java.lang.NoSuchMethodError"
-      ]
+      ],
+      "parsed_by": "head_of_line"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",

@@ -619,6 +619,16 @@ artefato, e o extrator os traduz em `cloudwatch.logs.unresolved`.
   prende o comportamento ATUAL para que alargar o parser vire diff de golden. O
   caminho proposto é um SEGUNDO padrão, sem tocar a âncora `^` do primeiro.
 
+  **FECHADA em 2026-09-09, e exatamente por esse caminho.**
+  `_CABECA_APOS_EXECUTOR` lê a classe depois de `executor <algo>): `, prefixo
+  literal do escalonador; `_CABECA` continua ancorada em `^` e tem precedência,
+  e `attrs.parsed_by` diz por qual dos dois a exceção entrou. O golden da
+  fixture é o diff que a mudança produziu — `unresolved` virou
+  `spark.exception` com dois frames —, e um teste novo mede a outra metade:
+  estruturar a exceção **não inventa assinatura**, e
+  `error.signature.unresolved` continua saindo porque
+  `java.lang.OutOfMemoryError` não casa nenhuma das seis.
+
 ### O que a Task 6 remediou fora do escopo original
 
 Duas linhas de *Números correntes* do `STATUS.md` que a própria frente deixou

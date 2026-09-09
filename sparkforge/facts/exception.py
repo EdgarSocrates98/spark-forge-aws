@@ -20,19 +20,28 @@ linha so, sem pilha:
 `is_chained=False` e zero `spark.exception.frame` -- que e a leitura certa: nao
 havia pilha para estruturar.
 
-A LACUNA que essa medida deixa aberta, e ela e nomeada aqui de proposito: o
-corpus nao tem nenhum `Failure Reason` no formato
+## A LACUNA FECHOU em 2026-09-09, e ela fechou com um SEGUNDO padrao
 
-    Job aborted due to stage failure: Task 3 in stage 5.0 failed 4 times [...]
-        at ...   (frame indentado por TAB no artefato real)
+A forma que o `DAGScheduler` escreve quando uma task falha N vezes
 
-em que a classe da excecao aparece no MEIO da primeira linha, depois do prefixo
-do `DAGScheduler`. `_CABECA` e ancorada em inicio de linha de proposito -- sem a
-ancora, qualquer `chave.pontuada: valor` de mensagem livre viraria classe de
-excecao que ninguem lancou --, entao esse formato sai hoje como
-`spark.exception.unresolved: sem_forma_de_stacktrace`. E recusa NOMEADA, nao
-silencio; alargar a ancora exige a fixture que prove a forma, e ela nao existe
-ainda.
+    Job aborted due to stage failure: Task 3 in stage 5.0 failed 4 times, most
+    recent failure: Lost task 3.3 in stage 5.0 (TID 42, host, executor 2):
+    java.lang.OutOfMemoryError: Java heap space
+
+poe a classe que importa no MEIO da primeira linha, depois do prefixo do
+escalonador. Ela saia como `spark.exception.unresolved: sem_forma_de_stacktrace`,
+e `fixtures/exception/classe_no_meio_da_linha/` prendia esse comportamento.
+
+`_CABECA` continua ancorada em `^`, e a ancora NAO foi afrouxada -- afrouxa-la
+faria qualquer `chave.pontuada: valor` de mensagem livre virar classe de excecao
+que ninguem lancou. O que entrou e `_CABECA_APOS_EXECUTOR`, um segundo padrao
+com ancora PROPRIA: `executor <algo>): ` e prefixo literal do `DAGScheduler`, e
+so depois dele a classe e lida. O primeiro padrao tem precedencia; o segundo so
+e tentado quando ele nao casa.
+
+`attrs.parsed_by` diz por qual dos dois a excecao entrou -- `head_of_line` ou
+`after_executor` --, pela mesma razao que `matched_on` existe no matcher: sem
+ele, duas procedencias diferentes ficariam indistinguiveis no fact.
 """
 
 from __future__ import annotations
@@ -53,6 +62,14 @@ EMITTED_KINDS = frozenset(
 # ele o texto e mensagem livre, nao excecao, e forcar o parse produziria uma
 # classe que ninguem lancou.
 _CABECA = re.compile(r"^([\w$]+(?:\.[\w$]+)+)\s*:\s*(.*)$", re.MULTILINE)
+# O SEGUNDO padrao, e a ancora dele e o prefixo literal do `DAGScheduler`:
+# `(TID 42, host, executor 2): java.lang.OutOfMemoryError: Java heap space`.
+# `executor <algo>):` e texto do escalonador, nao forma generica -- e e por isso
+# que este padrao pode ler a classe do MEIO da linha sem o falso positivo que
+# afrouxar `_CABECA` traria. Ele so e tentado quando `_CABECA` nao casa.
+_CABECA_APOS_EXECUTOR = re.compile(
+    r"\bexecutor\s+[^)\n]*\):\s*([\w$]+(?:\.[\w$]+)+)\s*:\s*(.*)$", re.MULTILINE
+)
 _CAUSED = re.compile(r"^Caused by:\s*([\w$]+(?:\.[\w$]+)+)", re.MULTILINE)
 _FRAME = re.compile(r"^\s+at\s+([\w$.]+)\.([\w$<>]+)\(([^:)]+):(\d+)\)", re.MULTILINE)
 
@@ -83,6 +100,15 @@ def build_exceptions(facts: Sequence[Fact], top_n: int = _TOPO) -> list[Fact]:
             continue
 
         cabeca = _CABECA.search(reason)
+        parsed_by = "head_of_line"
+        if not cabeca:
+            # PRECEDENCIA, e ela importa: o padrao ancorado em inicio de linha
+            # e o generico e vem primeiro. O do `DAGScheduler` so responde
+            # quando ele nao casa -- inverter a ordem faria uma pilha que
+            # comeca com a classe no topo ser lida pelo prefixo do escalonador
+            # se ele aparecesse mais abaixo.
+            cabeca = _CABECA_APOS_EXECUTOR.search(reason)
+            parsed_by = "after_executor"
         if not cabeca:
             saida.append(_unresolved(subject, "sem_forma_de_stacktrace", provenance))
             continue
@@ -98,6 +124,7 @@ def build_exceptions(facts: Sequence[Fact], top_n: int = _TOPO) -> list[Fact]:
                     "message_head": cabeca.group(2).strip()[:200],
                     "is_chained": bool(causas),
                     "caused_by": causas,
+                    "parsed_by": parsed_by,
                 },
                 provenance=provenance,
             )

@@ -831,7 +831,8 @@
       "exception_class": "java.lang.NoSuchMethodError",
       "message_head": "'scala.collection.immutable.ArraySeq scala.collection.immutable.ArraySeq$.unsafeWrapArray(java.lang.Object)'",
       "is_chained": false,
-      "caused_by": []
+      "caused_by": [],
+      "parsed_by": "head_of_line"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",

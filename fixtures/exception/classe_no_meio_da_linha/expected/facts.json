@@ -361,9 +361,9 @@
     }
   },
   {
-    "id": "f_d0ed3a",
+    "id": "f_508652",
     "schema_version": 1,
-    "kind": "spark.exception.unresolved",
+    "kind": "spark.exception",
     "subject": {
       "type": "stage",
       "symbol": "save at Etl.scala:120",
@@ -371,12 +371,82 @@
     },
     "measures": {},
     "attrs": {
-      "reason": "sem_forma_de_stacktrace"
+      "exception_class": "java.lang.OutOfMemoryError",
+      "message_head": "Java heap space",
+      "is_chained": false,
+      "caused_by": [],
+      "parsed_by": "after_executor"
     },
     "provenance": {
       "artifact": "eventlog.jsonl",
       "artifact_sha256": "",
       "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_a23f1b",
+    "schema_version": 1,
+    "kind": "spark.exception.frame",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 5,
+      "frame": 0
+    },
+    "measures": {},
+    "attrs": {
+      "class": "java.base.java.util.Arrays",
+      "method": "copyOf",
+      "file": "Arrays.java",
+      "line": 3745
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_9d041f",
+    "schema_version": 1,
+    "kind": "spark.exception.frame",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 5,
+      "frame": 1
+    },
+    "measures": {},
+    "attrs": {
+      "class": "org.apache.spark.util.collection.CompactBuffer",
+      "method": "growToSize",
+      "file": "CompactBuffer.scala",
+      "line": 143
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "exception@0.1.0"
+    }
+  },
+  {
+    "id": "f_81de82",
+    "schema_version": 1,
+    "kind": "error.signature.unresolved",
+    "subject": {
+      "type": "stage",
+      "symbol": "save at Etl.scala:120",
+      "stage_id": 5
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "nenhuma_assinatura_casou",
+      "exception_class": "java.lang.OutOfMemoryError"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
     }
   }
 ]
