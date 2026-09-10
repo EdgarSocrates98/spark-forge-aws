@@ -26,7 +26,12 @@ def _artefato(tmp_path: Path, **blocos) -> Path:
         "database": "curated",
         "table": "fato_venda",
         "status": "ok",
-        "permissions": {"status": "ok", "principals": [], "grants_collected": 0, "truncated": False},
+        "permissions": {
+            "status": "ok",
+            "principals": [],
+            "grants_collected": 0,
+            "truncated": False,
+        },
         "registered_location": {
             "status": "ok",
             "resource_arn": "arn:aws:s3:::lake/curated/fato_venda",
@@ -138,29 +143,48 @@ class TestOsTresEstadosDaListaVazia:
     def test_tabela_SEM_grant_nao_emite_grant_e_nomeia_vazio(self, tmp_path):
         arq = _artefato(
             tmp_path,
-            permissions={"status": "vazio", "principals": [], "grants_collected": 0, "truncated": False},
+            permissions={
+                "status": "vazio",
+                "principals": [],
+                "grants_collected": 0,
+                "truncated": False,
+            },
         )
         facts = extract_lakeformation_path(arq)
         assert not _de(facts, "lakeformation.grant")
-        recusas = [r for r in _de(facts, "lakeformation.grants.unresolved") if r.attrs["block"] == "permissions"]
+        recusas = [
+            r
+            for r in _de(facts, "lakeformation.grants.unresolved")
+            if r.attrs["block"] == "permissions"
+        ]
         assert [r.attrs["reason"] for r in recusas] == ["vazio"]
 
     @pytest.mark.parametrize("status", ["sem_permissao", "sem_credencial"])
     def test_falha_de_coleta_NAO_vira_ausencia_de_permissao(self, tmp_path, status):
         arq = _artefato(
             tmp_path,
-            permissions={"status": status, "principals": [], "grants_collected": 0, "truncated": False},
+            permissions={
+                "status": status,
+                "principals": [],
+                "grants_collected": 0,
+                "truncated": False,
+            },
         )
         facts = extract_lakeformation_path(arq)
         assert not _de(facts, "lakeformation.grant")
-        recusas = [r for r in _de(facts, "lakeformation.grants.unresolved") if r.attrs["block"] == "permissions"]
+        recusas = [
+            r
+            for r in _de(facts, "lakeformation.grants.unresolved")
+            if r.attrs["block"] == "permissions"
+        ]
         assert [r.attrs["reason"] for r in recusas] == [status]
         assert recusas[0].attrs["unblocked_by"]
 
 
 class TestLocalizacaoRegistrada:
     def test_registrada(self, tmp_path):
-        loc = _de(extract_lakeformation_path(_artefato(tmp_path)), "lakeformation.registered_location")
+        facts = extract_lakeformation_path(_artefato(tmp_path))
+        loc = _de(facts, "lakeformation.registered_location")
         assert len(loc) == 1
         assert loc[0].attrs["registered"] is True
         assert loc[0].attrs["role_arn"].endswith("lf-registration")
@@ -193,7 +217,11 @@ class TestLocalizacaoRegistrada:
         arq = _artefato(tmp_path, registered_location=bloco)
         facts = extract_lakeformation_path(arq)
         assert not _de(facts, "lakeformation.registered_location")
-        recusas = [r for r in _de(facts, "lakeformation.grants.unresolved") if r.attrs["block"] == "registered_location"]
+        recusas = [
+            r
+            for r in _de(facts, "lakeformation.grants.unresolved")
+            if r.attrs["block"] == "registered_location"
+        ]
         assert len(recusas) == 1
 
 
@@ -223,7 +251,11 @@ class TestDataLakeSettings:
         arq = _artefato(tmp_path, data_lake_settings={"status": "sem_permissao"})
         facts = extract_lakeformation_path(arq)
         assert not _de(facts, "lakeformation.data_lake_settings")
-        recusas = [r for r in _de(facts, "lakeformation.grants.unresolved") if r.attrs["block"] == "data_lake_settings"]
+        recusas = [
+            r
+            for r in _de(facts, "lakeformation.grants.unresolved")
+            if r.attrs["block"] == "data_lake_settings"
+        ]
         assert [r.attrs["reason"] for r in recusas] == ["sem_permissao"]
 
 
@@ -233,7 +265,12 @@ class TestContratoDoModulo:
         artefato nenhum" seriam indistinguiveis."""
         arq = _artefato(
             tmp_path,
-            permissions={"status": "sem_credencial", "principals": [], "grants_collected": 0, "truncated": False},
+            permissions={
+                "status": "sem_credencial",
+                "principals": [],
+                "grants_collected": 0,
+                "truncated": False,
+            },
             registered_location={"status": "sem_credencial", "registered": None},
             data_lake_settings={"status": "sem_credencial"},
         )

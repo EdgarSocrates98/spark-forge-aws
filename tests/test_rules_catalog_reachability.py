@@ -48,22 +48,22 @@ from sparkforge.facts import (
     emr_serverless,
     event_log,
     exception,
+    funcval,
+    fusion,
+    glue_job_run,
+    graph,
+    # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
+    # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
+    # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
+    iam_access,
+    iceberg_metadata,
     lakeformation,
     # `lakeformation_grants` LE ARTEFATO, ao contrario de `lakeformation`, que e
     # derivacao. Os dois convivem e o namespace nao colide: um emite
     # `lakeformation.access_model`/`iceberg_catalog`/`filesystem`, o outro
     # `lakeformation.grant`/`registered_location`/`data_lake_settings`. Sem ele
     # aqui, os cinco kinds de permissao contam como orfaos.
-    iam_access,
-    # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
-    # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
-    # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     lakeformation_grants,
-    funcval,
-    fusion,
-    glue_job_run,
-    graph,
-    iceberg_metadata,
     migration,
     parquet_footer,
     pyspark_ast,

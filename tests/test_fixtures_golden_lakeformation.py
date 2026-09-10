@@ -218,7 +218,11 @@ class TestOParNegativo:
                 f.subject["catalog_id"]
                 for f in facts
                 if f.kind.startswith("lakeformation.grant")
-                or f.kind in {"lakeformation.registered_location", "lakeformation.data_lake_settings"}
+                or f.kind
+                in {
+                    "lakeformation.registered_location",
+                    "lakeformation.data_lake_settings",
+                }
             }
 
         assert _catalogos(facts_local) == {""}

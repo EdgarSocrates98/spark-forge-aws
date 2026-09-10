@@ -160,7 +160,9 @@ def _grants(payload: dict[str, Any], subject: dict[str, Any], prov: dict[str, An
     return saida
 
 
-def _localizacao(payload: dict[str, Any], subject: dict[str, Any], prov: dict[str, Any]) -> list[Fact]:
+def _localizacao(
+    payload: dict[str, Any], subject: dict[str, Any], prov: dict[str, Any]
+) -> list[Fact]:
     bloco = payload.get("registered_location") or {}
     status = str(bloco.get("status") or "")
     registrada = bloco.get("registered")

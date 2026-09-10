@@ -251,6 +251,20 @@ def _judge_source_em(src: str, runtime: dict) -> set[str]:
     return {f.rule_id for f in judge(facts, load_catalog(), runtime)}
 
 
+# O VALOR da conf nao cabe em 100 colunas e nao pode ser quebrado: ele viaja
+# inteiro para dentro do HCL, e o extrator le a linha como o Terraform a
+# escreveria. Ele mora fora do template e entra por `.replace`, ANTES do
+# `.format` -- assim `{catalogo}` e `{emrfs}` sobrevivem para serem
+# preenchidos, e o texto produzido e byte a byte o mesmo de antes.
+_CONF_CATALOGO = (
+    "spark.sql.catalog.{catalogo}"
+    "=org.apache.iceberg.spark.SparkSessionCatalog"
+)
+_CONF_RESOLVER = (
+    "spark.hadoop.fs.s3.credentialsResolverClass="
+    "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver{emrfs}"
+)
+
 _TF_CATALOGO = """
 resource "aws_glue_job" "unico" {{
   glue_version = "5.1"
@@ -259,10 +273,10 @@ resource "aws_glue_job" "unico" {{
   }}
   default_arguments = {{
     "--enable-lakeformation-fine-grained-access" = "{fgac}"
-    "--conf"                                     = "spark.sql.catalog.{catalogo}=org.apache.iceberg.spark.SparkSessionCatalog"
+    "--conf"                                     = "@CONF@"
   }}
 }}
-"""
+""".replace("@CONF@", _CONF_CATALOGO)
 
 _TF_RESOLVER = """
 resource "aws_glue_job" "unico" {{
@@ -271,10 +285,10 @@ resource "aws_glue_job" "unico" {{
     name = "glueetl"
   }}
   default_arguments = {{
-    "--conf" = "spark.hadoop.fs.s3.credentialsResolverClass=com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver{emrfs}"
+    "--conf" = "@CONF@"
   }}
 }}
-"""
+""".replace("@CONF@", _CONF_RESOLVER)
 
 _EMRFS_RESTAURADO = " --conf spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem"
 

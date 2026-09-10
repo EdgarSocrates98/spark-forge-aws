@@ -181,7 +181,11 @@ def _localizacao(client: Any, resource_arn: str) -> dict[str, Any]:
         # "nao registrada" e leitura correta -- mas so quando a chamada
         # ACONTECEU. Sem permissao ou sem credencial, `registered` fica `None`,
         # porque ninguem mediu.
-        "registered": True if status == STATUS_OK else (False if status == STATUS_NAO_ENCONTRADO else None),
+        "registered": (
+            True
+            if status == STATUS_OK
+            else (False if status == STATUS_NAO_ENCONTRADO else None)
+        ),
         "role_arn": info.get("RoleArn", ""),
         "hybrid_access_enabled": info.get("HybridAccessEnabled"),
         "with_federation": info.get("WithFederation"),

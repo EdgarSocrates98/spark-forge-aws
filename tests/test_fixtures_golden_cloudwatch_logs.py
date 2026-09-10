@@ -66,16 +66,16 @@ import pytest
 import yaml
 
 from sparkforge.errors.matcher import build_signature_matches
+from sparkforge.facts.catalog_schema import extract_catalog_schema_path
 from sparkforge.facts.cloudwatch_logs import EMITTED_KINDS as CW_LOG_KINDS
 from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
 from sparkforge.facts.consumers import extract_consumers_path
 from sparkforge.facts.event_log import extract_event_log_path
-from sparkforge.facts.lakeformation import build_lakeformation
-from sparkforge.facts.catalog_schema import extract_catalog_schema_path
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
+from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.migration import extract_migration_tree
-from sparkforge.facts.s3_listing import extract_s3_listing_path
 from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
+from sparkforge.facts.s3_listing import extract_s3_listing_path
 from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge

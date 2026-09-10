@@ -94,6 +94,7 @@
     "benchmark_ref": "",
     "risks": [
       "A regra afirma sobre a AUSÊNCIA de declaração de modelo de acesso no case. Um job que ligue FGAC ou FTA por caminho que este motor não lê -- `non_overridable_arguments`, conexão, bootstrap -- é acusado sem estar errado, e a evidência do achado é o que permite ver isso.",
+      "**O `absent:` é avaliado no nível do CONJUNTO, e não por entidade.** Num case com vários jobs, um único que declare modelo de acesso faz a regra ficar muda sobre a tabela registrada -- inclusive quando o job que a lê não declara nada. `same_subject` não resolve: o fact de registro tem subject de tabela e o de modelo de acesso tem subject de recurso Terraform, e os dois nunca cairiam no mesmo grupo. Num case de um job só, que é o normal, o limite não morde.",
       "A regra **não** verifica que o job lê a tabela registrada. Ela correlaciona o registro coletado com a ausência de modelo declarado no case, e nada no case liga uma tabela a um job.",
       "Registro de localização é frequentemente compartilhado. A tabela pode estar registrada para outro consumidor, e este job pode legitimamente não ter nada a ver com ela."
     ],

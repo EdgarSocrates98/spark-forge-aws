@@ -1726,8 +1726,8 @@ def _fake_collect_boto3(monkeypatch):
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
     from sparkforge.collect import cloudwatch_logs as collect_cw_logs
-    from sparkforge.collect import lakeformation as collect_lf
     from sparkforge.collect import iam_access as collect_iam
+    from sparkforge.collect import lakeformation as collect_lf
 
     # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
     # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.

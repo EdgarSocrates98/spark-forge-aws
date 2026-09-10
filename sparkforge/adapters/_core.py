@@ -36,6 +36,8 @@ from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+from sparkforge.collect import iam_access as collect_iam
+from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
@@ -54,8 +56,6 @@ from sparkforge.controlm.matrix import (
     covers as controlm_covered_range,
 )
 from sparkforge.economy.report import build_context_report
-from sparkforge.collect import iam_access as collect_iam
-from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
@@ -63,14 +63,6 @@ from sparkforge.facts.athena_workgroup import (
 )
 from sparkforge.facts.benchmark import build_benchmark
 from sparkforge.facts.call_graph import build_call_graph
-from sparkforge.facts.iam_access import (
-    extract_iam_access_path,
-    extract_iam_access_tree,
-)
-from sparkforge.facts.lakeformation_grants import (
-    extract_lakeformation_path,
-    extract_lakeformation_tree,
-)
 from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
@@ -100,9 +92,17 @@ from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
 from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
+from sparkforge.facts.iam_access import (
+    extract_iam_access_path,
+    extract_iam_access_tree,
+)
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
+)
+from sparkforge.facts.lakeformation_grants import (
+    extract_lakeformation_path,
+    extract_lakeformation_tree,
 )
 from sparkforge.facts.parquet_footer import (
     extract_parquet_footer_path,

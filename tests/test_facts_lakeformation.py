@@ -42,7 +42,12 @@ def _tf_conf(key: str, value: str) -> Fact:
             "symbol": f"aws_glue_job.etl#{key}",
         },
         measures={},
-        attrs={"key": key, "value": value, "source_argument": "--conf", "block": "default_arguments"},
+        attrs={
+            "key": key,
+            "value": value,
+            "source_argument": "--conf",
+            "block": "default_arguments",
+        },
         provenance=PROV,
     )
 

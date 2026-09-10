@@ -52,18 +52,21 @@ def _de(facts, kind):
 
 class TestAsQuatroRespostas:
     def test_allowed(self, tmp_path):
-        d = _de(extract_iam_access_path(_artefato(tmp_path, [_r("allowed")])), "iam.access_decision")[0]
+        artefato = _artefato(tmp_path, [_r("allowed")])
+        d = _de(extract_iam_access_path(artefato), "iam.access_decision")[0]
         assert d.attrs["allowed"] is True
         assert d.attrs["denied_by"] == ""
 
     def test_implicit_deny_o_conserto_e_ACRESCENTAR(self, tmp_path):
-        d = _de(extract_iam_access_path(_artefato(tmp_path, [_r("implicitDeny")])), "iam.access_decision")[0]
+        artefato = _artefato(tmp_path, [_r("implicitDeny")])
+        d = _de(extract_iam_access_path(artefato), "iam.access_decision")[0]
         assert d.attrs["allowed"] is False
         assert d.attrs["denied_by"] == "implicit_deny"
 
     def test_explicit_deny_ACRESCENTAR_nao_resolve(self, tmp_path):
         """Alguma policy NEGA. Adicionar `Allow` nao muda nada -- `Deny` vence."""
-        d = _de(extract_iam_access_path(_artefato(tmp_path, [_r("explicitDeny")])), "iam.access_decision")[0]
+        artefato = _artefato(tmp_path, [_r("explicitDeny")])
+        d = _de(extract_iam_access_path(artefato), "iam.access_decision")[0]
         assert d.attrs["denied_by"] == "explicit_deny"
 
     def test_service_control_policy_vence_a_policy_do_role(self, tmp_path):

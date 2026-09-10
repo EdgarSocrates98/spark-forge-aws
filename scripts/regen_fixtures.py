@@ -41,12 +41,12 @@ from sparkforge.facts.exception import build_exceptions  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
+from sparkforge.facts.iam_access import extract_iam_access_tree  # noqa: E402
 from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
 from sparkforge.facts.lakeformation import build_lakeformation  # noqa: E402
-from sparkforge.facts.iam_access import extract_iam_access_tree  # noqa: E402
 from sparkforge.facts.lakeformation_grants import (  # noqa: E402
     extract_lakeformation_tree,
 )

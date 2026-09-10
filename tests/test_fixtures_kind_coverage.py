@@ -37,18 +37,18 @@ from sparkforge.facts import (
     emr_serverless,
     event_log,
     exception,
+    funcval,
+    fusion,
+    graph,
+    # `iam_access` entra nas DUAS listas no MESMO commit da fixture
+    # `fixtures/iam_access/`.
+    iam_access,
+    iceberg_metadata,
     lakeformation,
     # `lakeformation_grants` entra nas DUAS listas no MESMO commit da fixture
     # `fixtures/lakeformation/`. Ele e o extrator que fecha DOIS dos tres itens
     # que `lakeformation.unresolved` nomeia -- grant e registro de localizacao.
-    iam_access,
-    # `iam_access` entra nas DUAS listas no MESMO commit da fixture
-    # `fixtures/iam_access/`.
     lakeformation_grants,
-    funcval,
-    fusion,
-    graph,
-    iceberg_metadata,
     migration,
     parquet_footer,
     pyspark_ast,
