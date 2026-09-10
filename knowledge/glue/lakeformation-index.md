@@ -23,7 +23,7 @@ e que ninguém havia escrito.
 | `fgac` | idem, mais as 10 regras `SF-LF` em `rules/catalog/lakeformation.yaml` |
 | `fta` | §5 de [`lakeformation-fgac.md`](lakeformation-fgac.md), e os eixos `fta_*` de [`lakeformation-matrix.yaml`](lakeformation-matrix.yaml) |
 | `cross-account` | `rules/catalog/glue-cross-account.yaml` (`SF-XACC`), `SF-LF-007`, e `ERR-LF-002` |
-| `resource-links` | §1 de [`lakeformation-fgac.md`](lakeformation-fgac.md) — *"cross-account só por resource link, com nome idêntico"*. **Sem produtor de fact**: nenhum kind carrega resource link, e o grafo de acesso o devolve `unresolved` |
+| `resource-links` | §1 de [`lakeformation-fgac.md`](lakeformation-fgac.md) — *"cross-account só por resource link, com nome idêntico"*, e desde 2026-09-10 com **fact medido**: `sparkforge collect glue-resource-link` produz `glue.resource_link` e `glue.resource_link.target`, `SF-XACC-002` e `SF-XACC-003` julgam sobre eles, e a perna do grafo de acesso deixou de sair `unresolved` |
 | `credential-vending` | `ERR-LF-002..005`, e o eixo `fta_*` da matriz |
 | `iam` | `rules/catalog/iam.yaml` (`SF-IAM-001..003`) — e a decisão é **simulada**, nunca parse de policy |
 | `s3` | `SF-LF-004` (o conector default), `lakeformation.registered_location`, e `SF-PQ` para layout |
@@ -112,10 +112,18 @@ O que **é** sabido sobre o 6.0 e vale citar: três regras o guardam
 ## O que este índice não resolve
 
 **Duas pernas do caminho de acesso não têm coletor**, e o índice não as esconde:
-resource link e key policy do KMS. O grafo de acesso
+RAM share e key policy do KMS. O grafo de acesso
 (`sparkforge lakeformation access-graph`) as devolve `unresolved` com o que
-destravaria cada uma — `glue:GetTable` sobre o link comparando o nome com o do
-recurso de origem, e `kms:GetKeyPolicy`.
+destravaria cada uma — `ram:GetResourceShares` e `kms:GetKeyPolicy`.
 
-Enquanto elas não existirem, `is_accessible` nunca sai `true` num case real: ele
-sai `null`, que significa *"o que eu consegui olhar não impede"*.
+**Eram três até 2026-09-10.** A terceira era resource link, e o que a destravava
+estava escrito na própria recusa: *"`glue:GetTable` sobre o link, comparando o
+nome com o do recurso de origem"*. `sparkforge/collect/glue_resource_link.py` é
+exatamente essa chamada, e com ela a perna passou a ter quatro saídas medidas —
+`granted` (nome idêntico e origem respondendo), `blocking` (nome divergente),
+`not_applicable` (o objeto não é link) e `unresolved` (a origem respondeu
+`EntityNotFoundException`, que sob Lake Formation **não** distingue recurso
+inexistente de recurso não autorizado).
+
+Enquanto as duas restantes não existirem, `is_accessible` nunca sai `true` num
+case real: ele sai `null`, que significa *"o que eu consegui olhar não impede"*.

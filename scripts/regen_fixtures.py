@@ -40,6 +40,9 @@ from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.exception import build_exceptions  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
+from sparkforge.facts.glue_resource_link import (  # noqa: E402
+    extract_glue_resource_link_tree,
+)
 from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
 from sparkforge.facts.iam_access import extract_iam_access_tree  # noqa: E402
 from sparkforge.facts.iceberg_metadata import (  # noqa: E402
@@ -88,6 +91,7 @@ FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
 FIXTURES_LAKEFORMATION = ROOT / "fixtures" / "lakeformation"
 FIXTURES_IAM_ACCESS = ROOT / "fixtures" / "iam_access"
+FIXTURES_RESOURCE_LINK = ROOT / "fixtures" / "resource_link"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
@@ -229,6 +233,21 @@ def regen_infra_code(directory: Path) -> None:
     # `build_lakeformation` deriva sobre a UNIAO das duas extracoes, e o golden
     # tem de sair do mesmo caminho que o teste percorre.
     facts.extend(build_lakeformation(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_resource_link(directory: Path) -> None:
+    """Artefato de `collect glue-resource-link` -- link, alvo e nome.
+
+    Um `input/*.json` por (catalogo consumidor, banco, [tabela]). Sem
+    companheiro: este corpus prende o CONTRATO do extrator de topologia, e as
+    duas regras que o consomem (`SF-XACC-002` e `SF-XACC-003`) leem so os facts
+    dele.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_glue_resource_link_tree(input_dir, repo_root=input_dir)
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -840,6 +859,7 @@ def main() -> int:
                 (FIXTURES_INFRA_CODE / name, regen_infra_code),
                 (FIXTURES_LAKEFORMATION / name, regen_lakeformation),
                 (FIXTURES_IAM_ACCESS / name, regen_iam_access),
+                (FIXTURES_RESOURCE_LINK / name, regen_resource_link),
                 (FIXTURES_BENCH / name, regen_bench),
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),

@@ -44,6 +44,7 @@ class TestToolSurface:
             "sparkforge_analyze_cloudwatch_logs",
             "sparkforge_analyze_lakeformation_grants",
             "sparkforge_analyze_iam_access",
+            "sparkforge_analyze_glue_resource_link",
             "sparkforge_analyze_error_signatures",
             "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_parquet_footer",
@@ -93,6 +94,7 @@ class TestToolSurface:
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
             "sparkforge_collect_iam_access",
+            "sparkforge_collect_glue_resource_link",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -148,6 +150,7 @@ class TestToolSurface:
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
             "sparkforge_collect_iam_access",
+            "sparkforge_collect_glue_resource_link",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
@@ -1496,6 +1499,42 @@ class _FakeBoto3ForCollect:
         return self._clients[name]
 
 
+# Amostra igual a `fixtures/resource_link/link_de_tabela_com_nome_divergente/`:
+# link que aponta para o lugar certo com NOME PROPRIO.
+_RESOURCE_LINK_ARTIFACT = """
+{
+        "catalog_id": "111111111111",
+        "database": "analytics",
+        "link": {
+            "aws_error_code": "",
+            "is_resource_link": true,
+            "link_catalog_id": "111111111111",
+            "link_database": "analytics",
+            "link_name": "dim_cliente_prod",
+            "requested_catalog_id": "111111111111",
+            "requested_database": "analytics",
+            "requested_table": "dim_cliente_prod",
+            "status": "ok",
+            "target_catalog_id": "999999999999",
+            "target_database": "curated",
+            "target_name": "dim_cliente",
+            "target_region": "us-east-1",
+            "target_type": "table"
+        },
+        "status": "ok",
+        "table": "dim_cliente_prod",
+        "target": {
+            "aws_error_code": "",
+            "catalog_id": "999999999999",
+            "database": "curated",
+            "name": "dim_cliente",
+            "resolved_name": "dim_cliente",
+            "status": "ok"
+        },
+        "target_type": "table"
+    }
+"""
+
 _IAM_ACCESS_ARTIFACT = json.dumps(
     {
         "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
@@ -2050,6 +2089,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
         return resultado
 
+    if name == "sparkforge_analyze_glue_resource_link":
+        rlink_dir = tmp_path / "glue_resource_link"
+        rlink_dir.mkdir()
+        (rlink_dir / "111111111111_analytics_dim_cliente_prod.json").write_text(
+            _RESOURCE_LINK_ARTIFACT, encoding="utf-8"
+        )
+        resultado = call_tool("sparkforge_analyze_glue_resource_link", {"path": str(rlink_dir)})
+        assert any(
+            item["kind"] == "glue.resource_link" for item in resultado["items"]
+        ), "a amostra precisa render pelo menos um link"
+        return resultado
+
     if name == "sparkforge_analyze_iam_access":
         iam_dir = tmp_path / "iam_access"
         iam_dir.mkdir()
@@ -2392,6 +2443,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_cloudwatch_logs",
         "sparkforge_collect_lakeformation",
         "sparkforge_collect_iam_access",
+        "sparkforge_collect_glue_resource_link",
         "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
@@ -2435,6 +2487,13 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "repo": str(tmp_path),
                 "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
                 "resource_arns": ["arn:aws:s3:::lake/curated/*"],
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_glue_resource_link": {
+                "repo": str(tmp_path),
+                "database": "analytics",
+                "table": "dim_cliente_prod",
+                "catalog_id": "111111111111",
                 "now": "2026-07-30T00:00:00Z",
             },
             "sparkforge_collect_lakeformation": {

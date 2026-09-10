@@ -15,6 +15,7 @@ import pathlib
 
 import pytest
 
+from sparkforge.facts.glue_resource_link import extract_glue_resource_link_tree
 from sparkforge.facts.iam_access import extract_iam_access_tree
 from sparkforge.facts.lakeformation_grants import extract_lakeformation_tree
 from sparkforge.lakeformation.graph import (
@@ -29,6 +30,7 @@ from sparkforge.lakeformation.graph import (
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LF = ROOT / "fixtures" / "lakeformation"
 IAM = ROOT / "fixtures" / "iam_access"
+RLINK = ROOT / "fixtures" / "resource_link"
 
 
 def _facts(diretorio: pathlib.Path, extrator) -> list:
@@ -171,14 +173,85 @@ class TestOQueEleNaoEscolhe:
 
 
 class TestARecusaViajaNaResposta:
-    def test_refused_nomeia_as_tres_pernas_sem_coletor(self):
+    def test_refused_nomeia_as_pernas_sem_coletor_e_a_que_saiu(self):
+        """Eram TRÊS até 2026-09-10; `resource link` saiu quando
+        `collect glue-resource-link` passou a produzir a medida. A recusa diz
+        as duas que restam E diz que a terceira saiu -- apagá-la do texto faria
+        o leitor perder por que ela já esteve lá."""
         caso = LF / "grant_de_leitura_em_local_registrado"
         grafo = build_access_graph(_facts(caso, extract_lakeformation_tree))
         (recusa,) = grafo["refused"]
         assert recusa["what"] == "acusar_perna_sem_produtor"
         for termo in ("RAM", "resource link", "KMS"):
             assert termo in recusa["why"] or termo.lower() in recusa["why"].lower()
+        assert "SAIU" in recusa["why"]
         assert recusa["unblocked_by"]
+
+
+class TestAPernaDeResourceLinkPassouASerMEDIDA:
+    """A perna que este módulo devolvia `unresolved` desde sempre, e as quatro
+    saídas que ela ganhou. O grafo precisa do par (principal, tabela), e os facts
+    de link não carregam principal -- por isso cada caso é montado com o grant e
+    a decisão de IAM de uma fixture de Lake Formation ao lado."""
+
+    def _grafo(self, nome_do_link: str, tabela: str):
+        facts = _facts(LF / "grant_de_leitura_em_local_registrado", extract_lakeformation_tree)
+        facts += _facts(RLINK / nome_do_link, extract_glue_resource_link_tree)
+        # `target_table` explícito: com duas tabelas no case, o grafo recusa
+        # escolher -- e a recusa é o comportamento certo, não o que se testa aqui.
+        return build_access_graph(facts, target_table=tabela)
+
+    def test_sem_fact_de_link_a_perna_continua_unresolved(self):
+        caso = LF / "grant_de_leitura_em_local_registrado"
+        grafo = build_access_graph(_facts(caso, extract_lakeformation_tree))
+        aresta = _por_tipo(grafo, "resource_link")
+        assert aresta["status"] == STATUS_UNRESOLVED
+        assert "collect glue-resource-link" in aresta["evidence"]
+
+    def test_nome_divergente_BLOQUEIA_e_a_evidencia_diz_que_nao_e_negacao(self):
+        grafo = self._grafo("link_de_tabela_com_nome_divergente", "analytics.dim_cliente_prod")
+        aresta = _por_tipo(grafo, "resource_link")
+        assert aresta["status"] == STATUS_BLOCKING
+        assert "dim_cliente_prod" in aresta["evidence"]
+        assert "dim_cliente`" in aresta["evidence"]
+        assert "nao negacao observada" in aresta["evidence"]
+        assert grafo["is_accessible"] is False
+
+    def test_link_intacto_e_a_UNICA_perna_que_sai_granted_neste_corpus(self):
+        grafo = self._grafo("link_de_tabela_intacto", "analytics.fato_venda")
+        aresta = _por_tipo(grafo, "resource_link")
+        assert aresta["status"] == STATUS_GRANTED
+        # E `is_accessible` continua `None`: RAM share e KMS seguem sem coletor.
+        assert grafo["is_accessible"] is None
+
+    def test_alvo_que_nao_resolveu_sai_UNRESOLVED_e_nao_blocking(self):
+        """`EntityNotFoundException` sob Lake Formation é a mesma resposta para
+        recurso inexistente e para recurso não autorizado. Marcar `blocking`
+        seria escolher um dos dois sentidos."""
+        grafo = self._grafo("link_de_banco_com_origem_que_nao_resolve", "curated")
+        aresta = _por_tipo(grafo, "resource_link")
+        assert aresta["status"] == STATUS_UNRESOLVED
+        assert "EntityNotFoundException" in aresta["evidence"]
+        assert "NAO distingue" in aresta["evidence"]
+
+    def test_objeto_que_nao_e_link_sai_NOT_APPLICABLE(self):
+        """Mesma razão de `registered: False`: o acesso não passa por link, e
+        marcá-lo `missing` acusaria o arranjo em que ele não participa."""
+        from sparkforge.findings.models import Fact
+
+        facts = _facts(LF / "grant_de_leitura_em_local_registrado", extract_lakeformation_tree)
+        tabela = build_access_graph(facts)["target_table"]
+        facts.append(
+            Fact(
+                kind="glue.resource_link",
+                subject={"type": "table", "symbol": tabela},
+                measures={},
+                attrs={"is_resource_link": False, "name_matches_source": None},
+                provenance={"extractor": "teste"},
+            )
+        )
+        aresta = _por_tipo(build_access_graph(facts), "resource_link")
+        assert aresta["status"] == STATUS_NOT_APPLICABLE
 
 
 @pytest.mark.parametrize(

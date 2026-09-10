@@ -36,6 +36,7 @@ from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+from sparkforge.collect import glue_resource_link as collect_rlink
 from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect.base import CollectorUnavailable, verify_all
@@ -93,6 +94,10 @@ from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
+from sparkforge.facts.glue_resource_link import (
+    extract_glue_resource_link_path,
+    extract_glue_resource_link_tree,
+)
 from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
 from sparkforge.facts.iam_access import (
     extract_iam_access_path,
@@ -1281,6 +1286,47 @@ def analyze_lakeformation_grants(
     return _facts_page(
         facts, "lakeformation.grants.unresolved", kind, limit, cursor, detail_level
     )
+
+
+def _extract_glue_resource_link_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}" + chr(10) +
+            "  Aponte para um artefato gravado por `sparkforge collect "
+            "glue-resource-link`, ou para o DIRETORIO deles:" + chr(10) +
+            "    sparkforge analyze glue-resource-link --path "
+            ".sparkforge/artifacts/glue_resource_link/",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_glue_resource_link_tree(target, repo_root=target)
+    return extract_glue_resource_link_path(target)
+
+
+def analyze_glue_resource_link(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a TOPOLOGIA do catalogo ja coletada: link, alvo e nome.
+
+    A unica derivacao e `name_matches_source`, e ela existe porque a §1 de
+    `knowledge/glue/lakeformation-fgac.md` declara que o resource link precisa
+    ter o mesmo nome do recurso na conta de origem -- afirmacao que ate 2026-09-10
+    nao tinha fact nenhum para conferi-la. A comparacao NAO e a mesma nos dois
+    tipos: link de tabela compara contra `TargetTable.Name`, link de banco contra
+    `TargetDatabase.DatabaseName`, que nao tem campo `Name`.
+
+    Ele NAO afirma que o link esta pendurado quando o alvo nao resolve: sob Lake
+    Formation `EntityNotFoundException` e a mesma resposta para recurso
+    inexistente e para recurso nao autorizado, e `target_absence_is_ambiguous`
+    sai `True` em vez de a ambiguidade ser resolvida por chute.
+    """
+    facts = _extract_glue_resource_link_facts(path)
+    return _facts_page(facts, "glue.resource_link.unresolved", kind, limit, cursor, detail_level)
 
 
 def _extract_iam_access_facts(path: str) -> list[Fact]:
@@ -3200,10 +3246,11 @@ def lakeformation_access_graph(
     """O caminho de acesso como GRAFO, derivado de facts. Nao acusa o que nao mediu.
 
     Verbo de TOPO: compoe sobre facts e nao le artefato. Ele le
-    `lakeformation.grant`, `iam.access_decision` e
-    `lakeformation.registered_location` -- os tres que tem produtor -- e devolve
-    RAM share, resource link e key policy do KMS como `unresolved`, porque
-    NENHUM coletor deste repositorio os produz.
+    `lakeformation.grant`, `iam.access_decision`,
+    `lakeformation.registered_location`, `glue.resource_link` e
+    `glue.resource_link.target` -- os que tem produtor -- e devolve RAM share e
+    key policy do KMS como `unresolved`, porque nenhum coletor deste repositorio
+    os produz. Resource link SAIU dessa lista em 2026-09-10.
 
     `is_accessible` e TERNARIO, e o terceiro estado e a razao de o verbo existir:
     `None` significa "o que eu consegui olhar nao impede", que e diferente de
@@ -4951,6 +4998,36 @@ def collect_lakeformation(
             now=now,
             catalog_id=catalog_id,
             resource_arn=resource_arn,
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_glue_resource_link(
+    repo: str,
+    *,
+    database: str,
+    now: str,
+    table: str = "",
+    catalog_id: str = "",
+    verify_target: bool = True,
+) -> dict[str, Any]:
+    """Le o objeto na conta consumidora e o recurso de origem que ele declara.
+
+    `catalog_id` e o catalogo CONSUMIDOR, e nao o da conta de origem: o alvo sai
+    medido do proprio link. Sem `table`, o alvo e um BANCO -- e a comparacao de
+    nome muda com isso, porque `TargetDatabase` nao tem campo `Name`.
+    """
+    rel_path = collect_rlink.glue_resource_link_path(catalog_id, database, table)
+    try:
+        entry = collect_rlink.collect_glue_resource_link(
+            database,
+            Path(repo),
+            now=now,
+            table=table,
+            catalog_id=catalog_id,
+            verify_target=verify_target,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc

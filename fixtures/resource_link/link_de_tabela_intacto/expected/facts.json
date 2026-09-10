@@ -1,0 +1,81 @@
+[
+  {
+    "id": "f_44c8cf",
+    "schema_version": 1,
+    "kind": "glue.resource_link",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_fato_venda.json",
+      "symbol": "analytics.fato_venda",
+      "catalog_id": "111111111111"
+    },
+    "measures": {},
+    "attrs": {
+      "is_resource_link": true,
+      "target_type": "table",
+      "link_catalog_id": "111111111111",
+      "link_database": "analytics",
+      "link_name": "fato_venda",
+      "target_catalog_id": "999999999999",
+      "target_database": "curated",
+      "target_name": "fato_venda",
+      "target_region": "us-east-1",
+      "name_matches_source": true,
+      "source_resource_name": "fato_venda",
+      "cross_account": true,
+      "extractor": "glue_resource_link@0.1.0"
+    },
+    "provenance": {
+      "extractor": "glue_resource_link@0.1.0",
+      "artifact": "111111111111_analytics_fato_venda.json"
+    }
+  },
+  {
+    "id": "f_fc8103",
+    "schema_version": 1,
+    "kind": "glue.resource_link.analyzed",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_fato_venda.json",
+      "symbol": "analytics.fato_venda",
+      "catalog_id": "111111111111"
+    },
+    "measures": {
+      "facts_emitted": 2
+    },
+    "attrs": {
+      "status": "ok",
+      "extractor": "glue_resource_link@0.1.0"
+    },
+    "provenance": {
+      "extractor": "glue_resource_link@0.1.0",
+      "artifact": "111111111111_analytics_fato_venda.json"
+    }
+  },
+  {
+    "id": "f_dd2e82",
+    "schema_version": 1,
+    "kind": "glue.resource_link.target",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_fato_venda.json",
+      "symbol": "analytics.fato_venda",
+      "catalog_id": "111111111111"
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": true,
+      "catalog_id": "999999999999",
+      "database": "curated",
+      "name": "fato_venda",
+      "resolved_name": "fato_venda",
+      "aws_error_code": "",
+      "target_absence_is_ambiguous": false,
+      "extractor": "glue_resource_link@0.1.0"
+    },
+    "provenance": {
+      "extractor": "glue_resource_link@0.1.0",
+      "artifact": "111111111111_analytics_fato_venda.json"
+    }
+  }
+]

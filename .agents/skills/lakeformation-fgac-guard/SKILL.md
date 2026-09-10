@@ -161,6 +161,25 @@ Colapsar as quatro num booleano faz *"adicione a permissão"* virar o conselho �
 
 **Duas leituras que o fact preserva:** `allowed` **sem** `--resource-arn` é `allowed` sobre `*`, não sobre aquela tabela — `scoped_to_resource` diz qual pergunta foi feita. E `policy_de_recurso_nao_avaliada` sai em **todo** artefato: bucket policy, key policy do KMS e Glue resource policy são avaliação separada, e um `allowed` aqui com bucket policy negando ainda falha.
 
+### O quarto artefato: a topologia do catálogo — resource link
+
+```
+sparkforge collect glue-resource-link --database <banco-na-conta-consumidora> --table <link>     --catalog-id <conta-consumidora>
+sparkforge analyze glue-resource-link --path .sparkforge/artifacts/glue_resource_link/
+```
+
+Tools MCP: `sparkforge_collect_glue_resource_link` e `sparkforge_analyze_glue_resource_link`.
+
+Ele dá **fact medido** à afirmação da §1 que antes vivia só em prosa: *cross-account só por resource link, e o link precisa ter o mesmo nome do recurso na conta de origem*. `SF-XACC-002` julga sobre isso.
+
+**Três leituras que o fact preserva:**
+
+- **a comparação de nome não é a mesma nos dois tipos** — link de tabela compara contra `TargetTable.Name`, link de banco contra `TargetDatabase.DatabaseName`, que **não tem** campo `Name`. Colapsar as duas daria nome divergente em todo link de banco correto;
+- **`EntityNotFoundException` sobre o recurso de origem é ambíguo** — sob Lake Formation é a mesma resposta para recurso inexistente e para recurso **não autorizado**. `target_absence_is_ambiguous` marca isso, e `SF-XACC-003` investiga em vez de acusar: um link órfão se conserta na conta consumidora, uma permissão faltante na conta de origem;
+- **nome divergente é limite de suporte declarado, não negação observada** — o link pode responder hoje. O que a AWS não declara é que ele continue respondendo.
+
+O catálogo de ORIGEM nunca é passado à mão: ele sai medido do próprio link. Passá-lo conferiria contra o catálogo que o operador **supõe**.
+
 Aprofundamento sob demanda: [`knowledge/glue/lakeformation-fgac.md`](../../knowledge/glue/lakeformation-fgac.md) traz o que a documentação declara e o que ela não declara; [`docs/aws/glue/6.0/lakeformation.md`](../../docs/aws/glue/6.0/lakeformation.md) é a leitura pelo lado do runtime 6.0.
 
 ## Protocolo

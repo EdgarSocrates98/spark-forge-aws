@@ -944,7 +944,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `repo`, como todo verbo que le o blackboard do case.
         # 74 -> 75 com `lakeformation_access_graph` (2026-09-10), a 81ª tool:
         # ela declara `facts_path`, como todo verbo que compoe sobre facts.
-        assert len(TOOLS) - len(sem_caminho) == 75
+        # 75 -> 77 com `analyze_glue_resource_link` e
+        # `collect_glue_resource_link` (2026-09-10), as 82� e 83� tools, pelo
+        # mesmo par de lados de `iam_access`: a de analise e `_READ_ONLY` com
+        # `path`, a de coleta e `_WRITE_LOCAL_OPEN_WORLD` com `repo`.
+        assert len(TOOLS) - len(sem_caminho) == 77
 
 
 class TestAImposicaoNoDespacho:

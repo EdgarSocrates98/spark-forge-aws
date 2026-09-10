@@ -60,6 +60,14 @@ ARTIFACT_KINDS = (
     # escreveu. A diferenca e o ponto do coletor -- boundary, SCP, deny
     # explicito e condicao nao aparecem no documento do role.
     "iam_access",
+    # `glue_resource_link` e artefato de TOPOLOGIA de catalogo, e nao de
+    # permissao: ele diz se o objeto que o job consulta na conta consumidora e
+    # um link, para onde ele aponta, e se o recurso de origem resolve. Separado
+    # de `lakeformation` porque as chamadas sao de outro servico (`glue:GetTable`
+    # contra `lakeformation:ListPermissions`), falham por permissoes diferentes,
+    # e um link intacto sobre uma tabela sem grant e um estado real -- que um
+    # artefato so nao saberia representar.
+    "glue_resource_link",
     "source",
 )
 

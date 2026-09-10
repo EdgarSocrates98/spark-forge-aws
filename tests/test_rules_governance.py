@@ -165,12 +165,14 @@ class TestAsQuatroAreasDeGovernanca:
         assert por_area["SF-LF"] == 10
         assert por_area["SF-IAM"] == 3
         assert por_area["SF-KMS"] == 2
-        assert por_area["SF-XACC"] == 1
+        # 1 -> 3 em 2026-09-10 com `SF-XACC-002` e `SF-XACC-003`, as duas do
+        # resource link. Elas entram no recorte pela ÁREA, como a primeira.
+        assert por_area["SF-XACC"] == 3
         # As restantes vêm pelo NAMESPACE da ação e não pela área -- cinco
         # `SF-ERR` que julgam negação em runtime, e quatro de segredo em texto
         # claro (`security.move_secret_to_manager`).
         assert por_area["SF-ERR"] == 5
-        assert sum(por_area.values()) == 25
+        assert sum(por_area.values()) == 27
 
 
 def test_o_arquivo_de_vocabulario_nao_move_a_contagem_de_regras():

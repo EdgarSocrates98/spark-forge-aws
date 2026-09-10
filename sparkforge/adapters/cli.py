@@ -240,6 +240,20 @@ def build_parser() -> argparse.ArgumentParser:
     cwlog_analyze_p.add_argument("--cursor")
     _add_detail_level(cwlog_analyze_p)
 
+    rlink_analyze_p = analyze_sub.add_parser(
+        "glue-resource-link",
+        help="Extrai a topologia do catalogo ja coletada: link, alvo e nome.",
+    )
+    rlink_analyze_p.add_argument(
+        "--path", required=True,
+        help="Artefato JSON de `collect glue-resource-link`, ou o DIRETORIO deles.",
+    )
+    rlink_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    rlink_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    rlink_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    rlink_analyze_p.add_argument("--cursor")
+    _add_detail_level(rlink_analyze_p)
+
     iam_analyze_p = analyze_sub.add_parser(
         "iam-access",
         help="Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.",
@@ -1906,6 +1920,38 @@ def build_parser() -> argparse.ArgumentParser:
     )
     iam_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    rlink_p = collect_sub.add_parser(
+        "glue-resource-link",
+        help="Le o resource link na conta consumidora e o recurso de origem que ele declara.",
+    )
+    rlink_p.add_argument("--repo", required=True)
+    rlink_p.add_argument("--database", required=True, help="Banco do link na conta consumidora.")
+    rlink_p.add_argument(
+        "--table",
+        default="",
+        help=(
+            "Nome do link de TABELA. Sem ele o alvo e um BANCO -- e a comparacao de nome "
+            "muda, porque `TargetDatabase` nao tem campo `Name`."
+        ),
+    )
+    rlink_p.add_argument(
+        "--catalog-id",
+        default="",
+        help=(
+            "Id da conta CONSUMIDORA, onde o link mora. O catalogo de origem sai medido "
+            "do proprio link e nunca e passado a mao."
+        ),
+    )
+    rlink_p.add_argument(
+        "--no-verify-target",
+        action="store_true",
+        help=(
+            "Pula a leitura do recurso de ORIGEM. O default e conferir: link que aponta "
+            "para lugar nenhum e o defeito que este coletor existe para achar."
+        ),
+    )
+    rlink_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     lf_p = collect_sub.add_parser(
         "lakeformation",
         help="Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela.",
@@ -2136,6 +2182,11 @@ def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_cloudwatch_logs(args: argparse.Namespace) -> int:
     full = _core.analyze_cloudwatch_logs(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_glue_resource_link(args: argparse.Namespace) -> int:
+    full = _core.analyze_glue_resource_link(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
 
 
@@ -3082,6 +3133,19 @@ def _cmd_collect_cloudwatch_logs(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_glue_resource_link(args: argparse.Namespace) -> int:
+    payload = _core.collect_glue_resource_link(
+        args.repo,
+        database=args.database,
+        table=args.table,
+        catalog_id=args.catalog_id,
+        verify_target=not args.no_verify_target,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_iam_access(args: argparse.Namespace) -> int:
     payload = _core.collect_iam_access(
         args.repo,
@@ -3552,6 +3616,7 @@ _DISPATCH = {
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
     ("analyze", "cloudwatch-logs"): _cmd_analyze_cloudwatch_logs,
     ("analyze", "lakeformation-grants"): _cmd_analyze_lakeformation_grants,
+    ("analyze", "glue-resource-link"): _cmd_analyze_glue_resource_link,
     ("analyze", "iam-access"): _cmd_analyze_iam_access,
     ("analyze", "parquet-footer"): _cmd_analyze_parquet_footer,
     ("analyze", "error-signatures"): _cmd_analyze_error_signatures,
@@ -3628,6 +3693,7 @@ _DISPATCH = {
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
     ("collect", "cloudwatch-logs"): _cmd_collect_cloudwatch_logs,
     ("collect", "lakeformation"): _cmd_collect_lakeformation,
+    ("collect", "glue-resource-link"): _cmd_collect_glue_resource_link,
     ("collect", "iam-access"): _cmd_collect_iam_access,
     ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,

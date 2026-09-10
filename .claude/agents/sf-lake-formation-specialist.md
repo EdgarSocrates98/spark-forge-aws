@@ -63,14 +63,22 @@ catálogo Iceberg pelo lado do Apache — a classe em `spark_catalog`
 ## O caminho de acesso como grafo, e o `null` que ele publica
 
 `sparkforge_lakeformation_access_graph` monta o caminho — concessão do Lake
-Formation, decisão **simulada** do IAM com a camada que negou, e registro da
-localização S3 — e diz **onde ele parou**.
+Formation, decisão **simulada** do IAM com a camada que negou, registro da
+localização S3 e **resource link** — e diz **onde ele parou**.
 
 `is_accessible` é **ternário**, e o terceiro estado é o que importa nesta área:
 `null` significa *"o que eu consegui olhar não impede"*, e **não** "funciona".
-RAM share, resource link e key policy do KMS saem sempre `unresolved` — nenhum
-coletor deste repositório os produz, e devolver `missing` para eles seria
-acusação a partir de ausência de artefato.
+RAM share e key policy do KMS saem sempre `unresolved` — nenhum coletor deste
+repositório os produz, e devolver `missing` para eles seria acusação a partir de
+ausência de artefato.
+
+**Resource link saiu dessa lista em 2026-09-10**, com
+`sparkforge_collect_glue_resource_link`. A perna tem quatro saídas medidas:
+`granted` (nome idêntico ao do recurso de origem, e a origem respondeu),
+`blocking` (nome divergente — limite de suporte declarado, não negação
+observada), `not_applicable` (o objeto consultado não é link) e `unresolved`
+(a origem respondeu `EntityNotFoundException`, que sob Lake Formation **não**
+distingue recurso inexistente de recurso não autorizado).
 
 **Localização não registrada sai `not_applicable`, não `missing`.** Tabela fora
 do registro é lida com a credencial do runtime role: o registro não é uma perna

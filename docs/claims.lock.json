@@ -887,13 +887,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -907,13 +907,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 54
+          "value": 55
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "54",
+      "text": "55",
       "type": "number"
     },
     {
@@ -947,13 +947,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 12
+          "value": 13
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "12",
+      "text": "13",
       "type": "number"
     },
     {
@@ -1007,13 +1007,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 48
+          "value": 49
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "48",
+      "text": "49",
       "type": "number"
     },
     {
@@ -1087,13 +1087,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 12
+          "value": 13
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "12",
+      "text": "13",
       "type": "number"
     },
     {
@@ -1127,13 +1127,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 48
+          "value": 49
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "48",
+      "text": "49",
       "type": "number"
     },
     {
@@ -1147,13 +1147,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 75
+          "value": 77
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "75",
+      "text": "77",
       "type": "number"
     },
     {
@@ -1167,13 +1167,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -1187,13 +1187,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -1207,13 +1207,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -2975,13 +2975,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 580
+          "value": 584
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "580",
+      "text": "584",
       "type": "number"
     },
     {
@@ -3035,13 +3035,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 750916
+          "value": 761811
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "750916",
+      "text": "761811",
       "type": "number"
     },
     {
@@ -3055,13 +3055,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 10475
+          "value": 10666
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "10475",
+      "text": "10666",
       "type": "number"
     },
     {
@@ -3235,13 +3235,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 274794
+          "value": 277935
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "274794",
+      "text": "277935",
       "type": "number"
     },
     {
@@ -3435,13 +3435,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 378537
+          "value": 384674
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "378537",
+      "text": "384674",
       "type": "number"
     },
     {
@@ -3515,13 +3515,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1631503
+          "value": 1651676
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1631503",
+      "text": "1651676",
       "type": "number"
     },
     {
@@ -3535,13 +3535,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 22808
+          "value": 22999
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "22808",
+      "text": "22999",
       "type": "number"
     },
     {
@@ -3594,13 +3594,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(round(total / com, 1))'",
         "expect": {
           "kind": "contains",
-          "value": "738.2"
+          "value": "747.4"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "738.2",
+      "text": "747.4",
       "type": "number"
     },
     {
@@ -3613,13 +3613,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "10.3"
+          "value": "10.4"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "10.3",
+      "text": "10.4",
       "type": "number"
     },
     {
@@ -3652,13 +3652,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 49
+          "value": 50
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "49",
+      "text": "50",
       "type": "number"
     },
     {
@@ -3672,13 +3672,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12729
+          "value": 12992
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "12729",
+      "text": "12992",
       "type": "number"
     },
     {
@@ -3692,13 +3692,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 176625
+          "value": 196504
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "176625",
+      "text": "196504",
       "type": "number"
     },
     {
@@ -3712,13 +3712,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 9309
+          "value": 10743
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "9309",
+      "text": "10743",
       "type": "number"
     },
     {
@@ -3847,13 +3847,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 38
+          "value": 39
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "38",
+      "text": "39",
       "type": "number"
     },
     {
@@ -3867,13 +3867,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -4015,13 +4015,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 33
+          "value": 34
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "33",
+      "text": "34",
       "type": "number"
     },
     {
@@ -4173,13 +4173,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 75
+          "value": 77
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "75",
+      "text": "77",
       "type": "number"
     },
     {
@@ -4193,13 +4193,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -4449,13 +4449,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 38
+          "value": 39
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "38",
+      "text": "39",
       "type": "number"
     },
     {
@@ -4469,13 +4469,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 38
+          "value": 39
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "38",
+      "text": "39",
       "type": "number"
     },
     {
@@ -4546,13 +4546,13 @@
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/tools.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "341,8"
+          "value": "347,8"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "341,8",
+      "text": "347,8",
       "type": "number"
     },
     {
@@ -4565,13 +4565,13 @@
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "268,4"
+          "value": "271,4"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "268,4",
+      "text": "271,4",
       "type": "number"
     },
     {
@@ -4665,13 +4665,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 81
+          "value": 83
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "81",
+      "text": "83",
       "type": "number"
     },
     {
@@ -6530,13 +6530,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 39
+          "value": 40
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "39",
+      "text": "40",
       "type": "number"
     },
     {

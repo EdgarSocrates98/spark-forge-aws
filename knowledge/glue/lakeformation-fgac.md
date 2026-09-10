@@ -107,6 +107,16 @@ link **precisa ter o mesmo nome do recurso na conta de origem**. Um link com nom
 próprio, ainda que aponte para o lugar certo, está fora do que a AWS declara
 suportado.
 
+Desde 2026-09-10 esta afirmação tem **fact medido** e não vive mais só nesta
+página: `sparkforge collect glue-resource-link` lê o objeto na conta consumidora
+com `glue:GetTable` (ou `glue:GetDatabase`), guarda os dois nomes verbatim, e
+`glue.resource_link.attrs.name_matches_source` os compara. `SF-XACC-002` julga
+sobre isso — e o achado é sobre o **limite de suporte declarado**, não sobre uma
+negação observada: um link com nome próprio pode responder hoje, e o que a AWS
+não declara é que ele continue respondendo. A comparação não é a mesma nos dois
+tipos: link de tabela compara contra `TargetTable.Name`, link de banco contra
+`TargetDatabase.DatabaseName`, que não tem campo `Name`.
+
 **Mínimo de 4 workers.** *"Jobs with FGAC require a minimum of 4 workers: one
 user driver, one system driver, one system executor, and one standby user
 executor."* É o dobro do mínimo de 2 de um job Glue comum, e é fronteira dura:

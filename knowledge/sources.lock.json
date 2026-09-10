@@ -1575,7 +1575,8 @@
       "pinned": false,
       "retrieved": [
         "2026-08-22",
-        "2026-09-09"
+        "2026-09-09",
+        "2026-09-10"
       ],
       "rules": [
         "SF-ERR-014",
@@ -1587,7 +1588,9 @@
         "SF-LF-006",
         "SF-LF-008",
         "SF-LF-009",
-        "SF-LF-010"
+        "SF-LF-010",
+        "SF-XACC-002",
+        "SF-XACC-003"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html": {
