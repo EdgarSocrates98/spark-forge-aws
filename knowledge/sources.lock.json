@@ -1399,10 +1399,12 @@
       "pinned": false,
       "retrieved": [
         "2026-08-03",
-        "2026-08-05"
+        "2026-08-05",
+        "2026-09-10"
       ],
       "rules": [
-        "SF-GRAPH-005"
+        "SF-GRAPH-005",
+        "SF-ICE-009"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html": {
@@ -2256,11 +2258,13 @@
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-09-09"
+        "2026-09-09",
+        "2026-09-10"
       ],
       "rules": [
         "SF-ICE-006",
-        "SF-ICE-008"
+        "SF-ICE-008",
+        "SF-ICE-009"
       ]
     },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {

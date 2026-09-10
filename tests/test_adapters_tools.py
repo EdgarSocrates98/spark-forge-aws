@@ -79,6 +79,7 @@ class TestToolSurface:
             "sparkforge_economy_report",
             "sparkforge_judge",
             "sparkforge_arbitrate",
+            "sparkforge_lakeformation_access_graph",
             "sparkforge_debate_referee",
             "sparkforge_root_cause",
             "sparkforge_lakeformation_matrix",
@@ -1937,6 +1938,15 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "facts": facts["items"],
                 "glue": "5.0",
             },
+        )
+
+    if name == "sparkforge_lakeformation_access_graph":
+        facts_file = tmp_path / "lf_facts.json"
+        # Case VAZIO de proposito: a tool devolve `unresolved` nomeando o que
+        # coletar, e esse payload valida contra o schema igual.
+        facts_file.write_text("[]", encoding="utf-8")
+        return call_tool(
+            "sparkforge_lakeformation_access_graph", {"facts_path": str(facts_file)}
         )
 
     if name == "sparkforge_debate_referee":

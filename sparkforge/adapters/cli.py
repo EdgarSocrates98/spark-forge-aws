@@ -1741,6 +1741,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     lf_matrix_sub = lf_matrix_p.add_subparsers(dest="lakeformation_action", required=True)
+    lf_g = lf_matrix_sub.add_parser(
+        "access-graph",
+        help=(
+            "O caminho de acesso como GRAFO, a partir de facts. `is_accessible` e "
+            "TERNARIO -- `null` e 'o que olhei nao impede', nao 'funciona'."
+        ),
+    )
+    lf_g.add_argument("--facts", action="append", dest="facts_paths", required=True)
+    lf_g.add_argument("--principal-arn", default="")
+    lf_g.add_argument("--target-table", default="")
+
     lf_mx = lf_matrix_sub.add_parser(
         "matrix",
         help=(
@@ -2968,6 +2979,17 @@ def _cmd_root_cause(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_lakeformation_access_graph(args: argparse.Namespace) -> int:
+    _print(
+        _core.lakeformation_access_graph(
+            facts_path=args.facts_paths,
+            principal_arn=args.principal_arn,
+            target_table=args.target_table,
+        )
+    )
+    return 0
+
+
 def _cmd_lakeformation_matrix(args: argparse.Namespace) -> int:
     payload = _core.lakeformation_matrix(
         runtime=args.runtime, axis=args.axis, detail_level=args.detail_level
@@ -3596,6 +3618,7 @@ _DISPATCH = {
     ("debate", "referee"): _cmd_debate_referee,
     ("root-cause", None): _cmd_root_cause,
     ("lakeformation", "matrix"): _cmd_lakeformation_matrix,
+    ("lakeformation", "access-graph"): _cmd_lakeformation_access_graph,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
     ("report", "sign"): _cmd_report_sign,

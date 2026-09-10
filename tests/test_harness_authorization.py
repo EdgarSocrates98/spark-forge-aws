@@ -942,7 +942,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # todo verbo de topo.
         # 73 -> 74 com `debate_referee` (2026-09-10), a 80ª tool: ela declara
         # `repo`, como todo verbo que le o blackboard do case.
-        assert len(TOOLS) - len(sem_caminho) == 74
+        # 74 -> 75 com `lakeformation_access_graph` (2026-09-10), a 81ª tool:
+        # ela declara `facts_path`, como todo verbo que compoe sobre facts.
+        assert len(TOOLS) - len(sem_caminho) == 75
 
 
 class TestAImposicaoNoDespacho:

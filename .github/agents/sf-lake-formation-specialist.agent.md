@@ -60,6 +60,22 @@ negação não aparecem no documento do role. Duas regras `SF-ICE` julgam o
 catálogo Iceberg pelo lado do Apache — a classe em `spark_catalog`
 (`SF-ICE-006`) e a operação SQL que exige as extensões (`SF-ICE-008`).
 
+## O caminho de acesso como grafo, e o `null` que ele publica
+
+`sparkforge_lakeformation_access_graph` monta o caminho — concessão do Lake
+Formation, decisão **simulada** do IAM com a camada que negou, e registro da
+localização S3 — e diz **onde ele parou**.
+
+`is_accessible` é **ternário**, e o terceiro estado é o que importa nesta área:
+`null` significa *"o que eu consegui olhar não impede"*, e **não** "funciona".
+RAM share, resource link e key policy do KMS saem sempre `unresolved` — nenhum
+coletor deste repositório os produz, e devolver `missing` para eles seria
+acusação a partir de ausência de artefato.
+
+**Localização não registrada sai `not_applicable`, não `missing`.** Tabela fora
+do registro é lida com a credencial do runtime role: o registro não é uma perna
+que faltou, é uma perna que não participa.
+
 ## Por onde começar quando há mais de um achado
 
 `sparkforge_root_cause` ordena os achados por consequência declarada e publica a

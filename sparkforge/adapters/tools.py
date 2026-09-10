@@ -2359,6 +2359,50 @@ _ROOT_CAUSE_SCHEMA: dict[str, Any] = {
     },
 }
 
+# O caminho de acesso como GRAFO. `is_accessible` e TERNARIO no schema (`boolean`
+# OU `null`), e o `null` e o estado que o caminho antigo nao tinha.
+_LF_ACCESS_GRAPH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["status"],
+    "properties": {
+        "status": {"type": "string", "enum": ["ok", "unresolved"]},
+        "principal_arn": {"type": "string"},
+        "target_table": {"type": "string"},
+        "is_accessible": {"type": ["boolean", "null"]},
+        "effective_path": {"type": "array", "items": {"type": "string"}},
+        "edges": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["source_node", "target_node", "permission_type", "status"],
+                "properties": {
+                    "source_node": {"type": "string"},
+                    "target_node": {"type": "string"},
+                    "permission_type": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "granted",
+                            "missing",
+                            "blocking",
+                            "unresolved",
+                            "not_applicable",
+                        ],
+                    },
+                    "evidence": {"type": "string"},
+                },
+            },
+        },
+        "blocked": {"type": "array", "items": {"type": "object"}},
+        "unmeasured": {"type": "array", "items": {"type": "object"}},
+        "counts": {"type": "object"},
+        "refused": {"type": "array", "items": {"type": "object"}},
+        "reason": {"type": "string"},
+        "candidates": {"type": "array", "items": {"type": "string"}},
+        "unblocked_by": {"type": "string"},
+    },
+}
+
 # O eixo de versao de Lake Formation. `status` e o vocabulario FECHADO do
 # carregador, e os quatro valores estao no schema de proposito: um valor novo no
 # YAML derruba a validacao da tool em vez de viajar calado.
@@ -6152,6 +6196,41 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _ROOT_CAUSE_SCHEMA,
         "annotations": _READ_ONLY,
     },
+    "sparkforge_lakeformation_access_graph": {
+        "description": (
+            "O caminho de acesso a uma tabela governada como GRAFO, derivado de facts -- "
+            "concessao do Lake Formation, decisao SIMULADA do IAM (com a camada que negou) "
+            "e registro da localizacao S3. Use quando a pergunta for 'onde o caminho "
+            "parou', e depois de `collect lakeformation` e `collect iam-access`. "
+            "`is_accessible` e TERNARIO: `true` so quando toda perna medida passou E "
+            "nenhuma ficou sem medida; `false` quando alguma perna MEDIDA barrou; `null` "
+            "quando nada do que foi medido impede e alguma perna nao foi medida -- e "
+            "`null` e 'o que eu consegui olhar nao impede', NUNCA 'funciona'. "
+            "RAM share, resource link e key policy do KMS saem SEMPRE `unresolved`: "
+            "nenhum coletor deste repositorio os produz, e devolver `missing` para eles "
+            "seria acusacao a partir de ausencia de artefato. "
+            "Localizacao NAO registrada sai `not_applicable` e nao `missing` -- tabela "
+            "fora do registro e lida com a credencial do runtime role, e nao e permissao "
+            "que faltou. Com mais de uma tabela ou mais de um principal no case a tool "
+            "NAO escolhe: devolve `unresolved` com os candidatos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "oneOf": [
+                        {"type": "string"},
+                        {"type": "array", "items": {"type": "string"}},
+                    ]
+                },
+                "principal_arn": {"type": "string"},
+                "target_table": {"type": "string"},
+            },
+        },
+        "outputSchema": _LF_ACCESS_GRAPH_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_lakeformation_matrix": {
         "description": (
             "Eixo de VERSAO de Lake Formation por runtime Glue: filesystem S3 default, "
@@ -7272,6 +7351,14 @@ def _h_root_cause(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_lakeformation_access_graph(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.lakeformation_access_graph(
+        facts_path=args.get("facts_path"),
+        principal_arn=args.get("principal_arn", ""),
+        target_table=args.get("target_table", ""),
+    )
+
+
 def _h_lakeformation_matrix(args: dict[str, Any]) -> dict[str, Any]:
     return _core.lakeformation_matrix(
         runtime=args.get("runtime"),
@@ -7929,6 +8016,7 @@ _HANDLERS = {
     "sparkforge_arbitrate": _h_arbitrate,
     "sparkforge_debate_referee": _h_debate_referee,
     "sparkforge_root_cause": _h_root_cause,
+    "sparkforge_lakeformation_access_graph": _h_lakeformation_access_graph,
     "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,

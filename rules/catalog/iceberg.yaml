@@ -736,3 +736,125 @@ rules:
     sources:
       - {url: "https://iceberg.apache.org/docs/latest/spark-writes/", retrieved: 2026-09-09}
       - {url: "https://iceberg.apache.org/docs/latest/spark-configuration/", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-ICE-009 -- DUAS versoes de Iceberg no mesmo job, e qual vence nao esta
+  # declarado. Ela fecha metade do `V-ICE-2`, e a outra metade continua aberta:
+  # o veto pedia a versao da biblioteca EM EXECUCAO, e `spark.jars.packages` e
+  # DECLARACAO. O que esta regra julga e a pergunta vizinha, e mais acionavel.
+  #
+  # ELA NAO TEM FIXTURE GOLDEN, e a razao e medida. `iceberg.library_conflict`
+  # exige DOIS facts no mesmo pool: `tf.spark_conf` (a coordenada Maven) e
+  # `env.runtime_signal` com `component: iceberg` (a versao embarcada, que
+  # `runtime_detect` deriva de `glue_version`). NENHUM runner de fixture coloca
+  # os dois juntos -- `regen_fusion` extrai SQL, catalogo e Terraform, e nao
+  # chama `detect_runtime`; `regen_terraform` nao passa por `fuse`.
+  #
+  # Uma fixture foi escrita e REMOVIDA por isso: ela nao emitia o kind, e o
+  # `proves` dela falava de um par que o golden nao continha. Fixture que nao
+  # produz o que descreve e pior que nenhuma.
+  #
+  # A cobertura mora em `tests/test_facts_fusion.py`, nos quatro cenarios
+  # unitarios -- conflito, versoes iguais, sem declaracao, e runtime
+  # desconhecido. Destravaria a fixture: `regen_fusion` e o `_extract` do teste
+  # de golden chamando `detect_runtime` sob guarda, no mesmo molde da guarda de
+  # `*.tf` que a entrega de `SF-ICE-008` acrescentou.
+  # ---------------------------------------------------------------------------
+
+  - id: SF-ICE-009
+    category: iceberg-catalog
+    title: >-
+      Job declara versao de Iceberg diferente da que o runtime embarca
+    requires_facts: [iceberg.library_conflict]
+    when:
+      all:
+        - fact: iceberg.library_conflict
+          where:
+            attrs.order_declared: false
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Este job declara uma versao de Iceberg em `spark.jars.packages` e o runtime
+      embarca outra. `attrs.declared_version` e `attrs.runtime_version` trazem as
+      duas, e `attrs.declared_in` diz em qual superficie a declaracao foi lida --
+      event log, Terraform ou codigo.
+
+
+      **O que decide qual vence e a ORDEM DO CLASSPATH, e ela nao esta
+      declarada.** `--user-jars-first` e o argumento de job que a inverte, e o
+      fact carrega a leitura dele como TERNARIO em `attrs.user_jars_first`:
+      `true`, `false` (lido e a chave ausente) ou `null` (nao lido).
+
+
+      A regra compara `attrs.order_declared`, que e o predicado DERIVADO -- ele e
+      `true` so quando a chave existe. Os dois outros estados dizem a mesma coisa
+      para quem vai agir: **o job nao declara qual jar vence**. Juntar os dois num
+      campo e o que a regra 33 do `CLAUDE.md` manda fazer, porque `where` compara
+      igualdade e nada mais.
+
+
+      **Duas versoes de Iceberg no classpath nao falham no import.** Elas falham
+      mais tarde e de forma que nao se parece com versao: metodo que nao existe
+      na outra versao (`NoSuchMethodError`), comportamento de escrita diferente
+      do documentado, ou propriedade de tabela que uma versao le e a outra
+      ignora. E a razao de o achado ser `structural` -- ele afirma a combinacao,
+      nao a falha.
+    proposed_change:
+      - >-
+        Remover a declaracao e usar a versao embarcada, quando ela atende. E a
+        saida mais barata: uma versao no classpath, e a que o runtime testou.
+      - >-
+        Se a versao declarada e necessaria, declarar `--user-jars-first = "true"`
+        junto, para que a ordem deixe de ser adivinhavel -- e registrar POR QUE a
+        versao embarcada nao serve.
+      - >-
+        Conferir a compatibilidade da versao declarada com o Spark do runtime. A
+        coordenada Maven do Iceberg nomeia o minor do Spark
+        (`iceberg-spark-runtime-3.5_2.12`), e uma coordenada de outro minor e
+        defeito diferente e mais grave que o desta regra.
+    action:
+      kind: dependency.align_version_with_runtime
+      target: spark.jars.packages
+      direction: replace
+      requires_absent: []
+      moves:
+        - runtime.engine_version
+      depends_on: []
+    risks:
+      - >-
+        A regra afirma que DUAS versoes foram declaradas e que a ordem nao esta
+        declarada. Ela **nao** afirma que a versao embarcada vence, nem que a
+        declarada vence -- e afirmar qualquer um dos dois exigiria ler o
+        classpath em execucao, que nenhum artefato deste motor carrega.
+      - >-
+        `spark.jars.packages` e DECLARACAO. Um job que receba o jar por outro
+        caminho -- `--extra-jars`, fat jar corporativo, ou pacote instalado na
+        imagem -- nao e visto por esta regra, e ali o conflito existe sem
+        achado. Falso negativo, nao falso positivo.
+      - >-
+        Com `--user-jars-first` declarado (`true` ou `false`), a regra fica MUDA
+        de proposito: ali a ordem esta escrita, e o operador decidiu. O achado e
+        sobre a ausencia da decisao.
+    tradeoffs:
+      - >-
+        Usar a versao embarcada custa as features que a declarada trazia; usar a
+        declarada custa sair da combinacao que a AWS testou. A matriz de versao
+        por runtime esta em `knowledge/glue/runtime-matrix.yaml`.
+    validation:
+      - >-
+        A configuracao efetiva do run seguinte, lida do event log, mostrando uma
+        versao so -- ou as duas com a ordem declarada.
+      - >-
+        Contagem de linhas e agregado por chave sobre a tabela alvo, antes e
+        depois: trocar a biblioteca de Iceberg troca o escritor, e propriedade de
+        tabela que uma versao le e a outra ignora muda o layout do que foi
+        escrito.
+    rollback:
+      - >-
+        Restaurar a declaracao anterior. Se alguma escrita aconteceu sob a versao
+        nova, o rollback e de dado -- metadata de Iceberg escrita por uma versao
+        pode carregar campo que a anterior nao le.
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-configuration/", retrieved: 2026-09-10}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html", retrieved: 2026-09-10}
