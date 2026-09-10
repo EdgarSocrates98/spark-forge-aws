@@ -27,8 +27,22 @@ produz achados verdadeiros sobre a pergunta errada.
 
 ```bash
 sparkforge analyze terraform --path infra/ --out .sparkforge/facts_tf.json
-sparkforge judge --facts .sparkforge/facts_tf.json
+sparkforge judge --facts .sparkforge/facts_tf.json --show-skipped
 ```
+
+**`--show-skipped` não é opcional aqui.** Sem ele, "nenhum achado" e "não
+consegui avaliar" ficam indistinguíveis — e nesta área a segunda é a resposta
+comum no passo 1, porque grant, registro de localização e decisão de IAM só
+chegam nos passos 2 e 3. O que a saída mostra:
+
+- `reason: requires_facts` com o kind que falta — a regra dispara assim que
+  aquele artefato for coletado;
+- `reason: runtime_scope` — a regra não se aplica a este runtime, e coletar mais
+  não muda isso.
+
+Para ler as duas metades juntas, `sparkforge root-cause --facts
+.sparkforge/facts_tf.json` ordena os achados por consequência declarada e
+publica a lacuna com **o módulo que emite cada kind que falta**.
 
 Sai daqui, antes de qualquer chamada à AWS:
 
@@ -146,6 +160,39 @@ desregistrar localização, alterar boundary ou service control policy são
 mudanças de postura de segurança, e três delas têm raio maior que o do job. A
 decisão **sobe a quem pode ser perguntado** — o agente pai, ou o operador na
 sessão.
+
+## Referência rápida
+
+| Pergunta | Comando |
+|---|---|
+| este runtime escreve sob FGAC? | `sparkforge lakeformation matrix --runtime 5.1 --axis fgac_spark_native_write` |
+| o que o job declara? | `sparkforge analyze terraform --path infra/ --out F && sparkforge judge --facts F --show-skipped` |
+| por onde começo, e o que falta coletar? | `sparkforge root-cause --facts F` |
+| qual permissão a tabela tem? | `sparkforge collect lakeformation --database D --table T --catalog-id A --resource-arn ARN --now ISO` |
+| qual camada do IAM negou? | `sparkforge collect iam-access --role-arn R --action A --resource-arn ARN --now ISO` |
+| qual é o limiar e a fonte desta regra? | `sparkforge rules_lookup --id SF-LF-009` |
+
+### O runtime que o julgamento usou, e de onde ele veio
+
+`judge` devolve o campo `runtime` com o contexto que usou **de fato** para
+filtrar por versão. Leia dois campos dele antes de acreditar em qualquer achado
+desta área:
+
+- **`detected_from`** diz de qual fonte a versão saiu — `terraform`,
+  `event_log` ou `cli`. Nesta área isso decide o resultado: `SF-LF-004` só se
+  aplica a partir do Glue 5.1, e `SF-LF-003`/`005`/`006`/`007`/`009` a partir do
+  5.0. Um `glue_version` que o Terraform declara por variável (`var.gv`) **não é
+  versão observada**, e o guarda de versão pula a regra em silêncio se ninguém
+  ler este campo.
+- **`divergences`** denuncia fontes que discordam entre si — Terraform dizendo
+  5.0 e event log dizendo 5.1, por exemplo. Isso é **achado próprio**
+  (`SF-ENV-001`), não detalhe de diagnóstico, e nesta área ele muda qual metade
+  da matriz de versão se aplica.
+
+Sem `--glue` na linha de comando o contexto é inferido dos facts, e é por isso
+que os dois campos importam mais aqui que em outras áreas: o eixo de versão de
+Lake Formation (`sparkforge lakeformation matrix`) tem três colunas, e escolher
+a errada produz um achado verdadeiro sobre o runtime errado.
 
 ## Quando NÃO usar
 

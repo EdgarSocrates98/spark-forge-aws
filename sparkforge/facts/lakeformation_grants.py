@@ -46,6 +46,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "lakeformation_grants@0.1.0"
@@ -285,7 +286,9 @@ def extract_lakeformation_tree(
 ) -> list[Fact]:
     """Todos os artefatos `*.json` de um diretorio, na ordem do nome."""
     saida: list[Fact] = []
-    for arquivo in sorted(Path(root).glob("*.json")):
+    # `iter_source_files` e nao `glob` cru, pela mesma razao de `iam_access.py`:
+    # `root` e diretorio que o operador aponta. Ver `tests/test_facts_scan.py`.
+    for arquivo in iter_source_files(root, "*.json"):
         saida.extend(extract_lakeformation_path(arquivo, repo_root=repo_root))
     return sort_facts(saida)
 

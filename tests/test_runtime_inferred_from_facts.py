@@ -54,6 +54,29 @@ GLUE_GUARDED_RULES = (
     "SF-GLUE-006",
     "SF-LF-001",
     "SF-LF-002",
+    # As SEIS acrescidas em 2026-09-10, e o gate de igualdade acima foi o que as
+    # cobrou -- elas entraram no catalogo em entregas anteriores desta branch e
+    # esta lista ficou para tras, deixando o teste vermelho na arvore.
+    #
+    # Cinco declaram `{glue: ">=5.0"}` e SF-LF-004 declara `{glue: ">=5.1"}`.
+    # `GLUE_JOB_TF` fixa `glue_version = "5.1"`, que satisfaz as duas
+    # fronteiras -- e por isso as seis entram AQUI e nao em
+    # `GLUE_GUARDED_RULES_ABOVE_5_1`.
+    #
+    # SF-LF-004 e a fronteira mais estreita do catalogo e a que vale ler: ela
+    # NAO e de Lake Formation, e o breaking change de conector S3 do Glue 5.1.
+    # Num Glue 5.0 a mesma configuracao esta CORRETA, porque o default de
+    # filesystem ainda e o EMRFS.
+    #
+    # SF-LF-008 e SF-LF-010 continuam fora, e de proposito: as duas declaram
+    # `{}` porque falam de estado do Lake Formation -- `IAM_ALLOWED_PRINCIPALS`
+    # com `ALL`, localizacao registrada -- e nao de fronteira de runtime.
+    "SF-LF-003",
+    "SF-LF-004",
+    "SF-LF-005",
+    "SF-LF-006",
+    "SF-LF-007",
+    "SF-LF-009",
     "SF-MIG-001",
     "SF-MIG-002",
 )

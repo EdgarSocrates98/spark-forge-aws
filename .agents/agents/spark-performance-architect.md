@@ -39,7 +39,10 @@ e como obtê-lo.
 4. Julgue os facts contra o catálogo com `sparkforge_judge`.
 5. Deixe `sparkforge_next_step` decidir a rota. Não escolha skill por julgamento próprio.
 6. Consulte `sparkforge_rules_lookup` para todo limiar, guarda de versão e fonte — nunca de memória.
-7. Arbitre os achados com `sparkforge_arbitrate` antes de montar o relatório.
+7. Ordene os achados e leia a lacuna com `sparkforge_root_cause` — ele roda o julgamento por
+   dentro e publica as regras que ficaram **mudas** por falta de artefato, com o kind que falta e
+   o módulo que o emite. É o que separa "não há defeito" de "ninguém coletou".
+8. Arbitre os achados com `sparkforge_arbitrate` antes de montar o relatório.
 
 ## Arbitrar é função de coordenador, e não de executor
 

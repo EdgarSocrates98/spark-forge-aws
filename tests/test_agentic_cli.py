@@ -480,6 +480,24 @@ class TestArbitrate:
 
         Com so o lado do FGAC, os achados de GraphFrames perdem a ancora e
         viram `Unknown`. E o contrafactual da secao 12.9, medido aqui.
+
+        O QUE ESTE TESTE MEDE MUDOU, e a mudanca e correta. Ele afirmava
+        `not completo["unknowns"]` -- zero lacuna na uniao --, e isso deixou de
+        valer quando `sparkforge/facts/lakeformation.py` passou a emitir
+        `lakeformation.unresolved` com `reason: permissoes_nao_coletadas` sobre a
+        fixture de FGAC. Aquele fact e uma RECUSA NOMEADA que regra nenhuma cita,
+        entao ele legitimamente vira `Unknown`: grant do Lake Formation nao entra
+        em artefato que este motor colete, e o executor esta certo em nomear a
+        lacuna.
+
+        O contrafactual continua sendo o ponto, e agora ele e medido pelo
+        CONTRASTE em vez de por um zero: o subconjunto abre ESTRITAMENTE MAIS
+        lacuna que a uniao. Afirmar zero era afirmar um efeito colateral da
+        composicao do corpus, e nao a propriedade do verbo.
+
+        **O teste ficou vermelho na arvore por uma entrega inteira** sem que
+        nada acusasse -- confirmado com `git checkout` no commit anterior a esta
+        sessao.
         """
         findings, facts = _par_real(tmp_path)
         repo_uniao = tmp_path / "uniao"
@@ -492,8 +510,15 @@ class TestArbitrate:
         main(["arbitrate", "--findings", str(findings), *_flags([facts[1]], repo_parcial)])
         parcial = json.loads(capsys.readouterr().out)
 
-        assert not completo["unknowns"]
+        # A lacuna da uniao e SO a recusa nomeada do extrator de Lake Formation.
+        # Qualquer outra ali seria fabricada pela composicao dos facts, que e
+        # exatamente o defeito que este teste existe para pegar.
+        assert [u["evidence_needed"][0] for u in completo["unknowns"]] == [
+            "lakeformation.unresolved"
+        ]
         assert parcial["unknowns"], "o subconjunto deveria abrir lacuna"
+        # O CONTRASTE e o contrafactual: o subconjunto abre estritamente mais.
+        assert len(parcial["unknowns"]) > len(completo["unknowns"])
 
     def test_o_runtime_efetivamente_usado_volta_na_resposta(self, tmp_path: Path, capsys):
         findings, facts = _par_real(tmp_path)

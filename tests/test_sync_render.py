@@ -522,6 +522,21 @@ class TestRelacaoDerivada:
             "aws-messaging-and-streaming",
             "aws-security",
             "aws-sdk-python-usage",
+            # `diagnose-lakeformation-access` (2026-09-09) entra pela MESMA
+            # razao das duas primeiras, e ela esta escrita em
+            # `scripts/sync_skills.py::NON_DISPATCHABLE_SKILLS`: o procedimento
+            # coleta da AWS AO VIVO, e tres das recomendacoes dele -- permissions
+            # boundary, service control policy, desregistrar localizacao -- tem
+            # raio maior que o do job.
+            #
+            # Ela NAO entra no `skills:` de `sf-lake-formation-specialist` de
+            # proposito, ainda que seja o procedimento daquela area: skill
+            # declarada por coordenador vira despachavel na derivacao de
+            # `agent:`, e despachar quem nao pode PERGUNTAR e o caso que
+            # `NON_DISPATCHABLE_SKILLS` existe para barrar. O coordenador a cita
+            # na PROSA, que e como um agente chega nela sem que o motor a
+            # despache sozinho.
+            "diagnose-lakeformation-access",
         }
         orfas = [
             p.name
