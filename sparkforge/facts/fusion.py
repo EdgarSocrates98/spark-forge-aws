@@ -80,6 +80,7 @@ EMITTED_KINDS = frozenset(
         "sql.projection.enriched",
         "sql.predicate.enriched",
         "sql.predicate.partition_filter",
+        "sql.write_statement.enriched",
         "fusion.summary",
     }
 )
@@ -235,6 +236,69 @@ def _summary_subject() -> dict[str, Any]:
     }
 
 
+# As tres superficies de conf, e o rotulo de procedencia de cada uma. Mesma
+# tabela de `sparkforge/facts/lakeformation.py`, e por uma razao que vale
+# repetir: quem responde "esta sessao declara a extensao do Iceberg?" nao e o
+# texto SQL nem o dump de catalogo -- e a configuracao, e ela chega por tres
+# caminhos diferentes.
+_CONF_KINDS_FUSION = {
+    "spark.conf_effective": "event_log",
+    "tf.spark_conf": "terraform",
+    "pyspark.conf_set": "code",
+}
+
+_EXTENSIONS_KEY = "spark.sql.extensions"
+_ICEBERG_EXTENSIONS = "IcebergSparkSessionExtensions"
+
+# As operacoes que a documentacao do Iceberg marca com "Requires Iceberg Spark
+# extensions" na tabela de suporte de `spark-writes`. `insert_into` e
+# `insert_overwrite` NAO estao aqui: a mesma tabela as marca so com
+# `storeAssignmentPolicy=ANSI`, que e default desde o Spark 3.0.
+_EXIGEM_EXTENSAO = frozenset({"merge_into", "update", "delete_from"})
+
+
+def _extensoes_do_iceberg(facts: Sequence[Fact]) -> tuple[bool | None, str]:
+    """`(declarada, procedencia)` para `spark.sql.extensions`.
+
+    TERNARIO, e o terceiro estado e o que separa "ninguem declarou" de "ninguem
+    mediu": `None` quando NENHUMA das tres superficies de conf apareceu no case
+    -- ali o motor nao sabe nada sobre a sessao, e afirmar `False` seria inventar
+    ausencia a partir de ausencia de artefato. `False` so quando alguma
+    superficie foi lida e a chave nao estava nela.
+    """
+    viu_superficie = False
+    for fact in facts:
+        origem = _CONF_KINDS_FUSION.get(fact.kind)
+        if origem is None:
+            continue
+        viu_superficie = True
+        attrs = fact.attrs or {}
+        if (attrs or {}).get("redacted"):
+            continue
+        if str(attrs.get("key", "")) != _EXTENSIONS_KEY:
+            continue
+        if _ICEBERG_EXTENSIONS in str(attrs.get("value", "")):
+            return True, origem
+    return (False, "conf_lida_sem_a_chave") if viu_superficie else (None, "sem_superficie_de_conf")
+
+
+def _enrich_write_statement(
+    fact: Fact, declarada: bool | None, procedencia: str
+) -> Fact:
+    attrs = dict(fact.attrs or {})
+    attrs["iceberg_extensions_declared"] = declarada
+    attrs["iceberg_extensions_source"] = procedencia
+    attrs["requires_iceberg_extensions"] = attrs.get("operation") in _EXIGEM_EXTENSAO
+    attrs["extractor"] = EXTRACTOR_ID
+    return Fact(
+        kind="sql.write_statement.enriched",
+        subject=dict(fact.subject or {}),
+        attrs=attrs,
+        measures=dict(fact.measures or {}),
+        provenance=dict(fact.provenance or {}),
+    )
+
+
 def fuse(facts: Sequence[Fact]) -> list[Fact]:
     """Correlaciona `sql.projection`/`sql.predicate` com `catalog.table_schema`
     pelo nome da tabela e devolve `facts` mais o que conseguiu derivar. Ver
@@ -243,6 +307,7 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
     """
     facts = list(facts)
     by_full, by_bare = _catalog_lookup(facts)
+    extensoes, extensoes_origem = _extensoes_do_iceberg(facts)
 
     new_facts: list[Fact] = []
     enriched_count = 0
@@ -268,6 +333,13 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
             enriched_count += 1
             if partition_filter is not None:
                 new_facts.append(partition_filter)
+
+        elif fact.kind == "sql.write_statement":
+            # Nao depende de catalogo: o que falta ao statement e propriedade da
+            # SESSAO, e por isso ele nao entra na contagem de `unmatched_*` nem
+            # pode ficar de fora quando a tabela e desconhecida.
+            new_facts.append(_enrich_write_statement(fact, extensoes, extensoes_origem))
+            enriched_count += 1
 
     summary = Fact(
         kind="fusion.summary",

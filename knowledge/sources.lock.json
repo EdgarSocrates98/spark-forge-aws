@@ -1559,7 +1559,6 @@
       ],
       "rules": [
         "SF-ERR-015",
-        "SF-ICE-007",
         "SF-LF-003",
         "SF-LF-004",
         "SF-LF-005",
@@ -1599,7 +1598,6 @@
       ],
       "rules": [
         "SF-ERR-016",
-        "SF-ICE-007",
         "SF-LF-003",
         "SF-LF-006",
         "SF-LF-009"
@@ -2262,7 +2260,7 @@
       ],
       "rules": [
         "SF-ICE-006",
-        "SF-ICE-007"
+        "SF-ICE-008"
       ]
     },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
@@ -2296,10 +2294,12 @@
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-08-15"
+        "2026-08-15",
+        "2026-09-09"
       ],
       "rules": [
-        "SF-ERR-005"
+        "SF-ERR-005",
+        "SF-ICE-008"
       ]
     },
     "https://parquet.apache.org/docs/file-format/data-pages/compression/": {

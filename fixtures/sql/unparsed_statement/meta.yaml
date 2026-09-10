@@ -1,13 +1,30 @@
 name: unparsed_statement
 proves: >
-  `MERGE INTO` nao e `SELECT ... FROM`, e o extrator de SQL so reconhece a
-  segunda forma. A tabela alvo esta escrita ali em texto claro
-  (`glue_catalog.curated.pedidos`) e seria facil "quase" extrair -- e por isso
-  esta fixture existe: extrair meia query produziria `sql.projection` e
-  `sql.predicate` sobre uma sentenca que o parser nao entendeu, e SF-ATH-002
-  (`absent: sql.predicate.partition_filter`) acusaria falta de filtro numa
-  query cujo filtro esta no `ON`. Vira `sql.unresolved` com reason
-  `unparsed_clause`, e nenhuma regra dispara.
+  A FRONTEIRA do parse de SQL, e ela MUDOU em 2026-09-09 -- esta fixture existia
+  para provar que o extrator nao adivinha, e continua provando isso com uma
+  parcela menor de ignorancia.
+
+  ANTES: `MERGE INTO` nao era `SELECT ... FROM`, e o extrator nao reconhecia nada
+  dele. Saia so `sql.unresolved` com reason `unparsed_clause`.
+
+  AGORA: a OPERACAO e a TABELA ALVO sao extraidas -- `sql.write_statement` com
+  `operation: merge_into` e `table: glue_catalog.curated.pedidos`. O parse e
+  ancorado no INICIO do texto limpo, e por isso e determinista: nao ha SELECT
+  nenhum neste texto, e ainda assim o alvo sai certo.
+
+  O QUE CONTINUA RECUSADO, e e o motivo original desta fixture: `sql.projection`
+  e `sql.predicate` NAO sao inventados. O filtro deste MERGE mora no `ON`, e o
+  extrator nao tem gramatica para le-lo -- extrair meia query faria SF-ATH-002
+  (`absent: sql.predicate.partition_filter`) acusar falta de filtro de particao
+  numa query cujo filtro existe. `sql.unresolved` continua saindo, e
+  `expects_rules` continua VAZIO.
+
+  A TERCEIRA DEMONSTRACAO DO TERNARIO. `SF-ICE-008` julga `merge_into` sem as
+  extensoes do Iceberg e declara `runtime_scope: {}` -- ela seria considerada
+  aqui. Ela NAO dispara porque este corpus nao tem superficie de conf nenhuma:
+  `iceberg_extensions_declared` sai `null`, nunca `false`. Ninguem mediu a
+  sessao, e afirmar ausencia a partir de ausencia de artefato e o que o ternario
+  impede.
 runtime:
   glue: "5.0"
   spark: "3.5.4"
@@ -16,4 +33,5 @@ runtime:
 expects_kinds:
   - sql.analyzed
   - sql.unresolved
+  - sql.write_statement
 expects_rules: []

@@ -63,6 +63,7 @@ EMITTED_KINDS = frozenset(
         "sql.predicate",
         "sql.unresolved",
         "sql.analyzed",
+        "sql.write_statement",
     }
 )
 
@@ -81,6 +82,79 @@ _PRED_RE = re.compile(
     r'^\s*("[^"]+"|`[^`]+`|[A-Za-z_][\w.\[\]]*)\s*(<=|>=|<>|!=|=|<|>)\s*(.+?)\s*$'
 )
 _TABLE_RE = re.compile(r'^\s*("[^"]+"|`[^`]+`|[A-Za-z_][\w.]*)')
+
+# ---------------------------------------------------------------------------
+# STATEMENT DE ESCRITA -- a OPERACAO, e nao a projecao.
+#
+# `MERGE INTO`, `INSERT INTO`, `UPDATE` e `DELETE FROM` atravessam combinacoes
+# DIFERENTES de catalogo, extensao de SQL e caminho de autorizacao, e ate aqui o
+# extrator nao dizia qual delas o texto pedia. Um `MERGE` que falha e um `INSERT`
+# que falha eram o mesmo silencio.
+#
+# Ancorado no INICIO do texto limpo, e a ancora e o que torna o parse honesto:
+# um `MERGE INTO ... USING (SELECT ... FROM ...)` tem SELECT dentro, e casar a
+# operacao em qualquer posicao faria a subquery decidir a operacao do statement.
+# Texto que comeca com SELECT ou WITH nao produz `sql.write_statement` -- nao e
+# lacuna, e leitura.
+#
+# `create_table_as` e `create_table` sao separados porque o primeiro ESCREVE dado
+# e o segundo so declara schema. Colapsar os dois faria uma regra sobre escrita
+# disparar num DDL que nao escreve linha nenhuma.
+_WRITE_STATEMENTS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("merge_into", re.compile(r"^\s*MERGE\s+INTO\s+", re.IGNORECASE)),
+    ("insert_overwrite", re.compile(r"^\s*INSERT\s+OVERWRITE\s+(?:TABLE\s+)?", re.IGNORECASE)),
+    ("insert_into", re.compile(r"^\s*INSERT\s+INTO\s+(?:TABLE\s+)?", re.IGNORECASE)),
+    ("update", re.compile(r"^\s*UPDATE\s+", re.IGNORECASE)),
+    ("delete_from", re.compile(r"^\s*DELETE\s+FROM\s+", re.IGNORECASE)),
+    (
+        "create_table_as",
+        re.compile(
+            r"^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?:EXTERNAL\s+)?TABLE\s+"
+            r"(?:IF\s+NOT\s+EXISTS\s+)?(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][\w.]*)"
+            r"(?:\s*\([^)]*\))?\s+(?:USING\s+\S+\s+)?AS\b",
+            re.IGNORECASE | re.DOTALL,
+        ),
+    ),
+    (
+        "create_table",
+        re.compile(
+            r"^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?:EXTERNAL\s+)?TABLE\s+", re.IGNORECASE
+        ),
+    ),
+)
+
+
+def _write_statement(cleaned: str) -> tuple[str, str | None] | None:
+    """`(operacao, tabela)` do statement de escrita, ou `None` se nao for um.
+
+    A ordem de `_WRITE_STATEMENTS` decide, e ela e deliberada: `insert_overwrite`
+    antes de `insert_into` (o segundo nao casa `OVERWRITE`, mas depender disso e
+    fragil), e `create_table_as` antes de `create_table` porque o segundo e
+    prefixo do primeiro.
+    """
+    for operacao, padrao in _WRITE_STATEMENTS:
+        casou = padrao.match(cleaned)
+        if casou is None:
+            continue
+        resto = cleaned[casou.end():]
+        # `create_table_as` casa ate o `AS`, entao o nome da tabela nao esta no
+        # resto -- ele foi consumido pelo proprio padrao. Reextrai do inicio.
+        if operacao == "create_table_as":
+            depois_do_create = re.sub(
+                r"^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?:EXTERNAL\s+)?TABLE\s+"
+                r"(?:IF\s+NOT\s+EXISTS\s+)?",
+                "",
+                cleaned,
+                count=1,
+                flags=re.IGNORECASE,
+            )
+            resto = depois_do_create
+        elif operacao == "create_table":
+            resto = re.sub(r"^\s*(?:IF\s+NOT\s+EXISTS\s+)", "", resto, count=1, flags=re.IGNORECASE)
+        casou_tabela = _TABLE_RE.match(resto)
+        tabela = _strip_identifier_quotes(casou_tabela.group(1)) if casou_tabela else None
+        return operacao, tabela
+    return None
 
 
 def _strip_comments(sql: str) -> str:
@@ -164,6 +238,34 @@ def _scan_sql(
 
     facts: list[Fact] = []
     counts = {"projection_count": 0, "predicate_count": 0, "unresolved_count": 0}
+
+    # A OPERACAO vem antes da projecao, e a ordem e semantica: um
+    # `MERGE INTO ... USING (SELECT ...)` produz os DOIS facts, e ler primeiro o
+    # que o statement E evita que a subquery seja confundida com a query externa.
+    escrita = _write_statement(cleaned)
+    if escrita is not None:
+        operacao, tabela_alvo = escrita
+        facts.append(
+            Fact(
+                kind="sql.write_statement",
+                subject=subject,
+                attrs={
+                    "operation": operacao,
+                    "table": tabela_alvo,
+                    # Extensao de SQL do Iceberg e propriedade da SESSAO, nunca do
+                    # texto. `MERGE INTO`, `UPDATE` e `DELETE FROM` row-level
+                    # exigem `spark.sql.extensions` com
+                    # `IcebergSparkSessionExtensions`, e texto SQL nao carrega
+                    # essa informacao. Resolvido por `fusion.py` em
+                    # `sql.write_statement.enriched`, no mesmo molde de
+                    # `table_format_columnar`.
+                    "iceberg_extensions_declared": None,
+                    "extractor": EXTRACTOR_ID,
+                },
+                provenance=provenance,
+            )
+        )
+        counts["write_statement_count"] = counts.get("write_statement_count", 0) + 1
 
     select_match = _SELECT_FROM_RE.search(cleaned)
     table: str | None = None

@@ -9,6 +9,10 @@ EXPECTED_KINDS = {
     "sql.projection.enriched",
     "sql.predicate.enriched",
     "sql.predicate.partition_filter",
+    # A OPERACAO do texto SQL cruzada com a EXTENSAO declarada na configuracao.
+    # Nenhum dos dois lados a conhece sozinho -- mesmo molde de
+    # `table_format_columnar`, que e propriedade da TABELA e nunca do texto.
+    "sql.write_statement.enriched",
     "fusion.summary",
 }
 
@@ -37,7 +41,7 @@ PARQUET_EVENTOS = {
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 4
+    assert len(EMITTED_KINDS) == 5
     assert EXTRACTOR_ID.startswith("fusion@")
 
 

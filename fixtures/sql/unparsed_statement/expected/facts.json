@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_3db1cf",
+    "id": "f_9a0409",
     "schema_version": 1,
     "kind": "sql.analyzed",
     "subject": {
@@ -15,12 +15,13 @@
       "projection_count": 0,
       "predicate_count": 0,
       "unresolved_count": 1,
+      "write_statement_count": 1,
       "statement_count": 1
     },
     "attrs": {},
     "provenance": {
       "artifact": "merge.sql",
-      "artifact_sha256": "b7b3394d53b878aa97d907428784a17c0aba3792549308c4b9f52c3fd428fd3e",
+      "artifact_sha256": "8cbc42f17ac6ddde71b411cc34b76d2282405e604e81eac5b2a467f173c47552",
       "extractor": "sql_literal@0.1.0"
     }
   },
@@ -43,7 +44,32 @@
     },
     "provenance": {
       "artifact": "merge.sql",
-      "artifact_sha256": "b7b3394d53b878aa97d907428784a17c0aba3792549308c4b9f52c3fd428fd3e",
+      "artifact_sha256": "8cbc42f17ac6ddde71b411cc34b76d2282405e604e81eac5b2a467f173c47552",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_7c4d2f",
+    "schema_version": 1,
+    "kind": "sql.write_statement",
+    "subject": {
+      "type": "source_location",
+      "file": "merge.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operation": "merge_into",
+      "table": "glue_catalog.curated.pedidos",
+      "iceberg_extensions_declared": null,
+      "extractor": "sql_literal@0.1.0"
+    },
+    "provenance": {
+      "artifact": "merge.sql",
+      "artifact_sha256": "8cbc42f17ac6ddde71b411cc34b76d2282405e604e81eac5b2a467f173c47552",
       "extractor": "sql_literal@0.1.0"
     }
   }

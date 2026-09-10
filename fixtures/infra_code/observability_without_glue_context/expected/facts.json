@@ -601,6 +601,7 @@
     },
     "measures": {},
     "attrs": {
+      "api": "dataframe_writer_v1",
       "mode": "overwrite",
       "target": "s3://lake/curated/resumo_status/"
     },

@@ -6,7 +6,15 @@ from sparkforge.facts.sql_literal import (
 )
 from sparkforge.findings.validate import validate_fact
 
-EXPECTED_KINDS = {"sql.projection", "sql.predicate", "sql.unresolved", "sql.analyzed"}
+EXPECTED_KINDS = {
+    "sql.projection",
+    "sql.predicate",
+    "sql.unresolved",
+    "sql.analyzed",
+    # A OPERACAO do statement de escrita, ancorada no inicio do texto. O
+    # quinto kind desta area, de 2026-09-09.
+    "sql.write_statement",
+}
 
 
 def facts_of(kind, facts):
@@ -21,7 +29,7 @@ def one(kind, sql, path="q.sql"):
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 4
+    assert len(EMITTED_KINDS) == 5
     assert EXTRACTOR_ID.startswith("sql_literal@")
 
 

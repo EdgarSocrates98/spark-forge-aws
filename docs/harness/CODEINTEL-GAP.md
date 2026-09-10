@@ -210,13 +210,13 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **57
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 2 | 466 | 728577 | 9866 | 102 |
+| `iter_source_files` | 2 | 466 | 729964 | 9866 | 102 |
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 264082 | 2201 | 52 |
 | `tool_class` | 1 | 188 | 28525 | 2984 | 74 |
 | `authorize` | 4 | 897 | 360772 | 4426 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1580687**;
+Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1582074**;
 a saída do `grep` pelo nome, **22199**; a saída do `grep` pela definição, **420**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 715.2 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 715.9 vezes.** Contra a saída de um `grep`
 pelo nome, **10.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **5.3** vezes o que aquele `grep` custaria.
 
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **49** símbolos em **12729** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **170302** bytes. O `grep` pela definição contendo o fragmento continua menor
+  no mesmo corpus, tem **170386** bytes. O `grep` pela definição contendo o fragmento continua menor
   (**9223** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
@@ -352,8 +352,8 @@ de cada item.
 
 | `detail_level` | Envelope | Procedência dentro dos itens |
 |---|---|---|
-| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |
-| `normal` | **3619 bytes** | nenhuma; declarada uma vez em `provenance` |
+| `full` (default) | **4583 bytes** | **1144 bytes**, ou **25,0%** do envelope |
+| `normal` | **3649 bytes** | nenhuma; declarada uma vez em `provenance` |
 | `summary` | **1664 bytes** | nenhuma; declarada uma vez em `provenance` |
 
 `normal` encolhe o envelope tirando dos itens o que se **repete** — a procedência, referenciada

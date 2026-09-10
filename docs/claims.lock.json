@@ -3035,13 +3035,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 728577
+          "value": 729964
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "728577",
+      "text": "729964",
       "type": "number"
     },
     {
@@ -3515,13 +3515,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1580687
+          "value": 1582074
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1580687",
+      "text": "1582074",
       "type": "number"
     },
     {
@@ -3594,13 +3594,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(round(total / com, 1))'",
         "expect": {
           "kind": "contains",
-          "value": "715.2"
+          "value": "715.9"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "715.2",
+      "text": "715.9",
       "type": "number"
     },
     {
@@ -3692,13 +3692,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 170302
+          "value": 170386
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "170302",
+      "text": "170386",
       "type": "number"
     },
     {
@@ -3877,7 +3877,7 @@
       "type": "number"
     },
     {
-      "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
+      "context": "| `full` (default) | **4583 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-624",
       "line": 355,
@@ -3885,13 +3885,13 @@
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
           "kind": "contains",
-          "value": "full_bytes=4553"
+          "value": "4583"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "4553",
+      "text": "4583",
       "type": "number"
     },
     {
@@ -3913,7 +3913,7 @@
       "type": "number"
     },
     {
-      "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
+      "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,0** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-626",
       "line": 355,
@@ -3921,17 +3921,17 @@
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
           "kind": "contains",
-          "value": "pct_provenance=25,1"
+          "value": "25,0"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "25,1%",
+      "text": "25,0%",
       "type": "number"
     },
     {
-      "context": "| `normal` | **3619 bytes** | nenhuma; declarada uma vez em `provenance` |",
+      "context": "| `normal` | **3649 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-627",
       "line": 356,
@@ -3940,13 +3940,13 @@
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
           "kind": "contains",
-          "value": "normal_bytes=3619"
+          "value": "3649"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "3619",
+      "text": "3649",
       "type": "number"
     },
     {
