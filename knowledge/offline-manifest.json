@@ -125,6 +125,11 @@
       "bytes": null
     },
     {
+      "path": "knowledge/glue/lakeformation-index.md",
+      "title": "lakeformation-index",
+      "sha256": "64653472881d81e3e46de812fc94871dab3689cdb6cf8d7004f033f54d71ea34"
+    },
+    {
       "path": "knowledge/glue/observability.md",
       "title": "observability",
       "sha256": "f798e0a4c083d57647ed6410c3f13737c7d966f94e6588e368e306bf3af515b2"
