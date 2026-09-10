@@ -42,6 +42,10 @@ rules:
   # `SF-LF-001` documenta.
   - id: SF-KMS-001
     category: encryption-network-route
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      A acao acrescenta ROTA de rede para o servico, e nao permissao.
     title: Job com security configuration e conexão de VPC exige rota própria até o KMS
     requires_facts: [tf.attribute]
     when:
@@ -142,6 +146,10 @@ rules:
 
   - id: SF-KMS-002
     category: encryption-iceberg
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Ligar encriptacao em repouso estreita quem le o dado sem a chave.
     title: Security configuration não cobre a encriptação das tabelas Iceberg
     requires_facts: [tf.attribute]
     when:

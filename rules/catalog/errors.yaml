@@ -859,6 +859,10 @@ rules:
 
   - id: SF-ERR-006
     category: runtime-error
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      A acao e `investigate`: o achado pede LER a cadeia, e nao mexer nela.
     title: >-
       Permissão do Lake Formation negada em runtime, num job que lê o Data
       Catalog de outra conta
@@ -1787,6 +1791,10 @@ rules:
   # companheiro.
   - id: SF-ERR-014
     category: runtime-error
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      A acao e `investigate`.
     title: >-
       Credencial temporária do Lake Formation negada num job que declara
       controle de acesso fino
@@ -1903,6 +1911,10 @@ rules:
 
   - id: SF-ERR-015
     category: runtime-error
+    governance_decision_required: true
+    security_impact: widens_scope
+    security_impact_reason: >-
+      O conserto e conceder `lakeformation:GetDataAccess`, que ALARGA o que o principal alcanca.
     title: >-
       `lakeformation:GetDataAccess` negado num job configurado para credencial
       do Lake Formation
@@ -1997,6 +2009,10 @@ rules:
 
   - id: SF-ERR-016
     category: runtime-error
+    governance_decision_required: true
+    security_impact: widens_scope
+    security_impact_reason: >-
+      O conserto e conceder acao de API do Glue ao role.
     title: >-
       API do Glue negada num job com controle de acesso -- é o plano de IAM, e
       não o de concessão
@@ -2087,6 +2103,10 @@ rules:
 
   - id: SF-ERR-017
     category: runtime-error
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      A acao e `investigate`.
     title: >-
       Erro de validação de segurança sob controle de acesso fino -- e o log que
       explicaria está fechado por desenho

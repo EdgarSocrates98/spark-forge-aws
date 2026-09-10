@@ -14,7 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 # dois tem a chave `rules:`, e os dois pontos abaixo precisam da mesma isencao.
 # O literal repetido era o defeito: `action_kinds.yaml` derrubou este gate no
 # commit que o criou, e nada apontava para os dois lugares que precisavam mudar.
-NAO_SAO_AREA = {"routing.yaml", "action_kinds.yaml"}
+# `governance.yaml` (2026-09-10) e o TERCEIRO: o vocabulario de impacto em
+# postura de seguranca -- as nove acoes que o §25 proibe recomendar
+# automaticamente, e os cinco valores de `security_impact`. Ele nao declara
+# regra, e `tests/test_rules_governance.py` cobra isso por `_source_file`.
+NAO_SAO_AREA = {"routing.yaml", "action_kinds.yaml", "governance.yaml"}
 
 
 class TestCatalogDiscovery:

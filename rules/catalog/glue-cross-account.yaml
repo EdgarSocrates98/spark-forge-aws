@@ -17,6 +17,10 @@ rules:
 
   - id: SF-XACC-001
     category: cross-account-catalog
+    governance_decision_required: true
+    security_impact: radius_beyond_job
+    security_impact_reason: >-
+      A cadeia atravessa DUAS contas, e o conserto mora na conta produtora.
     title: Job lê o Data Catalog de outra conta e depende de uma cadeia que este artefato não mostra
     requires_facts: [tf.spark_conf]
     when:

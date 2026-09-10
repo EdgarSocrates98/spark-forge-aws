@@ -8815,3 +8815,81 @@ padrões, com as 10 recusas nomeadas** no cabeçalho de `rules/catalog/errors.ya
 
 As §76–§80 são critério de excelência e regra de ouro — texto de postura, sem
 artefato a produzir.
+
+---
+
+## §25 — os guardrails, e por que campo declarado e não varredura de prosa
+
+O §25 do prompt de origem diz, literalmente: *"Qualquer recomendação que reduza
+segurança deve possuir `security_impact` e `governance_decision_required`."*
+
+**Medido em 2026-09-10: nenhum dos dois campos existia** em lugar nenhum do
+repositório. A informação existia — em **prosa**, nos `risks` e `tradeoffs` das
+regras. `SF-LF-005` já dizia *"Nos dois sentidos é mudança de postura de
+segurança, e precisa de dono declarado"*. E nenhum gate podia conferi-la.
+
+### A varredura por regex falhou, e a falha é instrutiva
+
+A primeira tentativa varreu `proposed_change` das 188 regras pelos nove padrões
+que o §25 proíbe. Ela achou "remover FGAC" em `SF-LF-001`, `SF-LF-002` e
+`SF-LF-005` — e nas **três** é um braço de bifurcação explícita, com o outro
+braço apresentado primeiro e o custo declarado.
+
+O regex confundiu **a apresentação legítima de uma escolha** com o defeito que o
+§25 recorta. "Automaticamente" é a palavra que decide, e regex não a lê.
+
+### O que foi entregue
+
+`rules/catalog/governance.yaml` — vocabulário, sem regra (o terceiro arquivo
+assim, junto de `routing.yaml` e `action_kinds.yaml`):
+
+- **as nove ações que nunca devem ser recomendadas automaticamente**, cada uma
+  com o que se **perde**. Listar a proibição sem dizer o que se perde produz uma
+  lista que ninguém sabe aplicar;
+- **cinco valores de `security_impact`**, fechados: `none`, `reduces_scope`,
+  `widens_scope`, `changes_mechanism`, `radius_beyond_job`. Cada um declara se
+  **exige dono**, e `none` é o único que não exige.
+
+`none` **não é "seguro"** — é "esta mudança não move postura". `SF-LF-003`
+(trocar o nome do catálogo) é `none` e ainda assim vive numa área de governança.
+
+### As 25 regras do recorte, classificadas uma a uma
+
+O recorte é por **área** (`SF-LF`, `SF-IAM`, `SF-KMS`, `SF-XACC`) e por
+**namespace de ação** (`security.`) — os dois fechados e conferíveis. Medido: 25
+regras, e nenhuma classificação saiu de varredura:
+
+| Impacto | Quantas | Exemplos |
+|---|---|---|
+| `radius_beyond_job` | 4 | `SF-IAM-001` (boundary muda o teto de todo principal), `SF-IAM-002` (SCP é da organização), `SF-LF-007`, `SF-XACC-001` |
+| `changes_mechanism` | 4 | `SF-LF-001`, `SF-LF-002`, `SF-LF-005`, `SF-LF-009` — trocam **quem autoriza** |
+| `reduces_scope` | 6 | os quatro de segredo em texto claro, `SF-KMS-002`, `SF-LF-008` |
+| `widens_scope` | 3 | `SF-ERR-015`, `SF-ERR-016`, `SF-IAM-003` — o conserto **concede** |
+| `none` | 8 | as de `investigate`, mais `SF-LF-003` e `SF-LF-004` |
+
+### O gate
+
+`tests/test_rules_governance.py` — **109 testes**. O que ele cobra, e a linha que
+importa é a terceira:
+
+1. toda regra do recorte declara os dois campos;
+2. `security_impact` está no vocabulário fechado;
+3. **a consistência entre os dois** — um `widens_scope` com
+   `governance_decision_required: false` seria uma regra dizendo "isto alarga o
+   acesso e ninguém precisa aprovar", que é exatamente o que o §25 proíbe;
+4. toda declaração traz `security_impact_reason` — impacto sem razão é etiqueta;
+5. o gate **não vaza** para fora do recorte: uma regra de `SF-PY` não é obrigada,
+   mas se declarar, o valor tem de ser do vocabulário.
+
+### Chegou ao relatório
+
+`root_cause.security_posture` passou a trazer `impact`, `impact_reason` e
+`governance_decision_required` **na frente** da classificação por namespace — que
+continua ao lado, porque cobre regra fora do recorte.
+
+E a recusa mudou de nome porque mudou de natureza:
+`security_impact_assessment` virou **`security_impact_measurement`**. O impacto
+agora é **declarado**; o que continua recusado é **medi-lo** — dizer que uma
+mudança alarga o acesso em N ações exigiria simular a policy antes e depois.
+`impact: not_declared` é diferente de `impact: none`: o primeiro é ninguém ter
+dito.
