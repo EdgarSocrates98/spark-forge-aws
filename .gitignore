@@ -61,4 +61,9 @@ cm_claims_out.txt
 audit.json
 
 # Prompts de origem: insumo de sessao, nao artefato do repositorio.
+#
+# `prompt_especialization_*` entrou em 2026-09-10: o arquivo esteve RASTREADO,
+# foi deletado em `main`, e ao ser recuperado localmente voltou como untracked --
+# um `git add -A` o traria de volta. O padrao fecha isso.
 prompt_evo_*.md
+prompt_especialization_*.md

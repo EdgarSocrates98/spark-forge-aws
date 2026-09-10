@@ -133,6 +133,47 @@ def test_regra_sem_agente_sai_declarada_e_nao_escondida() -> None:
     assert "routing.yaml" in lacuna["reason"]
 
 
+def test_toda_area_executavel_do_catalogo_resolve_participante() -> None:
+    """O §26 do prompt de origem pede ONZE especialistas de Lake Formation, IAM,
+    S3, KMS, Iceberg e migracao, "e eles devem poder debater entre si".
+
+    Medido: os onze NOMES nao existem, e nao devem -- cada area que eles
+    cobririam ja tem dono em `routing.yaml`, e o §32 do mesmo prompt proibe
+    duplicar ("nao duplicar funcionalidades existentes; antes de criar qualquer
+    novo modulo, localizar o que ja existe e estender quando possivel").
+
+    O que o §26 pede DE VERDADE e a capacidade: participante resolvido para toda
+    area em disputa, senao o `DebatePlan` sai com `participants_unresolved` e o
+    debate nao tem quem o faca. Este teste trava isso como INVARIANTE em vez de
+    afirmacao -- area de regra nova sem rota passa a derrubar aqui, e o alarme
+    aparece antes de alguem descobrir que o plano nao acha o especialista.
+
+    Uma area COM regra executavel e sem agente e o defeito; area `structural`
+    (declaracao de coordenacao, sem `action`) nao entra, porque ela nao propoe
+    mudanca e portanto nao entra em contradicao com ninguem.
+    """
+    from sparkforge.findings.models import area_of
+    from sparkforge.rules.loader import load_catalog
+
+    regras = [r for r in load_catalog() if r.get("action")]
+    por_area: dict[str, str] = {}
+    for regra in regras:
+        por_area.setdefault(area_of(regra["id"]), regra["id"])
+
+    plano = debate_plan(
+        sorted(por_area.values()),
+        {rid: ["f_a"] for rid in por_area.values()},
+        None,
+    )
+    assert plano["participants_unresolved"] == [], plano["participants_unresolved"]
+    # E o outro lado: todo participante resolvido tem area e regra, nunca um
+    # agente pendurado sem o que julgar.
+    for participante in plano["participants"]:
+        assert participante["agent"]
+        assert participante["areas"]
+        assert participante["rules"]
+
+
 # --------------------------------------------------------------------------
 # Budget
 # --------------------------------------------------------------------------

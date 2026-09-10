@@ -8612,3 +8612,206 @@ O verbo serve a qualquer área do catálogo e não coleta nada. A ordem dos quat
 passos de diagnóstico de acesso — job, tabela e conta, IAM simulado, mensagem —
 continua na skill `diagnose-lakeformation-access`, **não-despachável** porque
 coleta AWS ao vivo. Ver a seção dos nove comandos, acima.
+
+---
+
+## §26 — os onze especialistas, e por que os onze nomes não devem existir
+
+O §26 do prompt de origem pede onze agentes (`lakeformation-architect`,
+`lakeformation-fgac-specialist`, `lakeformation-fta-specialist`,
+`lakeformation-cross-account-specialist`,
+`lakeformation-credential-specialist`, `glue-runtime-specialist`,
+`iceberg-lakeformation-specialist`, `iam-data-access-specialist`,
+`s3-data-access-specialist`, `kms-data-access-specialist`,
+`glue-migration-specialist`) e fecha com *"eles devem poder debater entre si"*.
+
+**Nenhum dos onze nomes existe. Criá-los violaria o §32 do mesmo prompt** — *"não
+duplicar funcionalidades existentes; antes de criar qualquer novo módulo,
+localizar o que já existe e estender quando possível"*.
+
+### Medido: cada área que eles cobririam já tem dono
+
+| Área | Regras | Quem declara hoje |
+|---|---|---|
+| `SF-LF` | 10 | `sf-lake-formation-specialist` |
+| `SF-XACC` | 1 | `sf-lake-formation-specialist` |
+| `SF-IAM` | 3 | `sf-security-reviewer` |
+| `SF-KMS` | 2 | `sf-security-reviewer` |
+| `SF-ICE` | 7 | `iceberg-performance-engineer`, `sf-storage-specialist`, e mais dois |
+| `SF-PQ` | 9 | `athena-query-optimizer`, `iceberg-performance-engineer`, `sf-storage-specialist` |
+| `SF-GLUE` | 6 | `glue-infra-reviewer`, `sf-runtime-specialist` |
+| `SF-ENV` | 5 | cinco coordenadores |
+| `SF-MIG` | 4 | `sf-runtime-specialist` |
+
+Os onze nomes são uma **decomposição diferente da mesma cobertura**. Cinco deles
+recortariam `SF-LF` em cinco especialistas — arquitetura, FGAC, FTA,
+cross-account, credencial — e a área tem dez regras: seriam dois achados por
+agente, com a contradição entre eles atravessando a fronteira que o recorte
+criou. É o oposto do que a área precisa.
+
+### O que o §26 pede DE VERDADE, e isso está completo
+
+A capacidade por trás da frase *"eles devem poder debater entre si"* é:
+participante resolvido para toda área em disputa. Sem isso o `DebatePlan` sai com
+`participants_unresolved` e o debate não tem quem o faça.
+
+**Medido em 2026-09-10: 28 de 28 áreas com regra executável resolvem
+participante.** Zero em `participants_unresolved`. Onze agentes recebem rota —
+coincidentemente onze, e um conjunto diferente do que o §26 lista:
+
+| Agente | Áreas |
+|---|---|
+| `spark-performance-architect` | 6 |
+| `pyspark-code-reviewer` | 4 |
+| `sf-runtime-specialist` | 4 |
+| `emr-infra-reviewer` | 3 |
+| `glue-infra-reviewer`, `sf-security-reviewer`, `iceberg-performance-engineer`, `sf-lake-formation-specialist` | 2 cada |
+| `athena-query-optimizer`, `data-quality-reviewer`, `sf-terraform-specialist` | 1 cada |
+
+**Isso não era medido por ninguém**, e agora é invariante:
+`test_agentic_executor_plan.py::test_toda_area_executavel_do_catalogo_resolve_participante`
+monta um `debate_plan` com uma regra de cada área e cobra
+`participants_unresolved == []`. Área de regra nova sem rota passa a derrubar o
+gate — antes de alguém descobrir, num case real, que o plano não acha o
+especialista.
+
+### O que faltava mesmo era o árbitro, e ele existe
+
+O exemplo do §26 é um debate FGAC × IAM × Iceberg × CrossAccount que termina com
+o Reviewer dizendo *"Evidence insufficient; Spark configuration required."* Essa
+fala é uma **recusa**, e é ela que `sparkforge_debate_referee` executa
+deterministicamente. Ver a seção do §27.
+
+---
+
+## Auditoria de `prompt_evo_20.md` — 68 seções, medidas contra o repositório
+
+Feita em 2026-09-10 por **sondas contra o repositório**, não por leitura de
+memória: cada linha abaixo veio de `TOOLS`, `load_catalog()`, `EMITTED_KINDS`,
+`area_of` ou do vocabulário fechado de ação. O arquivo é insumo de sessão e não
+é commitado; este é o registro que sobrevive a ele.
+
+**§68 não é item** — é a seção "arquitetura que eu buscaria". Restam **67**.
+
+| Desfecho | Quantas |
+|---|---|
+| **com produtor** | **44** |
+| **recusado por regra do projeto** | **6** |
+| **parcial — o achado existe, a automação não** | **3** |
+| **parcial — outra razão** | **3** |
+| **sem produtor** | **11** |
+
+### As seis recusas, e a regra que as sustenta
+
+| § | Pedido | Regra que recusa |
+|---|---|---|
+| 7 | Cost-per-GB / Cost-per-TB | **13** — nunca atribuir custo a uma causa |
+| 28 | Cluster Sizing Simulator | **12** — nunca interpolar entre capacidades observadas |
+| 40 | Cost-Based Recommendation Engine | **13** — nunca estimar economia |
+| 44 | Recommendation Confidence | score sem calibração; `confidence` é **declarado** por regra |
+| 53 | Performance Score | idem — nenhum experimento calibrou peso nenhum |
+| 54 | Benchmark Scorecard (com nota) | idem; `benchmark` compara dois runs sem pontuar |
+
+Não são lacunas. São decisões, e cada uma tem a regra escrita no `CLAUDE.md`.
+
+### As três que são "o achado existe, a automação não"
+
+§9 Small Files **Autopilot**, §15 Python→Spark **Auto**-Refactor, §27 Glue
+**Auto**-Tuning. Os três achados existem (`SF-ICE-001`, `SF-PY-*`, `tune` +
+`capacity`); o que não existe é aplicar sozinho. O executor é **L0**:
+`applied_changes` sai sempre `false`. É a regra 29, e é decisão de postura, não
+dívida técnica.
+
+### As três parciais por outra razão
+
+| § | Pedido | O que falta |
+|---|---|---|
+| 49 | Security / Governance | as três áreas existem (`SF-IAM`, `SF-KMS`, `SF-LF`); os guardrails do §25 do outro prompt — `governance_decision_required` — **não existem como campo** |
+| 57 | Glue 6.0 | `GLUE_MATRIX` tem 6.0 e três regras o guardam; o **eixo de Lake Formation do 6.0 não foi lido** (`V-` da matriz) |
+| 60 | Production Safety Mode | `autonomy` L0–L5 e `validate_autonomy_boundary` existem; um **modo declarado por case** não |
+
+### As onze sem produtor
+
+| § | Pedido | Por que |
+|---|---|---|
+| 16 | Avro Intelligence | nenhum extrator lê Avro |
+| 17 | JSON Doctor | idem para JSON como formato de dado |
+| 22 | Regression Detection (banco) | `benchmark` compara **dois** runs; banco histórico não existe |
+| 23 | Statistical Benchmarking | intervalo de confiança exige *n* repetições do mesmo run, e nada as coleta |
+| 24 | Workload Regression Database | mesma lacuna do §22 |
+| 47 | Volume Forecasting | prever volume exige série temporal que nenhum artefato guarda |
+| 50 | Data Lineage completo | `analyze_consumers` dá **um** salto; grafo de linhagem não |
+| 52 | Root Cause **Graph** | `root_cause` dá uma **ORDEM**; e `LakeFormationPermissionGraph` é órfão |
+| 59 | Python 3.13 Doctor | a versão está na matriz; um doctor próprio não existe |
+| 62 | Change Manifest | `report_sign` assina correspondência; manifesto de mudança não |
+| 66 | Token Budget **por agente** | token exige transcript do host (regra 24), e ele não vem por agente |
+
+### O que a auditoria mudou de leitura
+
+Três seções que eu teria chamado de lacuna **não são**, e a medida mostrou:
+
+- **§25 Plan Hash / Workload Fingerprint** existe — `workload_fingerprint`, com
+  teste próprio. Eu não sabia.
+- **§55 Knowledge Graph** existe pelo `sparkforge_code_export`, no formato de
+  extração do Graphify.
+- **§67 Evidence-first Agents** está **fechado nas duas pontas**: `Finding`
+  recusa `evidence` vazio no `__post_init__`, e desde 2026-09-10 o árbitro
+  recusa fechamento de debate sem evidência. A frase do §67 é a mesma do §27.
+
+E uma que eu teria chamado de fechada e é **parcial**: §49, porque os guardrails
+do §25 do prompt de Lake Formation não têm campo.
+
+---
+
+## Extração de `prompt_especialization_spark_forge.md` — o que sobreviveu ao arquivo
+
+O arquivo é insumo de sessão e **não é commitado** (`.gitignore`, padrão
+`prompt_especialization_*.md`, acrescentado em 2026-09-10 — ele esteve rastreado,
+foi deletado em `main`, e voltou como untracked, onde um `git add -A` o traria de
+volta).
+
+Ele tem **80 seções**. A extração não copiou o arquivo: pegou o que o
+repositório **não tinha** e o escreveu onde ele decide.
+
+### Extraído — `docs/precisao-de-versao.md` (novo)
+
+As §61–§64 são quatro proibições de imprecisão de versão que o projeto
+**praticava sem ter escrito**:
+
+1. não generalizar comportamento de versão para o produto (`Spark 3.5` → `Spark`);
+2. não generalizar patch para minor (`3.5.4`/`3.5.5`/`3.5.6` → `3.5`);
+3. não confundir a distribuição com o upstream (Apache ≠ EMR ≠ Glue Spark);
+4. uma regra tem de poder declarar a fronteira que precisa.
+
+O documento não é exortação: cada proibição vem com o **mecanismo medido** que a
+cumpre. A segunda, por exemplo, é a razão de a matriz guardar `3.5.4` para o
+Glue 5.0 e `3.5.6` para o 5.1 — mesmo minor, patches diferentes, e a diferença
+entre eles é onde mora metade do diagnóstico de Lake Formation.
+
+A quarta traz uma medida que corrige o pedido: a forma atual de `runtime_scope`
+**já cobre** os quatro eixos, por comparador único ou por lista
+(`[">=3.3", "<3.4"]`). O que não existe é `emr: {releases: [...]}`, e a razão é
+medida — nada alimenta `RuntimeContext` a partir de fact de EMR on EKS, e as
+quatro `SF-EMRK` declaram `{}` por isso.
+
+### Extraído — cabeçalho de `rules/catalog/errors.yaml`
+
+A §50 propõe um schema de assinatura mais rico. A diferença contra o atual
+divide-se em três, e só uma é dívida:
+
+| Pedido | Desfecho |
+|---|---|
+| `versions: {affected, fixed, introduced}` | **dívida real** — hoje `versions` diz onde o erro acontece, não onde foi corrigido, e as duas decidem consertos opostos (upgrade × mudança de código) |
+| `workarounds` | **decisão de postura** — o schema tem `unsafe_fixes`, que é o oposto: "aumente as retries" é workaround verdadeiro e conserto ruim, e ele é listado do lado que diz por que custa |
+| `signature: {regex, exception, message_pattern}` | **já existe por outro nome** — o matcher tem três portas de casamento no código, e o golden do log prova as três |
+
+### Não extraído, e por quê
+
+As §1–§48 e §65–§80 descrevem capacidades que o repositório já tem ou já recusou
+com regra escrita — matriz de runtime, engine de migração, preflight, cost
+architect. A auditoria de `prompt_evo_20.md` acima cobre a mesma família de
+pedidos com o mesmo método, e o §7 (stacktrace) já está medido em **15 de 25
+padrões, com as 10 recusas nomeadas** no cabeçalho de `rules/catalog/errors.yaml`.
+
+As §76–§80 são critério de excelência e regra de ouro — texto de postura, sem
+artefato a produzir.

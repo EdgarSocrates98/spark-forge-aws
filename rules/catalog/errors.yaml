@@ -162,6 +162,41 @@ rules:
   # `">=6.0"` e não `"==6.0"`: a fronteira ABRE no Glue 6.0 e não fecha depois.
   # `==6.0` faria a regra emudecer no dia em que a AWS publicar 6.1, com a mesma
   # falha acontecendo. Mesmo critério de `SF-MIG-003`.
+  # ---------------------------------------------------------------------------
+  # O SCHEMA DA ASSINATURA, E OS TRES CAMPOS QUE ELE NAO TEM
+  #
+  # Extraido de um prompt de origem que nao e artefato deste repositorio
+  # (insumo de sessao, ignorado pelo git). Ele propunha um schema mais rico para
+  # `knowledge/errors/*.json`, e a diferenca entre o proposto e o atual e dividida
+  # em tres -- uma dividida real, uma decisao de postura, e uma que ja existe por
+  # outro nome.
+  #
+  # DIVIDA REAL -- `versions: {affected, fixed, introduced}`. Hoje `versions` e
+  #   lista simples (`["*"]`, `["6.0"]`), e ela responde "em que versoes este erro
+  #   ACONTECE". Ela NAO responde "em que versao ele foi CORRIGIDO", e as duas
+  #   decidem consertos opostos: um erro corrigido no patch seguinte pede upgrade,
+  #   e um erro que atravessa todas as versoes pede mudanca de codigo. As 23
+  #   assinaturas nao distinguem os dois casos.
+  #
+  #   Destravaria: uma fonte que publique a versao de correcao. Para erro de
+  #   Apache Spark isso e o JIRA, que este repositorio nao vigia; para erro de
+  #   Glue, as release notes -- que ele vigia, e onde `SF-ERR-001`/`002` ja leem
+  #   a fronteira `>=6.0`.
+  #
+  # DECISAO DE POSTURA -- `workarounds`. O schema atual tem `unsafe_fixes`, que e
+  #   o OPOSTO: o que NAO fazer, com a razao. A troca nao e de nome. "Workaround"
+  #   publicado sem custo declarado e exatamente o que `unsafe_fixes` recusa --
+  #   "aumente as retries e o job passa" e workaround verdadeiro e conserto ruim,
+  #   e as 23 assinaturas o listam do lado que diz por que ele custa. Manter
+  #   `unsafe_fixes` e nao acrescentar `workarounds` e escolha, nao lacuna.
+  #
+  # JA EXISTE POR OUTRO NOME -- `signature: {regex, exception, message_pattern}`.
+  #   O matcher tem TRES portas de casamento (ver `sparkforge/errors/matcher.py`),
+  #   e `signature` e a string que a terceira usa. Separar o campo em tres so
+  #   duplicaria o que o matcher ja distingue no codigo, e o teste do golden do
+  #   log prova que as tres portas funcionam.
+  # ---------------------------------------------------------------------------
+
   - id: SF-ERR-001
     category: runtime-error
     title: >-
