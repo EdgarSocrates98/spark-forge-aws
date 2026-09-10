@@ -597,6 +597,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: order the findings by declared consequence and name the gap
+    tools: [sparkforge_root_cause]
+    cli: [root-cause]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: read the Lake Formation version axis for a Glue runtime
     tools: [sparkforge_lakeformation_matrix]
     cli: [lakeformation matrix]

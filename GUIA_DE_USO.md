@@ -231,7 +231,7 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 No Desktop va em **Devin Settings > MCP**, adicione um servidor com a URL acima e
 confirme. O processo do servidor precisa ficar rodando enquanto a sessao estiver ativa.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 78 tools fazem (recontado em 2026-09-09)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 79 tools fazem (recontado em 2026-09-09)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 

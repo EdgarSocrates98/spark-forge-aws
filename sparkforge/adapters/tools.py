@@ -2256,6 +2256,57 @@ _RULE_ITEM: dict[str, Any] = {
     },
 }
 
+# Causa raiz ordenada, e a lacuna nomeada. `refused` NAO e decoracao: as tres
+# recusas -- confianca calculada, avaliacao de impacto de seguranca e ganho
+# estimado -- viajam na resposta com o que destravaria cada uma, e um teste varre
+# o `outputSchema` inteiro por substring proibida, como o de `arbitrate`.
+_ROOT_CAUSE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["status", "candidate_count", "candidates", "missing_evidence", "ordering"],
+    "properties": {
+        "status": {"type": "string"},
+        "fact_count": {"type": "integer"},
+        "candidate_count": {"type": "integer"},
+        "candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["position", "root_cause", "rule_id", "severity"],
+                "properties": {
+                    "position": {"type": "integer"},
+                    "root_cause": {"type": "string"},
+                    "rule_id": {"type": "string"},
+                    "severity": {"type": "string"},
+                    "confidence_declared": {"type": "string"},
+                    "status": {"type": "string"},
+                    "subject": {"type": "object"},
+                    "evidence": {"type": "array", "items": {"type": "object"}},
+                    "evidence_count": {"type": "integer"},
+                    "remediation": {"type": "array", "items": {"type": "string"}},
+                    "security_posture": {"type": "object"},
+                    "version_impact": {"type": "object"},
+                    "validation": {"type": "array", "items": {"type": "string"}},
+                    "rollback": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        "missing_evidence": {"type": "array", "items": {"type": "object"}},
+        "missing_evidence_count": {"type": "integer"},
+        "missing_evidence_scope": {"type": "object"},
+        "ordering": {
+            "type": "object",
+            "required": ["key", "is_not"],
+            "properties": {
+                "key": {"type": "array", "items": {"type": "string"}},
+                "severity_order": {"type": "array", "items": {"type": "string"}},
+                "is_not": {"type": "string"},
+            },
+        },
+        "refused": {"type": "array", "items": {"type": "object"}},
+        "runtime": {"type": "object"},
+    },
+}
+
 # O eixo de versao de Lake Formation. `status` e o vocabulario FECHADO do
 # carregador, e os quatro valores estao no schema de proposito: um valor novo no
 # YAML derruba a validacao da tool em vez de viajar calado.
@@ -5969,6 +6020,58 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _ARBITRATE_SCHEMA,
         "annotations": _WRITE_NOT_IDEMPOTENT,
     },
+    "sparkforge_root_cause": {
+        "description": (
+            "Ordena os achados de `judge` por consequencia DECLARADA e nomeia a LACUNA. "
+            "Use quando houver mais de um achado e a pergunta for 'por onde comeco'. "
+            "O que ele publica de novo nao sao os achados: e `missing_evidence` -- as "
+            "regras que ficaram MUDAS por falta de artefato, com o kind que falta e o "
+            "modulo que o emite. Sem isso, silencio por falta de coleta e "
+            "indistinguivel de silencio por ausencia de defeito. "
+            "NAO calcula confianca: `confidence_declared` e o campo da REGRA repassado "
+            "como declarado, nunca combinado com severidade para produzir score novo. "
+            "NAO estima ganho. NAO avalia impacto de seguranca -- `security_posture` "
+            "classifica pelo NAMESPACE do `action.kind` e repassa o `risks` da regra "
+            "verbatim. As tres recusas saem em `refused` com o que destravaria cada uma. "
+            "A saida e uma ORDEM por consequencia, e `ordering.is_not` diz que ela nao "
+            "e ranking por probabilidade."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "oneOf": [
+                        {"type": "string"},
+                        {"type": "array", "items": {"type": "string"}},
+                    ],
+                    "description": (
+                        "Arquivo de facts, ou a LISTA deles. A repeticao e o contrato: "
+                        "a lacuna publicada e sobre a UNIAO."
+                    ),
+                },
+                "glue": {"type": "string"},
+                "spark": {"type": "string"},
+                "python": {"type": "string"},
+                "iceberg": {"type": "string"},
+                "athena": {"type": "string"},
+                "emr": {"type": "string"},
+                "all_missing": {
+                    "type": "boolean",
+                    "description": (
+                        "Lista as regras nao avaliadas de todas as areas. O TOTAL sai "
+                        "nos dois casos."
+                    ),
+                },
+                "detail_level": {
+                    "type": "string",
+                    "enum": ["summary", "normal", "full"],
+                },
+            },
+        },
+        "outputSchema": _ROOT_CAUSE_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_lakeformation_matrix": {
         "description": (
             "Eixo de VERSAO de Lake Formation por runtime Glue: filesystem S3 default, "
@@ -7071,6 +7174,20 @@ def _h_arbitrate(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_root_cause(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.root_cause(
+        facts_path=args.get("facts_path"),
+        glue=args.get("glue"),
+        spark=args.get("spark"),
+        python=args.get("python"),
+        iceberg=args.get("iceberg"),
+        athena=args.get("athena"),
+        emr=args.get("emr"),
+        all_missing=bool(args.get("all_missing")),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_lakeformation_matrix(args: dict[str, Any]) -> dict[str, Any]:
     return _core.lakeformation_matrix(
         runtime=args.get("runtime"),
@@ -7726,6 +7843,7 @@ _HANDLERS = {
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_arbitrate": _h_arbitrate,
+    "sparkforge_root_cause": _h_root_cause,
     "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,

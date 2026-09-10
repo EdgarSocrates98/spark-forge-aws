@@ -79,6 +79,7 @@ class TestToolSurface:
             "sparkforge_economy_report",
             "sparkforge_judge",
             "sparkforge_arbitrate",
+            "sparkforge_root_cause",
             "sparkforge_lakeformation_matrix",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -1936,6 +1937,37 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "glue": "5.0",
             },
         )
+
+    if name == "sparkforge_root_cause":
+        facts_file = tmp_path / "facts.json"
+        facts_file.write_text(
+            json.dumps(
+                [
+                    {
+                        "id": "f_aaaaaa",
+                        "schema_version": 1,
+                        "kind": "pyspark.udf",
+                        "subject": {
+                            "type": "source_location",
+                            "file": "job.py",
+                            "line": 3,
+                            "col": 0,
+                            "symbol": "minha_udf",
+                            "snippet": "",
+                        },
+                        "measures": {},
+                        "attrs": {"udf_type": "python"},
+                        "provenance": {
+                            "artifact": "job.py",
+                            "artifact_sha256": "a" * 64,
+                            "extractor": "pyspark_ast@0.1.0",
+                        },
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_root_cause", {"facts_path": str(facts_file)})
 
     if name == "sparkforge_lakeformation_matrix":
         # Sem `path` nenhum: a matriz e conhecimento versionado que viaja no

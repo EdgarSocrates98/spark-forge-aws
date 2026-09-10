@@ -1639,6 +1639,60 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge_path_p.add_argument("--file")
 
     # rules lookup --------------------------------------------------------
+    # root-cause -------------------------------------------------------
+    #
+    # Verbo de TOPO, no mesmo genero de `workload`, `capacity` e `finops`:
+    # compoe sobre facts e nao le artefato. Ele roda `judge` por dentro, e o que
+    # publica de novo nao sao os achados -- e a LACUNA: as regras que ficaram
+    # mudas por falta de artefato, com o kind que falta e o modulo que o emite.
+    #
+    # Ele NAO se chama `lakeformation diagnose`. A ordem dos quatro passos de
+    # diagnostico de acesso mora na skill `diagnose-lakeformation-access`, que e
+    # nao-despachavel porque coleta AWS ao vivo; este verbo nao coleta nada e
+    # serve a qualquer area do catalogo.
+    rc_p = sub.add_parser(
+        "root-cause",
+        help=(
+            "Ordena os achados por consequencia declarada e nomeia a lacuna. "
+            "Nao calcula confianca e nao estima ganho."
+        ),
+    )
+    rc_p.add_argument(
+        "--facts",
+        action="append",
+        dest="facts_paths",
+        required=True,
+        help=(
+            "Arquivo de facts. REPETIVEL, e a repeticao e o contrato: uma regra "
+            "pode exigir facts de mais de um extrator, e a lacuna publicada e "
+            "sobre a UNIAO."
+        ),
+    )
+    rc_p.add_argument("--glue")
+    rc_p.add_argument("--spark")
+    rc_p.add_argument("--python")
+    rc_p.add_argument("--iceberg")
+    rc_p.add_argument("--athena")
+    rc_p.add_argument("--emr")
+    rc_p.add_argument(
+        "--all-missing",
+        action="store_true",
+        help=(
+            "Lista as regras nao avaliadas de TODAS as areas, e nao so das que "
+            "ja tem achado. O TOTAL sai nos dois casos -- medido: 129 num case de "
+            "Terraform sozinho, contra 5 no recorte."
+        ),
+    )
+    rc_p.add_argument(
+        "--detail-level",
+        choices=["summary", "normal", "full"],
+        default="full",
+        help=(
+            "`summary` corta remediacao, validacao, rollback e os riscos da regra. "
+            "Nunca corta `rule_id`, severidade, evidencia nem a lacuna."
+        ),
+    )
+
     # lakeformation ----------------------------------------------------
     #
     # UM subcomando, e nao os nove que o prompt de origem pede. `matrix` esta
@@ -2869,6 +2923,22 @@ def _cmd_knowledge_path(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_root_cause(args: argparse.Namespace) -> int:
+    payload = _core.root_cause(
+        facts_path=args.facts_paths,
+        glue=args.glue,
+        spark=args.spark,
+        python=args.python,
+        iceberg=args.iceberg,
+        athena=args.athena,
+        emr=args.emr,
+        all_missing=args.all_missing,
+        detail_level=args.detail_level,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_lakeformation_matrix(args: argparse.Namespace) -> int:
     payload = _core.lakeformation_matrix(
         runtime=args.runtime, axis=args.axis, detail_level=args.detail_level
@@ -3494,6 +3564,7 @@ _DISPATCH = {
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
+    ("root-cause", None): _cmd_root_cause,
     ("lakeformation", "matrix"): _cmd_lakeformation_matrix,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,

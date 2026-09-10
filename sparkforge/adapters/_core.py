@@ -55,6 +55,7 @@ from sparkforge.controlm.matrix import (
 from sparkforge.controlm.matrix import (
     covers as controlm_covered_range,
 )
+from sparkforge.diagnosis import rank_root_causes
 from sparkforge.economy.report import build_context_report
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts import lakeformation_matrix as _lf_matrix
@@ -3188,6 +3189,81 @@ def _merge_facts_files(
             seen.add(key)
             merged.append(fact)
     return sort_facts(merged)
+
+
+def root_cause(
+    facts_path: str | list[str] | None = None,
+    facts: list[dict[str, Any]] | None = None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+    all_missing: bool = False,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Ordena os achados por consequencia declarada e NOMEIA a lacuna.
+
+    Verbo de TOPO pela mesma razao de `workload`, `capacity`, `finops` e
+    `arbitrate`: compoe sobre facts e nao le artefato nenhum. Ele roda `judge`
+    por dentro -- os facts entram, os findings e os PULADOS saem, e e o segundo
+    conjunto que ele publica e que nenhum outro verbo publicava.
+
+    Ele NAO calcula confianca, NAO estima ganho e NAO avalia impacto de
+    seguranca. As tres recusas viajam em `refused`, com o que destravaria cada
+    uma. `confidence_declared` e o campo da REGRA repassado como declarado;
+    combina-lo com severidade para produzir um score novo seria inventar a medida
+    que o `CLAUDE.md` recusa para a arbitragem.
+
+    A ordem e declarada em `ordering`, junto com a frase que diz o que ela nao e.
+    """
+    if facts is not None:
+        fact_list = _facts_from_dicts(facts)
+    elif facts_path is not None:
+        paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+        if not paths:
+            raise AdapterError(
+                "informe ao menos um `facts_path` (arquivo gerado por "
+                "`sparkforge analyze * --out <arquivo>`).",
+                exit_code=2,
+            )
+        fact_list = _merge_facts_files(paths)
+    else:
+        raise AdapterError(
+            "informe `facts` (lista inline) ou `facts_path` (arquivo gerado por "
+            "`sparkforge analyze * --out <arquivo>`).",
+            exit_code=2,
+        )
+
+    try:
+        rules = load_catalog()
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+    context = build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+    )
+    runtime = context.to_dict()
+    findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
+
+    saida = rank_root_causes(
+        fact_list, findings, skipped, runtime, all_missing=all_missing
+    )
+    saida["runtime"] = runtime
+    saida["fact_count"] = len(fact_list)
+    if detail_level == "summary":
+        # `summary` corta o TEXTO longo -- remediacao, validacao, rollback e o
+        # `risks` da regra --, e nunca o resultado: `rule_id`, `severity`,
+        # `confidence_declared`, a contagem de evidencia e a lacuna sobrevivem.
+        # Campo de evidencia apagado para economizar token e defeito, nao
+        # compressao.
+        for candidato in saida["candidates"]:
+            candidato.pop("remediation", None)
+            candidato.pop("validation", None)
+            candidato.pop("rollback", None)
+            candidato["security_posture"].pop("rule_declared_risks", None)
+    return saida
 
 
 def judge_findings(

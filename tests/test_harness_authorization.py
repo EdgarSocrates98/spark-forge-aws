@@ -934,11 +934,13 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # 72 desde `analyze_iam_access` e `collect_iam_access` (2026-09-09),
         # pelo mesmo par de lados: a de analise e `_READ_ONLY` com `path`, a de
         # coleta e `_WRITE_LOCAL_OPEN_WORLD` com `repo`.
-        # 72 continua: `lakeformation_matrix` (2026-09-09) foi a 78ª tool e NAO
-        # move este numero, porque entrou do lado das que nao declaram caminho.
-        # E a sexta do conjunto de excecao, e a primeira cuja entrada e
-        # conhecimento versionado em vez de identificador de recurso remoto.
-        assert len(TOOLS) - len(sem_caminho) == 72
+        # 72 -> 73 com `root_cause` (2026-09-09), a 79ª tool. As duas ultimas
+        # entraram em lados OPOSTOS do predicado no mesmo dia, e o contraste e o
+        # que este numero mede: `lakeformation_matrix` le conhecimento que viaja
+        # no pacote e nao recebe caminho nenhum (sexta do conjunto de excecao);
+        # `root_cause` compoe sobre facts do case e declara `facts_path`, como
+        # todo verbo de topo.
+        assert len(TOOLS) - len(sem_caminho) == 73
 
 
 class TestAImposicaoNoDespacho:
