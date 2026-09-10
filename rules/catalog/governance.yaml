@@ -1,0 +1,120 @@
+# Vocabulário fechado de IMPACTO EM POSTURA DE SEGURANÇA.
+#
+# Este arquivo NÃO tem regra. Ele declara duas coisas que o §25 do prompt de
+# origem exige e que não existiam:
+#
+#   1. as nove ações que NUNCA devem ser recomendadas automaticamente;
+#   2. o vocabulário de `security_impact` que uma regra pode declarar.
+#
+# O §25 diz, literalmente: *"Qualquer recomendação que reduza segurança deve
+# possuir `security_impact` e `governance_decision_required`."* Medido em
+# 2026-09-10: nenhum dos dois campos existia em lugar nenhum do repositório.
+#
+# ## Por que isto é campo DECLARADO e não varredura de prosa
+#
+# A primeira tentativa foi varrer `proposed_change` por regex das nove ações.
+# Ela achou "remover FGAC" em `SF-LF-001`, `SF-LF-002` e `SF-LF-005` -- e nas
+# TRÊS é um braço de bifurcação explícita, com o outro braço apresentado
+# primeiro e o `risks` já dizendo que a decisão é de governança
+# (`SF-LF-005`: *"Nos dois sentidos é mudança de postura de segurança, e precisa
+# de dono declarado"*).
+#
+# Ou seja: a informação existia em PROSA, o regex a confundiu com o defeito, e
+# nenhum gate podia conferi-la. Campo declarado resolve os dois -- a regra diz, e
+# o gate cobra.
+#
+# ## O que o gate cobra
+#
+# `tests/test_rules_governance.py`: toda regra de ÁREA DE GOVERNANÇA
+# (`SF-LF`, `SF-IAM`, `SF-KMS`, `SF-XACC`) ou com `action.kind` no namespace
+# `security.` declara `governance_decision_required`. Quando ela declara `true`,
+# `security_impact` passa a ser obrigatório e tem de vir deste vocabulário.
+#
+# O recorte é por ÁREA e por NAMESPACE de ação, não por texto: os dois são
+# fechados e conferíveis, e o texto não é.
+
+schema_version: 1
+
+# As nove que o §25 proíbe recomendar AUTOMATICAMENTE. "Automaticamente" é a
+# palavra que decide: apresentá-las como um lado de uma escolha explícita, com o
+# custo declarado, é o que as três regras de `SF-LF` já fazem -- e é legítimo.
+# O que a lista proíbe é a recomendação sozinha, sem dono.
+#
+# Nenhuma delas é executável por este motor: o executor é L0 e `applied_changes`
+# sai sempre `false` (regra 29). A lista existe para o RELATÓRIO, não para o
+# despacho.
+nunca_automaticamente:
+  - id: remover_fgac
+    descricao: "Remover `--enable-lakeformation-fine-grained-access` de um job"
+    perde: "filtro por coluna, linha e célula na leitura da tabela governada"
+  - id: administrator_access
+    descricao: "Conceder `AdministratorAccess` ao runtime role"
+    perde: "todo limite do que o job pode fazer na conta"
+  - id: s3_curinga
+    descricao: "Liberar `s3:*` ou `Resource: *` na policy do runtime role"
+    perde: "o recorte de quais prefixos o job alcança"
+  - id: lakeformation_curinga
+    descricao: "Liberar `lakeformation:*`"
+    perde: "o recorte de quais tabelas e ações o principal tem"
+  - id: desabilitar_kms
+    descricao: "Remover a exigência de KMS, ou a chave da policy"
+    perde: "criptografia em repouso, e o registro de quem decifrou"
+  - id: bucket_policy_indiscriminada
+    descricao: "Abrir a bucket policy para principal amplo"
+    perde: "o recorte de quem alcança o bucket, INDEPENDENTE do IAM do job"
+  - id: remover_resource_link
+    descricao: "Remover o resource link de uma tabela cross-account"
+    perde: "o caminho suportado de acesso cross-account; e o raio é da OUTRA conta"
+  - id: desregistrar_localizacao
+    descricao: "Desregistrar a localização S3 do Lake Formation"
+    perde: >-
+      a governança daquela localização para TODOS os consumidores, e não só para
+      este job. É a de raio maior da lista
+  - id: remover_governanca
+    descricao: "Remover controle de acesso sem substituto declarado"
+    perde: "o mecanismo, sem que outro assuma"
+
+# O vocabulário de `security_impact`. Fechado de propósito: texto livre num campo
+# de impacto de segurança vira "avaliar caso a caso" em toda regra, e um campo
+# que sempre diz a mesma coisa não é campo.
+#
+# `none` NÃO é "seguro": é "esta mudança não move postura de segurança". A
+# diferença importa porque `SF-LF-003` (trocar o nome do catálogo) é `none` e
+# ainda assim toca uma área de governança.
+security_impact:
+  none:
+    descricao: "A mudança não move postura de segurança."
+    exige_dono: false
+  reduces_scope:
+    descricao: >-
+      A mudança ESTREITA o que o principal alcança. Reduz superfície, e ainda
+      assim é decisão de governança -- estreitar demais quebra o job.
+    exige_dono: true
+  widens_scope:
+    descricao: >-
+      A mudança ALARGA o que o principal alcança. É a metade que o §25 recorta.
+    exige_dono: true
+  changes_mechanism:
+    descricao: >-
+      A mudança troca QUEM autoriza, sem alargar nem estreitar por si -- FGAC por
+      Full Table Access, credencial do Lake Formation por IAM do runtime role. O
+      resultado depende do que estava concedido em cada lado.
+    exige_dono: true
+  radius_beyond_job:
+    descricao: >-
+      A mudança afeta consumidores ALÉM deste job -- desregistrar localização,
+      permissions boundary, service control policy, bucket policy. É a de raio
+      maior, e a única que muda o que OUTROS jobs podem fazer.
+    exige_dono: true
+
+# As áreas cujas regras SEMPRE declaram `governance_decision_required`. O recorte
+# é por área e não por texto porque área é fechada e conferível.
+areas_de_governanca:
+  - SF-LF
+  - SF-IAM
+  - SF-KMS
+  - SF-XACC
+
+# O namespace de `action.kind` que também exige a declaração, mesmo fora das
+# áreas acima.
+namespace_de_acao: "security."

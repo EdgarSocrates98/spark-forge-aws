@@ -114,9 +114,13 @@ class TestNaoInventaConfianca:
     def test_as_tres_recusas_saem_com_o_que_destravaria(self):
         saida = rank_root_causes([], [], [], RUNTIME)
         recusas = {item["what"] for item in saida["refused"]}
+        # `security_impact_assessment` virou `security_impact_measurement` em
+        # 2026-09-10, e a troca de nome registra uma troca de natureza: o
+        # IMPACTO passou a ser DECLARADO pela regra, num vocabulario fechado
+        # (`rules/catalog/governance.yaml`), e o que continua recusado e MEDI-LO.
         assert recusas == {
             "confidence_score",
-            "security_impact_assessment",
+            "security_impact_measurement",
             "expected_gain",
         }
         for item in saida["refused"]:
@@ -303,6 +307,24 @@ class TestEvidencia:
 
 
 class TestPosturaEVersao:
+    def test_o_impacto_declarado_pela_regra_vem_na_frente(self):
+        """O §25 exige DECLARACAO, e ela e melhor que a inferencia por namespace.
+
+        `impact: not_declared` e diferente de `impact: none`: o primeiro e
+        ninguem ter dito, o segundo e a regra afirmando que nao move postura.
+        A classificacao por namespace continua saindo ao lado, porque ela cobre
+        regra fora do recorte de governanca.
+        """
+        alvo = _finding("SF-X-001", "P0", ["f_aaaaaa"])
+        postura = rank_root_causes([], [alvo], [], RUNTIME)["candidates"][0][
+            "security_posture"
+        ]
+        # `SF-X-001` nao existe no catalogo, entao nada foi declarado sobre ela.
+        assert postura["impact"] == "not_declared"
+        assert postura["governance_decision_required"] is False
+        # E a inferencia por namespace segue presente.
+        assert postura["classification"] in {"touches_access_control", "not_indicated"}
+
     def test_acao_de_seguranca_e_classificada_pelo_namespace(self):
         alvo = _finding("SF-X-001", "P0", ["f_aaaaaa"])
         alvo.action = {

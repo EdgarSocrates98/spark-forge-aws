@@ -13,6 +13,10 @@ EXPECTED_KINDS = {
     # Nenhum dos dois lados a conhece sozinho -- mesmo molde de
     # `table_format_columnar`, que e propriedade da TABELA e nunca do texto.
     "sql.write_statement.enriched",
+    # DUAS versoes de Iceberg no mesmo job -- a declarada em
+    # `spark.jars.packages` e a que o runtime embarca. Ele fecha metade do
+    # `V-ICE-2`: o veto pedia a versao EM EXECUCAO, e esta e DECLARACAO.
+    "iceberg.library_conflict",
     "fusion.summary",
 }
 
@@ -41,7 +45,7 @@ PARQUET_EVENTOS = {
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 5
+    assert len(EMITTED_KINDS) == 6
     assert EXTRACTOR_ID.startswith("fusion@")
 
 

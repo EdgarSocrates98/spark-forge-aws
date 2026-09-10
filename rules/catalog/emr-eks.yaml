@@ -219,6 +219,10 @@ rules:
   # esta, nunca uma conjuncao. `all` exigiria segredo nas DUAS para acusar.
   - id: SF-EMRK-001
     category: emr-eks
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Mesma natureza de SF-EMR-002: o literal sai da superficie de API.
     title: Segredo em texto claro na configuração deste job run — DescribeJobRun devolve o literal sem redação
     requires_facts: [emrc.job_run]
     when:

@@ -53,6 +53,17 @@ recomendação, qual medida falta para fechar a lacuna, e em que ordem as açõe
 aplicadas. O resultado vai para o blackboard do case (`sparkforge blackboard summary`,
 `sparkforge decisions list`, `sparkforge decisions explain <id>`).
 
+**Se o achado saiu de debate entre agentes, `sparkforge_debate_referee` decide se
+ele pode ser publicado.** Ele arbitra o protocolo e recusa quatro coisas: hipótese
+que sobrevive ao fechamento — `claim_type: hypothesis` **não** fecha causa raiz —,
+claim sem `evidence_refs`, objeção sem réplica, e referência pendurada. `upheld` é
+binário, porque recusa graduada não recusa.
+
+Ele **não executa debate**. Gerar argumento exige provider, e nada neste projeto
+chama provider: `arbitrate` emite `debate_plan` e para, e o árbitro valida o que
+você preencheu. O sétimo estágio do protocolo (VERIFICATION) sai
+`modeled: false` — consenso é acordo, não verificação.
+
 **Está aqui, e não num executor, porque a contradição cruza áreas.** Cada executor faz uma
 função e vê a área que lhe coube; o par que o catálogo de hoje produz — `SF-GRAPH-005` manda
 declarar o jar do GraphFrames em `--extra-jars`, `SF-LF-001` manda removê-lo porque o FGAC do

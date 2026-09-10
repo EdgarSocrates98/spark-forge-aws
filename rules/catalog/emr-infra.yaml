@@ -246,6 +246,10 @@ rules:
   # guarda aqui silenciaria um P0 real.
   - id: SF-EMR-002
     category: emr-infra
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Mover o segredo para o gerenciador estreita quem o le: hoje qualquer um com `get-job`/`describe-cluster` ve o literal.
     title: Segredo em Configurations ou em argumento de bootstrap action
     requires_facts: [emr.cluster]
     when:

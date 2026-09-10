@@ -34,6 +34,10 @@ REQUIRED_FIXTURES = {
     # texto SQL com a EXTENSAO declarada na configuracao, e nenhum dos dois
     # lados a conhece sozinho.
     "merge_sem_extensoes_do_iceberg",
+    # A segunda deste corpus com `.tf`, e a que exige a versao EMBARCADA de
+    # Iceberg -- derivada da `GLUE_MATRIX` a partir do `glue_version` que o
+    # proprio Terraform declara.
+    "iceberg_declarado_diferente_do_runtime",
 }
 
 

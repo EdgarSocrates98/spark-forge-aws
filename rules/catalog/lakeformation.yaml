@@ -58,6 +58,10 @@ rules:
   # SF-GLUE-001 e SF-GLUE-003.
   - id: SF-LF-001
     category: lakeformation-fgac
+    governance_decision_required: true
+    security_impact: changes_mechanism
+    security_impact_reason: >-
+      Uma das saidas TROCA o modelo de acesso (FGAC por IAM sobre o caminho S3); a outra remove a dependencia e nao move postura.
     title: JAR adicional declarado em job com controle de acesso fino do Lake Formation
     requires_facts: [tf.attribute]
     when:
@@ -214,6 +218,10 @@ rules:
   # para que uma mudança de forma quebre um teste em vez de calar a regra.
   - id: SF-LF-002
     category: lakeformation-fgac
+    governance_decision_required: true
+    security_impact: changes_mechanism
+    security_impact_reason: >-
+      Mesma bifurcacao de SF-LF-001: manter streaming troca quem autoriza.
     title: Controle de acesso fino do Lake Formation habilitado em job de streaming
     requires_facts: [tf.attribute]
     when:
@@ -362,6 +370,10 @@ rules:
   # catalogo nomeado -- esta declarado em `risks`.
   - id: SF-LF-003
     category: lakeformation-fgac
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      Trocar o NOME do catalogo nao move postura: as mesmas permissoes valem sobre a mesma tabela.
     title: >-
       Catálogo Iceberg de nome arbitrário sob controle de acesso fino do Lake
       Formation
@@ -490,6 +502,10 @@ rules:
   # mesma configuracao passou a nao fazer nada -- sem erro, sem aviso.
   - id: SF-LF-004
     category: lakeformation-fta
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      Restaurar o EMRFS faz a configuracao de credencial VOLTAR a ter efeito; ela ja estava declarada.
     title: >-
       Resolver de credencial do Lake Formation declarado sem restaurar o EMRFS
       no Glue 5.1
@@ -600,6 +616,10 @@ rules:
   # Derivar o predicado foi o que tornou a regra de uma linha.
   - id: SF-LF-005
     category: lakeformation-fgac
+    governance_decision_required: true
+    security_impact: changes_mechanism
+    security_impact_reason: >-
+      A escolha entre FGAC e Full Table Access troca QUEM vende a credencial, nos dois sentidos.
     title: >-
       Controle de acesso fino e Full Table Access declarados no mesmo job
     requires_facts: [lakeformation.access_model]
@@ -713,6 +733,10 @@ rules:
   # `<recurso>#<chave>`, e e por isso que a regra do catalogo nao pode agrupar.
   - id: SF-LF-006
     category: lakeformation-fgac
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      A acao e `investigate` sobre dimensionamento.
     title: >-
       Job com controle de acesso fino abaixo do mínimo de quatro workers
     requires_facts: [lakeformation.access_model, tf.attribute]
@@ -823,6 +847,10 @@ rules:
   # essa a diferenca que `collect lakeformation` abriu.
   - id: SF-LF-007
     category: lakeformation-fta
+    governance_decision_required: true
+    security_impact: radius_beyond_job
+    security_impact_reason: >-
+      Habilitar Full Table Access na CONTA muda o que todo job daquela conta pode fazer.
     title: >-
       Full Table Access configurado no job, e a conta não permite acesso por
       query engine de terceiro
@@ -926,6 +954,10 @@ rules:
   # ela e P1 e nao P0: o job funciona, e e justamente esse o problema.
   - id: SF-LF-008
     category: lakeformation-governance
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Retirar `IAM_ALLOWED_PRINCIPALS` ESTREITA -- a tabela deixa de estar aberta a quem tem IAM. E o raio e de todos os consumidores dela.
     title: >-
       Tabela concede permissão a `IAM_ALLOWED_PRINCIPALS` -- o controle do Lake
       Formation não decide nada sobre ela
@@ -1039,6 +1071,10 @@ rules:
   # direta.
   - id: SF-LF-009
     category: lakeformation-fgac
+    governance_decision_required: true
+    security_impact: changes_mechanism
+    security_impact_reason: >-
+      As tres saidas que a documentacao sustenta trocam o caminho de autorizacao da escrita, e uma delas desregistra a localizacao.
     title: >-
       Escrita sob controle de acesso fino em tabela com localização REGISTRADA --
       a documentação da AWS não fecha
@@ -1165,6 +1201,10 @@ rules:
   # (`rules/engine.py::_evaluate_when`).
   - id: SF-LF-010
     category: lakeformation-governance
+    governance_decision_required: false
+    security_impact: none
+    security_impact_reason: >-
+      A acao e `investigate`: o achado pede declarar o modelo, e nao muda concessao.
     title: >-
       Tabela com localização registrada, e o job não declara modelo de acesso
       nenhum

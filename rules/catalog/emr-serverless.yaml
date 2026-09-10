@@ -326,6 +326,10 @@ rules:
   # não pôde ser lido reporta `requires_facts`, que é a verdade.
   - id: SF-EMRS-002
     category: emr-serverless
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Mesma natureza de SF-EMR-002.
     title: Segredo em texto claro em runtimeConfiguration da application
     requires_facts: [emrs.application, emrs.configuration]
     when:

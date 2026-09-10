@@ -3191,6 +3191,74 @@ def _merge_facts_files(
     return sort_facts(merged)
 
 
+def lakeformation_access_graph(
+    facts_path: str | list[str] | None = None,
+    facts: list[dict[str, Any]] | None = None,
+    principal_arn: str = "",
+    target_table: str = "",
+) -> dict[str, Any]:
+    """O caminho de acesso como GRAFO, derivado de facts. Nao acusa o que nao mediu.
+
+    Verbo de TOPO: compoe sobre facts e nao le artefato. Ele le
+    `lakeformation.grant`, `iam.access_decision` e
+    `lakeformation.registered_location` -- os tres que tem produtor -- e devolve
+    RAM share, resource link e key policy do KMS como `unresolved`, porque
+    NENHUM coletor deste repositorio os produz.
+
+    `is_accessible` e TERNARIO, e o terceiro estado e a razao de o verbo existir:
+    `None` significa "o que eu consegui olhar nao impede", que e diferente de
+    "funciona". `LakeFormationPermissionGraph.evaluate_access` -- o caminho de
+    dicionario, mais antigo -- nao tinha esse estado, e por isso devolvia
+    `missing` para perna que ninguem coletou.
+    """
+    from sparkforge.lakeformation.graph import build_access_graph
+
+    if facts is not None:
+        fact_list = _facts_from_dicts(facts)
+    elif facts_path is not None:
+        paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+        if not paths:
+            raise AdapterError("informe ao menos um `facts_path`.", exit_code=2)
+        fact_list = _merge_facts_files(paths)
+    else:
+        raise AdapterError(
+            "informe `facts` ou `facts_path` (arquivo de "
+            "`sparkforge analyze lakeformation-grants --out`).",
+            exit_code=2,
+        )
+    return build_access_graph(fact_list, principal_arn=principal_arn, target_table=target_table)
+
+
+def debate_referee(repo: str) -> dict[str, Any]:
+    """Arbitra o protocolo de debate escrito no blackboard do case.
+
+    Verbo de TOPO: nao le artefato e nao gera argumento nenhum. Ele responde UMA
+    pergunta -- "este fechamento pode ser publicado?" -- e a resposta e binaria,
+    porque o §27 do prompt de origem pede uma RECUSA e recusa graduada nao
+    recusa.
+
+    **Ele nao e o executor de debate, e o executor continua nao existindo**
+    (regra 29 do `CLAUDE.md`). Gerar claim, objecao e replica exige provider, e
+    nada em `sparkforge/` chama provider (regra 23). O que se constroi sem
+    provider e a metade da VERIFICACAO, e e ela que esta aqui.
+
+    Blackboard sem decisao registrada devolve `upheld: true` com
+    `closed: false`. Nao e aprovacao: e "nada foi fechado, logo nada a recusar",
+    e o campo `closed` e o que separa os dois casos.
+    """
+    from sparkforge.agentic.referee import referee_over_blackboard
+
+    try:
+        return referee_over_blackboard(repo)
+    except OSError as exc:
+        raise AdapterError(
+            f"nao foi possivel ler o blackboard em {repo}: {exc}\n"
+            f"  Rode `sparkforge arbitrate` antes -- e ele que escreve claims, "
+            f"objecoes e replicas em `.sparkforge/blackboard/`.",
+            exit_code=2,
+        ) from exc
+
+
 def root_cause(
     facts_path: str | list[str] | None = None,
     facts: list[dict[str, Any]] | None = None,

@@ -119,3 +119,346 @@ class LakeFormationPermissionGraph:
             blocking_permissions=blocking,
             recommended_actions=recommendations,
         )
+
+
+# --------------------------------------------------------------------------- #
+# O grafo A PARTIR DE FACTS, e por que o caminho de cima não deve ser usado.
+#
+# O §13 do prompt de origem pede que o diagnóstico produza um GRAFO e não uma
+# lista. `LakeFormationPermissionGraph.evaluate_access` já produzia um -- e era
+# ÓRFÃO: medido em 2026-09-10, os únicos chamadores dele em todo o repositório
+# eram o próprio teste e o `__init__.py` que o reexporta.
+#
+# E o motivo não era esquecimento. Ele é PIOR: a assinatura recebe `grants`,
+# `ram_shares` e `kms_keys` como listas de dicionários, nenhum coletor deste
+# repositório produz esse shape, e chamá-lo com lista vazia ACUSA. Medido:
+#
+#   evaluate_access(..., ram_shares=[], is_cross_account=True)
+#     -> missing_permissions: [{permission_type: "ram_share", status: "missing"}]
+#     -> recommended_actions: ["Accept AWS RAM resource share ..."]
+#     -> is_accessible: False
+#
+# Ninguém coletou RAM share, e a resposta é "o compartilhamento não foi aceito".
+# É acusação a partir de ausência de artefato -- exatamente o que a regra 20 do
+# `CLAUDE.md` recusa, e o que torna aquele caminho inseguro de ligar como está.
+#
+# `build_access_graph` é a entrada que lê FACT. A diferença que ela introduz é um
+# quarto status -- `unresolved` -- e um `is_accessible` TERNÁRIO: `None` quando
+# alguma perna do caminho não foi medida. Sem o terceiro estado, "não sei" e "não
+# tem" viram a mesma resposta.
+# --------------------------------------------------------------------------- #
+
+STATUS_GRANTED = "granted"
+STATUS_MISSING = "missing"
+STATUS_BLOCKING = "blocking"
+STATUS_UNRESOLVED = "unresolved"
+# `not_applicable` existe por um defeito que a primeira versao deste modulo teve:
+# ela marcava `registered: False` como `missing`, e `is_accessible` saia `False`.
+#
+# LOCALIZACAO NAO REGISTRADA NAO E FALTA DE PERMISSAO -- e o oposto. Tabela fora
+# do registro do Lake Formation e lida com a credencial do RUNTIME ROLE, direto;
+# o registro nao e uma perna que faltou, e uma perna que nao participa. Marca-la
+# `missing` acusava de negar acesso justamente o arranjo em que o acesso nao
+# depende do Lake Formation.
+STATUS_NOT_APPLICABLE = "not_applicable"
+
+# As pernas do caminho de acesso que NENHUM coletor deste repositório produz.
+# Elas saem `unresolved` sempre, com o que destravaria cada uma -- nunca
+# `missing`.
+_PERNAS_SEM_PRODUTOR = (
+    (
+        "ram_share",
+        "ram:ResourceShare",
+        "nenhum coletor produz o estado do compartilhamento AWS RAM; "
+        "destravaria: `ram:GetResourceShares` num coletor novo",
+    ),
+    (
+        "resource_link",
+        "glue:ResourceLink",
+        "nenhum kind carrega resource link; destravaria: `glue:GetTable` sobre o "
+        "link, comparando o nome com o do recurso de origem",
+    ),
+    (
+        "kms_decrypt",
+        "kms:key",
+        "nenhum coletor le a key policy do KMS; destravaria: `kms:GetKeyPolicy` "
+        "num coletor novo",
+    ),
+)
+
+
+def _aresta(origem: str, destino: str, tipo: str, status: str, evidencia: str) -> PermissionEdge:
+    return PermissionEdge(
+        source_node=origem,
+        target_node=destino,
+        permission_type=tipo,
+        status=status,
+        evidence=evidencia,
+    )
+
+
+def _attrs(fact: Any) -> dict[str, Any]:
+    return dict(getattr(fact, "attrs", {}) or {})
+
+
+def _subject(fact: Any) -> dict[str, Any]:
+    return dict(getattr(fact, "subject", {}) or {})
+
+
+def build_access_graph(
+    facts: Any,
+    principal_arn: str = "",
+    target_table: str = "",
+) -> dict[str, Any]:
+    """O caminho de acesso como GRAFO, derivado de facts. Não acusa o que não mediu.
+
+    Lê `lakeformation.grant`, `iam.access_decision` e
+    `lakeformation.registered_location` -- os três que têm produtor -- e devolve
+    as pernas restantes como `unresolved`, com o que destravaria cada uma.
+
+    `is_accessible` é TERNÁRIO:
+
+      `True`   toda perna MEDIDA passou, e nenhuma ficou sem medida
+      `False`  alguma perna medida falhou -- e aí a resposta é conclusiva
+      `None`   nenhuma perna medida falhou, e alguma não foi medida
+
+    O `None` é o estado que o caminho antigo não tinha, e é o que separa "o
+    acesso funciona" de "o que eu consegui olhar não impede".
+
+    `principal_arn` e `target_table` vazios são preenchidos a partir dos facts
+    quando houver um só candidato; com mais de um, a função NÃO escolhe -- ela
+    devolve `unresolved` nomeando a ambiguidade, porque escolher o primeiro
+    produziria um grafo sobre um par que ninguém pediu.
+    """
+    lista = list(facts or [])
+    grants = [f for f in lista if getattr(f, "kind", "") == "lakeformation.grant"]
+    decisoes = [f for f in lista if getattr(f, "kind", "") == "iam.access_decision"]
+    registros = [
+        f for f in lista if getattr(f, "kind", "") == "lakeformation.registered_location"
+    ]
+
+    if not target_table:
+        tabelas = {
+            str(_subject(f).get("symbol", "")).split("#", 1)[0]
+            for f in grants + registros
+            if _subject(f).get("symbol")
+        }
+        tabelas.discard("")
+        if len(tabelas) == 1:
+            target_table = tabelas.pop()
+        elif len(tabelas) > 1:
+            return {
+                "status": "unresolved",
+                "reason": "mais_de_uma_tabela_no_case",
+                "candidates": sorted(tabelas),
+                "unblocked_by": "passe `target_table` para escolher qual grafo montar",
+            }
+
+    if not principal_arn:
+        principais = {str(_attrs(f).get("principal", "")) for f in grants}
+        principais |= {str(_attrs(f).get("role_arn", "")) for f in decisoes}
+        principais.discard("")
+        # `IAM_ALLOWED_PRINCIPALS` nao e um principal: e o marcador de que a
+        # tabela esta aberta a quem tem IAM (ver SF-LF-008).
+        principais = {p for p in principais if p != "IAM_ALLOWED_PRINCIPALS"}
+        if len(principais) == 1:
+            principal_arn = principais.pop()
+        elif len(principais) > 1:
+            return {
+                "status": "unresolved",
+                "reason": "mais_de_um_principal_no_case",
+                "candidates": sorted(principais),
+                "unblocked_by": "passe `principal_arn` para escolher qual grafo montar",
+            }
+
+    if not target_table or not principal_arn:
+        return {
+            "status": "unresolved",
+            "reason": "sem_grant_nem_decisao_de_iam_no_case",
+            "unblocked_by": (
+                "rode `sparkforge collect lakeformation` e `sparkforge collect iam-access`"
+            ),
+        }
+
+    arestas: list[PermissionEdge] = []
+    caminho: list[str] = [principal_arn]
+
+    # perna 1: concessao do Lake Formation (TEM produtor)
+    do_par = [
+        f
+        for f in grants
+        if str(_subject(f).get("symbol", "")).startswith(target_table + "#")
+        and str(_attrs(f).get("principal", "")) == principal_arn
+    ]
+    alvo_lf = "lakeformation:" + target_table
+    if not do_par:
+        arestas.append(
+            _aresta(
+                principal_arn,
+                alvo_lf,
+                "lf_grant",
+                STATUS_UNRESOLVED,
+                "nenhum `lakeformation.grant` no case para este par; destravaria: "
+                "`collect lakeformation` sobre " + target_table,
+            )
+        )
+    elif any(_attrs(f).get("has_select") or _attrs(f).get("has_all") for f in do_par):
+        caminho.append(alvo_lf)
+        arestas.append(
+            _aresta(
+                principal_arn,
+                alvo_lf,
+                "lf_grant",
+                STATUS_GRANTED,
+                "grant medido com SELECT ou ALL",
+            )
+        )
+    else:
+        permissoes = sorted({p for f in do_par for p in (_attrs(f).get("permissions") or [])})
+        arestas.append(
+            _aresta(
+                principal_arn,
+                alvo_lf,
+                "lf_grant",
+                STATUS_MISSING,
+                "grant medido e SEM SELECT nem ALL -- tem " + str(permissoes),
+            )
+        )
+
+    # perna 2: decisao do IAM, SIMULADA (TEM produtor)
+    if not decisoes:
+        arestas.append(
+            _aresta(
+                principal_arn,
+                "iam:decision",
+                "iam",
+                STATUS_UNRESOLVED,
+                "nenhuma `iam.access_decision` no case; destravaria: `collect iam-access` "
+                "-- e ele SIMULA, nunca faz parse de policy",
+            )
+        )
+    else:
+        negadas = [f for f in decisoes if not _attrs(f).get("allowed")]
+        if negadas:
+            for fact in negadas:
+                a = _attrs(fact)
+                arestas.append(
+                    _aresta(
+                        principal_arn,
+                        "iam:" + str(a.get("action", "")),
+                        "iam",
+                        STATUS_BLOCKING,
+                        "negado por "
+                        + str(a.get("denied_by") or "razao nao nomeada")
+                        + " sobre "
+                        + str(a.get("resource", "")),
+                    )
+                )
+        else:
+            caminho.append("iam:allowed")
+            arestas.append(
+                _aresta(
+                    principal_arn,
+                    "iam:decision",
+                    "iam",
+                    STATUS_GRANTED,
+                    str(len(decisoes)) + " acao(oes) simulada(s), nenhuma negada",
+                )
+            )
+
+    # perna 3: registro da localizacao (TEM produtor, e e TERNARIO)
+    do_registro = [f for f in registros if str(_subject(f).get("symbol", "")) == target_table]
+    origem_s3 = "s3:" + target_table
+    if not do_registro:
+        arestas.append(
+            _aresta(
+                origem_s3,
+                "lakeformation:registered_location",
+                "s3_registration",
+                STATUS_UNRESOLVED,
+                "ninguem mediu o registro da localizacao S3",
+            )
+        )
+    else:
+        registrada = _attrs(do_registro[0]).get("registered")
+        if registrada is None:
+            arestas.append(
+                _aresta(
+                    origem_s3,
+                    "lakeformation:registered_location",
+                    "s3_registration",
+                    STATUS_UNRESOLVED,
+                    "`registered` e ternario e saiu nulo -- ninguem mediu",
+                )
+            )
+        elif registrada:
+            arestas.append(
+                _aresta(
+                    origem_s3,
+                    "lakeformation:registered_location",
+                    "s3_registration",
+                    STATUS_GRANTED,
+                    "`registered` medido: True -- a credencial do Lake Formation le e "
+                    "escreve esta localizacao",
+                )
+            )
+        else:
+            arestas.append(
+                _aresta(
+                    origem_s3,
+                    "lakeformation:registered_location",
+                    "s3_registration",
+                    STATUS_NOT_APPLICABLE,
+                    "`registered` medido: False -- a localizacao NAO esta sob governanca "
+                    "do Lake Formation, e o acesso passa a ser pelo IAM do runtime role. "
+                    "Nao e permissao que faltou",
+                )
+            )
+
+    # pernas SEM produtor: `unresolved` SEMPRE, nunca `missing`
+    for tipo, destino, destrava in _PERNAS_SEM_PRODUTOR:
+        arestas.append(_aresta(principal_arn, destino, tipo, STATUS_UNRESOLVED, destrava))
+
+    bloqueadas = [a for a in arestas if a.status in (STATUS_MISSING, STATUS_BLOCKING)]
+    nao_medidas = [a for a in arestas if a.status == STATUS_UNRESOLVED]
+    # `not_applicable` nao entra em nenhum dos dois: nao bloqueia e nao e lacuna
+    # de medida -- e uma perna medida que nao participa do caminho.
+    nao_aplicaveis = [a for a in arestas if a.status == STATUS_NOT_APPLICABLE]
+
+    if bloqueadas:
+        acessivel: bool | None = False
+    elif nao_medidas:
+        acessivel = None
+    else:
+        acessivel = True
+
+    return {
+        "status": "ok",
+        "principal_arn": principal_arn,
+        "target_table": target_table,
+        # TERNARIO. `None` e "o que eu consegui olhar nao impede", e nao "funciona".
+        "is_accessible": acessivel,
+        "effective_path": caminho if acessivel is True else [],
+        "edges": [dict(vars(e)) for e in arestas],
+        "blocked": [dict(vars(e)) for e in bloqueadas],
+        "unmeasured": [dict(vars(e)) for e in nao_medidas],
+        "counts": {
+            "edges": len(arestas),
+            "granted": sum(1 for a in arestas if a.status == STATUS_GRANTED),
+            "blocked": len(bloqueadas),
+            "unresolved": len(nao_medidas),
+            "not_applicable": len(nao_aplicaveis),
+        },
+        "refused": [
+            {
+                "what": "acusar_perna_sem_produtor",
+                "why": (
+                    "RAM share, resource link e key policy do KMS nao tem coletor neste "
+                    "repositorio. `evaluate_access` (o caminho de dicionario) devolve "
+                    "`missing` para eles quando recebe lista vazia, e isso e acusacao a "
+                    "partir de ausencia de artefato."
+                ),
+                "unblocked_by": "; ".join(d for _, _, d in _PERNAS_SEM_PRODUTOR),
+            },
+        ],
+    }

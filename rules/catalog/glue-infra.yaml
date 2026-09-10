@@ -332,6 +332,10 @@ rules:
 
   - id: SF-GLUE-006
     category: glue-infra
+    governance_decision_required: true
+    security_impact: reduces_scope
+    security_impact_reason: >-
+      Mesma natureza de SF-EMR-002.
     title: Segredo em default argument
     requires_facts: [tf.attribute]
     when:

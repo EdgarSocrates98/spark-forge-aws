@@ -124,6 +124,32 @@ def _modulo_por_kind() -> dict[str, str]:
     return mapa
 
 
+@lru_cache(maxsize=1)
+def _governanca_declarada() -> dict[str, dict[str, Any]]:
+    """`rule_id -> {security_impact, security_impact_reason, governance_decision_required}`.
+
+    Lido do catálogo, e cacheado porque ele não muda durante a vida do processo.
+    Catálogo indisponível devolve `{}` em vez de derrubar -- medição nunca
+    derruba a chamada (regra 27).
+    """
+    try:
+        from sparkforge.rules.loader import load_catalog
+
+        regras = load_catalog()
+    except Exception:  # noqa: BLE001 - ver docstring
+        return {}
+    saida: dict[str, dict[str, Any]] = {}
+    for regra in regras:
+        if "security_impact" not in regra and "governance_decision_required" not in regra:
+            continue
+        saida[str(regra["id"])] = {
+            "security_impact": regra.get("security_impact"),
+            "security_impact_reason": regra.get("security_impact_reason"),
+            "governance_decision_required": regra.get("governance_decision_required"),
+        }
+    return saida
+
+
 def _ordem(finding: Finding) -> tuple[int, int, str]:
     severidade = str(finding.severity or "")
     posicao = (
@@ -136,11 +162,31 @@ def _ordem(finding: Finding) -> tuple[int, int, str]:
     return (posicao, -len(finding.evidence or []), str(finding.rule_id or ""))
 
 
-def _postura_de_seguranca(finding: Finding) -> dict[str, Any]:
+def _postura_de_seguranca(finding: Finding, declarado: dict[str, Any]) -> dict[str, Any]:
+    """A postura, com o que a REGRA declara na frente da classificação por namespace.
+
+    `declarado` vem de `rules/catalog/governance.yaml` via o catálogo: a regra
+    declara `security_impact` (vocabulário fechado de cinco valores) e
+    `governance_decision_required`. Isso é o que o §25 do prompt de origem
+    exige, e é estritamente melhor que a classificação por namespace -- que
+    continua saindo ao lado, porque ela cobre regra fora do recorte de
+    governança.
+
+    Quando a regra NÃO declara, `impact` sai `not_declared` -- e isso é
+    diferente de `none`. `none` é a regra afirmando que a mudança não move
+    postura; `not_declared` é ninguém ter dito.
+    """
     acao = finding.action or {}
     kind = str(acao.get("kind") or "")
     toca = kind.startswith(_NAMESPACE_DE_SEGURANCA)
     return {
+        # O que a REGRA declara. Vem primeiro porque é declaração e não
+        # inferência.
+        "impact": str(declarado.get("security_impact") or "not_declared"),
+        "impact_reason": str(declarado.get("security_impact_reason") or ""),
+        "governance_decision_required": bool(
+            declarado.get("governance_decision_required", False)
+        ),
         # Dois valores, e o segundo NAO e "nao toca": e "nao indicado pelo
         # namespace da acao". A diferenca e a mesma de `not_declared` contra
         # `not_supported` na matriz de versao.
@@ -284,6 +330,10 @@ def rank_root_causes(
     """
     runtime = dict(runtime or {})
     por_id = {fact.id: fact for fact in facts}
+    # O que a REGRA declara sobre postura de segurança, lido do catálogo. Sem
+    # isso `security_posture` só teria a classificação por namespace, que é
+    # inferência -- e o §25 exige declaração.
+    declarado_por_regra = _governanca_declarada()
 
     candidatos: list[dict[str, Any]] = []
     for posicao, finding in enumerate(sorted(findings, key=_ordem), start=1):
@@ -300,7 +350,9 @@ def rank_root_causes(
                 "evidence": _evidencia(finding, por_id),
                 "evidence_count": len(finding.evidence or []),
                 "remediation": list(finding.proposed_change or []),
-                "security_posture": _postura_de_seguranca(finding),
+                "security_posture": _postura_de_seguranca(
+                    finding, declarado_por_regra.get(str(finding.rule_id or ""), {})
+                ),
                 "version_impact": _impacto_de_versao(finding, runtime),
                 "validation": list(finding.validation or []),
                 "rollback": list(finding.rollback or []),
@@ -357,16 +409,20 @@ def rank_root_causes(
                 ),
             },
             {
-                "what": "security_impact_assessment",
+                "what": "security_impact_measurement",
                 "why": (
-                    "`security_posture` classifica pelo NAMESPACE do `action.kind` "
-                    "e repassa o `risks` da regra verbatim. Avaliar impacto exige "
-                    "conhecer o raio da mudança na conta, que nenhum artefato deste "
-                    "motor carrega."
+                    "`security_posture.impact` e DECLARADO pela regra, num vocabulario "
+                    "fechado de cinco valores (`rules/catalog/governance.yaml`), e o gate "
+                    "cobra a consistencia com `governance_decision_required`. O que "
+                    "continua recusado e MEDIR o impacto: dizer que uma mudanca alarga o "
+                    "acesso em N acoes exigiria simular a policy antes e depois, e o raio "
+                    "real na conta nenhum artefato deste motor carrega. "
+                    "`impact: not_declared` e diferente de `impact: none` -- o primeiro e "
+                    "ninguem ter dito, o segundo e a regra afirmando que nao move postura."
                 ),
                 "unblocked_by": (
-                    "Um campo declarado por regra dizendo o raio da ação, ou a "
-                    "coleta da política da organização."
+                    "Coletar a politica da organizacao e simular o principal antes e "
+                    "depois da mudanca -- `collect iam-access` ja simula UM estado."
                 ),
             },
             {

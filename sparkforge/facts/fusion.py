@@ -81,6 +81,7 @@ EMITTED_KINDS = frozenset(
         "sql.predicate.enriched",
         "sql.predicate.partition_filter",
         "sql.write_statement.enriched",
+        "iceberg.library_conflict",
         "fusion.summary",
     }
 )
@@ -282,6 +283,141 @@ def _extensoes_do_iceberg(facts: Sequence[Fact]) -> tuple[bool | None, str]:
     return (False, "conf_lida_sem_a_chave") if viu_superficie else (None, "sem_superficie_de_conf")
 
 
+# A coordenada Maven do runtime do Iceberg, como ela aparece em
+# `spark.jars.packages`. O grupo captura a VERSAO.
+_ICEBERG_COORD = re.compile(
+    r"org\.apache\.iceberg:iceberg-spark-runtime-[\d.]+_[\d.]+:([\w.\-]+)"
+)
+
+# A chave que declara a ordem do classpath no Glue. Sem ela o jar do usuario vem
+# DEPOIS do embarcado, e qual das duas versoes vence deixa de ser adivinhavel.
+_USER_JARS_FIRST = "--user-jars-first"
+
+
+def _iceberg_declarado(facts: Sequence[Fact]) -> tuple[str, str, str]:
+    """`(versao, origem, ancora)` da biblioteca Iceberg que o job DECLARA instalar.
+
+    Le `spark.jars.packages` das tres superficies de conf. `("", "", "")` quando
+    nenhuma o declara -- e isso NAO significa que o job usa a embarcada por
+    escolha; significa que ninguem declarou nada.
+
+    IMPORTANTE, e e o limite deste fact: `spark.jars.packages` e DECLARACAO, nao
+    classpath em execucao. O veto `V-ICE-2` pedia a versao da biblioteca EM
+    EXECUCAO, e essa continua sem produtor. O que este par fecha e a pergunta
+    vizinha, e mais acionavel: "o job declara uma versao diferente da que o
+    runtime embarca?"
+    """
+    for fact in facts:
+        origem = _CONF_KINDS_FUSION.get(fact.kind)
+        if origem is None:
+            continue
+        attrs = fact.attrs or {}
+        if (attrs or {}).get("redacted"):
+            continue
+        if str(attrs.get("key", "")) != "spark.jars.packages":
+            continue
+        casou = _ICEBERG_COORD.search(str(attrs.get("value", "")))
+        if casou:
+            return casou.group(1), origem, str((fact.subject or {}).get("symbol", ""))
+    return "", "", ""
+
+
+def _user_jars_first(facts: Sequence[Fact]) -> bool | None:
+    """Ternario: `True`/`False` quando `tf.attribute` foi lido, `None` sem ele."""
+    viu = False
+    for fact in facts:
+        if fact.kind != "tf.attribute":
+            continue
+        attrs = fact.attrs or {}
+        if str(attrs.get("block", "")) != "default_arguments":
+            continue
+        viu = True
+        if str(attrs.get("key", "")) == _USER_JARS_FIRST:
+            return str(attrs.get("value", "")).lower() == "true"
+    return False if viu else None
+
+
+def _iceberg_embarcado(facts: Sequence[Fact]) -> str:
+    """A versao de Iceberg que o runtime embarca, derivada de `glue_version`.
+
+    DUAS TENTATIVAS FALHARAM ANTES DESTA, e as duas do mesmo jeito -- lendo um
+    fact que nao existe:
+
+      1. `env.runtime` -- kind que nunca existiu neste repositorio;
+      2. `env.runtime_signal` com `component: iceberg` -- MEDIDO: `detect_runtime`
+         emite sinal so para `spark`. A versao de Iceberg vive em
+         `RuntimeContext.iceberg` e NAO vira fact.
+
+    A terceira le a mesma FONTE que `detect_runtime` usa -- a `GLUE_MATRIX` --
+    a partir do `glue_version` que `tf.attribute` ja traz. Sem mudar assinatura
+    de `fuse` e sem mover golden nenhum.
+
+    `""` quando o Terraform nao declara `glue_version`, quando o valor nao e
+    literal (`var.gv`), ou quando a versao nao esta na matriz. Nos tres casos a
+    comparacao NAO acontece -- comparar contra `""` produziria conflito com tudo.
+    """
+    from sparkforge.facts.runtime_matrix import load as load_matrix
+
+    versoes = {
+        str((f.attrs or {}).get("value", ""))
+        for f in facts
+        if f.kind == "tf.attribute" and str((f.attrs or {}).get("key", "")) == "glue_version"
+    }
+    versoes.discard("")
+    if len(versoes) != 1:
+        return ""
+    try:
+        matriz = load_matrix()
+    except Exception:  # noqa: BLE001 - matriz indisponivel nao derruba a fusao (regra 27)
+        return ""
+    return str((matriz.get(versoes.pop()) or {}).get("iceberg", "") or "")
+
+
+def _conflito_de_iceberg(facts: Sequence[Fact], runtime_iceberg: str) -> list[Fact]:
+    """Um fact quando o job declara versao de Iceberg e o runtime embarca outra.
+
+    Nao emite nada quando o job nao declara, nem quando a versao embarcada nao e
+    conhecida -- comparar contra `""` produziria conflito com tudo.
+    """
+    declarada, origem, ancora = _iceberg_declarado(facts)
+    if not declarada or not runtime_iceberg:
+        return []
+    if declarada == runtime_iceberg:
+        return []
+    return [
+        Fact(
+            kind="iceberg.library_conflict",
+            subject={
+                "type": "source_location" if origem == "code" else "tf_resource",
+                "file": "",
+                "line": 0,
+                "col": 0,
+                "symbol": ancora,
+                "snippet": "",
+            },
+            attrs={
+                "declared_version": declarada,
+                "runtime_version": runtime_iceberg,
+                "declared_in": origem,
+                # TERNARIO. Sem `tf.attribute` lido, ninguem sabe a ordem -- e
+                # dizer `False` ali seria afirmar que o embarcado vence.
+                "user_jars_first": _user_jars_first(facts),
+                # O PREDICADO DERIVADO, e a regra 33 do `CLAUDE.md` e por que ele
+                # existe: `where` compara igualdade, e "a ordem NAO esta
+                # declarada" precisa juntar dois estados do ternario -- `false`
+                # (lido e a chave ausente) e `null` (nao lido). Os dois dizem a
+                # mesma coisa para quem vai agir: o job nao declara qual jar
+                # vence. Sem este campo a regra precisaria de `any` sobre dois
+                # `where`, e a primeira versao dela disparava so no `null` --
+                # deixando de fora o caso MAIS comum, que e o `false`.
+                "order_declared": _user_jars_first(facts) is True,
+                "extractor": EXTRACTOR_ID,
+            },
+            provenance={"artifact": "", "artifact_sha256": "", "extractor": EXTRACTOR_ID},
+        )
+    ]
+
+
 def _enrich_write_statement(
     fact: Fact, declarada: bool | None, procedencia: str
 ) -> Fact:
@@ -356,6 +492,11 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
 
     # Dedup por id (content-addressed): garante a uniao sem duplicata e e a
     # base da idempotencia -- ver docstring do modulo.
+    # A versao embarcada vem de um fact de deteccao de runtime quando ele existe
+    # no case. Sem ele, `_conflito_de_iceberg` nao emite -- comparar contra `""`
+    # produziria conflito com tudo.
+    new_facts.extend(_conflito_de_iceberg(facts, _iceberg_embarcado(facts)))
+
     combined: dict[str, Fact] = {f.id: f for f in facts}
     for fact in new_facts:
         combined[fact.id] = fact

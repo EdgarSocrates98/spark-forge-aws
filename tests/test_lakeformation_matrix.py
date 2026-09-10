@@ -232,3 +232,89 @@ def test_o_filesystem_default_e_a_celula_que_muda_no_51(runtime):
     celula = matriz.capability(runtime, "filesystem_s3_default")
     esperado = {"4.0": "EMRFS", "5.0": "EMRFS", "5.1": "S3A"}[runtime]
     assert celula["valor"] == esperado
+
+INDEX = ROOT / "knowledge" / "glue" / "lakeformation-index.md"
+
+
+class TestAsTransicoesDerivadas:
+    """`lakeformation-index.md` publica as transicoes entre versoes, e elas sao
+    DERIVADAS da matriz. Se a matriz mudar e o documento nao, o gate reprova.
+
+    O §29 do prompt de origem pede 16 documentos em `docs/aws/lakeformation/`.
+    Dez dos dezesseis ja tinham dono, e seis nao sao documento -- sao dado ou
+    codigo. O que faltava era navegacao, mais as tres transicoes.
+    """
+
+    def test_o_indice_existe(self):
+        assert INDEX.is_file()
+
+    def _mudancas(self, de: str, para: str) -> set[str]:
+        mudou = set()
+        for eixo in matriz.eixos():
+            a = matriz.capability(de, eixo["id"]) or {}
+            b = matriz.capability(para, eixo["id"]) or {}
+            if a.get("status") != b.get("status") or a.get("valor") != b.get("valor"):
+                mudou.add(eixo["titulo"])
+        return mudou
+
+    @pytest.mark.parametrize(("de", "para"), [("4.0", "5.0"), ("5.0", "5.1")])
+    def test_toda_celula_que_muda_aparece_na_transicao(self, de, para):
+        """A tabela do documento tem de citar TODO eixo que muda -- omitir um
+        faria a transicao parecer menor do que e."""
+        texto = INDEX.read_text(encoding="utf-8")
+        inicio = texto.index(f"### Glue {de} → {para}")
+        fim = texto.index("###", inicio + 10)
+        secao = texto[inicio:fim]
+        # `_normaliza` tira backtick e caixa: o markdown escreve
+        # ``FTA via `GlueContext`/DynamicFrame`` e o YAML escreve sem os
+        # backticks. Comparar cru faria o gate reprovar por MARCACAO -- e ele
+        # reprovou, na primeira versao deste teste, exatamente nos dois eixos que
+        # tem backtick no meio.
+        secao_normalizada = _normaliza(secao)
+        for titulo in self._mudancas(de, para):
+            # O documento usa rotulo curto em algumas linhas; casa pelo nucleo.
+            nucleo = _normaliza(titulo.split("(")[0])
+            assert nucleo in secao_normalizada, (de, para, titulo)
+
+    @pytest.mark.parametrize(("de", "para"), [("4.0", "5.0"), ("5.0", "5.1")])
+    def test_a_transicao_nao_inventa_eixo(self, de, para):
+        """O inverso: eixo que NAO muda nao deve aparecer como mudanca."""
+        texto = INDEX.read_text(encoding="utf-8")
+        inicio = texto.index(f"### Glue {de} → {para}")
+        fim = texto.index("###", inicio + 10)
+        linhas = [
+            linha
+            for linha in texto[inicio:fim].split(chr(10))
+            if linha.startswith("|") and "---" not in linha
+        ]
+        # Menos o cabecalho, cada linha e um eixo que mudou.
+        assert len(linhas) - 1 == len(self._mudancas(de, para)), (de, para)
+
+    def test_a_transicao_para_o_60_e_declarada_como_limite(self):
+        """Ela NAO existe na matriz, e o documento diz por que -- a pagina do 6.0
+        nao foi lida para este eixo. Preencher por analogia seria inventar."""
+        texto = INDEX.read_text(encoding="utf-8")
+        assert "5.1 → 6.0" in texto
+        assert "limite declarado" in texto.lower()
+        assert "runtime_fora_da_matriz" in texto
+        assert "6.0" not in matriz.known_runtimes()
+
+    def test_os_dezesseis_pedidos_estao_todos_no_indice(self):
+        """Pedido sem linha no indice e pedido que ninguem responde."""
+        texto = INDEX.read_text(encoding="utf-8")
+        pedidos = [
+            "overview", "fgac", "fta", "cross-account", "resource-links",
+            "credential-vending", "iam", "s3", "kms", "iceberg", "parquet",
+            "glue-4-to-5", "glue-5-to-5.1", "glue-5.1-to-6", "troubleshooting",
+            "compatibility-matrix",
+        ]
+        assert len(pedidos) == 16
+        for pedido in pedidos:
+            assert f"`{pedido}`" in texto, pedido
+
+    def test_as_duas_pernas_sem_coletor_estao_nomeadas(self):
+        """O indice nao esconde o que nao tem produtor."""
+        texto = INDEX.read_text(encoding="utf-8")
+        assert "resource link" in texto.lower()
+        assert "key policy" in texto.lower()
+        assert "unresolved" in texto

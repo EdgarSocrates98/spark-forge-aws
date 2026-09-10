@@ -36,6 +36,10 @@ area: SF-IAM
 rules:
   - id: SF-IAM-001
     category: authorization
+    governance_decision_required: true
+    security_impact: radius_beyond_job
+    security_impact_reason: >-
+      Alargar permissions boundary muda o teto de TODO principal que a usa, e nao so deste job.
     title: >-
       Ação negada pelo permissions boundary do role -- alargar a policy dele não
       resolve
@@ -137,6 +141,10 @@ rules:
 
   - id: SF-IAM-002
     category: authorization
+    governance_decision_required: true
+    security_impact: radius_beyond_job
+    security_impact_reason: >-
+      Service control policy e da ORGANIZACAO: o raio e de todas as contas sob a OU.
     title: >-
       Ação negada por service control policy da organização -- a decisão é acima
       do role
@@ -226,6 +234,10 @@ rules:
 
   - id: SF-IAM-003
     category: authorization
+    governance_decision_required: true
+    security_impact: widens_scope
+    security_impact_reason: >-
+      Remover ou recortar um `Deny` explicito alarga o que o principal alcanca.
     title: >-
       Ação negada por `Deny` explícito -- acrescentar `Allow` não vence
     requires_facts: [iam.access_decision]
