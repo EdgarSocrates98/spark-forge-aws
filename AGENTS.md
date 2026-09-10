@@ -153,7 +153,7 @@ Read PROMPT_INICIAL_MESTRE.md and use the glue-incremental-performance-architect
 
 ## Economy: measure before claiming a saving
 
-**70 tools, 31 with `detail_level`** (`summary`, `normal`, `full`). Rule 28 of
+**77 tools, 34 with `detail_level`** (recounted 2026-09-09) (`summary`, `normal`, `full`). Rule 28 of
 `CLAUDE.md` applies to all three: *read the number before claiming `detail_level`
 reduces anything*. `sparkforge_economy_report` returns `detail_level_effect` with
 the bytes of each level requested — it shows both sides and does not conclude for
@@ -203,10 +203,10 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Thirty extractors, all offline — they read artifacts already on disk and never
-call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit **187** distinct fact kinds. The catalogue that judges them has **147**
-rules (**112** executable), and the MCP surface is **70** tools. Count areas with
+Thirty-six extractors, all offline — they read artifacts already on disk and
+never call AWS. Each has a CLI verb and an MCP tool with the same name, and
+together they emit **210** distinct fact kinds. The catalogue that judges them
+has **179** rules (**144** executable), and the MCP surface is **77** tools. Count areas with
 `area_of`, never by summing a hand-written list — `rules/catalog/README.md` says
 why. The live figures live in the *Números correntes* table of
 `docs/superpowers/STATUS.md`, and `scripts/check_status_numbers.py --strict`
@@ -589,6 +589,54 @@ compatible superset of it, with the same fields (`title`, `severity`,
 See `AGENT_PROTOCOL.md` for the operating rules every skill and agent are
 injected with, and `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md`
 for the full Fact/Finding contract.
+
+## Access governance: the four artifacts that answer "who may do what"
+
+None of the artifacts above answers why a read succeeds and a write fails. That
+question has four collectors of its own, and the order matters because each one
+answers a half the previous left open.
+
+```bash
+sparkforge analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+sparkforge collect lakeformation --repo . --database <db> --table <t>     --catalog-id <catalog-owning-account> --resource-arn <s3-location> --now <ISO8601>
+sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/
+sparkforge collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <target-arn> --action s3:PutObject --now <ISO8601>
+sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/
+```
+
+**Simulate, never parse.** `collect iam-access` calls
+`iam:SimulatePrincipalPolicy` and stores the AWS answer. Reading the role's
+policy document instead fails in the four cases that matter, and the four share
+one property — **none of them appears in that document**: a permissions boundary
+caps what the policy grants; a service control policy denies above the role; an
+explicit `Deny` in any attached policy beats every `Allow`; and a `Condition`
+depends on request context a parser does not have.
+
+**`EvalDecision` has four answers and the three denials need different fixes.**
+`attrs.denied_by` names the layer — `implicit_deny` (adding the permission
+fixes it), `explicit_deny` (adding does **not** fix it), `permissions_boundary`
+(editing the role's policy changes nothing), `service_control_policy` (the
+decision is the organisation's). Collapsing the four into a boolean makes "add
+the permission" the single advice, and it is **wrong in three of the four
+cases**.
+
+**Three choices that decide the quality of the answer:**
+
+- `--catalog-id` is mandatory cross-account: the same `db.table` exists in
+  different accounts, and without it the two collections overwrite each other in
+  the manifest;
+- `--resource-arn` on `iam-access` changes the question — without it AWS answers
+  about `*`, and `allowed` over `*` is **not** `allowed` on that resource.
+  `scoped_to_resource` on the fact says which question was asked;
+- `--action` should be the action that actually failed. The default list has 14;
+  passing all of them for a single write produces ten decisions that say nothing
+  about the case.
+
+**What these four do NOT cover, declared on every artifact:** S3 bucket policy,
+KMS key policy and Glue resource policy are a **separate** evaluation — an
+`allowed` here with a bucket policy denying still fails.
+`iam.access.unresolved` publishes that limit always, including when everything
+answered `ok`.
 
 ## Output compression — caveman mode
 

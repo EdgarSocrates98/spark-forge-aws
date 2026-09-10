@@ -1,0 +1,127 @@
+[
+  {
+    "rule_id": "SF-ERR-022",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "A exceção que nomeia o próprio conserto -- e aceitá-lo adia a migração",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_ue1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ue1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-012"
+    },
+    "evidence": [
+      "f_047e79",
+      "f_853020"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "`SparkUpgradeException` é incomum: **ela diz ao leitor o que configurar**. O runtime novo mudou um comportamento, e a mensagem nomeia a propriedade legada que restaura o antigo.\n\n**Aceitar a sugestão é uma decisão, e não o conserto óbvio.** A propriedade preserva o comportamento antigo por tempo indeterminado; a próxima atualização encontra o mesmo problema mais uma dívida. A alternativa — reescrever o dado sob o comportamento novo — é mudança de **dado**, e exige comparação valor a valor.\n\nO job já declara configuração legada, e é isso que o companheiro `mig.legacy_conf` traz: um job que carrega uma que o runtime novo removeu falha por motivo diferente de um que não carrega nenhuma.",
+    "proposed_change": [
+      "Ler qual propriedade legada a mensagem nomeia -- nesta exceção, o nome é o diagnóstico.",
+      "Ler as configurações legadas que o job já declara, e conferir se alguma foi removida ou renomeada no runtime novo.",
+      "Decidir entre preservar e migrar, e **registrar a decisão**. Preservar sem registro é o que transforma esta exceção em dívida permanente.",
+      "Se a decisão for migrar, tratar como mudança de dado: reescrever e comparar valor a valor sobre a chave de negócio declarada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Configurar a propriedade e seguir sem registrar preserva o comportamento antigo indefinidamente. A próxima atualização encontra o mesmo problema e mais uma dívida.",
+      "Reescrever o dado para satisfazer a leitura, sem comparar antes e depois, troca uma falha visível por uma diferença silenciosa.",
+      "A regra afirma que a exceção aconteceu num job que declara configuração legada. Ela **não** diz qual comportamento mudou -- a mensagem diz, e ela não entra em fact nenhum."
+    ],
+    "tradeoffs": [
+      "Preservar o comportamento antigo é barato agora e caro depois. Migrar é caro agora, exige comparação de valor, e fecha o assunto."
+    ],
+    "validation": [
+      "Se a correção tocou o dado: comparação **valor a valor** sobre a chave de negócio declarada. Contagem igual com valor diferente é exatamente o modo de falha desta classe.",
+      "Se a correção foi de configuração: a mesma query nos dois runtimes, devolvendo o mesmo resultado."
+    ],
+    "rollback": [
+      "Remover a configuração, ou restaurar o dado anterior à reescrita. O segundo é rollback de dado e precisa dos consumidores inventariados antes."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-migration-guide.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/upgrade_exception.json`. A pagina publica as propriedades de rebase de data e a mudanca de default de ANSI, que sao as duas familias que produzem esta excecao.\n"
+      }
+    ],
+    "action": {
+      "kind": "version.run_migration_assessment",
+      "target": "job.configuration.legacy_flag",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-PY-012",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "spark.conf.set em runtime conflitando com default arguments",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 0,
+      "end_line": 5,
+      "symbol": "",
+      "snippet": "spark.conf.set(\"spark.sql.legacy.timeParserPolicy\", \"LEGACY\")"
+    },
+    "evidence": [
+      "f_299fb5"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "spark.conf.set em runtime tem precedência sobre os default arguments definidos no Terraform ou na job definition, e sobrescreve silenciosamente. É a causa mais comum de \"mudei a configuração no IaC e nada aconteceu\". Além disso, algumas configurações não têm efeito nenhum após a sessão iniciar, e defini-las assim dá a falsa impressão de que foram aplicadas. Ver knowledge/spark/config-reference.md secao 6 para a ordem completa de precedência e a lista de configs imutáveis.",
+    "proposed_change": [
+      "Comparar cada chave definida no código com os default arguments do IaC e resolver a divergência num único lugar.",
+      "Mover configuração de infraestrutura para os default arguments; deixar no código apenas o que precisa variar por execução.",
+      "Confirmar o valor efetivo na aba Environment do Spark UI."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover a chamada no código pode desativar uma configuração que só existia ali."
+    ],
+    "tradeoffs": [
+      "Configuração no IaC é auditável e versionada; no código é mais flexível por run."
+    ],
+    "validation": [
+      "Valor efetivo de cada chave conferido na aba Environment antes e depois.",
+      "Runtime e DPU-hours antes e depois, para confirmar que a configuração tinha efeito real."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "A ordem de precedência deve ser verificada na aba Environment do runtime em uso, não assumida."
+      }
+    ],
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "pyspark.conf_set",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

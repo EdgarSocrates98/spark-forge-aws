@@ -342,3 +342,924 @@ rules:
         configuração.
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-08-22}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-003 -- entrou em 2026-09-09, junto com `sparkforge/facts/lakeformation.py`.
+  #
+  # POR QUE ELA PRECISOU DE UM EXTRATOR, e SF-LF-001/002 nao precisaram:
+  # aquelas duas perguntam por uma chave EXATA (`--extra-jars`,
+  # `command { name }`), e `where` compara igualdade. Esta pergunta "o catalogo
+  # Iceberg deste job e o session catalog?", e o nome do catalogo esta DENTRO da
+  # chave (`spark.sql.catalog.<nome>`). `sparkforge/rules/expr.py::_CMP_OPS` tem
+  # seis comparadores e nenhuma funcao -- sem `startswith`, sem `in`. O predicado
+  # foi derivado num fact (`attrs.is_session_catalog`), que e onde predicado mora
+  # neste motor.
+  #
+  # NAO usa `same_subject`, e a razao e medida: o subject de `tf.spark_conf` e
+  # `<recurso>#<chave>` (`facts/terraform.py`), enquanto o do argumento de job e
+  # `<recurso>`. Os dois nunca cairiam no mesmo grupo, e o falso positivo que
+  # isso abre -- dois `aws_glue_job` no mesmo arquivo, um com FGAC e outro com
+  # catalogo nomeado -- esta declarado em `risks`.
+  - id: SF-LF-003
+    category: lakeformation-fgac
+    title: >-
+      Catálogo Iceberg de nome arbitrário sob controle de acesso fino do Lake
+      Formation
+    requires_facts: [lakeformation.access_model, lakeformation.iceberg_catalog]
+    when:
+      all:
+        - fact: lakeformation.access_model
+          where:
+            attrs.fgac_enabled: true
+        - fact: lakeformation.iceberg_catalog
+          where:
+            attrs.is_session_catalog: false
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A documentação da AWS declara, entre as limitações de Iceberg sob controle
+      de acesso fino do Lake Formation: *"You can only use Apache Iceberg with
+      session catalog and not arbitrarily named catalogs."* O session catalog do
+      Spark é `spark_catalog`, e a configuração que a própria AWS publica para
+      rodar Iceberg sob FGAC declara
+      `spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog`.
+      Este job declara FGAC e um catálogo de outro nome.
+
+
+      **É a configuração mais comum de todas, e é por isso que a regra existe.**
+      `spark.sql.catalog.glue_catalog` é o padrão que a documentação de Glue 4.0
+      ensinava e que quase todo job carregou para o 5.x. Ele continua correto
+      fora de FGAC, e continua correto sob Full Table Access -- a própria AWS
+      publica exemplo de FTA com `glue_catalog`. O que a documentação recorta é a
+      combinação com FGAC, e só ela.
+
+
+      **Isto explica a classe de sintoma em que trocar a API de escrita não muda
+      nada.** `writeTo`, `insertInto` e `INSERT INTO` resolvem o alvo pelo mesmo
+      catálogo; se o catálogo está fora do recorte suportado, as três falham
+      juntas, e a variável que muda o resultado não é a API. Ver
+      `knowledge/glue/lakeformation-fgac.md` §4.
+    proposed_change:
+      - >-
+        Mover a configuração do catálogo para o session catalog:
+        `spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog`,
+        com `warehouse`, `client.region`, `glue.account-id` e `glue.endpoint` no
+        mesmo prefixo, que é a forma publicada pela AWS.
+      - >-
+        Conferir que a configuração é aplicada ANTES de a sessão existir. A
+        documentação declara que aplicá-la depois, por
+        `SparkSession.builder().conf(...)`, não basta, e que isso mudou em
+        relação ao Glue 4.0 -- job migrado que faz `spark.conf.set(...)` no meio
+        do script cai exatamente nessa mudança.
+      - >-
+        Reescrever as referências de tabela que citam o catálogo pelo nome
+        antigo. `glue_catalog.db.tabela` deixa de resolver quando o catálogo
+        passa a ser o de sessão, e isso é mudança de código, não de argumento.
+      - >-
+        Se o job precisa de catálogo nomeado por outra razão, a decisão passa a
+        ser de MODELO de acesso, não de configuração: Full Table Access aceita
+        catálogo de nome arbitrário, e o que muda junto está na §5 do documento
+        de conhecimento.
+    action:
+      kind: config.replace_property_key
+      target: spark.sql.catalog.name
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        A regra correlaciona o argumento de job com a configuração de catálogo
+        SEM `same_subject`, porque os dois facts têm formas de subject
+        diferentes. Num arquivo com dois `aws_glue_job` -- um com FGAC e outro
+        com catálogo nomeado -- ela acusa uma combinação que nenhum dos dois tem.
+        Conferir, no achado, que o recurso do argumento e o do `--conf` são o
+        mesmo antes de agir.
+      - >-
+        Trocar o nome do catálogo muda como toda referência de tabela resolve.
+        Uma referência não atualizada deixa de encontrar a tabela, e o erro que
+        sai disso -- tabela não encontrada -- não se parece com o problema
+        original.
+      - >-
+        A documentação declara a restrição de session catalog sem dizer o que
+        acontece quando ela é violada. O achado é `structural`: ele afirma que a
+        configuração está fora do recorte suportado, nunca que a falha observada
+        veio dela.
+    tradeoffs:
+      - >-
+        O session catalog é único por sessão. Um job que hoje lê de dois
+        catálogos nomeados diferentes não tem tradução direta, e a alternativa
+        passa a ser separar em dois jobs -- que é a mesma saída que a
+        incompatibilidade entre FGAC e FTA impõe.
+    validation:
+      - >-
+        Contagem de linhas e agregado por chave no destino, antes e depois, sobre
+        o MESMO recorte de entrada -- trocar o catálogo troca o caminho de
+        resolução da tabela, e é o resultado escrito que prova que ele resolveu
+        para o mesmo lugar.
+      - >-
+        Schema da tabela alvo comparado antes e depois, porque catálogo que
+        resolve para outro lugar produz tabela que não é a mesma.
+      - >-
+        A configuração efetiva do run seguinte, lida do event log
+        (`spark.conf_effective`), e não a declarada no Terraform: a diferença
+        entre as duas é exatamente o modo de falha que a documentação nomeia ao
+        dizer que aplicar depois não basta.
+    rollback:
+      - >-
+        Restaurar as chaves `spark.sql.catalog.*` anteriores e as referências de
+        tabela no código, juntas. Reverter só a configuração deixa o código
+        citando um catálogo que não existe mais.
+      - >-
+        Se alguma escrita chegou a acontecer sob a configuração nova, o rollback
+        é de dado e não de configuração -- o destino precisa ser comparado antes
+        de a versão anterior ser descartada.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-004 -- a armadilha de FILESYSTEM, e ela e de versao, nao de permissao.
+  #
+  # `runtime_scope` e `>=5.1` e nao `>=5.0` porque a fronteira e o breaking
+  # change de conector S3: ate o Glue 5.0 o default era EMRFS, e a chave
+  # `fs.s3.credentialsResolverClass` valia. No 5.1 o default virou S3A, e a
+  # mesma configuracao passou a nao fazer nada -- sem erro, sem aviso.
+  - id: SF-LF-004
+    category: lakeformation-fta
+    title: >-
+      Resolver de credencial do Lake Formation declarado sem restaurar o EMRFS
+      no Glue 5.1
+    requires_facts: [lakeformation.filesystem]
+    when:
+      all:
+        - fact: lakeformation.filesystem
+          where:
+            attrs.lf_credentials_resolver_declared: true
+            attrs.emrfs_restored: false
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.1"}
+    explanation: >
+      `spark.hadoop.fs.s3.credentialsResolverClass` é a chave com que o Full
+      Table Access manda o filesystem pedir credencial ao Lake Formation para
+      tabela registrada. Ela é chave **do EMRFS**. A documentação de Full Table
+      Access declara: *"Full Table Access works exclusively with EMR Filesystem
+      (EMRFS). S3A filesystem is not compatible."*
+
+
+      A página de migração para o Glue 5.1 declara, entre as breaking changes:
+      *"S3A filesystem has replaced EMRFS as the default S3 connector."*
+
+
+      As duas juntas dizem que, num Glue 5.1 de configuração default, esta chave
+      **não tem efeito**. E o modo de falha é o pior que existe: ela não produz
+      erro de configuração desconhecida, não aparece em log, e o job continua
+      rodando. A credencial do Lake Formation nunca é pedida, o acesso ao S3 cai
+      no runtime role, e o `AccessDenied` que sai disso parece problema de Lake
+      Formation quando é de filesystem. Ver
+      `knowledge/glue/lakeformation-fgac.md` §5.
+    proposed_change:
+      - >-
+        Restaurar o EMRFS declarando as três chaves juntas, que é a forma que a
+        AWS publica: `spark.hadoop.fs.s3.impl` e `spark.hadoop.fs.s3n.impl` com
+        `com.amazon.ws.emr.hadoop.fs.EmrFileSystem`, e
+        `spark.hadoop.fs.AbstractFileSystem.s3.impl` com
+        `org.apache.hadoop.fs.s3.EMRFSDelegate`.
+      - >-
+        Ou remover o resolver, se o job **não** usa Full Table Access. A chave
+        sozinha não liga nada, e mantê-la declarada faz o próximo leitor
+        acreditar que o caminho de credencial do Lake Formation está ativo.
+      - >-
+        Se o job permanecer em S3A, declarar `spark.hadoop.fs.s3a.endpoint.region`.
+        A mesma página de migração registra que, sem ele e sem
+        `spark.hadoop.fs.s3a.endpoint`, o S3A assume `us-east-2` -- e isso já
+        produziu timeout de upload em job de VPC.
+    action:
+      kind: config.satisfy_property_precondition
+      target: job.configuration.s3_filesystem
+      direction: add
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Voltar para o EMRFS reverte um default de plataforma, e o que mais mudou
+        junto com ele no Glue 5.1 não está inventariado por esta regra. Um job
+        que já tenha configuração específica de S3A passa a não usá-la.
+      - >-
+        A regra lê a configuração DECLARADA. Um job que restaure o EMRFS por
+        outro caminho -- conexão, script de bootstrap, argumento fora do
+        Terraform -- é acusado sem estar errado, e a evidência do achado é o que
+        permite ver isso.
+      - >-
+        A regra não afirma que o job usa Full Table Access. Ela afirma que uma
+        chave de FTA foi declarada e a pré-condição de filesystem dela não. Se o
+        job não usa FTA, a saída correta é remover a chave, não restaurar o
+        EMRFS.
+    tradeoffs:
+      - >-
+        Full Table Access exige EMRFS, e o Glue 5.1 caminha para S3A. Manter FTA
+        significa manter uma configuração contra o default da plataforma, e essa
+        distância tende a crescer a cada versão.
+    validation:
+      - >-
+        Uma escrita de controle em tabela REGISTRADA no Lake Formation, com o
+        runtime role SEM permissão S3 direta no destino: sob o caminho correto
+        ela funciona pela credencial do Lake Formation, e sob o caminho quebrado
+        ela falha. É o único teste que distingue os dois, porque um role com
+        permissão S3 ampla passa nos dois casos.
+      - >-
+        Contagem de linhas no destino antes e depois, sobre o mesmo recorte de
+        entrada.
+      - >-
+        A configuração efetiva do run, lida do event log, e não a declarada.
+    rollback:
+      - >-
+        Remover as três chaves de EMRFS e reaplicar. É rollback de configuração,
+        não de dado.
+      - >-
+        Se alguma escrita aconteceu sob o caminho novo, o destino precisa ser
+        comparado antes de a configuração anterior ser restaurada.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-005 e SF-LF-006 -- as duas que ja eram escreviveis quando o extrator
+  # entrou, e nao foram escritas. Nenhuma das duas precisou de fact novo.
+  #
+  # A de `both` le UMA condicao so, e isso e desenho: quem decidiu que FGAC mais
+  # marcador de FTA e um estado proprio foi o extrator (`model: "both"`), nao o
+  # `when`. O DSL nao tem grupo aninhado -- `all` com um `any` dentro nao existe
+  # --, e escrever "FGAC E (resolver OU chave de catalogo)" aqui seria impossivel.
+  # Derivar o predicado foi o que tornou a regra de uma linha.
+  - id: SF-LF-005
+    category: lakeformation-fgac
+    title: >-
+      Controle de acesso fino e Full Table Access declarados no mesmo job
+    requires_facts: [lakeformation.access_model]
+    when:
+      all:
+        - fact: lakeformation.access_model
+          where:
+            attrs.model: "both"
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A AWS declara: *"Only one AWS Lake Formation permission method can be
+      enabled for a given AWS Glue job. A job cannot simultaneously run Full
+      Table Access (FTA) and Fine-Grained Access Control (FGAC) at the same
+      time."* Este job declara os dois.
+
+
+      **A diferença entre eles não é granularidade — é quem vende a
+      credencial.** Sob controle de acesso fino a leitura passa pelo Lake
+      Formation e a **escrita usa IAM do runtime role**. Sob Full Table Access a
+      credencial do Lake Formation lê e escreve o S3 das tabelas **registradas**,
+      e o runtime role lê e escreve tudo o que não está registrado. Declarar os
+      dois não soma os dois comportamentos: pede uma combinação que a plataforma
+      não oferece.
+
+
+      `attrs.fta_markers` no fact traz a chave que ativou o lado FTA, e é ela
+      que decide qual dos dois foi declarado por engano. As duas que contam são
+      `spark.hadoop.fs.s3.credentialsResolverClass` com o resolver do Lake
+      Formation, e `spark.sql.catalog.<nome>.glue.lakeformation-enabled = true`.
+      Ver `knowledge/glue/lakeformation-fgac.md` §5.
+    proposed_change:
+      - >-
+        Decidir qual modelo o job usa, e a pergunta que decide é sobre o DADO,
+        não sobre o job: se a tabela tem regra de linha, coluna ou célula no Lake
+        Formation, o caminho é FGAC — sob Full Table Access, job que referencia
+        tabela com regra de FGAC **falha**.
+      - >-
+        Para ficar com FGAC — remover as chaves de credencial do Lake Formation
+        do `--conf`. Elas não ligam nada sob FGAC, e mantê-las declaradas faz o
+        próximo leitor acreditar que o caminho de credencial está ativo.
+      - >-
+        Para ficar com FTA — remover
+        `--enable-lakeformation-fine-grained-access`, e então valem os requisitos
+        próprios de FTA: `ALL` no Lake Formation para escrever (não `SELECT`),
+        `lakeformation:GetDataAccess` no IAM, o passo de conta de *application
+        integration*, e EMRFS restaurado quando o runtime for Glue 5.1.
+      - >-
+        Quando a leitura precisa de FGAC e a escrita precisa de credencial do
+        Lake Formation, **um job só não resolve** — a saída é separar em dois, e
+        essa é decisão de desenho, não de configuração.
+    action:
+      kind: config.remove_property
+      target: glue.lakeformation.access_model
+      direction: remove
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Escolher o modelo errado muda o que o job enxerga. Sair de FGAC para FTA
+        remove os controles de linha, coluna e célula; sair de FTA para FGAC
+        muda quem escreve o S3. Nos dois sentidos é mudança de postura de
+        segurança, e precisa de dono declarado.
+      - >-
+        A regra lê o que está DECLARADO no artefato. Um job que ligue o lado FTA
+        por outro caminho — conexão, script de bootstrap, argumento fora do
+        Terraform — não é visto, e a ausência de achado não prova ausência da
+        combinação.
+      - >-
+        A regra **não** afirma qual dos dois foi o engano. `attrs.fta_markers`
+        mostra a evidência do lado FTA, e a decisão de qual fica é de quem
+        responde pela governança do dado.
+    tradeoffs:
+      - >-
+        FTA tem menos overhead — dispensa o system driver e os system executors
+        — e menos granularidade. FGAC dá controle de linha, coluna e célula e
+        custa dois drivers mais a reserva de user executors. Não há terceira
+        opção.
+    validation:
+      - >-
+        Contagem de linhas e conjunto de colunas do resultado, antes e depois: os
+        dois modelos filtram coisas diferentes, e trocar de modelo pode mudar o
+        que a leitura devolve sem que nada acuse.
+      - >-
+        A configuração efetiva do run seguinte, lida do event log
+        (`spark.conf_effective`), e não a declarada no Terraform.
+      - >-
+        Se o job passou a usar FTA — uma leitura de controle sobre tabela
+        REGISTRADA, com o runtime role sem permissão S3 direta no caminho: é o
+        único teste que prova que a credencial do Lake Formation está sendo
+        usada.
+    rollback:
+      - >-
+        Restaurar as chaves removidas devolve o job ao estado não suportado. Só
+        é rollback válido junto de uma decisão sobre qual modelo fica.
+      - >-
+        Se alguma escrita aconteceu sob o modelo novo, o rollback é de dado e não
+        de configuração — o destino precisa ser comparado antes.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+
+  # SF-LF-006 usa `same_subject: true`, e aqui ele FUNCIONA -- ao contrario de
+  # SF-LF-003, onde nao funcionava. A diferenca e medida: `lakeformation.access_model`
+  # herda o subject do `tf.attribute` que declara a flag, cujo `symbol` e o
+  # RECURSO (`aws_glue_job.x`), e `number_of_workers` e outro `tf.attribute` do
+  # mesmo recurso, com o mesmo symbol. Ja `tf.spark_conf` tem symbol
+  # `<recurso>#<chave>`, e e por isso que a regra do catalogo nao pode agrupar.
+  - id: SF-LF-006
+    category: lakeformation-fgac
+    title: >-
+      Job com controle de acesso fino abaixo do mínimo de quatro workers
+    requires_facts: [lakeformation.access_model, tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: lakeformation.access_model
+          where:
+            attrs.fgac_enabled: true
+        - fact: tf.attribute
+          where:
+            attrs.key: number_of_workers
+            attrs.block: root
+          expr: 'measures.value < 4'
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A AWS declara: *"Jobs with FGAC require a minimum of 4 workers: one user
+      driver, one system driver, one system executor, and one standby user
+      executor."* É o dobro do mínimo de 2 de um job Glue comum, e não é
+      recomendação de dimensionamento: é o piso da alocação que o modelo exige.
+
+
+      **Sob controle de acesso fino o job deixa de ter um driver e N
+      executores.** A alocação passa a ter quatro papéis, e dois deles são
+      drivers. Um job declarado com menos de quatro workers não tem como
+      preencher os quatro papéis, e o que acontece com ele não é escolha de quem
+      escreveu o Terraform.
+
+
+      Este é um achado que se lê **antes de qualquer execução** — está no
+      Terraform, e a severidade é P0 pela mesma razão de `SF-LF-001` e
+      `SF-LF-002`: não é risco de degradação, é configuração que a documentação
+      declara insuficiente. Ver `knowledge/glue/lakeformation-fgac.md` §1 e §3.
+    proposed_change:
+      - >-
+        Subir `number_of_workers` para no mínimo 4. Este é um dos raros casos em
+        que o número vem da documentação da AWS e não de medição — é piso
+        declarado, não alvo de tuning.
+      - >-
+        Reler o dimensionamento inteiro depois de subir, e não só o mínimo. Sob
+        controle de acesso fino, de N workers pagos dois são drivers e uma
+        fração é reservada para user executors, então **a contagem de workers
+        deixa de ser comparável com a do mesmo job sem FGAC**. Comparar runtime
+        antes e depois de ligar FGAC sem levar isso em conta atribui ao controle
+        de acesso uma lentidão que é, em parte, capacidade que mudou de papel.
+      - >-
+        A proporção reservada para user executors é ajustável por
+        `--conf spark.dynamicAllocation.maxExecutorsRatio`, e mexer nela é
+        decisão separada — o mínimo de quatro vale de qualquer forma.
+    action:
+      kind: capacity.investigate_sizing
+      target: glue.number_of_workers
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Subir o número de workers sobe o custo do run, e este achado **não**
+        estima quanto: `dpu_seconds` do run que não aconteceu não existe. O que
+        ele afirma é que abaixo de quatro a configuração está fora do que a AWS
+        declara suportado.
+      - >-
+        Quatro é o PISO, não o dimensionamento. Um job que precisava de dez
+        workers sem FGAC não passa a caber em quatro por ter subido para o
+        mínimo.
+      - >-
+        A regra lê `number_of_workers` do Terraform. Um job que declare
+        `max_capacity` em vez de `number_of_workers`, ou que receba a contagem
+        por variável interpolada, não é visto — valor interpolado vira
+        `tf.unresolved`, e a regra fica calada.
+    tradeoffs:
+      - >-
+        Controle de acesso fino custa capacidade em papéis que não rodam
+        trabalho do usuário. Quando o dado não precisa de controle de linha,
+        coluna ou célula, Full Table Access dispensa o system driver e os system
+        executors — mas os dois modelos não coexistem no mesmo job.
+    validation:
+      - >-
+        O job completa a execução no runtime alvo. Submissão bem-sucedida não é
+        validação: a alocação dos quatro papéis acontece na execução.
+      - >-
+        Contagem de linhas na saída, antes e depois, sobre o mesmo recorte de
+        entrada — mudança de capacidade não deve mover o resultado, e provar que
+        não moveu é parte da entrega.
+      - >-
+        Nenhum eixo de dado é exigido além do acima, porque a mudança é de
+        capacidade e não de conteúdo. Declarar isso é parte da validação.
+    rollback:
+      - >-
+        Restaurar `number_of_workers` e reaplicar. É rollback de configuração,
+        não de dado.
+      - >-
+        Rollback que devolva o job para menos de quatro workers o devolve ao
+        estado que a AWS declara insuficiente.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-007 e SF-LF-008 -- as duas primeiras regras da area que consomem
+  # PERMISSAO COLETADA, e nao configuracao declarada.
+  #
+  # Ate aqui toda regra `SF-LF` lia o que o job PEDE (argumento, conf, worker).
+  # Estas duas leem o que a AWS RESPONDEU sobre a tabela e sobre a conta, e e
+  # essa a diferenca que `collect lakeformation` abriu.
+  - id: SF-LF-007
+    category: lakeformation-fta
+    title: >-
+      Full Table Access configurado no job, e a conta não permite acesso por
+      query engine de terceiro
+    requires_facts: [lakeformation.filesystem, lakeformation.data_lake_settings]
+    when:
+      all:
+        - fact: lakeformation.filesystem
+          where:
+            attrs.lf_credentials_resolver_declared: true
+        - fact: lakeformation.data_lake_settings
+          where:
+            attrs.allow_full_table_external_data_access: false
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      O job pede que o acesso ao S3 use a credencial que o Lake Formation vende,
+      e a conta **não permite** que ela seja vendida para query engine de
+      terceiro. `AllowFullTableExternalDataAccess` está desligado.
+
+
+      **Este é o passo 1 do procedimento da AWS, e ele precede qualquer
+      concessão.** A documentação de Full Table Access o descreve como
+      *"allow third-party query engines to access data without the IAM session
+      tag validation"*, e é configuração de **conta** — nenhum artefato do job
+      revela o estado dele, e nenhuma permissão concedida na tabela o compensa.
+
+
+      **É por isso que este achado é `confirmed` e P0:** não é risco nem
+      configuração discutível. As duas metades foram medidas — o job pediu, a
+      conta recusa — e a operação não vai acontecer enquanto as duas
+      continuarem assim.
+
+
+      Ver `knowledge/glue/lakeformation-fgac.md` §5.
+    proposed_change:
+      - >-
+        Habilitar a integração de aplicação para full table access na conta que
+        detém o catálogo, seguindo o passo 1 da documentação da AWS. É decisão
+        de plataforma, não de job.
+      - >-
+        Ou remover a configuração de Full Table Access do job, se o modelo
+        pretendido era outro. As chaves de credencial do Lake Formation não
+        ligam nada sem o passo de conta, e mantê-las declaradas faz o próximo
+        leitor acreditar que o caminho está ativo.
+      - >-
+        Conferir, antes de qualquer uma das duas, se as tabelas que o job lê
+        têm regra de linha, coluna ou célula: com regra de FGAC, o caminho é
+        FGAC e não FTA, e sob FTA um job que referencia tabela com regra de
+        FGAC **falha**.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.account_integration
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Habilitar a integração de conta muda o que **toda** a conta permite, não
+        só este job: ela é o que autoriza query engine de terceiro a receber
+        credencial do Lake Formation. É decisão de governança, e precisa de dono
+        declarado.
+      - >-
+        A regra afirma que o job PEDIU e a conta RECUSA. Ela **não** afirma que
+        habilitar a integração faz a operação passar — grant, policy de IAM e
+        filesystem continuam sendo condições próprias, e cada uma tem regra
+        própria nesta área.
+      - >-
+        O artefato de data lake settings é de uma conta. Num cenário
+        cross-account, é o settings da conta que detém o **catálogo** que
+        decide, e coletar o da conta errada produz um achado sobre a conta
+        errada.
+    tradeoffs:
+      - >-
+        A integração de conta afrouxa a validação de session tag do IAM para
+        engines de terceiro. É o preço de usar Full Table Access, e quem decide
+        pagá-lo é quem responde pela governança do dado.
+    validation:
+      - >-
+        Uma leitura de controle sobre tabela **registrada**, com o runtime role
+        SEM permissão S3 direta no caminho: é o único teste que prova que a
+        credencial do Lake Formation está sendo vendida, porque um role com
+        permissão ampla passa nos dois casos.
+      - >-
+        Contagem de linhas no destino antes e depois, sobre o mesmo recorte de
+        entrada.
+      - >-
+        O `data_lake_settings` recoletado, e não o lembrado: o passo de conta é
+        alterável por fora do job, e o que vale é a resposta de agora.
+    rollback:
+      - >-
+        Desabilitar a integração de conta reverte para toda a conta, e não só
+        para este job. Se outros engines passaram a depender dela no intervalo,
+        o rollback os quebra junto.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/full-table-credential-vending.html", retrieved: 2026-09-09}
+
+  # SF-LF-008 nao acusa FALHA -- acusa que o controle NAO CONTROLA. E por isso
+  # ela e P1 e nao P0: o job funciona, e e justamente esse o problema.
+  - id: SF-LF-008
+    category: lakeformation-governance
+    title: >-
+      Tabela concede permissão a `IAM_ALLOWED_PRINCIPALS` -- o controle do Lake
+      Formation não decide nada sobre ela
+    requires_facts: [lakeformation.grant]
+    when:
+      all:
+        - fact: lakeformation.grant
+          where:
+            attrs.is_iam_allowed_principals: true
+            attrs.has_all: true
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      `IAM_ALLOWED_PRINCIPALS` **não é um principal** no sentido dos outros: é o
+      modo de compatibilidade que o Lake Formation usa para dizer *"para esta
+      tabela, quem manda é o IAM"*. Uma tabela com `ALL` concedido a ele está
+      registrada no Lake Formation e **não é governada por ele** — qualquer
+      principal com permissão de IAM sobre o caminho S3 lê e escreve, e as
+      concessões finas que existam ao lado não recortam nada.
+
+
+      **Este achado não diz que algo falhou.** Diz o contrário: o job funciona, e
+      é exatamente isso que esconde o problema. Um inventário de permissões que
+      liste `SELECT` para o role e conclua "a tabela está governada" está errado
+      enquanto esta linha existir.
+
+
+      **É o falso positivo mais caro desta área quando lido ao contrário:** uma
+      regra que verificasse apenas *"existe `ALL` sobre a tabela"* concluiria
+      que a escrita está autorizada para o job — e `ALL` para
+      `IAM_ALLOWED_PRINCIPALS` não autoriza principal nenhum em particular. É
+      por isso que `lakeformation.grant` carrega `is_iam_allowed_principals`
+      separado da lista de permissões.
+    proposed_change:
+      - >-
+        Decidir se a tabela deve ser governada pelo Lake Formation. Se deve,
+        revogar `ALL` de `IAM_ALLOWED_PRINCIPALS` **depois** de conceder
+        explicitamente a cada principal que hoje depende dela — a ordem importa,
+        e invertê-la derruba consumidor em produção.
+      - >-
+        Inventariar quem lê a tabela hoje antes de revogar. O modo de
+        compatibilidade existe porque a permissão real está no IAM, e ela não
+        aparece no Lake Formation: revogar sem o inventário troca um problema de
+        governança por uma interrupção.
+      - >-
+        Se a tabela deve mesmo ficar sob IAM, registrar a decisão. Ela é
+        legítima — o que não é legítimo é acreditar que o Lake Formation a
+        governa enquanto esta linha existe.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.governance_mode
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Revogar `IAM_ALLOWED_PRINCIPALS` antes de conceder explicitamente a cada
+        consumidor derruba todos eles de uma vez, e o Lake Formation não tem o
+        inventário de quem dependia do modo de compatibilidade -- ele está no
+        IAM.
+      - >-
+        A regra lê o grant da tabela que foi coletada. Uma tabela sem
+        `collect lakeformation` não produz achado, e a ausência dele **não**
+        prova que a tabela está governada -- prova que ninguém perguntou.
+      - >-
+        `IAM_ALLOWED_PRINCIPALS` com permissão menor que `ALL` não é acusado por
+        esta regra. O recorte é deliberado: `ALL` é o estado que apaga a
+        governança inteira, e acusar `DESCRIBE` produziria ruído sobre um estado
+        que ainda recorta.
+    tradeoffs:
+      - >-
+        Governar pelo Lake Formation dá controle de linha, coluna e célula e
+        custa manter as concessões. Governar pelo IAM é mais grosso e mais
+        simples. Não há resposta certa fora do contexto do dado.
+    validation:
+      - >-
+        Depois de revogar: uma leitura com um principal que **não** recebeu
+        concessão explícita, confirmando que ela é recusada. Antes da revogação
+        essa leitura passa, e é essa diferença que prova que o controle passou a
+        controlar.
+      - >-
+        A lista de consumidores da tabela, comparada antes e depois: nenhum
+        deles pode ter perdido acesso sem ter sido concedido explicitamente.
+      - >-
+        Nenhum eixo de dado é exigido -- a mudança é de permissão e não de
+        conteúdo. Declarar isso é parte da validação.
+    rollback:
+      - >-
+        Reconceder `ALL` a `IAM_ALLOWED_PRINCIPALS` restaura o estado anterior e
+        **restaura o problema**. É rollback válido só como medida de emergência
+        enquanto o inventário de consumidores é refeito.
+    sources:
+      - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/upgrade-glue-lake-formation.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-009 e SF-LF-010 -- as duas que consomem `lakeformation.registered_location`,
+  # o unico kind dos coletores de permissao que nenhuma regra lia.
+  #
+  # As duas nascem da MESMA frase da AWS, lida de dois lados:
+  #
+  #   "If you registered a table location with Lake Formation, the data access
+  #    path goes through the Lake Formation stored credentials REGARDLESS of the
+  #    IAM permission for the AWS Glue job runtime role."
+  #
+  # `SF-LF-009` le o lado da ESCRITA sob FGAC, onde a frase colide com outra e o
+  # SparkForge nao escolhe lado. `SF-LF-010` le o lado do job que nao declarou
+  # modelo de acesso nenhum, onde a frase nao colide com nada e a consequencia e
+  # direta.
+  - id: SF-LF-009
+    category: lakeformation-fgac
+    title: >-
+      Escrita sob controle de acesso fino em tabela com localização REGISTRADA --
+      a documentação da AWS não fecha
+    requires_facts: [lakeformation.access_model, lakeformation.registered_location]
+    when:
+      all:
+        - fact: lakeformation.access_model
+          where:
+            attrs.fgac_enabled: true
+        - fact: lakeformation.registered_location
+          where:
+            attrs.registered: true
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      **Este achado não afirma um defeito. Ele afirma que a documentação da AWS
+      não fecha para esta combinação, e traz a evidência de que o caso está
+      nela.**
+
+
+      Quatro frases, todas da documentação atual:
+
+
+      1. a migração para o Glue 5.1 declara *"Support Spark-native FGAC writes
+         on AWS Lake Formation registered tables"*;
+      2. a tabela de operações da página de FGAC diz, para DDL e para DML
+         `INSERT`/`UPDATE`/`DELETE`: *"With IAM permissions only"*;
+      3. as considerações listam, entre o que **não** é suportado: *"Write with
+         Lake Formation granted permissions"*;
+      4. as mesmas considerações dizem que, para localização **registrada**, o
+         caminho de dado usa a credencial armazenada do Lake Formation
+         *"regardless of the IAM permission for the AWS Glue job runtime role"*.
+
+
+      **1, 2 e 3 fecham entre si:** a escrita passou a rodar no 5.1, e quem a
+      autoriza é o IAM do runtime role. **3 e 4 não fecham:** para localização
+      registrada o caminho do role não é usado (4), e o grant do Lake Formation
+      não autoriza escrita (3). A escrita fica sem caminho declarado.
+
+
+      **É a classe de sintoma em que trocar a API não muda nada.** `writeTo`,
+      `insertInto` e `INSERT INTO` atravessam o mesmo caminho de credencial, e
+      falham juntas quando é ele que não fecha.
+
+
+      Severidade P1 e não P0 porque **o SparkForge não sabe se a escrita falha**
+      — ele sabe que a combinação não tem resposta publicada. Ver
+      `knowledge/glue/lakeformation-fgac.md` §6.
+    proposed_change:
+      - >-
+        Confirmar primeiro que a escrita realmente falha, e com qual mensagem. A
+        combinação ser indefinida na documentação não é o mesmo que ela quebrar,
+        e agir antes de medir é o erro que este achado tenta evitar.
+      - >-
+        Saída 1 — o alvo **não** ser registrado no Lake Formation. Aí a escrita é
+        do runtime role, e o que resta conferir é `s3:PutObject`,
+        `s3:DeleteObject` e KMS, que `sparkforge collect iam-access` responde.
+      - >-
+        Saída 2 — trocar o job para **Full Table Access**. Aí quem escreve é a
+        credencial do Lake Formation, com `ALL` no grant, mais
+        `lakeformation:GetDataAccess` no IAM, mais o passo de conta, mais EMRFS
+        restaurado no Glue 5.1.
+      - >-
+        Saída 3 — **separar leitura e escrita em dois jobs**. FGAC e FTA não
+        coexistem no mesmo job, e quando a leitura precisa de FGAC e a escrita
+        precisa de credencial do Lake Formation, um job só não resolve.
+      - >-
+        Nenhuma das três é trocar a API de escrita, e as três são decisão de
+        desenho -- não de configuração.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.registered_write_path
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Desregistrar a localização (saída 1) muda o caminho de acesso de **todo**
+        consumidor daquela localização, e não só deste job. Exige inventário de
+        quem mais a lê.
+      - >-
+        Trocar para Full Table Access (saída 2) remove os controles de linha,
+        coluna e célula que o FGAC dava. É decisão de governança com dono.
+      - >-
+        A regra correlaciona o modelo de acesso declarado no job com o registro
+        da localização coletado do Lake Formation. Ela **não** verifica que a
+        tabela do registro é a mesma que o job escreve -- nada no case liga as
+        duas, e um case com várias tabelas produz o achado sobre a combinação, e
+        não sobre um par.
+    tradeoffs:
+      - >-
+        Registrar a localização é o que dá ao Lake Formation o controle do
+        caminho de dado. Desregistrá-la devolve o controle ao IAM, que é mais
+        grosso. As duas saídas trocam uma garantia por outra.
+    validation:
+      - >-
+        A mensagem exata da primeira operação de escrita que falha, coletada por
+        `sparkforge collect cloudwatch-logs`. Sem ela, o resto é hipótese.
+      - >-
+        Contagem de linhas e agregado por chave no destino, antes e depois da
+        saída escolhida -- as três mudam o caminho de escrita, e caminho
+        diferente pode escrever em outro lugar.
+      - >-
+        Se a saída foi desregistrar: uma leitura de controle com um principal que
+        dependia da credencial do Lake Formation, confirmando o que ele passou a
+        enxergar.
+    rollback:
+      - >-
+        Registrar de volta a localização, ou restaurar o modelo de acesso
+        anterior. Se houve escrita no intervalo, o rollback é de dado: o destino
+        precisa ser comparado antes de a configuração anterior voltar.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
+
+  # SF-LF-010 usa `absent:`, e e a UNICA da area que usa. O motivo: ela afirma
+  # sobre o que o job NAO declarou, e ausencia de `lakeformation.access_model` e
+  # exatamente isso. A condicao de fact vem junto porque grupo so de `absent`
+  # nao produz evidencia, e achado sem evidencia nao vira Finding
+  # (`rules/engine.py::_evaluate_when`).
+  - id: SF-LF-010
+    category: lakeformation-governance
+    title: >-
+      Tabela com localização registrada, e o job não declara modelo de acesso
+      nenhum
+    requires_facts: [lakeformation.registered_location]
+    when:
+      all:
+        - fact: lakeformation.registered_location
+          where:
+            attrs.registered: true
+        - absent: lakeformation.access_model
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      A localização da tabela está **registrada** no Lake Formation, e o job não
+      declara nem controle de acesso fino nem Full Table Access.
+
+
+      **A palavra que decide é `regardless`.** A documentação da AWS declara que,
+      para localização registrada, *"the data access path goes through the Lake
+      Formation stored credentials regardless of the IAM permission for the AWS
+      Glue job runtime role"*. Conceder ao runtime role a permissão S3 que falta
+      **não abre o caminho**, porque o caminho não é o dele.
+
+
+      **É a leitura errada mais comum desta área**, e ela custa horas: o job
+      falha com `AccessDenied` no S3, alguém alarga a policy do role, a
+      permissão a mais fica, e o job continua falhando pelo mesmo motivo.
+
+
+      **Severidade P2 porque a combinação não é necessariamente um defeito.** Um
+      job que só lê tabela **não** registrada convive com isso sem problema, e o
+      registro pode existir para outro consumidor. O que o achado afirma é que a
+      pergunta "o role tem permissão S3?" **não decide** o acesso a esta tabela.
+    proposed_change:
+      - >-
+        Decidir qual modelo de acesso o job usa sobre esta tabela: FGAC, Full
+        Table Access, ou nenhum -- e "nenhum" só é resposta se o job não a lê.
+      - >-
+        Se o job precisa dela, ler qual role está associado ao registro
+        (`attrs.role_arn` do fact) e se ele alcança a localização: é esse role
+        que vende a credencial, e não o do job.
+      - >-
+        Não alargar a policy S3 do runtime role para "resolver" um `AccessDenied`
+        nesta tabela antes das duas leituras acima. A permissão a mais não é
+        usada, e fica.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.access_path
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        A regra afirma sobre a AUSÊNCIA de declaração de modelo de acesso no
+        case. Um job que ligue FGAC ou FTA por caminho que este motor não lê --
+        `non_overridable_arguments`, conexão, bootstrap -- é acusado sem estar
+        errado, e a evidência do achado é o que permite ver isso.
+      - >-
+        **O `absent:` é avaliado no nível do CONJUNTO, e não por entidade.** Num
+        case com vários jobs, um único que declare modelo de acesso faz a regra
+        ficar muda sobre a tabela registrada -- inclusive quando o job que a lê
+        não declara nada. `same_subject` não resolve: o fact de registro tem
+        subject de tabela e o de modelo de acesso tem subject de recurso
+        Terraform, e os dois nunca cairiam no mesmo grupo. Num case de um job só,
+        que é o normal, o limite não morde.
+      - >-
+        A regra **não** verifica que o job lê a tabela registrada. Ela
+        correlaciona o registro coletado com a ausência de modelo declarado no
+        case, e nada no case liga uma tabela a um job.
+      - >-
+        Registro de localização é frequentemente compartilhado. A tabela pode
+        estar registrada para outro consumidor, e este job pode legitimamente
+        não ter nada a ver com ela.
+    tradeoffs:
+      - >-
+        Declarar um modelo de acesso traz o job para dentro da governança do
+        Lake Formation e custa o que cada modelo custa -- capacidade em papéis,
+        no caso do FGAC; EMRFS e passo de conta, no caso do FTA.
+    validation:
+      - >-
+        Uma leitura de controle sobre a tabela registrada, com o runtime role
+        **sem** permissão S3 direta no caminho: se ela passar, a credencial do
+        Lake Formation está sendo usada; se falhar, o caminho não está ativo. É
+        o teste que distingue os dois, e um role com permissão ampla passa nos
+        dois casos.
+      - >-
+        Nenhum eixo de dado é exigido enquanto a mudança for de declaração de
+        modelo. Se o modelo escolhido filtrar linha ou coluna, a contagem e o
+        conjunto de colunas passam a ser exigidos.
+    rollback:
+      - >-
+        Remover o modelo de acesso declarado devolve o job ao estado anterior. É
+        rollback de configuração, e não de dado.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
+      - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html", retrieved: 2026-09-09}

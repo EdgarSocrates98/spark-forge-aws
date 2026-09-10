@@ -120,6 +120,24 @@ Convenção da casa: kind, entrada nas listas `EXTRACTORS` dos dois arquivos de 
 golden entram **no mesmo commit**. `EMITTED_KINDS` declara só o que o extrator emite —
 kind declarado e nunca emitido torna inalcançável qualquer regra que dependa dele.
 
+**Extrator que NÃO lê artefato** — derivação pura sobre a união dos facts, no molde de
+`bridge.py`, `exception.py`, `call_graph.py` e `lakeformation.py` — tem um passo a mais que
+os outros não têm: ele precisa ser **chamado por alguém**. Um módulo com `EMITTED_KINDS`
+correto e nenhuma chamada emite zero facts em produção e passa nos dois testes acima, porque
+os dois leem o módulo e não o pipeline. Os pontos de chamada existentes são `fuse()`
+(`sparkforge/facts/fusion.py`), um verbo próprio sob `analyze` em
+`sparkforge/adapters/_core.py`, e o `_extract`/`_derive` de cada
+`tests/test_fixtures_golden_*.py` com o `regen_*` correspondente em
+`scripts/regen_fixtures.py`. **O runner do golden e o `regen_*` são um par**: se um deriva e o
+outro não, o golden nunca fecha.
+
+**Quando o extrator existe porque a regra não conseguia perguntar.** O DSL de regra compara
+igualdade (`where`) e seis comparadores (`expr`) — sem `startswith`, sem `in`, sem chamada de
+função, e `ast.Call` levanta `ExprError` por desenho de segurança. Predicado que precise de
+mais do que isso — "o nome do catálogo dentro da chave de conf é o session catalog?" — se
+resolve **derivando um fact**, nunca afrouxando `sparkforge/rules/expr.py`. Precedente medido:
+`sparkforge/facts/lakeformation.py`, 2026-09-09.
+
 ## Mexer no funil de contexto (`sparkforge/codeintel/context.py`, `ranking.py`, `budget.py`)
 
 ```

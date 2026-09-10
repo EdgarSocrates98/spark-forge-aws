@@ -106,7 +106,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**70 tools, 31 com `detail_level`.** Os niveis sao `summary`, `normal` e `full`. A
+**77 tools, 34 com `detail_level`** (recontado em 2026-09-09). Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
@@ -436,6 +436,31 @@ outras.
     Nenhuma medida de ganho de token, latência, custo ou qualidade foi publicada
     por esta entrega, e nenhuma pode ser até que o outro lado exista. Regra 28
     vale aqui igual.
+31. **Lake Formation são DOIS modelos, e a versão muda o significado.** FGAC e
+    Full Table Access não coexistem no mesmo job, e a diferença que decide não é
+    granularidade — é **quem vende a credencial**: sob FGAC a escrita usa IAM do
+    runtime role; sob FTA a credencial do Lake Formation lê e escreve as tabelas
+    **registradas**. Três fronteiras de versão mudam o diagnóstico: o Glue 5.0
+    removeu FGAC via `GlueContext`/DynamicFrame, o 5.0 não escrevia sob FGAC e o
+    5.1 escreve, e o 5.1 trocou o filesystem S3 default de EMRFS para **S3A** —
+    o que quebra FTA calado, porque `fs.s3.credentialsResolverClass` é chave de
+    EMRFS e sob S3A é ignorada sem erro. Afirmar "FGAC não escreve" sem dizer a
+    versão é erro de versão. Eixo completo em
+    `knowledge/glue/lakeformation-fgac.md` §0 e §5.
+32. **Escrita em tabela REGISTRADA sob FGAC é conflito declarado, não resposta.**
+    Quatro frases da documentação da AWS não fecham entre si (§6 do documento de
+    conhecimento). Não escolha um lado: apresente as três saídas que a
+    documentação sustenta. E **a API de escrita não é o caminho de
+    autorização** — `writeTo`, `insertInto` e `INSERT INTO` falhando juntas é
+    sinal de que a variável está em catálogo, filesystem, credencial ou
+    permissão, nunca na API.
+33. **Predicado que o `where` não alcança vira FACT, nunca um `expr` mais
+    permissivo.** `sparkforge/rules/expr.py::_CMP_OPS` tem seis comparadores e
+    nenhuma função — sem `startswith`, sem `in`, e `ast.Call` levanta `ExprError`
+    por desenho de segurança. Quando a regra precisa de mais do que igualdade
+    (por exemplo "o nome do catálogo dentro de `spark.sql.catalog.<nome>` é o
+    session catalog?"), derive o predicado num extrator. Precedente medido:
+    `sparkforge/facts/lakeformation.py`, 2026-09-09.
 
 ### CLI commands agênticos
 

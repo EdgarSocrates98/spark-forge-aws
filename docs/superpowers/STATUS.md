@@ -43,27 +43,27 @@ arquivo ganha.
 |---|---|---|
 | Testes | **10462** COLETADOS, recontados em 2026-09-09 na T6 da frente de stacktrace (`python -m pytest tests/ --collect-only -q`). **O número de PASSANTES não foi remedido nesta leitura**: rodar os nove lotes um a um não estava no escopo da tarefa de documentação, e publicar "passando" sem tê-los rodado seria número sem produtor. Os **294** acrescidos desde os 10168 têm produtor — **246** dos seis arquivos novos da frente (`test_fixtures_golden_cloudwatch_logs.py` 101, `test_fixtures_golden_exception.py` 85, `test_rules_errors.py` 25, `test_collect_cloudwatch_logs.py` 24, `test_facts_exception.py` 6 e `test_errors_signature_fact.py` 5) e **48** por parametrização nos gates de catálogo, de tools e de cobertura de kind, que ganham um caso por regra, por tool e por fixture nova. **Leitura anterior:** **10159** passando, **9** skipped, **remedido em 2026-09-08** ao fechar o executor agentico: os nove lotes rodados um a um, e a soma (10168) fecha com `pytest tests/ --collect-only -q` (10168), relido nesta sessao. Os 205 acrescidos desde os 9954 sao 163 do executor, 15 do verbo `arbitrate`, 6 da tool `sparkforge_arbitrate`, 2 em `test_agentic_models.py` e o resto por parametrizacao nos gates de catalogo e de tools, que ganham um caso por regra e por tool nova. **Leitura anterior, de 2026-09-03:** 9954 passando, 9 skipped, na auditoria da camada agentica. Os nove lotes, rodados um a um: 1834 (+2 skipped), 202, 1761 (+2 skipped), 893, 443, 232, 106, 352, 4131 (+5 skipped). Soma: 9954 + 9 = **9963**, e ela fecha com `pytest tests/ --collect-only` (9963). Os 468 acrescidos desde os 9486 sao **261** da camada agentica (206 da entrega + 55 de regressao da auditoria) e o resto do crescimento por parametrizacao nos gates de catalogo, de tools e de skills, que ganham um caso por skill AWS nova. **A entrega original publicou tres numeros diferentes para a mesma base** -- 9486 na spec, 9881 no relatorio e 9897 na mensagem de commit --, e nenhum deles era o medido; ver a secao 17 (desvio D-1) do spec da camada agentica | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **rodados um a um em 2026-09-02**: 1503 (+2 skipped), 173, 1745, 865, 443, 202, 106, 352, 3968 (+5 skipped). Soma: 9364, e ela fecha com a suíte — 9357 passando mais 7 skipped **Recontado em 2026-09-02** ao fechar a pilha de cinco incrementos de `prompt_evo_graph_economy.md`: os nove lotes, rodados um a um no topo da pilha, somam 1554 (+2 skipped), 202, 1746, 887, 443, 202, 106, 352 e 3994 (+5 skipped) — **9486 passando e 7 skipped**. Os 129 acrescidos desde os 9357 vêm dos cinco arquivos novos (`test_economy_goldset`, `test_economy_recall`, `test_codeintel_graph_caminho`, `test_codeintel_graph_comunidades`, `test_codeintel_export`, `test_fixtures_golden_bridge`) e do crescimento por parametrização nos gates de catálogo e de tools, que ganham um caso por regra e por tool nova. |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
-| Regras com eixo de resultado no `validation` | **129 de 164 têm `validation`** — as duas últimas são `SF-ERR-012` e `SF-ERR-013` (2026-09-09), e as duas publicam o eixo que as CLASSIFICA e não só o que muda: razão entre bytes máximo e mediano por task numa, fração de tempo em coleta de lixo na outra. Publicá-la antes e depois é o que separa "aumentei memória" de "resolvi". Leitura anterior de **127 de 162** — as três últimas são `SF-ERR-009` a `SF-ERR-011` (2026-09-09), e só a terceira exige eixo de VALOR: remover uma das duas cópias de um artefato é trocar implementação, e implementação diferente devolve valor diferente. As outras duas declaram que nenhum eixo de dado é exigido quando a entrega é só de classpath — declarar isso é parte da validação. Leitura anterior de **124 de 159** — as duas últimas são `SF-ERR-007` e `SF-ERR-008` (2026-09-09), e as duas declaram o eixo que a troca delas move: `SF-ERR-008` cobra comparação VALOR A VALOR quando a ação for eliminar a UDF Python ou reduzir o batch do `pandas_udf`, porque as duas mudam o resultado e nada no plano físico acusa. Leitura anterior de **122 de 157** — remedido em 2026-09-09 na entrega do footer do Parquet: `SF-PQ-006` a `SF-PQ-009` são as quatro últimas, e três delas declaram um eixo de VALOR além do de layout, porque reescrever arquivo é reescrever dado — contagem igual com valor diferente é o modo de falha que só esse eixo pega. `SF-PQ-009` é a exceção e diz isso explicitamente: trocar codec não muda o conteúdo lido, e declarar que nenhum eixo de dado é exigido é parte da validação. Leitura anterior de **118 de 153** — remedido em 2026-09-09 ao fechar as SEIS assinaturas da área `SF-ERR`: `SF-ERR-003` a `SF-ERR-006` são as quatro últimas, e cada uma declara os eixos que a mudança dela move — o valor das colunas de uma tabela reescrita de v3 para v2 (`SF-ERR-003`), o par duração/bytes por task que classifica o skew (`SF-ERR-004`), a contagem depois de um commit reexecutado (`SF-ERR-005`), e a recusa explícita de exigir eixo de dado quando a mudança é de permissão e não de conteúdo (`SF-ERR-006`). Leitura anterior de **114 de 149** — remedido em 2026-09-08 na entrega da área `SF-ERR` (stacktrace intelligence, T3): `SF-ERR-001` e `SF-ERR-002` são as duas últimas, e cada uma declara os eixos que a mudança dela move — o artefato entregue ao classpath em `--extra-jars`, e o VALOR das colunas que um JAR de terceiro trocado por outra linha de release produz. Leitura anterior, de **112 de 147** — as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, da entrega de dependência e janela do Control-M (2026-09-02), e cada uma declara os eixos de resultado que a mudança dela pode mover: conjunto de datas ordenadas em `SF-CTM-002` e `SF-CTM-003`, conjunto de jobs publicado em `SF-CTM-004` e `SF-CTM-006`, e conjunto de eventos esperados mais ordem de execução em `SF-CTM-005`. `SF-CTM-001` foi a 106ª, com os três eixos dela explícitos (mesma contagem de jobs, mesmas dependências item a item, mesmo artefato produzido); recontado em 2026-09-01. **O número anterior ("62 de 116") não tinha produtor**: a coluna ao lado aponta `tests/test_rules_result_axis.py`, que tem três testes e guarda só as regras que propõem trocar UDF Python por função nativa. Ele nunca contou 62 nem 116. Número publicado sem comando que o produza é a mesma família de defeito que a regra 5 do `AGENT_PROTOCOL.md` fechou para o `benchmark_ref` — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` A entrega da ponte (2026-09-02) fez **112 de 147**: `SF-BRIDGE-001` acrescentou um eixo de resultado que nenhuma outra regra tem — além de contagem, schema e agregados, ela pede que **o stage daquele callsite suma ou troque de método no próximo event log**, que é a confirmação de que a mudança chegou à EXECUÇÃO e não só ao código. |
-| Regras com `runtime_scope` não-vazio | **20 de 153** — o NUMERADOR não se moveu em 2026-09-09 e o denominador sim, e é a leitura que importa: as quatro regras novas da área `SF-ERR` declaram `runtime_scope: {}` de propósito. O Athena não lê Iceberg v3 em runtime nenhum, container morre por memória em qualquer runtime, commit do Iceberg conflita em qualquer runtime e concessão do Lake Formation falta em qualquer runtime — guardá-las por Glue seria etiqueta de serviço disfarçada de guarda de versão. **Consequência medida: a área `SF-ERR` deixou de sumir num runtime sem Glue, e a entrada dela saiu de `AREA_MAY_VANISH_WHEN` em `tests/test_rule_scope_by_nature.py`.** Leitura anterior, de **20 de 149** — remedido em 2026-09-08 na entrega da área `SF-ERR`: **15** guardadas por `glue` (as duas `SF-ERR` entre elas, com `{glue: ">=6.0"}`) e **5** por versão de Spark. O denominador anterior (`146`) já estava defasado antes desta entrega. **`SF-ERR-001` é guardada por `glue` e não por `spark`, ao contrário de `SF-SPARK4-004`, que julga o mesmo binário**: a fronteira BINÁRIA do Scala é do Apache e vale em qualquer runtime, mas a regra de erro fala da assinatura `ERR-GLUE-002`, que declara `service: glue` e `versions: ["6.0"]` — guardar as duas pela mesma chave apagaria a diferença entre elas. Leitura anterior, de **18 de 146** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados*. **`SF-CTM-001` também não entra, e o caso dela é o mais claro dos três**: a regra é inteiramente sobre versão, e mesmo assim declara `{}` — `runtime_scope` guarda a versão do `RuntimeContext` (Glue, Spark, Python, Iceberg), e nada alimenta o `RuntimeContext` com `9.0.2x.yyy`. A versão do Control-M é **dado do artefato**, e viaja dentro do achado em `ctm.version_declared` e em `attrs.declared_version`. **As cinco `SF-CTM` de 2026-09-02 também declaram `{}`**, e uma delas pelo caminho mais interessante: `SF-CTM-006` cita, no `explanation`, uma fronteira de versão que a própria fonte publica (`Control-M/Enterprise Manager 9.0.21 or higher`) e **não a julga** — o defeito dela é um `must not` verificável no artefato em qualquer versão, e a fronteira é de um produto que nenhuma matriz deste repositório cobre (veto `V-CTM-6`) | `load_catalog()` |
-| Extratores de facts | **33** — `parquet_footer.py` é o trigésimo terceiro (2026-09-09), e ele é o **primeiro que lê um formato BINÁRIO de dado**: o rodapé do Parquet, com row group, estatística por coluna, dicionário, page index, bloom filter e codec. A leitura em si NÃO mora nele — está em `sparkforge/collect/parquet_footer.py`, que depende de pyarrow como extra opcional; o extrator parte do artefato JSON e não importa pyarrow, e é essa divisão que mantém o núcleo em PyYAML + jsonschema. Leitura anterior: **32** — `cloudwatch_logs.py` é o trigésimo segundo, do coletor de LOG do CloudWatch (T5 da frente de stacktrace, 2026-09-09): ele lê a resposta de `logs.filter_log_events`, que é artefato **separado** do de `cloudwatch.py` (`get_metric_data`) — o nome parecido não os torna o mesmo extrator, e a decisão de não os juntar está escrita no docstring do módulo novo. `exception.py` é o trigésimo primeiro, da frente de stacktrace (2026-09-08): ele **não lê artefato**, é derivação pura sobre a união dos facts no molde de `bridge.py`, e estrutura o `attrs.reason` que `spark.stage.failure` já carregava. `matcher.py` também tem `EMITTED_KINDS` desde a mesma frente e **não entra nesta contagem**: ele mora em `sparkforge/errors/`, e as duas varreduras automáticas (`test_harness_untrusted` e este gate) enumeram por `sparkforge/facts/*.py`. Ele é visto só pelas listas manuais. — `controlm_jobs.py` é o vigésimo nono, da entrega de `Jobs-as-Code` do Control-M (2026-09-01); `emr_eks.py` era o vigésimo oitavo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 36 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator `bridge.py` e o trigesimo, da entrega da ponte (2026-09-02). Ele e o primeiro que nao le artefato nenhum: e derivacao pura sobre a UNIAO dos facts, no molde de `call_graph.py`, e cruza o lado estatico com o callsite do stage. |
-| Fact kinds distintos emitidos | **198** — os **5** acrescidos são `parquet.file`, `parquet.row_group`, `parquet.column_profile`, `parquet.footer_analyzed` e `parquet.unresolved` (2026-09-09). **`parquet.column_chunk` NÃO existe, e a ausência é decisão**: um arquivo com 100 row groups e 50 colunas produziria 5 000 facts que não decidem nada sozinhos, e `facts.json` é barramento de handoff committado — o que decide é o perfil agregado por coluna, no molde de `iceberg.files_summary`. Leitura anterior: **193** — os **três** últimos são de `cloudwatch_logs.py` (2026-09-09): `cloudwatch.log_event`, `cloudwatch.logs.unresolved` e `cloudwatch.logs.analyzed`. — os **três** anteriores são de `exception.py` (2026-09-08): `spark.exception`, `spark.exception.frame` e `spark.exception.unresolved`. Os dois de `matcher.py` (`error.signature_match`, `error.signature.unresolved`) **não entram**, pela mesma razão de diretório da linha acima. — os **catorze** últimos são `ctm.*`: doze da entrega de `Jobs-as-Code` (seis de inventário — `folder`, `job`, `schedule`, `dependency`, `action`, `variable` —, a declaração de versão `version_declared`, **três** de cruzamento com a matriz — `capability_supported`, `capability_incompatible`, `capability_unresolved` — e o par recusa/sentinela `unresolved`/`analyzed`) e **dois** da entrega de dependência e janela (2026-09-02): `ctm.event_logic` e `ctm.job_array_format`. Os dois novos são DERIVADOS pela mesma razão de `tf.graphframes.jar` — a evidência não está em campo nenhum do artefato. `event_logic` mede a profundidade de parênteses de uma lista de eventos, que é contagem e nenhum `expr` do motor conta; `job_array_format` diz que o job foi alcançado por índice de array, que só a travessia sabe. A terceira decisão do incremento **não** virou kind: `specific_dates_conflict` e `reference_path_with_explicit_jobs` são atributos já decididos sobre `ctm.schedule` e `ctm.folder`, no molde de `graph.algorithm.checkpoint_required`, porque nenhuma regra precisa de `absent:` sobre eles. Os oito de EMR on EKS são `emrc.*` | união de `EMITTED_KINDS` sobre os 29 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (182 = 182, sem overlap entre módulos) Os **quatro** ultimos sao da ponte (2026-09-02): `spark.stage.callsite` (parse do nome do stage, no extrator de event log) mais os tres de `bridge.py` -- `driver_collect_confirmed`, `unresolved` e `analyzed`. O callsite sai SEMPRE, inclusive quando o nome nao tem a forma: a recusa nomeada (`sem_forma_de_callsite`, `arquivo_nao_python`, `linha_nao_numerica`) e o que distingue “este stage nao diz de onde veio” de “ninguem perguntou”. O centesimo octogesimo setimo e `iceberg.format_version` (2026-09-02): o motor nao sabia dizer de que versao de spec uma tabela E. `format-version` viajava apenas como `iceberg.table_property` generico -- que e a PROPRIEDADE, nao a versao, e as duas podem divergir. O kind novo carrega `attrs.declared` (o topo do `metadata.json`, autoritativo) e `attrs.property` lado a lado, com `attrs.diverges` quando discordam. Ele sai SEMPRE, inclusive quando o dump nao traz o campo -- ali com uma das tres recusas nomeadas, e nunca inferido da propriedade. |
-| Regras de diagnóstico | **164**, sendo **80 `confirmed`**, **49 com `status: structural`** e **35 sem campo `status`** — as duas últimas são `SF-ERR-012` e `SF-ERR-013` (2026-09-09), do heap do executor. Elas completam a separação que `knowledge/spark/memory-and-oom.md` faz: `SF-ERR-004` trata o CONTAINER (`Container killed by YARN`, memória fora do heap, conserto por `memoryOverhead`), e estas duas tratam o lado de DENTRO — e o que as separa entre si é a MEDIDA que cada uma exige, distribuição de input por task contra razão de tempo em coleta. Leitura anterior: **162**, sendo **78 `confirmed`** — as três anteriores eram `SF-ERR-009` a `SF-ERR-011`, a família de classpath, e o que as separa decide o conserto: `ClassNotFoundException` é classe que nunca esteve lá (falta jar), `NoClassDefFoundError` é classe que ESTAVA na compilação (sumiu, ou o inicializador dela falhou — e aí adicionar jar não muda nada), e `AbstractMethodError` é classe presente na versão errada, a única em que **adicionar jar piora**, porque o problema é haver duas. Leitura anterior: **159**, sendo **75 `confirmed`** — as duas anteriores eram `SF-ERR-007` e `SF-ERR-008` (2026-09-09), as primeiras da área com `service: spark` em vez de um serviço da AWS: `FetchFailedException` e `Python worker exited unexpectedly` acontecem igual em EMR, Databricks ou cluster on-prem, e por isso `runtime_scope` é `{}` e a fonte é a documentação do Apache. Leitura anterior: **157**, sendo **73 `confirmed`**, **49 com `status: structural`** e **35 sem campo `status`** — as quatro anteriores eram `SF-PQ-006` a `SF-PQ-009` (2026-09-09), do footer do Parquet, e as quatro são `structural`: elas afirmam propriedade do LAYOUT lida de um artefato parado, não que algum job falhou. `SF-PQ-008` é a que justifica a frente — ela mede se a estatística CONSEGUE podar, e é o falso negativo que `SF-PQ-001` (tamanho de arquivo) e `SF-PQ-002` (filtro declarado no plano) deixavam passar. Leitura anterior: **153**, sendo **73 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** — as quatro anteriores eram `SF-ERR-003` a `SF-ERR-006` (2026-09-09), as regras das quatro assinaturas que só o log do CloudWatch alcança, e as quatro são `confirmed` pela mesma razão das duas anteriores: elas afirmam que a falha ACONTECEU, com `error.signature_match` e `matched_on: log_line` ao lado. Três delas têm irmã que afirma o mesmo defeito a partir do artefato parado — `SF-ENV-002`, `SF-UI-005` e `SF-XACC-001` —, e `SF-ERR-005` não tem, porque conflito de commit é propriedade da execução concorrente e nada no artefato parado o prevê. Leitura anterior: **149**, sendo **69 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** — as duas últimas eram `SF-ERR-001` e `SF-ERR-002`, da frente de stacktrace (2026-09-08), e as duas são `confirmed` porque afirmam que a falha ACONTECEU, com `error.signature_match` derivado de `spark.exception` ao lado. **A parcela `confirmed` anterior publicava 66 e não fechava a conta** (66+45+35 = 146, contra os 147 do total): ela já estava defasada em 1 antes desta entrega, e as três parcelas agora somam 149. Leitura anterior: **147**, sendo **66 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** (as cinco últimas `structural` são `SF-CTM-002` a `SF-CTM-006`, de 2026-09-02: como `SF-CTM-001`, elas julgam análise estática de código-fonte, sem nenhuma medida de execução) (`SF-CTM-001` foi a quadragésima) (as duas anteriores são `SF-GRAPH-005` e `SF-GRAPH-006`, da rodada de dívidas) (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` `SF-BRIDGE-001` e a 147ª, e a **primeira que cruza artefato estatico com artefato de execucao**: ate ela, medido, 20 regras usavam so fato estatico, 35 so de runtime, e ZERO os dois. Ela e `confirmed` enquanto `SF-PY-002`, que julga o mesmo `collect()`, e `structural` -- a diferenca e de natureza: uma afirma risco, a outra afirma que a linha executou e traz o stage como evidencia. |
+| Regras com eixo de resultado no `validation` | **150 de 185 têm `validation`** — as seis últimas são o Lote B (`SF-ERR-018` a `SF-ERR-023`), e duas delas publicam um eixo que quase nenhuma outra publica: `SF-ERR-022` cobra comparação **valor a valor** sobre a chave de negócio quando a correção toca dado (contagem igual com valor diferente é o modo de falha da classe), e `SF-ERR-023` cobra contagem de linhas contra a origem porque a falha tem um **irmão silencioso** — o arquivo que some ANTES da listagem não produz exceção nenhuma. Leitura anterior de **144 de 179 têm `validation`** — as duas últimas são `SF-LF-009` e `SF-LF-010`, e a primeira publica um eixo que nenhuma outra regra do catálogo publica: **a mensagem exata da primeira operação que falha**. Ela é P1 porque o motor não sabe se a escrita falha, e a validação começa por medir isso — sem a mensagem, o resto é hipótese. Leitura anterior de **142 de 177 têm `validation`** — as cinco últimas são `SF-LF-007`, `SF-LF-008` e `SF-IAM-001` a `SF-IAM-003` (2026-09-09), as primeiras do catálogo que julgam **permissão coletada** em vez de configuração declarada. Quatro delas declaram que **nenhum eixo de dado é exigido** — a mudança é de permissão e não de conteúdo —, e `SF-LF-008` publica o eixo que falta em todas as outras: a lista de consumidores da tabela, antes e depois, porque revogar `IAM_ALLOWED_PRINCIPALS` sem esse inventário derruba quem dependia dele. Leitura anterior de **137 de 172 têm `validation`** — as duas últimas são `SF-LF-005` e `SF-LF-006` (2026-09-09), e a segunda declara o que quase nenhuma regra de capacidade declara: **nenhum eixo de dado é exigido**, porque a mudança é de capacidade e não de conteúdo. Dizer isso é parte da validação, e não a ausência dela. Leitura anterior de **135 de 170 têm `validation`** — as quatro últimas são `SF-ERR-014` a `SF-ERR-017` (2026-09-09), a família de Lake Formation, e três delas publicam um eixo de validação que nenhuma outra regra do catálogo tem: **executar com um principal que NÃO tem a concessão e confirmar que ele continua sendo recusado**. Sem esse segundo teste, "o conserto funcionou" e "o controle foi removido" são indistinguíveis. `SF-ERR-017` é a exceção e declara o oposto: não há validação de um conserto que o suporte da AWS ainda não descreveu, e dizer isso é parte da validação. Leitura anterior de **131 de 166 têm `validation`** — as duas últimas são `SF-LF-003` e `SF-LF-004` (2026-09-09), e as duas declaram o eixo que a mudança delas move: trocar o catálogo Iceberg troca o CAMINHO de resolução da tabela, e restaurar o EMRFS troca o caminho de credencial — os dois pedem contagem e schema no destino, porque caminho diferente pode resolver para outro lugar. `SF-LF-004` acrescenta um eixo que nenhuma outra regra publica: uma escrita de controle com o runtime role SEM permissão S3 direta, que é o único teste que distingue os dois caminhos. Leitura anterior de **129 de 164 têm `validation`** — as duas últimas são `SF-ERR-012` e `SF-ERR-013` (2026-09-09), e as duas publicam o eixo que as CLASSIFICA e não só o que muda: razão entre bytes máximo e mediano por task numa, fração de tempo em coleta de lixo na outra. Publicá-la antes e depois é o que separa "aumentei memória" de "resolvi". Leitura anterior de **127 de 162** — as três últimas são `SF-ERR-009` a `SF-ERR-011` (2026-09-09), e só a terceira exige eixo de VALOR: remover uma das duas cópias de um artefato é trocar implementação, e implementação diferente devolve valor diferente. As outras duas declaram que nenhum eixo de dado é exigido quando a entrega é só de classpath — declarar isso é parte da validação. Leitura anterior de **124 de 159** — as duas últimas são `SF-ERR-007` e `SF-ERR-008` (2026-09-09), e as duas declaram o eixo que a troca delas move: `SF-ERR-008` cobra comparação VALOR A VALOR quando a ação for eliminar a UDF Python ou reduzir o batch do `pandas_udf`, porque as duas mudam o resultado e nada no plano físico acusa. Leitura anterior de **122 de 157** — remedido em 2026-09-09 na entrega do footer do Parquet: `SF-PQ-006` a `SF-PQ-009` são as quatro últimas, e três delas declaram um eixo de VALOR além do de layout, porque reescrever arquivo é reescrever dado — contagem igual com valor diferente é o modo de falha que só esse eixo pega. `SF-PQ-009` é a exceção e diz isso explicitamente: trocar codec não muda o conteúdo lido, e declarar que nenhum eixo de dado é exigido é parte da validação. Leitura anterior de **118 de 153** — remedido em 2026-09-09 ao fechar as SEIS assinaturas da área `SF-ERR`: `SF-ERR-003` a `SF-ERR-006` são as quatro últimas, e cada uma declara os eixos que a mudança dela move — o valor das colunas de uma tabela reescrita de v3 para v2 (`SF-ERR-003`), o par duração/bytes por task que classifica o skew (`SF-ERR-004`), a contagem depois de um commit reexecutado (`SF-ERR-005`), e a recusa explícita de exigir eixo de dado quando a mudança é de permissão e não de conteúdo (`SF-ERR-006`). Leitura anterior de **114 de 149** — remedido em 2026-09-08 na entrega da área `SF-ERR` (stacktrace intelligence, T3): `SF-ERR-001` e `SF-ERR-002` são as duas últimas, e cada uma declara os eixos que a mudança dela move — o artefato entregue ao classpath em `--extra-jars`, e o VALOR das colunas que um JAR de terceiro trocado por outra linha de release produz. Leitura anterior, de **112 de 147** — as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, da entrega de dependência e janela do Control-M (2026-09-02), e cada uma declara os eixos de resultado que a mudança dela pode mover: conjunto de datas ordenadas em `SF-CTM-002` e `SF-CTM-003`, conjunto de jobs publicado em `SF-CTM-004` e `SF-CTM-006`, e conjunto de eventos esperados mais ordem de execução em `SF-CTM-005`. `SF-CTM-001` foi a 106ª, com os três eixos dela explícitos (mesma contagem de jobs, mesmas dependências item a item, mesmo artefato produzido); recontado em 2026-09-01. **O número anterior ("62 de 116") não tinha produtor**: a coluna ao lado aponta `tests/test_rules_result_axis.py`, que tem três testes e guarda só as regras que propõem trocar UDF Python por função nativa. Ele nunca contou 62 nem 116. Número publicado sem comando que o produza é a mesma família de defeito que a regra 5 do `AGENT_PROTOCOL.md` fechou para o `benchmark_ref` — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` A entrega da ponte (2026-09-02) fez **112 de 147**: `SF-BRIDGE-001` acrescentou um eixo de resultado que nenhuma outra regra tem — além de contagem, schema e agregados, ela pede que **o stage daquele callsite suma ou troque de método no próximo event log**, que é a confirmação de que a mudança chegou à EXECUÇÃO e não só ao código. |
+| Regras com `runtime_scope` não-vazio | **26 de 144** — a única acrescida é `SF-LF-009` (`{glue: ">=5.0"}`). `SF-LF-010` declara `{}` de propósito: localização registrada é estado do Lake Formation, e a frase `regardless` vale em qualquer runtime que leia aquela tabela. Leitura anterior de **25 de 142** — a única acrescida é `SF-LF-007` (`{glue: ">=5.0"}`). As outras quatro declaram `{}` de propósito: `IAM_ALLOWED_PRINCIPALS` com `ALL` é estado do Lake Formation e não do runtime, e negação por boundary, service control policy ou `Deny` explícito acontece igual em qualquer runtime. **Consequência medida: `SF-LF` saiu de `AREA_MAY_VANISH_WHEN` e da entrada de 4.0 em `AREA_FULLY_OUT_OF_SCOPE`** — a área deixou de sumir num Glue 4.0, pelo mesmo movimento que tirou `SF-ERR` de lá. Leitura anterior de **24 de 137** — as duas acrescidas são `SF-LF-005` e `SF-LF-006`, ambas `{glue: ">=5.0"}`: os dois modelos de acesso do Lake Formation dentro de job Spark do Glue só existem a partir do 5.0, e num Glue 4.0 a afirmação continua sendo falsa mesmo com a infraestrutura Glue presente. Leitura anterior de **22 de 135** — o NUMERADOR não se moveu em 2026-09-09 na entrega da família de Lake Formation e o denominador sim, e é a leitura que importa: as quatro regras novas declaram `runtime_scope: {}` de propósito. Concessão do Lake Formation falta em qualquer runtime, permissão de IAM sobre a API do Glue falta em qualquer runtime, e a validação de segurança do system driver é do modelo de acesso e não da versão. O que as gateia é `requires_facts` — o companheiro derivado —, não uma fronteira de versão. Leitura anterior de **22 de 131** — as duas acrescidas são `SF-LF-003` (`{glue: ">=5.0"}`) e `SF-LF-004` (`{glue: ">=5.1"}`), e a segunda é a fronteira mais estreita do catálogo inteiro. Ela NÃO é de Lake Formation: é o breaking change de conector S3 do Glue 5.1, e num Glue 5.0 a mesma configuração está CORRETA porque o default de filesystem ainda é o EMRFS. Por eixo: **17** por `glue`, **5** por `spark`, **1** por `iceberg`. Leitura anterior de **20 de 153** — o NUMERADOR não se moveu em 2026-09-09 e o denominador sim, e é a leitura que importa: as quatro regras novas da área `SF-ERR` declaram `runtime_scope: {}` de propósito. O Athena não lê Iceberg v3 em runtime nenhum, container morre por memória em qualquer runtime, commit do Iceberg conflita em qualquer runtime e concessão do Lake Formation falta em qualquer runtime — guardá-las por Glue seria etiqueta de serviço disfarçada de guarda de versão. **Consequência medida: a área `SF-ERR` deixou de sumir num runtime sem Glue, e a entrada dela saiu de `AREA_MAY_VANISH_WHEN` em `tests/test_rule_scope_by_nature.py`.** Leitura anterior, de **20 de 149** — remedido em 2026-09-08 na entrega da área `SF-ERR`: **15** guardadas por `glue` (as duas `SF-ERR` entre elas, com `{glue: ">=6.0"}`) e **5** por versão de Spark. O denominador anterior (`146`) já estava defasado antes desta entrega. **`SF-ERR-001` é guardada por `glue` e não por `spark`, ao contrário de `SF-SPARK4-004`, que julga o mesmo binário**: a fronteira BINÁRIA do Scala é do Apache e vale em qualquer runtime, mas a regra de erro fala da assinatura `ERR-GLUE-002`, que declara `service: glue` e `versions: ["6.0"]` — guardar as duas pela mesma chave apagaria a diferença entre elas. Leitura anterior, de **18 de 146** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados*. **`SF-CTM-001` também não entra, e o caso dela é o mais claro dos três**: a regra é inteiramente sobre versão, e mesmo assim declara `{}` — `runtime_scope` guarda a versão do `RuntimeContext` (Glue, Spark, Python, Iceberg), e nada alimenta o `RuntimeContext` com `9.0.2x.yyy`. A versão do Control-M é **dado do artefato**, e viaja dentro do achado em `ctm.version_declared` e em `attrs.declared_version`. **As cinco `SF-CTM` de 2026-09-02 também declaram `{}`**, e uma delas pelo caminho mais interessante: `SF-CTM-006` cita, no `explanation`, uma fronteira de versão que a própria fonte publica (`Control-M/Enterprise Manager 9.0.21 or higher`) e **não a julga** — o defeito dela é um `must not` verificável no artefato em qualquer versão, e a fronteira é de um produto que nenhuma matriz deste repositório cobre (veto `V-CTM-6`) | `load_catalog()` |
+| Extratores de facts | **36** — `iam_access.py` é o trigésimo sexto (2026-09-09), e ele fecha o TERCEIRO item que `lakeformation.unresolved` nomeia. Ele lê a decisão de `iam:SimulatePrincipalPolicy`, e não o documento da policy: boundary, service control policy, `Deny` explícito e `Condition` não aparecem nesse documento, e um parser erra exatamente nesses quatro casos. Leitura anterior de **35** — `lakeformation_grants.py` é o trigésimo quinto (2026-09-09), e ele é o par de LEITURA do trigésimo quarto: `lakeformation.py` deriva sobre facts e não lê artefato; este lê o artefato de `collect lakeformation`. Os dois convivem no mesmo namespace sem colidir — um emite `access_model`/`iceberg_catalog`/`filesystem`, o outro `grant`/`registered_location`/`data_lake_settings`. Leitura anterior de **34** — `lakeformation.py` é o trigésimo quarto (2026-09-09), e ele é o TERCEIRO que não lê artefato: derivação pura sobre a união dos facts, no molde de `bridge.py` e `exception.py`. Ele existe porque `rules/expr.py` compara igualdade e o nome do catálogo Iceberg mora DENTRO da chave de conf. Leitura anterior de **33** — `parquet_footer.py` é o trigésimo terceiro (2026-09-09), e ele é o **primeiro que lê um formato BINÁRIO de dado**: o rodapé do Parquet, com row group, estatística por coluna, dicionário, page index, bloom filter e codec. A leitura em si NÃO mora nele — está em `sparkforge/collect/parquet_footer.py`, que depende de pyarrow como extra opcional; o extrator parte do artefato JSON e não importa pyarrow, e é essa divisão que mantém o núcleo em PyYAML + jsonschema. Leitura anterior: **32** — `cloudwatch_logs.py` é o trigésimo segundo, do coletor de LOG do CloudWatch (T5 da frente de stacktrace, 2026-09-09): ele lê a resposta de `logs.filter_log_events`, que é artefato **separado** do de `cloudwatch.py` (`get_metric_data`) — o nome parecido não os torna o mesmo extrator, e a decisão de não os juntar está escrita no docstring do módulo novo. `exception.py` é o trigésimo primeiro, da frente de stacktrace (2026-09-08): ele **não lê artefato**, é derivação pura sobre a união dos facts no molde de `bridge.py`, e estrutura o `attrs.reason` que `spark.stage.failure` já carregava. `matcher.py` também tem `EMITTED_KINDS` desde a mesma frente e **não entra nesta contagem**: ele mora em `sparkforge/errors/`, e as duas varreduras automáticas (`test_harness_untrusted` e este gate) enumeram por `sparkforge/facts/*.py`. Ele é visto só pelas listas manuais. — `controlm_jobs.py` é o vigésimo nono, da entrega de `Jobs-as-Code` do Control-M (2026-09-01); `emr_eks.py` era o vigésimo oitavo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 36 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator `bridge.py` e o trigesimo, da entrega da ponte (2026-09-02). Ele e o primeiro que nao le artefato nenhum: e derivacao pura sobre a UNIAO dos facts, no molde de `call_graph.py`, e cruza o lado estatico com o callsite do stage. |
+| Fact kinds distintos emitidos | **210** — os **3** acrescidos são `iam.access_decision`, `iam.access.unresolved` e `iam.access.analyzed` (2026-09-09). O primeiro carrega `denied_by`, que nomeia a CAMADA que decidiu — e é ele que separa três consertos diferentes que um booleano `autorizado` colapsaria num só. Leitura anterior de **207** — os **5** acrescidos são `lakeformation.grant`, `lakeformation.registered_location`, `lakeformation.data_lake_settings`, `lakeformation.grants.unresolved` e `lakeformation.grants.analyzed` (2026-09-09). São os primeiros kinds deste motor que descrevem **quem pode o quê**, e não o que o job faz. Leitura anterior de **202** — os **4** acrescidos são `lakeformation.access_model`, `lakeformation.iceberg_catalog`, `lakeformation.filesystem` e `lakeformation.unresolved` (2026-09-09). A recusa é sobre PERMISSÃO — grant do Lake Formation, policy do runtime role e registro da localização S3 —, e ela só é emitida quando há modelo de acesso declarado: recusa que aparece em todo case não informa nada. Leitura anterior de **198** — os **5** acrescidos são `parquet.file`, `parquet.row_group`, `parquet.column_profile`, `parquet.footer_analyzed` e `parquet.unresolved` (2026-09-09). **`parquet.column_chunk` NÃO existe, e a ausência é decisão**: um arquivo com 100 row groups e 50 colunas produziria 5 000 facts que não decidem nada sozinhos, e `facts.json` é barramento de handoff committado — o que decide é o perfil agregado por coluna, no molde de `iceberg.files_summary`. Leitura anterior: **193** — os **três** últimos são de `cloudwatch_logs.py` (2026-09-09): `cloudwatch.log_event`, `cloudwatch.logs.unresolved` e `cloudwatch.logs.analyzed`. — os **três** anteriores são de `exception.py` (2026-09-08): `spark.exception`, `spark.exception.frame` e `spark.exception.unresolved`. Os dois de `matcher.py` (`error.signature_match`, `error.signature.unresolved`) **não entram**, pela mesma razão de diretório da linha acima. — os **catorze** últimos são `ctm.*`: doze da entrega de `Jobs-as-Code` (seis de inventário — `folder`, `job`, `schedule`, `dependency`, `action`, `variable` —, a declaração de versão `version_declared`, **três** de cruzamento com a matriz — `capability_supported`, `capability_incompatible`, `capability_unresolved` — e o par recusa/sentinela `unresolved`/`analyzed`) e **dois** da entrega de dependência e janela (2026-09-02): `ctm.event_logic` e `ctm.job_array_format`. Os dois novos são DERIVADOS pela mesma razão de `tf.graphframes.jar` — a evidência não está em campo nenhum do artefato. `event_logic` mede a profundidade de parênteses de uma lista de eventos, que é contagem e nenhum `expr` do motor conta; `job_array_format` diz que o job foi alcançado por índice de array, que só a travessia sabe. A terceira decisão do incremento **não** virou kind: `specific_dates_conflict` e `reference_path_with_explicit_jobs` são atributos já decididos sobre `ctm.schedule` e `ctm.folder`, no molde de `graph.algorithm.checkpoint_required`, porque nenhuma regra precisa de `absent:` sobre eles. Os oito de EMR on EKS são `emrc.*` | união de `EMITTED_KINDS` sobre os 29 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (182 = 182, sem overlap entre módulos) Os **quatro** ultimos sao da ponte (2026-09-02): `spark.stage.callsite` (parse do nome do stage, no extrator de event log) mais os tres de `bridge.py` -- `driver_collect_confirmed`, `unresolved` e `analyzed`. O callsite sai SEMPRE, inclusive quando o nome nao tem a forma: a recusa nomeada (`sem_forma_de_callsite`, `arquivo_nao_python`, `linha_nao_numerica`) e o que distingue “este stage nao diz de onde veio” de “ninguem perguntou”. O centesimo octogesimo setimo e `iceberg.format_version` (2026-09-02): o motor nao sabia dizer de que versao de spec uma tabela E. `format-version` viajava apenas como `iceberg.table_property` generico -- que e a PROPRIEDADE, nao a versao, e as duas podem divergir. O kind novo carrega `attrs.declared` (o topo do `metadata.json`, autoritativo) e `attrs.property` lado a lado, com `attrs.diverges` quando discordam. Ele sai SEMPRE, inclusive quando o dump nao traz o campo -- ali com uma das tres recusas nomeadas, e nunca inferido da propriedade. |
+| Regras de diagnóstico | **185**, sendo **95 `confirmed`**, **55 com `status: structural`** e **35 sem campo `status`** — as seis últimas são o Lote B, e as seis são `confirmed` pela razão da área: elas afirmam que a exceção ACONTECEU, com a linha de log casada e o companheiro ao lado. Leitura anterior de **179**, sendo **89 `confirmed`**, **55 com `status: structural`** e **35 sem campo `status`** — as duas últimas consomem `lakeformation.registered_location`, o último kind dos coletores de permissão que nenhuma regra lia. `SF-LF-009` é o **único achado do catálogo que afirma que a DOCUMENTAÇÃO não fecha** em vez de afirmar um defeito, e é P1 por isso: o motor sabe que a combinação não tem resposta publicada, não que a escrita falha. Leitura anterior de **177**, sendo **89 `confirmed`**, **53 com `status: structural`** e **35 sem campo `status`** — as cinco últimas consomem os kinds que os dois coletores de permissão abriram, e as cinco são `confirmed`: a AWS **respondeu**, e o achado repete a resposta em vez de inferi-la. Leitura anterior de **172**, sendo **84 `confirmed`**, **53 com `status: structural`** e **35 sem campo `status`** — as duas últimas são `SF-LF-005` e `SF-LF-006` (2026-09-09), e as duas são `structural`: afirmam propriedade da configuração declarada, nunca que algum job falhou. Nenhuma das duas precisou de fact novo — as duas já eram escrevíveis quando o extrator entrou, e não tinham sido escritas. Leitura anterior de **170**, sendo **84 `confirmed`**, **51 com `status: structural`** e **35 sem campo `status`** — as quatro últimas são `SF-ERR-014` a `SF-ERR-017` (2026-09-09), e as quatro são `confirmed` porque afirmam que a negação ACONTECEU, com `error.signature_match` e `matched_on: log_line` ao lado. São também as primeiras da área cujo companheiro é um fact DERIVADO e não um extrator de artefato: `lakeformation.access_model` e `lakeformation.filesystem`. Leitura anterior de **166**, sendo **80 `confirmed`**, **51 com `status: structural`** e **35 sem campo `status`** — as duas últimas são `SF-LF-003` e `SF-LF-004` (2026-09-09), e as duas são `structural`: elas afirmam propriedade da CONFIGURAÇÃO declarada, nunca que algum job falhou. São também as duas primeiras da área que não leem `tf.attribute` cru — o predicado que elas comparam por igualdade foi derivado num fact. Leitura anterior de **164**, sendo **80 `confirmed`**, **49 com `status: structural`** e **35 sem campo `status`** — as duas últimas são `SF-ERR-012` e `SF-ERR-013` (2026-09-09), do heap do executor. Elas completam a separação que `knowledge/spark/memory-and-oom.md` faz: `SF-ERR-004` trata o CONTAINER (`Container killed by YARN`, memória fora do heap, conserto por `memoryOverhead`), e estas duas tratam o lado de DENTRO — e o que as separa entre si é a MEDIDA que cada uma exige, distribuição de input por task contra razão de tempo em coleta. Leitura anterior: **162**, sendo **78 `confirmed`** — as três anteriores eram `SF-ERR-009` a `SF-ERR-011`, a família de classpath, e o que as separa decide o conserto: `ClassNotFoundException` é classe que nunca esteve lá (falta jar), `NoClassDefFoundError` é classe que ESTAVA na compilação (sumiu, ou o inicializador dela falhou — e aí adicionar jar não muda nada), e `AbstractMethodError` é classe presente na versão errada, a única em que **adicionar jar piora**, porque o problema é haver duas. Leitura anterior: **159**, sendo **75 `confirmed`** — as duas anteriores eram `SF-ERR-007` e `SF-ERR-008` (2026-09-09), as primeiras da área com `service: spark` em vez de um serviço da AWS: `FetchFailedException` e `Python worker exited unexpectedly` acontecem igual em EMR, Databricks ou cluster on-prem, e por isso `runtime_scope` é `{}` e a fonte é a documentação do Apache. Leitura anterior: **157**, sendo **73 `confirmed`**, **49 com `status: structural`** e **35 sem campo `status`** — as quatro anteriores eram `SF-PQ-006` a `SF-PQ-009` (2026-09-09), do footer do Parquet, e as quatro são `structural`: elas afirmam propriedade do LAYOUT lida de um artefato parado, não que algum job falhou. `SF-PQ-008` é a que justifica a frente — ela mede se a estatística CONSEGUE podar, e é o falso negativo que `SF-PQ-001` (tamanho de arquivo) e `SF-PQ-002` (filtro declarado no plano) deixavam passar. Leitura anterior: **153**, sendo **73 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** — as quatro anteriores eram `SF-ERR-003` a `SF-ERR-006` (2026-09-09), as regras das quatro assinaturas que só o log do CloudWatch alcança, e as quatro são `confirmed` pela mesma razão das duas anteriores: elas afirmam que a falha ACONTECEU, com `error.signature_match` e `matched_on: log_line` ao lado. Três delas têm irmã que afirma o mesmo defeito a partir do artefato parado — `SF-ENV-002`, `SF-UI-005` e `SF-XACC-001` —, e `SF-ERR-005` não tem, porque conflito de commit é propriedade da execução concorrente e nada no artefato parado o prevê. Leitura anterior: **149**, sendo **69 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** — as duas últimas eram `SF-ERR-001` e `SF-ERR-002`, da frente de stacktrace (2026-09-08), e as duas são `confirmed` porque afirmam que a falha ACONTECEU, com `error.signature_match` derivado de `spark.exception` ao lado. **A parcela `confirmed` anterior publicava 66 e não fechava a conta** (66+45+35 = 146, contra os 147 do total): ela já estava defasada em 1 antes desta entrega, e as três parcelas agora somam 149. Leitura anterior: **147**, sendo **66 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** (as cinco últimas `structural` são `SF-CTM-002` a `SF-CTM-006`, de 2026-09-02: como `SF-CTM-001`, elas julgam análise estática de código-fonte, sem nenhuma medida de execução) (`SF-CTM-001` foi a quadragésima) (as duas anteriores são `SF-GRAPH-005` e `SF-GRAPH-006`, da rodada de dívidas) (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` `SF-BRIDGE-001` e a 147ª, e a **primeira que cruza artefato estatico com artefato de execucao**: ate ela, medido, 20 regras usavam so fato estatico, 35 so de runtime, e ZERO os dois. Ela e `confirmed` enquanto `SF-PY-002`, que julga o mesmo `collect()`, e `structural` -- a diferenca e de natureza: uma afirma risco, a outra afirma que a linha executou e traz o stage como evidencia. |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Perguntas do gold set de recuperação | **29**, cobrindo **20 regras distintas** — as **2** acrescidas vêm de `SF-ERR-007` e `SF-ERR-008` (2026-09-09): o gold set é DERIVADO das regras a cada execução, então regra nova com fixture que dispara entra sozinha, e o número sobe sem ninguém editá-lo. Leitura anterior: **27**, cobrindo **18 regras distintas** — DERIVADAS das regras a cada execução pela cadeia `finding.evidence[] → fact.id → fact.subject.{file,symbol}`, e **nunca versionadas como arquivo**. Congelar o gold set em JSON o faria afirmar sobre a ancoragem de ontem enquanto as regras mudam hoje, que é o defeito que `EMR_MATRIX` literal em código tinha contra a matriz em YAML. É **piso, não igualdade**: cair significa que uma regra perdeu ancoragem e é defeito; subir significa que uma regra nova ganhou fixture ancorada e é progresso, e o piso sobe no commit que o fez subir | `python scripts/check_recall_economy.py` **Subiu para 27 na entrega da ponte (2026-09-02)**, e o piso subiu no commit que o fez subir -- que e exatamente o comportamento projetado: cair e defeito, subir e progresso. As quatro novas vem das tres fixtures de `fixtures/bridge/`, cujas evidencias ancoram `principal` e `main` em `job.py`. |
-| Achados que NÃO rendem pergunta de ouro | **25 em 48**, por duas razões que destravam com medidas **diferentes**: **23** são `evidencia_sem_simbolo` (o fato citado ancora arquivo e linha, com `subject.symbol` vazio — destrava no EXTRATOR que produziu o fato) e **2** são `extensao_nao_indexada` (`SF-ENV-003` e `SF-GRAPH-005` ancoram símbolo em `.tf`, que `codeintel.index.indexar` não percorre — destrava no INDEXADOR). Somá-las num rótulo só mandaria quem fosse consertar para o módulo errado. Metade dos achados destas fixtures não rende pergunta, e publicar isso é o que impede que "o gate cobre 23 achados" seja lido como "existem 23 achados" | `python scripts/check_recall_economy.py` |
+| Achados que NÃO rendem pergunta de ouro | **27 em 54** — as seis do Lote B entram nas duas metades do denominador, e a razão de duas delas não renderem pergunta de ouro é a mesma das anteriores. Leitura anterior de **25 em 48**, por duas razões que destravam com medidas **diferentes**: **23** são `evidencia_sem_simbolo` (o fato citado ancora arquivo e linha, com `subject.symbol` vazio — destrava no EXTRATOR que produziu o fato) e **2** são `extensao_nao_indexada` (`SF-ENV-003` e `SF-GRAPH-005` ancoram símbolo em `.tf`, que `codeintel.index.indexar` não percorre — destrava no INDEXADOR). Somá-las num rótulo só mandaria quem fosse consertar para o módulo errado. Metade dos achados destas fixtures não rende pergunta, e publicar isso é o que impede que "o gate cobre 23 achados" seja lido como "existem 23 achados" | `python scripts/check_recall_economy.py` |
 | Regras com golden que dispara | **112 de 112 executáveis** — remedido em 2026-09-08 sobre `_judgeable_rules()`, que devolve 112 e cujo cruzamento com `_rules_fired_in_goldens()` deixa **zero** regra sem golden. **A linha publicava 111 e estava defasada desde `SF-BRIDGE-001`**, a regra que cruza código e execução, entregue em 2026-09-02: a leitura anterior foi escrita antes dela e nunca remedida. O gate `check_status_numbers.py` **não pega este defeito por desenho** — a linha está em `SEM_MEDIDA`, porque duplicar aqui a travessia de `tests/test_fixtures_kind_coverage.py` seria segundo mecanismo para a mesma pergunta; a consequência é que a defasagem só aparece quando alguém remede à mão, e este é o registro de que aconteceu. Leitura anterior, de 2026-09-02: 111, recontada sobre `_executable_rules()`; as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, e cada uma tem golden positivo **e** negativo. A leitura anterior publicava 105 e já estava defasada em 1 antes desta entrega. `_executable_rules()` filtra por `executable`, **nunca** por `status` | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **100** — a `AGENT-084` da entrega de `SF-ERR` (2026-09-08) é a centésima, e ela é rota **própria** pela mesma razão que `SF-SPARK4` e `SF-LF` ganharam as delas: declarar a área em `rule_areas` do agente NÃO roteia, e `findings_area` conta por prefixo exato do `rule_id` até o último hífen. Destino `sf-runtime-specialist`, e a posição é depois da `AGENT-002` — um case com `SF-GLUE` junto continua indo para `glue-infra-reviewer`. Leitura anterior: **99** — a `AGENT-082` da entrega de Control-M é a nonagésima oitava, e ela é rota **própria** e não uma linha a mais num `any:` existente: Control-M não é EMR, não roda Spark e não tem cluster, então enfiá-la na `AGENT-007` mandaria o case para um coordenador cujo vocabulário inteiro não descreve o artefato. A fase de EMR on EKS, ao contrário, **não** moveu esta linha: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` `AGENT-083` e a 99ª, da entrega da ponte (2026-09-02). Ela **nao** herda a rota de nenhuma das duas metades que cruza: `SF-PY` iria para quem le codigo e `SF-SPARK` para quem le event log, e o caso precisa de alguem que saiba pedir OS DOIS. Destino `spark-performance-architect`, e a posicao e antes de `AGENT-082` porque a leitura com execucao ao lado e a mais forte. |
-| Tools MCP | **73** — `sparkforge_analyze_parquet_footer` é a septuagésima terceira (2026-09-09), e ela é `READ_ONLY`: parte do artefato JSON e **não abre arquivo Parquet**. A leitura do rodapé é do coletor, que depende do extra opcional `parquet` — a tool não. Crescimento de superfície declarado: **+7 623 bytes** (398 374 → 405 997). Leitura anterior de **72** — `sparkforge_analyze_cloudwatch_logs` e `sparkforge_analyze_error_signatures` são a septuagésima primeira e a septuagésima segunda (2026-09-09), e fecham a lacuna D-4 da frente de stacktrace: até elas, `extract_cloudwatch_logs_tree` era referenciado por `scripts/regen_fixtures.py` e mais nada, e o operador que coletasse o log precisava do golden para ver o fact. **São DUAS e não uma, e a divisão não é estilo**: a primeira LÊ ARTEFATO, a segunda é derivação pura sobre a UNIÃO dos facts, no molde de `analyze call-graph`. Juntá-las quebraria a recusa: `build_signature_matches` recusa por ESCOPO — um `error.signature.unresolved` por (run, log group) —, e rodando o matcher dentro do verbo do log uma exceção do event log ausente daquele arquivo não produziria recusa nenhuma, e o ponto cego sumiria em silêncio. As duas são `READ_ONLY` (`readOnlyHint: True`, `openWorldHint: False`), e levam a contagem de tools que declaram caminho de 65 para **67** — por chaves diferentes: `path` numa, `facts_path` na outra. Crescimento de superfície declarado: **+14 764 bytes** (383 610 → 398 374). Leitura anterior de **70** — `sparkforge_collect_cloudwatch_logs` é a septuagésima (T5 da frente de stacktrace, 2026-09-09), e ela é a **décima** `CLOUD_MUTATION`: coleta de API AWS viva E grava artefato mais manifesto no disco do operador, então `readOnlyHint: False` e `openWorldHint: True` pela mesma anotação das outras nove `collect_*`. Crescimento de superfície declarado: **+2 848 bytes** (380 762 → 383 610), medido por `scripts/check_surface_lock.py`. Leitura anterior de **69** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` A entrega de `code path` (2026-09-02) levou de 65 para **66**: `sparkforge_code_path` e a setima tool de Code Intelligence, e a superficie de tools cresceu 4103 bytes (355071 para 359174). O schema proprio existe porque a resposta tem uma forma que nenhuma outra tem: `reason` obrigatorio e ANULAVEL, com tres razoes de recusa que nao querem dizer a mesma coisa (`node_not_indexed`, `depth_exhausted`, `no_resolved_path`). Numero relido pela propria prova. A entrega de `code shape` (2026-09-02) levou de 66 para **67**: `sparkforge_code_shape` é a oitava tool de Code Intelligence, e traz **duas** medidas na mesma resposta porque a entrada é a mesma (o índice inteiro) e a pergunta é a mesma — *como este código está organizado*. Duas tools cobririam o mesmo contrato duas vezes nos gates de paridade, para sempre. O schema obriga `communities.algorithm` no corpo, e isso **não** é decorativo: a partição é reproduzível e não única, e publicá-la sem o método ao lado convidaria a lê-la como canônica. A entrega de `code export` (2026-09-02) levou de 67 para **68**, e o escopo dela veio de uma **medição da fonte, não do prompt**: `prompt_evo_graph_economy.md` pede um adaptador que importe e exporte o `graph.json` do Graphify, e medido em `Graphify-Labs/graphify@v8` esse formato **não é publicado** — o `README.md` não o especifica e o `ARCHITECTURE.md` diz literalmente que o schema que mostra é o da *extração*, anterior a `build()`. Exportar contra o formato final seria inventá-lo e chamar isso de compatibilidade. A tool exporta o formato que a fonte publica e declara no próprio artefato o que não faz. A entrega da superfície do executor agêntico (2026-09-08) levou de 68 para **69**: `sparkforge_arbitrate` é a única tool nova, e a superfície de tools cresceu **9952 bytes** (366902 para 376854). Ela leva a classe `LOCAL_MUTATION` de 14 para 15 porque grava o blackboard do case, e declara `repo`, `findings_path` e `facts_path` — por isso NÃO entra no conjunto de exceção de `tests/test_harness_authorization.py`, que foi de 63 para 64 tools com caminho declarado. |
+| Rotas determinísticas | **101** — a `AGENT-085` é a centésima primeira (2026-09-09), e ela roteia a área `SF-IAM` nova para `sf-security-reviewer`: quando a AWS nomeia a camada que negou, o conserto não está na policy que o time do job abriria primeiro. Leitura anterior de **100** — a `AGENT-084` da entrega de `SF-ERR` (2026-09-08) é a centésima, e ela é rota **própria** pela mesma razão que `SF-SPARK4` e `SF-LF` ganharam as delas: declarar a área em `rule_areas` do agente NÃO roteia, e `findings_area` conta por prefixo exato do `rule_id` até o último hífen. Destino `sf-runtime-specialist`, e a posição é depois da `AGENT-002` — um case com `SF-GLUE` junto continua indo para `glue-infra-reviewer`. Leitura anterior: **99** — a `AGENT-082` da entrega de Control-M é a nonagésima oitava, e ela é rota **própria** e não uma linha a mais num `any:` existente: Control-M não é EMR, não roda Spark e não tem cluster, então enfiá-la na `AGENT-007` mandaria o case para um coordenador cujo vocabulário inteiro não descreve o artefato. A fase de EMR on EKS, ao contrário, **não** moveu esta linha: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` `AGENT-083` e a 99ª, da entrega da ponte (2026-09-02). Ela **nao** herda a rota de nenhuma das duas metades que cruza: `SF-PY` iria para quem le codigo e `SF-SPARK` para quem le event log, e o caso precisa de alguem que saiba pedir OS DOIS. Destino `spark-performance-architect`, e a posicao e antes de `AGENT-082` porque a leitura com execucao ao lado e a mais forte. |
+| Tools MCP | **77** — `sparkforge_collect_iam_access` e `sparkforge_analyze_iam_access` são a septuagésima sexta e a septuagésima sétima (2026-09-09), no mesmo par de lados das duas anteriores. Leitura anterior de **75** — `sparkforge_collect_lakeformation` e `sparkforge_analyze_lakeformation_grants` são a septuagésima quarta e a septuagésima quinta (2026-09-09), e elas caem em lados opostos do predicado de autorização: a de coleta é `_WRITE_LOCAL_OPEN_WORLD` e declara `repo`, a de análise é `_READ_ONLY` e declara `path`. Leitura anterior de **73** — `sparkforge_analyze_parquet_footer` é a septuagésima terceira (2026-09-09), e ela é `READ_ONLY`: parte do artefato JSON e **não abre arquivo Parquet**. A leitura do rodapé é do coletor, que depende do extra opcional `parquet` — a tool não. Crescimento de superfície declarado: **+7 623 bytes** (398 374 → 405 997). Leitura anterior de **72** — `sparkforge_analyze_cloudwatch_logs` e `sparkforge_analyze_error_signatures` são a septuagésima primeira e a septuagésima segunda (2026-09-09), e fecham a lacuna D-4 da frente de stacktrace: até elas, `extract_cloudwatch_logs_tree` era referenciado por `scripts/regen_fixtures.py` e mais nada, e o operador que coletasse o log precisava do golden para ver o fact. **São DUAS e não uma, e a divisão não é estilo**: a primeira LÊ ARTEFATO, a segunda é derivação pura sobre a UNIÃO dos facts, no molde de `analyze call-graph`. Juntá-las quebraria a recusa: `build_signature_matches` recusa por ESCOPO — um `error.signature.unresolved` por (run, log group) —, e rodando o matcher dentro do verbo do log uma exceção do event log ausente daquele arquivo não produziria recusa nenhuma, e o ponto cego sumiria em silêncio. As duas são `READ_ONLY` (`readOnlyHint: True`, `openWorldHint: False`), e levam a contagem de tools que declaram caminho de 65 para **67** — por chaves diferentes: `path` numa, `facts_path` na outra. Crescimento de superfície declarado: **+14 764 bytes** (383 610 → 398 374). Leitura anterior de **70** — `sparkforge_collect_cloudwatch_logs` é a septuagésima (T5 da frente de stacktrace, 2026-09-09), e ela é a **décima** `CLOUD_MUTATION`: coleta de API AWS viva E grava artefato mais manifesto no disco do operador, então `readOnlyHint: False` e `openWorldHint: True` pela mesma anotação das outras nove `collect_*`. Crescimento de superfície declarado: **+2 848 bytes** (380 762 → 383 610), medido por `scripts/check_surface_lock.py`. Leitura anterior de **69** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` A entrega de `code path` (2026-09-02) levou de 65 para **66**: `sparkforge_code_path` e a setima tool de Code Intelligence, e a superficie de tools cresceu 4103 bytes (355071 para 359174). O schema proprio existe porque a resposta tem uma forma que nenhuma outra tem: `reason` obrigatorio e ANULAVEL, com tres razoes de recusa que nao querem dizer a mesma coisa (`node_not_indexed`, `depth_exhausted`, `no_resolved_path`). Numero relido pela propria prova. A entrega de `code shape` (2026-09-02) levou de 66 para **67**: `sparkforge_code_shape` é a oitava tool de Code Intelligence, e traz **duas** medidas na mesma resposta porque a entrada é a mesma (o índice inteiro) e a pergunta é a mesma — *como este código está organizado*. Duas tools cobririam o mesmo contrato duas vezes nos gates de paridade, para sempre. O schema obriga `communities.algorithm` no corpo, e isso **não** é decorativo: a partição é reproduzível e não única, e publicá-la sem o método ao lado convidaria a lê-la como canônica. A entrega de `code export` (2026-09-02) levou de 67 para **68**, e o escopo dela veio de uma **medição da fonte, não do prompt**: `prompt_evo_graph_economy.md` pede um adaptador que importe e exporte o `graph.json` do Graphify, e medido em `Graphify-Labs/graphify@v8` esse formato **não é publicado** — o `README.md` não o especifica e o `ARCHITECTURE.md` diz literalmente que o schema que mostra é o da *extração*, anterior a `build()`. Exportar contra o formato final seria inventá-lo e chamar isso de compatibilidade. A tool exporta o formato que a fonte publica e declara no próprio artefato o que não faz. A entrega da superfície do executor agêntico (2026-09-08) levou de 68 para **69**: `sparkforge_arbitrate` é a única tool nova, e a superfície de tools cresceu **9952 bytes** (366902 para 376854). Ela leva a classe `LOCAL_MUTATION` de 14 para 15 porque grava o blackboard do case, e declara `repo`, `findings_path` e `facts_path` — por isso NÃO entra no conjunto de exceção de `tests/test_harness_authorization.py`, que foi de 63 para 64 tools com caminho declarado. |
 | Tools alcançáveis a partir de algum coordenador | **70 de 70** — remedido em 2026-09-09 na T6 da frente de stacktrace, pela mesma travessia de `tests/test_agent_coverage.py` (`_corpus_of` sobre `coordinators()`), que devolve **zero** órfã: `sparkforge_collect_cloudwatch_logs` chega por `sf-runtime-specialist`, o mesmo coordenador da rota `AGENT-084`. **A linha publicava 69 de 69, e a tool nova a deixou defasada** — pela mesma razão de sempre: ela está em `SEM_MEDIDA`, e o gate que a cobre é o teste, não este script. Leitura anterior, de 2026-09-08: **69 de 69**, remedido pela própria travessia de `tests/test_agent_coverage.py` (`_corpus_of` sobre `coordinators()`), que devolve **zero** órfã. **A linha publicava 65 e estava defasada em quatro** — `code_path`, `code_shape`, `code_export` e `arbitrate` entraram sem que ela fosse relida, pela mesma razão da linha *Regras com golden que dispara*: ela está em `SEM_MEDIDA`, e o gate que a cobre é o teste, não este script. `sparkforge_arbitrate` chega por `agents/spark-performance-architect.md`, o **coordenador** de diagnóstico — e no coordenador, não num executor, porque a contradição cruza áreas: o único par direto do catálogo (`SF-GRAPH-005` × `SF-LF-001`) só é visível para quem enxerga as duas ao mesmo tempo. Leitura anterior, de 2026-09-01: 65 de 65, e as quatro daquela vez chegavam por `sf-runtime-specialist`: as duas de `ReleaseDiff` pela skill `compare-releases`, e `sparkforge_controlm_describe` por citacao direta no proprio coordenador. Nao ha skill de Control-M, e a razao esta escrita la: a fronteira da pergunta e **versao**, a mesma que ja separa `migrate-glue-6` de `spark4-compatibility`. `sparkforge_analyze_controlm_jobs` chega pelo mesmo caminho, e `tests/test_agent_coverage.py` ganhou a classe que cobra as TRES metades do despacho de `SF-CTM` juntas -- rota, coordenador que declara a area, e as duas tools alcancaveis -- porque `SF-EMRS` ja ficou declarada num coordenador e sem rota nenhuma por uma fase inteira, com cada invariante generico passando sozinho | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Skills | **57** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases` + `provision-s3-tables-table` + `harden-s3-bucket` + 9 skills AWS oficiais adaptadas: `aws-storage`, `aws-database`, `aws-serverless`, `aws-iam`, `aws-observability`, `aws-billing-and-cost-management`, `aws-messaging-and-streaming`, `aws-security`, `aws-sdk-python-usage`) | `skills/*/SKILL.md` |
+| Skills | **58** — a quinquagésima oitava é `diagnose-lakeformation-access` (2026-09-09), o PROCEDIMENTO que ordena os quatro coletores de governança de acesso. Ela é **não-despachável** por duas razões registradas em `sync_skills.py`: coleta da AWS ao vivo, e toda recomendação dela é mudança de postura de segurança com raio maior que o do job. Leitura anterior de **57** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases` + `provision-s3-tables-table` + `harden-s3-bucket` + 9 skills AWS oficiais adaptadas: `aws-storage`, `aws-database`, `aws-serverless`, `aws-iam`, `aws-observability`, `aws-billing-and-cost-management`, `aws-messaging-and-streaming`, `aws-security`, `aws-sdk-python-usage`) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **23 de 57**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase). `provision-s3-tables-table`, `harden-s3-bucket` e as 9 skills AWS adaptadas são as onze não-despacháveis — procedimento operacional que pode mutar infra AWS ao vivo, fronteira `## Não faz` exige confirmação do operador, inalcancável em subagente | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **329** em 37 domínios — as **2** acrescidas são `heap_oom_com_distribuicao` e `gc_overhead_com_tempo`, e elas expuseram uma lacuna do matcher: as duas são `java.lang.OutOfMemoryError`, e o que as separa está na MENSAGEM. A terceira porta (`message_head`) estava no desenho da frente desde o início e nunca fora implementada, porque nenhuma assinatura precisava dela. Leitura anterior: **327** em 37 domínios — as **3** acrescidas são de `fixtures/exception/`, uma por regra da família de classpath. As três partem do MESMO event log, do MESMO `.jar` e do MESMO `main.tf`, e diferem só na classe da exceção — é o que torna o trio um contrafactual: se as regras casassem por outra coisa que não `signature_id`, as três disparariam juntas. Leitura anterior: **324** em 37 domínios — as **3** acrescidas são de `cloudwatch_logs`, do lote de assinaturas de Spark puro: `fetch_failed_com_executor_perdido` contra `fetch_failed_so_no_log` é o par que mede `requires_facts` (mesmo log, sem o event log), e `python_worker_morreu_com_udf` estreia o quinto companheiro do corpus — o `*.py`, porque `SF-ERR-008` exige `pyspark.udf` ao lado da linha. Leitura anterior: **321** em 37 domínios — recontado em 2026-09-09 na entrega do footer; as **7** acrescidas são `fixtures/parquet_footer/`, o domínio 37, e o corpus tem uma propriedade que nenhum outro tem: **o input foi gerado a partir de Parquet REAL e o binário NÃO é committado**. Um footer inventado provaria que o extrator consome o shape do gerador, nunca que pyarrow devolve aquele shape; e `.parquet` num corpus de fixture é irrevisável em diff. O par que sustenta a frente é `ordenado_poda` contra `espalhado_nao_poda` — MESMO número de linhas, MESMO `row_group_size`, MESMOS valores, só a ORDEM muda —, e ele dá `avg_range_coverage` de ~1/3 contra ~1,0. Se a medida reagisse a tamanho ou a contagem, os dois dariam igual. Leitura anterior, de **314** em 36 domínios — recontado em 2026-09-09 ao fechar as seis assinaturas; as **7** acrescidas desde as 307 são todas de `cloudwatch_logs`, e elas mudam a NATUREZA do domínio: ele deixou de ser só log e passou a trazer o companheiro que a regra exige — dump Iceberg em `input/iceberg/`, event log, inventário de consumidores e Terraform, cada um sob guarda de existência, com o log em `input/logs/`. **Quatro são positivas e três são o par negativo delas**, e o par é o que mede `requires_facts`: `athena_v3_confirmado_no_log` contra `athena_v3_sem_inventario` difere pelo `consumers.yaml`; `yarn_kill_nas_duas_fontes` contra `yarn_kill_so_no_log` difere pelo event log; `lf_negado_com_catalogo_de_outra_conta` contra `lf_negado_sem_catalogo_declarado` difere por UMA linha do mesmo `main.tf`. `commit_conflict_com_snapshots` é a única sem par próprio. Leitura anterior, de **307** em 36 domínios — recontado em 2026-09-09; as **9** acrescidas desde as 298 eram todas de `cloudwatch_logs`, o domínio 36, do coletor de LOG (T5). Quatro delas são recusa nomeada, e o teste que sustenta peso é o que cobra que as quatro sejam **distinguíveis entre si**: log group inexistente, sem permissão, janela vazia e sem credencial produzem a MESMA lista vazia de eventos, e se duas colapsassem na mesma razão a recusa nomeada não nomearia nada. `quatro_assinaturas_de_log` é a fixture que mede o ponto da frente: as QUATRO assinaturas de `knowledge/errors/` que são trecho de mensagem e não classe de exceção — ERR-ATH-001, ERR-GLUE-001, ERR-ICE-001 e ERR-LF-001 — casam de uma vez pelo caminho de log, e nenhuma delas casaria por `spark.exception`. Leitura anterior, de **298** em 35 domínios — recontado em 2026-09-08; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). A 289ª é `consumers/v3_sem_propriedade_com_athena` (2026-09-02), e ela prova um **falso negativo** que `SF-ENV-002` tinha: a regra lia a table property `format-version`, que é OPCIONAL, em vez do `format_version` do metadata, que é autoritativo. Tabela v3 sem a propriedade não disparava — e o modo de falha é o mesmo da fixture irmã: o job migra verde e o dashboard do outro time quebra dias depois. As duas juntas são o contrafactual: apontar a regra de volta para a propriedade cala esta e mantém a outra. A 290ª é `iceberg/delete_content_separado` (2026-09-02): os **três** estados do censo por `content` no mesmo dump — 4 position, 3 equality e 3 sem a coluna, somando os 10 delete files. Antes, os dois tipos entravam no mesmo `delete_file_count` e um dump sem a coluna era indistinguível de um em que todos fossem do mesmo tipo. `SF-ICE-002` continua disparando pelo mesmo número: o censo **acrescenta** medida, não muda a que a regra já usava. As **oito** ultimas sao `fixtures/exception/` (2026-09-08), o dominio 35, e elas fecham a divida que `tests/test_fixtures_kind_coverage.py` carregava nomeada desde a T1: `sparkforge/facts/exception.py` e `sparkforge/errors/matcher.py` ficavam FORA de `EXTRACTORS` porque o corpus nao tinha nenhum dos cinco kinds deles, e registra-los antes da fixture pintaria dois testes de vermelho sem medir nada. O corpus e o primeiro do repositorio com **tres artefatos por fixture** -- `eventlog.jsonl`, `*.jar` e `*.tf` no mesmo `input/` --, e a razao e `requires_facts`: as duas regras de `rules/catalog/errors.yaml` exigem `error.signature_match`, `mig.jar_binary` e `tf.attribute` juntos, e nenhuma fonte unica as prova. O par que sustenta peso e `nosuchmethod_com_jar_e_terraform` contra `nosuchmethod_sem_jar`: MESMO event log byte a byte, MESMO `main.tf`, um `.jar` a menos -- e o motor pula SF-ERR-001 com `missing: ["mig.jar_binary"]`, um item so. Tres das oito eram recusa nomeada (`sem_forma_de_stacktrace` duas vezes, `reason_redigida` uma), e `classe_no_meio_da_linha` registrava o LIMITE do parser em vez de o esconder. **Em 2026-09-09 esse limite caiu**, e o golden dela e o diff que a queda produziu: `_CABECA_APOS_EXECUTOR` alcanca a classe depois do prefixo do `DAGScheduler`, e `_CABECA` continua ancorada em `^`. Sao DUAS recusas nomeadas hoje, nao tres. |
+| Fixtures golden | **347** em 39 domínios — as **6** acrescidas são o Lote B, em `cloudwatch_logs`, e cada uma traz um companheiro DIFERENTE: dump de catálogo, event log, listagem S3 e código com configuração legada. A variedade é o ponto — nenhuma regra desta área dispara com a linha de log sozinha. Leitura anterior de **341** em 39 domínios — a acrescida é `fgac_escrevendo_em_local_registrado`, o par de `grant_de_leitura_em_local_registrado`: numa o modelo de acesso ESTÁ declarado e dispara `SF-LF-009`; na outra não está, e dispara `SF-LF-010`. A mesma localização registrada, lida dos dois lados. Leitura anterior de **340** em **39** domínios — o domínio novo é `fixtures/iam_access/`, com uma fixture que traz as QUATRO respostas de `EvalDecision` no mesmo artefato: leitura permitida, escrita no S3 negada pelo permissions boundary, e KMS negado pela service control policy. Três camadas, três consertos, um role só. Leitura anterior de **339** em **38** domínios — o domínio novo é `fixtures/lakeformation/`, com duas fixtures que são **par**: uma tem grant de `SELECT` em localização registrada e o bloco de settings recusado; a outra tem `ALL` com grant option, localização NÃO registrada, e o passo de conta de Full Table Access DESLIGADO. As duas juntas provam que um bloco que falha não apaga os outros dois. Leitura anterior de **337** em 37 domínios — as **2** acrescidas são `fgac_com_fta_no_mesmo_job` e `fgac_abaixo_do_minimo_de_workers`, em `infra_code`. A segunda carrega o par negativo **no mesmo arquivo**: dois `aws_glue_job` com os mesmos argumentos, um com 2 workers e outro com 4, e só o primeiro é acusado — é o que prova o `same_subject` da regra. Leitura anterior de **335** em 37 domínios — as **4** acrescidas são de `cloudwatch_logs`, uma por regra da família de Lake Formation, e cada uma traz o `main.tf` ao lado do log porque o companheiro que a regra exige é derivado dele. `get_data_access_negado_com_resolver` é a única das quatro SEM `--enable-lakeformation-fine-grained-access`, e a ausência é o par negativo embutido: sem ela nenhum `lakeformation.access_model` é emitido, e as outras três regras ficam mudas sobre o mesmo log. Leitura anterior de **331** em 37 domínios — as **2** acrescidas são `fgac_com_catalogo_nomeado` e `fta_sem_emrfs_no_51`, em `infra_code`, e a segunda carrega o par negativo embutido: sem `--enable-lakeformation-fine-grained-access`, nenhum `lakeformation.access_model` é emitido e a regra do catálogo nomeado não dispara. Leitura anterior de **329** em 37 domínios — as **2** acrescidas são `heap_oom_com_distribuicao` e `gc_overhead_com_tempo`, e elas expuseram uma lacuna do matcher: as duas são `java.lang.OutOfMemoryError`, e o que as separa está na MENSAGEM. A terceira porta (`message_head`) estava no desenho da frente desde o início e nunca fora implementada, porque nenhuma assinatura precisava dela. Leitura anterior: **327** em 37 domínios — as **3** acrescidas são de `fixtures/exception/`, uma por regra da família de classpath. As três partem do MESMO event log, do MESMO `.jar` e do MESMO `main.tf`, e diferem só na classe da exceção — é o que torna o trio um contrafactual: se as regras casassem por outra coisa que não `signature_id`, as três disparariam juntas. Leitura anterior: **324** em 37 domínios — as **3** acrescidas são de `cloudwatch_logs`, do lote de assinaturas de Spark puro: `fetch_failed_com_executor_perdido` contra `fetch_failed_so_no_log` é o par que mede `requires_facts` (mesmo log, sem o event log), e `python_worker_morreu_com_udf` estreia o quinto companheiro do corpus — o `*.py`, porque `SF-ERR-008` exige `pyspark.udf` ao lado da linha. Leitura anterior: **321** em 37 domínios — recontado em 2026-09-09 na entrega do footer; as **7** acrescidas são `fixtures/parquet_footer/`, o domínio 37, e o corpus tem uma propriedade que nenhum outro tem: **o input foi gerado a partir de Parquet REAL e o binário NÃO é committado**. Um footer inventado provaria que o extrator consome o shape do gerador, nunca que pyarrow devolve aquele shape; e `.parquet` num corpus de fixture é irrevisável em diff. O par que sustenta a frente é `ordenado_poda` contra `espalhado_nao_poda` — MESMO número de linhas, MESMO `row_group_size`, MESMOS valores, só a ORDEM muda —, e ele dá `avg_range_coverage` de ~1/3 contra ~1,0. Se a medida reagisse a tamanho ou a contagem, os dois dariam igual. Leitura anterior, de **314** em 36 domínios — recontado em 2026-09-09 ao fechar as seis assinaturas; as **7** acrescidas desde as 307 são todas de `cloudwatch_logs`, e elas mudam a NATUREZA do domínio: ele deixou de ser só log e passou a trazer o companheiro que a regra exige — dump Iceberg em `input/iceberg/`, event log, inventário de consumidores e Terraform, cada um sob guarda de existência, com o log em `input/logs/`. **Quatro são positivas e três são o par negativo delas**, e o par é o que mede `requires_facts`: `athena_v3_confirmado_no_log` contra `athena_v3_sem_inventario` difere pelo `consumers.yaml`; `yarn_kill_nas_duas_fontes` contra `yarn_kill_so_no_log` difere pelo event log; `lf_negado_com_catalogo_de_outra_conta` contra `lf_negado_sem_catalogo_declarado` difere por UMA linha do mesmo `main.tf`. `commit_conflict_com_snapshots` é a única sem par próprio. Leitura anterior, de **307** em 36 domínios — recontado em 2026-09-09; as **9** acrescidas desde as 298 eram todas de `cloudwatch_logs`, o domínio 36, do coletor de LOG (T5). Quatro delas são recusa nomeada, e o teste que sustenta peso é o que cobra que as quatro sejam **distinguíveis entre si**: log group inexistente, sem permissão, janela vazia e sem credencial produzem a MESMA lista vazia de eventos, e se duas colapsassem na mesma razão a recusa nomeada não nomearia nada. `quatro_assinaturas_de_log` é a fixture que mede o ponto da frente: as QUATRO assinaturas de `knowledge/errors/` que são trecho de mensagem e não classe de exceção — ERR-ATH-001, ERR-GLUE-001, ERR-ICE-001 e ERR-LF-001 — casam de uma vez pelo caminho de log, e nenhuma delas casaria por `spark.exception`. Leitura anterior, de **298** em 35 domínios — recontado em 2026-09-08; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` As **tres** ultimas sao `fixtures/bridge/` (2026-09-02), e elas sao o UNICO corpus deste repositorio com **dois artefatos por fixture** -- `job.py` e `eventlog.jsonl` no mesmo `input/`. E a natureza da coisa: uma ponte nao tem como ser exercitada por um lado so. O par positivo/negativo difere em UM numero (a linha 9 contra a 99 no nome do stage), e e ele que prova que a chave e `arquivo:linha` e nao so `arquivo`. As quatro ultimas sao de `fixtures/iceberg/` (2026-09-02) e fecham um eixo que estava sem lastro: **o corpus era 9 de 9 em v2**, e um kind que so ve um valor em todo o corpus nao esta sendo testado. Entraram `format_v1_valida` (v1 e valida, e a propriedade esta ausente), `format_v3_com_propriedade`, `format_version_diverge_da_propriedade` (o unico golden com `diverges: true`) e `format_version_ausente_no_dump` (a recusa). A 289ª é `consumers/v3_sem_propriedade_com_athena` (2026-09-02), e ela prova um **falso negativo** que `SF-ENV-002` tinha: a regra lia a table property `format-version`, que é OPCIONAL, em vez do `format_version` do metadata, que é autoritativo. Tabela v3 sem a propriedade não disparava — e o modo de falha é o mesmo da fixture irmã: o job migra verde e o dashboard do outro time quebra dias depois. As duas juntas são o contrafactual: apontar a regra de volta para a propriedade cala esta e mantém a outra. A 290ª é `iceberg/delete_content_separado` (2026-09-02): os **três** estados do censo por `content` no mesmo dump — 4 position, 3 equality e 3 sem a coluna, somando os 10 delete files. Antes, os dois tipos entravam no mesmo `delete_file_count` e um dump sem a coluna era indistinguível de um em que todos fossem do mesmo tipo. `SF-ICE-002` continua disparando pelo mesmo número: o censo **acrescenta** medida, não muda a que a regra já usava. As **oito** ultimas sao `fixtures/exception/` (2026-09-08), o dominio 35, e elas fecham a divida que `tests/test_fixtures_kind_coverage.py` carregava nomeada desde a T1: `sparkforge/facts/exception.py` e `sparkforge/errors/matcher.py` ficavam FORA de `EXTRACTORS` porque o corpus nao tinha nenhum dos cinco kinds deles, e registra-los antes da fixture pintaria dois testes de vermelho sem medir nada. O corpus e o primeiro do repositorio com **tres artefatos por fixture** -- `eventlog.jsonl`, `*.jar` e `*.tf` no mesmo `input/` --, e a razao e `requires_facts`: as duas regras de `rules/catalog/errors.yaml` exigem `error.signature_match`, `mig.jar_binary` e `tf.attribute` juntos, e nenhuma fonte unica as prova. O par que sustenta peso e `nosuchmethod_com_jar_e_terraform` contra `nosuchmethod_sem_jar`: MESMO event log byte a byte, MESMO `main.tf`, um `.jar` a menos -- e o motor pula SF-ERR-001 com `missing: ["mig.jar_binary"]`, um item so. Tres das oito eram recusa nomeada (`sem_forma_de_stacktrace` duas vezes, `reason_redigida` uma), e `classe_no_meio_da_linha` registrava o LIMITE do parser em vez de o esconder. **Em 2026-09-09 esse limite caiu**, e o golden dela e o diff que a queda produziu: `_CABECA_APOS_EXECUTOR` alcanca a classe depois do prefixo do `DAGScheduler`, e `_CABECA` continua ancorada em `^`. Sao DUAS recusas nomeadas hoje, nao tres. |
 | Ramos de severidade com golden que os produz | **119 de 119** — recontado em 2026-09-02 (o sub-número **15 deles nas 7 regras com `severity_by`** continua certo; nenhuma das cinco `SF-CTM` de 2026-09-02 declara `severity_by`, então cada uma acrescenta um ramo só, o de `severity_default`. `SF-GRAPH` também não tem nenhuma, ver `V-GR-3`). A leitura anterior publicava 113 e já estava defasada em 1 antes desta entrega | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **230** (215 móveis, 15 fixas) — as **duas** acrescidas são as páginas do formato Parquet que `SF-PQ-007` e `SF-PQ-009` citam (`file-format/metadata` e `data-pages/compression`), e são a primeira vez que este repositório vigia a especificação do formato em vez da documentação de um serviço. Leitura anterior de **228** (213 móveis, 15 fixas) — 96 citadas por regra, 215 por `knowledge/`, 83 pelas duas. Recontado em 2026-09-09 por `python scripts/refresh_knowledge.py --offline --update`: as **três** acrescidas são as fontes que `SF-ERR-004`, `SF-ERR-005` e `SF-ERR-006` citam, e as três já eram declaradas pelas assinaturas de `knowledge/errors/` — o que mudou é que agora uma REGRA as cita, e por isso elas entram na watchlist. Leitura anterior, de **225** (210 móveis, 15 fixas) — 93 citadas por regra, 215 por `knowledge/`, 83 pelas duas. As cinco parcelas foram **recontadas** em 2026-09-01 sobre o lock: as anteriores (201/14 e 87/205/77) somavam 215 e não fechavam com o total publicado. A entrega de conhecimento do Control-M acrescentou **uma** — a página What's New do Automation API —, e a de `Jobs-as-Code` acrescentou **quatro**: as três páginas do `API_CodeRef` que descrevem a forma do artefato (*Job Properties*, *Job Types*, *Folders and Flows*, citadas por `knowledge/controlm/` **e** por `SF-CTM-001`) e *Secrets in Code*, citada só por `knowledge/` — é ela que sustenta o veto V-CTM-1, porque publica que a credencial mora em connection profile e não em definição de job. A frase anterior desta linha, *"por regra nenhuma, porque não há regra de Control-M"*, deixou de valer com `SF-CTM`. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **235** (220 móveis, 15 fixas) — a **uma** acrescida é a referência de API de `GetTemporaryGlueTableCredentials`, e ela é a primeira vez que este repositório vigia uma página de REFERÊNCIA DE API em vez de um guia: é ela que publica o nome da ação e a permissão de IAM que a autoriza, e é só isso que sustenta a assinatura `ERR-LF-002` — o texto da mensagem de negação a AWS não publica em lugar nenhum. Leitura anterior de **234** (219 móveis, 15 fixas) — as **quatro** acrescidas são as páginas de FGAC, de Full Table Access e as duas de migração (5.0 e 5.1) que `knowledge/glue/lakeformation-fgac.md` passou a citar, e elas são a primeira vez que este repositório vigia as DUAS páginas de migração ao mesmo tempo — é entre elas que mora o conflito declarado da §6 daquele documento. Leitura anterior de **230** (215 móveis, 15 fixas) — as **duas** acrescidas são as páginas do formato Parquet que `SF-PQ-007` e `SF-PQ-009` citam (`file-format/metadata` e `data-pages/compression`), e são a primeira vez que este repositório vigia a especificação do formato em vez da documentação de um serviço. Leitura anterior de **228** (213 móveis, 15 fixas) — 96 citadas por regra, 215 por `knowledge/`, 83 pelas duas. Recontado em 2026-09-09 por `python scripts/refresh_knowledge.py --offline --update`: as **três** acrescidas são as fontes que `SF-ERR-004`, `SF-ERR-005` e `SF-ERR-006` citam, e as três já eram declaradas pelas assinaturas de `knowledge/errors/` — o que mudou é que agora uma REGRA as cita, e por isso elas entram na watchlist. Leitura anterior, de **225** (210 móveis, 15 fixas) — 93 citadas por regra, 215 por `knowledge/`, 83 pelas duas. As cinco parcelas foram **recontadas** em 2026-09-01 sobre o lock: as anteriores (201/14 e 87/205/77) somavam 215 e não fechavam com o total publicado. A entrega de conhecimento do Control-M acrescentou **uma** — a página What's New do Automation API —, e a de `Jobs-as-Code` acrescentou **quatro**: as três páginas do `API_CodeRef` que descrevem a forma do artefato (*Job Properties*, *Job Types*, *Folders and Flows*, citadas por `knowledge/controlm/` **e** por `SF-CTM-001`) e *Secrets in Code*, citada só por `knowledge/` — é ela que sustenta o veto V-CTM-1, porque publica que a credencial mora em connection profile e não em definição de job. A frase anterior desta linha, *"por regra nenhuma, porque não há regra de Control-M"*, deixou de valer com `SF-CTM`. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
@@ -7386,6 +7386,593 @@ jeito. Cruzar exigiria resolver a tabela do predicado contra o prefixo do
 footer, e nada no case liga os dois hoje —
 `fixtures/parquet_footer/espalhado_com_filtro/meta.yaml` registra isso em vez de
 esconder.
+
+
+## A decisão de IAM vira fact, e ela diz QUEM negou (2026-09-09)
+
+Branch `feat/executor-agentico-spec`, commit `ff8476c`.
+
+Fecha o **terceiro e último** item que `lakeformation.unresolved` nomeia: a
+policy do runtime role. E fecha por **simulação**, não por parse.
+
+### Por que simular e não parsear
+
+O caminho óbvio seria ler o JSON da policy e decidir. Ele erra exatamente nos
+casos que importam, e os quatro têm em comum **não aparecer no documento do
+role**: permission boundary recorta o que a policy concede; service control
+policy nega acima do role; `Deny` explícito em qualquer policy anexada vence
+todo `Allow`; e `Condition` depende de contexto que um parser não tem.
+
+`iam:SimulatePrincipalPolicy` avalia tudo isso do lado da AWS. O que sai daqui é
+**medida**, não inferência.
+
+### As quatro respostas, e as três de negação exigem consertos diferentes
+
+| `denied_by` | O conserto |
+|---|---|
+| — (`allowed`) | passa |
+| `implicit_deny` | nenhuma policy concede — **acrescentar** resolve |
+| `explicit_deny` | alguma policy nega — acrescentar **não** resolve |
+| `permissions_boundary` | o boundary recorta — mexer na policy do role não muda nada |
+| `service_control_policy` | a organização nega acima do role |
+
+A ordem de precedência — SCP antes de boundary antes da policy — está no código
+e no teste. **Colapsar as quatro num booleano faria "adicione a permissão" virar
+o conselho único, e ele é errado em três dos quatro casos.**
+
+### Duas recusas que saem SEMPRE
+
+**`allowed` sem recurso simulado não é `allowed` naquele recurso.** Sem
+`--resource-arn` a AWS responde sobre `*`, e `scoped_to_resource` diz qual das
+duas perguntas foi feita.
+
+**`policy_de_recurso_nao_avaliada` sai em todo artefato**, inclusive com tudo
+`ok`: a simulação avalia policies de **identidade** mais boundary e SCP. Bucket
+policy, key policy do KMS e Glue resource policy são avaliação separada, e um
+`allowed` aqui com bucket policy negando ainda falha.
+
+### A fixture: três camadas num role só
+
+| ação | decisão | camada |
+|---|---|---|
+| `glue:GetTable` | allowed | — |
+| `lakeformation:GetDataAccess` | allowed | — |
+| `s3:PutObject` | implicitDeny | **permissions_boundary** |
+| `kms:GenerateDataKey` | explicitDeny | **service_control_policy** |
+
+É o par leitura-passa/escrita-falha, com a resposta **fora** da policy que todo
+mundo abre primeiro — a mesma classe de sintoma que abriu esta frente.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| Tools MCP | 75 | **77** |
+| Extratores | 35 | **36** |
+| Fact kinds | 207 | **210** |
+| Fixtures golden | 339 | **340**, em **39** domínios |
+
+**27 alegações de lastro remediadas por id** — 24 de contagem e 3 de razão, e as
+três saíram da própria prova reexecutada.
+
+### Os três artefatos que faltavam, agora completos
+
+`lakeformation.unresolved` nomeava grant, registro de localização S3 e policy do
+runtime role. **Os três são coletáveis.** O que continua sem existir é **regra
+que os consuma**: os oito kinds novos entregam o material, e transformá-los em
+achado exige decidir o que `SELECT` bastar significa por operação e por modelo
+de acesso — que é juízo, e juízo mora na regra.
+
+
+## A permissão vira artefato, e o motor deixa de só dizer em qual plano parou (2026-09-09)
+
+Branch `feat/executor-agentico-spec`, commit `c84dd0e`.
+
+`lakeformation.unresolved` nomeia **três** artefatos que o motor não tinha.
+Esta entrega coleta **dois**: o grant do Lake Formation e o registro da
+localização S3. O terceiro — a policy do runtime role — continua faltando, e a
+seção *Lacuna nomeada* diz por que ele é coletor próprio.
+
+### Três chamadas, três status, e o topo é o pior dos três
+
+| Chamada | O que ela decide |
+|---|---|
+| `list_permissions` | quem tem o quê sobre a tabela |
+| `describe_resource` | a localização S3 está **registrada**, e com qual role |
+| `get_data_lake_settings` | se a conta permite query engine de terceiro sem validação de session tag |
+
+**As três falham por motivos independentes** — um principal pode ler grant e não
+ler data lake settings, uma tabela pode existir sem localização registrada, e a
+conta pode negar as três. Cada bloco carrega o **seu** status, e o de topo é o
+**pior** dos três: um artefato cujo topo diga `ok` porque duas das três
+funcionaram esconderia justamente a que o operador precisa saber que falhou.
+
+**O recurso é obrigatório.** `list_permissions` sem recurso devolve o inventário
+inteiro do data lake, que é dado de governança de terceiros e não tem por que
+entrar num `facts.json` committado.
+
+### As três distinções que o fact preserva
+
+1. **Três estados produzem a mesma lista vazia de grants** — tabela sem grant,
+   sem permissão para LER os grants, e sem credencial. Tratá-los igual acusaria
+   a tabela governada corretamente e a que ninguém conseguiu inspecionar do
+   mesmo jeito.
+2. **`registered` é ternário** — verdadeiro, falso, ou **ausente quando ninguém
+   mediu**. Tratar o ausente como falso faria o motor afirmar "não registrada"
+   sobre uma pergunta que não foi feita, e é exatamente sobre localização
+   **registrada** que a §6 do documento de conhecimento declara conflito.
+3. **`IAM_ALLOWED_PRINCIPALS` não é normalizado** — ele não é um role, é a
+   ausência de governança fina. Uma regra que leia *"existe `ALL` sobre a
+   tabela"* sem olhar o principal concluiria que a escrita está autorizada para
+   o job.
+
+### O par de fixtures inverte os três eixos
+
+`grant_de_leitura_em_local_registrado` tem `SELECT`+`DESCRIBE` para o role,
+`ALL` para `IAM_ALLOWED_PRINCIPALS`, localização **registrada**, e o bloco de
+settings recusado.
+
+`conta_sem_full_table_access` tem `ALL` **com grant option**, localização
+**não** registrada, e o bloco de settings respondendo `ok` com
+`allow_full_table_external_data_access` **desligado**. **É o achado que nenhum
+artefato do job revela**: a permissão está completa e a escrita sob Full Table
+Access não acontece assim mesmo, porque o passo de **conta** precede qualquer
+concessão.
+
+`expects_rules` sai vazio nas duas, de propósito: nenhuma regra consome
+`lakeformation.grant` ainda, e amarrar uma regra aqui antes de ela existir seria
+escrever o golden de um achado que ninguém produz.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| Tools MCP | 73 | **75** |
+| Extratores de facts | 34 | **35** |
+| Fact kinds | 202 | **207** |
+| Fixtures golden | 337 | **339**, em **38** domínios |
+| Superfície de skills | 464 084 B | **466 322 B** (+2 238) |
+
+**29 alegações de lastro remediadas por id**, nunca por varredura — o maior lote
+que uma entrega desta sessão moveu. A composição explica: 2 tools novas (sete
+alegações derivam de `len(TOOLS)`), 5 arquivos `.py` novos entre `sparkforge/` e
+`tests/`, e um domínio de fixture. **Quatro delas são razão e não contagem**, e
+saíram da própria prova reexecutada.
+
+### O gate de prosa se pagou de novo
+
+Ele pegou os **13** desvios desta entrega sozinho. Seis moram em `README.md`,
+`GUIA_DE_USO.md`, `AGENTS.md` e `CLAUDE.md` — os quatro arquivos que, até dois
+commits atrás, nenhum gate cobria.
+
+### Lacuna nomeada
+
+**A policy do runtime role continua sem coletor**, e quando ele existir o
+caminho é `iam:SimulatePrincipalPolicy` e **não** parse do documento. Ler o JSON
+e formar opinião sobre ele erra exatamente nos casos que importam — permission
+boundary, service control policy, deny explícito e condição. Simular devolve a
+resposta da AWS; parsear devolve uma leitura nossa.
+
+**Nenhuma regra consome os cinco kinds novos ainda.** O extrator entrega o
+material; transformá-lo em achado é entrega própria, e ela precisa decidir o que
+`SELECT` bastar significa por operação e por modelo de acesso — que é juízo, e
+juízo mora na regra.
+
+
+## O número em prosa ganha lastro, e as duas regras que já eram escrevíveis (2026-09-09)
+
+Branch `feat/executor-agentico-spec`.
+
+Duas frentes numa entrega, porque **a segunda provou a primeira**: ao acrescentar
+`SF-LF-005` e `SF-LF-006`, o gate novo pegou sozinho **três** alegações do
+`README.md` que teriam apodrecido em silêncio.
+
+### O segundo recorte de `check_status_numbers.py`
+
+Ele auditava a tabela *Números correntes* deste documento. Passou a auditar
+também **número publicado em prosa**, e o motivo está medido na seção anterior:
+sete números errados em quatro arquivos, e nenhum gate os conferia.
+`check_vnext_claims.py` audita `docs/vnext/` e `docs/harness/`; a tabela audita
+`STATUS.md`. **Os quatro arquivos que um leitor novo abre primeiro eram os únicos
+sem lastro.**
+
+**13 alegações ancoradas por regex**, cada uma conferida contra a medida que a
+dimensão já tem. Duas medidas novas moram em `MEDIDAS_PROSA`, **fora** de
+`MEDIDAS` para não disparar a checagem de órfã: *Regras executáveis* e *Tools com
+`detail_level`* — a segunda por `inspect.signature`, porque o parâmetro é o
+contrato e o texto do schema é descrição dele.
+
+**Âncora e não manifesto, e a diferença é de escala.** `check_vnext_claims.py`
+guarda a alegação num arquivo lateral porque audita prosa arbitrária em dezenas
+de documentos. Aqui são 13 alegações em 4 arquivos, todas sobre dimensões que
+`MEDIDAS` já mede — um manifesto seria um terceiro arquivo de verdade para
+guardar o que o par (âncora, medida) já diz.
+
+**A âncora falha fechada nos dois sentidos, e os dois vieram de defeito real:**
+
+- **padrão que não casa** → reprova. A frase foi reescrita ou apagada, e nos dois
+  casos o número deixou de ser conferido;
+- **padrão que casa DUAS vezes** → reprova. Âncora ambígua audita a primeira e
+  deixa a segunda apodrecer, que foi literalmente como o segundo `158 kinds` do
+  `README.md` sobreviveu a várias entregas.
+
+`auditar()` e `auditar_prosa()` ficam **separadas**, e `main()` soma as duas: os
+testes que trocam `MEDIDAS` por um dicionário de mentira reprovariam por alegação
+de prosa que eles não estão medindo, e o gate perderia a capacidade de ser testado
+por partes. **Nove testes novos**, e o contrafactual fora da suíte: mudar
+`34 extratores` para `33` faz o gate sair 1 nomeando a linha; revertido, sai 0.
+
+### `SF-LF-005` e `SF-LF-006`
+
+Nenhuma das duas precisou de fact novo. **As duas já eram escrevíveis quando o
+extrator entrou, e não tinham sido escritas** — é dívida da entrega anterior,
+paga aqui.
+
+| | fonte |
+|---|---|
+| `SF-LF-005` | *"A job cannot simultaneously run Full Table Access (FTA) and Fine-Grained Access Control (FGAC) at the same time."* |
+| `SF-LF-006` | *"Jobs with FGAC require a minimum of 4 workers."* |
+
+A segunda é **piso declarado, não alvo de tuning**, e por isso a regra propõe
+`investigate` sem estimar custo — `dpu_seconds` do run que não aconteceu não
+existe.
+
+### A correção no extrator que as regras expuseram
+
+`lakeformation.access_model` dizia `model: "fgac"` num job que **também**
+declarava Full Table Access. Como a AWS proíbe os dois juntos, `"both"` é um
+estado REAL — dizer `"fgac"` ali era o fact **escolhendo um lado** de uma
+configuração contraditória, juízo disfarçado de observação. `attrs.fta_markers`
+lista a chave que ativou o lado FTA, para que o achado mostre evidência em vez de
+afirmar.
+
+Isso tornou `SF-LF-005` uma regra de **uma condição**: o DSL não tem grupo
+aninhado, e *"FGAC E (resolver OU chave de catálogo)"* não é escrevível em
+`when`. Derivar o predicado foi o que a tornou possível — o mesmo motivo pelo
+qual o extrator existe (regra 33 do `CLAUDE.md`).
+
+**Limite declarado:** job **só** de FTA não produz `access_model`. FGAC tem um
+argumento que o liga e FTA não tem — ele é um conjunto de configurações de Spark.
+Inventar um `model: "fta"` ancorado numa chave de conf qualquer daria ao FTA uma
+declaração que ele não tem, e o subject sairia de um lugar arbitrário. A
+superfície de FTA é `lakeformation.filesystem`.
+
+### `same_subject` funciona numa e não na outra, e a diferença é medida
+
+`SF-LF-006` declara `same_subject: true`; `SF-LF-003` não pode.
+`lakeformation.access_model` herda o subject do `tf.attribute` da flag, cujo
+`symbol` é o **recurso** — igual ao de `number_of_workers`. Já `tf.spark_conf`
+tem symbol `<recurso>#<chave>`, e por isso a regra do catálogo nunca cairia no
+mesmo grupo. A fixture `fgac_abaixo_do_minimo_de_workers` carrega o par negativo
+**no mesmo arquivo**: dois `aws_glue_job` iguais, um com 2 workers e outro com 4,
+e só o primeiro é acusado.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| Regras de diagnóstico | 170 | **172** |
+| Área `SF-LF` | 4 | **6** |
+| Regras com `runtime_scope` | 22 | **24** |
+| Fixtures golden | 335 | **337** |
+| Superfície de skills | 463 924 B | **464 084 B** (+160) |
+| Alegações em prosa com lastro | **0** | **13** |
+
+`VNX-726` remediada por id: o corpus de `*.py` cresceu com o extrator e os testes,
+e a fração de `UNKNOWN_RECEIVER` foi de **90,7%** para **90,6%**.
+
+
+## A varredura de documentação, e os números que ninguém recontava (2026-09-09)
+
+Branch `feat/executor-agentico-spec`.
+
+Nove documentos vivos citavam capacidade que mudou. **Três classes de defasagem,
+e só a primeira era das entregas desta sessão.**
+
+### O que era desta sessão
+
+`skills/lakeformation-fgac-guard/SKILL.md` conhecia **somente** `SF-LF-001` —
+JAR contra FGAC. A área tem quatro regras estruturais e cinco de exceção. Ele
+ganhou a decisão FGAC contra Full Table Access (que vem antes de todas as
+outras), o eixo de versão 4.0/5.0/5.1, a seção *a API de escrita não é o caminho
+de autorização*, os quatro kinds `lakeformation.*` com o que eles **não**
+afirmam, e cinco red flags novas — uma por confusão que a área produz na prática.
+
+`agents/sf-lake-formation-specialist.md` era um agente **sem corpo**: só
+frontmatter e o bloco *Não faz*. `agents/sf-runtime-specialist.md` publicava
+*"só duas das seis assinaturas têm regra"*, e são **17 de 17**.
+`docs/aws/glue/6.0/lakeformation.md` publicava *"duas incompatibilidades"*, e são
+quatro.
+
+`docs/gates-por-mudanca.md` ganhou o passo que faltava, e ele é o que esta
+sessão descobriu na prática: **extrator DERIVADO precisa ser chamado.** Um módulo
+com `EMITTED_KINDS` correto e nenhuma chamada emite zero facts em produção e
+**passa nos dois testes do gate**, porque os dois leem o módulo e não o pipeline.
+O runner do golden e o `regen_*` são um par: se um deriva e o outro não, o golden
+nunca fecha.
+
+### O que NÃO era desta sessão
+
+| Documento | Publicava | Mede |
+|---|---:|---:|
+| `README.md` | 27 extratores | **34** |
+| `README.md` (dois lugares) | 158 kinds | **202** |
+| `GUIA_DE_USO.md` | 44 tools | **73** |
+| `.devin/README.md` | 63 tools | **73** |
+| `AGENTS.md` e `CLAUDE.md` | 70 tools, 31 com `detail_level` | **73** e **32** |
+
+A tabela de verbos do `README.md` também não tinha `analyze parquet-footer`,
+`analyze cloudwatch-logs` nem `analyze error-signatures` — três verbos entregues
+em 2026-09-09, antes desta frente.
+
+**O `detail_level` foi RECONTADO e não copiado:** 32, medido por
+`inspect.signature` sobre a função de cada tool em `sparkforge/adapters/_core.py`.
+O número publicado era 31, e a diferença é de um — que é exatamente o tipo de
+defasagem que sobrevive porque parece plausível.
+
+### `CLAUDE.md` ganhou três regras
+
+As três saem de defeito real desta sessão, não de generalidade:
+
+- **31** — Lake Formation são DOIS modelos, e a versão muda o significado.
+  Afirmar "FGAC não escreve" sem dizer a versão é erro de versão.
+- **32** — escrita em tabela REGISTRADA sob FGAC é conflito declarado, não
+  resposta. E a API de escrita não é o caminho de autorização.
+- **33** — predicado que o `where` não alcança vira FACT, nunca um `expr` mais
+  permissivo. `_CMP_OPS` tem seis comparadores e nenhuma função, e `ast.Call`
+  levanta `ExprError` por desenho de segurança.
+
+### Custo declarado
+
+Superfície de skills: **457 985 → 463 924 bytes** (+5 939). Espelhos por
+`python scripts/sync_skills.py` — `.claude/`, `.agents/` e `.github/` não são
+editados à mão.
+
+### Lacuna nomeada
+
+`README.md`, `GUIA_DE_USO.md`, `AGENTS.md` e `CLAUDE.md` **não estão em
+`audited_roots()`** de `scripts/check_vnext_claims.py`, que audita `docs/vnext/`
+e `docs/harness/` e mais nada. Os números corrigidos acima ficaram errados por
+várias entregas porque **nenhum gate os confere**, e continuam sem gate depois
+desta correção. A tabela *Números correntes* deste documento tem produtor
+(`check_status_numbers.py --strict`); os quatro arquivos acima não têm.
+
+
+## As quatro assinaturas de Lake Formation, e a procedência que a fonte não sustenta (2026-09-09)
+
+Branch `feat/executor-agentico-spec`.
+
+**O que esta entrega afirma, dito sem folga:** o catálogo de assinaturas passou de
+**13** para **17**, e as quatro novas — `ERR-LF-002` a `ERR-LF-005` — têm regra
+(`SF-ERR-014` a `SF-ERR-017`) e fixture que dispara. Ela **não** coleta grant do
+Lake Formation, **não** lê policy de IAM, e **não** afirma que o achado nomeia a
+causa: as três primeiras listam causas prováveis e dizem, no `risks`, que não
+decidem entre elas.
+
+### O que mudou desde `SF-ERR-006`, e é a razão de esta entrega vir depois do extrator
+
+`ERR-LF-001`, a assinatura mais antiga da família, declara
+`evidence_required: [lakeformation.missing_grant, ram.unaccepted_share]` — e
+**nenhum dos dois é kind emitido**. `SF-ERR-006` teve de usar `tf.spark_conf`
+como substituto medido, e isso está registrado no cabeçalho de
+`rules/catalog/errors.yaml` desde então.
+
+As quatro novas não repetem isso. Elas declaram `lakeformation.access_model` e
+`lakeformation.filesystem`, que `sparkforge/facts/lakeformation.py` emite, e
+**pela primeira vez o `evidence_required` da assinatura e o `requires_facts` da
+regra dizem a mesma coisa**. É o que a entrega anterior destravou.
+
+### A procedência do texto, declarada em vez de escondida
+
+**A página de troubleshooting do AWS Glue não publica string de erro literal.**
+Ela publica **título de sintoma**. Medido sobre as quatro:
+
+| assinatura | o texto casado | o que a AWS publica |
+|---|---|---|
+| `ERR-LF-002` | `GetTemporaryGlueTableCredentials` | nome de API, na referência de API |
+| `ERR-LF-003` | `lakeformation:GetDataAccess` | nome de ação IAM, nas policies de exemplo |
+| `ERR-LF-004` | `glue:GetTable` | nome de ação IAM, nas policies de exemplo |
+| `ERR-LF-005` | `Security validation exception` | **a frase**, como título de seção |
+
+Só a quarta é frase que a AWS escreve. As outras três casam por **nome de ação
+ou de API**, que é a parte publicada; o texto da mensagem de negação que os
+carrega não é publicado em página nenhuma. **Casar por nome de ação é o mais
+forte que a fonte sustenta**, e é por isso que nenhuma das quatro dispara sem o
+companheiro. A ressalva está no cabeçalho do catálogo, nas `sources` de cada
+regra e no `meta.yaml` de cada fixture — três lugares, porque quem lê um
+raramente lê os outros.
+
+### As quatro regras
+
+| regra | companheiro | o que ela separa |
+|---|---|---|
+| `SF-ERR-014` | `lakeformation.access_model` com `fgac_enabled` | a negação foi no caminho de CREDENCIAL, não na concessão nem na API |
+| `SF-ERR-015` | `lakeformation.filesystem` com resolver declarado | sob Full Table Access as duas metades do job usam credenciais diferentes, e só uma foi negada |
+| `SF-ERR-016` | `lakeformation.access_model` (sem filtro) | o plano que falhou é o de **IAM**, e "eu já dei SELECT" não é resposta |
+| `SF-ERR-017` | `lakeformation.access_model` com `fgac_enabled` | não é autorização: é a validação do isolamento entre system driver e user driver |
+
+`SF-ERR-016` é a única que **não** filtra por `fgac_enabled`, e a razão está no
+`meta.yaml` da fixture: negação de API do Glue acontece igual num job de Full
+Table Access, e exigir a flag ligada esconderia metade dos casos.
+
+**`SF-ERR-017` termina numa recomendação de contatar o suporte da AWS**, e isso é
+o que a fonte prescreve. O que a regra acrescenta é a lista do que **pode** ser
+lido antes do chamado — a funcionalidade que o Glue bloqueia sob FGAC, e a
+exigência de sessão Spark única. Ela declara, no `risks`, que **não afirma
+causa**: inventar uma lista de causas prováveis ali seria preencher com
+conjectura o que a documentação deixou em branco.
+
+### O acoplamento que a entrega expôs, e ele não era desta entrega
+
+`SO_PELO_LOG`, em `tests/test_fixtures_golden_cloudwatch_logs.py`, significava
+**duas coisas** ao mesmo tempo: a propriedade das ASSINATURAS (nenhuma delas é
+nome de classe Java) e o CONTEÚDO da fixture `quatro_assinaturas_de_log`. Os dois
+conjuntos eram idênticos enquanto só existiam quatro assinaturas de mensagem.
+
+Acrescentar quatro assinaturas novas derrubou um teste sobre **um log que
+ninguém tocou** — e esse é o sintoma. Separado em `SO_PELO_LOG` (a propriedade) e
+`NA_FIXTURE_DAS_QUATRO` (o artefato), com o motivo escrito no lugar.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| Assinaturas de erro | 13 | **17** |
+| Regras de diagnóstico | 166 | **170** |
+| Área `SF-ERR` | 13 | **17** — a maior do catálogo |
+| Fixtures golden | 331 | **335** |
+| Fontes vigiadas | 234 | **235** |
+| Superfície | 472 005 B | **inalterada** — `knowledge/errors/*.json` não entra na conta |
+
+### Lacuna nomeada
+
+O §7 de `prompt_especialization_spark_forge.md` enumera **28** padrões de erro.
+Cobertos hoje: **10**. Os que faltam são genéricos de Spark e de Python
+(`Py4JJavaError`, `AnalysisException`, `SparkUpgradeException`,
+`UnsupportedOperationException`, `IllegalArgumentException`, `ClassCastException`,
+`ExecutorLostFailure`, `MetadataFetchFailedException`, `Task not serializable`,
+`ArrowInvalid`, `ArrowMemoryError`, `ConcurrentModificationException`,
+`FileNotFoundException`, `AccessDeniedException`, `NoSuchTableException`), e
+nenhum deles depende de artefato que este motor não colete — é trabalho de
+pesquisa de fonte, não de mecanismo.
+
+
+## Lake Formation — o modelo de acesso vira fact, e as duas regras que só ele torna escrevíveis (2026-09-09)
+
+Branch `feat/executor-agentico-spec`, commit `eb7307f`.
+
+**O que esta entrega afirma, dito sem folga:** o motor passou a derivar o modelo
+de acesso do Lake Formation que a definição do job **declara**, e duas regras
+novas julgam sobre ele. Ela **não** coleta grant do Lake Formation, **não** lê
+policy de IAM, **não** diagnostica falha de escrita e **não** afirma ganho de
+detecção contra nada.
+
+### A medição que mudou o plano, e ela vale escrita
+
+O plano era acrescentar assinaturas de erro da família Lake Formation. Ao ir
+escrever, dois números apareceram:
+
+- o motor emite **200** kinds, e **zero** são `lakeformation.*`. As duas regras
+  da área liam `tf.attribute` cru — o que funciona porque as duas perguntam por
+  uma chave EXATA (`--extra-jars`, `command { name }`);
+- `sparkforge/rules/expr.py::_CMP_OPS` tem **seis** comparadores e **nenhuma
+  função**: sem `startswith`, sem `in`, e `ast.Call` levanta `ExprError` por
+  desenho de segurança. `where` compara igualdade e mais nada.
+
+Juntos, os dois dizem que **"este catálogo Iceberg é o session catalog?" não era
+escrevível como regra**, porque o nome do catálogo mora dentro da chave
+(`spark.sql.catalog.<nome>`). E metade das assinaturas planejadas dependia de
+grant e de policy — artefato que este motor não coleta —, o que produziria regra
+que nunca dispara: exatamente o que
+`tests/test_rules_errors.py::test_o_companheiro_de_cada_regra_e_kind_que_o_motor_EMITE`
+existe para impedir.
+
+A saída não foi afrouxar o avaliador de expressão. Foi derivar o predicado num
+fact, que é onde predicado mora neste motor.
+
+### O extrator
+
+`sparkforge/facts/lakeformation.py` — derivação pura sobre a união dos facts, no
+molde de `bridge.py` e `exception.py`. **Não lê artefato.** Consome as três
+superfícies de configuração, que chegam com a mesma forma (`attrs.key`,
+`attrs.value`): `tf.spark_conf` (Terraform), `pyspark.conf_set` (código) e
+`spark.conf_effective` (execução).
+
+`attrs.source` diz por qual delas o fato entrou, e o campo existe porque **as
+três não valem o mesmo**: a de execução foi medida, as outras duas foram
+pedidas. O módulo não elege vencedora — eleger seria decidir precedência calada,
+e precedência é julgamento.
+
+| kind | o que ele carrega |
+|---|---|
+| `lakeformation.access_model` | `model`, `fgac_enabled`, `declared_value` — e `"false"` declarado **não** é o mesmo que ausente |
+| `lakeformation.iceberg_catalog` | `catalog_name`, `is_session_catalog`, `catalog_impl`, `lakeformation_enabled` |
+| `lakeformation.filesystem` | `lf_credentials_resolver_declared`, `emrfs_restored`, `fs_s3_impl` |
+| `lakeformation.unresolved` | `permissoes_nao_coletadas`, com os três artefatos que faltam nomeados |
+
+**A recusa é sobre PERMISSÃO, e ela é real.** Grant do Lake Formation, policy do
+runtime role e registro da localização S3 não entram em artefato nenhum que este
+motor colete, e a autorização da escrita mora exatamente ali. Ela só é emitida
+quando há modelo de acesso declarado: recusa que aparece em todo case não informa
+nada.
+
+**O que o extrator não afirma:** `is_session_catalog: false` é observação, nunca
+acusação. A restrição de session catalog é de FGAC, e a própria AWS publica
+exemplo de Full Table Access com catálogo de nome arbitrário. Cruzar as duas
+coisas é trabalho da regra, e há teste que prende isso.
+
+### As duas regras
+
+**`SF-LF-003`** (`glue: ">=5.0"`, P0) — catálogo Iceberg de nome arbitrário sob
+FGAC. Fonte: *"You can only use Apache Iceberg with session catalog and not
+arbitrarily named catalogs."*
+
+Ela **não** declara `same_subject`, e a ausência é medida: `tf.spark_conf` tem
+subject `<recurso>#<chave>` e o argumento de job tem `<recurso>`, então os dois
+nunca cairiam no mesmo grupo. O falso positivo que isso abre — dois
+`aws_glue_job` no mesmo arquivo, um com FGAC e outro com catálogo nomeado — está
+declarado em `risks`, e há teste que cobra a declaração.
+
+**`SF-LF-004`** (`glue: ">=5.1"`, P0) — resolver de credencial do Lake Formation
+declarado sem restaurar o EMRFS. **A fronteira é de versão, e não de permissão:**
+*"Full Table Access works exclusively with EMR Filesystem (EMRFS). S3A filesystem
+is not compatible."* mais *"S3A filesystem has replaced EMRFS as the default S3
+connector"* no Glue 5.1.
+
+O modo de falha é silencioso: `fs.s3.credentialsResolverClass` é chave de EMRFS,
+e sob S3A ela é ignorada **sem erro**. `test_no_glue_50_a_MESMA_configuracao_esta_CORRETA`
+é o teste que prova que a fronteira é real — num Glue 5.0 a mesma configuração
+está certa.
+
+### O conhecimento ganhou eixo de versão, e um conflito declarado
+
+`knowledge/glue/lakeformation-fgac.md` era **version-agnostic**, e ler as
+limitações sem tabela de versão produz o erro que mais engana nesta área:
+aplicar a um Glue 5.1 uma limitação que era do 5.0. A §0 nova traz a matriz
+4.0/5.0/5.1 com Spark, Iceberg, filesystem default e os quatro estados de FGAC e
+FTA. A §5 traz Full Table Access inteiro.
+
+**A §6 é um `KNOWLEDGE_CONFLICT`, e o documento não escolhe lado.** Quatro frases
+da documentação atual:
+
+| | Página | Frase |
+|---|---|---|
+| A | migração 5.1 | *"Support Spark-native FGAC writes on AWS Lake Formation registered tables."* |
+| B | FGAC (tabela de operações) | DDL e DML INSERT/UPDATE/DELETE: *"With IAM permissions only"* |
+| C | considerations | não suportado: *"Write with Lake Formation granted permissions"* |
+| D | considerations | caminho de dado de localização registrada usa credencial do LF *"regardless"* do IAM do role |
+
+A, B e C fecham entre si: a escrita passou a rodar no 5.1, e quem autoriza é o
+IAM. **C e D não fecham** para tabela registrada — o caminho do role não é usado
+(D) e o grant do LF não autoriza (C). O conflito é da AWS, não do repositório, e
+está registrado com as quatro URLs.
+
+### Custo declarado
+
+| | antes | depois |
+|---|---:|---:|
+| superfície (`docs/surface.lock.json`) | 460 219 B | **472 005 B** (+11 786) |
+| `manifest.json` `rule_count` | 164 | **166** |
+| `knowledge/sources.lock.json` | 230 fontes | **234** |
+
+**7 alegações** de `docs/claims.lock.json` remediadas **por id**, nunca por
+varredura, todas por `iter_source_files`: o corpus de `*.py` cresceu com o
+extrator e dois arquivos de teste.
+
+### Lacuna nomeada
+
+As razões `706,9x / 10,0x / 5,3x` publicadas no `CLAUDE.md` derivam da §10 de
+`docs/harness/CODEINTEL-GAP.md`, cujos números esta entrega moveu de novo. Elas
+**não** foram recalculadas: o denominador que as produziria não é publicado por
+aquele documento, e `CLAUDE.md` está fora de `audited_roots()` do gate. Escolher
+o denominador seria escolher o resultado.
+
+As assinaturas `SF-ERR` da família Lake Formation continuam **não escritas**.
+Agora elas têm companheiro real disponível (`lakeformation.access_model`,
+`lakeformation.filesystem`), e a página de troubleshooting da AWS **não publica
+string de erro literal** — publica título de sintoma —, o que dá a metade delas
+procedência fraca para o TEXTO ainda que forte para a CAUSA. Isso precisa sair no
+arquivo, não escondido.
 
 
 ## As seis assinaturas viram seis regras, e o companheiro que a linha de log não substitui (2026-09-09)

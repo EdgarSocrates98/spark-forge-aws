@@ -1,0 +1,130 @@
+[
+  {
+    "rule_id": "SF-ERR-020",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Executor perdido -- e a RAZÃO da perda decide o conserto",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_el1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_el1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-010"
+    },
+    "evidence": [
+      "f_92cbef",
+      "f_c77ad7"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O executor parou de responder e o stage foi reexecutado. **A mensagem é a mesma para três histórias diferentes**, e o event log guarda qual delas aconteceu: um container morto por memória fora do heap, um processo que saiu com código próprio, e um nó reclamado pelo provedor.\n\n**A terceira não é defeito.** Capacidade interruptível sendo reclamada é o comportamento contratado, e tratá-la como falha leva a subir memória de um executor que morreu porque o nó sumiu.\n\nDuas medidas separam as três: a razão registrada, e **quantos** executores foram perdidos contra quantos o run tinha. Perder um de quarenta e perder trinta de quarenta são eventos diferentes sob a mesma mensagem.",
+    "proposed_change": [
+      "Ler a razão que o event log registra para a perda antes de qualquer mudança.",
+      "Comparar o número de executores perdidos com o total do run -- é essa razão, e não o número absoluto, que distingue infraestrutura de dado.",
+      "Tratar a memória fora do heap quando a razão for container morto: é um orçamento diferente do heap, e subir heap não o move.",
+      "Ler a opção de compra da capacidade quando as perdas forem espalhadas e a razão for decommission."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir o número de retentativas de task faz o run terminar e paga a perda em relógio toda vez. Esconde o evento em vez de tratá-lo.",
+      "Subir memória do executor antes de ler a razão não move nada quando o nó foi reclamado, e custa em toda a capacidade do run.",
+      "A regra afirma que houve perda de executor num run cujo log a registra. Ela **não** decide qual das três razões é a verdadeira."
+    ],
+    "tradeoffs": [
+      "Capacidade não interruptível remove a classe inteira de perda por reclamação e custa mais por hora. É escolha de custo contra previsibilidade."
+    ],
+    "validation": [
+      "Número de executores perdidos, antes e depois, sobre o **mesmo** volume de entrada. Um run que termina com o mesmo número de perdas não corrigiu a causa.",
+      "Nenhum eixo de dado é exigido quando a mudança é de capacidade. Se o tratamento mexeu na distribuição, a saída precisa ser comparada."
+    ],
+    "rollback": [
+      "Reverter a mudança de capacidade ou de memória. Se o tratamento mudou a distribuição do dado, a saída precisa ser comparada antes de a versão anterior ser descartada."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/executor_lost.json`."
+      }
+    ],
+    "action": {
+      "kind": "capacity.investigate_sizing",
+      "target": "spark.executor.loss_reason",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-UI-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Executor removido sem OOM registrado no log",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "3"
+    },
+    "evidence": [
+      "f_c77ad7"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace. A correção é spark.executor.memoryOverhead, não spark.executor.memory. É o OOM mais mal diagnosticado que existe, e a assinatura de que foi mal diagnosticado é \"aumentei a memória e continuou\". Ver knowledge/spark/memory-and-oom.md secao 2, classe container/overhead.",
+    "proposed_change": [
+      "Aumentar spark.executor.memoryOverhead, não spark.executor.memory.",
+      "Reduzir o tamanho de batch de pandas_udf, se houver.",
+      "Eliminar UDF Python, que é a fonte mais comum de consumo fora do heap.",
+      "Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar overhead reduz a memória disponível para o heap dentro do mesmo container.",
+      "Duas das quatro ações propostas mudam o resultado, e nenhuma delas falha ao mudá-lo. Eliminar UDF Python troca nulo, precisão, fuso e borda pela semântica da função nativa. E reduzir o tamanho de batch de pandas_udf muda o resultado de toda UDF vetorizada que NÃO seja linha a linha — normalização, ranking, preenchimento por vizinho e qualquer coisa que olhe o batch inteiro devolvem outro valor com outro tamanho de batch. Nada no plano físico nem no event log acusa isso: o nó continua sendo ArrowEvalPython."
+    ],
+    "tradeoffs": [
+      "Em algum ponto",
+      "worker maior é mais simples do que rebalancear heap e overhead."
+    ],
+    "validation": [
+      "Ausência de executores removidos no run seguinte.",
+      "glue.ALL.memory.non-heap.used.percentage abaixo do nível anterior.",
+      "Categoria de erro do Glue Observability sem OUT_OF_MEMORY_ERROR.",
+      "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas — a mesma validação que SF-PY-001 e SF-PLAN-001 exigem para a mesma troca.",
+      "Se a ação foi reduzir o batch de pandas_udf: a coluna produzida pela UDF comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui; é o valor que responde se a UDF era linha a linha ou não.",
+      "Se a ação foi só memoryOverhead: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das quatro que mexe em capacidade e não em semântica."
+    ],
+    "rollback": [
+      "Reverter o valor de memoryOverhead."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      }
+    ],
+    "action": {
+      "kind": "capacity.increase_memory_overhead",
+      "target": "spark.executor.memoryOverhead",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint",
+        "availability.executor_loss"
+      ],
+      "depends_on": []
+    }
+  }
+]

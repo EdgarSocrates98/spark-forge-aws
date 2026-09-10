@@ -36,6 +36,8 @@ from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+from sparkforge.collect import iam_access as collect_iam
+from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
@@ -90,9 +92,17 @@ from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
 from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
+from sparkforge.facts.iam_access import (
+    extract_iam_access_path,
+    extract_iam_access_tree,
+)
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
+)
+from sparkforge.facts.lakeformation_grants import (
+    extract_lakeformation_path,
+    extract_lakeformation_tree,
 )
 from sparkforge.facts.parquet_footer import (
     extract_parquet_footer_path,
@@ -1109,6 +1119,93 @@ def analyze_cloudwatch_logs(
     return _facts_page(
         facts, "cloudwatch.logs.unresolved", kind, limit, cursor, detail_level
     )
+
+
+def _extract_lakeformation_grants_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect "
+            f"lakeformation`, ou para o DIRETORIO deles:\n"
+            f"    sparkforge analyze lakeformation-grants "
+            f"--path .sparkforge/artifacts/lakeformation/",
+            exit_code=2,
+        )
+    # Arquivo OU diretorio, pela mesma razao do log: o coletor grava um por
+    # (catalogo, banco, tabela), e um job que le de uma tabela e escreve noutra
+    # tem DOIS. Ler os dois e uma chamada so.
+    if target.is_dir():
+        return extract_lakeformation_tree(target, repo_root=target)
+    return extract_lakeformation_path(target)
+
+
+def analyze_lakeformation_grants(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a PERMISSAO do Lake Formation ja coletada, e nada alem dela.
+
+    Tres estados produzem a mesma lista vazia de grants -- tabela sem grant,
+    sem permissao para LER os grants, e sem credencial --, e so o `status` do
+    artefato os separa. Os tres viram `lakeformation.grants.unresolved` com a
+    razao nomeada, nunca lista vazia silenciosa.
+
+    `registered` da localizacao e TERNARIO: `true`, `false`, ou ausente quando
+    ninguem mediu. Tratar o ausente como `false` faria o motor afirmar "nao
+    registrada" sobre uma pergunta que nao foi feita -- e e exatamente sobre
+    localizacao registrada que a §6 de `knowledge/glue/lakeformation-fgac.md`
+    declara conflito entre quatro frases da AWS.
+
+    Ele NAO decide se a permissao basta: `SELECT` bastar ou nao depende da
+    operacao e do modelo de acesso, e isso e juizo -- mora nas regras `SF-LF`.
+    """
+    facts = _extract_lakeformation_grants_facts(path)
+    return _facts_page(
+        facts, "lakeformation.grants.unresolved", kind, limit, cursor, detail_level
+    )
+
+
+def _extract_iam_access_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}" + chr(10) +
+            "  Aponte para um artefato gravado por `sparkforge collect iam-access`, "
+            "ou para o DIRETORIO deles:" + chr(10) +
+            "    sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_iam_access_tree(target, repo_root=target)
+    return extract_iam_access_path(target)
+
+
+def analyze_iam_access(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a DECISAO de IAM ja simulada, com a CAMADA que decidiu.
+
+    `EvalDecision` tem quatro respostas, e as tres de negacao exigem consertos
+    diferentes: `implicitDeny` se conserta acrescentando, `explicitDeny` nao --
+    e quando a negacao vem de service control policy ou de permissions
+    boundary, mexer na policy do role nao muda nada. `attrs.denied_by` nomeia a
+    camada, e e a razao de este verbo existir.
+
+    Ele NAO afirma que a operacao real vai passar (a AWS avalia policies, nao
+    tenta a chamada) e NAO cobre policy de RECURSO -- bucket policy, key policy
+    do KMS e Glue resource policy sao avaliacao separada, e o limite sai em
+    `iam.access.unresolved` em TODO artefato.
+    """
+    facts = _extract_iam_access_facts(path)
+    return _facts_page(facts, "iam.access.unresolved", kind, limit, cursor, detail_level)
 
 
 _FACTS_FROM_EXCEPTION_OR_LOG = (
@@ -4565,6 +4662,66 @@ def collect_cloudwatch_logs(
             end=end,
             filter_pattern=filter_pattern,
             max_events=max_events,
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_lakeformation(
+    repo: str,
+    *,
+    database: str,
+    table: str,
+    now: str,
+    catalog_id: str = "",
+    resource_arn: str = "",
+) -> dict[str, Any]:
+    """Coleta grant, registro de localizacao e data lake settings de UMA tabela.
+
+    As TRES chamadas falham por motivos independentes, e cada bloco do artefato
+    carrega o seu `status` -- permissao negada para ler grant nao e o mesmo que
+    tabela sem grant, e nenhuma das duas e "sem credencial". Nada disso sobe
+    como erro de fronteira: erro aqui e so o que impede ate a recusa de ser
+    gravada.
+    """
+    rel_path = collect_lf.lakeformation_path(catalog_id, database, table)
+    try:
+        entry = collect_lf.collect_lakeformation(
+            database,
+            table,
+            Path(repo),
+            now=now,
+            catalog_id=catalog_id,
+            resource_arn=resource_arn,
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_iam_access(
+    repo: str,
+    *,
+    role_arn: str,
+    now: str,
+    actions: list[str] | None = None,
+    resource_arns: list[str] | None = None,
+) -> dict[str, Any]:
+    """Simula as acoes contra o role e grava a DECISAO da AWS.
+
+    Simular e nao parsear e a decisao de desenho: permission boundary, service
+    control policy, `Deny` explicito e `Condition` nao aparecem no documento do
+    role, e um parser erra exatamente nesses casos.
+    """
+    rel_path = collect_iam.iam_access_path(role_arn)
+    try:
+        entry = collect_iam.collect_iam_access(
+            role_arn,
+            Path(repo),
+            now=now,
+            actions=actions,
+            resource_arns=resource_arns,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc

@@ -1,0 +1,64 @@
+{
+  "actions_requested": [
+    "glue:GetTable",
+    "lakeformation:GetDataAccess",
+    "s3:PutObject",
+    "kms:GenerateDataKey",
+    "s3:DeleteObject"
+  ],
+  "resource_arns": [
+    "arn:aws:s3:::sparkforge-demo/curated/*"
+  ],
+  "results": [
+    {
+      "action": "glue:GetTable",
+      "allowed_by_organizations": null,
+      "allowed_by_permissions_boundary": null,
+      "decision": "allowed",
+      "matched_statements": 1,
+      "missing_context_values": [],
+      "resource": "arn:aws:glue:us-east-1:111111111111:table/curated/fato_venda"
+    },
+    {
+      "action": "lakeformation:GetDataAccess",
+      "allowed_by_organizations": null,
+      "allowed_by_permissions_boundary": null,
+      "decision": "allowed",
+      "matched_statements": 1,
+      "missing_context_values": [],
+      "resource": "*"
+    },
+    {
+      "action": "s3:PutObject",
+      "allowed_by_organizations": null,
+      "allowed_by_permissions_boundary": false,
+      "decision": "implicitDeny",
+      "matched_statements": 0,
+      "missing_context_values": [],
+      "resource": "arn:aws:s3:::sparkforge-demo/curated/*"
+    },
+    {
+      "action": "kms:GenerateDataKey",
+      "allowed_by_organizations": false,
+      "allowed_by_permissions_boundary": null,
+      "decision": "explicitDeny",
+      "matched_statements": 1,
+      "missing_context_values": [],
+      "resource": "arn:aws:kms:us-east-1:111111111111:key/abc"
+    },
+    {
+      "action": "s3:DeleteObject",
+      "allowed_by_organizations": null,
+      "allowed_by_permissions_boundary": null,
+      "decision": "explicitDeny",
+      "matched_statements": 1,
+      "missing_context_values": [],
+      "resource": "arn:aws:s3:::sparkforge-demo/curated/*"
+    }
+  ],
+  "results_collected": 5,
+  "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+  "scoped_to_resource": true,
+  "status": "ok",
+  "truncated": false
+}

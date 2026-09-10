@@ -52,7 +52,18 @@ from sparkforge.facts import (
     fusion,
     glue_job_run,
     graph,
+    # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
+    # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
+    # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
+    iam_access,
     iceberg_metadata,
+    lakeformation,
+    # `lakeformation_grants` LE ARTEFATO, ao contrario de `lakeformation`, que e
+    # derivacao. Os dois convivem e o namespace nao colide: um emite
+    # `lakeformation.access_model`/`iceberg_catalog`/`filesystem`, o outro
+    # `lakeformation.grant`/`registered_location`/`data_lake_settings`. Sem ele
+    # aqui, os cinco kinds de permissao contam como orfaos.
+    lakeformation_grants,
     migration,
     parquet_footer,
     pyspark_ast,
@@ -133,6 +144,18 @@ EXTRACTORS = (
     # Task 4 desta frente, e entrar antes dela trocaria uma lacuna nomeada por
     # um teste vermelho que nao mede nada.
     exception,
+    # `lakeformation` entra com `SF-LF-003`, a primeira regra que exige um kind
+    # derivado desta area. Sem ele aqui, os quatro `lakeformation.*` contam como
+    # orfaos e a regra seria FORCADA a `blocked_on` sobre um extrator que esta no
+    # repositorio e roda.
+    iam_access,
+    lakeformation,
+    # `lakeformation_grants` e `iam_access` entram na SEGUNDA lista tambem: a
+    # primeira e de import, esta e a que o teste varre. Registrar so na de cima
+    # deixa os kinds contando como orfaos, e a regra que os consome e forcada a
+    # `blocked_on` sobre extrator que ja esta no repositorio -- a mentira que
+    # este arquivo existe para impedir.
+    lakeformation_grants,
     # `funcval` entra nas DUAS listas no mesmo commit da Fase 4c: sem ele aqui,
     # os quatro kinds `funcval.*` contam como orfaos e as cinco regras SF-FVAL
     # da Task 6 seriam obrigadas a declarar `blocked_on` sobre um modulo que ja
@@ -394,6 +417,23 @@ class TestAbsentSemSameSubjectSeJustifica:
         "SF-GRAPH-005": (
             "correlaciona codigo Python com Terraform; os subjects nunca "
             "coincidem e `same_subject` faria a regra nunca disparar."
+        ),
+        # SF-LF-010 pergunta sobre as DUAS metades da governanca: "esta tabela
+        # tem localizacao REGISTRADA, e o case declara modelo de acesso?".
+        # `lakeformation.registered_location` tem subject `table` (vem do
+        # artefato de permissao) e `lakeformation.access_model` tem subject
+        # `tf_resource` (vem do argumento de job no Terraform): os dois nunca
+        # coincidem, e com `same_subject: true` a regra nao dispararia em
+        # entrada nenhuma. Mesma natureza de SF-GRAPH-005 e SF-ENV-003.
+        #
+        # A semantica de CONJUNTO e limite REAL desta regra, e ela esta escrita
+        # no `risks` dela: um unico job com modelo de acesso declarado em
+        # qualquer lugar da analise faz a regra ficar muda sobre a tabela
+        # registrada. Num case de um job so -- o normal -- isso nao acontece.
+        "SF-LF-010": (
+            "correlaciona o artefato de permissao (subject `table`) com o "
+            "argumento de job do Terraform (subject `tf_resource`); os subjects "
+            "nunca coincidem e `same_subject` faria a regra nunca disparar."
         ),
         # SF-GLUE-005 saiu desta lista ao ser desbloqueada. A isencao existia
         # para justificar `absent: spark.stage.spill` sem `same_subject`, e

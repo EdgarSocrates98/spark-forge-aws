@@ -240,6 +240,35 @@ def build_parser() -> argparse.ArgumentParser:
     cwlog_analyze_p.add_argument("--cursor")
     _add_detail_level(cwlog_analyze_p)
 
+    iam_analyze_p = analyze_sub.add_parser(
+        "iam-access",
+        help="Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.",
+    )
+    iam_analyze_p.add_argument(
+        "--path", required=True,
+        help="Artefato JSON de `collect iam-access`, ou o DIRETORIO deles.",
+    )
+    iam_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    iam_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    iam_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    iam_analyze_p.add_argument("--cursor")
+    _add_detail_level(iam_analyze_p)
+
+    lfg_analyze_p = analyze_sub.add_parser(
+        "lakeformation-grants",
+        help="Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings).",
+    )
+    lfg_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Artefato JSON de `collect lakeformation`, ou o DIRETORIO deles.",
+    )
+    lfg_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    lfg_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    lfg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    lfg_analyze_p.add_argument("--cursor")
+    _add_detail_level(lfg_analyze_p)
+
     sig_analyze_p = analyze_sub.add_parser(
         "error-signatures",
         help="Casa knowledge/errors/ contra os facts do case. Derivacao pura.",
@@ -1715,6 +1744,55 @@ def build_parser() -> argparse.ArgumentParser:
     cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
     cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    iam_p = collect_sub.add_parser(
+        "iam-access",
+        help="Simula acoes contra um role via SimulatePrincipalPolicy e grava a decisao.",
+    )
+    iam_p.add_argument("--repo", required=True)
+    iam_p.add_argument(
+        "--role-arn", required=True,
+        help="ARN do role a simular -- tipicamente o runtime role do job.",
+    )
+    iam_p.add_argument(
+        "--action", action="append", dest="actions",
+        help=(
+            "Acao a simular. Repetivel. Sem ela, a lista default de Lake Formation e "
+            "Glue -- e passar a lista inteira quando a pergunta e sobre UMA escrita "
+            "produz decisoes que nao dizem nada sobre o caso."
+        ),
+    )
+    iam_p.add_argument(
+        "--resource-arn", action="append", dest="resource_arns",
+        help="Recurso contra o qual simular. Repetivel. Sem ele a resposta e sobre `*`.",
+    )
+    iam_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    lf_p = collect_sub.add_parser(
+        "lakeformation",
+        help="Coleta grant, registro de localizacao S3 e data lake settings de UMA tabela.",
+    )
+    lf_p.add_argument("--repo", required=True)
+    lf_p.add_argument("--database", required=True, help="Banco da tabela no catalogo.")
+    lf_p.add_argument("--table", required=True, help="Nome da tabela.")
+    lf_p.add_argument(
+        "--catalog-id",
+        default="",
+        help=(
+            "Id da conta dona do catalogo. Obrigatorio em cross-account: a MESMA "
+            "`db.tabela` existe em contas diferentes, e sem ele as duas coletas se "
+            "sobrescrevem no manifesto."
+        ),
+    )
+    lf_p.add_argument(
+        "--resource-arn",
+        default="",
+        help=(
+            "Localizacao S3 a conferir em `describe_resource`. Sem ela o bloco sai "
+            "`nao_coletado` em vez de sumir -- bloco ausente e indistinguivel de vazio."
+        ),
+    )
+    lf_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     cw_logs_p = collect_sub.add_parser(
         "cloudwatch-logs",
         help="Baixa o LOG do run no CloudWatch Logs (o caminho das assinaturas de mensagem).",
@@ -1919,6 +1997,16 @@ def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_cloudwatch_logs(args: argparse.Namespace) -> int:
     full = _core.analyze_cloudwatch_logs(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_iam_access(args: argparse.Namespace) -> int:
+    full = _core.analyze_iam_access(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
+def _cmd_analyze_lakeformation_grants(args: argparse.Namespace) -> int:
+    full = _core.analyze_lakeformation_grants(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
 
 
@@ -2815,6 +2903,31 @@ def _cmd_collect_cloudwatch_logs(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_iam_access(args: argparse.Namespace) -> int:
+    payload = _core.collect_iam_access(
+        args.repo,
+        role_arn=args.role_arn,
+        actions=args.actions,
+        resource_arns=args.resource_arns,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_lakeformation(args: argparse.Namespace) -> int:
+    payload = _core.collect_lakeformation(
+        args.repo,
+        database=args.database,
+        table=args.table,
+        catalog_id=args.catalog_id,
+        resource_arn=args.resource_arn,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_glue_job_runs(args: argparse.Namespace) -> int:
     payload = _core.collect_glue_job_runs(
         args.repo, job_name=args.job_name, max_runs=args.max_runs, now=args.now
@@ -3259,6 +3372,8 @@ _DISPATCH = {
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
     ("analyze", "cloudwatch-logs"): _cmd_analyze_cloudwatch_logs,
+    ("analyze", "lakeformation-grants"): _cmd_analyze_lakeformation_grants,
+    ("analyze", "iam-access"): _cmd_analyze_iam_access,
     ("analyze", "parquet-footer"): _cmd_analyze_parquet_footer,
     ("analyze", "error-signatures"): _cmd_analyze_error_signatures,
     ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
@@ -3329,6 +3444,8 @@ _DISPATCH = {
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
     ("collect", "cloudwatch-logs"): _cmd_collect_cloudwatch_logs,
+    ("collect", "lakeformation"): _cmd_collect_lakeformation,
+    ("collect", "iam-access"): _cmd_collect_iam_access,
     ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,

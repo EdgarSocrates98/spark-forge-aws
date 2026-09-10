@@ -1,0 +1,67 @@
+[
+  {
+    "rule_id": "SF-ERR-023",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Arquivo sumiu entre a listagem e a leitura -- e o irmão silencioso é pior",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_fnf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_fnf1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-013"
+    },
+    "evidence": [
+      "f_0c164d",
+      "f_392c7a"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O plano listou o arquivo e a task não o encontrou. Entre os dois momentos alguém o removeu — um escritor concorrente, uma compactação, ou um job de retenção.\n\n**Esta falha tem um irmão silencioso, e ele é pior.** Se o arquivo some **antes** da listagem, não há exceção nenhuma: o job lê menos dado do que deveria e termina com sucesso. Por isso a validação desta regra é **contagem de linhas contra a origem**, e não \"o job voltou a rodar\".\n\nReexecutar às vezes funciona, e isso é a armadilha: transforma uma questão de correção numa questão de tempo, e esconde o escritor concorrente.",
+    "proposed_change": [
+      "Ler a listagem do prefixo que o plano leu e conferir se a contagem de arquivos é compatível com o que ele esperava.",
+      "Descobrir qual outro processo escreve ou faz manutenção na mesma localização enquanto este job roda. Esta falha é quase sempre sobre dois escritores num relógio só.",
+      "Serializar o job contra esse processo, ou adotar um formato de tabela que dê ao leitor um snapshot consistente, quando a manutenção concorrente for condição permanente."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reexecutar até passar esconde o escritor concorrente e deixa o irmão silencioso agindo -- leituras que perdem arquivo sem falhar.",
+      "Ignorar arquivos ausentes por configuração faz o job terminar com menos dado do que deveria ter lido, e nada acusa.",
+      "A regra afirma que a exceção aconteceu num case que traz a listagem. Ela **não** identifica qual processo removeu o arquivo -- nada no case liga os dois."
+    ],
+    "tradeoffs": [
+      "Serializar contra a manutenção remove a corrida e alonga a janela do pipeline. Um formato com snapshot resolve sem serializar e custa a migração da tabela."
+    ],
+    "validation": [
+      "Contagem de linhas da saída contra a contagem esperada na origem, para a **mesma** janela. É a única verificação que pega o irmão silencioso.",
+      "Contagem de arquivos no prefixo, antes e depois da mudança de agendamento."
+    ],
+    "rollback": [
+      "Restaurar o agendamento anterior. **Se algum run completou com dado parcial, a saída está errada e precisa ser reprocessada** -- reverter a configuração não a conserta."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-data-sources-parquet.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/file_not_found.json`."
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "job.read.listing_consistency",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

@@ -41,9 +41,14 @@ from sparkforge.facts.exception import build_exceptions  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
+from sparkforge.facts.iam_access import extract_iam_access_tree  # noqa: E402
 from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
+)
+from sparkforge.facts.lakeformation import build_lakeformation  # noqa: E402
+from sparkforge.facts.lakeformation_grants import (  # noqa: E402
+    extract_lakeformation_tree,
 )
 from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
 from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
@@ -81,6 +86,8 @@ FIXTURES_S3 = ROOT / "fixtures" / "s3"
 FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
 FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
+FIXTURES_LAKEFORMATION = ROOT / "fixtures" / "lakeformation"
+FIXTURES_IAM_ACCESS = ROOT / "fixtures" / "iam_access"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
@@ -218,6 +225,37 @@ def regen_infra_code(directory: Path) -> None:
     input_dir = directory / "input"
     facts = list(extract_terraform_tree(input_dir, repo_root=input_dir))
     facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # Mesma ordem de `tests/test_fixtures_golden_infra_code.py::_extract`:
+    # `build_lakeformation` deriva sobre a UNIAO das duas extracoes, e o golden
+    # tem de sair do mesmo caminho que o teste percorre.
+    facts.extend(build_lakeformation(facts))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_iam_access(directory: Path) -> None:
+    """Artefato de `collect iam-access` -- a DECISAO simulada, com a camada."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_iam_access_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_lakeformation(directory: Path) -> None:
+    """Artefato de `collect lakeformation` -- grant, registro e data lake settings.
+
+    Um `input/*.json` por (catalogo, banco, tabela). Nao ha companheiro: este
+    corpus prende o CONTRATO do extrator de permissao, e nenhuma regra o consome
+    ainda -- `expects_rules` sai vazio de proposito.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_lakeformation_tree(input_dir, repo_root=input_dir)
+    # Mesma ordem de `tests/test_fixtures_golden_lakeformation.py::_extract`.
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_lakeformation(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -526,6 +564,18 @@ def regen_cloudwatch_logs(directory: Path) -> None:
     # unexpectedly" sozinho nao diz que ha UDF no caminho.
     if any(input_dir.glob("*.py")):
         facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    # Mesma ordem de `tests/test_fixtures_golden_cloudwatch_logs.py::_derive`.
+    catalogo = input_dir / "catalog"
+    if catalogo.is_dir():
+        for dump in sorted(catalogo.glob("*.json")):
+            facts.extend(extract_catalog_schema_path(dump, repo_root=input_dir))
+    listagem = input_dir / "s3"
+    if listagem.is_dir():
+        for dump in sorted(listagem.glob("*.json")):
+            facts.extend(extract_s3_listing_path(dump, repo_root=input_dir))
+    if any(input_dir.glob("*.py")):
+        facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
+    facts.extend(build_lakeformation(facts))
     facts.extend(build_signature_matches(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
@@ -785,6 +835,8 @@ def main() -> int:
                 (FIXTURES_CONSUMERS / name, regen_consumers),
                 (FIXTURES_TFDIFF / name, regen_tfdiff),
                 (FIXTURES_INFRA_CODE / name, regen_infra_code),
+                (FIXTURES_LAKEFORMATION / name, regen_lakeformation),
+                (FIXTURES_IAM_ACCESS / name, regen_iam_access),
                 (FIXTURES_BENCH / name, regen_bench),
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),

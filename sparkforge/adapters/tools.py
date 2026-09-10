@@ -4013,6 +4013,91 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_lakeformation_grants": {
+        "description": (
+            "Extrai a PERMISSAO do Lake Formation ja coletada por `collect lakeformation`: "
+            "grant por principal, registro da localizacao S3, e o data lake settings da "
+            "conta. Aceita um artefato ou o DIRETORIO deles, porque um job que le de uma "
+            "tabela e escreve noutra tem dois. TRES estados produzem a mesma lista vazia de "
+            "grants -- tabela sem grant, sem permissao para LER os grants, e sem credencial "
+            "--, e os tres viram `lakeformation.grants.unresolved` com a razao; colapsa-los "
+            "faria acusar a tabela governada corretamente e a que ninguem inspecionou do "
+            "mesmo jeito. `registered` da localizacao e TERNARIO: verdadeiro, falso, ou "
+            "AUSENTE quando ninguem mediu -- e e exatamente sobre localizacao registrada "
+            "que a documentacao da AWS se contradiz. Ele NAO decide se a permissao basta, "
+            "NAO le policy de IAM e NAO estima nada: `SELECT` bastar ou nao depende da "
+            "operacao e do modelo de acesso, e isso e juizo das regras `SF-LF`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect lakeformation`, ou o "
+                        "diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts de permissao extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_iam_access": {
+        "description": (
+            "Extrai a DECISAO de IAM ja simulada por `collect iam-access`, com a CAMADA "
+            "que decidiu. `EvalDecision` tem QUATRO respostas e as tres de negacao exigem "
+            "consertos DIFERENTES: `implicitDeny` se conserta acrescentando permissao; "
+            "`explicitDeny` nao, porque `Deny` vence todo `Allow`; e quando a negacao vem "
+            "de service control policy ou de permissions boundary, mexer na policy do role "
+            "nao muda nada. `attrs.denied_by` nomeia a camada, e colapsar as quatro num "
+            "booleano faria 'adicione a permissao' virar o conselho unico -- errado em tres "
+            "dos quatro casos. Ele NAO afirma que a operacao real vai passar (a AWS avalia "
+            "policies, nao tenta a chamada) e NAO cobre policy de RECURSO: bucket policy, "
+            "key policy do KMS e Glue resource policy sao avaliacao separada, e esse limite "
+            "sai em `iam.access.unresolved` em TODO artefato. `allowed` sem recurso "
+            "simulado NAO e `allowed` naquele recurso, e `scoped_to_resource` diz qual das "
+            "duas perguntas foi feita."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect iam-access`, ou o "
+                        "diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Decisoes de IAM extraidas, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_error_signatures": {
         "description": (
             "Casa as assinaturas de `knowledge/errors/` contra os facts do case e "
@@ -6089,6 +6174,103 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_lakeformation": {
+        "description": (
+            "Coleta a PERMISSAO de UMA tabela no Lake Formation: `list_permissions` (quem "
+            "tem o que), `describe_resource` (a localizacao S3 esta registrada, e com qual "
+            "role) e `get_data_lake_settings` (se a conta permite query engine de terceiro "
+            "sem validacao de session tag -- o passo de CONTA que precede qualquer grant "
+            "sob Full Table Access). E o artefato que fecha DOIS dos tres itens que "
+            "`lakeformation.unresolved` nomeia; o terceiro, a policy do runtime role, e "
+            "outro coletor. As TRES chamadas falham por motivos independentes e cada bloco "
+            "carrega o SEU status -- um status unico faria 'nao consegui' virar "
+            "indistinguivel de 'nao ha'. O recurso e OBRIGATORIO: `list_permissions` sem "
+            "recurso devolve o inventario inteiro do data lake, que e dado de governanca "
+            "de terceiros e nao tem por que entrar num `facts.json` committado. NAO le "
+            "policy de IAM. Mesma politica offline-first dos demais coletores."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "database", "table", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "database": {"type": "string", "description": "Banco da tabela no catalogo."},
+                "table": {"type": "string", "description": "Nome da tabela."},
+                "catalog_id": {
+                    "type": "string",
+                    "default": "",
+                    "description": (
+                        "Id da conta dona do catalogo. Obrigatorio em cross-account: a "
+                        "MESMA `db.tabela` existe em contas diferentes, e sem ele as duas "
+                        "coletas se sobrescreveriam no manifesto."
+                    ),
+                },
+                "resource_arn": {
+                    "type": "string",
+                    "default": "",
+                    "description": (
+                        "Localizacao S3 a conferir em `describe_resource`. Sem ela o bloco "
+                        "sai `nao_coletado` em vez de sumir -- bloco ausente e "
+                        "indistinguivel de bloco vazio."
+                    ),
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
+    "sparkforge_collect_iam_access": {
+        "description": (
+            "Simula acoes contra um role via `iam:SimulatePrincipalPolicy` e grava a "
+            "DECISAO da AWS. SIMULAR e nao PARSEAR e a decisao de desenho: permission "
+            "boundary recorta o que a policy concede sem aparecer nela, service control "
+            "policy nega acima do role, `Deny` explicito em qualquer policy anexada vence "
+            "todo `Allow`, e `Condition` depende de contexto que um parser nao tem -- um "
+            "leitor de documento erra exatamente nesses quatro casos. A lista default de "
+            "acoes vem da documentacao de Lake Formation e Glue e e SUBSTITUIVEL: quem "
+            "sabe qual operacao falhou passa as acoes dela. Sem `resource_arns` a simulacao "
+            "responde sobre `*`, o que NAO e a mesma pergunta -- o fact carrega "
+            "`scoped_to_resource` para que as duas nao se confundam. NAO cobre policy de "
+            "recurso. Mesma politica offline-first dos demais coletores."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "role_arn", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "role_arn": {
+                    "type": "string",
+                    "description": "ARN do role a simular -- tipicamente o runtime role do job.",
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Acoes a simular. Sem ela, a lista default de Lake Formation e "
+                        "Glue. Passar a lista inteira quando a pergunta e sobre UMA escrita "
+                        "produz decisoes que nao dizem nada sobre o caso."
+                    ),
+                },
+                "resource_arns": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Recursos contra os quais simular. Sem eles a resposta e sobre `*`."
+                    ),
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_glue_job_runs": {
         "description": (
             "Baixa o historico de execucoes de um job via `glue.get_job_runs` e grava UM "
@@ -6860,6 +7042,26 @@ def _h_analyze_cloudwatch_logs(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_lakeformation_grants(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_lakeformation_grants(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_iam_access(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_iam_access(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_error_signatures(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_error_signatures(
         args["facts_path"],
@@ -7212,6 +7414,27 @@ def _h_collect_cloudwatch_logs(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_lakeformation(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_lakeformation(
+        args["repo"],
+        database=args["database"],
+        table=args["table"],
+        catalog_id=args.get("catalog_id", ""),
+        resource_arn=args.get("resource_arn", ""),
+        now=args["now"],
+    )
+
+
+def _h_collect_iam_access(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_iam_access(
+        args["repo"],
+        role_arn=args["role_arn"],
+        actions=args.get("actions"),
+        resource_arns=args.get("resource_arns"),
+        now=args["now"],
+    )
+
+
 def _h_collect_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_glue_job_runs(
         args["repo"],
@@ -7362,6 +7585,8 @@ _HANDLERS = {
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
     "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
     "sparkforge_analyze_cloudwatch_logs": _h_analyze_cloudwatch_logs,
+    "sparkforge_analyze_lakeformation_grants": _h_analyze_lakeformation_grants,
+    "sparkforge_analyze_iam_access": _h_analyze_iam_access,
     "sparkforge_analyze_parquet_footer": _h_analyze_parquet_footer,
     "sparkforge_analyze_error_signatures": _h_analyze_error_signatures,
     "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
@@ -7405,6 +7630,8 @@ _HANDLERS = {
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
+    "sparkforge_collect_lakeformation": _h_collect_lakeformation,
+    "sparkforge_collect_iam_access": _h_collect_iam_access,
     "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,

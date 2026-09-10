@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-ERR-015",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "`lakeformation:GetDataAccess` negado num job configurado para credencial do Lake Formation",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "curated-fta",
+      "job_run_id": "jr_gda1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_gda1",
+      "event": 0,
+      "signature_id": "ERR-LF-003"
+    },
+    "evidence": [
+      "f_1564a9",
+      "f_f4fd49"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job declara o resolver de credencial do Lake Formation no filesystem -- quer dizer, pediu que o acesso ao S3 use a credencial que o Lake Formation vende -- e a permissão de IAM que autoriza essa venda foi negada.\n\n**Sob Full Table Access as duas metades do mesmo job falham por motivos diferentes, e é isso que confunde:** a documentação declara que a credencial do Lake Formation lê e escreve o S3 das tabelas **registradas**, enquanto a credencial do runtime role lê e escreve tudo o que **não** está registrado. Um job que lê tabela não registrada com sucesso e falha na registrada não tem problema de rede nem de bucket: tem duas credenciais, e só uma delas foi autorizada.\n\nVer `knowledge/glue/lakeformation-fgac.md` §5.",
+    "proposed_change": [
+      "Conceder `lakeformation:GetDataAccess` ao runtime role, na forma que a documentação de Full Table Access publica.",
+      "Conferir o passo de CONTA, que não é configuração de job: permitir que query engines de terceiro acessem o dado sem a validação de session tag do IAM. É o passo 1 do procedimento da AWS, e sem ele nenhuma concessão importa.",
+      "Conferir se um permission boundary ou uma service control policy nega a ação acima da policy do role -- a negação nesse caso não está na policy que se está lendo."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Anexar uma policy administrativa ampla ao runtime role faz o erro sumir concedendo muito mais do que a ação de credencial que o job precisa.",
+      "A regra lê o resolver DECLARADO. Um job que declare o resolver e não use Full Table Access de fato é acusado sem estar errado, e a evidência do achado é o que permite ver isso.",
+      "Sob Glue 5.1 o resolver pode estar declarado e **inerte**, porque o conector S3 default passou a ser o S3A e a chave é de EMRFS. Se `SF-LF-004` também disparou no mesmo case, ele é o achado a tratar primeiro: conceder a permissão não liga um caminho que nem está ativo."
+    ],
+    "tradeoffs": [
+      "A integração de conta para full table access vale para toda a conta, não para este job. Ligá-la é decisão de plataforma."
+    ],
+    "validation": [
+      "Reexecutar sobre uma tabela que **está** registrada no Lake Formation. Tabela não registrada não prova nada aqui, porque ela nunca usou a credencial vendida.",
+      "Contagem de linhas no destino antes e depois, sobre o mesmo recorte de entrada."
+    ],
+    "rollback": [
+      "Remover o statement de IAM acrescentado.",
+      "A integração de conta é compartilhada por todos os engines da conta e não é revertida por job."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/lakeformation/get_data_access_denied.json` (`ERR-LF-003`). Dela saem a exigência de `lakeformation:GetDataAccess`, a divisão entre credencial do Lake Formation e credencial do runtime role, e o passo de conta.\n"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "iam.lakeformation.get_data_access",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

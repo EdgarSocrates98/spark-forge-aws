@@ -1421,11 +1421,13 @@
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
       "checked_at": "2026-07-31",
       "docs": [
+        "knowledge/glue/lakeformation-fgac.md",
         "knowledge/glue/runtime-matrix.md"
       ],
       "pinned": false,
       "retrieved": [
-        "2026-07-29"
+        "2026-07-29",
+        "2026-09-09"
       ],
       "rules": [
         "SF-ENV-001",
@@ -1434,6 +1436,18 @@
         "SF-MIG-004"
       ],
       "sha256": "8df8427d8f815c4d9c443c40d22b5082d9c3129cb8bc053ad5969ad119044439"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-LF-004"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
       "docs": [
@@ -1502,17 +1516,60 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-015",
+        "SF-LF-003",
+        "SF-LF-004"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
       "docs": [
         "knowledge/glue/lakeformation-fgac.md"
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-22"
+        "2026-08-22",
+        "2026-09-09"
       ],
       "rules": [
+        "SF-ERR-014",
+        "SF-ERR-017",
         "SF-LF-001",
-        "SF-LF-002"
+        "SF-LF-002",
+        "SF-LF-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-016",
+        "SF-LF-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-017"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html": {
@@ -1557,6 +1614,16 @@
       ],
       "rules": [
         "SF-GLUE-007"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/APIReference/API_GetTemporaryGlueTableCredentials.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-014"
       ]
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {
@@ -2562,6 +2629,8 @@
         "SF-ERR-009",
         "SF-ERR-010",
         "SF-ERR-011",
+        "SF-ERR-012",
+        "SF-ERR-013",
         "SF-TIMEOUT-002"
       ]
     },

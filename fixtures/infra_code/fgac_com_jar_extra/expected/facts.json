@@ -943,5 +943,82 @@
       "artifact_sha256": "55d295a4524cc11d304ce9dc32edce9375cb9cc40fcacd3ad5f5a71cdb209e3c",
       "extractor": "terraform@0.1.0"
     }
+  },
+  {
+    "id": "f_24e299",
+    "schema_version": 1,
+    "kind": "lakeformation.access_model",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_fgac_com_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "model": "fgac",
+      "fgac_enabled": true,
+      "declared_value": "true",
+      "fta_markers": [],
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "55d295a4524cc11d304ce9dc32edce9375cb9cc40fcacd3ad5f5a71cdb209e3c",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_648c69",
+    "schema_version": 1,
+    "kind": "lakeformation.access_model",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 36,
+      "symbol": "aws_glue_job.etl_fgac_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "model": "fgac",
+      "fgac_enabled": true,
+      "declared_value": "true",
+      "fta_markers": [],
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "55d295a4524cc11d304ce9dc32edce9375cb9cc40fcacd3ad5f5a71cdb209e3c",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4d32fe",
+    "schema_version": 1,
+    "kind": "lakeformation.unresolved",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_fgac_com_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "permissoes_nao_coletadas",
+      "missing": [
+        "lake_formation_grants",
+        "iam_role_policy",
+        "s3_registered_location"
+      ],
+      "unblocked_by": "coletar os grants do Lake Formation sobre a tabela alvo, a policy do runtime role e o registro da localizacao S3 -- nenhum dos tres entra em artefato que este motor colete hoje",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "55d295a4524cc11d304ce9dc32edce9375cb9cc40fcacd3ad5f5a71cdb209e3c",
+      "extractor": "terraform@0.1.0"
+    }
   }
 ]

@@ -32,11 +32,11 @@ Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constrain
 
 **AWS Glue 6.0** é suportado e analisado: matriz de runtime com procedência por fonte, áreas de regra para a fronteira do Spark 4 (`SF-SPARK4`) e para o Lake Formation FGAC (`SF-LF`), compatibilidade de feature Iceberg por engine como dado, e cenários de migração por par de versões. A documentação dedicada — incluindo o guia de decisão e o que a ferramenta **não** sabe — está em [`docs/aws/glue/6.0/`](docs/aws/glue/6.0/).
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **147** regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data — **112 delas executáveis**; as outras **35** são declarações de área de coordenação (`executable: false`, `when: {all: []}`), que existem para a área ter nome e rota, não para julgar —, mais **99** rotas determinísticas em `routing.yaml`. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md). Os números correntes ficam na tabela *Números correntes* de [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md), e `python scripts/check_status_numbers.py --strict` reprova linha que nenhuma medida produz.
+`rules/catalog/` é a forma **executável** desse conhecimento: **185** regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data — **150 delas executáveis**; as outras **35** são declarações de área de coordenação (`executable: false`, `when: {all: []}`), que existem para a área ter nome e rota, não para julgar —, mais **99** rotas determinísticas em `routing.yaml`. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md). Os números correntes ficam na tabela *Números correntes* de [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md), e `python scripts/check_status_numbers.py --strict` reprova linha que nenhuma medida produz.
 
-As 112 executáveis se distribuem em 26 áreas (medido em 2026-09-08): `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-CTM` 6 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-GRAPH` 6 (grafo com GraphFrames), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-MIG` 4 (migração entre versões), `SF-PLAN` 4 (plano físico), `SF-SPARK4` 4 (fronteira do Spark 4), `SF-KMS` 2, `SF-LF` 2 (Lake Formation FGAC), `SF-TIMEOUT` 2, `SF-WASTE` 2, e uma cada em `SF-BRIDGE`, `SF-CG`, `SF-NET` e `SF-XACC`. **Conte área com `area_of`, nunca somando lista escrita à mão** — `SF-EMR` é prefixo de `SF-EMRS` e de `SF-EMRK`, e comparar por `startswith` mede a fronteira ao contrário. A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 150 executáveis se distribuem em 28 áreas (medido em 2026-09-09 com `area_of`): `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-GRAPH` 6 (grafo com GraphFrames), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional), `SF-ICE` 5 (Iceberg), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-LF` 10 (Lake Formation FGAC e FTA), `SF-MIG` 4 (migração entre versões), `SF-PLAN` 4 (plano físico), `SF-SPARK4` 4 (fronteira do Spark 4), `SF-KMS` 2, `SF-TIMEOUT` 2, `SF-WASTE` 2, `SF-IAM` 3 (a camada que negou: boundary, service control policy ou `Deny` explícito), e uma cada em `SF-BRIDGE`, `SF-CG`, `SF-NET` e `SF-XACC`. **Conte área com `area_of`, nunca somando lista escrita à mão** — `SF-EMR` é prefixo de `SF-EMRS` e de `SF-EMRK`, e comparar por `startswith` mede a fronteira ao contrário. A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
-Cada uma das 112 carrega um bloco **`action:`** — `kind` (66 no vocabulário fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`), `requires_absent`, `moves` (22 eixos, cada um `nature: measure` ou `risk`) e `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem MCP e sem Python. O vocabulário é travado **nas duas direções**: `kind`, eixo ou direção que o catálogo não declara reprova o gate, e `kind` declarado que regra nenhuma usa também — dez foram apagados por não serem ação dominante de regra nenhuma. `expected_gain` é **recusado pelo schema**: afirmar quanto se economizaria exige o custo do run que não aconteceu.
+Cada uma das 150 carrega um bloco **`action:`** — `kind` (66 no vocabulário fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`), `requires_absent`, `moves` (22 eixos, cada um `nature: measure` ou `risk`) e `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem MCP e sem Python. O vocabulário é travado **nas duas direções**: `kind`, eixo ou direção que o catálogo não declara reprova o gate, e `kind` declarado que regra nenhuma usa também — dez foram apagados por não serem ação dominante de regra nenhuma. `expected_gain` é **recusado pelo schema**: afirmar quanto se economizaria exige o custo do run que não aconteceu.
 
 ## Camada determinística (Fase 0)
 
@@ -212,9 +212,19 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 27 extratores emitem 158 kinds distintos de fact, e todos são offline: leem
-artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
-tool MCP de mesmo nome.
+Os 36 extratores emitem 210 kinds distintos de fact (recontado em 2026-09-09),
+e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
+Cada verbo abaixo tem uma tool MCP de mesmo nome.
+
+**Quatro deles não leem artefato nenhum**, e a diferença é de natureza:
+`call_graph.py`, `bridge.py`, `exception.py` e `lakeformation.py` são derivação
+pura sobre a UNIÃO dos facts que os outros já resolveram. O par mais próximo
+disso é `lakeformation.py` e `lakeformation_grants.py`: mesmo namespace, e um
+deriva enquanto o outro lê artefato. Eles existem porque o
+motor de regras avalia **um fact por condição** e nunca combina `attrs` de dois
+— quando a pergunta precisa cruzar duas fontes, ou quando o predicado não cabe
+nos seis comparadores de `sparkforge/rules/expr.py`, quem cruza é uma etapa
+anterior.
 
 | Artefato | Verbo | Lê |
 |---|---|---|
@@ -237,6 +247,11 @@ tool MCP de mesmo nome.
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
+| **Rodapé do Parquet** | `analyze parquet-footer` | dump de `collect parquet-footer` — row group, estatística por coluna, dicionário, page index, bloom filter e codec |
+| **Log do CloudWatch** | `analyze cloudwatch-logs` | resposta de `filter_log_events` já em disco — artefato SEPARADO do de `analyze cloudwatch`, que lê `get_metric_data` |
+| **Decisao de IAM** | `analyze iam-access` | artefato de `collect iam-access` — a resposta de `SimulatePrincipalPolicy`, com a CAMADA que negou (boundary, SCP, deny explícito ou implícito). Simulação, não parse de policy |
+| **Permissao do Lake Formation** | `analyze lakeformation-grants` | artefato de `collect lakeformation` — grant por principal, registro da localização S3, e o data lake settings da conta. É o único artefato que descreve **quem pode o quê** em vez de o que o job faz |
+| **Assinatura de erro** | `analyze error-signatures` | derivado de `spark.exception` e de `cloudwatch.log_event`: casa a exceção contra as 17 assinaturas de `knowledge/errors/`, por três portas (`exception_class`, `message_head`, `log_line`) |
 | Métricas do CloudWatch | `analyze cloudwatch` | artefato de `collect cloudwatch` já em disco |
 | Histórico de runs Glue | `analyze glue-job-runs` | diretório de artefatos de run, um JSON por run terminal |
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
@@ -332,7 +347,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 158 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 210 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

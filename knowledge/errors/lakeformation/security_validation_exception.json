@@ -1,0 +1,35 @@
+{
+  "id": "ERR-LF-005",
+  "signature": "Security validation exception",
+  "service": "lakeformation",
+  "versions": ["all"],
+  "symptoms": [
+    "The job fails with a security validation error rather than an authorization error",
+    "The job is configured for fine-grained access control, where AWS Glue isolates a system driver from the user driver",
+    "The system driver logs that would explain it are not readable: AWS Glue disables access to them on Lake Formation-enabled applications"
+  ],
+  "likely_causes": [
+    "AWS Glue detected a security validation error in the isolation between the system profile and the user profile. The AWS troubleshooting page does not enumerate the conditions that produce it"
+  ],
+  "evidence_required": ["lakeformation.access_model"],
+  "diagnostic_steps": [
+    "Confirm the job declares fine-grained access control, because the system and user profile split only exists there",
+    "Inventory the functionality that AWS Glue blocks under fine-grained access control to preserve the isolation of the system driver: user-defined types, Hive UDFs, any user-defined function involving custom classes, custom data sources, additional jars for Spark extension, connector or metastore, and the ANALYZE TABLE command",
+    "Confirm the job uses a single Spark session throughout, which fine-grained access control requires"
+  ],
+  "fixes": [
+    "Remove the blocked functionality the job declares, when the inventory finds any",
+    "Contact AWS support. The AWS troubleshooting page prescribes exactly this for a security validation exception, and no self-service remediation is published"
+  ],
+  "unsafe_fixes": [
+    "Disabling fine-grained access control to make the error disappear, which removes the row, column and cell level controls the job was placed under: that is a governance decision, not a fix",
+    "Retrying the job on more workers, which does not touch the isolation the error is about"
+  ],
+  "verification": "There is no verification of a fix that AWS support has not yet described. What can be verified is the removal of blocked functionality: re-run and confirm the job reaches the read it was performing",
+  "rollback": "Restore the removed functionality only together with a decision about the access model, because the blocked list is not a lacuna of the runtime, it is a boundary the platform declares",
+  "sources": [
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html",
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+  ],
+  "last_verified": "2026-09-09"
+}

@@ -127,6 +127,31 @@ GLUE_VERSIONED = {
     "SF-GLUE-007",
     "SF-LF-001",
     "SF-LF-002",
+    # SF-LF-003 entra com o extrator `lakeformation`, e SF-LF-004 com a
+    # fronteira de conector S3 do Glue 5.1. As duas sao GLUE_VERSIONED pela
+    # mesma razao das irmas: leem definicao de `aws_glue_job`, e o que as
+    # guarda e VERSAO, nao a existencia da infraestrutura. A de 5.1 e o caso
+    # mais claro disso -- num Glue 5.0 a mesma configuracao esta CORRETA,
+    # porque o default de filesystem ainda e EMRFS.
+    "SF-LF-003",
+    "SF-LF-004",
+    # SF-LF-005 (FGAC e FTA no mesmo job) e SF-LF-006 (FGAC abaixo do minimo
+    # de quatro workers) entram com a mesma natureza das irmas: leem definicao
+    # de `aws_glue_job`, e o que as guarda e VERSAO -- os dois modelos de acesso
+    # do Lake Formation dentro de job Spark do Glue so existem a partir do 5.0.
+    "SF-LF-005",
+    "SF-LF-006",
+    # SF-LF-007 e a primeira da area que le PERMISSAO COLETADA, e mesmo assim
+    # e GLUE_VERSIONED: Full Table Access em job Spark do Glue so existe a
+    # partir do 5.0, e num Glue 4.0 a combinacao que ela acusa nao e
+    # alcancavel. `SF-LF-008` e a excecao da area e NAO entra aqui -- ver a
+    # nota abaixo de `AREA_MAY_VANISH_WHEN`.
+    "SF-LF-007",
+    # SF-LF-009 e GLUE_VERSIONED pela mesma razao de SF-LF-007: a combinacao que
+    # ela acusa exige FGAC, e FGAC em job Spark do Glue comeca no 5.0.
+    # SF-LF-010 NAO entra: localizacao registrada e estado do Lake Formation, e
+    # a frase `regardless` vale em qualquer runtime que leia aquela tabela.
+    "SF-LF-009",
     "SF-MIG-001",
     "SF-MIG-002",
     "SF-MIG-003",
@@ -532,7 +557,12 @@ AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     # como "revisei e esta tudo bem". A saida NAO e `runtime_scope: {}`: sem
     # guarda as duas acusariam job de Glue 4.0, onde o parametro de FGAC nao
     # tem efeito nenhum e a incompatibilidade nao existe.
-    "SF-LF": (_glue_below_5, "runtime com Glue abaixo de 5.0, ou sem Glue detectado"),
+    # SF-LF SAIU desta lista em 2026-09-09, e a razao e `SF-LF-008`: ela julga
+    # `IAM_ALLOWED_PRINCIPALS` com `ALL` sobre uma tabela, e isso e estado do
+    # LAKE FORMATION e nao do runtime -- a mesma tabela tem o mesmo problema
+    # lida por Athena, por EMR ou por Glue 4.0. Guarda-la por versao de Glue
+    # seria etiqueta de servico disfarcada de guarda de versao, que e o mesmo
+    # movimento que tirou `SF-ERR` daqui.
     # SF-SPARK4 entrou aqui com a area, e o criterio acima e satisfeito na
     # leitura que importa: a area nao e sobre uma versao que NAO FOI DETECTADA,
     # e sobre uma fronteira do Apache que este runtime comprovadamente NAO

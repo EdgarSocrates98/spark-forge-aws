@@ -40,7 +40,15 @@ from sparkforge.facts import (
     funcval,
     fusion,
     graph,
+    # `iam_access` entra nas DUAS listas no MESMO commit da fixture
+    # `fixtures/iam_access/`.
+    iam_access,
     iceberg_metadata,
+    lakeformation,
+    # `lakeformation_grants` entra nas DUAS listas no MESMO commit da fixture
+    # `fixtures/lakeformation/`. Ele e o extrator que fecha DOIS dos tres itens
+    # que `lakeformation.unresolved` nomeia -- grant e registro de localizacao.
+    lakeformation_grants,
     migration,
     parquet_footer,
     pyspark_ast,
@@ -120,6 +128,16 @@ EXTRACTORS = {
     "emr_serverless": emr_serverless,
     "event_log": event_log,
     "exception": exception,
+    # `lakeformation` entra nas DUAS listas manuais no MESMO commit de
+    # `fixtures/infra_code/fgac_com_catalogo_nomeado/`, que e a fixture que
+    # traz os quatro kinds `lakeformation.*` para algum golden. Ele e o
+    # SEGUNDO extrator desta lista que nao le artefato: deriva de
+    # `tf.attribute`, `tf.spark_conf`, `pyspark.conf_set` e
+    # `spark.conf_effective`, e existe porque o DSL de regra compara
+    # igualdade e o nome do catalogo Iceberg mora DENTRO da chave de conf.
+    "lakeformation": lakeformation,
+    "iam_access": iam_access,
+    "lakeformation_grants": lakeformation_grants,
     "funcval": funcval,
     "fusion": fusion,
     # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES

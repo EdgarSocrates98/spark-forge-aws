@@ -1,0 +1,426 @@
+[
+  {
+    "id": "f_6b5f49",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 10,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://artefatos/scripts/etl_fta.py",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_66aef2",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_8c13fc",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4fe64a",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://logs/sparkui/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_6cae13",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--conf",
+      "value": "spark.hadoop.fs.s3.credentialsResolverClass=com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver --conf spark.hadoop.fs.s3.useDirectoryHeaderAsFolderObject=true --conf spark.hadoop.fs.s3.folderObject.autoAction.disabled=true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_11c1c9",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 2,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "etl-fta-sem-emrfs",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_939b9a",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 3,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "aws_iam_role.glue.arn",
+      "present": true,
+      "literal": false,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4327ff",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 4,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.1",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_9d4fe4",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.2X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_2ac209",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {
+      "value": 6
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "6",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a99516",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 9,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_fdc126",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 11,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4e34c5",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_1addb4",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs"
+    },
+    "measures": {
+      "attribute_count": 11
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "etl_fta_sem_emrfs"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_906172",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs#spark.hadoop.fs.s3.credentialsResolverClass"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.hadoop.fs.s3.credentialsResolverClass",
+      "value": "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_deed1a",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs#spark.hadoop.fs.s3.folderObject.autoAction.disabled"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.hadoop.fs.s3.folderObject.autoAction.disabled",
+      "value": "true",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_7cd0ee",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs#spark.hadoop.fs.s3.useDirectoryHeaderAsFolderObject"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.hadoop.fs.s3.useDirectoryHeaderAsFolderObject",
+      "value": "true",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_56a3c0",
+    "schema_version": 1,
+    "kind": "lakeformation.filesystem",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs#spark.hadoop.fs.s3.credentialsResolverClass"
+    },
+    "measures": {},
+    "attrs": {
+      "lf_credentials_resolver_declared": true,
+      "emrfs_restored": false,
+      "fs_s3_impl": "",
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

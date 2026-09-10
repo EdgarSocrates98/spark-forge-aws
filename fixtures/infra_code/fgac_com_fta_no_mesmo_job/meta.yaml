@@ -1,0 +1,33 @@
+name: fgac_com_fta_no_mesmo_job
+proves: >
+  O POSITIVO de `SF-LF-005`, e a razao de o estado `both` morar no EXTRATOR e
+  nao no `when`.
+
+  O job declara `--enable-lakeformation-fine-grained-access = "true"` e, no
+  mesmo `--conf`, o resolver de credencial do Lake Formation -- os dois modelos
+  que a AWS declara mutuamente exclusivos. `lakeformation.access_model` sai com
+  `model: "both"` e `fta_markers` nomeando a chave que ativou o lado FTA.
+
+  A regra le UMA condicao so, e isso nao e simplificacao: o DSL nao tem grupo
+  aninhado, entao "FGAC E (resolver OU chave de catalogo)" nao e escrevivel em
+  `when`. Derivar o predicado foi o que tornou a regra de uma linha -- e o mesmo
+  motivo pelo qual `sparkforge/facts/lakeformation.py` existe.
+
+  O EMRFS esta restaurado na mesma linha de `--conf`, de proposito: sem ele
+  `SF-LF-004` disparia junto, e a fixture provaria duas coisas ao mesmo tempo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - lakeformation.access_model
+  - lakeformation.filesystem
+  - lakeformation.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-LF-005

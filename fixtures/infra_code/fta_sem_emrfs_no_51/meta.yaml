@@ -1,0 +1,37 @@
+name: fta_sem_emrfs_no_51
+proves: >
+  O POSITIVO de `SF-LF-004`, e o modo de falha SILENCIOSO que ele persegue.
+
+  Um `aws_glue_job` em Glue 5.1 declara as tres confs de Full Table Access que a
+  AWS publica -- `fs.s3.credentialsResolverClass` com
+  `AWSLakeFormationCredentialResolver`, `useDirectoryHeaderAsFolderObject` e
+  `folderObject.autoAction.disabled` -- e NAO declara nenhuma das tres chaves que
+  restauram o EMRFS. As duas paginas juntas dizem o que isso significa: Full
+  Table Access so funciona com EMRFS, e o Glue 5.1 trocou o conector S3 default
+  para S3A. A chave e de EMRFS, e sob S3A ela e ignorada sem erro.
+
+  A fixture prova que o achado sai de UM fact -- `lakeformation.filesystem` --
+  que carrega os dois lados da pergunta (`lf_credentials_resolver_declared` e
+  `emrfs_restored`) porque eles chegam em chaves de conf diferentes. E o segundo
+  caso em que o DSL de regra, que compara igualdade sobre um fact por vez, so
+  alcanca a afirmacao depois de o extrator ter juntado as metades.
+
+  NAO ha `--enable-lakeformation-fine-grained-access` aqui, e isso e o par
+  negativo embutido de `SF-LF-003`: sem modelo de acesso declarado, nenhum
+  `lakeformation.access_model` e emitido, e a regra do catalogo nomeado nao
+  dispara. Uma fixture que declarasse os dois provaria duas coisas e nenhuma com
+  clareza.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - lakeformation.filesystem
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-LF-004

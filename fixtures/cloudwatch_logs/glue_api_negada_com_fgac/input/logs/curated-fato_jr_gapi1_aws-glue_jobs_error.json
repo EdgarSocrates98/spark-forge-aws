@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_gapi1",
+      "message": "2026-09-09 10:05:11,872 ERROR [main] catalog.GlueMetastore: AccessDeniedException: User is not authorized to perform: glue:GetTable on resource: table curated/fato_venda",
+      "timestamp": 1788948000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "curated-fato",
+  "job_run_id": "jr_gapi1",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_gapi1",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

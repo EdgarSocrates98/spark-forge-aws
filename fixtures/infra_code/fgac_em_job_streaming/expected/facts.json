@@ -636,5 +636,57 @@
       "artifact_sha256": "bd141e6f27e61931de764d78ad782aa7695f480bc19b44e5727002a4764e405c",
       "extractor": "terraform@0.1.0"
     }
+  },
+  {
+    "id": "f_f5eee6",
+    "schema_version": 1,
+    "kind": "lakeformation.access_model",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.stream_fgac"
+    },
+    "measures": {},
+    "attrs": {
+      "model": "fgac",
+      "fgac_enabled": true,
+      "declared_value": "true",
+      "fta_markers": [],
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bd141e6f27e61931de764d78ad782aa7695f480bc19b44e5727002a4764e405c",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_926ba3",
+    "schema_version": 1,
+    "kind": "lakeformation.unresolved",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.stream_fgac"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "permissoes_nao_coletadas",
+      "missing": [
+        "lake_formation_grants",
+        "iam_role_policy",
+        "s3_registered_location"
+      ],
+      "unblocked_by": "coletar os grants do Lake Formation sobre a tabela alvo, a policy do runtime role e o registro da localizacao S3 -- nenhum dos tres entra em artefato que este motor colete hoje",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "bd141e6f27e61931de764d78ad782aa7695f480bc19b44e5727002a4764e405c",
+      "extractor": "terraform@0.1.0"
+    }
   }
 ]

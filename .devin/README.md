@@ -28,11 +28,37 @@ Os dois arquivos ao lado já fazem o resto:
 
 | Arquivo | O que faz |
 |---|---|
-| `mcp_config.json` | expõe as **63 tools** por stdio. Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
+| `mcp_config.json` | expõe as **77 tools** por stdio (recontado em 2026-09-09). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
 As **46 skills** e os **38 coordenadores** o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
+
+## Governança de acesso: simular, nunca parsear
+
+Os dois coletores de permissão (2026-09-09) respondem a pergunta que nenhum outro
+artefato responde: **por que a leitura passa e a escrita não**.
+
+`collect iam-access` chama `iam:SimulatePrincipalPolicy` e guarda a resposta da AWS.
+**Ler o documento da policy do role em vez disso erra nos quatro casos que importam**,
+e os quatro têm em comum não aparecer nesse documento: permissions boundary,
+service control policy, `Deny` explícito em qualquer policy anexada, e `Condition`.
+
+`attrs.denied_by` no fact nomeia a camada, e ela decide o conserto:
+
+| `denied_by` | O conserto |
+|---|---|
+| `implicit_deny` | acrescentar a permissão resolve |
+| `explicit_deny` | acrescentar **não** resolve — `Deny` vence todo `Allow` |
+| `permissions_boundary` | editar a policy do role não muda nada |
+| `service_control_policy` | a decisão é da organização, acima do role |
+
+**Colapsar as quatro num booleano faz "adicione a permissão" virar o conselho único, e
+ele é errado em três dos quatro casos.**
+
+Duas ressalvas que saem em todo artefato: a simulação **não é a execução** (a AWS avalia
+policies, não tenta a chamada), e ela **não cobre policy de recurso** — bucket policy,
+key policy do KMS e Glue resource policy são avaliação separada.
 
 ## Verificar se o MCP subiu
 
@@ -101,6 +127,9 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | O que quebra ao migrar de X para Y? | `migrate glue` / `migrate emr` |
 | Posso subir esta tabela para Iceberg v3? | `iceberg assess-upgrade` |
 | Qual o próximo artefato a coletar? | `next-step` |
+| Por que a leitura passa e a escrita não? | `collect lakeformation` + `collect iam-access` |
+| Quem tem qual permissão sobre esta tabela? | `analyze lakeformation-grants` |
+| Qual CAMADA negou a ação -- policy, boundary ou SCP? | `analyze iam-access` |
 
 A tabela completa, com o que cada verbo **consome**, está na seção *Os verbos que
 compõem* do [`../CLAUDE.md`](../CLAUDE.md) — e as 28 regras numeradas que a

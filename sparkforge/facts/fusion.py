@@ -69,6 +69,8 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
+from sparkforge.facts.lakeformation import EMITTED_KINDS as LF_EMITTED_KINDS
+from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "fusion@0.1.0"
@@ -289,5 +291,25 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
     unknown = {f.kind for f in new_facts} - EMITTED_KINDS
     if unknown:
         raise AssertionError(f"kind fora do namespace declarado: {sorted(unknown)}")
+
+    # `lakeformation.*` deriva AQUI pela mesma razao que este modulo existe, e a
+    # razao esta no primeiro paragrafo do docstring: o motor de regras avalia UM
+    # fact por condicao e nunca combina `attrs` de dois. "Este catalogo Iceberg e
+    # o session catalog?" mora em `spark.sql.catalog.<nome>`, onde o `<nome>` e o
+    # DADO -- e `rules/expr.py` compara igualdade e mais nada. Quem combina e uma
+    # etapa anterior, que e esta.
+    #
+    # O namespace continua sendo do modulo que o declara: os kinds saem de
+    # `lakeformation.EMITTED_KINDS`, nao de `EMITTED_KINDS` daqui, e a asserção
+    # acima segue guardando so o que a fusao de SQL e catalogo produz. Misturar
+    # os dois namespaces faria `fusion` responder por kind que ela nao escreve.
+    derivados_lf = build_lakeformation(facts)
+    desconhecidos_lf = {f.kind for f in derivados_lf} - LF_EMITTED_KINDS
+    if desconhecidos_lf:
+        raise AssertionError(
+            f"kind fora do namespace de lakeformation: {sorted(desconhecidos_lf)}"
+        )
+    for fact in derivados_lf:
+        combined[fact.id] = fact
 
     return sort_facts(combined.values())

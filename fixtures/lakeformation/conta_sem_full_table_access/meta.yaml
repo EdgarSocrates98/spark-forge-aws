@@ -1,0 +1,40 @@
+name: conta_sem_full_table_access
+proves: >
+  O par NEGATIVO de `grant_de_leitura_em_local_registrado`, e ele inverte os
+  tres eixos ao mesmo tempo -- e por isso vale como par.
+
+  O grant e `ALL` COM grant option, e mesmo assim a escrita sob Full Table
+  Access nao acontece: `allow_full_table_external_data_access` esta DESLIGADO na
+  conta. E o passo 1 do procedimento da AWS -- permitir que query engine de
+  terceiro acesse o dado sem a validacao de session tag --, e ele precede
+  qualquer concessao. Nenhum artefato do JOB revela isso, e e por essa razao que
+  o coletor chama `get_data_lake_settings`.
+
+  A localizacao NAO esta registrada, e a diferenca com a fixture irma importa:
+  ali `registered: true`, aqui `false`, e nas duas a AWS RESPONDEU. O terceiro
+  valor do ternario -- ninguem mediu -- e coberto por
+  `tests/test_facts_lakeformation_grants.py`, que exercita os blocos um a um.
+
+  O `catalog_id` sai VAZIO de proposito: e o caso local, e o caminho do artefato
+  usa `local` no lugar dele. A fixture irma tem catalogo de outra conta, e as
+  duas juntas provam que os dois caminhos coexistem sem colidir no manifesto.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - lakeformation.data_lake_settings
+  - lakeformation.filesystem
+  - lakeformation.grant
+  - lakeformation.grants.analyzed
+  - lakeformation.registered_location
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-LF-007

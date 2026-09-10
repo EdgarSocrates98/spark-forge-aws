@@ -1,0 +1,134 @@
+[
+  {
+    "id": "f_203d5a",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_fnf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_fnf1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-demo/curated/fato_venda/dt=2026-09-09/part-7.snappy.parquet",
+      "log_stream": "jr_fnf1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_fnf1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_7f15da",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_fnf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_fnf1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_fnf1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_fnf1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_6602f8",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "s3/listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 2,
+      "control_object_count": 0,
+      "group_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "prefix": "s3://sparkforge-demo/curated/fato_venda/",
+      "truncated": false
+    },
+    "provenance": {
+      "artifact": "s3/listing.json",
+      "artifact_sha256": "0899a2760158e8fd1f81c77b033c2bbe2a1341a4518fc556efc66e1254276412",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_392c7a",
+    "schema_version": 1,
+    "kind": "s3.prefix_summary",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://sparkforge-demo/curated/fato_venda/ [parquet/snappy]"
+    },
+    "measures": {
+      "file_count": 2,
+      "total_bytes": 8388608,
+      "avg_file_bytes": 4194304.0,
+      "min_file_bytes": 4194304,
+      "p50_file_bytes": 4194304,
+      "p95_file_bytes": 4194304,
+      "max_file_bytes": 4194304
+    },
+    "attrs": {
+      "prefix": "s3://sparkforge-demo/curated/fato_venda/",
+      "format": "parquet",
+      "compression": "snappy"
+    },
+    "provenance": {
+      "artifact": "s3/listing.json",
+      "artifact_sha256": "0899a2760158e8fd1f81c77b033c2bbe2a1341a4518fc556efc66e1254276412",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_0c164d",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_fnf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_fnf1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-013"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-013",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-demo/curated/fato_venda/dt=2026-09-09/part-7."
+    },
+    "provenance": {
+      "artifact": "logs/etl-curated_jr_fnf1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

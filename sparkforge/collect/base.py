@@ -49,6 +49,17 @@ ARTIFACT_KINDS = (
     # dicionario, page index e bloom. Uma tabela Iceberg e feita de arquivos
     # Parquet, e os dois artefatos coexistem para a MESMA tabela.
     "parquet_footer",
+    # `lakeformation` e artefato de PERMISSAO, e nao de definicao nem de
+    # execucao: grant, registro de localizacao S3 e data lake settings da
+    # conta. Ele e o unico artefato deste repositorio cujo conteudo nao
+    # descreve o job -- descreve quem pode o que sobre a tabela que o job
+    # le ou escreve, e por isso responde perguntas que nenhum outro alcanca.
+    "lakeformation",
+    # `iam_access` e artefato de DECISAO, e nao de policy: ele guarda o que
+    # `iam:SimulatePrincipalPolicy` respondeu, nao o documento que alguem
+    # escreveu. A diferenca e o ponto do coletor -- boundary, SCP, deny
+    # explicito e condicao nao aparecem no documento do role.
+    "iam_access",
     "source",
 )
 

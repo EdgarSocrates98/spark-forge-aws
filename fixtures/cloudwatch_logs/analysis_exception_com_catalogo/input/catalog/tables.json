@@ -1,0 +1,28 @@
+{
+  "tables": [
+    {
+      "name": "curated.fato_venda",
+      "storage_format": "parquet",
+      "partition_keys": [
+        {
+          "name": "dt",
+          "type": "string"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint"
+        },
+        {
+          "name": "valor",
+          "type": "double"
+        },
+        {
+          "name": "dt",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}
