@@ -153,7 +153,7 @@ Read PROMPT_INICIAL_MESTRE.md and use the glue-incremental-performance-architect
 
 ## Economy: measure before claiming a saving
 
-**77 tools, 34 with `detail_level`** (recounted 2026-09-09) (`summary`, `normal`, `full`). Rule 28 of
+**78 tools, 35 with `detail_level`** (recounted 2026-09-09) (`summary`, `normal`, `full`). Rule 28 of
 `CLAUDE.md` applies to all three: *read the number before claiming `detail_level`
 reduces anything*. `sparkforge_economy_report` returns `detail_level_effect` with
 the bytes of each level requested — it shows both sides and does not conclude for
@@ -206,7 +206,7 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 Thirty-six extractors, all offline — they read artifacts already on disk and
 never call AWS. Each has a CLI verb and an MCP tool with the same name, and
 together they emit **210** distinct fact kinds. The catalogue that judges them
-has **179** rules (**144** executable), and the MCP surface is **77** tools. Count areas with
+has **187** rules (**152** executable), and the MCP surface is **78** tools. Count areas with
 `area_of`, never by summing a hand-written list — `rules/catalog/README.md` says
 why. The live figures live in the *Números correntes* table of
 `docs/superpowers/STATUS.md`, and `scripts/check_status_numbers.py --strict`

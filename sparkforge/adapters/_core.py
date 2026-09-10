@@ -57,6 +57,7 @@ from sparkforge.controlm.matrix import (
 )
 from sparkforge.economy.report import build_context_report
 from sparkforge.errors.matcher import build_signature_matches
+from sparkforge.facts import lakeformation_matrix as _lf_matrix
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
     extract_athena_workgroup_tree,
@@ -1138,6 +1139,118 @@ def _extract_lakeformation_grants_facts(path: str) -> list[Fact]:
     if target.is_dir():
         return extract_lakeformation_tree(target, repo_root=target)
     return extract_lakeformation_path(target)
+
+
+def lakeformation_matrix(
+    runtime: str | None = None,
+    axis: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """O eixo de versao de Lake Formation, legivel por maquina.
+
+    Ate 2026-09-09 esta matriz existia SO como tabela markdown na §0 de
+    `knowledge/glue/lakeformation-fgac.md`. Nenhum verbo a lia e nenhum gate a
+    conferia -- a matriz que governa o diagnostico de uma area de 21 regras nao
+    era dado.
+
+    NAO JULGA NADA. Ela devolve o que as paginas da AWS declaram, com a frase
+    citada quando existe, e o que elas NAO declaram como `not_declared` -- que e
+    diferente de `not_supported`. Uma celula sem frase citavel carrega `nota`
+    dizendo por que: parte da matriz da AWS e tabela, nao sentenca.
+
+    `runtime` filtra por versao de Glue; sem ele, todas. `axis` filtra por eixo.
+    Runtime fora da matriz devolve `unresolved` com a lista do que ela cobre --
+    nunca um palpite por analogia com a versao vizinha.
+    """
+    documento = _lf_matrix.load()
+    conhecidos = list(_lf_matrix.known_runtimes())
+    eixos = list(_lf_matrix.eixos())
+    titulo_por_eixo = {e["id"]: e["titulo"] for e in eixos}
+
+    if axis is not None and axis not in titulo_por_eixo:
+        return {
+            "status": "unresolved",
+            "reason": "eixo_desconhecido",
+            "requested_axis": axis,
+            "known_axes": [e["id"] for e in eixos],
+            "unblocked_by": "",
+        }
+
+    if runtime is not None and runtime not in conhecidos:
+        return {
+            "status": "unresolved",
+            "reason": "runtime_fora_da_matriz",
+            "requested_runtime": runtime,
+            "known_runtimes": conhecidos,
+            # A lacuna e de LEITURA e nao de existencia: a pagina do 6.0 existe
+            # e e vigiada por `runtime-matrix.yaml`; ela nao foi lida para este
+            # eixo. Dizer isso e o que separa "nao suportado" de "nao lemos".
+            "unblocked_by": (
+                "Ler a pagina de migracao daquele runtime para o eixo de Lake "
+                "Formation e acrescentar a coluna em "
+                "knowledge/glue/lakeformation-matrix.yaml"
+            ),
+            "declared_limits": list(_lf_matrix.limites_declarados()),
+        }
+
+    alvos = [runtime] if runtime is not None else conhecidos
+    ids_de_eixo = [axis] if axis is not None else [e["id"] for e in eixos]
+
+    linhas: list[dict[str, Any]] = []
+    com_frase = 0
+    sem_frase = 0
+    nao_declarados = 0
+    for versao in alvos:
+        for eixo in ids_de_eixo:
+            celula = _lf_matrix.capability(versao, eixo) or {}
+            citada = _lf_matrix.citada(versao, eixo)
+            status = celula.get("status", "")
+            if status == "not_declared":
+                nao_declarados += 1
+            elif status in _lf_matrix.EXIGEM_FONTE:
+                if citada:
+                    com_frase += 1
+                else:
+                    sem_frase += 1
+            linha: dict[str, Any] = {
+                "glue_version": versao,
+                "axis": eixo,
+                "axis_title": titulo_por_eixo[eixo],
+                "status": status,
+                "quoted": citada,
+            }
+            if celula.get("valor"):
+                linha["value"] = celula["valor"]
+            if detail_level != "summary":
+                if celula.get("source"):
+                    linha["source"] = (documento.get("fontes") or {}).get(celula["source"], "")
+                    linha["source_key"] = celula["source"]
+                if citada:
+                    linha["quote"] = celula["quote"]
+                if celula.get("nota"):
+                    linha["note"] = celula["nota"]
+            linhas.append(linha)
+
+    saida: dict[str, Any] = {
+        "status": "ok",
+        "schema_version": documento.get("schema_version", 1),
+        "collected": documento.get("coletada", ""),
+        "known_runtimes": conhecidos,
+        "known_axes": [e["id"] for e in eixos],
+        "rows": linhas,
+        # Nao e nota de qualidade: e a contagem de quantas afirmacoes desta
+        # leitura tem frase da fonte por tras, quantas vem de tabela da AWS sem
+        # sentenca citavel, e quantas sao lacuna declarada.
+        "evidence": {
+            "with_quote": com_frase,
+            "sourced_without_quote": sem_frase,
+            "not_declared": nao_declarados,
+        },
+        "declared_limits": list(_lf_matrix.limites_declarados()),
+    }
+    if detail_level != "summary":
+        saida["sources"] = dict(documento.get("fontes") or {})
+    return saida
 
 
 def analyze_lakeformation_grants(

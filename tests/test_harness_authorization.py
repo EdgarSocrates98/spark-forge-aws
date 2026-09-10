@@ -891,6 +891,16 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             "sparkforge_release_describe",
             "sparkforge_release_diff",
             "sparkforge_controlm_describe",
+            # `lakeformation_matrix` (2026-09-09) entra aqui pela MESMA razao das
+            # cinco de cima, e a razao e o que este conjunto guarda: a entrada
+            # dela nao e artefato do operador, e CONHECIMENTO VERSIONADO que
+            # viaja no proprio pacote. Ela le
+            # `knowledge/glue/lakeformation-matrix.yaml` por
+            # `safe_knowledge_file`, que e a fronteira que ja governa todo acesso
+            # a `knowledge/` -- nao ha caminho a autorizar porque nao ha caminho
+            # que o chamador escolha. Aceitar um `path` aqui seria abrir uma
+            # superficie que a tool nao precisa.
+            "sparkforge_lakeformation_matrix",
         }
     )
 
@@ -924,6 +934,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # 72 desde `analyze_iam_access` e `collect_iam_access` (2026-09-09),
         # pelo mesmo par de lados: a de analise e `_READ_ONLY` com `path`, a de
         # coleta e `_WRITE_LOCAL_OPEN_WORLD` com `repo`.
+        # 72 continua: `lakeformation_matrix` (2026-09-09) foi a 78ª tool e NAO
+        # move este numero, porque entrou do lado das que nao declaram caminho.
+        # E a sexta do conjunto de excecao, e a primeira cuja entrada e
+        # conhecimento versionado em vez de identificador de recurso remoto.
         assert len(TOOLS) - len(sem_caminho) == 72
 
 

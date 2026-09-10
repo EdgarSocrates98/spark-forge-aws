@@ -79,6 +79,7 @@ class TestToolSurface:
             "sparkforge_economy_report",
             "sparkforge_judge",
             "sparkforge_arbitrate",
+            "sparkforge_lakeformation_matrix",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
             "sparkforge_report_sign",
@@ -1934,6 +1935,15 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "facts": facts["items"],
                 "glue": "5.0",
             },
+        )
+
+    if name == "sparkforge_lakeformation_matrix":
+        # Sem `path` nenhum: a matriz e conhecimento versionado que viaja no
+        # pacote, e nao artefato de case. E a unica tool desta suite cujos
+        # argumentos reais nao apontam para o disco do operador.
+        return call_tool(
+            "sparkforge_lakeformation_matrix",
+            {"runtime": "5.1", "axis": "fgac_spark_native_write"},
         )
 
     if name == "sparkforge_rules_lookup":

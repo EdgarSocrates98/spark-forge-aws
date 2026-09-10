@@ -1639,6 +1639,56 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge_path_p.add_argument("--file")
 
     # rules lookup --------------------------------------------------------
+    # lakeformation ----------------------------------------------------
+    #
+    # UM subcomando, e nao os nove que o prompt de origem pede. `matrix` esta
+    # aqui porque acrescenta CAPACIDADE: o eixo de versao existia so como tabela
+    # markdown, e nenhum verbo o lia. Os outros oito seriam alias sobre verbo que
+    # ja existe -- `permissions` e `analyze lakeformation-grants`,
+    # `explain-error` e `troubleshoot` sao `analyze error-signatures`,
+    # `cross-account` mora em `forge lakeformation diagnose-cross-account`,
+    # `migration` e `migrate assess`. Alias move a superficie (regra 26) sem
+    # mover capacidade, e a razao de cada recusa esta em
+    # `docs/superpowers/STATUS.md`.
+    #
+    # `diagnose` e o unico dos oito que NAO seria alias, e ele nao esta aqui de
+    # proposito: a ordem dos quatro passos e procedimento e mora na skill
+    # `diagnose-lakeformation-access`, que e nao-despachavel porque coleta AWS ao
+    # vivo. Um verbo com esse nome sem essa ordem prometeria o que nao faz.
+    lf_matrix_p = sub.add_parser(
+        "lakeformation",
+        help=(
+            "Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, "
+            "nao versao de componente."
+        ),
+    )
+    lf_matrix_sub = lf_matrix_p.add_subparsers(dest="lakeformation_action", required=True)
+    lf_mx = lf_matrix_sub.add_parser(
+        "matrix",
+        help=(
+            "Imprime o eixo: filesystem S3 default, FGAC por caminho, DDL/DML e "
+            "FTA, com a frase da fonte quando ela existe."
+        ),
+    )
+    lf_mx.add_argument(
+        "--runtime",
+        help=(
+            "Versao de Glue. Sem ela, todas as que a matriz cobre. Versao fora "
+            "da matriz sai `unresolved` com o que destravaria -- nunca palpite "
+            "por analogia com a versao vizinha."
+        ),
+    )
+    lf_mx.add_argument(
+        "--axis",
+        help="Eixo especifico (ex.: `fgac_spark_native_write`). Sem ele, todos.",
+    )
+    lf_mx.add_argument(
+        "--detail-level",
+        choices=["summary", "normal", "full"],
+        default="full",
+        help="`summary` omite fonte, frase e nota. Ver a regra 28 do CLAUDE.md.",
+    )
+
     rules_p = sub.add_parser("rules", help="Consulta o catalogo de regras versionado.")
     rules_sub = rules_p.add_subparsers(dest="rules_action", required=True)
     lookup_p = rules_sub.add_parser(
@@ -2819,6 +2869,14 @@ def _cmd_knowledge_path(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_lakeformation_matrix(args: argparse.Namespace) -> int:
+    payload = _core.lakeformation_matrix(
+        runtime=args.runtime, axis=args.axis, detail_level=args.detail_level
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_rules_lookup(args: argparse.Namespace) -> int:
     payload = _core.rules_lookup(
         id=args.id, category=args.category, limit=args.limit, cursor=args.cursor
@@ -3436,6 +3494,7 @@ _DISPATCH = {
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
+    ("lakeformation", "matrix"): _cmd_lakeformation_matrix,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
     ("report", "sign"): _cmd_report_sign,
@@ -3473,6 +3532,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "runtime_action", None)
         or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
+        or getattr(args, "lakeformation_action", None)
         or getattr(args, "rules_action", None)
         or getattr(args, "report_action", None)
         or getattr(args, "collect_action", None)

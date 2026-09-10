@@ -597,6 +597,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: read the Lake Formation version axis for a Glue runtime
+    tools: [sparkforge_lakeformation_matrix]
+    cli: [lakeformation matrix]
+    knowledge: [knowledge/glue/lakeformation-matrix.yaml, knowledge/glue/lakeformation-fgac.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: look up a rule with threshold, version guard and source
     tools: [sparkforge_rules_lookup]
     cli: [rules lookup]

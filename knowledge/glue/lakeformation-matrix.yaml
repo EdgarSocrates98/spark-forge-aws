@@ -1,0 +1,232 @@
+# Eixo de versao de Lake Formation por runtime Glue -- a forma LEGIVEL POR
+# MAQUINA da tabela da §0 de `lakeformation-fgac.md`.
+#
+# POR QUE ESTE ARQUIVO EXISTE, e ele nao e duplicacao. `runtime-matrix.yaml`
+# guarda VERSAO DE COMPONENTE por runtime (Spark, Python, Scala, Java, Iceberg).
+# O que decide diagnostico nesta area nao e versao de componente: e CAPACIDADE
+# -- "este runtime escreve sob FGAC?", "qual e o filesystem S3 default?" --, e
+# capacidade nao se deduz de versao. Ate 2026-09-09 essas respostas existiam so
+# como tabela markdown, e por isso nenhum verbo as lia e nenhum gate as conferia.
+#
+# `tests/test_lakeformation_matrix.py` trava as duas metades juntas: toda celula
+# daqui aparece na tabela markdown, e toda linha da tabela markdown tem celula
+# aqui. Prosa e YAML divergindo em silencio e exatamente o defeito que o gate de
+# lastro fecha para numero, e que aqui nao tinha guarda nenhuma.
+#
+# TRES VALORES, E O TERCEIRO NAO E "FALSO":
+#   supported       a pagina declara suporte, com a frase citada
+#   not_supported   a pagina declara NAO suporte, com a frase citada
+#   not_declared    NENHUMA pagina vigiada diz. Nao e "nao funciona" -- e
+#                   "ninguem publicou", e virar isso em `false` seria inventar
+#   not_applicable  a capacidade nao existe naquele runtime (o modelo em si nao
+#                   existia)
+#
+# Toda celula com `supported` ou `not_supported` carrega `source` e `quote`. Sem
+# frase citada, o valor tem de ser `not_declared` -- e a regra 20 do CLAUDE.md.
+
+schema_version: 1
+
+fontes:
+  considerations: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+  fgac: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html"
+  fta: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html"
+  migrating_50: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+  migrating_51: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html"
+
+coletada: "2026-09-09"
+
+# A ordem dos eixos e a da tabela markdown, e ela e deliberada: filesystem
+# primeiro porque e o que quebra CALADO (§5), e escrita depois porque e o que a
+# §6 declara em conflito.
+eixos:
+  - id: filesystem_s3_default
+    titulo: "Filesystem S3 default"
+    natureza: valor
+  - id: fgac_via_glue_context
+    titulo: "FGAC via GlueContext/DynamicFrame"
+    natureza: capacidade
+  - id: fgac_spark_native_read
+    titulo: "FGAC Spark-native (leitura)"
+    natureza: capacidade
+  - id: fgac_spark_native_write
+    titulo: "FGAC Spark-native (escrita de dado)"
+    natureza: capacidade
+  - id: fgac_ddl_dml
+    titulo: "FGAC DDL/DML (CREATE/ALTER/DELETE/DROP)"
+    natureza: capacidade
+  - id: fta_spark_native
+    titulo: "FTA Spark-native"
+    natureza: capacidade
+  - id: fta_via_glue_context
+    titulo: "FTA via GlueContext/DynamicFrame"
+    natureza: capacidade
+
+runtimes:
+  "4.0":
+    filesystem_s3_default:
+      valor: "EMRFS"
+      status: supported
+      source: migrating_51
+      quote: "S3A filesystem has replaced EMRFS as the default S3 connector"
+      nota: >-
+        A frase e da pagina do 5.1 e afirma a TROCA. Que o default anterior era
+        EMRFS se le dela; nenhuma pagina do 4.0 vigiada por este repositorio o
+        declara diretamente.
+    fgac_via_glue_context:
+      status: supported
+      source: migrating_50
+      quote: >-
+        GlueContext-based table-level access control with AWS Lake Formation
+        permissions supported in Glue 4.0 or before is not supported in Glue 5.0.
+      nota: >-
+        A frase e da pagina do 5.0 e afirma a REMOCAO, nomeando o 4.0 como onde
+        havia suporte.
+    fgac_spark_native_read:
+      status: not_applicable
+      nota: "O modelo Spark-native de FGAC nao existia no 4.0."
+    fgac_spark_native_write:
+      status: not_applicable
+      nota: "O modelo Spark-native de FGAC nao existia no 4.0."
+    fgac_ddl_dml:
+      status: not_applicable
+      nota: "Sem FGAC Spark-native, a pergunta nao se aplica."
+    fta_spark_native:
+      status: not_applicable
+      nota: "Full Table Access Spark-native nao existia no 4.0."
+    fta_via_glue_context:
+      status: supported
+      source: fta
+      quote: ""
+      nota: >-
+        A pagina de Full Table Access descreve o caminho via GlueContext sem
+        citar o 4.0 nominalmente. A celula fica `supported` porque a pagina de
+        migracao do 5.0 declara que era esse o modelo do 4.0; a frase exata que
+        o afirmaria para o 4.0 nao existe numa pagina so, e por isso `quote`
+        esta VAZIA e esta nota ocupa o lugar dela.
+
+  "5.0":
+    filesystem_s3_default:
+      valor: "EMRFS"
+      status: supported
+      source: migrating_51
+      quote: "S3A filesystem has replaced EMRFS as the default S3 connector"
+      nota: "Mesma frase do 4.0: ela afirma que a troca foi NO 5.1."
+    fgac_via_glue_context:
+      status: not_supported
+      source: migrating_50
+      quote: >-
+        GlueContext-based table-level access control with AWS Lake Formation
+        permissions supported in Glue 4.0 or before is not supported in Glue 5.0.
+    fgac_spark_native_read:
+      status: supported
+      source: migrating_50
+      quote: ""
+      nota: >-
+        A pagina do 5.0 descreve o FGAC Spark-native e recorta a ESCRITA como
+        nao suportada -- a leitura e o que resta suportado. `quote` vazia porque
+        a frase que sustenta e a da escrita, na celula abaixo.
+    fgac_spark_native_write:
+      status: not_supported
+      source: migrating_50
+      quote: "Currently data writes are not supported"
+    fgac_ddl_dml:
+      status: not_declared
+      nota: >-
+        A pagina do 5.0 nao enumera DDL/DML sob FGAC. Ela declara que escrita de
+        DADO nao e suportada, e nao diz nada sobre CREATE/ALTER/DROP. `false`
+        aqui seria inferencia da celula acima.
+    fta_spark_native:
+      valor: "Hive e Iceberg"
+      status: supported
+      source: fta
+      quote: ""
+      nota: >-
+        A pagina de FTA lista os formatos suportados por runtime. A frase que
+        nomeia o 5.0 esta na tabela dela, e nao numa sentenca citavel.
+    fta_via_glue_context:
+      valor: "so tabela nao-OTF"
+      status: supported
+      source: fta
+      quote: ""
+      nota: >-
+        Mesma origem em tabela. "OTF" e open table format -- Iceberg, Hudi,
+        Delta.
+
+  "5.1":
+    filesystem_s3_default:
+      valor: "S3A"
+      status: supported
+      source: migrating_51
+      quote: "S3A filesystem has replaced EMRFS as the default S3 connector"
+      nota: >-
+        E A CELULA QUE QUEBRA CALADO. `spark.hadoop.fs.s3.credentialsResolverClass`
+        e chave de EMRFS; sob S3A ela e ignorada sem erro e sem aviso. Ver a §5
+        de `lakeformation-fgac.md` e a regra SF-LF-004.
+    fgac_via_glue_context:
+      status: not_supported
+      source: migrating_50
+      quote: >-
+        GlueContext-based table-level access control with AWS Lake Formation
+        permissions supported in Glue 4.0 or before is not supported in Glue 5.0.
+      nota: >-
+        A frase e do 5.0. Nenhuma pagina do 5.1 restaura o caminho, e nenhuma
+        pagina do 5.1 repete a remocao -- a celula herda do 5.0.
+    fgac_spark_native_read:
+      status: supported
+      source: migrating_51
+      quote: >-
+        Spark native fine-grained access control (FGAC) support using AWS Lake
+        Formation - DDL/DML operations (like CREATE, ALTER, DELETE, DROP) with
+        fine grained access control for Apache Hive, Apache Iceberg and Delta
+        Lake tables registered in AWS Lake Formation
+    fgac_spark_native_write:
+      status: supported
+      source: migrating_51
+      quote: "Support Spark-native FGAC writes on AWS Lake Formation registered tables."
+      nota: >-
+        ESTA CELULA ESTA EM CONFLITO DECLARADO com duas frases da pagina de
+        consideracoes, e o conflito NAO fecha para localizacao registrada. Ver a
+        §6 de `lakeformation-fgac.md`, que apresenta as quatro frases e nao
+        escolhe lado, e a regra SF-LF-009. `supported` aqui e o que a PAGINA DE
+        MIGRACAO declara, nao uma conclusao deste repositorio.
+    fgac_ddl_dml:
+      status: supported
+      source: migrating_51
+      quote: >-
+        Spark native fine-grained access control (FGAC) support using AWS Lake
+        Formation - DDL/DML operations (like CREATE, ALTER, DELETE, DROP) with
+        fine grained access control for Apache Hive, Apache Iceberg and Delta
+        Lake tables registered in AWS Lake Formation
+      nota: >-
+        A enumeracao usa "like", e por isso ela e ILUSTRATIVA e nao exaustiva.
+        `MERGE INTO` nao esta nela, e concluir dai que MERGE nao e suportado
+        seria ler uma lista de exemplos como fechada. O que MERGE exige de
+        verdade esta em SF-ICE-008, e vem da documentacao do Iceberg.
+    fta_spark_native:
+      valor: "+ Hudi e Delta"
+      status: supported
+      source: fta
+      quote: ""
+      nota: "Acrescenta Hudi e Delta ao que o 5.0 suportava."
+    fta_via_glue_context:
+      valor: "so tabela nao-OTF"
+      status: supported
+      source: fta
+      quote: ""
+      nota: >-
+        Mesma origem em tabela do 5.0, e o MESMO valor: a troca do 5.1 foi de
+        filesystem e de formatos no caminho Spark-native, nao neste.
+
+# O que esta matriz NAO responde, e a lista e curta de proposito:
+#
+#   - Glue 6.0. A pagina de migracao do 6.0 existe e e vigiada
+#     (`runtime-matrix.yaml` a cita para Spark 4.1.1 e Iceberg 1.11.0), mas ela
+#     nao foi lida para o eixo de Lake Formation. Acrescentar uma coluna "6.0"
+#     por analogia com o 5.1 seria inventar capacidade.
+#   - Glue 3.0 e anteriores. Fora do recorte das paginas coletadas.
+#   - O EFEITO de cada `not_declared`. A matriz diz que ninguem publicou; ela
+#     nao diz o que acontece.
+limites_declarados:
+  - "Glue 6.0 nao esta na matriz: a pagina de migracao dele nao foi lida para este eixo."
+  - "Glue 3.0 e anteriores estao fora do recorte das paginas coletadas."
+  - "`not_declared` diz que ninguem publicou, nunca o que acontece."

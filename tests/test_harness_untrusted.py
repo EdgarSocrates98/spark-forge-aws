@@ -92,6 +92,7 @@ def _derivados_de_facts(pool):
         exception,
         funcval,
         fusion,
+        lakeformation,
         run_cost,
         runtime_detect,
         timeout_diagnosis,
@@ -114,6 +115,16 @@ def _derivados_de_facts(pool):
     # `spark.stage.failure` e `spark.conf_effective` ja extraidos.
     yield "timeout_diagnosis", timeout_diagnosis.extract_timeout_diagnosis(pool, "<pool>")
     yield "utilization", utilization.extract_utilization(pool, "<pool>")
+    # `lakeformation` deriva das TRES superficies de conf (`spark.conf_effective`,
+    # `tf.spark_conf`, `pyspark.conf_set`) mais `tf.attribute`, e nao de caminho.
+    # Ele COPIA o `subject` do fact de conf que o ancora -- entao um dia em que
+    # `tf.spark_conf` passe a carregar snippet, `lakeformation` propaga, e e esta
+    # chamada que faz a medida perceber.
+    #
+    # ELE FALTAVA AQUI, e a guarda fail-closed derrubava o teste dizendo o nome
+    # do modulo: a entrega que criou `sparkforge/facts/lakeformation.py`
+    # registrou-o nas duas listas de cobertura de kind e nao nesta.
+    yield "lakeformation", lakeformation.build_lakeformation(pool)
     # `exception` deriva de `spark.stage.failure.attrs.reason`, e nao de
     # caminho. Ele COPIA o `subject` do fact de origem -- entao se um dia
     # `spark.stage.failure` passar a carregar snippet, `exception` propaga, e e
