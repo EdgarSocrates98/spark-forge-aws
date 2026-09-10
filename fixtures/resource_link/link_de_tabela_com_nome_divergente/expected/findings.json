@@ -1,0 +1,57 @@
+[
+  {
+    "rule_id": "SF-XACC-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Resource link com nome diferente do recurso na conta de origem",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_dim_cliente_prod.json",
+      "symbol": "analytics.dim_cliente_prod",
+      "catalog_id": "111111111111"
+    },
+    "evidence": [
+      "f_ef94cf"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A página de considerações e limitações do Glue com Lake Formation declara que consulta cross-account só é suportada quando o recurso é compartilhado por resource link, e que o resource link precisa ter o mesmo nome do recurso na conta de origem. O fact mede os dois nomes -- `link_name` e `source_resource_name` -- e eles são diferentes.\nEste achado é sobre o LIMITE DE SUPORTE DECLARADO, e não sobre uma negação observada: um link com nome próprio pode responder hoje. O que a AWS não declara é que ele continue respondendo, e a falha desse arranjo aparece como tabela que \"some\" para um consumidor e não para outro.\nA comparação não é a mesma nos dois tipos de link, e o extrator já cuida disso: link de tabela compara contra `TargetTable.Name`, link de banco contra `TargetDatabase.DatabaseName` -- que não tem campo `Name`.",
+    "proposed_change": [
+      "Recriar o resource link na conta consumidora com o MESMO nome do recurso na conta de origem, conferindo `target_database` e `source_resource_name` do fact.",
+      "Atualizar os consumidores que referenciam o nome antigo -- job, consulta de BI, view -- antes de remover o link com o nome divergente."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Renomear o link quebra toda referência ao nome antigo, e as referências vivem fora deste artefato -- em consultas salvas, jobs de outros times e views do catálogo."
+    ],
+    "tradeoffs": [
+      "Manter o nome próprio preserva as referências existentes, e em troca deixa o arranjo fora do que a AWS declara suportar."
+    ],
+    "validation": [
+      "`aws glue get-table --catalog-id CONSUMIDORA --database-name DB --name NOME` na conta consumidora, conferindo que `TargetTable.Name` é igual a `Name`.",
+      "Uma consulta de smoke test pelo consumidor real sobre o link recriado."
+    ],
+    "rollback": [
+      "Recriar o link com o nome anterior devolve o estado exato -- resource link não carrega dado, só a referência. O que não volta sozinho são as concessões do Lake Formation sobre o link, que são por objeto.\n"
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-10"
+      }
+    ],
+    "action": {
+      "kind": "catalog.rename_resource_link",
+      "target": "glue.resource_link",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

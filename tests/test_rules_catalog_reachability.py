@@ -51,10 +51,15 @@ from sparkforge.facts import (
     funcval,
     fusion,
     glue_job_run,
-    graph,
     # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
     # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
+    glue_resource_link,
+    graph,
+    # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
+    # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
+    # afirmacao que so existia em prosa: a §1 do documento de conhecimento
+    # declara que o link precisa ter o MESMO nome do recurso de origem.
     iam_access,
     iceberg_metadata,
     lakeformation,
@@ -148,9 +153,11 @@ EXTRACTORS = (
     # derivado desta area. Sem ele aqui, os quatro `lakeformation.*` contam como
     # orfaos e a regra seria FORCADA a `blocked_on` sobre um extrator que esta no
     # repositorio e roda.
+    glue_resource_link,
     iam_access,
     lakeformation,
-    # `lakeformation_grants` e `iam_access` entram na SEGUNDA lista tambem: a
+    # `glue_resource_link`, `lakeformation_grants` e `iam_access` entram na
+    # SEGUNDA lista tambem: a
     # primeira e de import, esta e a que o teste varre. Registrar so na de cima
     # deixa os kinds contando como orfaos, e a regra que os consome e forcada a
     # `blocked_on` sobre extrator que ja esta no repositorio -- a mentira que

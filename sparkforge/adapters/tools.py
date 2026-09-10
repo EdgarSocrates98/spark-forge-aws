@@ -4264,6 +4264,50 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_glue_resource_link": {
+        "description": (
+            "Extrai a TOPOLOGIA do catalogo ja coletada por `collect glue-resource-link`: "
+            "o objeto na conta consumidora e resource link ou tabela comum, para onde ele "
+            "aponta, e se o nome bate com o do recurso de origem. A UNICA derivacao e "
+            "`name_matches_source`, e ela existe porque a AWS declara suportado apenas o "
+            "link com o MESMO nome do recurso de origem -- afirmacao que ate esta tool nao "
+            "tinha fact nenhum para conferi-la. A comparacao NAO e a mesma nos dois tipos: "
+            "link de tabela compara contra `TargetTable.Name`, link de banco contra "
+            "`TargetDatabase.DatabaseName`, que nao tem campo `Name` -- colapsar as duas "
+            "daria nome divergente em todo link de banco correto. Ele NAO afirma que o "
+            "link esta pendurado quando o alvo nao resolve: sob Lake Formation "
+            "`EntityNotFoundException` e a mesma resposta para recurso inexistente e para "
+            "recurso NAO AUTORIZADO, e `target_absence_is_ambiguous` sai `True` em vez de "
+            "a ambiguidade ser resolvida por chute. NAO le grant e NAO le o estado do AWS "
+            "RAM -- as duas sao outras pernas do grafo de acesso."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Artefato gravado por `sparkforge collect glue-resource-link`, ou "
+                        "o diretorio deles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Topologia de resource link extraida, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_iam_access": {
         "description": (
             "Extrai a DECISAO de IAM ja simulada por `collect iam-access`, com a CAMADA "
@@ -6206,9 +6250,15 @@ TOOLS: dict[str, dict[str, Any]] = {
             "nenhuma ficou sem medida; `false` quando alguma perna MEDIDA barrou; `null` "
             "quando nada do que foi medido impede e alguma perna nao foi medida -- e "
             "`null` e 'o que eu consegui olhar nao impede', NUNCA 'funciona'. "
-            "RAM share, resource link e key policy do KMS saem SEMPRE `unresolved`: "
-            "nenhum coletor deste repositorio os produz, e devolver `missing` para eles "
-            "seria acusacao a partir de ausencia de artefato. "
+            "RAM share e key policy do KMS saem SEMPRE `unresolved`: nenhum coletor "
+            "deste repositorio os produz, e devolver `missing` para eles seria acusacao "
+            "a partir de ausencia de artefato. RESOURCE LINK saiu dessa lista em "
+            "2026-09-10 e tem QUATRO saidas medidas depois de `collect "
+            "glue-resource-link`: `granted` (nome identico ao do recurso de origem e a "
+            "origem respondeu), `blocking` (nome divergente -- limite de suporte "
+            "declarado, nao negacao observada), `not_applicable` (o objeto nao e link) e "
+            "`unresolved` (a origem respondeu `EntityNotFoundException`, que sob Lake "
+            "Formation NAO distingue recurso inexistente de recurso nao autorizado). "
             "Localizacao NAO registrada sai `not_applicable` e nao `missing` -- tabela "
             "fora do registro e lida com a credencial do runtime role, e nao e permissao "
             "que faltou. Com mais de uma tabela ou mais de um principal no case a tool "
@@ -6570,6 +6620,56 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "Localizacao S3 a conferir em `describe_resource`. Sem ela o bloco "
                         "sai `nao_coletado` em vez de sumir -- bloco ausente e "
                         "indistinguivel de bloco vazio."
+                    ),
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
+    "sparkforge_collect_glue_resource_link": {
+        "description": (
+            "Le o objeto que o job consulta na conta CONSUMIDORA via `glue:GetTable` (ou "
+            "`glue:GetDatabase` sem `table`) e, por default, o recurso de ORIGEM que o "
+            "link declara. Duas chamadas com STATUS SEPARADOS, porque falham por motivos "
+            "diferentes: o link pode existir e a origem nao ser visivel, e a origem pode "
+            "existir sem link nenhum. `catalog_id` e o catalogo CONSUMIDOR, onde o link "
+            "mora -- o de origem sai MEDIDO do proprio link e nunca e passado a mao, "
+            "senao a conferencia seria contra o catalogo que o operador SUPOE. NAO le o "
+            "estado do AWS RAM: link que resolve nao prova share aceito, e share aceito "
+            "nao cria link. NAO decide se o nome bate -- isso e derivacao, e mora no "
+            "extrator. Mesma politica offline-first dos demais coletores."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "database", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "database": {
+                    "type": "string",
+                    "description": "Banco do link na conta consumidora.",
+                },
+                "table": {
+                    "type": "string",
+                    "description": (
+                        "Nome do link de TABELA. Sem ele o alvo e um BANCO, e a comparacao "
+                        "de nome muda com isso."
+                    ),
+                },
+                "catalog_id": {
+                    "type": "string",
+                    "description": "Id da conta CONSUMIDORA, onde o link mora.",
+                },
+                "verify_target": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": (
+                        "Le tambem o recurso de origem. Default ligado: link que aponta "
+                        "para lugar nenhum e o defeito que este coletor existe para achar."
                     ),
                 },
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
@@ -7444,6 +7544,16 @@ def _h_analyze_lakeformation_grants(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_glue_resource_link(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_glue_resource_link(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_iam_access(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_iam_access(
         args["path"],
@@ -7817,6 +7927,17 @@ def _h_collect_lakeformation(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_glue_resource_link(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_glue_resource_link(
+        args["repo"],
+        database=args["database"],
+        table=args.get("table", ""),
+        catalog_id=args.get("catalog_id", ""),
+        verify_target=bool(args.get("verify_target", True)),
+        now=args["now"],
+    )
+
+
 def _h_collect_iam_access(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_iam_access(
         args["repo"],
@@ -7978,6 +8099,7 @@ _HANDLERS = {
     "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
     "sparkforge_analyze_cloudwatch_logs": _h_analyze_cloudwatch_logs,
     "sparkforge_analyze_lakeformation_grants": _h_analyze_lakeformation_grants,
+    "sparkforge_analyze_glue_resource_link": _h_analyze_glue_resource_link,
     "sparkforge_analyze_iam_access": _h_analyze_iam_access,
     "sparkforge_analyze_parquet_footer": _h_analyze_parquet_footer,
     "sparkforge_analyze_error_signatures": _h_analyze_error_signatures,
@@ -8027,6 +8149,7 @@ _HANDLERS = {
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_lakeformation": _h_collect_lakeformation,
+    "sparkforge_collect_glue_resource_link": _h_collect_glue_resource_link,
     "sparkforge_collect_iam_access": _h_collect_iam_access,
     "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,

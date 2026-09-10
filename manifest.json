@@ -87,7 +87,7 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 187,
+    "rule_count": 190,
     "retrieved": "2026-08-01"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
@@ -106,6 +106,7 @@
     "sparkforge_analyze_error_signatures",
     "sparkforge_analyze_event_log",
     "sparkforge_analyze_glue_job_runs",
+    "sparkforge_analyze_glue_resource_link",
     "sparkforge_analyze_graph",
     "sparkforge_analyze_iam_access",
     "sparkforge_analyze_iceberg",
@@ -142,6 +143,7 @@
     "sparkforge_collect_event_log",
     "sparkforge_collect_glue_job",
     "sparkforge_collect_glue_job_runs",
+    "sparkforge_collect_glue_resource_link",
     "sparkforge_collect_iam_access",
     "sparkforge_collect_iceberg_metadata",
     "sparkforge_collect_lakeformation",

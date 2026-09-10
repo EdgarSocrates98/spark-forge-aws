@@ -1,0 +1,26 @@
+name: link_de_tabela_com_nome_divergente
+proves: >
+  O caso que a §1 de `knowledge/glue/lakeformation-fgac.md` descrevia em PROSA e
+  nenhum fact media: o link aponta para o lugar certo e tem NOME PROPRIO.
+
+  `dim_cliente_prod` na conta consumidora aponta para `dim_cliente` na conta de
+  origem, e o recurso de origem RESOLVE -- a topologia esta intacta e o arranjo
+  continua fora do que a AWS declara suportar. E por isso que `SF-XACC-002` e
+  sobre limite de suporte declarado, e nao sobre negacao observada: nada aqui
+  falhou.
+
+  A fixture irma `link_de_tabela_intacto` tem os mesmos dois blocos com o MESMO
+  status, e nenhum achado -- o unico eixo que muda entre as duas e o nome.
+
+  Fixture SINTETICA: nenhuma conta, banco ou tabela real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - glue.resource_link
+  - glue.resource_link.analyzed
+  - glue.resource_link.target
+expects_rules:
+  - SF-XACC-002

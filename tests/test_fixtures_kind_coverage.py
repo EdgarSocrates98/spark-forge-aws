@@ -39,9 +39,14 @@ from sparkforge.facts import (
     exception,
     funcval,
     fusion,
-    graph,
     # `iam_access` entra nas DUAS listas no MESMO commit da fixture
     # `fixtures/iam_access/`.
+    glue_resource_link,
+    graph,
+    # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
+    # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
+    # afirmacao que so existia em prosa: a §1 do documento de conhecimento
+    # declara que o link precisa ter o MESMO nome do recurso de origem.
     iam_access,
     iceberg_metadata,
     lakeformation,
@@ -137,6 +142,7 @@ EXTRACTORS = {
     # igualdade e o nome do catalogo Iceberg mora DENTRO da chave de conf.
     "lakeformation": lakeformation,
     "iam_access": iam_access,
+    "glue_resource_link": glue_resource_link,
     "lakeformation_grants": lakeformation_grants,
     "funcval": funcval,
     "fusion": fusion,

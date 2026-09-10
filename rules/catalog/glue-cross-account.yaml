@@ -115,3 +115,140 @@ rules:
         arquitetura, não rollback.
     sources:
       - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html", retrieved: 2026-08-23}
+
+  - id: SF-XACC-002
+    category: cross-account-catalog
+    governance_decision_required: true
+    security_impact: radius_beyond_job
+    security_impact_reason: >-
+      O conserto cria ou recria um objeto de catálogo na conta consumidora, e o
+      nome dele é acordo entre as duas contas.
+    title: Resource link com nome diferente do recurso na conta de origem
+    requires_facts: [glue.resource_link]
+    when:
+      all:
+        - fact: glue.resource_link
+          expr: 'attrs.is_resource_link == True and attrs.name_matches_source == False'
+    status: structural
+    severity_default: P2
+    # Escopo vazio pela mesma razão de SF-XACC-001: a exigência da documentação
+    # não declara piso de versão, e quem gateia é `requires_facts` -- sem
+    # artefato de `collect glue-resource-link` a regra não dispara.
+    runtime_scope: {}
+    explanation: >
+      A página de considerações e limitações do Glue com Lake Formation declara
+      que consulta cross-account só é suportada quando o recurso é compartilhado
+      por resource link, e que o resource link precisa ter o mesmo nome do
+      recurso na conta de origem. O fact mede os dois nomes -- `link_name` e
+      `source_resource_name` -- e eles são diferentes.
+
+      Este achado é sobre o LIMITE DE SUPORTE DECLARADO, e não sobre uma negação
+      observada: um link com nome próprio pode responder hoje. O que a AWS não
+      declara é que ele continue respondendo, e a falha desse arranjo aparece
+      como tabela que "some" para um consumidor e não para outro.
+
+      A comparação não é a mesma nos dois tipos de link, e o extrator já cuida
+      disso: link de tabela compara contra `TargetTable.Name`, link de banco
+      contra `TargetDatabase.DatabaseName` -- que não tem campo `Name`.
+    proposed_change:
+      - >-
+        Recriar o resource link na conta consumidora com o MESMO nome do recurso
+        na conta de origem, conferindo `target_database` e `source_resource_name`
+        do fact.
+      - >-
+        Atualizar os consumidores que referenciam o nome antigo -- job, consulta
+        de BI, view -- antes de remover o link com o nome divergente.
+    action:
+      kind: catalog.rename_resource_link
+      target: glue.resource_link
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Renomear o link quebra toda referência ao nome antigo, e as referências
+        vivem fora deste artefato -- em consultas salvas, jobs de outros times e
+        views do catálogo.
+    tradeoffs:
+      - >-
+        Manter o nome próprio preserva as referências existentes, e em troca
+        deixa o arranjo fora do que a AWS declara suportar.
+    validation:
+      - >-
+        `aws glue get-table --catalog-id CONSUMIDORA --database-name DB --name
+        NOME` na conta consumidora, conferindo que `TargetTable.Name` é igual a
+        `Name`.
+      - >-
+        Uma consulta de smoke test pelo consumidor real sobre o link recriado.
+    rollback:
+      - >
+        Recriar o link com o nome anterior devolve o estado exato -- resource
+        link não carrega dado, só a referência. O que não volta sozinho são as
+        concessões do Lake Formation sobre o link, que são por objeto.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-10}
+
+  - id: SF-XACC-003
+    category: cross-account-catalog
+    governance_decision_required: true
+    security_impact: radius_beyond_job
+    security_impact_reason: >-
+      A resposta que separa as duas leituras mora na conta de origem, e quem lê
+      o link não a administra.
+    title: O recurso de origem que o resource link declara não resolveu, e a resposta é ambígua
+    requires_facts: [glue.resource_link.target]
+    when:
+      all:
+        - fact: glue.resource_link.target
+          expr: 'attrs.resolved == False'
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      O link declara um recurso de origem, e a leitura dele respondeu
+      `EntityNotFoundException`. Sob Lake Formation esse código é a MESMA
+      resposta para recurso inexistente e para recurso a que o principal não tem
+      permissão -- ausência e negação chegam pelo mesmo caminho.
+
+      Por isso este achado não diz que o link está pendurado. Ele diz que as
+      duas leituras seguem abertas, e que elas exigem consertos diferentes: um
+      link órfão se conserta na conta consumidora, uma permissão faltante na
+      conta de origem. `aws_error_code` no fact carrega o código verbatim, e
+      `target_absence_is_ambiguous` marca que a distinção não foi medida.
+    proposed_change:
+      - >-
+        Repetir a leitura com um principal que comprovadamente tenha permissão na
+        conta de ORIGEM -- se ela responder, o link está intacto e o que falta é
+        permissão.
+      - >-
+        Conferir na conta de origem se o recurso que o link declara ainda existe
+        com aquele nome, e se o compartilhamento do AWS RAM continua aceito.
+    action:
+      kind: catalog.resolve_link_target
+      target: glue.resource_link
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Tratar a resposta como "o recurso não existe" leva a recriar o link,
+        conserto que não toca o caso em que o problema era permissão -- e o
+        sintoma volta idêntico.
+    tradeoffs:
+      - >-
+        Coletar com um principal mais privilegiado desfaz a ambiguidade, e em
+        troca a coleta deixa de rodar com a identidade que o job usa.
+    validation:
+      - >-
+        `aws glue get-table --catalog-id ORIGEM --database-name DB --name NOME`
+        com um principal da conta de origem.
+      - >-
+        `aws ram get-resource-shares --resource-owner OTHER-ACCOUNTS` na conta
+        consumidora, conferindo que o compartilhamento continua aceito.
+    rollback:
+      - >
+        Não há estado aplicado -- este achado propõe uma medida, não uma mudança.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-10}

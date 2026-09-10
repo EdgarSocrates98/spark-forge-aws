@@ -1,0 +1,68 @@
+[
+  {
+    "id": "f_ac8e00",
+    "schema_version": 1,
+    "kind": "glue.resource_link.analyzed",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_dim_produto.json",
+      "symbol": "analytics.dim_produto",
+      "catalog_id": "111111111111"
+    },
+    "measures": {
+      "facts_emitted": 2
+    },
+    "attrs": {
+      "status": "sem_permissao",
+      "extractor": "glue_resource_link@0.1.0"
+    },
+    "provenance": {
+      "extractor": "glue_resource_link@0.1.0",
+      "artifact": "111111111111_analytics_dim_produto.json"
+    }
+  },
+  {
+    "id": "f_687168",
+    "schema_version": 1,
+    "kind": "glue.resource_link.unresolved",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_dim_produto.json",
+      "symbol": "analytics.dim_produto",
+      "catalog_id": "111111111111"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sem_permissao",
+      "block": "link",
+      "unblocked_by": "conceder `glue:GetTable` (ou `glue:GetDatabase`) ao principal que coleta, no catalogo CONSUMIDOR, e reexecutar `sparkforge collect glue-resource-link`",
+      "extractor": "glue_resource_link@0.1.0"
+    },
+    "provenance": {
+      "extractor": "glue_resource_link@0.1.0",
+      "artifact": "111111111111_analytics_dim_produto.json"
+    }
+  },
+  {
+    "id": "f_687168",
+    "schema_version": 1,
+    "kind": "glue.resource_link.unresolved",
+    "subject": {
+      "type": "table",
+      "file": "111111111111_analytics_dim_produto.json",
+      "symbol": "analytics.dim_produto",
+      "catalog_id": "111111111111"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sem_alvo_medido_no_link",
+      "block": "target",
+      "unblocked_by": "conceder ao principal que coleta permissao de leitura no catalogo de ORIGEM (`glue:GetTable`/`glue:GetDatabase` na conta dona), e coletar com `--verify-target`",
+      "extractor": "glue_resource_link@0.1.0"
+    },
+    "provenance": {
+      "extractor": "glue_resource_link@0.1.0",
+      "artifact": "111111111111_analytics_dim_produto.json"
+    }
+  }
+]

@@ -161,9 +161,11 @@ capabilities:
     tools:
       - sparkforge_analyze_lakeformation_grants
       - sparkforge_analyze_iam_access
+      - sparkforge_analyze_glue_resource_link
     cli:
       - analyze lakeformation-grants
       - analyze iam-access
+      - analyze glue-resource-link
     knowledge: [knowledge/glue/lakeformation-fgac.md]
     platforms:
       claude_code: [mcp, cli, files]
@@ -734,6 +736,7 @@ capabilities:
       - sparkforge_collect_cloudwatch_logs
       - sparkforge_collect_lakeformation
       - sparkforge_collect_iam_access
+      - sparkforge_collect_glue_resource_link
       - sparkforge_collect_glue_job_runs
       - sparkforge_collect_iceberg_metadata
       - sparkforge_collect_athena_workgroup
@@ -748,6 +751,7 @@ capabilities:
       - collect cloudwatch-logs
       - collect lakeformation
       - collect iam-access
+      - collect glue-resource-link
       - collect glue-job-runs
       - collect iceberg-metadata
       - collect athena-workgroup

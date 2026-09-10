@@ -172,12 +172,12 @@ _PERNAS_SEM_PRODUTOR = (
         "nenhum coletor produz o estado do compartilhamento AWS RAM; "
         "destravaria: `ram:GetResourceShares` num coletor novo",
     ),
-    (
-        "resource_link",
-        "glue:ResourceLink",
-        "nenhum kind carrega resource link; destravaria: `glue:GetTable` sobre o "
-        "link, comparando o nome com o do recurso de origem",
-    ),
+    # `resource_link` SAIU desta lista em 2026-09-10: `sparkforge/collect/
+    # glue_resource_link.py` produz `glue.resource_link` e
+    # `glue.resource_link.target`, e a perna passou a ser medida. O que
+    # destravaria estava escrito aqui -- "`glue:GetTable` sobre o link,
+    # comparando o nome com o do recurso de origem" -- e e literalmente o que o
+    # coletor faz.
     (
         "kms_decrypt",
         "kms:key",
@@ -212,9 +212,11 @@ def build_access_graph(
 ) -> dict[str, Any]:
     """O caminho de acesso como GRAFO, derivado de facts. Não acusa o que não mediu.
 
-    Lê `lakeformation.grant`, `iam.access_decision` e
-    `lakeformation.registered_location` -- os três que têm produtor -- e devolve
-    as pernas restantes como `unresolved`, com o que destravaria cada uma.
+    Lê `lakeformation.grant`, `iam.access_decision`,
+    `lakeformation.registered_location`, `glue.resource_link` e
+    `glue.resource_link.target` -- os que têm produtor -- e devolve as pernas
+    restantes (RAM share e key policy do KMS) como `unresolved`, com o que
+    destravaria cada uma.
 
     `is_accessible` é TERNÁRIO:
 
@@ -236,11 +238,13 @@ def build_access_graph(
     registros = [
         f for f in lista if getattr(f, "kind", "") == "lakeformation.registered_location"
     ]
+    links = [f for f in lista if getattr(f, "kind", "") == "glue.resource_link"]
+    alvos_de_link = [f for f in lista if getattr(f, "kind", "") == "glue.resource_link.target"]
 
     if not target_table:
         tabelas = {
             str(_subject(f).get("symbol", "")).split("#", 1)[0]
-            for f in grants + registros
+            for f in grants + registros + links
             if _subject(f).get("symbol")
         }
         tabelas.discard("")
@@ -415,6 +419,102 @@ def build_access_graph(
                 )
             )
 
+    # perna 4: resource link (TEM produtor desde 2026-09-10, e tem QUATRO saidas)
+    #
+    # Duas escolhas de status aqui nao sao obvias e sao de desenho:
+    #
+    #   objeto que NAO e link  -> `not_applicable`, pela mesma razao de
+    #     `registered: False`: o acesso simplesmente nao passa por link, e
+    #     marca-lo `missing` acusaria de defeito o arranjo em que ele nao
+    #     participa.
+    #
+    #   alvo que respondeu `EntityNotFound` -> `unresolved` e NAO `blocking`.
+    #     Sob Lake Formation esse codigo e a mesma resposta para recurso
+    #     inexistente e para recurso nao autorizado, e escolher um dos dois
+    #     sentidos seria chute com aparencia de medida.
+    do_link = [f for f in links if str(_subject(f).get("symbol", "")) == target_table]
+    destino_link = "glue:ResourceLink"
+    if not do_link:
+        arestas.append(
+            _aresta(
+                principal_arn,
+                destino_link,
+                "resource_link",
+                STATUS_UNRESOLVED,
+                "nenhum `glue.resource_link` no case para esta tabela; destravaria: "
+                "`collect glue-resource-link` sobre " + target_table,
+            )
+        )
+    else:
+        a_link = _attrs(do_link[0])
+        if not a_link.get("is_resource_link"):
+            arestas.append(
+                _aresta(
+                    principal_arn,
+                    destino_link,
+                    "resource_link",
+                    STATUS_NOT_APPLICABLE,
+                    "medido: o objeto consultado NAO e resource link -- o acesso nao "
+                    "passa por link, e isso nao e perna que faltou",
+                )
+            )
+        elif a_link.get("name_matches_source") is False:
+            arestas.append(
+                _aresta(
+                    principal_arn,
+                    destino_link,
+                    "resource_link",
+                    STATUS_BLOCKING,
+                    "link `"
+                    + str(a_link.get("link_name", ""))
+                    + "` aponta para `"
+                    + str(a_link.get("source_resource_name", ""))
+                    + "` -- nomes DIFERENTES. A AWS declara suportado apenas o nome "
+                    "identico (SF-XACC-002); e limite de suporte declarado, nao "
+                    "negacao observada",
+                )
+            )
+        else:
+            do_alvo = [
+                f for f in alvos_de_link if str(_subject(f).get("symbol", "")) == target_table
+            ]
+            if not do_alvo:
+                arestas.append(
+                    _aresta(
+                        principal_arn,
+                        destino_link,
+                        "resource_link",
+                        STATUS_UNRESOLVED,
+                        "link medido e com nome identico, e ninguem conferiu o recurso "
+                        "de ORIGEM; destravaria: recoletar com `--verify-target`",
+                    )
+                )
+            elif _attrs(do_alvo[0]).get("resolved"):
+                caminho.append(destino_link)
+                arestas.append(
+                    _aresta(
+                        principal_arn,
+                        destino_link,
+                        "resource_link",
+                        STATUS_GRANTED,
+                        "link com nome identico ao do recurso de origem, e a origem "
+                        "respondeu",
+                    )
+                )
+            else:
+                arestas.append(
+                    _aresta(
+                        principal_arn,
+                        destino_link,
+                        "resource_link",
+                        STATUS_UNRESOLVED,
+                        "o recurso de ORIGEM respondeu `"
+                        + str(_attrs(do_alvo[0]).get("aws_error_code", ""))
+                        + "`, e sob Lake Formation esse codigo NAO distingue recurso "
+                        "inexistente de recurso nao autorizado",
+                    )
+                )
+
     # pernas SEM produtor: `unresolved` SEMPRE, nunca `missing`
     for tipo, destino, destrava in _PERNAS_SEM_PRODUTOR:
         arestas.append(_aresta(principal_arn, destino, tipo, STATUS_UNRESOLVED, destrava))
@@ -453,8 +553,10 @@ def build_access_graph(
             {
                 "what": "acusar_perna_sem_produtor",
                 "why": (
-                    "RAM share, resource link e key policy do KMS nao tem coletor neste "
-                    "repositorio. `evaluate_access` (o caminho de dicionario) devolve "
+                    "RAM share e key policy do KMS nao tem coletor neste repositorio -- "
+                    "resource link SAIU desta lista em 2026-09-10, quando "
+                    "`collect glue-resource-link` passou a produzir a medida. "
+                    "`evaluate_access` (o caminho de dicionario) devolve "
                     "`missing` para eles quando recebe lista vazia, e isso e acusacao a "
                     "partir de ausencia de artefato."
                 ),
