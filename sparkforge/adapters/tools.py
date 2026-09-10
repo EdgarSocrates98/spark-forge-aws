@@ -2256,6 +2256,119 @@ _RULE_ITEM: dict[str, Any] = {
     },
 }
 
+# Causa raiz ordenada, e a lacuna nomeada. `refused` NAO e decoracao: as tres
+# recusas -- confianca calculada, avaliacao de impacto de seguranca e ganho
+# estimado -- viajam na resposta com o que destravaria cada uma, e um teste varre
+# o `outputSchema` inteiro por substring proibida, como o de `arbitrate`.
+_ROOT_CAUSE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["status", "candidate_count", "candidates", "missing_evidence", "ordering"],
+    "properties": {
+        "status": {"type": "string"},
+        "fact_count": {"type": "integer"},
+        "candidate_count": {"type": "integer"},
+        "candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["position", "root_cause", "rule_id", "severity"],
+                "properties": {
+                    "position": {"type": "integer"},
+                    "root_cause": {"type": "string"},
+                    "rule_id": {"type": "string"},
+                    "severity": {"type": "string"},
+                    "confidence_declared": {"type": "string"},
+                    "status": {"type": "string"},
+                    "subject": {"type": "object"},
+                    "evidence": {"type": "array", "items": {"type": "object"}},
+                    "evidence_count": {"type": "integer"},
+                    "remediation": {"type": "array", "items": {"type": "string"}},
+                    "security_posture": {"type": "object"},
+                    "version_impact": {"type": "object"},
+                    "validation": {"type": "array", "items": {"type": "string"}},
+                    "rollback": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        "missing_evidence": {"type": "array", "items": {"type": "object"}},
+        "missing_evidence_count": {"type": "integer"},
+        "missing_evidence_scope": {"type": "object"},
+        "ordering": {
+            "type": "object",
+            "required": ["key", "is_not"],
+            "properties": {
+                "key": {"type": "array", "items": {"type": "string"}},
+                "severity_order": {"type": "array", "items": {"type": "string"}},
+                "is_not": {"type": "string"},
+            },
+        },
+        "refused": {"type": "array", "items": {"type": "object"}},
+        "runtime": {"type": "object"},
+    },
+}
+
+# O eixo de versao de Lake Formation. `status` e o vocabulario FECHADO do
+# carregador, e os quatro valores estao no schema de proposito: um valor novo no
+# YAML derruba a validacao da tool em vez de viajar calado.
+#
+# `evidence` NAO e nota de qualidade: e a contagem de quantas afirmacoes desta
+# leitura tem frase da fonte por tras, quantas vem de tabela da propria AWS sem
+# sentenca citavel, e quantas sao lacuna declarada. Publicar as tres lado a lado
+# e o que impede que "com fonte" seja lido como "com frase".
+_LF_MATRIX_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["status"],
+    "properties": {
+        "status": {"type": "string", "enum": ["ok", "unresolved"]},
+        "schema_version": {"type": "integer"},
+        "collected": {"type": "string"},
+        "known_runtimes": {"type": "array", "items": {"type": "string"}},
+        "known_axes": {"type": "array", "items": {"type": "string"}},
+        "rows": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["glue_version", "axis", "axis_title", "status", "quoted"],
+                "properties": {
+                    "glue_version": {"type": "string"},
+                    "axis": {"type": "string"},
+                    "axis_title": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "supported",
+                            "not_supported",
+                            "not_declared",
+                            "not_applicable",
+                        ],
+                    },
+                    "quoted": {"type": "boolean"},
+                    "value": {"type": "string"},
+                    "source": {"type": "string"},
+                    "source_key": {"type": "string"},
+                    "quote": {"type": "string"},
+                    "note": {"type": "string"},
+                },
+            },
+        },
+        "evidence": {
+            "type": "object",
+            "required": ["with_quote", "sourced_without_quote", "not_declared"],
+            "properties": {
+                "with_quote": {"type": "integer"},
+                "sourced_without_quote": {"type": "integer"},
+                "not_declared": {"type": "integer"},
+            },
+        },
+        "declared_limits": {"type": "array", "items": {"type": "string"}},
+        "sources": {"type": "object"},
+        "reason": {"type": "string"},
+        "requested_runtime": {"type": "string"},
+        "requested_axis": {"type": "string"},
+        "unblocked_by": {"type": "string"},
+    },
+}
+
 _RULES_LOOKUP_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -5907,6 +6020,92 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _ARBITRATE_SCHEMA,
         "annotations": _WRITE_NOT_IDEMPOTENT,
     },
+    "sparkforge_root_cause": {
+        "description": (
+            "Ordena os achados de `judge` por consequencia DECLARADA e nomeia a LACUNA. "
+            "Use quando houver mais de um achado e a pergunta for 'por onde comeco'. "
+            "O que ele publica de novo nao sao os achados: e `missing_evidence` -- as "
+            "regras que ficaram MUDAS por falta de artefato, com o kind que falta e o "
+            "modulo que o emite. Sem isso, silencio por falta de coleta e "
+            "indistinguivel de silencio por ausencia de defeito. "
+            "NAO calcula confianca: `confidence_declared` e o campo da REGRA repassado "
+            "como declarado, nunca combinado com severidade para produzir score novo. "
+            "NAO estima ganho. NAO avalia impacto de seguranca -- `security_posture` "
+            "classifica pelo NAMESPACE do `action.kind` e repassa o `risks` da regra "
+            "verbatim. As tres recusas saem em `refused` com o que destravaria cada uma. "
+            "A saida e uma ORDEM por consequencia, e `ordering.is_not` diz que ela nao "
+            "e ranking por probabilidade."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "oneOf": [
+                        {"type": "string"},
+                        {"type": "array", "items": {"type": "string"}},
+                    ],
+                    "description": (
+                        "Arquivo de facts, ou a LISTA deles. A repeticao e o contrato: "
+                        "a lacuna publicada e sobre a UNIAO."
+                    ),
+                },
+                "glue": {"type": "string"},
+                "spark": {"type": "string"},
+                "python": {"type": "string"},
+                "iceberg": {"type": "string"},
+                "athena": {"type": "string"},
+                "emr": {"type": "string"},
+                "all_missing": {
+                    "type": "boolean",
+                    "description": (
+                        "Lista as regras nao avaliadas de todas as areas. O TOTAL sai "
+                        "nos dois casos."
+                    ),
+                },
+                "detail_level": {
+                    "type": "string",
+                    "enum": ["summary", "normal", "full"],
+                },
+            },
+        },
+        "outputSchema": _ROOT_CAUSE_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_lakeformation_matrix": {
+        "description": (
+            "Eixo de VERSAO de Lake Formation por runtime Glue: filesystem S3 default, "
+            "FGAC por caminho (GlueContext contra Spark-native, leitura contra escrita), "
+            "DDL/DML e Full Table Access -- cada celula com a frase da fonte quando ela "
+            "existe. Use ANTES de afirmar que um runtime suporta ou nao suporta algo "
+            "nesta area: a pagina de consideracoes da AWS nao tem eixo de versao, e "
+            "aplicar a um Glue 5.1 uma limitacao que era do 5.0 e o erro que mais engana "
+            "aqui. NAO julga configuracao nenhuma e NAO estima ganho: devolve o que as "
+            "paginas declaram, e o que elas NAO declaram sai como `not_declared`, que e "
+            "diferente de `not_supported`. Runtime fora da matriz sai `unresolved` com o "
+            "que destravaria -- nunca palpite por analogia com a versao vizinha."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "runtime": {
+                    "type": "string",
+                    "description": "Versao de Glue (ex.: `5.1`). Sem ela, todas as cobertas.",
+                },
+                "axis": {
+                    "type": "string",
+                    "description": "Eixo (ex.: `fgac_spark_native_write`). Sem ele, todos.",
+                },
+                "detail_level": {
+                    "type": "string",
+                    "enum": ["summary", "normal", "full"],
+                    "description": "`summary` omite fonte, frase e nota.",
+                },
+            },
+        },
+        "outputSchema": _LF_MATRIX_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_rules_lookup": {
         "description": (
             "Consulta o catalogo de regras determinístico por id ou categoria, devolvendo "
@@ -6975,6 +7174,28 @@ def _h_arbitrate(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_root_cause(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.root_cause(
+        facts_path=args.get("facts_path"),
+        glue=args.get("glue"),
+        spark=args.get("spark"),
+        python=args.get("python"),
+        iceberg=args.get("iceberg"),
+        athena=args.get("athena"),
+        emr=args.get("emr"),
+        all_missing=bool(args.get("all_missing")),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_lakeformation_matrix(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.lakeformation_matrix(
+        runtime=args.get("runtime"),
+        axis=args.get("axis"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
     return _core.rules_lookup(
         id=args.get("id"),
@@ -7622,6 +7843,8 @@ _HANDLERS = {
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_arbitrate": _h_arbitrate,
+    "sparkforge_root_cause": _h_root_cause,
+    "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
     "sparkforge_report_sign": _h_report_sign,

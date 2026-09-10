@@ -16,6 +16,7 @@ import yaml
 from sparkforge.facts.catalog_schema import extract_catalog_schema_path
 from sparkforge.facts.fusion import fuse
 from sparkforge.facts.sql_literal import extract_sql_path
+from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
@@ -29,6 +30,10 @@ REQUIRED_FIXTURES = {
     "limit_no_filter_multi_query",
     "limit_partition_filter_guard",
     "partition_type_mismatch",
+    # A unica deste corpus com `.tf`: SF-ICE-008 correlaciona a OPERACAO do
+    # texto SQL com a EXTENSAO declarada na configuracao, e nenhum dos dois
+    # lados a conhece sozinho.
+    "merge_sem_extensoes_do_iceberg",
 }
 
 
@@ -43,6 +48,13 @@ def _extract(directory: Path):
         facts.extend(extract_sql_path(sql_file, repo_root=input_dir))
     for json_file in sorted(input_dir.glob("*.json")):
         facts.extend(extract_catalog_schema_path(json_file, repo_root=input_dir))
+    # `*.tf` sob GUARDA DE DIRETORIO, no mesmo molde do runner de
+    # `cloudwatch_logs`: a fusao passou a resolver `sql.write_statement` contra a
+    # configuracao da sessao, e configuracao chega pelas tres superficies -- a de
+    # Terraform e a que este corpus consegue trazer sem acrescentar facts de
+    # PySpark. Fixture sem `.tf` continua extraindo exatamente o que extraia.
+    if any(input_dir.glob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
     return fuse(facts)
 
 

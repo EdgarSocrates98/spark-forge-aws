@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -358,7 +359,13 @@ def extract_source(source: str, path: str) -> list[Fact]:
                 and ("write" in methods or "writeTo" in methods)
             )
             if is_write:
-                facts.append(_write_fact(node, method, path, ctx, lines, provenance))
+                # A API viaja com o fact, e ela vem da ESPINHA da cadeia -- nao
+                # do terminal. `.append()` existe nas duas
+                # (`df.write.mode("append")` e `df.writeTo(t).append()`), e so o
+                # elo `write`/`writeTo` separa V1 de V2.
+                facts.append(
+                    _write_fact(node, method, path, ctx, lines, provenance, methods)
+                )
 
             # Quatro formas de fixar configuracao de Spark no codigo, nao uma.
             #
@@ -663,6 +670,29 @@ def _read_fact(
     )
 
 
+def _write_api(methods: Sequence[str]) -> str:
+    """`dataframe_writer_v2` quando a espinha tem `writeTo`, `v1` quando tem
+    `write`, `ambigua` quando tem os dois.
+
+    A distincao NAO e estilistica. A tabela de suporte de escrita do Apache
+    Iceberg marca as duas metades por linhas diferentes -- `DataFrame append` e
+    `DataFrame overwrite` de um lado, `DataFrame merge into` com "Requires DSv2
+    API (Spark 4.0 and later)" do outro --, e um `MERGE` pedido por DataFrame nao
+    atravessa o mesmo caminho de um pedido por SQL.
+
+    `ambigua` nunca deveria acontecer numa cadeia real e por isso e nomeada em
+    vez de escolhida: uma cadeia com `write` E `writeTo` e codigo que este parse
+    nao entende, e adivinhar qual vence seria inventar.
+    """
+    tem_v2 = "writeTo" in methods
+    tem_v1 = "write" in methods
+    if tem_v1 and tem_v2:
+        return "ambigua"
+    if tem_v2:
+        return "dataframe_writer_v2"
+    return "dataframe_writer_v1"
+
+
 def _write_fact(
     node: ast.Call,
     method: str,
@@ -670,8 +700,9 @@ def _write_fact(
     ctx: _Context,
     lines: list[str],
     provenance: dict[str, Any],
+    methods: Sequence[str] = (),
 ) -> Fact:
-    attrs: dict[str, Any] = {}
+    attrs: dict[str, Any] = {"api": _write_api(methods)}
 
     mode_call = next(
         (

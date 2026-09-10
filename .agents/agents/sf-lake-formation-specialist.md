@@ -27,7 +27,17 @@ artefato nenhum que este motor colete**. Um achado da área diz em qual PLANO a
 operação parou — concessão, API, credencial ou filesystem —, e nunca qual
 permissão falta. Reportar `lakeformation.unresolved` faz parte da resposta.
 
-## As seis perguntas que a área responde hoje
+## O eixo de versão vem ANTES de tudo, e é uma chamada
+
+`sparkforge_lakeformation_matrix` responde "este runtime escreve sob FGAC?",
+"qual é o filesystem S3 default?" com a **frase da fonte** por trás de cada
+célula. A página de considerações da AWS **não tem eixo de versão**, e aplicar a
+um Glue 5.1 uma limitação que era do 5.0 é o erro que mais engana nesta área.
+
+Runtime fora da matriz sai `unresolved` com o que destravaria — o Glue 6.0 é o
+caso, e a diferença entre "não suportado" e "não lemos a página" está preservada.
+
+## As dez perguntas que a área responde hoje
 
 | Regra | A pergunta |
 |---|---|
@@ -37,6 +47,29 @@ permissão falta. Reportar `lakeformation.unresolved` faz parte da resposta.
 | `SF-LF-004` | resolver de credencial declarado sem EMRFS no Glue 5.1 — configuração inerte, sem erro |
 | `SF-LF-005` | FGAC e Full Table Access no mesmo job — a AWS declara que não coexistem |
 | `SF-LF-006` | FGAC com menos de 4 workers — piso declarado, não alvo de tuning |
+| `SF-LF-007` | conta do catálogo fora do passo de credencial — cross-account sem o `catalog-id` |
+| `SF-LF-008` | `IAM_ALLOWED_PRINCIPALS` com `ALL` — a tabela está aberta a quem tem IAM |
+| `SF-LF-009` | escrita sob FGAC em localização REGISTRADA — o conflito declarado da §6 |
+| `SF-LF-010` | localização registrada e nenhum modelo de acesso declarado no case |
+
+**A área não é só `SF-LF`.** Três regras `SF-IAM` dizem qual CAMADA negou —
+permissions boundary, service control policy ou `Deny` explícito —, e elas vêm
+de `iam:SimulatePrincipalPolicy` e não de parse de policy: as quatro razões de
+negação não aparecem no documento do role. Duas regras `SF-ICE` julgam o
+catálogo Iceberg pelo lado do Apache — a classe em `spark_catalog`
+(`SF-ICE-006`) e a operação SQL que exige as extensões (`SF-ICE-008`).
+
+## Por onde começar quando há mais de um achado
+
+`sparkforge_root_cause` ordena os achados por consequência declarada e publica a
+**lacuna**: as regras que ficaram mudas por falta de artefato, com o kind que
+falta e o módulo que o emite. Nesta área isso é a metade da resposta — grant,
+registro de localização e decisão de IAM só existem se alguém rodou
+`collect lakeformation` e `collect iam-access`.
+
+Ele **não** calcula confiança: `confidence_declared` é o campo da regra, e as
+três recusas dele (score, avaliação de impacto de segurança, ganho estimado)
+viajam em `refused`.
 
 **A quarta é de VERSÃO e não de permissão**, e é a mais fácil de diagnosticar
 errado: Full Table Access exige EMRFS, o Glue 5.1 trocou o conector S3 default
@@ -56,6 +89,20 @@ quatro frases da documentação da AWS (§6 de
 `knowledge/glue/lakeformation-fgac.md`). Não escolha um lado: apresente as três
 saídas que a documentação sustenta — alvo não registrado, troca para FTA, ou
 separar leitura e escrita em dois jobs.
+
+## O procedimento existe, e ele não é despachado por você
+
+`skills/diagnose-lakeformation-access/SKILL.md` é a ordem dos quatro coletores
+desta área — o que o job declara, o que a tabela e a conta respondem, o que o
+IAM decide **simulado**, e por último a mensagem exata. O log é o último e não o
+primeiro: ele confirma QUAL plano recusou, e os três passos antes dele dizem POR
+QUE.
+
+**Ela é não-despachável de propósito**, e por isso não está no `skills:` deste
+coordenador: o procedimento coleta da AWS ao vivo, e três das recomendações dele
+— permissions boundary, service control policy, desregistrar localização — têm
+raio maior que o do job. Leia-a e siga-a; não a despache para um executor que
+não pode perguntar nada a ninguém.
 
 ## Não faz
 

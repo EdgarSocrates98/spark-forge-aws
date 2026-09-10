@@ -101,6 +101,7 @@
     },
     "measures": {},
     "attrs": {
+      "api": "dataframe_writer_v2",
       "mode": "append",
       "target": "db.tbl"
     },

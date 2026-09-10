@@ -128,7 +128,9 @@
       "snippet": "lote.write.parquet(destino)"
     },
     "measures": {},
-    "attrs": {},
+    "attrs": {
+      "api": "dataframe_writer_v1"
+    },
     "provenance": {
       "artifact": "lib/job.py",
       "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",

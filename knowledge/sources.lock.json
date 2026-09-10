@@ -216,6 +216,38 @@
       "rules": [],
       "sha256": "670ca2f90816d11fa1f96b83c3a33f02813ac7e9bb282a6c5b631e237f6a662a"
     },
+    "https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-IAM-001",
+        "SF-IAM-002",
+        "SF-IAM-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-IAM-001"
+      ]
+    },
+    "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-IAM-003"
+      ]
+    },
     "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -1446,7 +1478,8 @@
         "2026-09-09"
       ],
       "rules": [
-        "SF-LF-004"
+        "SF-LF-004",
+        "SF-LF-009"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
@@ -1527,7 +1560,10 @@
       "rules": [
         "SF-ERR-015",
         "SF-LF-003",
-        "SF-LF-004"
+        "SF-LF-004",
+        "SF-LF-005",
+        "SF-LF-007",
+        "SF-LF-009"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
@@ -1544,7 +1580,12 @@
         "SF-ERR-017",
         "SF-LF-001",
         "SF-LF-002",
-        "SF-LF-003"
+        "SF-LF-003",
+        "SF-LF-005",
+        "SF-LF-006",
+        "SF-LF-008",
+        "SF-LF-009",
+        "SF-LF-010"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html": {
@@ -1557,7 +1598,9 @@
       ],
       "rules": [
         "SF-ERR-016",
-        "SF-LF-003"
+        "SF-LF-003",
+        "SF-LF-006",
+        "SF-LF-009"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html": {
@@ -1644,6 +1687,46 @@
       ],
       "rules": [
         "SF-ERR-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/full-table-credential-vending.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-LF-007"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-LF-010"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/upgrade-glue-lake-formation.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-LF-008"
+      ]
+    },
+    "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-IAM-002"
       ]
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
@@ -2169,6 +2252,17 @@
         "SF-GRAPH-006"
       ]
     },
+    "https://iceberg.apache.org/docs/latest/spark-configuration/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ICE-006",
+        "SF-ICE-008"
+      ]
+    },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -2200,10 +2294,12 @@
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-08-15"
+        "2026-08-15",
+        "2026-09-09"
       ],
       "rules": [
-        "SF-ERR-005"
+        "SF-ERR-005",
+        "SF-ICE-008"
       ]
     },
     "https://parquet.apache.org/docs/file-format/data-pages/compression/": {
@@ -2631,6 +2727,8 @@
         "SF-ERR-011",
         "SF-ERR-012",
         "SF-ERR-013",
+        "SF-ERR-020",
+        "SF-ERR-021",
         "SF-TIMEOUT-002"
       ]
     },
@@ -2643,6 +2741,36 @@
         "2026-08-31"
       ],
       "rules": []
+    },
+    "https://spark.apache.org/docs/latest/sql-data-sources-parquet.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-023"
+      ]
+    },
+    "https://spark.apache.org/docs/latest/sql-getting-started.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-018"
+      ]
+    },
+    "https://spark.apache.org/docs/latest/sql-migration-guide.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-022"
+      ]
     },
     "https://spark.apache.org/docs/latest/sql-performance-tuning.html": {
       "checked_at": "2026-07-31",
@@ -2667,6 +2795,16 @@
         "SF-PLAN-003"
       ],
       "sha256": "0c641ce521fee80c2e09865345b29250149442d0f14d5023bfc1ade7615692a1"
+    },
+    "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-09"
+      ],
+      "rules": [
+        "SF-ERR-019"
+      ]
     },
     "https://www.dremio.com/blog/compaction-in-apache-iceberg-fine-tuning-your-iceberg-tables-data-files/": {
       "docs": [

@@ -678,6 +678,9 @@ def regen_fusion(directory: Path) -> None:
         facts.extend(extract_sql_path(sql_file, repo_root=input_dir))
     for json_file in sorted(input_dir.glob("*.json")):
         facts.extend(extract_catalog_schema_path(json_file, repo_root=input_dir))
+    # Mesma ordem e mesma guarda de `tests/test_fixtures_golden_fusion.py::_extract`.
+    if any(input_dir.glob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
     fused = fuse(facts)
     findings = judge(fused, load_catalog(), meta["runtime"])
     _write_expected(directory, fused, findings)

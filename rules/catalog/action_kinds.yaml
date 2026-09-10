@@ -162,6 +162,16 @@ kinds:
   config.replace_property_key:
     axis: configuracao
     description: Trocar a chave pelo nome ou equivalente que o runtime alvo reconhece, preservando o valor.
+  config.replace_property_value:
+    # Acrescentado em 2026-09-09 com SF-ICE-006, e o par simetrico do de cima:
+    # ali a chave muda e o valor fica, aqui a chave fica e o valor muda. Nao e o
+    # mesmo `kind` porque nao toca a mesma coisa -- o criterio de separacao
+    # declarado no cabecalho deste arquivo. `config.align_value_to_supported_range`
+    # tambem mexe no valor e tambem nao serve: ali o valor e numero e a fonte
+    # publica uma FAIXA; aqui o valor e uma classe, e o que a fonte publica e
+    # QUAL das duas delega.
+    axis: configuracao
+    description: Trocar o valor da propriedade pelo que a fonte publica para o efeito pretendido, preservando a chave.
   config.align_value_to_supported_range:
     axis: configuracao
     description: Levar o valor da propriedade para a faixa que a fonte publica.
@@ -361,6 +371,17 @@ axes:
     # Ver o comentario acima do bloco `axes` para o defeito que isso corrigiu.
     nature: risk
     description: As linhas que a escrita deixa no destino.
+  correctness.read_result:
+    # Acrescentado em 2026-09-09 com SF-ICE-006. NAO e `correctness.write_result`
+    # visto do outro lado: aquele eixo e sobre as linhas que a escrita DEIXA, e
+    # este e sobre QUAIS TABELAS a leitura alcanca. A regra que o estreou troca
+    # a classe do catalogo de sessao, e o efeito dela e uma tabela nao-Iceberg
+    # passar a resolver -- nada na saida escrita muda por causa disso.
+    #
+    # `nature: risk` pela mesma razao do eixo acima: o conjunto de tabelas que
+    # resolve e o resultado em si, nao grandeza que se compare por subtracao.
+    nature: risk
+    description: Quais tabelas a leitura consegue resolver pelo catalogo em uso.
   availability.interruption_exposure:
     # `emr.instance_group.market` e `emr.instance_fleet` guardam SPOT/ON_DEMAND
     # como `attrs` categorico (`market`, `has_spot_capacity`), nunca como

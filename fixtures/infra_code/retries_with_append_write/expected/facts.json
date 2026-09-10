@@ -523,6 +523,7 @@
     },
     "measures": {},
     "attrs": {
+      "api": "dataframe_writer_v1",
       "mode": "append",
       "target": "s3://lake/curated/eventos/"
     },

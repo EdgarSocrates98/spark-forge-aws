@@ -46,6 +46,10 @@ REQUIRED_FIXTURES = {
     "fta_sem_emrfs_no_51",
     "observability_without_glue_context",
     "retries_with_append_write",
+    # `session_catalog_com_sparkcatalog` e a unica desta lista que NAO declara
+    # argumento de Lake Formation nenhum: SF-ICE-006 e sobre a CLASSE do
+    # catalogo de sessao, que o Apache Iceberg declara, e nao sobre FGAC.
+    "session_catalog_com_sparkcatalog",
 }
 
 

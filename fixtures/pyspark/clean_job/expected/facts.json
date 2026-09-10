@@ -234,6 +234,7 @@
     },
     "measures": {},
     "attrs": {
+      "api": "dataframe_writer_v1",
       "mode": "overwrite",
       "target": "data_pedido"
     },

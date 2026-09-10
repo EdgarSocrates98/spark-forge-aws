@@ -891,6 +891,16 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             "sparkforge_release_describe",
             "sparkforge_release_diff",
             "sparkforge_controlm_describe",
+            # `lakeformation_matrix` (2026-09-09) entra aqui pela MESMA razao das
+            # cinco de cima, e a razao e o que este conjunto guarda: a entrada
+            # dela nao e artefato do operador, e CONHECIMENTO VERSIONADO que
+            # viaja no proprio pacote. Ela le
+            # `knowledge/glue/lakeformation-matrix.yaml` por
+            # `safe_knowledge_file`, que e a fronteira que ja governa todo acesso
+            # a `knowledge/` -- nao ha caminho a autorizar porque nao ha caminho
+            # que o chamador escolha. Aceitar um `path` aqui seria abrir uma
+            # superficie que a tool nao precisa.
+            "sparkforge_lakeformation_matrix",
         }
     )
 
@@ -924,7 +934,13 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # 72 desde `analyze_iam_access` e `collect_iam_access` (2026-09-09),
         # pelo mesmo par de lados: a de analise e `_READ_ONLY` com `path`, a de
         # coleta e `_WRITE_LOCAL_OPEN_WORLD` com `repo`.
-        assert len(TOOLS) - len(sem_caminho) == 72
+        # 72 -> 73 com `root_cause` (2026-09-09), a 79ª tool. As duas ultimas
+        # entraram em lados OPOSTOS do predicado no mesmo dia, e o contraste e o
+        # que este numero mede: `lakeformation_matrix` le conhecimento que viaja
+        # no pacote e nao recebe caminho nenhum (sexta do conjunto de excecao);
+        # `root_cause` compoe sobre facts do case e declara `facts_path`, como
+        # todo verbo de topo.
+        assert len(TOOLS) - len(sem_caminho) == 73
 
 
 class TestAImposicaoNoDespacho:

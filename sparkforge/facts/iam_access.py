@@ -44,6 +44,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "iam_access@0.1.0"
@@ -209,7 +210,12 @@ def extract_iam_access_path(path: Path | str, repo_root: Path | str | None = Non
 
 def extract_iam_access_tree(root: Path | str, repo_root: Path | str | None = None) -> list[Fact]:
     saida: list[Fact] = []
-    for arquivo in sorted(Path(root).glob("*.json")):
+    # `iter_source_files` e nao `glob` cru: `root` e diretorio que o OPERADOR
+    # aponta, e a varredura compartilhada aplica denylist e teto. Este modulo
+    # nasceu com `glob` direto e o gate estrutural de `tests/test_facts_scan.py`
+    # o pegou -- ele varre `sparkforge/` inteiro por AST, e as duas formas
+    # (`glob` e `rglob`) contam.
+    for arquivo in iter_source_files(root, "*.json"):
         saida.extend(extract_iam_access_path(arquivo, repo_root=repo_root))
     return sort_facts(saida)
 
