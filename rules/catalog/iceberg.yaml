@@ -27,6 +27,68 @@
 #   O que NÃO destrava: `SF-ICE-003` já pega churn de snapshot, e cada commit
 #   cria manifests (`iceberg-performance.md` linha 138). Um `rewrite_manifests`
 #   proposto por causa de churn seria a mesma evidência contada duas vezes.
+#
+# V-ICE-2 — VERSÃO DE FORMATO CONTRA BIBLIOTECA EMBARCADA NÃO TEM PRODUTOR, e
+#   por isso a família ICE-VERSION do prompt de origem não virou regra. A
+#   pergunta seria: "esta tabela pede uma versão de spec que o Iceberg deste
+#   runtime não suporta?" Ela precisa dos dois lados, e só um existe.
+#
+#   `iceberg.format_version` é extraído do `metadata.json` e diz de que versão a
+#   tabela É — esse lado está medido. O outro lado não: **nenhum fact carrega a
+#   versão da biblioteca Iceberg em uso**, e `RuntimeContext.iceberg` só é
+#   preenchido derivando de `GLUE_MATRIX` (quando alguma fonte trouxe
+#   `glue_version`) ou pela flag `--iceberg` da CLI — ver a seção ESCOPO logo
+#   abaixo, que é a mesma medida que fez as cinco primeiras regras desta área
+#   abandonarem `runtime_scope: {iceberg: ...}`.
+#
+#   Escrever a regra assim mesmo produziria um dos dois defeitos que este
+#   repositório recusa: um guarda derivado de Glue apagando a área inteira num
+#   runtime EMR, ou uma comparação de versão contra `""`.
+#
+#   Destravaria: um fact que publique a versão da biblioteca Iceberg do runtime
+#   — de `spark.conf_effective`, se alguma propriedade a expuser, ou de um dump
+#   de classpath do job.
+#
+#   O que NÃO destrava: `knowledge/storage/iceberg-v3.md` publica a matriz de
+#   suporte do formato v3 por engine. Ela é conhecimento, não fact: dá o lado
+#   direito da comparação e continua sem o esquerdo medido.
+#
+# V-ICE-3 — A CHAVE `glue.lakeformation-enabled` NUM CATÁLOGO NÃO RENDE REGRA
+#   DESTA ÁREA, e a razão foi medida escrevendo a regra e a fixture antes de
+#   retirar as duas.
+#
+#   A regra proposta (`SF-ICE-007`) julgava
+#   `spark.sql.catalog.<nome>.glue.lakeformation-enabled = true` num job que
+#   declara o argumento de FGAC. Ela carregava fonte, `runtime_scope` e o
+#   conserto localizado no catálogo, e ainda assim **nunca disparava sozinha**:
+#   essa chave é um dos DOIS marcadores de Full Table Access que
+#   `sparkforge/facts/lakeformation.py::_marcadores_de_fta` procura, então com
+#   FGAC ligado o `lakeformation.access_model` sai sempre com `model: "both"` e
+#   `SF-LF-005` acusa a mesma entrada. Medido sobre a fixture
+#   `fgac_com_lakeformation_enabled_no_catalogo`, depois removida:
+#   `['SF-ICE-007', 'SF-LF-005']`, as duas, em toda execução.
+#
+#   O conjunto de disparo dela era subconjunto estrito do de `SF-LF-005` — que
+#   dispara também quando o marcador é o resolver do filesystem sozinho. E a
+#   localização que ela acrescentava, "a chave está NESTE catálogo", **já está
+#   no achado da outra**: `SF-LF-005` nomeia `attrs.fta_markers` no
+#   `explanation` e lista as duas chaves possíveis, e a evidência do achado
+#   aponta o fact que carrega qual delas foi vista.
+#
+#   Duas regras para a mesma entrada, uma delas dizendo menos, é o defeito que
+#   o cabeçalho de `rules/catalog/errors.yaml` recusa em quatro assinaturas por
+#   "já coberta". Aqui ele apareceu ao contrário — a específica é a redundante —
+#   e a recusa é a mesma.
+#
+#   `TestAdversarial::test_each_fixture_fires_exactly_one_rule` de
+#   `tests/test_fixtures_golden_infra_code.py` foi o que cobrou: aquele corpus
+#   trava um achado por fixture, e o invariante não foi afrouxado para acomodar
+#   a regra. Foi a regra que saiu.
+#
+#   Destravaria: um fact que dissesse o que a combinação FAZ. Hoje o efeito dela
+#   não está documentado em nenhuma página que este repositório vigie — §4 de
+#   `knowledge/storage/iceberg-catalog.md` e §7 de
+#   `knowledge/glue/lakeformation-fgac.md` registram a lacuna.
 # Depende do leitor de metadata tables da Fase 1. Regras inertes até ele existir.
 # Atenção: procedimentos e propriedades variam muito entre Iceberg 1.0.0 (Glue 4.0),
 # 1.7.1 (5.0) e 1.10.0 (5.1). Onde uma regra depender de comportamento introduzido
@@ -388,3 +450,132 @@ rules:
     rollback: [Restaurar write.distribution-mode anterior; afeta apenas escritas futuras.]
     sources:
       - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29, note: "comportamento exato por versão não reconfirmado nesta coleta"}
+
+  # ---------------------------------------------------------------------------
+  # SF-ICE-006 -- a CONFIGURACAO do catalogo, e nao a saude da tabela. As cinco
+  # primeiras regras desta area leem dump de metadata table; esta le
+  # `lakeformation.iceberg_catalog`, que e derivado das tres superficies de conf
+  # por `sparkforge/facts/lakeformation.py`.
+  #
+  # O kind mora no namespace `lakeformation.*` e a regra mora na area SF-ICE, e
+  # isso NAO e inconsistencia: namespace de kind diz quem PRODUZIU o fact, area
+  # de regra diz quem DECIDE o conserto. Quem decide a classe de implementacao
+  # do catalogo Iceberg e quem responde pelo formato de tabela, nao quem
+  # responde pela governanca de acesso -- e e por isso que SF-ICE-006 nao exige
+  # FGAC nenhum para disparar.
+  #
+  # A SEGUNDA regra desta familia foi ESCRITA E RETIRADA. Ver V-ICE-3 no
+  # cabecalho: ela nunca disparava sozinha.
+  #
+  # Documento de conhecimento: `knowledge/storage/iceberg-catalog.md`.
+  # ---------------------------------------------------------------------------
+
+  - id: SF-ICE-006
+    category: iceberg-catalog
+    title: >-
+      Catálogo de sessão configurado com SparkCatalog, que não carrega tabela
+      não-Iceberg
+    requires_facts: [lakeformation.iceberg_catalog]
+    when:
+      all:
+        - fact: lakeformation.iceberg_catalog
+          where:
+            attrs.is_session_catalog: true
+            attrs.catalog_impl: "org.apache.iceberg.spark.SparkCatalog"
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A documentação do Apache Iceberg declara as duas implementações lado a
+      lado: `org.apache.iceberg.spark.SparkCatalog` *"supports a Hive Metastore
+      or a Hadoop warehouse as a catalog"*, e
+      `org.apache.iceberg.spark.SparkSessionCatalog` *"adds support for Iceberg
+      tables to Spark's built-in catalog, and delegates to the built-in catalog
+      for non-Iceberg tables"*. Sobre a primeira, com backend Hive, a mesma
+      página é explícita: *"The Hive-based catalog only loads Iceberg tables. To
+      load non-Iceberg tables in the same Hive metastore, use a session
+      catalog."*
+
+
+      Este job aponta o **catálogo de sessão** -- `spark_catalog`, o que resolve
+      todo nome de tabela não qualificado -- para a implementação que não
+      delega. Pela própria fonte, tabela que não é Iceberg deixa de carregar por
+      esse caminho.
+
+
+      **O sintoma aparece na tabela ERRADA.** A tabela Iceberg continua
+      resolvendo, e é a tabela Parquet que para -- com erro de tabela não
+      encontrada, que não se parece com problema de configuração de Iceberg.
+      Job que lê Parquet e Iceberg na mesma sessão é onde isso morde, e é o
+      arranjo em que a troca é mais fácil de fazer sem perceber.
+
+
+      **Isto é independente de Lake Formation.** `SF-LF-003` restringe o NOME do
+      catálogo sob FGAC; esta regra restringe a CLASSE no catálogo de sessão, e
+      quem a declara é o Apache Iceberg. Um job pode violar uma sem violar a
+      outra -- ver o quadro da §3 de `knowledge/storage/iceberg-catalog.md`.
+    proposed_change:
+      - >-
+        Trocar a classe do catálogo de sessão para a que delega:
+        `spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog`,
+        que é a forma que a documentação publica para adicionar suporte a
+        Iceberg ao catálogo embutido.
+      - >-
+        Se o job precisa de `SparkCatalog` por outra razão -- funções SQL com
+        escopo de catálogo, que a página declara indisponíveis via
+        `spark_catalog` antes do Spark 4.2.0 --, declará-lo num catálogo de nome
+        próprio ao lado, e deixar `spark_catalog` com `SparkSessionCatalog`.
+      - >-
+        Conferir se alguma tabela não-Iceberg é lida por nome não qualificado.
+        É esse conjunto que a configuração atual deixa de alcançar, e ele é o
+        que mede o tamanho do problema.
+    action:
+      kind: config.replace_property_value
+      target: spark.sql.catalog.spark_catalog
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.read_result
+      depends_on: []
+    risks:
+      - >-
+        A regra afirma que a configuração está fora do recorte que a
+        documentação sustenta, e **não** que uma falha observada veio dela. A
+        conclusão vem de DUAS frases da mesma página somadas, não de uma frase
+        única -- a derivação está escrita na §2 do documento de conhecimento, e
+        o achado é `structural` por isso.
+      - >-
+        Um job que lê SOMENTE tabela Iceberg funciona com esta configuração, e
+        para ele o achado não descreve defeito nenhum. O que separa os dois casos
+        é o conjunto de tabelas lidas, e nada neste motor o mede.
+      - >-
+        `SparkCatalog` em catálogo de nome próprio é a configuração que a própria
+        fonte exemplifica três vezes, e correta. A regra só dispara quando o nome
+        é `spark_catalog`.
+    tradeoffs:
+      - >-
+        `SparkSessionCatalog` envolve o catálogo embutido, e a página registra
+        uma limitação em troca: antes do Spark 4.2.0, funções com escopo de
+        catálogo (`system.bucket`, `system.days`, `system.iceberg_version`) não
+        estão disponíveis por `spark_catalog`. Job que dependa delas precisa de
+        um catálogo nomeado ao lado.
+    validation:
+      - >-
+        Resolver, no run seguinte, cada tabela não-Iceberg que o job lê por nome
+        não qualificado -- é esse conjunto que a mudança destrava, e contá-lo
+        antes e depois é o que prova.
+      - >-
+        Contagem de linhas e schema da tabela Iceberg alvo antes e depois: trocar
+        a classe do catálogo troca o caminho de resolução dela também, e o
+        resultado é que prova que resolveu para o mesmo lugar.
+      - >-
+        A configuração efetiva do run seguinte, lida do event log
+        (`spark.conf_effective`), e não a declarada no Terraform.
+    rollback:
+      - >-
+        Restaurar a classe anterior em `spark.sql.catalog.spark_catalog`. Se um
+        catálogo nomeado foi acrescentado junto, remover os dois na mesma
+        mudança -- deixar o catálogo nomeado sozinho muda como as referências
+        qualificadas resolvem.
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-configuration/", retrieved: 2026-09-09}
