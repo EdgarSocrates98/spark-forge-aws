@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_fnf1",
+      "message": "2026-09-09 10:11:48,207 ERROR [Executor task launch worker-0] executor.Executor: java.io.FileNotFoundException: No such file or directory: s3://sparkforge-demo/curated/fato_venda/dt=2026-09-09/part-7.snappy.parquet",
+      "timestamp": 1788948000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "etl-curated",
+  "job_run_id": "jr_fnf1",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_fnf1",
+  "max_events": 500,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

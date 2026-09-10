@@ -264,6 +264,17 @@ DISPATCHABLE_SKILLS = {
 }
 
 NON_DISPATCHABLE_SKILLS = {
+    # Ela COLETA da AWS ao vivo, e as quatro coletas do procedimento pedem
+    # credencial e permissao de leitura sobre governanca de terceiro
+    # (`ListPermissions`, `GetDataLakeSettings`, `SimulatePrincipalPolicy`).
+    # Alem disso, TODA recomendacao dela e mudanca de postura de seguranca, e
+    # tres delas -- boundary, service control policy, desregistrar localizacao --
+    # tem raio maior que o do job. Despachar quem nao pode perguntar seria
+    # exatamente o caso que este registro existe para barrar.
+    "diagnose-lakeformation-access": (
+        "coleta da AWS ao vivo e recomenda mudanca de permissao; a decisao sobe "
+        "a quem responde pela governanca, e um subagente nao pode perguntar"
+    ),
     "agentic-orchestration": "coordena no agente pai",
     "token-efficient-agent": "aplica contexto no agente atual",
     "tool-specialist-routing": "valida roteamento no agente atual",

@@ -121,6 +121,8 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-LF-004",
         "SF-LF-005",
         "SF-LF-006",
+        "SF-LF-007",
+        "SF-LF-009",
         "SF-MIG-001",
         "SF-MIG-002",
         "SF-MIG-003",
@@ -282,8 +284,14 @@ class TestRuleScopeOnTheCurrentRuntimes:
     #
     # A area passou a sobreviver nas tres versoes correntes, e excecao que nao
     # se realiza REPROVA aqui -- que e exatamente como esta linha caiu.
+    # SF-LF SAIU da entrada de 4.0 em 2026-09-09, e a razao e `SF-LF-008`:
+    # `IAM_ALLOWED_PRINCIPALS` com `ALL` e estado do LAKE FORMATION e nao do
+    # runtime -- a mesma tabela tem o mesmo problema lida por Athena, por EMR ou
+    # por Glue 4.0. Ela declara `runtime_scope: {}` e faz a area sobreviver ao
+    # guard, que e o comportamento correto: a area so devia sumir enquanto TODA
+    # afirmacao dela dependesse de uma fronteira de versao.
     AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {
-        "4.0": {"SF-LF", "SF-SPARK4"},
+        "4.0": {"SF-SPARK4"},
         "5.0": {"SF-SPARK4"},
         "5.1": {"SF-SPARK4"},
     }

@@ -252,6 +252,10 @@ def regen_lakeformation(directory: Path) -> None:
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
     facts = extract_lakeformation_tree(input_dir, repo_root=input_dir)
+    # Mesma ordem de `tests/test_fixtures_golden_lakeformation.py::_extract`.
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_lakeformation(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -561,6 +565,16 @@ def regen_cloudwatch_logs(directory: Path) -> None:
     if any(input_dir.glob("*.py")):
         facts.extend(extract_tree(input_dir, repo_root=input_dir))
     # Mesma ordem de `tests/test_fixtures_golden_cloudwatch_logs.py::_derive`.
+    catalogo = input_dir / "catalog"
+    if catalogo.is_dir():
+        for dump in sorted(catalogo.glob("*.json")):
+            facts.extend(extract_catalog_schema_path(dump, repo_root=input_dir))
+    listagem = input_dir / "s3"
+    if listagem.is_dir():
+        for dump in sorted(listagem.glob("*.json")):
+            facts.extend(extract_s3_listing_path(dump, repo_root=input_dir))
+    if any(input_dir.glob("*.py")):
+        facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
     facts.extend(build_lakeformation(facts))
     facts.extend(build_signature_matches(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])

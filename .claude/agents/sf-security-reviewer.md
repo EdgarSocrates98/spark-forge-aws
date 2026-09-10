@@ -6,7 +6,7 @@ skills:
   - review-terraform-data-platform
   - design-s3-data-lake
   - design-data-architecture
-rule_areas: [SF-SECURITY, SF-IAC, SF-LAKE, SF-KMS]
+rule_areas: [SF-SECURITY, SF-IAC, SF-LAKE, SF-KMS, SF-IAM]
 executors: [sf-extractor, sf-verifier]
 ---
 # sf-security-reviewer

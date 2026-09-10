@@ -2159,3 +2159,522 @@ rules:
           Dela saem a lista do que o AWS Glue bloqueia para preservar o
           isolamento do system driver, a exigência de sessão Spark única, e a
           declaração de que os logs do system driver são inacessíveis.
+
+  # ---------------------------------------------------------------------------
+  # LOTE B -- SF-ERR-018 a SF-ERR-023, as SEIS do §7 que a fonte sustenta.
+  #
+  # O §7 de `prompt_especialization_spark_forge.md` enumera 28 padroes. Com este
+  # lote, 16 tem assinatura. As DOZE que faltam NAO estao esquecidas -- cada uma
+  # foi recusada por um motivo, e os motivos sao tres:
+  #
+  # WRAPPER, e nao causa
+  #   `Py4JJavaError` embrulha a excecao do JVM. A assinatura casaria em toda
+  #   falha de job PySpark e nao diria nada sobre nenhuma: o que importa esta
+  #   DENTRO dela, e `spark.exception.caused_by` ja alcanca isso.
+  #
+  # GENERICA DEMAIS PARA CARREGAR CONSERTO
+  #   `UnsupportedOperationException`, `IllegalArgumentException`,
+  #   `ClassCastException`, `ConcurrentModificationException`, `MethodNotFound`.
+  #   Uma assinatura existe para dizer o que fazer; estas cinco aparecem em
+  #   contextos sem nada em comum, e `fixes` sairia ou vazio ou inventado.
+  #
+  # JA COBERTA, e duplicar produziria dois achados sobre um defeito
+  #   `AccessDeniedException` -- a familia `ERR-LF-002` a `ERR-LF-005` ja cobre o
+  #   caso com companheiro real; uma assinatura generica dispararia junto e
+  #   diria menos. `FetchFailed`/`FetchFailedException` -- `ERR-SPARK-001`.
+  #   `OutOfMemoryError` e `GC overhead limit exceeded` -- `ERR-SPARK-006` e
+  #   `ERR-SPARK-007`. `Task not serializable` -- fica de fora por ser quase
+  #   exclusiva de Scala, e o corpus deste repositorio e PySpark.
+  #   `ArrowInvalid` e `ArrowMemoryError` ficam de fora por FONTE: a pagina de
+  #   Arrow do PySpark nao respondeu a coleta de 2026-09-09, e assinatura sem
+  #   fonte lida e o que a regra 20 do `CLAUDE.md` recusa.
+  #
+  # Escrever as doze assim mesmo daria 28 de 28 e um catalogo pior.
+  - id: SF-ERR-018
+    category: runtime-error
+    title: O plano não foi construído -- o nome que a query usa não resolve no catálogo
+    requires_facts: [error.signature_match, catalog.table_schema]
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-008"}
+        - fact: catalog.table_schema
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      `AnalysisException` acontece **antes de qualquer stage**: o Spark não
+      conseguiu construir o plano. Nenhum dado foi lido, nenhuma capacidade foi
+      gasta, e nada do que a execução mede tem relação com esta falha.
+
+
+      **A mensagem nomeia uma tabela ou uma coluna, e as duas metades têm causas
+      diferentes.** Tabela que não resolve costuma ser catálogo — a sessão
+      resolveu outro que não o esperado. Coluna que não resolve costuma ser
+      schema — a tabela mudou e a query não.
+
+
+      O dump do catálogo ao lado é o que separa as duas: com ele, comparar o que
+      a query projeta com o que a tabela tem deixa de ser leitura no olho.
+    proposed_change:
+      - >-
+        Comparar, coluna a coluna, o que a query projeta com o schema que o
+        catálogo publica para a tabela que ela nomeia.
+      - >-
+        Ler qual catálogo a sessão resolveu. Um nome que resolve num catálogo e
+        não noutro **não é tabela faltando** -- é a sessão apontando para outro
+        lugar, e a correção é de configuração e não de query.
+      - >-
+        Corrigir a query quando o catálogo mostra o objeto sob outro nome, ou
+        atualizar a projeção quando uma coluna foi renomeada ou removida.
+    action:
+      kind: code.rewrite_expression
+      target: job.source.table_reference
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Recriar a tabela para o nome resolver perde o dado que estava lá. É a
+        saída que mais aparece e a que menos deveria.
+      - >-
+        A regra exige que o case traga o dump do catálogo. Sem ele, ela não
+        dispara -- e a ausência do achado **não** significa que a query resolve.
+      - >-
+        Mudar a projeção muda o que a escrita grava. Uma coluna que deixa de ser
+        lida e era escrita muda o resultado sem que nada acuse.
+    tradeoffs:
+      - >-
+        Apontar a sessão para outro catálogo resolve o nome e muda a resolução
+        de **todas** as tabelas da sessão, não só da que falhou.
+    validation:
+      - >-
+        Reexecutar e confirmar que o plano é construído.
+      - >-
+        Schema da saída comparado com o esperado: uma query que resolve ainda
+        não é uma query que devolve as colunas certas.
+      - >-
+        Contagem de linhas, quando a correção mudou a tabela que a query lê.
+    rollback:
+      - >-
+        Restaurar o texto anterior da query ou a configuração de catálogo. Se a
+        correção mudou o schema de uma tabela, o rollback é de dado e os
+        consumidores precisam ser inventariados antes.
+    sources:
+      - url: https://spark.apache.org/docs/latest/sql-getting-started.html
+        retrieved: 2026-09-09
+        note: Fonte declarada por `knowledge/errors/spark/analysis_exception.json`.
+
+  - id: SF-ERR-019
+    category: runtime-error
+    title: A tabela não resolve -- e o catálogo da sessão pode não ser o que a contém
+    requires_facts: [error.signature_match, catalog.table_schema]
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-009"}
+        - fact: catalog.table_schema
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      `NoSuchTableException` diz que o nome não resolveu. **Ele não diz que a
+      tabela não existe** — e essa diferença é a maior fonte de tempo perdido
+      nesta classe de falha.
+
+
+      Três estados produzem a mesma mensagem: a tabela está em outro catálogo; a
+      tabela é de outra conta e o resource link não existe ou tem nome diferente
+      do recurso de origem; ou a identidade que roda o job não pode descrevê-la,
+      e o catálogo responde como se ela não existisse.
+
+
+      **O terceiro é o que mais engana**, porque a tabela aparece no console de
+      quem investiga e não aparece para o job. Ver
+      `knowledge/glue/lakeformation-fgac.md` §1 sobre os dois planos de
+      autorização.
+    proposed_change:
+      - >-
+        Procurar o nome exato -- com o qualificador de banco -- no dump do
+        catálogo, e confirmar em qual catálogo ele está.
+      - >-
+        Ler a configuração de catálogo da sessão. Um nome que resolve sob um
+        catálogo e não sob outro não é tabela faltando.
+      - >-
+        Quando a tabela é de outra conta, conferir se existe resource link e se
+        ele tem **o mesmo nome** do recurso de origem, que é o que a AWS exige
+        para consulta cross-account sob Lake Formation.
+      - >-
+        Conferir se a identidade do job pode descrever a tabela antes de
+        concluir que ela sumiu.
+    action:
+      kind: config.verify_effective_value
+      target: spark.catalog.resolution
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Criar uma tabela com o mesmo nome no catálogo local faz o nome resolver
+        -- para **outro dado**. É a correção mais perigosa desta lista, porque o
+        job passa a rodar e a devolver o resultado errado.
+      - >-
+        Conceder permissão ampla de catálogo para o objeto ficar visível
+        autoriza muito mais do que a leitura de uma tabela.
+      - >-
+        A regra afirma que o nome não resolveu num case que traz o catálogo. Ela
+        **não** decide qual dos três estados é o verdadeiro.
+    tradeoffs:
+      - >-
+        Qualificar a tabela pelo catálogo torna a query explícita e a amarra a
+        um catálogo. Apontar a sessão resolve tudo de uma vez e move a
+        resolução de todas as outras tabelas junto.
+    validation:
+      - >-
+        Reexecutar e confirmar que a tabela resolve.
+      - >-
+        Contagem de linhas e schema comparados com a origem: um nome que resolve
+        para a tabela errada também para de falhar, e só a comparação separa os
+        dois desfechos.
+    rollback:
+      - >-
+        Restaurar a configuração de catálogo ou o texto da query. Resource link
+        criado pode ser removido, e removê-lo restaura a resolução anterior para
+        **todo** consumidor daquele link.
+    sources:
+      - url: https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select.html
+        retrieved: 2026-09-09
+        note: Fonte declarada por `knowledge/errors/spark/no_such_table.json`.
+
+  - id: SF-ERR-020
+    category: runtime-error
+    title: Executor perdido -- e a RAZÃO da perda decide o conserto
+    requires_facts: [error.signature_match, spark.executor.lost]
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-010"}
+        - fact: spark.executor.lost
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O executor parou de responder e o stage foi reexecutado. **A mensagem é a
+      mesma para três histórias diferentes**, e o event log guarda qual delas
+      aconteceu: um container morto por memória fora do heap, um processo que
+      saiu com código próprio, e um nó reclamado pelo provedor.
+
+
+      **A terceira não é defeito.** Capacidade interruptível sendo reclamada é o
+      comportamento contratado, e tratá-la como falha leva a subir memória de um
+      executor que morreu porque o nó sumiu.
+
+
+      Duas medidas separam as três: a razão registrada, e **quantos** executores
+      foram perdidos contra quantos o run tinha. Perder um de quarenta e perder
+      trinta de quarenta são eventos diferentes sob a mesma mensagem.
+    proposed_change:
+      - >-
+        Ler a razão que o event log registra para a perda antes de qualquer
+        mudança.
+      - >-
+        Comparar o número de executores perdidos com o total do run -- é essa
+        razão, e não o número absoluto, que distingue infraestrutura de dado.
+      - >-
+        Tratar a memória fora do heap quando a razão for container morto: é um
+        orçamento diferente do heap, e subir heap não o move.
+      - >-
+        Ler a opção de compra da capacidade quando as perdas forem espalhadas e
+        a razão for decommission.
+    action:
+      kind: capacity.investigate_sizing
+      target: spark.executor.loss_reason
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Subir o número de retentativas de task faz o run terminar e paga a perda
+        em relógio toda vez. Esconde o evento em vez de tratá-lo.
+      - >-
+        Subir memória do executor antes de ler a razão não move nada quando o nó
+        foi reclamado, e custa em toda a capacidade do run.
+      - >-
+        A regra afirma que houve perda de executor num run cujo log a registra.
+        Ela **não** decide qual das três razões é a verdadeira.
+    tradeoffs:
+      - >-
+        Capacidade não interruptível remove a classe inteira de perda por
+        reclamação e custa mais por hora. É escolha de custo contra
+        previsibilidade.
+    validation:
+      - >-
+        Número de executores perdidos, antes e depois, sobre o **mesmo** volume
+        de entrada. Um run que termina com o mesmo número de perdas não corrigiu
+        a causa.
+      - >-
+        Nenhum eixo de dado é exigido quando a mudança é de capacidade. Se o
+        tratamento mexeu na distribuição, a saída precisa ser comparada.
+    rollback:
+      - >-
+        Reverter a mudança de capacidade ou de memória. Se o tratamento mudou a
+        distribuição do dado, a saída precisa ser comparada antes de a versão
+        anterior ser descartada.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: Fonte declarada por `knowledge/errors/spark/executor_lost.json`.
+
+  - id: SF-ERR-021
+    category: runtime-error
+    title: >-
+      Saída de shuffle perdida com o executor -- o stage inteiro é recomputado
+    requires_facts: [error.signature_match, spark.stage.shuffle]
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-011"}
+        - fact: spark.stage.shuffle
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O stage que **lê** o shuffle não encontrou a localização de saída, e o
+      stage que a escreveu tinha reportado sucesso. O bloco foi embora com o
+      executor que o produziu.
+
+
+      **O custo não é a falha: é a recomputação.** O map stage inteiro roda de
+      novo, e o preço disso é proporcional aos bytes que ele tinha escrito — que
+      é exatamente o que `spark.stage.shuffle` mede, e por isso é o companheiro
+      desta regra.
+
+
+      **É diferente de uma falha de fetch de um bloco.** Ali uma conexão falhou;
+      aqui o executor inteiro sumiu, e é por isso que `ERR-SPARK-001` e
+      `ERR-SPARK-011` são assinaturas separadas.
+    proposed_change:
+      - >-
+        Ler os bytes de shuffle escritos pelo stage: é a medida do que a
+        recomputação custa, e ela é o que decide se vale reduzir o shuffle ou
+        manter o executor vivo.
+      - >-
+        Conferir se houve perda de executor entre o map stage e o reduce stage.
+        Os dois eventos juntos contam uma história que nenhum conta sozinho.
+      - >-
+        Reduzir o shuffle, quando ele for grande: menos bytes escritos é menos
+        recomputação por perda.
+      - >-
+        Tratar a perda de executor em si quando houver uma -- esta exceção é
+        consequência dela.
+    action:
+      kind: shuffle.reduce_bytes
+      target: spark.shuffle.output_survival
+      direction: decrease
+      requires_absent: []
+      moves:
+        - shuffle.partition_count
+        - runtime.wall_clock
+      depends_on: []
+    risks:
+      - >-
+        Subir retentativas recomputa o map stage a cada uma, e o custo
+        multiplica em vez de somar.
+      - >-
+        Desligar alocação dinâmica sem medir paga capacidade ociosa pelo run
+        inteiro para evitar um evento que pode ser raro.
+      - >-
+        Reduzir o shuffle mexendo na chave ou na distribuição pode mudar o
+        resultado, e aí o eixo de dado passa a ser exigido.
+    tradeoffs:
+      - >-
+        Manter o executor vivo entre os dois stages evita a recomputação e paga
+        capacidade parada no intervalo.
+    validation:
+      - >-
+        O reduce stage completa sem recomputar o map stage.
+      - >-
+        Bytes de shuffle escritos, antes e depois, sobre a **mesma** entrada.
+      - >-
+        Se a redução mexeu na chave de particionamento, comparação de contagem e
+        de agregado por chave -- a redistribuição pode mudar o resultado.
+    rollback:
+      - >-
+        Reverter a mudança de alocação ou de shuffle. Nenhum eixo de dado é
+        exigido enquanto a mudança for de capacidade, e declarar isso é parte da
+        validação.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-09-09
+        note: Fonte declarada por `knowledge/errors/spark/metadata_fetch_failed.json`.
+
+  - id: SF-ERR-022
+    category: runtime-error
+    title: >-
+      A exceção que nomeia o próprio conserto -- e aceitá-lo adia a migração
+    requires_facts: [error.signature_match, mig.legacy_conf]
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-012"}
+        - fact: mig.legacy_conf
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      `SparkUpgradeException` é incomum: **ela diz ao leitor o que configurar**.
+      O runtime novo mudou um comportamento, e a mensagem nomeia a propriedade
+      legada que restaura o antigo.
+
+
+      **Aceitar a sugestão é uma decisão, e não o conserto óbvio.** A propriedade
+      preserva o comportamento antigo por tempo indeterminado; a próxima
+      atualização encontra o mesmo problema mais uma dívida. A alternativa —
+      reescrever o dado sob o comportamento novo — é mudança de **dado**, e
+      exige comparação valor a valor.
+
+
+      O job já declara configuração legada, e é isso que o companheiro
+      `mig.legacy_conf` traz: um job que carrega uma que o runtime novo removeu
+      falha por motivo diferente de um que não carrega nenhuma.
+    proposed_change:
+      - >-
+        Ler qual propriedade legada a mensagem nomeia -- nesta exceção, o nome é
+        o diagnóstico.
+      - >-
+        Ler as configurações legadas que o job já declara, e conferir se alguma
+        foi removida ou renomeada no runtime novo.
+      - >-
+        Decidir entre preservar e migrar, e **registrar a decisão**. Preservar
+        sem registro é o que transforma esta exceção em dívida permanente.
+      - >-
+        Se a decisão for migrar, tratar como mudança de dado: reescrever e
+        comparar valor a valor sobre a chave de negócio declarada.
+    action:
+      kind: version.run_migration_assessment
+      target: job.configuration.legacy_flag
+      direction: investigate
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Configurar a propriedade e seguir sem registrar preserva o comportamento
+        antigo indefinidamente. A próxima atualização encontra o mesmo problema
+        e mais uma dívida.
+      - >-
+        Reescrever o dado para satisfazer a leitura, sem comparar antes e
+        depois, troca uma falha visível por uma diferença silenciosa.
+      - >-
+        A regra afirma que a exceção aconteceu num job que declara configuração
+        legada. Ela **não** diz qual comportamento mudou -- a mensagem diz, e ela
+        não entra em fact nenhum.
+    tradeoffs:
+      - >-
+        Preservar o comportamento antigo é barato agora e caro depois. Migrar é
+        caro agora, exige comparação de valor, e fecha o assunto.
+    validation:
+      - >-
+        Se a correção tocou o dado: comparação **valor a valor** sobre a chave de
+        negócio declarada. Contagem igual com valor diferente é exatamente o modo
+        de falha desta classe.
+      - >-
+        Se a correção foi de configuração: a mesma query nos dois runtimes,
+        devolvendo o mesmo resultado.
+    rollback:
+      - >-
+        Remover a configuração, ou restaurar o dado anterior à reescrita. O
+        segundo é rollback de dado e precisa dos consumidores inventariados
+        antes.
+    sources:
+      - url: https://spark.apache.org/docs/latest/sql-migration-guide.html
+        retrieved: 2026-09-09
+        note: >
+          Fonte declarada por `knowledge/errors/spark/upgrade_exception.json`.
+          A pagina publica as propriedades de rebase de data e a mudanca de
+          default de ANSI, que sao as duas familias que produzem esta excecao.
+
+  - id: SF-ERR-023
+    category: runtime-error
+    title: >-
+      Arquivo sumiu entre a listagem e a leitura -- e o irmão silencioso é pior
+    requires_facts: [error.signature_match, s3.prefix_summary]
+    when:
+      all:
+        - fact: error.signature_match
+          where: {attrs.signature_id: "ERR-SPARK-013"}
+        - fact: s3.prefix_summary
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O plano listou o arquivo e a task não o encontrou. Entre os dois momentos
+      alguém o removeu — um escritor concorrente, uma compactação, ou um job de
+      retenção.
+
+
+      **Esta falha tem um irmão silencioso, e ele é pior.** Se o arquivo some
+      **antes** da listagem, não há exceção nenhuma: o job lê menos dado do que
+      deveria e termina com sucesso. Por isso a validação desta regra é
+      **contagem de linhas contra a origem**, e não "o job voltou a rodar".
+
+
+      Reexecutar às vezes funciona, e isso é a armadilha: transforma uma questão
+      de correção numa questão de tempo, e esconde o escritor concorrente.
+    proposed_change:
+      - >-
+        Ler a listagem do prefixo que o plano leu e conferir se a contagem de
+        arquivos é compatível com o que ele esperava.
+      - >-
+        Descobrir qual outro processo escreve ou faz manutenção na mesma
+        localização enquanto este job roda. Esta falha é quase sempre sobre dois
+        escritores num relógio só.
+      - >-
+        Serializar o job contra esse processo, ou adotar um formato de tabela que
+        dê ao leitor um snapshot consistente, quando a manutenção concorrente for
+        condição permanente.
+    action:
+      kind: measurement.collect_baseline
+      target: job.read.listing_consistency
+      direction: investigate
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - >-
+        Reexecutar até passar esconde o escritor concorrente e deixa o irmão
+        silencioso agindo -- leituras que perdem arquivo sem falhar.
+      - >-
+        Ignorar arquivos ausentes por configuração faz o job terminar com menos
+        dado do que deveria ter lido, e nada acusa.
+      - >-
+        A regra afirma que a exceção aconteceu num case que traz a listagem. Ela
+        **não** identifica qual processo removeu o arquivo -- nada no case liga
+        os dois.
+    tradeoffs:
+      - >-
+        Serializar contra a manutenção remove a corrida e alonga a janela do
+        pipeline. Um formato com snapshot resolve sem serializar e custa a
+        migração da tabela.
+    validation:
+      - >-
+        Contagem de linhas da saída contra a contagem esperada na origem, para a
+        **mesma** janela. É a única verificação que pega o irmão silencioso.
+      - >-
+        Contagem de arquivos no prefixo, antes e depois da mudança de
+        agendamento.
+    rollback:
+      - >-
+        Restaurar o agendamento anterior. **Se algum run completou com dado
+        parcial, a saída está errada e precisa ser reprocessada** -- reverter a
+        configuração não a conserta.
+    sources:
+      - url: https://spark.apache.org/docs/latest/sql-data-sources-parquet.html
+        retrieved: 2026-09-09
+        note: Fonte declarada por `knowledge/errors/spark/file_not_found.json`.

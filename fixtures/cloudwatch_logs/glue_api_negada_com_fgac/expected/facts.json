@@ -422,6 +422,7 @@
       "model": "fgac",
       "fgac_enabled": true,
       "declared_value": "true",
+      "fta_markers": [],
       "source": "terraform",
       "extractor": "lakeformation@0.1.0"
     },

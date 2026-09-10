@@ -1,0 +1,320 @@
+schema_version: 1
+area: SF-IAM
+
+# ---------------------------------------------------------------------------
+# A AREA DA DECISAO DE IAM, e por que ela nao mora em `SF-LF`
+#
+# `SF-LF` fala de Lake Formation. Uma negacao por permission boundary ou por
+# service control policy nao e de Lake Formation: ela acontece igual num job que
+# nunca ouviu falar de governanca de data lake, e o conserto dela nao passa por
+# nenhuma pagina de Lake Formation. Guardar as tres aqui por proximidade
+# faria a area virar etiqueta de servico -- o defeito que o README do catalogo
+# nomeia.
+#
+# AS TRES REGRAS SAO A MESMA PERGUNTA COM TRES RESPOSTAS, e e por isso que sao
+# tres e nao uma. `iam.access_decision` carrega `denied_by`, e o conserto muda
+# inteiramente com ele:
+#
+#   permissions_boundary     alargar a policy do role NAO resolve
+#   service_control_policy   a decisao e da organizacao, acima do role
+#   explicit_deny            existe um `Deny`; acrescentar `Allow` nao vence
+#
+# Uma regra unica ("a acao foi negada") produziria um `proposed_change` que
+# serve para um dos tres casos e engana nos outros dois.
+#
+# `runtime_scope` e `{}` nas tres, e a razao e a mesma de `SF-ERR-003` a
+# `SF-ERR-006`: policy de IAM nega igual em Glue 4.0, 5.1, EMR ou fora da AWS
+# Glue inteira. Guarda-las por versao de Glue seria etiqueta de servico
+# disfarcada de guarda de versao. O que as gateia e `requires_facts` -- provar
+# que alguem SIMULOU.
+#
+# TODAS elas leem `iam.access_decision`, que e a resposta de
+# `iam:SimulatePrincipalPolicy` e nao a leitura de um documento de policy. A
+# distincao esta no docstring de `sparkforge/facts/iam_access.py`: boundary,
+# SCP, `Deny` explicito e `Condition` nao aparecem no documento do role.
+
+rules:
+  - id: SF-IAM-001
+    category: authorization
+    title: >-
+      Ação negada pelo permissions boundary do role -- alargar a policy dele não
+      resolve
+    requires_facts: [iam.access_decision]
+    when:
+      all:
+        - fact: iam.access_decision
+          where:
+            attrs.denied_by: permissions_boundary
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A AWS respondeu que a ação está negada, e nomeou a camada: o **permissions
+      boundary** anexado ao role. O boundary é um teto — ele recorta o que as
+      policies do role concedem, e **nada que se acrescente a elas ultrapassa
+      esse teto**.
+
+
+      **É o conserto errado mais provável desta área.** Diante de um
+      `AccessDenied`, a reação natural é abrir a policy do role e acrescentar a
+      permissão que falta. Aqui isso não muda nada: a permissão passa a estar
+      concedida e continua sendo recortada, e o job falha exatamente igual —
+      agora com uma permissão a mais que ninguém precisava.
+
+
+      **Este achado só existe porque a decisão foi SIMULADA e não lida.**
+      `iam:SimulatePrincipalPolicy` devolve `AllowedByPermissionsBoundary`; o
+      documento da policy do role não menciona o boundary em lugar nenhum, e um
+      parser de policy nunca veria isto.
+    proposed_change:
+      - >-
+        Ler o permissions boundary anexado ao role, e não a policy dele. É outro
+        documento, e é ele que decide.
+      - >-
+        Decidir com quem responde pelo boundary se a ação entra nele. Boundary
+        costuma ser instrumento de plataforma, não do time do job — alterá-lo
+        muda o teto de **todo** role que o use.
+      - >-
+        Se o boundary não pode mudar, a saída é de desenho e não de permissão:
+        outro role, outro caminho de acesso, ou outra arquitetura para a
+        operação.
+      - >-
+        Não acrescentar a permissão à policy do role antes das três leituras
+        acima -- ela não vai ter efeito, e vai ficar.
+    action:
+      kind: security.verify_access_chain
+      target: iam.permissions_boundary
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Alterar o permissions boundary afeta todo role que o tenha anexado, e
+        não só este. É mudança de plataforma com raio maior que o do job.
+      - >-
+        A simulação **não é a execução**: a AWS avalia policies, não tenta a
+        chamada. Uma condição que dependa de contexto de requisição foi avaliada
+        com o contexto do simulador, e `missing_context_values` no fact lista as
+        chaves que faltaram.
+      - >-
+        A simulação **não cobre policy de recurso**. Bucket policy, key policy
+        do KMS e Glue resource policy são avaliação separada, e
+        `iam.access.unresolved` publica esse limite em todo artefato.
+    tradeoffs:
+      - >-
+        Boundary existe para limitar o que um role pode receber. Abri-lo para
+        acomodar uma operação reduz a garantia que ele dava a todos os outros.
+    validation:
+      - >-
+        Reexecutar `collect iam-access` para a mesma ação e o mesmo recurso, e
+        confirmar que `denied_by` sumiu. É a única verificação que fecha o laço
+        na mesma medida que abriu o achado.
+      - >-
+        A operação real, sobre o recurso real -- porque a simulação não é a
+        execução, e policy de recurso não entrou na conta.
+      - >-
+        Nenhum eixo de dado é exigido: a mudança é de permissão. Declarar isso é
+        parte da validação.
+    rollback:
+      - >-
+        Restaurar o boundary anterior. Se outros roles passaram a depender da
+        abertura no intervalo, o rollback os quebra junto -- e é por isso que a
+        mudança precisa de dono declarado antes de acontecer.
+    sources:
+      - url: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
+        retrieved: 2026-09-09
+        note: >
+          A pagina que define o boundary como TETO -- ele nao concede nada, e
+          limita o que as policies de identidade concedem. E dela que sai a
+          afirmacao de que acrescentar permissao a policy do role nao ultrapassa
+          o boundary.
+      - url: https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html
+        retrieved: 2026-09-09
+        note: >
+          A API que devolve `PermissionsBoundaryDecisionDetail`, que e o campo de
+          onde `denied_by` sai.
+
+  - id: SF-IAM-002
+    category: authorization
+    title: >-
+      Ação negada por service control policy da organização -- a decisão é acima
+      do role
+    requires_facts: [iam.access_decision]
+    when:
+      all:
+        - fact: iam.access_decision
+          where:
+            attrs.denied_by: service_control_policy
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A negação veio da **organização**, não da conta. Service control policy é
+      um teto de conta inteira, aplicado pelo AWS Organizations, e ele decide
+      antes de qualquer policy de role, de boundary ou de recurso.
+
+
+      **Nenhuma mudança dentro da conta muda esta resposta.** Policy do role,
+      boundary, bucket policy, key policy: todas continuam sendo avaliadas
+      depois de a SCP já ter negado.
+
+
+      **A conversa muda de time.** Este é o único achado desta área cujo
+      conserto não está ao alcance de quem opera o job nem de quem administra a
+      conta — ele está com quem administra a organização, e essa é a informação
+      mais útil que o achado carrega.
+    proposed_change:
+      - >-
+        Levar a ação, o recurso e o ARN do role a quem administra o AWS
+        Organizations. A pergunta é se a SCP que os cobre deve passar a
+        permitir, e ela é de política corporativa.
+      - >-
+        Enquanto a resposta não vier, tratar como restrição de desenho e não
+        como bug: a operação precisa de outro caminho, ou de outra conta.
+      - >-
+        Não abrir a policy do role nem o boundary tentando compensar. Nenhum dos
+        dois é avaliado depois de a SCP negar, e a permissão a mais fica sem
+        efeito e sem dono.
+    action:
+      kind: security.verify_access_chain
+      target: iam.service_control_policy
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Alterar uma service control policy muda o teto de **todas** as contas na
+        unidade organizacional. É a mudança de maior raio que este catálogo
+        propõe investigar, e ela nunca é decisão de um time de dados sozinho.
+      - >-
+        A simulação **não é a execução** e **não cobre policy de recurso** --
+        as duas ressalvas de `SF-IAM-001` valem aqui igual.
+      - >-
+        `AllowedByOrganizations: false` diz que a SCP negou. Ela **não** diz
+        qual SCP, nem em que nível da hierarquia -- e nenhum artefato deste
+        motor coleta isso.
+    tradeoffs:
+      - >-
+        SCP existe para garantir que nenhuma conta ultrapasse um limite
+        corporativo. Abri-la para uma operação abre para toda a unidade
+        organizacional.
+    validation:
+      - >-
+        Reexecutar `collect iam-access` para a mesma ação e recurso e confirmar
+        que `denied_by` sumiu.
+      - >-
+        A operação real depois disso, porque a simulação não é a execução.
+      - >-
+        Nenhum eixo de dado é exigido: a mudança é de permissão.
+    rollback:
+      - >-
+        Restaurar a service control policy anterior, com o mesmo raio de
+        impacto da mudança -- toda a unidade organizacional.
+    sources:
+      - url: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+        retrieved: 2026-09-09
+        note: >
+          A pagina que define SCP como teto de conta: ela nao concede permissao,
+          limita o maximo que as contas da organizacao podem ter.
+      - url: https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html
+        retrieved: 2026-09-09
+        note: >
+          A API que devolve `OrganizationsDecisionDetail`, de onde `denied_by`
+          sai.
+
+  - id: SF-IAM-003
+    category: authorization
+    title: >-
+      Ação negada por `Deny` explícito -- acrescentar `Allow` não vence
+    requires_facts: [iam.access_decision]
+    when:
+      all:
+        - fact: iam.access_decision
+          where:
+            attrs.denied_by: explicit_deny
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      Alguma policy avaliada contém um `Deny` que casa com esta ação. **Na
+      lógica de avaliação do IAM, um `Deny` explícito vence qualquer quantidade
+      de `Allow`** — e é isso que separa este achado de uma negação implícita.
+
+
+      **A diferença decide o conserto, e ela é invisível num `AccessDenied`.** A
+      mensagem de erro é a mesma nos dois casos. Numa negação implícita, nenhuma
+      policy concede e acrescentar resolve. Aqui, acrescentar `Allow` não muda
+      nada: é preciso **achar o `Deny`** e decidir se ele sai.
+
+
+      `measures.matched_statements` traz quantos statements casaram a
+      requisição, e ele é o ponto de partida da busca -- as policies onde
+      procurar são as anexadas ao role, inline e managed.
+    proposed_change:
+      - >-
+        Localizar o `Deny` que casa com esta ação e este recurso, entre as
+        policies inline e managed anexadas ao role.
+      - >-
+        Decidir se ele deve sair, e essa é uma pergunta de intenção: um `Deny`
+        explícito quase sempre foi escrito de propósito, e removê-lo desfaz o
+        que alguém quis garantir.
+      - >-
+        Se o `Deny` deve ficar, a saída é de desenho: outro role, outro recurso,
+        ou outra arquitetura para a operação.
+      - >-
+        Não acrescentar `Allow` esperando que vença. Não vence, e a permissão a
+        mais fica.
+    action:
+      kind: security.verify_access_chain
+      target: iam.explicit_deny
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        Remover um `Deny` explícito desfaz uma restrição que alguém escreveu de
+        propósito, e o motivo dela raramente está na policy. Sem achar quem a
+        escreveu e por quê, a remoção troca uma falha por um risco silencioso.
+      - >-
+        A simulação **não é a execução** e **não cobre policy de recurso** -- um
+        `Deny` em bucket policy ou key policy não aparece aqui, e produz o mesmo
+        `AccessDenied`.
+      - >-
+        A regra afirma que existe `Deny` explícito nas policies de identidade.
+        Ela **não** diz em qual policy nem em qual statement, porque a resposta
+        da AWS não os nomeia.
+    tradeoffs:
+      - >-
+        `Deny` explícito é o instrumento mais forte do IAM justamente por não
+        poder ser contornado por acréscimo. Removê-lo devolve flexibilidade e
+        remove a garantia que ele dava.
+    validation:
+      - >-
+        Reexecutar `collect iam-access` para a mesma ação e recurso e confirmar
+        que a decisão mudou -- e conferir que ela virou `allowed`, e não outro
+        `denied_by`: remover o `Deny` pode revelar uma negação implícita atrás
+        dele.
+      - >-
+        A operação real depois disso.
+      - >-
+        Nenhum eixo de dado é exigido: a mudança é de permissão.
+    rollback:
+      - >-
+        Restaurar o `Deny` removido. Se ele existia por exigência de auditoria
+        ou de conformidade, o rollback é obrigatório e não opcional, e o
+        intervalo em que ele esteve ausente precisa ser reportado.
+    sources:
+      - url: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html
+        retrieved: 2026-09-09
+        note: >
+          A logica de avaliacao do IAM: `Deny` explicito vence qualquer `Allow`,
+          e negacao implicita e a ausencia de `Allow`. E dela que sai a
+          separacao entre esta regra e o caso implicito.
+      - url: https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html
+        retrieved: 2026-09-09
+        note: >
+          A API que devolve `EvalDecision` com `explicitDeny` e
+          `implicitDeny` como valores distintos.

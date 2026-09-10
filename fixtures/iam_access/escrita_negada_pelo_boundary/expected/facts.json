@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_157f14",
+    "id": "f_dc51b2",
     "schema_version": 1,
     "kind": "iam.access.analyzed",
     "subject": {
@@ -9,7 +9,7 @@
       "symbol": "arn:aws:iam::111111111111:role/glue-curated"
     },
     "measures": {
-      "decisions": 4
+      "decisions": 5
     },
     "attrs": {
       "status": "ok",
@@ -116,6 +116,34 @@
       "decision": "allowed",
       "allowed": true,
       "denied_by": "",
+      "scoped_to_resource": true,
+      "missing_context_values": [],
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_207888",
+    "schema_version": 1,
+    "kind": "iam.access_decision",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:DeleteObject@arn:aws:s3:::sparkforge-demo/curated/*"
+    },
+    "measures": {
+      "matched_statements": 1
+    },
+    "attrs": {
+      "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+      "action": "s3:DeleteObject",
+      "resource": "arn:aws:s3:::sparkforge-demo/curated/*",
+      "decision": "explicitDeny",
+      "allowed": false,
+      "denied_by": "explicit_deny",
       "scoped_to_resource": true,
       "missing_context_values": [],
       "extractor": "iam_access@0.1.0"

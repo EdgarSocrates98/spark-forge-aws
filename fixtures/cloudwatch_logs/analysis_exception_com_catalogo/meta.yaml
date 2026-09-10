@@ -1,0 +1,28 @@
+name: analysis_exception_com_catalogo
+proves: >
+  O POSITIVO de `SF-ERR-018`. `AnalysisException` nomeando uma COLUNA, com o dump do catalogo ao lado.
+
+  A falha acontece ANTES de qualquer stage -- o plano nao foi construido --, e
+  por isso nenhuma medida de execucao tem relacao com ela. O companheiro e o
+  catalogo justamente porque a comparacao que resolve o caso e entre o que a
+  query projeta e o que a tabela tem, e sem o dump ela e leitura no olho.
+
+  A mensagem sugere a coluna certa (`valor` no lugar de `vlr`), e isso NAO e
+  acidente da fixture: o Spark sugere, e a regra existe para o operador nao
+  parar na sugestao -- coluna que nao resolve pode ser schema que mudou, e nao
+  erro de digitacao.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - catalog.analyzed
+  - catalog.table_schema
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+expects_rules:
+  - SF-ERR-018

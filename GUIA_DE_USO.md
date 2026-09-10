@@ -421,6 +421,45 @@ provam que o dado é o mesmo, porque duas linhas podem trocar valores entre si e
 passam. Relate a ausência de achado `SF-FVAL` como "nenhum proxy detectou divergência",
 nunca como "o resultado é idêntico".
 
+## 6.1 Governança de acesso: os quatro artefatos que respondem "quem pode o quê"
+
+Nenhum dos artefatos da seção 6 responde por que uma leitura passa e a escrita não.
+Essa pergunta tem quatro coletores próprios, e a ordem entre eles importa porque
+cada um responde uma metade que o anterior deixou aberta.
+
+```bash
+# 1. o que o JOB declara -- FGAC, Full Table Access, catálogo, filesystem
+sparkforge analyze terraform --path infra/ --out .sparkforge/facts_tf.json
+
+# 2. o que a TABELA e a CONTA respondem
+sparkforge collect lakeformation --repo . --database <db> --table <t>     --catalog-id <conta-dona-do-catalogo>     --resource-arn <localizacao-s3-da-tabela> --now <ISO8601>
+sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformation/     --out .sparkforge/facts_lf.json
+
+# 3. o que o IAM decide, SIMULADO -- não o documento da policy
+sparkforge collect iam-access --repo . --role-arn <runtime-role>     --resource-arn <arn-do-alvo> --action s3:PutObject --action kms:GenerateDataKey     --now <ISO8601>
+sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/     --out .sparkforge/facts_iam.json
+
+# 4. a mensagem exata da falha
+sparkforge collect cloudwatch-logs --repo . --job-name <job> --job-run <run>     --log-group /aws-glue/jobs/error --start <ISO8601> --end <ISO8601> --now <ISO8601>
+sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_log.json
+```
+
+**Três coisas que decidem a qualidade da resposta, e todas são escolha de quem coleta:**
+
+- **`--catalog-id` é obrigatório em cross-account.** A mesma `db.tabela` existe em
+  contas diferentes, e sem ele as duas coletas se sobrescrevem no manifesto.
+- **`--resource-arn` no `iam-access` muda a pergunta.** Sem ele a AWS responde sobre
+  `*`, e `allowed` sobre `*` **não** é `allowed` naquele recurso. O fact carrega
+  `scoped_to_resource` para que as duas não se confundam.
+- **`--action` deve ser o da operação que falhou.** A lista default tem 14 ações; passar
+  todas quando a pergunta é sobre uma escrita produz 10 decisões que não dizem nada
+  sobre o caso.
+
+**O que estes quatro NÃO cobrem, e sai declarado em todo artefato:** bucket policy do
+S3, key policy do KMS e Glue resource policy são avaliação **separada** — um `allowed`
+no `iam-access` com bucket policy negando ainda falha. `iam.access.unresolved` publica
+esse limite sempre, inclusive quando tudo respondeu `ok`.
+
 ## 7. Quando faltarem dados
 
 Peça ao agente para gerar:

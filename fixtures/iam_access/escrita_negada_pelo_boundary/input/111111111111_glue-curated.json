@@ -3,7 +3,8 @@
     "glue:GetTable",
     "lakeformation:GetDataAccess",
     "s3:PutObject",
-    "kms:GenerateDataKey"
+    "kms:GenerateDataKey",
+    "s3:DeleteObject"
   ],
   "resource_arns": [
     "arn:aws:s3:::sparkforge-demo/curated/*"
@@ -44,9 +45,18 @@
       "matched_statements": 1,
       "missing_context_values": [],
       "resource": "arn:aws:kms:us-east-1:111111111111:key/abc"
+    },
+    {
+      "action": "s3:DeleteObject",
+      "allowed_by_organizations": null,
+      "allowed_by_permissions_boundary": null,
+      "decision": "explicitDeny",
+      "matched_statements": 1,
+      "missing_context_values": [],
+      "resource": "arn:aws:s3:::sparkforge-demo/curated/*"
     }
   ],
-  "results_collected": 4,
+  "results_collected": 5,
   "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
   "scoped_to_resource": true,
   "status": "ok",

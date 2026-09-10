@@ -71,7 +71,10 @@ from sparkforge.facts.cloudwatch_logs import extract_cloudwatch_logs_tree
 from sparkforge.facts.consumers import extract_consumers_path
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.catalog_schema import extract_catalog_schema_path
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
+from sparkforge.facts.migration import extract_migration_tree
+from sparkforge.facts.s3_listing import extract_s3_listing_path
 from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
 from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
@@ -113,6 +116,17 @@ REQUIRED_FIXTURES = {
     "get_data_access_negado_com_resolver",
     "glue_api_negada_com_fgac",
     "validacao_de_seguranca_com_fgac",
+    # LOTE B (2026-09-09): as SEIS do §7 do prompt de origem que a fonte
+    # sustenta. Cada uma traz um companheiro DIFERENTE, e essa variedade e
+    # o ponto -- dump de catalogo, event log, listagem S3 e codigo com
+    # configuracao legada. Uma regra que dispare so com a linha de log nao
+    # existe nesta area.
+    "analysis_exception_com_catalogo",
+    "no_such_table_com_catalogo",
+    "executor_lost_com_event_log",
+    "metadata_fetch_failed_com_shuffle",
+    "upgrade_exception_com_conf_legada",
+    "file_not_found_com_listagem",
 }
 
 # As QUATRO de `knowledge/errors/` que sao trecho de MENSAGEM e nao classe de
@@ -178,6 +192,22 @@ def _derive(directory: Path):
         facts.extend(extract_consumers_path(inventario, repo_root=entrada))
     if any(entrada.glob("*.py")):
         facts.extend(extract_pyspark_tree(entrada, repo_root=entrada))
+    # Tres companheiros novos (Lote B, 2026-09-09), cada um sob guarda de
+    # DIRETORIO e nao de extensao: `*.json` na raiz ja e o log, e `catalog/` e
+    # `s3/` sao dumps de servicos diferentes que colidiriam com ele.
+    catalogo = entrada / "catalog"
+    if catalogo.is_dir():
+        for dump in sorted(catalogo.glob("*.json")):
+            facts.extend(extract_catalog_schema_path(dump, repo_root=entrada))
+    listagem = entrada / "s3"
+    if listagem.is_dir():
+        for dump in sorted(listagem.glob("*.json")):
+            facts.extend(extract_s3_listing_path(dump, repo_root=entrada))
+    # `migration` varre os MESMOS `*.py` que o extrator de PySpark, por outra
+    # otica -- configuracao legada e API depreciada. Nenhum dos dois cala o
+    # outro, e e a mesma convivencia de `data_quality` e `graph`.
+    if any(entrada.glob("*.py")):
+        facts.extend(extract_migration_tree(entrada, repo_root=entrada))
     # `build_lakeformation` vem ANTES do matcher e depois dos extratores de
     # artefato: ele deriva o companheiro que as regras da familia de Lake
     # Formation exigem (`lakeformation.access_model`,

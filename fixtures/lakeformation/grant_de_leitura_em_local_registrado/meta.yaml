@@ -20,6 +20,12 @@ proves: >
   de topo do artefato continua `ok` porque os outros dois blocos responderam --
   o que este corpus mede e que o topo nao esconde o bloco que falhou.
 
+  Ela dispara DUAS regras, e as duas leem coisas diferentes do mesmo artefato:
+  `SF-LF-008` le o grant de `ALL` para `IAM_ALLOWED_PRINCIPALS`, e `SF-LF-010`
+  le a localizacao REGISTRADA sem modelo de acesso declarado no case. A segunda
+  e o par de `fgac_escrevendo_em_local_registrado`, onde o modelo ESTA
+  declarado -- e por isso la dispara `SF-LF-009` e aqui nao.
+
   Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
 runtime:
   glue: "5.1"
@@ -31,4 +37,6 @@ expects_kinds:
   - lakeformation.grants.analyzed
   - lakeformation.grants.unresolved
   - lakeformation.registered_location
-expects_rules: []
+expects_rules:
+  - SF-LF-008
+  - SF-LF-010

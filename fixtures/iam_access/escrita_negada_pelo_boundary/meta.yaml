@@ -36,4 +36,7 @@ expects_kinds:
   - iam.access.analyzed
   - iam.access.unresolved
   - iam.access_decision
-expects_rules: []
+expects_rules:
+  - SF-IAM-001
+  - SF-IAM-002
+  - SF-IAM-003

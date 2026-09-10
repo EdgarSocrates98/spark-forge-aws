@@ -27,7 +27,14 @@ runtime:
   iceberg: "1.10.0"
 expects_kinds:
   - lakeformation.data_lake_settings
+  - lakeformation.filesystem
   - lakeformation.grant
   - lakeformation.grants.analyzed
   - lakeformation.registered_location
-expects_rules: []
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-LF-007

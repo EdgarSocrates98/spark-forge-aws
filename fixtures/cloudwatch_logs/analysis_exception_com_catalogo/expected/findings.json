@@ -1,0 +1,68 @@
+[
+  {
+    "rule_id": "SF-ERR-018",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "O plano não foi construído -- o nome que a query usa não resolve no catálogo",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_ae1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ae1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-008"
+    },
+    "evidence": [
+      "f_67a466",
+      "f_eec47d"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "`AnalysisException` acontece **antes de qualquer stage**: o Spark não conseguiu construir o plano. Nenhum dado foi lido, nenhuma capacidade foi gasta, e nada do que a execução mede tem relação com esta falha.\n\n**A mensagem nomeia uma tabela ou uma coluna, e as duas metades têm causas diferentes.** Tabela que não resolve costuma ser catálogo — a sessão resolveu outro que não o esperado. Coluna que não resolve costuma ser schema — a tabela mudou e a query não.\n\nO dump do catálogo ao lado é o que separa as duas: com ele, comparar o que a query projeta com o que a tabela tem deixa de ser leitura no olho.",
+    "proposed_change": [
+      "Comparar, coluna a coluna, o que a query projeta com o schema que o catálogo publica para a tabela que ela nomeia.",
+      "Ler qual catálogo a sessão resolveu. Um nome que resolve num catálogo e não noutro **não é tabela faltando** -- é a sessão apontando para outro lugar, e a correção é de configuração e não de query.",
+      "Corrigir a query quando o catálogo mostra o objeto sob outro nome, ou atualizar a projeção quando uma coluna foi renomeada ou removida."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Recriar a tabela para o nome resolver perde o dado que estava lá. É a saída que mais aparece e a que menos deveria.",
+      "A regra exige que o case traga o dump do catálogo. Sem ele, ela não dispara -- e a ausência do achado **não** significa que a query resolve.",
+      "Mudar a projeção muda o que a escrita grava. Uma coluna que deixa de ser lida e era escrita muda o resultado sem que nada acuse."
+    ],
+    "tradeoffs": [
+      "Apontar a sessão para outro catálogo resolve o nome e muda a resolução de **todas** as tabelas da sessão, não só da que falhou."
+    ],
+    "validation": [
+      "Reexecutar e confirmar que o plano é construído.",
+      "Schema da saída comparado com o esperado: uma query que resolve ainda não é uma query que devolve as colunas certas.",
+      "Contagem de linhas, quando a correção mudou a tabela que a query lê."
+    ],
+    "rollback": [
+      "Restaurar o texto anterior da query ou a configuração de catálogo. Se a correção mudou o schema de uma tabela, o rollback é de dado e os consumidores precisam ser inventariados antes."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-getting-started.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/analysis_exception.json`."
+      }
+    ],
+    "action": {
+      "kind": "code.rewrite_expression",
+      "target": "job.source.table_reference",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

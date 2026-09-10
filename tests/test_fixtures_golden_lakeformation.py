@@ -6,10 +6,12 @@ de `sparkforge collect lakeformation`.
 
 ## O que este corpus mede, e o que ele NAO mede
 
-Ele mede que a permissao vira fact **sem virar juizo**. Nenhuma regra consome
-`lakeformation.grant` hoje, e `expects_rules` sai vazio de proposito -- o corpus
-existe para prender o CONTRATO do extrator, e amarrar uma regra aqui antes de
-ela existir seria escrever o golden de um achado que ninguem produz.
+Ele mede que a permissao vira fact **sem virar juizo** -- e desde 2026-09-09
+mede tambem o juizo que ela destrava: `SF-LF-007` (a conta recusa o que o job
+pede) e `SF-LF-008` (`IAM_ALLOWED_PRINCIPALS` com `ALL`, a tabela registrada que
+o Lake Formation nao governa). Cada fixture dispara UMA, e o Terraform ao lado
+entra sob guarda de existencia -- `SF-LF-007` correlaciona o PEDIDO do job com a
+RESPOSTA da conta, e nenhum artefato sozinho tem os dois.
 
 As tres propriedades que ele prende, e cada uma nasceu de um modo de falha real:
 
@@ -34,10 +36,12 @@ from pathlib import Path
 import pytest
 import yaml
 
+from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.lakeformation_grants import (
     EMITTED_KINDS,
     extract_lakeformation_tree,
 )
+from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
@@ -51,6 +55,11 @@ REQUIRED_FIXTURES = {
     # `SELECT`, localizacao NAO registrada, e o bloco de data lake settings
     # respondendo `ok` com o passo de conta DESLIGADO.
     "conta_sem_full_table_access",
+    # O par do conflito declarado (§6): FGAC ligado E localizacao registrada.
+    # A fixture irma `grant_de_leitura_em_local_registrado` tem a localizacao
+    # registrada e NAO tem modelo de acesso declarado -- e por isso ela
+    # dispara `SF-LF-010` e esta dispara `SF-LF-009`.
+    "fgac_escrevendo_em_local_registrado",
 }
 
 
@@ -60,7 +69,16 @@ def fixture_dirs():
 
 def _extract(directory: Path):
     entrada = directory / "input"
-    return extract_lakeformation_tree(entrada, repo_root=entrada)
+    facts = extract_lakeformation_tree(entrada, repo_root=entrada)
+    # O companheiro entra sob guarda de EXISTENCIA, no molde de
+    # `test_fixtures_golden_cloudwatch_logs.py`: a regra que correlaciona o
+    # PEDIDO do job (as confs de Full Table Access no Terraform) com a RESPOSTA
+    # da conta (o data lake settings) precisa dos dois lados, e nenhum artefato
+    # sozinho os tem.
+    if any(entrada.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(entrada, repo_root=entrada))
+        facts.extend(build_lakeformation(facts))
+    return facts
 
 
 def run_fixture(directory: Path):
@@ -109,8 +127,17 @@ class TestGolden:
         ]
 
     def test_no_kind_outside_the_declared_namespace(self, directory):
+        """Os kinds do EXTRATOR desta area, e os do COMPANHEIRO quando ha um.
+
+        A fixture que traz Terraform ao lado carrega tambem os kinds de
+        `terraform.py` e de `lakeformation.py` (a derivacao), e cobra-los contra
+        `EMITTED_KINDS` de `lakeformation_grants` sozinho reprovaria por um
+        companheiro que a propria regra exige.
+        """
         _, facts, _, _ = run_fixture(directory)
-        assert {f.kind for f in facts} <= EMITTED_KINDS
+        proprios = {f.kind for f in facts if f.kind.startswith("lakeformation.grant")}
+        assert proprios <= EMITTED_KINDS
+        assert proprios, "a fixture precisa exercitar o extrator desta area"
 
 
 class TestAsTresPropriedades:
@@ -184,6 +211,16 @@ class TestOParNegativo:
         _, facts_xacc, _, _ = run_fixture(
             FIXTURES / "grant_de_leitura_em_local_registrado"
         )
-        assert {f.subject["catalog_id"] for f in facts_local} == {""}
-        assert {f.subject["catalog_id"] for f in facts_xacc} == {"222222222222"}
+        # So os facts DESTE extrator carregam `catalog_id` no subject -- os do
+        # companheiro Terraform tem a forma de `tf_resource`.
+        def _catalogos(facts):
+            return {
+                f.subject["catalog_id"]
+                for f in facts
+                if f.kind.startswith("lakeformation.grant")
+                or f.kind in {"lakeformation.registered_location", "lakeformation.data_lake_settings"}
+            }
+
+        assert _catalogos(facts_local) == {""}
+        assert _catalogos(facts_xacc) == {"222222222222"}
         assert not {f.id for f in facts_local} & {f.id for f in facts_xacc}

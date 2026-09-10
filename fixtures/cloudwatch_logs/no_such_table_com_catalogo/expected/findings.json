@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-ERR-019",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "A tabela não resolve -- e o catálogo da sessão pode não ser o que a contém",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_nst1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_nst1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-009"
+    },
+    "evidence": [
+      "f_be8ea9",
+      "f_eec47d"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "`NoSuchTableException` diz que o nome não resolveu. **Ele não diz que a tabela não existe** — e essa diferença é a maior fonte de tempo perdido nesta classe de falha.\n\nTrês estados produzem a mesma mensagem: a tabela está em outro catálogo; a tabela é de outra conta e o resource link não existe ou tem nome diferente do recurso de origem; ou a identidade que roda o job não pode descrevê-la, e o catálogo responde como se ela não existisse.\n\n**O terceiro é o que mais engana**, porque a tabela aparece no console de quem investiga e não aparece para o job. Ver `knowledge/glue/lakeformation-fgac.md` §1 sobre os dois planos de autorização.",
+    "proposed_change": [
+      "Procurar o nome exato -- com o qualificador de banco -- no dump do catálogo, e confirmar em qual catálogo ele está.",
+      "Ler a configuração de catálogo da sessão. Um nome que resolve sob um catálogo e não sob outro não é tabela faltando.",
+      "Quando a tabela é de outra conta, conferir se existe resource link e se ele tem **o mesmo nome** do recurso de origem, que é o que a AWS exige para consulta cross-account sob Lake Formation.",
+      "Conferir se a identidade do job pode descrever a tabela antes de concluir que ela sumiu."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Criar uma tabela com o mesmo nome no catálogo local faz o nome resolver -- para **outro dado**. É a correção mais perigosa desta lista, porque o job passa a rodar e a devolver o resultado errado.",
+      "Conceder permissão ampla de catálogo para o objeto ficar visível autoriza muito mais do que a leitura de uma tabela.",
+      "A regra afirma que o nome não resolveu num case que traz o catálogo. Ela **não** decide qual dos três estados é o verdadeiro."
+    ],
+    "tradeoffs": [
+      "Qualificar a tabela pelo catálogo torna a query explícita e a amarra a um catálogo. Apontar a sessão resolve tudo de uma vez e move a resolução de todas as outras tabelas junto."
+    ],
+    "validation": [
+      "Reexecutar e confirmar que a tabela resolve.",
+      "Contagem de linhas e schema comparados com a origem: um nome que resolve para a tabela errada também para de falhar, e só a comparação separa os dois desfechos."
+    ],
+    "rollback": [
+      "Restaurar a configuração de catálogo ou o texto da query. Resource link criado pode ser removido, e removê-lo restaura a resolução anterior para **todo** consumidor daquele link."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/no_such_table.json`."
+      }
+    ],
+    "action": {
+      "kind": "config.verify_effective_value",
+      "target": "spark.catalog.resolution",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

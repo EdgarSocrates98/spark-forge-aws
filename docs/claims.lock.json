@@ -191,7 +191,7 @@
       "type": "number"
     },
     {
-      "context": "| **Skills** | 57 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
+      "context": "| **Skills** | 58 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-053",
       "line": 53,
@@ -201,13 +201,13 @@
         "expect": {
           "kind": "number",
           "pattern": "(\\d+) skills",
-          "value": 57
+          "value": 58
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "57",
+      "text": "58",
       "type": "number"
     },
     {
@@ -2975,13 +2975,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 570
+          "value": 571
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "570",
+      "text": "571",
       "type": "number"
     },
     {
@@ -3692,13 +3692,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 170004
+          "value": 170364
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "170004",
+      "text": "170364",
       "type": "number"
     },
     {
@@ -4409,13 +4409,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 54
+          "value": 55
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "54",
+      "text": "55",
       "type": "number"
     },
     {

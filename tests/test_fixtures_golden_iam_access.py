@@ -5,9 +5,10 @@ que a CAMADA que decidiu sobrevive ate o fact. Colapsa-las num booleano
 `autorizado` faria "adicione a permissao" virar o conselho unico -- e ele e
 errado em tres dos quatro casos.
 
-`expects_rules` sai vazio de proposito: nenhuma regra consome `iam.access_decision`
-ainda, e amarrar uma regra aqui antes de ela existir seria escrever o golden de
-um achado que ninguem produz.
+Desde 2026-09-09 o corpus tambem prende o JULGAMENTO: `SF-IAM-001` a
+`SF-IAM-003` consomem `iam.access_decision`, uma por camada, e a fixture dispara
+as TRES ao mesmo tempo -- de proposito, porque o ponto dela e que um role so
+pode ser negado por tres motivos que exigem consertos diferentes.
 """
 
 from __future__ import annotations
@@ -121,11 +122,28 @@ class TestTresConsertosNoMesmoRole:
         lidos = [a for a, f in d.items() if f.attrs["allowed"]]
         negados = [a for a, f in d.items() if not f.attrs["allowed"]]
         assert set(lidos) == {"glue:GetTable", "lakeformation:GetDataAccess"}
-        assert set(negados) == {"s3:PutObject", "kms:GenerateDataKey"}
-        # E as duas negacoes vem de camadas DIFERENTES.
-        assert len({d[a].attrs["denied_by"] for a in negados}) == 2
+        assert set(negados) == {
+            "s3:PutObject",
+            "s3:DeleteObject",
+            "kms:GenerateDataKey",
+        }
+        # E as TRES negacoes vem de camadas DIFERENTES -- e o ponto do corpus:
+        # boundary, service control policy e `Deny` explicito, num role so.
+        assert {d[a].attrs["denied_by"] for a in negados} == {
+            "permissions_boundary",
+            "service_control_policy",
+            "explicit_deny",
+        }
 
     def test_o_limite_de_policy_de_recurso_sai_mesmo_com_status_ok(self):
         _, facts, _, _ = run_fixture(FIXTURES / "escrita_negada_pelo_boundary")
         razoes = {f.attrs["reason"] for f in facts if f.kind == "iam.access.unresolved"}
         assert razoes == {"policy_de_recurso_nao_avaliada"}
+
+    def test_o_deny_explicito_e_a_terceira_camada(self):
+        """`explicitDeny` SEM boundary e SEM SCP: a negacao esta numa policy
+        anexada ao proprio role, e acrescentar `Allow` nao vence."""
+        d = self._decisoes()["s3:DeleteObject"]
+        assert d.attrs["decision"] == "explicitDeny"
+        assert d.attrs["denied_by"] == "explicit_deny"
+        assert d.measures["matched_statements"] == 1

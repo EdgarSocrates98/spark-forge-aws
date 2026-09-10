@@ -1,0 +1,35 @@
+name: upgrade_exception_com_conf_legada
+proves: >
+  O POSITIVO de `SF-ERR-022`. `SparkUpgradeException`, com o codigo que ja declara configuracao legada.
+
+  Esta excecao e incomum: ela DIZ ao leitor o que configurar. E aceitar a
+  sugestao e uma decisao, nao o conserto obvio -- a propriedade preserva o
+  comportamento antigo por tempo indeterminado, e a proxima atualizacao
+  encontra o mesmo problema mais uma divida.
+
+  O `spark.sql.legacy.timeParserPolicy` no codigo e o companheiro: um job que
+  ja carrega configuracao legada falha por motivo diferente de um que nao
+  carrega nenhuma.
+
+  `SF-PY-012` dispara junto, e pelo mesmo motivo: ele le o `spark.conf.set` do
+  codigo e diz que ha configuracao aplicada em runtime. As duas leituras do
+  mesmo `spark.conf.set` sao complementares -- uma sobre a excecao que
+  aconteceu, a outra sobre a procedencia da configuracao.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - mig.legacy_conf
+  - pyspark.chain
+  - pyspark.conf_set
+  - pyspark.module_analyzed
+expects_rules:
+  - SF-ERR-022
+  - SF-PY-012

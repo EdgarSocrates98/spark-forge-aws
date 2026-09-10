@@ -1163,6 +1163,26 @@ rules:
   # tenha SF-GLUE junto continua indo para la, porque dimensionamento e
   # observabilidade sao a conversa maior. Estas tres so pegam o case cujo
   # achado dominante e do eixo delas.
+  # SF-IAM entrou com `collect iam-access` (2026-09-09) e ganha ENTRADA PROPRIA
+  # pelo mesmo motivo das anteriores: declarar a area em `rule_areas` NAO
+  # roteia, e `findings_area` conta por prefixo exato do `rule_id`. Sem esta
+  # entrada, um case cujo unico achado e "a acao foi negada pelo boundary"
+  # cairia no fallback -- e o fallback nao sabe que a conversa e de quem
+  # administra a policy, e nao de quem tuna o job.
+  - id: AGENT-085
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em autorizacao de IAM e rota ate quem responde por policy
+    when:
+      all:
+        - {findings_area: SF-IAM, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      A AWS respondeu que a acao esta negada e nomeou a CAMADA -- permissions
+      boundary, service control policy, ou `Deny` explicito. Nos tres casos o
+      conserto nao esta na policy que o time do job abriria primeiro: o boundary
+      e teto de plataforma, a SCP e da organizacao, e o `Deny` foi escrito de
+      proposito por alguem. Quem decide os tres e quem responde por policy.
+
   - id: AGENT-079
     phase_in: [diagnosis, hypothesis, design, verification, documentation]
     title: Achado dominante em encriptacao e rota ate o KMS

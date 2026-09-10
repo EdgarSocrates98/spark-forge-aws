@@ -1,0 +1,41 @@
+{
+  "id": "ERR-SPARK-009",
+  "signature": "NoSuchTableException",
+  "service": "spark",
+  "versions": [
+    "*"
+  ],
+  "symptoms": [
+    "The failure names a table and happens at resolution time",
+    "The table is visible in the console of the catalog service and not to the job",
+    "The same job resolves other tables in the same database"
+  ],
+  "likely_causes": [
+    "The session catalog is not the catalog that holds the table",
+    "The table exists in another account and is reached through a resource link that is missing or named differently from the source resource",
+    "The identity running the job cannot describe the table, and the catalog answers as if it did not exist"
+  ],
+  "evidence_required": [
+    "catalog.table_schema"
+  ],
+  "diagnostic_steps": [
+    "Read the catalog dump for the table name exactly as the query writes it, including the database qualifier",
+    "Read the catalog configuration of the session: a table that resolves under one catalog name and not under another is not a missing table",
+    "When the table belongs to another account, read whether a resource link exists and whether it carries the same name as the source resource"
+  ],
+  "fixes": [
+    "Qualify the table with the catalog that holds it, or point the session at that catalog",
+    "Create the resource link for the cross-account table, with the same name the source resource has",
+    "Grant the identity the permission to describe the table, when the catalog is hiding it rather than missing it"
+  ],
+  "unsafe_fixes": [
+    "Creating a table with the same name in the local catalog, which makes the name resolve to different data",
+    "Granting broad catalog permission to make the object visible, when the precise fix is one grant on one resource"
+  ],
+  "verification": "Re-run and confirm the table resolves, then compare the row count and the schema with the source: a name that resolves to the wrong table also stops failing",
+  "rollback": "Restore the previous catalog configuration or query text. A resource link that was created can be removed, and doing so restores the previous resolution for every consumer of that link",
+  "sources": [
+    "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select.html"
+  ],
+  "last_verified": "2026-09-09"
+}

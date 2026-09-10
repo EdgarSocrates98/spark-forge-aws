@@ -484,7 +484,12 @@ def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
     # a mais antiga da familia, nomeia `lakeformation.missing_grant` e
     # `ram.unaccepted_share`, que nao existem -- e por isso `SF-ERR-006` teve
     # de usar um substituto medido.
-    assert len(_assinaturas()) == 17, [s["id"] for s in _assinaturas()]
+    # 23 desde 2026-09-09 (Lote B). As SEIS acrescidas sao as do §7 do prompt
+    # de origem que a FONTE sustenta -- e as DOZE restantes foram recusadas
+    # com motivo, no cabecalho de `rules/catalog/errors.yaml`: wrapper que
+    # nao e causa, generica demais para carregar conserto, ou ja coberta.
+    # Escrever as doze assim mesmo daria 28 de 28 e um catalogo pior.
+    assert len(_assinaturas()) == 23, [s["id"] for s in _assinaturas()]
 
 
 def test_toda_assinatura_tem_regra():

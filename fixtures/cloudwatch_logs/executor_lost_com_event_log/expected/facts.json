@@ -1,0 +1,180 @@
+[
+  {
+    "id": "f_b8ea16",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_el1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_el1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:05:41,120 ERROR [dispatcher] scheduler.TaskSetManager: Lost task 12.0 in stage 4.0: ExecutorLostFailure (executor 3 exited caused by one of the running tasks)",
+      "log_stream": "jr_el1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_el1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_866a05",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_el1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_el1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_el1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_el1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_8460b7",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-b1"
+    },
+    "measures": {
+      "available_cores": 0,
+      "executor_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c77ad7",
+    "schema_version": 1,
+    "kind": "spark.executor.lost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "3"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "Container killed by YARN",
+      "heap_oom_in_log": false
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c77bd5",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-b1"
+    },
+    "measures": {
+      "stages_with_spill": 0,
+      "total_memory_spill_bytes": 0,
+      "total_disk_spill_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_8508cb",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 4,
+      "event_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_af3045",
+    "schema_version": 1,
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-b1"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.6",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_92cbef",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_el1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_el1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-010"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-010",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:05:41,120 ERROR [dispatcher] scheduler.TaskSetManager: Lost task 12.0 in stage 4.0: ExecutorLostFailure (executor 3 exited caused by one of the running tasks)"
+    },
+    "provenance": {
+      "artifact": "logs/etl-curated_jr_el1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]
