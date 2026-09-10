@@ -121,7 +121,7 @@
     {
       "path": "knowledge/glue/lakeformation-fgac.md",
       "title": "lakeformation-fgac",
-      "sha256": "74bb52cd84244ddc9fa62fd3053651da060a833cc907bde695c7726bd2826e05",
+      "sha256": "beb4ea84173d48bf3e4fe8e0976422d7a121c20be2b3ed134903f517899360f2",
       "bytes": null
     },
     {
@@ -222,7 +222,7 @@
     {
       "path": "knowledge/storage/iceberg-catalog.md",
       "title": "iceberg-catalog",
-      "sha256": "7bffad1f74f9394d7a9845b3890e9daea628e93ca64460d981bd1ee0df1dd900"
+      "sha256": "75f0c925b7eb3b3aa1ace7c003bb74ebb31d9aa88e7878762e366e078ff8ea93"
     },
     {
       "path": "knowledge/storage/iceberg-performance.md",

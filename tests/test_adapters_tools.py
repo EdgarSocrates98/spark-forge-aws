@@ -79,6 +79,7 @@ class TestToolSurface:
             "sparkforge_economy_report",
             "sparkforge_judge",
             "sparkforge_arbitrate",
+            "sparkforge_debate_referee",
             "sparkforge_root_cause",
             "sparkforge_lakeformation_matrix",
             "sparkforge_rules_lookup",
@@ -1937,6 +1938,12 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "glue": "5.0",
             },
         )
+
+    if name == "sparkforge_debate_referee":
+        # Blackboard VAZIO de proposito: a tool devolve `upheld: true` com
+        # `closed: false`, que e a resposta honesta para "nada a arbitrar" -- e o
+        # payload dela valida contra o schema igual.
+        return call_tool("sparkforge_debate_referee", {"repo": str(tmp_path)})
 
     if name == "sparkforge_root_cause":
         facts_file = tmp_path / "facts.json"

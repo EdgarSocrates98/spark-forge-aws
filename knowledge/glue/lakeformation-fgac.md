@@ -32,6 +32,8 @@ uma limitação que era do 5.0, ou o contrário.
 | FGAC DDL/DML (CREATE/ALTER/DELETE/DROP) | — | não declarado | suportado |
 | FTA Spark-native | não existe | Hive e Iceberg | + Hudi e Delta |
 | FTA via `GlueContext`/DynamicFrame | suportado | só tabela não-OTF | só tabela não-OTF |
+| FTA DDL/DML (CREATE/ALTER/DELETE/UPDATE/MERGE INTO) | — | suportado | suportado |
+| FTA com biblioteca custom, UDF e RDD | — | suportado | suportado |
 
 As três linhas que decidem, com a citação:
 
@@ -55,6 +57,26 @@ Spark-native FGAC writes on AWS Lake Formation registered tables."*
 
 **Isso NÃO diz que a permissão do Lake Formation passou a autorizar a escrita.**
 Ver a seção 6.
+
+**As duas últimas linhas são uma ASSIMETRIA, e ela é citável dos dois lados**
+(coletado em 2026-09-10). A página de Full Table Access **enumera**:
+*"This capability enables Data Manipulation Language (DML) operations including
+CREATE, ALTER, DELETE, UPDATE, and MERGE INTO statements on Apache Hive and
+Iceberg tables."* A de migração para o 5.1, do lado FGAC, diz
+*"DDL/DML operations (**like** CREATE, ALTER, DELETE, DROP)"* — sem `MERGE INTO`,
+sem `UPDATE`, e com um "like" que torna a lista **ilustrativa e não exaustiva**.
+
+Portanto: `MERGE INTO` sob FTA é suportado **por escrito**; sob FGAC ele **não é
+nomeado em lugar nenhum**, e concluir daí que não funciona seria ler uma lista de
+exemplos como fechada. A pergunta continua aberta, e é assim que a matriz a
+publica.
+
+**A linha da biblioteca custom fecha o outro lado do tradeoff de `SF-LF-001`.**
+Aquela regra acusa `--extra-jars` sob FGAC — que a AWS bloqueia — e propõe, como
+uma das saídas, trocar de modelo de acesso. O benefício dessa troca era afirmado
+sem citação até aqui; a página de FTA a dá: *"supports Spark capabilities
+including Resilient Distributed Datasets (RDDs), custom libraries, and User
+Defined Functions (UDFs) with AWS Lake Formation tables."*
 
 **A quarta linha, e ela é breaking change de filesystem:** *"S3A filesystem has
 replaced EMRFS as the default S3 connector"* no Glue 5.1. A consequência para

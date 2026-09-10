@@ -1639,6 +1639,30 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge_path_p.add_argument("--file")
 
     # rules lookup --------------------------------------------------------
+    # debate referee ---------------------------------------------------
+    #
+    # O §27 do prompt de origem pede o protocolo de debate e fecha com "nenhum
+    # agente pode declarar root cause final apenas com hipotese". Essa frase e
+    # uma RECUSA, e recusa e verificacao -- que se constroi sem provider.
+    #
+    # O que NAO esta aqui e o executor: gerar argumento exige modelo, e
+    # `sparkforge/` nao chama provider (regra 23). `arbitrate` ja emite
+    # `debate_plan` e para; este verbo arbitra o que o host preencheu.
+    ref_p = sub.add_parser(
+        "debate",
+        help="Arbitra o protocolo de debate do case. NAO executa debate.",
+    )
+    ref_sub = ref_p.add_subparsers(dest="debate_action", required=True)
+    ref_r = ref_sub.add_parser(
+        "referee",
+        help=(
+            "Diz se o fechamento declarado pode ser publicado: hipotese que "
+            "sobrevive, claim sem evidencia, objecao sem replica, referencia "
+            "pendurada."
+        ),
+    )
+    ref_r.add_argument("--repo", required=True)
+
     # root-cause -------------------------------------------------------
     #
     # Verbo de TOPO, no mesmo genero de `workload`, `capacity` e `finops`:
@@ -2923,6 +2947,11 @@ def _cmd_knowledge_path(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_debate_referee(args: argparse.Namespace) -> int:
+    _print(_core.debate_referee(args.repo))
+    return 0
+
+
 def _cmd_root_cause(args: argparse.Namespace) -> int:
     payload = _core.root_cause(
         facts_path=args.facts_paths,
@@ -3564,6 +3593,7 @@ _DISPATCH = {
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
+    ("debate", "referee"): _cmd_debate_referee,
     ("root-cause", None): _cmd_root_cause,
     ("lakeformation", "matrix"): _cmd_lakeformation_matrix,
     ("rules", "lookup"): _cmd_rules_lookup,
@@ -3603,6 +3633,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "runtime_action", None)
         or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
+        or getattr(args, "debate_action", None)
         or getattr(args, "lakeformation_action", None)
         or getattr(args, "rules_action", None)
         or getattr(args, "report_action", None)

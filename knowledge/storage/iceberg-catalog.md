@@ -115,9 +115,19 @@ A chave `spark.sql.catalog.<nome>.glue.lakeformation-enabled` aparece na página
 **Full Table Access** do Glue. Ela **não aparece** na página de FGAC.
 
 O que isso significa quando o job liga FGAC e a chave está `true` **não está
-documentado em lugar nenhum que este repositório vigie**. Ver a §7 de
-[`../glue/lakeformation-fgac.md`](../glue/lakeformation-fgac.md), que registra a
-lacuna.
+documentado em lugar nenhum que este repositório vigie — e isso foi contado, não
+suposto** (2026-09-10). As duas páginas de FGAC foram coletadas e varridas:
+
+| Termo procurado | `security-lf-enable` | `security-lf-enable-considerations` |
+|---|---|---|
+| `lakeformation-enabled` | 0 | 0 |
+| `credentialsResolverClass` | 0 | 0 |
+| `precedence` / `conflict` / `ignored` / `overrid` | 0 | 0 |
+| `both` / `simultaneous` | 0 | 0 |
+
+As páginas que descrevem FGAC **nunca mencionam** a chave de credential vending,
+e nenhuma diz qual metade vence quando as duas estão declaradas. Ver a §7 de
+[`../glue/lakeformation-fgac.md`](../glue/lakeformation-fgac.md).
 
 **Nenhuma regra desta área julga a combinação, e a razão foi medida.** Uma regra
 para ela foi escrita, ganhou fixture, e saiu: a chave é um dos dois marcadores de

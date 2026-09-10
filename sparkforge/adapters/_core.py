@@ -3191,6 +3191,36 @@ def _merge_facts_files(
     return sort_facts(merged)
 
 
+def debate_referee(repo: str) -> dict[str, Any]:
+    """Arbitra o protocolo de debate escrito no blackboard do case.
+
+    Verbo de TOPO: nao le artefato e nao gera argumento nenhum. Ele responde UMA
+    pergunta -- "este fechamento pode ser publicado?" -- e a resposta e binaria,
+    porque o §27 do prompt de origem pede uma RECUSA e recusa graduada nao
+    recusa.
+
+    **Ele nao e o executor de debate, e o executor continua nao existindo**
+    (regra 29 do `CLAUDE.md`). Gerar claim, objecao e replica exige provider, e
+    nada em `sparkforge/` chama provider (regra 23). O que se constroi sem
+    provider e a metade da VERIFICACAO, e e ela que esta aqui.
+
+    Blackboard sem decisao registrada devolve `upheld: true` com
+    `closed: false`. Nao e aprovacao: e "nada foi fechado, logo nada a recusar",
+    e o campo `closed` e o que separa os dois casos.
+    """
+    from sparkforge.agentic.referee import referee_over_blackboard
+
+    try:
+        return referee_over_blackboard(repo)
+    except OSError as exc:
+        raise AdapterError(
+            f"nao foi possivel ler o blackboard em {repo}: {exc}\n"
+            f"  Rode `sparkforge arbitrate` antes -- e ele que escreve claims, "
+            f"objecoes e replicas em `.sparkforge/blackboard/`.",
+            exit_code=2,
+        ) from exc
+
+
 def root_cause(
     facts_path: str | list[str] | None = None,
     facts: list[dict[str, Any]] | None = None,

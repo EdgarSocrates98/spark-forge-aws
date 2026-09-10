@@ -147,6 +147,7 @@
     "sparkforge_collect_lakeformation",
     "sparkforge_collect_verify",
     "sparkforge_controlm_describe",
+    "sparkforge_debate_referee",
     "sparkforge_economy_report",
     "sparkforge_finops",
     "sparkforge_funcval_compare",

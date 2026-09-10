@@ -60,6 +60,19 @@ eixos:
   - id: fta_via_glue_context
     titulo: "FTA via GlueContext/DynamicFrame"
     natureza: capacidade
+  # Os dois abaixo entraram em 2026-09-10, e existem para tornar uma ASSIMETRIA
+  # legivel. A pagina de FTA ENUMERA `MERGE INTO` e `UPDATE`; a de FGAC lista
+  # "DDL/DML operations (like CREATE, ALTER, DELETE, DROP)" -- sem MERGE, sem
+  # UPDATE, e com "like", que faz a lista ilustrativa e nao exaustiva.
+  #
+  # Sem o lado FTA na matriz, "posso fazer MERGE nesta tabela governada?" nao
+  # tinha celula, e a resposta ficava em prosa de duas paginas diferentes.
+  - id: fta_ddl_dml
+    titulo: "FTA DDL/DML (CREATE/ALTER/DELETE/UPDATE/MERGE INTO)"
+    natureza: capacidade
+  - id: fta_custom_libraries_udf
+    titulo: "FTA com biblioteca custom, UDF e RDD"
+    natureza: capacidade
 
 runtimes:
   "4.0":
@@ -104,6 +117,12 @@ runtimes:
         o afirmaria para o 4.0 nao existe numa pagina so, e por isso `quote`
         esta VAZIA e esta nota ocupa o lugar dela.
 
+    fta_ddl_dml:
+      status: not_applicable
+      nota: "Full Table Access Spark-native nao existia no 4.0."
+    fta_custom_libraries_udf:
+      status: not_applicable
+      nota: "Full Table Access Spark-native nao existia no 4.0."
   "5.0":
     filesystem_s3_default:
       valor: "EMRFS"
@@ -152,6 +171,32 @@ runtimes:
         Mesma origem em tabela. "OTF" e open table format -- Iceberg, Hudi,
         Delta.
 
+    fta_ddl_dml:
+      status: supported
+      source: fta
+      quote: >-
+        This capability enables Data Manipulation Language (DML) operations
+        including CREATE, ALTER, DELETE, UPDATE, and MERGE INTO statements on
+        Apache Hive and Iceberg tables.
+      nota: >-
+        A frase nao recorta versao -- ela descreve o que FTA habilita, e a pagina
+        de FTA cobre 5.0 e 5.1. E A ASSIMETRIA QUE IMPORTA: aqui `MERGE INTO` e
+        `UPDATE` estao ENUMERADOS; do lado FGAC a lista e "like CREATE, ALTER,
+        DELETE, DROP", ilustrativa e sem nenhum dos dois.
+    fta_custom_libraries_udf:
+      status: supported
+      source: fta
+      quote: >-
+        FTA is ideal for use cases that need to comply with security regulations
+        at the table level and supports Spark capabilities including Resilient
+        Distributed Datasets (RDDs), custom libraries, and User Defined
+        Functions (UDFs) with AWS Lake Formation tables.
+      nota: >-
+        E O LADO QUE FALTAVA AO TRADEOFF DE `SF-LF-001`. Aquela regra acusa
+        `--extra-jars` sob FGAC e propoe, como uma das saidas, trocar de modelo
+        -- e ate aqui o beneficio da troca era afirmado sem citacao. Esta frase
+        e a citacao: biblioteca custom e UDF, que FGAC recusa, FTA sustenta por
+        escrito.
   "5.1":
     filesystem_s3_default:
       valor: "S3A"
@@ -217,6 +262,32 @@ runtimes:
         Mesma origem em tabela do 5.0, e o MESMO valor: a troca do 5.1 foi de
         filesystem e de formatos no caminho Spark-native, nao neste.
 
+    fta_ddl_dml:
+      status: supported
+      source: fta
+      quote: >-
+        This capability enables Data Manipulation Language (DML) operations
+        including CREATE, ALTER, DELETE, UPDATE, and MERGE INTO statements on
+        Apache Hive and Iceberg tables.
+      nota: >-
+        A frase nao recorta versao -- ela descreve o que FTA habilita, e a pagina
+        de FTA cobre 5.0 e 5.1. E A ASSIMETRIA QUE IMPORTA: aqui `MERGE INTO` e
+        `UPDATE` estao ENUMERADOS; do lado FGAC a lista e "like CREATE, ALTER,
+        DELETE, DROP", ilustrativa e sem nenhum dos dois.
+    fta_custom_libraries_udf:
+      status: supported
+      source: fta
+      quote: >-
+        FTA is ideal for use cases that need to comply with security regulations
+        at the table level and supports Spark capabilities including Resilient
+        Distributed Datasets (RDDs), custom libraries, and User Defined
+        Functions (UDFs) with AWS Lake Formation tables.
+      nota: >-
+        E O LADO QUE FALTAVA AO TRADEOFF DE `SF-LF-001`. Aquela regra acusa
+        `--extra-jars` sob FGAC e propoe, como uma das saidas, trocar de modelo
+        -- e ate aqui o beneficio da troca era afirmado sem citacao. Esta frase
+        e a citacao: biblioteca custom e UDF, que FGAC recusa, FTA sustenta por
+        escrito.
 # O que esta matriz NAO responde, e a lista e curta de proposito:
 #
 #   - Glue 6.0. A pagina de migracao do 6.0 existe e e vigiada

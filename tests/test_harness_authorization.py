@@ -940,7 +940,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # no pacote e nao recebe caminho nenhum (sexta do conjunto de excecao);
         # `root_cause` compoe sobre facts do case e declara `facts_path`, como
         # todo verbo de topo.
-        assert len(TOOLS) - len(sem_caminho) == 73
+        # 73 -> 74 com `debate_referee` (2026-09-10), a 80ª tool: ela declara
+        # `repo`, como todo verbo que le o blackboard do case.
+        assert len(TOOLS) - len(sem_caminho) == 74
 
 
 class TestAImposicaoNoDespacho:

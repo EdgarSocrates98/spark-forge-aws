@@ -106,7 +106,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**79 tools, 36 com `detail_level`** (recontado em 2026-09-09). Os niveis sao `summary`, `normal` e `full`. A
+**80 tools, 36 com `detail_level`** (recontado em 2026-09-09). Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
@@ -428,6 +428,18 @@ outras.
     pacote, e nada aqui chama provider (regra 23). O executor é **L0**:
     `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
     obrigatório. Status por componente em `docs/agentic-evolution-report.md`.
+
+    **A metade da VERIFICAÇÃO do debate passou a existir em 2026-09-10, e a da
+    GERAÇÃO não.** `sparkforge debate referee` (tool
+    `sparkforge_debate_referee`) arbitra o protocolo: dado o que o host
+    preencheu, ele recusa quatro coisas — hipótese que sobrevive ao fechamento
+    (`claim_type: hypothesis` **não** fecha causa raiz), claim sem
+    `evidence_refs`, objeção sem réplica, e referência pendurada. `upheld` é
+    binário, porque a garantia pedida é uma recusa e recusa graduada não recusa.
+    O sétimo estágio do protocolo (`VERIFICATION`) sai `modeled: false`:
+    consenso é acordo, não verificação, e `Debate.verdict` é texto livre que
+    nada liga a uma execução posterior. Gerar argumento continua fora — exige
+    provider.
 30. **Não há benchmark da camada agêntica, e por isso não há afirmação de
     ganho.** Comparar arquitetura nova com antiga exige os dois lados rodando o
     mesmo caso. A justificativa desta regra **encolheu em 2026-09-08 e a

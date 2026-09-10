@@ -2256,6 +2256,58 @@ _RULE_ITEM: dict[str, Any] = {
     },
 }
 
+# O arbitro do protocolo de debate. `upheld` e BINARIO de proposito: o §27 do
+# prompt de origem pede uma recusa ("nenhum agente pode declarar root cause final
+# apenas com hipotese"), e recusa graduada nao recusa.
+_DEBATE_REFEREE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["upheld", "violations", "protocol", "counts", "refused"],
+    "properties": {
+        "upheld": {"type": "boolean"},
+        "violations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["kind", "what"],
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "fechamento_sobre_hipotese",
+                            "consenso_sem_evidencia",
+                            "consenso_sobre_objecao_viva",
+                            "referencia_pendurada",
+                        ],
+                    },
+                    "what": {"type": "string"},
+                    "unblocked_by": {"type": "string"},
+                },
+            },
+        },
+        "violation_count": {"type": "integer"},
+        "protocol": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["stage", "observed_in", "modeled"],
+                "properties": {
+                    "stage": {"type": "string"},
+                    "observed_in": {"type": "string"},
+                    "modeled": {"type": "boolean"},
+                },
+            },
+        },
+        "counts": {"type": "object"},
+        "refused": {"type": "array", "items": {"type": "object"}},
+        "source": {"type": "string"},
+        "closed": {"type": "boolean"},
+        "decision_count": {"type": "integer"},
+        "debate_id": {"type": "string"},
+        "topic": {"type": "string"},
+        "status_declared": {"type": "string"},
+    },
+}
+
 # Causa raiz ordenada, e a lacuna nomeada. `refused` NAO e decoracao: as tres
 # recusas -- confianca calculada, avaliacao de impacto de seguranca e ganho
 # estimado -- viajam na resposta com o que destravaria cada uma, e um teste varre
@@ -6020,6 +6072,34 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _ARBITRATE_SCHEMA,
         "annotations": _WRITE_NOT_IDEMPOTENT,
     },
+    "sparkforge_debate_referee": {
+        "description": (
+            "Arbitra o PROTOCOLO de debate do case e diz se o fechamento declarado pode "
+            "ser publicado. Use depois de `sparkforge_arbitrate`, e antes de apresentar "
+            "qualquer causa raiz que tenha saido de debate entre agentes. "
+            "Ele NOMEIA quatro violacoes: hipotese que sobrevive ao fechamento (a frase "
+            "do protocolo -- `claim_type: hypothesis` nao fecha root cause), claim sem "
+            "`evidence_refs`, objecao sem replica, e referencia pendurada. "
+            "`upheld` e BINARIO: recusa graduada nao recusa. "
+            "ELE NAO EXECUTA DEBATE e nao gera argumento nenhum -- isso exige provider, e "
+            "nada neste projeto chama provider. `arbitrate` emite `debate_plan` e para; "
+            "este verbo valida o que o host preencheu. O setimo estagio do protocolo "
+            "(VERIFICATION) sai `modeled: false`, porque consenso e acordo e nao "
+            "verificacao. As tres recusas saem em `refused` com o que destravaria."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {
+                "repo": {
+                    "type": "string",
+                    "description": "Raiz do repositorio com `.sparkforge/blackboard/`.",
+                }
+            },
+        },
+        "outputSchema": _DEBATE_REFEREE_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_root_cause": {
         "description": (
             "Ordena os achados de `judge` por consequencia DECLARADA e nomeia a LACUNA. "
@@ -7174,6 +7254,10 @@ def _h_arbitrate(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_debate_referee(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.debate_referee(args["repo"])
+
+
 def _h_root_cause(args: dict[str, Any]) -> dict[str, Any]:
     return _core.root_cause(
         facts_path=args.get("facts_path"),
@@ -7843,6 +7927,7 @@ _HANDLERS = {
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_arbitrate": _h_arbitrate,
+    "sparkforge_debate_referee": _h_debate_referee,
     "sparkforge_root_cause": _h_root_cause,
     "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
     "sparkforge_rules_lookup": _h_rules_lookup,

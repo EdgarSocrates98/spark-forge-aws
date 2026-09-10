@@ -85,10 +85,30 @@
 #   trava um achado por fixture, e o invariante não foi afrouxado para acomodar
 #   a regra. Foi a regra que saiu.
 #
-#   Destravaria: um fact que dissesse o que a combinação FAZ. Hoje o efeito dela
-#   não está documentado em nenhuma página que este repositório vigie — §4 de
-#   `knowledge/storage/iceberg-catalog.md` e §7 de
-#   `knowledge/glue/lakeformation-fgac.md` registram a lacuna.
+#   Destravaria: um fact que dissesse o que a combinação FAZ.
+#
+#   **A LACUNA FOI MEDIDA em 2026-09-10, e não estimada.** As duas páginas de
+#   FGAC — `security-lf-enable.html` (10 307 chars) e
+#   `security-lf-enable-considerations.html` (5 282 chars) — foram coletadas e
+#   varridas por oito termos. Ocorrências de `lakeformation-enabled`: **zero** nas
+#   duas. De `credentialsResolverClass`: **zero**. De `precedence`, `conflict`,
+#   `ignored`, `overrid`, `both` e `simultaneous`: **zero** nas duas.
+#
+#   Ou seja: as páginas que descrevem FGAC **nunca mencionam** a chave de
+#   credential vending, e nenhuma delas diz o que acontece quando as duas metades
+#   estão declaradas — qual vence, qual é ignorada, se há erro. A afirmação
+#   anterior deste veto ("não está documentado em nenhuma página que este
+#   repositório vigie") era leitura de memória; agora ela é contagem.
+#
+#   O que a coleta ACHOU, e virou entrega em vez de veto: a página de FTA
+#   enumera `MERGE INTO` e `UPDATE` entre o DML que ela habilita, e declara
+#   suporte a biblioteca custom, UDF e RDD. Os dois viraram eixo em
+#   `knowledge/glue/lakeformation-matrix.yaml` (`fta_ddl_dml` e
+#   `fta_custom_libraries_udf`), e a assimetria contra a lista ilustrativa do
+#   lado FGAC está na §0 de `knowledge/glue/lakeformation-fgac.md`.
+#
+#   A §4 de `knowledge/storage/iceberg-catalog.md` e a §7 de
+#   `knowledge/glue/lakeformation-fgac.md` registram a lacuna que permanece.
 # Depende do leitor de metadata tables da Fase 1. Regras inertes até ele existir.
 # Atenção: procedimentos e propriedades variam muito entre Iceberg 1.0.0 (Glue 4.0),
 # 1.7.1 (5.0) e 1.10.0 (5.1). Onde uma regra depender de comportamento introduzido
