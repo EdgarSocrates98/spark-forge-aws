@@ -31,6 +31,15 @@ com o mesmo significado, e duas sao deste modulo: `tool_result_orphan` (resultad
 cujo `tool_use_id` nenhum `tool_use` declarou) e `tool_use_without_result`
 (chamada que o transcript nunca respondeu -- a sessao acabou no meio, por
 exemplo por teto de orcamento).
+
+HORARIO, SEM MUDAR ID. `host.transcript` guarda o primeiro e o ultimo
+`timestamp` do arquivo (`first_timestamp`, `last_timestamp`), e cada
+`host.tool_call` guarda o `id` do `tool_use` (`call_id`), o `timestamp` da linha
+que o declarou (`started_at`) e o da linha do `tool_result` (`ended_at`). Tudo
+em `attrs`, e como a string que o transcript traz: `Fact.id` e `kind + subject +
+measures`, entao nenhum id muda, e quem converte para tempo e quem precisa dele
+(`sparkforge/observability/otlp.py`). Linha sem `timestamp` deixa o campo
+ausente, nunca zero.
 """
 from __future__ import annotations
 
@@ -44,7 +53,7 @@ from typing import Any
 from sparkforge.collect.host_usage import SOURCE_CLAUDE_CODE, _somar_usage
 from sparkforge.findings.models import Fact, sort_facts
 
-EXTRACTOR_ID = "host_transcript@0.1.0"
+EXTRACTOR_ID = "host_transcript@0.2.0"
 
 EMITTED_KINDS = frozenset(
     {
@@ -177,6 +186,9 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
     lacunas: Counter[str] = Counter()
     chamadas: list[dict[str, Any]] = []
     resultados: dict[str, tuple[Any, bool]] = {}
+    fim_do_resultado: dict[str, str] = {}
+    primeiro_horario: str | None = None
+    ultimo_horario: str | None = None
     ordem_resultado: list[str] = []
     modelos: set[str] = set()
     versoes: set[str] = set()
@@ -201,6 +213,10 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
                 lacunas["host_format_unknown"] += 1
                 continue
             tipo = evento.get("type")
+            horario = _horario(evento)
+            if horario is not None:
+                primeiro_horario = primeiro_horario or horario
+                ultimo_horario = horario
             if tipo not in ("assistant", "user"):
                 continue
             versao = evento.get("version")
@@ -219,6 +235,8 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
                     if isinstance(bloco, dict) and bloco.get("type") == "tool_result":
                         chave = str(bloco.get("tool_use_id", ""))
                         resultados[chave] = (bloco.get("content"), bool(bloco.get("is_error")))
+                        if horario is not None:
+                            fim_do_resultado[chave] = horario
                         ordem_resultado.append(chave)
                 continue
 
@@ -240,6 +258,7 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
                             "name": str(bloco.get("name", "")),
                             "input": bloco.get("input"),
                             "line": numero,
+                            "started_at": horario,
                         }
                     )
                 elif bloco.get("type") == "text" and isinstance(bloco.get("text"), str):
@@ -267,6 +286,8 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
                 "source": SOURCE_CLAUDE_CODE,
                 "models": sorted(modelos),
                 "host_versions": sorted(versoes),
+                **({"first_timestamp": primeiro_horario} if primeiro_horario else {}),
+                **({"last_timestamp": ultimo_horario} if ultimo_horario else {}),
             },
             provenance=provenance,
         )
@@ -277,6 +298,12 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
         canal, verbo = canonical_verb(chamada["name"], chamada["input"])
         measures: dict[str, Any] = {"ordinal": ordinal}
         attrs: dict[str, Any] = {"channel": canal, "tool": chamada["name"], "verb": verbo}
+        if chamada["id"]:
+            attrs["call_id"] = chamada["id"]
+        if chamada["started_at"]:
+            attrs["started_at"] = chamada["started_at"]
+        if chamada["id"] in fim_do_resultado:
+            attrs["ended_at"] = fim_do_resultado[chamada["id"]]
         if chamada["id"] in resultados:
             conteudo_resultado, erro = resultados[chamada["id"]]
             measures["result_bytes"] = _result_bytes(conteudo_resultado)
@@ -327,6 +354,11 @@ def extract_host_transcript_path(path: Path | str) -> list[Fact]:
     for razao, quantas in sorted(lacunas.items()):
         facts.append(_unresolved(subject, provenance, razao, quantas))
     return sort_facts(facts)
+
+
+def _horario(evento: dict[str, Any]) -> str | None:
+    valor = evento.get("timestamp")
+    return valor if isinstance(valor, str) and valor else None
 
 
 def _unresolved(

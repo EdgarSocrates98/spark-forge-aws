@@ -14,7 +14,7 @@
       "truncated": false
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -36,10 +36,12 @@
       "channel": "mcp",
       "tool": "mcp__sparkforge__sparkforge_judge",
       "verb": "judge",
+      "call_id": "toolu_judge",
+      "started_at": "2026-09-10T00:00:10.000Z",
       "is_error": null
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -62,10 +64,13 @@
       "channel": "mcp",
       "tool": "mcp__sparkforge__sparkforge_analyze_pyspark",
       "verb": "analyze_pyspark",
+      "call_id": "toolu_ap",
+      "started_at": "2026-09-10T00:00:03.000Z",
+      "ended_at": "2026-09-10T00:00:04.000Z",
       "is_error": false
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -90,10 +95,12 @@
       ],
       "host_versions": [
         "2.1.268"
-      ]
+      ],
+      "first_timestamp": "2026-09-10T00:00:01.000Z",
+      "last_timestamp": "2026-09-10T00:00:11.000Z"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -114,7 +121,7 @@
       "reason": "host_format_unknown"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -135,7 +142,7 @@
       "reason": "malformed_line"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -156,7 +163,7 @@
       "reason": "message_field_not_object"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -177,7 +184,7 @@
       "reason": "tool_result_orphan"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -198,7 +205,7 @@
       "reason": "tool_use_without_result"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -219,7 +226,7 @@
       "reason": "usage_field_absent"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -240,7 +247,7 @@
       "reason": "usage_value_fractional"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -261,7 +268,7 @@
       "reason": "usage_value_malformed"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -282,7 +289,7 @@
       "reason": "usage_value_negative"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }
@@ -305,7 +312,7 @@
     },
     "attrs": {},
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
     }

@@ -170,8 +170,16 @@ class ContextLedger:
         detail_level: str,
         outcome: str,
         start_time: float,
+        channel: str = "",
+        transport: str = "",
     ) -> None:
         """Monta o span e guarda em memoria. Nunca toca disco, nunca derruba a chamada.
+
+        `channel` e `transport` sao o canal MEDIDO por quem chamou (`mcp` e
+        `stdio`/`http` quando a chamada vem de `adapters/mcp.py`). Vazio quer
+        dizer "nao declarado", e nao entra em `metadata`: e o que permite ao
+        export OTLP (`observability/otlp.py`) dar `mcp.method.name` so a quem
+        de fato veio pelo MCP. Nenhuma coluna nova: `metadata_json` ja existe.
 
         A MONTAGEM do span entra no try/except, e nao so uma escrita que nao
         existe mais aqui: `payload_bytes(resultado)` roda dentro do
@@ -203,6 +211,11 @@ class ContextLedger:
                 detail_level=detail_level,
                 item_count=declared_item_count(resultado),
                 outcome=outcome,
+                metadata={
+                    chave: valor
+                    for chave, valor in (("channel", channel), ("transport", transport))
+                    if valor
+                },
             )
             self._buffer.append(span)
         except Exception:  # noqa: BLE001,S110 -- medir nunca derruba a chamada

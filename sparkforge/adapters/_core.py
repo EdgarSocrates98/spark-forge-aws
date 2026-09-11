@@ -4530,6 +4530,131 @@ def report_github_write(repo: str, payload: dict[str, Any]) -> dict[str, str]:
     return gravados
 
 
+_TELEMETRY_DIR = (".sparkforge", "telemetry")
+_RUN_ID_VALIDO = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,63}$")
+_PROVIDER_VALIDO = re.compile(r"^[a-z0-9_.]{1,64}$")
+
+
+def telemetry_export(
+    run_id: str, host_transcript: str = "", provider: str | None = None
+) -> dict[str, Any]:
+    """Os spans de um run, e o transcript do host quando houver, em OTLP/JSON.
+
+    Verbo de TOPO pela mesma razao de `economy report`: compoe sobre o ledger
+    (`shared_ledger()`, buffer mais disco) e sobre o transcript que o operador
+    aponta, pela mesma flag `--host-transcript`. A projecao
+    (`observability/otlp.py`) e pura; aqui ficam a validacao do que vira nome de
+    arquivo (`run_id`) e do provider declarado. Quem grava e a CLI -- a tool MCP
+    devolve este mesmo dicionario e nao escreve.
+
+    O provider e DECLARADO, nunca deduzido: o transcript do Claude Code guarda o
+    modelo, e o mesmo host roda sobre a API da Anthropic, o Bedrock ou o Vertex.
+    Sem ele, `gen_ai.provider.name` sai em `unresolved` e a metrica de token nao
+    sai, porque o atributo e obrigatorio nela.
+    """
+    if not _RUN_ID_VALIDO.fullmatch(run_id or ""):
+        raise AdapterError(
+            f"--run-id {run_id!r}: use letras, digitos, `_`, `-` e `.`, ate 64 caracteres, "
+            "sem comecar com `.`, e rode: sparkforge telemetry export --run-id <run_id>",
+            exit_code=2,
+        )
+    if provider is not None and not _PROVIDER_VALIDO.fullmatch(provider):
+        raise AdapterError(
+            f"--provider {provider!r}: use o nome da semconv GenAI, em minusculas, e rode: "
+            "sparkforge telemetry export --run-id <run_id> --provider anthropic",
+            exit_code=2,
+        )
+    return telemetry_payload(
+        run_id,
+        shared_ledger().spans_of(run_id),
+        host_transcript=host_transcript,
+        provider=provider,
+    )
+
+
+def telemetry_payload(
+    run_id: str,
+    spans: list[dict[str, Any]],
+    host_transcript: str = "",
+    provider: str | None = None,
+) -> dict[str, Any]:
+    """A projecao sobre spans ja lidos. `telemetry_export` le do ledger; o
+    golden de `fixtures/otel/` le de `input/spans.json` e passa por aqui, para
+    que os dois produzam o mesmo texto pelo mesmo caminho."""
+    from sparkforge.facts.host_transcript import extract_host_transcript_path
+    from sparkforge.observability.otlp import OTLP_VERSION, SEMCONV_GENAI_COMMIT, projetar
+
+    if not spans:
+        raise AdapterError(
+            f"run {run_id!r} sem spans no ledger. Confira o SPARKFORGE_RUN_ID do processo "
+            "que chamou as tools e rode, no diretorio onde ele gravou "
+            ".sparkforge/traces.db: sparkforge telemetry export --run-id <run_id>",
+            exit_code=2,
+        )
+    host = None
+    if host_transcript:
+        if not Path(host_transcript).is_file():
+            raise AdapterError(
+                f"--host-transcript {host_transcript!r}: arquivo nao encontrado. Aponte o "
+                "JSONL da sessao: sparkforge telemetry export --run-id <run_id> "
+                "--host-transcript <sessao.jsonl>",
+                exit_code=2,
+            )
+        host = [fact.to_dict() for fact in extract_host_transcript_path(host_transcript)]
+    projecao = projetar(
+        spans, host, run_id=run_id, provider=provider, versao=_versao_sparkforge()
+    )
+    return {
+        "run_id": run_id,
+        "traces": projecao.traces,
+        "metrics": projecao.metrics,
+        "counts": projecao.counts,
+        "refused": list(projecao.recusados),
+        "unresolved": list(projecao.unresolved),
+        "semconv_genai_commit": SEMCONV_GENAI_COMMIT,
+        "otlp_version": OTLP_VERSION,
+    }
+
+
+def telemetry_export_textos(payload: dict[str, Any]) -> dict[str, str]:
+    """O texto EXATO dos dois arquivos, para a CLI e para o golden de
+    `fixtures/otel/`: se o golden serializasse por conta propria, poderia
+    passar com um arquivo que a CLI nunca escreve."""
+    from sparkforge.observability.otlp import linha_jsonl
+
+    run_id = payload["run_id"]
+    return {
+        f"{run_id}.traces.jsonl": linha_jsonl(payload["traces"]),
+        f"{run_id}.metrics.jsonl": linha_jsonl(payload["metrics"]),
+    }
+
+
+def telemetry_export_write(repo: str, payload: dict[str, Any]) -> dict[str, str]:
+    """Grava os dois arquivos com NOME FIXO sob `<repo>/.sparkforge/telemetry/`.
+
+    O nome vem do `run_id` que `telemetry_export` ja validou, e o destino e
+    conferido dentro de `--repo` antes de gravar. O arquivo de metricas existe
+    mesmo vazio: o `include` do Collector do operador nunca aponta para arquivo
+    ausente. Escrita em temporario com `replace`, como `report github`.
+    """
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(f"--repo {repo!r}: diretorio nao encontrado.", exit_code=2)
+    raiz = raiz.resolve()
+    destino = raiz.joinpath(*_TELEMETRY_DIR)
+    gravados: dict[str, str] = {}
+    for nome, texto in telemetry_export_textos(payload).items():
+        final = (destino / nome).resolve()
+        if not final.is_relative_to(raiz):
+            raise AdapterError(f"destino fora de --repo: {nome!r}", exit_code=2)
+        destino.mkdir(parents=True, exist_ok=True)
+        temporario = destino / f".{nome}.tmp"
+        temporario.write_text(texto, encoding="utf-8", newline="\n")
+        temporario.replace(final)
+        gravados[nome] = "/".join((*_TELEMETRY_DIR, nome))
+    return gravados
+
+
 def report_sign(report_path: str, findings_path: str) -> dict[str, Any]:
     """Escreve o bloco de assinatura no fim do relatorio, e devolve o que assinou.
 

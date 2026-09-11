@@ -1,0 +1,26 @@
+{
+  "counts": {
+    "sparkforge_spans": 1,
+    "host_agent": 1,
+    "host_tool_calls": 1,
+    "exported": 2,
+    "refused": 1
+  },
+  "refused": [
+    {
+      "origin": "host",
+      "id": "toolu_rel",
+      "reason": "host_sem_horario"
+    }
+  ],
+  "unresolved": [
+    {
+      "field": "gen_ai.provider.name",
+      "reason": "provider_nao_declarado"
+    },
+    {
+      "field": "gen_ai.usage",
+      "reason": "usage_ausente"
+    }
+  ]
+}

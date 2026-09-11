@@ -17,10 +17,12 @@
       "models": [],
       "host_versions": [
         "2.1.268"
-      ]
+      ],
+      "first_timestamp": "2026-09-10T00:00:01.000Z",
+      "last_timestamp": "2026-09-10T00:00:03.000Z"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
     }
@@ -41,7 +43,7 @@
       "reason": "host_format_unknown"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
     }
@@ -62,7 +64,7 @@
       "reason": "malformed_line"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
     }
@@ -83,7 +85,7 @@
       "reason": "message_field_not_object"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
     }

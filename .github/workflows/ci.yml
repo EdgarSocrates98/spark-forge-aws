@@ -193,6 +193,31 @@ jobs:
         # passaria por tudo o mais sem ter respondido nada sobre o lock.
         run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt
 
+  otel-collector:
+    # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge
+    # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda em todo push
+    # e PR: nao escreve em lugar nenhum fora do runner. O `otelcol-contrib` le os
+    # goldens de fixtures/otel com o receiver `otlpjsonfile` e grava o que recebeu
+    # com o exporter `file`; `scripts/check_otel_collector.py` cobra os mesmos
+    # spans, atributos e pontos de metrica. Versao do Collector fixada.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Subir o Collector
+        run: |
+          mkdir -p "$RUNNER_TEMP/otel-out"
+          chmod 777 "$RUNNER_TEMP/otel-out"
+          docker run -d --name otelcol             -v "$GITHUB_WORKSPACE/fixtures/otel:/data:ro"             -v "$RUNNER_TEMP/otel-out:/out"             -v "$GITHUB_WORKSPACE/.github/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro"             otel/opentelemetry-collector-contrib:0.160.0
+      - name: Conferir o que o Collector recebeu
+        run: |
+          python scripts/check_otel_collector.py --expected fixtures/otel             --traces "$RUNNER_TEMP/otel-out/traces.json"             --metrics "$RUNNER_TEMP/otel-out/metrics.json" --wait 90
+      - name: Log do Collector
+        if: always()
+        run: docker logs otelcol 2>&1 | tail -n 60
+
   sarif-upload:
     # Prova de que o GitHub ACEITA o SARIF de `sparkforge report github`
     # (SC6 do DEFINE_SARIF_GITHUB_CHECK). So roda por `workflow_dispatch`, de

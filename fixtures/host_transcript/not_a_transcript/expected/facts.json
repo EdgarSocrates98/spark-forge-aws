@@ -15,7 +15,7 @@
       "reason": "host_format_unknown"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl"
     }
   }

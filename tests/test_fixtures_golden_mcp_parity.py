@@ -72,6 +72,7 @@ ENVELOPE_DA_ERA = ("_meta", "resultType", "ttlMs", "cacheScope")
 # `test_toda_tool_nova_esta_declarada`.
 NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_report_github": "2026-09-11: projecao de findings para SARIF e resumo de PR",
+    "sparkforge_telemetry_export": "2026-09-11: spans de tool e transcript do host em OTLP/JSON",
 }
 
 

@@ -263,3 +263,17 @@ class TestSpec71OTransporteHttpNaoServeFonte:
         resultado = _call(servidor, "sparkforge_code_read", {"repo": "."})
         assert resultado.is_error is True
         assert "--transport stdio" in resultado.content[0].text
+
+
+def test_a_chamada_pelo_servidor_mcp_grava_o_canal_no_span(server, tmp_path, monkeypatch):
+    """O export OTLP so da `mcp.method.name` a quem veio pelo MCP; o canal
+    precisa sair daqui MEDIDO, com o transporte do servidor."""
+    from sparkforge.observability import context_ledger
+
+    ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_mcp")
+    monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+
+    _call(server, "sparkforge_case_get", {"repo": str(tmp_path)})
+
+    spans = ledger.spans_of("run_mcp")
+    assert [s["metadata"] for s in spans] == [{"channel": "mcp", "transport": "stdio"}]

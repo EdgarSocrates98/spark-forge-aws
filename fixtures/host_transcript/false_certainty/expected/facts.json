@@ -14,7 +14,7 @@
       "truncated": false
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
       "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
     }
@@ -37,10 +37,13 @@
       "channel": "mcp",
       "tool": "mcp__sparkforge__sparkforge_finops",
       "verb": "finops",
+      "call_id": "toolu_fin",
+      "started_at": "2026-09-10T00:00:02.000Z",
+      "ended_at": "2026-09-10T00:00:03.000Z",
       "is_error": false
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
       "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
     }
@@ -65,10 +68,12 @@
       ],
       "host_versions": [
         "2.1.268"
-      ]
+      ],
+      "first_timestamp": "2026-09-10T00:00:01.000Z",
+      "last_timestamp": "2026-09-10T00:00:04.000Z"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
       "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
     }
@@ -91,7 +96,7 @@
     },
     "attrs": {},
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-abst.jsonl",
       "artifact_sha256": "3d0589403e804613ca4383e114e6d7901c464a245f72eeb83946eb5eaaddf3a1"
     }

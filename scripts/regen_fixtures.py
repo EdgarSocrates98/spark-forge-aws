@@ -101,6 +101,7 @@ FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
 FIXTURES_PARQUET_FOOTER = ROOT / "fixtures" / "parquet_footer"
 FIXTURES_HOST_TRANSCRIPT = ROOT / "fixtures" / "host_transcript"
 FIXTURES_SARIF = ROOT / "fixtures" / "sarif"
+FIXTURES_OTEL = ROOT / "fixtures" / "otel"
 # Versao fixa no golden de `report github`: o SARIF carrega `semanticVersion`,
 # e com a versao real todo release reescreveria os quatro goldens sem que nada
 # da projecao tivesse mudado.
@@ -931,6 +932,57 @@ def regen_sarif(directory: Path) -> None:
     print(f"{directory.name}: SARIF + resumo + anotacoes")
 
 
+def saidas_otel(directory: Path) -> dict[str, str]:
+    """As saidas de `telemetry export` para um caso de `fixtures/otel/`, como TEXTO.
+
+    Os spans vem de `input/spans.json` (a forma que `context_ledger.spans_of`
+    devolve) e passam pelo mesmo `_core.telemetry_payload` e pelo mesmo
+    `telemetry_export_textos` da CLI, com a versao fixada em
+    `SARIF_GOLDEN_VERSION` para um release nao reescrever os goldens.
+    """
+    from sparkforge.adapters import _core
+
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    spans = json.loads((directory / "input" / "spans.json").read_text(encoding="utf-8"))
+    transcript = meta.get("host_transcript")
+    real = _core._versao_sparkforge
+    _core._versao_sparkforge = lambda: SARIF_GOLDEN_VERSION
+    try:
+        payload = _core.telemetry_payload(
+            meta["run_id"],
+            spans,
+            host_transcript=str(directory / transcript) if transcript else "",
+            provider=meta.get("provider"),
+        )
+    finally:
+        _core._versao_sparkforge = real
+    textos = _core.telemetry_export_textos(payload)
+    resultado = {
+        "counts": payload["counts"],
+        "refused": payload["refused"],
+        "unresolved": payload["unresolved"],
+    }
+    return {
+        "traces.jsonl": textos[f"{meta['run_id']}.traces.jsonl"],
+        "metrics.jsonl": textos[f"{meta['run_id']}.metrics.jsonl"],
+        "result.json": json.dumps(resultado, indent=2, ensure_ascii=False) + "\n",
+    }
+
+
+def regen_otel(directory: Path) -> None:
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    for nome, texto in saidas_otel(directory).items():
+        (out / nome).write_text(texto, encoding="utf-8", newline="\n")
+    print(f"{directory.name}: traces + metrics OTLP/JSON")
+
+
+def _otel_cases() -> list[Path]:
+    if not FIXTURES_OTEL.is_dir():
+        return []
+    return sorted(p for p in FIXTURES_OTEL.iterdir() if p.is_dir() and not p.name.startswith("_"))
+
+
 def _sarif_cases() -> list[Path]:
     if not FIXTURES_SARIF.is_dir():
         return []
@@ -990,6 +1042,7 @@ def main() -> int:
                 (FIXTURES_PARQUET_FOOTER / name, regen_parquet_footer),
                 (FIXTURES_HOST_TRANSCRIPT / name, regen_host_transcript),
                 (FIXTURES_SARIF / name, regen_sarif),
+                (FIXTURES_OTEL / name, regen_otel),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -1103,6 +1156,8 @@ def main() -> int:
     # `_schema/` e o schema OASIS versionado, e nao caso.
     for directory in _sarif_cases():
         regen_sarif(directory)
+    for directory in _otel_cases():
+        regen_otel(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.

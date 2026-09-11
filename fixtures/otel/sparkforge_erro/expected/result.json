@@ -1,0 +1,17 @@
+{
+  "counts": {
+    "sparkforge_spans": 4,
+    "host_agent": 0,
+    "host_tool_calls": 0,
+    "exported": 3,
+    "refused": 1
+  },
+  "refused": [
+    {
+      "origin": "sparkforge",
+      "id": "span_task00",
+      "reason": "componente_nao_tool"
+    }
+  ],
+  "unresolved": []
+}

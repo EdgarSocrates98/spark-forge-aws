@@ -92,6 +92,7 @@ class TestToolSurface:
             "sparkforge_report_sign",
             "sparkforge_report_verify",
             "sparkforge_report_github",
+            "sparkforge_telemetry_export",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2447,6 +2448,36 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["properties"], "a amostra precisa render ao menos uma proposta"
         return result
 
+    if name == "sparkforge_telemetry_export":
+        # Um ledger proprio com um span de verdade: sem span o verbo sai 2, e o
+        # schema seria validado so pelo envelope de erro. O transcript e o de
+        # `fixtures/host_transcript/correct_mcp`, para `traces` ter o trace do
+        # host e `metrics` ter a metrica de token (so sai com provider).
+        from pathlib import Path
+
+        from sparkforge.observability import context_ledger
+
+        assert monkeypatch is not None, f"{name} precisa de monkeypatch para o ledger"
+        ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_amostra")
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+        _open_case(tmp_path)
+        call_tool("sparkforge_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio")
+        transcript = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "host_transcript" / "correct_mcp" / "input" / "q-mcp.jsonl"
+        )
+        result = call_tool(
+            "sparkforge_telemetry_export",
+            {
+                "run_id": "run_amostra",
+                "host_transcript_path": str(transcript),
+                "provider": "anthropic",
+            },
+        )
+        assert result["counts"]["exported"] >= 2, result
+        assert result["metrics"] is not None
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -2831,6 +2862,7 @@ class TestErrorShapesValidateToo:
                 "repo": "<tmp>",
             },
         ),
+        ("sparkforge_telemetry_export", {"run_id": "../fora"}),
         (
             "sparkforge_arbitrate",
             {

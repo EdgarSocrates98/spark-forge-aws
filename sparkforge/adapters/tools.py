@@ -2780,6 +2780,71 @@ _REPORT_CHECK_ITEM: dict[str, Any] = {
 # testes contra o schema OASIS (`fixtures/sarif/_schema/`), e por isso so a casca
 # dele e declarada aqui -- repetir o schema de 112 KB da OASIS neste arquivo seria
 # um segundo lugar onde a verdade pode divergir da fonte.
+_TELEMETRY_EXPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "run_id", "traces", "metrics", "counts", "refused", "unresolved",
+        "semconv_genai_commit", "otlp_version",
+    ],
+    "properties": {
+        "run_id": {"type": "string"},
+        "traces": {
+            "type": ["object", "null"],
+            "required": ["resourceSpans"],
+            "properties": {"resourceSpans": {"type": "array"}},
+        },
+        "metrics": {
+            "type": ["object", "null"],
+            "required": ["resourceMetrics"],
+            "properties": {"resourceMetrics": {"type": "array"}},
+        },
+        "counts": {
+            "type": "object",
+            "required": [
+                "sparkforge_spans", "host_agent", "host_tool_calls", "exported", "refused"
+            ],
+            "properties": {
+                "sparkforge_spans": {"type": "integer"},
+                "host_agent": {"type": "integer"},
+                "host_tool_calls": {"type": "integer"},
+                "exported": {"type": "integer"},
+                "refused": {"type": "integer"},
+            },
+        },
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["origin", "id", "reason"],
+                "properties": {
+                    "origin": {"type": "string", "enum": ["sparkforge", "host"]},
+                    "id": {"type": "string"},
+                    "reason": {
+                        "type": "string",
+                        "enum": [
+                            "sem_horario",
+                            "componente_nao_tool",
+                            "host_sem_horario",
+                            "transcript_sem_horario",
+                        ],
+                    },
+                },
+            },
+        },
+        "unresolved": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["field", "reason"],
+                "properties": {"field": {"type": "string"}, "reason": {"type": "string"}},
+            },
+        },
+        "semconv_genai_commit": {"type": "string"},
+        "otlp_version": {"type": "string"},
+    },
+}
+
+
 _REPORT_GITHUB_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -6941,6 +7006,47 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_telemetry_export": {
+        "description": (
+            "Os spans de tool que o SparkForge mediu num run (`run_id`, o mesmo de "
+            "`economy report`) e, com `host_transcript_path`, o transcript do host, em "
+            "OTLP/JSON "
+            "(`traces` = TracesData, `metrics` = MetricsData), com os atributos `gen_ai.*` e "
+            "`mcp.*` da semconv GenAI no commit `semconv_genai_commit` (status Development). "
+            "Chamada que veio pelo servidor MCP sai como span `tools/call {tool}`; sem canal "
+            "medido, `execute_tool {tool}`. Bytes saem em `sparkforge.payload_bytes`, nunca "
+            "como token; token so vem do transcript (span `invoke_agent`), e custo nunca sai. "
+            "`provider` e DECLARADO (anthropic, aws.bedrock, gcp.vertex_ai): sem ele, "
+            "`gen_ai.provider.name` vai para `unresolved` e a metrica de token nao sai. Span "
+            "sem horario medido vai para `refused` com o motivo. Nada e gravado por esta "
+            "tool -- a CLI `sparkforge telemetry export` grava em .sparkforge/telemetry/, "
+            "para o receiver `otlpjsonfile` de um OTLP Collector."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["run_id"],
+            "additionalProperties": False,
+            "properties": {
+                "run_id": {
+                    "type": "string",
+                    "description": "O SPARKFORGE_RUN_ID do processo que chamou as tools.",
+                },
+                "host_transcript_path": {
+                    "type": "string",
+                    "description": "Transcript JSONL do host, quando houver.",
+                },
+                "provider": {
+                    "type": "string",
+                    "description": "Provider do host (gen_ai.provider.name), declarado.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _TELEMETRY_EXPORT_SCHEMA,
+            "TracesData, MetricsData, contagens, recusas e lacunas, ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_collect_event_log": {
         "description": (
             "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` "
@@ -8404,6 +8510,14 @@ def _h_report_github(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_telemetry_export(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.telemetry_export(
+        args["run_id"],
+        host_transcript=args.get("host_transcript_path") or "",
+        provider=args.get("provider"),
+    )
+
+
 def _h_collect_event_log(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_event_log(
         args["repo"],
@@ -8675,6 +8789,7 @@ _HANDLERS = {
     "sparkforge_report_sign": _h_report_sign,
     "sparkforge_report_verify": _h_report_verify,
     "sparkforge_report_github": _h_report_github,
+    "sparkforge_telemetry_export": _h_telemetry_export,
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
@@ -8702,7 +8817,12 @@ _HANDLERS = {
 
 
 def call_tool(
-    name: str, arguments: dict[str, Any], *, policy: CallPolicy | None = None
+    name: str,
+    arguments: dict[str, Any],
+    *,
+    policy: CallPolicy | None = None,
+    channel: str = "",
+    transport: str = "",
 ) -> dict[str, Any]:
     """Despacha para o handler de `name`. Nome desconhecido: KeyError com as validas.
 
@@ -8771,6 +8891,8 @@ def call_tool(
                 detail_level=detail_level,
                 outcome="unauthorized",
                 start_time=inicio,
+                channel=channel,
+                transport=transport,
             )
             return recusa
 
@@ -8796,5 +8918,7 @@ def call_tool(
         detail_level=detail_level,
         outcome=desfecho,
         start_time=inicio,
+        channel=channel,
+        transport=transport,
     )
     return resultado

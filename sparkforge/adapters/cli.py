@@ -1979,6 +1979,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="Categoria do upload no Code Scanning (automationDetails.id).",
     )
 
+    # telemetry ---------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `economy report`: compoe sobre o ledger.
+    telemetry_p = sub.add_parser(
+        "telemetry",
+        help="Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector.",
+    )
+    telemetry_sub = telemetry_p.add_subparsers(dest="subcommand", required=True)
+    telemetry_export_p = telemetry_sub.add_parser(
+        "export",
+        help=(
+            "Grava .sparkforge/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes "
+            "fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le "
+            "com o receiver otlpjsonfile. Nao chama rede; token so com transcript do host."
+        ),
+    )
+    telemetry_export_p.add_argument("--run-id", required=True)
+    telemetry_export_p.add_argument(
+        "--host-transcript",
+        default="",
+        help="Transcript JSONL do host, quando houver: vira o span invoke_agent com tokens.",
+    )
+    telemetry_export_p.add_argument(
+        "--provider",
+        default=None,
+        help=(
+            "Provider do host (gen_ai.provider.name), DECLARADO: anthropic, aws.bedrock, "
+            "gcp.vertex_ai. Sem ele o atributo fica em unresolved e a metrica de token nao sai."
+        ),
+    )
+    telemetry_export_p.add_argument(
+        "--repo",
+        default=".",
+        help="Raiz do repositorio. A saida vai para <repo>/.sparkforge/telemetry/.",
+    )
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3263,6 +3298,27 @@ def _cmd_report_github(args: argparse.Namespace) -> int:
     return 1 if gate["tripped"] else 0
 
 
+def _cmd_telemetry_export(args: argparse.Namespace) -> int:
+    """Grava os dois arquivos e imprime o resumo (sem os spans, que ja estao no
+    arquivo): contagens, recusas, lacunas e os caminhos gravados."""
+    payload = _core.telemetry_export(
+        args.run_id, host_transcript=args.host_transcript, provider=args.provider
+    )
+    gravados = _core.telemetry_export_write(args.repo, payload)
+    _print(
+        {
+            "run_id": payload["run_id"],
+            "files": sorted(gravados.values()),
+            "counts": payload["counts"],
+            "refused": payload["refused"],
+            "unresolved": payload["unresolved"],
+            "semconv_genai_commit": payload["semconv_genai_commit"],
+            "otlp_version": payload["otlp_version"],
+        }
+    )
+    return 0
+
+
 def _cmd_report_verify(args: argparse.Namespace) -> int:
     payload = _core.report_verify(args.report, args.findings)
     _print(payload)
@@ -3831,6 +3887,7 @@ _DISPATCH = {
     ("finops", None): _cmd_finops,
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
+    ("telemetry", "export"): _cmd_telemetry_export,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

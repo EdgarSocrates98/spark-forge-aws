@@ -674,3 +674,79 @@ class TestIdaEVoltaEntreInstancias:
         ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
 
         assert ledger.spans_of("run_nunca_gravado") == []
+
+
+class TestOCanalMedido:
+    """O canal vai MEDIDO para o span, e so quem declarou recebe: o export OTLP
+    so da `mcp.method.name` a chamada que entrou por `adapters/mcp.py`."""
+
+    def test_call_tool_sem_canal_nao_grava_metadata(self, tmp_path, monkeypatch):
+        from sparkforge.adapters import tools
+        from sparkforge.observability import context_ledger
+
+        ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+
+        tools.call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
+
+        assert ledger.spans_of("run_teste")[0]["metadata"] == {}
+
+    def test_call_tool_com_canal_grava_canal_e_transporte(self, tmp_path, monkeypatch):
+        from sparkforge.adapters import tools
+        from sparkforge.observability import context_ledger
+
+        ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+
+        tools.call_tool(
+            "sparkforge_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio"
+        )
+
+        assert ledger.spans_of("run_teste")[0]["metadata"] == {
+            "channel": "mcp",
+            "transport": "stdio",
+        }
+
+    def test_o_canal_sobrevive_a_ida_e_volta_pelo_disco(self, tmp_path):
+        import json
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        ledger.record(
+            name="sparkforge_case_get",
+            resultado={"ok": True},
+            detail_level="",
+            outcome="ok",
+            start_time=time.time(),
+            channel="mcp",
+            transport="http",
+        )
+        ledger.flush(final=True)
+
+        do_disco = ContextLedger(db_path=tmp_path / "traces.db").spans_of("run_teste")
+        assert json.loads(do_disco[0]["metadata_json"]) == {"channel": "mcp", "transport": "http"}
+
+    def test_gravar_o_canal_falhando_nao_derruba_a_chamada(self, tmp_path, monkeypatch):
+        """Regra 27: a montagem do span, canal incluido, fica no mesmo try/except."""
+        from sparkforge.adapters import tools
+        from sparkforge.observability import context_ledger, tracer
+
+        ledger = context_ledger.ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+
+        esperado = tools.call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
+
+        def quebra(*_a, **_k):
+            raise RuntimeError("span impossivel")
+
+        monkeypatch.setattr(context_ledger, "TraceSpan", quebra)
+        assert tracer.TraceSpan is not quebra
+
+        resultado = tools.call_tool(
+            "sparkforge_case_get", {"repo": str(tmp_path)}, channel="mcp", transport="stdio"
+        )
+
+        assert resultado == esperado
+        assert len(ledger.spans_of("run_teste")) == 1
