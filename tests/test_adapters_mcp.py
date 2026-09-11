@@ -14,6 +14,12 @@ sobra depois que a API foi verificada.
 
 Os testes pulam se o SDK nao estiver instalado, mas `[dev]` inclui o extra
 `mcp` justamente para que eles NAO pulem no CI.
+
+Desde a migracao para o SDK 2.x (2026-09-11) as chamadas passam por
+`mcp.Client(server)`, o cliente em processo do proprio SDK, e os atributos dos
+tipos sao os nomes Python do 2.x (`is_error`, `structured_content`,
+`input_schema`); no fio eles continuam camelCase. A paridade byte a byte com o
+1.x mora em `tests/test_fixtures_golden_mcp_parity.py`.
 """
 from pathlib import Path
 
@@ -23,7 +29,7 @@ pytest.importorskip("mcp", reason="SDK do MCP e extra opcional")
 pytest.importorskip("starlette", reason="starlette vem com o extra `mcp`")
 
 import anyio  # noqa: E402
-import mcp.types as types  # noqa: E402
+from mcp import Client  # noqa: E402
 
 from sparkforge.adapters.mcp import build_http_app, build_server  # noqa: E402
 from sparkforge.adapters.tools import TOOLS  # noqa: E402
@@ -37,17 +43,25 @@ def server():
 
 
 def _call(server, name: str, arguments: dict):
-    """Chama o tool ATRAVES do handler do SDK, nao de `tools.call_tool`.
+    """Chama o tool ATRAVES do SDK, por um cliente, nao de `tools.call_tool`.
 
     A diferenca e o ponto do teste: `tools.call_tool` sempre funcionou; o que
     estava quebrado era a camada do SDK entre ele e o cliente.
     """
-    handler = server.request_handlers[types.CallToolRequest]
-    request = types.CallToolRequest(
-        method="tools/call",
-        params=types.CallToolRequestParams(name=name, arguments=arguments),
-    )
-    return anyio.run(lambda: handler(request)).root
+
+    async def _ir():
+        async with Client(server) as cliente:
+            return await cliente.call_tool(name, arguments)
+
+    return anyio.run(_ir)
+
+
+def _list(server):
+    async def _ir():
+        async with Client(server) as cliente:
+            return await cliente.list_tools()
+
+    return anyio.run(_ir)
 
 
 def _status(app, path: str) -> int:
@@ -89,23 +103,20 @@ def _status(app, path: str) -> int:
 
 
 class TestBuildServer:
-    def test_registers_the_three_expected_handlers(self, server):
-        registered = {k.__name__ for k in server.request_handlers}
-        assert {"ListToolsRequest", "CallToolRequest"} <= registered
+    def test_registers_the_two_expected_handlers(self, server):
+        assert server.get_request_handler("tools/list") is not None
+        assert server.get_request_handler("tools/call") is not None
 
     def test_lists_every_tool_of_the_surface(self, server):
-        handler = server.request_handlers[types.ListToolsRequest]
-        result = anyio.run(lambda: handler(types.ListToolsRequest(method="tools/list")))
-        assert {tool.name for tool in result.root.tools} == set(TOOLS)
+        assert {tool.name for tool in _list(server).tools} == set(TOOLS)
 
     def test_every_listed_tool_carries_both_schemas(self, server):
         """Schema de entrada E de saida. Tool sem outputSchema obriga o cliente
         a adivinhar a forma do resultado, que e o oposto do contrato do pacote."""
-        handler = server.request_handlers[types.ListToolsRequest]
-        result = anyio.run(lambda: handler(types.ListToolsRequest(method="tools/list")))
-        for tool in result.root.tools:
-            assert tool.inputSchema, tool.name
-            assert tool.outputSchema, tool.name
+        for tool in _list(server).tools:
+            assert tool.input_schema, tool.name
+            assert tool.output_schema, tool.name
+            assert tool.output_schema.get("type") == "object", tool.name
 
 
 class TestCallTool:
@@ -129,16 +140,25 @@ class TestCallTool:
         # aparece em vez de sumir. `glue` e declarado, e lido, e deriva a versao
         # de Spark que a asercao abaixo confere.
         result = _call(server, "sparkforge_runtime_detect", {"glue": "5.0"})
-        assert result.isError is not True
-        assert result.structuredContent is not None
-        assert "spark" in result.structuredContent
+        assert result.is_error is not True
+        assert result.structured_content is not None
+        assert "spark" in result.structured_content
 
     def test_structured_content_validates_against_the_declared_output_schema(self, server):
-        """O SDK valida `structuredContent` contra o `outputSchema` do tool.
-        Passar aqui e a prova de que os dois nao divergiram."""
+        """`mcp_envelope.validar_saida` confere `structuredContent` contra o
+        `outputSchema` do tool -- no 1.x quem conferia era o SDK. Passar aqui e
+        a prova de que os dois nao divergiram."""
         result = _call(server, "sparkforge_rules_lookup", {"id": ["SF-PQ-002"]})
-        assert result.isError is not True
-        assert [r["id"] for r in result.structuredContent["rules"]] == ["SF-PQ-002"]
+        assert result.is_error is not True
+        assert [r["id"] for r in result.structured_content["rules"]] == ["SF-PQ-002"]
+
+    def test_invalid_arguments_are_refused_before_the_tool_runs(self, server):
+        """O SDK 2.x nao valida `arguments`; o envelope valida, com o texto do 1.x."""
+        result = _call(server, "sparkforge_release_describe", {"release": "5.0"})
+        assert result.is_error is True
+        assert result.content[0].text == (
+            "Input validation error: 'platform' is a required property"
+        )
 
     def test_text_content_still_carries_the_json(self, server):
         """O cliente que so le texto nao pode regredir: o JSON continua em
@@ -152,12 +172,12 @@ class TestCallTool:
         fosse devolvido como dict, ele nao casaria com o `outputSchema` e a
         validacao do SDK trocaria a mensagem util por uma queixa de schema."""
         result = _call(server, "sparkforge_analyze_plan", {"path": "/nao/existe.txt"})
-        assert result.isError is True
+        assert result.is_error is True
         assert "nao encontrado" in result.content[0].text
 
     def test_unknown_tool_is_an_error_not_a_crash(self, server):
         result = _call(server, "sparkforge_nao_existe", {})
-        assert result.isError is True
+        assert result.is_error is True
 
 
 class TestBuildHttpApp:
@@ -241,5 +261,5 @@ class TestSpec71OTransporteHttpNaoServeFonte:
         """
         servidor = build_server("http")
         resultado = _call(servidor, "sparkforge_code_read", {"repo": "."})
-        assert resultado.isError is True
+        assert resultado.is_error is True
         assert "--transport stdio" in resultado.content[0].text

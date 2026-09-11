@@ -24,21 +24,17 @@ attrs==26.1.0 \
     --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309 \
     --hash=sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32
 # sparkforge-lock: scope=optional license=Apache-2.0
-boto3==1.43.90 \
-    --hash=sha256:4b669742d5b45b8fd20ca50ac414a4e4cf995ebb8f280d21be28676e71c97594 \
-    --hash=sha256:aaaa1216d65ddb3dcf86bf9d93cfa436af05cbcd1e1f8b2847f2b83116012186
+boto3==1.43.92 \
+    --hash=sha256:30a1ff4bb729831c4890e0a0d121f9d43f066de724c5916e358c9f68f94749dd \
+    --hash=sha256:aee16b1ad54caf6e7b8f48f2682d18b03a2feefaf7afaf56fed6204016fa687d
 # sparkforge-lock: scope=optional license=Apache-2.0
-botocore==1.43.90 \
-    --hash=sha256:65f3394ef07314e45c92a90120988531d651136390d464a94938a92f665893f7 \
-    --hash=sha256:a139ed601e8b8fb1d730022355fe2b284b8c15cfe9ac0f100254a35d2273e1d3
+botocore==1.43.92 \
+    --hash=sha256:a5efebb7d8fd9e7a47a1ac3138688dae4234fcb2f5355c51f7c7aced63ef6df8 \
+    --hash=sha256:a6f003615a3b6059628146e4a1d13bc132f7bc8f415c469a63d1c616bccee18f
 # sparkforge-lock: scope=excluded license=MIT
-build==1.6.0 \
-    --hash=sha256:bd2c8afc603e7a2e0ce70e2ea85f0a6d02043bafbd307f5bada0f98669eca5af \
-    --hash=sha256:f7aaf1ebbb79178a02ba248bb524f2176b256017e17e8e4bd4289c7b38cc2bad
-# sparkforge-lock: scope=optional license=Mozilla Public License 2.0 (MPL 2.0)
-certifi==2026.7.22 \
-    --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775 \
-    --hash=sha256:741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55
+build==1.6.1 \
+    --hash=sha256:51cc11666391ab6f092070437ac747002ff46f3e4113a3622177ee6b488bfc53 \
+    --hash=sha256:ecd351a4be9d35a9eaaba244a7687143c9c7d4aea6ac964e7e7ddab20cbcf4e7
 # sparkforge-lock: scope=optional license=MIT-0
 cffi==2.1.1 \
     --hash=sha256:046bfc24911b37851ee1b51aab8bffe713d89c68c6a057b09484ce9fd5f69b4e \
@@ -210,17 +206,13 @@ hatchling==1.32.0 \
     --hash=sha256:0bdbde4a52b06c37e3eca395f85a762bf0ef06fe374fd8ae429dc6be10230f5f \
     --hash=sha256:0e17c9c3b9aa7c625acc8d0f5b622f107d5049af9ecf5ada4de1aada5be7cdbc
 # sparkforge-lock: scope=optional license=BSD-3-Clause
-httpcore==1.0.9 \
-    --hash=sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55 \
-    --hash=sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8
-# sparkforge-lock: scope=optional license=BSD License
-httpx==0.28.1 \
-    --hash=sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc \
-    --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
-# sparkforge-lock: scope=optional license=MIT
-httpx-sse==0.4.3 \
-    --hash=sha256:0ac1c9fe3c0afad2e0ebb25a934a59f4c7823b60792691f779fad2c5568830fc \
-    --hash=sha256:9b1ed0127459a66014aec3c56bebd93da3c1bc8bb6618c8082039a44889a755d
+httpcore2==2.12.0 \
+    --hash=sha256:7e04258ce01013d7d615e5b910a3b27fac937d7a95038227e79652b4ba3b4ceb \
+    --hash=sha256:9293522bba0aa7c4c8e9e3f040c16575bd8868e155a77fa30c7a9085a5eae648
+# sparkforge-lock: scope=optional license=BSD-3-Clause
+httpx2==2.12.0 \
+    --hash=sha256:7631fe9887a8a2275f4a2540e053aa670fcc50742864a9ae7c66e609fdcf12cf \
+    --hash=sha256:cc8b6eecb8661c146b8f89a60e97456ee086e91a784ed31ac450c3a9e613dd36
 # sparkforge-lock: scope=optional license=BSD-3-Clause
 idna==3.19 \
     --hash=sha256:5e0811a4383b21dc5838069f801c4fb62113b7447663d2530d2bd6e77b49bf15 \
@@ -242,9 +234,17 @@ jsonschema-specifications==2025.9.1 \
     --hash=sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe \
     --hash=sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d
 # sparkforge-lock: scope=optional license=MIT License
-mcp==1.30.0 \
-    --hash=sha256:445414625fce5c295faa505bb11bacece661ab6f4028d57c935db57820b7a3e4 \
-    --hash=sha256:666edb5009503e1047c9d60346a756f94b261f05cc2625f23d41c728ffc484d0
+mcp==2.2.0 \
+    --hash=sha256:2dc37ecb1974becdcebdbf7561e7c15a07dbbf20ba21ba16c3593b3038b3afbd \
+    --hash=sha256:bde982589473a060ae145e3406e9a5333fe538c97229ba841f5a7f92be004f81
+# sparkforge-lock: scope=optional license=MIT License
+mcp-types==2.2.0 \
+    --hash=sha256:d3ed53703ddd10d9c6399f29d322bb66f3f67ab41348ac8556ba23e07fedefad \
+    --hash=sha256:ea476b73ee86709ab5abc9452385ed36cc05907e582355622e294595c9a04f13
+# sparkforge-lock: scope=optional license=Apache-2.0
+opentelemetry-api==1.44.0 \
+    --hash=sha256:67647e5e9566edcf421166fdf022b3537f818635daa852b289e34604dc6fb33a \
+    --hash=sha256:94b98c893a91b88657eaac1e3ba89618cdb85be6918196705354f34728b2cdef
 # sparkforge-lock: scope=excluded license=Apache-2.0 OR BSD-2-Clause
 packaging==26.3 \
     --hash=sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 \
@@ -432,10 +432,6 @@ pydantic-core==2.46.5 \
     --hash=sha256:fc5d783bd4a2387e97b8a2d5ec781cfb92b3d893bf82370548e99db5915935d3 \
     --hash=sha256:fc8515076c11f3cfdf4fb142dcca0fe384b1230a3b5415458ac84f3e0903ec13 \
     --hash=sha256:ff218293c9c806138dca139765e3b067621be52bcd93cdc14c7711be7ddc90a9
-# sparkforge-lock: scope=optional license=MIT
-pydantic-settings==2.15.0 \
-    --hash=sha256:0ba092c291c94baceb5eff768aa0d56400a457585bc0175925a5a5510303da42 \
-    --hash=sha256:694b793e84f766ba76a90ebdefc01d0a9a045dab0382bee70393da93712ad117
 # sparkforge-lock: scope=excluded license=BSD-2-Clause
 pygments==2.21.0 \
     --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9 \
@@ -662,25 +658,25 @@ rpds-py==2026.6.3 \
     --hash=sha256:f90938e92afda60266da758ee7d363447f7f0138c9559f9e1811629580582d90 \
     --hash=sha256:faa679d19a6696fd54259ad321251ad77a13e70e03dd834daa762a44fb6196ef
 # sparkforge-lock: scope=excluded license=MIT
-ruff==0.16.6 \
-    --hash=sha256:0700580ed5303723cb3c11c2f1d2a8913ce77b7ea86646dddb887f5417a9ba70 \
-    --hash=sha256:0b87d9d16fcb63e8018423ca1d50b7260f15cb2da33e30db4baad4183a948c25 \
-    --hash=sha256:10d21c51c3495d8eaea7b703a16592117ea6eb1d649e36335aa965ff1173eb39 \
-    --hash=sha256:15f1d0b6e165a6e56567befb6629f8209271311d990bae0f37e6d065035ef5f3 \
-    --hash=sha256:31b36f1e5ad85e0737f09d2be4e512e2e283583c14015da3b9dc07359ac0fc88 \
-    --hash=sha256:56a67065e22efa6bc4d498299d3bb06c0c90aace8fac2068b5a12f9dc4d8d51d \
-    --hash=sha256:61029b4ab4aa723fd3064fab96b1d814492596bf0c792679fffcbde1e1679953 \
-    --hash=sha256:61c368c26bf8e973e5ab14a2772de587bc068ea3f9a277f673380749b4898fb8 \
-    --hash=sha256:65a006baa18f33324325814c864daef03541d51564b98c517610ea756ab7003e \
-    --hash=sha256:7a976c79b958f94e50a022a19f0f8c87387448020935ec14fc74331bd0a7f2c5 \
-    --hash=sha256:7fbf89013f2bb3f6835a6038ff658dc8a1b38c98dc8e724b964168ad4e881876 \
-    --hash=sha256:99b62ea33baf130f50368798d841f0d95527b6d817bf31817b65dd058f1d314c \
-    --hash=sha256:9ac8998457832c2061709d900856b7ad271dace0cb41f346588d540162bfa718 \
-    --hash=sha256:cd02a7bf1a21a8735228a3e8c95a9dc5cf86bd2a52194f4aaae2a5755b4de0f4 \
-    --hash=sha256:d72c591a96986ee4268860e2b7235082129ca5e4cb9cbba653a4b57c11893757 \
-    --hash=sha256:dcf8a73d2ff77e99dde91244b4da16feba7f14e6beeb4015dee7c5a909e99050 \
-    --hash=sha256:e25cc89174874b176a157e4428d66761c2c0c006654419bf384f967f361ff1b1 \
-    --hash=sha256:ecf4f068e2e123e43a26e9db4e19524cc56563912404e83bbfca375757e45a32
+ruff==0.16.7 \
+    --hash=sha256:06d0e93d04f392996435ebd600c153f65b47d73fbec2415aa99c5ee5756b3a5f \
+    --hash=sha256:142151a5e7b93c1b11111337142f89dd2fbfee92161225c99a97222f22e32656 \
+    --hash=sha256:2ea3470fcebcbc5df2fb0c6f3b90333fa9084c534e0111c038fa4a6ab9f1c4b7 \
+    --hash=sha256:398d3988edde000b5c75dc1b3f584708da9bc990de069c18909142580fec1af9 \
+    --hash=sha256:4c196c968874fc8019da8e7163de7a1a370f111e2309b4b7dfea0fce950198d0 \
+    --hash=sha256:53e39506a730fadeee0d998ed5946f30671f0db240c6c7c73bdabbe33604bb6f \
+    --hash=sha256:5f71d004ac1263b22fa39462ac5ae618a4b77d58981af2cc79bf79a29c12b1a6 \
+    --hash=sha256:727307773e7c7f9181d3ed3a2484186e56c1fa1874255911c74585eb2c7c19f9 \
+    --hash=sha256:7ab81118df8945e0193d0240712aa4496573595b75185c3636ed825592a0f728 \
+    --hash=sha256:7ac26aca826e9e21d0f1cb25b54ac660760a9fdd094d3e4df9848232be98cfc6 \
+    --hash=sha256:9ce7f8f22df67c93ed96c717f9128eadb797144ac2bad475cf536f31d6100c55 \
+    --hash=sha256:9d61c258deabf58f34c67bd4bb4d939c7f2e6b5f0e59c1cdd1cf771b11cde929 \
+    --hash=sha256:aab7f39e2c9df6c596216070f98eef1207b94f8516cca20c808826974971855b \
+    --hash=sha256:ac8c3bd0a7e10ad31e6ce51e7a99f3cb772e69aecdd6b9ea7e99b362f62a62c0 \
+    --hash=sha256:af1b576fddb9d9ef2ececfb5fadcd6a624b25070ed85e3cfcfe449fc3ff6a7b9 \
+    --hash=sha256:ce05b62b770a8217c4646a9c4139fca00efe8fe5d71f87df2b243ff20d4584d1 \
+    --hash=sha256:e6651f97a342d8b35d54d8991544ca22169b86dc54111cb604666940c431b750 \
+    --hash=sha256:ef140c6eb935fa9a84c9c607dfb2cb1b85843c192e79265b0c54f35f557ea8e5
 # sparkforge-lock: scope=optional license=Apache Software License
 s3transfer==0.19.2 \
     --hash=sha256:ba0309fd86be3c27dbf78cdd813c13c5e1df16e5874b99d2535ebbdfb9892993 \
@@ -705,6 +701,10 @@ tomlkit==0.15.1 \
 trove-classifiers==2026.6.1.19 \
     --hash=sha256:ab4c4ec93cc4a4e7815fa759906e05e6bb3f2fbd92ea0f897288c6a43efd15b3 \
     --hash=sha256:c5132b4b61a829d11cfbd2d72e97f20a45ed6edb95e45c5efdeb5e00836b2745
+# sparkforge-lock: scope=optional license=MIT
+truststore==0.10.4 \
+    --hash=sha256:9d91bd436463ad5e4ee4aba766628dd6cd7010cf3e2461756b3303710eebc301 \
+    --hash=sha256:adaeaecf1cbb5f4de3b1959b42d41f6fab57b2b1666adb59e89cb0b53361d981
 # sparkforge-lock: scope=required license=PSF-2.0
 typing-extensions==4.16.0 \
     --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8 \

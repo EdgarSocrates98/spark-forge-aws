@@ -14,21 +14,24 @@ Dois transportes, mesmo nucleo: stdio para Claude Code, Devin CLI e CI;
 streamable HTTP para Devin Desktop, que configura MCP por `serverUrl` --
 `http://<host>:<port>/mcp` com os defaults de `main()`.
 
-O extra `mcp` fixa `mcp>=1.0,<2` de proposito. O SDK 2.x removeu os
-decoradores `@server.list_tools()`/`@server.call_tool()` usados em
-`build_server()` em favor de `add_request_handler`, entao `mcp>=1.0` sozinho
-resolveria para 2.x numa instalacao limpa e o servidor quebraria no import,
-em TODAS as plataformas -- nao so no transporte HTTP. Migrar para 2.x e
-trabalho proprio, com o teste de construcao abaixo como rede.
+O extra `mcp` fixa `mcp>=2,<3`. A migracao do 1.x (2026-09-11) trocou mais do
+que a API: o SDK 1.x validava `arguments` contra o `inputSchema`, validava o
+resultado contra o `outputSchema` e montava `structuredContent` com o texto em
+`json.dumps(indent=2)` -- tudo calado, sem que este modulo escrevesse uma
+linha. O 2.x nao faz nenhuma das tres. Elas moram agora em
+`sparkforge/adapters/mcp_envelope.py`, sem import do SDK, e
+`fixtures/mcp_parity/` e o golden que o 1.29 produziu:
+`tests/test_fixtures_golden_mcp_parity.py` cobra que o fio nao mudou.
 """
 from __future__ import annotations
 
 import argparse
 import contextlib
-import json
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+from sparkforge.adapters.mcp_envelope import envelope_da_chamada
 from sparkforge.adapters.tools import TOOLS, call_tool
 
 _INSTALL_HINT = (
@@ -45,6 +48,27 @@ _INSTALL_HINT = (
 # `tests/test_adapters_mcp.py` cobra que a lista bate com quem de fato tem
 # `snippet` no `outputSchema`.
 TOOLS_COM_FONTE = ("sparkforge_code_read",)
+
+# Carregado pelo cliente junto do handshake. Curto de proposito: aponta o mapa
+# em vez de repeti-lo, porque cada byte aqui entra no contexto de TODA sessao.
+_INSTRUCOES = (
+    "analyze_* extrai facts de artefato; judge julga; workload, capacity, finops, tune, "
+    "benchmark, funcval e arbitrate compoem sobre facts ja extraidos e nao leem artefato. "
+    "Antes de ler arquivo no olho, use code_search/code_symbol/code_context. "
+    "detail_level (summary|normal|full) muda o tamanho da resposta; leia "
+    "economy_report antes de afirmar que reduziu."
+)
+
+# `tools/list` so muda com upgrade do pacote, e nao depende de quem pergunta.
+# Uma hora e CONVENCAO, nao medida -- nenhum experimento calibrou o valor.
+_TTL_TOOLS_LIST_MS = 3_600_000
+
+
+def _versao_do_pacote() -> str:
+    try:
+        return version("sparkforge-aws")
+    except PackageNotFoundError:
+        return "0+unknown"
 
 
 def tools_do_transporte(transport: str) -> dict[str, dict[str, Any]]:
@@ -83,89 +107,52 @@ def build_server(transport: str = "stdio") -> Any:
     """
     try:
         from mcp.server import Server
-        from mcp.types import CallToolResult, TextContent, Tool
+        from mcp.server.caching import CacheHint
+        from mcp.types import CallToolResult, ListToolsResult, TextContent, Tool
     except ImportError as exc:
         raise SystemExit(_INSTALL_HINT) from exc
 
     catalogo = tools_do_transporte(transport)
-    server = Server("sparkforge")
+    ferramentas = [
+        Tool(
+            name=name,
+            description=spec["description"],
+            input_schema=spec["inputSchema"],
+            output_schema=spec["outputSchema"],
+        )
+        for name, spec in catalogo.items()
+    ]
 
-    @server.list_tools()
-    async def _list_tools() -> list[Tool]:
-        return [
-            Tool(
-                name=name,
-                description=spec["description"],
-                inputSchema=spec["inputSchema"],
-                outputSchema=spec["outputSchema"],
-            )
-            for name, spec in catalogo.items()
-        ]
+    async def _list(_ctx: Any, _params: Any) -> Any:
+        return ListToolsResult(tools=ferramentas)
 
-    @server.call_tool()
-    async def _call_tool(name: str, arguments: dict[str, Any]) -> Any:
-        """Devolve o dict CRU, nao `TextContent`.
+    async def _call(_ctx: Any, params: Any) -> Any:
+        """Converte o `Envelope` em `CallToolResult`, e nada mais.
 
-        Todo tool declara `outputSchema`, e o SDK exige `structuredContent` de
-        quem declara: devolvendo so texto, TODA chamada de tool falhava com
-        `Output validation error: outputSchema defined but no structured
-        output returned` -- em qualquer transporte, inclusive stdio. Devolver o
-        dict faz o SDK preencher `structuredContent` e ainda serializar o JSON
-        em `content`, entao o cliente continua recebendo o texto de antes.
-
-        Erro de fronteira sai como `CallToolResult(isError=True)`, e nao como
-        dict: `{"error": ..., "exit_code": ...}` nao casa com o `outputSchema`
-        do tool, e a validacao do SDK trocaria a mensagem acionavel do adapter
-        por uma queixa de schema -- o operador perderia justamente o texto que
-        diz o que fazer.
-
-        `separators=(",", ":")` porque este texto e transporte, nao leitura
-        humana: os separadores default do `json.dumps` acrescentam um espaco
-        depois de cada `,` e de cada `:` sem mudar o valor. A mensagem acionavel
-        dentro do dict continua identica -- so o envelope encolhe. A CLI segue
-        com `indent=2`: la o destino E um humano lendo o terminal.
-
-        Isto cobre SO o caminho de erro. O payload de sucesso e serializado
-        pelo SDK do MCP a partir do dict devolvido abaixo, e nao passa por
-        `json.dumps` nenhum deste modulo.
+        Toda decisao -- catalogo do transporte, validacao de entrada e de
+        saida, erro de fronteira, excecao -- mora em `envelope_da_chamada`,
+        onde ela e testavel sem o SDK. Este handler so troca de tipo.
         """
-        if name not in catalogo:
-            # Nome fora do catalogo DESTE transporte. Sem esta porta, uma tool
-            # escondida de `tools/list` continuaria atendendo `tools/call` para
-            # quem soubesse o nome -- e "escondida" nao e "desabilitada".
-            return CallToolResult(
-                content=[
-                    TextContent(
-                        type="text",
-                        text=json.dumps(
-                            {
-                                "error": (
-                                    f"ferramenta indisponivel no transporte "
-                                    f"{transport!r}: {name}. Use --transport stdio."
-                                ),
-                                "exit_code": 2,
-                            },
-                            ensure_ascii=False,
-                            separators=(",", ":"),
-                        ),
-                    )
-                ],
-                isError=True,
-            )
-        result = call_tool(name, arguments)
-        if isinstance(result, dict) and "error" in result and "exit_code" in result:
-            return CallToolResult(
-                content=[
-                    TextContent(
-                        type="text",
-                        text=json.dumps(result, ensure_ascii=False, separators=(",", ":")),
-                    )
-                ],
-                isError=True,
-            )
-        return result
+        env = envelope_da_chamada(params.name, params.arguments, catalogo, transport, call_tool)
+        return CallToolResult(
+            content=[TextContent(type="text", text=env.text)],
+            structured_content=env.structured,
+            is_error=env.is_error,
+        )
 
-    return server
+    return Server(
+        "sparkforge",
+        # SEM `description`, de proposito. Na era 2026-07-28 o SDK carimba
+        # `_meta.serverInfo` em TODA resposta (spec #3002), e a descricao
+        # viajaria junto: medido em 2026-09-11, 177 bytes a mais por chamada
+        # (88 so com nome e versao, 265 com a frase). `instructions` vai uma
+        # vez, no handshake; a descricao iria em cada `tools/call`.
+        version=_versao_do_pacote(),
+        instructions=_INSTRUCOES,
+        cache_hints={"tools/list": CacheHint(ttl_ms=_TTL_TOOLS_LIST_MS, scope="public")},
+        on_list_tools=_list,
+        on_call_tool=_call,
+    )
 
 
 def _run_stdio(server: Any) -> None:  # pragma: no cover -- exige o SDK do MCP
