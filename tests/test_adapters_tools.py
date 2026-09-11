@@ -1280,6 +1280,25 @@ class _FakeGlueClient:
             ]
         }
 
+    # `collect_glue_resource_link` le o link na conta consumidora e depois o
+    # recurso de origem. No catalogo `111111111111` o objeto E um link; em
+    # qualquer outro e a tabela/banco de origem, sem `Target*`.
+    def get_table(self, **kwargs):
+        tabela = {"Name": kwargs["Name"], "DatabaseName": kwargs["DatabaseName"]}
+        if kwargs.get("CatalogId") == "111111111111":
+            tabela["TargetTable"] = {
+                "CatalogId": "222222222222",
+                "DatabaseName": "curated",
+                "Name": kwargs["Name"],
+            }
+        return {"Table": tabela}
+
+    def get_database(self, **kwargs):
+        banco = {"Name": kwargs["Name"]}
+        if kwargs.get("CatalogId") == "111111111111":
+            banco["TargetDatabase"] = {"CatalogId": "222222222222", "DatabaseName": "curated"}
+        return {"Database": banco}
+
 
 class _FakeCloudWatchClient:
     def get_metric_data(self, **kwargs):
@@ -1821,15 +1840,19 @@ def _fake_collect_boto3(monkeypatch):
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
     from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+    from sparkforge.collect import glue_resource_link as collect_rlink
     from sparkforge.collect import iam_access as collect_iam
     from sparkforge.collect import lakeformation as collect_lf
 
-    # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
-    # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.
+    # Um patch POR MODULO que importa `require_boto3` para o proprio namespace:
+    # patchar so `aws` deixaria os outros escaparem para a rede. Foi o que
+    # aconteceu com `glue_resource_link` (#47): o CI, sem regiao, falhava com
+    # `NoRegionError`, e numa maquina com credencial o teste chamava a AWS.
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_lf, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_iam, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_rlink, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
 _CODE_JOB = (
