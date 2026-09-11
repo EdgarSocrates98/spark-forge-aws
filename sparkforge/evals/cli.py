@@ -51,9 +51,17 @@ class EvalError(Exception):
     """Erro acionavel: mensagem para stderr e exit code 2."""
 
 
+_SEPARADORES = ("/", "\\", ":")
+
+
 def _nome(valor: str, flag: str) -> str:
+    """Um NOME, recusado se trouxer separador de caminho de QUALQUER sistema.
+
+    `os.path.basename` sozinho depende do SO: no Linux, `C:\\x` nao tem
+    separador e passaria. O CI do PR #48 pegou isso.
+    """
     nome = os.path.basename(valor)
-    if not nome or nome in (".", "..") or nome != valor:
+    if not nome or nome in (".", "..") or nome != valor or any(s in nome for s in _SEPARADORES):
         raise EvalError(f"{flag} aceita um NOME, sem separador de caminho: {valor!r}")
     return nome
 

@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 import yaml
 
 from sparkforge.agentic.models import EvidenceAuthority
+from sparkforge.knowledge_ref import knowledge_dir
 
 # Piso usado quando o mapa nao declara `default`. T4 nunca promove um host
 # desconhecido a documentacao oficial, e nunca o rebaixa a conjectura -- T5 e
@@ -33,11 +34,14 @@ _FALLBACK_DEFAULT = EvidenceAuthority.T4_RECOGNIZED_AUTHORITY
 def _authority_map_path() -> Path:
     """Caminho default de `knowledge/source_authority.yaml`.
 
-    Mesma resolucao que `sparkforge.rules.loader` usa para o catalogo: sobe do
-    modulo ate a raiz do repositorio. `parents[3]` porque este arquivo esta em
-    `sparkforge/agentic/executor/`, um nivel mais fundo que os modulos irmaos.
+    Resolve por `knowledge_dir()` -- env var, raiz do repositorio, pacote --, a
+    mesma ordem do catalogo. A versao anterior subia `parents[3]` ate a raiz do
+    repositorio, e esse caminho nao existe no wheel instalado: o `knowledge/`
+    mora em `sparkforge/knowledge` ali (`force-include` do `pyproject.toml`).
+    Nenhum golden do gate de wheel passava pelo executor ate os goldens do
+    debate, e foi o CI do PR #48 que expos a lacuna.
     """
-    return Path(__file__).resolve().parents[3] / "knowledge" / "source_authority.yaml"
+    return knowledge_dir() / "source_authority.yaml"
 
 
 def load_authority_map(path: Path | None = None) -> dict[str, object]:

@@ -57,6 +57,7 @@ from sparkforge.agentic.budget import (
     case_budget_from_case,
     debate_rounds_from_budget,
 )
+from sparkforge.rules.loader import catalog_dir
 
 # `SF-STEP-FUNCTIONS-004` -> `SF-STEP-FUNCTIONS`. O ordinal e o ultimo grupo de
 # digitos depois de um hifen, e so ele. Separar por hifen e jogar fora o ultimo
@@ -83,10 +84,10 @@ _cache_de_rota: dict[str, str] | None = None
 def _routing_path() -> Path:
     """Caminho default de `rules/catalog/routing.yaml`.
 
-    Mesma resolucao de `ordering._action_kinds_path`: `parents[3]` porque este
-    arquivo esta em `sparkforge/agentic/executor/`.
+    Resolve por `catalog_dir()`, como `ordering._action_kinds_path`: o
+    `parents[3]` anterior nao existe no wheel instalado (CI do PR #48).
     """
-    return Path(__file__).resolve().parents[3] / "rules" / "catalog" / "routing.yaml"
+    return catalog_dir() / "routing.yaml"
 
 
 def load_routing_agents(path: Path | None = None) -> dict[str, str]:

@@ -42,6 +42,8 @@ from typing import Any
 
 import yaml
 
+from sparkforge.rules.loader import catalog_dir
+
 # O texto que acompanha a restricao. Ele nomeia a razao (regra 13) e nao promete
 # nada sobre o resultado de aplicar junto -- a restricao e sobre ATRIBUICAO, nao
 # sobre risco tecnico de aplicar as duas.
@@ -55,10 +57,11 @@ _EXPLICACAO_DE_EIXO = (
 def _action_kinds_path() -> Path:
     """Caminho default de `rules/catalog/action_kinds.yaml`.
 
-    Mesma resolucao de `authority._authority_map_path`: `parents[3]` porque este
-    arquivo esta em `sparkforge/agentic/executor/`.
+    Resolve por `catalog_dir()` -- env var, raiz do repositorio, pacote. O
+    `parents[3]` anterior so existia no repositorio; no wheel o catalogo mora em
+    `sparkforge/rules/catalog` (CI do PR #48).
     """
-    return Path(__file__).resolve().parents[3] / "rules" / "catalog" / "action_kinds.yaml"
+    return catalog_dir() / "action_kinds.yaml"
 
 
 def load_measure_axes(path: Path | None = None) -> set[str]:
