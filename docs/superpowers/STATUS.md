@@ -9235,7 +9235,7 @@ regravado. A superfície de tools cresceu **+3 497 bytes** (464 995 → 468 492)
 
 ---
 
-## Stage → linha de código — o finding de runtime aponta a ação que originou o stage — **CONCLUÍDA** em 2026-09-11 (build; upload real pendente)
+## Stage → linha de código — o finding de runtime aponta a ação que originou o stage — **CONCLUÍDA** em 2026-09-11 (build e upload real)
 
 Continuação do `report github` (PR #50), com o ciclo SDD em
 `.claude/sdd/features/`, nos arquivos `BRAINSTORM`, `DEFINE` e
@@ -9271,4 +9271,6 @@ que diz o que destravaria a localização.
   evidência. `stage_scala` localiza em `src/Etl.scala:120`. `stage_negativos`
   tem um motivo de recusa por finding. Os 4 goldens anteriores ficaram byte a
   byte.
-- **Job `sarif-upload`.** Ganha o caso `stage_python` na matriz.
+- **Job `sarif-upload`.** Ganha o caso `stage_python` na matriz. Upload real em 2026-09-11
+  (https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34623986115):
+  `processing_status: complete` e `results_count` 3, igual aos resultados do SARIF.

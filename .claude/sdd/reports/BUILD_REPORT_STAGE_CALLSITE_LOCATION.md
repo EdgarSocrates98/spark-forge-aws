@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_STAGE_CALLSITE_LOCATION.md](../features/DEFINE_STAGE_CALLSITE_LOCATION.md) |
 | **DESIGN** | [DESIGN_STAGE_CALLSITE_LOCATION.md](../features/DESIGN_STAGE_CALLSITE_LOCATION.md) |
-| **Status** | Complete (B1–B4, B6); B5 no PR |
+| **Status** | Complete (B1–B6) |
 
 Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check` (PR #50).
 
@@ -21,7 +21,7 @@ Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check`
 
 | Metric | Value |
 |--------|-------|
-| **Tasks Completed** | B1–B4 e B6; B5 (commit, PR, upload real) em seguida |
+| **Tasks Completed** | B1–B6 |
 | **Files Created** | `fixtures/sarif/{stage_python,stage_scala,stage_negativos}/` |
 | **Files Modified** | `sparkforge/reporting/{locate,github}.py`, `sparkforge/adapters/tools.py`, `tests/test_reporting_github.py`, `tests/test_fixtures_golden_sarif.py`, `.github/workflows/ci.yml`, `docs/github-code-scanning.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + docs remediados |
 | **Tests Passing** | Suite completa, um processo por arquivo: 262 arquivos, 12 100 passed, 0 failed, 9 skipped |
@@ -37,6 +37,7 @@ Branch `feat/stage-callsite-location`, empilhado sobre `feat/sarif-github-check`
 | B2 | Enum da tool; invariante do corpus | (direct) | ✅ | Nenhum finding de stage do corpus sai `runtime`; os 28 saem `callsite_*` (0/28 localizados) |
 | B3 | 3 fixtures + golden | (direct) | ✅ | `stage_python` 3 localizados (`jobs/lib/carga.py:7`, `jobs/lib/job.py:42`, `jobs/lib/job.py:58`); `stage_scala` em `src/Etl.scala:120`; `stage_negativos` 5 recusas, uma de cada |
 | B4 | CI, docs, gates, suite, Snyk | (direct) | ✅ | Surface +315 bytes (tools 468 492 → 468 807) |
+| B5 | Commit, push, PR #51, upload real | (direct) | ✅ | `workflow_dispatch` no branch (https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34623986115): `stage_python` com `processing_status: complete` e `results_count` 3 = resultados do SARIF (sarif `783da738-ae00-11f1-8c14-f38d77c8051f`) |
 | B6 | Este relatorio e statuses | (direct) | ✅ | — |
 
 ---
@@ -123,22 +124,22 @@ Nenhum.
 | AT-007 | ✅ | golden `stage_scala` + `TestCallsite::test_scala_no_repo` |
 | AT-010 | ✅ | `test_nenhum_finding_com_stage_sai_como_runtime` + `test_nenhum_finding_some_no_corpus_inteiro` |
 | AT-011 | ✅ | `TestCaso` nos 4 casos anteriores, byte a byte |
-| AT-012 | ⏳ | `workflow_dispatch` depois do push |
+| AT-012 | ✅ | https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34623986115 |
 
-**Success Criteria:** SC1–SC6 e SC8 ✅; SC7 depende do upload real.
+**Success Criteria:** SC1–SC8 ✅.
 
 ---
 
 ## Final Status
 
-### Overall: ✅ COMPLETE (upload real pendente)
+### Overall: ✅ COMPLETE
 
 - [x] All tasks from manifest completed
 - [x] All verification checks pass
 - [x] All tests pass
 - [x] No blocking issues
-- [x] Acceptance tests verified (AT-012 no PR)
-- [x] Ready for /ship depois do AT-012
+- [x] Acceptance tests verified
+- [x] Ready for /ship
 
 ---
 
