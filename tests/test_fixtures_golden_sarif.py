@@ -58,8 +58,11 @@ def _validador() -> jsonschema.Draft4Validator:
     return jsonschema.Draft4Validator(json.loads(_texto(ESQUEMA)))
 
 
-def test_o_corpus_tem_os_quatro_casos():
-    assert [p.name for p in _casos()] == ["misto", "pyspark_com_linha", "so_runtime", "terraform"]
+def test_o_corpus_tem_os_sete_casos():
+    assert [p.name for p in _casos()] == [
+        "misto", "pyspark_com_linha", "so_runtime", "stage_negativos", "stage_python",
+        "stage_scala", "terraform",
+    ]
 
 
 def test_o_schema_e_o_da_oasis():
@@ -121,7 +124,7 @@ class TestCaso:
             assert _texto(gravado / nome) == _texto(caso / "expected" / nome), nome
 
 
-def test_os_seis_motivos_de_recusa_aparecem_ou_estao_na_unidade():
+def test_todo_motivo_de_recusa_aparece_ou_esta_na_unidade():
     """`limite_do_github` e coberto em `tests/test_reporting_github.py` com
     limite reduzido: cinco mil resultados num golden seriam ruido."""
     from sparkforge.reporting.locate import MOTIVOS
@@ -131,3 +134,17 @@ def test_os_seis_motivos_de_recusa_aparecem_ou_estao_na_unidade():
         resultado = json.loads(_texto(caso / "expected" / "result.json"))
         vistos |= {r["reason"] for r in resultado["refused"]}
     assert vistos == set(MOTIVOS) - {"limite_do_github"}
+
+
+def test_a_nota_do_callsite_sai_em_todo_resultado_localizado_por_stage():
+    """SC4: a linha e da ACAO que originou o stage, e o texto diz que nao e a causa."""
+    for nome in ("stage_python", "stage_scala"):
+        caso = FIXTURES / nome
+        sarif = json.loads(_texto(caso / "expected" / "sparkforge.sarif"))
+        resultados = sarif["runs"][0]["results"]
+        assert resultados
+        assert all("(nao e a causa)" in r["message"]["text"] for r in resultados), nome
+        anotacoes = _texto(caso / "expected" / "annotations.txt").splitlines()
+        assert len(anotacoes) == len(resultados)
+        assert all("(nao e a causa)" in linha for linha in anotacoes), nome
+        assert _texto(caso / "expected" / "summary.md").count("(nao e a causa)") == len(resultados)

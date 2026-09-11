@@ -219,6 +219,8 @@ jobs:
             roots: >-
               --source-root fixtures/sarif/misto/input/repo/a
               --source-root fixtures/sarif/misto/input/repo/b
+          - caso: stage_python
+            roots: "--source-root fixtures/sarif/stage_python/input/repo"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

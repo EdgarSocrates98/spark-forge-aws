@@ -2819,6 +2819,10 @@ _REPORT_GITHUB_SCHEMA: dict[str, Any] = {
                             "arquivo_fora_do_repo",
                             "caminho_ambiguo",
                             "limite_do_github",
+                            "callsite_ausente",
+                            "callsite_sem_forma",
+                            "callsite_nao_python",
+                            "callsite_ambiguo",
                         ],
                     },
                     "subject_type": {"type": "string"},
@@ -6889,8 +6893,11 @@ TOOLS: dict[str, dict[str, Any]] = {
             "que viram anotacao no diff). So entra no SARIF o finding com LINHA num arquivo "
             "que existe no repositorio -- a do proprio `subject`, ou a de um fact de "
             "evidencia de codigo. O resto sai em `refused` com o motivo: `runtime` "
-            "(job_run/stage/table), `sem_linha`, `arquivo_fora_do_repo`, `caminho_ambiguo`, "
-            "`evidencia_ausente` ou `limite_do_github`. `subject.file` e relativo ao "
+            "(job_run/table sem stage), `sem_linha`, `arquivo_fora_do_repo`, `caminho_ambiguo`, "
+            "`evidencia_ausente`, `limite_do_github` ou, para stage, `callsite_ausente`, "
+            "`callsite_sem_forma`, `callsite_nao_python` e `callsite_ambiguo`. Finding de "
+            "stage com callsite no event log sai na linha da ACAO que originou o stage, com "
+            "a ressalva de que ela nao e a causa. `subject.file` e relativo ao "
             "diretorio passado a cada `analyze --path`, entao informe esses diretorios em "
             "`source_roots`. `fail_on` so calcula `gate.tripped`; nada e gravado por esta "
             "tool -- a CLI `sparkforge report github` grava em .sparkforge/report/."
