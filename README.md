@@ -212,7 +212,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 37 extratores emitem 217 kinds distintos de fact (recontado em 2026-09-10),
+Os 38 extratores emitem 222 kinds distintos de fact (recontado em 2026-09-10),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -257,6 +257,7 @@ anterior.
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
 | **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
+| **O agente acertou, com as tools certas, e recusou onde devia?** | `python -m sparkforge.evals grade` / `compare` — fora da CLI `sparkforge`, porque o runtime não importa a avaliação (`tests/test_harness_boundary.py`) | transcripts do Claude Code gerados por `scripts/run_agentic_eval.py` (fora do CI) e o gabarito `evals/agentic/<suite>/suite.yaml`; o compare lê N scorecards por lado e não conclui — ver `evals/README.md` |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
 | Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
@@ -347,7 +348,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 217 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 222 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

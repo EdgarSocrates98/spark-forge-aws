@@ -1,0 +1,6 @@
+name: answer_absent
+mode: transcript
+question: q-mcp
+proves: >
+  AT-003: sem nenhuma linha ANSWER:. Sai answer_absent, nunca wrong --
+  o agente nao declarou valor, entao nao ha valor para estar errado.

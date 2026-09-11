@@ -1,0 +1,25 @@
+{
+  "id": "q-alt",
+  "status": "graded",
+  "answer": "correct",
+  "abstention": null,
+  "tools": {
+    "verdict": "ok",
+    "missing": [],
+    "order_violated": []
+  },
+  "cost": {
+    "tool_calls": 1,
+    "other_calls": 0,
+    "tool_errors": 0,
+    "tool_result_bytes": 38,
+    "tokens": null,
+    "tokens_unresolved": true
+  },
+  "unresolved": [
+    {
+      "reason": "usage_field_absent",
+      "count": 2
+    }
+  ]
+}

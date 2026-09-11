@@ -1,0 +1,6 @@
+name: compare_model_differs
+mode: compare
+proves: >
+  AT-019: o candidato rodou com outro modelo. O compare executa e reporta
+  differs.models true -- trocar o modelo costuma ser o que se quer comparar,
+  entao nao e recusa.

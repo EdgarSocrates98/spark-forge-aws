@@ -1,0 +1,97 @@
+[
+  {
+    "id": "f_ebd139",
+    "schema_version": 1,
+    "kind": "host.final_answer",
+    "subject": {
+      "type": "source_location",
+      "file": "q-alt.jsonl",
+      "symbol": "q-alt"
+    },
+    "measures": {},
+    "attrs": {
+      "answer": "3.5.4:1.7.1",
+      "truncated": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-alt.jsonl",
+      "artifact_sha256": "31855aec39f240e7428be0d1962b2fa43c6129832550b2e8ae0aadbf5f7bcac5"
+    }
+  },
+  {
+    "id": "f_502d35",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-alt.jsonl",
+      "symbol": "q-alt",
+      "line": 2
+    },
+    "measures": {
+      "ordinal": 1,
+      "result_bytes": 38
+    },
+    "attrs": {
+      "channel": "bash",
+      "tool": "Bash",
+      "verb": "release_describe",
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-alt.jsonl",
+      "artifact_sha256": "31855aec39f240e7428be0d1962b2fa43c6129832550b2e8ae0aadbf5f7bcac5"
+    }
+  },
+  {
+    "id": "f_d04cc5",
+    "schema_version": 1,
+    "kind": "host.transcript",
+    "subject": {
+      "type": "source_location",
+      "file": "q-alt.jsonl",
+      "symbol": "q-alt"
+    },
+    "measures": {
+      "assistant_message_count": 2,
+      "line_count": 4
+    },
+    "attrs": {
+      "source": "claude_code_transcript",
+      "models": [
+        "synthetic-model-a"
+      ],
+      "host_versions": [
+        "2.1.268"
+      ]
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-alt.jsonl",
+      "artifact_sha256": "31855aec39f240e7428be0d1962b2fa43c6129832550b2e8ae0aadbf5f7bcac5"
+    }
+  },
+  {
+    "id": "f_26d571",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-alt.jsonl",
+      "symbol": "q-alt"
+    },
+    "measures": {
+      "count": 2
+    },
+    "attrs": {
+      "reason": "usage_field_absent"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-alt.jsonl",
+      "artifact_sha256": "31855aec39f240e7428be0d1962b2fa43c6129832550b2e8ae0aadbf5f7bcac5"
+    }
+  }
+]

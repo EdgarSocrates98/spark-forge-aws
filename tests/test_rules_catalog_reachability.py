@@ -56,6 +56,7 @@ from sparkforge.facts import (
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     glue_resource_link,
     graph,
+    host_transcript,
     # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
     # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
     # afirmacao que so existia em prosa: a §1 do documento de conhecimento
@@ -175,6 +176,12 @@ EXTRACTORS = (
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
     # repositorio desde a Task 2 desta fase.
     graph,
+    # `host_transcript` entra nas DUAS listas no mesmo commit do eval harness.
+    # Nenhuma regra consome `host.*` hoje -- o eval pontua fora do motor --, e
+    # e justamente por isso que ele precisa estar aqui: a primeira regra que um
+    # dia ler um kind `host.*` seria forcada a `blocked_on` sobre um extrator
+    # que ja esta no repositorio.
+    host_transcript,
     iceberg_metadata,
     # `migration` entra nas DUAS listas no mesmo commit da Task 7 desta fase,
     # mesma razao de `funcval`/`graph`: as Tasks 4-6 ja deixaram o extrator no

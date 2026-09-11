@@ -1,0 +1,313 @@
+[
+  {
+    "id": "f_c0f271",
+    "schema_version": 1,
+    "kind": "host.final_answer",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {},
+    "attrs": {
+      "answer": "SF-PY-005:2",
+      "truncated": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_df5483",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 12
+    },
+    "measures": {
+      "ordinal": 2
+    },
+    "attrs": {
+      "channel": "mcp",
+      "tool": "mcp__sparkforge__sparkforge_judge",
+      "verb": "judge",
+      "is_error": null
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_39110d",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 5
+    },
+    "measures": {
+      "ordinal": 1,
+      "result_bytes": 31
+    },
+    "attrs": {
+      "channel": "mcp",
+      "tool": "mcp__sparkforge__sparkforge_analyze_pyspark",
+      "verb": "analyze_pyspark",
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_1d9135",
+    "schema_version": 1,
+    "kind": "host.transcript",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "assistant_message_count": 7,
+      "line_count": 13
+    },
+    "attrs": {
+      "source": "claude_code_transcript",
+      "models": [
+        "synthetic-model-a"
+      ],
+      "host_versions": [
+        "2.1.268"
+      ]
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "host_format_unknown"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "malformed_line"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "message_field_not_object"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "tool_result_orphan"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "tool_use_without_result"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "usage_field_absent"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "usage_value_fractional"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "usage_value_malformed"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "usage_value_negative"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  },
+  {
+    "id": "f_0bb16e",
+    "schema_version": 1,
+    "kind": "host.usage",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "input_tokens": 30,
+      "output_tokens": 60,
+      "cache_read_tokens": 300,
+      "cache_creation_tokens": 15,
+      "message_count": 3
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "b4fc55ff0e21df2395b8d828a1811aae2f6d559f739b39024a54dc9b5f47dca1"
+    }
+  }
+]

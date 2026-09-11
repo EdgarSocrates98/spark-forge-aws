@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sparkforge": {
+      "command": "python",
+      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+    }
+  }
+}

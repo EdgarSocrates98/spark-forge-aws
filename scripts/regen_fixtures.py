@@ -99,6 +99,7 @@ FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
 FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
 FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
 FIXTURES_PARQUET_FOOTER = ROOT / "fixtures" / "parquet_footer"
+FIXTURES_HOST_TRANSCRIPT = ROOT / "fixtures" / "host_transcript"
 FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
 # Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
 # `evals/holdout/README.md` e `regen_scenario`.
@@ -826,6 +827,70 @@ def regen_funcval(directory: Path) -> None:
     _write_expected(directory, derived, findings)
 
 
+def _write_json(path: Path, payload) -> None:
+    path.parent.mkdir(exist_ok=True)
+    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
+def regen_host_transcript(directory: Path) -> None:
+    """Golden do corpus `fixtures/host_transcript/`, em tres modos declarados no
+    `meta.yaml` e sem `findings.json` em nenhum deles: `host.*` nao passa por
+    `judge` (Decision 2 do DESIGN do eval harness), e um `findings.json` vazio
+    faria as varreduras do executor agentico contarem estas pastas como casos
+    julgados, que elas nao sao.
+
+      * `transcript` -- UM `input/<qid>.jsonl`. Golden: `facts.json` do extrator
+        e `grade.json`, o veredito daquela pergunta contra `_suite/suite.yaml`.
+      * `run` -- varios `input/*.jsonl`, uma execucao inteira. Golden:
+        `scorecard.json`, pelo mesmo caminho da CLI (`sparkforge.evals.cli.eval_grade`).
+      * `compare` -- `input/baseline/*.json` e `input/candidate/*.json`, que sao
+        scorecards. Golden: `compare.json`.
+
+    O `run.id` do scorecard e o nome do diretorio de transcripts, e aqui ele e
+    sempre `input` -- nunca o caminho da maquina.
+    """
+    from sparkforge.evals.cli import eval_compare, eval_grade
+    from sparkforge.evals.grade import grade_question
+    from sparkforge.evals.suite import load_suite
+    from sparkforge.facts.host_transcript import extract_host_transcript_path
+
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    out = directory / "expected"
+    mode = meta["mode"]
+    if mode == "transcript":
+        suite = load_suite(FIXTURES_HOST_TRANSCRIPT / "_suite")
+        question = suite.by_id()[meta["question"]]
+        facts = extract_host_transcript_path(directory / "input" / f"{question.id}.jsonl")
+        _write_json(out / "facts.json", [f.to_dict() for f in facts])
+        _write_json(out / "grade.json", grade_question(question, facts))
+        print(f"{directory.name}: {len(facts)} facts")
+    elif mode == "run":
+        scorecard = eval_grade(
+            str(FIXTURES_HOST_TRANSCRIPT / "_suite"), str(directory / "input")
+        )
+        _write_json(out / "scorecard.json", scorecard)
+        print(f"{directory.name}: scorecard {scorecard['totals']['graded']} graded")
+    elif mode == "compare":
+        resultado = eval_compare(
+            str(directory / "input" / "baseline"), str(directory / "input" / "candidate")
+        )
+        _write_json(out / "compare.json", resultado)
+        print(f"{directory.name}: compare refused={resultado['refused']}")
+    else:
+        raise SystemExit(f"{directory.name}: mode desconhecido {mode!r}")
+
+
+def _host_transcript_cases() -> list[Path]:
+    if not FIXTURES_HOST_TRANSCRIPT.is_dir():
+        return []
+    return sorted(
+        p
+        for p in FIXTURES_HOST_TRANSCRIPT.iterdir()
+        if p.is_dir() and not p.name.startswith("_")
+    )
+
+
 def main() -> int:
     targets = sys.argv[1:]
 
@@ -867,6 +932,7 @@ def main() -> int:
                 (FIXTURES_EXCEPTION / name, regen_exception),
                 (FIXTURES_CW_LOGS / name, regen_cloudwatch_logs),
                 (FIXTURES_PARQUET_FOOTER / name, regen_parquet_footer),
+                (FIXTURES_HOST_TRANSCRIPT / name, regen_host_transcript),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -973,6 +1039,10 @@ def main() -> int:
             p for p in FIXTURES_PARQUET_FOOTER.iterdir() if p.is_dir()
         ):
             regen_parquet_footer(directory)
+    # `_host_transcript_cases` ja carrega a guarda de existencia (D-4a-18) e
+    # pula `_suite/`, que e gabarito das fixtures e nao caso.
+    for directory in _host_transcript_cases():
+        regen_host_transcript(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.

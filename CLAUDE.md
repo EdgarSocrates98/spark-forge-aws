@@ -30,6 +30,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
+| O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge.evals grade` / `compare` (fora da CLI `sparkforge`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
 | Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
 
 Regras que valem para todos eles:

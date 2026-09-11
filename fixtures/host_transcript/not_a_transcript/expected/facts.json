@@ -1,0 +1,22 @@
+[
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "host_format_unknown"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl"
+    }
+  }
+]

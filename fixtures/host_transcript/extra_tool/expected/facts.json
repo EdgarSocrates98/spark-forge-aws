@@ -1,0 +1,177 @@
+[
+  {
+    "id": "f_c0f271",
+    "schema_version": 1,
+    "kind": "host.final_answer",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {},
+    "attrs": {
+      "answer": "SF-PY-005:2",
+      "truncated": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  },
+  {
+    "id": "f_53a24f",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 2
+    },
+    "measures": {
+      "ordinal": 1,
+      "result_bytes": 31
+    },
+    "attrs": {
+      "channel": "mcp",
+      "tool": "mcp__sparkforge__sparkforge_analyze_pyspark",
+      "verb": "analyze_pyspark",
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  },
+  {
+    "id": "f_4fc894",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 4
+    },
+    "measures": {
+      "ordinal": 2,
+      "result_bytes": 13
+    },
+    "attrs": {
+      "channel": "mcp",
+      "tool": "mcp__sparkforge__sparkforge_rules_lookup",
+      "verb": "rules_lookup",
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  },
+  {
+    "id": "f_b934f1",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 6
+    },
+    "measures": {
+      "ordinal": 3,
+      "result_bytes": 35
+    },
+    "attrs": {
+      "channel": "other",
+      "tool": "Read",
+      "verb": null,
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  },
+  {
+    "id": "f_4c50a8",
+    "schema_version": 1,
+    "kind": "host.tool_call",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp",
+      "line": 8
+    },
+    "measures": {
+      "ordinal": 4,
+      "result_bytes": 55
+    },
+    "attrs": {
+      "channel": "mcp",
+      "tool": "mcp__sparkforge__sparkforge_judge",
+      "verb": "judge",
+      "is_error": false
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  },
+  {
+    "id": "f_945e63",
+    "schema_version": 1,
+    "kind": "host.transcript",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "assistant_message_count": 5,
+      "line_count": 10
+    },
+    "attrs": {
+      "source": "claude_code_transcript",
+      "models": [
+        "synthetic-model-a"
+      ],
+      "host_versions": [
+        "2.1.268"
+      ]
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  },
+  {
+    "id": "f_9b6da9",
+    "schema_version": 1,
+    "kind": "host.usage",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "input_tokens": 50,
+      "output_tokens": 100,
+      "cache_read_tokens": 500,
+      "cache_creation_tokens": 25,
+      "message_count": 5
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "bd28e910d3458dd85a803f64ec690d9933e8b849d5111eaf0571ef8715b7414c"
+    }
+  }
+]

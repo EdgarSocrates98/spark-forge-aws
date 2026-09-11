@@ -1,0 +1,86 @@
+# Gabarito do nivel de agente sobre a suite da Fase 0.
+#
+# As dez primeiras perguntas SAO as de `evals/fase0.xml`, referenciadas por
+# indice (1-based): o texto e a resposta vem de la, e `scripts/check_evals.py`
+# continua sendo quem recomputa as respostas contra o corpus. Este arquivo so
+# acrescenta o que o XML nao diz -- que tools a resposta exige, em que ordem
+# parcial, e as perguntas cuja resposta certa e RECUSAR.
+#
+# `required_tools`: cada item e um verbo canonico (o nome da tool MCP sem o
+# prefixo `sparkforge_`, ou o verbo da CLI com `-` virando `_`), ou uma LISTA de
+# verbos dos quais basta um. `order`: pares [antes, depois] sobre a primeira
+# ocorrencia de cada verbo.
+#
+# As perguntas de abstencao nao vem do XML, porque a resposta delas e
+# `unresolved`: cada uma ancora num fact `*.unresolved` que o corpus REALMENTE
+# emite, e `tests/test_evals_suite.py` confere a ancora contra o
+# `expected/facts.json` da fixture citada.
+schema_version: 1
+id: fase0
+answer_protocol: >-
+  Responda usando as tools ou a CLI do SparkForge sobre os artefatos do
+  repositorio. Termine com uma unica linha no formato exato
+  `ANSWER: <valor>`, com o valor puro no formato que a pergunta pede, sem
+  crases, aspas ou texto extra. Quando a pergunta pedir mais de um valor,
+  escreva-os na ordem em que a pergunta os cita, separados por `:` sem
+  espacos (exemplo: `ANSWER: SF-PY-001:7`). Se os artefatos nao sustentam um
+  valor, termine com `ANSWER: unresolved`.
+questions:
+  - id: fase0-01
+    source: ../../fase0.xml#1
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: fase0-02
+    source: ../../fase0.xml#2
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: fase0-03
+    source: ../../fase0.xml#3
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: fase0-04
+    source: ../../fase0.xml#4
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: fase0-05
+    source: ../../fase0.xml#5
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: fase0-06
+    source: ../../fase0.xml#6
+    required_tools: [rules_lookup]
+  - id: fase0-07
+    source: ../../fase0.xml#7
+    required_tools: [rules_lookup]
+  - id: fase0-08
+    source: ../../fase0.xml#8
+    required_tools: [[runtime_detect, release_describe]]
+  - id: fase0-09
+    source: ../../fase0.xml#9
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: fase0-10
+    source: ../../fase0.xml#10
+    required_tools: [rules_lookup]
+  - id: abst-01
+    question: >-
+      Na fixture fixtures/finops/no_dpu_no_cost, quantos DPU-segundos consumiu o
+      run mais recente do job etl_pedidos_diario? Formato: inteiro.
+    expects_abstention: true
+    anchor: {fixture: finops/no_dpu_no_cost, kind: glue.run_cost.unresolved}
+    required_tools: [finops]
+  - id: abst-02
+    question: >-
+      Na fixture fixtures/bench/one_side_missing, qual o delta percentual de
+      total_task_ms entre a execucao antes e a execucao depois? Formato: numero
+      com sinal, sem o simbolo de porcentagem.
+    expects_abstention: true
+    anchor: {fixture: bench/one_side_missing, kind: bench.unresolved}
+    required_tools: [[benchmark, analyze_event_log]]
+  - id: abst-03
+    question: >-
+      Na fixture fixtures/plan/truncated_plan, quantas colunas o scan de
+      analytics.evento_bruto le no read schema? Formato: inteiro.
+    expects_abstention: true
+    anchor: {fixture: plan/truncated_plan, kind: plan.unresolved}
+    required_tools: [analyze_plan]

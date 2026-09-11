@@ -1,0 +1,25 @@
+{
+  "id": "q-abst",
+  "status": "graded",
+  "answer": null,
+  "abstention": "abstained",
+  "tools": {
+    "verdict": "ok",
+    "missing": [],
+    "order_violated": []
+  },
+  "cost": {
+    "tool_calls": 1,
+    "other_calls": 0,
+    "tool_errors": 0,
+    "tool_result_bytes": 46,
+    "tokens": {
+      "input": 20,
+      "output": 40,
+      "cache_read": 200,
+      "cache_creation": 10
+    },
+    "tokens_unresolved": false
+  },
+  "unresolved": []
+}

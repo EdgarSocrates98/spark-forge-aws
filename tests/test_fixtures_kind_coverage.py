@@ -43,6 +43,12 @@ from sparkforge.facts import (
     # `fixtures/iam_access/`.
     glue_resource_link,
     graph,
+    # `host_transcript` entra nas DUAS listas no MESMO commit de
+    # `fixtures/host_transcript/`. E o primeiro extrator cujo artefato nao e do
+    # job analisado, e sim do AGENTE que o analisou: o transcript do host. Nenhuma
+    # regra consome `host.*` (o eval pontua fora do motor), entao a unica guarda
+    # dos cinco kinds e esta.
+    host_transcript,
     # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
     # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
     # afirmacao que so existia em prosa: a §1 do documento de conhecimento
@@ -154,6 +160,11 @@ EXTRACTORS = {
     # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova
     # nomeando os seis.
     "graph": graph,
+    # `host_transcript`: ver o comentario do import. Os cinco kinds `host.*`
+    # tem golden em `fixtures/host_transcript/`, e as nove razoes de
+    # `host.transcript.unresolved` sao cobradas razao a razao por
+    # `tests/test_fixtures_golden_host_transcript.py`.
+    "host_transcript": host_transcript,
     "iceberg_metadata": iceberg_metadata,
     # `matcher` e o unico modulo desta lista que NAO mora em `sparkforge/facts/`
     # -- ele e `sparkforge/errors/matcher.py`, e o import dele vem separado la

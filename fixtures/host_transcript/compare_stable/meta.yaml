@@ -1,0 +1,5 @@
+name: compare_stable
+mode: compare
+proves: >
+  AT-015: tres execucoes de cada lado, todas iguais. Toda pergunta sai
+  pass->pass, com 3/3 cru dos dois lados.

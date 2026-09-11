@@ -1,0 +1,6 @@
+name: extra_tool
+mode: transcript
+question: q-mcp
+proves: >
+  AT-009: alem das exigidas, rules_lookup (MCP) e Read (other). tools ok --
+  tool extra conta em tool_calls e other_calls, nunca reprova.
