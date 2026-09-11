@@ -1,0 +1,76 @@
+# Workflow de exemplo: SparkForge no PR e na aba Security do repositorio de dados.
+#
+# Copie para `.github/workflows/sparkforge.yml` no repositorio do job e ajuste os
+# diretorios (`jobs`, `infra`) e as versoes (`--glue`). Guia completo:
+# https://github.com/EdgarSocrates98/spark-forge-aws/blob/main/docs/github-code-scanning.md
+#
+# O pacote nao chama rede nem a API do GitHub: quem sobe o SARIF e a action
+# `upload-sarif`, e o resumo do PR e o arquivo que o `report github` grava.
+name: SparkForge
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  sparkforge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar o SparkForge
+        run: pip install sparkforge-aws
+
+      # Um `analyze` por diretorio. O caminho de cada finding e relativo ao
+      # diretorio passado em `--path`, e por isso o mesmo diretorio volta como
+      # `--source-root` no `report github`.
+      - name: Extrair facts
+        run: |
+          mkdir -p .sparkforge
+          sparkforge analyze pyspark --path jobs --out .sparkforge/facts-pyspark.json
+          sparkforge analyze terraform --path infra --out .sparkforge/facts-terraform.json
+
+      - name: Julgar
+        run: |
+          sparkforge judge \
+            --facts .sparkforge/facts-pyspark.json \
+            --facts .sparkforge/facts-terraform.json \
+            --glue 5.0 \
+            --out .sparkforge/findings.json
+
+      # Grava .sparkforge/report/sparkforge.sarif e .sparkforge/report/summary.md,
+      # e imprime uma anotacao por finding com linha (aparece no diff do PR).
+      # `--fail-on P0` deixa o check vermelho quando ha P0; o upload abaixo roda
+      # mesmo assim, para o alerta chegar a aba Security.
+      - name: Projetar para o GitHub
+        id: report
+        run: |
+          sparkforge report github \
+            --findings .sparkforge/findings.json \
+            --facts .sparkforge/facts-pyspark.json \
+            --facts .sparkforge/facts-terraform.json \
+            --repo . \
+            --source-root jobs \
+            --source-root infra \
+            --category sparkforge \
+            --fail-on P0
+
+      - name: Resumo do PR
+        if: always() && hashFiles('.sparkforge/report/summary.md') != ''
+        run: cat .sparkforge/report/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enviar ao Code Scanning
+        if: always() && hashFiles('.sparkforge/report/sparkforge.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .sparkforge/report/sparkforge.sarif
+          category: sparkforge

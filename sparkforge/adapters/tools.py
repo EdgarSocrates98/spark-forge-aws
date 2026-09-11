@@ -2776,6 +2776,68 @@ _REPORT_CHECK_ITEM: dict[str, Any] = {
     "properties": {"ok": {"type": "boolean"}, "detail": {"type": "string"}},
 }
 
+# `report github`: o SARIF e o documento inteiro do Code Scanning, validado nos
+# testes contra o schema OASIS (`fixtures/sarif/_schema/`), e por isso so a casca
+# dele e declarada aqui -- repetir o schema de 112 KB da OASIS neste arquivo seria
+# um segundo lugar onde a verdade pode divergir da fonte.
+_REPORT_GITHUB_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "sarif", "summary_markdown", "annotations", "counts", "refused", "gate", "source_roots"
+    ],
+    "properties": {
+        "sarif": {
+            "type": "object",
+            "required": ["version", "runs"],
+            "properties": {"version": {"const": "2.1.0"}, "runs": {"type": "array"}},
+        },
+        "summary_markdown": {"type": "string"},
+        "annotations": {"type": "array", "items": {"type": "string"}},
+        "counts": {
+            "type": "object",
+            "required": ["findings", "located", "refused"],
+            "properties": {
+                "findings": {"type": "integer"},
+                "located": {"type": "integer"},
+                "refused": {"type": "integer"},
+            },
+        },
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule_id", "severity", "reason", "subject_type"],
+                "properties": {
+                    "rule_id": {"type": "string"},
+                    "severity": {"type": "string"},
+                    "reason": {
+                        "type": "string",
+                        "enum": [
+                            "evidencia_ausente",
+                            "runtime",
+                            "sem_linha",
+                            "arquivo_fora_do_repo",
+                            "caminho_ambiguo",
+                            "limite_do_github",
+                        ],
+                    },
+                    "subject_type": {"type": "string"},
+                },
+            },
+        },
+        "gate": {
+            "type": "object",
+            "required": ["fail_on", "tripped"],
+            "properties": {
+                "fail_on": {"type": ["string", "null"], "enum": ["P0", "P1", None]},
+                "tripped": {"type": "boolean"},
+            },
+        },
+        "source_roots": {"type": "array", "items": {"type": "string"}},
+    },
+}
+
+
 _REPORT_VERIFY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -6819,6 +6881,59 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_report_github": {
+        "description": (
+            "Projeta findings JA JULGADOS para o GitHub, sem ler artefato e sem rede: "
+            "`sarif` (SARIF 2.1.0 para o Code Scanning), `summary_markdown` (para o "
+            "`$GITHUB_STEP_SUMMARY` do PR) e `annotations` (linhas `::error file=,line=::` "
+            "que viram anotacao no diff). So entra no SARIF o finding com LINHA num arquivo "
+            "que existe no repositorio -- a do proprio `subject`, ou a de um fact de "
+            "evidencia de codigo. O resto sai em `refused` com o motivo: `runtime` "
+            "(job_run/stage/table), `sem_linha`, `arquivo_fora_do_repo`, `caminho_ambiguo`, "
+            "`evidencia_ausente` ou `limite_do_github`. `subject.file` e relativo ao "
+            "diretorio passado a cada `analyze --path`, entao informe esses diretorios em "
+            "`source_roots`. `fail_on` so calcula `gate.tripped`; nada e gravado por esta "
+            "tool -- a CLI `sparkforge report github` grava em .sparkforge/report/."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["findings_path", "facts_path", "repo"],
+            "additionalProperties": False,
+            "properties": {
+                "findings_path": {
+                    "type": "string",
+                    "description": "Saida de `sparkforge judge --out` (findings.json).",
+                },
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Um caminho, ou varios: a UNIAO dos facts do case. O fact de "
+                        "evidencia de codigo empresta a linha ao finding que nao tem a propria."
+                    ),
+                },
+                "repo": {"type": "string", "description": "Raiz do repositorio git."},
+                "source_roots": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Diretorios relativos a `repo` que foram passados aos `analyze "
+                        "--path`, na mesma ordem. Default: ['.']."
+                    ),
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Categoria do upload no Code Scanning (automationDetails.id).",
+                },
+                "fail_on": {"type": "string", "enum": ["P0", "P1"]},
+            },
+        },
+        "outputSchema": _may_fail(
+            _REPORT_GITHUB_SCHEMA,
+            "SARIF, resumo, anotacoes, contagens e recusas, ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_collect_event_log": {
         "description": (
             "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` "
@@ -8271,6 +8386,17 @@ def _h_report_verify(args: dict[str, Any]) -> dict[str, Any]:
     return _core.report_verify(args["report_path"], args["findings_path"])
 
 
+def _h_report_github(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.report_github(
+        args["findings_path"],
+        args["facts_path"],
+        repo=args["repo"],
+        source_roots=args.get("source_roots"),
+        category=args.get("category"),
+        fail_on=args.get("fail_on"),
+    )
+
+
 def _h_collect_event_log(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_event_log(
         args["repo"],
@@ -8541,6 +8667,7 @@ _HANDLERS = {
     "sparkforge_validate_output": _h_validate_output,
     "sparkforge_report_sign": _h_report_sign,
     "sparkforge_report_verify": _h_report_verify,
+    "sparkforge_report_github": _h_report_github,
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,

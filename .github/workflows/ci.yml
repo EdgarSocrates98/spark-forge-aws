@@ -192,3 +192,61 @@ jobs:
         # coisa -- caminho errado, arquivo velho de uma execucao anterior --
         # passaria por tudo o mais sem ter respondido nada sobre o lock.
         run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt
+
+  sarif-upload:
+    # Prova de que o GitHub ACEITA o SARIF de `sparkforge report github`
+    # (SC6 do DEFINE_SARIF_GITHUB_CHECK). So roda por `workflow_dispatch`, de
+    # proposito: os findings das fixtures sao codigo ruim de proposito, e subir a
+    # cada push encheria a aba Security deste repositorio com alertas que nao
+    # sao defeito dele. Os caminhos saem relativos a raiz do git (`--repo .` e as
+    # raizes prefixadas com o caminho da fixture), para que o GitHub encontre o
+    # arquivo de cada alerta. A permissao de escrita em `security-events` e so
+    # deste job.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - caso: pyspark_com_linha
+            roots: "--source-root fixtures/sarif/pyspark_com_linha/input/repo/jobs"
+          - caso: terraform
+            roots: "--source-root fixtures/sarif/terraform/input/repo/infra"
+          - caso: misto
+            roots: >-
+              --source-root fixtures/sarif/misto/input/repo/a
+              --source-root fixtures/sarif/misto/input/repo/b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: python -m pip install --quiet -e .
+      - name: report github
+        run: |
+          python -m sparkforge.adapters.cli report github \
+            --findings fixtures/sarif/${{ matrix.caso }}/input/findings.json \
+            --facts fixtures/sarif/${{ matrix.caso }}/input/facts.json \
+            --repo . ${{ matrix.roots }} \
+            --category sparkforge-fixtures-${{ matrix.caso }}
+      - name: Upload SARIF
+        id: upload
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .sparkforge/report/sparkforge.sarif
+          category: sparkforge-fixtures-${{ matrix.caso }}
+          wait-for-processing: true
+      - name: Conferir a analise aceita
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          esperado=$(python -c "import json; print(len(json.load(open('.sparkforge/report/sparkforge.sarif'))['runs'][0]['results']))")
+          gh api "repos/${{ github.repository }}/code-scanning/sarifs/${{ steps.upload.outputs.sarif-id }}" --jq '.processing_status' | tee status.txt
+          grep -qx complete status.txt
+          obtido=$(gh api "repos/${{ github.repository }}/code-scanning/analyses?sarif_id=${{ steps.upload.outputs.sarif-id }}" --jq 'map(.results_count) | add')
+          echo "resultados no SARIF: $esperado, aceitos pelo GitHub: $obtido"
+          test "$esperado" = "$obtido"

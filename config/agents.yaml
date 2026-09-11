@@ -110,6 +110,7 @@ agents:
   allowed_tools:
   - sparkforge_report_sign
   - sparkforge_report_verify
+  - sparkforge_report_github
   knowledge_refs:
   - knowledge/INDEX.md
   - knowledge/agentic-engineering.md

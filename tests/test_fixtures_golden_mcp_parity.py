@@ -65,6 +65,31 @@ ALLOWLIST_MOTIVO = {
 # Envelope da era 2026-07-28, conferido a parte e nunca comparado ao golden.
 ENVELOPE_DA_ERA = ("_meta", "resultType", "ttlMs", "cacheScope")
 
+# Tools que entraram DEPOIS do golden (gravado sob o 1.29 com 86 tools). O golden
+# prova a migracao de SDK e fica congelado; regrava-lo sob o 2.x apagaria a
+# referencia. Tool nova entra aqui com data e motivo, e a comparacao do golden
+# cobre so as tools que ele conhece. Uma tool nova FORA desta lista derruba
+# `test_toda_tool_nova_esta_declarada`.
+NOVAS_DEPOIS_DO_GOLDEN = {
+    "sparkforge_report_github": "2026-09-11: projecao de findings para SARIF e resumo de PR",
+}
+
+
+def _nomes(lista: dict[str, Any]) -> list[str]:
+    return [tool["name"] for tool in lista["tools"]]
+
+
+def _so_do_golden(coleta: dict[str, Any], golden: dict[str, Any]) -> dict[str, Any]:
+    """A coleta com `tools/list` restrito as tools que o golden conhece."""
+    listas = {}
+    for transporte, lista in coleta["tools_list"].items():
+        conhecidas = set(_nomes(golden["tools_list"][transporte]))
+        listas[transporte] = {
+            **lista,
+            "tools": [t for t in lista["tools"] if t["name"] in conhecidas],
+        }
+    return {**coleta, "tools_list": listas}
+
 
 def _fora_da_allowlist(difs: list[tuple[str, Any, Any]]) -> list[tuple[str, Any, Any]]:
     return [
@@ -99,17 +124,30 @@ def test_golden_foi_gerado_pelo_1x(golden):
     assert golden["meta"]["amostra"] == [item["id"] for item in mcp_parity.AMOSTRA]
 
 
-def test_contagem_do_catalogo(legado):
-    assert len(legado["tools_list"]["stdio"]["tools"]) == 86
-    assert len(legado["tools_list"]["http"]["tools"]) == 85
+def test_contagem_do_catalogo(legado, golden):
+    novas = len(NOVAS_DEPOIS_DO_GOLDEN)
+    assert len(golden["tools_list"]["stdio"]["tools"]) == 86
+    assert len(golden["tools_list"]["http"]["tools"]) == 85
+    assert len(legado["tools_list"]["stdio"]["tools"]) == 86 + novas
+    assert len(legado["tools_list"]["http"]["tools"]) == 85 + novas
+
+
+def test_toda_tool_nova_esta_declarada(legado, golden):
+    for transporte in ("stdio", "http"):
+        novas = set(_nomes(legado["tools_list"][transporte])) - set(
+            _nomes(golden["tools_list"][transporte])
+        )
+        assert novas == set(NOVAS_DEPOIS_DO_GOLDEN), transporte
+    assert all(motivo.strip() for motivo in NOVAS_DEPOIS_DO_GOLDEN.values())
 
 
 class TestHandshakeLegado:
-    def test_so_o_type_do_output_schema_difere(self, legado):
-        assert _fora_da_allowlist(mcp_parity.diff_contra_golden(legado)) == []
+    def test_so_o_type_do_output_schema_difere(self, legado, golden):
+        difs = mcp_parity.diff_contra_golden(_so_do_golden(legado, golden))
+        assert _fora_da_allowlist(difs) == []
 
-    def test_o_diff_aceito_tem_o_tamanho_medido(self, legado):
-        difs = mcp_parity.diff_contra_golden(legado)
+    def test_o_diff_aceito_tem_o_tamanho_medido(self, legado, golden):
+        difs = mcp_parity.diff_contra_golden(_so_do_golden(legado, golden))
         por_transporte = {t: sum(f".{t}." in c for c, _, _ in difs) for t in ("stdio", "http")}
         assert por_transporte == {"stdio": 77, "http": 76}
 

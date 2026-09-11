@@ -479,6 +479,17 @@ guardar um segredo, superfície que o projeto hoje não tem —, e o limite vai
 escrito dentro do bloco que o relatório carrega, porque bloco que sugira
 autoridade mente por omissão.
 
+### No GitHub: Code Scanning e resumo de PR
+
+`sparkforge report github` projeta os findings de `judge` em SARIF 2.1.0 para o
+Code Scanning (aba Security e diff do PR), num resumo Markdown para o
+`$GITHUB_STEP_SUMMARY` e em anotações `::error` no diff. Só entra no SARIF o
+finding com linha num arquivo do repositório; o de execução (event log, job run)
+sai no resumo com o motivo, e nenhum some. `--fail-on P0` deixa o check
+vermelho. Não chama rede: quem sobe o SARIF é a action `upload-sarif`. Guia e
+workflow de exemplo em [`docs/github-code-scanning.md`](docs/github-code-scanning.md)
+e [`examples/github/sparkforge.yml`](examples/github/sparkforge.yml).
+
 ### Fluxo de handoff
 
 `sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir

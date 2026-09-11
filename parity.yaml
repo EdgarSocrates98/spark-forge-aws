@@ -687,6 +687,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: show findings where the pull request is reviewed
+    tools: [sparkforge_report_github]
+    cli: [report github]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: maintain investigation state
     tools: [sparkforge_case_open, sparkforge_case_get, sparkforge_case_update]
     cli: [case open, case get, case update]
