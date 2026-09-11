@@ -131,10 +131,19 @@ def _first_line_is_ours(caminho: Path) -> bool:
 
 
 def _sha256(caminho: Path) -> str:
+    """sha256 do transcript com o fim de linha normalizado para LF.
+
+    Byte cru dava um hash por sistema: o checkout do Windows converte os
+    `.jsonl` para CRLF, e o golden de `fixtures/host_transcript/` falhava so no
+    wheel do Windows (CI do PR #48) com o MESMO conteudo. Linha a linha, e nao
+    `read_text`, porque transcript de host passa de megabytes; e o mesmo
+    criterio de `facts/athena_workgroup.py`, que faz o hash depois de ler em
+    modo texto.
+    """
     digest = hashlib.sha256()
     with caminho.open("rb") as arquivo:
-        for bloco in iter(lambda: arquivo.read(1 << 16), b""):
-            digest.update(bloco)
+        for linha in arquivo:
+            digest.update(linha.replace(b"\r\n", b"\n"))
     return digest.hexdigest()
 
 

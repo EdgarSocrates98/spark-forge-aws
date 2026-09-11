@@ -101,6 +101,20 @@ class TestTranscript:
             assert fact.subject["file"] == f"{_meta(pasta)['question']}.jsonl"
             assert str(ROOT) not in json.dumps(fact.to_dict())
 
+    def test_crlf_da_os_mesmos_facts(self, pasta, tmp_path):
+        """O checkout do Windows converte `.jsonl` para CRLF.
+
+        O golden quebrou so no wheel do Windows (CI do PR #48) porque o
+        `artifact_sha256` era do byte cru. O mesmo transcript com outro fim de
+        linha e o mesmo artefato, e tem de dar os mesmos facts.
+        """
+        nome = f"{_meta(pasta)['question']}.jsonl"
+        original = (pasta / "input" / nome).read_bytes().replace(b"\r\n", b"\n")
+        copia = tmp_path / nome
+        copia.write_bytes(original.replace(b"\n", b"\r\n"))
+        facts = extract_host_transcript_path(copia)
+        assert [f.to_dict() for f in facts] == _expected(pasta, "facts.json")
+
 
 def test_run_bate_com_o_golden():
     for pasta in _cases("run"):
