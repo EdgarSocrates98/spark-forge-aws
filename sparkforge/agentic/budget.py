@@ -262,6 +262,14 @@ class CaseBudget:
 # Chave opcional de `.sparkforge/case.yaml` que declara os tetos do case.
 CASE_BUDGET_KEY = "budget"
 
+# A unica chave do bloco `budget:` que NAO e teto do case inteiro: e o teto de
+# RODADAS dentro de um debate. `max_debates` conta debates; rodada dentro de um
+# so existia em `DebateBudget.max_rounds`, que e default de codigo -- e o
+# executor de debate precisa de um teto que o CASE declare, nunca do template
+# (`sparkforge budget show --template`). Ela nao vira campo de `CaseBudget`
+# porque nao agrega nada do case: e lida por `debate_rounds_from_budget`.
+DEBATE_ROUNDS_KEY = "max_rounds"
+
 _CASE_BUDGET_INT_FIELDS = (
     "max_total_tokens",
     "max_total_tool_calls",
@@ -290,13 +298,17 @@ def case_budget_from_case(case: Mapping[str, Any]) -> CaseBudget | None:
             f"case.yaml: `{CASE_BUDGET_KEY}` deve ser um mapa, recebido {type(raw).__name__}"
         )
 
-    permitidas = set(_CASE_BUDGET_INT_FIELDS) | {"max_cost_usd"}
+    permitidas = set(_CASE_BUDGET_INT_FIELDS) | {"max_cost_usd", DEBATE_ROUNDS_KEY}
     desconhecidas = sorted(set(raw) - permitidas)
     if desconhecidas:
         raise ValueError(
             f"case.yaml: chaves desconhecidas em `{CASE_BUDGET_KEY}`: "
             f"{', '.join(desconhecidas)}. Esperado: {', '.join(sorted(permitidas))}"
         )
+    # Validada aqui tambem, e nao so por quem debate: `budget show` e o verbo
+    # que existe para VALIDAR o bloco, e aceitar `max_rounds: 99` calado nele
+    # deixaria o erro para o primeiro `debate start`.
+    debate_rounds_from_budget(raw)
 
     kwargs: dict[str, Any] = {}
     for nome in _CASE_BUDGET_INT_FIELDS:
@@ -317,6 +329,36 @@ def case_budget_from_case(case: Mapping[str, Any]) -> CaseBudget | None:
         kwargs["max_cost_usd"] = float(valor)
 
     return CaseBudget(**kwargs)
+
+
+def debate_rounds_from_budget(block: Mapping[str, Any] | None) -> int | None:
+    """O teto de rodadas por debate que o bloco `budget:` DECLARA, ou `None`.
+
+    `None` e "o case nao declarou", e quem debate transforma isso em recusa
+    nomeada -- nunca no `DebateBudget.max_rounds` de fabrica, que e template.
+
+    Os limites sao os de `DebateBudget` (1 a 10), e a validacao e a do proprio
+    dataclass: duas copias da faixa divergiriam no dia em que uma mudasse.
+    """
+    if not isinstance(block, Mapping) or DEBATE_ROUNDS_KEY not in block:
+        return None
+    valor = block[DEBATE_ROUNDS_KEY]
+    if not isinstance(valor, int) or isinstance(valor, bool):
+        raise ValueError(
+            f"case.yaml: `{CASE_BUDGET_KEY}.{DEBATE_ROUNDS_KEY}` deve ser int entre 1 e 10, "
+            f"recebido {valor!r}"
+        )
+    # Import local: `debate` importa `models`, e este modulo e carregado por
+    # `budget show` sem precisar de nada do protocolo de debate.
+    from sparkforge.agentic.debate import DebateBudget
+
+    try:
+        DebateBudget(max_rounds=valor)
+    except ValueError as exc:
+        raise ValueError(
+            f"case.yaml: `{CASE_BUDGET_KEY}.{DEBATE_ROUNDS_KEY}` fora da faixa: {exc}"
+        ) from exc
+    return valor
 
 
 @dataclass

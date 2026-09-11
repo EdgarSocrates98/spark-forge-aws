@@ -552,7 +552,7 @@ São **não-despacháveis**: podem mutar infraestrutura ao vivo, e a fronteira
 escrita. Procedência e licença em [`vendor/CREDITS.md`](vendor/CREDITS.md),
 seção *Adaptado, não vendorizado*.
 
-## Camada agêntica — executor determinístico, e o que ela ainda não é
+## Camada agêntica — executores determinísticos, e o que ela ainda não é
 
 `sparkforge/agentic/` (13 módulos) traz entidades de primeira classe e engines
 para trabalho agêntico auditável: `Claim`, `Evidence` (com tiers de autoridade
@@ -561,24 +561,39 @@ T1-T6), `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`,
 com detecção de falso consenso, ADR automático, memória institucional,
 budget e níveis de autonomia L0-L5.
 
-`sparkforge/agentic/executor/` (7 módulos, 163 testes) é o **produtor** dessas
-entidades, e ele é determinístico. `sparkforge arbitrate` roda depois de `judge`
-e escreve no blackboard do case — num case rodado, `blackboard summary` deixa de
-devolver zero.
+`sparkforge/agentic/executor/` (10 módulos em 2026-09-11) é o **produtor**
+dessas entidades, e ele é determinístico. `sparkforge arbitrate` roda depois de
+`judge` e escreve no blackboard do case — num case rodado, `blackboard summary`
+deixa de devolver zero.
 
-**O que ela NÃO é, e isso governa o resto.** Não existe executor de **debate**:
-quando a arbitragem não fecha, o verbo emite um `DebatePlan` e para, com
-`debate.unresolved`. Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui
-chama provider — quem gasta token é o host que executa os agents. O executor é
-**L0**: `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
-obrigatório, nunca registro de coisa feita.
+**Executor de debate (2026-09-11).** Quando a arbitragem não fecha, o
+`arbitrate` emite um `DebatePlan` e para, com `debate.unresolved`. Desde
+2026-09-11 esse plano tem executor: `sparkforge debate start|next|submit`
+(tools `sparkforge_debate_start|next|submit`). É uma máquina de estados L0 que
+diz de quem é a vez, recusa por nome a submissão fora do protocolo e só aceita
+evidência nova **reextraída** por extrator da allowlist. O fechamento é sempre
+do `referee`. O argumento é escrito pelo host, pela skill `run-debate` ou por
+`scripts/run_debate.py` (`claude -p`), nunca dentro do pacote. O placar da
+suíte `evals/agentic/debate/` sai de `python -m sparkforge.evals debate --run
+<nome>`.
 
-Por isso **não há afirmação de ganho** publicada em lugar nenhum: comparar a
-arquitetura nova com a antiga exigiria os dois lados rodando o mesmo caso, e o
-lado que a comparação media — o debate — não roda.
+**O que ela NÃO é, e isso governa o resto.** Nenhum `AgentRuntime` concreto
+mora no pacote, e nada aqui chama provider — quem gasta token é o host que
+executa os agents. Os executores são **L0**: `applied_changes` sai sempre
+`false`, e o ADR é proposta com `rollback` obrigatório, nunca registro de coisa
+feita.
+
+Por isso **não há afirmação de ganho** publicada em lugar nenhum. Os dois lados
+rodam, mas o debate alcança um único par de regras (`SF-GRAPH-005` ×
+`SF-LF-001`, de 155 com `action`). Esse par só existe na união dos facts de dois
+jobs, e o baseline de modelo foi deliberadamente não rodado. Detalhe em
+[`evals/README.md`](evals/README.md).
 
 ```bash
 sparkforge arbitrate --findings f.json --facts a.json --facts b.json --repo .
+sparkforge debate start --rules A,B --findings f.json --facts a.json --facts b.json --repo .
+sparkforge debate next --debate <id> --repo .                 # brief da vez, ou done
+sparkforge debate submit --debate <id> --file s.json --repo . # submissao do lado
 sparkforge blackboard summary --repo .        # contagem do blackboard do case
 sparkforge decisions list --repo .            # decisões do case e da memória
 sparkforge decisions explain <id> --repo .    # rollback e falsification_condition
@@ -591,7 +606,7 @@ sparkforge autonomy show --level L3           # perfil de autonomia
 dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
 findings. Alimentá-lo com um subconjunto fabrica claim desancorada que a execução
 real não produz. A tool MCP equivalente é `sparkforge_arbitrate`, e ela é
-`LOCAL_MUTATION` — a única do pacote que grava no disco de quem chama.
+`LOCAL_MUTATION`, como as três `sparkforge_debate_start|next|submit`.
 
 Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que
 falta: [`docs/agentic-evolution-report.md`](docs/agentic-evolution-report.md).

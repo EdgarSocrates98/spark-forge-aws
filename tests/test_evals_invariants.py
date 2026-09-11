@@ -27,7 +27,14 @@ MODULOS_DO_EVAL = (
     PACOTE / "evals" / "compare.py",
     PACOTE / "evals" / "cli.py",
     PACOTE / "evals" / "__main__.py",
+    PACOTE / "evals" / "debate_grade.py",
     PACOTE / "facts" / "host_transcript.py",
+    # O executor de debate conduz uma geracao que acontece FORA do pacote: a
+    # maquina de estados e a reextracao de evidencia nao podem abrir processo
+    # nem chamar provider (regra 23), e a checagem de processo desta lista e a
+    # que confere isso.
+    PACOTE / "agentic" / "executor" / "debate_run.py",
+    PACOTE / "agentic" / "executor" / "debate_evidence.py",
 )
 
 
@@ -93,6 +100,9 @@ def test_os_modulos_do_eval_nao_disparam_processo():
 def test_o_runner_mora_fora_do_pacote():
     assert (ROOT / "scripts" / "run_agentic_eval.py").is_file()
     assert not (PACOTE / "evals" / "run_agentic_eval.py").exists()
+    # O driver do debate tambem gasta token, e pelo mesmo motivo mora em scripts/.
+    assert (ROOT / "scripts" / "run_debate.py").is_file()
+    assert not (PACOTE / "evals" / "run_debate.py").exists()
 
 
 def _chaves(valor, prefixo: str = "") -> list[str]:

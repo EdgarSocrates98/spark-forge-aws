@@ -1,0 +1,42 @@
+{
+  "catalog_id": "111111111111",
+  "data_lake_settings": {
+    "allow_external_data_filtering": false,
+    "allow_full_table_external_data_access": false,
+    "external_data_filtering_allow_list": [],
+    "status": "ok"
+  },
+  "database": "curated",
+  "permissions": {
+    "grants_collected": 1,
+    "principals": [
+      {
+        "Permissions": [
+          "ALL"
+        ],
+        "PermissionsWithGrantOption": [],
+        "Principal": {
+          "DataLakePrincipalIdentifier": "IAM_ALLOWED_PRINCIPALS"
+        },
+        "Resource": {
+          "Table": {
+            "DatabaseName": "curated",
+            "Name": "arestas"
+          }
+        }
+      }
+    ],
+    "status": "ok",
+    "truncated": false
+  },
+  "registered_location": {
+    "hybrid_access_enabled": null,
+    "registered": false,
+    "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/arestas",
+    "role_arn": "",
+    "status": "nao_encontrado",
+    "with_federation": null
+  },
+  "status": "ok",
+  "table": "arestas"
+}

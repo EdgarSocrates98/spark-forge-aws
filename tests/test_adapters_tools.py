@@ -82,6 +82,9 @@ class TestToolSurface:
             "sparkforge_arbitrate",
             "sparkforge_lakeformation_access_graph",
             "sparkforge_debate_referee",
+            "sparkforge_debate_start",
+            "sparkforge_debate_next",
+            "sparkforge_debate_submit",
             "sparkforge_root_cause",
             "sparkforge_lakeformation_matrix",
             "sparkforge_rules_lookup",
@@ -245,6 +248,13 @@ class TestToolSurface:
             # arbitragem nao tem id -- ele registra que a arbitragem
             # ACONTECEU, e duas execucoes sao dois acontecimentos.
             "sparkforge_arbitrate",
+            # O executor de debate grava em `.sparkforge/debate/<id>/` e no
+            # blackboard: `start` congela `plan.json`, `submit` grava a
+            # submissao e as entidades, e `next` -- que parece leitura -- grava
+            # a `Decision` no fechamento. As tres sao `LOCAL_MUTATION`.
+            "sparkforge_debate_start",
+            "sparkforge_debate_next",
+            "sparkforge_debate_submit",
             "sparkforge_case_open",
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
@@ -906,6 +916,48 @@ def _write_facts_file(tmp_path):
     path = tmp_path / "facts.json"
     path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
     return path
+
+
+def _debate_start_args(tmp_path):
+    """Os insumos do caso da regra 29: a UNIAO de duas fixtures, o unico par do
+    catalogo que `direct_conflicts` produz (`SF-GRAPH-005` x `SF-LF-001`).
+
+    Os findings das duas fixtures vao num arquivo so porque `findings_path` e
+    um caminho -- como o de `arbitrate`; os facts vao como LISTA de caminhos,
+    que e a uniao. O case declara `budget:`: sem ele `start` recusa
+    `budget_undeclared`, que e outro ramo do schema.
+    """
+    from pathlib import Path
+
+    from sparkforge.case.store import SCHEMA_VERSION, save_case
+
+    raiz = Path(__file__).resolve().parents[1]
+    pastas = (
+        raiz / "fixtures" / "graph" / "import_sem_jar_no_iac" / "expected",
+        raiz / "fixtures" / "infra_code" / "fgac_com_jar_extra" / "expected",
+    )
+    repo = tmp_path / "case_debate"
+    repo.mkdir()
+    save_case(
+        {
+            "schema_version": SCHEMA_VERSION,
+            "case_id": "debate-tools",
+            "budget": {"max_debates": 1, "max_rounds": 3},
+        },
+        repo,
+    )
+    findings = []
+    for pasta in pastas:
+        findings += json.loads((pasta / "findings.json").read_text(encoding="utf-8"))
+    findings_path = tmp_path / "debate_findings.json"
+    findings_path.write_text(json.dumps(findings), encoding="utf-8")
+    return {
+        "repo": str(repo),
+        "rules": ["SF-GRAPH-005", "SF-LF-001"],
+        "findings_path": str(findings_path),
+        "facts_path": [str(p / "facts.json") for p in pastas],
+        "glue": "5.0",
+    }
 
 
 def _write_workload_facts_file(tmp_path):
@@ -1994,6 +2046,36 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         # payload dela valida contra o schema igual.
         return call_tool("sparkforge_debate_referee", {"repo": str(tmp_path)})
 
+    if name in ("sparkforge_debate_start", "sparkforge_debate_next", "sparkforge_debate_submit"):
+        # Encadeadas sobre o caso real da regra 29: `next` e `submit` so existem
+        # depois de um `start` que congelou o plano. `submit` devolve `accepted`
+        # com o brief do lado B aninhado em `next` -- os dois ramos de uma vez.
+        args = _debate_start_args(tmp_path)
+        started = call_tool("sparkforge_debate_start", args)
+        if name == "sparkforge_debate_start":
+            return started
+        alvo = {"repo": args["repo"], "debate_id": started["debate_id"]}
+        if name == "sparkforge_debate_next":
+            return call_tool("sparkforge_debate_next", alvo)
+        return call_tool(
+            "sparkforge_debate_submit",
+            {
+                **alvo,
+                "submission": {
+                    "side": "A",
+                    "round": 1,
+                    "claims": [
+                        {
+                            "claim_type": "inference",
+                            "statement": "o job importa GraphFrames e o IaC nao entrega o JAR",
+                            "evidence_refs": ["f_32bc0d", "f_d9303b"],
+                            "confidence": "high",
+                        }
+                    ],
+                },
+            },
+        )
+
     if name == "sparkforge_root_cause":
         facts_file = tmp_path / "facts.json"
         facts_file.write_text(
@@ -2697,6 +2779,15 @@ class TestErrorShapesValidateToo:
             "sparkforge_arbitrate",
             {
                 "repo": "<tmp>",
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+            },
+        ),
+        (
+            "sparkforge_debate_start",
+            {
+                "repo": "<tmp>",
+                "rules": ["SF-GRAPH-005", "SF-LF-001"],
                 "findings_path": "<tmp>/nao-existe.json",
                 "facts_path": "<tmp>/nada.json",
             },

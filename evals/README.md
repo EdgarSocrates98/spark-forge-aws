@@ -189,6 +189,61 @@ de prova, acima), e uma interrompida por um defeito do runner no Windows. O
 runner lia a saída com o codepage local e, diante de um caractere fora dele,
 recebia `stdout` vazio. Nenhuma das duas é baseline.
 
+## Suíte do executor de debate — `evals/agentic/debate/` (2026-09-11)
+
+A suíte tem três casos sobre o mesmo par de regras, `SF-GRAPH-005` ×
+`SF-LF-001`, e a mesma união de facts (`uniao/findings.json` e
+`uniao/facts.json`). Todos declaram `budget: {max_debates: 1, max_rounds: 3}`.
+O que separa um caso do outro é o dump de `collect lakeformation` em
+`artifacts/lakeformation/curated_arestas.json`. Em todos, o caso se decide pelo
+fact `lakeformation.grant`, que o lado precisa **reextrair** pelo extrator
+`lakeformation-grants`: o executor de debate não aceita fact escrito pelo
+agente.
+
+| Caso | `is_iam_allowed_principals` do grant | Gabarito |
+|---|---|---|
+| `lf_vence` | `false` (grant do LF ao runtime role, localização registrada) | vence `SF-LF-001` |
+| `graph_vence` | `true` (só `IAM_ALLOWED_PRINCIPALS`, localização não registrada) | vence `SF-GRAPH-005` |
+| `sem_fato` | nenhum `lakeformation.grant`: o coletor não podia ler (`sem_permissao`), e o extrator emite `lakeformation.grants.unresolved` | `unresolved`; um vencedor aqui é `false_resolution` |
+
+```bash
+# headless: um `claude -p` por vez de lado, no workspace de prova (sem expected.yaml)
+python scripts/run_debate.py --model haiku --max-budget-usd 0.3
+python scripts/run_debate.py --dry-run          # monta e mostra; nao gasta
+# repontua uma execucao em ~/.sparkforge/debate-evals/<run>/
+python -m sparkforge.evals debate --run <run>
+```
+
+Por caso, o placar sai em cinco desfechos: `correct_winner`, `wrong_winner`,
+`correct_unresolved`, `false_resolution` e `missed_resolution`. Ao lado vêm as
+rodadas, as submissões recusadas e o custo dos transcripts, com byte e token
+separados (regra 22). A decidibilidade é conferida sem modelo por
+`tests/test_debate_suite.py`, com submissões gravadas. Sem o fact, o caso fecha
+`unresolved`. Com o fact, fecha no gabarito.
+
+### Dois achados medidos que limitam o que esta suíte pode dizer
+
+**(a) O catálogo tem exatamente UM par de conflito direto.** Sobre as 155
+regras com `action` (`load_catalog()`, 2026-09-11), `direct_conflicts` devolve
+um par só: `SF-GRAPH-005` × `SF-LF-001`, `glue.default_arguments`, `add` ×
+`remove`. Nenhuma fixture sozinha o produz. O executor é genérico, mas hoje o
+debate alcança esse único caso.
+
+**(b) Esse par só nasce da UNIÃO dos facts de dois jobs diferentes.** São eles
+`grafo_sem_jar` (sem FGAC, de `fixtures/graph/import_sem_jar_no_iac`) e
+`etl_fgac_com_jar` (com FGAC, de `fixtures/infra_code/fgac_com_jar_extra`). Um
+smoke real com `claude -p` (Haiku, US$ 0,0723) argumentou, dentro do próprio
+debate, que o conflito pode não existir para nenhum dos dois jobs sozinho. Cada
+job tem só a metade do conflito, e a união é que o fabrica.
+
+**Consequência.** A suíte mede **mecânica e decidibilidade** com submissões
+gravadas: vez, recusa, reextração, fechamento pelo `referee` e o desfecho que o
+fact impõe. O baseline de modelo (B8 do DESIGN) **não foi rodado, de
+propósito**. Ele mediria o desempenho de um modelo num tópico mal posto, e o
+número não diria nada sobre o executor nem sobre o modelo. Não há, portanto,
+afirmação de ganho do debate sobre a arbitragem determinística (regra 30). O que
+destrava o baseline é um par de conflito direto que caiba num job só.
+
 
 ## Execuções registradas
 

@@ -621,6 +621,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: run the debate protocol turn by turn and close it through the referee
+    tools: [sparkforge_debate_start, sparkforge_debate_next, sparkforge_debate_submit]
+    cli: [debate start, debate next, debate submit]
+    knowledge: [docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: order the findings by declared consequence and name the gap
     tools: [sparkforge_root_cause]
     cli: [root-cause]

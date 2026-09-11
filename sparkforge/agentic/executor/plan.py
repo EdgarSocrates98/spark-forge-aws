@@ -24,15 +24,16 @@ agente da primeira. Escolher outro criterio -- o mais especifico, o ultimo --
 divergiria do que `next_step` faz com o mesmo arquivo, e duas leituras do mesmo
 dado dando respostas diferentes e pior que uma leitura imperfeita.
 
-## Por que `rounds` sai `unresolved` mesmo com budget declarado
+## Por que `rounds` sai `unresolved` quando o case nao declara `max_rounds`
 
-O bloco `budget:` do `case.yaml` aceita sete chaves, e nenhuma delas e rodada:
-`max_debates` conta DEBATES, nao rodadas dentro de um. Rodada so existe em
-`DebateBudget.max_rounds`, que e default de codigo. Copia-lo para o plano seria
-reencenar num campo novo o defeito que a auditoria de 2026-09-03 corrigiu em
-`sparkforge budget show` -- ele imprimia `CaseBudget()` de fabrica como se fosse
-o estado do case. O default do codigo e template; template nao vira medida por
-ser impresso ao lado de dados medidos.
+`max_debates` conta DEBATES, nao rodadas dentro de um. O teto de rodadas so
+entra no plano quando o bloco `budget:` do `case.yaml` declara `max_rounds`
+(aceito desde 2026-09-11, para o executor de debate ter um teto que o CASE
+escolheu). Sem ele, copiar `DebateBudget.max_rounds` -- default de codigo --
+para o plano seria reencenar num campo novo o defeito que a auditoria de
+2026-09-03 corrigiu em `sparkforge budget show`: ele imprimia `CaseBudget()` de
+fabrica como se fosse o estado do case. O default do codigo e template;
+template nao vira medida por ser impresso ao lado de dados medidos.
 
 ## Por que o budget invalido nao derruba a emissao
 
@@ -51,7 +52,11 @@ from typing import Any
 
 import yaml
 
-from sparkforge.agentic.budget import CASE_BUDGET_KEY, case_budget_from_case
+from sparkforge.agentic.budget import (
+    CASE_BUDGET_KEY,
+    case_budget_from_case,
+    debate_rounds_from_budget,
+)
 
 # `SF-STEP-FUNCTIONS-004` -> `SF-STEP-FUNCTIONS`. O ordinal e o ultimo grupo de
 # digitos depois de um hifen, e so ele. Separar por hifen e jogar fora o ultimo
@@ -66,8 +71,8 @@ _MOTIVO_SEM_EXECUTOR = (
 )
 
 _MOTIVO_SEM_RODADA = (
-    "o bloco `budget:` do case.yaml nao tem campo de rodadas -- `max_debates` "
-    "conta debates, nao rodadas dentro de um. Rodada so existe em "
+    "o bloco `budget:` do case.yaml nao declara `max_rounds` -- `max_debates` "
+    "conta debates, nao rodadas dentro de um. Sem a chave, rodada so existe em "
     "`DebateBudget.max_rounds`, que e default de codigo (template), nunca "
     "estado do case"
 )
@@ -201,14 +206,17 @@ def debate_plan(
                 registro["context_fact_ids"].append(fact_id)
 
     limites = _limites(budget)
+    rodadas = _rodadas(budget)
     parada = _criterio_de_parada(limites)
+    if limites.get("status") == "declared" and rodadas.get("status") == "declared":
+        parada.append(f"max_rounds = {rodadas['max_rounds']}")
 
     return {
         "kind": "debate.plan",
         "participants": [{"agent": nome, **por_agente[nome]} for nome in ordem_de_agentes],
         "participants_unresolved": sem_agente,
         "budget": limites,
-        "rounds": {"status": "unresolved", "reason": _MOTIVO_SEM_RODADA},
+        "rounds": rodadas,
         "stop_criteria": parada,
         "stop_criteria_status": "declared" if parada else "unresolved",
         "executed": False,
@@ -272,6 +280,21 @@ def _limites(budget: dict | None) -> dict[str, Any]:
         if chave in completo:
             limites[chave] = completo[chave]
     return limites
+
+
+def _rodadas(budget: dict | None) -> dict[str, Any]:
+    """O teto de rodadas DECLARADO pelo case, ou `unresolved` nomeando a lacuna.
+
+    Valor invalido nao derruba o plano, pela mesma razao de `_limites` (regra
+    27): a mensagem que nomeia a chave viaja em `reason`.
+    """
+    try:
+        declarado = debate_rounds_from_budget(budget)
+    except ValueError as exc:
+        return {"status": "unresolved", "reason": str(exc)}
+    if declarado is None:
+        return {"status": "unresolved", "reason": _MOTIVO_SEM_RODADA}
+    return {"status": "declared", "max_rounds": declarado}
 
 
 def _criterio_de_parada(limites: dict[str, Any]) -> list[str]:

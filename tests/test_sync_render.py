@@ -537,6 +537,12 @@ class TestRelacaoDerivada:
             # na PROSA, que e como um agente chega nela sem que o motor a
             # despache sozinho.
             "diagnose-lakeformation-access",
+            # `run-debate` (2026-09-11) e o DRIVER do executor de debate: roda no
+            # agente pai e despacha um subagente por lado. Declara-la no
+            # `skills:` de um coordenador a tornaria despachavel inteira, e ai os
+            # dois lados dividiriam um contexto -- o motivo esta em
+            # `scripts/sync_skills.py::NON_DISPATCHABLE_SKILLS`.
+            "run-debate",
         }
         orfas = [
             p.name

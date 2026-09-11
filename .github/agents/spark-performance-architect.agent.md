@@ -65,6 +65,18 @@ chama provider: `arbitrate` emite `debate_plan` e para, e o árbitro valida o qu
 você preencheu. O sétimo estágio do protocolo (VERIFICATION) sai
 `modeled: false` — consenso é acordo, não verificação.
 
+**Quando `arbitrate` deixar um par em `debate.unresolved`, o executor de debate
+conduz as rodadas.** `sparkforge_debate_start` congela o plano do par sobre os
+mesmos insumos do `arbitrate` (findings e a união dos facts) e recusa
+`budget_undeclared` se o `case.yaml` não declarar `budget.max_rounds`.
+`sparkforge_debate_next` devolve o brief do lado da vez — ou fecha, passando pelo
+árbitro, e grava a `Decision`. `sparkforge_debate_submit` recebe a submissão que
+**você** (ou o subagente de cada lado) escreveu e recusa por nome o que fere o
+protocolo, sem gravar nada. Vencedor só existe quando exatamente um lado concede e
+o árbitro aceita; fora disso a decisão é `unresolved`. As três gravam no case
+(`LOCAL_MUTATION`) e nenhuma gera argumento: a geração é sua. Evidência nova entra
+como artefato do case e é reextraída pelo executor — fact escrito à mão é recusado.
+
 **Está aqui, e não num executor, porque a contradição cruza áreas.** Cada executor faz uma
 função e vê a área que lhe coube; o par que o catálogo de hoje produz — `SF-GRAPH-005` manda
 declarar o jar do GraphFrames em `--extra-jars`, `SF-LF-001` manda removê-lo porque o FGAC do

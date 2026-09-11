@@ -3599,35 +3599,18 @@ def _budget_declarado(repo: str) -> dict[str, Any] | None:
     return bloco if isinstance(bloco, dict) else None
 
 
-def arbitrate_findings(
-    repo: str,
-    findings: list[dict[str, Any]] | None = None,
-    findings_path: str | None = None,
-    facts: list[dict[str, Any]] | None = None,
-    facts_path: str | list[str] | None = None,
-    glue: str | None = None,
-    spark: str | None = None,
-    python: str | None = None,
-    iceberg: str | None = None,
-    athena: str | None = None,
-    emr: str | None = None,
-) -> dict[str, Any]:
-    """Roda o executor agentico deterministico e grava no blackboard de `repo`.
+def _findings_e_uniao_de_facts(
+    findings: list[dict[str, Any]] | None,
+    findings_path: str | None,
+    facts: list[dict[str, Any]] | None,
+    facts_path: str | list[str] | None,
+) -> tuple[list[dict[str, Any]], list[Fact]]:
+    """Os findings e a UNIAO dos facts do case, inline ou de arquivo.
 
-    Corre DEPOIS de `judge`, sobre findings ja julgados, e nao reavalia regra
-    nenhuma: o que ele decide e o que o julgamento deixou em aberto -- conflito
-    entre achados, lastro suficiente para virar recomendacao, medida que falta,
-    e ordem de aplicacao.
-
-    Os facts recebidos sao a UNIAO do case, o mesmo conjunto que `judge` recebeu
-    para produzir aqueles findings. Por isso `facts_path` aceita varios
-    caminhos: o corpus mede que alimentar o executor com um subconjunto fabrica
-    claim desancorada que a execucao real nao produz (secao 12.9 do spec).
-
-    O runtime sai dos PROPRIOS facts quando eles o carregam, e so entao das
-    flags -- mesma precedencia de `judge_findings`, e pelo mesmo motivo: e ele
-    que decide se a fonte de uma regra esta VIGENTE no escopo do case, e uma T1
-    fora da versao alvo tem autoridade e nao sustenta a claim.
+    Uma porta so para os dois verbos que recebem os insumos do executor --
+    `arbitrate` e `debate start`. O debate recalcula os planos pelo MESMO
+    caminho do `arbitrate`, e dois leitores de arquivo seriam duas chances de
+    os dois verbos verem conjuntos de facts diferentes para o mesmo case.
     """
     if findings is not None:
         finding_list = [f for f in findings if isinstance(f, dict)]
@@ -3658,7 +3641,42 @@ def arbitrate_findings(
             "recebe a UNIAO dos facts do case -- o mesmo conjunto que `judge` recebeu.",
             exit_code=2,
         )
+    return finding_list, fact_list
 
+
+def arbitrate_findings(
+    repo: str,
+    findings: list[dict[str, Any]] | None = None,
+    findings_path: str | None = None,
+    facts: list[dict[str, Any]] | None = None,
+    facts_path: str | list[str] | None = None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+) -> dict[str, Any]:
+    """Roda o executor agentico deterministico e grava no blackboard de `repo`.
+
+    Corre DEPOIS de `judge`, sobre findings ja julgados, e nao reavalia regra
+    nenhuma: o que ele decide e o que o julgamento deixou em aberto -- conflito
+    entre achados, lastro suficiente para virar recomendacao, medida que falta,
+    e ordem de aplicacao.
+
+    Os facts recebidos sao a UNIAO do case, o mesmo conjunto que `judge` recebeu
+    para produzir aqueles findings. Por isso `facts_path` aceita varios
+    caminhos: o corpus mede que alimentar o executor com um subconjunto fabrica
+    claim desancorada que a execucao real nao produz (secao 12.9 do spec).
+
+    O runtime sai dos PROPRIOS facts quando eles o carregam, e so entao das
+    flags -- mesma precedencia de `judge_findings`, e pelo mesmo motivo: e ele
+    que decide se a fonte de uma regra esta VIGENTE no escopo do case, e uma T1
+    fora da versao alvo tem autoridade e nao sustenta a claim.
+    """
+    finding_list, fact_list = _findings_e_uniao_de_facts(
+        findings, findings_path, facts, facts_path
+    )
     context = build_runtime_context(
         glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
     )
@@ -3683,6 +3701,120 @@ def arbitrate_findings(
     resposta["runtime"] = runtime
     resposta["repo"] = str(repo)
     return resposta
+
+
+# --------------------------------------------------------------------------- #
+# debate start / next / submit -- o executor de debate
+# --------------------------------------------------------------------------- #
+#
+# Cascas finas sobre `sparkforge.agentic.executor.debate_run`. Nenhuma recusa e
+# traduzida aqui: `{"status": "refused", "reason", "detail"}` sai como o modulo
+# a devolveu, porque o host decide o proximo passo pelo NOME da recusa. So o que
+# e erro de FRONTEIRA vira `AdapterError` -- arquivo de insumo ausente, JSON
+# invalido, disco que nao le. Nada aqui gera argumento: quem escreve claim,
+# objecao e replica e o host, e `sparkforge/` nao chama provider (regra 23).
+
+
+def debate_start(
+    repo: str,
+    rules: str | list[str] | tuple[str, ...],
+    findings: list[dict[str, Any]] | None = None,
+    findings_path: str | None = None,
+    facts: list[dict[str, Any]] | None = None,
+    facts_path: str | list[str] | None = None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+) -> dict[str, Any]:
+    """Congela o plano de debate do par `rules` em `<repo>/.sparkforge/debate/`.
+
+    Recebe os MESMOS insumos do `arbitrate` -- findings, a UNIAO dos facts e o
+    runtime com a mesma precedencia (facts antes das flags) -- e recalcula os
+    planos pelo mesmo caminho, sem gravar a saida do `arbitrate`. `rules` e
+    `"A,B"` ou uma lista de duas regras; o lado A defende a primeira.
+    """
+    finding_list, fact_list = _findings_e_uniao_de_facts(
+        findings, findings_path, facts, facts_path
+    )
+    runtime = build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+    ).to_dict()
+    par = (
+        [r.strip() for r in rules.split(",")] if isinstance(rules, str) else list(rules or [])
+    )
+
+    from sparkforge.agentic.executor import debate_run
+
+    try:
+        return debate_run.start(
+            repo, finding_list, [fact.to_dict() for fact in fact_list], runtime, par
+        )
+    except OSError as exc:
+        raise AdapterError(
+            f"nao foi possivel gravar o plano de debate em {repo}: {exc}\n"
+            f"  Confira a raiz do case e rode de novo `sparkforge debate start`.",
+            exit_code=2,
+        ) from exc
+
+
+def debate_next(repo: str, debate_id: str) -> dict[str, Any]:
+    """O brief do lado da vez, ou `done` -- derivado so dos arquivos do debate.
+
+    E mutacao, embora leia: no fechamento ele passa o candidato pelo `referee` e
+    grava a `Decision` no blackboard do case.
+    """
+    from sparkforge.agentic.executor import debate_run
+
+    try:
+        return debate_run.next_step(repo, debate_id)
+    except OSError as exc:
+        raise AdapterError(
+            f"nao foi possivel ler o debate {debate_id} em {repo}: {exc}\n"
+            f"  Rode `sparkforge debate start` antes -- e ele que congela o plano.",
+            exit_code=2,
+        ) from exc
+
+
+def debate_submit(
+    repo: str,
+    debate_id: str,
+    payload: Any = None,
+    payload_path: str | None = None,
+) -> dict[str, Any]:
+    """Valida a submissao inteira e so entao grava; recusa deixa o estado igual.
+
+    `payload` inline (MCP) ou `payload_path` (CLI `--file`). O arquivo so e LIDO
+    aqui: a forma da submissao e conferida por `debate_run.submit`, que recusa
+    `invalid_schema` por nome -- inclusive quando o JSON nao e um objeto.
+    """
+    if payload is None and payload_path is not None:
+        path = Path(payload_path)
+        if not path.is_file():
+            raise AdapterError(
+                f"Arquivo de submissao nao encontrado: {payload_path}\n"
+                f"  O schema da submissao sai no brief:\n"
+                f"    sparkforge debate next --repo <repo> --debate {debate_id}",
+                exit_code=2,
+            )
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise AdapterError(f"{payload_path}: JSON invalido: {exc}", exit_code=2) from exc
+
+    from sparkforge.agentic.executor import debate_run
+
+    try:
+        return debate_run.submit(repo, debate_id, payload)
+    except OSError as exc:
+        raise AdapterError(
+            f"nao foi possivel gravar a submissao do debate {debate_id} em {repo}: {exc}\n"
+            f"  O estado so muda depois da validacao; confira o disco e reenvie com "
+            f"`sparkforge debate submit`.",
+            exit_code=2,
+        ) from exc
 
 
 # --------------------------------------------------------------------------- #

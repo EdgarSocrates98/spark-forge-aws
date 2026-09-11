@@ -244,6 +244,9 @@ def _run_question(
         resultado = subprocess.run(  # noqa: S603 -- argv de listas fechadas, sem shell
             comando,
             cwd=workspace,
+            # Sem isto o `claude -p` espera stdin por ~3 s antes de ler o prompt
+            # do argv (medido no smoke do executor de debate, 2026-09-11).
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             encoding="utf-8",

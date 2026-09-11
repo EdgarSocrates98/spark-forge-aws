@@ -1,0 +1,17 @@
+name: recusas_de_referencia
+proves: 'Referencia pendurada e recusada no submit, e nao so no fechamento: fact fora da uniao,
+  objecao a claim inexistente, replica a objecao inexistente, supersedes de claim alheia,
+  a mesma claim duas vezes, e objecao citando fact inexistente.'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: brief

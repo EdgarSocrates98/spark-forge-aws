@@ -1,4 +1,4 @@
-"""`python -m sparkforge.evals grade|compare` -- a CLI do nivel de agente.
+"""`python -m sparkforge.evals grade|compare|debate` -- a CLI do nivel de agente.
 
 Mora DENTRO do pacote de avaliacao, e nao em `sparkforge/adapters/`, por causa
 da fronteira que `tests/test_harness_boundary.py` tranca: o runtime nao importa
@@ -13,6 +13,9 @@ recusado se trouxer separador, e o diretorio sai de uma base fixa:
   * conjunto -> `<cwd>/evals/agentic/<suite>/baselines/<nome>` (commitado) ou
     `~/.sparkforge/agentic-evals/<nome>` (recem-rodado); precisa existir em
     exatamente um dos dois.
+  * debate   -> a suite e CONSTANTE (`<cwd>/evals/agentic/debate`), e a execucao
+    e `~/.sparkforge/debate-evals/<run>` (onde `scripts/run_debate.py` grava).
+    O placar vai para `grade.json` dentro da propria execucao.
 
 O scorecard de `grade` vai para `scorecard.json` dentro da propria execucao, e
 `compare` so imprime -- sem `--out`, nenhum caminho do argv chega a escrita. A
@@ -33,11 +36,14 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.evals.compare import compare
+from sparkforge.evals.debate_grade import GRADE_FILE, DebateGradeError, grade_debate_run
 from sparkforge.evals.grade import grade
 from sparkforge.evals.suite import SuiteError, load_suite
 from sparkforge.facts.host_transcript import extract_host_transcript_path
 
 RUNS_ROOT = Path.home() / ".sparkforge" / "agentic-evals"
+DEBATE_RUNS_ROOT = Path.home() / ".sparkforge" / "debate-evals"
+DEBATE_SUITE = ("evals", "agentic", "debate")
 SCORECARD = "scorecard.json"
 
 
@@ -147,6 +153,14 @@ def build_parser() -> argparse.ArgumentParser:
     compare_p.add_argument("--suite", required=True, help="Nome da suite em evals/agentic/.")
     compare_p.add_argument("--baseline", required=True, help="Nome do conjunto de referencia.")
     compare_p.add_argument("--candidate", required=True, help="Nome do conjunto candidato.")
+    debate_p = sub.add_parser(
+        "debate",
+        help=(
+            "Placar de uma execucao de scripts/run_debate.py contra evals/agentic/debate; "
+            "grava grade.json dentro dela."
+        ),
+    )
+    debate_p.add_argument("--run", required=True, help=f"Nome da execucao em {DEBATE_RUNS_ROOT}.")
     return parser
 
 
@@ -159,12 +173,20 @@ def main(argv: list[str] | None = None) -> int:
             (execucao / SCORECARD).write_text(
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
+        elif args.action == "debate":
+            execucao = DEBATE_RUNS_ROOT / _nome(args.run, "--run")
+            if not execucao.is_dir():
+                raise EvalError(f"--run {args.run!r}: execucao ausente em {DEBATE_RUNS_ROOT}")
+            payload = grade_debate_run(Path.cwd().joinpath(*DEBATE_SUITE), execucao)
+            (execucao / GRADE_FILE).write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
         else:
             payload = eval_compare(
                 _conjunto(args.suite, args.baseline, "--baseline"),
                 _conjunto(args.suite, args.candidate, "--candidate"),
             )
-    except EvalError as exc:
+    except (EvalError, DebateGradeError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
     if hasattr(sys.stdout, "reconfigure"):

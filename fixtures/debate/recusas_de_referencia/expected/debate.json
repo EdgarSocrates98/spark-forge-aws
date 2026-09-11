@@ -1,0 +1,78 @@
+{
+  "trace": [
+    {
+      "op": "start",
+      "status": "started",
+      "created": true,
+      "max_rounds": 3
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 1,
+        "objections": 0,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "brief"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "dangling_evidence_ref"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "dangling_target_ref"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "dangling_target_ref"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "dangling_target_ref"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "duplicate_entity"
+    },
+    {
+      "op": "submit",
+      "status": "refused",
+      "reason": "dangling_evidence_ref"
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 1,
+        "objections": 1,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "brief"
+    },
+    {
+      "op": "next",
+      "status": "brief",
+      "side": "A",
+      "round": 2,
+      "rounds_remaining": 2,
+      "extracted_facts": 0,
+      "open_objections_against_you": 1,
+      "prior_submissions": 2
+    }
+  ],
+  "blackboard": {
+    "decisions": 0,
+    "debate_claims": 2,
+    "debate_objections": 1,
+    "debate_rebuttals": 0
+  }
+}
