@@ -9043,7 +9043,7 @@ scripts tests`, `check_surface_lock.py` (0), `check_evals.py` (10 de 10),
 
 ---
 
-## MCP SDK 2.x — o servidor troca de SDK, e o fio legado só muda num campo — **CONCLUÍDA** em 2026-09-11 (build B1–B6; eval Haiku B7 pendente)
+## MCP SDK 2.x — o servidor troca de SDK, e o fio legado só muda num campo — **CONCLUÍDA** em 2026-09-11 (build B1–B7)
 
 Terceira frente de `prompt_new_evo.md`. O ciclo SDD está em
 `.claude/sdd/features/` (`BRAINSTORM`, `DEFINE` e `DESIGN_MCP_SDK_V2.md`). O
@@ -9112,11 +9112,41 @@ exatamente `{name, version}`.
   saíram `httpx`, `httpcore`, `httpx-sse` e `pydantic-settings`. A resolução
   nova também subiu `boto3`, `ruff` e `build`, sem relação com o MCP.
 
+### Eval agêntico (B7): uma transição para trás, e a causa está na pergunta
+
+O candidato é o mesmo Haiku 4.5, rodado no workspace de prova com o servidor
+2.x, N = 3. O conjunto ficou em
+`evals/agentic/fase0/baselines/2026-09-11-haiku-4-5-mcp-sdk-2/`. Custo de host:
+**US$ 7,89** nas 39 respostas usadas. A execução em segundo plano caiu duas
+vezes por falta de memória da máquina, e as repetições 2 e 3 foram montadas
+com blocos de `--only`, todos do mesmo código.
+
+`python -m sparkforge.evals compare`, pergunta a pergunta:
+
+- **resposta:** 11 `pass->pass`, 1 `fail->fail` (`abst-03`, igual ao
+  baseline) e **1 `mixed->fail`**;
+- **tools exigidas:** 3 `fail->pass`, 2 `mixed->fail`, 3 `mixed->mixed` e
+  5 `fail->fail`.
+
+A transição para trás é a `fase0-07`, que foi de 2/3 para 0/3. A pergunta é
+*"qual rule_id tem runtime_scope exigindo Glue >= 5.1 e qual sua
+severity_default?"*, e o gabarito é `SF-ENV-002:P0`. O catálogo de hoje tem
+**duas** regras com `glue: ['>=5.1']` e `P0`: `SF-ENV-002` e `SF-LF-004`,
+esta última entrou em 2026-09-09. O candidato chamou `rules_lookup` nas três
+repetições (0/3 no baseline, que lia os YAML) e respondeu `SF-LF-004:P0`. É
+uma resposta que o catálogo sustenta, e o gabarito recusa.
+
+A pergunta deixou de ter resposta única, e `check_evals.py` não acusa isso,
+porque confere que o gabarito reproduz e não que ele é único. O que a tool
+devolve é o mesmo byte a byte nos dois SDKs (golden de paridade), então a
+transição mede a pergunta, e não o servidor. Pela regra 30 nada disto é
+ganho nem perda afirmada: o `fail->pass` das tools também não é atribuído à
+migração.
+
 ### O que ficou de fora, e por quê
 
-- **Eval agêntico N = 3 contra o baseline Haiku (B7).** Custa cerca de US$ 7
-  de host e roda depois do commit. Sem ele, a entrega afirma paridade de fio,
-  não "o agente não regrediu" (regra 30).
+- **Corrigir a `fase0-07`.** Tornar a pergunta única, ou aceitar as duas
+  respostas, muda o gabarito e exige repontuar o baseline. É entrega à parte.
 - **`transport_security`, OAuth, MRTR, resources/prompts e OTel do SDK.** Pela
   tabela YAGNI do BRAINSTORM.
 - **O piso de `python-dotenv` no extra `mcp`.** A transitiva que o justificava

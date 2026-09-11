@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_MCP_SDK_V2.md](../features/DEFINE_MCP_SDK_V2.md) |
 | **DESIGN** | [DESIGN_MCP_SDK_V2.md](../features/DESIGN_MCP_SDK_V2.md) |
-| **Status** | Complete (B7, SHOULD, pendente: eval Haiku depois do commit) |
+| **Status** | Complete (B7 rodado: 1 transição `mixed->fail`, atribuída a pergunta ambígua) |
 
 Branch `feat/mcp-sdk-v2`, empilhado sobre `feat/debate-executor` (PR #48). Empilhar foi escolha: o golden fixa 86 tools, e três delas só existem nesse PR.
 
@@ -39,7 +39,7 @@ Branch `feat/mcp-sdk-v2`, empilhado sobre `feat/debate-executor` (PR #48). Empil
 | B4 | Testes do adapter + paridade | (direct) | ✅ | 19 + 10 testes |
 | B5 | Era `2026-07-28` | (direct) | ✅ | 4 testes, `server/discover` negociado |
 | B6 | Locks, requirements, docs, gates, suíte | (direct) | ✅ | 8 alegações remediadas por lista de ids |
-| B7 | Eval Haiku N = 3 | — | ⏳ | Depois do commit; cerca de US$ 7 |
+| B7 | Eval Haiku N = 3 | (direct) | ✅ com ressalva | US$ 7,89; 11 `pass->pass`, 1 `fail->fail`, 1 `mixed->fail` (`fase0-07`: duas regras sustentam a resposta, e o gabarito aceita uma) |
 
 ---
 
@@ -153,18 +153,18 @@ Nenhum.
 | AT-009 | ✅ | `test_modulo_nao_importa_o_sdk` |
 | AT-010 | ✅ | `test_mcp_modern_era.py` |
 | AT-011 | ✅ | Caminho `SystemExit(_INSTALL_HINT)` preservado |
-| AT-012 | ⏳ | B7 |
+| AT-012 | ⚠️ | 1 transição `mixed->fail` (`fase0-07`). Causa medida: o catálogo tem `SF-ENV-002` e `SF-LF-004` com Glue `>=5.1` e P0, e o candidato respondeu a segunda usando `rules_lookup` 3/3 |
 
 **Success Criteria:**
 - SC1–SC4 ✅.
-- SC5 ⏳ (B7).
+- SC5 ⚠️: violado na letra por `fase0-07`; a causa é a pergunta, que perdeu a unicidade em 2026-09-09.
 - SC6 e SC7 ✅.
 
 ---
 
 ## Final Status
 
-### Overall: ✅ COMPLETE (B7 pendente)
+### Overall: ✅ COMPLETE (com a ressalva do SC5)
 
 - [x] All tasks from manifest completed (B7/SHOULD pendente)
 - [x] All verification checks pass
