@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_SARIF_GITHUB_CHECK.md](../features/DEFINE_SARIF_GITHUB_CHECK.md) |
 | **DESIGN** | [DESIGN_SARIF_GITHUB_CHECK.md](../features/DESIGN_SARIF_GITHUB_CHECK.md) |
-| **Status** | Complete (B7, o upload real, roda depois do push por `workflow_dispatch`) |
+| **Status** | Complete (B1–B7) |
 
 Branch `feat/sarif-github-check`, a partir da `main` (ja com #48 e #49).
 
@@ -21,7 +21,7 @@ Branch `feat/sarif-github-check`, a partir da `main` (ja com #48 e #49).
 
 | Metric | Value |
 |--------|-------|
-| **Tasks Completed** | B1–B6; B7 depois do push; B8 e este relatorio |
+| **Tasks Completed** | B1–B7; B8 e este relatorio |
 | **Files Created** | `sparkforge/reporting/{__init__,locate,github}.py`, `fixtures/sarif/` (4 casos + `_schema/`), `tests/test_reporting_github.py`, `tests/test_fixtures_golden_sarif.py`, `docs/github-code-scanning.md`, `examples/github/sparkforge.yml` |
 | **Files Modified** | `adapters/{_core,cli,tools}.py`, `scripts/regen_fixtures.py`, `.github/workflows/ci.yml`, registros de tool nova (`tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `parity.yaml`, `manifest.json`, `config/agents.yaml`, `agents/executors/sf-synthesizer.md` + espelhos), `tests/test_fixtures_golden_mcp_parity.py`, `tests/test_mcp_modern_era.py`, docs com numeros medidos, `docs/surface.lock.json`, `docs/claims.lock.json` |
 | **Tests Passing** | Suite completa, um processo por arquivo: 262 arquivos, 12 072 passed, 0 failed, 9 skipped |
@@ -39,7 +39,7 @@ Branch `feat/sarif-github-check`, a partir da `main` (ja com #48 e #49).
 | B4 | `fixtures/sarif/` + golden + regen | (direct) | ✅ | 4 casos a partir de findings reais; a CLI de verdade bate com o golden |
 | B5 | Guia, workflow de exemplo, job `sarif-upload` | (direct) | ✅ | Comandos do job rodados localmente com `--repo .`: os alertas caem em arquivos reais |
 | B6 | Docs, gates, suite, Snyk | (direct) | ✅ | 24 alegacoes remediadas por lista de ids; surface +3 497 bytes |
-| B7 | Upload real | — | ⏳ | `gh workflow run ci.yml --ref feat/sarif-github-check` depois do push |
+| B7 | Upload real | (direct) | ✅ | `workflow_dispatch` no branch (https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34613106227): os 3 casos com `processing_status: complete` e `results_count` = resultados do SARIF (1, 1, 1). Confirma A-001 (sem `startColumn`) e A-007 |
 
 ---
 
@@ -135,24 +135,24 @@ Nenhum.
 | AT-010 | ✅ | `test_nenhum_finding_some_no_corpus_inteiro` |
 | AT-011 | ✅ | `test_adapters_tools.py` (tool valida contra o schema e nao grava) |
 | AT-012 | ✅ | CLI: exit 2 para facts ausente e `--source-root ../x`; `evidencia_ausente` no golden `misto` |
-| AT-013 | ⏳ | B7 |
+| AT-013 | ✅ | https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34613106227 |
 
 **Success Criteria:**
 - SC1–SC5 e SC7 ✅.
-- SC6 ⏳ (B7).
+- SC6 ✅.
 
 ---
 
 ## Final Status
 
-### Overall: ✅ COMPLETE (B7 depois do push)
+### Overall: ✅ COMPLETE
 
 - [x] All tasks from manifest completed
 - [x] All verification checks pass
 - [x] All tests pass
 - [x] No blocking issues
-- [x] Acceptance tests verified (AT-013 pendente)
-- [x] Ready for /ship depois do B7
+- [x] Acceptance tests verified
+- [x] Ready for /ship
 
 ---
 

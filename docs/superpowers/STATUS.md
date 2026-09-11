@@ -9180,7 +9180,7 @@ de ids: VNX-357, 358, 431, 469, 640, 663, 666, 741),
 
 ---
 
-## SARIF + GitHub Check — os findings aparecem onde o PR é revisado — **CONCLUÍDA** em 2026-09-11 (build B1–B6; upload real B7 pendente)
+## SARIF + GitHub Check — os findings aparecem onde o PR é revisado — **CONCLUÍDA** em 2026-09-11 (build B1–B7)
 
 Quarta frente de `prompt_new_evo.md` (§22). O ciclo SDD está em
 `.claude/sdd/features/`, nos arquivos `BRAINSTORM`, `DEFINE` e
@@ -9216,6 +9216,11 @@ rede.
   (`actions/toolkit`, `escapeData`/`escapeProperty`), e sem ele um título com
   `::` injetaria outro comando no log.
 
+**Aceito pelo GitHub.** O job `sarif-upload`, disparado por `workflow_dispatch` no
+branch (https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34613106227), subiu os três casos com resultado localizado. Os três saíram com
+`processing_status: complete` e `results_count` igual ao número de resultados
+do SARIF enviado. Resultado sem `startColumn` é aceito.
+
 A tool nova levou o catálogo de **86 para 87** e as tools que declaram caminho de
 **80 para 81**. O golden de paridade do MCP (congelado sob o SDK 1.29) passou a
 declarar as tools posteriores a ele em `NOVAS_DEPOIS_DO_GOLDEN`, em vez de ser
@@ -9223,9 +9228,6 @@ regravado. A superfície de tools cresceu **+3 497 bytes** (464 995 → 468 492)
 
 ### O que ficou de fora, e por quê
 
-- **Upload real (B7).** O job `sarif-upload` sobe três casos e confere
-  `processing_status` e `results_count`, mas só pode rodar depois do push, por
-  `workflow_dispatch`.
 - **Localizar `stage` pela ponte código–execução (`spark.stage.callsite`).**
   É o próximo passo natural para tirar findings de runtime da recusa.
 - **`scan .`, só-o-que-o-PR-introduziu, Checks API, bot de review, `doctor`,
