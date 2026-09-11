@@ -9275,7 +9275,7 @@ que diz o que destravaria a localização.
   (https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34623986115):
   `processing_status: complete` e `results_count` 3, igual aos resultados do SARIF.
 
-## OpenTelemetry GenAI — as tools e a sessão do host num backend de tracing — **CONCLUÍDA** em 2026-09-11 (build; Collector real no CI do PR)
+## OpenTelemetry GenAI — as tools e a sessão do host num backend de tracing — **CONCLUÍDA** em 2026-09-11 (build e Collector real)
 
 Quinta frente de `prompt_new_evo.md` (§13; item 2 do P0 no §31). O ciclo SDD
 está em `.claude/sdd/features/`, nos arquivos `BRAINSTORM`, `DEFINE` e
@@ -9296,7 +9296,7 @@ log do primeiro job do CI).
 | Horário no host | `facts/host_transcript.py` (`@0.2.0`) | `first_timestamp`/`last_timestamp` e, por tool call, `call_id`, `started_at` e `ended_at`, em `attrs`: nenhum id de fact muda |
 | Verbo e tool | `adapters/_core.py`, `cli.py`, `tools.py` | A CLI grava `.sparkforge/telemetry/<run_id>.traces.jsonl` e `.metrics.jsonl` com nome fixo; a tool `sparkforge_telemetry_export` é `_READ_ONLY` e não grava |
 | Golden | `fixtures/otel/` (4 casos) | A CLI de verdade, lendo de um `traces.db` real, bate byte a byte |
-| Consumidor real | job `otel-collector` no `ci.yml`, `.github/otel-collector.yaml`, `scripts/check_otel_collector.py` | `otelcol-contrib` 0.160.0 lê os goldens e o conferidor cobra os mesmos spans, atributos e pontos de métrica do outro lado |
+| Consumidor real | job `otel-collector` no `ci.yml`, `.github/otel-collector.yaml`, `scripts/check_otel_collector.py` | `otelcol-contrib` 0.160.0 lê os goldens e o conferidor cobra os mesmos spans, atributos e pontos de métrica do outro lado. No PR #52 (https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34642782123): 13 spans e 11 pontos iguais, inclusive o histograma de token de bucket único |
 | Guia | `docs/opentelemetry.md` | Uso, configuração do Collector, o que sai, o que nunca sai, recusas e fontes com status |
 
 ### Quatro medidas que decidiram o desenho

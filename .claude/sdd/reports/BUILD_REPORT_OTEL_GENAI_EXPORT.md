@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_OTEL_GENAI_EXPORT.md](../features/DEFINE_OTEL_GENAI_EXPORT.md) |
 | **DESIGN** | [DESIGN_OTEL_GENAI_EXPORT.md](../features/DESIGN_OTEL_GENAI_EXPORT.md) |
-| **Status** | Complete (B1–B6, B8); B7 no PR |
+| **Status** | Complete (B1–B8) |
 
 Branch `feat/otel-genai`, a partir da `main` (com #48, #49 e #50).
 
@@ -21,7 +21,7 @@ Branch `feat/otel-genai`, a partir da `main` (com #48, #49 e #50).
 
 | Metric | Value |
 |--------|-------|
-| **Tasks Completed** | B1–B6 e B8; B7 (commit, PR e o job `otel-collector` no CI) em seguida |
+| **Tasks Completed** | B1–B8 |
 | **Files Created** | `sparkforge/observability/otlp.py`, `fixtures/otel/` (4 casos), `tests/test_observability_otlp.py`, `tests/test_fixtures_golden_otel.py`, `tests/test_check_otel_collector.py`, `scripts/check_otel_collector.py`, `.github/otel-collector.yaml`, `docs/opentelemetry.md` |
 | **Files Modified** | `facts/host_transcript.py` (+ 15 goldens), `observability/context_ledger.py`, `adapters/{tools,mcp,_core,cli}.py`, `scripts/regen_fixtures.py`, `.github/workflows/ci.yml`, registros de tool nova (`tests/test_adapters_tools.py`, `tests/test_harness_authorization.py`, `tests/test_fixtures_golden_mcp_parity.py`, `parity.yaml`, `manifest.json`, `config/agents.yaml`, `sf-synthesizer` + espelhos), `tests/test_context_ledger.py`, `tests/test_adapters_mcp.py`, `CLAUDE.md`, `AGENTS.md`, `GUIA_DE_USO.md`, `.devin/README.md`, `docs/superpowers/STATUS.md`, `docs/surface.lock.json`, `docs/claims.lock.json` + 4 docs de `docs/harness/` |
 | **Tests Passing** | Suite completa, um processo por arquivo: 265 arquivos, 12 154 passed, 0 failed, 9 skipped |
@@ -39,6 +39,7 @@ Branch `feat/otel-genai`, a partir da `main` (com #48, #49 e #50).
 | B4 | Verbo, CLI, tool e registros | (direct) | ✅ | Tool valida contra o proprio schema com um ledger real e o transcript de `correct_mcp`; mensagens de erro com o comando que resolve |
 | B5 | `fixtures/otel/` + golden | (direct) | ✅ | 4 casos com spans de chamadas reais de `call_tool`; a CLI le de um `traces.db` real e bate byte a byte |
 | B6 | Collector no CI, docs, gates | (direct) | ✅ | Conferidor testado contra os proprios goldens (identidade passa, token adulterado falha); surface +3 261 bytes; 22 alegacoes remediadas por id |
+| B7 | Commit, PR #52, job `otel-collector` | (direct) | ✅ | https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34642782123: o `otelcol-contrib` 0.160.0 leu os 4 goldens e o conferidor achou 13 spans e 11 pontos de metrica iguais, inclusive o histograma de token de bucket unico (A-005) |
 | B8 | Este relatorio e statuses | (direct) | ✅ | — |
 
 ---
@@ -136,22 +137,22 @@ Nenhum.
 | AT-010 | ✅ | `test_adapters_tools.py` (tool valida contra o schema e nao grava) |
 | AT-011 | ✅ | `TestErrorShapesValidateToo` (`run_id` fora do padrao, exit 2 com comando) |
 | AT-012 | ✅ | `TestOCanalMedido::test_gravar_o_canal_falhando_nao_derruba_a_chamada` |
-| AT-013 | ⏳ | job `otel-collector` no CI do PR |
+| AT-013 | ✅ | https://github.com/EdgarSocrates98/spark-forge-aws/actions/runs/34642782123 |
 
-**Success Criteria:** SC1–SC6, SC8 e SC9 ✅; SC7 depende do job no CI.
+**Success Criteria:** SC1–SC9 ✅.
 
 ---
 
 ## Final Status
 
-### Overall: ✅ COMPLETE (Collector real pendente no CI)
+### Overall: ✅ COMPLETE
 
 - [x] All tasks from manifest completed
 - [x] All verification checks pass
 - [x] All tests pass
 - [x] No blocking issues
-- [x] Acceptance tests verified (AT-013 no PR)
-- [x] Ready for /ship depois do AT-013
+- [x] Acceptance tests verified
+- [x] Ready for /ship
 
 ---
 
