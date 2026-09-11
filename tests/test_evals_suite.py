@@ -225,3 +225,52 @@ def test_protocolo_sem_a_linha_answer(tmp_path):
     )
     with pytest.raises(SuiteError, match="ANSWER:"):
         load_suite(tmp_path)
+
+
+class TestAlsoAccepted:
+    """Pergunta que o corpus passou a sustentar por mais de um valor.
+
+    A `fase0-07` perdeu a unicidade quando `SF-LF-004` entrou no catalogo com o
+    mesmo escopo de Glue e a mesma severidade de `SF-ENV-002`. O eval agentico
+    de 2026-09-11 pontuou como errada a resposta `SF-LF-004:P0`, que o catalogo
+    sustenta.
+    """
+
+    def test_a_fase0_07_aceita_as_duas_regras(self):
+        pergunta = load_suite(SUITE_DIR).by_id()["fase0-07"]
+        assert pergunta.expected == "SF-ENV-002:P0"
+        assert pergunta.also_accepted == ("SF-LF-004:P0",)
+        assert pergunta.accepts("SF-ENV-002:P0")
+        assert pergunta.accepts("SF-LF-004:P0")
+        assert not pergunta.accepts("SF-ENV-001:P0")
+
+    def test_sem_also_accepted_o_sha_nao_muda(self, tmp_path):
+        """O campo so entra no sha quando existe: as outras suites continuam iguais."""
+        corpo = (
+            "questions:\n  - id: q1\n    question: 'x?'\n    answer: 'a'\n"
+            "    required_tools: [judge]\n"
+        )
+        sem = load_suite(_suite_inline(tmp_path, corpo))
+        assert "also_accepted" not in sem.questions[0].canonical()
+        com_dir = tmp_path / "com"
+        com_dir.mkdir()
+        com = load_suite(_suite_inline(com_dir, corpo + "    also_accepted: [b]\n"))
+        assert com.sha256 != sem.sha256
+        assert com.questions[0].accepts("b")
+
+    @pytest.mark.parametrize(
+        ("valor", "trecho"),
+        [
+            ("[]", "lista nao vazia"),
+            ("[a]", "repete a resposta do gabarito"),
+            ("[b, b]", "valor repetido"),
+            ("['']", "strings nao vazias"),
+        ],
+    )
+    def test_recusas_de_forma(self, tmp_path, valor, trecho):
+        corpo = (
+            "questions:\n  - id: q1\n    question: 'x?'\n    answer: 'a'\n"
+            f"    required_tools: [judge]\n    also_accepted: {valor}\n"
+        )
+        with pytest.raises(SuiteError, match=trecho):
+            load_suite(_suite_inline(tmp_path, corpo))

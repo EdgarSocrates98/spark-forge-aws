@@ -44,3 +44,19 @@ class TestAnswersAreDerivableFromTheFixtures:
         from scripts.check_evals import verify_all
 
         assert not verify_all()
+
+    def test_resposta_que_deixou_de_ser_unica_derruba_o_gate(self, monkeypatch):
+        """Sem o `also_accepted` declarado, o gate acusa -- era `next(...)` antes.
+
+        O `next` pegava a primeira regra com Glue >= 5.1 e o gate "reproduzia" o
+        gabarito sem ver a segunda. Hoje ele recomputa o conjunto.
+        """
+        import sys
+
+        sys.path.insert(0, str(ROOT))
+        import scripts.check_evals as check_evals
+
+        monkeypatch.setattr(check_evals, "_also_accepted_declarado", lambda _i: frozenset())
+        divergencias = check_evals.verify_all()
+        assert len(divergencias) == 1
+        assert "SF-LF-004:P0" in divergencias[0] and "also_accepted" in divergencias[0]

@@ -72,6 +72,14 @@ perguntas cuja resposta certa é **recusar** (`expects_abstention`). Cada uma
 dessas três ancora num fact `*.unresolved` que o corpus de fato emite, e
 `tests/test_evals_suite.py` confere a âncora.
 
+Uma pergunta pode perder a unicidade sem mudar de texto. Foi o caso da
+`fase0-07` quando `SF-LF-004` entrou no catálogo com o mesmo escopo de Glue e a
+mesma severidade de `SF-ENV-002`. Para isso existe `also_accepted`: as outras
+respostas que o corpus sustenta. `scripts/check_evals.py` recomputa o
+**conjunto** e cobra que a lista seja exatamente o resto dele. O campo só
+entra no sha da suíte quando existe. Reescrever a pergunta, em vez disso,
+invalidaria os transcripts já gravados.
+
 ```bash
 # 1. roda o agente e pontua cada execucao -- gasta token do host, fora do CI.
 #    Grava em ~/.sparkforge/agentic-evals/: uma pasta por execucao (com

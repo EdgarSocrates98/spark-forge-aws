@@ -22,6 +22,7 @@ from defusedxml import ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_FILE = ROOT / "evals" / "fase0.xml"
 FIXTURES = ROOT / "fixtures" / "pyspark"
+AGENTIC_SUITE = ROOT / "evals" / "agentic" / "fase0" / "suite.yaml"
 
 
 def _pairs() -> list[tuple[str, str]]:
@@ -86,12 +87,33 @@ def _compute_sf_py_007() -> str:
     return f"{threshold}:{measure}"
 
 
-def _compute_glue_51_rule() -> str:
+def _compute_glue_51_rule() -> frozenset[str]:
+    """TODAS as regras com Glue >= 5.1, e nao a primeira.
+
+    Ate 2026-09-11 isto era `next(...)`: devolvia a primeira regra que casava e
+    o gate "reproduzia" o gabarito sem ver que `SF-LF-004` (2026-09-09) tambem
+    casa. O eval agentico pegou -- o agente respondeu a segunda, certa, e foi
+    pontuado errado. Devolver o conjunto e o que deixa `verify_all` cobrar a
+    unicidade.
+    """
     from sparkforge.rules.loader import load_catalog
 
-    rules = load_catalog()
-    rule = next(r for r in rules if r.get("runtime_scope", {}).get("glue") == ">=5.1")
-    return f"{rule['id']}:{rule['severity_default']}"
+    return frozenset(
+        f"{r['id']}:{r['severity_default']}"
+        for r in load_catalog()
+        if r.get("runtime_scope", {}).get("glue") == ">=5.1"
+    )
+
+
+def _also_accepted_declarado(indice: int) -> frozenset[str]:
+    """O `also_accepted` que a suite agentica declara para a pergunta `#indice`."""
+    import yaml
+
+    suite = yaml.safe_load(AGENTIC_SUITE.read_text(encoding="utf-8"))
+    for q in suite.get("questions") or []:
+        if str(q.get("source", "")).endswith(f"fase0.xml#{indice}"):
+            return frozenset(q.get("also_accepted") or [])
+    return frozenset()
 
 
 def _compute_glue_matrix() -> str:
@@ -166,6 +188,25 @@ def verify_all() -> list[str]:
             expected = compute()
         except Exception as exc:  # noqa: BLE001 -- reportado como divergencia, nao crash
             mismatches.append(f"{question!r}: falha ao recomputar: {exc}")
+            continue
+
+        if isinstance(expected, frozenset):
+            # Resposta que o corpus sustenta por mais de um valor: a do XML tem de
+            # estar no conjunto, e o RESTO tem de estar declarado como
+            # `also_accepted` na suite agentica -- senao o agente que responder o
+            # outro valor, certo, sai pontuado como errado.
+            indice = [q for q, _ in pairs].index(question) + 1
+            if answer not in expected:
+                mismatches.append(
+                    f"{question!r}: resposta no XML é {answer!r}, "
+                    f"recomputado é {sorted(expected)}"
+                )
+            elif (resto := expected - {answer}) != _also_accepted_declarado(indice):
+                mismatches.append(
+                    f"{question!r}: o corpus sustenta {sorted(expected)}; declare "
+                    f"also_accepted: {sorted(resto)} em "
+                    f"{AGENTIC_SUITE.relative_to(ROOT).as_posix()} (fase0.xml#{indice})"
+                )
             continue
 
         if answer != expected:

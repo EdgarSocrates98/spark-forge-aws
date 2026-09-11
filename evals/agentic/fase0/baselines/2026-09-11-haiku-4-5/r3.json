@@ -2,7 +2,7 @@
   "schema_version": 1,
   "suite": {
     "id": "fase0",
-    "sha256": "acc17b80bdd79886ecba0a5364be45b7c327b7c6a258c962237b85bbed2c0df5"
+    "sha256": "cd35c816a318670b2d251ca9e87ed345241396fcf2c67b425d36e52b1cbbdebf"
   },
   "run": {
     "id": "fase0-2026-09-11T02-30-27Z-r3",

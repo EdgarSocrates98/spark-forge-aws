@@ -2,7 +2,7 @@
   "schema_version": 1,
   "suite": {
     "id": "fase0",
-    "sha256": "acc17b80bdd79886ecba0a5364be45b7c327b7c6a258c962237b85bbed2c0df5"
+    "sha256": "cd35c816a318670b2d251ca9e87ed345241396fcf2c67b425d36e52b1cbbdebf"
   },
   "run": {
     "id": "mcp2-2026-09-11-r1",
@@ -179,7 +179,7 @@
     {
       "id": "fase0-07",
       "status": "graded",
-      "answer": "wrong",
+      "answer": "correct",
       "abstention": null,
       "tools": {
         "verdict": "ok",
@@ -370,8 +370,8 @@
     "questions": 13,
     "graded": 13,
     "ungraded": 0,
-    "correct": 9,
-    "wrong": 1,
+    "correct": 10,
+    "wrong": 0,
     "answer_absent": 0,
     "over_abstention": 0,
     "abstention_total": 3,

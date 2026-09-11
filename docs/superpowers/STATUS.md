@@ -9112,7 +9112,7 @@ exatamente `{name, version}`.
   saíram `httpx`, `httpcore`, `httpx-sse` e `pydantic-settings`. A resolução
   nova também subiu `boto3`, `ruff` e `build`, sem relação com o MCP.
 
-### Eval agêntico (B7): uma transição para trás, e a causa está na pergunta
+### Eval agêntico (B7): nenhuma transição para trás, depois de corrigir o gabarito
 
 O candidato é o mesmo Haiku 4.5, rodado no workspace de prova com o servidor
 2.x, N = 3. O conjunto ficou em
@@ -9121,32 +9121,48 @@ O candidato é o mesmo Haiku 4.5, rodado no workspace de prova com o servidor
 vezes por falta de memória da máquina, e as repetições 2 e 3 foram montadas
 com blocos de `--only`, todos do mesmo código.
 
-`python -m sparkforge.evals compare`, pergunta a pergunta:
+**A primeira leitura deu uma transição para trás, e a causa era o gabarito.**
+A `fase0-07` foi de 2/3 para 0/3. A pergunta é *"qual rule_id tem
+runtime_scope exigindo Glue >= 5.1 e qual sua severity_default?"*, e o gabarito
+era só `SF-ENV-002:P0`. O catálogo tem **duas** regras com `glue: '>=5.1'` e
+`P0`: `SF-ENV-002` e `SF-LF-004`, esta última desde 2026-09-09. O candidato
+chamou `rules_lookup` nas três repetições (0/3 no baseline, que lia os YAML) e
+respondeu `SF-LF-004:P0` em duas. O gate `check_evals.py` não via a
+ambiguidade porque recomputava a resposta com `next(...)`: pegava a primeira
+regra que casava e "reproduzia" o gabarito.
 
-- **resposta:** 11 `pass->pass`, 1 `fail->fail` (`abst-03`, igual ao
-  baseline) e **1 `mixed->fail`**;
+**A correção, sem mudar o texto da pergunta.** Reescrevê-la invalidaria os
+transcripts já gravados, porque o agente respondeu ao texto antigo. Então:
+
+- a suíte ganhou `also_accepted`, que só entra no sha quando existe (as outras
+  suítes, e os goldens de `fixtures/host_transcript/`, não mudaram de sha), e
+  a `fase0-07` declara `also_accepted: [SF-LF-004:P0]`;
+- `check_evals.py` recomputa o **conjunto** e cobra que o `also_accepted` seja
+  exatamente o resto dele. Uma terceira regra com o mesmo escopo derruba o
+  gate, e `tests/test_evals.py` prova isso tirando a declaração;
+- o baseline e o candidato foram **repontuados a partir dos transcripts**.
+  No baseline mudou só o sha da suíte; no candidato, a `fase0-07` das
+  repetições 1 e 2.
+
+As duas repetições r3, do baseline e do candidato, responderam
+`SF-ENV-002:P0, SF-LF-004:P0` (as duas regras numa linha). Isso fere o
+protocolo de resposta, que pede um valor por posição, e continua `wrong` nos
+dois lados.
+
+`python -m sparkforge.evals compare`, pergunta a pergunta, com o gabarito
+corrigido:
+
+- **resposta:** 11 `pass->pass`, 1 `mixed->mixed` (`fase0-07`, 2/3 nos dois
+  lados) e 1 `fail->fail` (`abst-03`, igual ao baseline). **Nenhuma transição
+  para trás;**
 - **tools exigidas:** 3 `fail->pass`, 2 `mixed->fail`, 3 `mixed->mixed` e
   5 `fail->fail`.
 
-A transição para trás é a `fase0-07`, que foi de 2/3 para 0/3. A pergunta é
-*"qual rule_id tem runtime_scope exigindo Glue >= 5.1 e qual sua
-severity_default?"*, e o gabarito é `SF-ENV-002:P0`. O catálogo de hoje tem
-**duas** regras com `glue: ['>=5.1']` e `P0`: `SF-ENV-002` e `SF-LF-004`,
-esta última entrou em 2026-09-09. O candidato chamou `rules_lookup` nas três
-repetições (0/3 no baseline, que lia os YAML) e respondeu `SF-LF-004:P0`. É
-uma resposta que o catálogo sustenta, e o gabarito recusa.
-
-A pergunta deixou de ter resposta única, e `check_evals.py` não acusa isso,
-porque confere que o gabarito reproduz e não que ele é único. O que a tool
-devolve é o mesmo byte a byte nos dois SDKs (golden de paridade), então a
-transição mede a pergunta, e não o servidor. Pela regra 30 nada disto é
-ganho nem perda afirmada: o `fail->pass` das tools também não é atribuído à
-migração.
+Pela regra 30, nada disto é ganho: o `fail->pass` das tools não é atribuído à
+migração, que não mudou nenhum byte do que a tool devolve.
 
 ### O que ficou de fora, e por quê
 
-- **Corrigir a `fase0-07`.** Tornar a pergunta única, ou aceitar as duas
-  respostas, muda o gabarito e exige repontuar o baseline. É entrega à parte.
 - **`transport_security`, OAuth, MRTR, resources/prompts e OTel do SDK.** Pela
   tabela YAGNI do BRAINSTORM.
 - **O piso de `python-dotenv` no extra `mcp`.** A transitiva que o justificava
