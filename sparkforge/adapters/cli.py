@@ -1659,12 +1659,20 @@ def build_parser() -> argparse.ArgumentParser:
     # agente pode declarar root cause final apenas com hipotese". Essa frase e
     # uma RECUSA, e recusa e verificacao -- que se constroi sem provider.
     #
-    # O que NAO esta aqui e o executor: gerar argumento exige modelo, e
-    # `sparkforge/` nao chama provider (regra 23). `arbitrate` ja emite
-    # `debate_plan` e para; este verbo arbitra o que o host preencheu.
+    # O que NAO esta aqui e a GERACAO: argumento exige modelo, e `sparkforge/`
+    # nao chama provider (regra 23). `arbitrate` emite `debate_plan` e para;
+    # `referee` arbitra o que o host preencheu.
+    #
+    # `start`, `next` e `submit` sao o executor de debate: uma maquina de
+    # estados sobre arquivos do case que diz de quem e a vez, recusa por nome a
+    # submissao que fere o protocolo e fecha pelo `referee`. Continua sem gerar
+    # uma palavra de argumento -- quem escreve a submissao e o host.
     ref_p = sub.add_parser(
         "debate",
-        help="Arbitra o protocolo de debate do case. NAO executa debate.",
+        help=(
+            "Conduz e arbitra o protocolo de debate do case. Nao gera argumento: "
+            "quem escreve cada submissao e o host."
+        ),
     )
     ref_sub = ref_p.add_subparsers(dest="debate_action", required=True)
     ref_r = ref_sub.add_parser(
@@ -1676,6 +1684,66 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     ref_r.add_argument("--repo", required=True)
+
+    deb_start = ref_sub.add_parser(
+        "start",
+        help=(
+            "Congela o plano de debate do par --rules A,B em "
+            "<repo>/.sparkforge/debate/<debate_id>/, a partir dos MESMOS insumos "
+            "do `arbitrate`. Recusa `budget_undeclared` sem `budget:` no case.yaml."
+        ),
+    )
+    deb_start.add_argument(
+        "--rules",
+        required=True,
+        help="As duas regras em contradicao, `A,B`. O lado A defende a primeira.",
+    )
+    deb_start.add_argument(
+        "--findings",
+        required=True,
+        help="Arquivo de findings (JSON) gerado por `judge --out` -- o mesmo do `arbitrate`.",
+    )
+    deb_start.add_argument(
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Arquivo de facts (JSON). Repetivel: o plano e recalculado sobre a UNIAO "
+            "dos facts do case, o mesmo conjunto que `arbitrate` recebeu."
+        ),
+    )
+    deb_start.add_argument("--repo", default=".", help="Raiz do case.")
+    deb_start.add_argument("--glue")
+    deb_start.add_argument("--emr", help=_EMR_FLAG_HELP)
+    deb_start.add_argument("--spark")
+    deb_start.add_argument("--python")
+    deb_start.add_argument("--iceberg")
+    deb_start.add_argument("--athena")
+
+    deb_next = ref_sub.add_parser(
+        "next",
+        help=(
+            "O brief do lado da vez, ou `done` com a Decision. Grava a Decision no "
+            "fechamento; depois dele devolve sempre o mesmo `done`."
+        ),
+    )
+    deb_next.add_argument("--repo", default=".", help="Raiz do case.")
+    deb_next.add_argument("--debate", required=True, help="O `debate_id` que `start` devolveu.")
+
+    deb_submit = ref_sub.add_parser(
+        "submit",
+        help=(
+            "Valida e grava a submissao do lado da vez. Recusa por nome e deixa o "
+            "estado igual."
+        ),
+    )
+    deb_submit.add_argument("--repo", default=".", help="Raiz do case.")
+    deb_submit.add_argument("--debate", required=True, help="O `debate_id` que `start` devolveu.")
+    deb_submit.add_argument(
+        "--file",
+        required=True,
+        help="A submissao (objeto JSON), no schema que o brief publica em `submission_schema`.",
+    )
 
     # root-cause -------------------------------------------------------
     #
@@ -3014,6 +3082,38 @@ def _cmd_debate_referee(args: argparse.Namespace) -> int:
     return 0
 
 
+# Recusa nomeada sai em stdout e com exit 0, como o `upheld: false` do
+# `referee`: e resposta do protocolo, nao erro de fronteira. O driver decide o
+# proximo passo por `status` e `reason`, e um exit != 0 so para `AdapterError`
+# (arquivo ausente, JSON invalido) mantem os dois casos separaveis.
+def _cmd_debate_start(args: argparse.Namespace) -> int:
+    _print(
+        _core.debate_start(
+            args.repo,
+            args.rules,
+            findings_path=args.findings,
+            facts_path=args.facts,
+            glue=args.glue,
+            emr=args.emr,
+            spark=args.spark,
+            python=args.python,
+            iceberg=args.iceberg,
+            athena=args.athena,
+        )
+    )
+    return 0
+
+
+def _cmd_debate_next(args: argparse.Namespace) -> int:
+    _print(_core.debate_next(args.repo, args.debate))
+    return 0
+
+
+def _cmd_debate_submit(args: argparse.Namespace) -> int:
+    _print(_core.debate_submit(args.repo, args.debate, payload_path=args.file))
+    return 0
+
+
 def _cmd_root_cause(args: argparse.Namespace) -> int:
     payload = _core.root_cause(
         facts_path=args.facts_paths,
@@ -3681,6 +3781,9 @@ _DISPATCH = {
     ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("debate", "referee"): _cmd_debate_referee,
+    ("debate", "start"): _cmd_debate_start,
+    ("debate", "next"): _cmd_debate_next,
+    ("debate", "submit"): _cmd_debate_submit,
     ("root-cause", None): _cmd_root_cause,
     ("lakeformation", "matrix"): _cmd_lakeformation_matrix,
     ("lakeformation", "access-graph"): _cmd_lakeformation_access_graph,

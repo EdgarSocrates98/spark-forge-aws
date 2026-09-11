@@ -1,0 +1,6 @@
+name: correct_mcp
+mode: transcript
+question: q-mcp
+proves: >
+  Caminho feliz (AT-001): as duas tools pela via MCP, na ordem
+  exigida, e a resposta exata. Resposta correct, tools ok, tokens somados do usage.

@@ -67,3 +67,4 @@ audit.json
 # um `git add -A` o traria de volta. O padrao fecha isso.
 prompt_evo_*.md
 prompt_especialization_*.md
+prompt_new_evo.md

@@ -948,7 +948,13 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `collect_glue_resource_link` (2026-09-10), as 82� e 83� tools, pelo
         # mesmo par de lados de `iam_access`: a de analise e `_READ_ONLY` com
         # `path`, a de coleta e `_WRITE_LOCAL_OPEN_WORLD` com `repo`.
-        assert len(TOOLS) - len(sem_caminho) == 77
+        # 77 -> 80 com `debate_start`, `debate_next` e `debate_submit`
+        # (2026-09-11), as 84ª a 86ª tools: as tres sao `LOCAL_MUTATION` e
+        # declaram `repo`, a raiz onde o debate grava -- `start` declara tambem
+        # `findings_path` e `facts_path`, como `arbitrate`. O conjunto de excecao
+        # nao se move: `submit` recebe a submissao INLINE, e o caminho de
+        # evidencia dentro dela e confinado a raiz do case pelo proprio executor.
+        assert len(TOOLS) - len(sem_caminho) == 80
 
 
 class TestAImposicaoNoDespacho:

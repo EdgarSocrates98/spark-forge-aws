@@ -225,9 +225,7 @@ def run_executor(
     lacunas = unknowns_from(findings_validos, facts_unicos)
     experimentos = experiments_from(lacunas)
 
-    claims_por_regra: dict[str, list[Claim]] = defaultdict(list)
-    for claim in claims:
-        claims_por_regra[claim.claimant].append(claim)
+    claims_por_regra = _claims_por_regra(claims)
     acoes = _acoes_por_regra(findings_validos)
     ancoras = _ancoras_por_regra(findings_validos)
 
@@ -236,40 +234,16 @@ def run_executor(
     planos: list[dict[str, Any]] = []
     traces: list[dict[str, Any]] = []
 
-    for regra_a, regra_b in diretas:
-        disputantes = [*claims_por_regra.get(regra_a, ()), *claims_por_regra.get(regra_b, ())]
-        if not disputantes:
-            # Par de regras sem claim nenhuma: nao ha o que arbitrar. Nao
-            # acontece com finding bem formado -- toda regra que entrou em
-            # `direct_conflicts` tem finding --, mas gravar contradicao entre
-            # claims que nao existem produziria linhagem quebrada.
-            continue
-
-        resultado = arbitrate(disputantes, evidences, target_runtime=contexto)
+    for regra_a, regra_b, resultado, decisao, plano in _arbitra_pares(
+        diretas, claims_por_regra, evidences, acoes, ancoras, findings_validos, lacunas,
+        contexto, budget,
+    ):
         traces.append(_trace_de_arbitragem(regra_a, regra_b, resultado))
-
-        decisao = None
-        if _fecha(resultado):
-            decisao = _decisao_do_par(
-                regra_a, regra_b, resultado, disputantes, evidences, acoes, findings_validos,
-                lacunas, contexto,
-            )
         if decisao is not None:
             decisoes.append(decisao)
             resolucao: str | None = f"decision {decisao.id}"
         else:
-            planos.append(
-                {
-                    "rules": [regra_a, regra_b],
-                    "recommendation": resultado.recommendation,
-                    "reason": _motivo_de_nao_fechar(resultado),
-                    "plan": debate_plan(
-                        [regra_a, regra_b],
-                        {regra: ancoras.get(regra, []) for regra in (regra_a, regra_b)},
-                        budget,
-                    ),
-                }
-            )
+            planos.append(plano)
             resolucao = None
 
         contradicoes.extend(
@@ -310,9 +284,107 @@ def run_executor(
     return resposta
 
 
+def open_debate_plans(
+    findings: list[dict],
+    facts: list[dict],
+    runtime: dict | None = None,
+    budget: dict | None = None,
+) -> list[dict[str, Any]]:
+    """Os `debate_plans` que `run_executor` emitiria, CALCULADOS e nunca gravados.
+
+    Existe para o executor de debate congelar o plano de um par sem rodar o
+    `arbitrate` de novo -- rodar o verbo gravaria claim, evidencia e trace no
+    blackboard como efeito colateral de uma pergunta de leitura.
+
+    O caminho e o MESMO de `run_executor` (`_arbitra_pares`), e nao uma copia:
+    duas implementacoes de "este par fecha ou vira plano?" divergiriam com o
+    tempo, e o debate congelaria um plano que o `arbitrate` do mesmo case nao
+    emite.
+    """
+    findings_validos = [f for f in _iteravel(findings) if isinstance(f, dict)]
+    facts_unicos = _facts_unicos(facts)
+    contexto = dict(runtime or {})
+    mapa = load_authority_map()
+
+    claims, evidences = claims_from_findings(findings_validos, facts_unicos, mapa, contexto)
+    lacunas = unknowns_from(findings_validos, facts_unicos)
+    pares = _arbitra_pares(
+        direct_conflicts(findings_validos),
+        _claims_por_regra(claims),
+        evidences,
+        _acoes_por_regra(findings_validos),
+        _ancoras_por_regra(findings_validos),
+        findings_validos,
+        lacunas,
+        contexto,
+        budget,
+    )
+    return [plano for _a, _b, _resultado, decisao, plano in pares if decisao is None]
+
+
 # --------------------------------------------------------------------------
 # Contradicao direta
 # --------------------------------------------------------------------------
+
+
+def _claims_por_regra(claims: list[Claim]) -> dict[str, list[Claim]]:
+    """As claims agrupadas pela regra que as produziu, na ordem de entrada."""
+    por_regra: dict[str, list[Claim]] = defaultdict(list)
+    for claim in claims:
+        por_regra[claim.claimant].append(claim)
+    return por_regra
+
+
+def _arbitra_pares(
+    diretas: list[tuple[str, str]],
+    claims_por_regra: dict[str, list[Claim]],
+    evidences: list[Any],
+    acoes: dict[str, dict[str, Any]],
+    ancoras: dict[str, list[str]],
+    findings: list[dict],
+    lacunas: list[Any],
+    contexto: dict[str, Any],
+    budget: dict | None,
+) -> list[tuple[str, str, ArbitrationResult, Decision | None, dict[str, Any] | None]]:
+    """Arbitra cada par de contradicao direta: `(a, b, resultado, decisao, plano)`.
+
+    Exatamente um de `decisao` e `plano` e `None`: o par fecha
+    deterministicamente ou vira plano de debate, e nunca os dois. Puro -- nao
+    grava nada --, e por isso serve tanto a `run_executor` quanto a
+    `open_debate_plans`.
+    """
+    saida: list[tuple[str, str, ArbitrationResult, Decision | None, dict[str, Any] | None]] = []
+    for regra_a, regra_b in diretas:
+        disputantes = [*claims_por_regra.get(regra_a, ()), *claims_por_regra.get(regra_b, ())]
+        if not disputantes:
+            # Par de regras sem claim nenhuma: nao ha o que arbitrar. Nao
+            # acontece com finding bem formado -- toda regra que entrou em
+            # `direct_conflicts` tem finding --, mas gravar contradicao entre
+            # claims que nao existem produziria linhagem quebrada.
+            continue
+
+        resultado = arbitrate(disputantes, evidences, target_runtime=contexto)
+
+        decisao = None
+        if _fecha(resultado):
+            decisao = _decisao_do_par(
+                regra_a, regra_b, resultado, disputantes, evidences, acoes, findings,
+                lacunas, contexto,
+            )
+        plano = None
+        if decisao is None:
+            plano = {
+                "rules": [regra_a, regra_b],
+                "recommendation": resultado.recommendation,
+                "reason": _motivo_de_nao_fechar(resultado),
+                "plan": debate_plan(
+                    [regra_a, regra_b],
+                    {regra: ancoras.get(regra, []) for regra in (regra_a, regra_b)},
+                    budget,
+                ),
+            }
+        saida.append((regra_a, regra_b, resultado, decisao, plano))
+    return saida
 
 
 def _fecha(resultado: ArbitrationResult) -> bool:

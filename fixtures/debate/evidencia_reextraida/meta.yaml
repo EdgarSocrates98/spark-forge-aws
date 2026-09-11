@@ -1,0 +1,17 @@
+name: evidencia_reextraida
+proves: 'Fact novo so entra reextraido: extrator fora da allowlist, caminho fora do case,
+  diretorio de estado e artefato ausente sao recusados; citar o fact sem o artefato e referencia
+  pendurada; com o artefato, o terraform roda e o fact vira citavel (AT-011).'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: brief

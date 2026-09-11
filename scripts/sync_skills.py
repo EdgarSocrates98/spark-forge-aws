@@ -276,6 +276,14 @@ NON_DISPATCHABLE_SKILLS = {
         "a quem responde pela governanca, e um subagente nao pode perguntar"
     ),
     "agentic-orchestration": "coordena no agente pai",
+    # Ela e o DRIVER do debate: conduz o laco next -> submit e, idealmente,
+    # despacha um subagente POR LADO. Despacha-la inteira para um subagente
+    # juntaria os dois lados num contexto so -- o lado A leria o raciocinio
+    # privado do B --, e o `submit` grava no blackboard do case (mutacao local).
+    "run-debate": (
+        "conduz o laco do debate no agente pai e despacha os lados; despachada "
+        "inteira, os dois lados dividiriam um contexto e gravariam no case"
+    ),
     "token-efficient-agent": "aplica contexto no agente atual",
     "tool-specialist-routing": "valida roteamento no agente atual",
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,

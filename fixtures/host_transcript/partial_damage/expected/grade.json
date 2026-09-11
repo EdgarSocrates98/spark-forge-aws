@@ -1,0 +1,62 @@
+{
+  "id": "q-mcp",
+  "status": "graded",
+  "answer": "correct",
+  "abstention": null,
+  "tools": {
+    "verdict": "ok",
+    "missing": [],
+    "order_violated": []
+  },
+  "cost": {
+    "tool_calls": 2,
+    "other_calls": 0,
+    "tool_errors": 0,
+    "tool_result_bytes": 31,
+    "tokens": {
+      "input": 30,
+      "output": 60,
+      "cache_read": 300,
+      "cache_creation": 15
+    },
+    "tokens_unresolved": false
+  },
+  "unresolved": [
+    {
+      "reason": "host_format_unknown",
+      "count": 1
+    },
+    {
+      "reason": "malformed_line",
+      "count": 1
+    },
+    {
+      "reason": "message_field_not_object",
+      "count": 1
+    },
+    {
+      "reason": "tool_result_orphan",
+      "count": 1
+    },
+    {
+      "reason": "tool_use_without_result",
+      "count": 1
+    },
+    {
+      "reason": "usage_field_absent",
+      "count": 1
+    },
+    {
+      "reason": "usage_value_fractional",
+      "count": 1
+    },
+    {
+      "reason": "usage_value_malformed",
+      "count": 1
+    },
+    {
+      "reason": "usage_value_negative",
+      "count": 1
+    }
+  ]
+}

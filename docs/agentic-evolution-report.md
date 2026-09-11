@@ -3,6 +3,7 @@
 **Entrega:** 2026-09-03
 **Auditoria e correções:** 2026-09-03 (mesma data, sessão seguinte)
 **Executor determinístico:** 2026-09-08, branch `feat/executor-agentico-spec`
+**Executor de debate:** 2026-09-11, branch `feat/debate-executor`
 **Branch:** `audit/fakes-de-coleta`
 **Spec:** `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
 **Spec do executor:** `docs/superpowers/specs/2026-09-08-sparkforge-executor-agentico-design.md`
@@ -21,13 +22,20 @@ tipos, níveis de autonomia L0-L5 e Agent Execution Graph.
 `Contradiction`, `Unknown` e `Decision` no blackboard. Exposto por
 `sparkforge arbitrate` e pela tool `sparkforge_arbitrate`.
 
-**O que ela ainda não é, e a distinção é o ponto desta página:** não existe
-executor de **debate**. Quando a arbitragem não fecha, o verbo emite um
-`DebatePlan` e para, com `debate.unresolved`; nenhum laço roda as rodadas e nada
-consulta `budget_exhausted`. Nenhum `AgentRuntime` concreto mora no pacote,
-nada aqui chama provider (regra 23), e o executor é **L0** — `applied_changes`
-sai sempre `false`, e o ADR é proposta com `rollback` obrigatório. Ver
-**Status por componente** abaixo.
+**Em 2026-09-11 o `DebatePlan` passou a ter executor, e ele também é
+determinístico.** `executor/debate_run.py` é uma máquina de estados L0 sobre
+arquivos do case: `sparkforge debate start|next|submit` (tools
+`sparkforge_debate_start|next|submit`) congela o plano do par, diz de quem é a
+vez, recusa por nome a submissão que fere o protocolo e fecha **sempre** pelo
+`referee`. A geração do argumento fica fora do pacote, no host: a skill
+`run-debate` (interativa) ou `scripts/run_debate.py` (`claude -p`, headless).
+
+**O que ela ainda não é, e a distinção é o ponto desta página:** nenhum
+`AgentRuntime` concreto mora no pacote, nada aqui chama provider (regra 23), e
+os dois executores são **L0** — `applied_changes` sai sempre `false`, e o ADR é
+proposta com `rollback` obrigatório. **Não há benchmark** do debate contra a
+arbitragem determinística, e por isso nenhuma afirmação de ganho (regra 30).
+Ver **Status por componente** abaixo.
 
 **A medida que fecha a lacuna, e como reproduzi-la.** Sobre
 `fixtures/graph/import_sem_jar_no_iac` unida a
@@ -58,7 +66,7 @@ por teste), `PARTIAL`, `DOCUMENTED ONLY`, `MISSING`.
 | `runtime.py` | 223 | 19 | IMPLEMENTED | nada fora dos testes — protocolo sem adapter escrito |
 | `evidence.py` | 273 | 23 | IMPLEMENTED | arbitration |
 | `blackboard.py` | 334 | 16 | IMPLEMENTED | CLI (`blackboard`, `decisions`) |
-| `debate.py` | 265 | 20 | PARTIAL — protocolo e budget existem, executor não | nada |
+| `debate.py` | 265 | 20 | IMPLEMENTED — protocolo e budget. Era PARTIAL até 2026-09-11 por falta de executor das rodadas, que hoje é `executor/debate_run.py` (ele lê o teto DECLARADO no `case.yaml`, nunca o default de `DebateBudget`) | `referee.py` (`Debate`, `DebateStatus`), `budget.py` |
 | `arbitration.py` | 380 | 19 | IMPLEMENTED | nada fora dos testes |
 | `experiment.py` | 189 | 19 (com `decision.py`) | IMPLEMENTED | nada fora dos testes |
 | `decision.py` | 228 | ↑ | IMPLEMENTED | nada fora dos testes |
@@ -85,6 +93,21 @@ O subpacote `executor/`, medido em 2026-09-08 (`wc -l` sobre os arquivos,
 arquivos**, **105 810 bytes**, **163 testes**. Com ele, o `debate.py` continua
 PARTIAL pelo mesmo motivo de sempre — o **plano** de debate passou a ter
 produtor, a **execução** dele não.
+
+**Remedido em 2026-09-11, com o executor de debate** (`wc -l`/`wc -c` e
+`pytest --collect-only` por arquivo). A tabela acima é a leitura de 2026-09-08 e
+fica como registro; `digest.py` (101 linhas) entrou depois dela e antes desta.
+
+| Módulo | Linhas | Testes | Status | Quem consome hoje |
+|---|---|---|---|---|
+| `executor/debate_run.py` | 1100 | 24 unidade + 47 golden | IMPLEMENTED | CLI (`debate start/next/submit`) e MCP (`sparkforge_debate_start/next/submit`) |
+| `executor/debate_evidence.py` | 263 | 41 | IMPLEMENTED | `debate_run.py` |
+
+Total do subpacote hoje: **4185 linhas em 11 arquivos**, **168 889 bytes**.
+Fora dele, na mesma entrega: `sparkforge/evals/debate_grade.py` (333 linhas,
+29 testes), `scripts/run_debate.py` (634 linhas, 13 testes) e a skill
+`skills/run-debate/`. A suíte `tests/test_debate_suite.py` (26) e
+`tests/test_cli_debate.py` (16) completam **196 testes novos**.
 
 `__init__.py` tem 68 linhas. Total do pacote: **4 210 linhas em 14 arquivos**,
 **148 841 bytes**. As linhas vêm de `wc -l`, não de estimativa — a tabela
@@ -121,7 +144,12 @@ publicada na primeira versão desta página estava errada em todos os módulos
 - `sparkforge budget show` (+ `--template`)
 - `sparkforge autonomy show --level <L0-L5>`
 - **`sparkforge arbitrate --findings <path> --facts <path> --repo <dir>`** — o
-  único que escreve
+  único que escrevia até 2026-09-11
+
+Desde 2026-09-11, `sparkforge debate start|next|submit` também escrevem, em
+`.sparkforge/debate/<debate_id>/` e no blackboard. As tools correspondentes
+são `LOCAL_MUTATION`. O `next` também é mutação, porque grava a `Decision` no
+fechamento. `sparkforge debate referee` só lê.
 
 `arbitrate` segue a forma dos verbos agênticos existentes (`--repo`, nunca
 `--case <id>`), porque o blackboard mora em `<repo>/.sparkforge/blackboard/`.
@@ -147,11 +175,37 @@ código só saem sob `--template`, rotulados como template. Consumo sai
   `sparkforge arbitrate` escreve `Claim`, `Evidence`, `Contradiction`, `Unknown`
   e `Decision`. Fica registrado por ter governado o desenho desta página por
   cinco dias, não apagado.
-- **MISSING — executor de debate.** `should_trigger_debate()` decide *se* um
-  debate cabe e `DebateBudget` limita rodadas, mas nenhum laço executa as
-  rodadas. Nada consulta `budget_exhausted`. O executor determinístico **emite**
-  o `DebatePlan` — participantes, contexto por fact e budget — e para ali, com
-  `debate.unresolved`. Plano não é execução.
+- **ENTREGUE em 2026-09-11 — executor de debate.** Até ali o executor
+  determinístico **emitia** o `DebatePlan` e parava em `debate.unresolved`, e
+  nenhum laço executava as rodadas. O que existe hoje, com precisão:
+  - **máquina de estados L0** em `executor/debate_run.py`. `start` congela o
+    plano do par em `.sparkforge/debate/<debate_id>/`, `next` devolve o brief
+    do lado da vez, e `submit` valida tudo antes de gravar qualquer coisa. O
+    estado vive só em arquivo, e por isso a retomada é recálculo. Sem `budget:`
+    declarado no `case.yaml`, o `start` recusa com `budget_undeclared`;
+  - **geração só no host.** Quem escreve claim, objeção e réplica é a sessão,
+    pela skill `run-debate`, ou `claude -p`, por `scripts/run_debate.py`. Nada
+    disso mora em `sparkforge/`;
+  - **fechamento sempre pelo `referee`.** Vence a regra do lado que não
+    concedeu, quando exatamente um lado concedeu. `upheld: false` vira
+    `Decision` `unresolved` com as violações citadas. Contagem de claim nunca
+    escolhe vencedor;
+  - **evidência nova só reextraída.** O lado aponta `{extractor, path}`. O
+    executor confere o extrator contra uma allowlist de 22, confina o caminho
+    ao case e roda o extrator. Fact escrito pelo agente não é aceito.
+
+  **O que continua não existindo:** benchmark do debate contra a arbitragem
+  determinística. A regra 30 continua bloqueando qualquer afirmação de ganho.
+  E o pacote continua sem provider nenhum (regra 23): o `subprocess` do
+  `claude -p` mora em `scripts/`, e `tests/test_evals_invariants.py` cobre os
+  módulos novos.
+- **Alcance medido do executor de debate: um par.** Sobre as 155 regras com
+  `action`, `direct_conflicts` devolve **exatamente um** par no catálogo
+  (`SF-GRAPH-005` × `SF-LF-001`), e nenhuma fixture sozinha o produz. O par só
+  aparece na UNIÃO dos facts de dois jobs diferentes (`grafo_sem_jar`, sem
+  FGAC; `etl_fgac_com_jar`, com FGAC). Um smoke real `claude -p` (Haiku,
+  US$ 0,0723) argumentou que o conflito pode não existir para nenhum dos dois
+  jobs sozinho. Detalhe e consequência em `evals/README.md`, seção do debate.
 - **MISSING — `AgentRuntime` concreto.** Nada neste pacote faz spawn de agente,
   e nada aqui chama provider. Quem gasta token é o host.
 - **MISSING — Fase 35 (checkpoint/resume).** Só existe a *flag*
@@ -178,11 +232,17 @@ código só saem sob `--template`, rotulados como template. Consumo sai
 As Fases 51-53 do prompt de origem pediam medir arquitetura nova contra antiga
 (tokens, latência, custo, número de agentes, qualidade, taxa de falha), e a
 Fase 63 pedia uma seção `Benchmarks` neste relatório. **Continua não havendo
-benchmark, e a entrega do executor determinístico não muda isso.** O que as
-Fases 51-53 comparam é a arquitetura de **debate** — vários agentes discutindo o
-mesmo caso — contra a determinística. O executor não debate: ele arbitra por
-regra e emite plano quando não fecha. Comparar "antes" com "depois" continua
-exigindo os dois lados rodando o mesmo caso, e o lado do debate não roda.
+benchmark, e nem o executor determinístico nem o de debate mudam isso.** O que
+as Fases 51-53 comparam é a arquitetura de **debate** — vários agentes
+discutindo o mesmo caso — contra a determinística. Desde 2026-09-11 os dois
+lados rodam. A comparação continua não feita, por duas razões medidas:
+
+- o debate alcança um único par de regras;
+- esse par é um tópico mal posto, porque só existe na união de dois jobs.
+
+A suíte `evals/agentic/debate/` mede mecânica e decidibilidade com submissões
+gravadas. O baseline de modelo (B8) **não foi rodado de propósito**: ele
+mediria um tópico mal posto.
 
 O que **é** mensurável hoje, e foi medido:
 
@@ -272,7 +332,7 @@ o alvo parecer entregue.
 | SHARED BLACKBOARD | `agentic.blackboard` | biblioteca, leitura por CLI e **produtor** (`agentic.executor.run`) |
 | HYPOTHESIS ENGINE | `agentic.models.Hypothesis` | entidade, sem gerador — o executor produz `Unknown` e `Experiment`, não `Hypothesis` |
 | ADVERSARIAL REVIEW / ARBITRATOR | `agentic.arbitration` | biblioteca, consumida por `agentic.executor.conflict` |
-| DEBATE ENGINE | `agentic.debate` | protocolo, budget e **plano** (`agentic.executor.plan`); sem executor das rodadas |
+| DEBATE ENGINE | `agentic.debate` + `agentic.executor.debate_run` | protocolo, budget, **plano** (`agentic.executor.plan`) e, desde 2026-09-11, executor L0 das rodadas; a geração do argumento é do host (skill `run-debate`, `scripts/run_debate.py`) |
 | EXPERIMENT ENGINE | `agentic.experiment` | biblioteca, consumida por `agentic.executor.unknowns` |
 | VALIDATION | `adapters._core.validate_output` | existente, em uso |
 | DECISION ENGINE | `agentic.decision` | biblioteca, consumida por `agentic.executor.run` (L0: propõe, nunca aplica) |
@@ -311,9 +371,12 @@ o alvo parecer entregue.
    nunca inventado. Medido sobre as 253 fixtures do corpus: T1 170, T4 20,
    T2 16; T3, T5 e T6 não aparecem, porque host não prova reprodutibilidade nem
    afirma nada sobre o conteúdo (§12.8 do spec do executor).
-2. Executor de debate, e só então os benchmarks das Fases 51-53, que passam a
-   ter os dois lados para comparar. Até lá, **nenhuma afirmação de ganho** —
-   regra 30 do `CLAUDE.md`.
+2. ~~Executor de debate.~~ **Feito em 2026-09-11** (máquina de estados L0,
+   geração no host, fechamento pelo `referee`). Os benchmarks das Fases 51-53
+   **continuam por fazer**. Os dois lados existem, mas o único par que o
+   catálogo produz é um tópico mal posto, e medir modelo sobre ele não
+   diria nada. O que destrava é um segundo par de conflito direto que caiba num
+   job só. Até lá, **nenhuma afirmação de ganho**, pela regra 30 do `CLAUDE.md`.
 3. Destravar a contradição **condicional**: ela não tem caso no catálogo de
    hoje, e a medida que a destrava é um fact kind emitido só acima do limiar
    (`glue.utilization.skew_high` ou equivalente por stage), ou um

@@ -1,0 +1,8 @@
+name: run_full
+mode: run
+proves: >
+  Uma execucao inteira da suite minima: q-mcp correct, q-abst abstained,
+  q-alt SEM transcript (ungraded, transcript_not_found) e um stray.jsonl que
+  nenhuma pergunta reivindica (unmatched_transcripts). Os agregados contam
+  cada coluna separadamente, os modelos dos dois transcripts aparecem em
+  run.models, e a mediana de custo e median_low.

@@ -1,0 +1,17 @@
+{
+  "catalog_id": "111111111111",
+  "data_lake_settings": {
+    "status": "sem_permissao"
+  },
+  "database": "curated",
+  "permissions": {
+    "status": "sem_permissao"
+  },
+  "registered_location": {
+    "registered": null,
+    "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/arestas",
+    "status": "sem_permissao"
+  },
+  "status": "sem_permissao",
+  "table": "arestas"
+}

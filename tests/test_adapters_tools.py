@@ -82,6 +82,9 @@ class TestToolSurface:
             "sparkforge_arbitrate",
             "sparkforge_lakeformation_access_graph",
             "sparkforge_debate_referee",
+            "sparkforge_debate_start",
+            "sparkforge_debate_next",
+            "sparkforge_debate_submit",
             "sparkforge_root_cause",
             "sparkforge_lakeformation_matrix",
             "sparkforge_rules_lookup",
@@ -245,6 +248,13 @@ class TestToolSurface:
             # arbitragem nao tem id -- ele registra que a arbitragem
             # ACONTECEU, e duas execucoes sao dois acontecimentos.
             "sparkforge_arbitrate",
+            # O executor de debate grava em `.sparkforge/debate/<id>/` e no
+            # blackboard: `start` congela `plan.json`, `submit` grava a
+            # submissao e as entidades, e `next` -- que parece leitura -- grava
+            # a `Decision` no fechamento. As tres sao `LOCAL_MUTATION`.
+            "sparkforge_debate_start",
+            "sparkforge_debate_next",
+            "sparkforge_debate_submit",
             "sparkforge_case_open",
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
@@ -908,6 +918,48 @@ def _write_facts_file(tmp_path):
     return path
 
 
+def _debate_start_args(tmp_path):
+    """Os insumos do caso da regra 29: a UNIAO de duas fixtures, o unico par do
+    catalogo que `direct_conflicts` produz (`SF-GRAPH-005` x `SF-LF-001`).
+
+    Os findings das duas fixtures vao num arquivo so porque `findings_path` e
+    um caminho -- como o de `arbitrate`; os facts vao como LISTA de caminhos,
+    que e a uniao. O case declara `budget:`: sem ele `start` recusa
+    `budget_undeclared`, que e outro ramo do schema.
+    """
+    from pathlib import Path
+
+    from sparkforge.case.store import SCHEMA_VERSION, save_case
+
+    raiz = Path(__file__).resolve().parents[1]
+    pastas = (
+        raiz / "fixtures" / "graph" / "import_sem_jar_no_iac" / "expected",
+        raiz / "fixtures" / "infra_code" / "fgac_com_jar_extra" / "expected",
+    )
+    repo = tmp_path / "case_debate"
+    repo.mkdir()
+    save_case(
+        {
+            "schema_version": SCHEMA_VERSION,
+            "case_id": "debate-tools",
+            "budget": {"max_debates": 1, "max_rounds": 3},
+        },
+        repo,
+    )
+    findings = []
+    for pasta in pastas:
+        findings += json.loads((pasta / "findings.json").read_text(encoding="utf-8"))
+    findings_path = tmp_path / "debate_findings.json"
+    findings_path.write_text(json.dumps(findings), encoding="utf-8")
+    return {
+        "repo": str(repo),
+        "rules": ["SF-GRAPH-005", "SF-LF-001"],
+        "findings_path": str(findings_path),
+        "facts_path": [str(p / "facts.json") for p in pastas],
+        "glue": "5.0",
+    }
+
+
 def _write_workload_facts_file(tmp_path):
     """Um fact `spark.stage.task_duration`, o suficiente para `skew_risk` sair
     `measured` -- os demais eixos saem `unknown` de proposito, sem `history_path`."""
@@ -1227,6 +1279,25 @@ class _FakeGlueClient:
                 }
             ]
         }
+
+    # `collect_glue_resource_link` le o link na conta consumidora e depois o
+    # recurso de origem. No catalogo `111111111111` o objeto E um link; em
+    # qualquer outro e a tabela/banco de origem, sem `Target*`.
+    def get_table(self, **kwargs):
+        tabela = {"Name": kwargs["Name"], "DatabaseName": kwargs["DatabaseName"]}
+        if kwargs.get("CatalogId") == "111111111111":
+            tabela["TargetTable"] = {
+                "CatalogId": "222222222222",
+                "DatabaseName": "curated",
+                "Name": kwargs["Name"],
+            }
+        return {"Table": tabela}
+
+    def get_database(self, **kwargs):
+        banco = {"Name": kwargs["Name"]}
+        if kwargs.get("CatalogId") == "111111111111":
+            banco["TargetDatabase"] = {"CatalogId": "222222222222", "DatabaseName": "curated"}
+        return {"Database": banco}
 
 
 class _FakeCloudWatchClient:
@@ -1769,15 +1840,19 @@ def _fake_collect_boto3(monkeypatch):
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
     from sparkforge.collect import cloudwatch_logs as collect_cw_logs
+    from sparkforge.collect import glue_resource_link as collect_rlink
     from sparkforge.collect import iam_access as collect_iam
     from sparkforge.collect import lakeformation as collect_lf
 
-    # DOIS modulos, e nao um: `cloudwatch_logs` importa `require_boto3` para o
-    # proprio namespace, entao patchar so `aws` o deixaria escapar para a rede.
+    # Um patch POR MODULO que importa `require_boto3` para o proprio namespace:
+    # patchar so `aws` deixaria os outros escaparem para a rede. Foi o que
+    # aconteceu com `glue_resource_link` (#47): o CI, sem regiao, falhava com
+    # `NoRegionError`, e numa maquina com credencial o teste chamava a AWS.
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_cw_logs, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_lf, "require_boto3", lambda: _FakeBoto3ForCollect())
     monkeypatch.setattr(collect_iam, "require_boto3", lambda: _FakeBoto3ForCollect())
+    monkeypatch.setattr(collect_rlink, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
 _CODE_JOB = (
@@ -1993,6 +2068,36 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         # `closed: false`, que e a resposta honesta para "nada a arbitrar" -- e o
         # payload dela valida contra o schema igual.
         return call_tool("sparkforge_debate_referee", {"repo": str(tmp_path)})
+
+    if name in ("sparkforge_debate_start", "sparkforge_debate_next", "sparkforge_debate_submit"):
+        # Encadeadas sobre o caso real da regra 29: `next` e `submit` so existem
+        # depois de um `start` que congelou o plano. `submit` devolve `accepted`
+        # com o brief do lado B aninhado em `next` -- os dois ramos de uma vez.
+        args = _debate_start_args(tmp_path)
+        started = call_tool("sparkforge_debate_start", args)
+        if name == "sparkforge_debate_start":
+            return started
+        alvo = {"repo": args["repo"], "debate_id": started["debate_id"]}
+        if name == "sparkforge_debate_next":
+            return call_tool("sparkforge_debate_next", alvo)
+        return call_tool(
+            "sparkforge_debate_submit",
+            {
+                **alvo,
+                "submission": {
+                    "side": "A",
+                    "round": 1,
+                    "claims": [
+                        {
+                            "claim_type": "inference",
+                            "statement": "o job importa GraphFrames e o IaC nao entrega o JAR",
+                            "evidence_refs": ["f_32bc0d", "f_d9303b"],
+                            "confidence": "high",
+                        }
+                    ],
+                },
+            },
+        )
 
     if name == "sparkforge_root_cause":
         facts_file = tmp_path / "facts.json"
@@ -2697,6 +2802,15 @@ class TestErrorShapesValidateToo:
             "sparkforge_arbitrate",
             {
                 "repo": "<tmp>",
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+            },
+        ),
+        (
+            "sparkforge_debate_start",
+            {
+                "repo": "<tmp>",
+                "rules": ["SF-GRAPH-005", "SF-LF-001"],
                 "findings_path": "<tmp>/nao-existe.json",
                 "facts_path": "<tmp>/nada.json",
             },

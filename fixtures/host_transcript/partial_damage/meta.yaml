@@ -1,0 +1,9 @@
+name: partial_damage
+mode: transcript
+question: q-mcp
+proves: >
+  Dano parcial: as nove razoes de lacuna do extrator aparecem, e ainda assim
+  ha mensagens de assistente legiveis, entao a pergunta E pontuada (correct).
+  Linha estragada nao apaga as boas; so a ausencia de mensagem legivel leva a
+  ungraded. judge ficou sem resultado (tool_use_without_result) e um
+  resultado chegou sem chamada (tool_result_orphan).

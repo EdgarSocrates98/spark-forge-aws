@@ -212,7 +212,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 37 extratores emitem 217 kinds distintos de fact (recontado em 2026-09-10),
+Os 38 extratores emitem 222 kinds distintos de fact (recontado em 2026-09-10),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -257,6 +257,7 @@ anterior.
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
 | **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
+| **O agente acertou, com as tools certas, e recusou onde devia?** | `python -m sparkforge.evals grade` / `compare` — fora da CLI `sparkforge`, porque o runtime não importa a avaliação (`tests/test_harness_boundary.py`) | transcripts do Claude Code gerados por `scripts/run_agentic_eval.py` (fora do CI) e o gabarito `evals/agentic/<suite>/suite.yaml`; o compare lê N scorecards por lado e não conclui — ver `evals/README.md` |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
 | Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
@@ -347,7 +348,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 217 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 222 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
@@ -551,7 +552,7 @@ São **não-despacháveis**: podem mutar infraestrutura ao vivo, e a fronteira
 escrita. Procedência e licença em [`vendor/CREDITS.md`](vendor/CREDITS.md),
 seção *Adaptado, não vendorizado*.
 
-## Camada agêntica — executor determinístico, e o que ela ainda não é
+## Camada agêntica — executores determinísticos, e o que ela ainda não é
 
 `sparkforge/agentic/` (13 módulos) traz entidades de primeira classe e engines
 para trabalho agêntico auditável: `Claim`, `Evidence` (com tiers de autoridade
@@ -560,24 +561,39 @@ T1-T6), `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`,
 com detecção de falso consenso, ADR automático, memória institucional,
 budget e níveis de autonomia L0-L5.
 
-`sparkforge/agentic/executor/` (7 módulos, 163 testes) é o **produtor** dessas
-entidades, e ele é determinístico. `sparkforge arbitrate` roda depois de `judge`
-e escreve no blackboard do case — num case rodado, `blackboard summary` deixa de
-devolver zero.
+`sparkforge/agentic/executor/` (10 módulos em 2026-09-11) é o **produtor**
+dessas entidades, e ele é determinístico. `sparkforge arbitrate` roda depois de
+`judge` e escreve no blackboard do case — num case rodado, `blackboard summary`
+deixa de devolver zero.
 
-**O que ela NÃO é, e isso governa o resto.** Não existe executor de **debate**:
-quando a arbitragem não fecha, o verbo emite um `DebatePlan` e para, com
-`debate.unresolved`. Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui
-chama provider — quem gasta token é o host que executa os agents. O executor é
-**L0**: `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
-obrigatório, nunca registro de coisa feita.
+**Executor de debate (2026-09-11).** Quando a arbitragem não fecha, o
+`arbitrate` emite um `DebatePlan` e para, com `debate.unresolved`. Desde
+2026-09-11 esse plano tem executor: `sparkforge debate start|next|submit`
+(tools `sparkforge_debate_start|next|submit`). É uma máquina de estados L0 que
+diz de quem é a vez, recusa por nome a submissão fora do protocolo e só aceita
+evidência nova **reextraída** por extrator da allowlist. O fechamento é sempre
+do `referee`. O argumento é escrito pelo host, pela skill `run-debate` ou por
+`scripts/run_debate.py` (`claude -p`), nunca dentro do pacote. O placar da
+suíte `evals/agentic/debate/` sai de `python -m sparkforge.evals debate --run
+<nome>`.
 
-Por isso **não há afirmação de ganho** publicada em lugar nenhum: comparar a
-arquitetura nova com a antiga exigiria os dois lados rodando o mesmo caso, e o
-lado que a comparação media — o debate — não roda.
+**O que ela NÃO é, e isso governa o resto.** Nenhum `AgentRuntime` concreto
+mora no pacote, e nada aqui chama provider — quem gasta token é o host que
+executa os agents. Os executores são **L0**: `applied_changes` sai sempre
+`false`, e o ADR é proposta com `rollback` obrigatório, nunca registro de coisa
+feita.
+
+Por isso **não há afirmação de ganho** publicada em lugar nenhum. Os dois lados
+rodam, mas o debate alcança um único par de regras (`SF-GRAPH-005` ×
+`SF-LF-001`, de 155 com `action`). Esse par só existe na união dos facts de dois
+jobs, e o baseline de modelo foi deliberadamente não rodado. Detalhe em
+[`evals/README.md`](evals/README.md).
 
 ```bash
 sparkforge arbitrate --findings f.json --facts a.json --facts b.json --repo .
+sparkforge debate start --rules A,B --findings f.json --facts a.json --facts b.json --repo .
+sparkforge debate next --debate <id> --repo .                 # brief da vez, ou done
+sparkforge debate submit --debate <id> --file s.json --repo . # submissao do lado
 sparkforge blackboard summary --repo .        # contagem do blackboard do case
 sparkforge decisions list --repo .            # decisões do case e da memória
 sparkforge decisions explain <id> --repo .    # rollback e falsification_condition
@@ -590,7 +606,7 @@ sparkforge autonomy show --level L3           # perfil de autonomia
 dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
 findings. Alimentá-lo com um subconjunto fabrica claim desancorada que a execução
 real não produz. A tool MCP equivalente é `sparkforge_arbitrate`, e ela é
-`LOCAL_MUTATION` — a única do pacote que grava no disco de quem chama.
+`LOCAL_MUTATION`, como as três `sparkforge_debate_start|next|submit`.
 
 Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que
 falta: [`docs/agentic-evolution-report.md`](docs/agentic-evolution-report.md).

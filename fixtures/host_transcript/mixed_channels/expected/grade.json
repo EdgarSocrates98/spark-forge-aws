@@ -1,0 +1,25 @@
+{
+  "id": "q-mcp",
+  "status": "graded",
+  "answer": "correct",
+  "abstention": null,
+  "tools": {
+    "verdict": "ok",
+    "missing": [],
+    "order_violated": []
+  },
+  "cost": {
+    "tool_calls": 4,
+    "other_calls": 1,
+    "tool_errors": 1,
+    "tool_result_bytes": 141,
+    "tokens": {
+      "input": 50,
+      "output": 100,
+      "cache_read": 500,
+      "cache_creation": 25
+    },
+    "tokens_unresolved": false
+  },
+  "unresolved": []
+}

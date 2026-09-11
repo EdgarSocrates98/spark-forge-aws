@@ -1,0 +1,75 @@
+{
+  "trace": [
+    {
+      "op": "start",
+      "status": "started",
+      "created": true,
+      "max_rounds": 3
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 1,
+        "objections": 0,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "brief"
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 1,
+        "objections": 1,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "brief"
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 0,
+        "objections": 0,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "brief"
+    },
+    {
+      "op": "submit",
+      "status": "accepted",
+      "entities": {
+        "claims": 0,
+        "objections": 0,
+        "rebuttals": 0
+      },
+      "facts_added": 0,
+      "next": "done"
+    },
+    {
+      "op": "next",
+      "status": "done",
+      "outcome": "unresolved",
+      "winner_rule": null,
+      "closed_by": "consensus",
+      "rounds_completed": 2,
+      "candidate": "winner",
+      "candidate_winner": "SF-LF-001",
+      "referee_upheld": false,
+      "violation_kinds": [
+        "consenso_sobre_objecao_viva"
+      ],
+      "selected_option": "unresolved: nenhuma das duas acoes e escolhida"
+    }
+  ],
+  "blackboard": {
+    "decisions": 1,
+    "debate_claims": 2,
+    "debate_objections": 1,
+    "debate_rebuttals": 0
+  }
+}

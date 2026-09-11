@@ -1,0 +1,27 @@
+{
+  "id": "q-mcp",
+  "status": "graded",
+  "answer": "correct",
+  "abstention": null,
+  "tools": {
+    "verdict": "failed",
+    "missing": [
+      "analyze_pyspark"
+    ],
+    "order_violated": []
+  },
+  "cost": {
+    "tool_calls": 1,
+    "other_calls": 0,
+    "tool_errors": 0,
+    "tool_result_bytes": 55,
+    "tokens": {
+      "input": 20,
+      "output": 40,
+      "cache_read": 200,
+      "cache_creation": 10
+    },
+    "tokens_unresolved": false
+  },
+  "unresolved": []
+}

@@ -1,0 +1,45 @@
+{
+  "catalog_id": "111111111111",
+  "data_lake_settings": {
+    "allow_external_data_filtering": true,
+    "allow_full_table_external_data_access": false,
+    "external_data_filtering_allow_list": [
+      "111111111111"
+    ],
+    "status": "ok"
+  },
+  "database": "curated",
+  "permissions": {
+    "grants_collected": 1,
+    "principals": [
+      {
+        "Permissions": [
+          "DESCRIBE",
+          "SELECT"
+        ],
+        "PermissionsWithGrantOption": [],
+        "Principal": {
+          "DataLakePrincipalIdentifier": "arn:aws:iam::111111111111:role/glue-etl-grafo"
+        },
+        "Resource": {
+          "Table": {
+            "DatabaseName": "curated",
+            "Name": "arestas"
+          }
+        }
+      }
+    ],
+    "status": "ok",
+    "truncated": false
+  },
+  "registered_location": {
+    "hybrid_access_enabled": false,
+    "registered": true,
+    "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/arestas",
+    "role_arn": "arn:aws:iam::111111111111:role/lf-registration",
+    "status": "ok",
+    "with_federation": false
+  },
+  "status": "ok",
+  "table": "arestas"
+}

@@ -1,0 +1,91 @@
+[
+  {
+    "id": "f_5678c4",
+    "schema_version": 1,
+    "kind": "host.transcript",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "assistant_message_count": 0,
+      "line_count": 5
+    },
+    "attrs": {
+      "source": "claude_code_transcript",
+      "models": [],
+      "host_versions": [
+        "2.1.268"
+      ]
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "host_format_unknown"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
+    }
+  },
+  {
+    "id": "f_c45b0f",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 1
+    },
+    "attrs": {
+      "reason": "malformed_line"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
+    }
+  },
+  {
+    "id": "f_d5a3ed",
+    "schema_version": 1,
+    "kind": "host.transcript.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "q-mcp.jsonl",
+      "symbol": "q-mcp"
+    },
+    "measures": {
+      "count": 2
+    },
+    "attrs": {
+      "reason": "message_field_not_object"
+    },
+    "provenance": {
+      "extractor": "host_transcript@0.1.0",
+      "artifact": "q-mcp.jsonl",
+      "artifact_sha256": "a9b568674cb9b95d29c6bd2aefc247a38d62a899c61722e1e83d42fbfa26a636"
+    }
+  }
+]

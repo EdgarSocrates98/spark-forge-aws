@@ -30,6 +30,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
+| O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge.evals grade` / `compare` (fora da CLI `sparkforge`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
 | Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
 
 Regras que valem para todos eles:
@@ -106,7 +107,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**83 tools, 37 com `detail_level`** (recontado em 2026-09-10). Os niveis sao `summary`, `normal` e `full`. A
+**86 tools, 37 com `detail_level`** (recontado em 2026-09-11). Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
@@ -403,31 +404,46 @@ Designer), `decision` (Decision Engine + ADR automático), `memory` (Decision
 Memory cross-case), `budget` (token economics), `security` (threat model +
 guardrails), `autonomy` (L0-L5), `graph` (Agent Execution Graph).
 
-`sparkforge/agentic/executor/` acrescenta **8 módulos** (remedido em
-2026-09-08: eram 7 antes de `digest`; 2727 linhas com o `__init__.py`, 112 092
-bytes, 176 testes): `authority` (mapa de autoridade de fonte e vigência de
+`sparkforge/agentic/executor/` acrescenta **10 módulos** (remedido em
+2026-09-11: 4185 linhas com o `__init__.py`, 168 889 bytes. Em 2026-09-08 eram
+8, com 2727 linhas e 176 testes, e o executor de debate acrescentou
+`debate_run` e `debate_evidence`, com 112 testes: 24 de unidade, 41 de
+reextração e 47 golden). Os módulos: `authority` (mapa de autoridade de fonte e vigência de
 escopo), `claims` (finding julgado vira `Claim`, fact que o ancora vira
 `Evidence`), `conflict` (contradição lida do bloco `action`), `ordering` (ordem
 de aplicação por `depends_on` e por eixo de medida), `unknowns` (lacuna vira
 `Unknown`, e o que a mede vira `Experiment`), `plan` (`DebatePlan` quando a
 arbitragem não fecha), `digest` (o mesmo plano CALCULADO e nunca gravado, para
-quem só lê) e `run` (os seis degraus num verbo só). Ele é o **produtor** que
-faltava — a lacuna que a auditoria de 2026-09-03 declarava governar todas as
-outras.
+quem só lê), `run` (os seis degraus num verbo só), `debate_run` (a máquina de
+estados do debate) e `debate_evidence` (a evidência nova, reextraída por
+extrator da allowlist). Ele é o **produtor** que faltava — a lacuna que a
+auditoria de 2026-09-03 declarava governar todas as outras.
 
-29. **A camada agêntica tem executor determinístico, e não tem executor de
-    debate.** `sparkforge arbitrate` roda depois de `judge` e produz
+29. **A camada agêntica tem executor determinístico e executor de debate, e o
+    debate não gera argumento dentro do pacote.** `sparkforge arbitrate` roda
+    depois de `judge` e produz
     `Claim`/`Evidence`/`Contradiction`/`Unknown`/`Decision` no blackboard do
     case — num case rodado, `blackboard summary` deixa de devolver zero.
     Medido em 2026-09-08 sobre `fixtures/graph/import_sem_jar_no_iac` unida a
     `fixtures/infra_code/fgac_com_jar_extra` (3 findings, 60 facts): antes,
     zero em tudo; depois, **3 claims, 11 evidências, 1 contradição e 1
-    contradição não resolvida**. O que continua não existindo é o executor de
-    **debate**: quando a arbitragem não fecha, o verbo emite um `DebatePlan` e
-    para, com `debate.unresolved`. Nenhum `AgentRuntime` concreto mora neste
-    pacote, e nada aqui chama provider (regra 23). O executor é **L0**:
-    `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
-    obrigatório. Status por componente em `docs/agentic-evolution-report.md`.
+    contradição não resolvida**. Quando a arbitragem não fecha, o verbo emite
+    um `DebatePlan` e para, com `debate.unresolved`. **Desde 2026-09-11 esse
+    plano tem executor**: `sparkforge debate start|next|submit` (tools
+    `sparkforge_debate_start|next|submit`, todas `LOCAL_MUTATION`), uma
+    máquina de estados L0 sobre `.sparkforge/debate/<debate_id>/`. Ela diz de
+    quem é a vez, recusa por nome a submissão que fere o protocolo, só aceita
+    evidência nova **reextraída** por extrator da allowlist e fecha **sempre**
+    pelo `referee`. Exige `budget:` declarado no case (`budget_undeclared`).
+    Quem escreve o argumento é o host: a skill `run-debate` ou
+    `scripts/run_debate.py` (`claude -p`, fora do pacote). O placar é
+    `python -m sparkforge.evals debate --run <nome>`. Nenhum `AgentRuntime`
+    concreto mora neste pacote, e nada aqui chama provider (regra 23). Os dois
+    executores são **L0**: `applied_changes` sai sempre `false`, e o ADR é
+    proposta com `rollback` obrigatório. **Alcance medido: um par.** Das 155
+    regras com `action`, `direct_conflicts` produz só `SF-GRAPH-005` ×
+    `SF-LF-001`, e só na união de dois jobs. Status por componente em
+    `docs/agentic-evolution-report.md`.
 
     **A metade da VERIFICAÇÃO do debate passou a existir em 2026-09-10, e a da
     GERAÇÃO não.** `sparkforge debate referee` (tool
@@ -438,16 +454,21 @@ outras.
     binário, porque a garantia pedida é uma recusa e recusa graduada não recusa.
     O sétimo estágio do protocolo (`VERIFICATION`) sai `modeled: false`:
     consenso é acordo, não verificação, e `Debate.verdict` é texto livre que
-    nada liga a uma execução posterior. Gerar argumento continua fora — exige
-    provider.
+    nada liga a uma execução posterior. Gerar argumento continua fora do
+    pacote — exige provider, e mora no host (2026-09-11: skill `run-debate`,
+    `scripts/run_debate.py`).
 30. **Não há benchmark da camada agêntica, e por isso não há afirmação de
     ganho.** Comparar arquitetura nova com antiga exige os dois lados rodando o
-    mesmo caso. A justificativa desta regra **encolheu em 2026-09-08 e a
-    conclusão não**: o executor determinístico passou a rodar, e o que continua
-    sem rodar é o **debate** — que é exatamente o lado que a comparação mediria.
-    Nenhuma medida de ganho de token, latência, custo ou qualidade foi publicada
-    por esta entrega, e nenhuma pode ser até que o outro lado exista. Regra 28
-    vale aqui igual.
+    mesmo caso. A justificativa desta regra **encolheu em 2026-09-08 e de novo
+    em 2026-09-11, e a conclusão não**. Em 2026-09-08 o executor determinístico
+    passou a rodar. Em 2026-09-11 o debate também passou a rodar, e mesmo assim
+    nenhuma comparação foi feita, por dois motivos. O único par que o catálogo
+    produz só existe na união de dois jobs, e um smoke real argumentou que o
+    conflito pode não existir em nenhum deles sozinho. Por isso o baseline de
+    modelo foi deliberadamente não rodado: mediria um tópico mal posto (ver
+    `evals/README.md`). Nenhuma medida de ganho de token, latência, custo ou
+    qualidade foi publicada, e nenhuma pode ser até existir um caso bem posto
+    rodando nos dois lados. Regra 28 vale aqui igual.
 31. **Lake Formation são DOIS modelos, e a versão muda o significado.** FGAC e
     Full Table Access não coexistem no mesmo job, e a diferença que decide não é
     granularidade — é **quem vende a credencial**: sob FGAC a escrita usa IAM do
@@ -486,11 +507,15 @@ sparkforge decisions explain <id>  # explica decisao
 sparkforge budget show           # budget DECLARADO do case
 sparkforge budget show --template  # defaults do codigo, rotulados
 sparkforge autonomy show --level L3  # perfil de autonomia
-sparkforge arbitrate --findings <path> --facts <path> --repo .  # o unico que ESCREVE
+sparkforge arbitrate --findings <path> --facts <path> --repo .  # ESCREVE
+sparkforge debate start --rules A,B --findings <path> --facts <path> --repo .  # ESCREVE
+sparkforge debate next --debate <id> --repo .    # ESCREVE (a Decision, no fechamento)
+sparkforge debate submit --debate <id> --file <json> --repo .  # ESCREVE
+sparkforge debate referee --repo .               # so le
 ```
 
-`arbitrate` é o único verbo agêntico que escreve, e por isso a tool MCP
-`sparkforge_arbitrate` é `LOCAL_MUTATION`. `--facts` é **repetível, e a
+`arbitrate` e os três verbos `debate start|next|submit` são os que escrevem, e
+por isso as tools MCP deles são `LOCAL_MUTATION`. `--facts` é **repetível, e a
 repetição é o contrato**: o executor recebe a UNIÃO dos facts do case, o mesmo
 conjunto que `judge` recebeu para produzir aqueles findings (§12.9 do spec).
 Alimentá-lo com um subconjunto fabrica claim desancorada que a execução real não
