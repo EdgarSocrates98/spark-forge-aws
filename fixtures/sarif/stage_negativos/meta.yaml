@@ -1,0 +1,9 @@
+description: >-
+  Uma recusa de cada: nome de stage sintetico (callsite_sem_forma), stage sem callsite (callsite_ausente), Scala fora do repo (callsite_nao_python), lib/job.py em a/ e b/ (caminho_ambiguo, sem cair para job.py) e stage sem fact de stage na evidencia com callsites em dois event logs (callsite_ambiguo).
+origem:
+  - fixtures/cloudwatch_logs\fetch_failed_com_executor_perdido (modelo do finding de stage)
+  - fixtures/waste\ocioso_por_skew (modelo do finding de job_run)
+  - fixtures/bridge/collect_corroborado_pelo_stage (forma do callsite)
+source_roots: [a, b]
+fail_on: P1
+category: fixture-stage-negativos

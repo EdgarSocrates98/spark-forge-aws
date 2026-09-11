@@ -25,7 +25,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from sparkforge.reporting.locate import Localizado, Recusa, localizar
+from sparkforge.reporting.locate import Localizado, Recusa, indice_de_callsites, localizar
 
 SARIF_VERSION = "2.1.0"
 SARIF_SCHEMA = (
@@ -85,13 +85,22 @@ def gate_disparou(severidades: Sequence[str], fail_on: str | None) -> bool:
     return any(ORDEM_SEVERIDADE.index(s) <= limite for s in severidades if s in ORDEM_SEVERIDADE)
 
 
-def _mensagem(finding: Mapping[str, Any]) -> str:
+def _mensagem(finding: Mapping[str, Any], local: Localizado | None = None) -> str:
+    """Titulo, medida e, quando a linha veio de um callsite, a nota que diz de onde.
+
+    A nota ("linha da acao X que originou o stage N (nao e a causa)") existe
+    porque skew e spill nascem num join ou shuffle ANTES da acao: o alerta aponta
+    onde o stage foi disparado, e dizer menos que isso seria afirmar causa.
+    """
     titulo = str(finding.get("title") or finding.get("rule_id") or "")
     medido = finding.get("measured") or {}
-    if not medido:
-        return titulo
-    partes = ", ".join(f"{chave}={medido[chave]}" for chave in sorted(medido))
-    return f"{titulo} (medido: {partes})"
+    texto = titulo
+    if medido:
+        partes = ", ".join(f"{chave}={medido[chave]}" for chave in sorted(medido))
+        texto = f"{titulo} (medido: {partes})"
+    if local is not None and local.nota:
+        texto = f"{texto} -- {local.nota}"
+    return texto
 
 
 def _lista_md(titulo: str, itens: Sequence[str]) -> list[str]:
@@ -141,7 +150,7 @@ def _resultado(finding: Mapping[str, Any], local: Localizado, indice: int) -> di
         "ruleId": str(finding["rule_id"]),
         "ruleIndex": indice,
         "level": LEVEL_POR_SEVERIDADE[finding["severity"]],
-        "message": {"text": _mensagem(finding)},
+        "message": {"text": _mensagem(finding, local)},
         "locations": [
             {
                 "physicalLocation": {
@@ -204,7 +213,7 @@ def _sumario(
         for f, local in no_sarif:
             corpo.append(
                 f"| {f['severity']} | {_celula(f['rule_id'])} | "
-                f"`{_celula(local.uri)}:{local.line}` | {_celula(_mensagem(f))} |"
+                f"`{_celula(local.uri)}:{local.line}` | {_celula(_mensagem(f, local))} |"
             )
     else:
         corpo.append("Nenhum finding com linha em arquivo do repositorio.")
@@ -255,8 +264,9 @@ def projetar(
     """A projecao inteira. `existe` recebe um caminho relativo a raiz do repositorio."""
     no_sarif: list[tuple[Mapping[str, Any], Localizado]] = []
     recusados: list[tuple[Mapping[str, Any], str]] = []
+    callsites = indice_de_callsites(facts_por_id)
     for finding in findings:
-        onde = localizar(finding, facts_por_id, raizes, existe)
+        onde = localizar(finding, facts_por_id, raizes, existe, callsites)
         if isinstance(onde, Recusa):
             recusados.append((finding, onde.motivo))
         else:
@@ -308,7 +318,7 @@ def projetar(
             local.uri,
             local.line,
             f"{f['rule_id']} {f['severity']}",
-            _mensagem(f),
+            _mensagem(f, local),
         )
         for f, local in no_sarif
     )
