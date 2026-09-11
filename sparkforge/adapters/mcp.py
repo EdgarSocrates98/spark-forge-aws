@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import functools
 import sys
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
@@ -113,6 +114,9 @@ def build_server(transport: str = "stdio") -> Any:
         raise SystemExit(_INSTALL_HINT) from exc
 
     catalogo = tools_do_transporte(transport)
+    # O canal vai MEDIDO para o span: so a chamada que entrou por aqui recebe
+    # `mcp.method.name` no export OTLP (`observability/otlp.py`).
+    executar = functools.partial(call_tool, channel="mcp", transport=transport)
     ferramentas = [
         Tool(
             name=name,
@@ -133,7 +137,7 @@ def build_server(transport: str = "stdio") -> Any:
         saida, erro de fronteira, excecao -- mora em `envelope_da_chamada`,
         onde ela e testavel sem o SDK. Este handler so troca de tipo.
         """
-        env = envelope_da_chamada(params.name, params.arguments, catalogo, transport, call_tool)
+        env = envelope_da_chamada(params.name, params.arguments, catalogo, transport, executar)
         return CallToolResult(
             content=[TextContent(type="text", text=env.text)],
             structured_content=env.structured,

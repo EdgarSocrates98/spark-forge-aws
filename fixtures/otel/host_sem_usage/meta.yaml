@@ -1,0 +1,7 @@
+description: >-
+  Transcript de fixtures/host_transcript/no_usage sem usage, sem --provider, e com o timestamp da primeira linha de tool_result removido: invoke_agent sem gen_ai.usage nem provider, nenhuma metrica de token, e a tool call sem horario de fim vira recusa host_sem_horario.
+run_id: run_otel_semuso
+provider: null
+host_transcript: input/transcript.jsonl
+origem:
+  - fixtures/host_transcript/no_usage/input (transcript, um timestamp removido)

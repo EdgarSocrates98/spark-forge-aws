@@ -111,6 +111,7 @@ agents:
   - sparkforge_report_sign
   - sparkforge_report_verify
   - sparkforge_report_github
+  - sparkforge_telemetry_export
   knowledge_refs:
   - knowledge/INDEX.md
   - knowledge/agentic-engineering.md

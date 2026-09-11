@@ -957,7 +957,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # 80 -> 81 com `report_github` (2026-09-11), a 87ª tool: `_READ_ONLY` e
         # declara `findings_path`, `facts_path` e `repo` -- compoe sobre facts como
         # os verbos de topo, e o `repo` e onde a existencia do arquivo e conferida.
-        assert len(TOOLS) - len(sem_caminho) == 81
+        # 81 -> 82 com `telemetry_export` (2026-09-11), a 88ª tool: `_READ_ONLY`
+        # e declara `host_transcript_path`. O `economy_report` recebe o mesmo
+        # transcript por `host_transcript`, que o predicado nao reconhece como
+        # caminho; a tool nova usa o sufixo para que a cadeia confine o arquivo.
+        assert len(TOOLS) - len(sem_caminho) == 82
 
 
 class TestAImposicaoNoDespacho:

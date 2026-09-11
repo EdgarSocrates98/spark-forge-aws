@@ -14,7 +14,7 @@
       "truncated": false
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "dec89d3ad3a6a183d724043ea9a2a91a676862010c5d0913db6fc23ee31d91af"
     }
@@ -37,10 +37,13 @@
       "channel": "mcp",
       "tool": "mcp__sparkforge__sparkforge_judge",
       "verb": "judge",
+      "call_id": "toolu_judge",
+      "started_at": "2026-09-10T00:00:03.000Z",
+      "ended_at": "2026-09-10T00:00:04.000Z",
       "is_error": false
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "dec89d3ad3a6a183d724043ea9a2a91a676862010c5d0913db6fc23ee31d91af"
     }
@@ -65,10 +68,12 @@
       ],
       "host_versions": [
         "2.1.268"
-      ]
+      ],
+      "first_timestamp": "2026-09-10T00:00:01.000Z",
+      "last_timestamp": "2026-09-10T00:00:05.000Z"
     },
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "dec89d3ad3a6a183d724043ea9a2a91a676862010c5d0913db6fc23ee31d91af"
     }
@@ -91,7 +96,7 @@
     },
     "attrs": {},
     "provenance": {
-      "extractor": "host_transcript@0.1.0",
+      "extractor": "host_transcript@0.2.0",
       "artifact": "q-mcp.jsonl",
       "artifact_sha256": "dec89d3ad3a6a183d724043ea9a2a91a676862010c5d0913db6fc23ee31d91af"
     }

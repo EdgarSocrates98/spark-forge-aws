@@ -81,9 +81,14 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    execução (`job_run`, `stage`, `table`) sai no resumo com o motivo, e é assim
    que ele tem de aparecer no relatório também — ponto cego nomeado, e não
    alerta preso a uma linha que não o causou.
-6. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
-7. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
-8. Registra no case com `sparkforge_case_update`.
+6. Quando o operador pedir a telemetria da sessão num OTLP Collector,
+   `sparkforge_telemetry_export` com o `run_id` do processo e, se houver, o
+   transcript do host. Byte de tool sai como byte e token só do transcript; o
+   `provider` é o que o operador declarar, nunca deduzido do nome do modelo, e
+   sem ele a lacuna sai em `unresolved` — relate-a, não a preencha.
+7. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
+8. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
+9. Registra no case com `sparkforge_case_update`.
 
 ## Pressupõe
 
