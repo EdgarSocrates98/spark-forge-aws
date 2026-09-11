@@ -1268,8 +1268,15 @@ def _may_fail(success: dict[str, Any], why: str) -> dict[str, Any]:
     validar uma resposta de "case nao existe" recebe falha de validacao em cima de
     um erro que a tool ja tratou corretamente. As duas formas nao compartilham
     nenhuma chave, entao `oneOf` casa exatamente um ramo.
+
+    `"type": "object"` no topo e redundante para o JSON Schema -- os dois ramos
+    ja sao objeto, e o conjunto aceito nao muda -- e obrigatorio para o
+    protocolo: o spec MCP `2025-06-18` declara `outputSchema.type` como campo
+    exigido, o SDK 2.x confere isso no handshake legado, e sem ele o
+    `tools/list` inteiro falhava com `Handler returned an invalid result`
+    (medido em 2026-09-11: 77 de 86 tools). O SDK 1.x nunca conferia.
     """
-    return {"description": why, "oneOf": [success, _ERROR_SCHEMA]}
+    return {"description": why, "type": "object", "oneOf": [success, _ERROR_SCHEMA]}
 
 
 _JUDGE_SCHEMA: dict[str, Any] = {
@@ -1277,6 +1284,7 @@ _JUDGE_SCHEMA: dict[str, Any] = {
         "Sucesso (paginado, com findings) OU erro de fronteira quando `facts_path` "
         "nao existe no disco -- ver `_JUDGE_SUCCESS_SCHEMA` e `_ERROR_SCHEMA`."
     ),
+    "type": "object",
     "oneOf": [_JUDGE_SUCCESS_SCHEMA, _ERROR_SCHEMA],
 }
 
@@ -1867,6 +1875,7 @@ _CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
         "Descritor da versao no nivel pedido (`full`/`compact`/`minimal`), ou "
         "erro se ela esta fora da faixa ou nao e publicada."
     ),
+    "type": "object",
     "oneOf": [
         _CONTROLM_DESCRIPTOR_SCHEMA_FULL,
         _CONTROLM_DESCRIPTOR_SCHEMA_COMPACT,
@@ -2519,16 +2528,19 @@ _DEBATE_START_SCHEMA: dict[str, Any] = {
         "Plano congelado, recusa nomeada, OU erro de fronteira quando `findings_path` "
         "ou `facts_path` nao existe no disco."
     ),
+    "type": "object",
     "oneOf": [_DEBATE_STARTED_SCHEMA, _DEBATE_REFUSED_SCHEMA, _ERROR_SCHEMA],
 }
 
 _DEBATE_NEXT_SCHEMA: dict[str, Any] = {
     "description": "Brief do lado da vez, `done` com a Decision, recusa nomeada, ou erro.",
+    "type": "object",
     "oneOf": [_DEBATE_BRIEF_SCHEMA, _DEBATE_DONE_SCHEMA, _DEBATE_REFUSED_SCHEMA, _ERROR_SCHEMA],
 }
 
 _DEBATE_SUBMIT_SCHEMA: dict[str, Any] = {
     "description": "Submissao aceita (com o passo seguinte), recusa nomeada, ou erro.",
+    "type": "object",
     "oneOf": [_DEBATE_ACCEPTED_SCHEMA, _DEBATE_REFUSED_SCHEMA, _ERROR_SCHEMA],
 }
 

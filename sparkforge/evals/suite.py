@@ -52,9 +52,16 @@ class Question:
     order: tuple[tuple[str, str], ...] = ()
     expects_abstention: bool = False
     anchor: dict[str, str] = field(default_factory=dict)
+    also_accepted: tuple[str, ...] = ()
 
     def canonical(self) -> dict[str, Any]:
-        return {
+        """Forma estavel que entra no sha256 da suite.
+
+        `also_accepted` so entra quando existe: acrescenta-lo sempre mudaria o
+        sha de toda suite ja gravada (os goldens de `fixtures/host_transcript/`
+        carregam o sha), sem que nenhuma delas tivesse mudado de gabarito.
+        """
+        forma: dict[str, Any] = {
             "id": self.id,
             "question": self.question,
             "expected": self.expected,
@@ -62,6 +69,12 @@ class Question:
             "order": [list(par) for par in self.order],
             "expects_abstention": self.expects_abstention,
         }
+        if self.also_accepted:
+            forma["also_accepted"] = list(self.also_accepted)
+        return forma
+
+    def accepts(self, resposta: str) -> bool:
+        return resposta == self.expected or resposta in self.also_accepted
 
 
 @dataclass(frozen=True)
@@ -200,7 +213,10 @@ def _question(suite_dir: Path, bruto: Any, posicao: int) -> Question:
         if abstencao:
             raise SuiteError(f"{qid}: pergunta de abstencao nao vem de fonte com resposta")
         texto, esperada = _resolve_source(suite_dir, qid, str(bruto["source"]))
-        return Question(qid, texto, esperada, tools, ordem)
+        return Question(
+            qid, texto, esperada, tools, ordem,
+            also_accepted=_also_accepted(qid, bruto.get("also_accepted"), esperada),
+        )
 
     texto = bruto["question"]
     if not isinstance(texto, str) or not texto.strip():
@@ -217,7 +233,36 @@ def _question(suite_dir: Path, bruto: Any, posicao: int) -> Question:
     esperada = bruto.get("answer")
     if not isinstance(esperada, str) or not esperada.strip():
         raise SuiteError(f"{qid}: pergunta inline sem abstencao exige answer")
-    return Question(qid, texto.strip(), esperada.strip(), tools, ordem)
+    return Question(
+        qid, texto.strip(), esperada.strip(), tools, ordem,
+        also_accepted=_also_accepted(qid, bruto.get("also_accepted"), esperada.strip()),
+    )
+
+
+def _also_accepted(qid: str, bruto: Any, esperada: str) -> tuple[str, ...]:
+    """Respostas que o corpus TAMBEM sustenta, alem da do gabarito.
+
+    Existe porque uma pergunta pode perder a unicidade sem mudar de texto: a
+    `fase0-07` ("qual rule_id tem runtime_scope exigindo Glue >= 5.1") tinha uma
+    resposta ate `SF-LF-004` entrar no catalogo com o mesmo escopo e a mesma
+    severidade (2026-09-09). Reescrever a pergunta invalidaria os transcripts
+    ja gravados -- o agente respondeu ao texto antigo --; declarar a segunda
+    resposta pontua certo a pergunta que ele de fato recebeu.
+    `scripts/check_evals.py` recomputa o CONJUNTO e cobra que esta lista seja
+    exatamente o resto dele, entao uma terceira regra derruba o gate.
+    """
+    if bruto is None:
+        return ()
+    if not isinstance(bruto, list) or not bruto:
+        raise SuiteError(f"{qid}: also_accepted precisa ser lista nao vazia")
+    if not all(isinstance(v, str) and v.strip() for v in bruto):
+        raise SuiteError(f"{qid}: also_accepted so aceita strings nao vazias")
+    valores = tuple(v.strip() for v in bruto)
+    if esperada in valores:
+        raise SuiteError(f"{qid}: also_accepted repete a resposta do gabarito")
+    if len(set(valores)) != len(valores):
+        raise SuiteError(f"{qid}: also_accepted tem valor repetido")
+    return valores
 
 
 def load_suite(suite_dir: Path | str) -> Suite:

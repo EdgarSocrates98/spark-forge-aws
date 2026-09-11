@@ -52,6 +52,11 @@ questions:
   - id: fase0-07
     source: ../../fase0.xml#7
     required_tools: [rules_lookup]
+    # A pergunta perdeu a unicidade sem mudar de texto: `SF-LF-004` entrou no
+    # catalogo (2026-09-09) com o mesmo `glue: '>=5.1'` e o mesmo P0 de
+    # `SF-ENV-002`. `scripts/check_evals.py` recomputa o conjunto e cobra que
+    # esta lista seja exatamente o resto dele.
+    also_accepted: [SF-LF-004:P0]
   - id: fase0-08
     source: ../../fase0.xml#8
     required_tools: [[runtime_detect, release_describe]]

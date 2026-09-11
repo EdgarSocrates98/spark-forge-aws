@@ -76,7 +76,7 @@ def _answer_verdict(question: Question, final: str | None) -> tuple[str | None, 
         return None, ("abstained" if recusou else "false_certainty")
     if recusou:
         return "over_abstention", None
-    return ("correct" if final == question.expected else "wrong"), None
+    return ("correct" if question.accepts(final) else "wrong"), None
 
 
 def _tools_verdict(question: Question, calls: Sequence[Fact]) -> dict[str, Any]:

@@ -5,7 +5,7 @@
     "sha256": "cd35c816a318670b2d251ca9e87ed345241396fcf2c67b425d36e52b1cbbdebf"
   },
   "run": {
-    "id": "fase0-2026-09-11T02-30-27Z-r3",
+    "id": "mcp2-2026-09-11-r1",
     "models": [
       "claude-haiku-4-5-20251001"
     ],
@@ -22,20 +22,21 @@
       "tools": {
         "verdict": "failed",
         "missing": [
+          "analyze_pyspark",
           "judge"
         ],
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 16,
-        "other_calls": 15,
-        "tool_errors": 1,
-        "tool_result_bytes": 42947,
+        "tool_calls": 19,
+        "other_calls": 14,
+        "tool_errors": 2,
+        "tool_result_bytes": 20212,
         "tokens": {
-          "input": 290,
-          "output": 5285,
-          "cache_read": 1415556,
-          "cache_creation": 38840
+          "input": 338,
+          "output": 9063,
+          "cache_read": 1682768,
+          "cache_creation": 85963
         },
         "tokens_unresolved": false
       },
@@ -43,56 +44,6 @@
     },
     {
       "id": "fase0-02",
-      "status": "graded",
-      "answer": "correct",
-      "abstention": null,
-      "tools": {
-        "verdict": "ok",
-        "missing": [],
-        "order_violated": []
-      },
-      "cost": {
-        "tool_calls": 40,
-        "other_calls": 35,
-        "tool_errors": 5,
-        "tool_result_bytes": 28483,
-        "tokens": {
-          "input": 648,
-          "output": 14862,
-          "cache_read": 3430892,
-          "cache_creation": 101912
-        },
-        "tokens_unresolved": false
-      },
-      "unresolved": []
-    },
-    {
-      "id": "fase0-03",
-      "status": "graded",
-      "answer": "correct",
-      "abstention": null,
-      "tools": {
-        "verdict": "ok",
-        "missing": [],
-        "order_violated": []
-      },
-      "cost": {
-        "tool_calls": 33,
-        "other_calls": 23,
-        "tool_errors": 4,
-        "tool_result_bytes": 35922,
-        "tokens": {
-          "input": 558,
-          "output": 12407,
-          "cache_read": 2996271,
-          "cache_creation": 86037
-        },
-        "tokens_unresolved": false
-      },
-      "unresolved": []
-    },
-    {
-      "id": "fase0-04",
       "status": "graded",
       "answer": "correct",
       "abstention": null,
@@ -105,15 +56,68 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 4,
-        "other_calls": 4,
-        "tool_errors": 0,
-        "tool_result_bytes": 2221,
+        "tool_calls": 20,
+        "other_calls": 17,
+        "tool_errors": 1,
+        "tool_result_bytes": 80726,
         "tokens": {
-          "input": 80,
-          "output": 3351,
-          "cache_read": 272108,
-          "cache_creation": 65550
+          "input": 362,
+          "output": 10105,
+          "cache_read": 1927172,
+          "cache_creation": 126822
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-03",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "analyze_pyspark",
+          "judge"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 38,
+        "other_calls": 38,
+        "tool_errors": 6,
+        "tool_result_bytes": 93783,
+        "tokens": {
+          "input": 654,
+          "output": 18779,
+          "cache_read": 4040185,
+          "cache_creation": 147870
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-04",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 76,
+        "other_calls": 65,
+        "tool_errors": 16,
+        "tool_result_bytes": 83745,
+        "tokens": {
+          "input": 1246,
+          "output": 34192,
+          "cache_read": 9084139,
+          "cache_creation": 147672
         },
         "tokens_unresolved": false
       },
@@ -133,15 +137,15 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 4,
-        "other_calls": 4,
-        "tool_errors": 2,
-        "tool_result_bytes": 284,
+        "tool_calls": 54,
+        "other_calls": 53,
+        "tool_errors": 5,
+        "tool_result_bytes": 38424,
         "tokens": {
-          "input": 94,
-          "output": 2207,
-          "cache_read": 364119,
-          "cache_creation": 48038
+          "input": 898,
+          "output": 19210,
+          "cache_read": 5533927,
+          "cache_creation": 100059
         },
         "tokens_unresolved": false
       },
@@ -153,22 +157,20 @@
       "answer": "correct",
       "abstention": null,
       "tools": {
-        "verdict": "failed",
-        "missing": [
-          "rules_lookup"
-        ],
+        "verdict": "ok",
+        "missing": [],
         "order_violated": []
       },
       "cost": {
         "tool_calls": 4,
-        "other_calls": 4,
-        "tool_errors": 0,
-        "tool_result_bytes": 36699,
+        "other_calls": 3,
+        "tool_errors": 1,
+        "tool_result_bytes": 2583,
         "tokens": {
-          "input": 88,
-          "output": 3296,
-          "cache_read": 313244,
-          "cache_creation": 89008
+          "input": 98,
+          "output": 3136,
+          "cache_read": 374915,
+          "cache_creation": 53007
         },
         "tokens_unresolved": false
       },
@@ -177,25 +179,23 @@
     {
       "id": "fase0-07",
       "status": "graded",
-      "answer": "wrong",
+      "answer": "correct",
       "abstention": null,
       "tools": {
-        "verdict": "failed",
-        "missing": [
-          "rules_lookup"
-        ],
+        "verdict": "ok",
+        "missing": [],
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 17,
-        "other_calls": 17,
-        "tool_errors": 2,
-        "tool_result_bytes": 44209,
+        "tool_calls": 12,
+        "other_calls": 10,
+        "tool_errors": 0,
+        "tool_result_bytes": 41436,
         "tokens": {
-          "input": 302,
-          "output": 11646,
-          "cache_read": 1675785,
-          "cache_creation": 88910
+          "input": 212,
+          "output": 6438,
+          "cache_read": 1030208,
+          "cache_creation": 66134
         },
         "tokens_unresolved": false
       },
@@ -214,15 +214,15 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 6,
-        "other_calls": 5,
+        "tool_calls": 2,
+        "other_calls": 2,
         "tool_errors": 0,
-        "tool_result_bytes": 10336,
+        "tool_result_bytes": 6144,
         "tokens": {
-          "input": 130,
-          "output": 2693,
-          "cache_read": 527017,
-          "cache_creation": 57568
+          "input": 52,
+          "output": 1520,
+          "cache_read": 194956,
+          "cache_creation": 37948
         },
         "tokens_unresolved": false
       },
@@ -234,20 +234,23 @@
       "answer": "correct",
       "abstention": null,
       "tools": {
-        "verdict": "ok",
-        "missing": [],
+        "verdict": "failed",
+        "missing": [
+          "analyze_pyspark",
+          "judge"
+        ],
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 27,
-        "other_calls": 17,
-        "tool_errors": 5,
-        "tool_result_bytes": 15768,
+        "tool_calls": 31,
+        "other_calls": 31,
+        "tool_errors": 3,
+        "tool_result_bytes": 61648,
         "tokens": {
-          "input": 424,
-          "output": 11052,
-          "cache_read": 2097900,
-          "cache_creation": 88238
+          "input": 546,
+          "output": 14268,
+          "cache_read": 3415499,
+          "cache_creation": 121618
         },
         "tokens_unresolved": false
       },
@@ -266,15 +269,15 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 17,
-        "other_calls": 17,
+        "tool_calls": 19,
+        "other_calls": 19,
         "tool_errors": 4,
-        "tool_result_bytes": 104043,
+        "tool_result_bytes": 70385,
         "tokens": {
-          "input": 302,
-          "output": 8251,
-          "cache_read": 1735191,
-          "cache_creation": 125086
+          "input": 332,
+          "output": 10683,
+          "cache_read": 2124912,
+          "cache_creation": 112308
         },
         "tokens_unresolved": false
       },
@@ -293,15 +296,15 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 6,
-        "other_calls": 6,
+        "tool_calls": 2,
+        "other_calls": 2,
         "tool_errors": 0,
-        "tool_result_bytes": 3216,
+        "tool_result_bytes": 2135,
         "tokens": {
-          "input": 126,
-          "output": 4633,
-          "cache_read": 523867,
-          "cache_creation": 53054
+          "input": 62,
+          "output": 3346,
+          "cache_read": 216795,
+          "cache_creation": 51587
         },
         "tokens_unresolved": false
       },
@@ -320,15 +323,15 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 26,
-        "other_calls": 26,
-        "tool_errors": 7,
-        "tool_result_bytes": 25010,
+        "tool_calls": 10,
+        "other_calls": 10,
+        "tool_errors": 0,
+        "tool_result_bytes": 8913,
         "tokens": {
-          "input": 446,
-          "output": 12389,
-          "cache_read": 2419497,
-          "cache_creation": 81149
+          "input": 190,
+          "output": 4606,
+          "cache_read": 875777,
+          "cache_creation": 59598
         },
         "tokens_unresolved": false
       },
@@ -347,15 +350,15 @@
         "order_violated": []
       },
       "cost": {
-        "tool_calls": 3,
-        "other_calls": 3,
+        "tool_calls": 10,
+        "other_calls": 10,
         "tool_errors": 0,
-        "tool_result_bytes": 1792,
+        "tool_result_bytes": 3069,
         "tokens": {
-          "input": 72,
-          "output": 4348,
-          "cache_read": 235498,
-          "cache_creation": 64248
+          "input": 190,
+          "output": 4410,
+          "cache_read": 843069,
+          "cache_creation": 54817
         },
         "tokens_unresolved": false
       },
@@ -367,8 +370,8 @@
     "questions": 13,
     "graded": 13,
     "ungraded": 0,
-    "correct": 9,
-    "wrong": 1,
+    "correct": 10,
+    "wrong": 0,
     "answer_absent": 0,
     "over_abstention": 0,
     "abstention_total": 3,
@@ -378,16 +381,16 @@
     "tokens_unresolved_questions": 0,
     "cost": {
       "tool_calls": {
-        "median_low": 16,
-        "max": 40
+        "median_low": 19,
+        "max": 76
       },
       "tool_result_bytes": {
-        "median_low": 25010,
-        "max": 104043
+        "median_low": 38424,
+        "max": 93783
       },
       "output_tokens": {
-        "median_low": 5285,
-        "max": 14862
+        "median_low": 9063,
+        "max": 34192
       }
     }
   }

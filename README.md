@@ -137,7 +137,7 @@ mensagem explícita em vez de comparar o repositório consigo mesmo.
 
 #### Ligando o servidor MCP
 
-Instale o extra `mcp` (ele traz `mcp>=1.0,<2`, `starlette`, `uvicorn` e os pins de
+Instale o extra `mcp` (ele traz `mcp>=2,<3`, `starlette`, `uvicorn` e os pins de
 segurança das transitivas):
 
 ```bash
@@ -204,11 +204,17 @@ sparkforge runtime detect --glue 5.0
 
 Para detalhes completos, veja [`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
 
-O extra `mcp` fixa `mcp>=1.0,<2`: o SDK 2.x removeu os decoradores que
-`build_server()` usa para registrar os tools, e sem o teto uma instalação
-limpa resolveria para 2.x e o servidor quebraria no import — nos dois
-transportes. `tests/test_adapters_mcp.py` constrói o servidor e o app ASGI de
-verdade, para que um erro de API apareça no CI e não na máquina do operador.
+O extra `mcp` fixa `mcp>=2,<3` desde 2026-09-11. A migração do 1.x trocou
+mais do que a API: o SDK 1.x validava os argumentos e o resultado de cada
+tool contra os schemas e montava o `structuredContent`, sem que o adapter
+escrevesse uma linha, e o 2.x não faz nada disso. As três garantias moram
+agora em `sparkforge/adapters/mcp_envelope.py`, testável sem o SDK.
+`tests/test_fixtures_golden_mcp_parity.py` compara o que o cliente recebe contra o golden que
+o 1.29 gravou em `fixtures/mcp_parity/`: no handshake legado, a única
+diferença é `outputSchema.type = "object"`, que o spec `2025-06-18` exige e o
+2.x confere — sem ela o `tools/list` inteiro falhava. O servidor também fala a
+era `2026-07-28` (`server/discover`). `tests/test_adapters_mcp.py` continua
+construindo o servidor e o app ASGI de verdade.
 
 ### O que pode ser extraído
 
