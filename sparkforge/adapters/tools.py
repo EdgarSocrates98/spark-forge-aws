@@ -7020,7 +7020,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "`gen_ai.provider.name` vai para `unresolved` e a metrica de token nao sai. Span "
             "sem horario medido vai para `refused` com o motivo. Nada e gravado por esta "
             "tool -- a CLI `sparkforge telemetry export` grava em .sparkforge/telemetry/, "
-            "para o receiver `otlpjsonfile` de um OTLP Collector."
+            "para o receiver `otlp_json_file` de um OTLP Collector."
         ),
         "inputSchema": {
             "type": "object",

@@ -197,7 +197,7 @@ jobs:
     # Prova de que um OTLP Collector de verdade ACEITA o que `sparkforge
     # telemetry export` grava (SC7 do DEFINE_OTEL_GENAI_EXPORT). Roda em todo push
     # e PR: nao escreve em lugar nenhum fora do runner. O `otelcol-contrib` le os
-    # goldens de fixtures/otel com o receiver `otlpjsonfile` e grava o que recebeu
+    # goldens de fixtures/otel com o receiver `otlp_json_file` e grava o que recebeu
     # com o exporter `file`; `scripts/check_otel_collector.py` cobra os mesmos
     # spans, atributos e pontos de metrica. Versao do Collector fixada.
     runs-on: ubuntu-latest

@@ -74,3 +74,15 @@ def test_ponto_de_metrica_com_atributo_de_semconv_a_mais_nao_conta_como_o_mesmo(
     alvo = {"gen_ai.operation.name": "invoke_agent"}
     assert mesmo({"gen_ai.operation.name": "invoke_agent", "log.file.name": "x"}, alvo)
     assert not mesmo({"gen_ai.operation.name": "invoke_agent", "gen_ai.provider.name": "a"}, alvo)
+
+
+def test_linha_incompleta_no_fim_conta_como_ainda_nao_chegou(tmp_path, capsys):
+    """O exporter `file` pode estar no meio da escrita: a linha truncada nao
+    derruba o conferidor (primeiro run do job no CI, 2026-09-11)."""
+    traces = _saida(tmp_path, "traces")
+    with traces.open("a", encoding="utf-8") as arquivo:
+        arquivo.write('{"resourceSpans":[{"par')
+    codigo = _conferidor().main(
+        ["--traces", str(traces), "--metrics", str(_saida(tmp_path, "metrics"))]
+    )
+    assert codigo == 0

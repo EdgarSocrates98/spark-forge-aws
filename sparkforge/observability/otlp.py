@@ -6,7 +6,7 @@ quando houver, os facts `host.*` que `facts/host_transcript.py` extrai do
 transcript do host -- e devolve `TracesData` e `MetricsData` no encoding JSON do
 OTLP. Nao le arquivo, nao grava, nao chama rede: quem grava e a CLI
 (`sparkforge telemetry export`), e quem envia e o Collector do operador, pelo
-receiver `otlpjsonfile`.
+receiver `otlp_json_file` (antes `otlpjsonfile`).
 
 AS FONTES, E O STATUS DELAS. Nomes de atributo e de span seguem
 `open-telemetry/semantic-conventions-genai` no commit `SEMCONV_GENAI_COMMIT`

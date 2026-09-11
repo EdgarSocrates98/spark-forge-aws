@@ -1,7 +1,7 @@
 # SparkForge no OpenTelemetry: tools e sessao do host em OTLP
 
 `sparkforge telemetry export` pega o que ja foi medido e grava em OTLP/JSON, o
-formato que um OTLP Collector le. De la, o Collector envia para CloudWatch,
+formato que um OTLP Collector le (receiver `otlp_json_file`). De la, o Collector envia para CloudWatch,
 Grafana, Datadog, Langfuse, Jaeger ou o backend que o time ja usa. Duas fontes
 entram no arquivo:
 
@@ -45,10 +45,10 @@ grava**: gravar e da CLI.
 
 ```yaml
 receivers:
-  otlpjsonfile/traces:
+  otlp_json_file/traces:
     include: [/caminho/do/repo/.sparkforge/telemetry/*.traces.jsonl]
     start_at: beginning
-  otlpjsonfile/metrics:
+  otlp_json_file/metrics:
     include: [/caminho/do/repo/.sparkforge/telemetry/*.metrics.jsonl]
     start_at: beginning
 exporters:
@@ -56,11 +56,14 @@ exporters:
     endpoint: https://seu-backend
 service:
   pipelines:
-    traces:  {receivers: [otlpjsonfile/traces],  exporters: [otlphttp]}
-    metrics: {receivers: [otlpjsonfile/metrics], exporters: [otlphttp]}
+    traces:  {receivers: [otlp_json_file/traces],  exporters: [otlphttp]}
+    metrics: {receivers: [otlp_json_file/metrics], exporters: [otlphttp]}
 ```
 
-Traces e metricas ficam em **arquivos separados** porque o `otlpjsonfile` le
+No 0.160.0 o receiver se chama `otlp_json_file`; o nome antigo, `otlpjsonfile`,
+ainda e aceito como alias obsoleto (o Collector avisa no log).
+
+Traces e metricas ficam em **arquivos separados** porque o `otlp_json_file` le
 cada linha com o leitor do seu pipeline: uma linha de metrica no pipeline de
 traces conta como falha do receiver.
 
@@ -132,7 +135,7 @@ como obrigatorio, e a lacuna fica nomeada em vez de preenchida por palpite.
 | `open-telemetry/semantic-conventions-genai`: `gen-ai-spans.md`, `gen-ai-agent-spans.md`, `gen-ai-metrics.md` e `mcp.md` | commit `0c87594975195608dc91b3f702e250a7b240c151` (2026-09-11) | **Development** |
 | OTLP, encoding JSON (ids em hex, int64 como string decimal, enum inteiro, lowerCamelCase) | 1.11.0 | — |
 | OTLP file exporter (JSON Lines, uma `TracesData`/`MetricsData` por linha) | — | Development |
-| Receiver `otlpjsonfile` do Collector contrib | 0.160.0 | alpha para traces |
+| Receiver `otlp_json_file` (antes `otlpjsonfile`) do Collector contrib | 0.160.0 | alpha para traces |
 
 Uma semconv em Development muda nome de atributo. O commit seguido sai no
 escopo de cada arquivo (`sparkforge.semconv_genai_commit`) e no stdout do verbo.
@@ -144,6 +147,6 @@ escopo de cada arquivo (`sparkforge.semconv_genai_commit`) e no stdout do verbo.
   chamadas reais de `call_tool`. A CLI de verdade, lendo de um `traces.db` real,
   bate byte a byte com o golden.
 - **Consumidor real:** o job `otel-collector` do CI sobe o `otelcol-contrib`
-  0.160.0 com o `otlpjsonfile` sobre os goldens e o exporter `file`, e
+  0.160.0 com o `otlp_json_file` sobre os goldens e o exporter `file`, e
   `scripts/check_otel_collector.py` confere, do outro lado, os mesmos spans,
   atributos e pontos de metrica.

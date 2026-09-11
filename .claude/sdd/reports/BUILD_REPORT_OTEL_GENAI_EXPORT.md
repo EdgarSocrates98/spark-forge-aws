@@ -38,7 +38,7 @@ Branch `feat/otel-genai`, a partir da `main` (com #48, #49 e #50).
 | B3 | `otlp.py` + unidade | (direct) | ✅ | 38 testes: ids, tempo, canal, recusas, provider, modelo, histogramas, forma OTLP |
 | B4 | Verbo, CLI, tool e registros | (direct) | ✅ | Tool valida contra o proprio schema com um ledger real e o transcript de `correct_mcp`; mensagens de erro com o comando que resolve |
 | B5 | `fixtures/otel/` + golden | (direct) | ✅ | 4 casos com spans de chamadas reais de `call_tool`; a CLI le de um `traces.db` real e bate byte a byte |
-| B6 | Collector no CI, docs, gates | (direct) | ✅ | Conferidor testado contra os proprios goldens (identidade passa, token adulterado falha); surface +3 259 bytes; 22 alegacoes remediadas por id |
+| B6 | Collector no CI, docs, gates | (direct) | ✅ | Conferidor testado contra os proprios goldens (identidade passa, token adulterado falha); surface +3 261 bytes; 22 alegacoes remediadas por id |
 | B8 | Este relatorio e statuses | (direct) | ✅ | — |
 
 ---
@@ -91,6 +91,8 @@ Snyk Code (sparkforge/observability, sparkforge/adapters, scripts/check_otel_col
 | 4 | O conferidor do Collector casava ponto de metrica por subconjunto de atributos, e o `invoke_agent.duration` de dois casos com o mesmo horario se confundia | Igualdade nos atributos de semconv (`gen_ai.*`, `mcp.*`, `error.*`) e subconjunto so no resto |
 | 5 | Duas alegacoes (`VNX-357`, `VNX-358`) com o mesmo `43` na mesma linha | As duas medem o numero de arquivos golden, e as duas viraram 44 a mao, com a nota no manifesto |
 | 6 | Sem Docker nesta maquina | O job `otel-collector` so roda no CI; o conferidor foi testado localmente contra os proprios goldens |
+| 7 | Primeiro run do job `otel-collector` no CI: `JSONDecodeError`, porque o conferidor leu `traces.json` com o exporter `file` no meio da escrita de uma linha | Linha incompleta conta como "ainda nao chegou" e o laco de `--wait` rele; teste com linha truncada no fim |
+| 8 | O log do Collector 0.160.0 avisou que `otlpjsonfile` e alias obsoleto de `otlp_json_file` | Config do CI, documento, descricoes da CLI e da tool passam a usar `otlp_json_file`; a superficie ficou em +3 261 bytes |
 
 ---
 

@@ -1991,7 +1991,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Grava .sparkforge/telemetry/<run_id>.traces.jsonl e .metrics.jsonl (nomes "
             "fixos), com gen_ai.* e mcp.* da semconv GenAI (Development). O Collector le "
-            "com o receiver otlpjsonfile. Nao chama rede; token so com transcript do host."
+            "com o receiver otlp_json_file. Nao chama rede; token so com transcript do host."
         ),
     )
     telemetry_export_p.add_argument("--run-id", required=True)

@@ -1,8 +1,9 @@
 """Confere que um OTLP Collector de verdade leu os goldens de `fixtures/otel/`.
 
 O job `otel-collector` do CI sobe o `otelcol-contrib` com o receiver
-`otlpjsonfile` apontado para `fixtures/otel/*/expected/{traces,metrics}.jsonl` e
-o exporter `file` gravando o que recebeu. Este script le essa saida e cobra, para
+`otlp_json_file` (antes `otlpjsonfile`) apontado para
+`fixtures/otel/*/expected/{traces,metrics}.jsonl` e o exporter `file` gravando
+o que recebeu. Este script le essa saida e cobra, para
 cada span dos goldens, o mesmo `spanId`, `traceId`, `parentSpanId`, nome e os
 atributos que o export promete (`gen_ai.*`, `mcp.method.name`); e, para cada
 ponto de metrica, o mesmo `count`, `sum` e `bucketCounts`. E a prova de que o
@@ -47,8 +48,15 @@ def _linhas(caminho: Path) -> list[dict[str, Any]]:
         return []
     dados = []
     for linha in caminho.read_text(encoding="utf-8").splitlines():
-        if linha.strip():
+        if not linha.strip():
+            continue
+        try:
             dados.append(json.loads(linha))
+        except json.JSONDecodeError:
+            # O exporter `file` pode estar no meio da escrita da linha. Ela conta
+            # como "ainda nao chegou": o laco de `--wait` le de novo, e uma linha
+            # que nunca fecha aparece como span faltando, com nome.
+            continue
     return dados
 
 
