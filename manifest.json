@@ -172,6 +172,7 @@
     "sparkforge_release_diff",
     "sparkforge_report_sign",
     "sparkforge_report_verify",
+    "sparkforge_report_github",
     "sparkforge_resume",
     "sparkforge_root_cause",
     "sparkforge_rules_lookup",

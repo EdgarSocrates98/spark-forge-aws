@@ -31,6 +31,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
 | O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge.evals grade` / `compare` (fora da CLI `sparkforge`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
+| Como o revisor vê os findings no PR? | `report github` | findings de `judge` e a união dos facts; grava SARIF e resumo em `.sparkforge/report/`, com recusa nomeada para o que não tem linha no repositório |
 | Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
 
 Regras que valem para todos eles:
@@ -107,7 +108,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**86 tools, 37 com `detail_level`** (recontado em 2026-09-11). Os niveis sao `summary`, `normal` e `full`. A
+**87 tools, 37 com `detail_level`** (recontado em 2026-09-11). Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.

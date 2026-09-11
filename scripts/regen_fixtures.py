@@ -100,6 +100,11 @@ FIXTURES_EXCEPTION = ROOT / "fixtures" / "exception"
 FIXTURES_CW_LOGS = ROOT / "fixtures" / "cloudwatch_logs"
 FIXTURES_PARQUET_FOOTER = ROOT / "fixtures" / "parquet_footer"
 FIXTURES_HOST_TRANSCRIPT = ROOT / "fixtures" / "host_transcript"
+FIXTURES_SARIF = ROOT / "fixtures" / "sarif"
+# Versao fixa no golden de `report github`: o SARIF carrega `semanticVersion`,
+# e com a versao real todo release reescreveria os quatro goldens sem que nada
+# da projecao tivesse mudado.
+SARIF_GOLDEN_VERSION = "0.0.0+golden"
 FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
 # Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
 # `evals/holdout/README.md` e `regen_scenario`.
@@ -881,6 +886,57 @@ def regen_host_transcript(directory: Path) -> None:
         raise SystemExit(f"{directory.name}: mode desconhecido {mode!r}")
 
 
+def saidas_sarif(directory: Path) -> dict[str, str]:
+    """As saidas de `report github` para um caso de `fixtures/sarif/`, como TEXTO.
+
+    Passa pelo mesmo `_core.report_github` e pelo mesmo `report_github_textos`
+    que a CLI usa, com a versao do pacote fixada em `SARIF_GOLDEN_VERSION`.
+    """
+    from sparkforge.adapters import _core
+
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    real = _core._versao_sparkforge
+    _core._versao_sparkforge = lambda: SARIF_GOLDEN_VERSION
+    try:
+        payload = _core.report_github(
+            str(directory / "input" / "findings.json"),
+            [str(directory / "input" / "facts.json")],
+            repo=str(directory / "input" / "repo"),
+            source_roots=meta.get("source_roots"),
+            category=meta.get("category"),
+            fail_on=meta.get("fail_on"),
+        )
+    finally:
+        _core._versao_sparkforge = real
+    textos = _core.report_github_textos(payload)
+    resultado = {
+        "counts": payload["counts"],
+        "refused": payload["refused"],
+        "gate": payload["gate"],
+        "exit_code": 1 if payload["gate"]["tripped"] else 0,
+    }
+    return {
+        "sparkforge.sarif": textos["sparkforge.sarif"],
+        "summary.md": textos["summary.md"],
+        "annotations.txt": "".join(linha + "\n" for linha in payload["annotations"]),
+        "result.json": json.dumps(resultado, indent=2, ensure_ascii=False) + "\n",
+    }
+
+
+def regen_sarif(directory: Path) -> None:
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    for nome, texto in saidas_sarif(directory).items():
+        (out / nome).write_text(texto, encoding="utf-8", newline="\n")
+    print(f"{directory.name}: SARIF + resumo + anotacoes")
+
+
+def _sarif_cases() -> list[Path]:
+    if not FIXTURES_SARIF.is_dir():
+        return []
+    return sorted(p for p in FIXTURES_SARIF.iterdir() if p.is_dir() and not p.name.startswith("_"))
+
+
 def _host_transcript_cases() -> list[Path]:
     if not FIXTURES_HOST_TRANSCRIPT.is_dir():
         return []
@@ -933,6 +989,7 @@ def main() -> int:
                 (FIXTURES_CW_LOGS / name, regen_cloudwatch_logs),
                 (FIXTURES_PARQUET_FOOTER / name, regen_parquet_footer),
                 (FIXTURES_HOST_TRANSCRIPT / name, regen_host_transcript),
+                (FIXTURES_SARIF / name, regen_sarif),
                 (FIXTURES_SCENARIOS / name, regen_scenario),
                 (HOLDOUT / name, regen_scenario),
             ]
@@ -1043,6 +1100,9 @@ def main() -> int:
     # pula `_suite/`, que e gabarito das fixtures e nao caso.
     for directory in _host_transcript_cases():
         regen_host_transcript(directory)
+    # `_schema/` e o schema OASIS versionado, e nao caso.
+    for directory in _sarif_cases():
+        regen_sarif(directory)
     # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
     # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
     # que este script seja o primeiro a saber.

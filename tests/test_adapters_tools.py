@@ -91,6 +91,7 @@ class TestToolSurface:
             "sparkforge_validate_output",
             "sparkforge_report_sign",
             "sparkforge_report_verify",
+            "sparkforge_report_github",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2647,6 +2648,30 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         }[name]
         return call_tool(name, args)
 
+    if name == "sparkforge_report_github":
+        # Mesmo job de amostra de `report sign`: um finding com LINHA num arquivo
+        # que existe sob `repo`, para que o SARIF validado aqui tenha resultado,
+        # e nao so o `results: []` que qualquer entrada vazia produziria.
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_judge", {"facts": facts["items"], "glue": "5.0"})
+        assert judged["items"], "o job de amostra precisa render pelo menos um finding"
+        findings_path = tmp_path / "findings.json"
+        findings_path.write_text(json.dumps(judged["items"]), encoding="utf-8")
+        facts_path = tmp_path / "facts.json"
+        facts_path.write_text(json.dumps(facts["items"]), encoding="utf-8")
+        resultado = call_tool(
+            "sparkforge_report_github",
+            {
+                "findings_path": str(findings_path),
+                "facts_path": [str(facts_path)],
+                "repo": str(lib),
+                "fail_on": "P0",
+            },
+        )
+        assert resultado["counts"]["located"] >= 1, resultado["refused"]
+        return resultado
+
     if name in ("sparkforge_report_sign", "sparkforge_report_verify"):
         lib = _write_job(tmp_path)
         facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
@@ -2797,6 +2822,14 @@ class TestErrorShapesValidateToo:
         (
             "sparkforge_report_verify",
             {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
+        (
+            "sparkforge_report_github",
+            {
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+                "repo": "<tmp>",
+            },
         ),
         (
             "sparkforge_arbitrate",

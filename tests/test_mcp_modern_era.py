@@ -18,6 +18,7 @@ from importlib.metadata import version  # noqa: E402
 import anyio  # noqa: E402
 
 from sparkforge.adapters.mcp import _INSTRUCOES, _versao_do_pacote, build_server  # noqa: E402
+from sparkforge.adapters.tools import TOOLS  # noqa: E402
 
 if int(version("mcp").split(".")[0]) < 2:
     pytest.skip("era 2026-07-28 so existe no SDK 2.x", allow_module_level=True)
@@ -44,14 +45,14 @@ def test_negocia_2026_07_28_por_discover():
     sessao = _conectar("auto")
     assert sessao["protocolo"] == "2026-07-28"
     assert sessao["discover"] is not None
-    assert sessao["tools"] == 86
+    assert sessao["tools"] == len(TOOLS)
 
 
 def test_handshake_legado_continua_atendido():
     sessao = _conectar("legacy")
     assert sessao["protocolo"] != "2026-07-28"
     assert sessao["discover"] is None
-    assert sessao["tools"] == 86
+    assert sessao["tools"] == len(TOOLS)
 
 
 @pytest.mark.parametrize("modo", ["auto", "legacy"])

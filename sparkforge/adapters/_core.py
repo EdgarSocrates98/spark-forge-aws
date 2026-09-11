@@ -4393,6 +4393,143 @@ def _render_signature_block(signature: str, parts: dict[str, Any]) -> str:
     )
 
 
+_REPORT_GITHUB_DIR = (".sparkforge", "report")
+REPORT_GITHUB_SARIF = "sparkforge.sarif"
+REPORT_GITHUB_SUMMARY = "summary.md"
+_FAIL_ON_VALIDOS = ("P0", "P1")
+
+
+def _raizes_confinadas(repo: Path, source_roots: list[str] | None) -> list[str]:
+    """`--source-root` relativos a `--repo`, recusados se escaparem dele.
+
+    A raiz e declarada por quem rodou os `analyze`: `subject.file` e relativo ao
+    diretorio analisado, e nao a raiz do git (`extract_tree(target,
+    repo_root=target)`). Absoluta, com `..` ou resolvendo fora de `--repo` e
+    erro de uso -- a resolucao de arquivo nunca sai do repositorio.
+    """
+    raiz = repo.resolve()
+    saida: list[str] = []
+    for bruto in source_roots or ["."]:
+        texto = str(bruto).replace("\\", "/").strip() or "."
+        partes = [p for p in texto.split("/") if p not in ("", ".")]
+        if texto.startswith("/") or ":" in texto or ".." in partes:
+            raise AdapterError(
+                f"--source-root {bruto!r}: use um caminho relativo a --repo, sem '..'.",
+                exit_code=2,
+            )
+        alvo = raiz.joinpath(*partes).resolve() if partes else raiz
+        if not alvo.is_relative_to(raiz) or not alvo.is_dir():
+            raise AdapterError(
+                f"--source-root {bruto!r}: nao e um diretorio dentro de --repo.", exit_code=2
+            )
+        saida.append("/".join(partes) or ".")
+    return saida
+
+
+def _existe_sob(repo: Path):
+    raiz = repo.resolve()
+
+    def existe(relativo: str) -> bool:
+        alvo = (raiz / relativo).resolve()
+        return alvo.is_relative_to(raiz) and alvo.is_file()
+
+    return existe
+
+
+def _versao_sparkforge() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("sparkforge-aws")
+    except PackageNotFoundError:
+        return "0+unknown"
+
+
+def report_github(
+    findings_path: str,
+    facts_path: str | list[str],
+    repo: str = ".",
+    source_roots: list[str] | None = None,
+    category: str | None = None,
+    fail_on: str | None = None,
+) -> dict[str, Any]:
+    """Findings ja julgados projetados para o GitHub, sem gravar nada.
+
+    Compoe sobre o que `judge` produziu e sobre a UNIAO dos facts, pela mesma
+    porta de `arbitrate` e `debate start`. Nao le artefato. A projecao
+    (`sparkforge/reporting/github.py`) e pura; aqui ficam so a leitura do JSON,
+    o confinamento dos caminhos a `--repo` e a versao do pacote. Quem grava e a
+    CLI -- a tool MCP devolve este mesmo dicionario e nao escreve.
+    """
+    from sparkforge.reporting.github import projetar
+
+    if fail_on is not None and fail_on not in _FAIL_ON_VALIDOS:
+        raise AdapterError(
+            f"--fail-on {fail_on!r}: use um de {', '.join(_FAIL_ON_VALIDOS)}.", exit_code=2
+        )
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(f"--repo {repo!r}: diretorio nao encontrado.", exit_code=2)
+    raizes = _raizes_confinadas(raiz, source_roots)
+    findings, facts = _findings_e_uniao_de_facts(None, findings_path, None, facts_path)
+    facts_por_id = {fact.id: fact.to_dict() for fact in facts}
+    projecao = projetar(
+        findings,
+        facts_por_id,
+        raizes,
+        _existe_sob(raiz),
+        versao=_versao_sparkforge(),
+        category=category,
+        fail_on=fail_on,
+    )
+    return {
+        "sarif": projecao.sarif,
+        "summary_markdown": projecao.summary,
+        "annotations": list(projecao.annotations),
+        "counts": {
+            "findings": projecao.total,
+            "located": projecao.localizados,
+            "refused": len(projecao.recusas),
+        },
+        "refused": list(projecao.recusas),
+        "gate": projecao.gate,
+        "source_roots": raizes,
+    }
+
+
+def report_github_textos(payload: dict[str, Any]) -> dict[str, str]:
+    """O texto EXATO de cada arquivo que `report github` grava.
+
+    Uma funcao so para a CLI e para o golden de `fixtures/sarif/`: se o golden
+    serializasse por conta propria, ele poderia passar com um SARIF que a CLI
+    nunca escreve.
+    """
+    return {
+        REPORT_GITHUB_SARIF: json.dumps(payload["sarif"], indent=2, ensure_ascii=False) + "\n",
+        REPORT_GITHUB_SUMMARY: payload["summary_markdown"],
+    }
+
+
+def report_github_write(repo: str, payload: dict[str, Any]) -> dict[str, str]:
+    """Grava o SARIF e o resumo com NOME FIXO sob `<repo>/.sparkforge/report/`.
+
+    Nada do argv vira caminho de escrita: o diretorio e fixo e o `repo` ja foi
+    validado por `report_github`. A escrita e em temporario com `replace`, para
+    que uma falha no meio nao deixe metade de um SARIF que o `upload-sarif`
+    subiria.
+    """
+    destino = Path(repo).resolve().joinpath(*_REPORT_GITHUB_DIR)
+    destino.mkdir(parents=True, exist_ok=True)
+    gravados: dict[str, str] = {}
+    for nome, texto in report_github_textos(payload).items():
+        final = destino / nome
+        temporario = destino / f".{nome}.tmp"
+        temporario.write_text(texto, encoding="utf-8", newline="\n")
+        temporario.replace(final)
+        gravados[nome] = "/".join((*_REPORT_GITHUB_DIR, nome))
+    return gravados
+
+
 def report_sign(report_path: str, findings_path: str) -> dict[str, Any]:
     """Escreve o bloco de assinatura no fim do relatorio, e devolve o que assinou.
 

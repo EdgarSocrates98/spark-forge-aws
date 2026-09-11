@@ -1932,6 +1932,53 @@ def build_parser() -> argparse.ArgumentParser:
         help="O mesmo arquivo de findings contra o qual o relatorio foi assinado.",
     )
 
+    report_github_p = report_sub.add_parser(
+        "github",
+        help=(
+            "Projeta findings ja julgados para o GitHub: SARIF para o Code Scanning e "
+            "resumo Markdown para o PR, em .sparkforge/report/ (nomes fixos), e uma "
+            "anotacao ::error/::warning/::notice por finding com linha no stdout. "
+            "Finding sem linha no repositorio sai no resumo com o motivo. Nao chama rede."
+        ),
+    )
+    report_github_p.add_argument(
+        "--findings", required=True, help="Saida de `judge --out` (findings.json)."
+    )
+    report_github_p.add_argument(
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Facts da UNIAO do case (repetivel): o fact de evidencia de codigo empresta "
+            "a linha a um finding que nao tem a propria."
+        ),
+    )
+    report_github_p.add_argument(
+        "--repo",
+        default=".",
+        help="Raiz do repositorio git. A saida vai para <repo>/.sparkforge/report/.",
+    )
+    report_github_p.add_argument(
+        "--source-root",
+        action="append",
+        dest="source_roots",
+        help=(
+            "Diretorio (relativo a --repo) que foi passado a um `analyze --path`, "
+            "repetivel, na mesma ordem. O caminho dos findings e relativo a ele."
+        ),
+    )
+    report_github_p.add_argument(
+        "--fail-on",
+        choices=["P0", "P1"],
+        default=None,
+        help="Sai com codigo 1 quando ha finding desta severidade ou pior.",
+    )
+    report_github_p.add_argument(
+        "--category",
+        default=None,
+        help="Categoria do upload no Code Scanning (automationDetails.id).",
+    )
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3182,6 +3229,40 @@ def _cmd_report_sign(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_report_github(args: argparse.Namespace) -> int:
+    """O unico verbo cujo stdout NAO e JSON, e a razao e o consumidor.
+
+    O GitHub transforma em anotacao a linha `::error file=..::msg` inteira no
+    stdout do step; misturar com JSON quebraria o parser dos workflow commands.
+    Por isso o stdout leva so as anotacoes, a contagem vai para o stderr, e o
+    SARIF e o resumo vao para arquivo de nome fixo, que o workflow le.
+    Codigo 1 so pelo gate (`--fail-on`), como `report verify`; erro de uso e 2.
+    """
+    payload = _core.report_github(
+        args.findings,
+        args.facts,
+        repo=args.repo,
+        source_roots=args.source_roots,
+        category=args.category,
+        fail_on=args.fail_on,
+    )
+    gravados = _core.report_github_write(args.repo, payload)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    for linha in payload["annotations"]:
+        sys.stdout.write(linha + "\n")
+    counts, gate = payload["counts"], payload["gate"]
+    estado = "off" if gate["fail_on"] is None else f"{gate['fail_on']}: " + (
+        "disparou" if gate["tripped"] else "ok"
+    )
+    print(
+        f"sparkforge report github: {counts['located']} no SARIF, {counts['refused']} sem "
+        f"localizacao, gate {estado} ({gravados['sparkforge.sarif']}, {gravados['summary.md']})",
+        file=sys.stderr,
+    )
+    return 1 if gate["tripped"] else 0
+
+
 def _cmd_report_verify(args: argparse.Namespace) -> int:
     payload = _core.report_verify(args.report, args.findings)
     _print(payload)
@@ -3791,6 +3872,7 @@ _DISPATCH = {
     ("validate", None): _cmd_validate,
     ("report", "sign"): _cmd_report_sign,
     ("report", "verify"): _cmd_report_verify,
+    ("report", "github"): _cmd_report_github,
     ("collect", "event-log"): _cmd_collect_event_log,
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,

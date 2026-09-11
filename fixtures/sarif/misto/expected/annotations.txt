@@ -1,0 +1,1 @@
+::error file=a/main.tf,line=24,title=SF-ERR-006 P0::Permissão do Lake Formation negada em runtime, num job que lê o Data Catalog de outra conta

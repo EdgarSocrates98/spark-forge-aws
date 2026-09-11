@@ -954,7 +954,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `findings_path` e `facts_path`, como `arbitrate`. O conjunto de excecao
         # nao se move: `submit` recebe a submissao INLINE, e o caminho de
         # evidencia dentro dela e confinado a raiz do case pelo proprio executor.
-        assert len(TOOLS) - len(sem_caminho) == 80
+        # 80 -> 81 com `report_github` (2026-09-11), a 87ª tool: `_READ_ONLY` e
+        # declara `findings_path`, `facts_path` e `repo` -- compoe sobre facts como
+        # os verbos de topo, e o `repo` e onde a existencia do arquivo e conferida.
+        assert len(TOOLS) - len(sem_caminho) == 81
 
 
 class TestAImposicaoNoDespacho:

@@ -1,0 +1,11 @@
+description: >-
+  Cinco caminhos numa entrada so: job_run localizado pelo fact de evidencia de Terraform (a/main.tf), plan_node com plan.txt fora do repo, source_location com linha 0 (sem_linha), lib/job.py presente nas duas raizes (caminho_ambiguo) e finding cuja evidencia nao esta na uniao (evidencia_ausente).
+origem:
+  - fixtures/cloudwatch_logs/lf_negado_com_catalogo_de_outra_conta
+  - fixtures/plan/cartesian_join
+  - fixtures/controlm/capacidade_abaixo_da_fronteira
+  - fixtures/pyspark/action_in_loop
+  - fixtures/bench/different_input_volume
+source_roots: [a, b]
+fail_on: P0
+category: fixture-misto

@@ -1,0 +1,1190 @@
+[
+  {
+    "id": "f_0a4776",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-dim",
+      "job_run_id": "jr_lf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_lf1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on default.dim_cliente",
+      "log_stream": "jr_lf1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-dim_jr_lf1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_512e52",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-dim",
+      "job_run_id": "jr_lf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_lf1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_lf1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-dim_jr_lf1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_903a44",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 10,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {
+      "value": 10
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "10",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_e0a696",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {
+      "value": 0
+    },
+    "attrs": {
+      "key": "max_retries",
+      "value": "0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca2042",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 14,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_55430d",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://sparkforge-demo/scripts/dim.py",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_f5397a",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d7284a",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_5de344",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 21,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://sparkforge-demo/spark-logs/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a52422",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 22,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-continuous-cloudwatch-log",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_587be8",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 23,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--job-bookmark-option",
+      "value": "job-bookmark-disable",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca07d6",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 24,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--conf",
+      "value": "spark.hadoop.hive.metastore.glue.catalogid=222222222222",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c56927",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "curated-dim",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca1c86",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 7,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "arn:aws:iam::111111111111:role/glue-curated",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d8a081",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 8,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_68c22c",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 9,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.1X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_adbdf8",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 14,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c1f183",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea1036",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.curated_dim"
+    },
+    "measures": {
+      "attribute_count": 14
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "curated_dim"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_205f31",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 24,
+      "symbol": "aws_glue_job.curated_dim#spark.hadoop.hive.metastore.glue.catalogid"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.hadoop.hive.metastore.glue.catalogid",
+      "value": "222222222222",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4618c52c606dae469099b907e6c7b954e1af452292d50bfe328e9b97527b8133",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_7dc110",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-dim",
+      "job_run_id": "jr_lf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_lf1",
+      "event": 0,
+      "signature_id": "ERR-LF-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-LF-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on default.dim_cliente"
+    },
+    "provenance": {
+      "artifact": "logs/etl-dim_jr_lf1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  },
+  {
+    "id": "f_11ea5e",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 43,
+      "node_count": 7,
+      "file_scan_count": 2,
+      "exchange_count": 0,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": true,
+      "aqe_final_plan": true,
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_f4888e",
+    "schema_version": 1,
+    "kind": "plan.aqe",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 41,
+      "symbol": "(7) AdaptiveSparkPlan",
+      "node_id": 7,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "is_final_plan": true
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_bb853f",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 11,
+      "symbol": "(1) Scan parquet curated.pedidos",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "curated.pedidos"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 3,
+      "referenced_columns": 2,
+      "partition_filter_count": 2,
+      "pushed_filter_count": 1
+    },
+    "attrs": {
+      "relation": "curated.pedidos",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": true,
+      "partitioned_evidence": "partition_filters",
+      "partition_filters_present": true,
+      "partition_filters_empty": false,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5b400",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 23,
+      "symbol": "(3) Scan parquet curated.faixas_frete",
+      "node_id": 3,
+      "operator": "Scan parquet",
+      "relation": "curated.faixas_frete"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 3,
+      "referenced_columns": 3
+    },
+    "attrs": {
+      "relation": "curated.faixas_frete",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": false,
+      "partition_filters_empty": "unknown",
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c794f",
+    "schema_version": 1,
+    "kind": "plan.join",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 29,
+      "symbol": "(4) BroadcastNestedLoopJoin",
+      "node_id": 4,
+      "operator": "BroadcastNestedLoopJoin",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "strategy": "BroadcastNestedLoopJoin",
+      "join_type": "Inner",
+      "build_side": "",
+      "has_condition": true,
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_cad6c5",
+    "schema_version": 1,
+    "kind": "plan.join",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 33,
+      "symbol": "(5) CartesianProduct",
+      "node_id": 5,
+      "operator": "CartesianProduct",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "strategy": "CartesianProduct",
+      "join_type": "Inner",
+      "build_side": "",
+      "has_condition": false,
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_655123",
+    "schema_version": 1,
+    "kind": "ctm.action",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato/ActionIfFailure",
+      "snippet": ""
+    },
+    "measures": {
+      "action_count": 1
+    },
+    "attrs": {
+      "name": "ActionIfFailure",
+      "trigger": "completion_status",
+      "trigger_value": "NOTOK",
+      "action_types": [
+        "Action:Mail"
+      ]
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_a96c9b",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 1,
+      "job_count": 2,
+      "dependency_count": 3,
+      "capability_probe_count": 1,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_7df929",
+    "schema_version": 1,
+    "kind": "ctm.capability_incompatible",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "capability": "job_detached_embedded_script",
+      "evidence": "job_type",
+      "job_type": "Job:DetachedEmbeddedScript",
+      "job": "PagamentosDiarios/ExtraiExtrato",
+      "declared_version": "9.0.21.300",
+      "boundary": "introduced_in",
+      "boundary_version": "9.0.22.005",
+      "summary": "O job type `Job:DetachedEmbeddedScript` roda um script embutido como processo em background.",
+      "reason": "below_introduction"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_621b4f",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ConciliaExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "direction": "wait",
+      "event": "EXTRATO-PRONTO",
+      "container": "job"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_dadea2",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "direction": "add",
+      "event": "EXTRATO-PRONTO",
+      "container": "job"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_0099dd",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/Sequencia",
+      "snippet": ""
+    },
+    "measures": {
+      "step_count": 2
+    },
+    "attrs": {
+      "direction": "sequence",
+      "container": "Flow",
+      "flow": "Sequencia",
+      "sequence": [
+        "ExtraiExtrato",
+        "ConciliaExtrato"
+      ]
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_c96239",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "PagamentosDiarios",
+      "application": "Financeiro",
+      "sub_application": "ContasAPagar",
+      "created_by": "esteira"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_ff4514",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ConciliaExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "ConciliaExtrato",
+      "run_as": "ctmagent",
+      "critical": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_603d90",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:DetachedEmbeddedScript",
+      "name": "ExtraiExtrato",
+      "run_as": "ctmagent",
+      "host": "agente-fin-01",
+      "description": "Dispara a extracao do extrato em background"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_156e03",
+    "schema_version": 1,
+    "kind": "ctm.schedule",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios",
+      "snippet": ""
+    },
+    "measures": {
+      "week_days_count": 5
+    },
+    "attrs": {
+      "from_time": "0300",
+      "to_time": "0600"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_7f703e",
+    "schema_version": 1,
+    "kind": "ctm.schedule",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ConciliaExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "from_time": "0400"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_dcfbd1",
+    "schema_version": 1,
+    "kind": "ctm.variable",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "DataDeCorte",
+      "value": "%%$DATE"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_dcfbd1",
+    "schema_version": 1,
+    "kind": "ctm.variable",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "TOKEN_DO_PORTAL",
+      "value": "<redigido>",
+      "redacted": true,
+      "secret_pattern_match": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.21.300",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0ee0754954d1fb8bd6c6c23c537e048be5f15834f42ed19e31ec9c7a9f052e8d",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1dfc61",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 3,
+      "col": 8,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "lote.write.parquet(destino)"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "write",
+        "parquet"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_0564ad",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "def processar(lotes, destino):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_85aa2c",
+    "schema_version": 1,
+    "kind": "pyspark.loop",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "for lote in lotes:"
+    },
+    "measures": {
+      "loop_depth": 1
+    },
+    "attrs": {
+      "contains_action": false,
+      "contains_write": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_07e474",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true,
+      "referenced_names": [
+        "destino",
+        "lote",
+        "lotes",
+        "parquet",
+        "write"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4c865a",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 3,
+      "col": 8,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "lote.write.parquet(destino)"
+    },
+    "measures": {},
+    "attrs": {
+      "api": "dataframe_writer_v1"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

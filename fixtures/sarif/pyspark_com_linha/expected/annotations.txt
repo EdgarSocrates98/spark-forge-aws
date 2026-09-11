@@ -1,0 +1,1 @@
+::error file=jobs/lib/job.py,line=2,title=SF-PY-004 P0::Action ou write dentro de loop (medido: loop_depth=1)

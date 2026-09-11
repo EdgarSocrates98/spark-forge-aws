@@ -76,9 +76,15 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    isso que serve: reassinar é barato, texto editado passando por verificado não
    é. O corpo assinado é tudo que vem antes do delimitador do bloco, então nada
    pode ser acrescentado depois dele.
-5. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
-6. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
-7. Registra no case com `sparkforge_case_update`.
+5. Quando a entrega for um PR, `sparkforge_report_github` sobre o mesmo arquivo de
+   findings e a união dos facts: SARIF para o Code Scanning e resumo para o PR.
+   Só o finding com linha num arquivo do repositório entra no SARIF; o de
+   execução (`job_run`, `stage`, `table`) sai no resumo com o motivo, e é assim
+   que ele tem de aparecer no relatório também — ponto cego nomeado, e não
+   alerta preso a uma linha que não o causou.
+6. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
+7. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
+8. Registra no case com `sparkforge_case_update`.
 
 ## Pressupõe
 
