@@ -187,6 +187,7 @@ def _sumario(
     no_sarif: Sequence[tuple[Mapping[str, Any], Localizado]],
     recusados: Sequence[tuple[Mapping[str, Any], str]],
     gate: Mapping[str, Any],
+    freshness: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> str:
     cabecalho = [
         "# SparkForge: findings deste commit",
@@ -230,7 +231,8 @@ def _sumario(
     else:
         rodape.append("Todos os findings tem linha em arquivo do repositorio.")
 
-    base = "\n".join(cabecalho + corpo + rodape)
+    frescor = _secao_frescor(total, freshness) if freshness is not None else []
+    base = "\n".join(cabecalho + corpo + frescor + rodape)
     cabem: list[str] = []
     tamanho = len(base.encode("utf-8")) + 1
     reserva = 200
@@ -251,6 +253,55 @@ def _sumario(
     return "\n".join(partes) + "\n"
 
 
+def _secao_frescor(
+    total: Sequence[Mapping[str, Any]], freshness: Mapping[str, Mapping[str, Any]]
+) -> list[str]:
+    """Os findings cuja fonte pede releitura (`stale` ou `aging`), um por fonte, e
+    uma linha so para os que citam fonte nunca conferida (`unverified`): com a
+    maioria das fontes do catalogo nesse estado, lista-los um por um afogaria o
+    resumo. O estado vem de `sparkforge/knowledge_freshness.py`, e so entra aqui
+    com `--source-freshness`."""
+    linhas: list[str] = []
+    sem_conferencia = 0
+    for f in sorted(total, key=lambda x: (_chave_severidade(x), str(x.get("rule_id")))):
+        # Uma regra pode citar a mesma URL duas vezes (duas notas sobre a mesma
+        # pagina); a linha e por finding e FONTE, e nao por citacao.
+        urls = dict.fromkeys(
+            str(fonte.get("url"))
+            for fonte in f.get("sources") or []
+            if isinstance(fonte, Mapping) and fonte.get("url")
+        )
+        estados = [(url, freshness.get(url) or {}) for url in urls]
+        if any(e.get("state") == "unverified" for _, e in estados):
+            sem_conferencia += 1
+        for url, e in estados:
+            if e.get("state") == "stale":
+                datas = f"validada {e.get('validated') or '?'}, mudou {e.get('changed_at')}"
+            elif e.get("state") == "aging":
+                datas = f"conferida {e.get('checked_at')} ({e.get('age_days')} dias)"
+            else:
+                continue
+            linhas.append(
+                f"| {f.get('severity')} | {_celula(str(f.get('rule_id')))} | "
+                f"{_celula(_sujeito(f.get('subject') or {}))} | "
+                f"{_celula(str(url))} | `{e['state']}` | {_celula(datas)} |"
+            )
+    secao = ["", f"## Fontes que pedem releitura ({len(linhas)})", ""]
+    if linhas:
+        secao += [
+            "| Severidade | Regra | Sujeito | Fonte | Estado | Datas |",
+            "|---|---|---|---|---|---|",
+            *linhas,
+        ]
+    else:
+        secao.append("Nenhuma fonte citada esta `stale` ou `aging`.")
+    secao += [
+        "",
+        f"{sem_conferencia} finding(s) citam fonte nunca conferida por hash (`unverified`).",
+    ]
+    return secao
+
+
 def projetar(
     findings: Sequence[Mapping[str, Any]],
     facts_por_id: Mapping[str, Mapping[str, Any]],
@@ -260,6 +311,7 @@ def projetar(
     versao: str,
     category: str | None = None,
     fail_on: str | None = None,
+    freshness: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> Projecao:
     """A projecao inteira. `existe` recebe um caminho relativo a raiz do repositorio."""
     no_sarif: list[tuple[Mapping[str, Any], Localizado]] = []
@@ -333,7 +385,7 @@ def projetar(
     )
     return Projecao(
         sarif=sarif,
-        summary=_sumario(findings, no_sarif, recusados, gate),
+        summary=_sumario(findings, no_sarif, recusados, gate, freshness),
         annotations=annotations,
         recusas=recusas,
         total=len(findings),

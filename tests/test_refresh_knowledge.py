@@ -248,9 +248,7 @@ class TestWatchlistIsDerivedFromBothOrigins:
         Uma URL citada por regra e por pagina com `retrieved` diferentes carrega
         as duas datas: quem le o alarme sabe qual das duas citacoes esta velha.
         """
-        both = {
-            url: meta for url, meta in watchlist().items() if meta["rules"] and meta["docs"]
-        }
+        both = {url: meta for url, meta in watchlist().items() if meta["rules"] and meta["docs"]}
         assert both, "o corpus tem URLs citadas pelas duas origens"
         for url, meta in both.items():
             assert meta["retrieved"], url
@@ -303,3 +301,88 @@ class TestOfflineSync:
     def test_a_source_nobody_cites_anymore_is_dropped(self):
         lock = {"sources": {"https://x.dev/latest/velha": {"sha256": "abc", "pinned": False}}}
         assert sync_metadata({}, lock)["sources"] == {}
+
+
+class TestChangedAt:
+    """`changed_at` e a data em que o hash mudou pela ultima vez: e ela que deixa
+    `sparkforge/knowledge_freshness.py` dizer `stale`."""
+
+    URL = "https://x.dev/latest/a"
+
+    def test_mudou_grava_changed_at_hoje(self):
+        lock = {"sources": {self.URL: {"sha256": digest("<p>antigo</p>"), "pinned": False}}}
+        _, novo = compare({self.URL: entry()}, lock, lambda u: "<p>novo</p>", TODAY)
+        stored = novo["sources"][self.URL]
+        assert stored["changed_at"] == TODAY
+        assert stored["checked_at"] == TODAY
+
+    def test_igual_preserva_o_changed_at_anterior(self):
+        previous = {
+            "sha256": digest("<p>a</p>"),
+            "checked_at": "2026-07-01",
+            "changed_at": "2026-06-15",
+            "pinned": False,
+        }
+        _, novo = compare(
+            {self.URL: entry()}, {"sources": {self.URL: previous}}, lambda u: "<p>a</p>", TODAY
+        )
+        stored = novo["sources"][self.URL]
+        assert stored["changed_at"] == "2026-06-15"
+        assert stored["checked_at"] == TODAY
+
+    def test_igual_sem_mudanca_anterior_nao_inventa_changed_at(self):
+        lock = {"sources": {self.URL: {"sha256": digest("<p>a</p>"), "pinned": False}}}
+        _, novo = compare({self.URL: entry()}, lock, lambda u: "<p>a</p>", TODAY)
+        assert "changed_at" not in novo["sources"][self.URL]
+
+    def test_nova_nao_ganha_changed_at(self):
+        _, novo = compare({self.URL: entry()}, {"sources": {}}, lambda u: "<p>a</p>", TODAY)
+        assert "changed_at" not in novo["sources"][self.URL]
+
+    def test_inalcancavel_mantem_o_changed_at_anterior(self):
+        previous = {
+            "sha256": "abc",
+            "checked_at": "2026-01-01",
+            "changed_at": "2025-12-01",
+            "pinned": False,
+        }
+
+        def falha(_url):
+            raise FetchFailed("404")
+
+        _, novo = compare({self.URL: entry()}, {"sources": {self.URL: previous}}, falha, TODAY)
+        stored = novo["sources"][self.URL]
+        assert stored["changed_at"] == "2025-12-01"
+        assert stored["checked_at"] == "2026-01-01"
+
+    def test_offline_preserva_e_nunca_cria(self):
+        previous = {
+            "sources": {
+                self.URL: {
+                    "sha256": "abc",
+                    "checked_at": "2026-01-01",
+                    "changed_at": "2025-12-01",
+                    "pinned": False,
+                }
+            }
+        }
+        assert (
+            sync_metadata({self.URL: entry()}, previous)["sources"][self.URL]["changed_at"]
+            == "2025-12-01"
+        )
+        assert "changed_at" not in sync_metadata({self.URL: entry()}, {})["sources"][self.URL]
+
+    def test_offline_remove_changed_at_de_fonte_fixa(self):
+        url = "https://x.dev/docs/1.2.3/a"
+        previous = {
+            "sources": {
+                url: {
+                    "sha256": "abc",
+                    "checked_at": "2026-01-01",
+                    "changed_at": "2025-12-01",
+                    "pinned": False,
+                }
+            }
+        }
+        stored = sync_metadata({url: entry(pinned=True)}, previous)["sources"][url]
+        assert {"sha256", "checked_at", "changed_at"}.isdisjoint(stored)

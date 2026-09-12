@@ -60,8 +60,8 @@ def _validador() -> jsonschema.Draft4Validator:
 
 def test_o_corpus_tem_os_sete_casos():
     assert [p.name for p in _casos()] == [
-        "misto", "pyspark_com_linha", "so_runtime", "stage_negativos", "stage_python",
-        "stage_scala", "terraform",
+        "freshness", "misto", "pyspark_com_linha", "so_runtime", "stage_negativos",
+        "stage_python", "stage_scala", "terraform",
     ]
 
 
@@ -112,6 +112,10 @@ class TestCaso:
             argv += ["--fail-on", meta["fail_on"]]
         if meta.get("category"):
             argv += ["--category", meta["category"]]
+        if meta.get("source_freshness"):
+            argv += ["--source-freshness", "--as-of", meta["as_of"]]
+        if meta.get("sources_lock"):
+            monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(caso / meta["sources_lock"]))
 
         codigo = cli.main(argv)
         saida = capsys.readouterr()

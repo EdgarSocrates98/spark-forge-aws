@@ -3381,6 +3381,48 @@ def root_cause(
     return saida
 
 
+_AS_OF_EXEMPLO = "sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
+
+
+def _as_of(valor: str | None) -> Any:
+    """O dia de referencia do estado das fontes: `AAAA-MM-DD`, ou hoje em UTC."""
+    from sparkforge.knowledge_freshness import data, hoje_utc
+
+    if valor is None:
+        return hoje_utc()
+    dia = data(valor) if isinstance(valor, str) and len(valor) == 10 else None
+    if dia is None:
+        raise AdapterError(
+            f"--as-of {valor!r}: use AAAA-MM-DD. Exemplo: {_AS_OF_EXEMPLO}", exit_code=2
+        )
+    return dia
+
+
+def _freshness_de_citacoes(citacoes: list[tuple[str | None, Any]], dia: Any) -> dict[str, Any]:
+    """`source_freshness` e `freshness_policy` sobre o lock de `knowledge_dir()`.
+
+    Lock ausente ou ilegivel nao derruba o verbo: toda fonte sai `unresolved`
+    com o motivo (regra 20), e o resto da resposta sai igual.
+    """
+    from sparkforge.knowledge_freshness import carregar_lock, mapa
+
+    try:
+        root = knowledge_dir()
+    except KnowledgeError:
+        root = None
+    lock, motivo = carregar_lock(root)
+    return mapa(citacoes, lock, dia, motivo_sem_lock=motivo or "lock_ausente")
+
+
+def source_freshness_de(itens: list[dict[str, Any]], as_of: str | None = None) -> dict[str, Any]:
+    """O estado das fontes citadas em `itens` (findings ou regras), calculado na
+    leitura. Um helper so para a tool e para a CLI: `judge` pela CLI pagina por
+    conta propria, e o estado precisa ser o da pagina que ela imprime."""
+    from sparkforge.knowledge_freshness import citacoes_de
+
+    return _freshness_de_citacoes(citacoes_de(itens), _as_of(as_of))
+
+
 def judge_findings(
     facts: list[dict[str, Any]] | None = None,
     facts_path: str | list[str] | None = None,
@@ -3394,7 +3436,11 @@ def judge_findings(
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
     show_skipped: bool = False,
+    source_freshness: bool = False,
+    as_of: str | None = None,
 ) -> dict[str, Any]:
+    if source_freshness:
+        _as_of(as_of)
     if facts is not None:
         fact_list = _facts_from_dicts(facts)
     elif facts_path is not None:
@@ -3483,6 +3529,8 @@ def judge_findings(
     }
     if show_skipped:
         result["skipped"] = skipped
+    if source_freshness:
+        result.update(source_freshness_de(page, as_of))
     return result
 
 
@@ -3987,7 +4035,14 @@ def rules_lookup(
     category: str | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    source_freshness: bool = False,
+    as_of: str | None = None,
 ) -> dict[str, Any]:
+    """Regras do catalogo. Sem `source_freshness`, a resposta e a mesma para o
+    mesmo catalogo, qualquer que seja o dia; com ela, entra o estado das fontes
+    citadas na pagina, que depende do lock e de `as_of`."""
+    if source_freshness:
+        _as_of(as_of)
     try:
         rules = load_catalog()
     except CatalogError as exc:
@@ -4032,6 +4087,7 @@ def rules_lookup(
         },
         "by_category": by_category,
         "rules": page,
+        **(source_freshness_de(page, as_of) if source_freshness else {}),
     }
 
 
@@ -4059,7 +4115,9 @@ def _knowledge_root_missing(cause: str) -> AdapterError:
     )
 
 
-def knowledge_path(file: str | None = None) -> dict[str, Any]:
+def knowledge_path(
+    file: str | None = None, source_freshness: bool = False, as_of: str | None = None
+) -> dict[str, Any]:
     """Resolve a raiz de knowledge, e opcionalmente um arquivo dentro dela.
 
     Sem `file`, devolve a raiz e a lista do que ha. Um consumidor instalado por
@@ -4106,7 +4164,34 @@ def knowledge_path(file: str | None = None) -> dict[str, Any]:
         except KnowledgeError as exc:
             raise AdapterError(str(exc), exit_code=2) from exc
 
-    return {"root": str(root), "file": resolved, "available": available}
+    payload: dict[str, Any] = {"root": str(root), "file": resolved, "available": available}
+    if source_freshness:
+        payload.update(_freshness_de_knowledge(root, resolved, _as_of(as_of)))
+    return payload
+
+
+def _freshness_de_knowledge(root: Path, resolved: str | None, dia: Any) -> dict[str, Any]:
+    """Com `file`, o estado de cada URL da secao `Fontes` daquele documento, com
+    a data de leitura que ELE declara; sem `file`, a contagem por estado de cada
+    documento. O lock junta as datas das duas origens numa lista so, por isso a
+    validacao vem do proprio documento (`fontes_de_knowledge`)."""
+    from sparkforge.knowledge_freshness import citacoes_do_doc, fontes_de_knowledge
+
+    _, por_doc = fontes_de_knowledge(root)
+    if resolved is not None:
+        ancora = "knowledge/" + Path(resolved).resolve().relative_to(root.resolve()).as_posix()
+        return _freshness_de_citacoes(citacoes_do_doc(por_doc, ancora), dia)
+    todas = [c for doc in por_doc for c in citacoes_do_doc(por_doc, doc)]
+    geral = _freshness_de_citacoes(todas, dia)
+    return {
+        "freshness_by_doc": {
+            doc: _freshness_de_citacoes(citacoes_do_doc(por_doc, doc), dia)["freshness_policy"][
+                "counts"
+            ]
+            for doc in por_doc
+        },
+        "freshness_policy": geral["freshness_policy"],
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -4452,6 +4537,8 @@ def report_github(
     source_roots: list[str] | None = None,
     category: str | None = None,
     fail_on: str | None = None,
+    source_freshness: bool = False,
+    as_of: str | None = None,
 ) -> dict[str, Any]:
     """Findings ja julgados projetados para o GitHub, sem gravar nada.
 
@@ -4473,6 +4560,7 @@ def report_github(
     raizes = _raizes_confinadas(raiz, source_roots)
     findings, facts = _findings_e_uniao_de_facts(None, findings_path, None, facts_path)
     facts_por_id = {fact.id: fact.to_dict() for fact in facts}
+    frescor = source_freshness_de(findings, as_of) if source_freshness else None
     projecao = projetar(
         findings,
         facts_por_id,
@@ -4481,6 +4569,7 @@ def report_github(
         versao=_versao_sparkforge(),
         category=category,
         fail_on=fail_on,
+        freshness=frescor["source_freshness"] if frescor else None,
     )
     return {
         "sarif": projecao.sarif,
@@ -4494,6 +4583,7 @@ def report_github(
         "refused": list(projecao.recusas),
         "gate": projecao.gate,
         "source_roots": raizes,
+        **(frescor or {}),
     }
 
 

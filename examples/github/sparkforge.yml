@@ -50,7 +50,10 @@ jobs:
       # Grava .sparkforge/report/sparkforge.sarif e .sparkforge/report/summary.md,
       # e imprime uma anotacao por finding com linha (aparece no diff do PR).
       # `--fail-on P0` deixa o check vermelho quando ha P0; o upload abaixo roda
-      # mesmo assim, para o alerta chegar a aba Security.
+      # mesmo assim, para o alerta chegar a aba Security. `--source-freshness`
+      # acrescenta ao resumo a secao "Fontes que pedem releitura": o finding cuja
+      # fonte mudou depois da validacao da regra (`stale`) ou foi conferida ha mais
+      # de 14 dias (`aging`), calculado sobre knowledge/sources.lock.json.
       - name: Projetar para o GitHub
         id: report
         run: |
@@ -62,7 +65,8 @@ jobs:
             --source-root jobs \
             --source-root infra \
             --category sparkforge \
-            --fail-on P0
+            --fail-on P0 \
+            --source-freshness
 
       - name: Resumo do PR
         if: always() && hashFiles('.sparkforge/report/summary.md') != ''

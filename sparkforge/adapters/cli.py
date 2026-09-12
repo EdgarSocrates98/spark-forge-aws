@@ -1202,6 +1202,17 @@ def build_parser() -> argparse.ArgumentParser:
     judge_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     judge_p.add_argument("--cursor")
     judge_p.add_argument("--show-skipped", action="store_true")
+    judge_p.add_argument(
+        "--source-freshness",
+        action="store_true",
+        help=(
+            "Acrescenta o estado das fontes citadas (fixed, unverified, stale, aging, fresh), "
+            "calculado sobre knowledge/sources.lock.json. Depende do lock e do dia."
+        ),
+    )
+    judge_p.add_argument(
+        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
+    )
 
     # arbitrate --------------------------------------------------------
     # Verbo de TOPO, e nao um `agentic arbitrate`: ele nao extrai de artefato
@@ -1651,6 +1662,17 @@ def build_parser() -> argparse.ArgumentParser:
         "path", help="Imprime a raiz de knowledge e, com --file, um arquivo dentro dela."
     )
     knowledge_path_p.add_argument("--file")
+    knowledge_path_p.add_argument(
+        "--source-freshness",
+        action="store_true",
+        help=(
+            "Acrescenta o estado das fontes citadas (fixed, unverified, stale, aging, fresh), "
+            "calculado sobre knowledge/sources.lock.json. Depende do lock e do dia."
+        ),
+    )
+    knowledge_path_p.add_argument(
+        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
+    )
 
     # rules lookup --------------------------------------------------------
     # debate referee ---------------------------------------------------
@@ -1869,6 +1891,17 @@ def build_parser() -> argparse.ArgumentParser:
     lookup_p.add_argument("--category")
     lookup_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     lookup_p.add_argument("--cursor")
+    lookup_p.add_argument(
+        "--source-freshness",
+        action="store_true",
+        help=(
+            "Acrescenta o estado das fontes citadas (fixed, unverified, stale, aging, fresh), "
+            "calculado sobre knowledge/sources.lock.json. Depende do lock e do dia."
+        ),
+    )
+    lookup_p.add_argument(
+        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
+    )
 
     # validate --------------------------------------------------------
     validate_p = sub.add_parser(
@@ -1977,6 +2010,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--category",
         default=None,
         help="Categoria do upload no Code Scanning (automationDetails.id).",
+    )
+    report_github_p.add_argument(
+        "--source-freshness",
+        action="store_true",
+        help=(
+            "Secao Fontes que pedem releitura no resumo, com o estado das fontes citadas "
+            "(fixed, unverified, stale, aging, fresh), calculado sobre "
+            "knowledge/sources.lock.json. Depende do lock e do dia."
+        ),
+    )
+    report_github_p.add_argument(
+        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
     )
 
     # telemetry ---------------------------------------------------------------
@@ -3024,6 +3069,8 @@ def _cmd_judge(args: argparse.Namespace) -> int:
     }
     if args.show_skipped:
         payload["skipped"] = full.get("skipped", [])
+    if args.source_freshness:
+        payload.update(_core.source_freshness_de(page, args.as_of))
     _print(payload)
     return 0
 
@@ -3155,7 +3202,11 @@ def _cmd_runtime_detect(args: argparse.Namespace) -> int:
 
 
 def _cmd_knowledge_path(args: argparse.Namespace) -> int:
-    _print(_core.knowledge_path(file=args.file))
+    _print(
+        _core.knowledge_path(
+            file=args.file, source_freshness=args.source_freshness, as_of=args.as_of
+        )
+    )
     return 0
 
 
@@ -3233,7 +3284,12 @@ def _cmd_lakeformation_matrix(args: argparse.Namespace) -> int:
 
 def _cmd_rules_lookup(args: argparse.Namespace) -> int:
     payload = _core.rules_lookup(
-        id=args.id, category=args.category, limit=args.limit, cursor=args.cursor
+        id=args.id,
+        category=args.category,
+        limit=args.limit,
+        cursor=args.cursor,
+        source_freshness=args.source_freshness,
+        as_of=args.as_of,
     )
     _print(payload)
     return 0
@@ -3280,6 +3336,8 @@ def _cmd_report_github(args: argparse.Namespace) -> int:
         source_roots=args.source_roots,
         category=args.category,
         fail_on=args.fail_on,
+        source_freshness=args.source_freshness,
+        as_of=args.as_of,
     )
     gravados = _core.report_github_write(args.repo, payload)
     if hasattr(sys.stdout, "reconfigure"):

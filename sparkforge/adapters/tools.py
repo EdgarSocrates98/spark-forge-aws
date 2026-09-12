@@ -1196,6 +1196,60 @@ _JUDGE_PLAN_SCHEMA: dict[str, Any] = {
     },
 }
 
+# O estado das fontes citadas (`sparkforge/knowledge_freshness.py`). Opt-in: a
+# resposta sem ele e a mesma para o mesmo catalogo em qualquer dia, e o golden de
+# paridade MCP (`fixtures/mcp_parity/`) compara uma chamada real de
+# `rules_lookup` byte a byte. As descricoes das tools do golden nao mudam, por
+# isso a flag se explica na propria propriedade.
+_FRESHNESS_INPUT: dict[str, Any] = {
+    "source_freshness": {
+        "type": "boolean",
+        "description": (
+            "Acrescenta `source_freshness` (estado de cada fonte citada: fixed, unverified, "
+            "stale, aging, fresh ou unresolved, com o motivo e as datas) e `freshness_policy` "
+            "(limiar declarado, `as_of` e contagem por estado). Calculado sobre "
+            "knowledge/sources.lock.json: depende do lock e do dia. stale = a fonte mudou "
+            "depois da data em que a regra a validou."
+        ),
+    },
+    "as_of": {
+        "type": "string",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+        "description": "Dia de referencia do estado das fontes (AAAA-MM-DD). Default: hoje, UTC.",
+    },
+}
+_FRESHNESS_ESTADO: dict[str, Any] = {
+    "type": "object",
+    "required": ["state", "reason"],
+    "properties": {
+        "state": {
+            "type": "string",
+            "enum": ["unresolved", "fixed", "stale", "unverified", "aging", "fresh"],
+        },
+        "reason": {"type": "string"},
+        "validated": {"type": "string"},
+        "checked_at": {"type": "string"},
+        "changed_at": {"type": "string"},
+        "age_days": {"type": "integer"},
+        "conflicted": {"type": "object"},
+    },
+}
+_FRESHNESS_POLICY: dict[str, Any] = {
+    "type": "object",
+    "required": ["aging_days", "basis", "as_of", "counts"],
+    "properties": {
+        "aging_days": {"type": "integer"},
+        "basis": {"type": "string"},
+        "as_of": {"type": "string"},
+        "counts": {"type": "object", "additionalProperties": {"type": "integer"}},
+    },
+}
+_FRESHNESS_OUTPUT: dict[str, Any] = {
+    "source_freshness": {"type": "object", "additionalProperties": _FRESHNESS_ESTADO},
+    "freshness_policy": _FRESHNESS_POLICY,
+}
+
+
 _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -1210,6 +1264,7 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
     ],
     "properties": {
         **_PAGE_PROPERTIES,
+        **_FRESHNESS_OUTPUT,
         "filters_applied": {
             "type": "object",
             "properties": {
@@ -2723,6 +2778,7 @@ _RULES_LOOKUP_SCHEMA: dict[str, Any] = {
             },
         },
         "by_category": {"type": "object", "additionalProperties": {"type": "integer"}},
+        **_FRESHNESS_OUTPUT,
         "rules": {"type": "array", "items": _RULE_ITEM},
     },
 }
@@ -6447,6 +6503,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
                 "show_skipped": {"type": "boolean"},
+                **_FRESHNESS_INPUT,
             },
         },
         "outputSchema": _JUDGE_SCHEMA,
@@ -6830,6 +6887,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "category": {"type": "string"},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                **_FRESHNESS_INPUT,
             },
         },
         "outputSchema": _RULES_LOOKUP_SCHEMA,
@@ -6848,7 +6906,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "file": {
                     "type": "string",
                     "description": "Caminho relativo, ex.: glue/runtime-matrix.md",
-                }
+                },
+                **_FRESHNESS_INPUT,
             },
         },
         "outputSchema": {
@@ -6858,6 +6917,14 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "root": {"type": "string"},
                 "file": {"type": ["string", "null"]},
                 "available": {"type": "array", "items": {"type": "string"}},
+                **_FRESHNESS_OUTPUT,
+                "freshness_by_doc": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {"type": "integer"},
+                    },
+                },
             },
         },
         "annotations": _READ_ONLY,
@@ -6998,6 +7065,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "description": "Categoria do upload no Code Scanning (automationDetails.id).",
                 },
                 "fail_on": {"type": "string", "enum": ["P0", "P1"]},
+                **_FRESHNESS_INPUT,
             },
         },
         "outputSchema": _may_fail(
@@ -8011,6 +8079,8 @@ def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
         show_skipped=args.get("show_skipped", False),
+        source_freshness=args.get("source_freshness", False),
+        as_of=args.get("as_of"),
     )
 
 
@@ -8095,11 +8165,17 @@ def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
         category=args.get("category"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        source_freshness=args.get("source_freshness", False),
+        as_of=args.get("as_of"),
     )
 
 
 def _h_knowledge_path(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.knowledge_path(file=args.get("file"))
+    return _core.knowledge_path(
+        file=args.get("file"),
+        source_freshness=args.get("source_freshness", False),
+        as_of=args.get("as_of"),
+    )
 
 
 def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
@@ -8507,6 +8583,8 @@ def _h_report_github(args: dict[str, Any]) -> dict[str, Any]:
         source_roots=args.get("source_roots"),
         category=args.get("category"),
         fail_on=args.get("fail_on"),
+        source_freshness=args.get("source_freshness", False),
+        as_of=args.get("as_of"),
     )
 
 
