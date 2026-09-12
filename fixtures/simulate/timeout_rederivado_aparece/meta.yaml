@@ -1,0 +1,9 @@
+description: >-
+  Event log com broadcast timeout. spark.network.timeout = 5s na camada
+  effective fica abaixo do heartbeatInterval, e SF-TIMEOUT-002 aparece: prova
+  de que fuse() agora rederiva a relacao de timeout.
+facts: [fixtures/eventlog/broadcast_timeout_stage_failure/expected/facts.json]
+sets: ["effective:spark.network.timeout=5s"]
+expect:
+  disappeared: []
+  appeared: [SF-TIMEOUT-002]

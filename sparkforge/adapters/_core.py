@@ -3459,7 +3459,79 @@ def proof_change(
     return saida
 
 
-_AS_OF_EXEMPLO = "sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
+_SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
+
+
+def _simulate_lado(
+    facts: list[Fact], regras: list[dict[str, Any]], versoes: dict[str, str | None]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Um lado do simulate: tira os derivados, rederiva, detecta o runtime, julga.
+
+    Os dois lados passam por aqui, e so por aqui: a diferenca entre eles so pode
+    vir do `--set`, nunca de uma rederivacao que um lado sofreu e o outro nao.
+    """
+    from sparkforge.simulate import strip_derived
+
+    derivados = run_fuse(strip_derived(facts))
+    runtime = build_runtime_context(**{**versoes, "facts": derivados}).to_dict()
+    achados, pulados = run_judge(derivados, regras, runtime, return_skipped=True)
+    return [a.to_dict() for a in achados], list(pulados), runtime
+
+
+def simulate_change(
+    facts_path: str | list[str] | None,
+    sets: list[str] | None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+) -> dict[str, Any]:
+    """O que uma mudanca de configuracao move, estruturalmente (§19).
+
+    Verbo de TOPO pela mesma razao de `proof_change`: compoe sobre facts e nao le
+    artefato de job. `--set <camada>:<chave>=<valor>` altera o valor de facts de
+    configuracao que JA existem; o mesmo pipeline roda nos dois lados e a
+    comparacao, pela chave estavel do subject, diz o que some e o que aparece.
+
+    Nunca preve medida: spill, tempo e custo nao sao fact de configuracao, e as
+    tres recusas saem em `refused`.
+    """
+    from sparkforge.proof import PolicyError, load_policy
+    from sparkforge.simulate import REFUSED, SimulateError, apply_sets, diff, parse_sets
+
+    lista = [facts_path] if isinstance(facts_path, str) else list(facts_path or [])
+    if not lista:
+        raise AdapterError(f"informe --facts. Rode: {_SIMULATE_HINT}", exit_code=2)
+    fatos = _merge_facts_files(lista)
+    try:
+        fatos_depois, changes = apply_sets(fatos, parse_sets(list(sets or [])))
+    except SimulateError as exc:
+        raise AdapterError(f"{exc} [{exc.reason}]. Rode: {_SIMULATE_HINT}", exit_code=2) from exc
+    try:
+        politica = load_policy()
+        regras = load_catalog()
+    except (PolicyError, CatalogError) as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+    versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
+               "athena": athena, "emr": emr}
+    achados_antes, pulados_antes, runtime_antes = _simulate_lado(fatos, regras, versoes)
+    achados_depois, pulados_depois, runtime_depois = _simulate_lado(fatos_depois, regras, versoes)
+    comparacao = diff(
+        achados_antes, achados_depois, pulados_antes, pulados_depois, politica["stable_keys"]
+    )
+    return {
+        "changes": changes,
+        **comparacao,
+        "runtime": {"before": runtime_antes, "after": runtime_depois},
+        "refused": [dict(item) for item in REFUSED],
+        "fact_count": len(fatos),
+    }
+
+
+_AS_OF_EXEMPLO ="sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
 
 
 def _as_of(valor: str | None) -> Any:

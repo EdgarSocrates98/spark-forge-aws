@@ -181,6 +181,7 @@
     "sparkforge_root_cause",
     "sparkforge_rules_lookup",
     "sparkforge_runtime_detect",
+    "sparkforge_simulate",
     "sparkforge_tune",
     "sparkforge_validate_output",
     "sparkforge_workload"

@@ -1,0 +1,6 @@
+description: >-
+  --set sem o prefixo de camada. A regra 19 separa quem pediu de quem venceu,
+  e o simulate recusa escolher a camada pelo operador.
+facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
+sets: ["max_concurrent_runs=1"]
+refusal: camada_invalida

@@ -96,6 +96,7 @@ class TestToolSurface:
             "sparkforge_receipt_emit",
             "sparkforge_receipt_verify",
             "sparkforge_proof",
+            "sparkforge_simulate",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2553,6 +2554,23 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["results"][0]["obligations"][0]["outcome"] == "refuted", result
         return result
 
+    if name == "sparkforge_simulate":
+        # Concorrencia 3 -> 1 num job com bookmark: SF-GLUE-003 some. O schema e
+        # validado por uma diferenca real, e nao por uma lista vazia.
+        from pathlib import Path
+
+        fatos = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "terraform" / "bookmarks_with_concurrency" / "expected"
+            / "facts.json"
+        )
+        result = call_tool(
+            "sparkforge_simulate",
+            {"facts_path": [str(fatos)], "sets": ["tf:max_concurrent_runs=1"]},
+        )
+        assert [d["rule_id"] for d in result["disappeared"]] == ["SF-GLUE-003"], result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -2957,6 +2975,7 @@ class TestErrorShapesValidateToo:
                 "applied": ["SF-PY-002"],
             },
         ),
+        ("sparkforge_simulate", {"facts_path": "<tmp>/nada.json", "sets": ["tf:x=1"]}),
         (
             "sparkforge_arbitrate",
             {

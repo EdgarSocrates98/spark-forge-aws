@@ -2156,6 +2156,30 @@ def build_parser() -> argparse.ArgumentParser:
     for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
         proof_p.add_argument(flag, default=None)
 
+    # simulate ----------------------------------------------------------------
+    # Verbo de TOPO: altera facts de configuracao ja extraidos e julga os dois
+    # lados no processo; nao le artefato de job.
+    simulate_p = sub.add_parser(
+        "simulate",
+        help=(
+            "O que uma mudanca de configuracao move, estruturalmente: altera o valor "
+            "de facts que ja existem, rederiva e julga os dois lados, e diz que "
+            "achados somem e aparecem. Nunca preve spill, tempo ou custo."
+        ),
+    )
+    simulate_p.add_argument(
+        "--facts", action="append", required=True, help="Facts do case. Repetivel."
+    )
+    simulate_p.add_argument(
+        "--set",
+        dest="sets",
+        action="append",
+        required=True,
+        help="camada:chave=valor, camada em tf, code, effective, emr. Repetivel.",
+    )
+    for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
+        simulate_p.add_argument(flag, default=None)
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3492,6 +3516,22 @@ def _cmd_proof(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_simulate(args: argparse.Namespace) -> int:
+    _print(
+        _core.simulate_change(
+            args.facts,
+            args.sets,
+            glue=args.glue,
+            spark=args.spark,
+            python=args.python,
+            iceberg=args.iceberg,
+            athena=args.athena,
+            emr=args.emr,
+        )
+    )
+    return 0
+
+
 def _cmd_receipt_emit(args: argparse.Namespace) -> int:
     """Grava o recibo e imprime onde, sem o corpo inteiro: o arquivo ja o tem."""
     payload = _core.receipt_emit_and_write(
@@ -4086,6 +4126,7 @@ _DISPATCH = {
     ("receipt", "emit"): _cmd_receipt_emit,
     ("receipt", "verify"): _cmd_receipt_verify,
     ("proof", None): _cmd_proof,
+    ("simulate", None): _cmd_simulate,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

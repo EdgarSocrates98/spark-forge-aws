@@ -1,0 +1,66 @@
+{
+  "appeared": [
+    {
+      "rule_id": "SF-TIMEOUT-002",
+      "subject": {
+        "symbol": "",
+        "type": "job_run"
+      }
+    }
+  ],
+  "changes": [
+    {
+      "facts_changed": 1,
+      "key": "spark.network.timeout",
+      "layer": "effective",
+      "new_value": "5s",
+      "old_values": [
+        "120s"
+      ]
+    }
+  ],
+  "disappeared": [],
+  "fact_count": 20,
+  "persisted_count": 0,
+  "refused": [
+    {
+      "field": "performance_prediction",
+      "reason": "spill_e_tempo_nao_sao_fact_de_configuracao"
+    },
+    {
+      "field": "dependency_incompatibility",
+      "reason": "use_sparkforge_migration_assess"
+    },
+    {
+      "field": "execution_graph",
+      "reason": "nao_e_previsivel_a_partir_de_configuracao"
+    }
+  ],
+  "runtime": {
+    "after": {
+      "athena": "",
+      "detected_from": [
+        "event_log"
+      ],
+      "divergences": [],
+      "emr": "",
+      "glue": "",
+      "iceberg": "",
+      "python": "",
+      "spark": "3.5.4"
+    },
+    "before": {
+      "athena": "",
+      "detected_from": [
+        "event_log"
+      ],
+      "divergences": [],
+      "emr": "",
+      "glue": "",
+      "iceberg": "",
+      "python": "",
+      "spark": "3.5.4"
+    }
+  },
+  "skipped_delta": []
+}

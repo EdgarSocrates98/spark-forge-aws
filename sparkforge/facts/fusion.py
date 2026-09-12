@@ -71,6 +71,9 @@ from typing import Any
 
 from sparkforge.facts.lakeformation import EMITTED_KINDS as LF_EMITTED_KINDS
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
+from sparkforge.facts.timeout_diagnosis import SOURCE_KINDS as TIMEOUT_SOURCE_KINDS
+from sparkforge.facts.timeout_diagnosis import extract_timeout_diagnosis
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "fusion@0.1.0"
@@ -524,5 +527,21 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
         )
     for fact in derivados_lf:
         combined[fact.id] = fact
+
+    # `spark.timeout.*` deriva AQUI pela mesma razao de `lakeformation.*`: ate
+    # 2026-09-12 `extract_timeout_diagnosis` nao tinha chamador de producao, e as
+    # regras que leem esses kinds (`SF-TIMEOUT-001/002`) so disparavam em teste.
+    # A guarda por `SOURCE_KINDS` mantem o `fuse` igual para quem nao tem
+    # artefato de timeout: sem ela, todo pool ganharia `no_timeout_evidence`.
+    # `path` vazio: ele so vai para a proveniencia, e um caminho inventado mentiria.
+    if any(f.kind in TIMEOUT_SOURCE_KINDS for f in facts):
+        derivados_timeout = extract_timeout_diagnosis(facts, "")
+        desconhecidos_timeout = {f.kind for f in derivados_timeout} - TIMEOUT_EMITTED_KINDS
+        if desconhecidos_timeout:
+            raise AssertionError(
+                f"kind fora do namespace de timeout_diagnosis: {sorted(desconhecidos_timeout)}"
+            )
+        for fact in derivados_timeout:
+            combined[fact.id] = fact
 
     return sort_facts(combined.values())
