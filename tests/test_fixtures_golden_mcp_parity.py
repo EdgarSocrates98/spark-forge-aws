@@ -76,6 +76,27 @@ NOVAS_DEPOIS_DO_GOLDEN = {
 }
 
 
+# Tools do golden cujo SCHEMA cresceu depois dele. So diferenca ADITIVA e aceita
+# nelas (chave nova, `antes == "<ausente>"`): remover ou alterar valor de schema
+# existente continua derrubando o teste. As chamadas gravadas continuam byte a
+# byte, porque nenhuma delas pede o campo novo.
+ALTERADAS_DEPOIS_DO_GOLDEN = {
+    "sparkforge_judge": (
+        "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
+        "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma"
+    ),
+    "sparkforge_rules_lookup": (
+        "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
+        "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma"
+    ),
+    "sparkforge_knowledge_path": (
+        "2026-09-11: `source_freshness`/`as_of` opcionais; estado das fontes do "
+        "documento, ou contagem por documento (frente de freshness)"
+    ),
+}
+_CAMINHO_DE_TOOL = re.compile(r"^\$\.tools_list\.(stdio|http)\.tools\[(\d+)\]\.")
+
+
 def _nomes(lista: dict[str, Any]) -> list[str]:
     return [tool["name"] for tool in lista["tools"]]
 
@@ -92,11 +113,22 @@ def _so_do_golden(coleta: dict[str, Any], golden: dict[str, Any]) -> dict[str, A
     return {**coleta, "tools_list": listas}
 
 
-def _fora_da_allowlist(difs: list[tuple[str, Any, Any]]) -> list[tuple[str, Any, Any]]:
+def _aditiva_em_tool_alterada(caminho: str, antes: Any, golden: dict[str, Any]) -> bool:
+    casou = _CAMINHO_DE_TOOL.match(caminho)
+    if casou is None or antes != "<ausente>":
+        return False
+    nome = _nomes(golden["tools_list"][casou.group(1)])[int(casou.group(2))]
+    return nome in ALTERADAS_DEPOIS_DO_GOLDEN
+
+
+def _fora_da_allowlist(
+    difs: list[tuple[str, Any, Any]], golden: dict[str, Any]
+) -> list[tuple[str, Any, Any]]:
     return [
         (caminho, antes, agora)
         for caminho, antes, agora in difs
         if not (_OUTPUT_TYPE.match(caminho) and antes == "<ausente>" and agora == "object")
+        and not _aditiva_em_tool_alterada(caminho, antes, golden)
     ]
 
 
@@ -145,12 +177,25 @@ def test_toda_tool_nova_esta_declarada(legado, golden):
 class TestHandshakeLegado:
     def test_so_o_type_do_output_schema_difere(self, legado, golden):
         difs = mcp_parity.diff_contra_golden(_so_do_golden(legado, golden))
-        assert _fora_da_allowlist(difs) == []
+        assert _fora_da_allowlist(difs, golden) == []
 
     def test_o_diff_aceito_tem_o_tamanho_medido(self, legado, golden):
         difs = mcp_parity.diff_contra_golden(_so_do_golden(legado, golden))
-        por_transporte = {t: sum(f".{t}." in c for c, _, _ in difs) for t in ("stdio", "http")}
-        assert por_transporte == {"stdio": 77, "http": 76}
+        tipo = {
+            t: sum(f".{t}." in c and bool(_OUTPUT_TYPE.match(c)) for c, _, _ in difs)
+            for t in ("stdio", "http")
+        }
+        assert tipo == {"stdio": 77, "http": 76}
+        aditivas = {
+            t: sum(
+                f".{t}." in c
+                and not _OUTPUT_TYPE.match(c)
+                and _aditiva_em_tool_alterada(c, antes, golden)
+                for c, antes, _ in difs
+            )
+            for t in ("stdio", "http")
+        }
+        assert aditivas == {"stdio": 13, "http": 13}
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
@@ -187,3 +232,4 @@ class TestEra2026:
 
 def test_allowlist_tem_motivo():
     assert all(motivo.strip() for motivo in ALLOWLIST_MOTIVO.values())
+    assert all(motivo.strip() for motivo in ALTERADAS_DEPOIS_DO_GOLDEN.values())

@@ -27,6 +27,13 @@ Para cada um, procure ativamente:
    inflar confiança.
 5. **A ausência é evidência?** Condição `absent:` sobre artefato nunca coletado é
    vacuamente verdadeira. Confira a sentinela `*_analyzed`.
+6. **A fonte ainda vale?** Chame `sparkforge_rules_lookup` com o `rule_id` e
+   `source_freshness: true`. Fonte `stale` quer dizer que a página mudou **depois**
+   da data em que a regra a validou: o achado não é refutado por isso — a regra
+   pode continuar certa —, mas fica `open`, com o statement "fonte mudou em X,
+   depois da validação de Y", e não sai confirmado sem alguém reler. `unverified`
+   e `aging` vão no statement como estão, sem mudar o status. O estado depende do
+   lock e do dia; cite o `as_of` que veio em `freshness_policy`.
 
 ## Pressupõe
 

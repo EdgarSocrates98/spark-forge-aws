@@ -198,52 +198,17 @@ def knowledge_sources() -> dict[str, dict]:
     Derivada, como a origem de regra: pagina nova de knowledge com fonte nova
     passa a ser vigiada sem ninguem registrar a URL em outro lugar.
 
-    O formato do rodape e prosa, e nao tem schema -- por isso o leitor e o mais
-    simples que resolve o corpus, e cada estreitamento tem razao medida:
-
-    - Heading cujo texto e EXATAMENTE `Fontes`. `## Fontes e frescor` do
-      `INDEX.md` fala SOBRE o mecanismo e nao cita fonte nenhuma; casar por
-      prefixo o transformaria em origem.
-    - A secao vai ate o proximo heading de nivel IGUAL OU MAIOR. Duas paginas
-      tem `### O que estas fontes NAO sustentam` dentro do bloco, e a subsecao
-      pertence a secao.
-    - URL dentro de crase e PADRAO, nao citacao: a §2 de
-      `emr-serverless/runtime-matrix.md` escreve `release-version-<N>.html` para
-      descrever 24 paginas, e o trecho antes do `<` e uma URL sintaticamente
-      valida que devolveria 404 para sempre. Alarme permanente e o modo de falha
-      que faz o operador parar de ler o relatorio.
+    O leitor mora em `sparkforge/knowledge_freshness.py::fontes_de_knowledge`,
+    e nao aqui, desde a frente de freshness (2026-09-11): o verbo
+    `knowledge_path` precisa dele no pacote instalado, e duas copias do mesmo
+    leitor divergiriam na primeira correcao. As regras de leitura (heading
+    exatamente `Fontes`, secao ate heading de nivel igual ou maior, URL em crase
+    ignorada) e as razoes medidas de cada uma estao no docstring de la.
     """
-    heading = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
-    inline_code = re.compile(r"`[^`]*`")
-    url_pattern = re.compile(r"https?://[^\s<>()\[\]\"'`]+")
-    retrieved_pattern = re.compile(r"retrieved[:\s]+(\d{4}-\d{2}-\d{2})")
+    from sparkforge.knowledge_freshness import fontes_de_knowledge
 
-    docs: dict[str, set[str]] = defaultdict(set)
-    dates: dict[str, set[str]] = defaultdict(set)
-    for path in sorted((ROOT / "knowledge").rglob("*.md")):
-        anchor = path.relative_to(ROOT).as_posix()
-        level: int | None = None
-        for line in path.read_text(encoding="utf-8").splitlines():
-            match = heading.match(line)
-            if match is not None:
-                current = len(match.group(1))
-                if match.group(2).strip() == "Fontes":
-                    level = current
-                elif level is not None and current <= level:
-                    level = None
-                continue
-            if level is None:
-                continue
-            body = inline_code.sub(" ", line)
-            declared = set(retrieved_pattern.findall(body))
-            for raw in url_pattern.findall(body):
-                url = raw.rstrip(".,;:")
-                docs[url].add(anchor)
-                dates[url] |= declared
-    return {
-        url: {"docs": sorted(anchors), "retrieved": sorted(dates[url])}
-        for url, anchors in sorted(docs.items())
-    }
+    por_url, _ = fontes_de_knowledge(ROOT / "knowledge")
+    return por_url
 
 
 def watchlist() -> dict[str, dict]:
@@ -353,7 +318,7 @@ def compare(
         elif before != current:
             events.append({"kind": "changed", "url": url, "was": before, "now": current, **meta})
 
-        stored[url] = {
+        novo = {
             "pinned": False,
             "sha256": current,
             "checked_at": today,
@@ -361,6 +326,18 @@ def compare(
             "docs": meta["docs"],
             "retrieved": meta["retrieved"],
         }
+        # `changed_at` e a DATA em que o hash mudou pela ultima vez. Sem ela, o
+        # `--update` sobrescrevia `sha256` e `checked_at` e a mudanca se perdia:
+        # o lock dizia "conferida hoje" e nao "mudou hoje". E ela que deixa
+        # `sparkforge/knowledge_freshness.py` dizer `stale` -- "a fonte mudou
+        # depois da data em que a regra a validou". Fonte nova nao ganha
+        # `changed_at` (nao ha antes para comparar), e a inalcancavel mantem a
+        # entrada anterior inteira, no ramo de cima.
+        if before is not None and before != current:
+            novo["changed_at"] = today
+        elif before == current and "changed_at" in previous:
+            novo["changed_at"] = previous["changed_at"]
+        stored[url] = novo
 
     for url in list(stored):
         if url not in entries:
@@ -400,6 +377,7 @@ def sync_metadata(entries: dict[str, dict], lock: dict) -> dict:
             # campos sem sentido nela -- e o `compare` tambem nao os grava.
             entry.pop("sha256", None)
             entry.pop("checked_at", None)
+            entry.pop("changed_at", None)
             entry.pop("last_error", None)
         stored[url] = entry
     for url in list(stored):
