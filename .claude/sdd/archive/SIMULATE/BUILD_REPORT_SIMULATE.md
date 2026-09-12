@@ -9,9 +9,9 @@
 | **Feature** | SIMULATE |
 | **Date** | 2026-09-12 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_SIMULATE.md](../features/DEFINE_SIMULATE.md) |
-| **DESIGN** | [DESIGN_SIMULATE.md](../features/DESIGN_SIMULATE.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_SIMULATE.md](./DEFINE_SIMULATE.md) |
+| **DESIGN** | [DESIGN_SIMULATE.md](./DESIGN_SIMULATE.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -150,4 +150,4 @@ N/A - o repositorio nao configura mypy.
 
 ## Next Step
 
-**Ready for:** `/agentspec:workflow:ship .claude/sdd/features/DEFINE_SIMULATE.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)

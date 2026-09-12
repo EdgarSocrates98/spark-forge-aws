@@ -10,7 +10,7 @@
 | **Date** | 2026-09-12 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_SIMULATE.md](./DEFINE_SIMULATE.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -258,6 +258,7 @@ def _um_lado(facts, rules, versoes):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | design-agent | Versao inicial. A-006 (dono `spark-performance-architect`) e A-007 (cenarios medidos por prototipo) fechadas |
+| 1.1 | 2026-09-12 | ship-agent | Shipped and archived (PR #58). Desvio do build: o passo 0 so roda com kind de origem (`timeout_diagnosis.SOURCE_KINDS`) |
 
 ---
 

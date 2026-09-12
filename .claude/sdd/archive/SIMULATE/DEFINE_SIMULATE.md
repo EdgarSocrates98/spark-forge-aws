@@ -9,7 +9,7 @@
 | **Feature** | SIMULATE |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -141,6 +141,7 @@ None - ready for Design. A-006 e A-007 sao de implementacao.
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_SIMULATE.md`; A-001 corrige a premissa do brainstorm (`measures.value` numerico em `tf.attribute`) |
 | 1.1 | 2026-09-12 | design-agent | A-006 e A-007 fechadas por prototipo; AT-003 afirma a mudanca de runtime e o `skipped_delta` |
+| 1.2 | 2026-09-12 | ship-agent | Shipped and archived (PR #58) |
 
 ---
 
