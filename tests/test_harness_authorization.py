@@ -961,7 +961,12 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # e declara `host_transcript_path`. O `economy_report` recebe o mesmo
         # transcript por `host_transcript`, que o predicado nao reconhece como
         # caminho; a tool nova usa o sufixo para que a cadeia confine o arquivo.
-        assert len(TOOLS) - len(sem_caminho) == 82
+        # 82 -> 84 com `receipt_emit` e `receipt_verify` (2026-09-12), as 89ª e
+        # 90ª tools: a primeira e `LOCAL_MUTATION` e declara `repo`,
+        # `facts_path`, `findings_path`, `report_path` e `host_transcript_path`;
+        # a segunda e `_READ_ONLY` e declara `repo` e `receipt_path`. O conjunto
+        # de excecao nao se move.
+        assert len(TOOLS) - len(sem_caminho) == 84
 
 
 class TestAImposicaoNoDespacho:

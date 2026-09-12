@@ -93,6 +93,8 @@ class TestToolSurface:
             "sparkforge_report_verify",
             "sparkforge_report_github",
             "sparkforge_telemetry_export",
+            "sparkforge_receipt_emit",
+            "sparkforge_receipt_verify",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -261,6 +263,10 @@ class TestToolSurface:
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
             "sparkforge_funcval_plan",
+            # `sparkforge_receipt_emit` grava `.sparkforge/receipts/<id>.json`.
+            # E idempotente (a mesma entrada com o mesmo `now` grava o mesmo
+            # arquivo), mas escreve -- `LOCAL_MUTATION`, como `report_sign`.
+            "sparkforge_receipt_emit",
             "sparkforge_report_sign",
             # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
             #
@@ -959,6 +965,37 @@ def _debate_start_args(tmp_path):
         "findings_path": str(findings_path),
         "facts_path": [str(p / "facts.json") for p in pastas],
         "glue": "5.0",
+    }
+
+
+def _receipt_args(tmp_path):
+    """Um case com a UNIAO das duas fixtures do debate DENTRO do repo: o recibo
+    recusa artefato fora de `--repo`, porque o verify nao o alcancaria."""
+    from pathlib import Path
+
+    from sparkforge.case.store import SCHEMA_VERSION, save_case
+
+    raiz = Path(__file__).resolve().parents[1]
+    pastas = (
+        raiz / "fixtures" / "graph" / "import_sem_jar_no_iac" / "expected",
+        raiz / "fixtures" / "infra_code" / "fgac_com_jar_extra" / "expected",
+    )
+    repo = tmp_path / "case_recibo"
+    (repo / "facts").mkdir(parents=True)
+    save_case({"schema_version": SCHEMA_VERSION, "case_id": "recibo-tools"}, repo)
+    findings = []
+    facts_path = []
+    for indice, pasta in enumerate(pastas):
+        destino = repo / "facts" / f"f{indice}.json"
+        destino.write_text((pasta / "facts.json").read_text(encoding="utf-8"), encoding="utf-8")
+        facts_path.append(str(destino))
+        findings += json.loads((pasta / "findings.json").read_text(encoding="utf-8"))
+    (repo / "findings.json").write_text(json.dumps(findings), encoding="utf-8")
+    return {
+        "repo": str(repo),
+        "facts_path": facts_path,
+        "findings_path": str(repo / "findings.json"),
+        "now": "2026-09-12T00:00:00Z",
     }
 
 
@@ -2478,6 +2515,21 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["metrics"] is not None
         return result
 
+    if name == "sparkforge_receipt_emit":
+        result = call_tool("sparkforge_receipt_emit", _receipt_args(tmp_path))
+        assert result["receipt_id"].startswith("rcpt_"), result
+        return result
+
+    if name == "sparkforge_receipt_verify":
+        argumentos = _receipt_args(tmp_path)
+        emitido = call_tool("sparkforge_receipt_emit", argumentos)
+        result = call_tool(
+            "sparkforge_receipt_verify",
+            {"repo": argumentos["repo"], "receipt_path": emitido["receipt_path"]},
+        )
+        assert result["valid"] is True, result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -2863,6 +2915,16 @@ class TestErrorShapesValidateToo:
             },
         ),
         ("sparkforge_telemetry_export", {"run_id": "../fora"}),
+        (
+            "sparkforge_receipt_emit",
+            {
+                "repo": "<tmp>",
+                "facts_path": "<tmp>/nada.json",
+                "findings_path": "<tmp>/nada.json",
+                "now": "2026-09-12T00:00:00Z",
+            },
+        ),
+        ("sparkforge_receipt_verify", {"repo": "<tmp>", "receipt_path": "<tmp>/nada.json"}),
         (
             "sparkforge_arbitrate",
             {

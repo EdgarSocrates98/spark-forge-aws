@@ -709,6 +709,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: prove what an execution used and decided
+    tools: [sparkforge_receipt_emit, sparkforge_receipt_verify]
+    cli: [receipt emit, receipt verify]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: maintain investigation state
     tools: [sparkforge_case_open, sparkforge_case_get, sparkforge_case_update]
     cli: [case open, case get, case update]

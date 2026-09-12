@@ -87,9 +87,16 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    transcript do host. Byte de tool sai como byte e token só do transcript; o
    `provider` é o que o operador declarar, nunca deduzido do nome do modelo, e
    sem ele a lacuna sai em `unresolved` — relate-a, não a preencha.
-7. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
-8. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
-9. Registra no case com `sparkforge_case_update`.
+7. `sparkforge_receipt_emit` para fechar a execução: o recibo amarra, por
+   caminho e sha256, o case, a **união** dos facts, os findings, o relatório
+   assinado, o blackboard, os ADRs, os debates e os spans deste run. Ele prova
+   **correspondência**, nunca autoria, e diz isso em `refused`. Passe o `now` da
+   emissão e, se houver, o transcript e o provider declarado. Quem receber o
+   case confere com `sparkforge_receipt_verify`: `not_rechecked` em `tools` ou
+   `host` é fonte que não está na máquina dele, não adulteração.
+8. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
+9. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
+10. Registra no case com `sparkforge_case_update`.
 
 ## Pressupõe
 
