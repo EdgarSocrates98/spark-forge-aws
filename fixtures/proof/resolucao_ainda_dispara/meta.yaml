@@ -1,0 +1,9 @@
+description: >-
+  O depois ainda coleta no driver, em outra linha da mesma funcao. A chave
+  estavel (file, symbol) ignora a linha, e a resolucao sai refuted.
+findings: [fixtures/pyspark/collect_unbounded/expected/findings.json]
+facts: [fixtures/pyspark/collect_unbounded/expected/facts.json]
+after_input: input/after
+applied: [SF-PY-002]
+expect:
+  - {rule_id: SF-PY-002, kind: resolution, outcome: refuted}

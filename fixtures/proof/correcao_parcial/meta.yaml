@@ -1,0 +1,11 @@
+description: >-
+  A uniao traz o funcval de partial_coverage: SF-FVAL-005 (validacao parcial)
+  deixa a correcao inconclusive -- parte do plano nao foi medida.
+findings: [fixtures/pyspark/collect_unbounded/expected/findings.json]
+facts:
+  - fixtures/pyspark/collect_unbounded/expected/facts.json
+  - fixtures/funcval/partial_coverage/expected/facts.json
+after_input: ../resolucao_corrigida/input/after
+applied: [SF-PY-002]
+expect:
+  - {rule_id: SF-PY-002, kind: axis, axis: correctness.write_result, outcome: inconclusive}

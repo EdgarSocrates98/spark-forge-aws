@@ -1,0 +1,10 @@
+description: >-
+  O depois so traz facts de benchmark: o extrator de PySpark nao rodou, e a
+  ausencia de pyspark.driver_collect nao prova nada. Resolucao unproven, com o
+  kind que falta e o modulo que o emitiria.
+findings: [fixtures/pyspark/collect_unbounded/expected/findings.json]
+facts: [fixtures/pyspark/collect_unbounded/expected/facts.json]
+after_facts: [fixtures/bench/clean_improvement/expected/facts.json]
+applied: [SF-PY-002]
+expect:
+  - {rule_id: SF-PY-002, kind: resolution, outcome: unproven}

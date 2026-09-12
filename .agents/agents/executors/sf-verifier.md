@@ -33,6 +33,15 @@ Para cada um, procure ativamente:
    depois da validação de Y", e não sai confirmado sem alguém reler. `unverified`
    e `aging` vão no statement como estão, sem mudar o status. O estado depende do
    lock e do dia; cite o `as_of` que veio em `freshness_policy`.
+7. **A mudança aplicada se sustentou?** Quando o operador já aplicou uma
+   recomendação e extraiu os facts do depois, chame `sparkforge_proof` com os
+   findings do antes, a união de facts (com os de `funcval compare` e
+   `benchmark`, se houver), os facts do depois e o `applied`. Cada obrigação sai
+   `refuted`, `not_refuted`, `inconclusive` ou `unproven` — **nunca "provado"**.
+   `refuted` na resolução quer dizer que a regra ainda dispara no mesmo lugar;
+   num eixo, que o veredito ou o delta foi contra. `unproven` traz o `unlock`:
+   relate a medida que falta, não a preencha. `not_refuted` em correção é "os
+   quatro proxies não detectaram divergência", e é assim que se escreve.
 
 ## Pressupõe
 

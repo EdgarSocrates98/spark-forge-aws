@@ -3381,6 +3381,84 @@ def root_cause(
     return saida
 
 
+_PROOF_HINT = (
+    "sparkforge proof --findings <findings.json> --facts <uniao.json> "
+    "--after-facts <depois.json> --applied <RULE_ID>[:simbolo]"
+)
+
+
+def _facts_de(paths: str | list[str] | None, flag: str) -> list[Fact]:
+    lista = [paths] if isinstance(paths, str) else list(paths or [])
+    if not lista:
+        raise AdapterError(f"informe {flag}. Rode: {_PROOF_HINT}", exit_code=2)
+    return _merge_facts_files(lista)
+
+
+def proof_change(
+    findings_path: str,
+    facts_path: str | list[str] | None,
+    after_facts_path: str | list[str] | None,
+    applied: list[str] | None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+) -> dict[str, Any]:
+    """As obrigacoes de prova de cada recomendacao aplicada, e o desfecho delas.
+
+    Verbo de TOPO pela mesma razao de `root_cause`: compoe sobre facts e nao le
+    artefato de job. Roda `judge` duas vezes, com as mesmas chamadas do
+    `root_cause` -- sobre a UNIAO, de onde saem os veredictos `SF-FVAL`/
+    `SF-BENCH`, e sobre os facts do DEPOIS, de onde sai a resolucao, com o
+    `skipped` que separa "resolvida" de "muda por falta de artefato".
+
+    Nunca diz "provado", nunca estima ganho: as duas recusas saem em `refused`.
+    """
+    from sparkforge.diagnosis.root_cause import _modulo_por_kind
+    from sparkforge.proof import PolicyError, load_policy, prove, select_applied
+
+    pedidos = [str(item) for item in applied or [] if str(item).strip()]
+    if not pedidos:
+        raise AdapterError(
+            "informe ao menos um --applied: sem mudanca aplicada nao ha o que provar. "
+            f"Rode: {_PROOF_HINT}",
+            exit_code=2,
+        )
+    findings = _load_findings_file(findings_path)
+    uniao = _facts_de(facts_path, "--facts (a uniao de facts do case)")
+    depois = _facts_de(after_facts_path, "--after-facts (os facts extraidos do depois)")
+    try:
+        politica = load_policy()
+        regras = load_catalog()
+    except (PolicyError, CatalogError) as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+    versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
+               "athena": athena, "emr": emr}
+    runtime = build_runtime_context(**{**versoes, "facts": uniao}).to_dict()
+    runtime_depois = build_runtime_context(**{**versoes, "facts": depois}).to_dict()
+    veredictos, _ = run_judge(uniao, regras, runtime, return_skipped=True)
+    achados_depois, pulados_depois = run_judge(depois, regras, runtime_depois, return_skipped=True)
+
+    aplicados, lacunas = select_applied(findings, pedidos)
+    saida = prove(
+        aplicados,
+        union_verdicts=[f.to_dict() for f in veredictos],
+        union_facts=[f.to_dict() for f in uniao],
+        after_findings=[f.to_dict() for f in achados_depois],
+        after_skipped=list(pulados_depois),
+        after_facts=[f.to_dict() for f in depois],
+        policy=politica,
+        rules_by_id={str(r["id"]): r for r in regras},
+        emitted_by=_modulo_por_kind(),
+        unresolved=lacunas,
+    )
+    saida["fact_count"] = {"union": len(uniao), "after": len(depois)}
+    return saida
+
+
 _AS_OF_EXEMPLO = "sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
 
 

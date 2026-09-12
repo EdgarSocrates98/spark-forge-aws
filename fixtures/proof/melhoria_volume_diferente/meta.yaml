@@ -1,0 +1,11 @@
+description: >-
+  O benchmark de different_input_volume dispara SF-BENCH-001 e SF-BENCH-002
+  juntos. A comparacao invalida vence o "piorou": inconclusive, nao refuted.
+findings: [fixtures/pyspark/action_in_loop/expected/findings.json]
+facts:
+  - fixtures/pyspark/action_in_loop/expected/facts.json
+  - fixtures/bench/different_input_volume/expected/facts.json
+after_facts: [fixtures/pyspark/action_in_loop/expected/facts.json]
+applied: [SF-PY-004]
+expect:
+  - {rule_id: SF-PY-004, kind: axis, axis: runtime.wall_clock, outcome: inconclusive}

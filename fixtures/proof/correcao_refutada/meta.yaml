@@ -1,0 +1,12 @@
+description: >-
+  A uniao traz o funcval de count_diverged: SF-FVAL-001 (contagem divergiu)
+  refuta a obrigacao de correcao, mesmo com o padrao resolvido.
+findings: [fixtures/pyspark/collect_unbounded/expected/findings.json]
+facts:
+  - fixtures/pyspark/collect_unbounded/expected/facts.json
+  - fixtures/funcval/count_diverged/expected/facts.json
+after_input: ../resolucao_corrigida/input/after
+applied: [SF-PY-002]
+expect:
+  - {rule_id: SF-PY-002, kind: resolution, outcome: not_refuted}
+  - {rule_id: SF-PY-002, kind: axis, axis: correctness.write_result, outcome: refuted}
