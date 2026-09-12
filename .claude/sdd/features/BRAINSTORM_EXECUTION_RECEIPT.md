@@ -9,7 +9,7 @@
 | **Feature** | EXECUTION_RECEIPT |
 | **Date** | 2026-09-12 |
 | **Author** | brainstorm-agent |
-| **Status** | Ready for Define |
+| **Status** | ✅ Complete (Defined) |
 
 ---
 
@@ -148,7 +148,7 @@
 | 11 | O JSON canonico reutiliza um helper existente (`findings/models._canonical`) | Ja existem seis helpers duplicados; um setimo aumenta a divida | Helper novo |
 | 12 | sha256 de artefato de texto normaliza CRLF para LF antes de hashear, sob `receipt_version` | Sem isso, um recibo emitido no Windows diverge no CI Linux pelo checkout do git | Bytes crus |
 | 13 | `receipt verify` na ordem fixa `version, integrity, case, evidence, judgment, decision, proof, tools, host`; item `match`, `diverged` ou `missing`; `valid` = integrity ok e nenhuma parte `diverged` ou `missing`; codigo 1 quando invalido e 2 em erro de uso | Mesmo contrato do `report verify`; arquivo apagado e `missing`, nunca `diverged` | Veredito unico sem diagnostico |
-| 14 | Spans com run podado ou `traces.db` ausente saem `not_rechecked` com a razao, listados, sem derrubar `valid` | O `traces.db` e podavel por desenho e fica fora do git; o modo estrito quebraria a verificacao em outra maquina e no CI | `not_rechecked` derruba `valid` |
+| 14 | Spans com run podado ou `traces.db` ausente saem `not_rechecked` com a razao, listados, sem derrubar `valid` | O `traces.db` fica fora do git e nao existe em outra maquina nem no CI (nenhum codigo o poda: corrigido no DEFINE, A-004); o modo estrito quebraria a verificacao nesses lugares | `not_rechecked` derruba `valid` |
 | 15 | `receipt_version` diferente da build: partes que dependem de normalizacao saem `not_evaluable`, fora de `diverged` | Licao do `report verify`: a versao no hash garante que as assinaturas diferem, e a versao declarada permite dizer por que | Tratar como corpo adulterado |
 | 16 | CLI `receipt emit`/`receipt verify` e tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge/receipts/`, caminhos confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) | Quem executa e o agente, e ele fecha a sessao emitindo o recibo | So CLI; so verify no MCP |
 | 17 | `sf-synthesizer` ganha um passo depois do sign e do telemetry; `parity.yaml` ganha a capacidade "prove what an execution used and decided" | O executor que ja fecha a sessao | Coordenador novo |
