@@ -9,7 +9,7 @@
 | **Feature** | CHANGE_PROOF |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -156,9 +156,10 @@ None - ready for Design. A-005 e A-006 sao de implementacao.
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_CHANGE_PROOF.md`; A-001 corrige a decisao 8 do brainstorm (direcao de melhoria no mapa, nao na `action`) e fixa a precedencia `inconclusive` > `refuted` do bench |
 | 1.1 | 2026-09-12 | design-agent | A-005 e A-006 fechadas; `SF-BENCH-001` confunde o eixo `scan.bytes_read` (DESIGN Decision 3) |
+| 1.2 | 2026-09-12 | ship-agent | Shipped and archived (PR #56) |
 
 ---
 
 ## Next Step
 
-**Next:** `/ship .claude/sdd/features/DEFINE_CHANGE_PROOF.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)

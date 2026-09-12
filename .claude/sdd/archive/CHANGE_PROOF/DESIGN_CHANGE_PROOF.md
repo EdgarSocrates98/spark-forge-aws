@@ -10,7 +10,7 @@
 | **Date** | 2026-09-12 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_CHANGE_PROOF.md](./DEFINE_CHANGE_PROOF.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -438,9 +438,10 @@ def bench_outcome(axis: str, spec: dict, verdicts: set[str], run_delta: dict | N
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | design-agent | Versao inicial. A-005 e A-006 decididas; `SF-BENCH-001` confunde o eixo de leitura (Decision 3); `skipped` por razao (Decision 4) |
+| 1.1 | 2026-09-12 | ship-agent | Shipped and archived (PR #56); o build corrigiu o passo 2 da Decision 4 (ver BUILD_REPORT, Issue 1) |
 
 ---
 
 ## Next Step
 
-**Next:** `/ship .claude/sdd/features/DEFINE_CHANGE_PROOF.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)
