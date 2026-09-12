@@ -9,7 +9,7 @@
 | **Feature** | EXECUTION_RECEIPT |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -47,7 +47,7 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 | **MUST** | G11: `emitted_at` vem de `--now` (obrigatorio) e entra no hash; mesma entrada e mesmo `--now` dao o mesmo `receipt_id` e o mesmo arquivo byte a byte |
 | **MUST** | G12: CLI `sparkforge receipt emit` e `sparkforge receipt verify`; tools `sparkforge_receipt_emit` (LOCAL_MUTATION, grava so em `.sparkforge/receipts/<receipt_id>.json`, caminhos de entrada confinados ao repo) e `sparkforge_receipt_verify` (READ_ONLY) |
 | **SHOULD** | G13: parte `host`: com `--host-transcript`, `transcript_sha256`, `agent` e `model` lidos pelos facts `host.*` de `extract_host_transcript_path`; `provider` so de `--provider`; sem transcript, `host.model` e `host.agent` saem `unresolved` (`transcript_ausente`); sem provider, `host.provider` sai `unresolved` (`provider_nao_declarado`); mais de um modelo sai `modelos_multiplos` |
-| **SHOULD** | G14: parte `decision`: por arquivo de `.sparkforge/blackboard/*.jsonl` presente, caminho, sha256 e contagem; `decision_ids`; por ADR em `.sparkforge/adr/`, caminho, sha256 e `rollback_present`; por debate em `.sparkforge/debate/<id>/`, id e sha256 do estado; sem nenhum deles, `unresolved` (`sem_arbitragem`) |
+| **SHOULD** | G14: parte `decision`: por arquivo de `.sparkforge/blackboard/*.jsonl` presente, caminho, sha256 e contagem; `decision_ids`; por ADR em `.sparkforge/blackboard/adr/`, caminho, sha256 e `rollback_present`; por debate em `.sparkforge/debate/<id>/`, id e sha256 do estado; sem nenhum deles, `unresolved` (`sem_arbitragem`) |
 | **SHOULD** | G15: parte `proof`: fact_ids `funcval.*` em `tests` e fact_ids de benchmark em `before_after`, so os presentes na uniao; nenhuma comparacao e nenhum ganho; sem nenhum, `unresolved` (`sem_prova_funcional`, `sem_benchmark`); no verify, fact_id citado que nao esta na uniao declarada faz a parte divergir |
 | **SHOULD** | G16: parte `actions` fixa: `autonomy: L0`, `applied_changes: false`, `items: []` |
 | **SHOULD** | G17: `sf-synthesizer` ganha o passo de emitir o recibo depois de `report_sign` e `telemetry_export`, com o `run_id` do processo; `parity.yaml` ganha a capacidade "prove what an execution used and decided" |
@@ -139,10 +139,10 @@ Depois de uma sessao, o SparkForge deixa os artefatos de uma execucao espalhados
 | A-002 | O transcript do host vira facts `host.*` com modelo por `extract_host_transcript_path`, o mesmo leitor do `telemetry export` | O bloco `host` precisaria de leitor proprio | [x] `adapters/_core.py:4693` |
 | A-003 | Os spans nao carregam `case_id` e nao guardam hash de I/O | Se carregassem, a ligacao case-run poderia ser conferida em vez de declarada | [x] zero ocorrencias em `sparkforge/observability/` |
 | A-004 | Nenhum codigo poda o `traces.db`; ele so fica ausente em outra maquina e no CI por estar no gitignore | Se existisse poda, `not_rechecked` teria mais uma razao | [x] nenhum `DELETE FROM` em `observability/`; o BRAINSTORM dizia "podavel por desenho" e foi corrigido |
-| A-005 | O verify consegue reusar `compute_signature` e a leitura do bloco de assinatura sem importar `adapters` a partir de `sparkforge/receipt/` | Se `_split_report`/`_signature_parts` so existirem em `_core.py`, o DESIGN decide entre mover para `findings/` ou chamar pelo adapter | [ ] DESIGN |
-| A-006 | O `case.yaml` tem um `case_id` legivel por `store.load_case` | A parte `case` sairia so com hash | [ ] DESIGN |
-| A-007 | O golden de paridade MCP aceita tool nova como adicao sem regenerar o golden inteiro | Se nao aceitar, o DESIGN decide regenerar sob o SDK 2.x | [ ] DESIGN |
-| A-008 | O span do proprio emit so e gravado no `traces.db` depois que o handler devolve | Se fosse gravado antes, `build` precisaria filtrar pelo `span_id` corrente | [ ] DESIGN |
+| A-005 | O verify consegue reusar `compute_signature` e a leitura do bloco de assinatura sem importar `adapters` a partir de `sparkforge/receipt/` | Se `_split_report`/`_signature_parts` so existirem em `_core.py`, o DESIGN decide entre mover para `findings/` ou chamar pelo adapter | [x] So existem em `_core.py`; o adapter le e passa (DESIGN Decision 1) |
+| A-006 | O `case.yaml` tem um `case_id` legivel por `store.load_case` | A parte `case` sairia so com hash | [x] `case/store.py:71` |
+| A-007 | O golden de paridade MCP aceita tool nova como adicao sem regenerar o golden inteiro | Se nao aceitar, o DESIGN decide regenerar sob o SDK 2.x | [x] `NOVAS_DEPOIS_DO_GOLDEN` em `tests/test_fixtures_golden_mcp_parity.py:73` |
+| A-008 | O span do proprio emit so e gravado no `traces.db` depois que o handler devolve | Se fosse gravado antes, `build` precisaria filtrar pelo `span_id` corrente | [x] Mais do que isso: `record()` roda depois do handler e so no buffer; o disco so no `atexit`. O emit le por `shared_ledger().spans_of` e o verify ancora por `span_id` (DESIGN Decision 2) |
 
 ---
 
@@ -170,9 +170,10 @@ None - ready for Design. A-005 a A-008 sao de implementacao e se decidem no DESI
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_EXECUTION_RECEIPT.md`; A-004 corrige "traces.db podavel por desenho" do brainstorm |
+| 1.1 | 2026-09-12 | design-agent | A-005 a A-008 fechadas; G14 com o caminho real do ADR (`.sparkforge/blackboard/adr/`) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_EXECUTION_RECEIPT.md`
+**Next:** `/build .claude/sdd/features/DESIGN_EXECUTION_RECEIPT.md`
