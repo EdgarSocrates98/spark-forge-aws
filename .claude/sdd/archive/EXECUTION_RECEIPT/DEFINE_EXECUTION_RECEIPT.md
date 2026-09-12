@@ -9,7 +9,7 @@
 | **Feature** | EXECUTION_RECEIPT |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -171,9 +171,10 @@ None - ready for Design. A-005 a A-008 sao de implementacao e se decidem no DESI
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_EXECUTION_RECEIPT.md`; A-004 corrige "traces.db podavel por desenho" do brainstorm |
 | 1.1 | 2026-09-12 | design-agent | A-005 a A-008 fechadas; G14 com o caminho real do ADR (`.sparkforge/blackboard/adr/`) |
+| 1.2 | 2026-09-12 | ship-agent | Shipped and archived (PR #54) |
 
 ---
 
 ## Next Step
 
-**Next:** `/ship .claude/sdd/features/DEFINE_EXECUTION_RECEIPT.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)

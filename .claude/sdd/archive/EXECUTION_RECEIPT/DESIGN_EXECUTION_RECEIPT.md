@@ -10,7 +10,7 @@
 | **Date** | 2026-09-12 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_EXECUTION_RECEIPT.md](./DEFINE_EXECUTION_RECEIPT.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -506,9 +506,10 @@ def conferir_tools(declarado: dict[str, Any], do_run: list[dict[str, Any]]) -> d
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | design-agent | Versao inicial. A-005 a A-008 decididas; ADR em `.sparkforge/blackboard/adr/` (corrige o DEFINE 1.0); spans ancorados por `span_id` e lidos do `shared_ledger` (Decision 2) |
+| 1.1 | 2026-09-12 | ship-agent | Shipped and archived (PR #54) |
 
 ---
 
 ## Next Step
 
-**Next:** `/ship .claude/sdd/features/DEFINE_EXECUTION_RECEIPT.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)
