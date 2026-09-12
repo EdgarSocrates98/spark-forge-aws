@@ -9,7 +9,7 @@
 | **Feature** | CHANGE_PROOF |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -125,8 +125,8 @@ O SparkForge recomenda mudancas com `validation` e `rollback` em prosa -- 479 it
 | A-002 | As fixtures de `bench/` e `funcval/` disparam os veredictos esperados | Os casos do golden precisariam de outras fixtures | [x] `regression_slower` -> SF-BENCH-002; `different_input_volume` -> 001 e 002; `faster_but_spilling` -> 003; `most_stages_renamed` -> 004; `count_diverged` -> SF-FVAL-001; `schema_diverged` -> 002; `duplicate_key_appeared` -> 003; `aggregate_*_diverged`/`outside_tolerance` -> 004; `partial_coverage` -> 005 |
 | A-003 | `run_judge(..., return_skipped=True)` devolve `skipped` com os kinds que faltam | A resolucao nao distinguiria muda de resolvida | [x] `adapters/_core.py:3363` e `diagnosis/root_cause.py:297-307` (`missing`) |
 | A-004 | `collect_unbounded` dispara SF-PY-002 com subject `source_location` e `symbol` estavel | O caso de resolucao precisaria de outra regra | [x] SF-PY-002 no golden; o `symbol` e a funcao que contem a chamada |
-| A-005 | `bench.unresolved` e o percentual omitido sao distinguiveis por medida | O `inconclusive` da melhoria seria so por regra | [ ] DESIGN (ler `bench.unresolved.attrs`) |
-| A-006 | Os facts de comparacao (`funcval.*`, `bench.*`) entram na uniao `--facts` e o `judge` sobre ela produz os veredictos | Os veredictos precisariam de outra entrada | [ ] DESIGN (decidir se a prova julga a uniao ou recebe os veredictos em `--findings`) |
+| A-005 | `bench.unresolved` e o percentual omitido sao distinguiveis por medida | O `inconclusive` da melhoria seria so por regra | [x] `bench.unresolved` carrega `measure` e `reason`; o percentual some quando a medida nao e `usable` (`facts/benchmark.py:_compare`) |
+| A-006 | Os facts de comparacao (`funcval.*`, `bench.*`) entram na uniao `--facts` e o `judge` sobre ela produz os veredictos | Os veredictos precisariam de outra entrada | [x] A prova julga a uniao e o depois ela mesma (DESIGN Decision 1) |
 | A-007 | `one_side_missing` e `migracao_entre_runtimes` nao disparam regra | Precisam de desfecho proprio | [x] Nenhuma regra dispara; o DESIGN decide se viram `inconclusive` pelo `bench.unresolved` |
 
 ---
@@ -155,9 +155,10 @@ None - ready for Design. A-005 e A-006 sao de implementacao.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_CHANGE_PROOF.md`; A-001 corrige a decisao 8 do brainstorm (direcao de melhoria no mapa, nao na `action`) e fixa a precedencia `inconclusive` > `refuted` do bench |
+| 1.1 | 2026-09-12 | design-agent | A-005 e A-006 fechadas; `SF-BENCH-001` confunde o eixo `scan.bytes_read` (DESIGN Decision 3) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_CHANGE_PROOF.md`
+**Next:** `/build .claude/sdd/features/DESIGN_CHANGE_PROOF.md`
