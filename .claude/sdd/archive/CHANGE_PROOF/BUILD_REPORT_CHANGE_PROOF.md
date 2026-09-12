@@ -9,9 +9,9 @@
 | **Feature** | CHANGE_PROOF |
 | **Date** | 2026-09-12 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_CHANGE_PROOF.md](../features/DEFINE_CHANGE_PROOF.md) |
-| **DESIGN** | [DESIGN_CHANGE_PROOF.md](../features/DESIGN_CHANGE_PROOF.md) |
-| **Status** | Complete |
+| **DEFINE** | [DEFINE_CHANGE_PROOF.md](./DEFINE_CHANGE_PROOF.md) |
+| **DESIGN** | [DESIGN_CHANGE_PROOF.md](./DESIGN_CHANGE_PROOF.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -155,4 +155,4 @@ rtk ruff check .  ->  []
 
 ## Next Step
 
-**If Complete:** `/ship .claude/sdd/features/DEFINE_CHANGE_PROOF.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)
