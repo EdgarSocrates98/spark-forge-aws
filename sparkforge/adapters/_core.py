@@ -4745,6 +4745,265 @@ def telemetry_export_write(repo: str, payload: dict[str, Any]) -> dict[str, str]
     return gravados
 
 
+# --------------------------------------------------------------------------- #
+# receipt -- o recibo content-addressed de uma execucao do case (§14)
+# --------------------------------------------------------------------------- #
+
+_RECEIPTS_DIR = (".sparkforge", "receipts")
+_RECEIPT_ID_VALIDO = re.compile(r"^rcpt_[0-9a-f]{64}$")
+_RECEIPT_PARTS = ("case", "evidence", "judgment", "decision", "proof", "tools", "host")
+_RECEIPT_EMIT_HINT = (
+    "sparkforge receipt emit --facts <facts.json> [--facts <outro.json>] "
+    "--findings <findings.json> --now <ISO-8601> --repo ."
+)
+_RECEIPT_VERIFY_HINT = (
+    "sparkforge receipt verify --receipt .sparkforge/receipts/<receipt_id>.json --repo ."
+)
+
+
+def _receipt_root(repo: str) -> Path:
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(f"--repo {repo!r}: diretorio nao encontrado.", exit_code=2)
+    return raiz.resolve()
+
+
+def _inside_repo(raiz: Path, caminho: str, flag: str, hint: str) -> str:
+    """Caminho relativo (POSIX) de um arquivo que precisa estar dentro de `--repo`.
+
+    Relativo resolve contra `--repo`, e nao contra o diretorio corrente: o
+    recibo guarda caminhos relativos ao repo, e o verify os resolve do mesmo
+    jeito. Fora do repo e recusado, porque o verify nao alcancaria o arquivo e
+    o recibo amarraria algo que nenhum outro leitor consegue conferir.
+    """
+    alvo = Path(caminho)
+    alvo = (alvo if alvo.is_absolute() else raiz / alvo).resolve()
+    if not alvo.is_relative_to(raiz):
+        raise AdapterError(
+            f"{flag} {caminho!r}: fora de --repo ({raiz}). O recibo so amarra "
+            f"artefato do case; mova-o para dentro do repo e rode: {hint}",
+            exit_code=2,
+        )
+    if not alvo.is_file():
+        raise AdapterError(f"{flag} {caminho!r}: arquivo nao encontrado. Rode: {hint}", exit_code=2)
+    return alvo.relative_to(raiz).as_posix()
+
+
+def _receipt_now(now: str) -> str:
+    from datetime import datetime
+
+    try:
+        datetime.fromisoformat(str(now).replace("Z", "+00:00"))
+    except ValueError:
+        raise AdapterError(
+            f"--now {now!r}: use ISO 8601 (2026-09-12T00:00:00Z). O instante entra no "
+            f"hash do recibo, entao ele e sempre declarado. Rode: {_RECEIPT_EMIT_HINT}",
+            exit_code=2,
+        ) from None
+    return now
+
+
+def _report_signature(raiz: Path, relativo: str) -> str | None:
+    """A assinatura DECLARADA no bloco do report, ou `None` sem bloco.
+
+    Ler, e nao conferir: a correspondencia do report com os findings e o que
+    `report verify` responde. O recibo amarra o arquivo pelo sha256 e cita a
+    assinatura que ele carregava.
+    """
+    _corpo, bloco, problema = _split_report(_read_report(str(raiz / relativo)))
+    if problema is not None:
+        raise AdapterError(
+            f"--report {relativo}: {problema}.\n"
+            f"  Corrija o arquivo e rode: {_REPORT_SIGN_HINT.format(report=relativo)}",
+            exit_code=2,
+        )
+    if bloco is None:
+        return None
+    achado = _BLOCK_SIGNATURE.search(bloco)
+    return achado.group(1) if achado else None
+
+
+def receipt_emit(
+    repo: str,
+    facts_path: str | list[str],
+    findings_path: str,
+    now: str,
+    report_path: str | None = None,
+    run_id: str | None = None,
+    host_transcript: str = "",
+    provider: str | None = None,
+) -> dict[str, Any]:
+    """Monta o recibo da execucao do case, sem gravar.
+
+    `facts_path` e a UNIAO dos arquivos de facts do case, o mesmo conjunto que
+    `judge` recebeu; os findings sao validados pelo mesmo `_signature_parts` do
+    `report sign`. Os spans vem de `shared_ledger().spans_of(run_id)` -- buffer
+    mais disco --, porque numa sessao MCP eles ainda estao em memoria. Sem
+    `run_id`, a parte `tools` sai em `unresolved`. O transcript do host pode
+    estar fora do repo: so o sha256 dele entra no recibo.
+    """
+    from sparkforge.facts.host_transcript import extract_host_transcript_path
+    from sparkforge.receipt import build
+
+    raiz = _receipt_root(repo)
+    caminhos = [facts_path] if isinstance(facts_path, str) else list(facts_path or [])
+    if not caminhos:
+        raise AdapterError(
+            f"--facts: informe a UNIAO dos arquivos de facts do case. Rode: {_RECEIPT_EMIT_HINT}",
+            exit_code=2,
+        )
+    facts_rel = [_inside_repo(raiz, c, "--facts", _RECEIPT_EMIT_HINT) for c in caminhos]
+    findings_rel = _inside_repo(raiz, findings_path, "--findings", _RECEIPT_EMIT_HINT)
+    report = None
+    if report_path:
+        report_rel = _inside_repo(raiz, report_path, "--report", _RECEIPT_EMIT_HINT)
+        report = {"path": report_rel, "signature": _report_signature(raiz, report_rel)}
+    if run_id is not None and not _RUN_ID_VALIDO.fullmatch(run_id):
+        raise AdapterError(
+            f"--run-id {run_id!r}: use letras, digitos, `_`, `-` e `.`, ate 64 caracteres, "
+            f"sem comecar com `.`. Rode: {_RECEIPT_EMIT_HINT} --run-id <run_id>",
+            exit_code=2,
+        )
+    if provider is not None and not _PROVIDER_VALIDO.fullmatch(provider):
+        raise AdapterError(
+            f"--provider {provider!r}: use o nome da semconv GenAI, em minusculas "
+            f"(anthropic). Rode: {_RECEIPT_EMIT_HINT} --provider anthropic",
+            exit_code=2,
+        )
+    transcript = None
+    host_facts = None
+    if host_transcript:
+        transcript = Path(host_transcript)
+        if not transcript.is_file():
+            raise AdapterError(
+                f"--host-transcript {host_transcript!r}: arquivo nao encontrado. Aponte o "
+                f"JSONL da sessao: {_RECEIPT_EMIT_HINT} --host-transcript <sessao.jsonl>",
+                exit_code=2,
+            )
+        host_facts = [fact.to_dict() for fact in extract_host_transcript_path(str(transcript))]
+    absolutos = [str(raiz / relativo) for relativo in facts_rel]
+    uniao = [fact.to_dict() for fact in _merge_facts_files(absolutos)]
+    arquivos = [
+        {"path": relativo, "fact_count": len(_load_facts_file(absoluto))}
+        for relativo, absoluto in zip(facts_rel, absolutos, strict=True)
+    ]
+    try:
+        case_id = store.load_case(raiz).get("case_id")
+    except store.CaseError:
+        case_id = None
+    return build(
+        raiz,
+        now=_receipt_now(now),
+        case_id=case_id,
+        facts_files=arquivos,
+        facts=uniao,
+        findings_path=findings_rel,
+        findings_parts=_signature_parts(str(raiz / findings_rel)),
+        report=report,
+        run_id=run_id,
+        spans=shared_ledger().spans_of(run_id) if run_id else None,
+        host_transcript=transcript,
+        host_facts=host_facts,
+        provider=provider,
+    )
+
+
+def receipt_write(repo: str, doc: dict[str, Any]) -> str:
+    """Grava `.sparkforge/receipts/<receipt_id>.json` (temporario + `replace`).
+
+    O nome sai do `receipt_id`, validado antes de virar caminho, e o destino e
+    conferido dentro de `--repo`. O texto tem `sort_keys` e LF, entao a mesma
+    emissao grava o mesmo arquivo byte a byte.
+    """
+    raiz = _receipt_root(repo)
+    receipt_id = str(doc.get("receipt_id") or "")
+    if not _RECEIPT_ID_VALIDO.fullmatch(receipt_id):
+        raise AdapterError(f"receipt_id invalido: {receipt_id!r}", exit_code=2)
+    destino = raiz.joinpath(*_RECEIPTS_DIR)
+    nome = f"{receipt_id}.json"
+    final = (destino / nome).resolve()
+    if not final.is_relative_to(raiz):
+        raise AdapterError(f"destino fora de --repo: {nome!r}", exit_code=2)
+    destino.mkdir(parents=True, exist_ok=True)
+    temporario = destino / f".{nome}.tmp"
+    temporario.write_text(
+        json.dumps(doc, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    temporario.replace(final)
+    return "/".join((*_RECEIPTS_DIR, nome))
+
+
+def receipt_emit_and_write(repo: str, **kwargs: Any) -> dict[str, Any]:
+    """O que a CLI imprime e a tool devolve: onde gravou, o id e o recibo."""
+    doc = receipt_emit(repo, **kwargs)
+    return {
+        "receipt_path": receipt_write(repo, doc),
+        "receipt_id": doc["receipt_id"],
+        "unresolved": doc["unresolved"],
+        "refused": doc["refused"],
+        "receipt": doc,
+    }
+
+
+def receipt_verify(repo: str, receipt_path: str, host_transcript: str = "") -> dict[str, Any]:
+    """Recalcula cada parte do recibo contra o disco e diz qual divergiu.
+
+    A uniao de facts e relida dos arquivos DECLARADOS no recibo, e so os que
+    ficam dentro do repo; se algum nao pode ser lido, `evidence` ja acusa e a
+    prova sai `not_rechecked`. Os spans vem do ledger pelo `run_id` do
+    recibo e sao comparados pelos `span_id` listados. O transcript so e
+    reconferido quando o operador o passa de novo.
+    """
+    from sparkforge.receipt import verify
+
+    raiz = _receipt_root(repo)
+    relativo = _inside_repo(raiz, receipt_path, "--receipt", _RECEIPT_VERIFY_HINT)
+    try:
+        doc = json.loads((raiz / relativo).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise AdapterError(
+            f"--receipt {receipt_path!r}: JSON ilegivel ({exc}).\n  Rode: {_RECEIPT_VERIFY_HINT}",
+            exit_code=2,
+        ) from None
+    faltam = [] if isinstance(doc, dict) else list(_RECEIPT_PARTS)
+    if isinstance(doc, dict):
+        faltam = [parte for parte in _RECEIPT_PARTS if not isinstance(doc.get(parte), dict)]
+        if not isinstance(doc.get("receipt_version"), int):
+            faltam.insert(0, "receipt_version")
+    if faltam:
+        raise AdapterError(
+            f"--receipt {receipt_path!r}: nao e um recibo (faltam: {', '.join(faltam)}).\n"
+            f"  Rode: {_RECEIPT_VERIFY_HINT}",
+            exit_code=2,
+        )
+    try:
+        declarados = [
+            str((raiz / str(item["path"])).resolve())
+            for item in doc["evidence"]["facts_files"]
+            if (raiz / str(item["path"])).resolve().is_relative_to(raiz)
+        ]
+        uniao: list[str] | None = [fact.id for fact in _merge_facts_files(declarados)]
+    except (AdapterError, KeyError, TypeError, OSError, ValueError):
+        uniao = None
+    run_id = doc["tools"].get("run_id")
+    spans = shared_ledger().spans_of(run_id) if run_id and doc["tools"].get("spans") else None
+    transcript = None
+    if host_transcript:
+        transcript = Path(host_transcript)
+        if not transcript.is_file():
+            raise AdapterError(
+                f"--host-transcript {host_transcript!r}: arquivo nao encontrado. "
+                f"Rode: {_RECEIPT_VERIFY_HINT} --host-transcript <sessao.jsonl>",
+                exit_code=2,
+            )
+    veredito = verify(
+        doc, raiz, union_fact_ids=uniao, spans_of_run=spans, host_transcript=transcript
+    )
+    return {"receipt": relativo, **veredito}
+
+
 def report_sign(report_path: str, findings_path: str) -> dict[str, Any]:
     """Escreve o bloco de assinatura no fim do relatorio, e devolve o que assinou.
 

@@ -9,7 +9,7 @@
 | **Feature** | EXECUTION_RECEIPT |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Complete (Built) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -176,4 +176,4 @@ None - ready for Design. A-005 a A-008 sao de implementacao e se decidem no DESI
 
 ## Next Step
 
-**Next:** `/build .claude/sdd/features/DESIGN_EXECUTION_RECEIPT.md`
+**Next:** `/ship .claude/sdd/features/DEFINE_EXECUTION_RECEIPT.md`

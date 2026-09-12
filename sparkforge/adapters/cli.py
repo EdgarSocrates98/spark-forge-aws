@@ -2059,6 +2059,69 @@ def build_parser() -> argparse.ArgumentParser:
         help="Raiz do repositorio. A saida vai para <repo>/.sparkforge/telemetry/.",
     )
 
+    # receipt -------------------------------------------------------------------
+    # Verbo de TOPO: compoe sobre artefatos que outros verbos gravaram e sobre o
+    # ledger, e nao le artefato de job.
+    receipt_p = sub.add_parser(
+        "receipt",
+        help=(
+            "Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre "
+            "o recibo e os artefatos, nunca autoria."
+        ),
+    )
+    receipt_sub = receipt_p.add_subparsers(dest="subcommand", required=True)
+    receipt_emit_p = receipt_sub.add_parser(
+        "emit",
+        help=(
+            "Grava .sparkforge/receipts/<receipt_id>.json com caminho e sha256 do case, "
+            "dos facts, dos findings, do report, do blackboard, dos ADRs e dos debates, os "
+            "spans do run declarado e o host declarado. Sem conteudo de caso."
+        ),
+    )
+    receipt_emit_p.add_argument(
+        "--facts",
+        action="append",
+        required=True,
+        help="Arquivo de facts. Repetivel, e a repeticao e o contrato: a UNIAO do case.",
+    )
+    receipt_emit_p.add_argument(
+        "--findings", required=True, help="Findings (JSON) gerados por `judge --out`."
+    )
+    receipt_emit_p.add_argument(
+        "--now", required=True, help="Instante ISO 8601 da emissao. Entra no hash."
+    )
+    receipt_emit_p.add_argument("--report", default=None, help="Relatorio assinado, se houver.")
+    receipt_emit_p.add_argument(
+        "--run-id",
+        default=None,
+        help="Run cujos spans de tool entram. Sem ele, a parte tools sai em unresolved.",
+    )
+    receipt_emit_p.add_argument(
+        "--host-transcript",
+        default="",
+        help="Transcript JSONL do host. So o sha256 entra; modelo e agente saem dele.",
+    )
+    receipt_emit_p.add_argument(
+        "--provider", default=None, help="Provider do host, DECLARADO (anthropic)."
+    )
+    receipt_emit_p.add_argument(
+        "--repo", default=".", help="Raiz do case. Caminhos relativos resolvem contra ela."
+    )
+    receipt_verify_p = receipt_sub.add_parser(
+        "verify",
+        help=(
+            "Recalcula cada parte contra o disco e diz qual divergiu. Sai com codigo 1 "
+            "quando o recibo nao corresponde."
+        ),
+    )
+    receipt_verify_p.add_argument("--receipt", required=True)
+    receipt_verify_p.add_argument(
+        "--host-transcript",
+        default="",
+        help="O mesmo transcript da emissao; sem ele a parte host sai not_rechecked.",
+    )
+    receipt_verify_p.add_argument("--repo", default=".")
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3377,6 +3440,28 @@ def _cmd_telemetry_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_receipt_emit(args: argparse.Namespace) -> int:
+    """Grava o recibo e imprime onde, sem o corpo inteiro: o arquivo ja o tem."""
+    payload = _core.receipt_emit_and_write(
+        args.repo,
+        facts_path=args.facts,
+        findings_path=args.findings,
+        now=args.now,
+        report_path=args.report,
+        run_id=args.run_id,
+        host_transcript=args.host_transcript,
+        provider=args.provider,
+    )
+    _print({chave: valor for chave, valor in payload.items() if chave != "receipt"})
+    return 0
+
+
+def _cmd_receipt_verify(args: argparse.Namespace) -> int:
+    payload = _core.receipt_verify(args.repo, args.receipt, host_transcript=args.host_transcript)
+    _print(payload)
+    return 0 if payload["valid"] else 1
+
+
 def _cmd_report_verify(args: argparse.Namespace) -> int:
     payload = _core.report_verify(args.report, args.findings)
     _print(payload)
@@ -3946,6 +4031,8 @@ _DISPATCH = {
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
     ("telemetry", "export"): _cmd_telemetry_export,
+    ("receipt", "emit"): _cmd_receipt_emit,
+    ("receipt", "verify"): _cmd_receipt_verify,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

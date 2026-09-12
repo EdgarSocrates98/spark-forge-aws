@@ -2836,6 +2836,107 @@ _REPORT_CHECK_ITEM: dict[str, Any] = {
 # testes contra o schema OASIS (`fixtures/sarif/_schema/`), e por isso so a casca
 # dele e declarada aqui -- repetir o schema de 112 KB da OASIS neste arquivo seria
 # um segundo lugar onde a verdade pode divergir da fonte.
+_RECEIPT_PART_NAMES = [
+    "version",
+    "integrity",
+    "case",
+    "evidence",
+    "judgment",
+    "decision",
+    "proof",
+    "tools",
+    "host",
+]
+
+_RECEIPT_GAP_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["field", "reason"],
+    "properties": {"field": {"type": "string"}, "reason": {"type": "string"}},
+}
+
+_RECEIPT_DOC_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "receipt_version", "receipt_id", "emitted_at", "case", "evidence", "judgment",
+        "decision", "proof", "tools", "host", "actions", "unresolved", "refused", "proves",
+    ],
+    "properties": {
+        "receipt_version": {"type": "integer"},
+        "receipt_id": {"type": "string", "pattern": "^rcpt_[0-9a-f]{64}$"},
+        "emitted_at": {"type": "string"},
+        "case": {"type": "object"},
+        "evidence": {"type": "object"},
+        "judgment": {"type": "object"},
+        "decision": {"type": "object"},
+        "proof": {"type": "object"},
+        "tools": {"type": "object"},
+        "host": {"type": "object"},
+        "actions": {
+            "type": "object",
+            "required": ["autonomy", "applied_changes", "items"],
+            "properties": {
+                "autonomy": {"const": "L0"},
+                "applied_changes": {"const": False},
+                "items": {"type": "array", "maxItems": 0},
+            },
+        },
+        "unresolved": {"type": "array", "items": _RECEIPT_GAP_ITEM},
+        "refused": {"type": "array", "items": _RECEIPT_GAP_ITEM},
+        "proves": {"type": "string"},
+    },
+}
+
+_RECEIPT_EMIT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["receipt_path", "receipt_id", "unresolved", "refused", "receipt"],
+    "properties": {
+        "receipt_path": {
+            "type": "string",
+            "description": "Relativo ao repo: .sparkforge/receipts/<receipt_id>.json.",
+        },
+        "receipt_id": {"type": "string", "pattern": "^rcpt_[0-9a-f]{64}$"},
+        "unresolved": {"type": "array", "items": _RECEIPT_GAP_ITEM},
+        "refused": {"type": "array", "items": _RECEIPT_GAP_ITEM},
+        "receipt": _RECEIPT_DOC_SCHEMA,
+    },
+}
+
+_RECEIPT_VERIFY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "receipt", "receipt_id", "valid", "status", "diverged", "missing",
+        "not_rechecked", "not_evaluable", "checks",
+    ],
+    "properties": {
+        "receipt": {"type": "string"},
+        "receipt_id": {"type": ["string", "null"]},
+        "valid": {"type": "boolean"},
+        "status": {
+            "type": "string",
+            "enum": ["valid", "diverged", "integrity_failed", "version_mismatch"],
+        },
+        "diverged": {"type": "array", "items": {"type": "string", "enum": _RECEIPT_PART_NAMES}},
+        "missing": {"type": "array", "items": {"type": "string", "enum": _RECEIPT_PART_NAMES}},
+        "not_rechecked": {
+            "type": "array",
+            "items": {"type": "string", "enum": _RECEIPT_PART_NAMES},
+            "description": (
+                "Partes cuja fonte nao esta aqui -- `traces.db` de outra maquina, "
+                "transcript fora do repo. Nao derrubam `valid`, mas saem listadas."
+            ),
+        },
+        "not_evaluable": {
+            "type": "array",
+            "items": {"type": "string", "enum": _RECEIPT_PART_NAMES},
+        },
+        "checks": {
+            "type": "object",
+            "required": _RECEIPT_PART_NAMES,
+            "properties": {nome: {"type": "object"} for nome in _RECEIPT_PART_NAMES},
+        },
+    },
+}
+
 _TELEMETRY_EXPORT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -7017,6 +7118,95 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_receipt_emit": {
+        "description": (
+            "Grava o RECIBO de uma execucao do case em "
+            "`<repo>/.sparkforge/receipts/<receipt_id>.json`: caminho relativo e sha256 do "
+            "`case.yaml`, de cada arquivo de facts (a UNIAO do case, o mesmo conjunto que "
+            "`judge` recebeu), dos findings, do report, do blackboard, dos ADRs e dos "
+            "debates; os fact_ids de `funcval.*` e `bench.*` como prova, sem comparar nada; "
+            "os spans de tool do run (sem `run_id`, o do proprio processo); e o host e o "
+            "modelo que o transcript declara, com o provider DECLARADO. O `receipt_id` e o "
+            "sha256 do JSON canonico, e `now` entra nele. "
+            "O QUE ELE NAO PROVA, e isto e contrato: autoria -- nao ha chave, e qualquer um "
+            "com os mesmos artefatos produz o mesmo recibo (`refused: authorship`); nem o "
+            "que cada tool recebeu ou devolveu (`refused: tool_io`). Nao carrega conteudo "
+            "de caso: nenhum valor de `measures`, nenhum `metadata_json`, nenhum caminho "
+            "absoluto. Toda lacuna sai em `unresolved` com a razao. Autonomia L0: "
+            "`actions.applied_changes` e sempre `false`. O span desta propria chamada fica "
+            "fora, em `tools.excluded`, porque e gravado depois que ela devolve."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "facts_path", "findings_path", "now"],
+            "properties": {
+                "repo": {
+                    "type": "string",
+                    "description": "Raiz do case. Caminhos relativos resolvem contra ela.",
+                },
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "A UNIAO dos arquivos de facts do case, dentro do repo.",
+                },
+                "findings_path": {
+                    "type": "string",
+                    "description": "Findings (JSON) gerados por `sparkforge judge --out`.",
+                },
+                "now": {
+                    "type": "string",
+                    "description": "Instante ISO 8601 da emissao. Entra no hash.",
+                },
+                "report_path": {"type": "string", "description": "Relatorio, se houver."},
+                "run_id": {
+                    "type": "string",
+                    "description": "Run cujos spans entram. Default: o run deste processo.",
+                },
+                "host_transcript_path": {
+                    "type": "string",
+                    "description": "Transcript JSONL do host. So o sha256 entra no recibo.",
+                },
+                "provider": {
+                    "type": "string",
+                    "description": "Provider do host, DECLARADO (anthropic). Nunca deduzido.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _RECEIPT_EMIT_SCHEMA, "O recibo gravado, ou erro se uma entrada nao serve."
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
+    "sparkforge_receipt_verify": {
+        "description": (
+            "Confere um recibo de execucao e diz QUAL parte divergiu -- `version`, "
+            "`integrity`, `case`, `evidence`, `judgment`, `decision`, `proof`, `tools`, "
+            "`host` --, em vez de devolver so 'invalido'. Arquivo apagado sai em `missing`, "
+            "nunca em `diverged`. Fonte que nao esta aqui (`traces.db` de outra maquina, "
+            "transcript nao informado) sai em `not_rechecked` e nao derruba `valid`. Os "
+            "spans sao reconferidos pelos `span_id` do recibo: os que o run ganhou depois "
+            "da emissao contam em `spans_after_emit` e ficam fora da comparacao."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "receipt_path"],
+            "properties": {
+                "repo": {"type": "string"},
+                "receipt_path": {
+                    "type": "string",
+                    "description": "`.sparkforge/receipts/<receipt_id>.json`, dentro do repo.",
+                },
+                "host_transcript_path": {
+                    "type": "string",
+                    "description": "O mesmo transcript da emissao, para reconferir `host`.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _RECEIPT_VERIFY_SCHEMA, "O veredito por parte, ou erro se o recibo nao serve."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_report_github": {
         "description": (
             "Projeta findings JA JULGADOS para o GitHub, sem ler artefato e sem rede: "
@@ -8596,6 +8786,29 @@ def _h_telemetry_export(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:
+    from sparkforge.observability.context_ledger import shared_ledger
+
+    return _core.receipt_emit_and_write(
+        args["repo"],
+        facts_path=args["facts_path"],
+        findings_path=args["findings_path"],
+        now=args["now"],
+        report_path=args.get("report_path"),
+        run_id=args.get("run_id") or shared_ledger().run_id,
+        host_transcript=args.get("host_transcript_path") or "",
+        provider=args.get("provider"),
+    )
+
+
+def _h_receipt_verify(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.receipt_verify(
+        args["repo"],
+        args["receipt_path"],
+        host_transcript=args.get("host_transcript_path") or "",
+    )
+
+
 def _h_collect_event_log(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_event_log(
         args["repo"],
@@ -8864,6 +9077,8 @@ _HANDLERS = {
     "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
+    "sparkforge_receipt_emit": _h_receipt_emit,
+    "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,
     "sparkforge_report_verify": _h_report_verify,
     "sparkforge_report_github": _h_report_github,

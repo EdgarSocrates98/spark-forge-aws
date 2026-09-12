@@ -1,0 +1,150 @@
+{
+  "actions": {
+    "applied_changes": false,
+    "autonomy": "L0",
+    "items": []
+  },
+  "case": {
+    "case_id": "uniao-debate",
+    "path": ".sparkforge/case.yaml",
+    "sha256": "c1d5c78453ab0726d7a6f3741f840f81dcd6de28ddbd56b6cb22b94ba22f3e90"
+  },
+  "decision": {
+    "adrs": [],
+    "blackboard": [
+      {
+        "count": 3,
+        "path": ".sparkforge/blackboard/claims.jsonl",
+        "sha256": "aa204dd5bcc38f0aed9ef29f942e15fa5b8d2c69829e6c623166dae9f5fe6b31"
+      },
+      {
+        "count": 1,
+        "path": ".sparkforge/blackboard/contradictions.jsonl",
+        "sha256": "12911eaa77be1cab8b481750fb195280cfb4e0ad69d2a49d62ccc0a7219832ff"
+      },
+      {
+        "count": 11,
+        "path": ".sparkforge/blackboard/evidence.jsonl",
+        "sha256": "198587f3101b23828ea6c2847bb887c78f41791b14de898da9781d2d5cfdc34e"
+      },
+      {
+        "count": 1,
+        "path": ".sparkforge/blackboard/traces.jsonl",
+        "sha256": "4408715b3976de52095e9c26f2d8fc16f86f6862be0fc783ade1686e7a972515"
+      },
+      {
+        "count": 1,
+        "path": ".sparkforge/blackboard/unknowns.jsonl",
+        "sha256": "61d798844a73b6c0906870fda77adf079051fcda42177436b561db4ac74a35bf"
+      }
+    ],
+    "debates": [],
+    "decision_ids": []
+  },
+  "emitted_at": "2026-09-12T00:00:00Z",
+  "evidence": {
+    "fact_count": 63,
+    "fact_ids_sha256": "d9da4b51dde10314c3fa7782c12aa7f3862bae22dfd7642c91c3b9684a952f55",
+    "facts_files": [
+      {
+        "fact_count": 20,
+        "path": "facts/f0.json",
+        "sha256": "959d424118aac37e96c3f809ca5f8f7da279ec9e7751a092129e09ccc6b45938"
+      },
+      {
+        "fact_count": 43,
+        "path": "facts/f1.json",
+        "sha256": "5b1bd41e70eb902887e8b8e6101cee39890c0d2261ae6ad2d8bb005660e9d871"
+      }
+    ]
+  },
+  "host": {
+    "agent": null,
+    "agent_version": null,
+    "model": null,
+    "provider": null,
+    "transcript_sha256": null
+  },
+  "judgment": {
+    "catalog_version": 1,
+    "fact_ids": [
+      "f_32bc0d",
+      "f_55f5ac",
+      "f_6ab9b2",
+      "f_d9303b"
+    ],
+    "findings": {
+      "path": "findings.json",
+      "sha256": "9c49e56860a917abb2e368b25ccd95e4dca80b4e86d4d4774c72b5ae3856af80"
+    },
+    "report": {
+      "path": "report.md",
+      "sha256": "99078049050b185ae82d3b7b177b6fc318d24d7009a8397d1e52d970a3299b3c",
+      "signature": "sig_047d2f7a93b5596107113943ce9f88741a7fb9d7ead259bc616b258911825c04"
+    },
+    "rule_ids": [
+      "SF-GRAPH-002",
+      "SF-GRAPH-005",
+      "SF-LF-001"
+    ],
+    "schema_version": 1
+  },
+  "proof": {
+    "before_after": [],
+    "tests": []
+  },
+  "proves": "correspondencia entre este recibo e estes artefatos -- nunca autoria",
+  "receipt_id": "rcpt_254d636aa570970ff609bf087518e249335634512eeccb87b60eecdccecb1793",
+  "receipt_version": 1,
+  "refused": [
+    {
+      "field": "authorship",
+      "reason": "content_addressed_sem_chave"
+    },
+    {
+      "field": "tool_io",
+      "reason": "span_sem_hash_de_io"
+    }
+  ],
+  "tools": {
+    "excluded": [
+      {
+        "name": "sparkforge_receipt_emit",
+        "reason": "gravado_depois_do_handler"
+      }
+    ],
+    "run_id": null,
+    "spans": [],
+    "spans_sha256": null
+  },
+  "unresolved": [
+    {
+      "field": "proof.tests",
+      "reason": "sem_prova_funcional"
+    },
+    {
+      "field": "proof.before_after",
+      "reason": "sem_benchmark"
+    },
+    {
+      "field": "tools",
+      "reason": "run_id_nao_declarado"
+    },
+    {
+      "field": "host.provider",
+      "reason": "provider_nao_declarado"
+    },
+    {
+      "field": "host.model",
+      "reason": "transcript_ausente"
+    },
+    {
+      "field": "host.agent",
+      "reason": "transcript_ausente"
+    },
+    {
+      "field": "host.agent_version",
+      "reason": "transcript_ausente"
+    }
+  ]
+}
