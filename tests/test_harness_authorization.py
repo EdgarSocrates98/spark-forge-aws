@@ -966,7 +966,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `facts_path`, `findings_path`, `report_path` e `host_transcript_path`;
         # a segunda e `_READ_ONLY` e declara `repo` e `receipt_path`. O conjunto
         # de excecao nao se move.
-        assert len(TOOLS) - len(sem_caminho) == 84
+        # 84 -> 85 com `proof` (2026-09-12), a 91ª tool: `_READ_ONLY` e declara
+        # `findings_path`, `facts_path` e `after_facts_path`, como todo verbo de
+        # topo que compoe sobre facts.
+        assert len(TOOLS) - len(sem_caminho) == 85
 
 
 class TestAImposicaoNoDespacho:

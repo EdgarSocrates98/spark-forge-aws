@@ -1,0 +1,156 @@
+# Politica do Change Proof (§20). NAO e regra: nao tem chave `rules:`, e o
+# loader do catalogo so pega regra dessa chave.
+#
+# Para cada eixo de `action.moves`, diz QUAL comparador o mede antes e depois, e
+# para que lado ele melhora. `action.direction` nao diz isso: e o sentido da
+# ACAO (medido em 2026-09-12: nas 26 regras com eixo de benchmark, 13 `replace`,
+# 8 `add`, 4 `decrease`, 1 `remove`). Por isso a direcao de melhoria mora aqui.
+#
+# Eixo com `source: none` nao tem comparador hoje. A obrigacao dele sai
+# `unproven`, e `unlock` diz a medida que a destravaria -- a lista abaixo e o
+# que falta construir, escrito, e nao um silencio.
+#
+# `tests/test_proof_policy.py` prende tres coisas: todo eixo usado em `moves`
+# tem entrada aqui (e nenhuma entrada sobra), toda fonte aponta para kind que
+# algum extrator emite, e toda regra citada existe no catalogo.
+
+policy_version: 1
+
+# Chave estavel da obrigacao de resolucao, por tipo de subject. Ficam fora os
+# campos que mudam entre antes e depois sem que nada tenha sido resolvido:
+# `line`, `col`, `end_line`, `snippet`, `stage_id`, `job_run_id`, `event`,
+# `node_id`. Tipo sem chave, ou chave com campo vazio, da resolucao
+# `inconclusive` (`subject_sem_chave_estavel`).
+stable_keys:
+  source_location: [file, symbol]
+  tf_resource: [symbol]
+  stage: [symbol]
+  table: [symbol]
+  plan_node: [symbol]
+  # `job_run` usa o nome do job, nunca o `symbol`: em varias regras o `symbol`
+  # e o proprio id do run, que muda a cada execucao.
+  job_run: [job_name]
+
+delta_sign_convention:
+  refutes_when: "delta_pct >= 0"
+  reason: >-
+    Sem regra de veredito para o eixo, "nao melhorou" e qualquer delta que nao
+    seja negativo. E convencao declarada, nao limiar medido (regra 11), e vale
+    so onde nenhuma regra do catalogo julga o eixo. Onde uma regra julga
+    (`refuted_by`), ela vence a convencao.
+
+axes:
+  correctness.write_result:
+    source: funcval
+  correctness.read_result:
+    source: funcval
+
+  runtime.wall_clock:
+    source: bench
+    measure: total_task_ms
+    improves_when: decreases
+    proxy: task_ms_nao_e_wall_clock
+    refuted_by: [SF-BENCH-002]
+  shuffle.spill_bytes:
+    source: bench
+    measure: total_spill_bytes
+    improves_when: decreases
+    refuted_by: [SF-BENCH-003]
+  scan.bytes_read:
+    source: bench
+    measure: total_input_bytes
+    improves_when: decreases
+    # `SF-BENCH-001` dispara quando os bytes de entrada mudam alem do limiar,
+    # nos dois sentidos -- e ler menos e exatamente o que as regras deste eixo
+    # recomendam. O benchmark nao distingue "a entrada mudou" de "a mudanca le
+    # menos".
+    confounded_by: [SF-BENCH-001]
+  scan.task_count:
+    source: bench
+    measure: total_task_count
+    improves_when: decreases
+
+  dependency.delivered_artifacts:
+    source: none
+    unlock: >-
+      comparar o conjunto de artefatos entregues antes e depois; nenhum
+      extrator compara dois conjuntos hoje (a resolucao cobre o sintoma)
+  observability.diagnostic_artifacts:
+    source: none
+    unlock: >-
+      coletar no depois o artefato de diagnostico que a regra pede; a resolucao
+      confirma que a regra deixou de disparar
+  cost.provisioned_capacity_time:
+    source: none
+    unlock: >-
+      `glue.run_cost` das duas execucoes lado a lado em `sparkforge finops`,
+      sem interpolar entre capacidades (regra 12)
+  cost.dpu_seconds:
+    source: none
+    unlock: >-
+      `glue.run_cost` das duas execucoes lado a lado em `sparkforge finops`
+      (regras 12 e 13)
+  storage.file_layout:
+    source: none
+    unlock: >-
+      `sparkforge analyze s3-listing` antes e depois; nao ha comparador entre
+      duas listagens
+  storage.delete_file_count:
+    source: none
+    unlock: >-
+      `sparkforge analyze iceberg` sobre o metadata de antes e de depois; nao ha
+      comparador entre dois dumps
+  storage.snapshot_count:
+    source: none
+    unlock: >-
+      `sparkforge analyze iceberg` sobre o metadata de antes e de depois; nao ha
+      comparador entre dois dumps
+  runtime.engine_version:
+    source: none
+    unlock: >-
+      `sparkforge runtime detect` sobre os artefatos do depois; a resolucao
+      confirma a regra de versao
+  capacity.executor_footprint:
+    source: none
+    unlock: >-
+      metricas de executor das duas execucoes (`collect cloudwatch`); nao ha
+      comparador entre elas
+  capacity.worker_count:
+    source: none
+    unlock: >-
+      `sparkforge capacity` sobre as capacidades que o job ja rodou, lado a
+      lado (regra 12)
+  shuffle.partition_count:
+    source: none
+    unlock: >-
+      contagem de particoes de shuffle no event log de antes e de depois; o
+      benchmark compara so totais de task, spill, GC e bytes
+  skew.task_duration_ratio:
+    source: none
+    unlock: >-
+      distribuicao da duracao de task por stage antes e depois; o benchmark
+      compara so o total somado
+  availability.executor_loss:
+    source: none
+    unlock: >-
+      executores perdidos no event log de antes e de depois; o benchmark nao os
+      compara
+  availability.interruption_exposure:
+    source: none
+    unlock: >-
+      historico de execucoes antes e depois (`analyze glue-job-runs`); nao ha
+      comparador entre as duas janelas
+  security.secret_exposure:
+    source: none
+    unlock: >-
+      a resolucao cobre: a regra de segredo deixa de disparar sobre os
+      artefatos do depois
+  schedule.ordered_dates:
+    source: none
+    unlock: >-
+      a resolucao cobre: a regra de agenda deixa de disparar sobre o calendario
+      do depois
+  metadata.partition_resolution_time:
+    source: none
+    unlock: >-
+      tempo de planejamento das duas execucoes; nenhum extrator o compara hoje

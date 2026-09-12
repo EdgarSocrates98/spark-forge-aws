@@ -2122,6 +2122,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     receipt_verify_p.add_argument("--repo", default=".")
 
+    # proof -------------------------------------------------------------------
+    # Verbo de TOPO: compoe sobre findings e facts ja extraidos, e julga no
+    # processo; nao le artefato de job.
+    proof_p = sub.add_parser(
+        "proof",
+        help=(
+            "Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra "
+            "deixou de disparar no depois?) e um eixo por item de action.moves "
+            "(funcval, benchmark ou sem comparador). Desfechos: refuted, not_refuted, "
+            "inconclusive, unproven -- nunca provado."
+        ),
+    )
+    proof_p.add_argument("--findings", required=True, help="Findings do antes (`judge --out`).")
+    proof_p.add_argument(
+        "--facts",
+        action="append",
+        required=True,
+        help="Uniao de facts do case, com os de funcval e benchmark. Repetivel.",
+    )
+    proof_p.add_argument(
+        "--after-facts",
+        action="append",
+        required=True,
+        help="Facts extraidos dos artefatos do depois. Repetivel.",
+    )
+    proof_p.add_argument(
+        "--applied",
+        action="append",
+        required=True,
+        help="RULE_ID ou RULE_ID:simbolo de cada recomendacao aplicada. Repetivel.",
+    )
+    for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
+        proof_p.add_argument(flag, default=None)
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3440,6 +3474,24 @@ def _cmd_telemetry_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_proof(args: argparse.Namespace) -> int:
+    _print(
+        _core.proof_change(
+            args.findings,
+            args.facts,
+            args.after_facts,
+            args.applied,
+            glue=args.glue,
+            spark=args.spark,
+            python=args.python,
+            iceberg=args.iceberg,
+            athena=args.athena,
+            emr=args.emr,
+        )
+    )
+    return 0
+
+
 def _cmd_receipt_emit(args: argparse.Namespace) -> int:
     """Grava o recibo e imprime onde, sem o corpo inteiro: o arquivo ja o tem."""
     payload = _core.receipt_emit_and_write(
@@ -4033,6 +4085,7 @@ _DISPATCH = {
     ("telemetry", "export"): _cmd_telemetry_export,
     ("receipt", "emit"): _cmd_receipt_emit,
     ("receipt", "verify"): _cmd_receipt_verify,
+    ("proof", None): _cmd_proof,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

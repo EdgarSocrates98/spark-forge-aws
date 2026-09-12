@@ -9,7 +9,7 @@
 | **Feature** | CHANGE_PROOF |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Complete (Built) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -161,4 +161,4 @@ None - ready for Design. A-005 e A-006 sao de implementacao.
 
 ## Next Step
 
-**Next:** `/build .claude/sdd/features/DESIGN_CHANGE_PROOF.md`
+**Next:** `/ship .claude/sdd/features/DEFINE_CHANGE_PROOF.md`

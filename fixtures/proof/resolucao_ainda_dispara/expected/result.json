@@ -1,0 +1,70 @@
+{
+  "applied_count": 1,
+  "attribution": "single",
+  "fact_count": {
+    "after": 4,
+    "union": 4
+  },
+  "policy": {
+    "delta_sign_convention": {
+      "reason": "Sem regra de veredito para o eixo, \"nao melhorou\" e qualquer delta que nao seja negativo. E convencao declarada, nao limiar medido (regra 11), e vale so onde nenhuma regra do catalogo julga o eixo. Onde uma regra julga (`refuted_by`), ela vence a convencao.",
+      "refutes_when": "delta_pct >= 0"
+    },
+    "policy_version": 1
+  },
+  "refused": [
+    {
+      "field": "proven",
+      "reason": "nenhuma_medida_do_pacote_prova_equivalencia_ou_melhoria"
+    },
+    {
+      "field": "gain_estimate",
+      "reason": "exige_o_run_que_nao_aconteceu_regra_13"
+    }
+  ],
+  "results": [
+    {
+      "obligations": [
+        {
+          "evidence": [
+            "f_659572"
+          ],
+          "kind": "resolution",
+          "outcome": "refuted",
+          "reason": "regra_ainda_dispara",
+          "rule_id": "SF-PY-002"
+        },
+        {
+          "axis": "correctness.write_result",
+          "kind": "axis",
+          "outcome": "unproven",
+          "reason": "sem_funcval",
+          "source": "funcval",
+          "unlock": "sparkforge funcval plan ... --out <plano> e sparkforge funcval compare --plan <plano> --before <resultado-antes> --after <resultado-depois>"
+        }
+      ],
+      "rule_id": "SF-PY-002",
+      "stable_key": {
+        "file": "lib/job.py",
+        "symbol": "carregar",
+        "type": "source_location"
+      },
+      "subject": {
+        "col": 11,
+        "end_line": 2,
+        "file": "lib/job.py",
+        "line": 2,
+        "snippet": "return df.collect()",
+        "symbol": "carregar",
+        "type": "source_location"
+      },
+      "summary": {
+        "inconclusive": 0,
+        "not_refuted": 0,
+        "refuted": 1,
+        "unproven": 1
+      }
+    }
+  ],
+  "unresolved": []
+}

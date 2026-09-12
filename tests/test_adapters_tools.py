@@ -95,6 +95,7 @@ class TestToolSurface:
             "sparkforge_telemetry_export",
             "sparkforge_receipt_emit",
             "sparkforge_receipt_verify",
+            "sparkforge_proof",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2530,6 +2531,28 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["valid"] is True, result
         return result
 
+    if name == "sparkforge_proof":
+        # O mesmo artefato como antes e como depois: a regra ainda dispara, entao
+        # a resolucao sai `refuted` -- o schema e validado por um desfecho real,
+        # e nao pelo envelope de erro.
+        from pathlib import Path
+
+        raiz = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "pyspark" / "collect_unbounded" / "expected"
+        )
+        result = call_tool(
+            "sparkforge_proof",
+            {
+                "findings_path": str(raiz / "findings.json"),
+                "facts_path": [str(raiz / "facts.json")],
+                "after_facts_path": [str(raiz / "facts.json")],
+                "applied": ["SF-PY-002"],
+            },
+        )
+        assert result["results"][0]["obligations"][0]["outcome"] == "refuted", result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -2925,6 +2948,15 @@ class TestErrorShapesValidateToo:
             },
         ),
         ("sparkforge_receipt_verify", {"repo": "<tmp>", "receipt_path": "<tmp>/nada.json"}),
+        (
+            "sparkforge_proof",
+            {
+                "findings_path": "<tmp>/nao-existe.json",
+                "facts_path": "<tmp>/nada.json",
+                "after_facts_path": "<tmp>/nada.json",
+                "applied": ["SF-PY-002"],
+            },
+        ),
         (
             "sparkforge_arbitrate",
             {

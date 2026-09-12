@@ -75,6 +75,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_telemetry_export": "2026-09-11: spans de tool e transcript do host em OTLP/JSON",
     "sparkforge_receipt_emit": "2026-09-12: recibo content-addressed da execucao do case (§14)",
     "sparkforge_receipt_verify": "2026-09-12: verificacao do recibo parte por parte (§14)",
+    "sparkforge_proof": "2026-09-12: obrigacoes de prova de uma mudanca aplicada (§20)",
 }
 
 

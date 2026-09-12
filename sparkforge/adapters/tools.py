@@ -2836,6 +2836,55 @@ _REPORT_CHECK_ITEM: dict[str, Any] = {
 # testes contra o schema OASIS (`fixtures/sarif/_schema/`), e por isso so a casca
 # dele e declarada aqui -- repetir o schema de 112 KB da OASIS neste arquivo seria
 # um segundo lugar onde a verdade pode divergir da fonte.
+_PROOF_OUTCOMES = ["refuted", "not_refuted", "inconclusive", "unproven"]
+
+_PROOF_OBLIGATION: dict[str, Any] = {
+    "type": "object",
+    "required": ["kind", "outcome"],
+    "properties": {
+        "kind": {"type": "string", "enum": ["resolution", "axis"]},
+        "outcome": {"type": "string", "enum": _PROOF_OUTCOMES},
+        "axis": {"type": "string"},
+        "source": {"type": "string", "enum": ["funcval", "bench", "none"]},
+        "reason": {"type": "string"},
+        "unlock": {"type": ["string", "object"]},
+    },
+}
+
+_PROOF_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "results", "applied_count", "attribution", "refused", "unresolved", "policy",
+        "fact_count",
+    ],
+    "properties": {
+        "results": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule_id", "subject", "stable_key", "obligations", "summary"],
+                "properties": {
+                    "rule_id": {"type": "string"},
+                    "subject": {"type": "object"},
+                    "stable_key": {"type": ["object", "null"]},
+                    "obligations": {"type": "array", "items": _PROOF_OBLIGATION},
+                    "summary": {
+                        "type": "object",
+                        "required": _PROOF_OUTCOMES,
+                        "properties": {o: {"type": "integer"} for o in _PROOF_OUTCOMES},
+                    },
+                },
+            },
+        },
+        "applied_count": {"type": "integer"},
+        "attribution": {"type": "string", "enum": ["single", "shared"]},
+        "refused": {"type": "array", "items": {"type": "object"}},
+        "unresolved": {"type": "array", "items": {"type": "object"}},
+        "policy": {"type": "object"},
+        "fact_count": {"type": "object"},
+    },
+}
+
 _RECEIPT_PART_NAMES = [
     "version",
     "integrity",
@@ -7118,6 +7167,57 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_proof": {
+        "description": (
+            "Change Proof: para cada recomendacao APLICADA (`applied`: RULE_ID ou "
+            "RULE_ID:simbolo), as obrigacoes de prova e o desfecho de cada uma. "
+            "RESOLUCAO: a regra deixou de disparar na mesma chave estavel do subject, "
+            "julgada sobre os facts do depois? Se ela ficou muda por falta de artefato, "
+            "o desfecho e `unproven` com os kinds que faltam. EIXOS: um por item de "
+            "`action.moves`, pela politica `rules/catalog/proof_axes.yaml` -- correcao "
+            "pelos veredictos SF-FVAL, melhoria pelo benchmark e SF-BENCH, e eixo sem "
+            "comparador sai `unproven` com a medida que o destravaria. Desfechos: "
+            "refuted, not_refuted, inconclusive, unproven. O QUE ELA NAO FAZ, e isto e "
+            "contrato: nunca diz `proven` (proxy de funcval e delta de benchmark nao "
+            "provam equivalencia nem melhoria atribuivel) e nunca estima ganho. Com mais "
+            "de uma mudanca aplicada, a melhoria sai `inconclusive` (`attribution_shared`)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["findings_path", "facts_path", "after_facts_path", "applied"],
+            "properties": {
+                "findings_path": {
+                    "type": "string",
+                    "description": "Findings do antes, gerados por `sparkforge judge --out`.",
+                },
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "A UNIAO de facts do case, com os de funcval e benchmark.",
+                },
+                "after_facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "Facts extraidos dos artefatos do depois.",
+                },
+                "applied": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "RULE_ID ou RULE_ID:simbolo de cada recomendacao aplicada.",
+                },
+                "glue": {"type": "string"},
+                "spark": {"type": "string"},
+                "python": {"type": "string"},
+                "iceberg": {"type": "string"},
+                "athena": {"type": "string"},
+                "emr": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _PROOF_SCHEMA, "As obrigacoes por finding aplicado, ou erro de entrada."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -8786,6 +8886,21 @@ def _h_telemetry_export(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_proof(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.proof_change(
+        args["findings_path"],
+        args["facts_path"],
+        args["after_facts_path"],
+        args["applied"],
+        glue=args.get("glue"),
+        spark=args.get("spark"),
+        python=args.get("python"),
+        iceberg=args.get("iceberg"),
+        athena=args.get("athena"),
+        emr=args.get("emr"),
+    )
+
+
 def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:
     from sparkforge.observability.context_ledger import shared_ledger
 
@@ -9077,6 +9192,7 @@ _HANDLERS = {
     "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
+    "sparkforge_proof": _h_proof,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,

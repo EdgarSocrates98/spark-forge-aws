@@ -10,7 +10,7 @@
 | **Date** | 2026-09-12 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_CHANGE_PROOF.md](./DEFINE_CHANGE_PROOF.md) |
-| **Status** | Ready for Build |
+| **Status** | ✅ Complete (Built) |
 
 ---
 
@@ -443,4 +443,4 @@ def bench_outcome(axis: str, spec: dict, verdicts: set[str], run_delta: dict | N
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_CHANGE_PROOF.md`
+**Next:** `/ship .claude/sdd/features/DEFINE_CHANGE_PROOF.md`

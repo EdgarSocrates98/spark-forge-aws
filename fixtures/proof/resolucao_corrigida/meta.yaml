@@ -1,0 +1,11 @@
+description: >-
+  A correcao tira o collect() de collect_unbounded. pyspark.driver_collect some,
+  SF-PY-002 cai em requires_facts, e o extrator rodou no depois
+  (pyspark.module_analyzed): a ausencia e evidencia de que o padrao sumiu.
+findings: [fixtures/pyspark/collect_unbounded/expected/findings.json]
+facts: [fixtures/pyspark/collect_unbounded/expected/facts.json]
+after_input: input/after
+applied: [SF-PY-002]
+expect:
+  - {rule_id: SF-PY-002, kind: resolution, outcome: not_refuted}
+  - {rule_id: SF-PY-002, kind: axis, axis: correctness.write_result, outcome: unproven}
