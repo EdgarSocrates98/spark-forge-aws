@@ -9,7 +9,7 @@
 | **Feature** | SIMULATE |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -111,8 +111,8 @@ Para saber o que uma mudanca de configuracao faria com os achados, o operador ho
 | A-003 | So `eventlog/broadcast_timeout_stage_failure` tem `spark.network.timeout` e `spark.executor.heartbeatInterval` em `spark.conf_effective` | O caso de timeout precisaria de outra fixture | [x] medido |
 | A-004 | Ha fixture com FGAC declarado e SF-LF disparada | O caso de Lake Formation precisaria de fixture nova | [x] 6 de `infra_code` + 1 de `lakeformation` |
 | A-005 | `extract_timeout_diagnosis(facts, path)` roda so sobre facts | Chama-la no `fuse` exigiria outra entrada | [x] assinatura; o significado de `path` fica para o DESIGN |
-| A-006 | Qual coordenador declara `tune` | O dono muda | [ ] DESIGN |
-| A-007 | Qual `--set` faz uma regra aparecer (AT-002) e qual valor de FGAC muda a SF-LF (AT-004) | Os casos precisam de outras fixtures | [ ] DESIGN (medido rodando o simulate) |
+| A-006 | Qual coordenador declara `tune` | O dono muda | [x] `agents/spark-performance-architect.md` |
+| A-007 | Qual `--set` faz uma regra aparecer (AT-002) e qual valor de FGAC muda a SF-LF (AT-004) | Os casos precisam de outras fixtures | [x] Prototipo: `tf:number_of_workers=1` em `fgac_abaixo_do_minimo_de_workers` faz SF-LF-006 aparecer; `tf:--enable-lakeformation-fine-grained-access=false` em `fgac_com_jar_extra` faz SF-LF-001 sumir; `tf:glue_version=3.0` muda o runtime sem finding novo (AT-003 afirma runtime e `skipped_delta`) |
 
 ---
 
@@ -140,9 +140,10 @@ None - ready for Design. A-006 e A-007 sao de implementacao.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_SIMULATE.md`; A-001 corrige a premissa do brainstorm (`measures.value` numerico em `tf.attribute`) |
+| 1.1 | 2026-09-12 | design-agent | A-006 e A-007 fechadas por prototipo; AT-003 afirma a mudanca de runtime e o `skipped_delta` |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_SIMULATE.md`
+**Next:** `/build .claude/sdd/features/DESIGN_SIMULATE.md`
