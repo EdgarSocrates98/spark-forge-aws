@@ -9,7 +9,7 @@
 | **Feature** | FORGE_PACK |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -64,7 +64,7 @@ Uma equipe de plataforma que quer regras e knowledge proprios sobre os mesmos ar
 |----|----------|-------|------|------|
 | AT-001 | Sem pack | `SPARKFORGE_PACKS` ausente | `load_catalog()`, `judge` em qualquer golden | Resultado byte a byte o de hoje |
 | AT-002 | Pack carrega | `SPARKFORGE_PACKS=fixtures/packs/acme-platform` | `load_catalog()` | 190 regras do core + as do pack, cada uma com `id` `ACME-*` |
-| AT-003 | Regra de pack dispara | pack ativo; facts de job Terraform sem `security_configuration` (48 de 50 jobs dos fixtures do core) | `judge` | finding `ACME-*` com o subject do job; findings `SF-*` inalterados |
+| AT-003 | Regra de pack dispara | pack ativo; facts de job Terraform com `timeout` 2880 (`terraform/max_capacity_conflict`) | `judge` | finding `ACME-*` com o subject do job; findings `SF-*` inalterados |
 | AT-004 | Verbo de topo ve o pack | pack ativo | `root_cause` sobre os mesmos facts | o finding `ACME-*` aparece entre os candidatos |
 | AT-005 | Prefixo reservado | pack com `prefix: SF` | `pack list` | recusado `prefixo_reservado`; nenhuma regra carregada |
 | AT-006 | Id fora do prefixo | pack `ACME` com regra `BETA-X-001` | `pack list` | recusado `id_fora_do_prefixo` |
@@ -124,7 +124,7 @@ Uma equipe de plataforma que quer regras e knowledge proprios sobre os mesmos ar
 |----|------------|------------------|------------|
 | A-001 | `importlib.metadata.version("sparkforge-aws")` responde no install editavel local e no CI | A checagem de `core:` precisaria de outra fonte da versao | [ ] |
 | A-002 | Nenhum consumidor de `load_catalog()` assume que todo `rule_id` comeca com `SF-` (area por prefixo, gold set, autoridade do executor agentico, `root_cause`) | Finding `ACME-*` quebraria um verbo de topo; o design precisa varrer os literais `SF-` | [ ] |
-| A-003 | As regras sinteticas cabem em kinds que o core ja emite (medido: `security_configuration` aparece em 2 de 50 jobs `tf.attribute` dos fixtures) | O pack precisaria de fact novo, que exige extrator, que esta fora | [x] |
+| A-003 | As regras sinteticas cabem em kinds que o core ja emite. Corrigida no design: "`security_configuration` ausente" NAO e escrevivel, porque `absent` so confere kind (`engine.py::_absent_satisfied`, sem `where`); as regras usam `worker_type = G.4X` (2 fatos) e `timeout > 1440` (2 jobs) | O pack precisaria de fact novo, que exige extrator, que esta fora | [x] |
 | A-004 | Carregar o pack a cada `load_catalog()` e barato (poucos YAML) | Precisaria de cache por processo, com cuidado para nao esconder mudanca de variavel | [ ] |
 | A-005 | O `fallback` do `routing.yaml` aceita finding de area desconhecida sem erro (medido em `case/router.py::next_step`) | Pack precisaria declarar rota, que esta fora | [x] |
 
@@ -156,9 +156,10 @@ Nenhuma que bloqueie o design. Ficam para ele: uma tool (`pack` com acao) ou dua
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_FORGE_PACK.md`; medido: 89 arquivos de knowledge (docstring diz 19), `security_configuration` em 2 de 50 jobs, `_REQUIRED` exige `sources` |
+| 1.1 | 2026-09-12 | design-agent | A-003 corrigida (`absent` sem `where`); AT-003 passa a `timeout` 2880; `pack_duplicado` inclui prefixo repetido (Decisao 2 do design) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_FORGE_PACK.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_FORGE_PACK.md`
