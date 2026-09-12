@@ -9,9 +9,9 @@
 | **Feature** | EXECUTION_RECEIPT |
 | **Date** | 2026-09-12 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_EXECUTION_RECEIPT.md](../features/DEFINE_EXECUTION_RECEIPT.md) |
-| **DESIGN** | [DESIGN_EXECUTION_RECEIPT.md](../features/DESIGN_EXECUTION_RECEIPT.md) |
-| **Status** | Complete |
+| **DEFINE** | [DEFINE_EXECUTION_RECEIPT.md](./DEFINE_EXECUTION_RECEIPT.md) |
+| **DESIGN** | [DESIGN_EXECUTION_RECEIPT.md](./DESIGN_EXECUTION_RECEIPT.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -177,4 +177,4 @@ N/A - o repositorio nao configura mypy.
 
 ## Next Step
 
-**If Complete:** `/ship .claude/sdd/features/DEFINE_EXECUTION_RECEIPT.md`
+**Shipped:** ver [SHIPPED_2026-09-12.md](./SHIPPED_2026-09-12.md)
