@@ -167,6 +167,22 @@ broadcast, overhead de memória, speculation — sai listada com a medida que a 
 Nenhuma delas tem base hoje, e propor valor para elas seria trocar um número mágico por outro
 com aparência de cálculo.
 
+## O que uma mudança de configuração move, antes de aplicá-la
+
+`sparkforge_simulate` responde "se eu mudar este valor, que achado some e qual aparece?" sem
+rodar o job. Cada `sets` é `camada:chave=valor`, com a camada obrigatória — `tf`, `code`,
+`effective` ou `emr` —, porque a regra 19 separa quem pediu de quem venceu e mudar "a
+configuração" sem dizer onde escolheria a camada pelo operador. O valor troca em todo fact da
+camada que já declara a chave; chave que a camada não declara é recusada
+(`chave_ausente_na_camada`), porque criá-la seria inventar o default que o artefato não disse.
+
+Os dois lados passam pelo mesmo pipeline (tirar os derivados, rederivar fusão, Lake Formation
+e timeout, detectar o runtime, julgar). Leia `disappeared` e `appeared`, e depois
+`skipped_delta`: trocar `glue_version` não move achado nenhum e mesmo assim tira regras do
+escopo, e é ali que isso aparece. O que ela **não** faz está em `refused`: spill, tempo e custo
+não são fact de configuração, e nenhum número de desempenho sai daqui. Para compatibilidade de
+dependência, use `sparkforge_migration_assess`.
+
 ## "Timeout" é quatro coisas, e a categoria muda a investigação
 
 `SF-TIMEOUT` cobre a área que o operador chama por um nome só. `spark.timeout.diagnosis`

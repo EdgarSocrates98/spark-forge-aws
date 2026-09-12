@@ -40,6 +40,16 @@ EMITTED_KINDS = frozenset(
 )
 
 _HEARTBEAT_KEY = "spark.executor.heartbeatInterval"
+# Os kinds que produzem SINAL ou RELACAO: as frases do event log
+# (`_BASIS_POR_KIND`), o estado do run Glue e a configuracao efetiva. Os de
+# sintoma (duracao, spill, GC) so viajam como medida, e sozinhos nao justificam
+# rodar a derivacao. `fusion.fuse()` so chama `extract_timeout_diagnosis` quando
+# o pool tem algum destes: sem a guarda, todo pool nao vazio ganharia a lacuna
+# `no_timeout_evidence` -- inclusive um pool so de SQL, que nada tem de timeout.
+SOURCE_KINDS = frozenset(
+    {"spark.executor.lost", "spark.stage.failure", "glue.job_run", "spark.conf_effective"}
+)
+
 _NETWORK_KEY = "spark.network.timeout"
 
 # Sufixos que o Spark aceita nestas duas chaves. Valor sem sufixo e lido como

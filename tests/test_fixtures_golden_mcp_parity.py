@@ -76,6 +76,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_receipt_emit": "2026-09-12: recibo content-addressed da execucao do case (§14)",
     "sparkforge_receipt_verify": "2026-09-12: verificacao do recibo parte por parte (§14)",
     "sparkforge_proof": "2026-09-12: obrigacoes de prova de uma mudanca aplicada (§20)",
+    "sparkforge_simulate": "2026-09-12: o que uma mudanca de configuracao move (§19)",
 }
 
 

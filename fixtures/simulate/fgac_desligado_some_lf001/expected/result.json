@@ -1,0 +1,68 @@
+{
+  "appeared": [],
+  "changes": [
+    {
+      "facts_changed": 2,
+      "key": "--enable-lakeformation-fine-grained-access",
+      "layer": "tf",
+      "new_value": "false",
+      "old_values": [
+        "true"
+      ]
+    }
+  ],
+  "disappeared": [
+    {
+      "rule_id": "SF-LF-001",
+      "subject": {
+        "file": "main.tf",
+        "line": 15,
+        "symbol": "aws_glue_job.etl_fgac_com_jar",
+        "type": "tf_resource"
+      }
+    }
+  ],
+  "fact_count": 43,
+  "persisted_count": 0,
+  "refused": [
+    {
+      "field": "performance_prediction",
+      "reason": "spill_e_tempo_nao_sao_fact_de_configuracao"
+    },
+    {
+      "field": "dependency_incompatibility",
+      "reason": "use_sparkforge_migration_assess"
+    },
+    {
+      "field": "execution_graph",
+      "reason": "nao_e_previsivel_a_partir_de_configuracao"
+    }
+  ],
+  "runtime": {
+    "after": {
+      "athena": "",
+      "detected_from": [
+        "terraform"
+      ],
+      "divergences": [],
+      "emr": "",
+      "glue": "5.0",
+      "iceberg": "1.7.1",
+      "python": "3.11",
+      "spark": "3.5.4"
+    },
+    "before": {
+      "athena": "",
+      "detected_from": [
+        "terraform"
+      ],
+      "divergences": [],
+      "emr": "",
+      "glue": "5.0",
+      "iceberg": "1.7.1",
+      "python": "3.11",
+      "spark": "3.5.4"
+    }
+  },
+  "skipped_delta": []
+}

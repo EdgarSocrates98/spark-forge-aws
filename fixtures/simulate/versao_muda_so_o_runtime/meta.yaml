@@ -1,0 +1,10 @@
+description: >-
+  glue_version = 3.0 nao move achado nenhum, mas o runtime detectado vai de 5.0
+  para 3.0, e as regras de Lake Formation e migracao passam a sair do escopo:
+  a mudanca aparece em runtime e em skipped_delta, nao em appeared.
+facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
+sets: ["tf:glue_version=3.0"]
+expect:
+  disappeared: []
+  appeared: []
+  runtime_glue: ["5.0", "3.0"]

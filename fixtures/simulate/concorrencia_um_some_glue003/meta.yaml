@@ -1,0 +1,9 @@
+description: >-
+  Job com bookmark e max_concurrent_runs = 3. Levar a concorrencia para 1 na
+  camada tf troca attrs.value E measures.value do tf.attribute, e SF-GLUE-003,
+  que le a medida, some.
+facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
+sets: ["tf:max_concurrent_runs=1"]
+expect:
+  disappeared: [SF-GLUE-003]
+  appeared: []

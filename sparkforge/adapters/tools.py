@@ -2885,6 +2885,65 @@ _PROOF_SCHEMA: dict[str, Any] = {
     },
 }
 
+_SIMULATE_FINDING: dict[str, Any] = {
+    "type": "object",
+    "required": ["rule_id", "subject"],
+    "properties": {"rule_id": {"type": "string"}, "subject": {"type": "object"}},
+}
+
+_SIMULATE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "changes", "disappeared", "appeared", "persisted_count", "skipped_delta",
+        "runtime", "refused", "fact_count",
+    ],
+    "properties": {
+        "changes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["layer", "key", "old_values", "new_value", "facts_changed"],
+                "properties": {
+                    "layer": {"type": "string", "enum": ["tf", "code", "effective", "emr"]},
+                    "key": {"type": "string"},
+                    "old_values": {"type": "array", "items": {"type": "string"}},
+                    "new_value": {"type": "string"},
+                    "facts_changed": {"type": "integer"},
+                },
+            },
+        },
+        "disappeared": {"type": "array", "items": _SIMULATE_FINDING},
+        "appeared": {"type": "array", "items": _SIMULATE_FINDING},
+        "persisted_count": {"type": "integer"},
+        "skipped_delta": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule_id", "before", "after"],
+                "properties": {
+                    "rule_id": {"type": "string"},
+                    "before": {"type": "string"},
+                    "after": {"type": "string"},
+                },
+            },
+        },
+        "runtime": {
+            "type": "object",
+            "required": ["before", "after"],
+            "properties": {"before": {"type": "object"}, "after": {"type": "object"}},
+        },
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["field", "reason"],
+                "properties": {"field": {"type": "string"}, "reason": {"type": "string"}},
+            },
+        },
+        "fact_count": {"type": "integer"},
+    },
+}
+
 _RECEIPT_PART_NAMES = [
     "version",
     "integrity",
@@ -7218,6 +7277,50 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_simulate": {
+        "description": (
+            "Simulate: o que uma mudanca de configuracao move, ESTRUTURALMENTE. Cada item "
+            "de `sets` e `camada:chave=valor`, com a camada obrigatoria -- `tf` "
+            "(tf.spark_conf, tf.attribute), `code` (pyspark.conf_set), `effective` "
+            "(spark.conf_effective) ou `emr` (emr/emrs/emrc.configuration). O valor troca "
+            "em TODO fact da camada que declara a chave, e so nesses: chave que a camada "
+            "nao declara e recusada (`chave_ausente_na_camada`), assim como texto para uma "
+            "medida numerica. Os dois lados passam pelo mesmo pipeline -- tirar os "
+            "derivados, rederivar (fusion, Lake Formation, timeout), detectar o runtime e "
+            "julgar -- e a comparacao, pela chave estavel do subject, devolve "
+            "`disappeared`, `appeared`, `persisted_count` e `skipped_delta`. O QUE ELA NAO "
+            "FAZ, e isto e contrato: nunca preve spill, tempo ou custo (nao sao fact de "
+            "configuracao), nao julga compatibilidade de dependencia (use "
+            "`sparkforge_migration_assess`) e nao preve o grafo de execucao. As tres "
+            "recusas saem em `refused`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "sets"],
+            "properties": {
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "Facts do case, gerados por `sparkforge analyze * --out`.",
+                },
+                "sets": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "camada:chave=valor, por exemplo tf:max_concurrent_runs=1.",
+                },
+                "glue": {"type": "string"},
+                "spark": {"type": "string"},
+                "python": {"type": "string"},
+                "iceberg": {"type": "string"},
+                "athena": {"type": "string"},
+                "emr": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _SIMULATE_SCHEMA, "O que some e o que aparece, ou erro de entrada com o motivo."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -8901,6 +9004,19 @@ def _h_proof(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_simulate(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.simulate_change(
+        args["facts_path"],
+        args["sets"],
+        glue=args.get("glue"),
+        spark=args.get("spark"),
+        python=args.get("python"),
+        iceberg=args.get("iceberg"),
+        athena=args.get("athena"),
+        emr=args.get("emr"),
+    )
+
+
 def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:
     from sparkforge.observability.context_ledger import shared_ledger
 
@@ -9193,6 +9309,7 @@ _HANDLERS = {
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
     "sparkforge_proof": _h_proof,
+    "sparkforge_simulate": _h_simulate,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,
