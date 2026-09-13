@@ -1,0 +1,7 @@
+# Recusa `pack_duplicado` quando ativo junto de acme-platform: outro id, MESMO
+# prefixo ACME. O prefixo diz a origem do finding, entao ele precisa ser unico.
+pack:
+  id: acme-copia
+  version: 1.0.0
+  prefix: ACME
+  core: ">=0.5"

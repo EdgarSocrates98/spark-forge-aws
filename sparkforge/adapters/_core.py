@@ -3531,6 +3531,88 @@ def simulate_change(
     }
 
 
+def _packs_ativos() -> Any:
+    from sparkforge.packs import resolve
+
+    try:
+        return resolve()
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+def _arquivos_de(raiz: Path) -> list[str]:
+    if not raiz.is_dir():
+        return []
+    return sorted(p.relative_to(raiz).as_posix() for p in raiz.rglob("*") if p.is_file())
+
+
+def pack_list() -> dict[str, Any]:
+    """Os packs de `SPARKFORGE_PACKS`: ativos, recusados com o motivo, e o mapa
+    prefixo -> pack que diz a origem de um finding (§5).
+
+    Nao le artefato de job nem julga: so resolve a variavel e os manifestos.
+    """
+    from sparkforge.packs import ENV, installed_version
+
+    conjunto = _packs_ativos()
+    return {
+        "env": ENV,
+        "installed_core": installed_version(),
+        "active": [
+            {
+                "id": pack.id,
+                "version": pack.manifest.version,
+                "prefix": pack.prefix,
+                "core": pack.manifest.core,
+                "description": pack.manifest.description,
+                "dir": str(pack.root),
+                "rules": sorted(str(regra["id"]) for regra in pack.rules),
+                "knowledge": _arquivos_de(pack.knowledge_dir),
+            }
+            for pack in conjunto.active
+        ],
+        "refused": [dict(item) for item in conjunto.refused],
+        "prefixes": conjunto.prefixes(),
+    }
+
+
+def pack_check(pack_dir: str) -> dict[str, Any]:
+    """Roda cada fixture do pack pelo `judge` (core + este pack, sem a variavel)
+    e compara o que disparou com o `expect.yaml` do caso. `ok` falso quando um
+    caso diverge ou quando uma regra do pack nao dispara em nenhum caso."""
+    from sparkforge.packs import PackRefused, load_pack
+    from sparkforge.packs.check import cases, evaluate
+    from sparkforge.rules.loader import catalog_dir
+
+    raiz = Path(pack_dir).expanduser().resolve()
+    if not raiz.is_dir():
+        raise AdapterError(f"{pack_dir}: diretorio de pack inexistente", exit_code=2)
+    try:
+        pack = load_pack(raiz)
+        casos = cases(pack)
+    except PackRefused as exc:
+        return {
+            "pack": {"id": exc.pack_id},
+            "refused": {"reason": exc.reason, "detail": exc.detail},
+            "cases": [],
+            "rules_without_fixture": [],
+            "ok": False,
+        }
+    try:
+        regras = load_catalog(catalog_dir()) + [dict(regra) for regra in pack.rules]
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+    disparos: dict[str, set[str]] = {}
+    for caso in casos:
+        fatos = _merge_facts_files([str(caso.facts_path)])
+        runtime = build_runtime_context(None, None, None, None, None, facts=fatos).to_dict()
+        disparos[caso.name] = {achado.rule_id for achado in run_judge(fatos, regras, runtime)}
+    saida = evaluate(pack, disparos, casos)
+    saida["refused"] = None
+    return saida
+
+
 _AS_OF_EXEMPLO ="sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
 
 
@@ -3570,7 +3652,50 @@ def source_freshness_de(itens: list[dict[str, Any]], as_of: str | None = None) -
     conta propria, e o estado precisa ser o da pagina que ela imprime."""
     from sparkforge.knowledge_freshness import citacoes_de
 
-    return _freshness_de_citacoes(citacoes_de(itens), _as_of(as_of))
+    dia = _as_of(as_of)
+    conjunto = _packs_ativos()
+    if not conjunto.active:
+        return _freshness_de_citacoes(citacoes_de(itens), dia)
+
+    # Regra de pack tem as fontes vigiadas pelo lock DO PACK (Decisao 5 do design
+    # do Forge Pack); o lock do core nunca vigia URL de terceiro. A origem sai do
+    # prefixo do `rule_id`, o mesmo que `pack list` publica.
+    grupos: dict[str | None, list[dict[str, Any]]] = {}
+    for item in itens:
+        pack = conjunto.pack_of(str(item.get("rule_id") or item.get("id") or ""))
+        grupos.setdefault(pack.id if pack else None, []).append(item)
+    mapas = [_freshness_de_citacoes(citacoes_de(grupos.pop(None, [])), dia)]
+    for pack in conjunto.active:
+        if pack.id in grupos:
+            mapas.append(_freshness_de_pack(pack, citacoes_de(grupos[pack.id]), dia))
+    return _juntar_mapas(mapas)
+
+
+def _freshness_de_pack(
+    pack: Any, citacoes: list[tuple[str | None, Any]], dia: Any
+) -> dict[str, Any]:
+    from sparkforge.knowledge_freshness import carregar_lock, mapa
+
+    lock, motivo = carregar_lock(pack.knowledge_dir)
+    sem_lock = "pack_sem_lock" if motivo in (None, "lock_ausente") else motivo
+    return mapa(citacoes, lock, dia, motivo_sem_lock=sem_lock)
+
+
+def _juntar_mapas(mapas: list[dict[str, Any]]) -> dict[str, Any]:
+    from collections import Counter
+
+    from sparkforge.knowledge_freshness import ESTADOS
+
+    estados: dict[str, Any] = {}
+    sem_url = 0
+    for item in mapas:
+        for url, estado in item["source_freshness"].items():
+            estados.setdefault(url, estado)
+        sem_url += int(item["freshness_policy"]["counts"].get("sem_url", 0))
+    contagem = Counter(e["state"] for e in estados.values())
+    politica = dict(mapas[0]["freshness_policy"])
+    politica["counts"] = {**{nome: contagem.get(nome, 0) for nome in ESTADOS}, "sem_url": sem_url}
+    return {"source_freshness": estados, "freshness_policy": politica}
 
 
 def judge_findings(
@@ -4218,7 +4343,9 @@ def rules_lookup(
 
     clean = []
     for rule in filtered:
-        entry = {k: v for k, v in rule.items() if k != "_source_file"}
+        # Chave com `_` e metadado de carga (`_source_file`, e `_pack` numa regra
+        # de pack), nunca parte da regra publicada.
+        entry = {k: v for k, v in rule.items() if not k.startswith("_")}
         entry["knowledge_refs"] = _resolve_knowledge_refs(
             _citations_of(rule), knowledge_root, resolved_paths
         )
@@ -4307,17 +4434,40 @@ def knowledge_path(
         p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()
     )
 
+    # Knowledge de pack mora numa chave PROPRIA, nunca em `available`: o teto de
+    # paginacao acima e da lista curada do core. Sem pack ativo, a chave nao
+    # aparece e a resposta e a de sempre.
+    conjunto = _packs_ativos()
+    raiz_do_arquivo = root
     resolved: str | None = None
     if file:
+        pack, relativo = _pack_do_arquivo(conjunto, file)
+        if pack is not None:
+            raiz_do_arquivo = pack.knowledge_dir
         try:
-            resolved = str(safe_knowledge_file(root, file))
+            resolved = str(safe_knowledge_file(raiz_do_arquivo, relativo))
         except KnowledgeError as exc:
             raise AdapterError(str(exc), exit_code=2) from exc
 
     payload: dict[str, Any] = {"root": str(root), "file": resolved, "available": available}
+    if conjunto.active:
+        payload["packs"] = [
+            {"id": p.id, "root": str(p.knowledge_dir), "available": _arquivos_de(p.knowledge_dir)}
+            for p in conjunto.active
+        ]
     if source_freshness:
-        payload.update(_freshness_de_knowledge(root, resolved, _as_of(as_of)))
+        payload.update(_freshness_de_knowledge(raiz_do_arquivo, resolved, _as_of(as_of)))
     return payload
+
+
+def _pack_do_arquivo(conjunto: Any, file: str) -> tuple[Any, str]:
+    """`packs/<id>/<relativo>` de um pack ativo vira (pack, relativo); o resto e do core."""
+    partes = file.replace("\\", "/").split("/", 2)
+    if len(partes) == 3 and partes[0] == "packs":
+        pack = next((p for p in conjunto.active if p.id == partes[1]), None)
+        if pack is not None:
+            return pack, partes[2]
+    return None, file
 
 
 def _freshness_de_knowledge(root: Path, resolved: str | None, dia: Any) -> dict[str, Any]:

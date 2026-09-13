@@ -184,6 +184,16 @@ escopo, e é ali que isso aparece. O que ela **não** faz está em `refused`: sp
 não são fact de configuração, e nenhum número de desempenho sai daqui. Para compatibilidade de
 dependência, use `sparkforge_migration_assess`.
 
+## Regra que não é do core: Forge Packs
+
+Um finding com prefixo diferente de `SF-` (por exemplo `ACME-GOV-001`) vem de um **Forge Pack**:
+regras, knowledge e fixtures de uma equipe, carregados junto do core pela variável
+`SPARKFORGE_PACKS`. Antes de explicar um achado desses, chame `sparkforge_pack_list`: ela diz
+qual pack é dono do prefixo, em que versão, e quais packs foram **recusados** e por quê
+(`prefixo_reservado`, `pack_duplicado`, `core_incompativel`, `regra_invalida`...). Um pack
+recusado sai inteiro, então "a regra da equipe não apareceu" costuma ser um pack recusado, não
+um job limpo. Pack é só dado: não traz extrator, e as regras dele leem os mesmos kinds do core.
+
 ## "Timeout" é quatro coisas, e a categoria muda a investigação
 
 `SF-TIMEOUT` cobre a área que o operador chama por um nome só. `spark.timeout.diagnosis`

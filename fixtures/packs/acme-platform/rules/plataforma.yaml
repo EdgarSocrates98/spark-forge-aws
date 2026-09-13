@@ -1,0 +1,52 @@
+catalog_version: 1
+
+# Duas regras sinteticas sobre `tf.attribute`. "Job sem security_configuration"
+# ficou de fora de proposito: `absent` so confere kind (engine.py), e o
+# predicado exigiria fact derivado -- que um pack, por ser so dado, nao traz.
+rules:
+  - id: ACME-GOV-001
+    category: acme-governanca
+    title: Job Glue com worker G.4X sem aprovacao de capacidade
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: worker_type, attrs.value: G.4X}
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Padrao sintetico de plataforma: worker G.4X exige aprovacao de capacidade
+      pela equipe de plataforma antes de ir para producao.
+    proposed_change:
+      - Registrar a aprovacao de capacidade, ou voltar para G.2X.
+    risks: [G.2X pode nao caber o volume do job.]
+    validation: [Aprovacao registrada no repositorio de plataforma.]
+    rollback: [Restaurar o worker_type anterior.]
+    sources:
+      - {url: "https://example.com/acme/padroes-de-plataforma", retrieved: 2026-09-12}
+
+  - id: ACME-GOV-002
+    category: acme-governanca
+    title: Job Glue com timeout acima de 24 horas
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: timeout}
+          expr: "measures.value > 1440"
+    status: structural
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Padrao sintetico de plataforma: timeout acima de 24 horas esconde job
+      travado atras de um relogio que ninguem olha.
+    proposed_change:
+      - Reduzir o timeout para o SLA declarado do job.
+    risks: [Timeout curto demais derruba um job legitimamente longo.]
+    validation: [Duracao dos ultimos runs abaixo do novo timeout.]
+    rollback: [Restaurar o timeout anterior.]
+    sources:
+      - {url: "https://example.com/acme/padroes-de-plataforma", retrieved: 2026-09-12}

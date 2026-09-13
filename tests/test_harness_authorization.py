@@ -901,6 +901,12 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # que o chamador escolha. Aceitar um `path` aqui seria abrir uma
             # superficie que a tool nao precisa.
             "sparkforge_lakeformation_matrix",
+            # `pack_list` (2026-09-12, Forge Pack) nao recebe caminho: le
+            # `SPARKFORGE_PACKS`, variavel do operador da mesma confianca de
+            # `SPARKFORGE_CATALOG`. Aceitar diretorio pela tool abriria uma
+            # leitura que o host escolhe; checar pack arbitrario e da CLI
+            # (`sparkforge pack check`).
+            "sparkforge_pack_list",
         }
     )
 

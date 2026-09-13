@@ -359,8 +359,10 @@ _FINDING_ITEM: dict[str, Any] = {
     "properties": {
         # `[A-Z][A-Z0-9]*` e nao `[A-Z]+`: a area pode ter digito no NOME
         # (`SF-SPARK4` fala do Apache Spark 4), e o digito ali nao e numeracao.
-        # Tem que casar com `findings/schemas/finding.schema.json`.
-        "rule_id": {"type": "string", "pattern": "^SF-[A-Z][A-Z0-9]*-[0-9]{3}$"},
+        # Tem que casar com `findings/schemas/finding.schema.json`. O prefixo e
+        # aberto desde o Forge Pack (2026-09-12): `ACME-GOV-001` vem de pack, e a
+        # reserva do `SF` e do loader de pack (`sparkforge/packs/manifest.py`).
+        "rule_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-[0-9]{3}$"},
         "schema_version": {"type": "integer"},
         "catalog_version": {"type": "integer"},
         "title": {"type": "string"},
@@ -2284,7 +2286,7 @@ _RULE_ITEM: dict[str, Any] = {
     ],
     "properties": {
         # Mesma abertura de `rule_id` acima, pela mesma razao (`SF-SPARK4`).
-        "id": {"type": "string", "pattern": "^SF-[A-Z][A-Z0-9]*-[0-9]{3}$"},
+        "id": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-[0-9]{3}$"},
         "category": {"type": "string"},
         "title": {"type": "string"},
         "requires_facts": {"type": "array", "items": {"type": "string"}},
@@ -2941,6 +2943,57 @@ _SIMULATE_SCHEMA: dict[str, Any] = {
             },
         },
         "fact_count": {"type": "integer"},
+    },
+}
+
+_PACK_LIST_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["env", "installed_core", "active", "refused", "prefixes"],
+    "properties": {
+        "env": {"type": "string"},
+        "installed_core": {"type": ["string", "null"]},
+        "active": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "version", "prefix", "core", "dir", "rules", "knowledge"],
+                "properties": {
+                    "id": {"type": "string"},
+                    "version": {"type": "string"},
+                    "prefix": {"type": "string"},
+                    "core": {"type": "string"},
+                    "description": {"type": "string"},
+                    "dir": {"type": "string"},
+                    "rules": {"type": "array", "items": {"type": "string"}},
+                    "knowledge": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["dir", "reason", "detail"],
+                "properties": {
+                    "dir": {"type": "string"},
+                    "id": {"type": ["string", "null"]},
+                    "reason": {
+                        "type": "string",
+                        "enum": [
+                            "manifesto_invalido",
+                            "prefixo_reservado",
+                            "pack_duplicado",
+                            "core_incompativel",
+                            "regra_invalida",
+                            "id_fora_do_prefixo",
+                            "id_duplicado",
+                        ],
+                    },
+                    "detail": {"type": "string"},
+                },
+            },
+        },
+        "prefixes": {"type": "object", "additionalProperties": {"type": "string"}},
     },
 }
 
@@ -7321,6 +7374,25 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_pack_list": {
+        "description": (
+            "Forge Packs ativos: pacotes de DADO (regras YAML, knowledge e fixtures) de "
+            "terceiro, carregados junto do core pela variavel SPARKFORGE_PACKS. Devolve os "
+            "packs ativos (id, versao, prefixo, faixa de core aceita, regras, knowledge), os "
+            "RECUSADOS com o motivo -- manifesto_invalido, prefixo_reservado (SF e do core), "
+            "pack_duplicado (id ou prefixo repetido), core_incompativel, regra_invalida, "
+            "id_fora_do_prefixo, id_duplicado -- e o mapa prefixo -> pack, que e como se sabe "
+            "de onde veio um finding `ACME-GOV-001`. Pack recusado sai inteiro: nenhuma regra "
+            "dele entra em judge. O QUE ELA NAO FAZ: nao instala nem baixa pack, nao executa "
+            "codigo de pack (pack e so dado), nao sobrescreve regra do core. Checar um pack "
+            "contra os fixtures dele e da CLI: `sparkforge pack check <dir>`."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+        "outputSchema": _may_fail(
+            _PACK_LIST_SCHEMA, "Packs ativos e recusados, ou erro se um diretorio nao existe."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9017,6 +9089,10 @@ def _h_simulate(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_pack_list(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.pack_list()
+
+
 def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:
     from sparkforge.observability.context_ledger import shared_ledger
 
@@ -9310,6 +9386,7 @@ _HANDLERS = {
     "sparkforge_validate_output": _h_validate_output,
     "sparkforge_proof": _h_proof,
     "sparkforge_simulate": _h_simulate,
+    "sparkforge_pack_list": _h_pack_list,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,
