@@ -9,9 +9,9 @@
 | **Feature** | DOCTOR_SCAN |
 | **Date** | 2026-09-13 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_DOCTOR_SCAN.md](../features/DEFINE_DOCTOR_SCAN.md) |
-| **DESIGN** | [DESIGN_DOCTOR_SCAN.md](../features/DESIGN_DOCTOR_SCAN.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_DOCTOR_SCAN.md](./DEFINE_DOCTOR_SCAN.md) |
+| **DESIGN** | [DESIGN_DOCTOR_SCAN.md](./DESIGN_DOCTOR_SCAN.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -150,10 +150,10 @@ A 1a passada foi morta por falta de memoria no lote goldens-2; antes disso, o a-
 - [x] All tests pass (12 583 passed, 0 failed, 9 skipped, nos nove lotes de `tests/test_suite_batches.py`)
 - [x] No blocking issues
 - [x] Acceptance tests verified
-- [ ] Ready for /ship (depois do CI do PR)
+- [x] Ready for /ship (CI do PR #63 verde nos seis jobs depois de `0b748636`)
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_DOCTOR_SCAN.md`
+**Shipped:** ver [SHIPPED_2026-09-13.md](./SHIPPED_2026-09-13.md)

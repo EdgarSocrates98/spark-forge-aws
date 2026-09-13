@@ -9,7 +9,7 @@
 | **Feature** | DOCTOR_SCAN |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -51,12 +51,12 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 ## Success Criteria
 
-- [ ] SC1: num repositorio sintetico misto (codigo + artefatos coletados com manifesto), `scan` produz facts e findings iguais, fact a fact e finding a finding, aos dos `analyze` e do `judge` rodados a mao sobre os mesmos arquivos.
-- [ ] SC2: cada uma das 5 recusas (`sem_manifesto`, `sha256_divergente`, `kind_sem_analyze`, `analyze_falhou`, `exige_job_name`) tem caso em `fixtures/scan/`, e com 1 analyze falhando os outros N-1 ainda gravam facts.
-- [ ] SC3: `scan --dry-run` sai 0 e deixa `.sparkforge/scan/` sem nenhum arquivo novo.
-- [ ] SC4: `scan --format sarif` gera SARIF byte a byte igual ao de `report github` sobre os mesmos findings e facts.
-- [ ] SC5: `doctor` sai 1 com uma checagem `fail` e 0 sem nenhuma; as 9 checagens tem teste para cada status que podem assumir.
-- [ ] SC6: 2 tools novas (97 no total), registros, surface lock e claims em dia; suite nos 9 lotes com 0 falhas; referencia de `docs/guia/referencia/` regerada.
+- [x] SC1: num repositorio sintetico misto (codigo + artefatos coletados com manifesto), `scan` produz facts e findings iguais, fact a fact e finding a finding, aos dos `analyze` e do `judge` rodados a mao sobre os mesmos arquivos.
+- [x] SC2: cada uma das 5 recusas (`sem_manifesto`, `sha256_divergente`, `kind_sem_analyze`, `analyze_falhou`, `exige_job_name`) tem caso em `fixtures/scan/`, e com 1 analyze falhando os outros N-1 ainda gravam facts.
+- [x] SC3: `scan --dry-run` sai 0 e deixa `.sparkforge/scan/` sem nenhum arquivo novo.
+- [x] SC4: `scan --format sarif` gera SARIF byte a byte igual ao de `report github` sobre os mesmos findings e facts.
+- [x] SC5: `doctor` sai 1 com uma checagem `fail` e 0 sem nenhuma; as 9 checagens tem teste para cada status que podem assumir.
+- [x] SC6: 2 tools novas (97 no total), registros, surface lock e claims em dia; suite nos 9 lotes com 0 falhas; referencia de `docs/guia/referencia/` regerada.
 
 ---
 

@@ -10,7 +10,7 @@
 | **Date** | 2026-09-13 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_DOCTOR_SCAN.md](./DEFINE_DOCTOR_SCAN.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
