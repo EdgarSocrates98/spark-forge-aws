@@ -3483,6 +3483,227 @@ def gain(
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
+_SCAN_DIR = Path(".sparkforge") / "scan"
+_SCAN_FORMATOS = ("json", "sarif")
+
+
+def _scan_extrair(entrada: Any, raiz: Path) -> list[dict[str, Any]]:
+    """Um analyze sobre UM arquivo (ou a pasta de runs de um job): os itens.
+
+    Por arquivo, e nao por diretorio, para que um arquivo malformado vire
+    `analyze_falhou` sozinho e os outros sigam (medido no design: todo extrator
+    usado aqui aceita arquivo unico)."""
+    alvo = str(raiz / entrada.path)
+    por_nome = {
+        "pyspark": analyze_pyspark,
+        "terraform": analyze_terraform,
+        "event-log": analyze_event_log,
+        "cloudwatch": analyze_cloudwatch,
+        "cloudwatch-logs": analyze_cloudwatch_logs,
+        "iceberg": analyze_iceberg,
+        "athena-workgroup": analyze_athena_workgroup,
+        "emr-cluster": analyze_emr_cluster,
+        "emr-serverless": analyze_emr_serverless,
+        "emr-eks": analyze_emr_eks,
+        "parquet-footer": analyze_parquet_footer,
+        "iam-access": analyze_iam_access,
+        "lakeformation-grants": analyze_lakeformation_grants,
+        "glue-resource-link": analyze_glue_resource_link,
+    }
+    if entrada.analyze == "sql":
+        if alvo.endswith(".py"):
+            resultado = analyze_sql(from_pyspark=alvo, limit=None)
+        else:
+            resultado = analyze_sql(path=alvo, limit=None)
+    elif entrada.analyze == "glue-job-runs":
+        resultado = analyze_glue_job_runs(alvo, entrada.job_name, limit=None)
+    else:
+        resultado = por_nome[entrada.analyze](alvo, limit=None)
+    return list(resultado["items"])
+
+
+def _scan_gravar(raiz: Path, arquivos: dict[str, Any]) -> list[str]:
+    """Grava com NOME FIXO sob `<raiz>/.sparkforge/scan/`; o que sobrou de um
+    scan anterior sai antes, para `facts_<analyze>.json` velho nao ficar."""
+    destino = raiz / _SCAN_DIR
+    destino.mkdir(parents=True, exist_ok=True)
+    for velho in destino.iterdir():
+        if velho.is_file() and velho.suffix == ".json":
+            velho.unlink()
+    for nome, dados in arquivos.items():
+        (destino / nome).write_text(
+            json.dumps(dados, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+    return [(_SCAN_DIR / nome).as_posix() for nome in arquivos]
+
+
+def scan(
+    repo: str = ".",
+    dry_run: bool = False,
+    output_format: str = "json",
+    fail_on: str | None = None,
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    emr: str | None = None,
+) -> dict[str, Any]:
+    """`sparkforge scan` (§22): plano por manifesto e extensao, um analyze por
+    arquivo, `fuse` e `judge` sobre a uniao, e o resumo. Sem rede: so analisa o
+    que ja esta no disco."""
+    from sparkforge.scan import ScanError, resumo
+    from sparkforge.scan import plan as planejar
+
+    if output_format not in _SCAN_FORMATOS:
+        raise AdapterError(
+            f"--format {output_format!r}: use um de {', '.join(_SCAN_FORMATOS)}.", exit_code=2
+        )
+    if fail_on is not None and fail_on not in _FAIL_ON_VALIDOS:
+        raise AdapterError(
+            f"--fail-on {fail_on!r}: use um de {', '.join(_FAIL_ON_VALIDOS)}.", exit_code=2
+        )
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(
+            f"scan: diretorio nao encontrado: {repo}\n"
+            f"  Aponte para a raiz do repositorio:\n    sparkforge scan <raiz> --dry-run",
+            exit_code=2,
+        )
+    try:
+        plano = planejar(raiz)
+    except ScanError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    if dry_run:
+        return {"dry_run": True, "plan": plano.to_dict()}
+
+    brutos: dict[str, list[dict[str, Any]]] = {}
+    por_analyze: dict[str, dict[str, int]] = {}
+    falhas: list[dict[str, str]] = []
+    for entrada in plano.entradas:
+        try:
+            itens = _scan_extrair(entrada, raiz)
+        except Exception as exc:  # noqa: BLE001 -- um arquivo ruim nao derruba os outros
+            primeira = (str(exc).splitlines() or [""])[0][:200]
+            falhas.append({
+                "path": entrada.path,
+                "reason": "analyze_falhou",
+                "detail": f"{entrada.analyze}: {type(exc).__name__}: {primeira}",
+            })
+            continue
+        brutos.setdefault(entrada.analyze, []).extend(itens)
+        contagem = por_analyze.setdefault(entrada.analyze, {"files": 0, "facts": 0})
+        contagem["files"] += 1
+        contagem["facts"] += len(itens)
+
+    uniao = [fact for nome in sorted(brutos) for fact in brutos[nome]]
+    fundidos = [f.to_dict() for f in run_fuse(_facts_from_dicts(uniao))] if uniao else []
+    findings: list[dict[str, Any]] = []
+    runtime: dict[str, Any] | None = None
+    if fundidos:
+        julgado = judge_findings(
+            facts=fundidos, glue=glue, spark=spark, python=python, iceberg=iceberg,
+            athena=athena, emr=emr, limit=None,
+        )
+        findings = list(julgado["items"])
+        runtime = julgado.get("runtime")
+
+    arquivos: dict[str, Any] = {f"facts_{nome}.json": brutos[nome] for nome in sorted(brutos)}
+    arquivos["facts.json"] = fundidos
+    arquivos["findings.json"] = findings
+    saidas = _scan_gravar(raiz, arquivos)
+    saidas.append((_SCAN_DIR / "summary.json").as_posix())
+    resultado = resumo(
+        plano, por_analyze, falhas, len(uniao), len(fundidos), findings, runtime, saidas, fail_on
+    )
+    if output_format == "sarif":
+        payload = report_github(
+            str(raiz / _SCAN_DIR / "findings.json"),
+            str(raiz / _SCAN_DIR / "facts.json"),
+            repo=str(raiz),
+            fail_on=fail_on,
+        )
+        gravados = report_github_write(str(raiz), payload)
+        resultado["sarif"] = {
+            "files": sorted(gravados.values()),
+            "counts": payload["counts"],
+            "gate": payload["gate"],
+        }
+    (raiz / _SCAN_DIR / "summary.json").write_text(
+        json.dumps(resultado, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return resultado
+
+
+def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
+    """`sparkforge doctor` (§22): sonda as portas que ja existem e deixa a
+    avaliacao para `sparkforge.doctor`. Sem rede, a menos de `online` (so CLI):
+    ai chama STS `get_caller_identity`."""
+    import importlib.util
+    import sys
+
+    from sparkforge import doctor as dr
+    from sparkforge.packs.manifest import installed_version
+
+    if not Path(repo).is_dir():
+        raise AdapterError(
+            f"doctor: diretorio nao encontrado: {repo}\n"
+            f"  Aponte para a raiz do repositorio:\n    sparkforge doctor --repo <raiz>",
+            exit_code=2,
+        )
+
+    def sondar(porta: Any) -> tuple[Any, str | None]:
+        try:
+            return porta(), None
+        except Exception as exc:  # noqa: BLE001 -- porta que falha vira checagem, nao excecao
+            return None, f"{type(exc).__name__}: {(str(exc).splitlines() or [''])[0][:200]}"
+
+    checagens = [dr.avaliar_pacote(installed_version(), tuple(sys.version_info[:3]))]
+    extras = {m: importlib.util.find_spec(m) is not None for m in ("mcp", "boto3", "pyarrow")}
+    checagens.append(dr.avaliar_extras(extras))
+
+    def montar_mcp() -> int:
+        from sparkforge.adapters.mcp import build_server
+        from sparkforge.adapters.tools import TOOLS
+
+        build_server()
+        return len(TOOLS)
+
+    tools, erro = sondar(montar_mcp) if extras["mcp"] else (None, None)
+    checagens.append(dr.avaliar_mcp(extras["mcp"], tools, erro))
+    regras, erro = sondar(lambda: len(load_catalog()))
+    checagens.append(dr.avaliar_catalogo(regras, erro))
+    checagens.append(dr.avaliar_packs(*sondar(pack_list)))
+    contagem, erro = sondar(
+        lambda: knowledge_path(source_freshness=True)["freshness_policy"]["counts"]
+    )
+    checagens.append(dr.avaliar_knowledge(contagem, erro))
+    # So a EXISTENCIA do indice: `code_status` passa por `garantir_frescor`, que
+    # grava a conferencia no banco, e o doctor e READ_ONLY.
+    checagens.append(dr.avaliar_indice(*sondar(
+        lambda: {"initialized": _code_banco(_code_raiz(repo), None).is_file(), "fresh": None}
+    )))
+    checagens.append(dr.avaliar_artefatos(*sondar(lambda: collect_verify(repo))))
+
+    metodo = conta = erro = None
+    if extras["boto3"]:
+        import boto3  # noqa: PLC0415 -- extra opcional
+
+        credencial, erro = sondar(lambda: boto3.Session().get_credentials())
+        metodo = getattr(credencial, "method", None) if credencial else None
+        if online and metodo and erro is None:
+            identidade, erro = sondar(
+                lambda: boto3.client("sts").get_caller_identity()  # rede, so com --online
+            )
+            conta = (identidade or {}).get("Account")
+    checagens.append(dr.avaliar_credencial(extras["boto3"], metodo, conta, erro, online))
+    return dr.resumo(checagens, online=online)
+
+
 _SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
 
 

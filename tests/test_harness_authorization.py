@@ -984,7 +984,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `facts_path`; os `--set` sao texto, nao caminho.
         # 86 -> 87 com `gain` (2026-09-13, §21): `_READ_ONLY` e declara
         # `baseline_paths` e `candidate_paths`, os runs medidos de cada lado.
-        assert len(TOOLS) - len(sem_caminho) == 87
+        # 87 -> 89 com `scan` e `doctor` (2026-09-13, §22): as duas declaram
+        # `repo`; `scan` grava em `.sparkforge/scan/`, `doctor` so le.
+        assert len(TOOLS) - len(sem_caminho) == 89
 
 
 class TestAImposicaoNoDespacho:

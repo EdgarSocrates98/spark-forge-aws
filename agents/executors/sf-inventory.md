@@ -13,6 +13,9 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 
 Mapeia o terreno antes de qualquer análise:
 
+0. `sparkforge_doctor` — o ambiente está pronto? Uma checagem `fail` (catálogo, servidor
+   MCP, pacote) para o inventário antes de ele começar; `warn` e `skip` vão para
+   `case.open_questions` com o `unlock` que a checagem devolveu.
 1. `sparkforge_runtime_detect` — versão de Glue, Spark, Python, Iceberg, e divergências entre fontes.
 2. `sparkforge_case_get` — estado do case, ou `sparkforge_case_open` se não existir.
 3. `sparkforge_collect_verify` — quais artefatos já existem e estão íntegros.
@@ -27,6 +30,11 @@ Mapeia o terreno antes de qualquer análise:
    `sparkforge_collect_iceberg_metadata`, `sparkforge_collect_athena_workgroup`,
    `sparkforge_collect_emr_serverless` (exige o `applicationId`, nunca o nome — o nome é
    opcional na API e nenhuma fonte o declara único).
+
+5. `sparkforge_scan` com `dry_run` — o plano do que roda em cada arquivo, pelo manifesto
+   e pela extensão, e as recusas com nome (`sem_manifesto`, `sha256_divergente`,
+   `kind_sem_analyze`, `exige_job_name`, `fora_da_raiz`). O plano é inventário; rodar o
+   scan sem `dry_run` já é extração, e é do `sf-extractor`.
 
 ## Pressupõe
 

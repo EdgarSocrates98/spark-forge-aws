@@ -1,0 +1,34 @@
+[
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "event_log",
+    "path": ".sparkforge/artifacts/eventlog/jr_0001.jsonl",
+    "sha256": "92e7e46aaf0db1dbd066c0b9d15ce94ef27abd3cd71c73b843c48cb8828093c5",
+    "source": "s3://sintetico/eventlog"
+  },
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "glue_job_run",
+    "path": ".sparkforge/artifacts/glue_job_run/synthetic-job_jr_0001.json",
+    "sha256": "d035eea3bb9b86b1e7a7d36c79ce97d91dffd12c7131a1e437dfbbf841ef8825",
+    "source": "glue:get_job_runs:synthetic-job/jr_0001"
+  },
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "glue_job_run",
+    "path": ".sparkforge/artifacts/glue_job_run/synthetic-job_jr_0002.json",
+    "sha256": "7ccbff5fc3314ead20ee0a972fce0fbdd5195bebd0df14e163d6d2e90fc8cbb4",
+    "source": "glue:get_job_runs:synthetic-job/jr_0002"
+  },
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "iceberg_metadata",
+    "path": ".sparkforge/artifacts/iceberg/small_files.json",
+    "sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+    "source": "athena:sintetico"
+  }
+]

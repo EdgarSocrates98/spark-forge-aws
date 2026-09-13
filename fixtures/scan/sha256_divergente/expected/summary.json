@@ -1,0 +1,83 @@
+{
+  "analyzes": {
+    "pyspark": {
+      "facts": 3,
+      "files": 1
+    },
+    "sql": {
+      "facts": 1,
+      "files": 1
+    }
+  },
+  "dry_run": false,
+  "facts": {
+    "after_fuse": 5,
+    "extracted": 4
+  },
+  "findings": {
+    "by_severity": {
+      "P1": 1
+    },
+    "rule_ids": [
+      "SF-PY-001"
+    ],
+    "total": 1
+  },
+  "gate": {
+    "fail_on": null,
+    "tripped": false
+  },
+  "outputs": [
+    ".sparkforge/scan/facts_pyspark.json",
+    ".sparkforge/scan/facts_sql.json",
+    ".sparkforge/scan/facts.json",
+    ".sparkforge/scan/findings.json",
+    ".sparkforge/scan/summary.json"
+  ],
+  "plan": {
+    "entries": [
+      {
+        "analyze": "pyspark",
+        "origin": "extensao",
+        "path": "src/job.py"
+      },
+      {
+        "analyze": "sql",
+        "origin": "extensao",
+        "path": "src/job.py"
+      }
+    ],
+    "refused": [
+      {
+        "detail": "sha256 nao bate com o manifesto",
+        "path": ".sparkforge/artifacts/iceberg/t.json",
+        "reason": "sha256_divergente"
+      }
+    ],
+    "skipped": [
+      {
+        "path": ".sparkforge",
+        "reason": "DIRECTORY_IGNORED"
+      }
+    ]
+  },
+  "refused": [
+    {
+      "detail": "sha256 nao bate com o manifesto",
+      "path": ".sparkforge/artifacts/iceberg/t.json",
+      "reason": "sha256_divergente"
+    }
+  ],
+  "refused_by_reason": {
+    "sha256_divergente": 1
+  },
+  "runtime": {
+    "athena": "",
+    "divergences": [],
+    "emr": "",
+    "glue": "",
+    "iceberg": "",
+    "python": "",
+    "spark": ""
+  }
+}

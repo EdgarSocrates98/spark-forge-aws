@@ -1,0 +1,3 @@
+description: >-
+  Dump de grants malformado com sha256 correto: o analyze falha sozinho e o job.py roda. (Iceberg, Athena e EMR aceitam dump malformado como *.unresolved.)
+args: []
