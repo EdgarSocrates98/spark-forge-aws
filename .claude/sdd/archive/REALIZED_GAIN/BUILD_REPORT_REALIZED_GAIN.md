@@ -9,9 +9,9 @@
 | **Feature** | REALIZED_GAIN |
 | **Date** | 2026-09-13 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_REALIZED_GAIN.md](../features/DEFINE_REALIZED_GAIN.md) |
-| **DESIGN** | [DESIGN_REALIZED_GAIN.md](../features/DESIGN_REALIZED_GAIN.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_REALIZED_GAIN.md](./DEFINE_REALIZED_GAIN.md) |
+| **DESIGN** | [DESIGN_REALIZED_GAIN.md](./DESIGN_REALIZED_GAIN.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -142,10 +142,10 @@ Nenhum.
 - [x] All tests pass (12 530 passed, 0 failed, 9 skipped, nos nove lotes de `tests/test_suite_batches.py`)
 - [x] No blocking issues
 - [x] Acceptance tests verified
-- [ ] Ready for /ship (depois do CI do PR)
+- [x] Ready for /ship (CI do PR #61 verde: `test (3.10)`, `test (3.11)`, os dois `wheel`, `audit` e `otel-collector`)
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_REALIZED_GAIN.md`
+**Shipped:** ver [SHIPPED_2026-09-13.md](./SHIPPED_2026-09-13.md)

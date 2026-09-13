@@ -9,7 +9,7 @@
 | **Feature** | REALIZED_GAIN |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -49,11 +49,11 @@ Depois de aplicar uma mudanca num job Glue, o operador compara runs a mao, sem N
 
 ## Success Criteria
 
-- [ ] SC1: com baseline e candidato recortados de `fixtures/capacity/cheapest_that_fits` (30 runs, uma capacidade por lado), N, mediana, minimo, maximo e o delta batem com a conta feita a mao sobre os mesmos numeros.
-- [ ] SC2: cada marca (`amostra_insuficiente`, `volume_diverge`, `volume_desconhecido`, `custo_indisponivel`) tem um caso de fixture e aparece so na metrica que ela afeta.
-- [ ] SC3: `refused` traz sempre os tres itens de G7, em todos os casos.
-- [ ] SC4: jobs diferentes e lado sem run valido saem com codigo 2; run nao `SUCCEEDED` sai em `discarded`.
-- [ ] SC5: tool nova validada por amostra real; registros de tool nova (declara caminho: 86 -> 87); surface lock com o crescimento declarado; claims por lista de ids; suite por lotes com 0 falhas.
+- [x] SC1: com baseline e candidato recortados de `fixtures/capacity/cheapest_that_fits` (30 runs, uma capacidade por lado), N, mediana, minimo, maximo e o delta batem com a conta feita a mao sobre os mesmos numeros.
+- [x] SC2: cada marca (`amostra_insuficiente`, `volume_diverge`, `volume_desconhecido`, `custo_indisponivel`) tem um caso de fixture e aparece so na metrica que ela afeta.
+- [x] SC3: `refused` traz sempre os tres itens de G7, em todos os casos.
+- [x] SC4: jobs diferentes e lado sem run valido saem com codigo 2; run nao `SUCCEEDED` sai em `discarded`.
+- [x] SC5: tool nova validada por amostra real; registros de tool nova (declara caminho: 86 -> 87); surface lock com o crescimento declarado; claims por lista de ids; suite por lotes com 0 falhas.
 
 ---
 

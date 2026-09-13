@@ -10,7 +10,7 @@
 | **Date** | 2026-09-13 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_REALIZED_GAIN.md](./DEFINE_REALIZED_GAIN.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
