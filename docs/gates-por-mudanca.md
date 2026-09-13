@@ -356,6 +356,19 @@ Cuidado com YAML no frontmatter: `: ` dentro de valor escalar sem aspas quebra o
 Isso derrubou 81 testes numa única sessão, e nenhum dos quatro arquivos de teste que
 rodei na hora tocava esse caminho.
 
+## Acrescentar ou alterar tool, verbo de CLI, agent ou skill: a referência gerada
+
+`docs/guia/referencia/` tem uma página por comando de topo, tool, agent e skill,
+gerada do código. Qualquer mudança de nome, descrição, flag ou parâmetro a deixa velha.
+
+```
+python scripts/gen_reference_docs.py
+python -m pytest tests/test_reference_docs.py -q
+```
+
+Os guias escritos à mão (`docs/guia/*.md`, `docs/guia/usos/*.md`) não são gerados:
+revise o manual da tarefa quando o comportamento do verbo mudar.
+
 ## Alterar `rules/catalog/routing.yaml`
 
 ```

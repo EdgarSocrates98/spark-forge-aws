@@ -1,5 +1,8 @@
 # Guia de Uso — SparkForge AWS
 
+> Manuais passo a passo por tarefa, para quem está começando: [Guia do SparkForge](docs/guia/README.md).
+> Este arquivo continua como guia de integração com Claude Code, Devin e Copilot.
+
 ## 1. Começo recomendado
 
 Abra a ferramenta no repositório que contém:
