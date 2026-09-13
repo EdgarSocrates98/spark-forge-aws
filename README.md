@@ -11,6 +11,9 @@ O pacote foi estruturado para funcionar em:
 - GitHub Copilot: `.github/copilot-instructions.md`, `.github/instructions`, `.github/prompts` e `.github/agents`
 - Qualquer agente compatível com o padrão Agent Skills: `skills/`
 
+**Primeira vez aqui?** Comece pelo [Guia do SparkForge](docs/guia/README.md): manuais
+simples por tarefa, com receita rápida para copiar e colar, e uma referência de cada
+comando, tool, agent e skill gerada do código.
 
 ## Investigação de fluxos full e incrementais
 
