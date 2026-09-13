@@ -9,7 +9,7 @@
 | **Feature** | DOCTOR_SCAN |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -155,4 +155,4 @@ Para usar o SparkForge num repositorio, o operador precisa saber qual `analyze` 
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_DOCTOR_SCAN.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_DOCTOR_SCAN.md`
