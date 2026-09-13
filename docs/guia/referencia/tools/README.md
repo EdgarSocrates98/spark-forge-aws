@@ -110,6 +110,12 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_debate_start`](sparkforge_debate_start.md) | grava local | Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos fac... |
 | [`sparkforge_debate_submit`](sparkforge_debate_submit.md) | muda estado local | Submete o turno do lado da vez, INLINE em `submission`, no schema que o brief publica. |
 
+## doctor
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_doctor`](sparkforge_doctor.md) | só leitura | Confere se o ambiente esta pronto, em nove checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codigo... |
+
 ## economy
 
 | Tool | Efeito | O que faz |
@@ -248,6 +254,12 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_runtime_detect`](sparkforge_runtime_detect.md) | só leitura | Deriva glue/emr/spark/python/iceberg/athena dos facts ja extraidos e dos parametros informados, usando as matrizes oficiais de compatibilidade do Glue e do EMR. |
+
+## scan
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_scan`](sparkforge_scan.md) | grava local | Roda sozinho os analyzes que cabem num repositorio e julga a uniao. |
 
 ## simulate
 

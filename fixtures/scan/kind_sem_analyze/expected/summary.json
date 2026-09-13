@@ -1,0 +1,93 @@
+{
+  "analyzes": {
+    "pyspark": {
+      "facts": 3,
+      "files": 1
+    },
+    "sql": {
+      "facts": 1,
+      "files": 1
+    }
+  },
+  "dry_run": false,
+  "facts": {
+    "after_fuse": 5,
+    "extracted": 4
+  },
+  "findings": {
+    "by_severity": {
+      "P1": 1
+    },
+    "rule_ids": [
+      "SF-PY-001"
+    ],
+    "total": 1
+  },
+  "gate": {
+    "fail_on": null,
+    "tripped": false
+  },
+  "outputs": [
+    ".sparkforge/scan/facts_pyspark.json",
+    ".sparkforge/scan/facts_sql.json",
+    ".sparkforge/scan/facts.json",
+    ".sparkforge/scan/findings.json",
+    ".sparkforge/scan/summary.json"
+  ],
+  "plan": {
+    "entries": [
+      {
+        "analyze": "pyspark",
+        "origin": "extensao",
+        "path": "src/job.py"
+      },
+      {
+        "analyze": "sql",
+        "origin": "extensao",
+        "path": "src/job.py"
+      }
+    ],
+    "refused": [
+      {
+        "detail": "definicao implantada do job (collect glue-job) em JSON; o analyze terraform le HCL e nenhum extrator le este artefato",
+        "path": ".sparkforge/artifacts/glue_job/synthetic-job.json",
+        "reason": "kind_sem_analyze"
+      },
+      {
+        "detail": "kind 'kind_inventado' desconhecido",
+        "path": ".sparkforge/artifacts/outro/x.json",
+        "reason": "kind_sem_analyze"
+      }
+    ],
+    "skipped": [
+      {
+        "path": ".sparkforge",
+        "reason": "DIRECTORY_IGNORED"
+      }
+    ]
+  },
+  "refused": [
+    {
+      "detail": "definicao implantada do job (collect glue-job) em JSON; o analyze terraform le HCL e nenhum extrator le este artefato",
+      "path": ".sparkforge/artifacts/glue_job/synthetic-job.json",
+      "reason": "kind_sem_analyze"
+    },
+    {
+      "detail": "kind 'kind_inventado' desconhecido",
+      "path": ".sparkforge/artifacts/outro/x.json",
+      "reason": "kind_sem_analyze"
+    }
+  ],
+  "refused_by_reason": {
+    "kind_sem_analyze": 2
+  },
+  "runtime": {
+    "athena": "",
+    "divergences": [],
+    "emr": "",
+    "glue": "",
+    "iceberg": "",
+    "python": "",
+    "spark": ""
+  }
+}

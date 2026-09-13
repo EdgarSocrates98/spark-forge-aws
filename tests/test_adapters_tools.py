@@ -100,6 +100,8 @@ class TestToolSurface:
             "sparkforge_pack_list",
             "sparkforge_knowledge_drift",
             "sparkforge_gain",
+            "sparkforge_scan",
+            "sparkforge_doctor",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -273,6 +275,10 @@ class TestToolSurface:
             # arquivo), mas escreve -- `LOCAL_MUTATION`, como `report_sign`.
             "sparkforge_receipt_emit",
             "sparkforge_report_sign",
+            # `sparkforge_scan` grava `.sparkforge/scan/` (facts por analyze,
+            # uniao, findings, summary) e, com `format: sarif`, o SARIF do
+            # `report github`. Idempotente: a mesma arvore da os mesmos arquivos.
+            "sparkforge_scan",
             # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
             #
             # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
@@ -2635,6 +2641,27 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["metrics"]["execution_time_s"]["delta_pct"] == -44.4, result
         return result
 
+    if name == "sparkforge_scan":
+        # O repositorio misto de `fixtures/scan/`, copiado: o scan grava em
+        # `<repo>/.sparkforge/scan/`, e o schema e validado por um plano cheio.
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        origem = Path(__file__).resolve().parents[1] / "fixtures" / "scan" / "misto" / "repo"
+        destino = Path(tempfile.mkdtemp()) / "repo"
+        shutil.copytree(origem, destino)
+        result = call_tool("sparkforge_scan", {"repo": str(destino)})
+        assert "SF-LF-005" in result["findings"]["rule_ids"], result
+        return result
+
+    if name == "sparkforge_doctor":
+        import tempfile
+
+        result = call_tool("sparkforge_doctor", {"repo": tempfile.mkdtemp()})
+        assert len(result["checks"]) == 9 and result["online"] is False, result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -3044,6 +3071,8 @@ class TestErrorShapesValidateToo:
             "sparkforge_gain",
             {"baseline_paths": ["<tmp>/nada.json"], "candidate_paths": ["<tmp>/nada.json"]},
         ),
+        ("sparkforge_scan", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_doctor", {"repo": "<tmp>/nao-existe"}),
         (
             "sparkforge_arbitrate",
             {

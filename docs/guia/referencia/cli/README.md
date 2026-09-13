@@ -20,6 +20,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge controlm`](controlm.md) | Conhecimento versionado do Control-M Automation API. |
 | [`sparkforge debate`](debate.md) | Conduz e arbitra o protocolo de debate do case. |
 | [`sparkforge decisions`](decisions.md) | Lista e explica decisões registradas. |
+| [`sparkforge doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos e credencial AWS. |
 | [`sparkforge economy`](economy.md) | O que a execucao poe na janela de contexto: byte medido, nunca token estimado. |
 | [`sparkforge finops`](finops.md) | O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- capacidade ou codigo. |
 | [`sparkforge funcval`](funcval.md) | Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. |
@@ -43,6 +44,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge root-cause`](root-cause.md) | Ordena os achados por consequencia declarada e nomeia a lacuna. |
 | [`sparkforge rules`](rules.md) | Consulta o catalogo de regras versionado. |
 | [`sparkforge runtime`](runtime.md) | Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena. |
+| [`sparkforge scan`](scan.md) | Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge/scan/. |
 | [`sparkforge simulate`](simulate.md) | O que uma mudanca de configuracao move, estruturalmente: altera o valor de facts que ja existem, rederiva e julga os dois lados, e diz que achados somem e aparecem. |
 | [`sparkforge telemetry`](telemetry.md) | Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector. |
 | [`sparkforge tune`](tune.md) | Configuracao Spark derivada da medida, com a procedencia de cada propriedade. |

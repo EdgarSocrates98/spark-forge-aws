@@ -3116,6 +3116,71 @@ _GAIN_SCHEMA: dict[str, Any] = {
     },
 }
 
+_SCAN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["dry_run", "plan"],
+    "properties": {
+        "dry_run": {"type": "boolean"},
+        "plan": {
+            "type": "object",
+            "required": ["entries", "refused", "skipped"],
+            "properties": {
+                "entries": {"type": "array", "items": {"type": "object"}},
+                "refused": {"type": "array", "items": {"type": "object"}},
+                "skipped": {"type": "array", "items": {"type": "object"}},
+            },
+        },
+        "analyzes": {"type": "object"},
+        "facts": {"type": "object"},
+        "findings": {"type": "object"},
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["path", "reason", "detail"],
+                "properties": {
+                    "path": {"type": "string"},
+                    "reason": {
+                        "type": "string",
+                        "enum": [
+                            "sem_manifesto", "sha256_divergente", "kind_sem_analyze",
+                            "exige_job_name", "fora_da_raiz", "analyze_falhou",
+                        ],
+                    },
+                    "detail": {"type": "string"},
+                },
+            },
+        },
+        "refused_by_reason": {"type": "object"},
+        "runtime": {"type": ["object", "null"]},
+        "outputs": {"type": "array", "items": {"type": "string"}},
+        "gate": {"type": "object"},
+        "sarif": {"type": "object"},
+    },
+}
+_DOCTOR_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["checks", "counts", "healthy", "online"],
+    "properties": {
+        "checks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "status", "detail", "unlock"],
+                "properties": {
+                    "id": {"type": "string"},
+                    "status": {"type": "string", "enum": ["ok", "warn", "fail", "skip"]},
+                    "detail": {"type": "string"},
+                    "unlock": {"type": ["string", "null"]},
+                },
+            },
+        },
+        "counts": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "healthy": {"type": "boolean"},
+        "online": {"type": "boolean"},
+    },
+}
+
 _RECEIPT_PART_NAMES = [
     "version",
     "integrity",
@@ -7580,6 +7645,54 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_scan": {
+        "description": (
+            "Roda sozinho os analyzes que cabem num repositorio e julga a uniao. Artefato "
+            "coletado entra pelo `kind` do `.sparkforge/artifacts/manifest.json`, com sha256 "
+            "conferido; codigo entra pela extensao (.py, .sql, .tf, .jsonl). Um analyze por "
+            "arquivo; depois `fuse` e `judge`. Grava em `.sparkforge/scan/` (facts por "
+            "analyze, facts.json, findings.json, summary.json) e, com `format: sarif`, o SARIF "
+            "e o resumo de PR do `report github`. `dry_run` so devolve o plano. Toda recusa tem "
+            "nome: sem_manifesto (JSON solto nunca e classificado pelo conteudo), "
+            "sha256_divergente, kind_sem_analyze, exige_job_name, fora_da_raiz, analyze_falhou "
+            "(um arquivo ruim nao derruba os outros). Sem rede: nao coleta nada."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio a varrer."},
+                "dry_run": {"type": "boolean", "description": "So o plano; nada roda."},
+                "format": {"type": "string", "enum": ["json", "sarif"]},
+                "fail_on": {"type": "string", "enum": ["P0", "P1"]},
+                **{
+                    eixo: {"type": "string", "description": f"Versao de {eixo} para o judge."}
+                    for eixo in ("glue", "spark", "python", "iceberg", "athena", "emr")
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _SCAN_SCHEMA, "O plano, o que rodou e o que foi recusado, ou erro de entrada."
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
+    "sparkforge_doctor": {
+        "description": (
+            "Confere se o ambiente esta pronto, em nove checagens com status ok, warn, fail "
+            "ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, "
+            "indice_de_codigo, artefatos e credencial_aws. A credencial e conferida so "
+            "localmente (cadeia do boto3): esta tool nunca vai a rede; a confirmacao na AWS e "
+            "`sparkforge doctor --online`, so na CLI."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio (padrao: .)."},
+            },
+        },
+        "outputSchema": _may_fail(_DOCTOR_SCHEMA, "As checagens, ou erro de entrada."),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9280,6 +9393,21 @@ def _h_pack_list(args: dict[str, Any]) -> dict[str, Any]:
     return _core.pack_list()
 
 
+def _h_scan(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.scan(
+        args["repo"],
+        dry_run=bool(args.get("dry_run", False)),
+        output_format=args.get("format", "json"),
+        fail_on=args.get("fail_on"),
+        **{e: args.get(e) for e in ("glue", "spark", "python", "iceberg", "athena", "emr")},
+    )
+
+
+def _h_doctor(args: dict[str, Any]) -> dict[str, Any]:
+    # Nunca `online`: a tool e READ_ONLY sem rede; STS e so da CLI.
+    return _core.doctor(args.get("repo", "."))
+
+
 def _h_gain(args: dict[str, Any]) -> dict[str, Any]:
     return _core.gain(args["baseline_paths"], args["candidate_paths"])
 
@@ -9584,6 +9712,8 @@ _HANDLERS = {
     "sparkforge_pack_list": _h_pack_list,
     "sparkforge_knowledge_drift": _h_knowledge_drift,
     "sparkforge_gain": _h_gain,
+    "sparkforge_scan": _h_scan,
+    "sparkforge_doctor": _h_doctor,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,

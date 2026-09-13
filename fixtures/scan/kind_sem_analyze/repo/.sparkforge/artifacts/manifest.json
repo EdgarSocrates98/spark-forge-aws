@@ -1,0 +1,18 @@
+[
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "terraform",
+    "path": ".sparkforge/artifacts/glue_job/synthetic-job.json",
+    "sha256": "db92c1ea2dbf4c305c21b127a1eccb0be9754e0f0d8bbdec4c166629f62833c9",
+    "source": "glue:get_job:synthetic-job"
+  },
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "kind_inventado",
+    "path": ".sparkforge/artifacts/outro/x.json",
+    "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "source": "sintetico"
+  }
+]

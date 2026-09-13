@@ -2229,6 +2229,46 @@ def build_parser() -> argparse.ArgumentParser:
         "--candidate", action="append", required=True, help="Facts de runs do depois. Repetivel."
     )
 
+    # scan --------------------------------------------------------------------
+    # Verbo de TOPO que encadeia: plano por manifesto e extensao, um analyze por
+    # arquivo, fuse e judge sobre a uniao. Nao coleta: so o que esta no disco.
+    scan_p = sub.add_parser(
+        "scan",
+        help=(
+            "Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo "
+            "manifesto, codigo pela extensao; depois fuse, judge e um resumo em "
+            ".sparkforge/scan/. Sem rede."
+        ),
+    )
+    scan_p.add_argument("raiz", nargs="?", default=".", help="Pasta a varrer (padrao: .).")
+    scan_p.add_argument(
+        "--dry-run", action="store_true", help="So mostra o plano; nao roda nem grava nada."
+    )
+    scan_p.add_argument(
+        "--format", choices=["json", "sarif"], default="json",
+        help="sarif grava tambem o SARIF e o resumo de PR, como `report github`.",
+    )
+    scan_p.add_argument(
+        "--fail-on", choices=["P0", "P1"], default=None,
+        help="Sai 1 se houver finding nesta severidade (P1 inclui P0).",
+    )
+    for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
+        scan_p.add_argument(flag, default=None)
+
+    # doctor ------------------------------------------------------------------
+    doctor_p = sub.add_parser(
+        "doctor",
+        help=(
+            "Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, "
+            "knowledge, indice de codigo, artefatos e credencial AWS. Sai 1 com alguma falha."
+        ),
+    )
+    doctor_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
+    doctor_p.add_argument(
+        "--online", action="store_true",
+        help="Confirma a credencial na AWS (STS get_caller_identity). Unico modo com rede.",
+    )
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3586,6 +3626,22 @@ def _cmd_gain(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_scan(args: argparse.Namespace) -> int:
+    resultado = _core.scan(
+        args.raiz, dry_run=args.dry_run, output_format=args.format, fail_on=args.fail_on,
+        glue=args.glue, spark=args.spark, python=args.python, iceberg=args.iceberg,
+        athena=args.athena, emr=args.emr,
+    )
+    _print(resultado)
+    return 1 if (resultado.get("gate") or {}).get("tripped") else 0
+
+
+def _cmd_doctor(args: argparse.Namespace) -> int:
+    resultado = _core.doctor(args.repo, online=args.online)
+    _print(resultado)
+    return 0 if resultado["healthy"] else 1
+
+
 def _cmd_simulate(args: argparse.Namespace) -> int:
     _print(
         _core.simulate_change(
@@ -4198,6 +4254,8 @@ _DISPATCH = {
     ("proof", None): _cmd_proof,
     ("simulate", None): _cmd_simulate,
     ("gain", None): _cmd_gain,
+    ("scan", None): _cmd_scan,
+    ("doctor", None): _cmd_doctor,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

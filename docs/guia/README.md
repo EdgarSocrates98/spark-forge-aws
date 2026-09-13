@@ -15,6 +15,7 @@ Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 
 | Eu quero... | Manual |
 |---|---|
+| Conferir o ambiente e rodar tudo o que cabe no repositório de uma vez | [Scan e doctor](usos/scan-e-doctor.md) |
 | Descobrir por que um job PySpark no Glue está lento | [Job lento](usos/job-lento.md) |
 | Saber quanto um job custa e qual capacidade escolher | [Custo e capacidade](usos/custo-e-capacidade.md) |
 | Cuidar de tabelas Iceberg e arquivos Parquet | [Iceberg e Parquet](usos/iceberg-e-parquet.md) |
