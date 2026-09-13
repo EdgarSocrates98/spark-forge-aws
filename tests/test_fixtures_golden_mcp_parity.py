@@ -82,6 +82,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_gain": "2026-09-13: o ganho observado entre runs medidos (§21)",
     "sparkforge_scan": "2026-09-13: os analyzes que cabem num repositorio, julgados (§22)",
     "sparkforge_doctor": "2026-09-13: o ambiente esta pronto? nove checagens (§22)",
+    "sparkforge_policy_explain": "2026-09-13: o que a policy decide, e por qual porta (§16)",
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

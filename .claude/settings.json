@@ -13,8 +13,23 @@
     "caveman@caveman": false,
     "ck@cavekit": false
   },
-  "enabledMcpjsonServers": ["sparkforge"],
+  "enabledMcpjsonServers": [
+    "sparkforge"
+  ],
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m sparkforge.policy.hook",
+            "timeout": 10,
+            "statusMessage": "sparkforge: conferindo a policy..."
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
@@ -26,6 +41,32 @@
           }
         ]
       }
+    ]
+  },
+  "permissions": {
+    "ask": [
+      "Bash(terraform destroy *)",
+      "Bash(terraform apply *)",
+      "Bash(aws s3 rm *)",
+      "Bash(aws lakeformation revoke-permissions *)",
+      "Bash(*expire_snapshots*)",
+      "Edit(rules/catalog/**)",
+      "Write(rules/catalog/**)",
+      "Edit(**/*.tf)",
+      "Write(**/*.tf)",
+      "mcp__sparkforge__sparkforge_collect_athena_workgroup",
+      "mcp__sparkforge__sparkforge_collect_cloudwatch",
+      "mcp__sparkforge__sparkforge_collect_cloudwatch_logs",
+      "mcp__sparkforge__sparkforge_collect_emr_cluster",
+      "mcp__sparkforge__sparkforge_collect_emr_eks",
+      "mcp__sparkforge__sparkforge_collect_emr_serverless",
+      "mcp__sparkforge__sparkforge_collect_event_log",
+      "mcp__sparkforge__sparkforge_collect_glue_job",
+      "mcp__sparkforge__sparkforge_collect_glue_job_runs",
+      "mcp__sparkforge__sparkforge_collect_glue_resource_link",
+      "mcp__sparkforge__sparkforge_collect_iam_access",
+      "mcp__sparkforge__sparkforge_collect_iceberg_metadata",
+      "mcp__sparkforge__sparkforge_collect_lakeformation"
     ]
   }
 }

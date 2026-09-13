@@ -172,6 +172,7 @@
     "sparkforge_knowledge_drift",
     "sparkforge_pack_list",
     "sparkforge_playbook",
+    "sparkforge_policy_explain",
     "sparkforge_release_describe",
     "sparkforge_release_diff",
     "sparkforge_report_sign",

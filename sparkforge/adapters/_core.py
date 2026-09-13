@@ -3704,6 +3704,119 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
     return dr.resumo(checagens, online=online)
 
 
+def _policy_carregada(repo: str) -> tuple[Path, Any]:
+    from sparkforge.policy.load import PolicyError, carregar
+
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(
+            f"policy: diretorio nao encontrado: {repo}\n"
+            f"  Aponte para a raiz do repositorio:\n    sparkforge policy check --repo <raiz>",
+            exit_code=2,
+        )
+    try:
+        return raiz, carregar(raiz)
+    except PolicyError as exc:
+        raise AdapterError(
+            f"{exc}\n  Corrija o arquivo e confira com:\n    sparkforge policy check",
+            exit_code=2,
+        ) from exc
+
+
+def policy_check(repo: str = ".") -> dict[str, Any]:
+    """A policy de `.sparkforge/policy.yaml`, validada, ou `active: false`."""
+    from dataclasses import asdict
+
+    from sparkforge.policy.load import POLICY_RELATIVE
+
+    _, politica = _policy_carregada(repo)
+    if politica is None:
+        return {"active": False, "path": POLICY_RELATIVE.as_posix()}
+    return {
+        "active": True,
+        "path": POLICY_RELATIVE.as_posix(),
+        "tools": {
+            "denied": list(politica.denied),
+            "approvals": list(politica.approvals),
+            "ask": {"classes": list(politica.ask_classes), "names": list(politica.ask_names)},
+        },
+        "extra_roots": list(politica.extra_roots),
+        "bash": [asdict(r) for r in politica.bash],
+        "paths": [asdict(r) for r in politica.paths],
+    }
+
+
+_POLICY_PORTAS = {
+    ("bash", "deny"): "hook PreToolUse (exit 2)",
+    ("bash", "ask"): "permissions.ask do .claude/settings.json",
+    ("path", "deny"): "hook PreToolUse (exit 2)",
+    ("path", "ask"): "permissions.ask do .claude/settings.json",
+    ("tool", "deny"): "servidor MCP (call_tool)",
+    ("tool", "ask"): "permissions.ask do .claude/settings.json",
+}
+
+
+def policy_explain(
+    repo: str = ".",
+    command: str | None = None,
+    file_path: str | None = None,
+    tool: str | None = None,
+) -> dict[str, Any]:
+    """A decisao da policy para um comando, um caminho ou uma tool, e a regra
+    que casou. So le."""
+    from sparkforge.policy.decide import decidir_bash, decidir_caminho, decidir_tool
+
+    informados = [n for n, v in (("bash", command), ("path", file_path), ("tool", tool)) if v]
+    if len(informados) != 1:
+        raise AdapterError(
+            "informe exatamente um entre comando, caminho e tool:\n"
+            '    sparkforge policy explain --bash "terraform destroy"',
+            exit_code=2,
+        )
+    tipo = informados[0]
+    raiz, politica = _policy_carregada(repo)
+    if politica is None:
+        return {"active": False, "subject_kind": tipo, "decision": "allow",
+                "rule": None, "reason": "sem .sparkforge/policy.yaml", "subject": None,
+                "enforced_by": None}
+    if tipo == "bash":
+        decisao = decidir_bash(str(command), politica.bash)
+    elif tipo == "path":
+        decisao = decidir_caminho(str(file_path), politica.paths, raiz)
+    else:
+        from sparkforge.agents.autonomy import tool_class
+
+        try:
+            classe = tool_class(str(tool)).name
+        except KeyError as exc:
+            raise AdapterError(
+                f"tool desconhecida: {tool}. Liste as tools com: sparkforge policy check",
+                exit_code=2,
+            ) from exc
+        decisao = decidir_tool(str(tool), classe, politica)
+    return {
+        "active": True,
+        "subject_kind": tipo,
+        **decisao.to_dict(),
+        "enforced_by": _POLICY_PORTAS.get((tipo, decisao.decision)),
+    }
+
+
+def policy_sync_settings(repo: str = ".", check: bool = False) -> dict[str, Any]:
+    """Gera (ou, com `check`, so confere) `permissions.ask` no `.claude/settings.json`."""
+    from sparkforge.policy.mcp import tools_por_classe
+    from sparkforge.policy.settings import sincronizar
+
+    raiz, politica = _policy_carregada(repo)
+    if politica is None:
+        raise AdapterError(
+            "sem .sparkforge/policy.yaml: nada a gerar.\n"
+            "  Crie a policy e confira com:\n    sparkforge policy check",
+            exit_code=2,
+        )
+    return sincronizar(raiz, politica, tools_por_classe(), check=check)
+
+
 _SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
 
 
