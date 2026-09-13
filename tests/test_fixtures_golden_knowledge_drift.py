@@ -27,8 +27,16 @@ CASOS = sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.yaml").is_file()
 LF = "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
 
 
-def _rodar(caso: str, monkeypatch, capsys) -> dict:
+def _rodar(caso: str, monkeypatch, capsys, raiz: Path | None = ROOT) -> dict:
+    from sparkforge import knowledge_drift
+
     meta = yaml.safe_load((FIXTURES / caso / "meta.yaml").read_text(encoding="utf-8"))
+    # O golden descreve o impacto sobre ESTE repositorio. Sem fixar a raiz, o
+    # gate de wheel (`verify_wheel.py`, que roda os `test_fixtures_*` contra o
+    # pacote instalado) acharia o site-packages, sem `fixtures/`, e o radar
+    # responderia `sem_repositorio` -- o comportamento certo para quem instala
+    # por pip, e o caso que `test_sem_repositorio` prova de proposito.
+    monkeypatch.setattr(knowledge_drift, "repo_root", lambda: raiz)
     monkeypatch.delenv("SPARKFORGE_PACKS", raising=False)
     monkeypatch.setenv("SPARKFORGE_SOURCES_LOCK", str(FIXTURES / caso / "lock.json"))
     assert main(["knowledge", "drift", "--as-of", "2026-09-13", *meta["args"]]) == 0
@@ -84,10 +92,7 @@ def test_lock_ausente_e_unresolved(monkeypatch, capsys, tmp_path):
 
 
 def test_sem_repositorio(monkeypatch, capsys):
-    from sparkforge import knowledge_drift
-
-    monkeypatch.setattr(knowledge_drift, "repo_root", lambda: None)
-    saida = _rodar("lf_consideracoes", monkeypatch, capsys)
+    saida = _rodar("lf_consideracoes", monkeypatch, capsys, raiz=None)
     assert {u["reason"] for u in saida["unresolved"]} == {"sem_repositorio"}
     assert saida["changed_sources"][0]["impact"]["goldens"] is None
     assert saida["changed_sources"][0]["url"] == LF

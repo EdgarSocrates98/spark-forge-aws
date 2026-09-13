@@ -96,6 +96,7 @@ A 1a passada teve 1 falha (Issue 4), corrigida; a 2a refez os lotes que a correc
 | 1 | O schema da tool usava `_RECEIPT_GAP_ITEM` antes de ele ser definido no modulo: o `tools.py` quebraria no import, e nenhum teste rodado ate ali o importava | O ruff pegou (`F821`); o schema ganhou `_DRIFT_LACUNA` proprio |
 | 2 | O AT-009 do DEFINE pedia o relatorio do `--offline`, que sai antes de gerar relatorio | Revisto no design: o teste chama `render_report` com o impacto |
 | 4 | A suite pegou `test_adapters_code_surface::test_inv_009_nenhum_argumento_aceita_url`: o parametro `url` da tool viola o INV-009 (tool nenhuma aceita argumento com `url` no nome, porque nada acessa rede) | Renomeado para `source` na tool e na CLI (`--source`); o valor e so a chave do lock, comparada por igualdade. DEFINE e DESIGN citam `--url`: desvio registrado |
+| 5 | CI do PR #60: os dois `wheel` falharam no golden do radar. O gate de wheel roda os `test_fixtures_*` contra o pacote INSTALADO, onde `repo_root()` acha o site-packages sem `fixtures/`, e o radar responde `sem_repositorio` -- o comportamento certo; o golden e que dependia de achar a raiz sozinho | O golden fixa a raiz do repositorio (`_rodar(..., raiz=ROOT)`), e `test_sem_repositorio` passa `None`. Conferido: o id dos documentos de knowledge sai igual com a raiz fora do repositorio |
 | 3 | 24 claims movidas (tools, READ_ONLY, sem caminho 7 -> 8, `.py`, bytes, receptor 90,7 -> 90,6, razao contra `grep` 10.7 -> 10.9) | Probe e aplicacao por id |
 
 ---
