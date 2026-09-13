@@ -77,6 +77,22 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_receipt_verify": "2026-09-12: verificacao do recibo parte por parte (§14)",
     "sparkforge_proof": "2026-09-12: obrigacoes de prova de uma mudanca aplicada (§20)",
     "sparkforge_simulate": "2026-09-12: o que uma mudanca de configuracao move (§19)",
+    "sparkforge_pack_list": "2026-09-12: Forge Packs ativos, recusados e o mapa de prefixo (§5)",
+}
+
+# Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
+# data e motivo. E troca de valor, nao acrescimo -- por isso nao cabe em
+# `ALTERADAS_DEPOIS_DO_GOLDEN` --, e so casa em caminho que termina em
+# `.pattern`, com os dois valores exatos. Qualquer outra troca continua
+# derrubando `test_so_o_type_do_output_schema_difere`.
+PADROES_ALARGADOS = {
+    (
+        "^SF-[A-Z][A-Z0-9]*-[0-9]{3}$",
+        "^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-[0-9]{3}$",
+    ): (
+        "2026-09-12: Forge Pack (§5). Finding de pack (`ACME-GOV-001`) precisa validar na "
+        "saida da tool; a reserva do prefixo `SF` passou para o loader de pack"
+    ),
 }
 
 
@@ -133,7 +149,24 @@ def _fora_da_allowlist(
         for caminho, antes, agora in difs
         if not (_OUTPUT_TYPE.match(caminho) and antes == "<ausente>" and agora == "object")
         and not _aditiva_em_tool_alterada(caminho, antes, golden)
+        and not _padrao_alargado(caminho, antes, agora)
     ]
+
+
+def _padrao_alargado(caminho: str, antes: Any, agora: Any) -> bool:
+    return caminho.endswith(".pattern") and (antes, agora) in PADROES_ALARGADOS
+
+
+def test_padroes_alargados_tem_o_tamanho_medido(legado, golden):
+    """6 por transporte, medido: o `rule_id` do finding e o `id` da regra nas
+    tools que os devolvem. Mais ou menos que isso e schema que mudou sem registro."""
+    difs = mcp_parity.diff_contra_golden(_so_do_golden(legado, golden))
+    contagem = {
+        t: sum(f".{t}." in c and _padrao_alargado(c, antes, agora) for c, antes, agora in difs)
+        for t in ("stdio", "http")
+    }
+    assert contagem == {"stdio": 6, "http": 6}
+    assert all(motivo.strip() for motivo in PADROES_ALARGADOS.values())
 
 
 def _sem_envelope(resultado: dict[str, Any]) -> dict[str, Any]:

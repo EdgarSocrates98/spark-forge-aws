@@ -1654,6 +1654,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # knowledge path --------------------------------------------------------
+    # pack ----------------------------------------------------------------------
+    # Forge Pack (§5): regras, knowledge e fixtures de terceiro, ativados por
+    # SPARKFORGE_PACKS. `list` e o que a tool MCP expoe; `check` e do autor do pack.
+    pack_p = sub.add_parser(
+        "pack",
+        help="Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_PACKS).",
+    )
+    pack_sub = pack_p.add_subparsers(dest="pack_action", required=True)
+    pack_sub.add_parser(
+        "list", help="Packs ativos, recusados com o motivo, e o mapa prefixo -> pack."
+    )
+    pack_check_p = pack_sub.add_parser(
+        "check",
+        help=(
+            "Roda cada fixture do pack pelo judge. Sai 1 quando uma regra do pack nao "
+            "dispara no fixture que a declara, ou quando o pack e recusado."
+        ),
+    )
+    pack_check_p.add_argument("dir", help="Diretorio do pack (com pack.yaml).")
+
     knowledge_p = sub.add_parser(
         "knowledge", help="Localiza os arquivos de conhecimento versionado."
     )
@@ -3322,6 +3342,17 @@ def _cmd_runtime_detect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_pack_list(args: argparse.Namespace) -> int:
+    _print(_core.pack_list())
+    return 0
+
+
+def _cmd_pack_check(args: argparse.Namespace) -> int:
+    payload = _core.pack_check(args.dir)
+    _print(payload)
+    return 0 if payload["ok"] else 1
+
+
 def _cmd_knowledge_path(args: argparse.Namespace) -> int:
     _print(
         _core.knowledge_path(
@@ -4157,6 +4188,8 @@ _DISPATCH = {
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
+    ("pack", "list"): _cmd_pack_list,
+    ("pack", "check"): _cmd_pack_check,
     ("debate", "referee"): _cmd_debate_referee,
     ("debate", "start"): _cmd_debate_start,
     ("debate", "next"): _cmd_debate_next,
@@ -4203,6 +4236,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "runtime_action", None)
         or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
+        or getattr(args, "pack_action", None)
         or getattr(args, "debate_action", None)
         or getattr(args, "lakeformation_action", None)
         or getattr(args, "rules_action", None)

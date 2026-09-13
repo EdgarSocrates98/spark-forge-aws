@@ -1,0 +1,6 @@
+# Recusa `regra_invalida`: a regra nao cita fonte, e o schema do core exige `sources`.
+pack:
+  id: sem-fonte
+  version: 1.0.0
+  prefix: SEMF
+  core: ">=0.5"

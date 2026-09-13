@@ -97,6 +97,7 @@ class TestToolSurface:
             "sparkforge_receipt_verify",
             "sparkforge_proof",
             "sparkforge_simulate",
+            "sparkforge_pack_list",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2569,6 +2570,28 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             {"facts_path": [str(fatos)], "sets": ["tf:max_concurrent_runs=1"]},
         )
         assert [d["rule_id"] for d in result["disappeared"]] == ["SF-GLUE-003"], result
+        return result
+
+    if name == "sparkforge_pack_list":
+        # Um pack ativo e um recusado: o schema e validado com as duas listas
+        # cheias, e nao por listas vazias que passam em qualquer schema de array.
+        import os
+        from pathlib import Path
+
+        raiz = Path(__file__).resolve().parents[1] / "fixtures" / "packs"
+        antes = os.environ.get("SPARKFORGE_PACKS")
+        os.environ["SPARKFORGE_PACKS"] = os.pathsep.join(
+            [str(raiz / "acme-platform"), str(raiz / "recusa_prefixo_reservado")]
+        )
+        try:
+            result = call_tool("sparkforge_pack_list", {})
+        finally:
+            if antes is None:
+                os.environ.pop("SPARKFORGE_PACKS", None)
+            else:
+                os.environ["SPARKFORGE_PACKS"] = antes
+        assert result["prefixes"] == {"ACME": "acme-platform"}, result
+        assert [r["reason"] for r in result["refused"]] == ["prefixo_reservado"], result
         return result
 
     if name == "sparkforge_economy_report":

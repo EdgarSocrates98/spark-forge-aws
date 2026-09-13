@@ -10,7 +10,7 @@
 | **Date** | 2026-09-12 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_FORGE_PACK.md](./DEFINE_FORGE_PACK.md) |
-| **Status** | Ready for Build |
+| **Status** | ✅ Complete (Built) |
 
 ---
 
@@ -292,44 +292,16 @@ def load_catalog(directory=None, validate_exprs=False):
 
 ### Pattern 3: Pack sintetico `acme-platform`
 
-```yaml
-# fixtures/packs/acme-platform/rules/plataforma.yaml
-catalog_version: 1
-rules:
-  - id: ACME-GOV-001
-    category: acme-governanca
-    title: Job Glue com worker G.4X sem aprovacao de capacidade
-    requires_facts: [tf.attribute]
-    when:
-      same_subject: true
-      all:
-        - fact: tf.attribute
-          where: {attrs.key: worker_type, attrs.value: G.4X}
-    status: structural
-    severity_default: P2
-    runtime_scope: {glue: "*"}
-    explanation: >
-      Padrao sintetico de plataforma: G.4X exige aprovacao de capacidade.
-    sources:
-      - {url: "https://example.com/acme/padroes-de-plataforma", retrieved: 2026-09-12}
-  - id: ACME-GOV-002
-    category: acme-governanca
-    title: Job Glue com timeout acima de 24 horas
-    requires_facts: [tf.attribute]
-    when:
-      same_subject: true
-      all:
-        - fact: tf.attribute
-          where: {attrs.key: timeout}
-          expr: "measures.value > 1440"
-    status: structural
-    severity_default: P3
-    runtime_scope: {glue: "*"}
-    explanation: >
-      Padrao sintetico de plataforma: timeout acima de 24 horas esconde job travado.
-    sources:
-      - {url: "https://example.com/acme/padroes-de-plataforma", retrieved: 2026-09-12}
-```
+As regras moram em `fixtures/packs/acme-platform/rules/plataforma.yaml`, no formato do
+catalogo. O YAML nao e repetido aqui de proposito: `.claude/` e diretorio de plataforma, e
+`tests/test_agents_parity.py::TestNoPlatformKnowledge` recusa metadado de regra (limiar,
+escopo de runtime, data de leitura de fonte) nele -- conhecimento copiado para fora do
+catalogo e o drift que aquele gate existe para pegar.
+
+| Regra | Condicao (`same_subject`, sobre `tf.attribute`) | Severidade |
+|-------|-------------------------------------------------|------------|
+| `ACME-GOV-001` | `attrs.key = worker_type` e `attrs.value = G.4X` | P2 |
+| `ACME-GOV-002` | `attrs.key = timeout` e `expr: measures.value > 1440` | P3 |
 
 Medido nos fixtures do core: `worker_type = G.4X` em 2 fatos; `timeout` 2880 em 2 jobs (`terraform/autoscaling_with_max_workers`, `terraform/max_capacity_conflict`), 480 em 12 e 60 em 3. Os campos exigidos por `_validate_executability` (`status` e o que a regra executavel pede) sao conferidos no build contra o loader.
 

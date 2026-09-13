@@ -315,35 +315,51 @@ def load_catalog(
 
         for rule in document.get("rules") or []:
             rule_id = rule.get("id", "<sem id>")
-
-            missing = [key for key in _REQUIRED if key not in rule]
-            if missing:
-                raise CatalogError(
-                    f"{rule_id}: campos obrigatorios ausentes: {', '.join(missing)}"
-                )
-            if "severity_default" not in rule and "severity_by" not in rule:
-                raise CatalogError(f"{rule_id}: precisa de severity_default ou severity_by")
-            for source in rule["sources"]:
-                if "url" not in source and "origin" not in source:
-                    raise CatalogError(f"{rule_id}: source sem url nem origin")
+            validate_rule(rule, validate_exprs=validate_exprs)
             if rule_id in seen:
                 raise CatalogError(
                     f"id duplicado: {rule_id} em {seen[rule_id]} e {path.name}"
                 )
-
-            # Sempre, nao so sob validate_exprs: condicao malformada e defeito
-            # estrutural, da mesma classe de campo obrigatorio ausente.
-            _validate_conditions(rule_id, rule)
-            _validate_executability(rule_id, rule)
-            _validate_action(rule_id, rule)
-
-            if validate_exprs:
-                for expr in _collect_exprs(rule):
-                    _validate_expr(rule_id, expr)
-
             seen[rule_id] = path.name
             rule["catalog_version"] = version
             rule["_source_file"] = path.name
             rules.append(rule)
 
+    # So sem `directory`: quem aponta um catalogo explicito (teste, `pack check`)
+    # quer aquele catalogo e nada mais. Sem `SPARKFORGE_PACKS`, `resolve()` nao
+    # toca o disco e a lista e a de sempre. Import tardio porque `packs` usa
+    # `validate_rule` deste modulo.
+    if directory is None:
+        from sparkforge.packs.load import resolve
+
+        rules.extend(resolve().rules())
+
     return sorted(rules, key=lambda r: r["id"])
+
+
+def validate_rule(rule: dict[str, Any], validate_exprs: bool = False) -> None:
+    """Valida UMA regra pelo schema do catalogo. Levanta `CatalogError`.
+
+    O mesmo validador serve o core e os packs (`sparkforge/packs/load.py`): regra
+    de pack que passasse por um schema mais frouxo seria o jeito mais barato de um
+    terceiro escrever o que o core recusa.
+    """
+    rule_id = rule.get("id", "<sem id>")
+    missing = [key for key in _REQUIRED if key not in rule]
+    if missing:
+        raise CatalogError(f"{rule_id}: campos obrigatorios ausentes: {', '.join(missing)}")
+    if "severity_default" not in rule and "severity_by" not in rule:
+        raise CatalogError(f"{rule_id}: precisa de severity_default ou severity_by")
+    for source in rule["sources"]:
+        if "url" not in source and "origin" not in source:
+            raise CatalogError(f"{rule_id}: source sem url nem origin")
+
+    # Sempre, nao so sob validate_exprs: condicao malformada e defeito
+    # estrutural, da mesma classe de campo obrigatorio ausente.
+    _validate_conditions(rule_id, rule)
+    _validate_executability(rule_id, rule)
+    _validate_action(rule_id, rule)
+
+    if validate_exprs:
+        for expr in _collect_exprs(rule):
+            _validate_expr(rule_id, expr)
