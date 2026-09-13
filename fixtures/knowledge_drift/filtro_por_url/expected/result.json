@@ -1,0 +1,83 @@
+{
+  "as_of": "2026-09-13",
+  "changed_sources": [
+    {
+      "changed_at": "2026-09-12",
+      "citations": [
+        {
+          "id": "SF-GRAPH-005",
+          "kind": "rule",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-05",
+          "state": "stale"
+        },
+        {
+          "id": "SF-ICE-009",
+          "kind": "rule",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-09-10",
+          "state": "stale"
+        },
+        {
+          "id": "knowledge/dq/validation-frameworks.md",
+          "kind": "doc",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-03",
+          "state": "stale"
+        }
+      ],
+      "impact": {
+        "agents": [
+          "agents/glue-incremental-performance-architect.md",
+          "agents/iceberg-performance-engineer.md",
+          "agents/pyspark-code-reviewer.md",
+          "agents/sf-graph-specialist.md",
+          "agents/sf-neptune-specialist.md",
+          "agents/sf-orchestrator.md",
+          "agents/sf-storage-specialist.md",
+          "agents/spark-performance-architect.md"
+        ],
+        "docs": [
+          "knowledge/dq/validation-frameworks.md"
+        ],
+        "evals": [
+          "evals/README.md",
+          "evals/agentic/debate/graph_vence/expected.yaml",
+          "evals/agentic/debate/lf_vence/expected.yaml",
+          "evals/agentic/debate/sem_fato/expected.yaml",
+          "evals/agentic/debate/uniao/findings.json"
+        ],
+        "goldens": [
+          "fusion/iceberg_declarado_diferente_do_runtime",
+          "graph/import_sem_jar_no_iac"
+        ],
+        "rules": [
+          "SF-GRAPH-005",
+          "SF-ICE-009"
+        ]
+      },
+      "revalidated": [],
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html"
+    }
+  ],
+  "lock": {
+    "changed": 2,
+    "checked": 2,
+    "pinned": 0,
+    "sources": 2
+  },
+  "refused": [
+    {
+      "field": "conteudo_da_mudanca",
+      "reason": "exige_leitura_humana_da_fonte"
+    }
+  ],
+  "totals": {
+    "agents": 8,
+    "docs": 1,
+    "evals": 5,
+    "goldens": 2,
+    "rules": 2
+  },
+  "unresolved": []
+}

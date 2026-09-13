@@ -42,6 +42,13 @@ Para cada um, procure ativamente:
    num eixo, que o veredito ou o delta foi contra. `unproven` traz o `unlock`:
    relate a medida que falta, não a preencha. `not_refuted` em correção é "os
    quatro proxies não detectaram divergência", e é assim que se escreve.
+8. **Uma fonte mudou — o que ela arrasta?** Quando a checagem 6 der `stale`, chame
+   `sparkforge_knowledge_drift` (com `source`, se for uma fonte só). Ele lista as regras e
+   os documentos que leram a fonte **antes** da mudança, os goldens que provam essas
+   regras, os evals que as citam e os agentes que as usam. As citações lidas depois da
+   mudança saem em `revalidated`: alguém já releu. O radar não diz se a mudança tocou o
+   trecho que a regra cita (`refused`), e fora do repositório goldens, evals e agentes
+   saem `unresolved`. Relate a lista como está; reler a fonte é trabalho humano.
 
 ## Pressupõe
 

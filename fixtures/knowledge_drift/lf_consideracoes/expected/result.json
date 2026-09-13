@@ -1,0 +1,158 @@
+{
+  "as_of": "2026-09-13",
+  "changed_sources": [
+    {
+      "changed_at": "2026-09-09",
+      "citations": [
+        {
+          "id": "SF-ERR-014",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-ERR-017",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-LF-001",
+          "kind": "rule",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-22",
+          "state": "stale"
+        },
+        {
+          "id": "SF-LF-002",
+          "kind": "rule",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-22",
+          "state": "stale"
+        },
+        {
+          "id": "SF-LF-003",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-LF-005",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-LF-006",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-LF-008",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-LF-009",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-LF-010",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-09",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-XACC-002",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-10",
+          "state": "fresh"
+        },
+        {
+          "id": "SF-XACC-003",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-10",
+          "state": "fresh"
+        },
+        {
+          "id": "knowledge/glue/lakeformation-fgac.md",
+          "kind": "doc",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-22",
+          "state": "stale"
+        }
+      ],
+      "impact": {
+        "agents": [
+          "agents/sf-lake-formation-specialist.md",
+          "agents/spark-performance-architect.md"
+        ],
+        "docs": [
+          "knowledge/glue/lakeformation-fgac.md"
+        ],
+        "evals": [
+          "evals/README.md",
+          "evals/agentic/debate/graph_vence/expected.yaml",
+          "evals/agentic/debate/lf_vence/expected.yaml",
+          "evals/agentic/debate/sem_fato/expected.yaml",
+          "evals/agentic/debate/uniao/findings.json"
+        ],
+        "goldens": [
+          "infra_code/fgac_com_jar_extra",
+          "infra_code/fgac_em_job_streaming"
+        ],
+        "rules": [
+          "SF-LF-001",
+          "SF-LF-002"
+        ]
+      },
+      "revalidated": [
+        "SF-ERR-014",
+        "SF-ERR-017",
+        "SF-LF-003",
+        "SF-LF-005",
+        "SF-LF-006",
+        "SF-LF-008",
+        "SF-LF-009",
+        "SF-LF-010",
+        "SF-XACC-002",
+        "SF-XACC-003"
+      ],
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+    }
+  ],
+  "lock": {
+    "changed": 1,
+    "checked": 1,
+    "pinned": 0,
+    "sources": 1
+  },
+  "refused": [
+    {
+      "field": "conteudo_da_mudanca",
+      "reason": "exige_leitura_humana_da_fonte"
+    }
+  ],
+  "totals": {
+    "agents": 2,
+    "docs": 1,
+    "evals": 5,
+    "goldens": 2,
+    "rules": 2
+  },
+  "unresolved": []
+}

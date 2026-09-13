@@ -386,7 +386,29 @@ def sync_metadata(entries: dict[str, dict], lock: dict) -> dict:
     return {"schema_version": 1, "sources": stored}
 
 
-def render_report(events: Iterable[dict], entries: dict[str, dict], today: str) -> str:
+def impacto(lock: dict, today: str, mudadas: list[str]) -> dict | None:
+    """A secao "Impacto" do PR: o Drift Radar (`sparkforge.knowledge_drift`) sobre
+    o lock que acabou de ser conferido, restrito as URLs que mudaram. A MESMA
+    funcao do verbo `sparkforge knowledge drift` -- uma conta so, duas portas."""
+    if not mudadas:
+        return None
+    from datetime import date
+
+    from sparkforge import knowledge_drift as radar
+    from sparkforge.knowledge_freshness import fontes_de_knowledge
+    from sparkforge.rules.loader import catalog_dir, load_catalog
+
+    fontes = {u: e for u, e in (lock.get("sources") or {}).items() if u in mudadas}
+    _, por_doc = fontes_de_knowledge(ROOT / "knowledge")
+    raiz = radar.repo_root()
+    indice = radar.build_index(raiz) if raiz is not None else None
+    regras = load_catalog(catalog_dir())
+    return radar.drift(fontes, None, regras, por_doc, indice, date.fromisoformat(today))
+
+
+def render_report(
+    events: Iterable[dict], entries: dict[str, dict], today: str, impacto: dict | None = None
+) -> str:
     events = list(events)
     moving = [u for u, m in entries.items() if not m["pinned"]]
     pinned = [u for u, m in entries.items() if m["pinned"]]
@@ -452,6 +474,11 @@ def render_report(events: Iterable[dict], entries: dict[str, dict], today: str) 
         ]
         lines.append("")
 
+    if impacto is not None:
+        from sparkforge.knowledge_drift import render_markdown
+
+        lines.append(render_markdown(impacto))
+
     return "\n".join(lines)
 
 
@@ -491,7 +518,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     events, lock = compare(entries, load_lock(), http_fetch, today)
-    report = render_report(events, entries, today)
+    mudadas = [event["url"] for event in events if event["kind"] == "changed"]
+    report = render_report(events, entries, today, impacto(lock, today, mudadas))
     print(report)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

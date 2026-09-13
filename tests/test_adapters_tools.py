@@ -98,6 +98,7 @@ class TestToolSurface:
             "sparkforge_proof",
             "sparkforge_simulate",
             "sparkforge_pack_list",
+            "sparkforge_knowledge_drift",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2592,6 +2593,29 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 os.environ["SPARKFORGE_PACKS"] = antes
         assert result["prefixes"] == {"ACME": "acme-platform"}, result
         assert [r["reason"] for r in result["refused"]] == ["prefixo_reservado"], result
+        return result
+
+    if name == "sparkforge_knowledge_drift":
+        # Lock sintetico com uma fonte mudada: o schema e validado com citacoes,
+        # impacto e revalidadas cheios, e nao pela lista vazia do lock real.
+        import os
+        from pathlib import Path
+
+        lock = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "knowledge_drift" / "lf_consideracoes" / "lock.json"
+        )
+        antes = os.environ.get("SPARKFORGE_SOURCES_LOCK")
+        os.environ["SPARKFORGE_SOURCES_LOCK"] = str(lock)
+        try:
+            result = call_tool("sparkforge_knowledge_drift", {"as_of": "2026-09-13"})
+        finally:
+            if antes is None:
+                os.environ.pop("SPARKFORGE_SOURCES_LOCK", None)
+            else:
+                os.environ["SPARKFORGE_SOURCES_LOCK"] = antes
+        [fonte] = result["changed_sources"]
+        assert fonte["impact"]["rules"] and fonte["revalidated"], result
         return result
 
     if name == "sparkforge_economy_report":

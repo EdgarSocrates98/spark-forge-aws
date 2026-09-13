@@ -2997,6 +2997,63 @@ _PACK_LIST_SCHEMA: dict[str, Any] = {
     },
 }
 
+_DRIFT_LISTA = {"type": ["array", "null"], "items": {"type": "string"}}
+_DRIFT_LACUNA = {
+    "type": "object",
+    "required": ["field", "reason"],
+    "properties": {"field": {"type": "string"}, "reason": {"type": "string"}},
+}
+_DRIFT_CONTAGENS = ("sources", "checked", "pinned", "changed")
+
+_KNOWLEDGE_DRIFT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["as_of", "lock", "changed_sources", "totals", "unresolved", "refused"],
+    "properties": {
+        "as_of": {"type": "string"},
+        "lock": {
+            "type": "object",
+            "required": list(_DRIFT_CONTAGENS),
+            "properties": {k: {"type": "integer"} for k in _DRIFT_CONTAGENS},
+        },
+        "changed_sources": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["url", "changed_at", "citations", "revalidated", "impact"],
+                "properties": {
+                    "url": {"type": "string"},
+                    "changed_at": {"type": "string"},
+                    "citations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["kind", "id", "retrieved", "state", "reason"],
+                            "properties": {
+                                "kind": {"type": "string", "enum": ["rule", "doc"]},
+                                "id": {"type": "string"},
+                                "retrieved": {"type": ["string", "null"]},
+                                "state": {"type": "string"},
+                                "reason": {"type": "string"},
+                            },
+                        },
+                    },
+                    "revalidated": {"type": "array", "items": {"type": "string"}},
+                    "impact": {
+                        "type": "object",
+                        "required": ["rules", "docs", "goldens", "evals", "agents"],
+                        "properties": {
+                            k: _DRIFT_LISTA for k in ("rules", "docs", "goldens", "evals", "agents")
+                        },
+                    },
+                },
+            },
+        },
+        "totals": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "unresolved": {"type": "array", "items": _DRIFT_LACUNA},
+        "refused": {"type": "array", "items": _DRIFT_LACUNA},
+    },
+}
+
 _RECEIPT_PART_NAMES = [
     "version",
     "integrity",
@@ -7393,6 +7450,39 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_knowledge_drift": {
+        "description": (
+            "Knowledge Drift Radar: para cada fonte oficial vigiada cujo hash mudou "
+            "(`changed_at` em knowledge/sources.lock.json), o que ela arrasta. As citacoes "
+            "(regras e documentos de knowledge/) com o `retrieved` declarado e o estado; "
+            "as lidas ANTES da mudanca sao `stale` e entram no impacto -- regras e "
+            "documentos a reler, os goldens que provam essas regras, os evals que as citam "
+            "e os agentes que declaram a area ou citam a regra --, e as lidas depois saem "
+            "em `revalidated`. So por ligacao que existe em arquivo; nada inferido. Sem "
+            "checkout do repositorio (instalado por pip), goldens, evals e agentes saem "
+            "`unresolved` com `sem_repositorio`. Fonte fixa por versao nunca entra. O QUE "
+            "ELA NAO FAZ: nao acessa a rede (quem confere o hash e o refresh semanal), nao "
+            "diz se a mudanca tocou o trecho que a regra cita (`refused`), nao roda os "
+            "goldens nem os evals."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                # `source`, e nao `url`: o INV-009 recusa argumento com `url` no
+                # nome, porque tool nenhuma acessa rede. Aqui o valor e so a CHAVE
+                # de uma entrada do lock, comparada por igualdade -- nunca buscada.
+                "source": {
+                    "type": "string",
+                    "description": "So esta fonte do lock (a chave, igual a do lock).",
+                },
+                "as_of": {"type": "string", "description": "Dia de referencia (AAAA-MM-DD)."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _KNOWLEDGE_DRIFT_SCHEMA, "O impacto por fonte mudada, ou erro se a URL nao e vigiada."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9093,6 +9183,10 @@ def _h_pack_list(args: dict[str, Any]) -> dict[str, Any]:
     return _core.pack_list()
 
 
+def _h_knowledge_drift(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.knowledge_drift(url=args.get("source"), as_of=args.get("as_of"))
+
+
 def _h_receipt_emit(args: dict[str, Any]) -> dict[str, Any]:
     from sparkforge.observability.context_ledger import shared_ledger
 
@@ -9387,6 +9481,7 @@ _HANDLERS = {
     "sparkforge_proof": _h_proof,
     "sparkforge_simulate": _h_simulate,
     "sparkforge_pack_list": _h_pack_list,
+    "sparkforge_knowledge_drift": _h_knowledge_drift,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,
