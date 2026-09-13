@@ -1,0 +1,7 @@
+# Artefatos de `fixtures/scan/` sao evidencia presa por sha256 no manifesto
+# (`.sparkforge/artifacts/manifest.json`), e o scan confere o hash dos BYTES
+# crus, como `collect verify`. Um checkout com `core.autocrlf=true` (o padrao
+# dos runners Windows do GitHub Actions) trocava LF por CRLF e o golden inteiro
+# saia `sha256_divergente` -- medido no CI do PR #63, 2026-09-13. `-text` diz ao
+# git para nunca converter esses arquivos.
+fixtures/scan/** -text
