@@ -9,7 +9,7 @@
 | **Feature** | KNOWLEDGE_DRIFT |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -69,7 +69,7 @@ Quando uma pagina oficial que o SparkForge cita muda, o lock (`knowledge/sources
 | AT-006 | Documento | URL citada so por documento de `knowledge/` | `knowledge drift` | o documento sai como citacao, com o `retrieved` que ele declara |
 | AT-007 | Sem repositorio | raiz de repositorio ausente | `knowledge drift` | goldens/evals/agentes em `unresolved` com `sem_repositorio` |
 | AT-008 | Lock ausente | `SPARKFORGE_SOURCES_LOCK` para arquivo inexistente | `knowledge drift` | `unresolved` com `lock_ausente`/`lock_ilegivel`, sem erro |
-| AT-009 | Relatorio do refresh | lock sintetico, `refresh_knowledge.py --offline` | relatorio | secao "Impacto" com os totais do verbo |
+| AT-009 | Relatorio do refresh | impacto calculado sobre o lock sintetico | `render_report(..., impacto)` | secao "Impacto" com os totais do verbo (o `--offline` nao gera relatorio; medido no design) |
 | AT-010 | Recusa | qualquer lock | `knowledge drift` | `refused` com `conteudo_da_mudanca` |
 
 ---
@@ -145,9 +145,10 @@ Nenhuma que bloqueie o design. Ficam para ele: o formato exato da saida (por URL
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-13 | define-agent | Versao inicial, a partir de `BRAINSTORM_KNOWLEDGE_DRIFT.md`; medido: 115 URLs de regra, 155 regras com golden, 14 com eval, 38 de 43 agentes com `rule_areas`, e a URL de SC2 lida em tres datas |
+| 1.1 | 2026-09-13 | design-agent | AT-009 testa `render_report` direto: o `--offline` sai antes do relatorio |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_KNOWLEDGE_DRIFT.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_KNOWLEDGE_DRIFT.md`
