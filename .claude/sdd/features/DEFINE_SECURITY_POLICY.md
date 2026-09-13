@@ -9,7 +9,7 @@
 | **Feature** | SECURITY_POLICY |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -151,4 +151,4 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_SECURITY_POLICY.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_SECURITY_POLICY.md`
