@@ -9,9 +9,9 @@
 | **Feature** | FORGE_PACK |
 | **Date** | 2026-09-12 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_FORGE_PACK.md](../features/DEFINE_FORGE_PACK.md) |
-| **DESIGN** | [DESIGN_FORGE_PACK.md](../features/DESIGN_FORGE_PACK.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_FORGE_PACK.md](./DEFINE_FORGE_PACK.md) |
+| **DESIGN** | [DESIGN_FORGE_PACK.md](./DESIGN_FORGE_PACK.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -159,4 +159,4 @@ A 1a passada teve 2 falhas (Issue 6), corrigidas; a 2a refez os lotes que as cor
 
 ## Next Step
 
-**Ready for:** `/agentspec:workflow:ship .claude/sdd/features/DEFINE_FORGE_PACK.md`
+**Shipped:** ver [SHIPPED_2026-09-13.md](./SHIPPED_2026-09-13.md)

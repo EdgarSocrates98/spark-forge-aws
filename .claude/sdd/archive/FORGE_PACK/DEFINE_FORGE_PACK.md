@@ -9,7 +9,7 @@
 | **Feature** | FORGE_PACK |
 | **Date** | 2026-09-12 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -157,6 +157,7 @@ Nenhuma que bloqueie o design. Ficam para ele: uma tool (`pack` com acao) ou dua
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | define-agent | Versao inicial, a partir de `BRAINSTORM_FORGE_PACK.md`; medido: 89 arquivos de knowledge (docstring diz 19), `security_configuration` em 2 de 50 jobs, `_REQUIRED` exige `sources` |
 | 1.1 | 2026-09-12 | design-agent | A-003 corrigida (`absent` sem `where`); AT-003 passa a `timeout` 2880; `pack_duplicado` inclui prefixo repetido (Decisao 2 do design) |
+| 1.2 | 2026-09-13 | ship-agent | Shipped and archived (PR #59) |
 
 ---
 

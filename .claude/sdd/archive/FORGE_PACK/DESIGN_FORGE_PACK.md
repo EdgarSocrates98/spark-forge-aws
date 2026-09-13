@@ -10,7 +10,7 @@
 | **Date** | 2026-09-12 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_FORGE_PACK.md](./DEFINE_FORGE_PACK.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -406,6 +406,7 @@ Medido nos fixtures do core: `worker_type = G.4X` em 2 fatos; `timeout` 2880 em 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-12 | design-agent | Versao inicial. A-001 confirmada (`0.5.0`); A-002 caiu (3 schemas travam `^SF-`, 6 ocorrencias por transporte no golden MCP) e virou a Decisao 3; A-003 caiu (`absent` so confere kind, sem `where`) e trocou a regra sintetica para `worker_type`/`timeout`; A-004: `load_catalog` ja custa ~810 ms, pack soma pouco |
+| 1.1 | 2026-09-13 | ship-agent | Shipped and archived (PR #59). Desvios do build: versao do core lida do `pyproject.toml` antes da metadata; `rules/` confinado antes da varredura; o exemplo de regra saiu deste documento para a tabela |
 
 ---
 
