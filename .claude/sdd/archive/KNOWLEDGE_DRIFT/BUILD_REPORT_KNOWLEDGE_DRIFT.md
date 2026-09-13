@@ -9,9 +9,9 @@
 | **Feature** | KNOWLEDGE_DRIFT |
 | **Date** | 2026-09-13 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_KNOWLEDGE_DRIFT.md](../features/DEFINE_KNOWLEDGE_DRIFT.md) |
-| **DESIGN** | [DESIGN_KNOWLEDGE_DRIFT.md](../features/DESIGN_KNOWLEDGE_DRIFT.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_KNOWLEDGE_DRIFT.md](./DEFINE_KNOWLEDGE_DRIFT.md) |
+| **DESIGN** | [DESIGN_KNOWLEDGE_DRIFT.md](./DESIGN_KNOWLEDGE_DRIFT.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -154,4 +154,4 @@ A 1a passada teve 1 falha (Issue 4), corrigida; a 2a refez os lotes que a correc
 
 ## Next Step
 
-**Ready for:** `/agentspec:workflow:ship .claude/sdd/features/DEFINE_KNOWLEDGE_DRIFT.md`
+**Shipped:** ver [SHIPPED_2026-09-13.md](./SHIPPED_2026-09-13.md)

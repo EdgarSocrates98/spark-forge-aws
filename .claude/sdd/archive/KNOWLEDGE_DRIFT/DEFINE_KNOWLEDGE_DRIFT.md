@@ -9,7 +9,7 @@
 | **Feature** | KNOWLEDGE_DRIFT |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -146,6 +146,7 @@ Nenhuma que bloqueie o design. Ficam para ele: o formato exato da saida (por URL
 |---------|------|--------|---------|
 | 1.0 | 2026-09-13 | define-agent | Versao inicial, a partir de `BRAINSTORM_KNOWLEDGE_DRIFT.md`; medido: 115 URLs de regra, 155 regras com golden, 14 com eval, 38 de 43 agentes com `rule_areas`, e a URL de SC2 lida em tres datas |
 | 1.1 | 2026-09-13 | design-agent | AT-009 testa `render_report` direto: o `--offline` sai antes do relatorio |
+| 1.2 | 2026-09-13 | ship-agent | Shipped and archived (PR #60). O filtro virou `--source`/`source` no build (INV-009) |
 
 ---
 

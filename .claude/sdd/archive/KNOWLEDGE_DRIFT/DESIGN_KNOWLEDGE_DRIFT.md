@@ -10,7 +10,7 @@
 | **Date** | 2026-09-13 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_KNOWLEDGE_DRIFT.md](./DEFINE_KNOWLEDGE_DRIFT.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -296,6 +296,7 @@ def citacoes(url, rules, doc_citations, lock, as_of):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-13 | design-agent | Versao inicial. A-002 confirmada (`por_doc`, 28 documentos); A-003 confirmada (287 ms); A-005 revista: o refresh offline nao gera relatorio, e o AT-009 passa a testar `render_report` direto |
+| 1.1 | 2026-09-13 | ship-agent | Shipped and archived (PR #60). Desvios do build: filtro `source` em vez de `url` (INV-009); o golden fixa a raiz do repositorio (gate de wheel) |
 
 ---
 
