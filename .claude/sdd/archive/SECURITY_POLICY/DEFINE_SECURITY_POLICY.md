@@ -9,7 +9,7 @@
 | **Feature** | SECURITY_POLICY |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -48,13 +48,13 @@ A cadeia de autorizacao do SparkForge (`authorize()` + `CallPolicy`) decide e im
 
 ## Success Criteria
 
-- [ ] SC1: com a policy padrao, `policy explain --bash` devolve `ask` para os 5 padroes destrutivos inclusive compostos (`cd infra && terraform destroy -auto-approve`) e `allow` para `git status`; e as 7 regras `ask` (5 de Bash, 2 de caminho) mais as tools `CLOUD_MUTATION` aparecem em `permissions.ask` depois do `sync-settings`.
-- [ ] SC2: uma regra `deny` faz o hook sair 2 com o motivo em 100% dos casos de `fixtures/policy/` que a casam, e sair 0 sem saida nos que nao casam.
-- [ ] SC3: o hook responde em menos de 0,2 s por chamada (medido sobre os casos de fixture), sem importar `sparkforge.adapters.tools`.
-- [ ] SC4: policy invalida faz o hook sair 2 e o `call_tool` do servidor recusar; o handler nao roda.
-- [ ] SC5: sem `.sparkforge/policy.yaml`, hook e servidor MCP se comportam como hoje (os testes atuais de `call_tool` passam sem mudanca).
-- [ ] SC6: com a policy padrao carregada, nenhuma tool que o MCP chama hoje com caminho dentro do repositorio passa a ser recusada; uma chamada com caminho fora da raiz e das `extra_roots` e recusada.
-- [ ] SC7: tool nova com registros, `test_execution_surface` com o hook na lista fechada, surface e claims em dia; suite nos 9 lotes com 0 falhas.
+- [x] SC1: com a policy padrao, `policy explain --bash` devolve `ask` para os 5 padroes destrutivos inclusive compostos (`cd infra && terraform destroy -auto-approve`) e `allow` para `git status`; e as 7 regras `ask` (5 de Bash, 2 de caminho) mais as tools `CLOUD_MUTATION` aparecem em `permissions.ask` depois do `sync-settings`.
+- [x] SC2: uma regra `deny` faz o hook sair 2 com o motivo em 100% dos casos de `fixtures/policy/` que a casam, e sair 0 sem saida nos que nao casam.
+- [x] SC3: o hook responde em menos de 0,2 s por chamada (medido sobre os casos de fixture), sem importar `sparkforge.adapters.tools`.
+- [x] SC4: policy invalida faz o hook sair 2 e o `call_tool` do servidor recusar; o handler nao roda.
+- [x] SC5: sem `.sparkforge/policy.yaml`, hook e servidor MCP se comportam como hoje (os testes atuais de `call_tool` passam sem mudanca).
+- [x] SC6: com a policy padrao carregada, nenhuma tool que o MCP chama hoje com caminho dentro do repositorio passa a ser recusada; uma chamada com caminho fora da raiz e das `extra_roots` e recusada.
+- [x] SC7: tool nova com registros, `test_execution_surface` com o hook na lista fechada, surface e claims em dia; suite nos 9 lotes com 0 falhas.
 
 ---
 

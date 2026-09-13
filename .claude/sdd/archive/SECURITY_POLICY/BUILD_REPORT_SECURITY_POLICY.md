@@ -9,9 +9,9 @@
 | **Feature** | SECURITY_POLICY |
 | **Date** | 2026-09-13 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_SECURITY_POLICY.md](../features/DEFINE_SECURITY_POLICY.md) |
-| **DESIGN** | [DESIGN_SECURITY_POLICY.md](../features/DESIGN_SECURITY_POLICY.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_SECURITY_POLICY.md](./DEFINE_SECURITY_POLICY.md) |
+| **DESIGN** | [DESIGN_SECURITY_POLICY.md](./DESIGN_SECURITY_POLICY.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -154,10 +154,10 @@ A 1a passada foi parada para a correcao do Snyk; a 2a rodou os nove lotes depois
 - [x] All tests pass (12 631 passed, 0 failed, 9 skipped, nos nove lotes de `tests/test_suite_batches.py`)
 - [x] No blocking issues
 - [x] Acceptance tests verified
-- [ ] Ready for /ship (depois do CI do PR)
+- [x] Ready for /ship (CI do PR #64: 5 jobs verdes, `test (3.10)` pendente no ship, liberado pelo operador)
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_SECURITY_POLICY.md`
+**Shipped:** ver [SHIPPED_2026-09-13.md](./SHIPPED_2026-09-13.md)
