@@ -9,7 +9,7 @@
 | **Feature** | REALIZED_GAIN |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -112,8 +112,8 @@ Depois de aplicar uma mudanca num job Glue, o operador compara runs a mao, sem N
 | ID | Assumption | If Wrong, Impact | Validated? |
 |----|------------|------------------|------------|
 | A-001 | `glue.run_cost` tem o mesmo `job_run_id` do `glue.job_run` (medido: os dois subjects tem `job_name`, `job_run_id`, `symbol`, `type`) | Pareamento por outro campo | [x] |
-| A-002 | Os runs de `fixtures/capacity/*/input/history/` separam capacidades distintas o bastante para recortar baseline e candidato | Casos novos precisariam ser escritos do zero | [ ] |
-| A-003 | `_volume_de` do capacity pode ser importado ou movido para um lugar comum sem mudar o capacity | Duplicacao do calculo de volume | [ ] |
+| A-002 | Os runs de `fixtures/capacity/*/input/history/` separam capacidades distintas o bastante para recortar baseline e candidato | Casos novos precisariam ser escritos do zero | [x] |
+| A-003 | `_volume_de` do capacity pode ser importado ou movido para um lugar comum sem mudar o capacity | Duplicacao do calculo de volume | [x] |
 | A-004 | Os estados de run possiveis sao os da API do Glue (`SUCCEEDED`, `FAILED`, `TIMEOUT`, `STOPPED`, ...) e todos os fixtures atuais sao `SUCCEEDED` (medido) | O caso de run que falhou exige fixture nova | [x] |
 
 ---
@@ -142,9 +142,10 @@ Nenhuma que bloqueie o design. Ficam para ele: o dono da tool (coordenador que j
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-13 | define-agent | Versao inicial, a partir de `BRAINSTORM_REALIZED_GAIN.md`. Refinado pela medida: arquivo com varios runs e aceito (o `analyze glue-job-runs` gera assim), e o volume so e conhecido em arquivo de um run; custo pareado por `job_run_id` |
+| 1.1 | 2026-09-13 | design-agent | A-002 e A-003 confirmadas no design; dono `sf-verifier` |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_REALIZED_GAIN.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_REALIZED_GAIN.md`
