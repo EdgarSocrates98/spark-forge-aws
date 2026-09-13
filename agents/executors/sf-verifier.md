@@ -50,6 +50,13 @@ Para cada um, procure ativamente:
    mudança saem em `revalidated`: alguém já releu. O radar não diz se a mudança tocou o
    trecho que a regra cita (`refused`), e fora do repositório goldens, evals e agentes
    saem `unresolved`. Relate a lista como está; reler a fonte é trabalho humano.
+9. **O ganho alegado foi observado?** Quando alguém afirmar que uma mudança "ganhou" tempo,
+   DPU-segundos ou custo, e houver runs medidos antes e depois, chame `sparkforge_gain` com
+   os arquivos de cada lado. Ele devolve, por métrica, N, mediana, mínimo, máximo e o delta
+   das medianas, com as marcas que dizem quando o delta **não** é ganho:
+   `amostra_insuficiente`, `volume_diverge`, `volume_desconhecido`, `custo_indisponivel`.
+   Delta com marca não sustenta a alegação; relate a marca junto do número. Economia
+   mensal, atribuição causal e intervalo de confiança saem sempre em `refused`.
 
 ## Pressupõe
 

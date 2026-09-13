@@ -79,6 +79,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_simulate": "2026-09-12: o que uma mudanca de configuracao move (§19)",
     "sparkforge_pack_list": "2026-09-12: Forge Packs ativos, recusados e o mapa de prefixo (§5)",
     "sparkforge_knowledge_drift": "2026-09-13: o que uma fonte vigiada que mudou arrasta (§17)",
+    "sparkforge_gain": "2026-09-13: o ganho observado entre runs medidos (§21)",
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
