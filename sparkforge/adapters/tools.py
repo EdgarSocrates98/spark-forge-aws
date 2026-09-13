@@ -3054,6 +3054,68 @@ _KNOWLEDGE_DRIFT_SCHEMA: dict[str, Any] = {
     },
 }
 
+_GAIN_MARCAS = [
+    "amostra_insuficiente", "volume_diverge", "volume_desconhecido", "custo_indisponivel",
+]
+_GAIN_RESUMO: dict[str, Any] = {
+    "type": "object",
+    "required": ["n", "median", "min", "max"],
+    "properties": {
+        "n": {"type": "integer"},
+        "median": {"type": ["number", "null"]},
+        "min": {"type": ["number", "null"]},
+        "max": {"type": ["number", "null"]},
+    },
+}
+_GAIN_LADO: dict[str, Any] = {
+    "type": "object",
+    "required": ["runs", "capacities", "volume_median_bytes"],
+    "properties": {
+        "runs": {"type": "integer"},
+        "capacities": {"type": "array", "items": {"type": "object"}},
+        "volume_median_bytes": {"type": ["number", "null"]},
+    },
+}
+_GAIN_METRICA: dict[str, Any] = {
+    "type": "object",
+    "required": ["baseline", "candidate", "delta", "delta_pct", "marks"],
+    "properties": {
+        "baseline": _GAIN_RESUMO,
+        "candidate": _GAIN_RESUMO,
+        "delta": {"type": ["number", "null"]},
+        "delta_pct": {"type": ["number", "null"]},
+        "marks": {"type": "array", "items": {"type": "string", "enum": _GAIN_MARCAS}},
+    },
+}
+_GAIN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "job_name", "baseline", "candidate", "metrics", "currency", "discarded",
+        "volume_tolerance", "refused",
+    ],
+    "properties": {
+        "job_name": {"type": "string"},
+        "baseline": _GAIN_LADO,
+        "candidate": _GAIN_LADO,
+        "metrics": {
+            "type": "object",
+            "required": ["execution_time_s", "dpu_seconds", "cost"],
+            "properties": {m: _GAIN_METRICA for m in ("execution_time_s", "dpu_seconds", "cost")},
+        },
+        "currency": {"type": ["string", "null"]},
+        "discarded": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "volume_tolerance": {"type": "number"},
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["field", "reason"],
+                "properties": {"field": {"type": "string"}, "reason": {"type": "string"}},
+            },
+        },
+    },
+}
+
 _RECEIPT_PART_NAMES = [
     "version",
     "integrity",
@@ -7483,6 +7545,41 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_gain": {
+        "description": (
+            "Realized Gain Ledger: o ganho OBSERVADO entre runs ja medidos de um job Glue "
+            "antes (`baseline_paths`) e depois (`candidate_paths`) de uma mudanca. Cada "
+            "caminho e um arquivo de facts de runs (`analyze glue-job-runs --out`); so runs "
+            "SUCCEEDED contam, e os lados precisam ser do mesmo job. Por lado e por metrica "
+            "(tempo de execucao, DPU-segundos, custo do `glue.run_cost` do mesmo run): N, "
+            "mediana, minimo e maximo, e o delta das medianas em valor e %. O delta sai "
+            "sempre, com as marcas que dizem quando ele NAO e ganho: amostra_insuficiente "
+            "(< 3 runs), volume_diverge / volume_desconhecido (bytes varridos, criterio do "
+            "capacity), custo_indisponivel. O QUE ELA NAO FAZ, e isto e contrato: nao projeta "
+            "economia mensal, nao atribui o delta a mudanca (sem run de controle) e nao "
+            "publica intervalo de confianca -- as tres saem em `refused`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["baseline_paths", "candidate_paths"],
+            "properties": {
+                "baseline_paths": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "Arquivos de facts dos runs de antes da mudanca.",
+                },
+                "candidate_paths": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "Arquivos de facts dos runs de depois da mudanca.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _GAIN_SCHEMA, "O ganho observado por metrica, ou erro de entrada com o motivo."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9183,6 +9280,10 @@ def _h_pack_list(args: dict[str, Any]) -> dict[str, Any]:
     return _core.pack_list()
 
 
+def _h_gain(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.gain(args["baseline_paths"], args["candidate_paths"])
+
+
 def _h_knowledge_drift(args: dict[str, Any]) -> dict[str, Any]:
     return _core.knowledge_drift(url=args.get("source"), as_of=args.get("as_of"))
 
@@ -9482,6 +9583,7 @@ _HANDLERS = {
     "sparkforge_simulate": _h_simulate,
     "sparkforge_pack_list": _h_pack_list,
     "sparkforge_knowledge_drift": _h_knowledge_drift,
+    "sparkforge_gain": _h_gain,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,

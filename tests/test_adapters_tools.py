@@ -99,6 +99,7 @@ class TestToolSurface:
             "sparkforge_simulate",
             "sparkforge_pack_list",
             "sparkforge_knowledge_drift",
+            "sparkforge_gain",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2618,6 +2619,22 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert fonte["impact"]["rules"] and fonte["revalidated"], result
         return result
 
+    if name == "sparkforge_gain":
+        # G.1X x10 contra G.2X x10 do capacity: o schema e validado por um delta
+        # real nas tres metricas, com a marca de custo que falta.
+        from pathlib import Path
+
+        caso = Path(__file__).resolve().parents[1] / "fixtures" / "gain" / "ganho_por_capacidade"
+        result = call_tool(
+            "sparkforge_gain",
+            {
+                "baseline_paths": [str(p) for p in sorted((caso / "baseline").glob("*.json"))],
+                "candidate_paths": [str(p) for p in sorted((caso / "candidate").glob("*.json"))],
+            },
+        )
+        assert result["metrics"]["execution_time_s"]["delta_pct"] == -44.4, result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -3023,6 +3040,10 @@ class TestErrorShapesValidateToo:
             },
         ),
         ("sparkforge_simulate", {"facts_path": "<tmp>/nada.json", "sets": ["tf:x=1"]}),
+        (
+            "sparkforge_gain",
+            {"baseline_paths": ["<tmp>/nada.json"], "candidate_paths": ["<tmp>/nada.json"]},
+        ),
         (
             "sparkforge_arbitrate",
             {

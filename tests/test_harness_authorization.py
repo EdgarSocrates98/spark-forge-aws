@@ -982,7 +982,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # topo que compoe sobre facts.
         # 85 -> 86 com `simulate` (2026-09-12), a 92ª tool: `_READ_ONLY` e declara
         # `facts_path`; os `--set` sao texto, nao caminho.
-        assert len(TOOLS) - len(sem_caminho) == 86
+        # 86 -> 87 com `gain` (2026-09-13, §21): `_READ_ONLY` e declara
+        # `baseline_paths` e `candidate_paths`, os runs medidos de cada lado.
+        assert len(TOOLS) - len(sem_caminho) == 87
 
 
 class TestAImposicaoNoDespacho:

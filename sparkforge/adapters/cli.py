@@ -2212,6 +2212,23 @@ def build_parser() -> argparse.ArgumentParser:
     for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
         simulate_p.add_argument(flag, default=None)
 
+    # gain --------------------------------------------------------------------
+    # Verbo de TOPO: compara runs ja medidos; nao le artefato de job.
+    gain_p = sub.add_parser(
+        "gain",
+        help=(
+            "Ganho OBSERVADO entre runs medidos antes e depois de uma mudanca: por lado, "
+            "N, mediana, minimo e maximo de tempo, DPU-segundos e custo, e o delta das "
+            "medianas. Nunca projeta economia nem atribui causa."
+        ),
+    )
+    gain_p.add_argument(
+        "--baseline", action="append", required=True, help="Facts de runs do antes. Repetivel."
+    )
+    gain_p.add_argument(
+        "--candidate", action="append", required=True, help="Facts de runs do depois. Repetivel."
+    )
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3564,6 +3581,11 @@ def _cmd_proof(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_gain(args: argparse.Namespace) -> int:
+    _print(_core.gain(args.baseline, args.candidate))
+    return 0
+
+
 def _cmd_simulate(args: argparse.Namespace) -> int:
     _print(
         _core.simulate_change(
@@ -4175,6 +4197,7 @@ _DISPATCH = {
     ("receipt", "verify"): _cmd_receipt_verify,
     ("proof", None): _cmd_proof,
     ("simulate", None): _cmd_simulate,
+    ("gain", None): _cmd_gain,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

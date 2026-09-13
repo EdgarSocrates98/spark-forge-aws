@@ -1,0 +1,107 @@
+{
+  "baseline": {
+    "capacities": [
+      {
+        "autoscaling": false,
+        "glue_version": "5.0",
+        "number_of_workers": 10,
+        "runs": 10,
+        "worker_type": "G.2X"
+      }
+    ],
+    "runs": 10,
+    "volume_median_bytes": null
+  },
+  "candidate": {
+    "capacities": [
+      {
+        "autoscaling": false,
+        "glue_version": "5.0",
+        "number_of_workers": 20,
+        "runs": 10,
+        "worker_type": "G.2X"
+      }
+    ],
+    "runs": 10,
+    "volume_median_bytes": null
+  },
+  "currency": "USD",
+  "discarded": {
+    "run_nao_sucedido": 0
+  },
+  "job_name": "etl_pedidos_diario",
+  "metrics": {
+    "cost": {
+      "baseline": {
+        "max": 1.87,
+        "median": 0.7333333333333334,
+        "min": 0.7333333333333334,
+        "n": 10
+      },
+      "candidate": {
+        "max": 1.9555555555555557,
+        "median": 1.9555555555555557,
+        "min": 1.9555555555555557,
+        "n": 10
+      },
+      "delta": 1.2222222222222223,
+      "delta_pct": 166.7,
+      "marks": [
+        "volume_desconhecido"
+      ]
+    },
+    "dpu_seconds": {
+      "baseline": {
+        "max": 15300.0,
+        "median": 6000.0,
+        "min": 6000.0,
+        "n": 10
+      },
+      "candidate": {
+        "max": 16000.0,
+        "median": 16000.0,
+        "min": 16000.0,
+        "n": 10
+      },
+      "delta": 10000.0,
+      "delta_pct": 166.7,
+      "marks": [
+        "volume_desconhecido"
+      ]
+    },
+    "execution_time_s": {
+      "baseline": {
+        "max": 900.0,
+        "median": 300.0,
+        "min": 300.0,
+        "n": 10
+      },
+      "candidate": {
+        "max": 400.0,
+        "median": 400.0,
+        "min": 400.0,
+        "n": 10
+      },
+      "delta": 100.0,
+      "delta_pct": 33.3,
+      "marks": [
+        "volume_desconhecido"
+      ]
+    }
+  },
+  "refused": [
+    {
+      "field": "economia_mensal",
+      "reason": "projecao_sobre_runs_que_nao_aconteceram"
+    },
+    {
+      "field": "atribuicao_causal",
+      "reason": "sem_run_de_controle"
+    },
+    {
+      "field": "intervalo_de_confianca",
+      "reason": "amostra_pequena_use_mediana_e_faixa"
+    }
+  ],
+  "volume_tolerance": 0.25
+}

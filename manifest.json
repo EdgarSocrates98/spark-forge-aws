@@ -159,6 +159,7 @@
     "sparkforge_funcval_compare",
     "sparkforge_funcval_plan",
     "sparkforge_fuse",
+    "sparkforge_gain",
     "sparkforge_glue_dependency_audit",
     "sparkforge_iceberg_assess_upgrade",
     "sparkforge_judge",

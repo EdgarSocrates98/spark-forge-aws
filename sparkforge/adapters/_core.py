@@ -3459,6 +3459,30 @@ def proof_change(
     return saida
 
 
+def gain(
+    baseline_paths: str | list[str] | None, candidate_paths: str | list[str] | None
+) -> dict[str, Any]:
+    """Realized Gain Ledger (§21): o ganho OBSERVADO entre runs medidos antes e
+    depois de uma mudanca. Verbo de topo: compoe sobre facts de runs ja
+    extraidos (`analyze glue-job-runs --out`), um conjunto por arquivo."""
+    from sparkforge.finops.realized import GainError, realized_gain
+
+    lados: dict[str, list[list[Fact]]] = {}
+    for rotulo, caminhos in (("--baseline", baseline_paths), ("--candidate", candidate_paths)):
+        lista = [caminhos] if isinstance(caminhos, str) else list(caminhos or [])
+        if not lista:
+            raise AdapterError(
+                f"informe ao menos um {rotulo}: arquivo de facts de runs "
+                "(`sparkforge analyze glue-job-runs --out <arquivo>`).",
+                exit_code=2,
+            )
+        lados[rotulo] = [_load_facts_file(p, _FACTS_FROM_RUN_AND_SCAN, rotulo) for p in lista]
+    try:
+        return realized_gain(lados["--baseline"], lados["--candidate"])
+    except GainError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
 _SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
 
 

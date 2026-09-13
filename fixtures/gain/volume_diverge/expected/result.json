@@ -1,0 +1,108 @@
+{
+  "baseline": {
+    "capacities": [
+      {
+        "autoscaling": false,
+        "glue_version": "5.0",
+        "number_of_workers": 10,
+        "runs": 20,
+        "worker_type": "G.2X"
+      }
+    ],
+    "runs": 20,
+    "volume_median_bytes": 100000000.0
+  },
+  "candidate": {
+    "capacities": [
+      {
+        "autoscaling": false,
+        "glue_version": "5.0",
+        "number_of_workers": 10,
+        "runs": 5,
+        "worker_type": "G.4X"
+      }
+    ],
+    "runs": 5,
+    "volume_median_bytes": 1000000000.0
+  },
+  "currency": null,
+  "discarded": {
+    "run_nao_sucedido": 0
+  },
+  "job_name": "etl_pedidos_diario",
+  "metrics": {
+    "cost": {
+      "baseline": {
+        "max": null,
+        "median": null,
+        "min": null,
+        "n": 0
+      },
+      "candidate": {
+        "max": null,
+        "median": null,
+        "min": null,
+        "n": 0
+      },
+      "delta": null,
+      "delta_pct": null,
+      "marks": [
+        "volume_diverge",
+        "custo_indisponivel"
+      ]
+    },
+    "dpu_seconds": {
+      "baseline": {
+        "max": 1000.0,
+        "median": 1000.0,
+        "min": 1000.0,
+        "n": 20
+      },
+      "candidate": {
+        "max": 2000.0,
+        "median": 2000.0,
+        "min": 2000.0,
+        "n": 5
+      },
+      "delta": 1000.0,
+      "delta_pct": 100.0,
+      "marks": [
+        "volume_diverge"
+      ]
+    },
+    "execution_time_s": {
+      "baseline": {
+        "max": 900.0,
+        "median": 100.0,
+        "min": 100.0,
+        "n": 20
+      },
+      "candidate": {
+        "max": 300.0,
+        "median": 300.0,
+        "min": 300.0,
+        "n": 5
+      },
+      "delta": 200.0,
+      "delta_pct": 200.0,
+      "marks": [
+        "volume_diverge"
+      ]
+    }
+  },
+  "refused": [
+    {
+      "field": "economia_mensal",
+      "reason": "projecao_sobre_runs_que_nao_aconteceram"
+    },
+    {
+      "field": "atribuicao_causal",
+      "reason": "sem_run_de_controle"
+    },
+    {
+      "field": "intervalo_de_confianca",
+      "reason": "amostra_pequena_use_mediana_e_faixa"
+    }
+  ],
+  "volume_tolerance": 0.25
+}
