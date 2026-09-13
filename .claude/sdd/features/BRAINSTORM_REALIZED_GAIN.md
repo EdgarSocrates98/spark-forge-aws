@@ -9,7 +9,7 @@
 | **Feature** | REALIZED_GAIN |
 | **Date** | 2026-09-13 |
 | **Author** | brainstorm-agent |
-| **Status** | Ready for Define |
+| **Status** | ✅ Complete (Defined) |
 
 ---
 
