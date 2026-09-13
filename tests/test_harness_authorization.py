@@ -907,6 +907,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # leitura que o host escolhe; checar pack arbitrario e da CLI
             # (`sparkforge pack check`).
             "sparkforge_pack_list",
+            # `knowledge_drift` (2026-09-13, §17) le o lock de `knowledge_dir()`
+            # (ou `SPARKFORGE_SOURCES_LOCK`, variavel do operador) e o proprio
+            # repositorio -- conhecimento versionado, como a matriz de Lake
+            # Formation. Nenhum caminho e escolhido pelo chamador.
+            "sparkforge_knowledge_drift",
         }
     )
 

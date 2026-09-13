@@ -1693,6 +1693,18 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge_path_p.add_argument(
         "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
     )
+    knowledge_drift_p = knowledge_sub.add_parser(
+        "drift",
+        help=(
+            "Knowledge Drift Radar: para cada fonte vigiada que mudou (changed_at no lock), "
+            "as regras e documentos que a leram antes da mudanca e os goldens, evals e "
+            "agentes dessas regras. Sem rede."
+        ),
+    )
+    knowledge_drift_p.add_argument("--source", help="So esta fonte do lock (a chave do lock).")
+    knowledge_drift_p.add_argument(
+        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
+    )
 
     # rules lookup --------------------------------------------------------
     # debate referee ---------------------------------------------------
@@ -3353,6 +3365,11 @@ def _cmd_pack_check(args: argparse.Namespace) -> int:
     return 0 if payload["ok"] else 1
 
 
+def _cmd_knowledge_drift(args: argparse.Namespace) -> int:
+    _print(_core.knowledge_drift(url=args.source, as_of=args.as_of))
+    return 0
+
+
 def _cmd_knowledge_path(args: argparse.Namespace) -> int:
     _print(
         _core.knowledge_path(
@@ -4188,6 +4205,7 @@ _DISPATCH = {
     ("code", "doctor"): _cmd_code_doctor,
     ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
+    ("knowledge", "drift"): _cmd_knowledge_drift,
     ("pack", "list"): _cmd_pack_list,
     ("pack", "check"): _cmd_pack_check,
     ("debate", "referee"): _cmd_debate_referee,

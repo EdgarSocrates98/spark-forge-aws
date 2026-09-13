@@ -1,0 +1,56 @@
+{
+  "as_of": "2026-09-13",
+  "changed_sources": [
+    {
+      "changed_at": "2026-09-01",
+      "citations": [
+        {
+          "id": "knowledge/graph/availability.md",
+          "kind": "doc",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-05",
+          "state": "stale"
+        },
+        {
+          "id": "knowledge/graph/graphframes-api.md",
+          "kind": "doc",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": "2026-08-05",
+          "state": "stale"
+        }
+      ],
+      "impact": {
+        "agents": [],
+        "docs": [
+          "knowledge/graph/availability.md",
+          "knowledge/graph/graphframes-api.md"
+        ],
+        "evals": [],
+        "goldens": [],
+        "rules": []
+      },
+      "revalidated": [],
+      "url": "https://api.github.com/repos/graphframes/graphframes/releases"
+    }
+  ],
+  "lock": {
+    "changed": 1,
+    "checked": 1,
+    "pinned": 0,
+    "sources": 1
+  },
+  "refused": [
+    {
+      "field": "conteudo_da_mudanca",
+      "reason": "exige_leitura_humana_da_fonte"
+    }
+  ],
+  "totals": {
+    "agents": 0,
+    "docs": 2,
+    "evals": 0,
+    "goldens": 0,
+    "rules": 0
+  },
+  "unresolved": []
+}

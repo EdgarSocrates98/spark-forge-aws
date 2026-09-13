@@ -84,3 +84,49 @@ Tres leituras dessa tabela:
 
 Os numeros mudam a cada refresh do lock e com a passagem do tempo; esta tabela
 e a medida de uma data, e nao um teste.
+
+## Knowledge Drift Radar: o que uma fonte que mudou arrasta
+
+O estado responde "esta fonte mudou depois de eu le-la?". O radar (§17 de
+`prompt_new_evo.md`, 2026-09-13) responde a pergunta seguinte: **o que precisa
+ser relido e rodado de novo**.
+
+```bash
+sparkforge knowledge drift [--source <url do lock>] [--as-of AAAA-MM-DD]
+```
+
+O filtro chama `source`, e nao `url`, de proposito: o INV-009 recusa argumento
+de tool com `url` no nome, porque tool nenhuma acessa a rede. O valor e so a
+chave de uma entrada do lock, comparada por igualdade.
+
+A tool MCP e `sparkforge_knowledge_drift` (`READ_ONLY`, sem parametro de
+caminho). O dono e o `sf-verifier` (checagem 8). Para cada fonte do lock com
+`changed_at` e que nao e fixa por versao:
+
+| Campo | O que traz |
+|---|---|
+| `citations` | Cada regra e documento que cita a fonte, com o `retrieved` declarado (o mais antigo) e o estado |
+| `impact.rules` / `impact.docs` | As citacoes `stale`, lidas **antes** da mudanca: o que reler |
+| `impact.goldens` | Os fixtures cujo `expected/findings.json` tem uma dessas regras: o que rodar de novo |
+| `impact.evals` | Os arquivos de `evals/` que citam uma dessas regras |
+| `impact.agents` | Os agentes que declaram a area da regra em `rule_areas` ou citam o `rule_id` |
+| `revalidated` | As citacoes lidas no dia da mudanca ou depois: alguem ja releu |
+
+So entra ligacao que existe em arquivo. Instalado por pip, o wheel nao leva
+`fixtures/`, `evals/` nem `agents/`, e esses tres saltos saem `unresolved` com
+`sem_repositorio` -- nunca como lista vazia, que pareceria "nada afetado". O
+radar **nao** diz se a mudanca tocou o trecho que a regra cita: o lock guarda o
+hash da pagina inteira (`refused: conteudo_da_mudanca`).
+
+O relatorio do refresh semanal ganha a secao "Impacto" com a **mesma** conta,
+feita sobre o lock que acabou de ser conferido.
+
+### Pre-requisito do operador
+
+**O refresh semanal nao abre PR desde 2026-08-10.** As cinco execucoes agendadas
+desde entao falharam no passo do PR com `GitHub Actions is not permitted to
+create or approve pull requests`: a conferencia roda e o lock e commitado na
+branch, mas o PR e barrado pela configuracao do repositorio. Enquanto isso
+durar, nenhuma fonte ganha `changed_at` e o radar nao tem o que mostrar. O
+conserto e ligar, em Settings -> Actions -> General, "Allow GitHub Actions to
+create and approve pull requests".

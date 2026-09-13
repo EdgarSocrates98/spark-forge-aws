@@ -4460,6 +4460,37 @@ def knowledge_path(
     return payload
 
 
+def knowledge_drift(url: str | None = None, as_of: str | None = None) -> dict[str, Any]:
+    """Knowledge Drift Radar (§17): o que cada fonte vigiada com `changed_at`
+    arrasta -- regras e documentos que a leram antes da mudanca, e os goldens,
+    evals e agentes dessas regras. Sem rede: le o lock, o catalogo, as secoes
+    `Fontes` e, quando ha checkout, o repositorio."""
+    from sparkforge import knowledge_drift as radar
+    from sparkforge.knowledge_freshness import carregar_lock, fontes_de_knowledge
+
+    dia = _as_of(as_of)
+    try:
+        root: Path | None = knowledge_dir()
+    except KnowledgeError:
+        root = None
+    lock, motivo = carregar_lock(root)
+    if url is not None and (lock is None or url not in lock):
+        raise AdapterError(
+            f"--source {url}: fonte fora do lock vigiado. Liste com: sparkforge knowledge drift",
+            exit_code=2,
+        )
+    try:
+        regras = load_catalog()
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    por_doc: dict[str, Any] = {}
+    if root is not None and root.is_dir():
+        _, por_doc = fontes_de_knowledge(root)
+    raiz = radar.repo_root()
+    indice = radar.build_index(raiz) if raiz is not None else None
+    return radar.drift(lock, motivo, regras, por_doc, indice, dia, url=url)
+
+
 def _pack_do_arquivo(conjunto: Any, file: str) -> tuple[Any, str]:
     """`packs/<id>/<relativo>` de um pack ativo vira (pack, relativo); o resto e do core."""
     partes = file.replace("\\", "/").split("/", 2)
