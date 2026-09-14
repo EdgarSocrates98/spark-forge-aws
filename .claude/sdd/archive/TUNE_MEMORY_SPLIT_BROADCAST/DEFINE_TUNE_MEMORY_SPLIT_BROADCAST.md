@@ -9,7 +9,7 @@
 | **Feature** | TUNE_MEMORY_SPLIT_BROADCAST |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 13/15 |
 
 ---

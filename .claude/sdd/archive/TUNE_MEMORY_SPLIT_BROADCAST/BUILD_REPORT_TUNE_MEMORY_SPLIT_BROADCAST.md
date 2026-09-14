@@ -9,9 +9,9 @@
 | **Feature** | TUNE_MEMORY_SPLIT_BROADCAST |
 | **Date** | 2026-09-14 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_TUNE_MEMORY_SPLIT_BROADCAST.md](../features/DEFINE_TUNE_MEMORY_SPLIT_BROADCAST.md) |
-| **DESIGN** | [DESIGN_TUNE_MEMORY_SPLIT_BROADCAST.md](../features/DESIGN_TUNE_MEMORY_SPLIT_BROADCAST.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_TUNE_MEMORY_SPLIT_BROADCAST.md](./DEFINE_TUNE_MEMORY_SPLIT_BROADCAST.md) |
+| **DESIGN** | [DESIGN_TUNE_MEMORY_SPLIT_BROADCAST.md](./DESIGN_TUNE_MEMORY_SPLIT_BROADCAST.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -174,4 +174,4 @@ Nenhum.
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_TUNE_MEMORY_SPLIT_BROADCAST.md`
+**Shipped:** `.claude/sdd/archive/TUNE_MEMORY_SPLIT_BROADCAST/SHIPPED_2026-09-14.md` (PR #67, CI verde)
