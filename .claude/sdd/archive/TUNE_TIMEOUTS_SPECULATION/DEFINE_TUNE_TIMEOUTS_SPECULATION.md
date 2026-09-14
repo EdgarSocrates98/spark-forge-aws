@@ -9,7 +9,7 @@
 | **Feature** | TUNE_TIMEOUTS_SPECULATION |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---

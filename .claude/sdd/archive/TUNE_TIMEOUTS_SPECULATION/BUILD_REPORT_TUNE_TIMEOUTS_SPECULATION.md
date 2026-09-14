@@ -9,9 +9,9 @@
 | **Feature** | TUNE_TIMEOUTS_SPECULATION |
 | **Date** | 2026-09-14 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_TUNE_TIMEOUTS_SPECULATION.md](../features/DEFINE_TUNE_TIMEOUTS_SPECULATION.md) |
-| **DESIGN** | [DESIGN_TUNE_TIMEOUTS_SPECULATION.md](../features/DESIGN_TUNE_TIMEOUTS_SPECULATION.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_TUNE_TIMEOUTS_SPECULATION.md](./DEFINE_TUNE_TIMEOUTS_SPECULATION.md) |
+| **DESIGN** | [DESIGN_TUNE_TIMEOUTS_SPECULATION.md](./DESIGN_TUNE_TIMEOUTS_SPECULATION.md) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -180,4 +180,4 @@ Nenhum.
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_TUNE_TIMEOUTS_SPECULATION.md`
+**Shipped:** `.claude/sdd/archive/TUNE_TIMEOUTS_SPECULATION/SHIPPED_2026-09-14.md` (PR #68)

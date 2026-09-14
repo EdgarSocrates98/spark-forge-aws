@@ -10,7 +10,7 @@
 | **Date** | 2026-09-14 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_TUNE_TIMEOUTS_SPECULATION.md](./DEFINE_TUNE_TIMEOUTS_SPECULATION.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
