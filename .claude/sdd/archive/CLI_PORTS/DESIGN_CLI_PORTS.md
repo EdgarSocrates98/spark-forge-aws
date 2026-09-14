@@ -10,7 +10,7 @@
 | **Date** | 2026-09-14 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_CLI_PORTS.md](./DEFINE_CLI_PORTS.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -244,9 +244,10 @@ scan:  manifesto (parquet_footer) + extensão + workload.yaml na raiz -> analyze
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-14 | design-agent | Versão inicial. A-001 e A-004 medidos (5/5 e 2/2 iguais ao golden) |
+| 1.1 | 2026-09-14 | ship-agent | Shipped and archived (PR #66, CI verde) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_CLI_PORTS.md`
+**Shipped:** `.claude/sdd/archive/CLI_PORTS/SHIPPED_2026-09-14.md`

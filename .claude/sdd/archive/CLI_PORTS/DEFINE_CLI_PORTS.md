@@ -9,7 +9,7 @@
 | **Feature** | CLI_PORTS |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -148,9 +148,10 @@ Três extratores têm golden e ficam de fora do caminho do operador:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-14 | define-agent | Versão inicial a partir de BRAINSTORM_CLI_PORTS.md |
+| 1.1 | 2026-09-14 | ship-agent | Shipped and archived (PR #66, CI verde) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_CLI_PORTS.md`
+**Shipped:** `.claude/sdd/archive/CLI_PORTS/SHIPPED_2026-09-14.md`

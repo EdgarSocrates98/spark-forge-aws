@@ -9,7 +9,7 @@
 | **Feature** | CLI_PORTS |
 | **Date** | 2026-09-14 |
 | **Author** | brainstorm-agent |
-| **Status** | ✅ Complete (Defined) |
+| **Status** | ✅ Shipped |
 
 ---
 

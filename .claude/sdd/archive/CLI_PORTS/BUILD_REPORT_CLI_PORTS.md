@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_CLI_PORTS.md](../features/DEFINE_CLI_PORTS.md) |
 | **DESIGN** | [DESIGN_CLI_PORTS.md](../features/DESIGN_CLI_PORTS.md) |
-| **Status** | Complete |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -192,4 +192,4 @@ Nenhum.
 
 ## Next Step
 
-**If Complete:** `/ship .claude/sdd/features/DEFINE_CLI_PORTS.md`
+**Shipped:** `.claude/sdd/archive/CLI_PORTS/SHIPPED_2026-09-14.md` (PR #66, CI verde)
