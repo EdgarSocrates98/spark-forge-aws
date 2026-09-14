@@ -103,6 +103,8 @@ class TestToolSurface:
             "sparkforge_scan",
             "sparkforge_doctor",
             "sparkforge_policy_explain",
+            "sparkforge_change_plan",
+            "sparkforge_change_sandbox",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -280,6 +282,11 @@ class TestToolSurface:
             # uniao, findings, summary) e, com `format: sarif`, o SARIF do
             # `report github`. Idempotente: a mesma arvore da os mesmos arquivos.
             "sparkforge_scan",
+            # `sparkforge_change_sandbox` grava as copias `before/`/`after/` e o
+            # `report.json` em `.sparkforge/sandbox/<id>/`, recriadas a cada
+            # execucao com o mesmo `id` para a mesma entrada (§15). A arvore
+            # principal nunca e escrita.
+            "sparkforge_change_sandbox",
             # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
             #
             # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
@@ -2674,6 +2681,45 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["decision"] == "ask" and result["active"] is True, result
         return result
 
+    if name == "sparkforge_change_plan":
+        # O golden com quatro chaves na mesma linha do `--conf`: o diff troca so
+        # o par pedido, e o schema e validado por uma mudanca real.
+        from pathlib import Path
+
+        caso = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "change" / "tf_linha_compartilhada" / "input"
+        )
+        result = call_tool(
+            "sparkforge_change_plan",
+            {
+                "facts_path": [str(caso / "facts.json")],
+                "repo": str(caso / "repo"),
+                "sets": ["spark.sql.shuffle.partitions=320"],
+            },
+        )
+        assert result["files"] == ["main.tf"] and result["changes"][0]["to"] == "320", result
+        return result
+
+    if name == "sparkforge_change_sandbox":
+        # O diff do host que tira o `spark.conf.set`, numa copia do repo: o
+        # SF-PY-012 sai em `resolved`, com as obrigacoes de prova da regra.
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        caso = (
+            Path(__file__).resolve().parents[1] / "fixtures" / "change" / "resolve_achado" / "input"
+        )
+        destino = Path(tempfile.mkdtemp()) / "repo"
+        shutil.copytree(caso / "repo", destino)
+        result = call_tool(
+            "sparkforge_change_sandbox",
+            {"repo": str(destino), "diff_path": str(caso / "host.patch")},
+        )
+        assert [r["rule_id"] for r in result["resolved"]] == ["SF-PY-012"], result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -3086,6 +3132,11 @@ class TestErrorShapesValidateToo:
         ("sparkforge_scan", {"repo": "<tmp>/nao-existe"}),
         ("sparkforge_doctor", {"repo": "<tmp>/nao-existe"}),
         ("sparkforge_policy_explain", {"repo": "<tmp>/nao-existe", "bash_text": "ls"}),
+        (
+            "sparkforge_change_plan",
+            {"facts_path": ["<tmp>/nada.json"], "repo": "<tmp>/nao-existe", "sets": ["a=1"]},
+        ),
+        ("sparkforge_change_sandbox", {"repo": "<tmp>/nao-existe", "diff_path": "<tmp>/x.patch"}),
         (
             "sparkforge_arbitrate",
             {

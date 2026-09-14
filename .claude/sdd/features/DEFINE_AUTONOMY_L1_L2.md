@@ -9,7 +9,7 @@
 | **Feature** | AUTONOMY_L1_L2 |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Complete (Built) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -172,4 +172,4 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_AUTONOMY_L1_L2.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_AUTONOMY_L1_L2.md`

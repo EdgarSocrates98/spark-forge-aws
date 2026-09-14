@@ -63,6 +63,16 @@ Para cada um, procure ativamente:
    `amostra_insuficiente`, `volume_diverge`, `volume_desconhecido`, `custo_indisponivel`.
    Delta com marca não sustenta a alegação; relate a marca junto do número. Economia
    mensal, atribuição causal e intervalo de confiança saem sempre em `refused`.
+10. **O que um diff move, antes de alguém aplicá-lo?** Quando houver um diff proposto (o
+    `diff` de `sparkforge_change_plan` gravado em arquivo, ou um escrito pelo host), chame
+    `sparkforge_change_sandbox` com o `repo` e o `diff_path`. Ele aplica o diff numa cópia
+    em `.sparkforge/sandbox/<id>/` e roda o scan antes e depois: `resolved` é o que sumiu,
+    `new` é o que apareceu, e `moved_candidates` é o mesmo achado com a linha deslocada.
+    Esse último não é resolução. As `proof_obligations` trazem a validação e o rollback de
+    cada regra tocada. Achado resolvido no sandbox é "o motor deixou de ver", nunca ganho
+    medido: para desempenho, os dois runs de `sparkforge_gain`/`benchmark`; para o
+    resultado, `funcval`. Recusa do aplicador (`diff_nao_aplica`, `arquivo_fora_da_copia`)
+    vai no relatório como está. Não conserte o diff por conta própria.
 
 #### Pressupõe
 

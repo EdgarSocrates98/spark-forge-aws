@@ -10,7 +10,7 @@
 | **Date** | 2026-09-13 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_AUTONOMY_L1_L2.md](./DEFINE_AUTONOMY_L1_L2.md) |
-| **Status** | Ready for Build |
+| **Status** | ✅ Complete (Built) |
 
 ---
 
@@ -421,4 +421,4 @@ O caso `resolve_achado` reusa o padrao de `fixtures/pyspark/conf_set_conflict`: 
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_AUTONOMY_L1_L2.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_AUTONOMY_L1_L2.md`

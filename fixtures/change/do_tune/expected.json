@@ -1,0 +1,39 @@
+{
+  "changes": [
+    {
+      "basis": {
+        "basis": {
+          "shuffle_write_bytes": 671088640.0,
+          "target_partition_bytes": 67108864.0,
+          "target_source": "spark_default"
+        },
+        "formula": "ceil(shuffle_write_bytes / target_partition_bytes)",
+        "safety": "REVIEW",
+        "source": "tune"
+      },
+      "evidence": [
+        "f_ea876c"
+      ],
+      "file": "main.tf",
+      "from": "800",
+      "key": "spark.sql.shuffle.partitions",
+      "line": 13,
+      "provenance": "terraform",
+      "to": "10"
+    }
+  ],
+  "diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=800\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=10\"\n   }\n }\n",
+  "files": [
+    "main.tf"
+  ],
+  "refused": [],
+  "rollback_diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.sql.shuffle.partitions=10\"\n+    \"--conf\" = \"spark.sql.shuffle.partitions=800\"\n   }\n }\n",
+  "tune_refused": [
+    "no_measured_basis",
+    "no_measured_basis",
+    "no_measured_basis",
+    "no_measured_basis",
+    "no_measured_basis",
+    "no_measured_basis"
+  ]
+}

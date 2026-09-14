@@ -28,6 +28,7 @@ Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 | Levar o SparkForge para o CI e o pull request | [CI e GitHub](usos/ci-e-github.md) |
 | Conduzir uma investigação com memória (case) | [Investigação com case](usos/investigacao-com-case.md) |
 | Resolver dois achados que se contradizem | [Arbitragem e debate](usos/arbitragem-e-debate.md) |
+| Transformar um valor de configuração em diff, e ver numa cópia o que ele muda | [Mudança de configuração e sandbox](usos/change.md) |
 | Provar que uma mudança funcionou | [Mudanças com prova](usos/mudancas-com-prova.md) |
 | Consultar regras, fontes e packs de terceiros | [Packs e conhecimento](usos/packs-e-conhecimento.md) |
 | Achar código sem ler arquivo por arquivo | [Inteligência de código](usos/code-intelligence.md) |

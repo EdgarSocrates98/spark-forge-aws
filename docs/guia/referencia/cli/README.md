@@ -15,6 +15,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge budget`](budget.md) | Mostra estado do budget do case. |
 | [`sparkforge capacity`](capacity.md) | Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades que o job JA rodou. |
 | [`sparkforge case`](case.md) | Gerencia o estado do case em .sparkforge/case.yaml. |
+| [`sparkforge change`](change.md) | Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff numa copia isolada para ver o que ele move nos achados (sandbox). |
 | [`sparkforge code`](code.md) | Indice local de codigo: prepara, sincroniza, busca simbolo, monta contexto e diagnostica. |
 | [`sparkforge collect`](collect.md) | Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg). |
 | [`sparkforge controlm`](controlm.md) | Conhecimento versionado do Control-M Automation API. |

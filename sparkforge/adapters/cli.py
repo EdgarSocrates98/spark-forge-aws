@@ -2304,6 +2304,59 @@ def build_parser() -> argparse.ArgumentParser:
         "--check", action="store_true", help="So confere; nao grava. Sai 1 se divergir."
     )
 
+    # change ------------------------------------------------------------------
+    # §15: L1 (produce change) gera o diff de um valor de configuracao sem
+    # aplicar; L2 (sandbox execute) aplica um diff numa copia e compara achados.
+    change_p = sub.add_parser(
+        "change",
+        help=(
+            "Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff "
+            "numa copia isolada para ver o que ele move nos achados (sandbox)."
+        ),
+    )
+    change_sub = change_p.add_subparsers(dest="change_action", required=True)
+    change_plan_p = change_sub.add_parser(
+        "plan",
+        help=(
+            "Diff e diff de rollback de um valor de configuracao, achado pela procedencia dos "
+            "facts (Terraform --conf ou spark.conf.set). Nao aplica nada."
+        ),
+    )
+    change_plan_p.add_argument(
+        "--facts", action="append", required=True,
+        help="Facts do case (repetivel): a uniao que o judge recebeu.",
+    )
+    change_plan_p.add_argument(
+        "--repo", default=".", help="Raiz usada na extracao dos facts (padrao: .)."
+    )
+    change_plan_p.add_argument(
+        "--from-tune", action="store_true", help="Usa o valor que o tune deriva da medida."
+    )
+    change_plan_p.add_argument(
+        "--set", dest="sets", action="append", default=None, metavar="CHAVE=VALOR",
+        help="Valor a propor (repetivel), por exemplo spark.sql.shuffle.partitions=320.",
+    )
+    change_plan_p.add_argument(
+        "--out", default=None, help="Grava o diff neste arquivo .patch (so quando pedido)."
+    )
+    change_sandbox_p = change_sub.add_parser(
+        "sandbox",
+        help=(
+            "Aplica um diff numa copia em .sparkforge/sandbox/<id>/, roda o scan antes e "
+            "depois e compara os achados. A arvore principal nao muda."
+        ),
+    )
+    change_sandbox_p.add_argument(
+        "--repo", default=".", help="Raiz do repositorio (padrao: .)."
+    )
+    change_sandbox_p.add_argument(
+        "--diff", default=None,
+        help="Arquivo de diff unificado (de change plan --out ou de git diff).",
+    )
+    change_sandbox_p.add_argument(
+        "--clean", action="store_true", help="Apaga .sparkforge/sandbox/ e sai."
+    )
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3687,6 +3740,20 @@ def _cmd_policy_sync_settings(args: argparse.Namespace) -> int:
     return 1 if args.check and not resultado["in_sync"] else 0
 
 
+def _cmd_change_plan(args: argparse.Namespace) -> int:
+    resultado = _core.change_plan(
+        args.facts, args.repo, from_tune=args.from_tune, sets=args.sets, out=args.out
+    )
+    _print(resultado)
+    return 1 if resultado["refused"] and not resultado["changes"] else 0
+
+
+def _cmd_change_sandbox(args: argparse.Namespace) -> int:
+    resultado = _core.change_sandbox(args.repo, diff_path=args.diff, clean=args.clean)
+    _print(resultado)
+    return 1 if resultado.get("refused") else 0
+
+
 def _cmd_doctor(args: argparse.Namespace) -> int:
     resultado = _core.doctor(args.repo, online=args.online)
     _print(resultado)
@@ -4310,6 +4377,8 @@ _DISPATCH = {
     ("policy", "check"): _cmd_policy_check,
     ("policy", "explain"): _cmd_policy_explain,
     ("policy", "sync-settings"): _cmd_policy_sync_settings,
+    ("change", "plan"): _cmd_change_plan,
+    ("change", "sandbox"): _cmd_change_sandbox,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,
@@ -4390,6 +4459,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
         or getattr(args, "policy_action", None)
+        or getattr(args, "change_action", None)
         or getattr(args, "pack_action", None)
         or getattr(args, "debate_action", None)
         or getattr(args, "lakeformation_action", None)

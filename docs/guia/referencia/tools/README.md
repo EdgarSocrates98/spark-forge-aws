@@ -62,6 +62,13 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_case_open`](sparkforge_case_open.md) | grava local | Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. |
 | [`sparkforge_case_update`](sparkforge_case_update.md) | muda estado local | Atualiza a fase, um gate booleano, ou registra o uso de uma skill no case atual. |
 
+## change
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_change_plan`](sparkforge_change_plan.md) | só leitura | Autonomia L1 (§15, produce change): o diff unificado e o diff de rollback de um VALOR de configuracao Spark, achado pela procedencia dos facts -- `tf.spark_conf` (so o par `chav... |
+| [`sparkforge_change_sandbox`](sparkforge_change_sandbox.md) | grava local | Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do `sparkforge change plan --out` ou de `git diff`) numa COPIA do repositorio em `.sparkforge/sandbox... |
+
 ## code
 
 | Tool | Efeito | O que faz |

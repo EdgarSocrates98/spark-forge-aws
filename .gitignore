@@ -43,6 +43,9 @@ node_modules/
 .sparkforge/traces.db
 .sparkforge/cache/
 .sparkforge/local/
+# Copias do `change sandbox` (§15): `before/` e `after/` sao a arvore inteira do
+# repositorio, recriada a cada execucao -- nunca vao para o git.
+.sparkforge/sandbox/
 .tokensave
 
 # Material de referencia sigiloso -- nunca versionar neste repositorio publico.

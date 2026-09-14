@@ -1,0 +1,26 @@
+{
+  "applied": false,
+  "copy_skipped": [],
+  "files_changed": [],
+  "id": null,
+  "kept_count": 0,
+  "main_tree_touched": false,
+  "moved_candidates": [],
+  "new": [],
+  "next_steps": [],
+  "proof_obligations": [],
+  "refused": [
+    {
+      "detail": "prod.tfvars: fora da copia (SENSITIVE_NAME)",
+      "reason": "arquivo_fora_da_copia",
+      "unlock": "o arquivo e sensivel, fica em diretorio ignorado (vendor, build, .venv...) ou passa do teto de tamanho da varredura; mude-o a mao"
+    }
+  ],
+  "resolved": [],
+  "sandbox": null,
+  "scan_refused": {
+    "after": [],
+    "before": []
+  },
+  "stage": "sandbox_execute"
+}
