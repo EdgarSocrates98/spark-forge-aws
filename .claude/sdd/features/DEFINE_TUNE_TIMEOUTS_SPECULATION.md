@@ -9,7 +9,7 @@
 | **Feature** | TUNE_TIMEOUTS_SPECULATION |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -185,4 +185,4 @@ None - ready for Design. A-004 a A-007 são conferências do design e do build, 
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_TUNE_TIMEOUTS_SPECULATION.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_TUNE_TIMEOUTS_SPECULATION.md`
