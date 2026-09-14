@@ -59,6 +59,82 @@ def _stage_completed(stage_id, name, num_tasks, failure_reason=None):
     return _line("SparkListenerStageCompleted", **{"Stage Info": stage_info})
 
 
+def _log_de_speculation(versao, stages, *, props=None, killed=()):
+    """`stages`: lista de listas de duracao (ms); a task i roda no executor 1 ou 2."""
+    linhas = []
+    if versao:
+        linhas.append(_line("SparkListenerLogStart", **{"Spark Version": versao}))
+    if props:
+        linhas.append(_line("SparkListenerEnvironmentUpdate", **{"Spark Properties": props}))
+    for stage, duracoes in enumerate(stages):
+        for i, duracao in enumerate(duracoes):
+            executor = "1" if i % 2 == 0 else "2"
+            evento = json.loads(_task_end(stage, stage * 100 + i, 0, duracao, executor_id=executor))
+            if (stage, i) in killed:
+                evento["Task Info"]["Killed"] = True
+            linhas.append(json.dumps(evento))
+        linhas.append(_stage_completed(stage, f"s{stage}", len(duracoes)))
+    return extract_event_log(linhas, "log.jsonl")
+
+
+class TestCriterioDeSpeculation:
+    """O criterio do scheduler: max(multiplier x mediana, tempo minimo), por versao."""
+
+    def test_the_kinds_are_declared(self):
+        assert {"spark.stage.slow_tasks", "spark.executor.slow_node"} <= EMITTED_KINDS
+
+    def test_spark_3_uses_one_and_a_half_times_the_median(self):
+        facts = _log_de_speculation("3.5.4", [[1000] * 7 + [1600]])
+        (lento,) = facts_of("spark.stage.slow_tasks", facts)
+
+        assert lento.measures["threshold_ms"] == 1500.0
+        assert lento.measures["slow_count"] == 1
+        assert lento.attrs["by_executor"]["2"]["slow"] == 1
+
+    def test_spark_4_raised_the_multiplier_to_three(self):
+        facts = _log_de_speculation("4.1.1", [[1000] * 7 + [1600]])
+
+        assert facts_of("spark.stage.slow_tasks", facts) == []
+
+    def test_a_configured_multiplier_wins_over_the_default(self):
+        facts = _log_de_speculation(
+            "3.5.4", [[1000] * 7 + [2100]], props={"spark.speculation.multiplier": "2"}
+        )
+        (lento,) = facts_of("spark.stage.slow_tasks", facts)
+
+        assert lento.measures["threshold_ms"] == 2000.0
+        assert lento.attrs["criterion_source"] == "configured"
+
+    def test_without_version_there_is_no_criterion(self):
+        facts = _log_de_speculation(None, [[1000] * 7 + [1600]])
+
+        assert facts_of("spark.stage.slow_tasks", facts) == []
+
+    def test_the_minimum_task_time_floors_the_threshold(self):
+        facts = _log_de_speculation("3.5.4", [[10] * 7 + [90]])
+
+        assert facts_of("spark.stage.slow_tasks", facts) == []
+
+    def test_a_killed_copy_is_not_a_slow_task(self):
+        facts = _log_de_speculation("3.5.4", [[1000] * 7 + [1600]], killed={(0, 7)})
+
+        assert facts_of("spark.stage.slow_tasks", facts) == []
+
+    def test_the_same_executor_slow_in_two_stages_is_a_slow_node(self):
+        facts = _log_de_speculation("3.5.4", [[1000] * 7 + [1600], [1000] * 7 + [1700]])
+        (no,) = facts_of("spark.executor.slow_node", facts)
+
+        assert no.attrs["executor_id"] == "2"
+        assert no.measures["stages_slow"] == 2
+        assert no.attrs["stage_ids"] == [0, 1]
+
+    def test_every_new_fact_validates(self):
+        facts = _log_de_speculation("3.5.4", [[1000] * 7 + [1600], [1000] * 7 + [1700]])
+        for fact in facts:
+            if fact.kind in ("spark.stage.slow_tasks", "spark.executor.slow_node"):
+                validate_fact(fact.to_dict())
+
+
 class TestNearestRank:
     def test_single_value_never_divides_by_zero(self):
         assert _nearest_rank([42], 50) == 42

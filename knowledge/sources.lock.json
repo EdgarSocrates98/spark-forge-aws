@@ -2410,6 +2410,16 @@
       ],
       "rules": []
     },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.4/core/src/main/scala/org/apache/spark/scheduler/TaskSetManager.scala": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-14"
+      ],
+      "rules": [
+        "SF-UI-007"
+      ]
+    },
     "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
       "docs": [
         "knowledge/spark/sql-metrics.md"
@@ -2734,7 +2744,8 @@
       "retrieved": [
         "2026-08-29",
         "2026-08-31",
-        "2026-09-09"
+        "2026-09-09",
+        "2026-09-14"
       ],
       "rules": [
         "SF-ERR-007",
@@ -2746,7 +2757,8 @@
         "SF-ERR-013",
         "SF-ERR-020",
         "SF-ERR-021",
-        "SF-TIMEOUT-002"
+        "SF-TIMEOUT-002",
+        "SF-UI-007"
       ]
     },
     "https://spark.apache.org/docs/latest/running-on-kubernetes.html": {

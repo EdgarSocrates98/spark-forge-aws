@@ -1,0 +1,4 @@
+name: network_relacao_quebrada
+runtime:
+  glue: '5.0'
+proves: 'Heartbeat de 130s contra espera de 120s: a relacao da SF-TIMEOUT-002 esta quebrada, e `spark.network.timeout` = ceil(130 x 12) = 1560 s, mantendo o heartbeat pedido.'

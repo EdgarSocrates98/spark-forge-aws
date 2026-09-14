@@ -1,12 +1,14 @@
 """O valor que a medida sustenta, e a procedencia de cada propriedade.
 
 O documento de origem poe em letras grandes: `spark.sql.shuffle.partitions`
-passa a ser DERIVED, e nao HARDCODED. Desde 2026-09-14 sao cinco derivacoes --
-shuffle, overhead, heap, split de leitura e threshold de broadcast --, cada uma
-com a formula e a base medida; o resto do 11 entra como recusa NOMEADA, com a
-medida que a destravaria. Listar a recusa e a diferenca entre "nao sei" e "nao
-perguntei". Toda proposta e PISO medido (ou a estimativa que o proprio Spark
-compara, no broadcast) e sai `REVIEW`: nada aqui e ganho estimado.
+passa a ser DERIVED, e nao HARDCODED. Desde 2026-09-14 sao oito derivacoes --
+shuffle, overhead, heap, split de leitura, threshold de broadcast, speculation,
+network timeout e broadcast timeout --, cada uma com a formula e a base medida,
+e cada uma recusada por NOME quando a medida falta, com o que a destravaria.
+Listar a recusa e a diferenca entre "nao sei" e "nao perguntei". Toda proposta
+e PISO medido (ou a estimativa que o proprio Spark compara, no broadcast, ou a
+relacao entre os defaults, no network timeout) e sai `REVIEW`: nada aqui e
+ganho estimado.
 
 NAO E EXTRATOR, e nada aqui vira Fact. Custo (E) e categoria de timeout (F) sao
 fact porque sao aritmetica sobre medida, sem escolha; um valor PROPOSTO de
@@ -23,13 +25,18 @@ O QUE ESTE MODULO RECUSA:
 """
 from __future__ import annotations
 
+import functools
 import math
 import re
 import statistics
 from collections.abc import Sequence
 from typing import Any
 
+import yaml
+
+from sparkforge.facts.timeout_diagnosis import _segundos
 from sparkforge.findings.models import Fact
+from sparkforge.rules.loader import CatalogError, catalog_dir, safe_catalog_file
 
 _MIB = 1024 * 1024
 
@@ -60,28 +67,6 @@ _SPARK_POR_GLUE = {
     "3.0": "3.1.1",
 }
 
-# As propriedades que o 11 lista e que NENHUMA fonte de hoje sustenta, com a
-# medida que destravaria cada uma. A lista e explicita porque omissao silenciosa
-# e o defeito que este bloco existe para evitar.
-_SEM_BASE_MEDIDA = {
-    "spark.speculation": (
-        "O documento de origem recusa explicitamente a inferencia "
-        "`skew detectado -> speculation=true`: speculation duplica trabalho e "
-        "aumenta I/O e custo. A decisao exige saber se a lentidao e do NO ou "
-        "da PARTICAO, e nenhuma fonte de hoje separa os dois."
-    ),
-    "spark.sql.broadcastTimeout": (
-        "Subir timeout nao e conserto de performance -- e a `SF-TIMEOUT-001`, "
-        "do subprojeto F. O diagnostico de timeout nomeia a categoria; propor "
-        "um numero novo aqui contradiria a regra."
-    ),
-    "spark.network.timeout": (
-        "Mesma razao de `spark.sql.broadcastTimeout`. A relacao com "
-        "`spark.executor.heartbeatInterval` e conferida por `SF-TIMEOUT-002`, "
-        "que julga a RELACAO e nao o valor."
-    ),
-}
-
 # Niveis do 34 do documento. Paralelismo de shuffle e REVIEW pela lista dele:
 # muda a forma do trabalho, nao o resultado, e nunca entra em producao sem
 # alguem olhar.
@@ -90,6 +75,9 @@ _CHAVE_MEMORIA = "spark.executor.memory"
 _CHAVE_PYSPARK_MEMORIA = "spark.executor.pyspark.memory"
 _CHAVE_SPLIT = "spark.sql.files.maxPartitionBytes"
 _CHAVE_BROADCAST = "spark.sql.autoBroadcastJoinThreshold"
+_CHAVE_SPECULATION = "spark.speculation"
+_CHAVE_NETWORK = "spark.network.timeout"
+_CHAVE_BROADCAST_TIMEOUT = "spark.sql.broadcastTimeout"
 
 _SEGURANCA_POR_CHAVE = {
     _CHAVE_SHUFFLE: "REVIEW",
@@ -97,7 +85,25 @@ _SEGURANCA_POR_CHAVE = {
     _CHAVE_MEMORIA: "REVIEW",
     _CHAVE_SPLIT: "REVIEW",
     _CHAVE_BROADCAST: "REVIEW",
+    _CHAVE_SPECULATION: "REVIEW",
+    _CHAVE_NETWORK: "REVIEW",
+    _CHAVE_BROADCAST_TIMEOUT: "REVIEW",
 }
+
+# Razao entre os defaults documentados: `spark.network.timeout` 120s
+# (`config/Network.scala`) sobre `spark.executor.heartbeatInterval` 10s
+# (`config/package.scala`). E a folga que o proprio Spark escolheu para o
+# heartbeat caber varias vezes na espera do driver.
+_RAZAO_REDE_HEARTBEAT = 12
+# `SQLConf.BROADCAST_TIMEOUT`: 300 segundos de default.
+_BROADCAST_TIMEOUT_DEFAULT_S = 300.0
+# Medida do `spark.timeout.diagnosis` -> chave de limiar da `SF-TIMEOUT-001`.
+_SINTOMAS = (
+    ("skew_p95_over_p50", "skew_ratio"),
+    ("spill_over_input", "spill_ratio"),
+    ("gc_ratio", "gc_ratio"),
+    ("executor_lost_count", "executor_lost_min"),
+)
 
 # Documentacao de configuracao do Spark: overhead default =
 # `spark.executor.memory * spark.executor.memoryOverheadFactor` (0.10), com
@@ -134,6 +140,24 @@ _EXPLICACOES = {
         "e contra a estimativa, e nao contra o tamanho serializado, que o Spark "
         "compara o threshold. O tamanho medido do broadcast, quando existe, vem ao lado "
         "como conferencia da estimativa, nunca como base da proposta."
+    ),
+    _CHAVE_SPECULATION: (
+        "Ha executor com task lenta em varios stages sem ter lido mais que a mediana "
+        "do stage (input mais shuffle lido): "
+        "a lentidao e do NO, e nao da particao. Speculation relanca a task lenta em "
+        "outro executor, e isso so ajuda quando o no e o problema -- ao custo de "
+        "duplicar trabalho e I/O. Investigar o worker vem antes (`SF-UI-007`)."
+    ),
+    _CHAVE_NETWORK: (
+        "A relacao estava quebrada: o heartbeat pedido nao cabia na espera do driver, "
+        "e executor vivo seria declarado morto. O valor devolve a folga dos defaults "
+        "(12 vezes o heartbeat) mantendo o heartbeat que alguem pediu (regra 16)."
+    ),
+    _CHAVE_BROADCAST_TIMEOUT: (
+        "O broadcast estourou sem outra categoria e sem sintoma acima dos limiares da "
+        "`SF-TIMEOUT-001`, e o mesmo broadcast ja completou num run medido. O piso e "
+        "o maior tempo medido (coletar, montar e distribuir), com a folga declarada; "
+        "com sintoma ao lado, subir o limite so adiaria a falha (regra 15)."
     ),
 }
 
@@ -249,7 +273,7 @@ def _pedido(
 def _proposta(
     chave: str,
     confs: tuple[dict[str, Fact], dict[str, Fact], dict[str, Fact]],
-    valor: int,
+    valor: int | str,
     formula: str,
     base: dict[str, Any],
 ) -> dict[str, Any]:
@@ -473,6 +497,245 @@ def _broadcast(
     ), None
 
 
+def _speculation(
+    facts: Sequence[Fact], confs: tuple[dict[str, Fact], dict[str, Fact], dict[str, Fact]]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if _pedido(_CHAVE_SPECULATION, *confs).strip().lower() == "true":
+        return None, _recusa(
+            "speculation_ja_ligada",
+            _CHAVE_SPECULATION,
+            "`spark.speculation` ja esta pedido como `true`: nao ha o que propor.",
+        )
+    nos = sorted(
+        (f for f in facts if f.kind == "spark.executor.slow_node"),
+        key=lambda f: str(f.attrs.get("executor_id") or ""),
+    )
+    lentas = [f for f in facts if f.kind == "spark.stage.slow_tasks"]
+    if not nos:
+        return None, _sem_no_lento(facts, lentas)
+    criterio = min(lentas, key=lambda f: f.id).attrs if lentas else {}
+    base = {
+        "slow_nodes": [
+            {
+                "executor_id": f.attrs.get("executor_id"),
+                "host": f.attrs.get("host"),
+                "stages_slow": f.measures.get("stages_slow"),
+                "stage_ids": f.attrs.get("stage_ids"),
+            }
+            for f in nos
+        ],
+        "criterion": {
+            chave: criterio.get(chave)
+            for chave in ("multiplier", "quantile", "min_task_ms", "criterion_source")
+        },
+    }
+    return _proposta(
+        _CHAVE_SPECULATION,
+        confs,
+        "true",
+        "slow_node: mesmo executor com task > max(multiplier * mediana, min_task_ms) "
+        "em >= 2 stages, com input <= mediana do stage",
+        base,
+    ), None
+
+
+def _sem_no_lento(facts: Sequence[Fact], lentas: list[Fact]) -> dict[str, Any]:
+    """Nomeia POR QUE nao ha no lento, na ordem em que a medida falta."""
+    if not lentas:
+        if not any(f.kind == "spark.stage.task_duration" for f in facts):
+            return _recusa(
+                "sem_tasks_por_executor",
+                _CHAVE_SPECULATION,
+                "Nenhuma duracao de task nos facts. `sparkforge analyze event-log` a extrai "
+                "de `SparkListenerTaskEnd`, com o executor de cada task.",
+            )
+        if not any(f.kind == "spark.runtime_version" for f in facts):
+            return _recusa(
+                "criterio_de_especulacao_desconhecido",
+                _CHAVE_SPECULATION,
+                "O log nao declara a versao do Spark (`SparkListenerLogStart`) nem os tres "
+                "parametros de speculation, e o criterio de task lenta muda no Spark 4.0 "
+                "(multiplier 1.5 e quantile 0.75 antes, 3 e 0.9 depois).",
+            )
+        return _recusa(
+            "sem_tasks_lentas",
+            _CHAVE_SPECULATION,
+            "Nenhuma task passou do criterio do Spark para copia especulativa "
+            "(max(multiplier * mediana, tempo minimo)): nao ha o que relancar.",
+        )
+    estagios: dict[str, set[Any]] = {}
+    for fato in lentas:
+        for executor in fato.attrs.get("by_executor") or {}:
+            estagios.setdefault(str(executor), set()).add(fato.subject.get("stage_id"))
+    repetidos = sorted(e for e, s in estagios.items() if len(s) >= 2)
+    if repetidos:
+        return _recusa(
+            "lentidao_da_particao",
+            _CHAVE_SPECULATION,
+            f"Executor(es) {', '.join(repetidos)} lento(s) em mais de um stage, mas as "
+            "tasks lentas leram mais que a mediana do stage (input mais shuffle lido), ou a "
+            "leitura nao foi medida: a particao explica a lentidao, e speculation so "
+            "duplicaria o trabalho grande.",
+        )
+    return _recusa(
+        "lentidao_espalhada",
+        _CHAVE_SPECULATION,
+        "As tasks lentas caem em executores diferentes a cada stage: nenhum no se repete, "
+        "e nao ha no para contornar.",
+    )
+
+
+def _network(
+    facts: Sequence[Fact], confs: tuple[dict[str, Fact], dict[str, Fact], dict[str, Fact]]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    relacoes = sorted((f for f in facts if f.kind == "spark.timeout.relation"), key=lambda f: f.id)
+    if not relacoes:
+        return None, _recusa(
+            "sem_relacao_observada",
+            _CHAVE_NETWORK,
+            "Sem `spark.timeout.relation`: o run nao reportou `spark.executor.heartbeatInterval` "
+            "e `spark.network.timeout` juntos em `spark.conf_effective`. `sparkforge analyze "
+            "event-log` seguido de `sparkforge fuse` a produz.",
+        )
+    relacao = relacoes[0]
+    heartbeat = float(relacao.measures.get("heartbeat_s") or 0.0)
+    rede = float(relacao.measures.get("network_timeout_s") or 0.0)
+    if heartbeat < rede:
+        return None, _recusa(
+            "relacao_ok",
+            _CHAVE_NETWORK,
+            f"Heartbeat de {heartbeat:g}s cabe na espera de {rede:g}s: a relacao que a "
+            "`SF-TIMEOUT-002` confere esta de pe, e o valor isolado nao e certo nem errado "
+            "(regra 16).",
+        )
+    base = {
+        "heartbeat_s": heartbeat,
+        "network_timeout_s": rede,
+        "ratio": _RAZAO_REDE_HEARTBEAT,
+        "ratio_source": "spark_defaults_120s_over_10s",
+    }
+    valor = math.ceil(heartbeat * _RAZAO_REDE_HEARTBEAT)
+    return _proposta(_CHAVE_NETWORK, confs, valor, "ceil(heartbeat_s * 12)", base), None
+
+
+@functools.lru_cache(maxsize=1)
+def _limiares_de_sintoma() -> tuple[tuple[str, float], ...] | None:
+    """Os limiares da `SF-TIMEOUT-001`, lidos do catalogo e de nenhum outro lugar.
+
+    Limiar e regra (regra 11): copia-lo aqui divergiria na primeira mudanca do
+    catalogo. So `timeout.yaml` e lido, pelo caminho contido do loader.
+    """
+    try:
+        caminho = safe_catalog_file(catalog_dir(), "timeout.yaml")
+        documento = yaml.safe_load(caminho.read_text(encoding="utf-8-sig")) or {}
+    except (OSError, yaml.YAMLError, CatalogError):
+        return None
+    regra = next(
+        (r for r in documento.get("rules") or [] if r.get("id") == "SF-TIMEOUT-001"), None
+    )
+    limiar = (regra or {}).get("threshold")
+    if not isinstance(limiar, dict):
+        return None
+    return tuple(sorted((str(k), float(v)) for k, v in limiar.items()))
+
+
+def _broadcast_timeout(
+    facts: Sequence[Fact],
+    confs: tuple[dict[str, Fact], dict[str, Fact], dict[str, Fact]],
+    headroom: float | None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    diagnosticos = sorted(
+        (f for f in facts if f.kind == "spark.timeout.diagnosis"), key=lambda f: f.id
+    )
+    de_broadcast = [f for f in diagnosticos if f.attrs.get("category") == "broadcast"]
+    if not de_broadcast:
+        vistas = sorted({str(f.attrs.get("category")) for f in diagnosticos})
+        return None, _recusa(
+            "sem_diagnostico_de_broadcast",
+            _CHAVE_BROADCAST_TIMEOUT,
+            "Nenhum `spark.timeout.diagnosis` com categoria `broadcast`"
+            + (f" (visto: {', '.join(vistas)})" if vistas else "")
+            + ". Sem o broadcast estourando o limite nao tem o que sustentar; `wall_clock` e "
+            "`heartbeat` nunca tem valor proposto (regra 15).",
+        )
+    diagnostico = de_broadcast[0]
+    outras = [str(c) for c in diagnostico.attrs.get("also_seen") or []]
+    if outras:
+        return None, _recusa(
+            "broadcast_com_outra_categoria",
+            _CHAVE_BROADCAST_TIMEOUT,
+            f"O broadcast estourou junto de {', '.join(outras)}: a outra categoria pode ser "
+            "a causa, e subir o limite do broadcast a mascararia.",
+        )
+    limiares = _limiares_de_sintoma()
+    if limiares is None:
+        return None, _recusa(
+            "limiar_indisponivel",
+            _CHAVE_BROADCAST_TIMEOUT,
+            "Os limiares de sintoma da `SF-TIMEOUT-001` nao foram lidos de "
+            "`rules/catalog/timeout.yaml`; sem eles nao da para dizer que nao ha sintoma.",
+        )
+    por_chave = dict(limiares)
+    acima = [
+        f"{medida}={float(diagnostico.measures[medida]):g} (limiar {por_chave[chave]:g})"
+        for medida, chave in _SINTOMAS
+        if medida in diagnostico.measures
+        and chave in por_chave
+        and float(diagnostico.measures[medida]) >= por_chave[chave]
+    ]
+    if acima:
+        return None, _recusa(
+            "sintoma_ao_lado",
+            _CHAVE_BROADCAST_TIMEOUT,
+            "Sintoma medido ao lado do timeout: " + "; ".join(acima) + ". Subir o limite "
+            "troca uma falha rapida por uma cara (`SF-TIMEOUT-001`, regra 15).",
+        )
+    medidos = sorted(
+        sum(float(f.measures.get(k) or 0.0) for k in ("collect_ms", "build_ms", "broadcast_ms"))
+        for f in facts
+        if f.kind == "spark.sql.broadcast_exchange"
+    )
+    medidos = [m for m in medidos if m > 0]
+    if not medidos:
+        return None, _recusa(
+            "sem_broadcast_medido",
+            _CHAVE_BROADCAST_TIMEOUT,
+            "Nenhum `spark.sql.broadcast_exchange` com tempo medido: o piso sai do broadcast "
+            "que COMPLETOU, num run bem-sucedido. `sparkforge analyze sql-metrics` sobre o "
+            "event log dele o produz.",
+        )
+    folga = float(headroom or 0.0)
+    piso_ms = medidos[-1]
+    valor = math.ceil(piso_ms * (1.0 + folga) / 1000.0)
+    pedido = _pedido(_CHAVE_BROADCAST_TIMEOUT, *confs)
+    atual = _segundos(pedido) if pedido else None
+    origem = "configured" if atual is not None else "spark_default"
+    atual = _BROADCAST_TIMEOUT_DEFAULT_S if atual is None else atual
+    if atual >= valor:
+        return None, _recusa(
+            "ja_cabe_no_timeout",
+            _CHAVE_BROADCAST_TIMEOUT,
+            f"O limite efetivo de {atual:g}s ja passa do piso medido de {valor}s: o broadcast "
+            "que completou coube nele, e o estouro nao e falta de tempo medida.",
+        )
+    base = {
+        "measured_broadcast_ms": piso_ms,
+        "broadcasts_measured": len(medidos),
+        "effective_timeout_s": atual,
+        "timeout_source": origem,
+        "headroom": folga,
+        "headroom_source": "declared" if headroom else "none",
+        "diagnosis_basis": diagnostico.attrs.get("basis"),
+    }
+    return _proposta(
+        _CHAVE_BROADCAST_TIMEOUT,
+        confs,
+        valor,
+        "ceil(max(collect_ms + build_ms + broadcast_ms) * (1 + headroom) / 1000)",
+        base,
+    ), None
+
+
 def build_conf_advice(
     facts: Sequence[Fact],
     *,
@@ -550,14 +813,14 @@ def build_conf_advice(
         _memoria(facts, confs),
         _split(facts, confs),
         _broadcast(facts, confs),
+        _speculation(facts, confs),
+        _network(facts, confs),
+        _broadcast_timeout(facts, confs, headroom),
     ):
         if proposta is not None:
             propriedades.append(proposta)
         if recusa is not None:
             recusas.append(recusa)
-
-    for chave, razao in sorted(_SEM_BASE_MEDIDA.items()):
-        recusas.append({"reason": "no_measured_basis", "property": chave, "detail": razao})
 
     return {
         "runtime": {

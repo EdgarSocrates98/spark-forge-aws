@@ -33,12 +33,12 @@
   "refused": [],
   "rollback_diff": "--- a/main.tf\n+++ b/main.tf\n@@ -10,6 +10,6 @@\n   }\n \n   default_arguments = {\n-    \"--conf\" = \"spark.executor.memoryOverhead=1152\"\n+    \"--conf\" = \"spark.executor.memoryOverhead=512\"\n   }\n }\n",
   "tune_refused": [
-    "no_measured_basis",
-    "no_measured_basis",
-    "no_measured_basis",
     "no_shuffle_measured",
+    "sem_diagnostico_de_broadcast",
     "sem_explain_cost",
     "sem_footer",
-    "sem_pico_de_heap"
+    "sem_pico_de_heap",
+    "sem_relacao_observada",
+    "sem_tasks_por_executor"
   ]
 }

@@ -974,7 +974,10 @@ def build_parser() -> argparse.ArgumentParser:
     tune_p.add_argument("--out", help="Escreve o relatorio completo (JSON) neste arquivo.")
     tune_p.add_argument(
         "--headroom", type=float, default=None,
-        help="Folga declarada sobre o piso de memoryOverhead (0.2 = +20%%). Sem ela, o piso.",
+        help=(
+            "Folga declarada sobre o piso de memoryOverhead e de broadcastTimeout "
+            "(0.2 = +20%%). Sem ela, o piso."
+        ),
     )
 
     # economy ------------------------------------------------------------------

@@ -32,19 +32,19 @@
       "detail": "Nenhum lado de join tem estatistica: a estimativa e o default do Spark (8.0 EiB). Rode `ANALYZE TABLE <tabela> COMPUTE STATISTICS` na tabela menor e gere o EXPLAIN COST de novo."
     },
     {
-      "reason": "no_measured_basis",
-      "property": "spark.network.timeout",
-      "detail": "Mesma razao de `spark.sql.broadcastTimeout`. A relacao com `spark.executor.heartbeatInterval` e conferida por `SF-TIMEOUT-002`, que julga a RELACAO e nao o valor."
-    },
-    {
-      "reason": "no_measured_basis",
+      "reason": "sem_tasks_por_executor",
       "property": "spark.speculation",
-      "detail": "O documento de origem recusa explicitamente a inferencia `skew detectado -> speculation=true`: speculation duplica trabalho e aumenta I/O e custo. A decisao exige saber se a lentidao e do NO ou da PARTICAO, e nenhuma fonte de hoje separa os dois."
+      "detail": "Nenhuma duracao de task nos facts. `sparkforge analyze event-log` a extrai de `SparkListenerTaskEnd`, com o executor de cada task."
     },
     {
-      "reason": "no_measured_basis",
+      "reason": "sem_relacao_observada",
+      "property": "spark.network.timeout",
+      "detail": "Sem `spark.timeout.relation`: o run nao reportou `spark.executor.heartbeatInterval` e `spark.network.timeout` juntos em `spark.conf_effective`. `sparkforge analyze event-log` seguido de `sparkforge fuse` a produz."
+    },
+    {
+      "reason": "sem_diagnostico_de_broadcast",
       "property": "spark.sql.broadcastTimeout",
-      "detail": "Subir timeout nao e conserto de performance -- e a `SF-TIMEOUT-001`, do subprojeto F. O diagnostico de timeout nomeia a categoria; propor um numero novo aqui contradiria a regra."
+      "detail": "Nenhum `spark.timeout.diagnosis` com categoria `broadcast`. Sem o broadcast estourando o limite nao tem o que sustentar; `wall_clock` e `heartbeat` nunca tem valor proposto (regra 15)."
     }
   ]
 }

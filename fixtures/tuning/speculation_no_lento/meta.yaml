@@ -1,0 +1,4 @@
+name: speculation_no_lento
+runtime:
+  glue: '5.0'
+proves: '`spark.executor.slow_node` do executor 2 em dois stages: `spark.speculation = true` proposto, com os stages e o criterio da versao no `basis`.'

@@ -23,7 +23,9 @@ Campos do Spark event log usam nomes com maiuscula e espaco ("Task Metrics",
 from __future__ import annotations
 
 import json
+import math
 import re
+import statistics
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
@@ -43,9 +45,11 @@ EMITTED_KINDS = frozenset(
         "spark.stage.task_count",
         "spark.stage.failure",
         "spark.stage.callsite",
+        "spark.stage.slow_tasks",
         "spark.cluster.cores",
         "spark.executor.lost",
         "spark.executor.memory_usage",
+        "spark.executor.slow_node",
         "spark.job.spill_summary",
         "spark.runtime_version",
         "spark.conf_effective",
@@ -164,9 +168,15 @@ class _StageAccumulator:
         "shuffle_write_time_ns",
         "shuffle_read_seen",
         "shuffle_write_seen",
+        "tasks",
     )
 
     def __init__(self) -> None:
+        # (duracao, executor, host, input) de cada task bem-sucedida e nao
+        # morta, para o criterio de speculation. `Killed` sai daqui e nao das
+        # outras agregacoes: a copia morta nao terminou o trabalho, e o
+        # scheduler so conta as bem-sucedidas na mediana.
+        self.tasks: list[tuple[int, str, str, int | None]] = []
         self.durations_ms: list[int] = []
         self.input_bytes: list[int] = []
         self.memory_spill_bytes = 0
@@ -225,6 +235,32 @@ class _StageAccumulator:
             self.shuffle_write_bytes += int(escrita.get("Shuffle Bytes Written") or 0)
             self.shuffle_write_records += int(escrita.get("Shuffle Records Written") or 0)
             self.shuffle_write_time_ns += int(escrita.get("Shuffle Write Time") or 0)
+
+        # O tamanho da PARTICAO que a task processou e o que ela LEU: input do
+        # data lake mais shuffle lido (remoto e local). So o input deixaria de
+        # fora a task de shuffle que e lenta por ler mais -- e ela seria contada
+        # como no lento. Sem nenhuma das duas medidas, o tamanho e desconhecido.
+        if (
+            isinstance(launch, int | float)
+            and isinstance(finish, int | float)
+            and not task_info.get("Killed")
+        ):
+            partes = []
+            if isinstance(bytes_read, int | float):
+                partes.append(int(bytes_read))
+            if isinstance(leitura, dict):
+                partes.append(
+                    int(leitura.get("Remote Bytes Read") or 0)
+                    + int(leitura.get("Local Bytes Read") or 0)
+                )
+            self.tasks.append(
+                (
+                    max(0, int(finish) - int(launch)),
+                    str(task_info.get("Executor ID") or ""),
+                    str(task_info.get("Host") or ""),
+                    sum(partes) if partes else None,
+                )
+            )
 
 
 def _line_subject(path: str, line_no: int, snippet: str) -> dict[str, Any]:
@@ -459,6 +495,168 @@ def _stage_facts(
         )
     )
 
+    return facts
+
+
+# Criterio do scheduler para lancar copia especulativa, conferido no fonte
+# (`TaskSetManager` e `config/package.scala`): uma task e lenta quando dura mais
+# que max(multiplier x mediana das bem-sucedidas, tempo minimo), e so depois que
+# max(floor(quantile x tasks), 1) tasks terminaram. Os defaults mudaram no
+# Spark 4.0.0; o tempo minimo e 100 ms em todas (constante do scheduler na
+# 3.1.1, `spark.speculation.minTaskRuntime` desde a 3.2.0).
+_ESPECULACAO_ANTES_DO_4 = {"multiplier": 1.5, "quantile": 0.75, "min_task_ms": 100.0}
+_ESPECULACAO_DESDE_O_4 = {"multiplier": 3.0, "quantile": 0.9, "min_task_ms": 100.0}
+_CHAVES_DE_ESPECULACAO = {
+    "multiplier": "spark.speculation.multiplier",
+    "quantile": "spark.speculation.quantile",
+    "min_task_ms": "spark.speculation.minTaskRuntime",
+}
+_TEMPO_RE = re.compile(r"^\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|s|min|m|h)?\s*$", re.IGNORECASE)
+_FATOR_MS = {"": 1.0, "ms": 1.0, "s": 1000.0, "m": 60000.0, "min": 60000.0, "h": 3600000.0}
+
+
+def _criterio_de_especulacao(
+    spark_version: str, propriedades: dict[str, str]
+) -> dict[str, Any] | None:
+    """Os tres parametros do criterio: default da versao, e o configurado vence.
+
+    Sem versao e sem os tres configurados, `None`: escolher a linha da tabela
+    sem saber a versao seria o erro de versao da regra 18.
+    """
+    try:
+        maior: int | None = int(spark_version.split(".")[0])
+    except ValueError:
+        maior = None
+    if maior is None:
+        base = None
+    else:
+        base = _ESPECULACAO_DESDE_O_4 if maior >= 4 else _ESPECULACAO_ANTES_DO_4
+    lidos: dict[str, float] = {}
+    for campo, chave in _CHAVES_DE_ESPECULACAO.items():
+        texto = propriedades.get(chave)
+        if texto is None:
+            continue
+        valor: float | None
+        if campo == "min_task_ms":
+            casou = _TEMPO_RE.match(texto)
+            valor = float(casou[1]) * _FATOR_MS[(casou[2] or "").lower()] if casou else None
+        else:
+            try:
+                valor = float(texto)
+            except ValueError:
+                valor = None
+        if valor is not None:
+            lidos[campo] = valor
+    if base is None and len(lidos) < len(_CHAVES_DE_ESPECULACAO):
+        return None
+    return {**(base or {}), **lidos, "source": "configured" if lidos else "spark_default"}
+
+
+def _tasks_lentas(
+    stage_id: int,
+    stage_name: str,
+    acc: _StageAccumulator,
+    declared_task_count: int | None,
+    criterio: dict[str, Any] | None,
+    provenance: dict[str, Any],
+) -> tuple[Fact | None, dict[str, dict[str, Any]]]:
+    """`spark.stage.slow_tasks` do stage, so quando ha task lenta.
+
+    Stage sem task lenta nao emite nada: um fact por stage uniforme seria
+    volume sem decisao. Devolve tambem, por executor, o que a derivacao de
+    `spark.executor.slow_node` precisa.
+    """
+    if criterio is None or not acc.tasks:
+        return None, {}
+    total = declared_task_count if declared_task_count is not None else len(acc.tasks)
+    if len(acc.tasks) < max(math.floor(criterio["quantile"] * total), 1):
+        return None, {}
+    mediana = statistics.median(d for d, _, _, _ in acc.tasks)
+    limiar = max(criterio["multiplier"] * mediana, criterio["min_task_ms"])
+    lentas = [t for t in acc.tasks if t[0] > limiar]
+    if not lentas:
+        return None, {}
+    lidos = [b for _, _, _, b in acc.tasks if b is not None]
+    mediana_lida = statistics.median(lidos) if lidos else None
+
+    por_executor: dict[str, dict[str, Any]] = {}
+    for _duracao, executor, host, lido in lentas:
+        if not executor:
+            continue
+        linha = por_executor.setdefault(
+            executor, {"slow": 0, "host": host, "max_slow_read_bytes": None, "read_known": True}
+        )
+        linha["slow"] += 1
+        if lido is None:
+            linha["read_known"] = False
+        else:
+            linha["max_slow_read_bytes"] = max(linha["max_slow_read_bytes"] or 0, lido)
+
+    medidas: dict[str, Any] = {
+        "task_count": len(acc.tasks),
+        "slow_count": len(lentas),
+        "threshold_ms": limiar,
+        "median_ms": mediana,
+    }
+    if mediana_lida is not None:
+        medidas["median_read_bytes"] = mediana_lida
+    fato = Fact(
+        kind="spark.stage.slow_tasks",
+        subject=_stage_subject(stage_id, stage_name),
+        measures=medidas,
+        attrs={
+            "multiplier": criterio["multiplier"],
+            "quantile": criterio["quantile"],
+            "min_task_ms": criterio["min_task_ms"],
+            "criterion_source": criterio["source"],
+            "by_executor": dict(sorted(por_executor.items())),
+        },
+        provenance=provenance,
+    )
+    return fato, {
+        executor: {**linha, "stage_id": stage_id, "median_read_bytes": mediana_lida}
+        for executor, linha in por_executor.items()
+    }
+
+
+def _nos_lentos(
+    por_executor: dict[str, list[dict[str, Any]]], provenance: dict[str, Any]
+) -> list[Fact]:
+    """`spark.executor.slow_node`: o MESMO executor lento em dois ou mais stages.
+
+    So conta o stage em que TODA task lenta do executor leu no maximo a
+    mediana do stage (input mais shuffle lido): task lenta que leu mais e
+    explicada pela particao, e leitura desconhecida nao prova nada. Contar
+    entre stages e agregacao que o `where` do motor nao alcanca (regra 33), por
+    isso mora aqui.
+    """
+    facts: list[Fact] = []
+    for executor, linhas in sorted(por_executor.items()):
+        do_no = [
+            linha
+            for linha in linhas
+            if linha["read_known"]
+            and linha["median_read_bytes"] is not None
+            and (linha["max_slow_read_bytes"] or 0) <= linha["median_read_bytes"]
+        ]
+        if len(do_no) < 2:
+            continue
+        facts.append(
+            Fact(
+                kind="spark.executor.slow_node",
+                subject={"type": "job_run", "symbol": executor},
+                measures={
+                    "stages_slow": len(do_no),
+                    "slow_tasks": sum(linha["slow"] for linha in do_no),
+                },
+                attrs={
+                    "executor_id": executor,
+                    "host": do_no[0]["host"],
+                    "stage_ids": sorted(linha["stage_id"] for linha in do_no),
+                },
+                provenance=provenance,
+            )
+        )
     return facts
 
 
@@ -813,6 +1011,8 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
     # (log truncado -- job morto no meio da execucao) ainda produz Facts,
     # com nome vazio e task_count de melhor esforco: um blind spot parcial
     # e mais honesto que descartar o stage inteiro.
+    criterio = _criterio_de_especulacao(spark_version, spark_properties)
+    lentos_por_executor: dict[str, list[dict[str, Any]]] = {}
     for stage_id in sorted(stage_acc.keys() | completed_stage_ids):
         acc = stage_acc.get(stage_id, _StageAccumulator())
         stage_name = stage_names.get(stage_id, "")
@@ -820,6 +1020,12 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
         facts.extend(
             _stage_facts(stage_id, stage_name, acc, declared, peak_cores or None, provenance)
         )
+        lento, linhas = _tasks_lentas(stage_id, stage_name, acc, declared, criterio, provenance)
+        if lento is not None:
+            facts.append(lento)
+        for executor, linha in linhas.items():
+            lentos_por_executor.setdefault(executor, []).append(linha)
+    facts.extend(_nos_lentos(lentos_por_executor, provenance))
 
     # Visao de JOB do spill, alem da de stage.
     #

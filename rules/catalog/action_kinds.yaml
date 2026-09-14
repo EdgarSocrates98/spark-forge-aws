@@ -83,6 +83,9 @@ kinds:
   capacity.change_preinitialized_capacity:
     axis: capacidade
     description: Mudar ou remover a capacidade pre-inicializada declarada da application.
+  capacity.investigate_slow_executor:
+    axis: capacidade
+    description: Isolar o executor lento em varios stages (worker, disco, rede) antes de ligar speculation como mitigacao.
 
   # --- provisionamento ------------------------------------------------------
   provisioning.diagnose_bootstrap_failure:

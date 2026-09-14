@@ -33,6 +33,7 @@ expects_kinds:
 - spark.stage.callsite
 - spark.stage.gc
 - spark.stage.shuffle
+- spark.stage.slow_tasks
 - spark.stage.spill
 - spark.stage.task_count
 - spark.stage.task_duration

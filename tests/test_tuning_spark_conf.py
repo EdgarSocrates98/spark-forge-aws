@@ -201,18 +201,18 @@ class TestRecusas:
     def test_every_property_of_the_document_without_basis_is_named(self):
         """Listar a recusa e a diferenca entre nao sei e nao perguntei."""
         relatorio = build_conf_advice([_shuffle(640 * MIB)], runtime={"glue": "5.0"})
-        sem_base = {
-            r["property"] for r in relatorio["refused"] if r["reason"] == "no_measured_basis"
-        }
 
-        assert "spark.speculation" in sem_base
-        # Overhead, heap, split e broadcast deixaram de ser `no_measured_basis`:
-        # sem a medida, cada um sai recusado pela medida que falta.
+        # Nenhuma propriedade sai mais como `no_measured_basis`: sem a medida,
+        # cada uma e recusada pela medida que falta.
+        assert "no_measured_basis" not in _recusas(relatorio)
         por_chave = {r["property"]: r["reason"] for r in relatorio["refused"]}
         assert por_chave["spark.executor.memoryOverhead"] == "sem_memoria_por_executor"
         assert por_chave["spark.executor.memory"] == "sem_memoria_por_executor"
         assert por_chave["spark.sql.files.maxPartitionBytes"] == "sem_footer"
         assert por_chave["spark.sql.autoBroadcastJoinThreshold"] == "sem_explain_cost"
+        assert por_chave["spark.speculation"] == "sem_tasks_por_executor"
+        assert por_chave["spark.network.timeout"] == "sem_relacao_observada"
+        assert por_chave["spark.sql.broadcastTimeout"] == "sem_diagnostico_de_broadcast"
 
     def test_the_refusals_say_what_would_unlock_them(self):
         relatorio = build_conf_advice([_shuffle(640 * MIB)], runtime={"glue": "5.0"})
@@ -419,3 +419,75 @@ class TestPortaDoHeadroom:
             tune_conf(str(facts), headroom=-0.1)
 
         assert erro.value.exit_code == 2
+
+
+def _relacao(heartbeat_s, rede_s):
+    return Fact(
+        kind="spark.timeout.relation",
+        subject={"type": "job_run", "symbol": ""},
+        measures={"heartbeat_s": float(heartbeat_s), "network_timeout_s": float(rede_s)},
+    )
+
+
+def _diagnostico(categoria="broadcast", also_seen=(), **sintomas):
+    return Fact(
+        kind="spark.timeout.diagnosis",
+        subject={"type": "job_run", "symbol": ""},
+        measures={"executor_lost_count": 0.0, **{k: float(v) for k, v in sintomas.items()}},
+        attrs={"category": categoria, "basis": "stage_failure_reason", "evidence_text": "x",
+               "also_seen": list(also_seen)},
+    )
+
+
+def _exchange(total_ms):
+    return Fact(
+        kind="spark.sql.broadcast_exchange",
+        subject={"type": "plan_node", "node_id": 2, "operator": "BroadcastExchange",
+                 "relation": "", "symbol": "0:2", "execution_id": 0},
+        measures={"collect_ms": total_ms, "build_ms": 0, "broadcast_ms": 0},
+    )
+
+
+class TestTimeouts:
+    def test_a_broken_relation_gives_twelve_heartbeats(self):
+        relatorio = build_conf_advice([_relacao(60, 30)], runtime=_RT)
+        derivado = _propriedade(relatorio, "spark.network.timeout")["derived"]
+
+        assert derivado["value"] == 720
+        assert derivado["basis"]["ratio"] == 12
+
+    def test_a_standing_relation_has_no_number(self):
+        relatorio = build_conf_advice([_relacao(10, 120)], runtime=_RT)
+
+        assert "relacao_ok" in _recusas(relatorio)
+
+    def test_the_broadcast_timeout_is_the_measured_floor_with_headroom(self):
+        relatorio = build_conf_advice(
+            [_diagnostico(), _exchange(370_000)], runtime=_RT, headroom=0.1
+        )
+        derivado = _propriedade(relatorio, "spark.sql.broadcastTimeout")["derived"]
+
+        assert derivado["value"] == 408
+        assert derivado["basis"]["effective_timeout_s"] == 300.0
+
+    def test_a_symptom_at_the_catalog_threshold_refuses(self):
+        """O limiar vem da SF-TIMEOUT-001 (skew 3.0) e a comparacao e `>=`, como na regra."""
+        relatorio = build_conf_advice(
+            [_diagnostico(skew_p95_over_p50=3.0), _exchange(370_000)], runtime=_RT
+        )
+
+        assert "sintoma_ao_lado" in _recusas(relatorio)
+
+    def test_another_category_beside_refuses(self):
+        relatorio = build_conf_advice(
+            [_diagnostico(also_seen=["wall_clock"]), _exchange(370_000)], runtime=_RT
+        )
+
+        assert "broadcast_com_outra_categoria" in _recusas(relatorio)
+
+    def test_a_network_diagnosis_never_proposes_broadcast_timeout(self):
+        relatorio = build_conf_advice(
+            [_diagnostico(categoria="network"), _exchange(370_000)], runtime=_RT
+        )
+
+        assert "sem_diagnostico_de_broadcast" in _recusas(relatorio)

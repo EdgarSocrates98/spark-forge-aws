@@ -435,6 +435,42 @@
     }
   },
   {
+    "id": "f_0e258d",
+    "schema_version": 1,
+    "kind": "spark.stage.slow_tasks",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "measures": {
+      "task_count": 6,
+      "slow_count": 1,
+      "threshold_ms": 1500.0,
+      "median_ms": 1000.0,
+      "median_read_bytes": 10000000.0
+    },
+    "attrs": {
+      "multiplier": 1.5,
+      "quantile": 0.75,
+      "min_task_ms": 100.0,
+      "criterion_source": "spark_default",
+      "by_executor": {
+        "2": {
+          "slow": 1,
+          "host": "10.0.0.12",
+          "max_slow_read_bytes": 200000000,
+          "read_known": true
+        }
+      }
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_22f46d",
     "schema_version": 1,
     "kind": "spark.stage.spill",

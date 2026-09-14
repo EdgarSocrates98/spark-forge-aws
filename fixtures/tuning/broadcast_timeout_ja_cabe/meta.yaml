@@ -1,0 +1,4 @@
+name: broadcast_timeout_ja_cabe
+runtime:
+  glue: '5.0'
+proves: 'O broadcast que completou levou 240 ms: o limite de 300 s ja passa do piso, recusa `ja_cabe_no_timeout`.'

@@ -322,3 +322,46 @@ rules:
     rollback: [Reverter configuração de partições e de capacidade.]
     sources:
       - {origin: field-heuristic, note: "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."}
+
+  - id: SF-UI-007
+    category: spark-ui
+    title: Executor lento em vários stages sem partição maior — lentidão do nó
+    requires_facts: [spark.executor.slow_node]
+    when:
+      all:
+        - fact: spark.executor.slow_node
+          expr: "measures.stages_slow >= threshold.min_stages"
+    threshold: {min_stages: 2}
+    status: confirmed
+    severity_default: P2
+    # Escopo vazio: o criterio de task lenta ja e o da versao, resolvido no
+    # extrator (`spark.stage.slow_tasks` le a versao de SparkListenerLogStart);
+    # a regra so conta stages.
+    runtime_scope: {}
+    explanation: >
+      O mesmo executor teve tasks acima do critério de cópia especulativa do
+      Spark — max(multiplier × mediana, tempo mínimo) — em dois ou mais stages,
+      e essas tasks não leram mais que a mediana do stage, contando input e
+      shuffle lido. A partição não explica a lentidão; o nó explica: worker
+      degradado, disco lento, rede ou vizinho barulhento. Skew é o caso oposto,
+      a task lenta porque leu mais.
+    proposed_change:
+      - Investigar o worker do executor nomeado (disco, rede e CPU do nó no mesmo intervalo) antes de mexer em configuração.
+      - Se o nó não puder ser trocado, ligar spark.speculation como mitigação — `sparkforge tune` propõe o valor com os stages medidos.
+    action:
+      kind: capacity.investigate_slow_executor
+      target: spark.speculation
+      direction: investigate
+      requires_absent: []
+      moves:
+        - skew.task_duration_ratio
+      depends_on: []
+    risks: [Speculation duplica trabalho e I/O; com lentidão da partição ela só relança a task grande.]
+    tradeoffs: [Investigar o nó custa tempo de análise; speculation custa recurso em todo run.]
+    validation:
+      - Razão p95/p50 de duração de task nos stages nomeados, depois da mudança.
+      - Contagem de tasks lentas do mesmo executor no run seguinte.
+    rollback: [Reverter spark.speculation; nenhuma escrita de dado é envolvida.]
+    sources:
+      - {url: "https://raw.githubusercontent.com/apache/spark/v3.5.4/core/src/main/scala/org/apache/spark/scheduler/TaskSetManager.scala", retrieved: 2026-09-14, note: "Critério de task especulável: max(multiplier × mediana, tempo mínimo), depois de o quantile de tasks terminar. A mesma fórmula nas tags v3.1.1 e v4.1.1."}
+      - {url: "https://spark.apache.org/docs/latest/configuration.html", retrieved: 2026-09-14, note: "Defaults de spark.speculation.multiplier (3), quantile (0.9) e minTaskRuntime (100ms) desde o Spark 4.0.0; 1.5 e 0.75 antes."}

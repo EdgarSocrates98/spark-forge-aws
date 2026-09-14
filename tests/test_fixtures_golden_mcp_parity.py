@@ -20,6 +20,7 @@ aqui, derruba o teste -- e quem o aceitar escreve o motivo.
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -146,6 +147,18 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "outputSchema.oneOf[0].properties.refused.items.properties.reason.enum",
     ): "2026-09-14: onze recusas nomeadas das quatro propriedades novas (regra 20)",
 }
+# Chamadas gravadas cujo CONTEUDO mudou porque o catalogo mudou, e nao o SDK.
+# So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
+# dois lados antes de comparar; todo o resto da chamada continua byte a byte, e
+# o teste exige que a troca exista (senao a excecao sobra e cai).
+CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
+    "sucesso_verbo_lookup": (
+        "2026-09-14: a SF-TIMEOUT-002 passou a mirar `spark.network.timeout` com "
+        "`direction: increase`, e o `proposed_change` cita o valor que o `tune` deriva "
+        "(frente 2b); o resto da regra e da resposta nao mudou"
+    ),
+}
+_CAMPOS_DA_REGRA_REESCRITOS = (("action", "target"), ("action", "direction"), ("proposed_change",))
 _CAMINHO_DE_TOOL = re.compile(r"^\$\.tools_list\.(stdio|http)\.tools\[(\d+)\]\.")
 
 
@@ -183,7 +196,22 @@ def _fora_da_allowlist(
         and not _aditiva_em_tool_alterada(caminho, antes, golden)
         and not _padrao_alargado(caminho, antes, agora)
         and not _reescrita_declarada(caminho, antes, agora, golden)
+        and not _chamada_declarada(caminho)
     ]
+
+
+_CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
+    r"^\$\.calls\.(?P<chave>[A-Za-z0-9_]+)\.result\."
+    r"(?:content\[0\]\.text"
+    r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
+)
+
+
+def _chamada_declarada(caminho: str) -> bool:
+    """So os campos reescritos da chamada declarada; o texto inteiro e conferido por
+    `test_toda_chamada_bate_byte_a_byte`, que o compara com os mesmos campos neutralizados."""
+    casou = _CAMINHO_DA_CHAMADA_DECLARADA.match(caminho)
+    return casou is not None and casou.group("chave") in CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN
 
 
 def _reescrita_declarada(caminho: str, antes: Any, agora: Any, golden: dict[str, Any]) -> bool:
@@ -201,6 +229,30 @@ def _reescrita_declarada(caminho: str, antes: Any, agora: Any, golden: dict[str,
             and agora[: len(antes)] == antes
         )
     return isinstance(antes, str) and isinstance(agora, str)
+
+
+def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
+    """O resultado com os campos declarados trocados por um marcador, nos dois formatos.
+
+    O texto do `content` e JSON serializado: ele e lido, neutralizado e mantido
+    como objeto, para a comparacao nao depender da ordem de serializacao.
+    """
+    copia = json.loads(json.dumps(resultado))
+
+    def neutraliza(regra: dict[str, Any]) -> None:
+        for caminho in _CAMPOS_DA_REGRA_REESCRITOS:
+            alvo = regra
+            for chave in caminho[:-1]:
+                alvo = alvo[chave]
+            alvo[caminho[-1]] = "<declarado>"
+
+    for regra in copia["structuredContent"]["rules"]:
+        neutraliza(regra)
+    texto = json.loads(copia["content"][0]["text"])
+    for regra in texto["rules"]:
+        neutraliza(regra)
+    copia["content"][0]["text"] = texto
+    return copia
 
 
 def _padrao_alargado(caminho: str, antes: Any, agora: Any) -> bool:
@@ -291,10 +343,22 @@ class TestHandshakeLegado:
             for t in ("stdio", "http")
         }
         assert reescritas == {"stdio": 3, "http": 3}
+        # A chamada declarada: o texto serializado, alvo, direcao e os dois
+        # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
+        # que mudou sem registro.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 5
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
-            assert legado["calls"][chave]["result"] == esperado["result"], chave
+            agora = legado["calls"][chave]["result"]
+            if chave in CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN:
+                assert agora != esperado["result"], f"{chave}: excecao declarada sem troca"
+                assert _neutro(agora) == _neutro(esperado["result"]), chave
+                continue
+            assert agora == esperado["result"], chave
+
+    def test_toda_chamada_alterada_tem_motivo(self):
+        assert all(m.strip() for m in CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN.values())
 
     def test_o_fio_legado_nao_carrega_envelope_novo(self, legado):
         for transporte in ("stdio", "http"):
