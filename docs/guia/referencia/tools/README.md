@@ -68,6 +68,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_change_plan`](sparkforge_change_plan.md) | só leitura | Autonomia L1 (§15, produce change): o diff unificado e o diff de rollback de um VALOR de configuracao Spark, achado pela procedencia dos facts -- `tf.spark_conf` (so o par `chav... |
+| [`sparkforge_change_propose`](sparkforge_change_propose.md) | grava local | Autonomia L3 (§15, propose change): monta o pacote de um PR em `.sparkforge/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id que `sparkforge_change_sandbox`... |
 | [`sparkforge_change_sandbox`](sparkforge_change_sandbox.md) | grava local | Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do `sparkforge change plan --out` ou de `git diff`) numa COPIA do repositorio em `.sparkforge/sandbox... |
 
 ## code

@@ -88,6 +88,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_change_sandbox": "2026-09-13: um diff numa copia isolada, e o que ele move (§15)",
     "sparkforge_analyze_workload": "2026-09-14: o SLA declarado em workload.yaml (porta publica)",
     "sparkforge_collect_parquet_footer": "2026-09-14: a porta do coletor de footer Parquet",
+    "sparkforge_change_propose": "2026-09-14: o pacote de PR montado a partir do sandbox (§15 L3)",
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

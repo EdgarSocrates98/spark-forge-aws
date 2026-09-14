@@ -284,6 +284,13 @@ NON_DISPATCHABLE_SKILLS = {
         "conduz o laco do debate no agente pai e despacha os lados; despachada "
         "inteira, os dois lados dividiriam um contexto e gravariam no case"
     ),
+    # O lado do host do L3 do §15: roda git na arvore do operador e para antes
+    # de `git push` e de `gh pr create`. As duas paradas pedem confirmacao
+    # humana, e um subagente despachado nao tem a quem perguntar.
+    "propose-change-pr": (
+        "roda git/gh na arvore do operador e para para confirmacao humana antes de "
+        "push e de abrir o PR; despachada, ninguem estaria la para confirmar"
+    ),
     "token-efficient-agent": "aplica contexto no agente atual",
     "tool-specialist-routing": "valida roteamento no agente atual",
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,

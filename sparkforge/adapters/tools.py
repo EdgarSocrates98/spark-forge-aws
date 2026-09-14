@@ -31,7 +31,11 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
-from sparkforge.change.refusals import RECUSAS_DO_PLANO, RECUSAS_DO_SANDBOX
+from sparkforge.change.refusals import (
+    RECUSAS_DA_PROPOSTA,
+    RECUSAS_DO_PLANO,
+    RECUSAS_DO_SANDBOX,
+)
 from sparkforge.observability.context_ledger import shared_ledger
 
 if TYPE_CHECKING:
@@ -3204,6 +3208,49 @@ _CHANGE_REFUSAL: dict[str, Any] = {
         "reason": {"type": "string", "enum": sorted({*RECUSAS_DO_PLANO, *RECUSAS_DO_SANDBOX})},
         "detail": {"type": "string"},
         "unlock": {"type": "string"},
+    },
+}
+
+_CHANGE_PROPOSE_REFUSAL: dict[str, Any] = {
+    "type": "object",
+    "required": ["reason", "detail", "unlock"],
+    "properties": {
+        "reason": {"type": "string", "enum": sorted(RECUSAS_DA_PROPOSTA)},
+        "detail": {"type": "string"},
+        "unlock": {"type": "string"},
+    },
+}
+_PROPOSE_FINDING: dict[str, Any] = {
+    "type": "object",
+    "required": ["rule_id", "severity", "subject"],
+    "properties": {
+        "rule_id": {"type": "string"},
+        "severity": {"type": "string"},
+        "title": {"type": "string"},
+        "subject": {"type": "object"},
+    },
+}
+_CHANGE_PROPOSE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["stage", "applied", "git_run", "main_tree_touched", "refused"],
+    "properties": {
+        "stage": {"type": "string", "enum": ["propose_change"]},
+        "applied": {"type": "boolean", "enum": [False]},
+        "git_run": {"type": "boolean", "enum": [False]},
+        "main_tree_touched": {"type": "boolean", "enum": [False]},
+        "refused": {"type": "array", "items": _CHANGE_PROPOSE_REFUSAL},
+        "proposal": {"type": ["string", "null"]},
+        "id": {"type": ["string", "null"]},
+        "files": {"type": "array", "items": {"type": "string"}},
+        "branch": {"type": ["string", "null"]},
+        "blocking_findings": {"type": "array", "items": _PROPOSE_FINDING},
+        "attention_findings": {"type": "array", "items": _PROPOSE_FINDING},
+        "pending_measures": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["benchmark", "funcval"]},
+        },
+        "signed": {"type": "boolean"},
+        "receipt_id": {"type": ["string", "null"]},
     },
 }
 
@@ -7974,6 +8021,53 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_IDEMPOTENT,
     },
+    "sparkforge_change_propose": {
+        "description": (
+            "Autonomia L3 (§15, propose change): monta o pacote de um PR em "
+            "`.sparkforge/proposal/<id>/` a partir de um sandbox JA rodado (`sandbox_id`, o id "
+            "que `sparkforge_change_sandbox` devolveu): `change.patch` e `rollback.patch` "
+            "provados contra a copia validada, `pr_body.md` assinado pelo `report sign` com os "
+            "findings de `after/`, `commit_message.txt`, `branch.txt`, `commands.md` com os "
+            "comandos git/gh que o HOST roda, `evidence/sandbox_report.json`, "
+            "`evidence/receipt.json` e `manifest.json`. Recusa antes de gravar: "
+            "sandbox_inexistente, sandbox_nao_aplicado, sandbox_desatualizado (a arvore mudou "
+            "depois do sandbox) e achado_novo_bloqueante (o diff faz aparecer P0/P1). "
+            "`benchmark_paths` e `funcval_path` anexam facts ja medidos; sem eles a medida sai "
+            "PENDENTE no corpo. `now` entra no recibo: o mesmo `now` grava os mesmos bytes. O QUE "
+            "ELA NAO FAZ: nao roda git, gh nem subprocess (`git_run: false`), nao toca a arvore "
+            "principal, nao abre o PR e nao afirma ganho."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "sandbox_id", "now"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio."},
+                "sandbox_id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{16}$",
+                    "description": "O id que `sparkforge_change_sandbox` devolveu.",
+                },
+                "benchmark_paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arquivos de facts com `bench.*` de dois runs medidos.",
+                },
+                "funcval_path": {
+                    "type": "string",
+                    "description": "Arquivo de facts com `funcval.*` do funcval compare.",
+                },
+                "now": {
+                    "type": "string",
+                    "description": "Instante ISO 8601 do recibo. Entra no hash.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _CHANGE_PROPOSE_SCHEMA,
+            "O pacote gravado, a recusa com o que a destrava, ou erro de entrada.",
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9769,6 +9863,16 @@ def _h_change_sandbox(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_change_propose(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.change_propose(
+        args.get("repo", "."),
+        sandbox_id=args.get("sandbox_id"),
+        benchmark_paths=args.get("benchmark_paths"),
+        funcval_path=args.get("funcval_path"),
+        now=args["now"],
+    )
+
+
 def _h_doctor(args: dict[str, Any]) -> dict[str, Any]:
     # Nunca `online`: a tool e READ_ONLY sem rede; STS e so da CLI.
     return _core.doctor(args.get("repo", "."))
@@ -10099,6 +10203,7 @@ _HANDLERS = {
     "sparkforge_policy_explain": _h_policy_explain,
     "sparkforge_change_plan": _h_change_plan,
     "sparkforge_change_sandbox": _h_change_sandbox,
+    "sparkforge_change_propose": _h_change_propose,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,

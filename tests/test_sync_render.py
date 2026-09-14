@@ -543,6 +543,10 @@ class TestRelacaoDerivada:
             # dois lados dividiriam um contexto -- o motivo esta em
             # `scripts/sync_skills.py::NON_DISPATCHABLE_SKILLS`.
             "run-debate",
+            # `propose-change-pr` (2026-09-14) roda git/gh na arvore do operador
+            # e para para confirmacao humana antes de push e de PR; despachada,
+            # ninguem estaria la para confirmar.
+            "propose-change-pr",
         }
         orfas = [
             p.name

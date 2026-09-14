@@ -106,6 +106,7 @@ class TestToolSurface:
             "sparkforge_policy_explain",
             "sparkforge_change_plan",
             "sparkforge_change_sandbox",
+            "sparkforge_change_propose",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -290,6 +291,10 @@ class TestToolSurface:
             # execucao com o mesmo `id` para a mesma entrada (§15). A arvore
             # principal nunca e escrita.
             "sparkforge_change_sandbox",
+            # `sparkforge_change_propose` grava o pacote do PR em
+            # `.sparkforge/proposal/<id>/` (tmp + troca), e o mesmo `now` grava os
+            # mesmos bytes (§15 L3). Nao roda git e nao toca a arvore principal.
+            "sparkforge_change_propose",
             # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
             #
             # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
@@ -2735,6 +2740,30 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert [r["rule_id"] for r in result["resolved"]] == ["SF-PY-012"], result
         return result
 
+    if name == "sparkforge_change_propose":
+        # O sandbox que resolve o SF-PY-012 vira pacote de PR: nove arquivos, o
+        # corpo assinado e o recibo, e git nenhum rodado.
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        caso = (
+            Path(__file__).resolve().parents[1] / "fixtures" / "change" / "resolve_achado" / "input"
+        )
+        destino = Path(tempfile.mkdtemp()) / "repo"
+        shutil.copytree(caso / "repo", destino)
+        sandbox = call_tool(
+            "sparkforge_change_sandbox",
+            {"repo": str(destino), "diff_path": str(caso / "host.patch")},
+        )
+        result = call_tool(
+            "sparkforge_change_propose",
+            {"repo": str(destino), "sandbox_id": sandbox["id"], "now": "2026-09-14T00:00:00Z"},
+        )
+        assert result["refused"] == [] and result["git_run"] is False, result
+        assert "pr_body.md" in result["files"], result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -3169,6 +3198,10 @@ class TestErrorShapesValidateToo:
             {"facts_path": ["<tmp>/nada.json"], "repo": "<tmp>/nao-existe", "sets": ["a=1"]},
         ),
         ("sparkforge_change_sandbox", {"repo": "<tmp>/nao-existe", "diff_path": "<tmp>/x.patch"}),
+        (
+            "sparkforge_change_propose",
+            {"repo": "<tmp>/nao-existe", "sandbox_id": "0" * 16, "now": "2026-09-14T00:00:00Z"},
+        ),
         (
             "sparkforge_arbitrate",
             {
