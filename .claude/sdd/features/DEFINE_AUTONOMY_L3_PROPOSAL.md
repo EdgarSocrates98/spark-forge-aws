@@ -9,7 +9,7 @@
 | **Feature** | AUTONOMY_L3_PROPOSAL |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -153,4 +153,4 @@ None - ready for Design. A-002, A-004 e A-005 são conferências de design e bui
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_AUTONOMY_L3_PROPOSAL.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_AUTONOMY_L3_PROPOSAL.md`
