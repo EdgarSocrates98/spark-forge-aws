@@ -972,6 +972,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     tune_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
     tune_p.add_argument("--out", help="Escreve o relatorio completo (JSON) neste arquivo.")
+    tune_p.add_argument(
+        "--headroom", type=float, default=None,
+        help="Folga declarada sobre o piso de memoryOverhead (0.2 = +20%%). Sem ela, o piso.",
+    )
 
     # economy ------------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `capacity`, `finops` e `tune`: compoe
@@ -3280,7 +3284,7 @@ def _cmd_finops(args: argparse.Namespace) -> int:
 
 
 def _cmd_tune(args: argparse.Namespace) -> int:
-    payload = _core.tune_conf(args.facts)
+    payload = _core.tune_conf(args.facts, headroom=args.headroom)
     if args.out:
         Path(args.out).write_text(
             json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"

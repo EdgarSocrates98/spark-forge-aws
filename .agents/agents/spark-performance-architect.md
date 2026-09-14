@@ -162,10 +162,25 @@ significa que ninguém no repositório pediu, e `spark_default_explicit` é conf
 à mão que não muda nada) e `safety`, que é `REVIEW` para paralelismo e nunca entra em produção
 sem alguém olhar.
 
-O bloco `refused` é a parte honesta: toda propriedade que o operador espera ver — limiar de
-broadcast, overhead de memória, speculation — sai listada com a medida que a destravaria.
-Nenhuma delas tem base hoje, e propor valor para elas seria trocar um número mágico por outro
-com aparência de cálculo.
+Quatro propriedades a mais saem derivadas quando a medida existe, cada uma com `safety`
+`REVIEW`:
+
+- `spark.executor.memoryOverhead` — piso do pior executor fora do heap (off-heap da JVM mais
+  RSS do Python), de `spark.executor.memory_usage`. Sem `ProcessTreePythonRSSMemory` no event
+  log sai `sem_process_tree`: ligue `spark.executor.processTreeMetrics.enabled` (default
+  false). A folga é declarada por quem pede (`headroom`), nunca inventada aqui.
+- `spark.executor.memory` — piso do pior executor no heap, da mesma medida.
+- `spark.sql.files.maxPartitionBytes` — mediana do row group **comprimido** no footer Parquet
+  (`sparkforge_collect_parquet_footer`). Com duas fontes pedindo valores diferentes sai
+  `fontes_divergentes`, porque a propriedade vale para o job inteiro.
+- `spark.sql.autoBroadcastJoinThreshold` — piso do lado menor estimado pelo `EXPLAIN COST`
+  (`plan.join_side_stats`), só com UM join candidato e com estatística. O tamanho **medido**
+  do `BroadcastExchange` (`spark.sql.broadcast_exchange`) vem ao lado em `basis`, como
+  conferência, e não substitui a estimativa.
+
+O bloco `refused` é a parte honesta: toda propriedade sem base sai listada com a medida que a
+destravaria — speculation, `broadcastTimeout` e `network.timeout` continuam aí, e cada uma
+das quatro acima sai aí também quando a medida falta.
 
 ## O que uma mudança de configuração move, antes de aplicá-la
 

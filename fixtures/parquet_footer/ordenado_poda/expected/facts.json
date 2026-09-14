@@ -164,7 +164,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/ordenado_poda/"
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "total_compressed_bytes": 5487
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -190,7 +191,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/ordenado_poda/"
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "total_compressed_bytes": 5492
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -216,7 +218,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/ordenado_poda/"
+      "prefix": "s3://lake/curated/ordenado_poda/",
+      "total_compressed_bytes": 5494
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",

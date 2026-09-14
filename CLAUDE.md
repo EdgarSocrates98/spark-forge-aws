@@ -26,7 +26,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Que tipo de workload é este job? | `workload` | scan, shuffle, spill e plano, mais `--history` dos runs anteriores |
 | Qual a capacidade mais barata que cumpre o SLA? | `capacity` | `glue.job_run` e o SLA declarado em `workload.yaml` |
 | Quanto custou, e onde está a alavanca? | `finops` | `glue.job_run`/`glue.run_cost`, o SLA, e os sintomas ao lado |
-| Que valor de configuração a medida sustenta? | `tune` | `spark.stage.shuffle` medido, mais `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` |
+| Que valor de configuração a medida sustenta? | `tune` | `spark.stage.shuffle`, `spark.executor.memory_usage`, `parquet.row_group`, `plan.join_side_stats` e `spark.sql.broadcast_exchange` medidos, mais `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` |
 | Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |

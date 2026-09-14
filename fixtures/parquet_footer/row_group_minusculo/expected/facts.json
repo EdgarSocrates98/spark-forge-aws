@@ -164,7 +164,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -190,7 +191,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 452
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -216,7 +218,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 450
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -242,7 +245,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 450
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -268,7 +272,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 452
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -294,7 +299,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -320,7 +326,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -346,7 +353,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 449
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -372,7 +380,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -398,7 +407,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -424,7 +434,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -450,7 +461,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/row_group_minusculo/"
+      "prefix": "s3://lake/curated/row_group_minusculo/",
+      "total_compressed_bytes": 448
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",

@@ -44,6 +44,7 @@ EMITTED_KINDS = frozenset(
         "spark.sql.analyzed",
         "spark.sql.join",
         "spark.sql.join_input",
+        "spark.sql.broadcast_exchange",
     }
 )
 
@@ -249,6 +250,10 @@ class _Execution:
         self.description, self.redacted = redact("description", description)
         self.plan_source = "initial"
         self.nodes: dict[int, dict[str, Any]] = {}
+        # Nos `BroadcastExchange`: o driver publica tamanho e tempos deles em
+        # `SparkListenerDriverAccumUpdates`. Ficam fora de `nodes` (que sao os
+        # scans) para nao virarem `spark.sql.scan`.
+        self.broadcasts: dict[int, dict[str, Any]] = {}
         self.nodes_total = 0
         # accumulatorId -> (node_id, nome publicado da metrica)
         self.accum: dict[int, tuple[int, str]] = {}
@@ -295,7 +300,7 @@ class _Execution:
             if accum_id not in self.values:
                 # Metrica declarada no plano e nunca publicada. Ausencia, nao zero.
                 continue
-            if node_id not in self.nodes:
+            if node_id not in self.nodes and node_id not in self.broadcasts:
                 orfaos.append(accum_id)
                 continue
             measure = measure_for(nome)
@@ -321,11 +326,14 @@ class _Execution:
         """
         self.plan_source = source
         self.nodes = {}
+        self.broadcasts = {}
         self.nodes_total = 0
         for node_id, node in _walk(plano, [0]):
             self.nodes_total += 1
             scan = _scan_of(node)
             if scan is None:
+                if str(node.get("nodeName") or "").strip() == "BroadcastExchange":
+                    self.broadcasts[node_id] = {"node_name": "BroadcastExchange", "relation": ""}
                 continue
             api, relation, formato = scan
             self.nodes[node_id] = {
@@ -577,15 +585,27 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                     provenance={"extractor": EXTRACTOR_ID, "artifact": path},
                 )
             )
+        for node_id in sorted(execucao.broadcasts):
+            facts.append(
+                Fact(
+                    kind="spark.sql.broadcast_exchange",
+                    subject=_plan_node_subject(
+                        execucao.execution_id, node_id, "BroadcastExchange", ""
+                    ),
+                    measures=por_no.get(node_id, {}),
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
         for node_id, metric_name in desconhecidos:
+            no = execucao.nodes.get(node_id) or execucao.broadcasts[node_id]
             facts.append(
                 Fact(
                     kind="spark.sql.unresolved",
                     subject=_plan_node_subject(
                         execucao.execution_id,
                         node_id,
-                        execucao.nodes[node_id]["node_name"],
-                        execucao.nodes[node_id]["relation"],
+                        no["node_name"],
+                        no["relation"],
                     ),
                     attrs={
                         "reason": "unknown_metric_name",

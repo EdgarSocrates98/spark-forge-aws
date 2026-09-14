@@ -281,7 +281,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/codec_misto/"
+      "prefix": "s3://lake/curated/codec_misto/",
+      "total_compressed_bytes": 5487
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -307,7 +308,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/codec_misto/"
+      "prefix": "s3://lake/curated/codec_misto/",
+      "total_compressed_bytes": 5492
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -333,7 +335,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/codec_misto/"
+      "prefix": "s3://lake/curated/codec_misto/",
+      "total_compressed_bytes": 3067
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -359,7 +362,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/codec_misto/"
+      "prefix": "s3://lake/curated/codec_misto/",
+      "total_compressed_bytes": 3064
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",

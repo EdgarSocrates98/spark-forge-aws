@@ -33,6 +33,7 @@ REQUIRED_FIXTURES = {
     "join_nested_via_joins",
     "join_sort_merge_without_build",
     "join_side_without_source",
+    "broadcast_exchange",
 }
 
 

@@ -322,8 +322,8 @@ sparkforge tune --facts fixtures/tuning/valor_atual_vem_do_codigo/input/facts.js
     }
   ],
   "refused": [
-    { "reason": "no_measured_basis", "property": "spark.executor.memoryOverhead", "detail": "..." },
-    { "reason": "no_measured_basis", "property": "spark.sql.autoBroadcastJoinThreshold", "detail": "..." },
+    { "reason": "sem_memoria_por_executor", "property": "spark.executor.memoryOverhead", "detail": "..." },
+    { "reason": "sem_explain_cost", "property": "spark.sql.autoBroadcastJoinThreshold", "detail": "..." },
     ...
   ]
 }
@@ -350,6 +350,31 @@ Os campos que importam:
 - `refused` lista as propriedades sem base medida, com a medida que destravaria cada uma.
   Sem shuffle medido, até a proposta principal vira recusa: `no_shuffle_measured`
   (`fixtures/tuning/sem_shuffle_medido`).
+
+Com mais medida, `tune` deriva mais quatro propriedades. Cada uma sai em `properties` quando a
+medida existe e em `refused` quando falta:
+
+| Propriedade | De onde vem o valor | Quando recusa | Fixture de exemplo |
+|---|---|---|---|
+| `spark.executor.memoryOverhead` | Pico fora do heap do pior executor (off-heap da JVM mais o processo Python), do event log | Sem `ProcessTreePythonRSSMemory` no log: `sem_process_tree`. Ligue `spark.executor.processTreeMetrics.enabled=true` | `overhead_medido`, `overhead_sem_process_tree` |
+| `spark.executor.memory` | Pico de heap do pior executor, do event log | Sem métrica por executor: `sem_memoria_por_executor` | `overhead_medido` |
+| `spark.sql.files.maxPartitionBytes` | Mediana do row group comprimido, do footer Parquet | Sem footer: `sem_footer`. Duas fontes com valores diferentes: `fontes_divergentes` | `split_uma_fonte`, `split_duas_fontes` |
+| `spark.sql.autoBroadcastJoinThreshold` | Lado menor do join, estimado pelo `EXPLAIN COST` | Sem plano com custo: `sem_explain_cost`. Mais de um join candidato: `joins_divergentes`. Tabela sem estatística: `estimativa_sem_estatistica` | `broadcast_um_join`, `broadcast_dois_joins`, `broadcast_sem_estatistica` |
+
+Os fixtures ficam em `fixtures/tuning/`. Para juntar as medidas:
+
+```bash
+sparkforge analyze event-log --path eventlog.jsonl --out facts_log.json      # memória por executor
+sparkforge collect parquet-footer --prefix s3://bucket/tabela/ --out footer.json
+sparkforge analyze parquet-footer --path footer.json --out facts_footer.json  # row groups
+sparkforge analyze plan --path plano_com_custo.txt --out facts_plan.json     # df.explain("cost")
+sparkforge fuse --facts facts_log.json --facts facts_footer.json --facts facts_plan.json --out facts.json
+sparkforge tune --facts facts.json --headroom 0.2
+```
+
+`--headroom` é opcional e vale só para o overhead: 0.2 acrescenta 20% sobre o pico medido. Sem
+ele, o valor é o próprio pico. No broadcast, o tamanho **medido** de cada `BroadcastExchange`
+do event log aparece em `derived.basis.measured_broadcasts`, só para conferir a estimativa.
 
 `tune` nunca aplica a mudança. Ele só propõe.
 

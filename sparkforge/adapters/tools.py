@@ -4659,8 +4659,8 @@ _TUNE_PROPERTY_SCHEMA: dict[str, Any] = {
         "explanation": {
             "type": "string",
             "description": (
-                "Muda com AQE: com AQE default o numero e piso inicial que o motor "
-                "coalesce; sem AQE e o numero final de particoes."
+                "O que o numero significa. No shuffle, muda com AQE: com AQE default e piso "
+                "inicial que o motor coalesce, sem AQE e o numero final de particoes."
             ),
         },
     },
@@ -4692,6 +4692,17 @@ _TUNE_SUCCESS_SCHEMA: dict[str, Any] = {
                             "no_shuffle_measured",
                             "runtime_unknown",
                             "no_measured_basis",
+                            "sem_memoria_por_executor",
+                            "sem_process_tree",
+                            "sem_pico_de_heap",
+                            "sem_footer",
+                            "fontes_divergentes",
+                            "sem_explain_cost",
+                            "broadcast_desligado",
+                            "joins_divergentes",
+                            "lado_acima_de_8gb",
+                            "estimativa_sem_estatistica",
+                            "ja_cabe_no_threshold",
                         ],
                     },
                     "property": {"type": "string"},
@@ -6750,11 +6761,17 @@ TOOLS: dict[str, dict[str, Any]] = {
             "artefato, consome facts JA extraidos -- mesma razao de `benchmark`, "
             "`fuse`, `sparkforge_workload`, `sparkforge_capacity` e "
             "`sparkforge_finops`. "
-            "Deriva UMA propriedade, `spark.sql.shuffle.partitions`, a partir de "
+            "Deriva `spark.sql.shuffle.partitions` a partir de "
             "`spark.stage.shuffle.write_bytes` medido sobre o alvo de tamanho de "
             "particao -- o default documentado do AQE, ou "
             "`spark.sql.adaptive.advisoryPartitionSizeInBytes` quando o run declara "
-            "um. A formula e a base viajam dentro da resposta. "
+            "um. E, cada uma so com a sua medida: `spark.executor.memoryOverhead` (piso "
+            "do pior executor, fora do heap mais o Python; `headroom` multiplica), "
+            "`spark.executor.memory` (piso do pico de heap), "
+            "`spark.sql.files.maxPartitionBytes` (row group mediano COMPRIMIDO de uma "
+            "fonte so) e `spark.sql.autoBroadcastJoinThreshold` (estimativa do EXPLAIN "
+            "COST de um unico join candidato, com o broadcast medido ao lado). A formula "
+            "e a base viajam dentro da resposta. "
             "A VERSAO MUDA O SIGNIFICADO: com AQE default (Spark 3.2+, portanto Glue "
             "4.0 e 5.x) o numero e o PISO de paralelismo inicial que o motor "
             "coalesce; sem AQE (Glue 3.0, Spark 3.1.1) e o numero FINAL de "
@@ -6778,6 +6795,15 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "quando houver, `spark.conf_effective`, `pyspark.conf_set` e "
                         "`tf.spark_conf` -- tipicamente o `--out` de "
                         "`sparkforge_analyze_event_log`, fundido com os outros."
+                    ),
+                },
+                "headroom": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": (
+                        "Folga declarada sobre o piso medido do "
+                        "`spark.executor.memoryOverhead` (0.2 = 20%). Sem ela o "
+                        "valor e o piso, sem folga nenhuma."
                     ),
                 },
             },
@@ -9582,7 +9608,7 @@ def _h_finops(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _h_tune(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.tune_conf(args["facts_path"])
+    return _core.tune_conf(args["facts_path"], headroom=args.get("headroom"))
 
 
 def _h_economy_report(args: dict[str, Any]) -> dict[str, Any]:

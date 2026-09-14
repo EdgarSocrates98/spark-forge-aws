@@ -205,9 +205,14 @@ class TestRecusas:
             r["property"] for r in relatorio["refused"] if r["reason"] == "no_measured_basis"
         }
 
-        assert "spark.sql.autoBroadcastJoinThreshold" in sem_base
-        assert "spark.executor.memoryOverhead" in sem_base
         assert "spark.speculation" in sem_base
+        # Overhead, heap, split e broadcast deixaram de ser `no_measured_basis`:
+        # sem a medida, cada um sai recusado pela medida que falta.
+        por_chave = {r["property"]: r["reason"] for r in relatorio["refused"]}
+        assert por_chave["spark.executor.memoryOverhead"] == "sem_memoria_por_executor"
+        assert por_chave["spark.executor.memory"] == "sem_memoria_por_executor"
+        assert por_chave["spark.sql.files.maxPartitionBytes"] == "sem_footer"
+        assert por_chave["spark.sql.autoBroadcastJoinThreshold"] == "sem_explain_cost"
 
     def test_the_refusals_say_what_would_unlock_them(self):
         relatorio = build_conf_advice([_shuffle(640 * MIB)], runtime={"glue": "5.0"})
@@ -233,3 +238,184 @@ class TestSegurancaEFronteira:
         relatorio = build_conf_advice([_shuffle(640 * MIB)], runtime={"glue": "5.0"})
 
         assert relatorio["runtime"]["spark_version"].startswith("3.5")
+
+
+def _uso(executor, heap=None, offheap=None, python=None):
+    medidas = {
+        chave: float(valor)
+        for chave, valor in (
+            ("peak_jvm_heap_bytes", heap),
+            ("peak_jvm_offheap_bytes", offheap),
+            ("peak_python_rss_bytes", python),
+        )
+        if valor is not None
+    }
+    return Fact(
+        kind="spark.executor.memory_usage",
+        subject={"type": "job_run", "symbol": executor},
+        measures=medidas,
+        attrs={"executor_id": executor},
+    )
+
+
+def _join(left, right, *, left_stats=True, right_stats=True, line=2):
+    return Fact(
+        kind="plan.join_side_stats",
+        subject={"type": "plan_node", "file": "plan.txt", "line": line, "symbol": "Join Inner",
+                 "node_id": 0, "operator": "Join", "relation": ""},
+        measures={"left_bytes": float(left), "right_bytes": float(right)},
+        attrs={"join_type": "Inner", "left_has_stats": left_stats,
+               "right_has_stats": right_stats, "left_node": "Filter", "right_node": "Filter"},
+    )
+
+
+def _row_group(prefix, comprimido, indice=0):
+    return Fact(
+        kind="parquet.row_group",
+        subject={"type": "table", "symbol": f"{prefix}part-0.parquet", "row_group": indice},
+        measures={"num_rows": 1000.0, "total_byte_size": float(comprimido * 2)},
+        attrs={"prefix": prefix, "total_compressed_bytes": comprimido},
+    )
+
+
+_RT = {"glue": "5.0"}
+
+
+class TestMemoriaDoExecutor:
+    def test_the_overhead_is_the_worst_executor_outside_the_heap(self):
+        relatorio = build_conf_advice(
+            [_uso("1", offheap=256 * MIB, python=768 * MIB),
+             _uso("2", offheap=128 * MIB, python=1024 * MIB)],
+            runtime=_RT,
+        )
+        derivado = _propriedade(relatorio, "spark.executor.memoryOverhead")["derived"]
+
+        assert derivado["value"] == 1152
+        assert derivado["basis"]["worst_executor"] == "2"
+        assert derivado["basis"]["python_counted"] is True
+
+    def test_headroom_multiplies_the_floor_and_travels_in_the_basis(self):
+        relatorio = build_conf_advice(
+            [_uso("1", offheap=100 * MIB, python=900 * MIB)], runtime=_RT, headroom=0.2
+        )
+        derivado = _propriedade(relatorio, "spark.executor.memoryOverhead")["derived"]
+
+        assert derivado["value"] == 1200
+        assert derivado["basis"]["headroom"] == 0.2
+        assert derivado["basis"]["headroom_source"] == "declared"
+
+    def test_without_headroom_the_floor_has_no_slack(self):
+        relatorio = build_conf_advice([_uso("1", offheap=100 * MIB, python=900 * MIB)], runtime=_RT)
+        derivado = _propriedade(relatorio, "spark.executor.memoryOverhead")["derived"]
+
+        assert derivado["value"] == 1000
+        assert derivado["basis"]["headroom_source"] == "none"
+
+    def test_pyspark_memory_takes_python_out_of_the_overhead(self):
+        """Com `spark.executor.pyspark.memory`, o Python tem limite proprio e nao soma."""
+        relatorio = build_conf_advice(
+            [_uso("1", offheap=100 * MIB, python=900 * MIB),
+             _conf("spark.executor.pyspark.memory", "1g")],
+            runtime=_RT,
+        )
+        derivado = _propriedade(relatorio, "spark.executor.memoryOverhead")["derived"]
+
+        assert derivado["value"] == 100
+        assert derivado["basis"]["python_counted"] is False
+        assert "peak_python_rss_bytes" not in derivado["formula"]
+
+    def test_the_effective_default_is_shown_beside_when_memory_is_known(self):
+        relatorio = build_conf_advice(
+            [_uso("1", offheap=100 * MIB, python=900 * MIB), _conf("spark.executor.memory", "10g")],
+            runtime=_RT,
+        )
+        base = _propriedade(relatorio, "spark.executor.memoryOverhead")["derived"]["basis"]
+
+        assert base["effective_default_mib"] == 1024
+
+    def test_without_process_tree_the_overhead_is_refused_by_name(self):
+        relatorio = build_conf_advice(
+            [_uso("1", heap=3 * 1024 * MIB, offheap=256 * MIB)], runtime=_RT
+        )
+        por_chave = {r["property"]: r for r in relatorio["refused"]}
+
+        assert por_chave["spark.executor.memoryOverhead"]["reason"] == "sem_process_tree"
+        assert "processTreeMetrics" in por_chave["spark.executor.memoryOverhead"]["detail"]
+        assert _propriedade(relatorio, "spark.executor.memory")["derived"]["value"] == 3072
+
+    def test_without_heap_peak_the_memory_is_refused(self):
+        relatorio = build_conf_advice([_uso("1", offheap=100 * MIB, python=900 * MIB)], runtime=_RT)
+
+        assert "sem_pico_de_heap" in _recusas(relatorio)
+
+
+class TestSplitPeloFooter:
+    def test_the_split_is_the_median_compressed_row_group(self):
+        relatorio = build_conf_advice(
+            [_row_group("s3://b/t/", c, i) for i, c in enumerate((96 * MIB, 128 * MIB, 112 * MIB))],
+            runtime=_RT,
+        )
+        derivado = _propriedade(relatorio, "spark.sql.files.maxPartitionBytes")["derived"]
+
+        assert derivado["value"] == 112 * MIB
+        assert derivado["basis"]["row_groups"] == 3
+
+    def test_two_sources_with_different_medians_are_refused(self):
+        relatorio = build_conf_advice(
+            [_row_group("s3://b/a/", 128 * MIB), _row_group("s3://b/c/", 8 * MIB)], runtime=_RT
+        )
+
+        assert "fontes_divergentes" in _recusas(relatorio)
+
+
+class TestLimiarDeBroadcast:
+    def test_one_candidate_join_gives_the_floor_of_the_smaller_side(self):
+        relatorio = build_conf_advice([_join(1200 * MIB, 23.5 * MIB)], runtime=_RT)
+        derivado = _propriedade(relatorio, "spark.sql.autoBroadcastJoinThreshold")["derived"]
+
+        assert derivado["value"] == 24 * MIB
+        assert derivado["basis"]["threshold_source"] == "spark_default"
+
+    def test_a_disabled_threshold_is_not_turned_back_on(self):
+        relatorio = build_conf_advice(
+            [_join(1200 * MIB, 24 * MIB), _conf("spark.sql.autoBroadcastJoinThreshold", "-1")],
+            runtime=_RT,
+        )
+
+        assert "broadcast_desligado" in _recusas(relatorio)
+
+    def test_a_side_that_already_fits_is_refused(self):
+        relatorio = build_conf_advice(
+            [_join(1200 * MIB, 24 * MIB), _conf("spark.sql.autoBroadcastJoinThreshold", "64MB")],
+            runtime=_RT,
+        )
+
+        assert "ja_cabe_no_threshold" in _recusas(relatorio)
+
+    def test_a_side_above_8gb_is_refused(self):
+        relatorio = build_conf_advice([_join(20 * 1024 * MIB, 9 * 1024 * MIB)], runtime=_RT)
+
+        assert "lado_acima_de_8gb" in _recusas(relatorio)
+
+    def test_a_side_without_statistics_never_becomes_the_candidate(self):
+        """O lado sem estatistica carrega 8.0 EiB, e o com estatistica decide sozinho."""
+        relatorio = build_conf_advice(
+            [_join(8.0 * (1 << 60), 30 * MIB, left_stats=False)], runtime=_RT
+        )
+        derivado = _propriedade(relatorio, "spark.sql.autoBroadcastJoinThreshold")["derived"]
+
+        assert derivado["value"] == 30 * MIB
+
+
+class TestPortaDoHeadroom:
+    def test_a_negative_headroom_is_an_input_error(self, tmp_path):
+        import pytest
+
+        from sparkforge.adapters._core import AdapterError, tune_conf
+
+        facts = tmp_path / "facts.json"
+        facts.write_text("[]", encoding="utf-8")
+        with pytest.raises(AdapterError) as erro:
+            tune_conf(str(facts), headroom=-0.1)
+
+        assert erro.value.exit_code == 2

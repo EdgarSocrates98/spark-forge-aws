@@ -1,0 +1,88 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [
+    {
+      "key": "spark.executor.memoryOverhead",
+      "current": {
+        "value": "",
+        "provenance": "unset",
+        "evidence": []
+      },
+      "derived": {
+        "value": 1152,
+        "formula": "ceil(max_executor(peak_jvm_offheap_bytes + peak_python_rss_bytes) * (1 + headroom) / MiB)",
+        "basis": {
+          "worst_executor": "2",
+          "executors_measured": 2,
+          "peak_jvm_offheap_bytes": 134217728.0,
+          "peak_python_rss_bytes": 1073741824.0,
+          "python_counted": true,
+          "headroom": 0.0,
+          "headroom_source": "none",
+          "effective_default_mib": 1024
+        }
+      },
+      "safety": "REVIEW",
+      "supported_in_runtime": true,
+      "explanation": "Piso do pior executor medido: memoria fora do heap da JVM mais o processo Python (que so conta aqui sem `spark.executor.pyspark.memory`). E piso, nao alvo: um executor abaixo dele morre por limite de container sem OOM no log. No Glue a memoria do worker e fixa por tipo, e o piso diz quanto o job pediu fora do heap, nao que o worker deva crescer."
+    },
+    {
+      "key": "spark.executor.memory",
+      "current": {
+        "value": "10g",
+        "provenance": "runtime_or_cluster",
+        "evidence": [
+          "f_3a3eed"
+        ]
+      },
+      "derived": {
+        "value": 3072,
+        "formula": "ceil(max_executor(peak_jvm_heap_bytes) / MiB)",
+        "basis": {
+          "worst_executor": "1",
+          "executors_measured": 2,
+          "peak_jvm_heap_bytes": 3221225472.0
+        }
+      },
+      "safety": "REVIEW",
+      "supported_in_runtime": true,
+      "explanation": "Piso do pior executor medido no heap da JVM. Abaixo dele o heap nao cabe o que o run ja usou; acima, e escolha de quem aprova."
+    }
+  ],
+  "refused": [
+    {
+      "reason": "no_shuffle_measured",
+      "property": "spark.sql.shuffle.partitions",
+      "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge analyze event-log` produz a medida."
+    },
+    {
+      "reason": "sem_footer",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Nenhum `parquet.row_group` com tamanho comprimido. `sparkforge collect parquet-footer --prefix <fonte>` e `sparkforge analyze parquet-footer` o produzem."
+    },
+    {
+      "reason": "sem_explain_cost",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Nenhuma estimativa de join. Gere o plano com `df.explain(\"cost\")` (ou `EXPLAIN COST`) e extraia com `sparkforge analyze plan`."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.network.timeout",
+      "detail": "Mesma razao de `spark.sql.broadcastTimeout`. A relacao com `spark.executor.heartbeatInterval` e conferida por `SF-TIMEOUT-002`, que julga a RELACAO e nao o valor."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.speculation",
+      "detail": "O documento de origem recusa explicitamente a inferencia `skew detectado -> speculation=true`: speculation duplica trabalho e aumenta I/O e custo. A decisao exige saber se a lentidao e do NO ou da PARTICAO, e nenhuma fonte de hoje separa os dois."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Subir timeout nao e conserto de performance -- e a `SF-TIMEOUT-001`, do subprojeto F. O diagnostico de timeout nomeia a categoria; propor um numero novo aqui contradiria a regra."
+    }
+  ]
+}

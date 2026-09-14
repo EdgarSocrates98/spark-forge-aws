@@ -31,9 +31,24 @@
   ],
   "refused": [
     {
-      "reason": "no_measured_basis",
+      "reason": "sem_memoria_por_executor",
       "property": "spark.executor.memoryOverhead",
-      "detail": "Exigiria o pico de memoria fora do heap por executor. `spark.executor.memory_usage` traz o pico de heap, e overhead e a outra metade -- propor sobre a metade errada e propor sobre nada."
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memory",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_footer",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Nenhum `parquet.row_group` com tamanho comprimido. `sparkforge collect parquet-footer --prefix <fonte>` e `sparkforge analyze parquet-footer` o produzem."
+    },
+    {
+      "reason": "sem_explain_cost",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Nenhuma estimativa de join. Gere o plano com `df.explain(\"cost\")` (ou `EXPLAIN COST`) e extraia com `sparkforge analyze plan`."
     },
     {
       "reason": "no_measured_basis",
@@ -47,18 +62,8 @@
     },
     {
       "reason": "no_measured_basis",
-      "property": "spark.sql.autoBroadcastJoinThreshold",
-      "detail": "Exigiria o tamanho SERIALIZADO do lado pequeno do join, que nem `plan.join` nem `spark.sql.join_input` medem hoje -- os dois dao tamanho de entrada, e broadcast falha pelo tamanho em memoria do executor."
-    },
-    {
-      "reason": "no_measured_basis",
       "property": "spark.sql.broadcastTimeout",
       "detail": "Subir timeout nao e conserto de performance -- e a `SF-TIMEOUT-001`, do subprojeto F. O diagnostico de timeout nomeia a categoria; propor um numero novo aqui contradiria a regra."
-    },
-    {
-      "reason": "no_measured_basis",
-      "property": "spark.sql.files.maxPartitionBytes",
-      "detail": "Exigiria distribuicao de tamanho de arquivo por fonte lida. `spark.sql.scan` traz bytes e arquivos lidos no total, e um valor derivado da media esconderia exatamente o caso que importa, que e a fonte com arquivo grande demais."
     }
   ]
 }

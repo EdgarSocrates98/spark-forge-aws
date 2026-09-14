@@ -1,0 +1,78 @@
+[
+  {
+    "id": "f_eea6eb",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.executor.memoryOverhead"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.memoryOverhead",
+      "value": "512",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "83a62fa6202805e663ac186e24d17eedbfc81f567fa8e1f07870dc4666c4fbda",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "kind": "spark.executor.memory_usage",
+    "subject": {
+      "type": "job_run",
+      "symbol": "1"
+    },
+    "measures": {
+      "peak_jvm_offheap_bytes": 268435456.0,
+      "peak_python_rss_bytes": 805306368.0
+    },
+    "attrs": {
+      "executor_id": "1"
+    },
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "kind": "spark.executor.memory_usage",
+    "subject": {
+      "type": "job_run",
+      "symbol": "2"
+    },
+    "measures": {
+      "peak_jvm_offheap_bytes": 134217728.0,
+      "peak_python_rss_bytes": 1073741824.0
+    },
+    "attrs": {
+      "executor_id": "2"
+    },
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0045"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.4",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

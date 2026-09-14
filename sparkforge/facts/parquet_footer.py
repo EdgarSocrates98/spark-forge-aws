@@ -238,7 +238,18 @@ def _do_arquivo(
                     "total_byte_size": float(grupo.get("total_byte_size") or 0),
                     "num_columns": float(len(grupo.get("columns") or [])),
                 },
-                attrs={"prefix": prefixo},
+                # `total_byte_size` do Parquet e DESCOMPRIMIDO, e o split de
+                # leitura do Spark fatia bytes do arquivo. O comprimido e a soma
+                # das colunas, e mora em `attrs` de proposito: `Fact.id` e hash
+                # de kind + subject + measures, e nenhum finding que cita row
+                # group muda de evidencia por causa desta chave.
+                attrs={
+                    "prefix": prefixo,
+                    "total_compressed_bytes": sum(
+                        int(coluna.get("total_compressed_size") or 0)
+                        for coluna in grupo.get("columns") or []
+                    ),
+                },
                 provenance=provenance,
             )
         )

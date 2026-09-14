@@ -1,0 +1,4 @@
+name: broadcast_dois_joins
+runtime:
+  glue: '5.0'
+proves: 'Dois joins candidatos, com lado menor de 24 MiB e de 48 MiB: o threshold e um so para o job, e escolher um ligaria o broadcast do outro junto. Sai `joins_divergentes`, com o piso de cada join.'

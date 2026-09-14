@@ -2420,6 +2420,16 @@
       ],
       "rules": []
     },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/exchange/BroadcastExchangeExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-14"
+      ],
+      "rules": []
+    },
     "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/metric/SQLMetrics.scala": {
       "docs": [
         "knowledge/spark/sql-metrics.md"

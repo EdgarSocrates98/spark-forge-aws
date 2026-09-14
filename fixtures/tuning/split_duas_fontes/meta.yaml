@@ -1,0 +1,4 @@
+name: split_duas_fontes
+runtime:
+  glue: '5.0'
+proves: 'Duas fontes com row group mediano de 128 MiB e de 8 MiB: a propriedade vale para o job inteiro, e o split sai recusado por `fontes_divergentes` com o valor de cada fonte, em vez de uma media que esconderia a fonte que importa.'
