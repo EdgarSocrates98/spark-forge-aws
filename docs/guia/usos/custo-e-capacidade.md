@@ -135,9 +135,16 @@ Valor fora da faixa não é aceito em silêncio. Por exemplo, `reliability_targe
 `workload.unresolved` com `reason: reliability_target_out_of_range`. Um job declarado duas
 vezes vira `job_declared_twice`, e a primeira declaração vale.
 
-**Limite desta versão:** nenhum verbo da CLI lê o `workload.yaml` hoje. O SLA chega a
-`capacity`, `finops` e `workload` como um fact `workload.declared` dentro do arquivo de facts.
-Os fixtures já trazem esse fact pronto. Este é o de `fixtures/capacity/cheapest_that_fits/input/facts.json`:
+Transforme o arquivo em facts com `analyze workload` e passe o resultado junto dos outros
+`--facts` de `capacity`, `finops` e `workload`:
+
+```bash
+sparkforge analyze workload --path workload.yaml --out facts_workload.json
+```
+
+O `scan` faz isso sozinho quando o `workload.yaml` está na **raiz** do repositório. Em subpasta
+ele não lê, porque um repositório com vários jobs pode ter vários arquivos; use o comando acima.
+O fact que sai tem esta forma (exemplo de `fixtures/capacity/cheapest_that_fits/input/facts.json`):
 
 ```json
 {
@@ -333,7 +340,10 @@ Detalhes em [docs/realized-gain.md](../../realized-gain.md).
 - **Chamar `delta_pct` de economia.** É a diferença observada, sem causa atribuída.
 - **Ler `sla_class: unknown` como defeito do job.** Falta declarar o SLA.
 - **Reduzir workers porque a utilização é baixa.** Com skew, a ociosidade é sintoma. Veja
-  [job-lento.md](job-lento.md#utilização-baixa-não-é-capacidade-sobrando).
+  [job-lento.md](job-lento.md#utilização-baixa-não-é-capacidade-sobrando). As regras que
+  separam os dois casos (`SF-WASTE-001` e `SF-WASTE-002`) aparecem quando os facts do
+  CloudWatch e do event log passam pelo `fuse` antes do `judge`: é o `fuse` que monta o resumo
+  de utilização. O `scan` já faz isso sozinho.
 
 ## Para ir além
 

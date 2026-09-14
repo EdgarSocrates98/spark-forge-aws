@@ -32,6 +32,12 @@ EXTRACTOR_ID = "utilization@0.1.0"
 
 EMITTED_KINDS = frozenset({"glue.utilization.summary", "glue.utilization.unresolved"})
 
+# O que o `fuse` confere antes de derivar: sem metrica de CloudWatch no pool, o
+# resumo nao tem de onde vir, e derivar mesmo assim poria uma sentinela
+# `utilization_not_observed` em todo pool sem CloudWatch -- o mesmo motivo da
+# guarda de `timeout_diagnosis.SOURCE_KINDS`.
+SOURCE_KINDS = frozenset({"glue.metric"})
+
 _METRICA_UTILIZACAO = "glue.driver.workerUtilization"
 
 # Memoria e disco entram pelo p95 e nao pelo p50: o pico e o que decide se havia

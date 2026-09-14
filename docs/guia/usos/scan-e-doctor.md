@@ -123,6 +123,7 @@ Com `--format sarif`, ele grava também o SARIF e o resumo de PR em `.sparkforge
 | `.sql` | `analyze sql` |
 | `.tf` | `analyze terraform` |
 | `.jsonl` fora de `.sparkforge/` | `analyze event-log` |
+| `workload.yaml` na raiz do repositório (origem `nome`) | `analyze workload`; em subpasta, nada |
 | `.json` fora do manifesto | Nada: recusa `sem_manifesto` |
 
 Um JSON solto nunca é classificado pelo conteúdo: vários extratores leem `.json`, e adivinhar mandaria o arquivo ao extrator errado. Para o scan analisar um dump, colete-o com `sparkforge collect ...`: o coletor grava o tipo no manifesto.

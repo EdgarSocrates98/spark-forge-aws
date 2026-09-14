@@ -10,7 +10,7 @@
 | **Date** | 2026-09-14 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_CLI_PORTS.md](./DEFINE_CLI_PORTS.md) |
-| **Status** | Ready for Build |
+| **Status** | ✅ Complete (Built) |
 
 ---
 
@@ -249,4 +249,4 @@ scan:  manifesto (parquet_footer) + extensão + workload.yaml na raiz -> analyze
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_CLI_PORTS.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_CLI_PORTS.md`

@@ -9,7 +9,7 @@
 | **Feature** | CLI_PORTS |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Complete (Built) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -153,4 +153,4 @@ Três extratores têm golden e ficam de fora do caminho do operador:
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_CLI_PORTS.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_CLI_PORTS.md`

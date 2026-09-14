@@ -29,7 +29,10 @@ Mapeia o terreno antes de qualquer análise:
    terminal — é o baseline que responde "esse job sempre demorou isso?"),
    `sparkforge_collect_iceberg_metadata`, `sparkforge_collect_athena_workgroup`,
    `sparkforge_collect_emr_serverless` (exige o `applicationId`, nunca o nome — o nome é
-   opcional na API e nenhuma fonte o declara único).
+   opcional na API e nenhuma fonte o declara único),
+   `sparkforge_collect_parquet_footer` (só o FOOTER dos primeiros `max_files` Parquet de um
+   prefixo local ou `s3://`, sem ler dado; exige pyarrow, e a falta dele vira
+   `status: pyarrow_indisponivel` no artefato, não erro).
 
 5. `sparkforge_scan` com `dry_run` — o plano do que roda em cada arquivo, pelo manifesto
    e pela extensão, e as recusas com nome (`sem_manifesto`, `sha256_divergente`,

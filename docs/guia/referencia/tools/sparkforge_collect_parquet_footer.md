@@ -1,20 +1,21 @@
 <!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
 
-# `sparkforge_collect_emr_cluster`
+# `sparkforge_collect_parquet_footer`
 
 **Efeito:** Acessa a AWS (lê a conta) e grava o artefato em disco local.
 
 ## O que faz
 
-Baixa os seis dumps de um cluster EMR on EC2 (`describe_cluster`, grupos OU fleets, bootstrap actions, managed scaling e auto termination) e registra a uniao deles no manifesto, no mesmo shape PascalCase que `aws emr ...` devolve -- coleta manual e automatica produzem o mesmo arquivo. Secao que nao se aplica ao cluster (fleets num cluster de grupos, politica nao configurada) e OMITIDA, nunca gravada vazia. Mesma politica offline-first de `sparkforge_collect_event_log`.
+Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e registra o artefato no manifesto com `kind: parquet_footer`, que `sparkforge_analyze_parquet_footer` e o `sparkforge_scan` leem. Nenhuma linha de dado e lida. A amostra e DECLARADA (os N primeiros pelo nome, teto 500) e sai no artefato. Exige pyarrow (`pip install 'sparkforge-aws[parquet]'`); S3 usa a cadeia padrao de credencial. Prefixo inexistente, vazio ou sem permissao vira `status` no artefato, nao erro.
 
 ## Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `cluster_id` | string | sim | j-XXXXXXXXXXXXX |
 | `now` | string | sim | Timestamp ISO 8601. |
+| `prefix` | string | sim | Diretorio local com .parquet, ou s3://bucket/prefixo/. |
 | `repo` | string | sim |  |
+| `max_files` | integer | não |  |
 
 ## Na CLI
 

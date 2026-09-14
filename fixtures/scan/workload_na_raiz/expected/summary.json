@@ -1,0 +1,70 @@
+{
+  "analyzes": {
+    "pyspark": {
+      "facts": 4,
+      "files": 1
+    },
+    "sql": {
+      "facts": 1,
+      "files": 1
+    },
+    "workload": {
+      "facts": 2,
+      "files": 1
+    }
+  },
+  "dry_run": false,
+  "facts": {
+    "after_fuse": 8,
+    "extracted": 7
+  },
+  "findings": {
+    "by_severity": {},
+    "rule_ids": [],
+    "total": 0
+  },
+  "gate": {
+    "fail_on": null,
+    "tripped": false
+  },
+  "outputs": [
+    ".sparkforge/scan/facts_pyspark.json",
+    ".sparkforge/scan/facts_sql.json",
+    ".sparkforge/scan/facts_workload.json",
+    ".sparkforge/scan/facts.json",
+    ".sparkforge/scan/findings.json",
+    ".sparkforge/scan/summary.json"
+  ],
+  "plan": {
+    "entries": [
+      {
+        "analyze": "pyspark",
+        "origin": "extensao",
+        "path": "job.py"
+      },
+      {
+        "analyze": "sql",
+        "origin": "extensao",
+        "path": "job.py"
+      },
+      {
+        "analyze": "workload",
+        "origin": "nome",
+        "path": "workload.yaml"
+      }
+    ],
+    "refused": [],
+    "skipped": []
+  },
+  "refused": [],
+  "refused_by_reason": {},
+  "runtime": {
+    "athena": "",
+    "divergences": [],
+    "emr": "",
+    "glue": "",
+    "iceberg": "",
+    "python": "",
+    "spark": ""
+  }
+}

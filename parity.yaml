@@ -304,6 +304,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts from the declared workload inventory (SLA and primary source)
+    tools: [sparkforge_analyze_workload]
+    cli: [analyze workload]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from the declared table consumer inventory
     tools: [sparkforge_analyze_consumers]
     cli: [analyze consumers]
@@ -886,8 +897,10 @@ capabilities:
       - sparkforge_collect_emr_cluster
       - sparkforge_collect_emr_serverless
       - sparkforge_collect_emr_eks
+      - sparkforge_collect_parquet_footer
       - sparkforge_collect_verify
     cli:
+      - collect parquet-footer
       - collect event-log
       - collect glue-job
       - collect cloudwatch

@@ -39,6 +39,7 @@ from sparkforge.collect import cloudwatch_logs as collect_cw_logs
 from sparkforge.collect import glue_resource_link as collect_rlink
 from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
+from sparkforge.collect import parquet_footer as collect_parquet
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
@@ -126,6 +127,7 @@ from sparkforge.facts.terraform import (
     extract_terraform_path,
     extract_terraform_tree,
 )
+from sparkforge.facts.workload import extract_workload_path
 from sparkforge.findings import signature as _signature
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
@@ -1911,6 +1913,44 @@ def analyze_consumers(
 
 
 # --------------------------------------------------------------------------- #
+# analyze workload
+# --------------------------------------------------------------------------- #
+
+
+def _extract_workload_facts(path: str) -> list[Fact]:
+    """O `workload.yaml` que o operador APONTOU. O extrator trata arquivo ausente
+    como sentinela em zero (o caso comum de quem nunca declarou); aqui o caminho
+    veio de alguem, e apontar para o nada e erro de entrada."""
+    target = Path(path)
+    if not target.is_file():
+        raise AdapterError(
+            f"Arquivo nao encontrado para analise: {path}\n"
+            f"  Aponte para o inventario declarado de workload (SLA e fonte primaria):\n"
+            f"    sparkforge analyze workload --path workload.yaml "
+            f"--out .sparkforge/facts_workload.json",
+            exit_code=2,
+        )
+    return extract_workload_path(target, repo_root=target.parent)
+
+
+def analyze_workload(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """O SLA declarado (`sla_minutes`, `primary_source`) como `workload.declared`.
+
+    E a porta que faltava: `capacity`, `finops` e `workload` so viam o SLA se
+    `workload.declared` ja estivesse no arquivo de facts, e nenhum verbo o
+    produzia -- `extract_workload_path` so tinha chamador em teste.
+    """
+    facts = _extract_workload_facts(path)
+    return _facts_page(facts, "workload.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
 # analyze terraform-diff
 # --------------------------------------------------------------------------- #
 
@@ -3509,6 +3549,7 @@ def _scan_extrair(entrada: Any, raiz: Path) -> list[dict[str, Any]]:
         "iam-access": analyze_iam_access,
         "lakeformation-grants": analyze_lakeformation_grants,
         "glue-resource-link": analyze_glue_resource_link,
+        "workload": analyze_workload,
     }
     if entrada.analyze == "sql":
         if alvo.endswith(".py"):
@@ -6659,6 +6700,30 @@ def collect_iceberg_metadata(
         entry = collect_aws.collect_iceberg_metadata(
             table, Path(repo), workgroup=workgroup, output_location=output_location, now=now
         )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_parquet_footer(
+    repo: str, *, prefix: str, now: str, max_files: int | None = None
+) -> dict[str, Any]:
+    """Le o FOOTER dos primeiros `max_files` Parquet do prefixo (local ou `s3://`).
+    Ver `collect/parquet_footer.py`: nenhuma linha de dado e lida, e pyarrow e
+    opcional -- sem ele, o erro diz o `pip install`."""
+    rel_path = collect_parquet.parquet_footer_path(prefix)
+    arquivos = collect_parquet._MAX_FILES_PADRAO if max_files is None else max_files
+    try:
+        entry = collect_parquet.collect_parquet_footer(
+            prefix, Path(repo), now=now, max_files=arquivos
+        )
+    except ValueError as exc:
+        raise AdapterError(
+            f"collect parquet-footer: {exc}\n"
+            f"  Rode: sparkforge collect parquet-footer --repo {repo} --prefix {prefix} "
+            f"--max-files <1..{collect_parquet._MAX_FILES_TETO}> --now <ISO 8601>",
+            exit_code=2,
+        ) from exc
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)

@@ -66,7 +66,7 @@ consulta no Athena, veja [athena-e-sql.md](athena-e-sql.md).
 |---|---|
 | Metadata tables do Iceberg (`files`, `delete_files`, `snapshots`, propriedades) | `sparkforge collect iceberg-metadata` (roda consulta no Athena, acessa AWS) |
 | Listagem do prefixo no S3 | `aws s3api list-objects-v2` (AWS CLI), salvo em JSON |
-| Footer do Parquet | Um JSON de footer já coletado (veja o aviso abaixo) |
+| Footer do Parquet | `sparkforge collect parquet-footer` (lê só o rodapé; exige pyarrow; acessa o S3 se o prefixo for `s3://`) |
 | A consulta que lê a tabela | O arquivo `.sql`, ou o `.py` com `spark.sql("...")` |
 
 Estes comandos acessam AWS e não foram rodados neste guia. As flags do `collect` foram
@@ -76,11 +76,15 @@ conferidas no `--help`:
 sparkforge collect iceberg-metadata --repo . --table <db.tabela> --workgroup <workgroup-athena> \
   --output-location <s3://bucket/resultados/> --now <ISO8601>
 aws s3api list-objects-v2 --bucket <bucket> --prefix <prefixo/> > listing.json
+sparkforge collect parquet-footer --repo . --prefix <s3://bucket/tabela/ ou pasta local> \
+  --max-files 20 --now <ISO8601>
 ```
 
-**Aviso sobre o footer.** O `--help` de `analyze parquet-footer` cita um `collect
-parquet-footer`, mas esse subcomando não aparece em `sparkforge collect --help` nesta versão.
-Confira antes de contar com ele. O `analyze` em si funciona sobre o JSON já coletado.
+**Sobre o footer.** O `collect parquet-footer` lê só o rodapé dos primeiros arquivos pelo nome
+(20 por padrão, teto de 500), sem nenhuma linha de dado, e registra o artefato no manifesto:
+depois dele, o `scan` roda o `analyze parquet-footer` sozinho. Ele exige o pyarrow
+(`pip install 'sparkforge-aws[parquet]'`). Sem o pyarrow, ou com prefixo vazio, inexistente ou
+sem permissão, o artefato sai com um `status` que diz o motivo, em vez de erro.
 
 ## Passo a passo
 
