@@ -214,9 +214,9 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **72
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 345420 | 2201 | 52 |
 | `tool_class` | 1 | 188 | 374182 | 3531 | 74 |
-| `authorize` | 4 | 897 | 469099 | 4427 | 107 |
+| `authorize` | 4 | 897 | 470369 | 4427 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **2149872**;
+Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **2151142**;
 a saída do `grep` pelo nome, **24374**; a saída do `grep` pela definição, **420**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 972.8 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 973.4 vezes.** Contra a saída de um `grep`
 pelo nome, **11.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **5.3** vezes o que aquele `grep` custaria.
 
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **50** símbolos em **12619** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **225499** bytes. O `grep` pela definição contendo o fragmento continua menor
+  no mesmo corpus, tem **226194** bytes. O `grep` pela definição contendo o fragmento continua menor
   (**11355** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não

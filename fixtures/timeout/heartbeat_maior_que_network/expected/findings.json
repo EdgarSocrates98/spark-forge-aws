@@ -24,8 +24,8 @@
     "runtime_scope": {},
     "explanation": "O Spark documenta que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`: o heartbeat é o pulso que o executor manda, e o network timeout é quanto o driver espera antes de considerá-lo morto. Com o intervalo maior ou igual à espera, o driver desiste antes do próximo pulso chegar, e passa a declarar morto executor vivo.\n\nA regra confere a RELAÇÃO, e não o valor: `spark.network.timeout = 120s` não é certo nem errado sozinho. Ela só existe quando as duas chaves foram observadas em `spark.conf_effective` do mesmo run — sem as duas, o fact `spark.timeout.relation` não é emitido, e sai `spark.timeout.unresolved.conf_not_observed` no lugar.",
     "proposed_change": [
-      "Restaurar a folga entre as duas — o heartbeat precisa caber várias vezes dentro da espera do driver.",
-      "Se a intenção era tolerar rede lenta, mexer em `spark.network.timeout`, e não no intervalo de heartbeat.",
+      "Restaurar a folga entre as duas subindo `spark.network.timeout` até caber o heartbeat pedido — `sparkforge tune` deriva 12 vezes o heartbeat, a razão entre os defaults (120s e 10s).",
+      "Manter o intervalo de heartbeat que alguém pediu; baixá-lo é a alternativa quando ninguém sabe por que ele subiu.",
       "Conferir se alguma das duas veio de configuração de cluster ou de `--conf` sem quem a explique — as duas são propriedades que raramente precisam sair do default."
     ],
     "expected_effect": "",
@@ -54,8 +54,8 @@
     ],
     "action": {
       "kind": "timeout.restore_interval_relation",
-      "target": "spark.executor.heartbeatInterval",
-      "direction": "decrease",
+      "target": "spark.network.timeout",
+      "direction": "increase",
       "requires_absent": [],
       "moves": [
         "availability.executor_loss"

@@ -26,7 +26,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Que tipo de workload é este job? | `workload` | scan, shuffle, spill e plano, mais `--history` dos runs anteriores |
 | Qual a capacidade mais barata que cumpre o SLA? | `capacity` | `glue.job_run` e o SLA declarado em `workload.yaml` |
 | Quanto custou, e onde está a alavanca? | `finops` | `glue.job_run`/`glue.run_cost`, o SLA, e os sintomas ao lado |
-| Que valor de configuração a medida sustenta? | `tune` | `spark.stage.shuffle`, `spark.executor.memory_usage`, `parquet.row_group`, `plan.join_side_stats` e `spark.sql.broadcast_exchange` medidos, mais `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` |
+| Que valor de configuração a medida sustenta? | `tune` | `spark.stage.shuffle`, `spark.executor.memory_usage`, `parquet.row_group`, `plan.join_side_stats`, `spark.sql.broadcast_exchange`, `spark.stage.slow_tasks`/`spark.executor.slow_node`, `spark.timeout.relation` e `spark.timeout.diagnosis` medidos, mais `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` |
 | Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
@@ -56,10 +56,18 @@ Regras que valem para todos eles:
     de tocar em configuração. O relógio do Glue é consequência, não causa.
     Aumentar o limite com skew, spill, GC ou executor perdido ao lado troca uma
     falha rápida por uma falha cara (`SF-TIMEOUT-001`). Sem sintoma nenhum,
-    aumentar pode ser a decisão certa.
+    aumentar pode ser a decisão certa — e aí `tune` propõe
+    `spark.sql.broadcastTimeout` pelo piso medido do broadcast que completou
+    (com `--headroom` declarado), só com categoria `broadcast`, sem `also_seen`
+    e com os limiares de sintoma lidos da própria `SF-TIMEOUT-001`.
+    `wall_clock` e `heartbeat` nunca têm valor proposto.
 16. **A relação entre duas propriedades é conferível; o valor isolado não é.**
     `spark.network.timeout = 120s` não é certo nem errado sozinho;
     `heartbeatInterval >= network.timeout` é errado sempre (`SF-TIMEOUT-002`).
+    A relação QUEBRADA tem valor derivado: `tune` propõe
+    `spark.network.timeout = heartbeat × 12` (a razão entre os defaults, 120s e
+    10s), mantendo o heartbeat que alguém pediu. Com a relação de pé, sai
+    `relacao_ok` e nenhum número.
 17. **Utilização baixa não é sinônimo de capacidade sobrando.** Com skew alto,
     o worker está ocioso **porque** uma task segura o stage, e reduzir workers
     não toca a causa (`SF-WASTE-002`). Só com as quatro medidas apontando junto
@@ -443,7 +451,7 @@ auditoria de 2026-09-03 declarava governar todas as outras.
     `python -m sparkforge.evals debate --run <nome>`. Nenhum `AgentRuntime`
     concreto mora neste pacote, e nada aqui chama provider (regra 23). Os dois
     executores são **L0**: `applied_changes` sai sempre `false`, e o ADR é
-    proposta com `rollback` obrigatório. **Alcance medido: um par.** Das 155
+    proposta com `rollback` obrigatório. **Alcance medido: um par.** Das 156
     regras com `action`, `direct_conflicts` produz só `SF-GRAPH-005` ×
     `SF-LF-001`, e só na união de dois jobs. Status por componente em
     `docs/agentic-evolution-report.md`.

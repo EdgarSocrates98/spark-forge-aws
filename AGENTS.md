@@ -375,10 +375,17 @@ for the operator.
 `SF-TIMEOUT-001` does not fire because there is a timeout; it fires because
 there is a timeout **with a measured symptom beside it** (skew, spill, GC, lost
 executor). With no symptom it stays quiet, and raising the limit may be exactly
-the right call. `SF-TIMEOUT-002` checks the **relation** between
+the right call — then `tune` proposes `spark.sql.broadcastTimeout` from the
+measured floor of the broadcast that completed, only for category `broadcast`,
+with nothing in `also_seen` and no symptom above the thresholds it reads from
+`SF-TIMEOUT-001` itself; `wall_clock` and `heartbeat` never get a value.
+`SF-TIMEOUT-002` checks the **relation** between
 `spark.executor.heartbeatInterval` and `spark.network.timeout`, never the value:
 `120s` is neither right nor wrong on its own, but a heartbeat slower than the
-driver's wait breaks the mechanism that detects a dead executor.
+driver's wait breaks the mechanism that detects a dead executor. A broken
+relation has a derived value: `tune` proposes `spark.network.timeout = heartbeat
+× 12` (the ratio between the defaults, 120s and 10s), keeping the heartbeat
+someone asked for.
 
 **Configuration derived from measurement — `tune`.** `spark.sql.shuffle.partitions`
 is derived from measured shuffle write bytes over the partition-size target — the
@@ -392,7 +399,11 @@ overhead), `spark.sql.files.maxPartitionBytes` from the median compressed Parque
 row group of a single source, and `spark.sql.autoBroadcastJoinThreshold` from the
 `EXPLAIN COST` estimate of the smaller join side, only with one candidate join and
 with statistics — the measured `BroadcastExchange` size travels beside it as a
-cross-check. Each one refuses by name when its measurement is missing.
+cross-check. `spark.speculation` is proposed only when the same executor has
+tasks above Spark's own speculation criterion (multiplier times the median,
+1.5 before Spark 4.0 and 3 from it) in two or more stages without reading more
+than the stage median (`spark.executor.slow_node`): node slowness, not partition
+size. Each one refuses by name when its measurement is missing.
 
 This is **not** a `Fact`, and the reason is written in the module: cost and
 timeout category are arithmetic over a measurement with no choice in them, while
@@ -408,12 +419,11 @@ count. Provenance answers **who asked** and not who won — `code`, `terraform`,
 symptom worth hunting: configuration someone wrote with the default's own value,
 which nobody understands any more and which changes nothing.
 
-Every other property the operator expects to see — broadcast threshold, memory
-overhead, speculation, `maxPartitionBytes`, the two timeouts — comes back in
-`refused`, **with the measurement that would unlock it**. Listing the refusal is
-the difference between "I don't know" and "I didn't ask". The two timeouts carry
-an extra reason: proposing a new number for them would contradict
-`SF-TIMEOUT-001`.
+Every property without its measurement comes back in `refused`, **with the
+measurement that would unlock it**. Listing the refusal is the difference
+between "I don't know" and "I didn't ask". The broadcast timeout carries an
+extra refusal: with a symptom beside it (`sintoma_ao_lado`), a new number would
+contradict `SF-TIMEOUT-001`.
 
 **Waste, and the idleness that is a symptom — `SF-WASTE`.** Low worker
 utilisation *looks* like waste and sometimes is a symptom: ninety per cent of the

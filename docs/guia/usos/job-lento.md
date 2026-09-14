@@ -351,7 +351,7 @@ Os campos que importam:
   Sem shuffle medido, até a proposta principal vira recusa: `no_shuffle_measured`
   (`fixtures/tuning/sem_shuffle_medido`).
 
-Com mais medida, `tune` deriva mais quatro propriedades. Cada uma sai em `properties` quando a
+Com mais medida, `tune` deriva mais sete propriedades. Cada uma sai em `properties` quando a
 medida existe e em `refused` quando falta:
 
 | Propriedade | De onde vem o valor | Quando recusa | Fixture de exemplo |
@@ -360,6 +360,9 @@ medida existe e em `refused` quando falta:
 | `spark.executor.memory` | Pico de heap do pior executor, do event log | Sem métrica por executor: `sem_memoria_por_executor` | `overhead_medido` |
 | `spark.sql.files.maxPartitionBytes` | Mediana do row group comprimido, do footer Parquet | Sem footer: `sem_footer`. Duas fontes com valores diferentes: `fontes_divergentes` | `split_uma_fonte`, `split_duas_fontes` |
 | `spark.sql.autoBroadcastJoinThreshold` | Lado menor do join, estimado pelo `EXPLAIN COST` | Sem plano com custo: `sem_explain_cost`. Mais de um join candidato: `joins_divergentes`. Tabela sem estatística: `estimativa_sem_estatistica` | `broadcast_um_join`, `broadcast_dois_joins`, `broadcast_sem_estatistica` |
+| `spark.speculation` | O mesmo executor lento em dois ou mais stages sem ter lido mais que a mediana, pelo critério do Spark da versão | Task lenta que leu mais: `lentidao_da_particao`. Executores diferentes a cada stage: `lentidao_espalhada`. Já ligada: `speculation_ja_ligada` | `speculation_no_lento`, `speculation_particao`, `speculation_espalhada`, `speculation_ja_ligada` |
+| `spark.network.timeout` | 12 vezes o heartbeat, quando o heartbeat não cabe na espera do driver | Relação de pé: `relacao_ok`. Sem as duas chaves: `sem_relacao_observada` | `network_relacao_quebrada`, `network_relacao_ok` |
+| `spark.sql.broadcastTimeout` | Maior tempo medido do broadcast que completou, com a folga declarada | Sintoma ao lado (skew, spill, GC, executor perdido): `sintoma_ao_lado`. Limite atual já basta: `ja_cabe_no_timeout`. Sem medida: `sem_broadcast_medido` | `broadcast_timeout_medido`, `broadcast_timeout_com_sintoma`, `broadcast_timeout_ja_cabe` |
 
 Os fixtures ficam em `fixtures/tuning/`. Para juntar as medidas:
 
@@ -372,8 +375,8 @@ sparkforge fuse --facts facts_log.json --facts facts_footer.json --facts facts_p
 sparkforge tune --facts facts.json --headroom 0.2
 ```
 
-`--headroom` é opcional e vale só para o overhead: 0.2 acrescenta 20% sobre o pico medido. Sem
-ele, o valor é o próprio pico. No broadcast, o tamanho **medido** de cada `BroadcastExchange`
+`--headroom` é opcional e vale para o overhead e o `broadcastTimeout`: 0.2 acrescenta 20% sobre
+o pico medido. Sem ele, o valor é o próprio pico. No broadcast, o tamanho **medido** de cada `BroadcastExchange`
 do event log aparece em `derived.basis.measured_broadcasts`, só para conferir a estimativa.
 
 `tune` nunca aplica a mudança. Ele só propõe.

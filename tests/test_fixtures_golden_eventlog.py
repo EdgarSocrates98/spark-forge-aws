@@ -40,6 +40,11 @@ REQUIRED_FIXTURES = {
     # A razao da stage que falhou, do subprojeto F: e a unica fonte no event
     # log que separa timeout de broadcast de timeout de rede.
     "broadcast_timeout_stage_failure",
+    # Criterio de copia especulativa por executor (frente 2b): no lento, o par
+    # com a lentidao espalhada, e a mudanca de default no Spark 4.
+    "no_lento_em_dois_stages",
+    "lentidao_espalhada",
+    "criterio_spark4",
 }
 
 

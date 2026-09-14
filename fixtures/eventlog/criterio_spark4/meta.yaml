@@ -1,0 +1,27 @@
+name: criterio_spark4
+proves: >
+  O mesmo stage sob Spark 4.1.1, onde o default de `spark.speculation.multiplier`
+  passou de 1,5 para 3 (e o quantile de 0,75 para 0,9). A task de 2500 ms seria lenta
+  no 3.5 e nao e aqui: o limiar e 3000 ms, e so a de 3500 ms conta. A mesma razao
+  max/p50 de 3,5 dispara SF-UI-001, que nao depende da versao.
+runtime:
+  glue: '6.0'
+  spark: 4.1.1
+  python: '3.11'
+  iceberg: 1.7.1
+expects_kinds:
+- spark.cluster.cores
+- spark.conf_effective
+- spark.conf_excluded
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.slow_tasks
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+expects_rules:
+- SF-UI-001

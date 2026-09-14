@@ -183,9 +183,20 @@ Quatro propriedades a mais saem derivadas quando a medida existe, cada uma com `
   do `BroadcastExchange` (`spark.sql.broadcast_exchange`) vem ao lado em `basis`, como
   conferência, e não substitui a estimativa.
 
+E mais três, desde a frente 2b:
+
+- `spark.speculation = true` — só com `spark.executor.slow_node`: o MESMO executor com tasks
+  acima do critério de cópia especulativa do Spark da versão (multiplier × mediana; 1.5 antes
+  do Spark 4.0, 3 depois) em dois ou mais stages, sem ter lido mais que a mediana (input mais
+  shuffle lido). Lentidão do nó, não da partição; `SF-UI-007` acusa o mesmo nó.
+- `spark.network.timeout` — 12 vezes o heartbeat, só com a relação da `SF-TIMEOUT-002`
+  quebrada, mantendo o heartbeat pedido.
+- `spark.sql.broadcastTimeout` — piso medido do broadcast que completou, com `headroom`, só
+  com diagnóstico `broadcast` sem `also_seen` e sem sintoma acima dos limiares da
+  `SF-TIMEOUT-001`.
+
 O bloco `refused` é a parte honesta: toda propriedade sem base sai listada com a medida que a
-destravaria — speculation, `broadcastTimeout` e `network.timeout` continuam aí, e cada uma
-das quatro acima sai aí também quando a medida falta.
+destravaria, e cada uma das oito sai aí quando a medida falta.
 
 #### O que uma mudança de configuração move, antes de aplicá-la
 
@@ -241,8 +252,10 @@ spill, GC ou executor perdido. Sem sintoma ela não dispara, e aí subir o limit
 decisão certa. `SF-TIMEOUT-002` confere a relação entre `spark.executor.heartbeatInterval` e
 `spark.network.timeout`, e não o valor de nenhuma das duas.
 
-Nenhuma das duas recomenda um valor novo de timeout, e você também não deve: derivar
-configuração a partir de medida ainda não existe neste projeto.
+Nenhuma das duas recomenda valor, e você também não deve de memória: o número, quando a medida
+o sustenta, vem do `sparkforge_tune` — `broadcastTimeout` só sem sintoma ao lado, e
+`network.timeout` só com a relação quebrada. `wall_clock` e `heartbeat` nunca têm valor
+proposto.
 
 #### "Preserve correção funcional" deixou de ser frase e virou artefato
 

@@ -1,7 +1,7 @@
 {
   "analyzes": {
     "event-log": {
-      "facts": 28,
+      "facts": 29,
       "files": 1
     },
     "glue-job-runs": {
@@ -27,8 +27,8 @@
   },
   "dry_run": false,
   "facts": {
-    "after_fuse": 68,
-    "extracted": 66
+    "after_fuse": 69,
+    "extracted": 67
   },
   "findings": {
     "by_severity": {

@@ -4703,6 +4703,20 @@ _TUNE_SUCCESS_SCHEMA: dict[str, Any] = {
                             "lado_acima_de_8gb",
                             "estimativa_sem_estatistica",
                             "ja_cabe_no_threshold",
+                            "sem_tasks_por_executor",
+                            "criterio_de_especulacao_desconhecido",
+                            "sem_tasks_lentas",
+                            "lentidao_da_particao",
+                            "lentidao_espalhada",
+                            "speculation_ja_ligada",
+                            "sem_relacao_observada",
+                            "relacao_ok",
+                            "sem_diagnostico_de_broadcast",
+                            "broadcast_com_outra_categoria",
+                            "limiar_indisponivel",
+                            "sintoma_ao_lado",
+                            "sem_broadcast_medido",
+                            "ja_cabe_no_timeout",
                         ],
                     },
                     "property": {"type": "string"},
@@ -6770,8 +6784,13 @@ TOOLS: dict[str, dict[str, Any]] = {
             "`spark.executor.memory` (piso do pico de heap), "
             "`spark.sql.files.maxPartitionBytes` (row group mediano COMPRIMIDO de uma "
             "fonte so) e `spark.sql.autoBroadcastJoinThreshold` (estimativa do EXPLAIN "
-            "COST de um unico join candidato, com o broadcast medido ao lado). A formula "
-            "e a base viajam dentro da resposta. "
+            "COST de um unico join candidato, com o broadcast medido ao lado), "
+            "`spark.speculation` (so com o MESMO executor lento em >= 2 stages sem "
+            "particao maior, pelo criterio de copia especulativa do Spark da versao), "
+            "`spark.network.timeout` (12 vezes o heartbeat, so com a relacao quebrada) e "
+            "`spark.sql.broadcastTimeout` (piso medido do broadcast que completou, so com "
+            "diagnostico `broadcast` sem outra categoria e sem sintoma acima dos limiares "
+            "da SF-TIMEOUT-001). A formula e a base viajam dentro da resposta. "
             "A VERSAO MUDA O SIGNIFICADO: com AQE default (Spark 3.2+, portanto Glue "
             "4.0 e 5.x) o numero e o PISO de paralelismo inicial que o motor "
             "coalesce; sem AQE (Glue 3.0, Spark 3.1.1) e o numero FINAL de "
@@ -6802,8 +6821,9 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "minimum": 0,
                     "description": (
                         "Folga declarada sobre o piso medido do "
-                        "`spark.executor.memoryOverhead` (0.2 = 20%). Sem ela o "
-                        "valor e o piso, sem folga nenhuma."
+                        "`spark.executor.memoryOverhead` e do "
+                        "`spark.sql.broadcastTimeout` (0.2 = 20%). Sem ela o valor e o "
+                        "piso, sem folga nenhuma."
                     ),
                 },
             },

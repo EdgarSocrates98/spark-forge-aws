@@ -48,6 +48,15 @@ REQUIRED_FIXTURES = {
     "broadcast_um_join",
     "broadcast_dois_joins",
     "broadcast_sem_estatistica",
+    "speculation_no_lento",
+    "speculation_particao",
+    "speculation_espalhada",
+    "speculation_ja_ligada",
+    "network_relacao_quebrada",
+    "network_relacao_ok",
+    "broadcast_timeout_medido",
+    "broadcast_timeout_com_sintoma",
+    "broadcast_timeout_ja_cabe",
 }
 
 
