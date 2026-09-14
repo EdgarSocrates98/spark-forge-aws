@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import functools
+import os
 import sys
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
@@ -96,7 +97,40 @@ def tools_do_transporte(transport: str) -> dict[str, dict[str, Any]]:
     return {n: s for n, s in TOOLS.items() if n not in TOOLS_COM_FONTE}
 
 
-def build_server(transport: str = "stdio") -> Any:
+def _recusa_por_policy_invalida(erro: str) -> Any:
+    """Toda chamada recusada, com a causa: policy que existe e nao valida nao
+    pode deixar o agente rodar sob uma politica que o operador acredita valer."""
+
+    def recusar(name: str, arguments: dict[str, Any], **_: Any) -> dict[str, Any]:
+        return {
+            "error": f"policy invalida, nenhuma tool roda ate corrigir: {erro}. "
+                     f"Confira com: sparkforge policy check",
+            "exit_code": 2,
+            "error_code": "POLICY_INVALID",
+        }
+
+    return recusar
+
+
+def carregar_policy_do_servidor(raiz: Any = None) -> tuple[Any, str | None]:
+    """`(CallPolicy | None, erro | None)` da policy de `CLAUDE_PROJECT_DIR`
+    (ou do diretorio corrente). Sem arquivo: `(None, None)`, o de hoje."""
+    from sparkforge.policy.load import PolicyError, carregar, raiz_do_projeto
+    from sparkforge.policy.mcp import para_call_policy
+
+    try:
+        # A raiz vem do ambiente: resolvida e exigida como diretorio antes de
+        # qualquer leitura, e o arquivo embaixo dela e confinado a ela.
+        base = raiz_do_projeto(raiz or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd())
+        politica = carregar(base)
+    except PolicyError as exc:
+        return None, str(exc)
+    return (para_call_policy(politica, base) if politica else None), None
+
+
+def build_server(
+    transport: str = "stdio", policy: Any = None, policy_error: str | None = None
+) -> Any:
     """Constroi um `mcp.server.Server` registrando `TOOLS`. Falha com mensagem
     acionavel (SystemExit) se o SDK nao estiver instalado.
 
@@ -116,7 +150,13 @@ def build_server(transport: str = "stdio") -> Any:
     catalogo = tools_do_transporte(transport)
     # O canal vai MEDIDO para o span: so a chamada que entrou por aqui recebe
     # `mcp.method.name` no export OTLP (`observability/otlp.py`).
-    executar = functools.partial(call_tool, channel="mcp", transport=transport)
+    # `policy` e montada por `main()` a partir de `.sparkforge/policy.yaml`
+    # (§16); sem ela, `call_tool` se comporta como sempre.
+    executar = (
+        _recusa_por_policy_invalida(policy_error)
+        if policy_error
+        else functools.partial(call_tool, channel="mcp", transport=transport, policy=policy)
+    )
     ferramentas = [
         Tool(
             name=name,
@@ -256,7 +296,8 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o S
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args(argv)
 
-    server = build_server(args.transport)
+    policy, erro = carregar_policy_do_servidor()
+    server = build_server(args.transport, policy=policy, policy_error=erro)
 
     if args.transport == "stdio":
         _run_stdio(server)

@@ -47,7 +47,7 @@ chamam `get_object`, `get_job`, `get_metric_data`, `SELECT`/`get_work_group`. Ma
 `readOnlyHint` **não tem lado**: ele afirma que a tool não modifica o ambiente
 dela, e os sete modificam o ambiente **local**. Todos terminam em
 `sparkforge.collect.aws._write_and_register`, que grava o artefato e depois grava
-o manifesto `path` + `sha2116` que `sparkforge_collect_verify` confere — e cuja
+o manifesto `path` + `sha256` que `sparkforge_collect_verify` confere — e cuja
 entrada de mesmo `path` é substituída a cada coleta. Medido executando
 `_write_and_register` num diretório vazio: **zero arquivos antes, dois depois**.
 
@@ -77,11 +77,11 @@ confirmação, não menos —, e nenhuma capacidade foi removida.
 ## Duas classes ficam sem membro, e não são as esperadas
 
 Distribuição depois da correção, derivada executando `tool_class()` sobre as
-97 tools:
+98 tools:
 
 | classe | tools |
 |---|---|
-| `READ_ONLY` | 64 |
+| `READ_ONLY` | 65 |
 | `LOCAL_MUTATION` | 20 |
 | `CLOUD_MUTATION` | 13 |
 | `CLOUD_READ` | 0 |
@@ -169,11 +169,11 @@ sistema de arquivos, com a classe derivada por `tool_class()`:
 
 | classe | declaram caminho | não declaram |
 |---|---|---|
-| `READ_ONLY` | 54 | 8 |
+| `READ_ONLY` | 55 | 8 |
 | `LOCAL_MUTATION` | 20 | 0 |
 | `CLOUD_MUTATION` | 13 | 0 |
 
-Medido: **56** das tools `READ_ONLY` declaram algum argumento de caminho
+Medido: **57** das tools `READ_ONLY` declaram algum argumento de caminho
 (`path`, `repo`, `facts_path`, `before`/`after`, `file`, `report_path`,
 `findings_path`), e as **seis** exceções são `sparkforge_rules_lookup`, que só
 aceita `category`, `id`, `limit` e `cursor`; `sparkforge_economy_report`, que lê
@@ -193,7 +193,7 @@ recebe nada que aponte para fora**: `runtime` e `axis` filtram o que ela já
 carrega, e o que ela carrega é conhecimento versionado que viaja no próprio
 pacote (`knowledge/glue/lakeformation-matrix.yaml`, por `safe_knowledge_file`).
 Não há caminho a autorizar porque não há caminho que o chamador escolha. Estendendo às outras classes, o total é
-**89** de 97 — as dezenove `LOCAL_MUTATION` e as treze `CLOUD_MUTATION` declaram
+**90** de 98 — as dezenove `LOCAL_MUTATION` e as treze `CLOUD_MUTATION` declaram
 caminho sem exceção. Receber caminho é a forma normal da chamada neste
 catálogo, não um caso de borda. As onze tools que a SPEC do `SFCI` propõe
 recebem todas caminho, e é o caminho que decide se a chamada é legítima.
@@ -275,7 +275,7 @@ chamar a tool direto.
 > **Superado em `5cc065d`.** O parágrafo acima registra o que a fase J2 não
 > fechou e fica como está — é o registro dela. O que mudou depois:
 > `sparkforge/adapters/tools.py:call_tool` passou a chamar a cadeia via
-> `CallPolicy.decide`, e o despacho é único para as 97 tools, então fechar ali
+> `CallPolicy.decide`, e o despacho é único para as 98 tools, então fechar ali
 > cobre `adapters/mcp.py` junto. Ver *A imposição no despacho* abaixo.
 
 Isso é o gap do hook `PreToolUse` do §41, e ele **não** fecha aqui. O que
@@ -321,7 +321,7 @@ pública; a afirmação de fato que a acompanhava não era verdade e foi corrigi
 ## A imposição no despacho
 
 `sparkforge/adapters/tools.py:call_tool(name, arguments, *, policy=None)` chama
-a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 97
+a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 98
 tools passam por ele, e `adapters/mcp.py` o usa, então fechar ali cobre os dois
 de uma vez em vez de uma checagem por porta.
 
@@ -345,8 +345,17 @@ handler **não rodou**. Recusa que devolve erro depois de executar não é recus
 
 ## O que falta, declarado
 
-O hook `PreToolUse` do §41 **não** existe, e a imposição acima não o substitui:
-ela vale dentro do processo Python. Um agente que chame `terraform destroy` por
-`Bash` continua sem passar por `authorize()`. O hook depende desta cadeia — hook
-sem classe de tool seria uma lista de comandos mantida à mão, a segunda tabela
-que esta fase existe para não criar.
+O hook `PreToolUse` do §41 **passou a existir em 2026-09-13** (§16), com uma
+fonte declarada em vez de uma lista de comandos no script:
+`.sparkforge/policy.yaml`. Três portas leem a mesma decisão
+(`sparkforge/policy/decide.py`): o hook (`python -m sparkforge.policy.hook`,
+matcher `Bash|Edit|Write|MultiEdit|NotebookEdit`) bloqueia as regras `deny` pelo
+código de saída que o Claude Code trata como bloqueio; as regras `ask` viram `permissions.ask` do `.claude/settings.json`,
+geradas por `sparkforge policy sync-settings` (o `PreToolUse` só decide
+`allow`/`deny`); e o servidor MCP carrega a policy ao subir e a passa ao
+`call_tool` como `CallPolicy`, com as classes pré-aprovadas e as raízes
+(repositório mais `extra_roots`). Sem arquivo, as três portas se comportam como
+antes. O que continua fora: regra de shell casa o texto do comando, não o
+programa — alias, script que chama o programa por dentro e caminho absoluto do
+binário escapam, e a própria documentação do Claude Code diz o mesmo das regras
+de permissão.

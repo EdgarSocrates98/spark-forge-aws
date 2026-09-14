@@ -203,6 +203,12 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 |---|---|---|
 | [`sparkforge_playbook`](sparkforge_playbook.md) | só leitura | Decomposicao de um coordenador (agents/*.md) em passos sequenciais -- o PISO de orquestracao das cinco plataformas. |
 
+## policy
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_policy_explain`](sparkforge_policy_explain.md) | só leitura | Diz o que a policy de seguranca do repositorio (`.sparkforge/policy.yaml`) decide para UM comando de shell (`bash_text`, so comparado como texto, nunca executado), UM caminho de... |
+
 ## proof
 
 | Tool | Efeito | O que faz |

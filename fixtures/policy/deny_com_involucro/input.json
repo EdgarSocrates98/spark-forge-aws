@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "FOO=1 sudo aws s3 rm s3://bucket/chave"
+  },
+  "cwd": "."
+}

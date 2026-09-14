@@ -1,0 +1,42 @@
+# Politica de seguranca do repositorio (§16). Fonte unica de tres portas:
+#   - servidor MCP (`python -m sparkforge.adapters.mcp`): `tools.denied` recusa,
+#     `tools.approvals` pre-aprova classes, caminhos confinados ao repositorio
+#     e a `extra_roots`;
+#   - hook PreToolUse (`python -m sparkforge.policy.hook`): regras `deny` de
+#     `bash` e `paths` bloqueiam (exit 2);
+#   - `.claude/settings.json` `permissions.ask`: regras `ask`, geradas por
+#     `sparkforge policy sync-settings` (nao edite a lista a mao).
+# Regra de Bash casa o TEXTO do comando, nao o programa: nao e fronteira de
+# seguranca (ver docs/harness/THREAT-MODEL.md, T-024).
+version: 1
+tools:
+  denied: []
+  # O servidor MCP de hoje roda estas classes sem pedir nada; pre-aprova-las
+  # mantem o comportamento. DESTRUCTIVE fica de fora de proposito.
+  approvals: [LOCAL_MUTATION, CLOUD_READ, CLOUD_MUTATION]
+  ask:
+    classes: [CLOUD_MUTATION]
+extra_roots: []
+bash:
+  - rule: "terraform destroy *"
+    decision: ask
+    reason: "destroi infraestrutura; confirme escopo"
+  - rule: "terraform apply *"
+    decision: ask
+    reason: "muda infraestrutura"
+  - rule: "aws s3 rm *"
+    decision: ask
+    reason: "apaga objetos no S3"
+  - rule: "aws lakeformation revoke-permissions *"
+    decision: ask
+    reason: "tira permissao do Lake Formation"
+  - rule: "*expire_snapshots*"
+    decision: ask
+    reason: "manutencao destrutiva do Iceberg: confirme escopo e retencao (regra 10)"
+paths:
+  - rule: "rules/catalog/**"
+    decision: ask
+    reason: "muda o catalogo de regras"
+  - rule: "**/*.tf"
+    decision: ask
+    reason: "muda infraestrutura declarada"

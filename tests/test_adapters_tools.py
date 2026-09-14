@@ -102,6 +102,7 @@ class TestToolSurface:
             "sparkforge_gain",
             "sparkforge_scan",
             "sparkforge_doctor",
+            "sparkforge_policy_explain",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -2662,6 +2663,17 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert len(result["checks"]) == 9 and result["online"] is False, result
         return result
 
+    if name == "sparkforge_policy_explain":
+        # A policy commitada do proprio repositorio: destroy pede confirmacao.
+        from pathlib import Path
+
+        raiz = str(Path(__file__).resolve().parents[1])
+        result = call_tool(
+            "sparkforge_policy_explain", {"repo": raiz, "bash_text": "terraform destroy"}
+        )
+        assert result["decision"] == "ask" and result["active"] is True, result
+        return result
+
     if name == "sparkforge_economy_report":
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
@@ -3073,6 +3085,7 @@ class TestErrorShapesValidateToo:
         ),
         ("sparkforge_scan", {"repo": "<tmp>/nao-existe"}),
         ("sparkforge_doctor", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_policy_explain", {"repo": "<tmp>/nao-existe", "bash_text": "ls"}),
         (
             "sparkforge_arbitrate",
             {

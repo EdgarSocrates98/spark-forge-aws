@@ -279,13 +279,16 @@ def _argumento_fora_da_raiz(arguments: dict[str, Any], root: Path | str) -> str 
     falharia de todo jeito -- mas a recusa nao depende de isso continuar
     verdade.
     """
+    # Uma raiz ou varias (§16: repositorio + `extra_roots` da policy). O
+    # caminho vale se cabe em ALGUMA; com uma raiz, a decisao e a de antes.
+    raizes = [root] if isinstance(root, (str, Path)) else list(root)
     for chave, valor in _caminhos_declarados(arguments):
         if valor.startswith("~"):
             return (
                 f"argumento `{chave}` fora da raiz do case: `~` nomeia o home "
                 f"do usuario e o confinamento nao o expande"
             )
-        if resolve_within(root, valor) is None:
+        if all(resolve_within(r, valor) is None for r in raizes):
             return f"argumento `{chave}` aponta para fora da raiz do case: {valor!r}"
     return None
 

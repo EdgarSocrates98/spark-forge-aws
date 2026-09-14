@@ -2269,6 +2269,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="Confirma a credencial na AWS (STS get_caller_identity). Unico modo com rede.",
     )
 
+    # policy ------------------------------------------------------------------
+    # §16: `.sparkforge/policy.yaml`, imposta pelo servidor MCP, pelo hook
+    # PreToolUse (deny) e por `permissions.ask` gerado (ask).
+    policy_p = sub.add_parser(
+        "policy",
+        help=(
+            "Politica de seguranca do repositorio (.sparkforge/policy.yaml): validar, "
+            "explicar uma decisao e gerar as regras ask do .claude/settings.json."
+        ),
+    )
+    policy_sub = policy_p.add_subparsers(dest="policy_action", required=True)
+    policy_check_p = policy_sub.add_parser(
+        "check", help="Valida a policy e lista as regras; sai 2 se ela for invalida."
+    )
+    policy_check_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
+    policy_explain_p = policy_sub.add_parser(
+        "explain",
+        help="Diz a decisao (allow, ask, deny), a regra que casou e qual porta a impoe.",
+    )
+    policy_explain_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
+    policy_explain_p.add_argument("--bash", default=None, help="Comando de shell a conferir.")
+    policy_explain_p.add_argument("--path", default=None, help="Caminho de escrita a conferir.")
+    policy_explain_p.add_argument("--tool", default=None, help="Nome de tool MCP a conferir.")
+    policy_sync_p = policy_sub.add_parser(
+        "sync-settings",
+        help=(
+            "Gera permissions.ask no .claude/settings.json a partir das regras ask; "
+            "--check so confere e sai 1 se divergir."
+        ),
+    )
+    policy_sync_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
+    policy_sync_p.add_argument(
+        "--check", action="store_true", help="So confere; nao grava. Sai 1 se divergir."
+    )
+
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
         "collect",
@@ -3636,6 +3671,22 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     return 1 if (resultado.get("gate") or {}).get("tripped") else 0
 
 
+def _cmd_policy_check(args: argparse.Namespace) -> int:
+    _print(_core.policy_check(args.repo))
+    return 0
+
+
+def _cmd_policy_explain(args: argparse.Namespace) -> int:
+    _print(_core.policy_explain(args.repo, command=args.bash, file_path=args.path, tool=args.tool))
+    return 0
+
+
+def _cmd_policy_sync_settings(args: argparse.Namespace) -> int:
+    resultado = _core.policy_sync_settings(args.repo, check=args.check)
+    _print(resultado)
+    return 1 if args.check and not resultado["in_sync"] else 0
+
+
 def _cmd_doctor(args: argparse.Namespace) -> int:
     resultado = _core.doctor(args.repo, online=args.online)
     _print(resultado)
@@ -4256,6 +4307,9 @@ _DISPATCH = {
     ("gain", None): _cmd_gain,
     ("scan", None): _cmd_scan,
     ("doctor", None): _cmd_doctor,
+    ("policy", "check"): _cmd_policy_check,
+    ("policy", "explain"): _cmd_policy_explain,
+    ("policy", "sync-settings"): _cmd_policy_sync_settings,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,
@@ -4335,6 +4389,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "runtime_action", None)
         or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
+        or getattr(args, "policy_action", None)
         or getattr(args, "pack_action", None)
         or getattr(args, "debate_action", None)
         or getattr(args, "lakeformation_action", None)

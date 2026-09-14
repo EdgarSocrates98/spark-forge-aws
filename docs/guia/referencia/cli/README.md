@@ -36,6 +36,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge next-step`](next-step.md) | Rota deterministica a partir de routing.yaml (nunca julgamento do agente). |
 | [`sparkforge pack`](pack.md) | Forge Packs: regras, knowledge e fixtures de terceiro (SPARKFORGE_PACKS). |
 | [`sparkforge playbook`](playbook.md) | Decomposicao de um coordenador em passos sequenciais -- o PISO de orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, e o caminho em Claude Code, Devin CLI... |
+| [`sparkforge policy`](policy.md) | Politica de seguranca do repositorio (.sparkforge/policy.yaml): validar, explicar uma decisao e gerar as regras ask do .claude/settings.json. |
 | [`sparkforge proof`](proof.md) | Obrigacoes de prova de cada recomendacao APLICADA: resolucao (a regra deixou de disparar no depois?) e um eixo por item de action.moves (funcval, benchmark ou sem comparador). |
 | [`sparkforge receipt`](receipt.md) | Recibo content-addressed da execucao do case: prova CORRESPONDENCIA entre o recibo e os artefatos, nunca autoria. |
 | [`sparkforge release`](release.md) | O que uma release publica, e o que muda entre duas. |

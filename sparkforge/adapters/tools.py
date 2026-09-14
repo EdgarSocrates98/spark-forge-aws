@@ -3181,6 +3181,20 @@ _DOCTOR_SCHEMA: dict[str, Any] = {
     },
 }
 
+_POLICY_EXPLAIN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["active", "subject_kind", "decision", "rule", "reason", "subject", "enforced_by"],
+    "properties": {
+        "active": {"type": "boolean"},
+        "subject_kind": {"type": "string", "enum": ["bash", "path", "tool"]},
+        "decision": {"type": "string", "enum": ["allow", "ask", "deny"]},
+        "rule": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]},
+        "subject": {"type": ["string", "null"]},
+        "enforced_by": {"type": ["string", "null"]},
+    },
+}
+
 _RECEIPT_PART_NAMES = [
     "version",
     "integrity",
@@ -7693,6 +7707,34 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(_DOCTOR_SCHEMA, "As checagens, ou erro de entrada."),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_policy_explain": {
+        "description": (
+            "Diz o que a policy de seguranca do repositorio (`.sparkforge/policy.yaml`) "
+            "decide para UM comando de shell (`bash_text`, so comparado como texto, nunca "
+            "executado), UM caminho de escrita (`file_path`) "
+            "ou UMA tool MCP (`tool`): allow, ask ou deny, a regra que casou e a porta que "
+            "impoe (hook PreToolUse para deny de shell e escrita, permissions.ask do "
+            "`.claude/settings.json` para ask, servidor MCP para deny de tool). So le. Regra "
+            "de shell casa o texto do comando, nao o programa: nao e fronteira de seguranca. "
+            "Sem arquivo de policy, `active: false` e allow."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio (padrao: .)."},
+                "bash_text": {
+                    "type": "string",
+                    "description": "Texto do comando de shell a conferir (nunca executado).",
+                },
+                "file_path": {"type": "string", "description": "Caminho de escrita a conferir."},
+                "tool": {"type": "string", "description": "Nome de tool MCP a conferir."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _POLICY_EXPLAIN_SCHEMA, "A decisao e a regra que casou, ou erro de entrada."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9403,6 +9445,15 @@ def _h_scan(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_policy_explain(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.policy_explain(
+        args.get("repo", "."),
+        command=args.get("bash_text"),
+        file_path=args.get("file_path"),
+        tool=args.get("tool"),
+    )
+
+
 def _h_doctor(args: dict[str, Any]) -> dict[str, Any]:
     # Nunca `online`: a tool e READ_ONLY sem rede; STS e so da CLI.
     return _core.doctor(args.get("repo", "."))
@@ -9714,6 +9765,7 @@ _HANDLERS = {
     "sparkforge_gain": _h_gain,
     "sparkforge_scan": _h_scan,
     "sparkforge_doctor": _h_doctor,
+    "sparkforge_policy_explain": _h_policy_explain,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,
