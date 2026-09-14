@@ -126,6 +126,8 @@
     "sparkforge_case_get",
     "sparkforge_case_open",
     "sparkforge_case_update",
+    "sparkforge_change_plan",
+    "sparkforge_change_sandbox",
     "sparkforge_code_context",
     "sparkforge_code_export",
     "sparkforge_code_path",

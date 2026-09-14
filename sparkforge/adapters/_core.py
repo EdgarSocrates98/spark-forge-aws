@@ -3817,6 +3817,150 @@ def policy_sync_settings(repo: str = ".", check: bool = False) -> dict[str, Any]
     return sincronizar(raiz, politica, tools_por_classe(), check=check)
 
 
+# --------------------------------------------------------------------------- #
+# change (§15: L1 produce change, L2 sandbox execute)
+# --------------------------------------------------------------------------- #
+
+_CHANGE_PLAN_HINT = (
+    "sparkforge change plan --facts <facts.json> --repo <raiz> (--from-tune | --set chave=valor)"
+)
+_CHANGE_SANDBOX_HINT = "sparkforge change sandbox --repo <raiz> --diff <arquivo.patch>"
+
+
+def change_plan(
+    facts_path: str | list[str] | None,
+    repo: str = ".",
+    from_tune: bool = False,
+    sets: list[str] | None = None,
+    out: str | None = None,
+) -> dict[str, Any]:
+    """L1 do §15: o diff e o rollback de um valor de configuracao, sem aplicar.
+
+    Verbo de TOPO: compoe sobre facts ja extraidos (a procedencia diz o arquivo
+    e a linha) e so le do repositorio a linha que o fact aponta. `from_tune` usa
+    o valor que `tune` deriva da medida, com a formula e a base no `basis` da
+    mudanca; `sets` e o valor que o operador propoe. `out` so existe na CLI:
+    a tool e READ_ONLY e devolve o diff no payload.
+    """
+    from sparkforge.change import plan_change
+
+    lista = [facts_path] if isinstance(facts_path, str) else list(facts_path or [])
+    if not lista:
+        raise AdapterError(f"change plan: informe --facts. Rode: {_CHANGE_PLAN_HINT}", exit_code=2)
+    if bool(from_tune) == bool(sets):
+        raise AdapterError(
+            "change plan: use --from-tune OU --set chave=valor, um dos dois.\n"
+            f"  Rode: {_CHANGE_PLAN_HINT}",
+            exit_code=2,
+        )
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(
+            f"change plan: diretorio nao encontrado: {repo}\n"
+            f"  Aponte --repo para a raiz usada na extracao:\n    {_CHANGE_PLAN_HINT}",
+            exit_code=2,
+        )
+    fatos = _merge_facts_files(lista)
+    valores: dict[str, str] = {}
+    bases: dict[str, dict[str, Any]] = {}
+    recusas_do_tune: list[dict[str, Any]] = []
+    if from_tune:
+        conselho = build_conf_advice(fatos, runtime=build_runtime_context(facts=fatos).to_dict())
+        for propriedade in conselho["properties"]:
+            derivado = propriedade["derived"]
+            valores[propriedade["key"]] = str(derivado["value"])
+            bases[propriedade["key"]] = {
+                "source": "tune",
+                "formula": derivado["formula"],
+                "basis": derivado["basis"],
+                "safety": propriedade["safety"],
+            }
+        recusas_do_tune = list(conselho["refused"])
+    else:
+        for item in sets or []:
+            chave, sep, valor = item.partition("=")
+            if not sep or not chave.strip() or not valor.strip():
+                raise AdapterError(
+                    f"change plan: --set {item!r} precisa ser chave=valor.\n"
+                    f"  Rode: {_CHANGE_PLAN_HINT}",
+                    exit_code=2,
+                )
+            valores[chave.strip()] = valor.strip()
+    resultado = plan_change(fatos, raiz, valores, bases)
+    resultado["tune_refused"] = recusas_do_tune
+    resultado["written"] = None
+    if out:
+        Path(out).write_text(resultado["diff"], encoding="utf-8", newline="\n")
+        resultado["written"] = out
+    return resultado
+
+
+def _sandbox_varrer(raiz: Path) -> dict[str, Any]:
+    """Um lado do sandbox: o `scan` inteiro sobre a copia, e os findings que ele gravou."""
+    resumo = scan(str(raiz))
+    achados = json.loads((raiz / _SCAN_DIR / "findings.json").read_text(encoding="utf-8"))
+    return {"findings": achados, "refused": list(resumo.get("refused") or [])}
+
+
+def change_sandbox(
+    repo: str = ".", diff_path: str | None = None, clean: bool = False
+) -> dict[str, Any]:
+    """L2 do §15: o diff numa copia isolada, e o que ele move nos achados.
+
+    `before/` e `after/` sob `.sparkforge/sandbox/<id>/`, o `scan` em cada uma e
+    a comparacao pela chave estavel da politica de prova. Recusa de diff sai no
+    payload (`refused`), sem nada gravado; erro de ENTRADA (repo ou arquivo que
+    nao existe) e `AdapterError`.
+    """
+    from sparkforge.change import DIFF_MAX_BYTES, ChangeError, executar, limpar, recusa
+    from sparkforge.change.refusals import DIFF_GRANDE_DEMAIS, DIFF_NAO_SUPORTADO
+    from sparkforge.proof import PolicyError, load_policy
+
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(
+            f"change sandbox: diretorio nao encontrado: {repo}\n"
+            f"  Aponte --repo para a raiz do repositorio:\n    {_CHANGE_SANDBOX_HINT}",
+            exit_code=2,
+        )
+    if clean:
+        try:
+            return limpar(raiz)
+        except ChangeError as exc:
+            raise AdapterError(
+                f"change sandbox --clean: {exc}\n"
+                "  Rode: sparkforge change sandbox --repo <raiz> --clean",
+                exit_code=2,
+            ) from exc
+    if not diff_path:
+        raise AdapterError(
+            f"change sandbox: informe --diff <arquivo> ou --clean.\n  Rode: {_CHANGE_SANDBOX_HINT}",
+            exit_code=2,
+        )
+    arquivo = Path(diff_path)
+    if not arquivo.is_file():
+        raise AdapterError(
+            f"change sandbox: diff nao encontrado: {diff_path}\n"
+            "  Gere um com:\n"
+            f"    sparkforge change plan --facts <facts.json> --repo {repo} --set chave=valor "
+            f"--out {diff_path}",
+            exit_code=2,
+        )
+    if arquivo.stat().st_size > DIFF_MAX_BYTES:
+        return recusa(
+            ChangeError(DIFF_GRANDE_DEMAIS, f"{diff_path} passa de {DIFF_MAX_BYTES} bytes")
+        )
+    try:
+        texto = arquivo.read_bytes().decode("utf-8")
+    except UnicodeDecodeError:
+        return recusa(ChangeError(DIFF_NAO_SUPORTADO, f"{diff_path} nao e texto UTF-8"))
+    try:
+        politica = load_policy()
+    except PolicyError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    return executar(raiz, texto, _sandbox_varrer, politica["stable_keys"])
+
+
 _SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
 
 

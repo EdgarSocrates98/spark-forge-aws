@@ -1,0 +1,15 @@
+{
+  "changes": [],
+  "diff": "",
+  "files": [],
+  "refused": [
+    {
+      "detail": "spark.sql.shuffle.partitions: nenhum tf.spark_conf nem pyspark.conf_set pede esta chave nos facts",
+      "key": "spark.sql.shuffle.partitions",
+      "reason": "sem_procedencia_em_arquivo",
+      "unlock": "declare a chave em arquivo (Terraform `--conf` ou `spark.conf.set`) e extraia de novo com `sparkforge analyze terraform|pyspark --out`; valor que so o runtime ou o cluster define nao tem linha para mudar"
+    }
+  ],
+  "rollback_diff": "",
+  "tune_refused": []
+}

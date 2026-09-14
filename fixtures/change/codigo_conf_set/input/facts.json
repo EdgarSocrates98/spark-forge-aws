@@ -1,0 +1,26 @@
+[
+  {
+    "id": "f_4e6128",
+    "schema_version": 1,
+    "kind": "pyspark.conf_set",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 32,
+      "end_line": 6,
+      "symbol": "configurar",
+      "snippet": "registrar(\"configuração\", spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\"))"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "374bfc9ebc89014dfe07f1b8ccac5c4cecb066f293a9d0d68af9abf5d8010978",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

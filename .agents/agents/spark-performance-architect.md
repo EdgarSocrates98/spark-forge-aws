@@ -183,6 +183,21 @@ escopo, e é ali que isso aparece. O que ela **não** faz está em `refused`: sp
 não são fact de configuração, e nenhum número de desempenho sai daqui. Para compatibilidade de
 dependência, use `sparkforge_migration_assess`.
 
+## Da proposta ao diff revisável (autonomia L1)
+
+`sparkforge_change_plan` transforma o valor proposto em diff, sem aplicar. Com `from_tune`, ele
+usa o que `sparkforge_tune` derivou (a fórmula e a base vêm em `basis`); com `sets`, o valor que
+o operador pediu. Ele acha o arquivo e a linha pela procedência — o par `chave=valor` dentro do
+`--conf` do Terraform, ou o literal do `spark.conf.set`/`.config` — e confere que o valor do fact
+ainda está lá antes de trocar. Entregue o `diff` **e** o `rollback_diff` juntos: recomendação sem
+rollback fere a regra 7.
+
+Leia `refused` antes de propor mudança à mão. `procedencia_ambigua` quer dizer que a chave é
+pedida em código e em Terraform, e o código vence em runtime: mudar só o Terraform não muda
+nada. `sem_procedencia_em_arquivo` quer dizer que o valor vem do runtime ou do cluster, e não
+há linha no repositório para mudar. Para ver o que o diff move nos achados antes de aplicá-lo,
+passe-o a `sparkforge_change_sandbox`. Isso é função do `sf-verifier`.
+
 ## Regra que não é do core: Forge Packs
 
 Um finding com prefixo diferente de `SF-` (por exemplo `ACME-GOV-001`) vem de um **Forge Pack**:

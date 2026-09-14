@@ -1,0 +1,60 @@
+{
+  "applied": true,
+  "copy_skipped": [],
+  "files_changed": [
+    "lib/job.py"
+  ],
+  "id": "a6dd7ad28357b7f3",
+  "kept_count": 0,
+  "main_tree_touched": false,
+  "moved_candidates": [],
+  "new": [],
+  "next_steps": [
+    {
+      "action": "run_your_tests",
+      "detail": "rode os seus testes sobre .sparkforge/sandbox/a6dd7ad28357b7f3/after: o sandbox nao executa comando do repositorio"
+    },
+    {
+      "action": "sparkforge benchmark",
+      "detail": "desempenho so se afirma com dois runs medidos, antes e depois; a diferenca de achados nao e ganho"
+    },
+    {
+      "action": "sparkforge funcval plan",
+      "detail": "confira que o resultado continua o mesmo: contagem, schema, chaves, agregados"
+    }
+  ],
+  "proof_obligations": [
+    {
+      "rollback": [
+        "Reverter o commit."
+      ],
+      "rule_id": "SF-PY-012",
+      "side": "resolved",
+      "validation": [
+        "Valor efetivo de cada chave conferido na aba Environment antes e depois.",
+        "Runtime e DPU-hours antes e depois, para confirmar que a configuração tinha efeito real."
+      ]
+    }
+  ],
+  "refused": [],
+  "resolved": [
+    {
+      "rule_id": "SF-PY-012",
+      "subject": {
+        "col": 4,
+        "end_line": 2,
+        "file": "job.py",
+        "line": 2,
+        "snippet": "spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\")",
+        "symbol": "configurar",
+        "type": "source_location"
+      }
+    }
+  ],
+  "sandbox": ".sparkforge/sandbox/a6dd7ad28357b7f3",
+  "scan_refused": {
+    "after": [],
+    "before": []
+  },
+  "stage": "sandbox_execute"
+}

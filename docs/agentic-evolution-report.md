@@ -37,6 +37,17 @@ proposta com `rollback` obrigatório. **Não há benchmark** do debate contra a
 arbitragem determinística, e por isso nenhuma afirmação de ganho (regra 30).
 Ver **Status por componente** abaixo.
 
+**Em 2026-09-13 o §15 do plano de evolução ganhou L1 e L2 — em OUTRA escala.**
+`sparkforge change plan` (L1, *produce change*) gera o diff e o diff de rollback
+de um valor de configuração pela procedência dos facts, sem aplicar;
+`sparkforge change sandbox` (L2, *sandbox execute*) aplica qualquer diff numa
+cópia em `.sparkforge/sandbox/<id>/` e compara os achados do `scan` antes e
+depois. As duas saídas levam um campo `stage` próprio (`produce_change`,
+`sandbox_execute`) e **não** usam o enum `AutonomyLevel` desta biblioteca, onde
+L1 é *specialist* e L2 é *cooperative* — níveis de coordenação de agentes, com
+`modify_code` proibido. Os dois executores acima continuam L0 nesta escala, e
+`applied_changes` continua `false`: nada do §15 escreve na árvore do operador.
+
 **A medida que fecha a lacuna, e como reproduzi-la.** Sobre
 `fixtures/graph/import_sem_jar_no_iac` unida a
 `fixtures/infra_code/fgac_com_jar_extra` — 3 findings, 60 facts, o case que a

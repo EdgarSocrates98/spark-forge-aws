@@ -1,0 +1,26 @@
+{
+  "applied": false,
+  "copy_skipped": [],
+  "files_changed": [],
+  "id": null,
+  "kept_count": 0,
+  "main_tree_touched": false,
+  "moved_candidates": [],
+  "new": [],
+  "next_steps": [],
+  "proof_obligations": [],
+  "refused": [
+    {
+      "detail": "'../fora.txt' nao e caminho relativo dentro da raiz",
+      "reason": "caminho_fora_da_raiz",
+      "unlock": "use caminho relativo a raiz do repositorio, sem `..` nem absoluto"
+    }
+  ],
+  "resolved": [],
+  "sandbox": null,
+  "scan_refused": {
+    "after": [],
+    "before": []
+  },
+  "stage": "sandbox_execute"
+}

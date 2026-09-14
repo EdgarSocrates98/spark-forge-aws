@@ -5,3 +5,7 @@
 # saia `sha256_divergente` -- medido no CI do PR #63, 2026-09-13. `-text` diz ao
 # git para nunca converter esses arquivos.
 fixtures/scan/** -text
+# `fixtures/change/` pelo mesmo motivo: o golden prende o diff byte a byte, o
+# `id` do sandbox e o sha256 do diff mais o dos arquivos copiados, e o
+# aplicador confere linha de contexto contra os bytes do repositorio sintetico.
+fixtures/change/** -text

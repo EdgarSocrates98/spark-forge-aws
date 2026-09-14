@@ -34,6 +34,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Como o revisor vê os findings no PR? | `report github` | findings de `judge` e a união dos facts; grava SARIF e resumo em `.sparkforge/report/`, com recusa nomeada para o que não tem linha no repositório |
 | Como vejo as tools e a sessão no meu backend de tracing? | `telemetry export` | os spans que `call_tool` gravou no ledger e, com `--host-transcript`, o transcript do host; grava OTLP/JSON (`gen_ai.*`, `mcp.*`) em `.sparkforge/telemetry/` para o receiver `otlp_json_file` do Collector, com o provider declarado e recusa nomeada para span sem horário |
 | Dois achados se contradizem — qual deles vale? | `arbitrate` | os findings que `judge` produziu e a **união** dos facts do case, mais o bloco `action:` de cada regra |
+| Que mudança de arquivo esse valor vira, e o que ela move nos achados? | `change plan` / `change sandbox` | a procedência de `tf.spark_conf`/`pyspark.conf_set` (arquivo e linha) e o valor de `tune` ou do operador; no sandbox, um diff aplicado numa cópia em `.sparkforge/sandbox/<id>/`, julgada antes e depois pelo `scan`. Não aplica na árvore do operador nem afirma ganho (§15, `stage` próprio, fora do `AutonomyLevel`) |
 
 Regras que valem para todos eles:
 
@@ -109,7 +110,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**98 tools, 37 com `detail_level`** (recontado em 2026-09-13). Os niveis sao `summary`, `normal` e `full`. A
+**100 tools, 37 com `detail_level`** (recontado em 2026-09-13). Os niveis sao `summary`, `normal` e `full`. A
 regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
 numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
 cada nivel pedido — ele mostra os dois lados e nao conclui por voce.

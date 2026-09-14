@@ -742,6 +742,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: produce a configuration change and try any diff in a sandbox copy
+    tools: [sparkforge_change_plan, sparkforge_change_sandbox]
+    cli: [change plan, change sandbox]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: load third-party rule packs alongside the core
     tools: [sparkforge_pack_list]
     cli: [pack list, pack check]

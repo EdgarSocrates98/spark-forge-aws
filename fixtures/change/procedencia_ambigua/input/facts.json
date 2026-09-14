@@ -1,0 +1,49 @@
+[
+  {
+    "id": "f_ea876c",
+    "schema_version": 1,
+    "kind": "tf.spark_conf",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl#spark.sql.shuffle.partitions"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800",
+      "source_argument": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "df869fe729b6450c977bdbaa25f72fdb50bc7fbec54eae1a5bbc6a08b10300c9",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_147a7e",
+    "schema_version": 1,
+    "kind": "pyspark.conf_set",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "configurar",
+      "snippet": "spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\")"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "593815cc90913d6a602c6c83e30171feea2a2b6386d3b01fd7933754ee9f9c78",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

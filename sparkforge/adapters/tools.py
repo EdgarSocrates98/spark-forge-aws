@@ -31,6 +31,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
+from sparkforge.change.refusals import RECUSAS_DO_PLANO, RECUSAS_DO_SANDBOX
 from sparkforge.observability.context_ledger import shared_ledger
 
 if TYPE_CHECKING:
@@ -3192,6 +3193,122 @@ _POLICY_EXPLAIN_SCHEMA: dict[str, Any] = {
         "reason": {"type": ["string", "null"]},
         "subject": {"type": ["string", "null"]},
         "enforced_by": {"type": ["string", "null"]},
+    },
+}
+
+_CHANGE_REFUSAL: dict[str, Any] = {
+    "type": "object",
+    "required": ["reason", "detail", "unlock"],
+    "properties": {
+        "key": {"type": "string"},
+        "reason": {"type": "string", "enum": sorted({*RECUSAS_DO_PLANO, *RECUSAS_DO_SANDBOX})},
+        "detail": {"type": "string"},
+        "unlock": {"type": "string"},
+    },
+}
+
+_CHANGE_PLAN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "stage", "applied", "changes", "refused", "files", "diff", "rollback_diff",
+        "tune_refused", "written",
+    ],
+    "properties": {
+        "stage": {"type": "string", "enum": ["produce_change"]},
+        "applied": {"type": "boolean", "enum": [False]},
+        "changes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "key", "file", "line", "from", "to", "provenance", "evidence", "basis",
+                ],
+                "properties": {
+                    "key": {"type": "string"},
+                    "file": {"type": "string"},
+                    "line": {"type": "integer"},
+                    "from": {"type": "string"},
+                    "to": {"type": "string"},
+                    "provenance": {"type": "string", "enum": ["terraform", "code"]},
+                    "evidence": {"type": "array", "items": {"type": "string"}},
+                    "basis": {"type": ["object", "null"]},
+                },
+            },
+        },
+        "refused": {"type": "array", "items": _CHANGE_REFUSAL},
+        "files": {"type": "array", "items": {"type": "string"}},
+        "diff": {"type": "string"},
+        "rollback_diff": {"type": "string"},
+        "tune_refused": {"type": "array", "items": {"type": "object"}},
+        "written": {"type": ["string", "null"]},
+    },
+}
+
+_CHANGE_SANDBOX_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["stage", "main_tree_touched"],
+    "properties": {
+        "stage": {"type": "string", "enum": ["sandbox_execute"]},
+        "main_tree_touched": {"type": "boolean", "enum": [False]},
+        "applied": {"type": "boolean"},
+        "refused": {"type": "array", "items": _CHANGE_REFUSAL},
+        "sandbox": {"type": ["string", "null"]},
+        "id": {"type": ["string", "null"]},
+        "before": {"type": ["string", "null"]},
+        "after": {"type": ["string", "null"]},
+        "files_changed": {"type": "array", "items": {"type": "string"}},
+        "new": {"type": "array", "items": _SIMULATE_FINDING},
+        "resolved": {"type": "array", "items": _SIMULATE_FINDING},
+        "kept_count": {"type": "integer"},
+        "moved_candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule_id", "file"],
+                "properties": {
+                    "rule_id": {"type": "string"},
+                    "file": {"type": "string"},
+                    "before_line": {"type": ["integer", "null"]},
+                    "after_line": {"type": ["integer", "null"]},
+                },
+            },
+        },
+        "proof_obligations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["rule_id", "side", "validation", "rollback"],
+                "properties": {
+                    "rule_id": {"type": "string"},
+                    "side": {"type": "string", "enum": ["new", "resolved"]},
+                    "validation": {"type": "array", "items": {"type": "string"}},
+                    "rollback": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        "next_steps": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["action", "detail"],
+                "properties": {"action": {"type": "string"}, "detail": {"type": "string"}},
+            },
+        },
+        "copy_skipped": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["path", "reason"],
+                "properties": {"path": {"type": "string"}, "reason": {"type": "string"}},
+            },
+        },
+        "scan_refused": {
+            "type": "object",
+            "required": ["before", "after"],
+            "properties": {"before": {"type": "array"}, "after": {"type": "array"}},
+        },
+        "cleaned": {"type": "boolean"},
+        "removed": {"type": "array", "items": {"type": "string"}},
     },
 }
 
@@ -7735,6 +7852,82 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_change_plan": {
+        "description": (
+            "Autonomia L1 (§15, produce change): o diff unificado e o diff de rollback de um "
+            "VALOR de configuracao Spark, achado pela procedencia dos facts -- `tf.spark_conf` "
+            "(so o par `chave=valor` dentro do `--conf` do Terraform) ou `pyspark.conf_set` (o "
+            "literal na chamada). O valor vem de `from_tune` (o que `sparkforge_tune` deriva da "
+            "medida, com a formula em `basis`) ou de `sets` (`chave=valor`). Antes de trocar, "
+            "confere que o valor do fact ainda esta na linha. Toda chave sem base sai em "
+            "`refused` com o que a destrava: sem_procedencia_em_arquivo, linha_nao_confere, "
+            "procedencia_ambigua, valor_nao_literal, valor_redigido, valor_invalido, "
+            "valor_ja_igual, caminho_fora_da_raiz. O QUE ELA NAO FAZ: nao aplica nem grava nada "
+            "(`applied: false`), nao gera mudanca de codigo (so valor literal) e nao estima "
+            "ganho. Para ver o que o diff move nos achados, `sparkforge_change_sandbox`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "repo"],
+            "properties": {
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": "Facts do case (a uniao que o judge recebeu).",
+                },
+                "repo": {"type": "string", "description": "Raiz usada na extracao dos facts."},
+                "from_tune": {
+                    "type": "boolean",
+                    "description": "Usa o valor que o tune deriva da medida.",
+                },
+                "sets": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "chave=valor, por exemplo spark.sql.shuffle.partitions=320.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _CHANGE_PLAN_SCHEMA, "O diff, o rollback e as recusas por chave, ou erro de entrada."
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_change_sandbox": {
+        "description": (
+            "Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do "
+            "`sparkforge change plan --out` ou de `git diff`) numa COPIA do repositorio em "
+            "`.sparkforge/sandbox/<id>/` -- `before/` pristina e `after/` com o diff --, roda o "
+            "scan nas duas e compara os achados pela chave estavel: `new`, `resolved`, "
+            "`kept_count` e `moved_candidates`, com as obrigacoes de prova (validation e "
+            "rollback) das regras tocadas e os proximos passos. O aplicador e estrito, tudo ou "
+            "nada: diff_vazio, diff_grande_demais, diff_nao_suportado (criacao, remocao, renome, "
+            "binario), diff_malformado, diff_nao_aplica, caminho_fora_da_raiz, "
+            "arquivo_fora_da_copia. `clean` apaga `.sparkforge/sandbox/`. O QUE ELA NAO FAZ: nao "
+            "toca a arvore principal (`main_tree_touched: false`), nao executa comando do "
+            "repositorio (testes sao do operador), nao usa git e nao afirma ganho: a diferenca "
+            "de achados nao e desempenho."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio."},
+                "diff_path": {
+                    "type": "string",
+                    "description": "Arquivo de diff unificado a aplicar na copia.",
+                },
+                "clean": {
+                    "type": "boolean",
+                    "description": "Apaga .sparkforge/sandbox/ em vez de aplicar.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _CHANGE_SANDBOX_SCHEMA,
+            "O que o diff move nos achados, a recusa com o que a destrava, ou erro de entrada.",
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
     "sparkforge_receipt_emit": {
         "description": (
             "Grava o RECIBO de uma execucao do case em "
@@ -9454,6 +9647,23 @@ def _h_policy_explain(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_change_plan(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.change_plan(
+        args["facts_path"],
+        args.get("repo", "."),
+        from_tune=bool(args.get("from_tune", False)),
+        sets=args.get("sets"),
+    )
+
+
+def _h_change_sandbox(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.change_sandbox(
+        args.get("repo", "."),
+        diff_path=args.get("diff_path"),
+        clean=bool(args.get("clean", False)),
+    )
+
+
 def _h_doctor(args: dict[str, Any]) -> dict[str, Any]:
     # Nunca `online`: a tool e READ_ONLY sem rede; STS e so da CLI.
     return _core.doctor(args.get("repo", "."))
@@ -9766,6 +9976,8 @@ _HANDLERS = {
     "sparkforge_scan": _h_scan,
     "sparkforge_doctor": _h_doctor,
     "sparkforge_policy_explain": _h_policy_explain,
+    "sparkforge_change_plan": _h_change_plan,
+    "sparkforge_change_sandbox": _h_change_sandbox,
     "sparkforge_receipt_emit": _h_receipt_emit,
     "sparkforge_receipt_verify": _h_receipt_verify,
     "sparkforge_report_sign": _h_report_sign,

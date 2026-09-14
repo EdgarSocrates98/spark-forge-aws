@@ -988,7 +988,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `repo`; `scan` grava em `.sparkforge/scan/`, `doctor` so le.
         # 89 -> 90 com `policy_explain` (2026-09-13, §16): `_READ_ONLY`, declara
         # `repo` e `file_path` (o caminho de escrita que ela so confere).
-        assert len(TOOLS) - len(sem_caminho) == 90
+        assert len(TOOLS) - len(sem_caminho) == 92
 
 
 class TestAImposicaoNoDespacho:

@@ -1,0 +1,19 @@
+[
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.sql.shuffle.partitions"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800",
+      "app_id": "application_1699000000000_0044"
+    },
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]
