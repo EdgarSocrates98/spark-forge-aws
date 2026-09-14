@@ -1,0 +1,4 @@
+name: broadcast_um_join
+runtime:
+  glue: '5.0'
+proves: 'Um join candidato: lado menor estimado em 24 MiB, com estatistica, acima do threshold default de 10 MB e abaixo de 8 GB. O threshold proposto e o piso da estimativa (25165824 bytes), e o tamanho MEDIDO do broadcast vem em `basis.measured_broadcasts` so como conferencia.'

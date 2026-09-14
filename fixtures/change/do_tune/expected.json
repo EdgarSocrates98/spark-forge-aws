@@ -32,8 +32,9 @@
     "no_measured_basis",
     "no_measured_basis",
     "no_measured_basis",
-    "no_measured_basis",
-    "no_measured_basis",
-    "no_measured_basis"
+    "sem_explain_cost",
+    "sem_footer",
+    "sem_memoria_por_executor",
+    "sem_memoria_por_executor"
   ]
 }

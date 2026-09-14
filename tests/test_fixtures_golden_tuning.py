@@ -41,6 +41,13 @@ REQUIRED_FIXTURES = {
     "valor_atual_vem_do_terraform",
     "default_escrito_a_mao",
     "sem_shuffle_medido",
+    "overhead_medido",
+    "overhead_sem_process_tree",
+    "split_uma_fonte",
+    "split_duas_fontes",
+    "broadcast_um_join",
+    "broadcast_dois_joins",
+    "broadcast_sem_estatistica",
 }
 
 
@@ -95,8 +102,10 @@ class TestOQueOCorpusInteiroGarante:
             for propriedade in run_fixture(directory)["properties"]:
                 derivado = propriedade["derived"]
                 assert derivado["formula"].strip(), directory.name
-                assert derivado["basis"]["shuffle_write_bytes"] > 0, directory.name
-                assert derivado["basis"]["target_partition_bytes"] > 0, directory.name
+                assert derivado["basis"], directory.name
+                if propriedade["key"] == "spark.sql.shuffle.partitions":
+                    assert derivado["basis"]["shuffle_write_bytes"] > 0, directory.name
+                    assert derivado["basis"]["target_partition_bytes"] > 0, directory.name
                 vistos += 1
         assert vistos >= 5
 
@@ -107,7 +116,8 @@ class TestOQueOCorpusInteiroGarante:
                 f.kind == "spark.stage.shuffle" and float(f.measures.get("write_bytes") or 0) > 0
                 for f in entradas
             )
-            if run_fixture(directory)["properties"]:
+            chaves = {p["key"] for p in run_fixture(directory)["properties"]}
+            if "spark.sql.shuffle.partitions" in chaves:
                 assert mediu, directory.name
 
     def test_every_proposal_carries_a_safety_level(self):

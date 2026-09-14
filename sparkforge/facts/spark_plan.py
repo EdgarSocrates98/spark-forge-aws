@@ -63,6 +63,7 @@ EMITTED_KINDS = frozenset(
         "plan.aqe",
         "plan.unresolved",
         "plan.analyzed",
+        "plan.join_side_stats",
     }
 )
 
@@ -95,6 +96,27 @@ _JOIN_OPERATORS = frozenset(
 )
 
 _EXCHANGE_OPERATORS = frozenset({"Exchange", "BroadcastExchange", "ShuffleExchange"})
+
+# `Utils.bytesToString` do Spark: uma casa decimal e unidade binaria. A
+# estimativa SEM estatistica e `Long.MaxValue`, que imprime "8.0 EiB" -- o
+# default que o `plan-reading.md` manda desconfiar.
+_UNIDADES_DE_BYTES = {
+    "B": 1, "KiB": 1 << 10, "MiB": 1 << 20, "GiB": 1 << 30,
+    "TiB": 1 << 40, "PiB": 1 << 50, "EiB": 1 << 60,
+}
+_STATS_RE = re.compile(r"Statistics\(sizeInBytes=([0-9.]+)\s*(B|KiB|MiB|GiB|TiB|PiB|EiB)\b")
+_SEM_ESTATISTICA_BYTES = 8.0 * (1 << 60)
+_LOGICAL_PREFIX_RE = re.compile(r"^[\s:|+\-]*")
+
+
+def bytes_da_estatistica(linha: str) -> float | None:
+    """Bytes da estimativa `Statistics(sizeInBytes=...)`, ou `None` se a linha nao a traz."""
+    casou = _STATS_RE.search(linha)
+    return float(casou[1]) * _UNIDADES_DE_BYTES[casou[2]] if casou else None
+
+
+def _tem_estatistica(valor: float | None) -> bool:
+    return valor is not None and valor < _SEM_ESTATISTICA_BYTES
 
 _PYTHON_UDF_OPERATORS = {
     "BatchEvalPython": "python",
@@ -892,6 +914,80 @@ class _Parser:
 
     # -- sentinela -------------------------------------------------------- #
 
+    # -- estatistica do EXPLAIN COST ------------------------------------ #
+
+    def _optimized_logical_slice(self) -> list[tuple[int, str]]:
+        """Linhas de `== Optimized Logical Plan ==`, so quando trazem `Statistics(`."""
+        secao: list[tuple[int, str]] = []
+        dentro = False
+        for i, raw in enumerate(self.lines):
+            marker = _SECTION_RE.match(raw)
+            if marker:
+                dentro = marker.group(1).strip().lower() == "optimized logical plan"
+                continue
+            if dentro:
+                secao.append((i + 1, raw))
+        if not any("Statistics(sizeInBytes=" in raw for _, raw in secao):
+            return []
+        return secao
+
+    def join_side_stats(self) -> None:
+        """`plan.join_side_stats`: a ESTIMATIVA de cada lado de cada join logico.
+
+        `QueryExecution.stringWithStats` (modo COST) imprime a secao logica
+        otimizada com o sufixo `Statistics(sizeInBytes=<Utils.bytesToString>, ...)`
+        em cada no -- conferido no fonte do Spark. E contra essa estimativa, e
+        nao contra o tamanho serializado, que o Spark compara
+        `spark.sql.autoBroadcastJoinThreshold`. Sem a secao, nada e emitido e os
+        goldens de plano sem EXPLAIN COST ficam como estavam.
+        """
+        pilha: list[tuple[int, dict[str, Any]]] = []
+        nos: list[dict[str, Any]] = []
+        for line_no, raw in self._optimized_logical_slice():
+            if not raw.strip():
+                continue
+            nivel = len(_LOGICAL_PREFIX_RE.match(raw).group(0))  # type: ignore[union-attr]
+            no: dict[str, Any] = {"line": line_no, "text": raw[nivel:].strip(), "filhos": []}
+            while pilha and pilha[-1][0] >= nivel:
+                pilha.pop()
+            if pilha:
+                pilha[-1][1]["filhos"].append(no)
+            pilha.append((nivel, no))
+            nos.append(no)
+        for no in nos:
+            if not no["text"].startswith("Join ") or len(no["filhos"]) != 2:
+                continue
+            join_type = no["text"].split()[1].rstrip(",")
+            esquerdo, direito = (bytes_da_estatistica(f["text"]) for f in no["filhos"])
+            measures = {
+                chave: valor
+                for chave, valor in (("left_bytes", esquerdo), ("right_bytes", direito))
+                if valor is not None
+            }
+            self.facts.append(
+                Fact(
+                    kind="plan.join_side_stats",
+                    subject={
+                        "type": "plan_node",
+                        "file": self.path,
+                        "line": no["line"],
+                        "symbol": f"Join {join_type}",
+                        "node_id": 0,
+                        "operator": "Join",
+                        "relation": "",
+                    },
+                    measures=measures,
+                    attrs={
+                        "join_type": join_type,
+                        "left_has_stats": _tem_estatistica(esquerdo),
+                        "right_has_stats": _tem_estatistica(direito),
+                        "left_node": _operator_of(no["filhos"][0]["text"]),
+                        "right_node": _operator_of(no["filhos"][1]["text"]),
+                    },
+                    provenance=self.provenance,
+                )
+            )
+
     def sentinel(self) -> Fact:
         unresolved_count = sum(1 for f in self.facts if f.kind == "plan.unresolved")
         aqe = [f for f in self.facts if f.kind == "plan.aqe"]
@@ -934,6 +1030,7 @@ def extract_plan(text: str, path: str) -> list[Fact]:
     try:
         parser.parse()
         parser.emit()
+        parser.join_side_stats()
     except Exception as exc:  # nenhum insumo pode derrubar quem chamou
         parser.unresolved(0, "extraction_error", f"{type(exc).__name__}: {exc}")
 

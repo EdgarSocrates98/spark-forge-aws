@@ -16,6 +16,7 @@ import pytest
 
 from sparkforge.facts.spark_plan import (
     EMITTED_KINDS,
+    bytes_da_estatistica,
     extract_plan,
     split_top_level,
 )
@@ -33,6 +34,48 @@ def one(facts, kind):
     matched = of_kind(facts, kind)
     assert len(matched) == 1, [f.to_dict() for f in matched]
     return matched[0]
+
+
+class TestEstatisticaDoExplainCost:
+    """`Statistics(sizeInBytes=...)` usa `Utils.bytesToString`: B, KiB, MiB, GiB, TiB, PiB, EiB."""
+
+    @pytest.mark.parametrize(
+        ("linha", "esperado"),
+        [
+            ("Relation db.t[id#1] parquet, Statistics(sizeInBytes=24.0 MiB)", 24.0 * (1 << 20)),
+            (":- Filter x, Statistics(sizeInBytes=1.1 GiB, rowCount=10)", 1.1 * (1 << 30)),
+            ("+- LocalRelation, Statistics(sizeInBytes=512.0 B)", 512.0),
+            ("Join Inner, Statistics(sizeInBytes=8.0 EiB)", 8.0 * (1 << 60)),
+        ],
+    )
+    def test_units_are_binary(self, linha, esperado):
+        assert bytes_da_estatistica(linha) == pytest.approx(esperado)
+
+    def test_a_line_without_statistics_is_none(self):
+        assert bytes_da_estatistica("Join Inner, (a#1 = b#2)") is None
+
+    def test_each_logical_join_gets_both_sides(self):
+        plano = textwrap.dedent(
+            """\
+            == Optimized Logical Plan ==
+            Join Inner, (a#1 = b#2), Statistics(sizeInBytes=2.0 GiB)
+            :- Relation db.grande[a#1] parquet, Statistics(sizeInBytes=2.0 GiB)
+            +- Relation db.pequena[b#2] parquet, Statistics(sizeInBytes=8.0 EiB)
+
+            == Physical Plan ==
+            *(1) Project [a#1]
+            """
+        )
+        join = one(extract_plan(plano, "plan.txt"), "plan.join_side_stats")
+
+        assert join.measures["left_bytes"] == pytest.approx(2.0 * (1 << 30))
+        assert join.attrs["left_has_stats"] is True
+        assert join.attrs["right_has_stats"] is False
+        assert join.attrs["join_type"] == "Inner"
+
+    def test_a_plan_without_cost_section_emits_no_side_stats(self):
+        plano = "== Physical Plan ==\n*(1) Project [a#1]\n"
+        assert of_kind(extract_plan(plano, "plan.txt"), "plan.join_side_stats") == []
 
 
 class TestSplitTopLevel:

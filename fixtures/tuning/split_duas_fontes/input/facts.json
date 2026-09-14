@@ -1,0 +1,16 @@
+[
+  {
+    "kind": "parquet.row_group",
+    "subject": {"type": "table", "symbol": "s3://bucket-sintetico/pedidos/part-0.parquet", "row_group": 0},
+    "measures": {"num_rows": 1000000.0, "total_byte_size": 268435456.0, "num_columns": 4.0},
+    "attrs": {"prefix": "s3://bucket-sintetico/pedidos/", "total_compressed_bytes": 134217728},
+    "provenance": {"extractor": "parquet_footer@0.1.0", "artifact": "footer_pedidos.json"}
+  },
+  {
+    "kind": "parquet.row_group",
+    "subject": {"type": "table", "symbol": "s3://bucket-sintetico/clientes/part-0.parquet", "row_group": 0},
+    "measures": {"num_rows": 100000.0, "total_byte_size": 16777216.0, "num_columns": 2.0},
+    "attrs": {"prefix": "s3://bucket-sintetico/clientes/", "total_compressed_bytes": 8388608},
+    "provenance": {"extractor": "parquet_footer@0.1.0", "artifact": "footer_clientes.json"}
+  }
+]

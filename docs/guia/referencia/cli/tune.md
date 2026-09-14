@@ -14,6 +14,7 @@ sparkforge tune --help
 |---|---|---|---|---|---|
 | `--facts` | sim | texto |  |  | Arquivo de facts (--out de analyze). |
 | `--out` | não | texto |  |  | Escreve o relatorio completo (JSON) neste arquivo. |
+| `--headroom` | não | texto |  |  | Folga declarada sobre o piso de memoryOverhead (0.2 = +20%). Sem ela, o piso. |
 
 ## Tool MCP equivalente
 

@@ -2745,7 +2745,7 @@ def finops_report(facts_path: str, job_name: str) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 
 
-def tune_conf(facts_path: str) -> dict[str, Any]:
+def tune_conf(facts_path: str, headroom: float | None = None) -> dict[str, Any]:
     """Deriva configuracao Spark do que foi medido, com procedencia por chave.
 
     Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload`,
@@ -2759,9 +2759,15 @@ def tune_conf(facts_path: str) -> dict[str, Any]:
     Nada aqui aplica configuracao. O relatorio nomeia o nivel de seguranca de
     cada proposta, e `REVIEW` significa que alguem olha antes.
     """
+    if headroom is not None and headroom < 0:
+        raise AdapterError(
+            f"tune: --headroom {headroom} precisa ser >= 0 (0.2 = 20% acima do piso medido).\n"
+            f"  Rode: sparkforge tune --facts <facts.json> --headroom 0.2",
+            exit_code=2,
+        )
     facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
     runtime = build_runtime_context(facts=facts).to_dict()
-    return build_conf_advice(facts, runtime=runtime)
+    return build_conf_advice(facts, runtime=runtime, headroom=headroom)
 
 
 # --------------------------------------------------------------------------- #

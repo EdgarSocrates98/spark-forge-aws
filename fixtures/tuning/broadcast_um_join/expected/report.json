@@ -1,0 +1,77 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [
+    {
+      "key": "spark.sql.autoBroadcastJoinThreshold",
+      "current": {
+        "value": "",
+        "provenance": "unset",
+        "evidence": []
+      },
+      "derived": {
+        "value": 25165824,
+        "formula": "ceil(smaller_side_estimated_bytes / MiB) * MiB",
+        "basis": {
+          "join_line": 2,
+          "join_type": "Inner",
+          "smaller_side_bytes": 25165824.0,
+          "effective_threshold_bytes": 10485760,
+          "threshold_source": "spark_default",
+          "measured_broadcasts": [
+            {
+              "broadcast_ms": 40,
+              "build_ms": 80,
+              "collect_ms": 120,
+              "data_size_bytes": 25165824,
+              "rows_output": 1000
+            }
+          ]
+        }
+      },
+      "safety": "REVIEW",
+      "supported_in_runtime": true,
+      "explanation": "Piso da ESTIMATIVA do otimizador para o lado menor do unico join candidato -- e contra a estimativa, e nao contra o tamanho serializado, que o Spark compara o threshold. O tamanho medido do broadcast, quando existe, vem ao lado como conferencia da estimativa, nunca como base da proposta."
+    }
+  ],
+  "refused": [
+    {
+      "reason": "no_shuffle_measured",
+      "property": "spark.sql.shuffle.partitions",
+      "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge analyze event-log` produz a medida."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memoryOverhead",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memory",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_footer",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Nenhum `parquet.row_group` com tamanho comprimido. `sparkforge collect parquet-footer --prefix <fonte>` e `sparkforge analyze parquet-footer` o produzem."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.network.timeout",
+      "detail": "Mesma razao de `spark.sql.broadcastTimeout`. A relacao com `spark.executor.heartbeatInterval` e conferida por `SF-TIMEOUT-002`, que julga a RELACAO e nao o valor."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.speculation",
+      "detail": "O documento de origem recusa explicitamente a inferencia `skew detectado -> speculation=true`: speculation duplica trabalho e aumenta I/O e custo. A decisao exige saber se a lentidao e do NO ou da PARTICAO, e nenhuma fonte de hoje separa os dois."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Subir timeout nao e conserto de performance -- e a `SF-TIMEOUT-001`, do subprojeto F. O diagnostico de timeout nomeia a categoria; propor um numero novo aqui contradiria a regra."
+    }
+  ]
+}

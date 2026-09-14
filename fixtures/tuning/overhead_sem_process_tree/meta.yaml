@@ -1,0 +1,4 @@
+name: overhead_sem_process_tree
+runtime:
+  glue: '5.0'
+proves: 'Event log sem `ProcessTreePythonRSSMemory`: o overhead sai recusado por `sem_process_tree`, nomeando `spark.executor.processTreeMetrics.enabled` (default false), porque pico fora do heap sem o Python e metade da medida. O heap, que tem medida, continua derivado.'

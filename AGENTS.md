@@ -286,7 +286,7 @@ And the verbs that **compose** over facts, never over artifacts:
 | Workload profile by axis | `workload` | scan, shuffle, spill and plan facts, plus `--history` of previous runs |
 | Cheapest capacity that meets the SLA | `capacity` | `glue.job_run` facts and the SLA declared in `workload.yaml` |
 | Cost per run, and where the lever is | `finops` | `glue.job_run`/`glue.run_cost`, the declared SLA, and the symptoms beside it |
-| Spark configuration derived from measurement | `tune` | `spark.stage.shuffle` measured, plus `spark.conf_effective`, `pyspark.conf_set` and `tf.spark_conf` for provenance |
+| Spark configuration derived from measurement | `tune` | `spark.stage.shuffle` measured, `spark.executor.memory_usage`, `parquet.row_group`, `plan.join_side_stats` and `spark.sql.broadcast_exchange`, plus `spark.conf_effective`, `pyspark.conf_set` and `tf.spark_conf` for provenance |
 | What this run put in the context window | `economy report` | the spans `call_tool` writes per call, the surface at rest, and the host transcript when there is one |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
@@ -384,7 +384,15 @@ driver's wait breaks the mechanism that detects a dead executor.
 is derived from measured shuffle write bytes over the partition-size target — the
 documented AQE default of 64 MiB, or the run's own
 `spark.sql.adaptive.advisoryPartitionSizeInBytes` when it declares one. The
-formula and the basis travel inside the answer.
+formula and the basis travel inside the answer. Four more properties are derived
+when their measurement exists: `spark.executor.memoryOverhead` and
+`spark.executor.memory` from the worst executor's peaks
+(`spark.executor.memory_usage`, with an optional declared `headroom` on the
+overhead), `spark.sql.files.maxPartitionBytes` from the median compressed Parquet
+row group of a single source, and `spark.sql.autoBroadcastJoinThreshold` from the
+`EXPLAIN COST` estimate of the smaller join side, only with one candidate join and
+with statistics — the measured `BroadcastExchange` size travels beside it as a
+cross-check. Each one refuses by name when its measurement is missing.
 
 This is **not** a `Fact`, and the reason is written in the module: cost and
 timeout category are arithmetic over a measurement with no choice in them, while

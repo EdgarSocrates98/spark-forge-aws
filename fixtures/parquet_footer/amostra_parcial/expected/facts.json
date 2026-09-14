@@ -280,7 +280,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/amostra_parcial/"
+      "prefix": "s3://lake/curated/amostra_parcial/",
+      "total_compressed_bytes": 1213
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -306,7 +307,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/amostra_parcial/"
+      "prefix": "s3://lake/curated/amostra_parcial/",
+      "total_compressed_bytes": 1214
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -332,7 +334,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/amostra_parcial/"
+      "prefix": "s3://lake/curated/amostra_parcial/",
+      "total_compressed_bytes": 1213
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -358,7 +361,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/amostra_parcial/"
+      "prefix": "s3://lake/curated/amostra_parcial/",
+      "total_compressed_bytes": 1214
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",

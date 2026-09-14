@@ -162,7 +162,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/sem_estatistica/"
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "total_compressed_bytes": 5431
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -188,7 +189,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/sem_estatistica/"
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "total_compressed_bytes": 5436
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -214,7 +216,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/sem_estatistica/"
+      "prefix": "s3://lake/curated/sem_estatistica/",
+      "total_compressed_bytes": 5438
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",

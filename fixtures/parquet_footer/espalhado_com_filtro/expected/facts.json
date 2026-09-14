@@ -164,7 +164,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/espalhado_com_filtro/"
+      "prefix": "s3://lake/curated/espalhado_com_filtro/",
+      "total_compressed_bytes": 5495
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -190,7 +191,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/espalhado_com_filtro/"
+      "prefix": "s3://lake/curated/espalhado_com_filtro/",
+      "total_compressed_bytes": 5498
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",
@@ -216,7 +218,8 @@
       "num_columns": 2.0
     },
     "attrs": {
-      "prefix": "s3://lake/curated/espalhado_com_filtro/"
+      "prefix": "s3://lake/curated/espalhado_com_filtro/",
+      "total_compressed_bytes": 5497
     },
     "provenance": {
       "extractor": "parquet_footer@0.1.0",

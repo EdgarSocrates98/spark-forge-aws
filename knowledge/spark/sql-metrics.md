@@ -16,6 +16,14 @@ para a execução inteira: `number of files read`, `size of files read`, `number
 partitions read`) ou de **tarefa** (`number of output rows`, somada por task como qualquer
 outro acumulador Spark).
 
+`BroadcastExchangeExec` — o operador que coleta o lado menor de um join no driver e o
+distribui aos executores — declara outros quatro rótulos, todos de **driver**: `data
+size` (tipo `size`, o tamanho do que foi para o broadcast), `time to collect`, `time to
+build` e `time to broadcast` (tipo `timing`). Eles chegam por
+`SparkListenerDriverAccumUpdates` e saem num `spark.sql.broadcast_exchange` por nó. É o
+tamanho MEDIDO do broadcast, e por isso `tune` o mostra ao lado da estimativa do `EXPLAIN
+COST`, como conferência: ele só existe para o join que já foi para broadcast.
+
 ## Por que é lista fechada
 
 O rótulo publicado é texto livre escolhido pelo operador que o declara, não um enum do
@@ -41,4 +49,5 @@ só explica o porquê da forma.
 - FileSourceScanLike / DataSourceScanExec.scala — Apache Spark, tag v3.5.4. https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala (retrieved 2026-08-28)
 - FileSourceScanLike / DataSourceScanExec.scala — Apache Spark, tag v3.5.6. https://raw.githubusercontent.com/apache/spark/v3.5.6/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala (retrieved 2026-08-28)
 - FileSourceScanLike / DataSourceScanExec.scala — Apache Spark, tag v4.1.1. https://raw.githubusercontent.com/apache/spark/v4.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala (retrieved 2026-08-28)
+- BroadcastExchangeExec.scala — Apache Spark, tag v3.5.4. Rótulos `data size`, `time to collect`, `time to build` e `time to broadcast` conferidos no fonte, e iguais nas tags v3.1.1, v3.3.0 e v4.1.1. https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/exchange/BroadcastExchangeExec.scala (retrieved 2026-09-14)
 - SQLMetrics.scala — Apache Spark, tag v3.5.4. Fábricas de métrica e os tipos (`sum`, `size`, `timing`, `nsTiming`, `average`) que cada uma produz. https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/metric/SQLMetrics.scala (retrieved 2026-08-28)

@@ -222,7 +222,7 @@
     {
       "path": "knowledge/spark/sql-metrics.md",
       "title": "sql-metrics",
-      "sha256": "c6230ba233c1ebfc6415c4c4dc343d38add1d7123c6286bc2d4c286492b00526"
+      "sha256": "9b1f2c75b250d1e45c4734d5d844813d9cb1279adb0da29045b153b0c4fcb4a7"
     },
     {
       "path": "knowledge/storage/iceberg-catalog.md",

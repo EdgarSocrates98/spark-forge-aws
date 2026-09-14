@@ -122,6 +122,29 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
         "2026-09-11: `source_freshness`/`as_of` opcionais; estado das fontes do "
         "documento, ou contagem por documento (frente de freshness)"
     ),
+    "sparkforge_tune": (
+        "2026-09-14: `headroom` opcional (folga declarada sobre o piso do overhead); "
+        "sem ele a resposta e a mesma"
+    ),
+}
+# Trocas NAO aditivas aceitas, uma por (tool, caminho dentro da tool), cada uma com
+# motivo. Descricao so aceita texto por texto; enum so aceita CRESCER com os valores
+# antigos na frente, na mesma ordem -- tirar ou reordenar valor continua derrubando
+# `test_so_o_type_do_output_schema_difere`.
+REESCRITAS_DEPOIS_DO_GOLDEN = {
+    ("sparkforge_tune", "description"): (
+        "2026-09-14: `tune` passou a derivar memoryOverhead, executor.memory, "
+        "maxPartitionBytes e autoBroadcastJoinThreshold; a descricao antiga dizia que so "
+        "o shuffle era derivado, e publicaria uma afirmacao falsa"
+    ),
+    (
+        "sparkforge_tune",
+        "outputSchema.oneOf[0].properties.properties.items.properties.explanation.description",
+    ): "2026-09-14: `explanation` deixou de ser so do shuffle",
+    (
+        "sparkforge_tune",
+        "outputSchema.oneOf[0].properties.refused.items.properties.reason.enum",
+    ): "2026-09-14: onze recusas nomeadas das quatro propriedades novas (regra 20)",
 }
 _CAMINHO_DE_TOOL = re.compile(r"^\$\.tools_list\.(stdio|http)\.tools\[(\d+)\]\.")
 
@@ -159,7 +182,25 @@ def _fora_da_allowlist(
         if not (_OUTPUT_TYPE.match(caminho) and antes == "<ausente>" and agora == "object")
         and not _aditiva_em_tool_alterada(caminho, antes, golden)
         and not _padrao_alargado(caminho, antes, agora)
+        and not _reescrita_declarada(caminho, antes, agora, golden)
     ]
+
+
+def _reescrita_declarada(caminho: str, antes: Any, agora: Any, golden: dict[str, Any]) -> bool:
+    casou = _CAMINHO_DE_TOOL.match(caminho)
+    if casou is None:
+        return False
+    nome = _nomes(golden["tools_list"][casou.group(1)])[int(casou.group(2))]
+    if (nome, caminho[casou.end():]) not in REESCRITAS_DEPOIS_DO_GOLDEN:
+        return False
+    if caminho.endswith(".enum"):
+        return (
+            isinstance(antes, list)
+            and isinstance(agora, list)
+            and len(agora) > len(antes)
+            and agora[: len(antes)] == antes
+        )
+    return isinstance(antes, str) and isinstance(agora, str)
 
 
 def _padrao_alargado(caminho: str, antes: Any, agora: Any) -> bool:
@@ -241,7 +282,15 @@ class TestHandshakeLegado:
             )
             for t in ("stdio", "http")
         }
-        assert aditivas == {"stdio": 13, "http": 13}
+        assert aditivas == {"stdio": 14, "http": 14}
+        reescritas = {
+            t: sum(
+                f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
+                for c, antes, agora in difs
+            )
+            for t in ("stdio", "http")
+        }
+        assert reescritas == {"stdio": 3, "http": 3}
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
@@ -279,3 +328,4 @@ class TestEra2026:
 def test_allowlist_tem_motivo():
     assert all(motivo.strip() for motivo in ALLOWLIST_MOTIVO.values())
     assert all(motivo.strip() for motivo in ALTERADAS_DEPOIS_DO_GOLDEN.values())
+    assert all(motivo.strip() for motivo in REESCRITAS_DEPOIS_DO_GOLDEN.values())
