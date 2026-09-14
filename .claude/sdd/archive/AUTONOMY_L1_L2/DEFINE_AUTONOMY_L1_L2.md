@@ -9,7 +9,7 @@
 | **Feature** | AUTONOMY_L1_L2 |
 | **Date** | 2026-09-13 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -167,9 +167,10 @@ O SparkForge só diagnostica (L0). O `tune` diz qual valor de `spark.sql.shuffle
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-13 | define-agent | Versão inicial a partir de BRAINSTORM_AUTONOMY_L1_L2.md. Medido: linha do `--conf` compartilhada, poda de `.sparkforge`, `tune` com uma propriedade, código vence Terraform. Recusas acrescentadas: `valor_redigido` e `arquivo_fora_da_copia` |
+| 1.1 | 2026-09-14 | ship-agent | Shipped and archived (PR #65, CI verde) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_AUTONOMY_L1_L2.md`
+**Shipped:** `.claude/sdd/archive/AUTONOMY_L1_L2/SHIPPED_2026-09-14.md`

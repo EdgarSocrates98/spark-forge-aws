@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_AUTONOMY_L1_L2.md](../features/DEFINE_AUTONOMY_L1_L2.md) |
 | **DESIGN** | [DESIGN_AUTONOMY_L1_L2.md](../features/DESIGN_AUTONOMY_L1_L2.md) |
-| **Status** | Complete |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -214,4 +214,4 @@ Nenhum.
 
 ## Next Step
 
-**If Complete:** `/ship .claude/sdd/features/DEFINE_AUTONOMY_L1_L2.md`
+**Shipped:** `.claude/sdd/archive/AUTONOMY_L1_L2/SHIPPED_2026-09-14.md` (PR #65, CI verde)

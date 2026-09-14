@@ -10,7 +10,7 @@
 | **Date** | 2026-09-13 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_AUTONOMY_L1_L2.md](./DEFINE_AUTONOMY_L1_L2.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -416,9 +416,10 @@ O caso `resolve_achado` reusa o padrao de `fixtures/pyspark/conf_set_conflict`: 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-13 | design-agent | Versao inicial. A-002 resolvido pelo span do no (bytes UTF-8); A-005 por duas copias; A-008 reusando `simulate.diff` com `stable_keys`. `spark_default_explicit` passa a ser editavel (correcao de SC3). Recusas acrescentadas: `diff_vazio`; `moved_candidates` para achado deslocado |
+| 1.1 | 2026-09-14 | ship-agent | Shipped and archived (PR #65, CI verde) |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/ship .claude/sdd/features/DEFINE_AUTONOMY_L1_L2.md`
+**Shipped:** `.claude/sdd/archive/AUTONOMY_L1_L2/SHIPPED_2026-09-14.md`
