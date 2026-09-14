@@ -30,6 +30,7 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 | processamento de grafo (GraphFrames) | `sparkforge_analyze_graph` |
 | listagem S3 | `sparkforge_analyze_s3_listing` |
 | inventário de consumidores | `sparkforge_analyze_consumers` |
+| SLA e fonte primária declarados (`workload.yaml`) | `sparkforge_analyze_workload` |
 | LOG do run no CloudWatch | `sparkforge_analyze_cloudwatch_logs` |
 | footer de arquivos Parquet | `sparkforge_analyze_parquet_footer` |
 

@@ -35,6 +35,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze sql-metrics`](#sparkforge-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
 | [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
 | [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
+| [`sparkforge analyze workload`](#sparkforge-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
 
 ## `sparkforge analyze athena-workgroup`
 
@@ -661,3 +662,26 @@ sparkforge analyze terraform-diff --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_terraform_diff`](../tools/sparkforge_analyze_terraform_diff.md)
+
+## `sparkforge analyze workload`
+
+Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem.
+
+```bash
+sparkforge analyze workload --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo workload.yaml. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON) neste arquivo. |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_workload`](../tools/sparkforge_analyze_workload.md)

@@ -62,6 +62,7 @@ class TestToolSurface:
             "sparkforge_analyze_call_graph",
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
+            "sparkforge_analyze_workload",
             "sparkforge_analyze_terraform_diff",
             "sparkforge_migration_assess",
             "sparkforge_glue_dependency_audit",
@@ -114,6 +115,7 @@ class TestToolSurface:
             "sparkforge_collect_glue_resource_link",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
+            "sparkforge_collect_parquet_footer",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
@@ -170,6 +172,7 @@ class TestToolSurface:
             "sparkforge_collect_glue_resource_link",
             "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
+            "sparkforge_collect_parquet_footer",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
@@ -2420,6 +2423,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         inventory.write_text(_CONSUMER_INVENTORY, encoding="utf-8")
         return call_tool("sparkforge_analyze_consumers", {"path": str(inventory)})
 
+    if name == "sparkforge_analyze_workload":
+        # O golden do extrator: `workload.declared` com SLA e fonte primaria.
+        from pathlib import Path
+
+        alvo = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "workload" / "declared_only" / "input" / "workload.yaml"
+        )
+        result = call_tool("sparkforge_analyze_workload", {"path": str(alvo)})
+        assert result["by_kind"].get("workload.declared"), result
+        return result
+
     if name == "sparkforge_analyze_terraform_diff":
         before = tmp_path / "before"
         after = tmp_path / "after"
@@ -2813,6 +2828,23 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             {"path": str(job), "source": "4.0", "target": "6.0"},
         )
         assert result["findings"], "a amostra precisa render pelo menos um finding"
+        return result
+
+    if name == "sparkforge_collect_parquet_footer":
+        # Sem AWS: um Parquet LOCAL gerado pelo pyarrow. O coletor le so o footer e
+        # registra no manifesto, e o schema e validado por um artefato de verdade.
+        import pytest
+
+        pa = pytest.importorskip("pyarrow")
+        pq = pytest.importorskip("pyarrow.parquet")
+        dados = tmp_path / "dados"
+        dados.mkdir()
+        pq.write_table(pa.table({"id": [1, 2, 3]}), dados / "part-0.parquet")
+        result = call_tool(
+            "sparkforge_collect_parquet_footer",
+            {"repo": str(tmp_path), "prefix": str(dados), "now": "2026-09-14T00:00:00Z"},
+        )
+        assert result["kind"] == "parquet_footer", result
         return result
 
     if name in (

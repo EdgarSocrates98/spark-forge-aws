@@ -543,6 +543,22 @@ def build_parser() -> argparse.ArgumentParser:
     consumers_p.add_argument("--cursor")
     _add_detail_level(consumers_p)
 
+    workload_an_p = analyze_sub.add_parser(
+        "workload",
+        help=(
+            "Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte "
+            "primaria), que capacity, finops e workload consomem."
+        ),
+    )
+    workload_an_p.add_argument("--path", required=True, help="Arquivo workload.yaml.")
+    workload_an_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    workload_an_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    workload_an_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    workload_an_p.add_argument("--cursor")
+    _add_detail_level(workload_an_p)
+
     tf_diff_p = analyze_sub.add_parser(
         "terraform-diff",
         help="Compara dois estados de um modulo Terraform e marca o que mudou.",
@@ -2524,6 +2540,23 @@ def build_parser() -> argparse.ArgumentParser:
     iceberg_p.add_argument("--output-location", required=True)
     iceberg_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    parquet_collect_p = collect_sub.add_parser(
+        "parquet-footer",
+        help=(
+            "Le so o FOOTER dos Parquet de um prefixo (diretorio local ou s3://): row group, "
+            "estatistica por coluna e sort order. Nenhuma linha de dado. Exige pyarrow."
+        ),
+    )
+    parquet_collect_p.add_argument("--repo", required=True)
+    parquet_collect_p.add_argument(
+        "--prefix", required=True, help="Diretorio local com .parquet, ou s3://bucket/prefixo/."
+    )
+    parquet_collect_p.add_argument(
+        "--max-files", type=int, default=None,
+        help="Quantos arquivos ler, os primeiros pelo nome (padrao do coletor: 20; teto 500).",
+    )
+    parquet_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     athena_wg_collect_p = collect_sub.add_parser(
         "athena-workgroup", help="Baixa a configuracao de um workgroup via a API do Athena."
     )
@@ -2879,6 +2912,27 @@ def _cmd_analyze_s3_listing(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_consumers(args: argparse.Namespace) -> int:
     full = _core.analyze_consumers(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_workload(args: argparse.Namespace) -> int:
+    full = _core.analyze_workload(args.path, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -3907,6 +3961,14 @@ def _cmd_collect_iceberg_metadata(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_parquet_footer(args: argparse.Namespace) -> int:
+    payload = _core.collect_parquet_footer(
+        args.repo, prefix=args.prefix, now=args.now, max_files=args.max_files
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_athena_workgroup(args: argparse.Namespace) -> int:
     payload = _core.collect_athena_workgroup(args.repo, workgroup=args.workgroup, now=args.now)
     _print(payload)
@@ -4351,6 +4413,7 @@ _DISPATCH = {
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
+    ("analyze", "workload"): _cmd_analyze_workload,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("migrate", "glue"): _cmd_migrate_glue,
     ("migrate", "emr"): _cmd_migrate_emr,
@@ -4433,6 +4496,7 @@ _DISPATCH = {
     ("collect", "iam-access"): _cmd_collect_iam_access,
     ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
+    ("collect", "parquet-footer"): _cmd_collect_parquet_footer,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,

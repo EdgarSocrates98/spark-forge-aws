@@ -8427,6 +8427,65 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_analyze_workload": {
+        "description": (
+            "Extrai facts do inventario DECLARADO de workload (`workload.yaml`, versionado "
+            "com o repositorio): `sla_minutes` e `primary_source` de cada job, como "
+            "`workload.declared`, mais `workload.declared_analyzed` e `workload.unresolved` "
+            "para entrada malformada. Nenhum artefato responde os dois -- SLA e decisao de "
+            "negocio, e a fonte primaria exige alguem dizer qual dirige o batch. E o que "
+            "`sparkforge_capacity`, `sparkforge_finops` e `sparkforge_workload` consomem."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo workload.yaml."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA, "Facts extraidos, ou erro se o arquivo nao existe."
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_collect_parquet_footer": {
+        "description": (
+            "Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio "
+            "local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e "
+            "registra o artefato no manifesto com `kind: parquet_footer`, que "
+            "`sparkforge_analyze_parquet_footer` e o `sparkforge_scan` leem. Nenhuma linha de "
+            "dado e lida. A amostra e DECLARADA (os N primeiros pelo nome, teto 500) e sai no "
+            "artefato. Exige pyarrow (`pip install 'sparkforge-aws[parquet]'`); S3 usa a "
+            "cadeia padrao de credencial. Prefixo inexistente, vazio ou sem permissao vira "
+            "`status` no artefato, nao erro."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "prefix", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "prefix": {
+                    "type": "string",
+                    "description": "Diretorio local com .parquet, ou s3://bucket/prefixo/.",
+                },
+                "max_files": {"type": "integer", "minimum": 1},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_iceberg_metadata": {
         "description": (
             "Consulta as cinco metadata tables Iceberg de uma tabela via Athena "
@@ -9780,6 +9839,22 @@ def _h_collect_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_workload(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_workload(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_collect_parquet_footer(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_parquet_footer(
+        args["repo"], prefix=args["prefix"], now=args["now"], max_files=args.get("max_files")
+    )
+
+
 def _h_collect_iceberg_metadata(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_iceberg_metadata(
         args["repo"],
@@ -9993,6 +10068,8 @@ _HANDLERS = {
     "sparkforge_collect_iam_access": _h_collect_iam_access,
     "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
+    "sparkforge_analyze_workload": _h_analyze_workload,
+    "sparkforge_collect_parquet_footer": _h_collect_parquet_footer,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
     "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,
     "sparkforge_collect_emr_serverless": _h_collect_emr_serverless,

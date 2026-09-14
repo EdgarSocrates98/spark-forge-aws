@@ -56,6 +56,9 @@ EXTENSAO_PARA_ANALYZE: dict[str, tuple[str, ...]] = {
     ".jsonl": ("event-log",),
 }
 PADROES = ("*.py", "*.sql", "*.tf", "*.jsonl", "*.json")
+# O SLA declarado entra pelo NOME, e so na raiz: um repositorio com varios jobs
+# pode ter varios `workload.yaml`, e escolher um deles seria chute.
+WORKLOAD_NA_RAIZ = "workload.yaml"
 RECUSAS = (
     "sem_manifesto",
     "sha256_divergente",
@@ -177,6 +180,8 @@ def plan(raiz: Path | str) -> Plano:
     """O plano do scan sobre `raiz`. Puro: le o disco e nao grava nada."""
     raiz = Path(raiz)
     entradas, recusas = _do_manifesto(raiz)
+    if (raiz / WORKLOAD_NA_RAIZ).is_file():
+        entradas.append(Entrada("workload", WORKLOAD_NA_RAIZ, "nome"))
     pulos: dict[str, str] = {}
     for padrao in PADROES:
         varredura = varrer_source_files(raiz, padrao)

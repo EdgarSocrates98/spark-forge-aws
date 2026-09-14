@@ -35,6 +35,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_analyze_sql_metrics`](sparkforge_analyze_sql_metrics.md) | só leitura | Extrai metrica por NO DO PLANO de um Spark event log ja coletado: quantos bytes e quantos arquivos cada fonte custou, medidos pelo proprio Spark. |
 | [`sparkforge_analyze_terraform`](sparkforge_analyze_terraform.md) | só leitura | Extrai facts de blocos `resource "aws_glue_job"` em HCL Terraform: glue_version, worker_type, number_of_workers, default_arguments, observabilidade do Spark UI. |
 | [`sparkforge_analyze_terraform_diff`](sparkforge_analyze_terraform_diff.md) | só leitura | Compara dois estados de um modulo Terraform (dois checkouts, dois `git worktree`, o main e o branch do PR) e devolve os facts do lado DEPOIS, com `attrs.changed` e `attrs.previo... |
+| [`sparkforge_analyze_workload`](sparkforge_analyze_workload.md) | só leitura | Extrai facts do inventario DECLARADO de workload (`workload.yaml`, versionado com o repositorio): `sla_minutes` e `primary_source` de cada job, como `workload.declared`, mais `w... |
 
 ## arbitrate
 
@@ -100,6 +101,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_collect_iam_access`](sparkforge_collect_iam_access.md) | acessa a AWS | Simula acoes contra um role via `iam:SimulatePrincipalPolicy` e grava a DECISAO da AWS. |
 | [`sparkforge_collect_iceberg_metadata`](sparkforge_collect_iceberg_metadata.md) | acessa a AWS | Consulta as cinco metadata tables Iceberg de uma tabela via Athena (`SELECT * FROM "db"."tabela$secao"`) e registra no manifesto. |
 | [`sparkforge_collect_lakeformation`](sparkforge_collect_lakeformation.md) | acessa a AWS | Coleta a PERMISSAO de UMA tabela no Lake Formation: `list_permissions` (quem tem o que), `describe_resource` (a localizacao S3 esta registrada, e com qual role) e `get_data_lake... |
+| [`sparkforge_collect_parquet_footer`](sparkforge_collect_parquet_footer.md) | acessa a AWS | Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e registra o artefa... |
 | [`sparkforge_collect_verify`](sparkforge_collect_verify.md) | só leitura | Verifica presenca e integridade (sha256 recalculado) de todos os artefatos registrados no manifesto local. |
 
 ## controlm
