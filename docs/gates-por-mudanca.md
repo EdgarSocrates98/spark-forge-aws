@@ -24,7 +24,7 @@ python -m pytest tests/test_rules_loader.py tests/test_rules_catalog_reachabilit
   tests/test_rules_result_axis.py tests/test_rules_engine.py \
   tests/test_agent_coverage.py tests/test_router_agents.py \
   tests/test_docs_coverage.py tests/test_fixtures_kind_coverage.py \
-  tests/test_refresh_knowledge.py -q
+  tests/test_refresh_knowledge.py tests/test_rules_threshold_mutation.py -q
 ```
 
 **A seção `runtime_scope`, abaixo, NÃO é opcional.** `runtime_scope` é campo
@@ -43,6 +43,7 @@ O que cada um cobra, medido na fase `SF-MIG`:
 | `test_fixtures_kind_coverage` | toda regra tem golden que a dispara, e todo ramo de severidade tem golden | regra sem fixture, e ramo de severidade descoberto |
 | `test_refresh_knowledge` | toda URL de `sources:` entra na watchlist, e o lock commitado bate com ela | **medido em `SF-KMS`/`SF-NET`/`SF-XACC`, 2026-08-23:** as três fontes oficiais novas ficaram fora de `knowledge/sources.lock.json` e só a suíte completa pegou. A watchlist é derivada de **duas** origens — a seção `## Fontes` dos documentos de `knowledge/` **e** o bloco `sources:` de cada regra do catálogo —, e o gate-map só nomeava a primeira. Alinhar sem rede: `python scripts/refresh_knowledge.py --update --offline` |
 | `test_rules_engine` | `blocked_on` novo é decisão consciente registrada | o teste é alarme deliberado: a docstring diz que o próximo `blocked_on` "tem que ser uma decisao consciente de quem o escreve" |
+| `test_rules_threshold_mutation` | todo número de `threshold:` tem golden a menos de 10% da fronteira, e toda troca de operador (`>=`/`>`, `<=`/`<`) que nenhum golden percebe está declarada em `FRONTEIRA_SEM_GOLDEN` | **medido em 2026-09-15:** 41 de 41 limiares percebidos a 10%; 39 de 57 trocas de operador sobrevivem, porque nenhum golden fica exatamente no limiar. A lista só encolhe: golden novo que mate uma entrada obriga a tirá-la, e sobrevivente nova precisa ser declarada |
 
 ## Dar `runtime_scope` a uma regra — ou seja, **toda regra nova**
 
