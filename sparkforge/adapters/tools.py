@@ -36,6 +36,7 @@ from sparkforge.change.refusals import (
     RECUSAS_DO_PLANO,
     RECUSAS_DO_SANDBOX,
 )
+from sparkforge.journal.record import recording
 from sparkforge.observability.context_ledger import shared_ledger
 
 if TYPE_CHECKING:
@@ -751,6 +752,28 @@ _RESUME_SCHEMA: dict[str, Any] = {
         "missing_artifacts": {"type": "array", "items": _ARTIFACT_ITEM},
         "next_step": _NEXT_STEP_SCHEMA,
         "in_flight": {"type": "string"},
+        "in_flight_source": {
+            "type": "string",
+            "enum": ["caller", "journal", "none"],
+            "description": (
+                "De onde veio `in_flight`: texto de quem chamou (vence), os `started` "
+                "sem `finished` do journal, ou nada."
+            ),
+        },
+        "journal": {
+            "type": "object",
+            "description": (
+                "Estado do `.sparkforge/journal.jsonl`. `open_calls` sao `started` sem "
+                "`finished`: caiu OU ainda roda, nunca so 'caiu'."
+            ),
+            "properties": {
+                "last_seq": {"type": "integer"},
+                "open_calls": {"type": "array", "items": {"type": "object"}},
+                "chain": {"type": "string", "enum": ["intact", "broken", "absent", "unreadable"]},
+                "broken_at": {"type": ["integer", "null"]},
+                "torn_tail": {"type": "boolean"},
+            },
+        },
         "coverage": _COVERAGE_SCHEMA,
         "skills_used": {"type": "array", "items": _SKILL_USE_ITEM},
         "open_questions": {"type": "array", "items": {"type": "string"}},
@@ -10329,21 +10352,26 @@ def call_tool(
             )
             return recusa
 
-    try:
-        resultado = handler(argumentos)
-        desfecho = "ok"
-    except _core.CodeIndexError as exc:
-        # SPEC 43 exige um corpo MAQUINAVEL na recusa por indice velho --
-        # `STALE_INDEX`, `changed_files`, `action`. O envelope uniforme deste
-        # repositorio (`error` + `exit_code`) fica INTEIRO e os campos da SPEC
-        # entram ao lado: o codigo sai em `error_code`, e nao em `error`, para
-        # nao apagar a frase que diz o que fazer. Cliente que so le `error`
-        # continua atendido; cliente que le `error_code` decide sozinho.
-        resultado = {"error": exc.message, "exit_code": exc.exit_code, **exc.detalhes}
-        desfecho = "error"
-    except _core.AdapterError as exc:
-        resultado = {"error": exc.message, "exit_code": exc.exit_code}
-        desfecho = "error"
+    # O journal (`sparkforge.journal.record`) grava `started`/`finished` so para
+    # verbo que muda estado, e so DEPOIS da policy: chamada recusada nao rodou.
+    # Ele nunca derruba a chamada -- falha dele vira `journal: "unrecorded"`.
+    with recording(name, "mcp", argumentos, now=argumentos.get("now")) as registro:
+        try:
+            resultado = handler(argumentos)
+            desfecho = "ok"
+        except _core.CodeIndexError as exc:
+            # SPEC 43 exige um corpo MAQUINAVEL na recusa por indice velho --
+            # `STALE_INDEX`, `changed_files`, `action`. O envelope uniforme deste
+            # repositorio (`error` + `exit_code`) fica INTEIRO e os campos da SPEC
+            # entram ao lado: o codigo sai em `error_code`, e nao em `error`, para
+            # nao apagar a frase que diz o que fazer. Cliente que so le `error`
+            # continua atendido; cliente que le `error_code` decide sozinho.
+            resultado = {"error": exc.message, "exit_code": exc.exit_code, **exc.detalhes}
+            desfecho = "error"
+        except _core.AdapterError as exc:
+            resultado = {"error": exc.message, "exit_code": exc.exit_code}
+            desfecho = "error"
+        resultado = registro.finish(resultado, desfecho)
 
     shared_ledger().record(
         name=name,

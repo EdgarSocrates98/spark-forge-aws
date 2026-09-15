@@ -49,6 +49,9 @@ node_modules/
 # Pacotes do `change propose` (§15 L3): patch, corpo e recibo de um PR que o
 # host ainda vai abrir. Derivados do sandbox, e recriados a cada execucao.
 .sparkforge/proposal/
+# Quarentena da cauda cortada por uma queda (`sparkforge.durable.append_line`):
+# evidencia local do que a queda interrompeu, nunca estado do case.
+**/.sparkforge/**/*.torn
 .tokensave
 
 # Material de referencia sigiloso -- nunca versionar neste repositorio publico.

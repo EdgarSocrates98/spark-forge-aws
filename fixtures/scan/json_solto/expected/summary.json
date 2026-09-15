@@ -54,7 +54,12 @@
         "reason": "sem_manifesto"
       }
     ],
-    "skipped": []
+    "skipped": [
+      {
+        "path": ".sparkforge",
+        "reason": "DIRECTORY_IGNORED"
+      }
+    ]
   },
   "refused": [
     {

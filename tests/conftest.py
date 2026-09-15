@@ -89,6 +89,42 @@ def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
     )
 
 
+def _journals_do_repositorio() -> dict[str, str | None]:
+    import hashlib
+
+    alvos = [
+        _ROOT / ".sparkforge" / "journal.jsonl",
+        *sorted((_ROOT / "fixtures").glob("**/.sparkforge/journal.jsonl")),
+    ]
+    return {
+        str(alvo): hashlib.sha256(alvo.read_bytes()).hexdigest() if alvo.is_file() else None
+        for alvo in alvos
+    }
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _journal_do_repositorio_intocado_pela_suite():
+    """O journal (`sparkforge.journal`) grava na raiz do case que o verbo toca.
+
+    Teste que rode verbo de escrita com `repo` na raiz do projeto, ou direto sobre
+    a pasta de uma fixture, sujaria a arvore versionada -- o journal e
+    commitavel. Mesma disciplina do backstop do `traces.db`: verificar o EFEITO,
+    que pega qualquer teste presente ou futuro, e nao uma lista de quem chama.
+    """
+    antes = _journals_do_repositorio()
+    yield
+    depois = _journals_do_repositorio()
+    mudados = sorted(
+        caminho
+        for caminho in set(antes) | set(depois)
+        if antes.get(caminho) != depois.get(caminho)
+    )
+    assert not mudados, (
+        f"a suite criou ou alterou journal.jsonl na arvore versionada: {mudados}. "
+        "Rode o verbo de escrita sobre uma copia em tmp_path."
+    )
+
+
 @pytest.fixture(autouse=True)
 def _nenhum_teste_aperta_o_rlimit_do_pytest(request):
     """Nenhum teste pode deixar um `setrlimit` aplicado no processo do pytest.

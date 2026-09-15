@@ -224,7 +224,45 @@ Início real do `handoff.md`:
 ```
 
 O `resume` traz, entre outras, as chaves `top_findings`, `open_hypotheses`,
-`unsatisfied_gates`, `gate_overrides`, `missing_artifacts`, `next_step` e `coverage`.
+`unsatisfied_gates`, `gate_overrides`, `missing_artifacts`, `next_step`, `coverage`,
+`journal` e `in_flight_source`.
+
+#### O que estava rodando quando a sessão caiu
+
+Todo verbo que muda estado (27 hoje: `case open`, `case update`, `scan`, `arbitrate`,
+`debate start|next|submit`, `change sandbox|propose`, os `collect *`, `receipt emit`,
+`report sign`, `funcval plan|compare`) grava em `.sparkforge/journal.jsonl` um
+`started` antes de rodar e um `finished` depois. Isso vale pela CLI e pelo MCP. Os
+argumentos entram como hash, e só uma lista fechada de chaves, como `rules`,
+`fail_on` e `debate_id`, entra literal.
+
+Quando a sessão cai no meio de um verbo, sobra um `started` sem `finished`. O
+`resume` lê esse evento e preenche `in_flight` sozinho:
+
+```json
+"in_flight": "sparkforge_arbitrate (cli, seq 5) sem finished",
+"in_flight_source": "journal"
+```
+
+- `in_flight_source: caller` quer dizer que o texto de `--in-flight` venceu. O journal
+  continua no bloco `journal` ao lado.
+- Um `started` sem `finished` quer dizer **caiu ou ainda roda**. Outro processo rodando
+  agora tem a mesma cara.
+
+Para conferir que ninguém apagou nem editou evento, rode:
+
+```bash
+sparkforge journal verify --repo "$DEMO"
+```
+
+A saída é `intact`, `torn_tail` (a última linha foi cortada por uma queda),
+`absent` ou `broken` com o `broken_at`. O comando sai com código 1 só em `broken`.
+A cadeia não percebe edição da **última** linha, porque nenhuma linha depois dela
+guarda o hash dela. Quem protege a última linha é o commit.
+
+Depois de uma queda, `case.yaml`, os arquivos do blackboard e os do debate continuam
+legíveis. A gravação troca o arquivo inteiro de uma vez, e uma linha cortada no fim
+de um JSONL vai para `<arquivo>.torn` antes do próximo append.
 
 Ao retomar, siga esta ordem:
 
@@ -234,9 +272,10 @@ Ao retomar, siga esta ordem:
 4. Recolete cada item de `missing_artifacts` com o comando registrado no manifesto.
 5. Deixe o `next-step` decidir a rota.
 
-**O que vai para o git:** `case.yaml`, `facts.json`, `findings.json`, `handoff.md` e
-`artifacts/manifest.json`, dentro de `.sparkforge/`. Os artefatos brutos (event logs,
-planos) **não** vão: podem ter dado de negócio.
+**O que vai para o git:** `case.yaml`, `facts.json`, `findings.json`, `handoff.md`,
+`journal.jsonl` e `artifacts/manifest.json`, dentro de `.sparkforge/`. Os artefatos
+brutos (event logs, planos) **não** vão, porque podem ter dado de negócio. Os `*.torn`
+também não vão: são evidência local de uma queda, não estado do case.
 
 ## Gates estritos (`--strict-gates`)
 

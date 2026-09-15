@@ -9,3 +9,6 @@ fixtures/scan/** -text
 # `id` do sandbox e o sha256 do diff mais o dos arquivos copiados, e o
 # aplicador confere linha de contexto contra os bytes do repositorio sintetico.
 fixtures/change/** -text
+# `fixtures/journal/`: a cadeia do journal e sha256 dos BYTES de cada linha
+# (`prev`), e um CRLF introduzido pelo checkout quebraria a cadeia inteira.
+fixtures/journal/** -text

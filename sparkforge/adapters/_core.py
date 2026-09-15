@@ -6566,12 +6566,32 @@ def resume_case(
     except store.CaseError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
+    from sparkforge.journal.read import estado as estado_do_journal
+
     try:
         return run_resume(
-            case, findings or [], unresolved_count=unresolved, in_flight=in_flight, root=root
+            case,
+            findings or [],
+            unresolved_count=unresolved,
+            in_flight=in_flight,
+            root=root,
+            journal=estado_do_journal(repo),
         )
     except CatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
+
+
+def journal_verify(repo: str) -> dict[str, Any]:
+    """`sparkforge journal verify`: a cadeia do journal do case confere?"""
+    from sparkforge.journal.read import verify
+
+    if not Path(repo).is_dir():
+        raise AdapterError(
+            f"journal verify: diretorio nao encontrado: {repo}\n"
+            f"  Aponte para a raiz do case:\n    sparkforge journal verify --repo <raiz>",
+            exit_code=2,
+        )
+    return verify(repo)
 
 
 def handoff(

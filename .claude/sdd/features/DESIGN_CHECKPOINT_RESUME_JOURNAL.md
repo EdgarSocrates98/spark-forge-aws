@@ -10,7 +10,7 @@
 | **Date** | 2026-09-15 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_CHECKPOINT_RESUME_JOURNAL.md](./DEFINE_CHECKPOINT_RESUME_JOURNAL.md) |
-| **Status** | Ready for Build |
+| **Status** | ✅ Complete (Built) |
 
 ---
 
@@ -441,4 +441,4 @@ def recording(tool: str, port: str, args: Mapping[str, Any], now: Any = None):
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_CHECKPOINT_RESUME_JOURNAL.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_CHECKPOINT_RESUME_JOURNAL.md`

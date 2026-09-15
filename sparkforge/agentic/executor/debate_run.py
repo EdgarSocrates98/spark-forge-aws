@@ -105,6 +105,7 @@ from sparkforge.agentic.models import (
 )
 from sparkforge.agentic.referee import referee_over_blackboard
 from sparkforge.case.store import CASE_DIR, load_case
+from sparkforge.durable import append_text_line, read_records, write_atomic
 
 AGENTE = "sparkforge.agentic.executor.debate_run"
 NIVEL_DE_AUTONOMIA = "L0"
@@ -1150,21 +1151,15 @@ def _sha1(texto: str) -> str:
 
 
 def _escreve_json(caminho: Path, valor: Any) -> None:
-    caminho.write_text(
-        json.dumps(valor, ensure_ascii=True, sort_keys=True, indent=2) + "\n", encoding="utf-8"
-    )
+    write_atomic(caminho, json.dumps(valor, ensure_ascii=True, sort_keys=True, indent=2) + "\n")
 
 
 def _anexa_jsonl(caminho: Path, registro: dict[str, Any]) -> None:
-    with caminho.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(registro, ensure_ascii=True, sort_keys=True) + "\n")
+    append_text_line(caminho, json.dumps(registro, ensure_ascii=True, sort_keys=True))
 
 
 def _le_jsonl(caminho: Path) -> list[dict[str, Any]]:
-    if not caminho.is_file():
-        return []
-    with caminho.open("r", encoding="utf-8") as fh:
-        return [json.loads(linha) for linha in fh if linha.strip()]
+    return read_records(caminho)
 
 
 def _recusa(reason: str, detail: str) -> dict[str, Any]:

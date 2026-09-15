@@ -30,6 +30,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge glue`](glue.md) | Comandos especificos do runtime AWS Glue. |
 | [`sparkforge handoff`](handoff.md) | Escreve .sparkforge/handoff.md e imprime o payload. |
 | [`sparkforge iceberg`](iceberg.md) | Comandos especificos de Apache Iceberg. |
+| [`sparkforge journal`](journal.md) | Journal de eventos do case (.sparkforge/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash. |
 | [`sparkforge judge`](judge.md) | Aplica o catalogo de regras versionado sobre facts ja extraidos. |
 | [`sparkforge knowledge`](knowledge.md) | Localiza os arquivos de conhecimento versionado. |
 | [`sparkforge lakeformation`](lakeformation.md) | Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, nao versao de componente. |

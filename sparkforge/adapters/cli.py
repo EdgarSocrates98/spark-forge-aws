@@ -20,6 +20,8 @@ from typing import Any
 
 from sparkforge import __version__ as _pkg_fallback
 from sparkforge.adapters import _core
+from sparkforge.journal import journaled
+from sparkforge.journal.record import UNRECORDED, recording
 
 try:
     from importlib.metadata import PackageNotFoundError
@@ -55,7 +57,11 @@ def _ensure_utf8_streams() -> None:
                 pass
 
 
+_ULTIMA_SAIDA: list[Any] = []
+
+
 def _print(payload: Any) -> None:
+    _ULTIMA_SAIDA[:] = [payload]
     print(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
@@ -1420,6 +1426,23 @@ def build_parser() -> argparse.ArgumentParser:
     handoff_p.add_argument("--findings")
     handoff_p.add_argument("--unresolved", type=int, default=0)
     handoff_p.add_argument("--in-flight", default="")
+
+    journal_p = sub.add_parser(
+        "journal",
+        help=(
+            "Journal de eventos do case (.sparkforge/journal.jsonl): um started e um "
+            "finished por verbo que muda estado, encadeados por hash."
+        ),
+    )
+    journal_sub = journal_p.add_subparsers(dest="journal_action", required=True)
+    journal_verify_p = journal_sub.add_parser(
+        "verify",
+        help=(
+            "Recalcula a cadeia: intact, broken (com o seq da quebra), torn_tail ou "
+            "absent. Sai 1 em broken."
+        ),
+    )
+    journal_verify_p.add_argument("--repo", required=True)
 
     playbook_p = sub.add_parser(
         "playbook",
@@ -3565,6 +3588,12 @@ def _cmd_handoff(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_journal_verify(args: argparse.Namespace) -> int:
+    payload = _core.journal_verify(args.repo)
+    _print(payload)
+    return 1 if payload["status"] == "broken" else 0
+
+
 def _cmd_playbook(args: argparse.Namespace) -> int:
     findings = _load_json_list(args.findings) if args.findings else []
     _print(_core.playbook(args.coordinator, repo=args.repo, findings=findings))
@@ -4556,7 +4585,42 @@ _DISPATCH = {
     ("decisions", "explain"): _cmd_decisions_explain,
     ("budget", "show"): _cmd_budget_show,
     ("autonomy", "show"): _cmd_autonomy_show,
+    ("journal", "verify"): _cmd_journal_verify,
 }
+
+_FORA_DOS_ARGS_DO_JOURNAL = frozenset({"command", "subcommand", "analyze_target"})
+
+
+def _tool_da_cli(comando: str, sub_action: str | None) -> str:
+    """O nome da tool MCP do verbo de CLI (`collect glue-job` -> `sparkforge_collect_glue_job`)."""
+    partes = [comando, sub_action] if sub_action else [comando]
+    return "sparkforge_" + "_".join(parte.replace("-", "_") for parte in partes)
+
+
+def _args_da_cli(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        chave: valor
+        for chave, valor in vars(args).items()
+        if chave not in _FORA_DOS_ARGS_DO_JOURNAL
+        and not chave.endswith("_action")
+        and not callable(valor)
+    }
+
+
+def _com_journal(tool: str, handler: Any, args: argparse.Namespace) -> int:
+    """Roda o verbo entre o `started` e o `finished`; o journal nunca derruba o verbo."""
+    _ULTIMA_SAIDA.clear()
+    with recording(tool, "cli", _args_da_cli(args), now=getattr(args, "now", None)) as registro:
+        try:
+            codigo = handler(args)
+        except _core.AdapterError:
+            registro.finish({}, "error")
+            raise
+        saida = _ULTIMA_SAIDA[0] if _ULTIMA_SAIDA and isinstance(_ULTIMA_SAIDA[0], dict) else {}
+        marcado = registro.finish(saida, "ok" if codigo == 0 else "error")
+    if isinstance(marcado, dict) and marcado.get("journal") == UNRECORDED:
+        print(f"journal: {UNRECORDED} ({marcado.get('journal_reason')})", file=sys.stderr)
+    return codigo
 
 
 def _dispatch(args: argparse.Namespace) -> int:
@@ -4585,6 +4649,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "decisions_action", None)
         or getattr(args, "budget_action", None)
         or getattr(args, "autonomy_action", None)
+        or getattr(args, "journal_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
@@ -4592,7 +4657,10 @@ def _dispatch(args: argparse.Namespace) -> int:
         handler = _DISPATCH.get((args.command, None))
     if handler is None:
         raise _core.AdapterError(f"comando desconhecido: {args.command} {sub_action}", exit_code=2)
-    return handler(args)
+    tool = _tool_da_cli(args.command, sub_action)
+    if tool not in journaled():
+        return handler(args)
+    return _com_journal(tool, handler, args)
 
 
 def main(argv: list[str] | None = None) -> int:
