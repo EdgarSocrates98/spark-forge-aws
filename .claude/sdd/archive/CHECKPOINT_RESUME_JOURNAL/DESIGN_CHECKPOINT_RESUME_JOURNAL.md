@@ -10,7 +10,7 @@
 | **Date** | 2026-09-15 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_CHECKPOINT_RESUME_JOURNAL.md](./DEFINE_CHECKPOINT_RESUME_JOURNAL.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -436,6 +436,7 @@ def recording(tool: str, port: str, args: Mapping[str, Any], now: Any = None):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-15 | design-agent | Initial version |
+| 1.1 | 2026-09-15 | ship-agent | Shipped and archived (PR #71) |
 
 ---
 

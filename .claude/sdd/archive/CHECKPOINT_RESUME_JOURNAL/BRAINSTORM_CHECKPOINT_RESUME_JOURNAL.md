@@ -9,7 +9,7 @@
 | **Feature** | CHECKPOINT_RESUME_JOURNAL |
 | **Date** | 2026-09-15 |
 | **Author** | brainstorm-agent |
-| **Status** | ✅ Complete (Defined) |
+| **Status** | ✅ Shipped |
 
 ---
 

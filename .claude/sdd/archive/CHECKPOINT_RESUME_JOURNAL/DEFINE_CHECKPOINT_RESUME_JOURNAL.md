@@ -9,7 +9,7 @@
 | **Feature** | CHECKPOINT_RESUME_JOURNAL |
 | **Date** | 2026-09-15 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -166,6 +166,7 @@ None - ready for Design. A-003 a A-006 são conferências de design.
 |---------|------|--------|---------|
 | 1.0 | 2026-09-15 | define-agent | Initial version, a partir de BRAINSTORM_CHECKPOINT_RESUME_JOURNAL.md; `finished` passa a carregar `started_seq` (duas chamadas iguais e concorrentes teriam o mesmo `call`) |
 | 1.1 | 2026-09-15 | design-agent | SC2 revisto (argumentos seguem o nome de cada porta); A-003, A-004 e A-006 fechadas no design |
+| 1.2 | 2026-09-15 | ship-agent | Shipped and archived (PR #71) |
 
 ---
 
