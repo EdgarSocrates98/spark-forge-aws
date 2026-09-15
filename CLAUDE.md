@@ -15,6 +15,11 @@ Ao trabalhar em código PySpark destinado ao AWS Glue:
 
 Use o agente `spark-performance-architect` para investigações abrangentes e as Skills específicas para tarefas focadas.
 
+Este arquivo é carregado em toda sessão, então ele guarda **regra e ponteiro**, não
+histórico. O texto datado que morava aqui (medidas antigas, narrativa de cada frente)
+está em `docs/historico/instrucoes-arquivadas.md`, e `tests/test_bootstrap_budget.py`
+trava o teto de tamanho.
+
 ## Os verbos que compõem, e quando usar cada um
 
 `analyze *` **extrai** de artefato. Os verbos de topo **compõem** sobre facts que
@@ -116,23 +121,17 @@ Regras que valem para todos eles:
     `detail_level_effect` com os bytes de cada nível pedido — ele mostra os dois
     e não conclui por você.
 
-
 ## Economia: o que medir antes de afirmar que economizou
 
-**103 tools, 38 com `detail_level`** (recontado em 2026-09-14). Os niveis sao `summary`, `normal` e `full`. A
-regra 28 vale para os tres: *antes de afirmar que `detail_level` reduz, leia o
-numero*. `sparkforge_economy_report` traz `detail_level_effect` com os bytes de
-cada nivel pedido — ele mostra os dois lados e nao conclui por voce.
+**103 tools, 38 com `detail_level`** (recontado em 2026-09-14). Os niveis sao `summary`,
+`normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
+pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
-**Medido em 2026-09-02, sobre o gold set de recuperacao:** `full` 46 488 bytes
-contra `summary` 45 878 — **1,3%**. Num corpus pequeno o envelope fixo do pacote
-(840 bytes) domina, e `detail_level` quase nao move. Citar "reduz o pacote" sem
-esse numero e a divida que a regra 28 fechou.
+**Número neste arquivo não passa por gate.** `scripts/check_vnext_claims.py` audita
+`docs/vnext/` e `docs/harness/`, e mais nada. Aqui, aponte para o documento auditado em
+vez de copiar o número — cópia envelhece sem que nada acuse.
 
 ### Antes de ler artefato no olho, rode o verbo
-
-As nove tools de Code Intelligence existem para responder sem que ninguem leia
-arquivo:
 
 | Pergunta | Tool |
 |---|---|
@@ -145,77 +144,39 @@ arquivo:
 | o indice esta fresco | `sparkforge_code_status` / `_sync` |
 | o grafo no formato de extracao do Graphify | `sparkforge_code_export` |
 
-**O denominador decide o sinal, e ele precisa sair junto.** Medido na secao 10 de
-`docs/harness/CODEINTEL-GAP.md`, e relido dela em 2026-09-09: contra ler os
-arquivos o indice economiza **706,9x**; contra a saida de um `grep` pelo nome,
-**10,0x**; contra um `grep` cirurgico pela definicao ele **custa 5,3x mais**. As
-tres medidas sao verdadeiras e citar so a primeira escolheria o resultado.
-
-**Os dois primeiros numeros MUDAM a cada arquivo `.py` novo**, porque o
-denominador deles e o tamanho da arvore. Eram 675,6x e 9,6x em 2026-09-08, e a
-entrega do footer do Parquet os moveu -- nao porque o indice melhorou, e sim
-porque ha mais codigo para nao ler. Citar qualquer um dos dois sem a data e
-citar uma medida que ja mudou.
-
-Este paragrafo publicava **661,3x** e **9,4x**. Nenhum dos dois reproduz a
-partir dos numeros que a secao 10 sustenta hoje — 1 493 002 sobre 2210 da 675,6,
-e 21 273 sobre 2210 da 9,6 —, e o denominador que os produziria o documento
-auditado nao publica mais. Nao adivinho qual era: o que da para afirmar e que os
-dois estavam defasados, e a defasagem
-sobreviveu porque **`CLAUDE.md` esta fora de `audited_roots()` do
-`scripts/check_vnext_claims.py`**, que audita `docs/vnext/` e `docs/harness/` e
-mais nada. O arquivo de instrucao que governa o projeto publica numero que gate
-nenhum confere.
+**O denominador decide o sinal, e ele precisa sair junto.** Contra ler os arquivos o
+índice economiza muito; contra um `grep` pelo nome, bem menos; contra um `grep`
+cirúrgico pela definição ele custa mais. As três medidas estão, com data, na seção 10 de
+`docs/harness/CODEINTEL-GAP.md` (auditada), e os dois primeiros números mudam a cada
+arquivo `.py` novo. Citar só a primeira seria escolher o resultado.
 
 ### O gate que torna "economizou" conferivel
 
 `python scripts/check_recall_economy.py` decide **uma** coisa e recusa outra:
 
 - **recall nominal tem piso duro de 100%** — perguntado pelo nome do simbolo, o
-  pacote entrega aquele simbolo. Economia que omite o simbolo necessario e falha,
-  nao sucesso;
-- **recall conceitual e medido e nao tem piso** — perguntado pelo titulo da
-  regra, o pacote recupera? **Medido: 0 de 27.** O indice guarda NOME e o titulo
-  descreve DEFEITO;
+  pacote entrega aquele simbolo. Economia que omite o simbolo necessario e falha;
+- **recall conceitual e medido e nao tem piso** — o indice guarda NOME e o titulo
+  de regra descreve DEFEITO;
 - **a razao de economia sai `unresolved`** quando o corpus e menor que o envelope
-  fixo do pacote, porque ali ela mede o piso do envelope e nao o subsistema.
-
-### Byte e token nao se somam
-
-`payload_bytes` e medido e sempre existe. Token de provider so aparece quando ha
-transcript do host; sem fonte sai `tokens_unresolved`. `estimar_tokens` existe e
-sai como `estimated_tokens` — **estimativa declarada**, e ela nunca entra numa
-razao de economia.
+  fixo do pacote. `estimated_tokens` e estimativa declarada e nunca entra numa razao.
 
 ## Verificação antes de fechar
 
-A suíte inteira num processo só não sobrevive — rode em lotes (ver
-`docs/gates-por-mudanca.md` para qual gate cada tipo de mudança toca). Área de
-regra nova precisa de rota em `rules/catalog/routing.yaml` **e** de coordenador
-que a declare; extrator novo entra nas duas listas manuais de teste e na medida
-de snippet; fonte citada por regra nova precisa entrar em
-`knowledge/sources.lock.json` via `python scripts/refresh_knowledge.py --offline
---update`. Número publicado em `docs/vnext/` ou `docs/harness/` passa pelo gate
-de lastro (`python scripts/check_vnext_claims.py`), e remediá-lo é por lista de
-ids tirada da saída do gate, nunca por varredura. Tool, skill ou documento de
-`knowledge/` novo move a superfície e exige
-`python scripts/check_surface_lock.py --update`, com o crescimento declarado no
-commit.
+A suíte inteira num processo só não sobrevive — rode em lotes, **um por vez**. A receita
+é executável e mora em `tests/test_suite_batches.py`, na constante `LOTES`, que trava três
+invariantes: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes
+é o tamanho da suíte. Qual gate cada tipo de mudança toca: `docs/gates-por-mudanca.md`.
 
-A suíte inteira num processo só não sobrevive — rode em lotes, um por vez. **A
-receita é executável e mora em `tests/test_suite_batches.py`, na constante
-`LOTES`**; esta página aponta para ela em vez de repeti-la, e a razão é medida.
-
-Enquanto a receita era prosa, `tests/test_fixtures_golden.py` — **90 testes** —
-não caía em lote nenhum: o lote `f` se escrevia `ls tests/test_f*.py | grep -v
-golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não
-é (falta o underscore). A suíte coletava 8662 e a receita somava 8572. Quem
-seguisse o procedimento publicado fechava verde com 90 testes sem execução, e
-nada acusava.
-
-Hoje `test_suite_batches.py` trava três invariantes: todo arquivo cai em ao menos
-um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Arquivo de
-teste com nome que nenhum lote pega passa a derrubar o gate.
+- Área de regra nova precisa de rota em `rules/catalog/routing.yaml` **e** de coordenador
+  que a declare.
+- Extrator novo entra nas duas listas manuais de teste e na medida de snippet.
+- Fonte citada por regra nova entra em `knowledge/sources.lock.json` via
+  `python scripts/refresh_knowledge.py --offline --update`.
+- Número publicado em `docs/vnext/` ou `docs/harness/` passa pelo gate de lastro
+  (`python scripts/check_vnext_claims.py`); remedie pela lista de ids da saída do gate,
+  nunca por varredura.
+- Tool, skill ou documento de `knowledge/` novo move a superfície (regra 26).
 
 ## Compressão de output
 
@@ -234,260 +195,54 @@ Créditos: [`vendor/CREDITS.md`](vendor/CREDITS.md).
 
 Para jobs com fluxos full/incremental, use primeiro o agente `glue-incremental-performance-architect` e leia `PROMPT_INICIAL_MESTRE.md`. Não faça tuning localizado antes de mapear a biblioteca, actions, batching, latest-per-key e OOM.
 
-<!-- rtk-instructions v2 -->
-# RTK (Rust Token Killer) - Token-Optimized Commands
-
-## Golden Rule
-
-**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
-
-**Important**: Even in command chains with `&&`, use `rtk`:
-```bash
-# ❌ Wrong
-git add . && git commit -m "msg" && git push
-
-# ✅ Correct
-rtk git add . && rtk git commit -m "msg" && rtk git push
-```
-
-## RTK Commands by Workflow
-
-### Build & Compile (80-90% savings)
-```bash
-rtk cargo build         # Cargo build output
-rtk cargo check         # Cargo check output
-rtk cargo clippy        # Clippy warnings grouped by file (80%)
-rtk tsc                 # TypeScript errors grouped by file/code (83%)
-rtk lint                # ESLint/Biome violations grouped (84%)
-rtk prettier --check    # Files needing format only (70%)
-rtk next build          # Next.js build with route metrics (87%)
-```
-
-### Test (60-99% savings)
-```bash
-rtk cargo test          # Cargo test failures only (90%)
-rtk go test             # Go test failures only (90%)
-rtk jest                # Jest failures only (99.5%)
-rtk vitest              # Vitest failures only (99.5%)
-rtk playwright test     # Playwright failures only (94%)
-rtk pytest              # Python test failures only (90%)
-rtk rake test           # Ruby test failures only (90%)
-rtk rspec               # RSpec test failures only (60%)
-rtk test <cmd>          # Generic test wrapper - failures only
-```
-
-### Git (59-80% savings)
-```bash
-rtk git status          # Compact status
-rtk git log             # Compact log (works with all git flags)
-rtk git diff            # Compact diff (80%)
-rtk git show            # Compact show (80%)
-rtk git add             # Ultra-compact confirmations (59%)
-rtk git commit          # Ultra-compact confirmations (59%)
-rtk git push            # Ultra-compact confirmations
-rtk git pull            # Ultra-compact confirmations
-rtk git branch          # Compact branch list
-rtk git fetch           # Compact fetch
-rtk git stash           # Compact stash
-rtk git worktree        # Compact worktree
-```
-
-Note: Git passthrough works for ALL subcommands, even those not explicitly listed.
-
-### GitHub (26-87% savings)
-```bash
-rtk gh pr view <num>    # Compact PR view (87%)
-rtk gh pr checks        # Compact PR checks (79%)
-rtk gh run list         # Compact workflow runs (82%)
-rtk gh issue list       # Compact issue list (80%)
-rtk gh api              # Compact API responses (26%)
-```
-
-### JavaScript/TypeScript Tooling (70-90% savings)
-```bash
-rtk pnpm list           # Compact dependency tree (70%)
-rtk pnpm outdated       # Compact outdated packages (80%)
-rtk pnpm install        # Compact install output (90%)
-rtk npm run <script>    # Compact npm script output
-rtk npx <cmd>           # Compact npx command output
-rtk prisma              # Prisma without ASCII art (88%)
-rtk uv run <cmd>        # Compact uv project command output
-```
-
-### Files & Search (60-75% savings)
-```bash
-rtk ls <path>           # Tree format, compact (65%)
-rtk read <file>         # Code reading with filtering (60%)
-rtk grep <pattern>      # Search grouped by file (75%). Format flags (-c, -l, -L, -o, -Z) run raw.
-rtk find <pattern>      # Find grouped by directory (70%)
-```
-
-### Analysis & Debug (70-90% savings)
-```bash
-rtk err <cmd>           # Filter errors only from any command
-rtk log <file>          # Deduplicated logs with counts
-rtk json <file>         # JSON structure without values
-rtk deps                # Dependency overview
-rtk env                 # Environment variables compact
-rtk summary <cmd>       # Smart summary of command output
-rtk diff                # Ultra-compact diffs
-```
-
-### Infrastructure (85% savings)
-```bash
-rtk docker ps           # Compact container list
-rtk docker images       # Compact image list
-rtk docker logs <c>     # Deduplicated logs
-rtk kubectl get         # Compact resource list
-rtk kubectl logs        # Deduplicated pod logs
-```
-
-### Network (65-70% savings)
-```bash
-rtk curl <url>          # Compact HTTP responses (70%)
-rtk wget <url>          # Compact download output (65%)
-```
-
-### Meta Commands
-```bash
-rtk gain                # View token savings statistics
-rtk gain --history      # View command history with savings
-rtk discover            # Analyze Claude Code sessions for missed RTK usage
-rtk proxy <cmd>         # Run command without filtering (for debugging)
-rtk init                # Add RTK instructions to CLAUDE.md
-rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
-```
-
-## Token Savings Overview
-
-| Category | Commands | Typical Savings |
-|----------|----------|-----------------|
-| Tests | vitest, playwright, cargo test | 90-99% |
-| Build | next, tsc, lint, prettier | 70-87% |
-| Git | status, log, diff, add, commit | 59-80% |
-| GitHub | gh pr, gh run, gh issue | 26-87% |
-| Package Managers | pnpm, npm, npx | 70-90% |
-| Files | ls, read, grep, find | 60-75% |
-| Infrastructure | docker, kubectl | 85% |
-| Network | curl, wget | 65-70% |
-
-Overall average: **60-90% token reduction** on common development operations.
-<!-- /rtk-instructions -->
-
 ## Skills AWS oficiais complementares
 
-O SparkForge inclui **11 skills de procedimento operacional AWS** adaptadas do
-`aws/agent-toolkit-for-aws` (commit `10b28af8`, 2026-09-02). São **não-despacháveis**
-— podem mutar infraestrutura AWS ao vivo, e a fronteira `## Não faz` de cada uma
-exige confirmação explícita do operador por comando de escrita.
-
-| Skill | Quando usar |
-|---|---|
-| `provision-s3-tables-table` | Criar table bucket, namespace e tabela Iceberg no S3 Tables |
-| `harden-s3-bucket` | Hardening de bucket S3 (encryption, policy, versioning, BPA) |
-| `aws-storage` | Selecionar entre S3, EFS, FSx, EBS; custo e performance de storage |
-| `aws-database` | Rotear para o database AWS correto (Aurora, RDS, DynamoDB, etc) |
-| `aws-serverless` | Lambda, API Gateway, Step Functions, EventBridge, SAM/CDK |
-| `aws-iam` | Policies, roles, trust policies, STS, Organizations, SAML/MFA |
-| `aws-observability` | CloudWatch, X-Ray, CloudTrail, ADOT, Application Signals |
-| `aws-billing-and-cost-management` | CUR, Savings Plans, Reserved Instances, Compute Optimizer |
-| `aws-messaging-and-streaming` | SQS, SNS, EventBridge, Kinesis, Firehose, Flink, MSK |
-| `aws-security` | Security Hub, GuardDuty, Inspector, Macie, Detective |
-| `aws-sdk-python-usage` | Padrões de boto3/botocore (clients, sessions, paginators) |
-
-**Estas skills são complementares às skills SparkForge determinísticas.** Use
-as skills `analyze-*`, `benchmark`, `tune`, `funcval` para diagnóstico de job
-PySpark. Use as skills AWS acima quando a pergunta for sobre o **serviço AWS**
-em si — qual storage escolher, como configurar IAM, como ler CUR.
-
-As 15 skills AWS restantes (Bedrock, SageMaker, Cognito, CDK, CloudFormation,
-EC2, EKS, CodePipeline, networking, JS/Swift SDK, credenciais, prompts de
-startup, AWS Blocks, launch-with-aws) estão fora do domínio SparkForge e
-permanecem no nível usuário (`~/.agents/skills/`).
+Onze skills de procedimento operacional AWS, adaptadas do `aws/agent-toolkit-for-aws`
+(commit `10b28af8`): `provision-s3-tables-table`, `harden-s3-bucket`, `aws-storage`,
+`aws-database`, `aws-serverless`, `aws-iam`, `aws-observability`,
+`aws-billing-and-cost-management`, `aws-messaging-and-streaming`, `aws-security` e
+`aws-sdk-python-usage`. São **não-despacháveis** — podem mutar infraestrutura AWS ao vivo,
+e a fronteira `## Não faz` de cada uma exige confirmação explícita do operador por comando
+de escrita. Use-as quando a pergunta for sobre o **serviço AWS** em si; diagnóstico de job
+PySpark usa as skills SparkForge determinísticas (`analyze-*`, `benchmark`, `tune`,
+`funcval`). As demais skills AWS ficam no nível usuário (`~/.agents/skills/`).
 
 ## Agentic Engineering Runtime
 
-`sparkforge/agentic/` tem 13 módulos: `models` (Claim, Evidence, Hypothesis,
-Experiment, Decision, Unknown, Contradiction, Objection, Rebuttal), `runtime`
-(AgentRuntime protocol), `evidence` (Source Authority T1-T6), `blackboard`
-(Shared Blackboard JSONL), `debate` (protocolo formal), `arbitration`
-(arbitragem independente + false consensus detection), `experiment` (Experiment
-Designer), `decision` (Decision Engine + ADR automático), `memory` (Decision
-Memory cross-case), `budget` (token economics), `security` (threat model +
-guardrails), `autonomy` (L0-L5), `graph` (Agent Execution Graph).
-
-`sparkforge/agentic/executor/` acrescenta **10 módulos** (remedido em
-2026-09-11: 4185 linhas com o `__init__.py`, 168 889 bytes. Em 2026-09-08 eram
-8, com 2727 linhas e 176 testes, e o executor de debate acrescentou
-`debate_run` e `debate_evidence`, com 112 testes: 24 de unidade, 41 de
-reextração e 47 golden). Os módulos: `authority` (mapa de autoridade de fonte e vigência de
-escopo), `claims` (finding julgado vira `Claim`, fact que o ancora vira
-`Evidence`), `conflict` (contradição lida do bloco `action`), `ordering` (ordem
-de aplicação por `depends_on` e por eixo de medida), `unknowns` (lacuna vira
-`Unknown`, e o que a mede vira `Experiment`), `plan` (`DebatePlan` quando a
-arbitragem não fecha), `digest` (o mesmo plano CALCULADO e nunca gravado, para
-quem só lê), `run` (os seis degraus num verbo só), `debate_run` (a máquina de
-estados do debate) e `debate_evidence` (a evidência nova, reextraída por
-extrator da allowlist). Ele é o **produtor** que faltava — a lacuna que a
-auditoria de 2026-09-03 declarava governar todas as outras.
+`sparkforge/agentic/` tem entidades de primeira classe (`Claim`, `Evidence`,
+`Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`, `Objection`,
+`Rebuttal`), o blackboard JSONL do case, debate, arbitragem, experimento, decisão com ADR,
+memória, budget, segurança, autonomia L0–L5 e o grafo de execução.
+`sparkforge/agentic/executor/` é o **produtor** determinístico: `authority`, `claims`,
+`conflict`, `ordering`, `unknowns`, `plan`, `gate`, `digest`, `run`, `debate_run` e
+`debate_evidence`. Status por componente em `docs/agentic-evolution-report.md`.
 
 29. **A camada agêntica tem executor determinístico e executor de debate, e o
     debate não gera argumento dentro do pacote.** `sparkforge arbitrate` roda
-    depois de `judge` e produz
-    `Claim`/`Evidence`/`Contradiction`/`Unknown`/`Decision` no blackboard do
-    case — num case rodado, `blackboard summary` deixa de devolver zero.
-    Medido em 2026-09-08 sobre `fixtures/graph/import_sem_jar_no_iac` unida a
-    `fixtures/infra_code/fgac_com_jar_extra` (3 findings, 60 facts): antes,
-    zero em tudo; depois, **3 claims, 11 evidências, 1 contradição e 1
-    contradição não resolvida**. Quando a arbitragem não fecha, o verbo emite
-    um `DebatePlan` e para, com `debate.unresolved`. **Desde 2026-09-11 esse
-    plano tem executor**: `sparkforge debate start|next|submit` (tools
-    `sparkforge_debate_start|next|submit`, todas `LOCAL_MUTATION`), uma
-    máquina de estados L0 sobre `.sparkforge/debate/<debate_id>/`. Ela diz de
-    quem é a vez, recusa por nome a submissão que fere o protocolo, só aceita
-    evidência nova **reextraída** por extrator da allowlist e fecha **sempre**
-    pelo `referee`. Exige `budget:` declarado no case (`budget_undeclared`).
-    **Antes do budget, o Debate ROI Gate** (§11, 2026-09-14): cada plano traz
-    `debate_gate`, e só o veredito `debater` abre debate — severidade em
-    `rules/catalog/debate_gate.yaml` (`[P0, P1]`), ação com `reversible: false`
-    em `action_kinds.yaml`, ou arbitragem sem lastro. Lacuna mensurável citando
-    o par recusa `gate_experimentar_antes`, par barato e reversível
-    `gate_nao_debater`, sinal ausente `gate_unresolved`. O gate não pesa sinal
-    nem diz quanto um debate evitado poupa (regra 30).
-    Quem escreve o argumento é o host: a skill `run-debate` ou
-    `scripts/run_debate.py` (`claude -p`, fora do pacote). O placar é
-    `python -m sparkforge.evals debate --run <nome>`. Nenhum `AgentRuntime`
-    concreto mora neste pacote, e nada aqui chama provider (regra 23). Os dois
-    executores são **L0**: `applied_changes` sai sempre `false`, e o ADR é
-    proposta com `rollback` obrigatório. **Alcance medido: um par.** Das 156
-    regras com `action`, `direct_conflicts` produz só `SF-GRAPH-005` ×
-    `SF-LF-001`, e só na união de dois jobs. Status por componente em
-    `docs/agentic-evolution-report.md`.
-
-    **A metade da VERIFICAÇÃO do debate passou a existir em 2026-09-10, e a da
-    GERAÇÃO não.** `sparkforge debate referee` (tool
-    `sparkforge_debate_referee`) arbitra o protocolo: dado o que o host
-    preencheu, ele recusa quatro coisas — hipótese que sobrevive ao fechamento
-    (`claim_type: hypothesis` **não** fecha causa raiz), claim sem
-    `evidence_refs`, objeção sem réplica, e referência pendurada. `upheld` é
-    binário, porque a garantia pedida é uma recusa e recusa graduada não recusa.
-    O sétimo estágio do protocolo (`VERIFICATION`) sai `modeled: false`:
-    consenso é acordo, não verificação, e `Debate.verdict` é texto livre que
-    nada liga a uma execução posterior. Gerar argumento continua fora do
-    pacote — exige provider, e mora no host (2026-09-11: skill `run-debate`,
-    `scripts/run_debate.py`).
+    depois de `judge` e grava `Claim`/`Evidence`/`Contradiction`/`Unknown`/`Decision`
+    no blackboard do case. Quando a arbitragem não fecha, emite um `DebatePlan`
+    com `debate_gate` (§11): só o veredito `debater` abre debate — severidade em
+    `rules/catalog/debate_gate.yaml`, ação com `reversible: false` em
+    `action_kinds.yaml`, ou arbitragem sem lastro; lacuna mensurável citando o par
+    recusa `gate_experimentar_antes`, par barato e reversível `gate_nao_debater`,
+    sinal ausente `gate_unresolved`. `sparkforge debate start|next|submit` (tools
+    `LOCAL_MUTATION`) é máquina de estados L0 sobre `.sparkforge/debate/<debate_id>/`:
+    diz de quem é a vez, recusa por nome a submissão que fere o protocolo, só aceita
+    evidência nova **reextraída** por extrator da allowlist, exige `budget:` declarado
+    no case (`budget_undeclared`) e fecha **sempre** pelo `referee`. `sparkforge debate
+    referee` só lê, e recusa hipótese que sobrevive ao fechamento, claim sem
+    `evidence_refs`, objeção sem réplica e referência pendurada. Quem escreve o
+    argumento é o host (skill `run-debate`, `scripts/run_debate.py`); nenhum
+    `AgentRuntime` concreto mora neste pacote (regra 23). Os dois executores são
+    **L0**: `applied_changes` sai sempre `false`, e o ADR é proposta com `rollback`
+    obrigatório. **Alcance medido: um par** (`SF-GRAPH-005` × `SF-LF-001`), só na
+    união de dois jobs.
 30. **Não há benchmark da camada agêntica, e por isso não há afirmação de
     ganho.** Comparar arquitetura nova com antiga exige os dois lados rodando o
-    mesmo caso. A justificativa desta regra **encolheu em 2026-09-08 e de novo
-    em 2026-09-11, e a conclusão não**. Em 2026-09-08 o executor determinístico
-    passou a rodar. Em 2026-09-11 o debate também passou a rodar, e mesmo assim
-    nenhuma comparação foi feita, por dois motivos. O único par que o catálogo
-    produz só existe na união de dois jobs, e um smoke real argumentou que o
-    conflito pode não existir em nenhum deles sozinho. Por isso o baseline de
-    modelo foi deliberadamente não rodado: mediria um tópico mal posto (ver
-    `evals/README.md`). Nenhuma medida de ganho de token, latência, custo ou
-    qualidade foi publicada, e nenhuma pode ser até existir um caso bem posto
-    rodando nos dois lados. Regra 28 vale aqui igual.
+    mesmo caso bem posto; o único par que o catálogo produz só existe na união de
+    dois jobs. Nenhuma medida de ganho de token, latência, custo ou qualidade foi
+    publicada, e nenhuma pode ser até existir um caso bem posto rodando nos dois
+    lados. Regra 28 vale aqui igual.
 31. **Lake Formation são DOIS modelos, e a versão muda o significado.** FGAC e
     Full Table Access não coexistem no mesmo job, e a diferença que decide não é
     granularidade — é **quem vende a credencial**: sob FGAC a escrita usa IAM do
@@ -533,51 +288,35 @@ sparkforge debate submit --debate <id> --file <json> --repo .  # ESCREVE
 sparkforge debate referee --repo .               # so le
 ```
 
-`arbitrate` e os três verbos `debate start|next|submit` são os que escrevem, e
-por isso as tools MCP deles são `LOCAL_MUTATION`. `--facts` é **repetível, e a
-repetição é o contrato**: o executor recebe a UNIÃO dos facts do case, o mesmo
-conjunto que `judge` recebeu para produzir aqueles findings (§12.9 do spec).
-Alimentá-lo com um subconjunto fabrica claim desancorada que a execução real não
-produz. Ela **não estima ganho**, **não publica score como confiança medida** e
-**não executa debate** — as três recusas estão na descrição da tool, e um teste
-varre o `outputSchema` inteiro por substring.
-
-`budget show` lê o bloco `budget:` do `case.yaml`. Sem o bloco, sai
-`limits.status = "unresolved"` nomeando a lacuna — o default do código só
-aparece sob `--template`. Consumo sai `unresolved` e aponta `economy report
---run-id`, que é onde ele é medido (token exige transcript: regra 24; dólar
-exige `cost_basis`: regra 25).
+`--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO dos facts
+do case, o mesmo conjunto que `judge` recebeu (§12.9 do spec). Alimentá-lo com um
+subconjunto fabrica claim desancorada. Ele **não estima ganho**, **não publica score como
+confiança medida** e **não gera argumento de debate**. `budget show` lê o bloco `budget:`
+do `case.yaml`; sem ele, `limits.status = "unresolved"` nomeando a lacuna, e consumo
+aponta `economy report --run-id` (token exige transcript, regra 24; dólar exige
+`cost_basis`, regra 25).
 
 ### Evidence Authority Tiers
 
 T1 (docs oficial) > T2 (source/changelog) > T3 (benchmark reproduzível) >
 T4 (autoridade reconhecida) >> T5 (LLM) > T6 (conjectura). T5 e T6 **nunca**
 são suficientes sozinhos para confirmar uma claim de alta confiança.
-
-`aggregate_strength` separa duas perguntas que já foram a mesma expressão:
-`has_sufficient_authority` é só o tier; `has_fresh_in_scope` é tier **mais**
-verificação de vigência e escopo. Uma T1 fora da versão alvo tem autoridade e
-não sustenta a claim — e é essa diferença que nomeia por quê.
+`has_sufficient_authority` é só o tier; `has_fresh_in_scope` é tier **mais** vigência e
+escopo — uma T1 fora da versão alvo tem autoridade e não sustenta a claim.
 
 ### Autonomy Levels
 
 L0 deterministic → L1 specialist → L2 cooperative → L3 debate → L4 experimental
-→ L5 autonomous engineering.
-
-**O perfil EXIGIR um guardrail não é o mesmo que tê-lo obtido.**
-`validate_autonomy_boundary` recebe `guardrails_satisfied` do chamador — a lista
-do que ele comprova ter executado — e recusa ação de alto risco enquanto o
-`required_validation` do nível não estiver coberto. Ler a exigência do próprio
-perfil estático era tautologia: o ramo nunca disparava, e L5 `modify_code` de
-alto risco saía autorizado sem aprovação nenhuma.
+→ L5 autonomous engineering. **O perfil EXIGIR um guardrail não é o mesmo que tê-lo
+obtido:** `validate_autonomy_boundary` recebe `guardrails_satisfied` do chamador e recusa
+ação de alto risco enquanto o `required_validation` do nível não estiver coberto.
 
 ### Arbitragem: o que o score é, e o que ele não é
 
 Os pesos de `assess_claim` (evidência 40%, autoridade 30%, especificidade 20%,
-aplicabilidade 10%) são **convenção**, não medida — nenhum experimento os
-calibrou. Eles ordenam claims dentro de uma mesma arbitragem; o valor absoluto
-não é confiança medida e não deve ser publicado como tal. Uma claim avaliada
-sozinha não é arbitragem: o resultado sai com `disputed=False`, e não pede
-experimento para diferenciar a claim dela mesma.
+aplicabilidade 10%) são **convenção**, não medida — nenhum experimento os calibrou.
+Eles ordenam claims dentro de uma mesma arbitragem; o valor absoluto não é confiança
+medida e não deve ser publicado como tal. Uma claim avaliada sozinha não é arbitragem:
+sai com `disputed=False`.
 
 Spec: `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
