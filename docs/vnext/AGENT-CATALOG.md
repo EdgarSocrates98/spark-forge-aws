@@ -30,7 +30,7 @@ dos sete existe em `agents/`, o diretório canônico (espelhado em
 cada um.
 
 O que existe de fato é o motor de economia de tokens em
-`sparkforge/economy/budget.py`, que define tiers de 0 a 6 (`TIER_PRICING`)
+`sparkforge/registry/models.py`, que define tiers de 0 a 6 (`ModelTier`)
 usados para selecionar o perfil de execução de cada tarefa.
 
 ---
