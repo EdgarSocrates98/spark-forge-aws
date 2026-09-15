@@ -2405,6 +2405,9 @@ _DEBATE_REFUSAL_REASONS: tuple[str, ...] = (
     "artifact_outside_case",
     "artifact_not_found",
     "extractor_failed",
+    "gate_experimentar_antes",
+    "gate_nao_debater",
+    "gate_unresolved",
 )
 
 _DEBATE_REFUSED_SCHEMA: dict[str, Any] = {
@@ -7207,7 +7210,12 @@ TOOLS: dict[str, dict[str, Any]] = {
             "(3) nao executa debate -- quando a arbitragem nao fecha, sai um PLANO em "
             "`debate_plans`, com `executed: false` e `unresolved.reason: "
             "debate.unresolved`. Quem debateria e um `AgentRuntime` concreto, do host: "
-            "`sparkforge/` nao chama provider nenhum. "
+            "`sparkforge/` nao chama provider nenhum. Cada plano traz `debate_gate` "
+            "(Debate ROI Gate): `experimentar_antes` quando ha lacuna mensuravel "
+            "citando o par, `debater` com severidade na politica, acao irreversivel ou "
+            "arbitragem sem lastro, `nao_debater` quando tudo e conhecido e nada disso "
+            "casa, e `unresolved` nomeando o sinal que falta; `expected_information_gain` "
+            "sai recusado, sem fonte. "
             "Autonomia L0: escreve decisao e NUNCA aplica mudanca. O ADR e proposta com "
             "`rollback` obrigatorio, nao registro de coisa feita -- `applied_changes` "
             "sai sempre `false`. "
@@ -7298,7 +7306,10 @@ TOOLS: dict[str, dict[str, Any]] = {
             "nao declara `budget.max_rounds` (o default do codigo nunca vira teto), "
             "`no_open_debate_for_rules` quando o par nao se contradiz ou a arbitragem ja "
             "fechou, `debate_exists_with_other_plan` quando o par ja tem debate congelado "
-            "com outros facts ou outro budget, e `invalid_rules`. "
+            "com outros facts ou outro budget, e `invalid_rules`. Antes do budget, o "
+            "`debate_gate` do plano: `gate_experimentar_antes`, `gate_nao_debater` e "
+            "`gate_unresolved` recusam o par cujo veredito nao e `debater`, nomeando a "
+            "medida, as duas acoes com rollback, ou o sinal que falta. "
             "NAO gera argumento: nada neste projeto chama provider. Quem escreve cada "
             "submissao e o HOST (subagente ou `claude -p`), fora de `sparkforge/`. "
             "Nao estima ganho sobre a arbitragem deterministica e nao aplica mudanca "

@@ -28,9 +28,9 @@
         "sha256": "198587f3101b23828ea6c2847bb887c78f41791b14de898da9781d2d5cfdc34e"
       },
       {
-        "count": 1,
+        "count": 2,
         "path": ".sparkforge/blackboard/traces.jsonl",
-        "sha256": "4408715b3976de52095e9c26f2d8fc16f86f6862be0fc783ade1686e7a972515"
+        "sha256": "e32be95e25640cd4ac2d537584f8b8d6f68361bfc7496aee8f74363e1a2bd92e"
       },
       {
         "count": 1,
@@ -94,7 +94,7 @@
     "tests": []
   },
   "proves": "correspondencia entre este recibo e estes artefatos -- nunca autoria",
-  "receipt_id": "rcpt_254d636aa570970ff609bf087518e249335634512eeccb87b60eecdccecb1793",
+  "receipt_id": "rcpt_2ecf57f9acaebaaae7f782e2ae315c982ec92fac7589724a2574dc5175edf459",
   "receipt_version": 1,
   "refused": [
     {

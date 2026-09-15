@@ -86,6 +86,7 @@ from sparkforge.agentic.blackboard import (
     read_objections,
     read_rebuttals,
 )
+from sparkforge.agentic.executor import gate
 from sparkforge.agentic.executor.debate_evidence import (
     EVIDENCE_EXTRACTORS,
     EvidenceRefused,
@@ -129,6 +130,10 @@ DANGLING_EVIDENCE_REF = "dangling_evidence_ref"
 DANGLING_TARGET_REF = "dangling_target_ref"
 DUPLICATE_ENTITY = "duplicate_entity"
 DEBATE_CLOSED = "debate_closed"
+# O Debate ROI Gate (§11): o par existe, mas o veredito nao e `debater`.
+GATE_EXPERIMENTAR_ANTES = "gate_experimentar_antes"
+GATE_NAO_DEBATER = "gate_nao_debater"
+GATE_UNRESOLVED = "gate_unresolved"
 
 # A opcao que a `Decision` escolhe quando o debate nao elege vencedor. Ela e
 # OPCAO de verdade -- `Decision` exige `selected_option in options` --, e nao um
@@ -230,6 +235,11 @@ def start(
             f"a arbitragem deste case nao deixa debate aberto para {par[0]} x {par[1]}: "
             f"ou o par nao se contradiz diretamente, ou a arbitragem ja fechou",
         )
+
+    # O gate vem ANTES do budget: par que nao sera debatido nao precisa de teto.
+    recusa_do_gate = _recusa_do_gate(entrada, par, findings)
+    if recusa_do_gate is not None:
+        return recusa_do_gate
 
     plano = entrada["plan"]
     if (plano.get("budget") or {}).get("status") != "declared":
@@ -362,6 +372,67 @@ def _contexto_da_regra(regra: str, findings: list[dict[str, Any]]) -> dict[str, 
         "anchor_fact_ids": ancoras,
         "validation": validacao,
     }
+
+
+def _recusa_do_gate(
+    entrada: dict[str, Any], par: tuple[str, str], findings: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """A recusa nomeada quando o Debate ROI Gate nao diz `debater`, ou `None`.
+
+    Entrada sem `debate_gate` e tratada como `unresolved`: abrir debate sem o
+    veredito seria pular o gate calado.
+    """
+    bloco = entrada.get("debate_gate")
+    if not isinstance(bloco, dict):
+        return _recusa(
+            GATE_UNRESOLVED,
+            "o plano do par nao traz `debate_gate`: recalcule pelo `arbitrate` desta versao",
+        )
+    veredito = bloco.get("verdict")
+    if veredito == gate.DEBATER:
+        return None
+    if veredito == gate.EXPERIMENTAR_ANTES:
+        medidas = "; ".join(
+            f"{lacuna.get('question')} -> medir {lacuna.get('experiment', {}).get('variable')}"
+            for lacuna in bloco.get("signals", {}).get("evidence_gap") or []
+        )
+        return _recusa(
+            GATE_EXPERIMENTAR_ANTES,
+            f"o par {par[0]} x {par[1]} tem lacuna mensuravel, e debate nao cria medida: "
+            f"{medidas}",
+        )
+    if veredito == gate.NAO_DEBATER:
+        acoes = "; ".join(_acao_com_rollback(regra, findings) for regra in par)
+        return _recusa(
+            GATE_NAO_DEBATER,
+            f"o par {par[0]} x {par[1]} e de severidade abaixo de "
+            f"{bloco.get('policy', {}).get('debate_severities')} e as duas acoes sao "
+            f"reversiveis: decisao humana direta entre elas. {acoes}",
+        )
+    faltando = ", ".join(bloco.get("missing") or []) or "sinal desconhecido"
+    motivo_da_politica = bloco.get("policy", {}).get("reason")
+    return _recusa(
+        GATE_UNRESOLVED,
+        f"o gate nao decide sem: {faltando}"
+        + (f" ({motivo_da_politica})" if motivo_da_politica else ""),
+    )
+
+
+def _acao_com_rollback(regra: str, findings: list[dict[str, Any]]) -> str:
+    """`regra: kind (direction); rollback: ...`, lido dos findings da regra."""
+    contexto = _contexto_da_regra(regra, findings)
+    acao = contexto["action"]
+    rollback: list[str] = []
+    for finding in findings or []:
+        if isinstance(finding, dict) and str(finding.get("rule_id") or "").strip() == regra:
+            for bruto in finding.get("rollback") or []:
+                item = str(bruto).strip()
+                if item and item not in rollback:
+                    rollback.append(item)
+    return (
+        f"{regra}: {acao.get('kind')} ({acao.get('direction')}); rollback: "
+        f"{' | '.join(rollback) or 'nao declarado'}"
+    )
 
 
 def _debate_do_par(case_root: Path | str, par: tuple[str, str]) -> str | None:

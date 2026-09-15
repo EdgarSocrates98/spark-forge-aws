@@ -10,7 +10,7 @@
 | **Date** | 2026-09-14 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_DEBATE_ROI_GATE.md](./DEFINE_DEBATE_ROI_GATE.md) |
-| **Status** | Ready for Build |
+| **Status** | ✅ Complete (Built) |
 
 ---
 
@@ -370,4 +370,4 @@ def test_irreversiveis_sao_os_declarados(self):
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_DEBATE_ROI_GATE.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_DEBATE_ROI_GATE.md`

@@ -9,7 +9,7 @@
 | **Feature** | DEBATE_ROI_GATE |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Designed) |
+| **Status** | ✅ Complete (Built) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -153,4 +153,4 @@ None - ready for Design. A-004 e A-005 são conferências de design.
 
 ## Next Step
 
-**Ready for:** `/build .claude/sdd/features/DESIGN_DEBATE_ROI_GATE.md`
+**Ready for:** `/ship .claude/sdd/features/DEFINE_DEBATE_ROI_GATE.md`

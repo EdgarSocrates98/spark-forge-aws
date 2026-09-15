@@ -54,6 +54,22 @@
 # POR QUE aquela regra nao os usou, e e essa leitura que os matou.
 #
 # 76 -> 66 `kind`.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `reversible` (2026-09-14, Debate ROI Gate do §11)
+#
+# Criterio, acordado com o operador: a acao e REVERSIVEL quando muda so arquivo
+# do repositorio -- configuracao, codigo, IaC --, porque o `rollback.patch` a
+# desfaz byte a byte. Ela NAO e reversivel quando destroi ou reescreve estado
+# fora do repositorio: snapshots expirados nao voltam, dado reparticionado ou
+# regravado em outro formato nao volta pelo patch, e tipo de coluna alargado na
+# definicao da tabela e caminho de mao unica.
+#
+# Quatro `kind` sao `false`: maintenance.expire_snapshots,
+# storage.change_storage_format, storage.change_partition_scheme e
+# schema.align_types. Declaracao, nao medida: e o `debate_gate` que le o valor,
+# e `tests/test_rules_action_field.py` trava o booleano nos setenta e o conjunto
+# dos quatro.
 schema_version: 1
 directions:
   - increase
@@ -67,103 +83,131 @@ kinds:
   # --- capacidade -----------------------------------------------------------
   capacity.investigate_sizing:
     axis: capacidade
+    reversible: true
     description: Rodar o verbo de capacidade contra o SLA declarado, sem propor numero.
   capacity.size_executor_explicitly:
     axis: capacidade
+    reversible: true
     description: Declarar memoria, cores e instancias do executor em vez de deixar o calculo derivado.
   capacity.increase_memory_overhead:
     axis: capacidade
+    reversible: true
     description: Aumentar a memoria fora do heap do executor, sem mexer no heap.
   capacity.change_purchasing_option:
     axis: capacidade
+    reversible: true
     description: Mudar em que capacidade um papel de no roda -- opcao de compra, ou node label que prende o driver.
   capacity.change_idle_shutdown:
     axis: capacidade
+    reversible: true
     description: Ligar ou apertar a janela de ociosidade que desliga o cluster ou a application.
   capacity.change_preinitialized_capacity:
     axis: capacidade
+    reversible: true
     description: Mudar ou remover a capacidade pre-inicializada declarada da application.
   capacity.investigate_slow_executor:
     axis: capacidade
+    reversible: true
     description: Isolar o executor lento em varios stages (worker, disco, rede) antes de ligar speculation como mitigacao.
 
   # --- provisionamento ------------------------------------------------------
   provisioning.diagnose_bootstrap_failure:
     axis: provisionamento
+    reversible: true
     description: Ler os logs, as permissoes e os argumentos do bootstrap antes de reprovisionar.
 
   # --- timeout --------------------------------------------------------------
   timeout.investigate_symptom_first:
     axis: timeout
+    reversible: true
     description: Ler a categoria do timeout e os sintomas medidos ao lado antes de tocar em limite.
   timeout.restore_interval_relation:
     axis: timeout
+    reversible: true
     description: Restaurar a folga entre duas propriedades de timeout que se referenciam.
 
   # --- shuffle --------------------------------------------------------------
   shuffle.reduce_bytes:
     axis: shuffle
+    reversible: true
     description: Reduzir os bytes que atravessam o shuffle por filtro, projecao ou pre-agregacao.
   shuffle.change_partition_count:
     axis: shuffle
+    reversible: true
     description: Mudar o numero de particoes do shuffle ou da escrita, por configuracao ou por hint.
 
   # --- skew -----------------------------------------------------------------
   skew.classify_type:
     axis: skew
+    reversible: true
     description: Cruzar duracao e bytes de entrada por task para classificar o tipo de skew.
   skew.apply_treatment:
     axis: skew
+    reversible: true
     description: Aplicar o tratamento de skew correspondente ao tipo classificado.
 
   # --- join -----------------------------------------------------------------
   join.restore_equi_condition:
     axis: join
+    reversible: true
     description: Recuperar ou derivar a condicao de igualdade que falta no join.
   join.change_broadcast_decision:
     axis: join
+    reversible: true
     description: Remover ou rever o hint de broadcast e a estrategia de join que ele fixa.
 
   # --- leitura --------------------------------------------------------------
   scan.project_columns:
     axis: leitura
+    reversible: true
     description: Ler apenas as colunas usadas, em vez de projecao total.
   scan.add_partition_filter:
     axis: leitura
+    reversible: true
     description: Acrescentar filtro sobre coluna de particao para restringir o escaneamento.
   scan.push_filter_earlier:
     axis: leitura
+    reversible: true
     description: Mover filtro ou projecao para antes do join, do explode ou da UDF.
 
   # --- codigo ---------------------------------------------------------------
   code.replace_udf_with_native:
     axis: codigo
+    reversible: true
     description: Trocar UDF Python por funcao Spark SQL nativa, higher-order function ou UDF vetorizada.
   code.replace_driver_collection:
     axis: codigo
+    reversible: true
     description: Trocar coleta para o driver por escrita distribuida, agregacao ou limite explicito.
   code.restructure_loop:
     axis: codigo
+    reversible: true
     description: Tirar do laco ou da recursao o trabalho Spark que se repete, ou uni-lo numa acao so.
   code.change_persistence:
     axis: codigo
+    reversible: true
     description: Persistir o DataFrame reusado, ou remover o cache sem reuso e liberar com unpersist.
   code.rewrite_expression:
     axis: codigo
+    reversible: true
     description: Reescrever a expressao preservando a semantica -- select unico, chave explicita, cast guardado.
   code.make_write_idempotent:
     axis: codigo
+    reversible: true
     description: Tornar a escrita idempotente por merge com chave, overwrite de particao ou controle de execucao.
 
   # --- configuracao ---------------------------------------------------------
   config.remove_property:
     axis: configuracao
+    reversible: true
     description: Remover a propriedade que nao deveria estar declarada, ou a declaracao que conflita com outra.
   config.narrow_property_scope:
     axis: configuracao
+    reversible: true
     description: Mover a propriedade do escopo de cluster para o job ou para a escrita que a exige.
   config.replace_property_key:
     axis: configuracao
+    reversible: true
     description: Trocar a chave pelo nome ou equivalente que o runtime alvo reconhece, preservando o valor.
   config.replace_property_value:
     # Acrescentado em 2026-09-09 com SF-ICE-006, e o par simetrico do de cima:
@@ -174,151 +218,193 @@ kinds:
     # publica uma FAIXA; aqui o valor e uma classe, e o que a fonte publica e
     # QUAL das duas delega.
     axis: configuracao
+    reversible: true
     description: Trocar o valor da propriedade pelo que a fonte publica para o efeito pretendido, preservando a chave.
   config.align_value_to_supported_range:
     axis: configuracao
+    reversible: true
     description: Levar o valor da propriedade para a faixa que a fonte publica.
   config.satisfy_property_precondition:
     axis: configuracao
+    reversible: true
     description: Cumprir a pre-condicao que a propriedade ou a API exige para ter efeito.
   config.verify_effective_value:
     axis: configuracao
+    reversible: true
     description: Confirmar o valor efetivo e a procedencia da propriedade antes de mudar qualquer coisa.
 
   # --- armazenamento --------------------------------------------------------
   storage.change_partition_scheme:
     axis: armazenamento
+    reversible: false
     description: Mudar como a particao da tabela e definida ou resolvida -- coluna, cardinalidade, bucket, projection.
   storage.change_storage_format:
     axis: armazenamento
+    reversible: false
     description: Trocar o formato de arquivo, o formato de tabela ou a versao de formato da tabela.
   storage.set_write_layout_property:
     axis: armazenamento
+    reversible: true
     description: Definir propriedade de escrita da tabela -- distribution mode, tamanho-alvo de arquivo, sort order, retencao de metadata.
 
   # --- manutencao -----------------------------------------------------------
   maintenance.rewrite_data_files:
     axis: manutencao
+    reversible: true
     description: Reescrever os data files do passivo, por binpack ou por sort/zorder.
   maintenance.compact_delete_files:
     axis: manutencao
+    reversible: true
     description: Compactar os delete files da tabela merge-on-read.
   maintenance.expire_snapshots:
     axis: manutencao
+    reversible: false
     description: Expirar snapshots e metadata files acumulados, com retencao acordada.
 
   # --- seguranca ------------------------------------------------------------
   security.move_secret_to_manager:
     axis: seguranca
+    reversible: true
     description: Tirar o literal da definicao e referenciar o segredo pelo mecanismo que o servico sustenta.
   security.verify_access_chain:
     axis: seguranca
+    reversible: true
     description: Confirmar cada elo da cadeia de concessao entre contas antes de ler qualquer achado.
   security.enable_encryption_at_rest:
     axis: seguranca
+    reversible: true
     description: Habilitar a encriptacao em repouso na camada que a configuracao atual nao cobre.
   catalog.rename_resource_link:
     axis: seguranca
+    reversible: true
     description: Recriar o resource link com o MESMO nome do recurso na conta de origem -- o unico arranjo que a AWS declara suportar em cross-account.
   catalog.resolve_link_target:
     axis: seguranca
+    reversible: true
     description: Medir de novo o recurso de origem que o link declara, com um principal da conta dona -- e o que separa recurso inexistente de recurso nao autorizado.
 
   # --- rede -----------------------------------------------------------------
   network.provide_service_route:
     axis: rede
+    reversible: true
     description: Prover a rota da subnet ate o servico -- endpoint de VPC ou NAT gateway.
   network.fix_security_group_rule:
     axis: rede
+    reversible: true
     description: Corrigir a regra do security group que a conexao exige.
 
   # --- observabilidade ------------------------------------------------------
   observability.enable_telemetry:
     axis: observabilidade
+    reversible: true
     description: Ligar o destino de log ou a metrica de runtime que a definicao nao declara.
   observability.enable_application_ui:
     axis: observabilidade
+    reversible: true
     description: Ligar o event log ou o armazenamento que faz a UI de aplicacao existir.
 
   # --- versao ---------------------------------------------------------------
   version.upgrade_runtime:
     axis: versao
+    reversible: true
     description: Levar o job para a versao de runtime, engine ou plataforma que sustenta a capacidade pedida.
   version.align_declared_runtime:
     axis: versao
+    reversible: true
     description: Alinhar as fontes que declaram o runtime ao valor efetivo observado.
   version.run_migration_assessment:
     axis: versao
+    reversible: true
     description: Rodar a avaliacao de migracao sobre o par de versoes antes de tratar a mudanca como ajuste.
 
   # --- dependencia ----------------------------------------------------------
   dependency.align_version_with_runtime:
     axis: dependencia
+    reversible: true
     description: Levar a dependencia ao build ou ao piso de versao que o runtime alvo exige.
   dependency.declare_in_iac:
     axis: dependencia
+    reversible: true
     description: Declarar a dependencia no IaC, apontando para o caminho versionado do artefato.
   dependency.migrate_to_successor_api:
     axis: dependencia
+    reversible: true
     description: Trocar a API removida pelo substituto declarado, conferindo a assinatura.
   dependency.remove_library:
     axis: dependencia
+    reversible: true
     description: Remover a biblioteca, reescrevendo nativamente o que ela fazia.
 
   # --- schema ---------------------------------------------------------------
   schema.align_types:
     axis: schema
+    reversible: false
     description: Alinhar o tipo do literal ao da coluna, ou corrigir o tipo na definicao da tabela.
   schema.split_change_into_own_delivery:
     axis: schema
+    reversible: true
     description: Separar a mudanca de schema em outra entrega, com aviso ao consumidor.
 
   # --- validacao ------------------------------------------------------------
   validation.move_before_write:
     axis: validacao
+    reversible: true
     description: Mover a validacao para antes da escrita, ou escrever em staging e promover depois.
   validation.enforce_check_result:
     axis: validacao
+    reversible: true
     description: Ler o resultado do check e abortar o job quando ele reprovar, com excecao explicita.
   validation.merge_checks_into_single_pass:
     axis: validacao
+    reversible: true
     description: Reunir os checks numa unica agregacao sobre o dado.
   validation.correct_declared_key:
     axis: validacao
+    reversible: true
     description: Refazer o plano com a chave de negocio certa quando a chave declarada nao e a chave.
   validation.complete_check_coverage:
     axis: validacao
+    reversible: true
     description: Medir nos dois lados os checks que faltaram, ou declarar por escrito por que nao ha valor.
 
   # --- medicao --------------------------------------------------------------
   measurement.collect_baseline:
     axis: medicao
+    reversible: true
     description: Coletar a medida ou o artefato que falta antes de mudar ou de afirmar.
   measurement.recollect_comparable_artifacts:
     axis: medicao
+    reversible: true
     description: Refazer a coleta ou a execucao ate que os dois lados sejam comparaveis.
   measurement.localize_divergence:
     axis: medicao
+    reversible: true
     description: Isolar a etapa, o stage ou a coluna em que a divergencia nasce, antes de corrigir.
   measurement.narrow_claim_scope:
     axis: medicao
+    reversible: true
     description: Declarar a afirmacao mais fraca que a medida sustenta, em vez de apresentar o total.
 
   # --- orquestracao ---------------------------------------------------------
   orchestration.replace_unsupported_capability:
     axis: orquestracao
+    reversible: true
     description: Trocar a capacidade que a versao do orquestrador nao tem pela alternativa que ela publica.
   orchestration.fix_schedule_declaration:
     axis: orquestracao
+    reversible: true
     description: Corrigir a declaracao de agendamento -- anular os eixos concorrentes, ou trocar enumeracao por calendario.
   orchestration.change_job_definition:
     axis: orquestracao
+    reversible: true
     description: Mudar a forma da definicao do job ou do folder -- tipo, estrutura, expressao de eventos, uso de template.
   orchestration.restrict_run_policy:
     axis: orquestracao
+    reversible: true
     description: Restringir a politica de execucao do job -- concorrencia, retries.
   orchestration.split_into_separate_job:
     axis: orquestracao
+    reversible: true
     description: Mover a etapa para um job separado, fora do caminho critico.
 
 # Vocabulario fechado de `action.moves`. Sem ele cada lote escreveria o eixo por

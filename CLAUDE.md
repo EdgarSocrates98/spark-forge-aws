@@ -446,6 +446,13 @@ auditoria de 2026-09-03 declarava governar todas as outras.
     quem é a vez, recusa por nome a submissão que fere o protocolo, só aceita
     evidência nova **reextraída** por extrator da allowlist e fecha **sempre**
     pelo `referee`. Exige `budget:` declarado no case (`budget_undeclared`).
+    **Antes do budget, o Debate ROI Gate** (§11, 2026-09-14): cada plano traz
+    `debate_gate`, e só o veredito `debater` abre debate — severidade em
+    `rules/catalog/debate_gate.yaml` (`[P0, P1]`), ação com `reversible: false`
+    em `action_kinds.yaml`, ou arbitragem sem lastro. Lacuna mensurável citando
+    o par recusa `gate_experimentar_antes`, par barato e reversível
+    `gate_nao_debater`, sinal ausente `gate_unresolved`. O gate não pesa sinal
+    nem diz quanto um debate evitado poupa (regra 30).
     Quem escreve o argumento é o host: a skill `run-debate` ou
     `scripts/run_debate.py` (`claude -p`, fora do pacote). O placar é
     `python -m sparkforge.evals debate --run <nome>`. Nenhum `AgentRuntime`

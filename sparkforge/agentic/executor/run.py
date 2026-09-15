@@ -122,6 +122,8 @@ from sparkforge.agentic.executor.authority import load_authority_map
 from sparkforge.agentic.executor.claims import claims_from_findings
 from sparkforge.agentic.executor.conflict import conditional_conflicts, direct_conflicts
 from sparkforge.agentic.executor.digest import plan_digest
+from sparkforge.agentic.executor.gate import avaliar as avaliar_gate
+from sparkforge.agentic.executor.gate import fala_de as _fala_de
 from sparkforge.agentic.executor.plan import debate_plan
 from sparkforge.agentic.executor.unknowns import experiments_from, unknowns_from
 from sparkforge.agentic.models import Claim, Contradiction, Decision, Objection
@@ -244,6 +246,7 @@ def run_executor(
             resolucao: str | None = f"decision {decisao.id}"
         else:
             planos.append(plano)
+            traces.append(_trace_do_gate(regra_a, regra_b, plano["debate_gate"]))
             resolucao = None
 
         contradicoes.extend(
@@ -373,14 +376,21 @@ def _arbitra_pares(
             )
         plano = None
         if decisao is None:
+            plano_de_debate = debate_plan(
+                [regra_a, regra_b],
+                {regra: ancoras.get(regra, []) for regra in (regra_a, regra_b)},
+                budget,
+            )
+            # `debate_gate` fica AO LADO de `plan`, nunca dentro: o plano
+            # congelado do debate copia `plan`, e o `debate_id` e o hash dele.
             plano = {
                 "rules": [regra_a, regra_b],
                 "recommendation": resultado.recommendation,
                 "reason": _motivo_de_nao_fechar(resultado),
-                "plan": debate_plan(
-                    [regra_a, regra_b],
-                    {regra: ancoras.get(regra, []) for regra in (regra_a, regra_b)},
-                    budget,
+                "plan": plano_de_debate,
+                "debate_gate": avaliar_gate(
+                    (regra_a, regra_b), resultado, findings, lacunas, len(diretas),
+                    plano_de_debate,
                 ),
             }
         saida.append((regra_a, regra_b, resultado, decisao, plano))
@@ -437,6 +447,26 @@ def _trace_de_arbitragem(
     # que o das entidades: a MESMA arbitragem tem o mesmo id nos dois registros,
     # e um contador ou um relogio fariam duas gravacoes do mesmo evento
     # parecerem dois eventos diferentes.
+    canonico = json.dumps(corpo, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    digest = hashlib.sha1(canonico.encode("utf-8"), usedforsecurity=False).hexdigest()
+    return {"id": "trace_" + digest[:8], **corpo}
+
+
+def _trace_do_gate(regra_a: str, regra_b: str, gate: dict[str, Any]) -> dict[str, Any]:
+    """O veredito do Debate ROI Gate, num trace PROPRIO.
+
+    Proprio, e nao um campo a mais no trace `arbitration`: aquele id e
+    content-addressed sobre o corpo, e acrescentar campo moveria o id de todo
+    trace de arbitragem ja gravado.
+    """
+    corpo: dict[str, Any] = {
+        "kind": "debate_gate",
+        "rules": [regra_a, regra_b],
+        "verdict": gate.get("verdict"),
+        "reasons": list(gate.get("reasons") or []),
+        "missing": list(gate.get("missing") or []),
+        "decided_by": AGENTE,
+    }
     canonico = json.dumps(corpo, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     digest = hashlib.sha1(canonico.encode("utf-8"), usedforsecurity=False).hexdigest()
     return {"id": "trace_" + digest[:8], **corpo}
@@ -623,19 +653,6 @@ def _validacao(regra_vencedora: str, findings: list[dict]) -> str:
         if itens:
             return "; ".join(itens)
     return f"unresolved -- {regra_vencedora} nao declara `validation` no catalogo"
-
-
-def _fala_de(lacuna: Any, rule_id: str) -> bool:
-    """A lacuna cita esta regra, na pergunta ou no impacto?
-
-    As duas origens de `Unknown` nomeiam a regra em campos diferentes: a de
-    ancora ausente comeca a pergunta com `finding <rule_id>`, e a de recusa
-    nomeia quem cita o fact em `impact`. Procurar nos dois e o que nao perde
-    nenhuma das duas.
-    """
-    return rule_id in str(getattr(lacuna, "question", "")) or rule_id in str(
-        getattr(lacuna, "impact", "")
-    )
 
 
 # --------------------------------------------------------------------------

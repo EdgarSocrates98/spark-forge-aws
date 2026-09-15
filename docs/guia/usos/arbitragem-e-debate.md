@@ -126,6 +126,38 @@ Medido em 2026-09-13 com estas fixtures: 2 claims, 5 evidências, 1 contradiçã
 - `--facts` é repetível **e deve** receber a mesma união que o `judge` recebeu.
   Passar só metade fabrica claims sem âncora.
 
+#### O veredito do gate: vale debater este par?
+
+Debate é a etapa mais cara, porque cada rodada é escrita por um modelo no host.
+Por isso cada plano traz o bloco `debate_gate`, com um de quatro vereditos. A
+primeira regra que casa vence:
+
+| Veredito | Quando | O que fazer |
+|---|---|---|
+| `experimentar_antes` | uma lacuna bloqueante cita uma das regras do par, e existe experimento que a mede | medir primeiro; debate não cria a medida que falta |
+| `debater` | severidade em `rules/catalog/debate_gate.yaml` (`P0`, `P1`), ou ação com `reversible: false` em `action_kinds.yaml`, ou arbitragem sem lastro (`escalate`) | abrir o debate (passo 5) |
+| `nao_debater` | todos os sinais conhecidos e nenhum dos acima | decisão humana direta entre as duas ações |
+| `unresolved` | falta a severidade ou a reversibilidade de um lado, e nenhum outro sinal decide | declarar o sinal que falta |
+
+Trecho real do par deste manual:
+
+```json
+{"verdict": "debater",
+ "reasons": ["severidade:SF-GRAPH-005=P1", "severidade:SF-LF-001=P0"],
+ "signals": {"severity": {"SF-GRAPH-005": "P1", "SF-LF-001": "P0"},
+             "reversible": {"SF-GRAPH-005": true, "SF-LF-001": true},
+             "arbitration": "experiment", "evidence_gap": [],
+             "complexity": 2, "contradiction_count": 1},
+ "refused": {"expected_information_gain": {"reason": "sem fonte: exigiria um modelo de probabilidade ..."}},
+ "policy": {"status": "declared", "file": "debate_gate.yaml", "debate_severities": ["P0", "P1"]}}
+```
+
+- As duas ações só mudam arquivo do repositório, então são reversíveis. O que
+  decide aqui é a severidade.
+- `expected_information_gain` sai recusado: sem um modelo de probabilidade, qualquer
+  número seria inventado.
+- O gate não dá nota aos sinais nem diz quanto um debate evitado poupa.
+
 ### 3. Ler o blackboard
 
 O **blackboard** é o registro do case, em arquivos `.jsonl` dentro de
@@ -242,6 +274,12 @@ Recusas reais, sempre com nome e sem gravar nada:
 | lado B enviou na vez do A | `out_of_turn` |
 | submissão depois do fechamento | `debate_closed` |
 | debate sem teto declarado | `budget_undeclared` |
+| lacuna mensurável citando o par | `gate_experimentar_antes` |
+| par de baixa severidade com as duas ações reversíveis | `gate_nao_debater` |
+| sinal do gate ausente (severidade ou `reversible`) | `gate_unresolved` |
+
+As três recusas do gate vêm **antes** do budget: um par que não vai ser debatido
+não precisa de teto.
 
 Neste exemplo, A e B enviaram uma claim cada, sem objeção. A rodada terminou sem
 objeção nova, então o debate fechou por consenso (`closed_by: consensus`):
@@ -332,6 +370,9 @@ gravam decisão e **nunca** aplicam mudança.
 | claims sem âncora ou contradição que some | `--facts` com só parte da união | passe a mesma união que o `judge` recebeu |
 | `autonomy show` com `unrecognized arguments: --repo` | `autonomy show` não aceita `--repo` | use só `--level` |
 | `out_of_turn` | lado ou rodada errados | rode `debate next` e siga `side` e `round` do brief |
+| `gate_experimentar_antes` | lacuna que só medida fecha | rode o experimento do `detail` e julgue de novo |
+| `gate_nao_debater` | par barato e reversível | escolha entre as duas ações do `detail`, com o rollback de cada uma |
+| `gate_unresolved` | `kind` sem `reversible` ou finding sem severidade | declare o que o `detail` nomeia |
 
 ## Próximos passos
 

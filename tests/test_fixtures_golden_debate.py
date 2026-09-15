@@ -51,6 +51,9 @@ REQUIRED_FIXTURES = {
     "consenso_sem_concessao",
     "debate_fechado",
     "evidencia_reextraida",
+    "gate_experimentar_antes",
+    "gate_nao_debater",
+    "gate_unresolved",
     "hipotese_fechando",
     "objecao_sem_replica",
     "recusas_de_forma_e_vez",
@@ -71,13 +74,28 @@ def _json(caminho: Path) -> Any:
 
 
 def _uniao(meta: dict[str, Any]) -> tuple[list[dict], list[dict]]:
-    """Findings e facts da uniao declarada no `meta.yaml`, na ordem declarada."""
+    """Findings e facts da uniao declarada no `meta.yaml`, na ordem declarada.
+
+    `finding_overrides` (Debate ROI Gate, 2026-09-14) troca campos dos findings de
+    uma regra da uniao -- `severity`, chaves de `action`, ou `evidence_append` --
+    para os casos do gate: o par real e o unico que o catalogo produz, e copiar os
+    facts dele para cada caso so para mudar uma severidade seria duplicar medida.
+    """
     findings: list[dict] = []
     facts: list[dict] = []
     for relativo in meta["union"]:
         pasta = ROOT / "fixtures" / relativo / "expected"
         findings += _json(pasta / "findings.json")
         facts += _json(pasta / "facts.json")
+    trocas = meta.get("finding_overrides") or {}
+    for finding in findings:
+        for chave, valor in trocas.get(finding["rule_id"], {}).items():
+            if chave == "evidence_append":
+                finding["evidence"] = list(finding.get("evidence") or []) + list(valor)
+            elif chave == "action":
+                finding["action"] = {**finding["action"], **valor}
+            else:
+                finding[chave] = valor
     return findings, facts
 
 
