@@ -4093,7 +4093,7 @@ def change_propose(
     (repo, id malformado, anexo sem o kind esperado) e `AdapterError`. `now`
     entra no recibo: com o mesmo `now`, a mesma chamada grava os mesmos bytes.
     """
-    from datetime import UTC, datetime
+    from datetime import datetime, timezone
 
     from sparkforge.change import ProposalDefect, montar
 
@@ -4111,7 +4111,7 @@ def change_propose(
             exit_code=2,
         )
     instante = (
-        _receipt_now(now) if now else datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        _receipt_now(now) if now else datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
     anexos = {
         "benchmark": _anexo_de_facts(benchmark_paths, "bench.", "--benchmark", _BENCH_HINT),
