@@ -197,6 +197,50 @@ de prova, acima), e uma interrompida por um defeito do runner no Windows. O
 runner lia a saída com o codepage local e, diante de um caractere fora dele,
 recebia `stdout` vazio. Nenhuma das duas é baseline.
 
+### Rodada de 2026-09-15 — Haiku 4.5, N = 3, com 103 tools
+
+`evals/agentic/fase0/baselines/2026-09-15-haiku-4-5/` (`r1.json`…`r3.json`), só
+scorecards. Pedida pela revisão crítica de 2026-09-15 ("a superfície de 103 tools
+atrapalha o agente?"). Mesma suíte (sha `cd35c816…`), mesmo modelo, mesmo runner
+(`--strict-mcp-config`, `--setting-sources project`, workspace de prova),
+`--max-budget-usd 1` por pergunta. Custo do host somado dos `result.json`:
+**US$ 6,28 pelas 39 sessões**.
+
+O lado de comparação é `2026-09-11-haiku-4-5-mcp-sdk-2`, e não o primeiro
+baseline: é o que já roda no SDK MCP 2.x, como hoje.
+
+| Coluna (soma das 3 execuções) | 2026-09-11 (mcp-sdk-2) | 2026-09-15 |
+|---|---|---|
+| Resposta `correct` (30 com valor) | 29 | 29 |
+| `abstained` (9 de abstenção) | 6 | 6 |
+| `false_certainty` | 3 | 3 |
+| `over_abstention` | 0 | 1 |
+| `tools_ok` (39) | 14 | 9 |
+| Chamadas de tool, `median_low` por execução | 19 / 15 / 14 | 17 / 8 / 10 |
+| Chamadas de tool, máx. por execução | 76 / 79 / 48 | 52 / 67 / 36 |
+
+Por pergunta (`compare`), a resposta muda em duas: `fase0-05` `pass->mixed` e
+`fase0-07` `mixed->pass`. Em `tools_ok`: `fase0-04`, `fase0-06` e `fase0-07`
+`pass->mixed`; `abst-02` `mixed->fail`; `fase0-10` `fail->mixed`. `abst-03`
+continua `false_certainty` em 3/3 nos dois lados.
+
+**O que o número NÃO diz, e por que a pergunta continua aberta.** Entre os dois
+lados mudaram **três** coisas ao mesmo tempo, e nenhuma delas é isolável daqui:
+
+1. a superfície: **86 tools / 464 995 bytes** em `09a0c4fe` contra **103 tools /
+   533 592 bytes** hoje (+14,8%, `docs/surface.lock.json`);
+2. as instruções: `CLAUDE.md` e `AGENTS.md`, que o workspace de prova copia,
+   foram enxugados de 34 889 e 56 657 bytes para 22 656 e 21 582 (#73);
+3. o host: Claude Code 2.1.268 contra 2.1.272/2.1.273.
+
+Com N = 3, `tools_ok` de 14 para 9 cabe em variação entre execuções: o próprio
+baseline foi de 3 a 6 entre as suas três. A leitura honesta é a mesma do
+primeiro baseline: o Haiku acerta a resposta e na maior parte das vezes não
+passa pelas tools que a suíte exige, com 86 ou com 103 tools. Medir o efeito da
+superfície **sozinha** exige um segundo braço na MESMA rodada, com as tools que a
+suíte não usa fora do contexto do agente. O runner ainda não tem esse braço.
+Regra 30: não há afirmação de ganho nem de perda.
+
 ## Suíte do executor de debate — `evals/agentic/debate/` (2026-09-11)
 
 A suíte tem três casos sobre o mesmo par de regras, `SF-GRAPH-005` ×
