@@ -747,7 +747,7 @@ manifesto silencioso é pior que erro barulhento:
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
 constrói o artefato, instala num venv limpo e reproduz as 164 fixtures golden byte a byte.
 
-`locks/py3.10.txt` e `locks/py3.11.txt` **não** entram nessa tabela, e a diferença importa.
+`locks/py3.10.txt`, `locks/py3.11.txt` e `locks/py3.12.txt` **não** entram nessa tabela, e a diferença importa.
 Espelho é projeção: sai do `pyproject.toml` sozinho, offline, e por isso `--check` pode
 regenerá-lo e comparar. Lock é **resolução**: ele diz qual versão de cada pacote — diretos e
 transitivos — o ambiente instala, e produzir isso exige consultar o índice do PyPI. Por isso

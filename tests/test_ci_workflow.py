@@ -30,11 +30,12 @@ class TestWorkflowExists:
 
 
 class TestMatrix:
-    def test_tests_both_3_10_and_3_11(self):
+    def test_tests_3_10_3_11_and_3_12(self):
         doc = _load()
         versions = doc["jobs"]["test"]["strategy"]["matrix"]["python-version"]
         assert "3.10" in versions
         assert "3.11" in versions
+        assert "3.12" in versions
 
 
 class TestSteps:
@@ -163,7 +164,7 @@ class TestWheelGateJob:
 
     def test_the_wheel_job_is_separate_from_the_test_job(self):
         """Construir artefato e criar venv custa mais de um minuto e nao depende
-        da versao de Python. Dentro da matriz 3.10/3.11 rodaria quatro vezes."""
+        da versao de Python. Dentro da matriz 3.10/3.11/3.12 rodaria seis vezes."""
         assert "verify_wheel" not in str(_load()["jobs"]["test"])
 
 

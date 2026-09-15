@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -115,7 +115,7 @@ jobs:
           fi
 
   wheel:
-    # Job proprio, fora da matriz 3.10/3.11: construir artefato e criar venv
+    # Job proprio, fora da matriz 3.10/3.11/3.12: construir artefato e criar venv
     # custa mais de um minuto e o resultado nao depende da versao de Python.
     # Depende do sistema operacional -- golden e gravado com LF forcado e path
     # de subject e normalizado para `/`. O que escapar disso so aparece no

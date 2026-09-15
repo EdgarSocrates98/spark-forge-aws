@@ -7,14 +7,14 @@ primeira mudança.
 
 ## Ambiente
 
-Python 3.10 ou 3.11. As dependências são travadas com hash:
+Python 3.10, 3.11 ou 3.12. As dependências são travadas com hash:
 
 ```bash
 python -m pip install --require-hashes -r locks/py3.11.txt
 python -m pip install -e . --no-deps --no-build-isolation
 ```
 
-Use `locks/py3.10.txt` no Python 3.10. O projeto mira 3.10: API que só existe no 3.11+
+Use `locks/py3.10.txt` no Python 3.10 e `locks/py3.12.txt` no 3.12. O projeto mira 3.10: API que só existe no 3.11+
 (`datetime.UTC`, `tomllib`, `typing.Self`, `StrEnum`) passa na máquina local e cai no job
 `test (3.10)` do CI.
 

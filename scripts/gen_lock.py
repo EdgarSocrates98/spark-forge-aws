@@ -34,7 +34,7 @@ constroi e testa, que e exatamente o que a exigencia de supply chain pede.
 Por que `uv` para resolver, e nao o proprio pip
 -----------------------------------------------
 
-O lock precisa valer para Linux/CPython 3.10 e 3.11, e ele e gerado de onde o
+O lock precisa valer para Linux/CPython 3.10, 3.11 e 3.12, e ele e gerado de onde o
 mantenedor estiver. O `--python-version` do pip so afeta compatibilidade de tag
 de wheel e `Requires-Python`; ele NAO reavalia marcador de ambiente. Uma
 resolucao feita no Windows com `--python-version 3.10` sai com `colorama` (que
@@ -54,9 +54,9 @@ Um lock por versao de Python, e por que nao da para ser um so
 A resolucao DIVERGE entre 3.10 e 3.11, e nao por capricho: `rpds-py` tem versao
 cujo `requires-python` exclui 3.10, entao as duas linhas resolvem para versoes
 diferentes do MESMO pacote; e `tomli`, `importlib-metadata` e `zipp` so existem
-na linha 3.10. Um lock unico teria que mentir sobre uma das duas. Sao dois
-arquivos, um por entrada da matriz do CI, e o nome do arquivo carrega a versao
-para que o workflow os enderece sem tabela de conversao.
+na linha 3.10. Um lock unico teria que mentir sobre uma das linhas. Sao tres
+arquivos (3.12 entrou em 2026-09-15), um por entrada da matriz do CI, e o nome
+do arquivo carrega a versao para que o workflow os enderece sem tabela de conversao.
 
 O alvo e Linux x86_64, que e onde o job `test` roda (`ubuntu-latest`). O job
 `wheel`, que tambem roda no Windows, NAO usa este lock: ele instala so `build` e
@@ -118,7 +118,7 @@ LOCK_DIR = ROOT / "locks"
 # mesma lista la e drift esperando para acontecer -- `tests/test_supply_chain.py`
 # le a matriz do workflow e compara com esta tupla, entao acrescentar 3.12 no CI
 # sem gerar o lock correspondente quebra a suite em vez de quebrar o CI.
-PYTHON_VERSIONS = ("3.10", "3.11")
+PYTHON_VERSIONS = ("3.10", "3.11", "3.12")
 
 # O alvo de `ubuntu-latest`, no vocabulario do `--python-platform` do uv.
 #

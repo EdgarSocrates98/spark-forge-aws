@@ -32,6 +32,7 @@ class TestPyprojectMetadata:
         text = _pyproject()
         assert "Programming Language :: Python :: 3.10" in text
         assert "Programming Language :: Python :: 3.11" in text
+        assert "Programming Language :: Python :: 3.12" in text
 
     def test_urls_point_at_the_real_repository(self):
         assert REPO_URL in _pyproject()
