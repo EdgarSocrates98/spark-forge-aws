@@ -1,8 +1,10 @@
 """Unified Token Economics — AgentBudget, CaseBudget, DebateBudget.
 
-Unifica as 3 classes de budget existentes (TaskBudgetGuardrail, AutonomyBudget,
-Budget) em uma hierarquia coerente. Não substitui as existentes — fornece
-uma camada unificada que as referencia.
+A família ÚNICA de budget do pacote. Até 2026-09-15 ela convivia com três outras
+(`economy.budget.TaskBudgetGuardrail`, `agents.autonomy.AutonomyBudget` e
+`agents.supervisor.Budget`), que nenhum caminho de produção usava; as três
+foram removidas, e `CaseBudget`/`DebateBudget` são as que o `case.yaml`, o
+`budget show` e o executor de debate leem.
 
 Princípios:
 - Budget é finito e enforced.

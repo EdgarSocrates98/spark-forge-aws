@@ -5,31 +5,8 @@ from sparkforge.economy import (
     CapabilityModelRouter,
     ExecutionProfile,
     ModelTier,
-    TaskBudgetGuardrail,
-    TokenUsage,
     TokenWasteDetector,
 )
-
-
-def test_token_usage_cost_estimation():
-    usage = TokenUsage(
-        input_tokens=10000,
-        output_tokens=2000,
-        cached_tokens=5000,
-        tier="tier_3_cheap_local",
-    )
-    cost = usage.estimate_cost_usd()
-    assert cost > 0
-    d = usage.to_dict()
-    assert "estimated_cost_usd" in d
-
-
-def test_budget_guardrail_detection():
-    guardrail = TaskBudgetGuardrail(max_total_tokens=1000, max_cost_usd=0.01)
-    usage = TokenUsage(input_tokens=800, output_tokens=300)  # total 1100 > 1000
-    exceeded, reason = guardrail.check_exceeded(usage)
-    assert exceeded is True
-    assert "Total token budget exceeded" in reason
 
 
 def test_artifact_cache_set_get(tmp_path):

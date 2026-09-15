@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     # So para a anotacao. Em tempo de execucao o import de `CallPolicy`
     # continua LOCAL, dentro de `call_tool` e so quando ha politica, para
     # `import sparkforge.adapters.tools` nao passar a arrastar o pacote
-    # `sparkforge.agents` inteiro -- que importa `supervisor` e `room` --
+    # `sparkforge.agents` inteiro -- que importa `room` e `observability` --
     # por causa de um parametro que quase ninguem passa.
     from sparkforge.agents.autonomy import CallPolicy
 

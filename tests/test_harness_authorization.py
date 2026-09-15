@@ -464,26 +464,6 @@ class TestDenylist:
         assert "denylist" in decisao.reason
 
 
-class TestCompatibilidade:
-    def test_authorize_tool_continua_existindo_e_respondendo_igual(self):
-        """`AutonomyController.authorize_tool` e API publica exportada em
-        `sparkforge.agents.__all__`, e a cadeia entra AO LADO, nao no lugar:
-        quebrar a assinatura antiga transformaria uma adicao de seguranca numa
-        migracao.
-
-        O que esta afirmacao NAO diz, porque seria falso: que ha chamador em
-        producao. Busca exaustiva na Fase I3 achou zero -- os unicos chamadores
-        sao `tests/test_agent_autonomy.py` e este teste. A razao de manter e
-        ser superficie publica, nao ter consumidor interno."""
-        from sparkforge.agents.autonomy import AutonomyController
-
-        controlador = AutonomyController()
-        ok, razao = controlador.authorize_tool(
-            agent="a", tool="t", allowed_tools=["t"], mutating=False, approval=False
-        )
-        assert ok is True and razao == "authorized"
-
-
 class TestArgumentoEntraNaDecisao:
     """A cadeia autorizava um NOME; agora ela ve a CHAMADA.
 
