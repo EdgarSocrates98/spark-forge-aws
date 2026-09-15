@@ -125,8 +125,8 @@ class AgentOpsTracker:
         if estimated_cost_usd and not cost_basis:
             raise ValueError(
                 f"custo {estimated_cost_usd} sem `cost_basis`: preco sem fonte e "
-                f"numero inventado. Nomeie de onde o preco veio (ex.: "
-                f"'TIER_PRICING:tier_3') ou deixe o custo em zero."
+                f"numero inventado. Nomeie de onde o preco veio (ex.: a tabela "
+                f"publicada do provider, com a data da leitura) ou deixe o custo em zero."
             )
         span.end_time = time.time()
         span.input_tokens = input_tokens

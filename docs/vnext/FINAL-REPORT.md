@@ -39,7 +39,7 @@ removida, não reescrita.
 
 ### Novos Pacotes e Módulos:
 - [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`
-- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `budget.py`, `cache.py`, `waste_detector.py`, `router.py`, `__init__.py`
+- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `cache.py`, `waste_detector.py`, `router.py`, `__init__.py` (o `budget.py` saiu em 2026-09-15, sem uso em produção)
 - [`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `knowledge_pack.py`, `__init__.py`
 - [`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `antigravity.py`, `cursor.py`, `claude.py`, `targets.py`, `compiler.py`, `__init__.py`
 - [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`
