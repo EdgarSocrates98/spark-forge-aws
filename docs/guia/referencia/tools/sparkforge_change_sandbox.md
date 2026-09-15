@@ -18,7 +18,7 @@ Autonomia L2 (§15, sandbox execute): aplica um diff unificado (`diff_path`, do 
 
 ## Na CLI
 
-[`sparkforge change plan`](../cli/change.md), [`sparkforge change sandbox`](../cli/change.md)
+[`sparkforge change plan`](../cli/change.md), [`sparkforge change propose`](../cli/change.md), [`sparkforge change sandbox`](../cli/change.md)
 
 ## Capacidade
 

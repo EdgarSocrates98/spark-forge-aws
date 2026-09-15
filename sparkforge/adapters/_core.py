@@ -4008,7 +4008,134 @@ def change_sandbox(
     return executar(raiz, texto, _sandbox_varrer, politica["stable_keys"])
 
 
-_SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
+_CHANGE_PROPOSE_HINT = "sparkforge change propose --sandbox <id> --repo <raiz>"
+_SANDBOX_ID = re.compile(r"^[0-9a-f]{16}$")
+_BENCH_HINT = "sparkforge benchmark ... --out <bench.json> (facts `bench.*` de dois runs)"
+_FUNCVAL_HINT = "sparkforge funcval compare ... --out <funcval.json> (facts `funcval.*`)"
+
+
+def _anexo_de_facts(
+    caminhos: list[str] | None, prefixo: str, flag: str, hint: str
+) -> list[dict[str, Any]]:
+    """Os facts medidos que o PR cita; arquivo sem o kind esperado e erro de entrada."""
+    fatos: list[dict[str, Any]] = []
+    for caminho in caminhos or []:
+        do_tipo = [
+            fato.to_dict()
+            for fato in _load_facts_file(caminho, hint, flag)
+            if fato.kind.startswith(prefixo)
+        ]
+        if not do_tipo:
+            raise AdapterError(
+                f"change propose: {flag} {caminho} nao tem nenhum fact `{prefixo}*`.\n"
+                f"  Rode: {hint}",
+                exit_code=2,
+            )
+        fatos.extend(do_tipo)
+    return fatos
+
+
+def _assinar_corpo(corpo: str, findings: Path) -> str | None:
+    """O corpo com o bloco do `report sign`, calculado pelo proprio `report sign`."""
+    import tempfile
+
+    if not findings.is_file() or not _load_findings_file(str(findings)):
+        return None
+    with tempfile.TemporaryDirectory() as temporario:
+        alvo = Path(temporario) / "pr_body.md"
+        alvo.write_text(corpo, encoding="utf-8", newline="\n")
+        report_sign(str(alvo), str(findings))
+        return alvo.read_text(encoding="utf-8")
+
+
+def _recibo_do_after(depois: Path, now: str) -> dict[str, Any] | None:
+    """O recibo do scan de `after/`, com a raiz nele e sem spans de tool.
+
+    Sem `run_id`, a parte de spans sai `unresolved`: o recibo nao pode depender
+    das chamadas que o processo fez antes desta.
+    """
+    from sparkforge.receipt import build
+
+    achados = depois / _SCAN_DIR / "findings.json"
+    if not achados.is_file() or not _load_findings_file(str(achados)):
+        return None
+    arquivos = sorted((depois / _SCAN_DIR).glob("facts*.json"))
+    return build(
+        depois,
+        now=now,
+        case_id=None,
+        facts_files=[
+            {"path": a.relative_to(depois).as_posix(), "fact_count": len(_load_facts_file(str(a)))}
+            for a in arquivos
+        ],
+        facts=[f.to_dict() for f in _merge_facts_files([str(a) for a in arquivos])]
+        if arquivos
+        else [],
+        findings_path=(_SCAN_DIR / "findings.json").as_posix(),
+        findings_parts=_signature_parts(str(achados)),
+        report=None,
+        run_id=None,
+        spans=None,
+    )
+
+
+def change_propose(
+    repo: str = ".",
+    sandbox_id: str | None = None,
+    benchmark_paths: list[str] | None = None,
+    funcval_path: str | None = None,
+    now: str | None = None,
+) -> dict[str, Any]:
+    """L3 do §15: o pacote de um PR em `.sparkforge/proposal/<id>/`, sem rodar git.
+
+    Parte do sandbox ja rodado: o que se propoe e o que passou pelo scan antes e
+    depois. Recusa sai no payload (`refused`), sem nada gravado; erro de ENTRADA
+    (repo, id malformado, anexo sem o kind esperado) e `AdapterError`. `now`
+    entra no recibo: com o mesmo `now`, a mesma chamada grava os mesmos bytes.
+    """
+    from datetime import datetime, timezone
+
+    from sparkforge.change import ProposalDefect, montar
+
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(
+            f"change propose: diretorio nao encontrado: {repo}\n  Rode: {_CHANGE_PROPOSE_HINT}",
+            exit_code=2,
+        )
+    ident = str(sandbox_id or "")
+    if not _SANDBOX_ID.fullmatch(ident):
+        raise AdapterError(
+            f"change propose: --sandbox {sandbox_id!r} precisa ser o id de 16 hex que "
+            f"`sparkforge change sandbox` devolveu.\n  Rode: {_CHANGE_PROPOSE_HINT}",
+            exit_code=2,
+        )
+    instante = (
+        _receipt_now(now) if now else datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+    anexos = {
+        "benchmark": _anexo_de_facts(benchmark_paths, "bench.", "--benchmark", _BENCH_HINT),
+        "funcval": _anexo_de_facts(
+            [funcval_path] if funcval_path else [], "funcval.", "--funcval", _FUNCVAL_HINT
+        ),
+    }
+    try:
+        return montar(
+            raiz,
+            ident,
+            assinar=_assinar_corpo,
+            recibo=lambda depois: _recibo_do_after(depois, instante),
+            anexos=anexos,
+        )
+    except ProposalDefect as exc:
+        raise AdapterError(
+            f"change propose: {exc}.\n  Rode o sandbox de novo: sparkforge change sandbox "
+            f"--repo {repo} --diff <arquivo>",
+            exit_code=2,
+        ) from exc
+
+
+_SIMULATE_HINT ="sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
 
 
 def _simulate_lado(

@@ -50,6 +50,8 @@
       "Bash(aws s3 rm *)",
       "Bash(aws lakeformation revoke-permissions *)",
       "Bash(*expire_snapshots*)",
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
       "Edit(rules/catalog/**)",
       "Write(rules/catalog/**)",
       "Edit(**/*.tf)",

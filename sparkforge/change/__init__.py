@@ -10,8 +10,10 @@ from __future__ import annotations
 
 from sparkforge.change.apply import DIFF_MAX_BYTES, Patch, apply_patches, parse_unified_diff
 from sparkforge.change.plan import STAGE_PLAN, plan_change
+from sparkforge.change.proposal import STAGE_PROPOSAL, ProposalDefect, montar
 from sparkforge.change.refusals import (
     DESTRAVA,
+    RECUSAS_DA_PROPOSTA,
     RECUSAS_DO_PLANO,
     RECUSAS_DO_SANDBOX,
     ChangeError,
@@ -21,15 +23,19 @@ from sparkforge.change.sandbox import STAGE_SANDBOX, executar, limpar, recusa
 __all__ = [
     "DESTRAVA",
     "DIFF_MAX_BYTES",
+    "RECUSAS_DA_PROPOSTA",
     "RECUSAS_DO_PLANO",
     "RECUSAS_DO_SANDBOX",
     "STAGE_PLAN",
+    "STAGE_PROPOSAL",
     "STAGE_SANDBOX",
     "ChangeError",
     "Patch",
+    "ProposalDefect",
     "apply_patches",
     "executar",
     "limpar",
+    "montar",
     "parse_unified_diff",
     "plan_change",
     "recusa",

@@ -33,6 +33,12 @@ bash:
   - rule: "*expire_snapshots*"
     decision: ask
     reason: "manutencao destrutiva do Iceberg: confirme escopo e retencao (regra 10)"
+  - rule: "git push *"
+    decision: ask
+    reason: "publica a branch; o L3 do §15 pede aprovacao humana antes"
+  - rule: "gh pr create *"
+    decision: ask
+    reason: "abre o PR; o L3 do §15 pede aprovacao humana antes"
 paths:
   - rule: "rules/catalog/**"
     decision: ask

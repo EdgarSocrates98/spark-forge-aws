@@ -46,6 +46,9 @@ node_modules/
 # Copias do `change sandbox` (§15): `before/` e `after/` sao a arvore inteira do
 # repositorio, recriada a cada execucao -- nunca vao para o git.
 .sparkforge/sandbox/
+# Pacotes do `change propose` (§15 L3): patch, corpo e recibo de um PR que o
+# host ainda vai abrir. Derivados do sandbox, e recriados a cada execucao.
+.sparkforge/proposal/
 .tokensave
 
 # Material de referencia sigiloso -- nunca versionar neste repositorio publico.

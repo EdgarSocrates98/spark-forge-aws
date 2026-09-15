@@ -36,11 +36,19 @@ def _pedido(caso: str) -> dict[str, Any]:
     return json.loads((FIXTURES / caso / "input" / "request.json").read_text(encoding="utf-8"))
 
 
+_ESTADO_DO_CHANGE = (".sparkforge/sandbox/", ".sparkforge/proposal/")
+# O que o pacote do L3 grava e o golden compara pelo conteudo.
+ARQUIVOS_DA_PROPOSTA = (
+    "pr_body.md", "commands.md", "change.patch", "rollback.patch", "commit_message.txt",
+    "branch.txt",
+)
+
+
 def _hashes(raiz: Path) -> dict[str, str]:
     return {
         p.relative_to(raiz).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(raiz.rglob("*"))
-        if p.is_file() and not p.relative_to(raiz).as_posix().startswith(".sparkforge/sandbox/")
+        if p.is_file() and not p.relative_to(raiz).as_posix().startswith(_ESTADO_DO_CHANGE)
     }
 
 
@@ -77,7 +85,24 @@ def _executar(caso: str, tmp_path: Path) -> tuple[dict[str, Any], Path, dict[str
     else:
         diff = FIXTURES / caso / "input" / pedido["diff"]
     r = _core.change_sandbox(str(repo), diff_path=str(diff))
-    return {campo: r[campo] for campo in CAMPOS_DO_SANDBOX}, repo, antes
+    if pedido["kind"] != "propose":
+        return {campo: r[campo] for campo in CAMPOS_DO_SANDBOX}, repo, antes
+    proposta = _core.change_propose(
+        str(repo),
+        sandbox_id=r["id"],
+        benchmark_paths=[str(FIXTURES / caso / "input" / b) for b in pedido.get("benchmark", [])]
+        or None,
+        now=pedido["now"],
+    )
+    pasta = repo / proposta["proposal"]
+    saida = {
+        **proposta,
+        "conteudo": {
+            nome: (pasta / nome).read_text(encoding="utf-8") for nome in ARQUIVOS_DA_PROPOSTA
+        },
+        "manifest": json.loads((pasta / "manifest.json").read_text(encoding="utf-8")),
+    }
+    return saida, repo, antes
 
 
 @pytest.mark.parametrize("caso", CASOS)

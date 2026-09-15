@@ -67,6 +67,14 @@ Para cada um, procure ativamente:
     medido: para desempenho, os dois runs de `sparkforge_gain`/`benchmark`; para o
     resultado, `funcval`. Recusa do aplicador (`diff_nao_aplica`, `arquivo_fora_da_copia`)
     vai no relatório como está. Não conserte o diff por conta própria.
+11. **O sandbox passou: como isso vira um PR revisável?** Chame `sparkforge_change_propose`
+    com o `repo`, o `sandbox_id` e o `now`. Ele monta em `.sparkforge/proposal/<id>/` o patch,
+    o rollback, o corpo do PR assinado, o recibo e o `commands.md` com os comandos git/gh —
+    e não roda nenhum deles (`git_run: false`). Recusa sem gravar nada quando o sandbox não
+    existe, não aplicou, ficou velho (a árvore mudou depois dele) ou fez aparecer achado P0/P1.
+    Benchmark e funcval só entram como facts já medidos; sem eles, o corpo diz PENDENTE. Quem
+    abre o PR é o host, pela skill `propose-change-pr`, parando antes de `git push` e de
+    `gh pr create`.
 
 ## Pressupõe
 

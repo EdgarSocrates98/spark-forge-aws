@@ -1,4 +1,4 @@
-# Mudança de configuração e sandbox: gerar o diff e testar numa cópia
+# Mudança de configuração, sandbox e PR: gerar o diff, testar numa cópia e propor
 
 ## Receita rápida
 
@@ -11,10 +11,16 @@ sparkforge analyze pyspark --path . --out facts_py.json
 sparkforge change plan --facts facts_tf.json --facts facts_py.json --repo . \
   --set spark.sql.shuffle.partitions=320 --out mudanca.patch
 
-# 3. Veja numa cópia o que o diff muda nos achados
+# 3. Veja numa cópia o que o diff muda nos achados (guarde o "id" da saída)
 sparkforge change sandbox --repo . --diff mudanca.patch
 
-# 4. Apague as cópias quando terminar
+# 4. Monte o pacote do PR a partir desse sandbox (nada é aplicado, git não roda)
+sparkforge change propose --sandbox <id> --repo .
+
+# 5. Abra o PR seguindo .sparkforge/proposal/<id>/commands.md (você, ou o agente
+#    pela skill propose-change-pr, que para antes de git push e de gh pr create)
+
+# 6. Apague as cópias do sandbox quando terminar
 sparkforge change sandbox --repo . --clean
 ```
 
@@ -23,7 +29,9 @@ sparkforge change sandbox --repo . --clean
 - **`change plan`** transforma um valor de configuração num **diff** que você pode revisar, e já traz o **diff de rollback**. Ele descobre sozinho em que arquivo e em que linha o valor foi pedido: no `--conf` de um job Glue no Terraform ou numa chamada `spark.conf.set`/`.config` no código. Não grava nada no seu repositório.
 - **`change sandbox`** pega **qualquer** diff (o do `change plan` ou um escrito à mão ou por um agente), aplica numa **cópia** do repositório e roda o `scan` na cópia antes e depois. Assim você vê quais achados somem e quais aparecem **sem mexer na sua árvore**.
 
-Os dois são os níveis L1 ("produzir a mudança") e L2 ("executar numa cópia isolada") do plano de autonomia do projeto. Nenhum deles aplica nada no seu repositório, abre PR ou chama a AWS.
+- **`change propose`** pega um sandbox que já rodou e monta em `.sparkforge/proposal/<id>/` tudo o que um PR precisa: o patch, o patch de rollback, o texto do PR (assinado), a mensagem de commit, o nome da branch, um recibo da evidência e os comandos git/gh. Ele **não roda** esses comandos: quem abre o PR é você.
+
+Os três são os níveis L1 ("produzir a mudança"), L2 ("executar numa cópia isolada") e L3 ("propor para produção") do plano de autonomia do projeto. Nenhum deles aplica nada no seu repositório, roda git, abre PR ou chama a AWS.
 
 ## Quando usar e quando não usar
 
@@ -173,10 +181,55 @@ Nenhuma recusa aplica o diff pela metade, e nenhuma grava nada.
 
 Única tolerância: um diff com fim de linha LF aplica num arquivo com CRLF, e as linhas novas seguem o fim de linha do arquivo.
 
-## O que nenhum dos dois faz
+## change propose passo a passo
 
-- Não aplica nada no seu repositório: `applied: false` no plano e `main_tree_touched: false` no sandbox.
-- Não roda comando do seu repositório (testes, `spark-submit`) nem git.
+Rode depois de um `change sandbox` que aplicou o diff (`applied: true`), passando o `id` que ele devolveu:
+
+```bash
+sparkforge change propose --sandbox fc778c4f8222e1b0 --repo .
+```
+
+Se você tiver medidas de verdade, anexe os facts: `--benchmark bench.json` (facts `bench.*` de dois runs) e `--funcval funcval.json` (facts `funcval.*`). Sem elas, o texto do PR diz que a medida está **PENDENTE**, e está certo sair assim.
+
+O pacote fica em `.sparkforge/proposal/<id>/` (o git ignora essa pasta):
+
+| Arquivo | O que é |
+|---|---|
+| `change.patch` | O diff, conferido: aplicado sobre a cópia validada, ele reproduz a cópia com a mudança |
+| `rollback.patch` | O caminho de volta |
+| `pr_body.md` | O texto do PR: o que muda, achados que somem, achados novos de baixa gravidade, obrigações de prova, medidas e o que a proposta **não** afirma. Termina com a seção **Assinatura** |
+| `commit_message.txt` e `branch.txt` | Mensagem do commit e nome da branch (`sparkforge/change-<8 letras do id>`) |
+| `commands.md` | Os comandos git/gh, na ordem, com duas paradas: antes de `git push` e antes de `gh pr create` |
+| `evidence/sandbox_report.json` | O relatório do sandbox, para o revisor |
+| `evidence/receipt.json` | O recibo do scan da cópia com a mudança |
+| `manifest.json` | O sha256 de cada arquivo do pacote |
+
+Para conferir depois que o texto do PR não foi editado:
+
+```bash
+sparkforge report verify --report .sparkforge/proposal/<id>/pr_body.md \
+  --findings .sparkforge/sandbox/<id>/after/.sparkforge/scan/findings.json
+```
+
+Se o scan da cópia não deixar nenhum achado, não há o que assinar: o texto do PR diz isso, e o pacote sai sem recibo.
+
+A política padrão do repositório (`.sparkforge/policy.yaml`) pede confirmação para `git push` e `gh pr create`. Rodar `sparkforge policy sync-settings` leva isso para o Claude Code.
+
+### As recusas do propose
+
+Nada é gravado quando uma delas sai:
+
+| Recusa | Quando | O que fazer |
+|---|---|---|
+| `sandbox_inexistente` | Não há sandbox com esse `id` | Rode o `change sandbox` e use o `id` da saída |
+| `sandbox_nao_aplicado` | O sandbox recusou o diff | Resolva a recusa do sandbox e rode de novo |
+| `sandbox_desatualizado` | Algum arquivo mudou depois do sandbox | Rode o `change sandbox` de novo sobre a árvore atual |
+| `achado_novo_bloqueante` | O diff faz aparecer achado P0 ou P1 | Corrija a mudança antes de propor |
+
+## O que nenhum dos três faz
+
+- Não aplica nada no seu repositório: `applied: false` no plano e no propose, e `main_tree_touched: false` no sandbox e no propose.
+- Não roda comando do seu repositório (testes, `spark-submit`) nem git: o propose só escreve os comandos em `commands.md` (`git_run: false`).
 - Não chama a AWS nem modelo de linguagem.
 - Não afirma ganho. Para desempenho, compare dois runs medidos com [`gain`](custo-e-capacidade.md); para o resultado dos dados, [`funcval`](mudancas-com-prova.md).
 
@@ -192,5 +245,5 @@ Nenhuma recusa aplica o diff pela metade, e nenhuma grava nada.
 
 ## Próximos passos
 
-- Referência: [`sparkforge change`](../referencia/cli/change.md), [`sparkforge_change_plan`](../referencia/tools/sparkforge_change_plan.md) e [`sparkforge_change_sandbox`](../referencia/tools/sparkforge_change_sandbox.md).
+- Referência: [`sparkforge change`](../referencia/cli/change.md), [`sparkforge_change_plan`](../referencia/tools/sparkforge_change_plan.md), [`sparkforge_change_sandbox`](../referencia/tools/sparkforge_change_sandbox.md), [`sparkforge_change_propose`](../referencia/tools/sparkforge_change_propose.md) e a skill [`propose-change-pr`](../referencia/skills/propose-change-pr.md).
 - Depois de aplicar de verdade, prove o que a mudança fez: [Mudanças com prova](mudancas-com-prova.md).

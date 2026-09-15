@@ -24,6 +24,11 @@ DIFF_MALFORMADO = "diff_malformado"
 DIFF_NAO_APLICA = "diff_nao_aplica"
 ARQUIVO_FORA_DA_COPIA = "arquivo_fora_da_copia"
 
+SANDBOX_INEXISTENTE = "sandbox_inexistente"
+SANDBOX_NAO_APLICADO = "sandbox_nao_aplicado"
+SANDBOX_DESATUALIZADO = "sandbox_desatualizado"
+ACHADO_NOVO_BLOQUEANTE = "achado_novo_bloqueante"
+
 DESTRAVA: dict[str, str] = {
     SEM_PROCEDENCIA: (
         "declare a chave em arquivo (Terraform `--conf` ou `spark.conf.set`) e extraia de "
@@ -58,6 +63,21 @@ DESTRAVA: dict[str, str] = {
         "o arquivo e sensivel, fica em diretorio ignorado (vendor, build, .venv...) ou passa do "
         "teto de tamanho da varredura; mude-o a mao"
     ),
+    SANDBOX_INEXISTENTE: (
+        "rode `sparkforge change sandbox --repo <raiz> --diff <arquivo>` e passe o `id` que ele "
+        "devolver"
+    ),
+    SANDBOX_NAO_APLICADO: (
+        "o sandbox recusou o diff; resolva a recusa dele e rode `sparkforge change sandbox` de novo"
+    ),
+    SANDBOX_DESATUALIZADO: (
+        "a arvore mudou depois do sandbox; rode `sparkforge change sandbox` de novo sobre a "
+        "arvore atual e proponha o `id` novo"
+    ),
+    ACHADO_NOVO_BLOQUEANTE: (
+        "o diff faz aparecer achado P0 ou P1; corrija a mudanca, rode o sandbox de novo e so "
+        "entao proponha"
+    ),
 }
 
 RECUSAS_DO_PLANO: tuple[str, ...] = (
@@ -67,6 +87,10 @@ RECUSAS_DO_PLANO: tuple[str, ...] = (
 RECUSAS_DO_SANDBOX: tuple[str, ...] = (
     DIFF_VAZIO, DIFF_GRANDE_DEMAIS, DIFF_NAO_SUPORTADO, DIFF_MALFORMADO, DIFF_NAO_APLICA,
     CAMINHO_FORA_DA_RAIZ, ARQUIVO_FORA_DA_COPIA,
+)
+RECUSAS_DA_PROPOSTA: tuple[str, ...] = (
+    SANDBOX_INEXISTENTE, SANDBOX_NAO_APLICADO, SANDBOX_DESATUALIZADO, ACHADO_NOVO_BLOQUEANTE,
+    CAMINHO_FORA_DA_RAIZ,
 )
 
 

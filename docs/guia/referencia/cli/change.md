@@ -9,6 +9,7 @@ Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff
 | Subcomando | O que faz |
 |---|---|
 | [`sparkforge change plan`](#sparkforge-change-plan) | Diff e diff de rollback de um valor de configuracao, achado pela procedencia dos facts (Terraform --conf ou spark.conf.set). Nao aplica nada. |
+| [`sparkforge change propose`](#sparkforge-change-propose) | Monta o pacote de um PR em .sparkforge/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh. |
 | [`sparkforge change sandbox`](#sparkforge-change-sandbox) | Aplica um diff numa copia em .sparkforge/sandbox/<id>/, roda o scan antes e depois e compara os achados. A arvore principal nao muda. |
 
 ## `sparkforge change plan`
@@ -31,7 +32,29 @@ sparkforge change plan --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
+[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_propose`](../tools/sparkforge_change_propose.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
+
+## `sparkforge change propose`
+
+Monta o pacote de um PR em .sparkforge/proposal/<id>/ a partir do sandbox ja rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST roda. Nao executa git nem gh.
+
+```bash
+sparkforge change propose --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--repo` | não | texto |  | `.` | Raiz do repositorio (padrao: .). |
+| `--sandbox` | sim | texto |  |  | O id que `sparkforge change sandbox` devolveu. |
+| `--benchmark` | não | texto | sim |  | Facts com `bench.*` de dois runs medidos (repetivel). Sem ele, fica PENDENTE. |
+| `--funcval` | não | texto |  |  | Facts com `funcval.*` do funcval compare. Sem ele, fica PENDENTE. |
+| `--now` | não | texto |  |  | Instante ISO 8601 do recibo (padrao: agora, em UTC). |
+
+### Tool MCP equivalente
+
+[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_propose`](../tools/sparkforge_change_propose.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
 
 ## `sparkforge change sandbox`
 
@@ -51,4 +74,4 @@ sparkforge change sandbox --help
 
 ### Tool MCP equivalente
 
-[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)
+[`sparkforge_change_plan`](../tools/sparkforge_change_plan.md), [`sparkforge_change_propose`](../tools/sparkforge_change_propose.md), [`sparkforge_change_sandbox`](../tools/sparkforge_change_sandbox.md)

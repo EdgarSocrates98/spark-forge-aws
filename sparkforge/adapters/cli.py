@@ -2379,6 +2379,31 @@ def build_parser() -> argparse.ArgumentParser:
     change_sandbox_p.add_argument(
         "--clean", action="store_true", help="Apaga .sparkforge/sandbox/ e sai."
     )
+    change_propose_p = change_sub.add_parser(
+        "propose",
+        help=(
+            "Monta o pacote de um PR em .sparkforge/proposal/<id>/ a partir do sandbox ja "
+            "rodado: patch, rollback, corpo assinado, recibo e os comandos git/gh que o HOST "
+            "roda. Nao executa git nem gh."
+        ),
+    )
+    change_propose_p.add_argument(
+        "--repo", default=".", help="Raiz do repositorio (padrao: .)."
+    )
+    change_propose_p.add_argument(
+        "--sandbox", required=True, help="O id que `sparkforge change sandbox` devolveu."
+    )
+    change_propose_p.add_argument(
+        "--benchmark", action="append", default=None,
+        help="Facts com `bench.*` de dois runs medidos (repetivel). Sem ele, fica PENDENTE.",
+    )
+    change_propose_p.add_argument(
+        "--funcval", default=None,
+        help="Facts com `funcval.*` do funcval compare. Sem ele, fica PENDENTE.",
+    )
+    change_propose_p.add_argument(
+        "--now", default=None, help="Instante ISO 8601 do recibo (padrao: agora, em UTC)."
+    )
 
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
@@ -3815,6 +3840,18 @@ def _cmd_change_sandbox(args: argparse.Namespace) -> int:
     return 1 if resultado.get("refused") else 0
 
 
+def _cmd_change_propose(args: argparse.Namespace) -> int:
+    resultado = _core.change_propose(
+        args.repo,
+        sandbox_id=args.sandbox,
+        benchmark_paths=args.benchmark,
+        funcval_path=args.funcval,
+        now=args.now,
+    )
+    _print(resultado)
+    return 1 if resultado.get("refused") else 0
+
+
 def _cmd_doctor(args: argparse.Namespace) -> int:
     resultado = _core.doctor(args.repo, online=args.online)
     _print(resultado)
@@ -4449,6 +4486,7 @@ _DISPATCH = {
     ("policy", "sync-settings"): _cmd_policy_sync_settings,
     ("change", "plan"): _cmd_change_plan,
     ("change", "sandbox"): _cmd_change_sandbox,
+    ("change", "propose"): _cmd_change_propose,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

@@ -19,7 +19,7 @@ Autonomia L1 (§15, produce change): o diff unificado e o diff de rollback de um
 
 ## Na CLI
 
-[`sparkforge change plan`](../cli/change.md), [`sparkforge change sandbox`](../cli/change.md)
+[`sparkforge change plan`](../cli/change.md), [`sparkforge change propose`](../cli/change.md), [`sparkforge change sandbox`](../cli/change.md)
 
 ## Capacidade
 
