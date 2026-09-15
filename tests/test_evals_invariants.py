@@ -130,3 +130,31 @@ def test_scorecard_nao_soma_byte_com_token_nem_publica_nota():
         assert not ("byte" in folha and "token" in folha), chave
     assert any(c.endswith("tool_result_bytes") for c in chaves)
     assert any(c.endswith("tokens.output") for c in chaves)
+
+
+def test_braco_suite_da_superficie_nega_so_o_que_o_gabarito_nao_exige():
+    """`--surface suite` (2026-09-15) mede o TAMANHO da superficie: o agente ve
+    a uniao de `required_tools` da suite, a mesma lista para toda pergunta, e o
+    resto do registro sai por `--disallowedTools`. Verbo exigido que o registro
+    nao conhece derrubaria o braco; tool nova no registro entra negada sem
+    ninguem editar lista."""
+    from scripts import run_agentic_eval as runner
+    from sparkforge.adapters.tools import TOOLS
+    from sparkforge.evals.suite import load_suite
+
+    suite = load_suite(runner.SUITE_DIR)
+    assert runner._negadas(suite, "full") == []
+    negadas = runner._negadas(suite, "suite")
+    assert all(nome.startswith(runner.MCP_PREFIX) for nome in negadas)
+    visiveis = set(TOOLS) - {nome.removeprefix(runner.MCP_PREFIX) for nome in negadas}
+    assert visiveis == {
+        "sparkforge_analyze_event_log",
+        "sparkforge_analyze_plan",
+        "sparkforge_analyze_pyspark",
+        "sparkforge_benchmark",
+        "sparkforge_finops",
+        "sparkforge_judge",
+        "sparkforge_release_describe",
+        "sparkforge_rules_lookup",
+        "sparkforge_runtime_detect",
+    }
