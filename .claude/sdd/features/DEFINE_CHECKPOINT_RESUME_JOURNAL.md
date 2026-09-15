@@ -9,7 +9,7 @@
 | **Feature** | CHECKPOINT_RESUME_JOURNAL |
 | **Date** | 2026-09-15 |
 | **Author** | define-agent |
-| **Status** | Ready for Design |
+| **Status** | ✅ Complete (Designed) |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -53,7 +53,7 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 ## Success Criteria
 
 - [ ] 27 de 27 verbos que mudam estado gravam `started` e `finished` pela porta MCP, e 27 de 27 pela CLI; o conjunto é igual ao das anotações (teste)
-- [ ] O mesmo verbo pelas duas portas grava eventos que diferem só em `port`, `seq` e `prev`
+- [ ] O mesmo verbo pelas duas portas grava `tool`, `outcome` e `outputs` iguais; `args` (e `call`) seguem o nome de argumento de cada porta (revisto no design: os nomes divergem em 27 de 27)
 - [ ] 6 cenários sintéticos em `fixtures/journal/` (`sem_queda`, `started_sem_finished`, `cauda_cortada` em journal, blackboard e `submissions.jsonl`, `linha_removida`, `linha_alterada`, `case_yaml_intacto_apos_falha`) com saída esperada
 - [ ] `journal verify` acerta 3 de 3: `intact` sem queda, `broken` com o `seq` certo para linha removida e para linha alterada
 - [ ] Com `os.replace` sabotado, 2 de 2 arquivos (`case.yaml`, `plan.json`) continuam byte a byte iguais ao anterior
@@ -131,10 +131,10 @@ O estado do case (`case.yaml`, os JSONL do blackboard, `plan.json`/`decision.jso
 |----|------------|------------------|------------|
 | A-001 | O `receipt` não enumera `journal.jsonl` nem `*.torn` | O golden `uniao_debate` mudaria | [x] `receipt/build.py:144-189` só lista nomes de `_ENTITY_FILES` e `DEBATE_FILES` |
 | A-002 | `tools.call_tool` é o despacho único do MCP | Chamada MCP fora do journal | [x] `tools.py:10252`, docstring: "`adapters/mcp.py` e qualquer outro chamador entram por aqui" |
-| A-003 | Todo verbo de escrita tem o subcomando de CLI declarado no `parity.yaml` | Porta CLI sem mapa para parte dos 27 | [ ] conferir os 27 no design |
-| A-004 | Nenhum teste roda verbo de escrita com `repo` na raiz do projeto ou na pasta de fixture sem copiar | Journal novo sujaria a árvore durante a suíte | [ ] medir no design (4 goldens medidos usam `tmp_path`) |
-| A-005 | `msvcrt.locking` e `fcntl.flock` funcionam nos jobs de CI (Windows e Linux) | Trava inoperante; `prev` disputado | [ ] conferir no design |
-| A-006 | `os.replace` no mesmo diretório troca o arquivo sem estado intermediário legível | Arquivo parcial visível | [ ] a doc do Python garante atomicidade no POSIX; no Windows, conferir no design |
+| A-003 | Todo verbo de escrita tem o subcomando de CLI declarado no `parity.yaml` | Porta CLI sem mapa para parte dos 27 | [x] 27 de 27 no `parity.yaml`; o mapa é por capacidade, então o design usa a convenção `sparkforge_<comando>_<sub>`, que acerta 27 de 27 |
+| A-004 | Nenhum teste roda verbo de escrita com `repo` na raiz do projeto ou na pasta de fixture sem copiar | Journal novo sujaria a árvore durante a suíte | [x] CAIU para os 3 sem `repo` (`report sign` roda com cwd na raiz em `test_adapters_report_signature.py:430`); design: raiz pelo ancestral com `case.yaml`, senão `sem_raiz_de_case`, e backstop no `conftest.py` |
+| A-005 | `msvcrt.locking` e `fcntl.flock` funcionam nos jobs de CI (Windows e Linux) | Trava inoperante; `prev` disputado | [ ] stdlib nos dois sistemas; provado pelo teste de trava no CI |
+| A-006 | `os.replace` no mesmo diretório troca o arquivo sem estado intermediário legível | Arquivo parcial visível | [x] atômico no POSIX pela doc do Python; no Windows o destino é o antigo ou o novo, e `PermissionError` com leitor aberto vira retry limitado (Decision 1 do design) |
 | A-007 | `sparkforge_resume` está no golden MCP 1.29 | Exceção de paridade desnecessária | [x] 1 ocorrência em `tools_list_stdio.json` |
 | A-008 | 18 dos 27 verbos recebem `now` | `at` quase sempre nulo | [x] medido nas `inputSchema` |
 | A-009 | Gravar conteúdo igual por `write_atomic` não muda os goldens de debate | Regravação de 13 goldens | [ ] conferido pela suíte no build |
@@ -165,9 +165,10 @@ None - ready for Design. A-003 a A-006 são conferências de design.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-15 | define-agent | Initial version, a partir de BRAINSTORM_CHECKPOINT_RESUME_JOURNAL.md; `finished` passa a carregar `started_seq` (duas chamadas iguais e concorrentes teriam o mesmo `call`) |
+| 1.1 | 2026-09-15 | design-agent | SC2 revisto (argumentos seguem o nome de cada porta); A-003, A-004 e A-006 fechadas no design |
 
 ---
 
 ## Next Step
 
-**Ready for:** `/design .claude/sdd/features/DEFINE_CHECKPOINT_RESUME_JOURNAL.md`
+**Ready for:** `/build .claude/sdd/features/DESIGN_CHECKPOINT_RESUME_JOURNAL.md`
