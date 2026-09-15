@@ -9,7 +9,7 @@
 | **Feature** | DEBATE_ROI_GATE |
 | **Date** | 2026-09-14 |
 | **Author** | define-agent |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 | **Clarity Score** | 14/15 |
 
 ---
@@ -148,6 +148,7 @@ None - ready for Design. A-004 e A-005 são conferências de design.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-14 | define-agent | Initial version, a partir de BRAINSTORM_DEBATE_ROI_GATE.md |
+| 1.1 | 2026-09-14 | ship-agent | Shipped and archived (PR #70) |
 
 ---
 

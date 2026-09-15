@@ -10,7 +10,7 @@
 | **Date** | 2026-09-14 |
 | **Author** | design-agent |
 | **DEFINE** | [DEFINE_DEBATE_ROI_GATE.md](./DEFINE_DEBATE_ROI_GATE.md) |
-| **Status** | ✅ Complete (Built) |
+| **Status** | ✅ Shipped |
 
 ---
 
@@ -365,6 +365,7 @@ def test_irreversiveis_sao_os_declarados(self):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-14 | design-agent | Initial version |
+| 1.1 | 2026-09-14 | ship-agent | Shipped and archived (PR #70) |
 
 ---
 

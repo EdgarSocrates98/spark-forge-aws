@@ -9,9 +9,9 @@
 | **Feature** | DEBATE_ROI_GATE |
 | **Date** | 2026-09-14 |
 | **Author** | build-agent |
-| **DEFINE** | [DEFINE_DEBATE_ROI_GATE.md](../features/DEFINE_DEBATE_ROI_GATE.md) |
-| **DESIGN** | [DESIGN_DEBATE_ROI_GATE.md](../features/DESIGN_DEBATE_ROI_GATE.md) |
-| **Status** | ✅ Complete |
+| **DEFINE** | [DEFINE_DEBATE_ROI_GATE.md](./DEFINE_DEBATE_ROI_GATE.md) |
+| **DESIGN** | [DESIGN_DEBATE_ROI_GATE.md](./DESIGN_DEBATE_ROI_GATE.md) |
+| **Status** | ✅ Shipped |
 
 ---
 

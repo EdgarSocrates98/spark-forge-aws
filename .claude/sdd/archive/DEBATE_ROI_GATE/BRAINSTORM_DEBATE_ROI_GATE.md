@@ -9,7 +9,7 @@
 | **Feature** | DEBATE_ROI_GATE |
 | **Date** | 2026-09-14 |
 | **Author** | brainstorm-agent |
-| **Status** | ✅ Complete (Defined) |
+| **Status** | ✅ Shipped |
 
 ---
 
