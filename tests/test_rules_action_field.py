@@ -146,6 +146,26 @@ class TestActionField:
         )
         assert invalidas == [], f"`nature` fora do vocabulario fechado: {invalidas}"
 
+    def test_todo_kind_declara_reversible(self):
+        """Sem `reversible`, o Debate ROI Gate nao sabe se a acao em disputa volta
+        pelo `rollback.patch`, e o par sai `unresolved` em vez de decidir."""
+        kinds = _vocabulary()["kinds"]
+        faltando = sorted(
+            nome for nome, corpo in kinds.items() if not isinstance(corpo.get("reversible"), bool)
+        )
+        assert faltando == [], f"kind sem `reversible` booleano: {faltando}"
+
+    def test_irreversiveis_sao_os_declarados(self):
+        """O conjunto dos `false` e decisao do operador (2026-09-14); mudar exige
+        mexer aqui, a vista, e no criterio do cabecalho de `action_kinds.yaml`."""
+        kinds = _vocabulary()["kinds"]
+        assert sorted(n for n, c in kinds.items() if c.get("reversible") is False) == [
+            "maintenance.expire_snapshots",
+            "schema.align_types",
+            "storage.change_partition_scheme",
+            "storage.change_storage_format",
+        ]
+
 
 class TestActionShape:
     def test_direction_invalida_recusa(self):

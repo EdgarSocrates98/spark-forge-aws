@@ -1,0 +1,21 @@
+name: gate_experimentar_antes
+proves: 'Debate ROI Gate: o finding de SF-LF-001 cita um fact que nao esta no case, a
+  lacuna bloqueante cita o par e tem experimento; start recusa gate_experimentar_antes
+  e nao grava nada (AT-002).'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+finding_overrides:
+  SF-LF-001:
+    evidence_append:
+    - f_ausente_do_case
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: refused:gate_experimentar_antes

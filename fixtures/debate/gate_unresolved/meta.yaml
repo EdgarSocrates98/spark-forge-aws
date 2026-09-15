@@ -1,0 +1,24 @@
+name: gate_unresolved
+proves: 'Debate ROI Gate: P3 nos dois lados e o kind de SF-LF-001 fora do vocabulario,
+  entao a reversibilidade dele e ausente e nenhum sinal suficiente decide; start recusa
+  gate_unresolved nomeando o sinal (AT-006).'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+finding_overrides:
+  SF-GRAPH-005:
+    severity: P3
+  SF-LF-001:
+    severity: P3
+    action:
+      kind: dependency.kind_fora_do_vocabulario
+budget:
+  max_debates: 1
+  max_rounds: 3
+expects_outcome: refused:gate_unresolved

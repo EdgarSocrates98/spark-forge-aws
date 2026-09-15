@@ -21,7 +21,16 @@ ROOT = Path(__file__).resolve().parents[1]
 # `proof_axes.yaml` (2026-09-12) e o QUARTO: a politica do Change Proof, que diz
 # qual comparador mede cada eixo de `action.moves` e para que lado ele melhora.
 # Ele nao declara regra; `tests/test_proof_policy.py` o cobra contra o catalogo.
-NAO_SAO_AREA = {"routing.yaml", "action_kinds.yaml", "governance.yaml", "proof_axes.yaml"}
+# `debate_gate.yaml` (2026-09-14) e o QUINTO: a politica do Debate ROI Gate (§11),
+# as severidades que sozinhas justificam debate. Ele nao declara regra;
+# `tests/test_agentic_executor_gate.py` o cobra.
+NAO_SAO_AREA = {
+    "routing.yaml",
+    "action_kinds.yaml",
+    "governance.yaml",
+    "proof_axes.yaml",
+    "debate_gate.yaml",
+}
 
 
 class TestCatalogDiscovery:

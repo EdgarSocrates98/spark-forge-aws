@@ -147,6 +147,32 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "sparkforge_tune",
         "outputSchema.oneOf[0].properties.refused.items.properties.reason.enum",
     ): "2026-09-14: onze recusas nomeadas das quatro propriedades novas (regra 20)",
+    ("sparkforge_arbitrate", "description"): (
+        "2026-09-14: Debate ROI Gate (§11) -- cada plano de debate traz `debate_gate`, e a "
+        "descricao antiga nao dizia o que o veredito significa"
+    ),
+    ("sparkforge_debate_start", "description"): (
+        "2026-09-14: Debate ROI Gate (§11) -- o `start` recusa o par cujo veredito nao e "
+        "`debater`, antes do budget"
+    ),
+    (
+        "sparkforge_debate_start",
+        "outputSchema.oneOf[1].properties.reason.enum",
+    ): "2026-09-14: tres recusas nomeadas do Debate ROI Gate (regra 20)",
+    (
+        "sparkforge_debate_next",
+        "outputSchema.oneOf[2].properties.reason.enum",
+    ): (
+        "2026-09-14: o enum de recusa do debate e UM so (`_DEBATE_REFUSAL_REASONS`), "
+        "e cresceu com as tres recusas do gate"
+    ),
+    (
+        "sparkforge_debate_submit",
+        "outputSchema.oneOf[1].properties.reason.enum",
+    ): (
+        "2026-09-14: o enum de recusa do debate e UM so (`_DEBATE_REFUSAL_REASONS`), "
+        "e cresceu com as tres recusas do gate"
+    ),
 }
 # Chamadas gravadas cujo CONTEUDO mudou porque o catalogo mudou, e nao o SDK.
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
@@ -343,7 +369,7 @@ class TestHandshakeLegado:
             )
             for t in ("stdio", "http")
         }
-        assert reescritas == {"stdio": 3, "http": 3}
+        assert reescritas == {"stdio": 8, "http": 8}
         # A chamada declarada: o texto serializado, alvo, direcao e os dois
         # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
         # que mudou sem registro.
