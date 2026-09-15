@@ -128,6 +128,10 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
         "2026-09-14: `headroom` opcional (folga declarada sobre o piso do overhead); "
         "sem ele a resposta e a mesma"
     ),
+    "sparkforge_resume": (
+        "2026-09-15: `journal` e `in_flight_source` na saida (checkpoint/resume/event "
+        "journal, §31 P0 item 7), so em `properties`, fora de `required`"
+    ),
 }
 # Trocas NAO aditivas aceitas, uma por (tool, caminho dentro da tool), cada uma com
 # motivo. Descricao so aceita texto por texto; enum so aceita CRESCER com os valores
@@ -361,7 +365,7 @@ class TestHandshakeLegado:
             )
             for t in ("stdio", "http")
         }
-        assert aditivas == {"stdio": 14, "http": 14}
+        assert aditivas == {"stdio": 16, "http": 16}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)

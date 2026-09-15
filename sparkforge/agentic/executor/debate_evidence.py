@@ -46,6 +46,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.case.store import CASE_DIR
+from sparkforge.durable import append_text_line, read_records
 
 # nome publico -> (modulo em `sparkforge.facts`, funcao). O nome e o do verbo
 # `sparkforge analyze <nome>` que le o mesmo artefato, para o agente reconhecer o
@@ -146,16 +147,7 @@ def extract_evidence(
 
 def read_evidence_facts(debate_dir: Path | str) -> list[dict[str, Any]]:
     """Os registros ja reextraidos neste debate, na ordem em que entraram."""
-    arquivo = Path(debate_dir) / FACTS_FILE
-    if not arquivo.is_file():
-        return []
-    registros: list[dict[str, Any]] = []
-    with arquivo.open("r", encoding="utf-8") as fh:
-        for linha in fh:
-            linha = linha.strip()
-            if linha:
-                registros.append(json.loads(linha))
-    return registros
+    return read_records(Path(debate_dir) / FACTS_FILE)
 
 
 def append_evidence_facts(
@@ -178,10 +170,8 @@ def append_evidence_facts(
     if not novos:
         return []
     arquivo = Path(debate_dir) / FACTS_FILE
-    arquivo.parent.mkdir(parents=True, exist_ok=True)
-    with arquivo.open("a", encoding="utf-8") as fh:
-        for registro in novos:
-            fh.write(json.dumps(registro, ensure_ascii=True, sort_keys=True) + "\n")
+    for registro in novos:
+        append_text_line(arquivo, json.dumps(registro, ensure_ascii=True, sort_keys=True))
     return [str(r["fact"]["id"]) for r in novos]
 
 

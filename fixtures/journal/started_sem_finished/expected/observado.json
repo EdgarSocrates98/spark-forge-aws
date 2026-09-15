@@ -1,0 +1,45 @@
+{
+  "estado": {
+    "broken_at": null,
+    "chain": "intact",
+    "last_seq": 5,
+    "open_calls": [
+      {
+        "at": null,
+        "port": "cli",
+        "seq": 5,
+        "tool": "sparkforge_arbitrate"
+      }
+    ],
+    "torn_tail": false
+  },
+  "handoff_em_voo": [
+    "- `sparkforge_arbitrate` (cli, seq 5) sem finished (caiu ou ainda roda)"
+  ],
+  "resume": {
+    "in_flight": "sparkforge_arbitrate (cli, seq 5) sem finished",
+    "in_flight_source": "journal",
+    "journal": {
+      "broken_at": null,
+      "chain": "intact",
+      "last_seq": 5,
+      "open_calls": [
+        {
+          "at": null,
+          "port": "cli",
+          "seq": 5,
+          "tool": "sparkforge_arbitrate"
+        }
+      ],
+      "torn_tail": false
+    }
+  },
+  "verify": {
+    "broken_at": null,
+    "events": 5,
+    "last_seq": 5,
+    "path": ".sparkforge/journal.jsonl",
+    "status": "intact",
+    "torn_tail": false
+  }
+}

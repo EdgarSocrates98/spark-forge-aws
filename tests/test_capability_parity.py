@@ -130,6 +130,15 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mesma capacidade que 'resume'; escreve markdown em disco, sem uso "
             "para um cliente MCP."
         ),
+        # `journal verify` e auditoria da cadeia do `.sparkforge/journal.jsonl`.
+        # O estado que o cliente MCP precisa (o que ficou sem `finished`, a
+        # cadeia intacta ou quebrada) ja chega pelo bloco `journal` de
+        # `sparkforge_resume`; uma tool so para conferir a cadeia nao cabia no
+        # recorte do §31 P0 item 7 (cortada por YAGNI no brainstorm).
+        "journal verify": (
+            "auditoria da cadeia do journal; o estado ja chega pelo bloco `journal` "
+            "de sparkforge_resume."
+        ),
         # CLI `validate` valida um ARQUIVO de findings (JSON no disco);
         # `sparkforge_validate_output` valida um finding inline -- mesma
         # `_core.validate_output` por baixo, granularidade de I/O diferente

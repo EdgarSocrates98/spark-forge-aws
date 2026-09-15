@@ -34,6 +34,30 @@ HANDOFF_SECTIONS = (
 
 _MAX_TOP_FINDINGS = 10
 
+JOURNAL_AUSENTE: dict[str, Any] = {
+    "last_seq": 0,
+    "open_calls": [],
+    "chain": "absent",
+    "broken_at": None,
+    "torn_tail": False,
+}
+
+
+def _em_voo(in_flight: str, journal: dict[str, Any]) -> tuple[str, str]:
+    """O texto de quem chama vence; sem ele, os `started` sem `finished`."""
+    if in_flight:
+        return in_flight, "caller"
+    abertos = journal.get("open_calls") or []
+    if abertos:
+        return (
+            "; ".join(
+                f"{c.get('tool')} ({c.get('port')}, seq {c.get('seq')}) sem finished"
+                for c in abertos
+            ),
+            "journal",
+        )
+    return "", "none"
+
 
 def _severity_rank(finding: dict[str, Any]) -> int:
     severity = finding.get("severity")
@@ -80,13 +104,20 @@ def resume(
     unresolved_count: int = 0,
     in_flight: str = "",
     root: Path | None = None,
+    journal: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Monta o payload de rehidratação: onde o case parou e o que vem a seguir.
 
     `root`, quando informado, faz `missing_artifacts` consultar o manifesto
     de `sparkforge.collect` em vez de confiar apenas na flag `present`
     gravada no case -- ver `_missing_artifacts`.
+
+    `journal` é o estado já lido (`sparkforge.journal.read.estado`): esta
+    função continua pura. Sem texto de quem chama, `in_flight` vem dos
+    `started` sem `finished`, e `in_flight_source` diz de onde veio.
     """
+    bloco_journal = dict(journal) if journal is not None else dict(JOURNAL_AUSENTE)
+    texto_em_voo, fonte_em_voo = _em_voo(in_flight, bloco_journal)
     ordered_findings = sorted(
         findings, key=lambda f: (_severity_rank(f), f.get("rule_id", ""))
     )
@@ -128,7 +159,9 @@ def resume(
         ],
         "missing_artifacts": missing_artifacts,
         "next_step": step,
-        "in_flight": in_flight,
+        "in_flight": texto_em_voo,
+        "in_flight_source": fonte_em_voo,
+        "journal": bloco_journal,
         "coverage": {
             "facts": facts_index.get("count", 0),
             "findings": findings_index.get("count", 0),
@@ -257,8 +290,21 @@ def _next_step_lines(payload: dict[str, Any]) -> list[str]:
 
 
 def _in_flight_lines(payload: dict[str, Any]) -> list[str]:
-    in_flight = payload.get("in_flight")
-    return [f"- {in_flight}"] if in_flight else []
+    journal = payload.get("journal") or {}
+    linhas: list[str] = []
+    if payload.get("in_flight_source") != "journal" and payload.get("in_flight"):
+        linhas.append(f"- {payload['in_flight']}")
+    for chamada in journal.get("open_calls") or []:
+        linhas.append(
+            f"- `{chamada.get('tool')}` ({chamada.get('port')}, seq {chamada.get('seq')}) "
+            f"sem finished (caiu ou ainda roda)"
+        )
+    if journal.get("chain") == "broken":
+        linhas.append(
+            f"- journal: cadeia quebrada no seq {journal.get('broken_at')} — "
+            f"confira com `sparkforge journal verify`"
+        )
+    return linhas
 
 
 def _coverage_lines(payload: dict[str, Any]) -> list[str]:

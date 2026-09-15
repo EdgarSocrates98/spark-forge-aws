@@ -54,7 +54,12 @@
       }
     ],
     "refused": [],
-    "skipped": []
+    "skipped": [
+      {
+        "path": ".sparkforge",
+        "reason": "DIRECTORY_IGNORED"
+      }
+    ]
   },
   "refused": [],
   "refused_by_reason": {},

@@ -1,0 +1,46 @@
+{
+  "estado": {
+    "broken_at": 2,
+    "chain": "broken",
+    "last_seq": 1,
+    "open_calls": [
+      {
+        "at": "2026-09-15T10:00:00Z",
+        "port": "cli",
+        "seq": 1,
+        "tool": "sparkforge_case_open"
+      }
+    ],
+    "torn_tail": false
+  },
+  "handoff_em_voo": [
+    "- `sparkforge_case_open` (cli, seq 1) sem finished (caiu ou ainda roda)",
+    "- journal: cadeia quebrada no seq 2 — confira com `sparkforge journal verify`"
+  ],
+  "resume": {
+    "in_flight": "sparkforge_case_open (cli, seq 1) sem finished",
+    "in_flight_source": "journal",
+    "journal": {
+      "broken_at": 2,
+      "chain": "broken",
+      "last_seq": 1,
+      "open_calls": [
+        {
+          "at": "2026-09-15T10:00:00Z",
+          "port": "cli",
+          "seq": 1,
+          "tool": "sparkforge_case_open"
+        }
+      ],
+      "torn_tail": false
+    }
+  },
+  "verify": {
+    "broken_at": 2,
+    "events": 1,
+    "last_seq": 1,
+    "path": ".sparkforge/journal.jsonl",
+    "status": "broken",
+    "torn_tail": false
+  }
+}

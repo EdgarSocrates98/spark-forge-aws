@@ -17,6 +17,8 @@ from typing import Any
 
 import yaml
 
+from sparkforge.durable import write_atomic
+
 SCHEMA_VERSION = 1
 CASE_DIR = ".sparkforge"
 CASE_FILE = "case.yaml"
@@ -99,13 +101,15 @@ def save_case(case: dict[str, Any], root: Path | str) -> Path:
 
     Chaves ordenadas e `default_flow_style=False`: o mesmo case produz sempre o
     mesmo texto, condição necessária para o arquivo ser committável e revisável.
+
+    Gravação atômica (`durable.write_atomic`): uma queda no meio deixa o case
+    anterior inteiro, nunca um YAML truncado que `load_case` recusaria.
     """
     path = case_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
     text = yaml.safe_dump(
         case, sort_keys=True, allow_unicode=True, default_flow_style=False
     )
-    path.write_text(text, encoding="utf-8")
+    write_atomic(path, text)
     return path
 
 

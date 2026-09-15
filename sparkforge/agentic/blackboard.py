@@ -41,6 +41,7 @@ from sparkforge.agentic.models import (
     Unknown,
 )
 from sparkforge.case.store import CASE_DIR
+from sparkforge.durable import append_text_line, read_records
 
 BLACKBOARD_DIR = "blackboard"
 
@@ -75,24 +76,17 @@ def init_blackboard(root: Path | str) -> Path:
 
 
 def _append_jsonl(path: Path, record: dict[str, Any]) -> None:
-    """Append um registro JSONL. Cria o arquivo se não existir."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    line = json.dumps(record, ensure_ascii=True, sort_keys=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(line + "\n")
+    """Append um registro JSONL sob trava (`durable.append_text_line`).
+
+    Cria o arquivo se não existir; a cauda cortada por uma queda anterior vai
+    para quarentena antes do append, e não vira linha corrompida no meio.
+    """
+    append_text_line(path, json.dumps(record, ensure_ascii=True, sort_keys=True))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    """Lê todos os registros de um arquivo JSONL."""
-    if not path.exists():
-        return []
-    records: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                records.append(json.loads(line))
-    return records
+    """Lê os registros; tolera só a última linha cortada por uma queda."""
+    return read_records(path)
 
 
 def _entity_file(root: Path | str, entity_type: str) -> Path:
