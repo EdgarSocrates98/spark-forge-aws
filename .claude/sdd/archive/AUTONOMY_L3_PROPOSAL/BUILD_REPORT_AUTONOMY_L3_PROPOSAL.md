@@ -11,7 +11,7 @@
 | **Author** | build-agent |
 | **DEFINE** | [DEFINE_AUTONOMY_L3_PROPOSAL.md](../features/DEFINE_AUTONOMY_L3_PROPOSAL.md) |
 | **DESIGN** | [DESIGN_AUTONOMY_L3_PROPOSAL.md](../features/DESIGN_AUTONOMY_L3_PROPOSAL.md) |
-| **Status** | ✅ Complete |
+| **Status** | ✅ Shipped |
 
 ---
 
