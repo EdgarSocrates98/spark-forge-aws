@@ -13,6 +13,15 @@
     "other_calls": 0,
     "tool_errors": 0,
     "tool_result_bytes": 31,
+    "tool_result_bytes_by_channel": {
+      "mcp": 31,
+      "bash": 0,
+      "other": 0
+    },
+    "tool_result_bytes_by_tool": {
+      "mcp__sparkforge__sparkforge_analyze_pyspark": 31,
+      "mcp__sparkforge__sparkforge_judge": 0
+    },
     "tokens": {
       "input": 30,
       "output": 60,
