@@ -17,7 +17,13 @@ convencao vestida de medida, o mesmo problema dos pesos de `assess_claim`.
     sobre a PRIMEIRA ocorrencia de cada verbo. Tool extra nao reprova; conta.
   * custo -- chamadas, bytes de resultado vistos no transcript e tokens do
     usage do host. Byte e token em campos separados, nunca somados (regra 22).
-    Sem usage, `tokens_unresolved` (regra 24).
+    Sem usage, `tokens_unresolved` (regra 24). Os bytes saem tambem POR ORIGEM
+    -- `channel` (`mcp`, `bash`, `other`) e nome de tool --, porque o total
+    sozinho nao diz quem os gastou: na medida de 2026-09-15 sobre 39 sessoes,
+    93% dos bytes cairam em `other` e a maior parte deles em `Read` de arquivo,
+    contra menos de 3% nas tools MCP do SparkForge. O `channel` vem do extrator;
+    a quebra por nome existe porque `other` mistura `Read` com shell que nao
+    virou verbo, e e essa diferenca que diz onde o byte foi gasto.
 
 Pergunta sem transcript, ou com transcript que nao e deste host, ou sem nenhuma
 mensagem de assistente, sai `ungraded` com a razao -- nunca `wrong`: medicao
@@ -37,6 +43,10 @@ from sparkforge.findings.models import Fact
 
 SCHEMA_VERSION = 1
 UNRESOLVED_ANSWER = "unresolved"
+# O vocabulario de `channel` do extrator (`canonical_verb`): `mcp` e tool do
+# servidor MCP, `bash` e verbo do SparkForge reconhecido numa linha de shell, e
+# `other` e todo o resto -- `Read`, `Grep`, `Glob` e as tools do proprio host.
+CHANNELS = ("mcp", "bash", "other")
 _TOKENS = (
     ("input", "input_tokens"),
     ("output", "output_tokens"),
@@ -102,12 +112,45 @@ def _tools_verdict(question: Question, calls: Sequence[Fact]) -> dict[str, Any]:
     }
 
 
+def _bytes_por_origem(calls: Sequence[Fact]) -> dict[str, int]:
+    """Bytes de resultado por `channel`, com as tres chaves sempre presentes.
+
+    Chave ausente e chave zerada diriam a mesma coisa para quem le o JSON e
+    coisas diferentes para quem soma varias execucoes; a forma fixa evita a
+    ambiguidade. `channel` desconhecido cai em `other`, que e onde o extrator
+    ja poe o que nao e verbo do SparkForge.
+    """
+    por_origem = dict.fromkeys(CHANNELS, 0)
+    for chamada in calls:
+        canal = chamada.attrs.get("channel")
+        chave = canal if canal in por_origem else "other"
+        por_origem[chave] += int(chamada.measures.get("result_bytes", 0))
+    return por_origem
+
+
+def _bytes_por_tool(calls: Sequence[Fact]) -> dict[str, int]:
+    """Bytes de resultado por NOME de tool, do maior para o menor.
+
+    `channel` responde "veio do SparkForge ou nao"; esta quebra responde "de
+    onde exatamente", porque `other` mistura `Read` de arquivo com shell que
+    nao virou verbo. Ordem por bytes, e por nome no empate, para que o JSON
+    seja estavel entre execucoes.
+    """
+    por_tool: dict[str, int] = {}
+    for chamada in calls:
+        nome = str(chamada.attrs.get("tool") or "unknown")
+        por_tool[nome] = por_tool.get(nome, 0) + int(chamada.measures.get("result_bytes", 0))
+    return dict(sorted(por_tool.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
 def _cost(calls: Sequence[Fact], usage: Sequence[Fact]) -> dict[str, Any]:
     custo: dict[str, Any] = {
         "tool_calls": len(calls),
         "other_calls": sum(1 for c in calls if c.attrs.get("channel") == "other"),
         "tool_errors": sum(1 for c in calls if c.attrs.get("is_error") is True),
         "tool_result_bytes": sum(int(c.measures.get("result_bytes", 0)) for c in calls),
+        "tool_result_bytes_by_channel": _bytes_por_origem(calls),
+        "tool_result_bytes_by_tool": _bytes_por_tool(calls),
     }
     if usage:
         medidas = usage[0].measures
@@ -144,6 +187,15 @@ def grade_question(question: Question, facts: Sequence[Fact] | None) -> dict[str
     }
 
 
+def _soma_por_tool(perguntas: list[dict[str, Any]]) -> dict[str, int]:
+    """Soma a quebra por tool das perguntas pontuadas, na mesma ordem estavel."""
+    total: dict[str, int] = {}
+    for pergunta in perguntas:
+        for nome, bytes_ in pergunta["cost"]["tool_result_bytes_by_tool"].items():
+            total[nome] = total.get(nome, 0) + bytes_
+    return dict(sorted(total.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
 def _spread(valores: list[int]) -> dict[str, int] | None:
     if not valores:
         return None
@@ -173,6 +225,17 @@ def _totals(suite: Suite, perguntas: list[dict[str, Any]]) -> dict[str, Any]:
         "cost": {
             "tool_calls": _spread([p["cost"]["tool_calls"] for p in pontuadas]),
             "tool_result_bytes": _spread([p["cost"]["tool_result_bytes"] for p in pontuadas]),
+            # SOMA, e nao `median_low` como as demais: a pergunta aqui e de onde
+            # vieram os bytes da execucao inteira, e mediana de cada origem nao
+            # se compara com mediana das outras nem fecha com o total.
+            "tool_result_bytes_by_channel": {
+                canal: sum(p["cost"]["tool_result_bytes_by_channel"][canal] for p in pontuadas)
+                for canal in CHANNELS
+            },
+            # Por TOOL, e nao so por canal, porque `other` mistura `Read` com
+            # shell que nao virou verbo do SparkForge -- e a diferenca entre os
+            # dois e a que diz onde o byte foi gasto.
+            "tool_result_bytes_by_tool": _soma_por_tool(pontuadas),
             "output_tokens": _spread([p["cost"]["tokens"]["output"] for p in com_tokens]),
         },
     }

@@ -96,7 +96,9 @@ python -m sparkforge.evals compare --suite fase0 --baseline <nome> --candidate <
 - resposta: `correct`, `wrong`, `answer_absent` ou `over_abstention`;
 - abstenção: `abstained` ou `false_certainty`;
 - tools: exigidas e ordem;
-- custo: chamadas, bytes de resultado vistos no transcript e tokens do usage do host.
+- custo: chamadas, bytes de resultado vistos no transcript e tokens do usage do
+  host. Os bytes saem também **por origem**: por `channel` (`mcp`, `bash`,
+  `other`) e por nome de tool, porque o total agregado não diz quem os gastou.
 
 **O que ele não mede:**
 - não existe nota composta;
@@ -223,6 +225,26 @@ Por pergunta (`compare`), a resposta muda em duas: `fase0-05` `pass->mixed` e
 `fase0-07` `mixed->pass`. Em `tools_ok`: `fase0-04`, `fase0-06` e `fase0-07`
 `pass->mixed`; `abst-02` `mixed->fail`; `fase0-10` `fail->mixed`. `abst-03`
 continua `false_certainty` em 3/3 nos dois lados.
+
+**De onde vieram os bytes.** O scorecard quebra os bytes de resultado por
+origem desde 2026-09-15, e a quebra desta rodada é o motivo de ele existir —
+somados os 1 454 804 bytes das 39 sessões:
+
+| Origem | Bytes | Fatia |
+|---|---:|---:|
+| `Read` de arquivo | 1 079 134 | 74,2% |
+| `Bash` | 286 483 | 19,7% |
+| `Grep` | 30 060 | 2,1% |
+| `Glob` | 17 027 | 1,2% |
+| `sparkforge_judge` (MCP) | 14 572 | 1,0% |
+| `sparkforge_rules_lookup` (MCP) | 11 443 | 0,8% |
+
+Por `channel`: `other` 93,4%, `bash` 4,2% (verbo do SparkForge por linha de
+shell), `mcp` 2,4%. O agente gasta quase todo o orçamento lendo arquivo, não
+chamando tool — e **ler é mais caro**: `rules/catalog/pyspark.yaml` tem 33 888
+bytes, e as chamadas de `rules_lookup` das 39 sessões somadas deram 11 443.
+Isso é uma medida da suíte `fase0` com Haiku, não uma lei; o que ela habilita é
+comparar a mesma quebra depois de cada mudança de protocolo ou de tool.
 
 **O que o número NÃO diz, e por que a pergunta continua aberta.** Entre os dois
 lados mudaram **três** coisas ao mesmo tempo, e nenhuma delas é isolável daqui:

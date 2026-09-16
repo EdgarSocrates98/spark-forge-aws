@@ -13,6 +13,14 @@
     "other_calls": 0,
     "tool_errors": 0,
     "tool_result_bytes": 38,
+    "tool_result_bytes_by_channel": {
+      "mcp": 0,
+      "bash": 38,
+      "other": 0
+    },
+    "tool_result_bytes_by_tool": {
+      "Bash": 38
+    },
     "tokens": null,
     "tokens_unresolved": true
   },

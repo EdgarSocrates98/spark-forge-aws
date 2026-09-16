@@ -13,6 +13,14 @@
     "other_calls": 0,
     "tool_errors": 0,
     "tool_result_bytes": 46,
+    "tool_result_bytes_by_channel": {
+      "mcp": 46,
+      "bash": 0,
+      "other": 0
+    },
+    "tool_result_bytes_by_tool": {
+      "mcp__sparkforge__sparkforge_finops": 46
+    },
     "tokens": {
       "input": 20,
       "output": 40,
