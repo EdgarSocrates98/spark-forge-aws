@@ -1970,6 +1970,27 @@ def build_parser() -> argparse.ArgumentParser:
     lookup_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     lookup_p.add_argument("--cursor")
     lookup_p.add_argument(
+        "--severity",
+        choices=list(_core.SEVERITIES),
+        help="Filtra por severity_default.",
+    )
+    lookup_p.add_argument(
+        "--runtime",
+        help=(
+            "Filtra pelas regras cujo runtime_scope tem esta CHAVE (glue, spark, ...). "
+            "Nao compara versao: o escopo vem na resposta para voce ler."
+        ),
+    )
+    lookup_p.add_argument(
+        "--index",
+        action="store_true",
+        help=(
+            "Forma compacta em rules_index (id, category, title, severity_default, "
+            "runtime_scope), com rules vazia. Para procurar regra por atributo sem "
+            "baixar o catalogo inteiro."
+        ),
+    )
+    lookup_p.add_argument(
         "--source-freshness",
         action="store_true",
         help=(
@@ -3719,6 +3740,9 @@ def _cmd_rules_lookup(args: argparse.Namespace) -> int:
         cursor=args.cursor,
         source_freshness=args.source_freshness,
         as_of=args.as_of,
+        severity=args.severity,
+        runtime=args.runtime,
+        index=args.index,
     )
     _print(payload)
     return 0

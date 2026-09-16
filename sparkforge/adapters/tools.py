@@ -2808,11 +2808,31 @@ _RULES_LOOKUP_SCHEMA: dict[str, Any] = {
                 "category": {"type": ["string", "null"]},
                 "limit": {"type": ["integer", "null"]},
                 "cursor": {"type": ["string", "null"]},
+                "severity": {"type": ["string", "null"]},
+                "runtime": {"type": ["string", "null"]},
+                "index": {"type": ["boolean", "null"]},
             },
         },
         "by_category": {"type": "object", "additionalProperties": {"type": "integer"}},
         **_FRESHNESS_OUTPUT,
         "rules": {"type": "array", "items": _RULE_ITEM},
+        # Forma compacta, so com `index`. Chave PROPRIA, e nao `rules` encolhida:
+        # cada item de `rules` deve as nove chaves de `_RULE_ITEM`, e uma
+        # projecao com o mesmo nome mentiria sobre o shape para quem valida.
+        "rules_index": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "category", "title", "runtime_scope"],
+                "properties": {
+                    "id": {"type": "string"},
+                    "category": {"type": "string"},
+                    "title": {"type": "string"},
+                    "severity_default": {"type": ["string", "null"]},
+                    "runtime_scope": {"type": "object"},
+                },
+            },
+        },
     },
 }
 
@@ -7591,6 +7611,27 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "category": {"type": "string"},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "severity": {
+                    "type": "string",
+                    "enum": ["P0", "P1", "P2", "P3", "P4"],
+                    "description": "Filtra por `severity_default`. Valor fora da lista e recusado.",
+                },
+                "runtime": {
+                    "type": "string",
+                    "description": (
+                        "Filtra pelas regras cujo `runtime_scope` tem esta CHAVE (glue, spark, "
+                        "...). Nao compara versao: a comparacao e do motor de regras, e a "
+                        "resposta traz o escopo para voce ler."
+                    ),
+                },
+                "index": {
+                    "type": "boolean",
+                    "description": (
+                        "Devolve a forma compacta em `rules_index` (id, category, title, "
+                        "severity_default, runtime_scope) e deixa `rules` vazia. Para procurar "
+                        "regra por atributo sem baixar o catalogo inteiro."
+                    ),
+                },
                 **_FRESHNESS_INPUT,
             },
         },
@@ -9400,6 +9441,9 @@ def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
         cursor=args.get("cursor"),
         source_freshness=args.get("source_freshness", False),
         as_of=args.get("as_of"),
+        severity=args.get("severity"),
+        runtime=args.get("runtime"),
+        index=args.get("index", False),
     )
 
 

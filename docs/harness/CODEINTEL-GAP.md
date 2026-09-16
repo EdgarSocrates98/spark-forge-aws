@@ -212,11 +212,11 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **73
 |---|---|---|---|---|---|
 | `iter_source_files` | 2 | 466 | 762440 | 11493 | 102 |
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
-| `project_items` | 1 | 193 | 350723 | 2201 | 52 |
-| `tool_class` | 1 | 187 | 375421 | 3529 | 73 |
-| `authorize` | 2 | 376 | 473079 | 4426 | 49 |
+| `project_items` | 1 | 193 | 353641 | 2201 | 52 |
+| `tool_class` | 1 | 187 | 378339 | 3529 | 73 |
+| `authorize` | 2 | 376 | 475191 | 4426 | 49 |
 
-Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2160394**;
+Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2168342**;
 a saída do `grep` pelo nome, **24371**; a saída do `grep` pela definição, **361**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1279.9 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1284.6 vezes.** Contra a saída de um `grep`
 pelo nome, **14.4** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.7** vezes o que aquele `grep` custaria.
 
@@ -245,8 +245,8 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **50** símbolos em **12619** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **227106** bytes. O `grep` pela definição contendo o fragmento continua menor
-  (**11355** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+  no mesmo corpus, tem **227223** bytes. O `grep` pela definição contendo o fragmento continua menor
+  (**11356** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.

@@ -4981,6 +4981,17 @@ def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
     return _resolve_knowledge_refs(citations, root, {})
 
 
+# As severidades que o catalogo declara, na ordem em que o `_RULE_ITEM` do
+# `tools.py` as enumera. Existe aqui para que `severity` invalido vire recusa
+# NOMEADA em vez de lista vazia -- ver a docstring de `rules_lookup`.
+SEVERITIES = ("P0", "P1", "P2", "P3", "P4")
+
+# O que o `index` de `rules_lookup` devolve por regra. `title` entra porque sem
+# ele o indice nao decide nada: quem pergunta "qual regra" precisa reconhecer a
+# regra pelo nome, e cairia numa segunda chamada por id.
+INDEX_FIELDS = ("id", "category", "title", "severity_default", "runtime_scope")
+
+
 def rules_lookup(
     id: list[str] | None = None,  # noqa: A002 -- nome do parametro espelha o flag --id
     category: str | None = None,
@@ -4988,10 +4999,38 @@ def rules_lookup(
     cursor: str | None = None,
     source_freshness: bool = False,
     as_of: str | None = None,
+    severity: str | None = None,
+    runtime: str | None = None,
+    index: bool = False,
 ) -> dict[str, Any]:
     """Regras do catalogo. Sem `source_freshness`, a resposta e a mesma para o
     mesmo catalogo, qualquer que seja o dia; com ela, entra o estado das fontes
-    citadas na pagina, que depende do lock e de `as_of`."""
+    citadas na pagina, que depende do lock e de `as_of`.
+
+    `severity`, `runtime` e `index` existem por uma medida, nao por simetria.
+    Em 2026-09-15, 74% dos bytes que um agente consumiu numa suite de eval
+    vieram de `Read` de arquivo, e o catalogo era o arquivo mais lido: perguntar
+    "qual regra tem escopo de Glue 5.1" so tinha duas saidas, paginar as 191
+    regras inteiras (607 301 bytes) ou abrir o YAML (33 888). Com filtro e
+    `index`, a mesma pergunta cabe em cerca de 2 KB. O contrato:
+
+      * `severity` -- igualdade com `severity_default`. Valor fora de
+        `SEVERITIES` e recusa nomeada, nao filtro vazio: lista vazia leria como
+        "nao ha regra assim", que e outra afirmacao.
+      * `runtime` -- a CHAVE de `runtime_scope` (`glue`, `spark`, ...), nunca
+        uma comparacao de versao. Quem compara versao e o motor de regras; um
+        filtro que entendesse `>=5.1` reimplementaria isso num segundo lugar.
+        Chave que nenhuma regra usa e recusa que nomeia as existentes.
+      * `index` -- devolve a forma compacta em `rules_index` e deixa `rules`
+        vazia. Encolher os itens de `rules` seria mentir sobre o shape: o
+        `outputSchema` exige `id`, `when`, `sources` e mais seis campos em cada
+        item, e uma projecao os removeria mantendo o nome.
+    """
+    if severity is not None and severity not in SEVERITIES:
+        raise AdapterError(
+            f"severity {severity!r} nao existe; use uma de {', '.join(SEVERITIES)}",
+            exit_code=2,
+        )
     if source_freshness:
         _as_of(as_of)
     try:
@@ -5005,6 +5044,17 @@ def rules_lookup(
         filtered = [r for r in filtered if r["id"] in wanted_ids]
     if category:
         filtered = [r for r in filtered if r.get("category") == category]
+    if severity:
+        filtered = [r for r in filtered if r.get("severity_default") == severity]
+    if runtime:
+        chaves = sorted({k for r in rules for k in (r.get("runtime_scope") or {})})
+        if runtime not in chaves:
+            raise AdapterError(
+                f"runtime {runtime!r} nao aparece em runtime_scope nenhum; "
+                f"as chaves do catalogo sao {', '.join(chaves)}",
+                exit_code=2,
+            )
+        filtered = [r for r in filtered if runtime in (r.get("runtime_scope") or {})]
 
     by_category = _count_by(filtered, lambda r: r.get("category", ""))
 
@@ -5027,6 +5077,9 @@ def rules_lookup(
         )
         clean.append(entry)
     page, next_cursor = paginate_items(clean, limit, cursor)
+    indice = (
+        [{campo: regra.get(campo) for campo in INDEX_FIELDS} for regra in page] if index else []
+    )
 
     return {
         "total_count": len(filtered),
@@ -5037,9 +5090,13 @@ def rules_lookup(
             "category": category,
             "limit": limit,
             "cursor": cursor,
+            "severity": severity,
+            "runtime": runtime,
+            "index": index,
         },
         "by_category": by_category,
-        "rules": page,
+        "rules": [] if index else page,
+        "rules_index": indice,
         **(source_freshness_de(page, as_of) if source_freshness else {}),
     }
 

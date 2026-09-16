@@ -613,6 +613,34 @@ class TestRuntimeAndRules:
         _, output = run(["rules", "lookup", "--category", "athena"], capsys)
         assert json.loads(output)["total_count"] == 5
 
+    def test_rules_lookup_index_troca_a_regra_inteira_pela_forma_compacta(self, capsys):
+        """`--index` existe porque procurar regra por atributo custava o catalogo
+        inteiro (607 301 bytes em 2026-09-15) ou um `Read` do YAML -- e era o YAML
+        que o agente lia. A forma compacta responde a mesma pergunta."""
+        _, output = run(["rules", "lookup", "--index", "--runtime", "glue"], capsys)
+        payload = json.loads(output)
+        assert payload["rules"] == []
+        assert payload["rules_index"], "o indice nao pode vir vazio com regras casando"
+        entrada = payload["rules_index"][0]
+        assert set(entrada) == {"id", "category", "title", "severity_default", "runtime_scope"}
+        assert all("glue" in r["runtime_scope"] for r in payload["rules_index"])
+        assert len(json.dumps(payload)) < len(
+            json.dumps(json.loads(run(["rules", "lookup", "--runtime", "glue"], capsys)[1]))
+        )
+
+    def test_rules_lookup_by_severity(self, capsys):
+        _, output = run(["rules", "lookup", "--severity", "P0", "--index"], capsys)
+        payload = json.loads(output)
+        assert payload["rules_index"]
+        assert {r["severity_default"] for r in payload["rules_index"]} == {"P0"}
+
+    def test_rules_lookup_recusa_runtime_que_nenhuma_regra_usa(self, capsys):
+        """Recusa NOMEADA em vez de lista vazia: vazio leria como "nao ha regra
+        assim", que e outra afirmacao (regra 20)."""
+        codigo = main(["rules", "lookup", "--runtime", "databricks"])
+        assert codigo == 2
+        assert "nao aparece em runtime_scope" in capsys.readouterr().err
+
     def test_validate_rejects_unbacked_gain(self, tmp_path, capsys):
         payload = {
             "rule_id": "SF-PY-005", "schema_version": 1, "title": "t", "severity": "P0",
