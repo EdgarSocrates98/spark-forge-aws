@@ -39,8 +39,16 @@ US$ 0,10 antes de a primeira tool responder. Por isso os defaults sao
 `--strict-mcp-config` e `--setting-sources project`, os dois gravados em
 `run.json`, porque mudam o que o agente viu.
 
+Superficie de tools (`--surface`), acrescentada em 2026-09-15 para medir se o
+TAMANHO da superficie muda o comportamento do agente. `full` e o servidor MCP
+inteiro. `suite` nega, por `--disallowedTools`, toda tool do registro que o
+gabarito da suite nao exige -- a lista sai de `required_tools` contra
+`sparkforge.adapters.tools.TOOLS`, nunca do argv. Os dois bracos gravam em
+`run.json` quantas tools MCP o agente pode ver.
+
 Uso:
     python scripts/run_agentic_eval.py --repeat 3 --model haiku
+    python scripts/run_agentic_eval.py --repeat 3 --model haiku --surface suite
     python scripts/run_agentic_eval.py --dry-run    # nao gasta
 """
 from __future__ import annotations
@@ -57,6 +65,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sparkforge.adapters.tools import TOOLS  # noqa: E402
 from sparkforge.evals.cli import SCORECARD, eval_grade  # noqa: E402
 from sparkforge.evals.suite import QUESTION_ID, Question, Suite, load_suite  # noqa: E402
 
@@ -90,6 +99,8 @@ ALLOWED_TOOLS = ",".join(
         "Glob",
     )
 )
+SUPERFICIES = ("full", "suite")
+MCP_PREFIX = "mcp__sparkforge__"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -111,6 +122,12 @@ def _parser() -> argparse.ArgumentParser:
         "--no-strict-mcp",
         action="store_true",
         help="Nao passa --strict-mcp-config (o agente vera os MCPs globais do operador).",
+    )
+    p.add_argument(
+        "--surface",
+        choices=SUPERFICIES,
+        default="full",
+        help="full: todas as tools MCP. suite: so as que o gabarito exige.",
     )
     p.add_argument("--dry-run", action="store_true", help="Mostra os comandos e sai.")
     return p
@@ -140,6 +157,28 @@ def _prompt(suite: Suite, question: Question) -> str:
     return f"{question.question}\n\n{suite.answer_protocol}"
 
 
+def _negadas(suite: Suite, superficie: str) -> list[str]:
+    """Tools MCP negadas ao agente no braco `suite`; nenhuma no `full`.
+
+    A lista e a MESMA para toda pergunta: a uniao de `required_tools` da suite,
+    alternativas incluidas, e nao as tools da propria pergunta -- entregar so a
+    tool certa mediria leitura de gabarito, nao escolha. Verbo exigido que o
+    registro nao conhece derruba a execucao, porque um braco que negasse a tool
+    certa mediria outra coisa.
+    """
+    if superficie == "full":
+        return []
+    verbos: set[str] = set()
+    for pergunta in suite.questions:
+        for item in pergunta.required_tools:
+            verbos.update((item,) if isinstance(item, str) else item)
+    exigidas = {f"sparkforge_{verbo}" for verbo in verbos}
+    desconhecidas = sorted(exigidas - set(TOOLS))
+    if desconhecidas:
+        raise SystemExit(f"verbo exigido pela suite sem tool no registro: {desconhecidas}")
+    return [MCP_PREFIX + nome for nome in sorted(set(TOOLS) - exigidas)]
+
+
 def _command(
     claude: str,
     args: argparse.Namespace,
@@ -161,6 +200,9 @@ def _command(
         "--allowedTools",
         ALLOWED_TOOLS,
     ]
+    negadas = _negadas(suite, args.surface)
+    if negadas:
+        comando += ["--disallowedTools", ",".join(negadas)]
     if not args.no_strict_mcp:
         comando.append("--strict-mcp-config")
     if args.model:
@@ -294,7 +336,8 @@ def main(argv: list[str] | None = None) -> int:
             print(" ".join(_command(claude, args, suite, pergunta, "<uuid>")[:-1]) + " '<prompt>'")
         print(
             f"{len(perguntas)} pergunta(s) x {args.repeat} execucao(oes) em {OUT_BASE}; "
-            "nada foi executado."
+            f"superficie {args.surface}: {len(TOOLS) - len(_negadas(suite, args.surface))} "
+            f"de {len(TOOLS)} tools MCP visiveis; nada foi executado."
         )
         return 0
 
@@ -320,6 +363,11 @@ def main(argv: list[str] | None = None) -> int:
                     "claude_version": versao,
                     "argv_template": _command(claude, args, suite, perguntas[0], "<uuid>")[:-1],
                     "started_utc": carimbo,
+                    "surface": {
+                        "arm": args.surface,
+                        "mcp_tools_registered": len(TOOLS),
+                        "mcp_tools_disallowed": len(_negadas(suite, args.surface)),
+                    },
                     "workspace": {
                         "path": str(workspace),
                         "dirs": list(WORKSPACE_DIRS),

@@ -238,8 +238,48 @@ baseline foi de 3 a 6 entre as suas três. A leitura honesta é a mesma do
 primeiro baseline: o Haiku acerta a resposta e na maior parte das vezes não
 passa pelas tools que a suíte exige, com 86 ou com 103 tools. Medir o efeito da
 superfície **sozinha** exige um segundo braço na MESMA rodada, com as tools que a
-suíte não usa fora do contexto do agente. O runner ainda não tem esse braço.
-Regra 30: não há afirmação de ganho nem de perda.
+suíte não usa fora do contexto do agente. Esse braço foi rodado no mesmo dia —
+ver a seção seguinte. Regra 30: não há afirmação de ganho nem de perda.
+
+### Braço de superfície reduzida — 9 de 103 tools, mesmo dia e mesmo host
+
+`evals/agentic/fase0/baselines/2026-09-15-haiku-4-5-surface-suite/`
+(`r1.json`…`r3.json`). `scripts/run_agentic_eval.py --surface suite` passa
+`--disallowedTools` com toda tool MCP do registro fora da união dos
+`required_tools` da suíte: o agente vê 9 (`analyze_event_log`, `analyze_plan`,
+`analyze_pyspark`, `benchmark`, `finops`, `judge`, `release_describe`,
+`rules_lookup`, `runtime_detect`), a mesma lista em toda pergunta. Mesmo host
+(Claude Code 2.1.273), mesmas instruções e mesma suíte do braço de 103 tools da
+seção anterior: **só a quantidade de tools muda**. Custo do host: **US$ 6,38**
+pelas 39 sessões.
+
+| Coluna (soma das 3 execuções) | 103 tools | 9 tools |
+|---|---|---|
+| Resposta `correct` (30 com valor) | 29 | 27 |
+| `tools_ok` (39) | 9 | 10 |
+| `abstained` (9) / `false_certainty` | 6 / 3 | 6 / 3 |
+| Chamadas de `ToolSearch` (sessões) | 110 (39/39) | 95 (39/39) |
+| Chamadas a tool MCP do SparkForge | 62 | 20 |
+| `cache_creation` por sessão, mediana | 22 249 | 22 931 |
+
+**O host difere as tools MCP nos dois braços, e isso muda o que "superfície"
+custa.** No transcript, o modelo recebe só os NOMES das tools (anexo
+`deferred_tools_delta`: 10 110 caracteres com 103 tools, 1 456 com 9) e carrega
+o schema de uma tool por `ToolSearch` quando decide usá-la. Os 533 592 bytes de
+`docs/surface.lock.json` medem as definições, e não o que entra no contexto
+deste host. Por isso cortar 94 tools quase não moveu `cache_creation`. O baseline
+de 2026-09-11 (Claude Code 2.1.268) já diferia do mesmo jeito.
+
+**O que o número diz.** Com N = 3, reduzir a superfície para 9 tools não
+aumentou o uso das tools exigidas: `tools_ok` de 9 para 10, dentro da variação
+que cada braço tem sozinho. Em todas as 78 sessões o agente chamou `ToolSearch`
+e, na maior parte, respondeu lendo arquivo. Esta medida não sustenta que as 103
+tools sejam a causa de o agente pular as tools.
+
+**O que ele não diz.** Não diz que a superfície é irrelevante em outro host,
+outro modelo ou numa suíte em que ler YAML não baste. As chamadas MCP de 62 para
+20 e as respostas de 29 para 27 também cabem em N = 3 e não têm explicação
+medida aqui. Regra 30: não há afirmação de ganho nem de perda.
 
 ## Suíte do executor de debate — `evals/agentic/debate/` (2026-09-11)
 
