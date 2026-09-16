@@ -16,7 +16,10 @@ Consulta o catalogo de regras determinístico por id ou categoria, devolvendo th
 | `category` | string | não |  |
 | `cursor` | string | não |  |
 | `id` | array de string | não |  |
+| `index` | boolean | não | Devolve a forma compacta em `rules_index` (id, category, title, severity_default, runtime_scope) e deixa `rules` vazia. Para procurar regra por atributo sem baixar o catalogo inteiro. |
 | `limit` | integer | não |  |
+| `runtime` | string | não | Filtra pelas regras cujo `runtime_scope` tem esta CHAVE (glue, spark, ...). Nao compara versao: a comparacao e do motor de regras, e a resposta traz o escopo para voce ler. |
+| `severity` | string: `P0`, `P1`, `P2`, `P3`, `P4` | não | Filtra por `severity_default`. Valor fora da lista e recusado. |
 | `source_freshness` | boolean | não | Acrescenta `source_freshness` (estado de cada fonte citada: fixed, unverified, stale, aging, fresh ou unresolved, com o motivo e as datas) e `freshness_policy` (limiar declarado, `as_of` e contagem por estado). Calculado sobre knowledge/sources.lock.json: depende do lock e do dia. stale = a fonte mudou depois da data em que a regra a validou. |
 
 ## Na CLI

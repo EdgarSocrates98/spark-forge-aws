@@ -186,7 +186,9 @@ CHAMADAS_ALTERADAS_DEPOIS_DO_GOLDEN = {
     "sucesso_verbo_lookup": (
         "2026-09-14: a SF-TIMEOUT-002 passou a mirar `spark.network.timeout` com "
         "`direction: increase`, e o `proposed_change` cita o valor que o `tune` deriva "
-        "(frente 2b); o resto da regra e da resposta nao mudou"
+        "(frente 2b); o resto da regra e da resposta nao mudou. "
+        "2026-09-15: `rules_index` entrou na saida, VAZIO sem `index` -- a chamada "
+        "gravada nao pede a forma compacta, entao o conteudo dela continua o mesmo"
     ),
 }
 _CAMPOS_DA_REGRA_REESCRITOS = (("action", "target"), ("action", "direction"), ("proposed_change",))
@@ -234,6 +236,8 @@ def _fora_da_allowlist(
 _CAMINHO_DA_CHAMADA_DECLARADA = re.compile(
     r"^\$\.calls\.(?P<chave>[A-Za-z0-9_]+)\.result\."
     r"(?:content\[0\]\.text"
+    r"|structuredContent\.rules_index"
+    r"|structuredContent\.filters_applied\.(?:severity|runtime|index)"
     r"|structuredContent\.rules\[\d+\]\.(?:action\.target|action\.direction|proposed_change\[\d+\]))$"
 )
 
@@ -270,6 +274,25 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
     """
     copia = json.loads(json.dumps(resultado))
 
+    def sem_busca_nao_pedida(payload: dict[str, Any]) -> dict[str, Any]:
+        """Tira o que a busca de 2026-09-15 acrescentou QUANDO ELA NAO FOI PEDIDA.
+
+        `severity`, `runtime` e `index` entraram em `filters_applied`, e
+        `rules_index` na saida. Esta chamada gravada nao usa nenhum dos tres,
+        entao os filtros vem nulos, `index` vem `false` e o indice vem `[]`.
+        So esses valores sao tirados: filtro preenchido ou indice com conteudo
+        continua derrubando a comparacao byte a byte, que e o que ela existe
+        para pegar.
+        """
+        if payload.get("rules_index") == []:
+            payload.pop("rules_index")
+        filtros = payload.get("filters_applied")
+        if isinstance(filtros, dict):
+            for chave, nao_pedido in (("severity", None), ("runtime", None), ("index", False)):
+                if filtros.get(chave, nao_pedido) == nao_pedido:
+                    filtros.pop(chave, None)
+        return payload
+
     def neutraliza(regra: dict[str, Any]) -> None:
         for caminho in _CAMPOS_DA_REGRA_REESCRITOS:
             alvo = regra
@@ -282,7 +305,8 @@ def _neutro(resultado: dict[str, Any]) -> dict[str, Any]:
     texto = json.loads(copia["content"][0]["text"])
     for regra in texto["rules"]:
         neutraliza(regra)
-    copia["content"][0]["text"] = texto
+    copia["structuredContent"] = sem_busca_nao_pedida(copia["structuredContent"])
+    copia["content"][0]["text"] = sem_busca_nao_pedida(texto)
     return copia
 
 
@@ -365,7 +389,10 @@ class TestHandshakeLegado:
             )
             for t in ("stdio", "http")
         }
-        assert aditivas == {"stdio": 16, "http": 16}
+        # 16 -> 23 em 2026-09-15: `sparkforge_rules_lookup` ganhou `severity`,
+        # `runtime` e `index` na entrada, os tres em `filters_applied` na saida, e
+        # `rules_index`. Sete chaves novas, nenhuma removida ou alterada.
+        assert aditivas == {"stdio": 23, "http": 23}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
@@ -377,7 +404,11 @@ class TestHandshakeLegado:
         # A chamada declarada: o texto serializado, alvo, direcao e os dois
         # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
         # que mudou sem registro.
-        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 5
+        # 5 -> 9 em 2026-09-15: `rules_index` mais as tres chaves que a busca
+        # acrescentou em `filters_applied` (`severity`, `runtime`, `index`).
+        # A chamada gravada nao pede nenhuma delas: os filtros vem nulos, o
+        # indice vazio, e o conteudo da regra continua byte a byte.
+        assert sum(_chamada_declarada(c) for c, _, _ in difs) == 9
 
     def test_toda_chamada_bate_byte_a_byte(self, legado, golden):
         for chave, esperado in golden["calls"].items():
