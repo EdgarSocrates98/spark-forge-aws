@@ -303,6 +303,44 @@ outro modelo ou numa suíte em que ler YAML não baste. As chamadas MCP de 62 pa
 20 e as respostas de 29 para 27 também cabem em N = 3 e não têm explicação
 medida aqui. Regra 30: não há afirmação de ganho nem de perda.
 
+### Braço do caminho barato — depois de `rules_lookup` ganhar busca (2026-09-16)
+
+`evals/agentic/fase0/baselines/2026-09-16-haiku-4-5-lookup-busca/`
+(`r1.json`…`r3.json`). Este braço pergunta outra coisa: **o agente pega o
+caminho barato quando ele passa a existir?** Depois do #80, `rules_lookup`
+aceita `--severity`, `--runtime` e `--index`, e a regra 4 do
+`AGENT_PROTOCOL.md` recusa `Read` em `rules/catalog/*.yaml`. Mesma suíte, mesmo
+modelo e mesmo host (Claude Code 2.1.273) do braço de 103 tools: as duas
+mudanças são a única variável. Custo do host: **US$ 6,75** pelas 39 sessões.
+
+| Coluna (soma das 3 execuções) | antes (09-15) | depois (09-16) |
+|---|---|---|
+| Resposta `correct` (30 com valor) | 29 | 28 |
+| `tools_ok` (39) | 9 | 7 |
+| `abstained` (9) / `false_certainty` | 6 / 3 | 6 / 3 |
+| Fatia de `Read` nos bytes | 74,2% | 72,3% |
+| Fatia das tools MCP do SparkForge | 2,4% | 2,1% |
+| Chamadas de `rules_lookup` | 5 | 4 |
+| Leituras do catálogo | 24 (610 262 bytes) | 29 (438 040) |
+
+As opções novas foram usadas **uma vez cada**: uma chamada com `--index`, uma
+com `--runtime`.
+
+**A medida explica a si mesma, e esse é o achado que fica.** Em **0 de 39
+sessões, nos DOIS braços, o agente abriu o `AGENT_PROTOCOL.md`.** Nada injeta
+esse arquivo: ele é um arquivo que o agente precisa escolher ler, e nenhuma
+sessão escolheu. Então a metade de protocolo do #80 não teve como produzir
+efeito nenhum — o que este braço exercitou de fato foi a tool, que o agente
+usou uma vez.
+
+**Regra só vale onde o agente olha.** As superfícies que chegam ao modelo sem
+ser pedidas são as instruções que o host injeta (`CLAUDE.md`, `AGENTS.md`) e a
+descrição da tool, que o `ToolSearch` carrega quando o agente vai usá-la. É lá
+que a recusa precisa morar, e isso é outra mudança, com medição própria.
+
+Regra 30: não há afirmação de ganho nem de perda. Com N = 3, as diferenças
+(29 → 28, 9 → 7) cabem na variação que cada braço mostra sozinho.
+
 ## Suíte do executor de debate — `evals/agentic/debate/` (2026-09-11)
 
 A suíte tem três casos sobre o mesmo par de regras, `SF-GRAPH-005` ×
