@@ -219,6 +219,7 @@ A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
 | "Desenhar ou revisar orquestração de pipeline" | [`sf-airflow-specialist`](referencia/agents/sf-airflow-specialist.md), [`sf-step-functions-specialist`](referencia/agents/sf-step-functions-specialist.md) | [`design-airflow-pipelines`](referencia/skills/design-airflow-pipelines.md), [`design-step-functions-orchestration`](referencia/skills/design-step-functions-orchestration.md) |
 | "Coordenar vários agents em fases" | [`sf-orchestrator`](referencia/agents/sf-orchestrator.md) | [`agentic-orchestration`](referencia/skills/agentic-orchestration.md) |
 | "Dois achados se contradizem" | coordenador do case | [`run-debate`](referencia/skills/run-debate.md); veja [Arbitragem e debate](usos/arbitragem-e-debate.md) |
+| "Quero especificar a mudança antes de construir" (spec, plano, TDD, entrega) | a sessão, sem despacho | [`sdd-explore`](referencia/skills/sdd-explore.md), [`sdd-define`](referencia/skills/sdd-define.md), [`sdd-design`](referencia/skills/sdd-design.md), [`sdd-plan`](referencia/skills/sdd-plan.md), [`sdd-build`](referencia/skills/sdd-build.md), [`sdd-ship`](referencia/skills/sdd-ship.md); veja [`docs/sdd/README.md`](../sdd/README.md) |
 
 Listas completas: [agents](referencia/agents/README.md) e [skills](referencia/skills/README.md).
 
