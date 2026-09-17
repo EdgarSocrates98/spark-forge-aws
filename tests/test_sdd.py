@@ -1218,6 +1218,63 @@ def test_proof_de_tarefa_operator(tmp_path):
     assert _codigos(check(dev)) == (["schema_invalid", "task_without_test"], [])
 
 
+def test_moved_confere_o_relatorio(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    tarefa = {"id": "T1", "status": "done",
+              "moved": {"change_id": "S1", "resolved": ["SF-PY-012"]}}
+    _reescreve(caminhos["build_report"], tasks=[tarefa])
+    # sem relatorio, nada foi observado
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [("moved_not_observed", "tasks/0/moved")]
+    assert "SF-PY-012" in recusa[0]["unlock"]
+    _relatorio_de_mudanca(tmp_path, "sandbox", "S1", resolvidos=["SF-PY-012"])
+    assert _codigos(check(tmp_path)) == ([], [])
+    # regra que tambem entra em new nao saiu
+    _relatorio_de_mudanca(
+        tmp_path, "sandbox", "S1", novos=["SF-PY-012"], resolvidos=["SF-PY-012"]
+    )
+    assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
+    # o sandbox limpo nao apaga a prova que o pacote de proposal guarda
+    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox" / "S1")
+    _relatorio_de_mudanca(tmp_path, "proposal", "S1", resolvidos=["SF-PY-012"])
+    assert _codigos(check(tmp_path)) == ([], [])
+    # o plano que prova por #<rule_id> le o change_id do build; com o build pronto,
+    # achado nao observado e recusa
+    meta = _meta(caminhos["plan"])
+    del meta["tasks"][0]["test"]
+    meta["tasks"][0]["proof"] = {"kind": "finding", "ref": "#SF-PY-012"}
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    _restampa(tmp_path)
+    assert _codigos(check(tmp_path)) == ([], [])
+    meta["tasks"][0]["proof"]["ref"] = "#SF-OUTRA"
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    _restampa(tmp_path)
+    assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
+    # no dev, moved nao substitui red
+    dev = tmp_path / "dev"
+    caminhos_dev = _ate(dev, "build_report")
+    _reescreve(caminhos_dev["build_report"], tasks=[tarefa])
+    assert _codigos(check(dev)) == (["red_not_declared", "schema_invalid"], [])
+
+
+def test_proof_e_moved_fecham_propriedades():
+    tarefa_plan = schema_for("plan")["properties"]["tasks"]["items"]
+    prova = tarefa_plan["properties"]["proof"]
+    tarefa_build = schema_for("build_report")["properties"]["tasks"]["items"]
+    movido = tarefa_build["properties"]["moved"]
+    for bloco in (tarefa_plan, prova, tarefa_build, movido):
+        assert bloco["additionalProperties"] is False
+    validador = jsonschema.Draft202012Validator(prova)
+    assert validador.is_valid({"kind": "finding", "ref": "S1#SF-X"})
+    assert not validador.is_valid({"kind": "finding", "ref": "S1#SF-X", "extra": 1})
+    assert not validador.is_valid({"kind": "test", "ref": "x"})
+    validador = jsonschema.Draft202012Validator(movido)
+    assert validador.is_valid({"change_id": "S1", "resolved": ["SF-X"]})
+    assert not validador.is_valid({"change_id": "S1", "resolved": []})
+    assert not validador.is_valid({"change_id": "S1", "resolved": ["SF-X"], "exit": 0})
+
+
 def test_status_mostra_fase_e_bloqueio(tmp_path):
     feature_limpa(tmp_path, feature="F1")
     caminhos = _ate(tmp_path / "outro", "design")  # repo separado so para montar

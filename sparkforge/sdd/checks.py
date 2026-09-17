@@ -467,11 +467,34 @@ def _gate_task_test(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        f"{tarefa['id']} precisa do teste que falha antes do codigo{extra}")
 
 
+def _conferir_movido(
+    ctx: _Contexto, artefato: Artifact, campo: str, movido: dict[str, Any], dono: str
+) -> None:
+    if _ship_feito(ctx):
+        return  # referencia historica: o sandbox pode ter sido limpo
+    ident = movido["change_id"]
+    faltam = _nao_movidas(_relatorio_da_mudanca(ctx.repo, ident), movido["resolved"])
+    if faltam:
+        ctx.recusa("moved_not_observed", artefato.path, campo,
+                   f"{dono}: {', '.join(faltam)} nao sai no relatorio de {ident} "
+                   f"({_ONDE_O_RELATORIO_MORA}); a regra precisa estar em resolved e fora "
+                   "de new: rode `sparkforge change sandbox` de novo ou corrija moved")
+
+
 def _gate_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    operador = artefato.meta["profile"] == "operator"
     for indice, tarefa in enumerate(artefato.meta["tasks"]):
+        movido = tarefa.get("moved")
+        if movido is not None and not operador:
+            ctx.recusa("schema_invalid", artefato.path, f"tasks/{indice}/moved",
+                       "moved so vale no perfil operator; no dev a tarefa declara red e green")
         if tarefa["status"] != "done":
             continue
         vermelho = tarefa.get("red")
+        if movido is not None and operador:
+            _conferir_movido(ctx, artefato, f"tasks/{indice}/moved", movido, tarefa["id"])
+            if vermelho is None:
+                continue
         if not vermelho or vermelho["exit"] == 0:
             ctx.recusa("red_not_declared", artefato.path, f"tasks/{indice}/red",
                        f"registre o comando que falhou antes do codigo de {tarefa['id']} "
