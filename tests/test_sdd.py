@@ -17,6 +17,7 @@ from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
 from sparkforge.sdd.checks import change_kinds, check, schema_for
 from sparkforge.sdd.load import discover, load_artifact, split_frontmatter
+from sparkforge.sdd.stamp import StampError, stamp
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -276,3 +277,50 @@ def test_feature_filtra(tmp_path):
     feature_limpa(tmp_path, feature="F1")
     feature_limpa(tmp_path, feature="F2")
     assert check(tmp_path, feature="F2")["features"] == ["F2"]
+
+
+def test_upstream_stale_e_stamp_resolve(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["define"], out_of_scope=["mudou"])
+    assert _codigos(check(tmp_path)) == (["upstream_stale"], [])
+    saida = stamp(tmp_path, "docs/sdd/F1/design.md")
+    assert saida["changed"] is True
+    assert saida["path"] == "docs/sdd/F1/design.md"
+    assert saida["upstream"] == "docs/sdd/F1/define.md"
+    # restampar o design muda o texto dele: agora o plan fica stale, e so ele
+    assert [r["path"] for r in check(tmp_path)["refused"]] == ["docs/sdd/F1/plan.md"]
+
+
+def test_stamp_idempotente_nao_regrava(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    antes = caminhos["design"].stat().st_mtime_ns
+    assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is False
+    assert caminhos["design"].stat().st_mtime_ns == antes
+
+
+def test_stamp_preserva_crlf_e_o_corpo(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    original = caminhos["design"].read_bytes().replace(b"\n", b"\r\n")
+    original = original.replace(
+        text_sha256(caminhos["define"]).encode(), b"0" * 64
+    )
+    caminhos["design"].write_bytes(original)
+    stamp(tmp_path, "docs/sdd/F1/design.md")
+    depois = caminhos["design"].read_bytes()
+    assert b"\n" not in depois.replace(b"\r\n", b"")
+    assert depois.endswith(b"corpo livre\r\n")
+    assert _codigos(check(tmp_path))[0] == []
+
+
+def test_stamp_recusa_sem_upstream(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    with pytest.raises(StampError) as erro:
+        stamp(tmp_path, "docs/sdd/F1/define.md")
+    assert erro.value.code == "upstream_missing"
+    with pytest.raises(StampError) as erro:
+        stamp(tmp_path, "docs/sdd/F1/nao-existe.md")
+    assert erro.value.code == "artifact_missing"
+    with pytest.raises(StampError) as erro:
+        stamp(tmp_path, "../fora.md")
+    assert erro.value.code == "artifact_missing"
+    assert caminhos["define"].is_file()
