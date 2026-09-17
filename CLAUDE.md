@@ -162,6 +162,17 @@ arquivo `.py` novo. Citar só a primeira seria escolher o resultado.
 - **a razao de economia sai `unresolved`** quando o corpus e menor que o envelope
   fixo do pacote. `estimated_tokens` e estimativa declarada e nunca entra numa razao.
 
+## Desenvolver: o SDD próprio
+
+Mudança não trivial neste repositório passa pelas skills `sdd-explore`, `sdd-define`,
+`sdd-design`, `sdd-plan`, `sdd-build` e `sdd-ship`, com os artefatos em
+`docs/sdd/<FEATURE>/` e cada fase conferida por `sparkforge sdd check --repo . --feature <F>`
+(`sdd status`, `sdd stamp`). Elas substituem, aqui, o ciclo de spec, plano e TDD do
+superpowers e o plugin AgentSpec (desligado em `.claude/settings.json`); debugging,
+verificação e revisão do superpowers continuam valendo. `docs/superpowers/specs/` e
+`plans/` estão congelados; o histórico do AgentSpec mora em `docs/sdd/archive/agentspec/`.
+Fluxo: `docs/sdd/README.md`.
+
 ## Verificação antes de fechar
 
 A suíte inteira num processo só não sobrevive — rode em lotes, **um por vez**. A receita

@@ -25,6 +25,16 @@ correntes* table of `docs/superpowers/STATUS.md`, checked by
   `docs/gates-por-mudanca.md` maps each kind of change to its gates, with the defect
   each one caught in real life.
 
+## Developing this repository: the in-repo SDD
+
+Non-trivial changes go through the skills `sdd-explore`, `sdd-define`, `sdd-design`,
+`sdd-plan`, `sdd-build` and `sdd-ship`. Artifacts live in `docs/sdd/<FEATURE>/`, and
+each phase is checked by `sparkforge sdd check --repo . --feature <F>` (plus
+`sdd status` and `sdd stamp`). Here they replace the spec/plan/TDD cycle of other
+plugins (superpowers, AgentSpec); `docs/superpowers/specs/` and `plans/` are frozen,
+and the AgentSpec history is archived in `docs/sdd/archive/agentspec/`. Flow:
+`docs/sdd/README.md`.
+
 ## Mandatory recommendation schema
 
 ```yaml

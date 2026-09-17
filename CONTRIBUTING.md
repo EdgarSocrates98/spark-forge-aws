@@ -77,8 +77,12 @@ python scripts/check_surface_lock.py
 - Um branch por mudança, a partir da `main`. Um PR por frente.
 - Commits no formato Conventional Commits (`feat`, `fix`, `docs`, `chore`, `test`,
   `refactor`), com o porquê no corpo quando ele não for óbvio.
-- Mudança grande passa pelo fluxo SDD em `.claude/sdd/` (brainstorm, define, design,
-  build, ship). Os documentos das frentes entregues ficam em `.claude/sdd/archive/`.
+- Mudança grande passa pelo SDD do próprio repositório: as skills `sdd-explore`,
+  `sdd-define`, `sdd-design`, `sdd-plan`, `sdd-build` e `sdd-ship`, com os artefatos em
+  `docs/sdd/<FEATURE>/` e cada fase conferida por
+  `sparkforge sdd check --repo . --feature <F>`. O fluxo está em `docs/sdd/README.md`.
+  `docs/superpowers/specs/` e `plans/` estão congelados, e o histórico do AgentSpec
+  está em `docs/sdd/archive/agentspec/`.
 - Agente se edita na fonte `agents/<nome>.md`, nunca no espelho `.claude/agents/`:
   `scripts/sync_skills.py` regrava os espelhos a partir da fonte.
 

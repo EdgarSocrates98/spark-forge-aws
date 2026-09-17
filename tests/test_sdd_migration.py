@@ -36,3 +36,11 @@ def test_superpowers_congelado():
     assert "congelad" in texto
     assert "docs/sdd/" in texto
     assert (ROOT / "docs" / "superpowers" / "STATUS.md").is_file()
+
+
+def test_documentos_de_entrada_apontam_o_sdd():
+    for nome in ("CLAUDE.md", "AGENTS.md", "CONTRIBUTING.md"):
+        texto = (ROOT / nome).read_text(encoding="utf-8")
+        assert "sdd-define" in texto, nome
+        assert "sparkforge sdd check" in texto, nome
+        assert "fluxo SDD em `.claude/sdd/`" not in texto, nome
