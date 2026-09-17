@@ -22,6 +22,8 @@ docs/sdd/
 `templates/` não é feature: só pasta no padrão `^[A-Z0-9_]+$` entra na
 descoberta. O contrato de cada fase está em `sparkforge/sdd/schema/`, e o mapa de
 tipo de mudança para registros do ship em `sparkforge/sdd/change_kinds.yaml`.
+Todo campo e todo código de recusa e de lacuna, com quando dispara e em que
+fase, está em [`CONTRATO.md`](CONTRATO.md), travado por teste contra o código.
 
 ## Os três verbos
 
@@ -140,12 +142,15 @@ O que o gate aceita só no operator:
 |---|---|---|
 | define | `verified_by: {kind: fact, ref: <facts.json>#kind:<kind>}` | ao menos um fact daquele kind; prefira ao `#<id>`, que é hash desconhecido antes da coleta |
 | plan | `proof: {kind: funcval\|fact\|finding, ref}` no lugar de `test` | `finding` é `<change_id>#<rule_id>` ou `#<rule_id>` (o `change_id` do build); lacuna `finding_not_observed` até o sandbox |
-| build_report | `moved: {change_id, resolved: [<rule_id>...]}` no lugar de `red`/`green` | cada regra em `resolved` e fora de `new` no `report.json` do sandbox ou no `evidence/sandbox_report.json` da proposal; senão `moved_not_observed` |
+| build_report | `moved: {change_id, resolved: [<rule_id>...]}` no lugar de `red`/`green` | `change_id` igual ao do build (senão `moved_change_mismatch`) e cada regra em `resolved` e fora de `new` no `report.json` do sandbox ou no `evidence/sandbox_report.json` da proposal; senão `moved_not_observed` |
+| ship | `evidence: [{change_id, report_sha256}]`, obrigatório | uma entrada por `change_id` citado, com o `text_sha256` do relatório lido (senão `ship_evidence_missing`); relatório presente com outro hash, `ship_evidence_mismatch` |
 
 `change_id` vale enquanto existir `.sparkforge/sandbox/<id>/` ou
-`.sparkforge/proposal/<id>/`. Com o ship em `status: done`, `case_missing`,
-`change_missing` e a conferência de `moved`/`finding` param: o case e a
-mudança citados viraram histórico.
+`.sparkforge/proposal/<id>/`. Com o ship em `status: done`, `case_missing` e
+`change_missing` param: o case e a pasta citados viraram histórico. A
+conferência de `moved`/`finding` só para quando **nenhum** relatório da
+mudança existe — aí o que sustenta a mudança é o `report_sha256` gravado em
+`evidence`. Relatório presente continua conferido, também contra esse hash.
 
 ## Base e crédito
 

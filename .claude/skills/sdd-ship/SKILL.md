@@ -118,10 +118,19 @@ substituída depois vira `status: superseded`.
 - `confirmed` exige medida: `sparkforge funcval compare` para a semântica e
   `sparkforge benchmark` entre runs para o desempenho. Economia estimada não
   fecha hipótese.
+- **Grave o que leu.** `evidence: [{change_id, report_sha256}]`, uma entrada
+  por `change_id` citado (o do build, o de `moved`, o de `finding`), com o
+  `text_sha256` do relatório da mudança. Leia o relatório; o `unlock` de
+  `ship_evidence_missing` traz o hash de cada relatório presente para copiar.
+  Sem a entrada, `ship_evidence_missing`; relatório presente com outro hash,
+  `ship_evidence_mismatch` — ele mudou depois do ship, e se relê antes de
+  regravar.
 - Com `status: done`, o case e a mudança citados viram histórico: o
   `case.yaml` pode passar a ser de outro case e `change sandbox --clean` pode
-  rodar, sem `case_missing` nem `change_missing`. Antes do `done`, os dois
-  valem; o id serve enquanto existir `.sparkforge/sandbox/<id>/` ou
+  rodar, sem `case_missing` nem `change_missing`. `moved` e `finding` só
+  deixam de ser conferidos quando **nenhum** relatório da mudança existe; aí
+  o que resta é o `report_sha256` gravado. Antes do `done`, tudo vale; o id
+  serve enquanto existir `.sparkforge/sandbox/<id>/` ou
   `.sparkforge/proposal/<id>/`.
 - Os registros de `change_kinds` são do repositório SparkForge; mudança só no
   job do operador costuma ter `change_kinds: []`.
@@ -155,7 +164,9 @@ python scripts/check_status_numbers.py --strict
 ```
 
 Recusas desta fase: `phase_out_of_order`, `hypothesis_open_at_ship`,
-`registry_unchecked`, `upstream_stale`. Template: `docs/sdd/templates/ship.md`.
+`registry_unchecked`, `upstream_stale`, `ship_evidence_missing` e
+`ship_evidence_mismatch` (operator). Contrato completo:
+`docs/sdd/CONTRATO.md`. Template: `docs/sdd/templates/ship.md`.
 
 ## Red flags
 

@@ -312,3 +312,27 @@ def test_skills_ensinam_o_operador_duravel():
     for trecho in ("--root .sparkforge/sdd", "sparkforge change sandbox",
                    "sparkforge change propose", "#kind:"):
         assert trecho in readme, trecho
+
+
+def _skill_e_operador(nome: str) -> tuple[str, str]:
+    texto = (ROOT / "skills" / nome / "SKILL.md").read_text(encoding="utf-8")
+    return texto, texto.split("## Perfil operator", 1)[1].split("\n## ", 1)[0]
+
+
+def test_skills_ensinam_a_evidencia_do_ship():
+    """SDD_ENDURECIMENTO AC10: evidence, os codigos novos e o contrato vivo."""
+    ship, ship_operador = _skill_e_operador("sdd-ship")
+    for trecho in ("evidence", "report_sha256", "ship_evidence_missing",
+                   "ship_evidence_mismatch"):
+        assert trecho in ship_operador, trecho
+    build, build_operador = _skill_e_operador("sdd-build")
+    assert "moved_change_mismatch" in build_operador
+    for texto in (ship, build):
+        assert "docs/sdd/CONTRATO.md" in texto
+    readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
+    for trecho in ("evidence", "ship_evidence_missing", "moved_change_mismatch",
+                   "CONTRATO.md"):
+        assert trecho in readme, trecho
+    congelado = (ROOT / "docs" / "superpowers" / "specs"
+                 / "2026-09-16-sdd-nucleo-design.md").read_text(encoding="utf-8")
+    assert "docs/sdd/CONTRATO.md" in "\n".join(congelado.splitlines()[:12])

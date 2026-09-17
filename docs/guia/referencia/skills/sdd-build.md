@@ -177,8 +177,10 @@ Registro por tarefa:
 - Tarefa com `test`: `red` é o teste rodado antes do sandbox; `green`, o mesmo
   teste depois do compare.
 - Tarefa com `proof`, sem pytest: `moved: {change_id: <id>, resolved: [<rule_id>...]}`
-  no lugar de `red` e `green`. O gate lê `.sparkforge/sandbox/<id>/report.json`
-  (ou `.sparkforge/proposal/<id>/evidence/sandbox_report.json`) e exige cada
+  no lugar de `red` e `green`, com o **mesmo** `change_id` do relatório
+  (outro sai `moved_change_mismatch`). O gate lê
+  `.sparkforge/sandbox/<id>/report.json` (ou
+  `.sparkforge/proposal/<id>/evidence/sandbox_report.json`) e exige cada
   regra em `resolved` e fora de `new`; senão, `moved_not_observed`. No dev,
   `moved` é `schema_invalid`.
 
@@ -215,8 +217,9 @@ exit 0. A suíte inteira roda em lotes, um por vez
 | pacote do PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Recusas desta fase: `red_not_declared`, `claim_without_evidence`,
-`change_missing`, `moved_not_observed`, `verified_by_dangling`, `upstream_stale`.
-Template: `docs/sdd/templates/build_report.md`.
+`change_missing`, `moved_not_observed`, `moved_change_mismatch`,
+`verified_by_dangling`, `upstream_stale`. Contrato completo:
+`docs/sdd/CONTRATO.md`. Template: `docs/sdd/templates/build_report.md`.
 
 ### Red flags
 
