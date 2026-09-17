@@ -865,6 +865,31 @@ def test_funcval_not_comparison(tmp_path):
     assert _codigos(check(tmp_path)) == ([], [])
 
 
+def test_funcval_blind_spot(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "funcval", "ref": "compare.json"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    (tmp_path / "compare.json").write_bytes(
+        b'{"items": [{"id": "f1", "kind": "funcval.check_delta"},'
+        b' {"id": "f2", "kind": "funcval.unresolved", "subject": {"check": "row_count"}}]}'
+    )
+    relatorio = check(tmp_path)
+    assert _codigos(relatorio) == ([], ["funcval_blind_spot"])
+    assert "row_count" in relatorio["unresolved"][0]["unlock"]
+    # a forma real de funcval.py: subject {type, symbol} e o motivo em attrs.reason
+    (tmp_path / "compare.json").write_bytes(json.dumps({"items": [
+        {"id": "f1", "kind": "funcval.check_delta"},
+        {"id": "f2", "kind": "funcval.unresolved",
+         "subject": {"type": "table", "symbol": "db.t#after#target_mismatch"},
+         "attrs": {"reason": "target_mismatch"}},
+    ]}).encode("utf-8"))
+    relatorio = check(tmp_path)
+    assert _codigos(relatorio) == ([], ["funcval_blind_spot"])
+    assert "db.t#after#target_mismatch" in relatorio["unresolved"][0]["unlock"]
+    assert "target_mismatch" in relatorio["unresolved"][0]["unlock"]
+
+
 def test_command_e_declarado_e_nao_conferido(tmp_path):
     caminhos = _so_define(tmp_path)
     meta = _define_meta(caminhos)

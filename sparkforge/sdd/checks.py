@@ -271,6 +271,24 @@ def _conferir_funcval(
         ctx.recusa("funcval_not_comparison", artefato.path, campo,
                    f"{referencia} nao tem nenhum funcval.check_delta; rode `sparkforge funcval "
                    f"compare --plan <plano> --before <a> --after <b> --out {referencia}`")
+        return
+    for item in itens:
+        if item.get("kind") == "funcval.unresolved":
+            ctx.lacuna("funcval_blind_spot", artefato.path,
+                       f"{referencia} nao comparou {_nome_do_ponto_cego(item)}; resolva o motivo "
+                       "e rode `sparkforge funcval compare` de novo")
+
+
+def _nome_do_ponto_cego(item: dict[str, Any]) -> str:
+    """O que o funcval deixou sem comparar: o `symbol` do subject (ou o subject cru) e o motivo."""
+    sujeito = item.get("subject")
+    sujeito = sujeito if isinstance(sujeito, dict) else {}
+    nome = _texto_ou_none(sujeito.get("symbol")) or ", ".join(
+        f"{chave}={valor}" for chave, valor in sorted(sujeito.items())
+    ) or str(item.get("id") or "?")
+    atributos = item.get("attrs")
+    motivo = _texto_ou_none(atributos.get("reason")) if isinstance(atributos, dict) else None
+    return f"{nome} (reason: {motivo})" if motivo else nome
 
 
 def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:

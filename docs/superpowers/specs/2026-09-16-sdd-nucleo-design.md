@@ -265,6 +265,16 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
 - O `stamp` preserva comentário de coluna zero dentro do bloco `upstream:`,
   comentário no fim da linha do hash e o BOM de UTF-8; `load_artifact` tolera
   o BOM antes da cerca.
+- **`funcval` confere a forma, nunca o veredito** (feature `SDD_OPERATOR`).
+  Achado o arquivo, o gate o lê como lista de facts (lista crua ou
+  `{"items": [...]}`):
+  - `refused: funcval_not_comparison` — nenhum `funcval.check_delta` (inclui
+    JSON quebrado ou que não é lista de facts); `unlock` manda rodar
+    `sparkforge funcval compare --out <ref>`;
+  - `unresolved: funcval_blind_spot` — um por `funcval.unresolved`, com o
+    `subject.symbol` (ou o subject cru) e o `attrs.reason` no `unlock`.
+  Se a divergência passa do limiar continua com as `SF-FVAL-*` no `judge`
+  (regra 11).
 
 Fora de A, de propósito: julgar se a prosa é boa ou o design é sensato. Isso é
 do agente e de review; o gate não finge avaliar qualidade.
