@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 import yaml
 
+from sparkforge.adapters import _core
+from sparkforge.adapters.cli import main
 from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
 from sparkforge.sdd.checks import change_kinds, check, schema_for
@@ -1030,3 +1033,73 @@ def test_status_sem_raiz(tmp_path):
     saida = status(tmp_path)
     assert saida["features"] == []
     assert [u["code"] for u in saida["unresolved"]] == ["root_missing"]
+
+
+def test_cli_check_ok_e_recusa(tmp_path, capsys):
+    caminhos = feature_limpa(tmp_path)
+    assert main(["sdd", "check", "--repo", str(tmp_path)]) == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is True
+    _reescreve(caminhos["ship"], hypothesis_outcome=None)
+    assert main(["sdd", "check", "--repo", str(tmp_path)]) == 1
+    saida = json.loads(capsys.readouterr().out)
+    assert [r["code"] for r in saida["refused"]] == ["hypothesis_open_at_ship"]
+
+
+def test_cli_so_lacuna_sai_zero(tmp_path, capsys):
+    assert main(["sdd", "check", "--repo", str(tmp_path)]) == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_cli_status_e_stamp(tmp_path, capsys):
+    caminhos = feature_limpa(tmp_path)
+    assert main(["sdd", "status", "--repo", str(tmp_path)]) == 0
+    assert json.loads(capsys.readouterr().out)["features"][0]["phase"] == "ship"
+    _reescreve(caminhos["build_report"], claims=[{"text": "t", "evidence_ref": "x"}])
+    assert main(["sdd", "stamp", "--repo", str(tmp_path), "docs/sdd/F1/ship.md"]) == 0
+    assert json.loads(capsys.readouterr().out)["changed"] is True
+
+
+def test_cli_root_alternativo(tmp_path, capsys):
+    feature_limpa(tmp_path)
+    # copia: o upstream declarado continua apontando para docs/sdd, que segue existindo
+    shutil.copytree(tmp_path / "docs" / "sdd", tmp_path / "specs")
+    main(["sdd", "check", "--repo", str(tmp_path), "--root", "specs"])
+    assert json.loads(capsys.readouterr().out)["features"] == ["F1"]
+    assert main(["sdd", "status", "--repo", str(tmp_path), "--root", "specs"]) == 0
+    assert json.loads(capsys.readouterr().out)["root"] == "specs"
+    argv = ["sdd", "stamp", "--repo", str(tmp_path), "--root", "specs", "specs/F1/ship.md"]
+    assert main(argv) == 0
+    assert json.loads(capsys.readouterr().out)["changed"] is False
+    # sem --root, o mesmo arquivo nao e artefato da raiz padrao
+    assert main(["sdd", "stamp", "--repo", str(tmp_path), "specs/F1/ship.md"]) == 2
+    assert "not_an_artifact" in capsys.readouterr().err
+
+
+def test_core_erros_acionaveis(tmp_path):
+    with pytest.raises(_core.AdapterError) as erro:
+        _core.sdd_check(str(tmp_path / "nao-existe"))
+    assert "sparkforge" in erro.value.message
+    with pytest.raises(_core.AdapterError) as erro:
+        _core.sdd_status(str(tmp_path / "nao-existe"))
+    assert "sparkforge sdd status" in erro.value.message
+    # sem raiz, feature pedida nao e erro: a lacuna root_missing ja diz o que falta
+    sem_raiz = _core.sdd_check(str(tmp_path), feature="NAO_HA")
+    assert [u["code"] for u in sem_raiz["unresolved"]] == ["root_missing"]
+    feature_limpa(tmp_path)
+    with pytest.raises(_core.AdapterError) as erro:
+        _core.sdd_check(str(tmp_path), feature="NAO_HA")
+    assert "sparkforge sdd status" in erro.value.message
+    assert erro.value.exit_code == 2
+    with pytest.raises(_core.AdapterError) as erro:
+        _core.sdd_stamp(str(tmp_path), "docs/sdd/F1/define.md")
+    assert "sparkforge sdd stamp" in erro.value.message
+    assert "upstream_missing" in erro.value.message
+    assert erro.value.exit_code == 2
+
+
+def test_core_feature_so_com_lacuna_de_pulo_nao_e_erro(tmp_path):
+    # a feature existe no disco, mas a varredura a podou: a lacuna diz por que
+    feature_limpa(tmp_path, feature="BUILD")
+    relatorio = _core.sdd_check(str(tmp_path), feature="BUILD")
+    assert relatorio["features"] == []
+    assert [u["code"] for u in relatorio["unresolved"]] == ["path_skipped"]

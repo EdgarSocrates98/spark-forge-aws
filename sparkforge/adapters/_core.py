@@ -3352,6 +3352,66 @@ def debate_referee(repo: str) -> dict[str, Any]:
         ) from exc
 
 
+def _raiz_do_repo_sdd(repo: str, verbo: str) -> Path:
+    raiz = Path(repo)
+    if not raiz.is_dir():
+        raise AdapterError(
+            f"repositorio nao encontrado: {repo}. Rode `sparkforge sdd {verbo} --repo <raiz>` "
+            "apontando para a raiz que contem docs/sdd/.",
+            exit_code=2,
+        )
+    return raiz
+
+
+def sdd_check(
+    repo: str, root_path: str = "docs/sdd", feature: str | None = None
+) -> dict[str, Any]:
+    """Os gates do SDD sobre `repo/root_path`. So le.
+
+    Feature pedida e nao descoberta e erro de chamada, salvo quando uma lacuna ja
+    explica a ausencia: raiz inexistente (`root_missing`) ou pasta da feature
+    podada pela varredura (`path_skipped` com o nome dela).
+    """
+    from sparkforge.sdd.checks import check
+
+    raiz = _raiz_do_repo_sdd(repo, "check")
+    relatorio = check(raiz, root_path, feature)
+    if feature is not None and feature not in relatorio["features"]:
+        explicada = any(
+            item["code"] == "root_missing" or item.get("feature") == feature
+            for item in relatorio["unresolved"]
+        )
+        if not explicada:
+            raise AdapterError(
+                f"feature {feature} nao existe em {root_path}. Rode `sparkforge sdd status "
+                f"--repo {repo}` para listar as que existem.",
+                exit_code=2,
+            )
+    return relatorio
+
+
+def sdd_status(repo: str, root_path: str = "docs/sdd") -> dict[str, Any]:
+    """Fase atual de cada feature do SDD e o que a impede de avancar. So le."""
+    from sparkforge.sdd.status import status
+
+    return status(_raiz_do_repo_sdd(repo, "status"), root_path)
+
+
+def sdd_stamp(repo: str, path: str, root_path: str = "docs/sdd") -> dict[str, Any]:
+    """Grava `upstream.sha256` em `path`. Unica escrita do SDD."""
+    from sparkforge.sdd.stamp import StampError, stamp
+
+    raiz = _raiz_do_repo_sdd(repo, "stamp")
+    try:
+        return stamp(raiz, path, root=root_path)
+    except StampError as exc:
+        raise AdapterError(
+            f"{exc.code}: {exc.message}. Corrija o artefato e rode "
+            f"`sparkforge sdd stamp --repo {repo} --root {root_path} {path}` de novo.",
+            exit_code=2,
+        ) from exc
+
+
 def root_cause(
     facts_path: str | list[str] | None = None,
     facts: list[dict[str, Any]] | None = None,
