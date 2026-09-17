@@ -7,13 +7,14 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cache
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
 from jsonschema import Draft202012Validator
 
 from sparkforge.case.store import CASE_DIR, CASE_FILE
+from sparkforge.change.proposal import PROPOSAL_DIR
 from sparkforge.change.sandbox import SANDBOX_DIR
 from sparkforge.facts.scan import (
     DIRECTORY_IGNORED,
@@ -440,18 +441,35 @@ def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                    "abra o case com `sparkforge case open` e copie o case_id dele para o define")
 
 
+_BASES_DA_MUDANCA: tuple[tuple[PurePosixPath, str], ...] = (
+    (SANDBOX_DIR, "report.json"),
+    (PROPOSAL_DIR, "evidence/sandbox_report.json"),
+)
+
+
+def _pastas_da_mudanca(repo: Path, ident: str) -> list[tuple[Path, str]]:
+    """As pastas de `ident` que existem, com o relatorio que cada uma guarda."""
+    # um segmento so, sem separador: `..`, `.` e `a/../b` nao sao id de mudanca
+    if not ident or "/" in ident or "\\" in ident or ident in (".", ".."):
+        return []
+    achadas: list[tuple[Path, str]] = []
+    for base_rel, relatorio in _BASES_DA_MUDANCA:
+        base = repo / base_rel
+        alvo = resolve_within(base, ident)
+        if alvo is not None and alvo.parent == base.resolve() and alvo.is_dir():
+            achadas.append((alvo, relatorio))
+    return achadas
+
+
 def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     if artefato.meta["profile"] != "operator":
         return
     ident = str(artefato.meta.get("change_id") or "")
-    base = ctx.repo / SANDBOX_DIR
-    # um segmento so, sem separador: `..`, `.` e `a/../b` nao sao id de sandbox
-    segmento = bool(ident) and "/" not in ident and "\\" not in ident and ident not in (".", "..")
-    alvo = resolve_within(base, ident) if segmento else None
-    if alvo is None or alvo.parent != base.resolve() or not alvo.is_dir():
+    if not _pastas_da_mudanca(ctx.repo, ident):
         ctx.recusa("change_missing", artefato.path, "change_id",
                    "o build do operador passa por `sparkforge change sandbox`; registre o id "
-                   "do sandbox em change_id")
+                   "em change_id (vale enquanto existir .sparkforge/sandbox/<id>/ ou "
+                   ".sparkforge/proposal/<id>/)")
 
 
 _GATES: dict[str, tuple[Gate, ...]] = {

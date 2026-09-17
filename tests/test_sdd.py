@@ -1080,6 +1080,20 @@ def test_change_id_que_e_arquivo_nao_serve(tmp_path):
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
 
+def test_change_id_aceita_proposal(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    assert _codigos(check(tmp_path)) == (["change_missing"], [])
+    # o sandbox foi limpo, mas o pacote de `change propose` guarda o mesmo id
+    (tmp_path / ".sparkforge" / "proposal" / "S1").mkdir(parents=True)
+    assert _codigos(check(tmp_path)) == ([], [])
+    # a proposal passa pelo mesmo confinamento: arquivo com o nome do id nao serve
+    (tmp_path / ".sparkforge" / "proposal" / "S1").rmdir()
+    (tmp_path / ".sparkforge" / "proposal" / "S1").write_bytes(b"x")
+    assert _codigos(check(tmp_path)) == (["change_missing"], [])
+
+
 def test_case_id_compara_como_texto(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     for fase in ("design", "plan", "build_report", "ship"):
