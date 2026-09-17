@@ -82,11 +82,20 @@ substituída depois vira `status: superseded`.
 
 ## Perfil operator
 
-- O PR sai pela skill `propose-change-pr`, a partir do sandbox que o build
-  registrou em `change_id`.
+- O `ship.md` mora em `.sparkforge/sdd/<F>/`, como as outras fases:
+  `sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+- O pacote do PR sai de
+  `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`,
+  sobre o `change_id` que o build registrou, e o PR pela skill
+  `propose-change-pr`. Sem `--funcval` e `--benchmark`, o pacote diz PENDENTE.
 - `confirmed` exige medida: `sparkforge funcval compare` para a semântica e
   `sparkforge benchmark` entre runs para o desempenho. Economia estimada não
   fecha hipótese.
+- Com `status: done`, o case e a mudança citados viram histórico: o
+  `case.yaml` pode passar a ser de outro case e `change sandbox --clean` pode
+  rodar, sem `case_missing` nem `change_missing`. Antes do `done`, os dois
+  valem; o id serve enquanto existir `.sparkforge/sandbox/<id>/` ou
+  `.sparkforge/proposal/<id>/`.
 - Os registros de `change_kinds` são do repositório SparkForge; mudança só no
   job do operador costuma ter `change_kinds: []`.
 
@@ -104,8 +113,8 @@ substituída depois vira `status: superseded`.
 | conferir o build | `sparkforge sdd check --repo . --feature <F>` | `sparkforge_sdd_check` |
 | carimbar | `sparkforge sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
 | estado geral | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
-| semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b>` | `sparkforge_funcval_compare` |
-| PR (operator) | `sparkforge change propose --sandbox <id> --repo .` | `sparkforge_change_propose` |
+| semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
+| PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Gates que aparecem em quase toda entrega de dev:
 

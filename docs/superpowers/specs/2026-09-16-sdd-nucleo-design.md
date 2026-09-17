@@ -275,6 +275,34 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
     `subject.symbol` (ou o subject cru) e o `attrs.reason` no `unlock`.
   Se a divergência passa do limiar continua com as `SF-FVAL-*` no `judge`
   (regra 11).
+- **Perfil operator durável** (feature `SDD_OPERATOR_DURAVEL`). A spec do
+  operador mora em `.sparkforge/sdd` (`--root`), porque a cópia do sandbox poda
+  `.sparkforge`; a raiz passada à descoberta nunca é podada.
+  - **`change_id`** vale quando `.sparkforge/sandbox/<id>/` **ou**
+    `.sparkforge/proposal/<id>/` existe como diretório, as duas com o mesmo
+    confinamento de um segmento.
+  - **Referência histórica.** Com o `ship.md` carregado em `status: done`,
+    `case_missing`, `change_missing` e as conferências de `moved` e de
+    `proof` `finding` não rodam: o case atual pode ser outro e o sandbox pode
+    ter sido limpo. `fact` e `funcval` seguem conferidos.
+  - **Seletor por kind.** `verified_by.kind: fact` aceita
+    `path#kind:<kind>`, que passa com ao menos um fact daquele kind;
+    `kind:` vazio não casa. `path#<id>` segue igual.
+  - **`plan.tasks[].proof`** `{kind: funcval|fact|finding, ref}` substitui
+    `test` só no operator; no dev é `schema_invalid` e `test` segue exigido
+    (`task_without_test`). `funcval` e `fact` usam as conferências do define.
+    `finding` é `<change_id>#<rule_id>` (ref sem `#<rule_id>` é
+    `schema_invalid` em `tasks/<i>/proof/ref`); `change_id` vazio usa o do
+    `build_report`.
+  - **`build_report.tasks[].moved`** `{change_id, resolved: [rule_id, ...]}`
+    substitui `red`/`green` só no operator; no dev é `schema_invalid` e
+    `red_not_declared` continua. O gate lê `report.json` do sandbox ou
+    `evidence/sandbox_report.json` da proposal.
+  - `refused: moved_not_observed` — regra de `moved.resolved` (ou de um
+    `proof` `finding` com o build `ready`/`done`) que o relatório não mostra em
+    `resolved`, ou mostra também em `new`, ou relatório ausente.
+  - `unresolved: finding_not_observed` — o mesmo para `proof` `finding` antes
+    do build pronto.
 
 Fora de A, de propósito: julgar se a prosa é boa ou o design é sensato. Isso é
 do agente e de review; o gate não finge avaliar qualidade.

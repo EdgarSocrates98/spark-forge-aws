@@ -135,22 +135,36 @@ Comportamento de Spark, Glue ou Iceberg sai de `sparkforge rules lookup` ou
 
 ## Perfil operator
 
-A sessão **nunca** escreve na árvore do operador. O caminho é:
+A sessão **nunca** escreve na árvore do operador. A spec e as evidências moram
+em `.sparkforge/sdd/<F>/` (a cópia do sandbox poda `.sparkforge`; qualquer
+outro lugar deixa o sandbox desatualizado). O caminho é:
 
 1. `sparkforge funcval plan` com a chave de negócio declarada, antes da mudança.
 2. `sparkforge change plan --facts <f> --set k=v --out d.patch` (ou `--from-tune`).
 3. `sparkforge change sandbox --repo . --diff d.patch`: guarde o `id` e grave-o
    em `change_id` no relatório. Sem ele, ou com id que não está em
-   `.sparkforge/sandbox/`, sai `change_missing`.
+   `.sparkforge/sandbox/` nem em `.sparkforge/proposal/`, sai `change_missing`.
 4. Achado novo P0 ou P1 no sandbox: pare e volte ao design.
-5. `sparkforge funcval compare` e `sparkforge benchmark` com os runs medidos.
-6. O PR vai pela skill `propose-change-pr`, que para antes de `git push` e de
-   `gh pr create`.
+5. `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>`:
+   o `--out` é o `ref` do `verified_by` funcval, senão `funcval_not_run` nunca
+   sai. `sparkforge benchmark --before <a> --after <b> --out bench.json` com os
+   runs medidos.
+6. `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
+   sem as duas flags o pacote fica com a medida PENDENTE. O PR vai pela skill
+   `propose-change-pr`, que para antes de `git push` e de `gh pr create`.
 
-O `case_id` é o de `sparkforge case open` (`.sparkforge/case.yaml`). O `red` é
-o `test` da tarefa rodado antes do sandbox; o `green`, o mesmo teste depois do
-compare. O pacote do PR sai de `sparkforge change propose` sobre o id do
-sandbox, e nada é escrito na árvore do operador.
+Registro por tarefa:
+
+- Tarefa com `test`: `red` é o teste rodado antes do sandbox; `green`, o mesmo
+  teste depois do compare.
+- Tarefa com `proof`, sem pytest: `moved: {change_id: <id>, resolved: [<rule_id>...]}`
+  no lugar de `red` e `green`. O gate lê `.sparkforge/sandbox/<id>/report.json`
+  (ou `.sparkforge/proposal/<id>/evidence/sandbox_report.json`) e exige cada
+  regra em `resolved` e fora de `new`; senão, `moved_not_observed`. No dev,
+  `moved` é `schema_invalid`.
+
+Feche com `sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+O `case_id` é o de `sparkforge case open` (`.sparkforge/case.yaml`).
 
 ## Verificação antes de fechar
 
@@ -175,12 +189,12 @@ roda em lotes, um por vez (`tests/test_suite_batches.py`, constante `LOTES`).
 | carimbar o relatório | `sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` | `sparkforge_sdd_stamp` |
 | diff (operator) | `sparkforge change plan --facts <f> --set k=v --out d.patch` | `sparkforge_change_plan` |
 | sandbox (operator) | `sparkforge change sandbox --repo . --diff d.patch` | `sparkforge_change_sandbox` |
-| semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b>` | `sparkforge_funcval_compare` |
-| desempenho (operator) | `sparkforge benchmark --before <a> --after <b>` | `sparkforge_benchmark` |
-| pacote do PR (operator) | `sparkforge change propose --sandbox <id> --repo .` | `sparkforge_change_propose` |
+| semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
+| desempenho (operator) | `sparkforge benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
+| pacote do PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Recusas desta fase: `red_not_declared`, `claim_without_evidence`,
-`change_missing`, `verified_by_dangling`, `upstream_stale`.
+`change_missing`, `moved_not_observed`, `verified_by_dangling`, `upstream_stale`.
 Template: `docs/sdd/templates/build_report.md`.
 
 ## Red flags

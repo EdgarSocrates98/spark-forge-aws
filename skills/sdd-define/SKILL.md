@@ -34,7 +34,7 @@ um `verified_by`:
 | `test` | node id do pytest, `tests/arquivo.py::test_nome` | antes do build, teste ausente é lacuna `test_not_written`; com o build `ready` ou `done`, é recusa `verified_by_dangling` |
 | `command` | o comando cujo exit 0 prova o critério | registra; quem roda é o ship |
 | `funcval` | o arquivo de `sparkforge funcval compare --out` | lacuna `funcval_not_run` até existir; sem `funcval.check_delta`, recusa `funcval_not_comparison`; cada `funcval.unresolved`, lacuna `funcval_blind_spot` |
-| `fact` | `arquivo.json#fact_id` | lacuna `fact_not_collected` até a coleta |
+| `fact` | `arquivo.json#fact_id` ou `arquivo.json#kind:<kind>` | lacuna `fact_not_collected` até a coleta |
 
 Prefira `test`. Critério que nada verifica é desejo, e não entra.
 
@@ -85,14 +85,23 @@ outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
 
 ## Perfil operator
 
+- **A spec mora em `.sparkforge/sdd/<F>/`** no repositório do operador, nunca
+  em `docs/sdd/`: a cópia do `change sandbox` poda `.sparkforge`, e escrever
+  fora dele deixa o sandbox desatualizado para `change propose`. Todo verbo do
+  SDD leva a raiz: `sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>`.
+  Não ponha `.sparkforge/sdd/` no `.gitignore`.
 - Abra o case antes: `sparkforge case open --repo . --case-id <id> --now <ISO 8601>`,
   e copie o `case_id` para o define (ele fica em `.sparkforge/case.yaml`). Sem
-  ele, ou com outro, sai `case_missing`.
+  ele, ou com outro, sai `case_missing` — até o ship ficar `done`; dali em
+  diante o case citado é histórico.
 - Preservar a semântica é critério, não detalhe: um `AC` com `kind: funcval`,
   planejado por `sparkforge funcval plan` com a chave de negócio **declarada**.
 - O aceite do operador raramente é pytest: `{kind: funcval, ref: <arquivo do
-  compare --out>}` para o resultado, `{kind: fact, ref: <facts.json>#<fact_id>}`
-  para o sintoma medido. O gate confere a forma; o veredito é do `judge`.
+  compare --out>}` para o resultado e `{kind: fact, ref: <facts.json>#kind:<kind>}`
+  para o sintoma medido. **Prefira o seletor `#kind:`** agora: o id de fact é
+  hash de conteúdo e só existe depois da coleta; `#<fact_id>` continua valendo.
+  Grave os dois arquivos dentro de `.sparkforge/sdd/<F>/`. O gate confere a
+  forma; o veredito é do `judge`.
 - Métrica de desempenho vem de `sparkforge benchmark` entre dois runs medidos;
   custo, de `dpu_seconds` medido. Economia estimada não é métrica.
 

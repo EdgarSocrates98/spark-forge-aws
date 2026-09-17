@@ -22,7 +22,8 @@ critério do define tem tarefa.
 ## A tarefa
 
 No frontmatter, cada tarefa tem `id` `T<n>`, `files`, `covers` (os `AC` do
-define) e `test` com `path` e `name`. Tarefa sem `test` sai `task_without_test`.
+define) e `test` com `path` e `name`. Tarefa sem `test` sai `task_without_test`
+(no perfil operator, `proof` também serve; veja abaixo).
 
 No corpo, cada tarefa é uma seção `## T<n> — título` com passos de poucos
 minutos cada:
@@ -90,11 +91,20 @@ Corrija no lugar. Isso é checagem sua, não nota.
   mudança, `sparkforge change plan` para gerar o diff, `sparkforge change sandbox`
   para aplicá-lo numa cópia, `sparkforge benchmark` e `sparkforge funcval compare`
   para medir, e a skill `propose-change-pr` para o PR.
-- Nenhuma tarefa edita a árvore do operador direto.
-- O gate ainda exige `test` em toda tarefa. No operador ele aponta a checagem
-  que falha antes da mudança: pytest sobre as funções puras do job, se houver;
-  senão, um teste que o build cria nos `tests/` do repositório do operador e que
-  afirma o desfecho do `sparkforge funcval compare` ou dos achados `SF-FVAL`.
+- Nenhuma tarefa edita a árvore do operador direto. O plano mora em
+  `.sparkforge/sdd/<F>/plan.md`:
+  `sparkforge sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/plan.md`.
+- Toda tarefa prova alguma coisa. Com pytest sobre as funções puras do job, é
+  `test`. Sem ele, a tarefa declara `proof` no lugar:
+
+  | `proof.kind` | `proof.ref` | o que o check faz |
+  |---|---|---|
+  | `funcval` | o arquivo de `funcval compare --out` | o mesmo do define: `funcval_not_run`, `funcval_not_comparison`, `funcval_blind_spot` |
+  | `fact` | `<facts.json>#kind:<kind>` (ou `#<id>`) | `fact_not_collected` até a coleta |
+  | `finding` | `<change_id>#<rule_id>`, ou `#<rule_id>` para o `change_id` do build | lacuna `finding_not_observed` até o sandbox mostrar a regra em `resolved` e fora de `new`; com o build pronto, recusa `moved_not_observed` |
+
+  Prefira `#<rule_id>`: o id do sandbox é hash e não existe na hora do plano.
+  No perfil dev, `proof` é `schema_invalid` e `test` segue obrigatório.
 
 ## Quando NÃO usar
 
@@ -114,7 +124,8 @@ Corrija no lugar. Isso é checagem sua, não nota.
 | cascata | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
 
 Recusas desta fase: `phase_out_of_order`, `task_without_test`,
-`acceptance_uncovered`, `upstream_stale`. Template: `docs/sdd/templates/plan.md`.
+`acceptance_uncovered`, `upstream_stale`, `moved_not_observed` (operator).
+Template: `docs/sdd/templates/plan.md`.
 
 ## Red flags
 

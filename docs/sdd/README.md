@@ -56,6 +56,37 @@ Uma por fase, canônicas em `skills/` e espelhadas por `scripts/sync_skills.py`:
   `sparkforge change sandbox` e o PR pela skill `propose-change-pr`. A árvore do
   operador nunca é escrita pela sessão.
 
+## Perfil operator: onde mora a spec
+
+No repositório do operador, os artefatos e as evidências ficam em
+`.sparkforge/sdd/<FEATURE>/`, e todo verbo do SDD leva a raiz:
+
+```
+sparkforge sdd check --repo . --root .sparkforge/sdd --feature <F>
+sparkforge sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/<fase>.md
+```
+
+Por quê: a cópia que `sparkforge change sandbox` valida poda `.sparkforge`.
+Uma spec em `docs/sdd/` muda a árvore copiada, e `sparkforge change propose`
+recusa o pacote com `sandbox_desatualizado`. A árvore do job continua mudando
+só pelo diff de `sparkforge change sandbox` e pelo pacote de
+`sparkforge change propose`. Não ponha `.sparkforge/sdd/` no `.gitignore`: é a
+spec do operador. `.sparkforge/sandbox/` e `.sparkforge/proposal/` são
+recriados a cada execução.
+
+O que o gate aceita só no operator:
+
+| onde | campo | prova |
+|---|---|---|
+| define | `verified_by: {kind: fact, ref: <facts.json>#kind:<kind>}` | ao menos um fact daquele kind; prefira ao `#<id>`, que é hash desconhecido antes da coleta |
+| plan | `proof: {kind: funcval\|fact\|finding, ref}` no lugar de `test` | `finding` é `<change_id>#<rule_id>` ou `#<rule_id>` (o `change_id` do build); lacuna `finding_not_observed` até o sandbox |
+| build_report | `moved: {change_id, resolved: [<rule_id>...]}` no lugar de `red`/`green` | cada regra em `resolved` e fora de `new` no `report.json` do sandbox ou no `evidence/sandbox_report.json` da proposal; senão `moved_not_observed` |
+
+`change_id` vale enquanto existir `.sparkforge/sandbox/<id>/` ou
+`.sparkforge/proposal/<id>/`. Com o ship em `status: done`, `case_missing`,
+`change_missing` e a conferência de `moved`/`finding` param: o case e a
+mudança citados viraram histórico.
+
 ## Cascata
 
 Mudou uma fase? `sparkforge sdd status` mostra quem ficou `upstream_stale`. A

@@ -264,3 +264,23 @@ def test_coordenadores_apontam_o_sdd():
         assert "`sdd-define`" in corpo and "`sdd-build`" in corpo, nome
         assert "sparkforge sdd check" in corpo, nome
         assert "sparkforge case open" in corpo, nome
+
+
+_OPERADOR_DURAVEL = {
+    "sdd-define": ("--root .sparkforge/sdd", "#kind:"),
+    "sdd-plan": ("--root .sparkforge/sdd", "proof", "finding"),
+    "sdd-build": ("--root .sparkforge/sdd", "moved", "--out", "--funcval", "--benchmark"),
+    "sdd-ship": ("--root .sparkforge/sdd", "--funcval", "--benchmark", "done"),
+}
+
+
+def test_skills_ensinam_o_operador_duravel():
+    for nome, trechos in _OPERADOR_DURAVEL.items():
+        texto = (ROOT / "skills" / nome / "SKILL.md").read_text(encoding="utf-8")
+        operador = texto.split("## Perfil operator", 1)[1].split("\n## ", 1)[0]
+        for trecho in trechos:
+            assert trecho in operador, (nome, trecho)
+    readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
+    for trecho in ("--root .sparkforge/sdd", "sparkforge change sandbox",
+                   "sparkforge change propose", "#kind:"):
+        assert trecho in readme, trecho
