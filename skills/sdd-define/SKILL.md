@@ -1,6 +1,6 @@
 ---
 name: sdd-define
-description: Use quando a abordagem já está escolhida (ou o pedido já é claro) e é hora de fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador. Grava docs/sdd/<FEATURE>/define.md com hipótese em três partes, critérios com verified_by real, métricas com source, lacunas com unlock e change_kinds da lista fechada, e fecha com sparkforge sdd stamp (quando existe explore) e sparkforge sdd check.
+description: Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador.
 ---
 
 # SDD Define

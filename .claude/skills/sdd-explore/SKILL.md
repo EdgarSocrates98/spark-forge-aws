@@ -1,6 +1,6 @@
 ---
 name: sdd-explore
-description: Use quando houver uma ideia ainda sem forma que vai virar mudança no SparkForge ou num job Glue/PySpark do operador — "quero fazer X", "uso A ou B?", "como você atacaria isso?" — antes de qualquer define, design ou código. Escolhe o perfil (dev ou operator) primeiro, faz uma pergunta por vez, compara duas ou três abordagens com trade-offs e grava docs/sdd/<FEATURE>/explore.md, fechando com sparkforge sdd check. A fase é opcional, e requisito já claro vai direto para sdd-define.
+description: Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job Glue/PySpark do operador — "quero fazer X", "uso A ou B?", "como você atacaria isso?" — e ainda não há define, design nem código. Requisito já claro vai direto para sdd-define.
 ---
 
 # SDD Explore

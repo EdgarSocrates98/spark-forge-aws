@@ -1,6 +1,6 @@
 ---
 name: sdd-ship
-description: Use quando o build_report.md da feature está pronto e é hora de fechar — "entrega a feature", "fecha o ciclo", "fase ship", "posso abrir o PR?". Deriva a lista de gates das seções de docs/gates-por-mudanca.md pelos change_kinds do define, roda cada um, registra os registros conferidos, fecha a hipótese sem reescrevê-la, lista os desvios, atualiza STATUS e manifestos e grava docs/sdd/<FEATURE>/ship.md, fechando com sparkforge sdd stamp e sparkforge sdd check.
+description: Use quando o build_report.md da feature está pronto e é hora de entregar — "entrega a feature", "fecha o ciclo", "fase ship", "posso abrir o PR?", "posso fazer merge?" — no SparkForge ou num job do operador.
 ---
 
 # SDD Ship

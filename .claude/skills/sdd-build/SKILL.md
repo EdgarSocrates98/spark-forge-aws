@@ -1,6 +1,6 @@
 ---
 name: sdd-build
-description: Use quando o plan.md da feature está ready e é hora de construir — "executa o plano", "implementa a feature", "fase build" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox). Aplica a lei do vermelho antes do verde em cada tarefa, despacha um subagente novo por tarefa com o texto dela colado, revisa em dois estágios (spec e depois qualidade), registra red e green com comando e exit em docs/sdd/<FEATURE>/build_report.md e fecha com sparkforge sdd stamp e sparkforge sdd check.
+description: Use quando o plan.md da feature está ready e é hora de construir — "executa o plano", "implementa a feature", "fase build" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox).
 ---
 
 # SDD Build

@@ -1,6 +1,6 @@
 ---
 name: sdd-design
-description: Use quando o define.md da feature está ready e é hora de decidir como construir — "desenha a solução", "quais arquivos mudam?", "fase design" — no SparkForge ou num job do operador. Grava docs/sdd/<FEATURE>/design.md com o manifesto de arquivos conferido no código, decisões com alternativas rejeitadas e rollback, e a cobertura de cada critério do define, e fecha com sparkforge sdd stamp e sparkforge sdd check.
+description: Use quando o define.md da feature está ready e falta decidir como construir — "desenha a solução", "quais arquivos mudam?", "como desfazer?", "fase design" — no SparkForge ou num job do operador.
 ---
 
 # SDD Design

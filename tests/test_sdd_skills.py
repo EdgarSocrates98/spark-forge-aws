@@ -138,6 +138,19 @@ def test_o_detector_recusa_flag_inventada():
     assert _flags_recusadas(parser, "benchmark --before a --funcval b") == ["--funcval"]
 
 
+def _descricao(nome: str) -> str:
+    return re.search(r"^description: (.*)$", _texto_da_skill(nome), re.M).group(1)
+
+
+def test_descricoes_so_com_gatilho():
+    for nome in SKILLS_SDD:
+        descricao = _descricao(nome)
+        assert descricao.startswith("Use quando"), nome
+        assert len(descricao) <= 320, (nome, len(descricao))
+        for resumo in ("Grava ", "fecha com", "fechando com"):
+            assert resumo not in descricao, (nome, resumo)
+
+
 def test_credito_das_bases():
     """AgentSpec e superpowers creditados, com licenca e o que veio de cada um."""
     texto = (ROOT / "vendor" / "CREDITS.md").read_text(encoding="utf-8")

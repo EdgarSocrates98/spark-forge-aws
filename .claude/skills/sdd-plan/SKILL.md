@@ -1,6 +1,6 @@
 ---
 name: sdd-plan
-description: Use quando o design.md da feature está ready e é hora de quebrar a construção em tarefas executáveis — "escreve o plano", "quebra em tarefas", "fase plan". Grava docs/sdd/<FEATURE>/plan.md com tarefas pequenas, cada uma com o teste que falha antes, os arquivos, os critérios que cobre e o código completo no corpo, sem placeholder, e fecha com sparkforge sdd stamp e sparkforge sdd check.
+description: Use quando o design.md da feature está ready e falta quebrar a construção em tarefas pequenas, com teste e código, que outra sessão execute sem contexto — "escreve o plano", "quebra em tarefas", "fase plan".
 ---
 
 # SDD Plan
