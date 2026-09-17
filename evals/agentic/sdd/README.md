@@ -55,24 +55,27 @@ número desta suite vira afirmação de ganho sobre outro processo.
 
 ## Baseline
 
-`baselines/2026-09-17-haiku-4-5/r1.json`: uma execução (N=1) com
+`baselines/2026-09-17-haiku-4-5/`: duas execuções do mesmo comando
+(`r1.json` às 07:45Z, `r2.json` às 08:14Z, N=2) com
 `claude-haiku-4-5-20251001`, host `2.1.274`, superfície `full`, suite sha256
 `47bdb24f…`.
 
-| pergunta | acerto | tools exigidas | canal usado |
-|---|---|---|---|
-| `sdd-01` | correct | ok | CLI, por `Bash` e `PowerShell` |
-| `sdd-02` | correct | ok | CLI, depois de `Read` e `Glob` procurando a pasta |
-| `sdd-03` | correct | ok | CLI |
-| `sdd-04` | correct | ok | CLI |
-| `sdd-05` | correct | ok | CLI |
-| `sdd-06` | correct | ok | CLI, por `Bash` e `PowerShell` |
+| pergunta | acerto k/N | tools exigidas k/N |
+|---|---|---|
+| `sdd-01` | 2/2 | 2/2 |
+| `sdd-02` | 2/2 | 2/2 |
+| `sdd-03` | 2/2 | **1/2** |
+| `sdd-04` | 2/2 | 2/2 |
+| `sdd-05` | 2/2 | 2/2 |
+| `sdd-06` | 2/2 | 2/2 |
 
-Acerto 6/6 e tools 6/6, com **uma** amostra: é um ponto de partida, não uma
-taxa. Nenhuma pergunta usou a tool MCP; todas chegaram ao gate pela CLI
-`sparkforge sdd ...`, e o grader só reconhece a CLI chamada por `Bash`
-(`PowerShell` conta como `other`). O `sparkforge` do PATH da máquina era
-instalação editável deste repositório, não a cópia do workspace; o código de
-`sparkforge/` era o mesmo nos dois. Repetir com `--repeat 3` antes de citar
+Nenhuma pergunta usou a tool MCP; o gate foi alcançado pela CLI
+`sparkforge sdd ...`. Em `r2`, `sdd-03` tentou `python -m sparkforge.cli sdd
+check`, que não é o ponto de entrada da CLI, e respondeu certo **lendo o YAML**
+com `Read` — exatamente o comportamento que a suite existe para distinguir.
+O grader só reconhece a CLI chamada por `Bash` (`PowerShell` conta como
+`other`). O `sparkforge` do PATH da máquina era instalação editável deste
+repositório, não a cópia do workspace; o código de `sparkforge/` era o mesmo
+nos dois. Duas amostras não são taxa: repetir com `--repeat 3` antes de citar
 estabilidade, e comparar com `python -m sparkforge.evals compare`, que lista
 transições e não conclui.
