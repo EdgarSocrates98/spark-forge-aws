@@ -452,8 +452,13 @@ def _lacuna_de_pulo(root: str, pulo: Pulo) -> dict[str, Any]:
     }
 
 
-def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None) -> dict[str, Any]:
-    """`{ok, root, features, refused, unresolved}` sobre `repo/root`."""
+def _avaliar(
+    repo: Path | str, root: str, feature: str | None
+) -> tuple[dict[str, Any], dict[str, _Contexto]]:
+    """Uma varredura so: o relatorio do `check` e o contexto de cada feature.
+
+    `status` le os mesmos contextos, entao os dois nunca discordam sobre a arvore.
+    """
     raiz_repo = Path(repo)
     raiz = resolve_within(raiz_repo, root)
     if raiz is None or not raiz.is_dir():
@@ -466,7 +471,7 @@ def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None
                 "code": "root_missing", "feature": None, "path": root,
                 "unlock": f"crie {root}/<FEATURE>/ ou passe --root para a pasta dos artefatos",
             }],
-        }
+        }, {}
     descoberta = discover(raiz)
     todas = descoberta.features
     nomes = sorted(todas) if feature is None else [n for n in sorted(todas) if n == feature]
@@ -476,8 +481,10 @@ def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None
         item = _lacuna_de_pulo(root, pulo)
         if feature is None or item["feature"] == feature:
             unresolved.append(item)
+    contextos: dict[str, _Contexto] = {}
     for nome in nomes:
         ctx = _check_feature(raiz_repo, nome, todas[nome])
+        contextos[nome] = ctx
         refused.extend(ctx.refused)
         unresolved.extend(ctx.unresolved)
     return {
@@ -486,4 +493,9 @@ def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None
         "features": nomes,
         "refused": refused,
         "unresolved": unresolved,
-    }
+    }, contextos
+
+
+def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None) -> dict[str, Any]:
+    """`{ok, root, features, refused, unresolved}` sobre `repo/root`."""
+    return _avaliar(repo, root, feature)[0]

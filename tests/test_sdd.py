@@ -976,6 +976,56 @@ def test_status_mostra_fase_e_bloqueio(tmp_path):
     assert por_nome["F2"]["refused"] == ["rollback_missing"]
 
 
+@pytest.mark.parametrize("estraga", ["campo_extra", "yaml_quebrado"])
+def test_status_com_fase_atual_invalida(tmp_path, estraga):
+    caminhos = feature_limpa(tmp_path)
+    if estraga == "campo_extra":
+        _reescreve(caminhos["ship"], inventado=1)
+    else:
+        caminhos["ship"].write_bytes(b"---\nsdd: [\n---\n")
+    item = status(tmp_path)["features"][0]
+    assert item["phase"] == "ship"
+    assert item["status"] is None
+    assert item["profile"] is None
+    assert "schema_invalid" in item["refused"]
+
+
+def test_status_varre_uma_vez_so(tmp_path, monkeypatch):
+    import sparkforge.sdd.checks as modulo_checks
+    import sparkforge.sdd.load as modulo_load
+
+    feature_limpa(tmp_path)
+    chamadas = []
+    original = modulo_load.varrer_source_files
+
+    def conta(*args, **kwargs):
+        chamadas.append(args)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(modulo_load, "varrer_source_files", conta)
+    assert status(tmp_path)["features"][0]["phase"] == "ship"
+    assert len(chamadas) == 1
+    assert modulo_checks.check(tmp_path)["ok"] is True
+    assert len(chamadas) == 2
+
+
+def test_registry_unchecked_nao_repete_registro_compartilhado(tmp_path, monkeypatch):
+    import sparkforge.sdd.checks as modulo_checks
+
+    tipos = {
+        "tipo_a": {"section": "A", "registries": ["r1", "r2"]},
+        "tipo_b": {"section": "B", "registries": ["r2", "r3"]},
+    }
+    monkeypatch.setattr(modulo_checks, "change_kinds", lambda: tipos)
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["define"], change_kinds=["tipo_a", "tipo_b"])
+    _reescreve(caminhos["ship"], registries=[])
+    _restampa(tmp_path)
+    recusa = check(tmp_path)["refused"]
+    assert [r["code"] for r in recusa] == ["registry_unchecked"] * 3
+    assert [r["unlock"].split(" ")[0] for r in recusa] == ["r1", "r2", "r3"]
+
+
 def test_status_sem_raiz(tmp_path):
     saida = status(tmp_path)
     assert saida["features"] == []
