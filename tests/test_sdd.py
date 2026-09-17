@@ -1258,6 +1258,21 @@ def test_moved_confere_o_relatorio(tmp_path):
     assert _codigos(check(dev)) == (["red_not_declared", "schema_invalid"], [])
 
 
+def test_moved_de_outra_mudanca(tmp_path):
+    """SDD_ENDURECIMENTO AC5: moved prova a mudanca que o build registrou, nao outra."""
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    _relatorio_de_mudanca(tmp_path, "sandbox", "S2", resolvidos=["SF-PY-012"])
+    tarefa = {"id": "T1", "status": "done",
+              "moved": {"change_id": "S2", "resolved": ["SF-PY-012"]}}
+    _reescreve(caminhos["build_report"], tasks=[tarefa])
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [
+        ("moved_change_mismatch", "tasks/0/moved/change_id"),
+    ]
+    assert "S1" in recusa[0]["unlock"] and "S2" in recusa[0]["unlock"]
+
+
 def test_proof_e_moved_fecham_propriedades():
     tarefa_plan = schema_for("plan")["properties"]["tasks"]["items"]
     prova = tarefa_plan["properties"]["proof"]

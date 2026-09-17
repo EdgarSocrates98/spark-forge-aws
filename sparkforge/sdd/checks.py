@@ -470,9 +470,15 @@ def _gate_task_test(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
 def _conferir_movido(
     ctx: _Contexto, artefato: Artifact, campo: str, movido: dict[str, Any], dono: str
 ) -> None:
+    ident = movido["change_id"]
+    do_build = _texto_ou_none(artefato.meta.get("change_id"))
+    if ident != do_build:
+        ctx.recusa("moved_change_mismatch", artefato.path, f"{campo}/change_id",
+                   f"{dono}: moved.change_id {ident} nao e o change_id do build "
+                   f"({do_build or 'vazio'}); a tarefa prova a mudanca que o build registrou")
+        return
     if _ship_feito(ctx):
         return  # referencia historica: o sandbox pode ter sido limpo
-    ident = movido["change_id"]
     faltam = _nao_movidas(_relatorio_da_mudanca(ctx.repo, ident), movido["resolved"])
     if faltam:
         ctx.recusa("moved_not_observed", artefato.path, campo,
