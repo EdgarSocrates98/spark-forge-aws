@@ -1,7 +1,7 @@
 # SDD próprio — núcleo determinístico (subprojeto A)
 
 **Data:** 2026-09-16
-**Estado:** desenho aprovado, implementação não iniciada
+**Estado:** implementado (subprojeto A), branch `sdd/nucleo-spec`; desvios no §13
 **Frente:** A de 5 (A núcleo · B skills dev · C perfil operador · D migração · E medida)
 
 > Este é o **último** spec gravado em `docs/superpowers/specs/`. O formato que ele
@@ -368,3 +368,30 @@ Estrutura de fases, templates e a ideia de manifesto de arquivos vêm do
 AgentSpec (MIT, `luanmorenommaciel/agentspec`, 3.5.0) e do ciclo do superpowers.
 A atribuição entra em `vendor/CREDITS.md` no subprojeto B, quando o primeiro
 texto derivado entrar no repo.
+
+## 13. Desvios na implementação
+
+O que a entrega fez diferente do texto acima, ou decidiu onde ele calava. Os
+itens da revisão já estão descritos no §5.0; aqui fica só o registro.
+
+- **`explore` é opcional.** A ordem exigida começa no define, e o define só
+  declara `upstream` quando `explore.md` existe (§5).
+- **Feature inexistente é erro de uso do verbo**, não código do §5: `--feature`
+  que a varredura não achou sai com exit 2 e aponta `sdd status`. As exceções
+  são as ausências que uma lacuna já explica: `root_missing`, ou um
+  `path_skipped` com o nome da feature.
+- **Sem `detail_level`** nas três tools (§6).
+- **Hash de texto.** `upstream.sha256` é o `text_sha256` (quebra de linha
+  normalizada), não o hash dos bytes.
+- **Features sintéticas em `tmp_path`**, sem fixture versionada (§9).
+- **`stamp` recebe `root`** e recusa o que não é artefato (`not_an_artifact`),
+  além de `sha_line_unsupported` e `upstream_flow_style`.
+- **`path_skipped`** nasceu na revisão, e só para pulo que a descoberta leria
+  (§5.0).
+- **`delete` no manifesto** deixa de ser `manifest_path_unknown` depois que o
+  build fica `ready` ou `done` (§5).
+- **Endurecimento da revisão:** BOM de UTF-8 tolerado, comentário no fim da
+  linha do hash preservado com o espaço antes do `#`, `change_id` confinado à
+  pasta do sandbox, `case_id` comparado como texto, referência de teste lida
+  como node id do pytest, `evaluate` público para o `status` usar a mesma
+  passada do `check`, e `root_path: null` no MCP tratado como a raiz padrão.

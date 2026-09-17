@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-16-sdd-nucleo-design.md`.
 
+> **Execução:** feita em 2026-09-16; onde ela divergiu deste plano está no §13 do spec.
+
 ---
 
 ## Antes de começar
