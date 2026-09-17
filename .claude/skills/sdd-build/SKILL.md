@@ -123,35 +123,30 @@ Achado corrigido volta ao **mesmo** estágio. Revisor lista achados; não dá no
 - Com o relatório em `ready` ou `done`, todo teste citado no define e no plan
   **precisa existir**: o que faltar sai `verified_by_dangling`.
 
-Feche com `sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` e
+Feche pelo laço de `docs/sdd/README.md#o-laço-de-cada-fase`:
+`sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` e
 `sparkforge sdd check --repo . --feature <F>`. Zero recusa e zero lacuna →
 `status: done`.
 
 ## Conhecimento durante o build
 
 Antes de mexer num símbolo, `sparkforge code symbol <node_id>` diz quem o chama.
-Comportamento de Spark, Glue ou Iceberg sai de `sparkforge rules lookup` ou
-`sparkforge knowledge path`, com a versão. Memória do agente não é fonte.
+O resto: `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 
 ## Perfil operator
 
-A sessão **nunca** escreve na árvore do operador. A spec e as evidências moram
-em `.sparkforge/sdd/<F>/` (a cópia do sandbox poda `.sparkforge`; qualquer
-outro lugar deixa o sandbox desatualizado). O caminho é:
+A sessão **nunca** escreve na árvore do operador. Spec e evidências moram em
+`.sparkforge/sdd/<F>/` (a cópia do sandbox poda `.sparkforge`). Siga
+`docs/sdd/README.md#caminho-da-mudança-do-operador`; os três passos que mais
+erram:
 
-1. `sparkforge funcval plan` com a chave de negócio declarada, antes da mudança.
-2. `sparkforge change plan --facts <f> --set k=v --out d.patch` (ou `--from-tune`).
-3. `sparkforge change sandbox --repo . --diff d.patch`: guarde o `id` e grave-o
-   em `change_id` no relatório. Sem ele, ou com id que não está em
-   `.sparkforge/sandbox/` nem em `.sparkforge/proposal/`, sai `change_missing`.
-4. Achado novo P0 ou P1 no sandbox: pare e volte ao design.
-5. `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>`:
-   o `--out` é o `ref` do `verified_by` funcval, senão `funcval_not_run` nunca
-   sai. `sparkforge benchmark --before <a> --after <b> --out bench.json` com os
-   runs medidos.
-6. `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
-   sem as duas flags o pacote fica com a medida PENDENTE. O PR vai pela skill
-   `propose-change-pr`, que para antes de `git push` e de `gh pr create`.
+- `sparkforge change sandbox --repo . --diff d.patch`: o `id` vai para
+  `change_id`. Id fora de `.sparkforge/sandbox/` e de `.sparkforge/proposal/`
+  sai `change_missing`. Achado novo P0 ou P1: pare e volte ao design.
+- `funcval compare ... --out <ref do AC>` e `benchmark ... --out bench.json`:
+  sem o `--out`, a evidência não existe para o gate.
+- `change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
+  sem as duas flags, o pacote diz PENDENTE.
 
 Registro por tarefa:
 

@@ -67,6 +67,8 @@ não é reescrito.
 
 ## O laço
 
+O de `docs/sdd/README.md#o-laço-de-cada-fase`, fechado assim:
+
 1. Rode os gates e anote o que passou.
 2. Escreva `ship.md` com `registries`, `hypothesis_outcome`, `deviations` e o
    corpo (hipótese, pendências, gates rodados).
@@ -87,7 +89,9 @@ substituída depois vira `status: superseded`.
 - O pacote do PR sai de
   `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`,
   sobre o `change_id` que o build registrou, e o PR pela skill
-  `propose-change-pr`. Sem `--funcval` e `--benchmark`, o pacote diz PENDENTE.
+  `propose-change-pr` (passos em
+  `docs/sdd/README.md#caminho-da-mudança-do-operador`). Sem `--funcval` e
+  `--benchmark`, o pacote diz PENDENTE.
 - `confirmed` exige medida: `sparkforge funcval compare` para a semântica e
   `sparkforge benchmark` entre runs para o desempenho. Economia estimada não
   fecha hipótese.

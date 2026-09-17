@@ -63,25 +63,16 @@ mudança toca. É delas que o ship deriva os gates. Guia rápido:
 Chave fora do arquivo sai `schema_invalid` com a lista das válidas. Na dúvida,
 abra `docs/gates-por-mudanca.md` e procure a seção que descreve a mudança.
 
-## Conhecimento, não memória
+## Conhecimento
 
-Critério sobre comportamento de Glue, Spark ou Iceberg cita a fonte:
-`sparkforge rules lookup --id <SF-...>` ou `sparkforge knowledge path --file
-<documento>`. A versão vem antes — com AQE ou sem AQE, o mesmo número significa
-outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
+Critério sobre Glue, Spark ou Iceberg cita a fonte, com a versão:
+`docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 
 ## O laço
 
-1. Rascunhe os campos com `status: draft`.
-2. Lacuna que só o operador resolve: **uma pergunta por vez**.
-3. Com `explore.md` presente: `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md`.
-   Nunca escreva o `sha256` à mão.
-4. `sparkforge sdd check --repo . --feature <F>`. Cada recusa traz `field` e
-   `unlock`: corrija aquele campo e rode de novo.
-5. `status: ready` com zero recusa. Lacunas `test_not_written`,
-   `fact_not_collected` e `funcval_not_run` são esperadas aqui, desde que cada
-   uma vire tarefa no plano.
-6. Próximo passo: `sdd-design`.
+O de `docs/sdd/README.md#o-laço-de-cada-fase`. Aqui: com `explore.md`
+presente, `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md`; sempre
+`sparkforge sdd check --repo . --feature <F>`. Próximo passo: `sdd-design`.
 
 ## Perfil operator
 
@@ -95,7 +86,8 @@ outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
   ele, ou com outro, sai `case_missing` — até o ship ficar `done`; dali em
   diante o case citado é histórico.
 - Preservar a semântica é critério, não detalhe: um `AC` com `kind: funcval`,
-  planejado por `sparkforge funcval plan` com a chave de negócio **declarada**.
+  planejado por `sparkforge funcval plan` com a chave de negócio **declarada**
+  (o caminho inteiro: `docs/sdd/README.md#caminho-da-mudança-do-operador`).
 - O aceite do operador raramente é pytest: `{kind: funcval, ref: <arquivo do
   compare --out>}` para o resultado e `{kind: fact, ref: <facts.json>#kind:<kind>}`
   para o sintoma medido. **Prefira o seletor `#kind:`** agora: o id de fact é

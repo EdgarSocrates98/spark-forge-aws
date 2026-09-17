@@ -77,21 +77,16 @@ Corrija no lugar. Isso é checagem sua, não nota.
 
 ## O laço
 
-1. Escreva tarefas e corpo com `status: draft`.
-2. Autorrevisão.
-3. `sparkforge sdd stamp --repo . docs/sdd/<F>/plan.md`.
-4. `sparkforge sdd check --repo . --feature <F>`. Aqui `test_not_written` para
-   cada tarefa é esperado: o teste nasce no build. Recusa não é.
-5. `status: ready` com zero recusa, depois da leitura do operador.
-6. Próximo passo: `sdd-build`.
+O de `docs/sdd/README.md#o-laço-de-cada-fase`, com a autorrevisão antes do
+stamp: `sparkforge sdd stamp --repo . docs/sdd/<F>/plan.md` e
+`sparkforge sdd check --repo . --feature <F>`. Aqui `test_not_written` para
+cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo:
+`sdd-build`.
 
 ## Perfil operator
 
-- As tarefas seguem o caminho do change: `sparkforge funcval plan` antes da
-  mudança, `sparkforge change plan` para gerar o diff, `sparkforge change sandbox`
-  para aplicá-lo numa cópia, `sparkforge benchmark` e `sparkforge funcval compare`
-  para medir, e a skill `propose-change-pr` para o PR.
-- Nenhuma tarefa edita a árvore do operador direto. O plano mora em
+- As tarefas seguem `docs/sdd/README.md#caminho-da-mudança-do-operador`;
+  nenhuma tarefa edita a árvore do operador direto. O plano mora em
   `.sparkforge/sdd/<F>/plan.md`:
   `sparkforge sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/plan.md`.
 - Toda tarefa prova alguma coisa. Com pytest sobre as funções puras do job, é

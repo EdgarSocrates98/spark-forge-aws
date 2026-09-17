@@ -151,6 +151,28 @@ def test_descricoes_so_com_gatilho():
             assert resumo not in descricao, (nome, resumo)
 
 
+_SECOES_COMUNS = {
+    "o-laço-de-cada-fase": ("## O laço de cada fase", SKILLS_SDD),
+    "caminho-da-mudança-do-operador": (
+        "## Caminho da mudança do operador",
+        ("sdd-define", "sdd-design", "sdd-plan", "sdd-build", "sdd-ship"),
+    ),
+    "conhecimento-citado-nunca-memória": (
+        "## Conhecimento citado, nunca memória",
+        ("sdd-explore", "sdd-define", "sdd-design", "sdd-build"),
+    ),
+}
+
+
+def test_blocos_comuns_moram_no_readme():
+    readme = (ROOT / "docs" / "sdd" / "README.md").read_text(encoding="utf-8")
+    assert "lacunas esperadas" in readme and "zero recusa" in readme
+    for ancora, (titulo, skills) in _SECOES_COMUNS.items():
+        assert titulo in readme, titulo
+        for nome in skills:
+            assert f"docs/sdd/README.md#{ancora}" in _texto_da_skill(nome), (nome, ancora)
+
+
 def test_credito_das_bases():
     """AgentSpec e superpowers creditados, com licenca e o que veio de cada um."""
     texto = (ROOT / "vendor" / "CREDITS.md").read_text(encoding="utf-8")
