@@ -11,10 +11,13 @@ files:
   - {path: sparkforge/sdd/checks.py, action: modify, reason: "funcval_not_comparison e funcval_blind_spot no gate de verified_by"}
   - {path: tests/test_sdd.py, action: modify, reason: "AC2 e AC3"}
   - {path: tests/test_sdd_operator.py, action: create, reason: "AC1 e AC4"}
-  - {path: agents/spark-performance-architect.md, action: modify, reason: "skills sdd-define e sdd-build e quando abrir a spec"}
+  - {path: agents/spark-performance-architect.md, action: modify, reason: "paragrafo que cita sdd-define e sdd-build e diz quando abrir a spec"}
   - {path: agents/glue-incremental-performance-architect.md, action: modify, reason: "idem"}
   - {path: agents/glue-infra-reviewer.md, action: modify, reason: "idem"}
   - {path: agents/pyspark-code-reviewer.md, action: modify, reason: "idem"}
+  - {path: skills/sdd-define/SKILL.md, action: modify, reason: "perfil operator: case_id e aceite por funcval ou fact (acrescimo do build)"}
+  - {path: skills/sdd-plan/SKILL.md, action: modify, reason: "perfil operator: o test da tarefa (acrescimo do build)"}
+  - {path: skills/sdd-build/SKILL.md, action: modify, reason: "perfil operator: red, green e o pacote do PR (acrescimo do build)"}
   - {path: docs/superpowers/specs/2026-09-16-sdd-nucleo-design.md, action: modify, reason: "os dois codigos novos na tabela do paragrafo 5"}
 decisions:
   - id: D1
@@ -22,9 +25,11 @@ decisions:
     rejected: ["recusar quando algum delta passa de um limiar, o que poria limiar dentro do gate de spec (regra 11)"]
     rollback: "Voltar _gate_verified_by a conferir so a existencia do arquivo."
   - id: D2
-    choice: "Os coordenadores ganham as skills na lista skills do frontmatter e um paragrafo curto; o texto da skill continua o unico lugar do procedimento."
-    rejected: ["copiar o procedimento do SDD para cada coordenador"]
-    rollback: "Remover as duas skills e o paragrafo de cada coordenador e rodar python scripts/sync_skills.py."
+    choice: "Os coordenadores ganham um paragrafo curto que cita as skills sdd-define e sdd-build na PROSA, fora do skills do frontmatter; o texto da skill continua o unico lugar do procedimento."
+    rejected:
+      - "copiar o procedimento do SDD para cada coordenador"
+      - "listar as skills no skills do frontmatter (revisto no build): as sdd-* estao em NON_DISPATCHABLE_SKILLS porque perguntam e despacham, e o coordenador roda como subagente; o precedente e diagnose-lakeformation-access, citada so na prosa"
+    rollback: "Remover o paragrafo de cada coordenador e rodar python scripts/sync_skills.py."
   - id: D3
     choice: "O teste ponta a ponta usa call_tool com sparkforge_case_open e sparkforge_change_sandbox reais sobre um repositorio sintetico em tmp_path."
     rejected: ["fabricar .sparkforge/case.yaml e .sparkforge/sandbox/<id> a mao, que e o que o teste do nucleo ja faz"]
@@ -32,7 +37,7 @@ decisions:
 covers:
   - {part: "gate funcval", acceptance: [AC2, AC3]}
   - {part: "fluxo ponta a ponta", acceptance: [AC1]}
-  - {part: "coordenadores", acceptance: [AC4]}
+  - {part: "coordenadores e skills", acceptance: [AC4]}
 ---
 
 # SDD_OPERATOR — desenho

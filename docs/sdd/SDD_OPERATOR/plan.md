@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/SDD_OPERATOR/design.md
-  sha256: "f03a575d6ee0da42490e9f4c1930b0b4a293868d9bcd08c3a5e44ba8e4cdf77a"
+  sha256: "393ca4bc25010058f3bfa044fdbbdbbc20f6e41aa5a34532642b9666a8b26e69"
 tasks:
   - id: T1
     files: [sparkforge/sdd/checks.py, tests/test_sdd.py]
@@ -21,7 +21,7 @@ tasks:
     covers: [AC1]
     test: {path: tests/test_sdd_operator.py, name: test_fluxo_operator_ponta_a_ponta}
   - id: T4
-    files: [agents/spark-performance-architect.md, agents/glue-incremental-performance-architect.md, agents/glue-infra-reviewer.md, agents/pyspark-code-reviewer.md, tests/test_sdd_operator.py]
+    files: [agents/spark-performance-architect.md, agents/glue-incremental-performance-architect.md, agents/glue-infra-reviewer.md, agents/pyspark-code-reviewer.md, skills/sdd-define/SKILL.md, skills/sdd-plan/SKILL.md, skills/sdd-build/SKILL.md, tests/test_sdd_operator.py]
     covers: [AC4]
     test: {path: tests/test_sdd_operator.py, name: test_coordenadores_apontam_o_sdd}
 ---
@@ -87,11 +87,19 @@ COORDENADORES = (
 def test_coordenadores_apontam_o_sdd():
     for nome in COORDENADORES:
         texto = (ROOT / "agents" / f"{nome}.md").read_text(encoding="utf-8")
-        frente = texto.split("\n---\n", 1)[0]
-        assert "sdd-define" in frente and "sdd-build" in frente, nome
-        assert "sparkforge sdd check" in texto, nome
+        frente, corpo = texto.split("\n---\n", 1)
+        assert "sdd-" not in frente, nome
+        assert "`sdd-define`" in corpo and "`sdd-build`" in corpo, nome
+        assert "sparkforge sdd check" in corpo, nome
+        assert "sparkforge case open" in corpo, nome
 ```
 
-Editar a FONTE em `agents/`, rodar `python scripts/sync_skills.py` (guardando
-`.claude/agents/README.md`), e `python -m pytest tests/test_agents_parity.py
-tests/test_agent_coverage.py tests/test_sync_render.py -q`. Commit.
+Revisto no build (D2): as `sdd-*` sao nao-despachaveis e ficam fora do
+`skills:`; o coordenador as cita na prosa. No mesmo commit, as secoes "Perfil
+operator" de `sdd-define`, `sdd-plan` e `sdd-build` trocam o adiamento para o
+subprojeto C pelo caminho concreto.
+
+Editar a FONTE em `agents/` e `skills/`, rodar `python scripts/sync_skills.py`
+(guardando `.claude/agents/README.md`), e `python -m pytest
+tests/test_agents_parity.py tests/test_agent_coverage.py tests/test_sync_render.py
+tests/test_skill_content.py tests/test_sdd_skills.py -q`. Commit.

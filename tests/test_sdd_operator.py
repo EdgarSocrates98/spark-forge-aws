@@ -164,3 +164,23 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     call_tool("sparkforge_change_sandbox", {"repo": str(repo), "clean": True})
     assert not (repo / ".sparkforge" / "sandbox" / change_id).exists()
     assert _codigos(check(repo, feature=FEATURE)) == (["change_missing"], [])
+
+
+COORDENADORES = (
+    "spark-performance-architect",
+    "glue-incremental-performance-architect",
+    "glue-infra-reviewer",
+    "pyspark-code-reviewer",
+)
+
+
+def test_coordenadores_apontam_o_sdd():
+    # as sdd-* sao nao-despachaveis (scripts/sync_skills.py::NON_DISPATCHABLE_SKILLS):
+    # o coordenador as cita na prosa e fica sem elas no `skills:`
+    for nome in COORDENADORES:
+        texto = (ROOT / "agents" / f"{nome}.md").read_text(encoding="utf-8")
+        frente, corpo = texto.split("\n---\n", 1)
+        assert "sdd-" not in frente, nome
+        assert "`sdd-define`" in corpo and "`sdd-build`" in corpo, nome
+        assert "sparkforge sdd check" in corpo, nome
+        assert "sparkforge case open" in corpo, nome

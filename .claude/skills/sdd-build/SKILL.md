@@ -147,7 +147,10 @@ A sessão **nunca** escreve na árvore do operador. O caminho é:
 6. O PR vai pela skill `propose-change-pr`, que para antes de `git push` e de
    `gh pr create`.
 
-O detalhe do perfil operator é o subprojeto C.
+O `case_id` é o de `sparkforge case open` (`.sparkforge/case.yaml`). O `red` é
+o `test` da tarefa rodado antes do sandbox; o `green`, o mesmo teste depois do
+compare. O pacote do PR sai de `sparkforge change propose` sobre o id do
+sandbox, e nada é escrito na árvore do operador.
 
 ## Verificação antes de fechar
 

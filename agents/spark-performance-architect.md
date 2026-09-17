@@ -281,6 +281,15 @@ linhas podem trocar valores entre si e os quatro passam; a ausência de achado s
 "nenhum proxy detectou divergência". **`SF-FVAL-005` acesa invalida a leitura das outras
 quatro:** parte do plano não foi medida, e a foto está incompleta.
 
+## Mudança no job pede spec
+
+Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
+`sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
+`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
+nunca pela árvore do operador. `sparkforge sdd check` confere cada fase. As duas
+skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
+despacham subagentes, e subagente não faz nenhum dos dois.
+
 ## Não faz
 
 **O seu caminho até a manutenção destrutiva passa pelo benchmark.** Medir antes e depois
