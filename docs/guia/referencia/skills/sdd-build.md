@@ -2,7 +2,7 @@
 
 # Skill `sdd-build`
 
-Use quando o plan.md da feature está ready e é hora de construir — "executa o plano", "implementa a feature", "fase build" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox). Aplica a lei do vermelho antes do verde em cada tarefa, despacha um subagente novo por tarefa com o texto dela colado, revisa em dois estágios (spec e depois qualidade), registra red e green com comando e exit em docs/sdd/<FEATURE>/build_report.md e fecha com sparkforge sdd stamp e sparkforge sdd check.
+Use quando o plan.md da feature está ready e é hora de construir — "executa o plano", "implementa a feature", "fase build" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox).
 
 | Campo | Valor |
 |---|---|
@@ -29,12 +29,18 @@ vale guardar "como referência" nem "adaptar enquanto escreve o teste".
 **Ver falhar** é: rodar o comando, ler a mensagem, e a falha ser pelo motivo
 certo — o comportamento ausente, não um erro de digitação no próprio teste. Se o
 teste passou de primeira, ele não testa nada novo: pare e revise a tarefa.
+Erro de import ou de coleta (`ModuleNotFoundError`, `NameError`) só conta como
+vermelho quando o que falta é **a unidade sob teste**; faltando outra coisa (um
+auxiliar, um fixture, um typo), o teste está quebrado, não vermelho.
 
 ### Antes de começar
 
 1. `sparkforge sdd check --repo . --feature <F>` com o plan em `ready`.
 2. Branch de trabalho, nunca a principal.
-3. Leia o plano **uma vez** e extraia cada tarefa com o texto inteiro.
+3. Leia o plano **com olho crítico**, uma vez, e extraia cada tarefa com o texto
+   inteiro. Tarefa ambígua, comando que não existe, arquivo fora do manifesto
+   ou ordem que não fecha: levante a dúvida ao operador e **pare** — adivinhar
+   para seguir é como o plano errado vira código.
 4. Copie `docs/sdd/templates/build_report.md` para
    `docs/sdd/<FEATURE>/build_report.md`, com `status: draft`, `upstream.path` no
    plan, e `tasks: []` para ir preenchendo.
@@ -54,6 +60,9 @@ teste passou de primeira, ele não testa nada novo: pare e revise a tarefa.
    conferem a árvore versionada.
 6. **Revisão em dois estágios** (abaixo).
 7. Tarefa no relatório com `status: done`.
+   **O controlador escreve `red` e `green`** no `build_report.md`, a partir do
+   comando e do exit que o subagente relatou ter visto; o subagente não edita
+   o relatório. Relato sem exit volta ao subagente.
 
 ### Um subagente por tarefa
 
@@ -114,6 +123,14 @@ red {command, exit}, green {command, exit}, dúvidas.
 
 Achado corrigido volta ao **mesmo** estágio. Revisor lista achados; não dá nota.
 
+### Revisão final
+
+Depois da última tarefa e **antes do ship**, um revisor novo lê o diff inteiro
+da feature (do commit do plano até o último) contra o define e o design:
+critério sem entrega, tarefas que se contradizem, código duplicado entre
+tarefas, registro manual esquecido. Achado crítico ou importante volta ao
+build; o resultado entra no corpo do relatório.
+
 ### O relatório (`build_report.md`)
 
 - **`tasks`**: `id`, `status` (`done`, `skipped`, `blocked`), `red` e `green`.
@@ -130,35 +147,30 @@ Achado corrigido volta ao **mesmo** estágio. Revisor lista achados; não dá no
 - Com o relatório em `ready` ou `done`, todo teste citado no define e no plan
   **precisa existir**: o que faltar sai `verified_by_dangling`.
 
-Feche com `sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` e
+Feche pelo laço de `docs/sdd/README.md#o-laço-de-cada-fase`:
+`sparkforge sdd stamp --repo . docs/sdd/<F>/build_report.md` e
 `sparkforge sdd check --repo . --feature <F>`. Zero recusa e zero lacuna →
 `status: done`.
 
 ### Conhecimento durante o build
 
 Antes de mexer num símbolo, `sparkforge code symbol <node_id>` diz quem o chama.
-Comportamento de Spark, Glue ou Iceberg sai de `sparkforge rules lookup` ou
-`sparkforge knowledge path`, com a versão. Memória do agente não é fonte.
+O resto: `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 
 ### Perfil operator
 
-A sessão **nunca** escreve na árvore do operador. A spec e as evidências moram
-em `.sparkforge/sdd/<F>/` (a cópia do sandbox poda `.sparkforge`; qualquer
-outro lugar deixa o sandbox desatualizado). O caminho é:
+A sessão **nunca** escreve na árvore do operador. Spec e evidências moram em
+`.sparkforge/sdd/<F>/` (a cópia do sandbox poda `.sparkforge`). Siga
+`docs/sdd/README.md#caminho-da-mudança-do-operador`; os três passos que mais
+erram:
 
-1. `sparkforge funcval plan` com a chave de negócio declarada, antes da mudança.
-2. `sparkforge change plan --facts <f> --set k=v --out d.patch` (ou `--from-tune`).
-3. `sparkforge change sandbox --repo . --diff d.patch`: guarde o `id` e grave-o
-   em `change_id` no relatório. Sem ele, ou com id que não está em
-   `.sparkforge/sandbox/` nem em `.sparkforge/proposal/`, sai `change_missing`.
-4. Achado novo P0 ou P1 no sandbox: pare e volte ao design.
-5. `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>`:
-   o `--out` é o `ref` do `verified_by` funcval, senão `funcval_not_run` nunca
-   sai. `sparkforge benchmark --before <a> --after <b> --out bench.json` com os
-   runs medidos.
-6. `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
-   sem as duas flags o pacote fica com a medida PENDENTE. O PR vai pela skill
-   `propose-change-pr`, que para antes de `git push` e de `gh pr create`.
+- `sparkforge change sandbox --repo . --diff d.patch`: o `id` vai para
+  `change_id`. Id fora de `.sparkforge/sandbox/` e de `.sparkforge/proposal/`
+  sai `change_missing`. Achado novo P0 ou P1: pare e volte ao design.
+- `funcval compare ... --out <ref do AC>` e `benchmark ... --out bench.json`:
+  sem o `--out`, a evidência não existe para o gate.
+- `change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`:
+  sem as duas flags, o pacote diz PENDENTE.
 
 Registro por tarefa:
 
@@ -176,8 +188,10 @@ O `case_id` é o de `sparkforge case open` (`.sparkforge/case.yaml`).
 ### Verificação antes de fechar
 
 Rode de novo, agora, os comandos que provam o que o relatório afirma. "Deve
-passar" e "passou antes da última edição" não são evidência. A suíte inteira
-roda em lotes, um por vez (`tests/test_suite_batches.py`, constante `LOTES`).
+passar" e "passou antes da última edição" não são evidência. Todo
+`verified_by` de `kind: command` do define roda aqui e precisa sair com
+exit 0. A suíte inteira roda em lotes, um por vez
+(`tests/test_suite_batches.py`, constante `LOTES`).
 
 ### Quando NÃO usar
 

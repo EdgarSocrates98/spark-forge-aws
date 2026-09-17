@@ -2,7 +2,7 @@
 
 # Skill `sdd-design`
 
-Use quando o define.md da feature está ready e é hora de decidir como construir — "desenha a solução", "quais arquivos mudam?", "fase design" — no SparkForge ou num job do operador. Grava docs/sdd/<FEATURE>/design.md com o manifesto de arquivos conferido no código, decisões com alternativas rejeitadas e rollback, e a cobertura de cada critério do define, e fecha com sparkforge sdd stamp e sparkforge sdd check.
+Use quando o define.md da feature está ready e falta decidir como construir — "desenha a solução", "quais arquivos mudam?", "como desfazer?", "fase design" — no SparkForge ou num job do operador.
 
 | Campo | Valor |
 |---|---|
@@ -57,10 +57,8 @@ Cada decisão tem `id` `D<n>`, `choice`, `rejected` e `rollback`.
 - **`rollback`**: como desfazer, em comando (`git revert` do commit, o script que
   regenera, o `rollback.patch` do pacote de mudança). Sem ele,
   `rollback_missing`.
-- **Conhecimento citado, nunca lembrado.** Decisão sobre Glue, Spark, Iceberg ou
-  Lake Formation cita `sparkforge rules lookup --id <SF-...>` ou
-  `sparkforge knowledge path --file <documento>`, com a versão alvo. Documentação
-  oficial e changelog sustentam uma decisão; texto de modelo sozinho não.
+- **Conhecimento citado, nunca lembrado**, com a versão alvo:
+  `docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 - **Valor de configuração não é decisão de design.** Ele sai de `sparkforge tune`
   sobre a medida; o design decide *onde* o valor mora e *quem* o pede.
 
@@ -72,29 +70,20 @@ entrega. Todo `AC` aparece em pelo menos um `covers`; o que faltar sai
 
 ### O laço
 
-1. Rascunhe manifesto, decisões e cobertura com `status: draft`.
-2. Apresente ao operador por partes, do tamanho da complexidade de cada uma, e
-   pergunte se está certo antes de seguir.
-3. `sparkforge sdd stamp --repo . docs/sdd/<F>/design.md`.
-4. `sparkforge sdd check --repo . --feature <F>`; corrija o campo de cada recusa.
-5. `status: ready` com zero recusa. Próximo passo: `sdd-plan`.
-
-### Cascata
-
-Se o define mudar depois, `sparkforge sdd status --repo .` mostra o design em
-`upstream_stale`. Leia o que mudou no define, **revise** o design e só então
-carimbe de novo. Carimbar sem revisar é o erro que a cascata existe para pegar.
+O de `docs/sdd/README.md#o-laço-de-cada-fase`, com a cascata. Aqui o desenho
+vai ao operador **por partes**, do tamanho da complexidade de cada uma, com a
+pergunta "está certo?" antes de seguir. Depois
+`sparkforge sdd stamp --repo . docs/sdd/<F>/design.md` e
+`sparkforge sdd check --repo . --feature <F>`. Próximo passo: `sdd-plan`.
 
 ### Perfil operator
 
 - O manifesto lista os arquivos do job que a mudança toca (`.tf`, `.py`). A
   procedência de cada configuração vem dos facts `tf.spark_conf` e
   `pyspark.conf_set`, com arquivo e linha.
-- Esses arquivos mudam **só** por diff gerado em `sparkforge change plan` e
-  aplicado numa cópia por `sparkforge change sandbox`. A sessão nunca escreve na
-  árvore do operador.
-- O `rollback` da decisão é o `rollback.patch` que `sparkforge change propose`
-  grava no pacote, ou `git revert` depois do merge.
+- Esses arquivos mudam **só** pelo caminho de
+  `docs/sdd/README.md#caminho-da-mudança-do-operador`; o `rollback` é o
+  `rollback.patch` do pacote.
 
 ### Quando NÃO usar
 

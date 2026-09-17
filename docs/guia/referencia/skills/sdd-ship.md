@@ -2,7 +2,7 @@
 
 # Skill `sdd-ship`
 
-Use quando o build_report.md da feature está pronto e é hora de fechar — "entrega a feature", "fecha o ciclo", "fase ship", "posso abrir o PR?". Deriva a lista de gates das seções de docs/gates-por-mudanca.md pelos change_kinds do define, roda cada um, registra os registros conferidos, fecha a hipótese sem reescrevê-la, lista os desvios, atualiza STATUS e manifestos e grava docs/sdd/<FEATURE>/ship.md, fechando com sparkforge sdd stamp e sparkforge sdd check.
+Use quando o build_report.md da feature está pronto e é hora de entregar — "entrega a feature", "fecha o ciclo", "fase ship", "posso abrir o PR?", "posso fazer merge?" — no SparkForge ou num job do operador.
 
 | Campo | Valor |
 |---|---|
@@ -44,19 +44,27 @@ disciplina desta skill.
 6. Crescimento da superfície (`python scripts/check_surface_lock.py --update`)
    vai declarado em bytes na mensagem do commit.
 7. A suíte roda em lotes, um por vez (`tests/test_suite_batches.py`).
+8. Cada `verified_by` de `kind: command` do define **roda agora** e precisa sair
+   com exit 0. O corpo do `ship.md` registra o comando e o exit de cada um;
+   exit diferente de zero volta ao build.
 
 ### Fechar a hipótese
 
 `hypothesis_outcome` recebe `confirmed`, `refuted` ou `abandoned`. Sem ele,
 `hypothesis_open_at_ship`.
 
-- **Só acrescenta.** A afirmação, a previsão e o experimento do define ficam como
-  estão. Editar o define agora para casar com o resultado é reescrever a
-  hipótese — e ainda deixaria todas as fases de baixo em `upstream_stale`.
-- **Previsão com parte que só se mede depois:** `confirmed` só se a parte
-  mensurável agora se confirmou, e o corpo diz qual parte segue pendente e onde
-  ela será verificada. Se a parte mensurável falhou, é `refuted`.
-- **`abandoned`** quando o experimento não rodou, com o motivo.
+- **Só acrescenta (regra 21).** A afirmação, a previsão e o experimento do
+  define ficam como estão. Editar o define agora para casar com o resultado é
+  reescrever a hipótese — e ainda deixaria todas as fases de baixo em
+  `upstream_stale`. Desfecho já gravado errado também não se reescreve: a
+  feature seguinte registra a correção nos próprios `deviations`.
+- **`confirmed` só com a previsão inteira medida.** Qualquer parte da previsão
+  que falhou é `refuted`.
+- **Parte ainda sem medida:** o ship fica em `draft` (o
+  `hypothesis_open_at_ship` segura o `done`) até a medida rodar; ou, se ela não
+  vai rodar nesta feature, `abandoned`, com o motivo e a feature que vai
+  medir. Nunca `confirmed` parcial.
+- **`abandoned`** também quando o experimento não rodou, com o motivo.
 
 ### Desvios
 
@@ -74,15 +82,32 @@ não é reescrito.
 
 ### O laço
 
+O de `docs/sdd/README.md#o-laço-de-cada-fase`, fechado assim:
+
 1. Rode os gates e anote o que passou.
 2. Escreva `ship.md` com `registries`, `hypothesis_outcome`, `deviations` e o
-   corpo (hipótese, pendências, gates rodados).
+   corpo (hipótese, pendências, gates rodados, comandos de `kind: command` com
+   o exit, e `## Lições`).
 3. `sparkforge sdd stamp --repo . docs/sdd/<F>/ship.md`.
 4. `sparkforge sdd check --repo . --feature <F>`: `ok` verdadeiro, zero recusa e
    zero lacuna. Então `status: done`.
 5. Commit.
-6. Integração: apresente as opções (abrir PR, manter a branch) e **espere a
-   escolha do operador** antes de `git push`, `gh pr create` ou merge.
+6. Integração. **Antes de oferecer**, rode de novo os testes da entrega e
+   confirme que passam; vermelho aqui volta ao build. Então apresente as
+   quatro opções e **espere a escolha do operador**:
+   - **merge local** na branch principal, com os testes rodados de novo depois
+     do merge;
+   - **push e PR** (`git push` e `gh pr create`);
+   - **manter a branch** como está, para depois;
+   - **descartar** a branch — só com confirmação digitada pelo operador (ele
+     escreve o nome da branch), nunca por um "sim" solto.
+
+### Lições
+
+O corpo do `ship.md` fecha com `## Lições`: duas ou três frases sobre o que a
+próxima feature deve fazer diferente — o registro que faltou no manifesto, o
+teste que passou de primeira, a suposição que o gate pegou. Lição sem
+evidência no relatório não entra.
 
 Nada é movido para arquivo morto: a pasta da feature é o registro. Uma fase
 substituída depois vira `status: superseded`.
@@ -94,7 +119,9 @@ substituída depois vira `status: superseded`.
 - O pacote do PR sai de
   `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json`,
   sobre o `change_id` que o build registrou, e o PR pela skill
-  `propose-change-pr`. Sem `--funcval` e `--benchmark`, o pacote diz PENDENTE.
+  `propose-change-pr` (passos em
+  `docs/sdd/README.md#caminho-da-mudança-do-operador`). Sem `--funcval` e
+  `--benchmark`, o pacote diz PENDENTE.
 - `confirmed` exige medida: `sparkforge funcval compare` para a semântica e
   `sparkforge benchmark` entre runs para o desempenho. Economia estimada não
   fecha hipótese.
@@ -121,6 +148,7 @@ substituída depois vira `status: superseded`.
 | carimbar | `sparkforge sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
 | estado geral | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
 | semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
+| desempenho (operator) | `sparkforge benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
 | PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Gates que aparecem em quase toda entrega de dev:

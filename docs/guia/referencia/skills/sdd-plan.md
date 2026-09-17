@@ -2,7 +2,7 @@
 
 # Skill `sdd-plan`
 
-Use quando o design.md da feature está ready e é hora de quebrar a construção em tarefas executáveis — "escreve o plano", "quebra em tarefas", "fase plan". Grava docs/sdd/<FEATURE>/plan.md com tarefas pequenas, cada uma com o teste que falha antes, os arquivos, os critérios que cobre e o código completo no corpo, sem placeholder, e fecha com sparkforge sdd stamp e sparkforge sdd check.
+Use quando o design.md da feature está ready e falta quebrar a construção em tarefas pequenas, com teste e código, que outra sessão execute sem contexto — "escreve o plano", "quebra em tarefas", "fase plan".
 
 | Campo | Valor |
 |---|---|
@@ -30,14 +30,18 @@ critério do define tem tarefa.
 
 No frontmatter, cada tarefa tem `id` `T<n>`, `files`, `covers` (os `AC` do
 define) e `test` com `path` e `name`. Tarefa sem `test` sai `task_without_test`
-(no perfil operator, `proof` também serve; veja abaixo).
+(no perfil operator, `proof` também serve; veja abaixo). `name` é o node id do
+pytest sem o arquivo: `test_x`, ou `TestClasse::test_x` para método de classe.
+O sufixo `[...]` do parametrize é descartado antes da conferência; escreva o
+nome da função.
 
 No corpo, cada tarefa é uma seção `## T<n> — título` com passos de poucos
 minutos cada:
 
 1. **Escrever o teste que falha** — o código do teste inteiro, num bloco.
 2. **Rodar e ver falhar** — o comando exato e a falha esperada
-   (`ModuleNotFoundError`, `AssertionError` sobre o campo X).
+   (`AssertionError` sobre o campo X; `ModuleNotFoundError` só quando o módulo
+   ausente é a unidade sob teste).
 3. **Código mínimo** — o código inteiro, num bloco, com o caminho do arquivo.
 4. **Rodar e ver passar** — o mesmo comando.
 5. **Gates vizinhos** — os comandos da seção de `docs/gates-por-mudanca.md` que a
@@ -84,21 +88,16 @@ Corrija no lugar. Isso é checagem sua, não nota.
 
 ### O laço
 
-1. Escreva tarefas e corpo com `status: draft`.
-2. Autorrevisão.
-3. `sparkforge sdd stamp --repo . docs/sdd/<F>/plan.md`.
-4. `sparkforge sdd check --repo . --feature <F>`. Aqui `test_not_written` para
-   cada tarefa é esperado: o teste nasce no build. Recusa não é.
-5. `status: ready` com zero recusa, depois da leitura do operador.
-6. Próximo passo: `sdd-build`.
+O de `docs/sdd/README.md#o-laço-de-cada-fase`, com a autorrevisão antes do
+stamp: `sparkforge sdd stamp --repo . docs/sdd/<F>/plan.md` e
+`sparkforge sdd check --repo . --feature <F>`. Aqui `test_not_written` para
+cada tarefa é esperado (o teste nasce no build); recusa não é. Próximo passo:
+`sdd-build`.
 
 ### Perfil operator
 
-- As tarefas seguem o caminho do change: `sparkforge funcval plan` antes da
-  mudança, `sparkforge change plan` para gerar o diff, `sparkforge change sandbox`
-  para aplicá-lo numa cópia, `sparkforge benchmark` e `sparkforge funcval compare`
-  para medir, e a skill `propose-change-pr` para o PR.
-- Nenhuma tarefa edita a árvore do operador direto. O plano mora em
+- As tarefas seguem `docs/sdd/README.md#caminho-da-mudança-do-operador`;
+  nenhuma tarefa edita a árvore do operador direto. O plano mora em
   `.sparkforge/sdd/<F>/plan.md`:
   `sparkforge sdd stamp --repo . --root .sparkforge/sdd .sparkforge/sdd/<F>/plan.md`.
 - Toda tarefa prova alguma coisa. Com pytest sobre as funções puras do job, é

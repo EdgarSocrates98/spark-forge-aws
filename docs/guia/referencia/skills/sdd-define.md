@@ -2,7 +2,7 @@
 
 # Skill `sdd-define`
 
-Use quando a abordagem já está escolhida (ou o pedido já é claro) e é hora de fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador. Grava docs/sdd/<FEATURE>/define.md com hipótese em três partes, critérios com verified_by real, métricas com source, lacunas com unlock e change_kinds da lista fechada, e fecha com sparkforge sdd stamp (quando existe explore) e sparkforge sdd check.
+Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador.
 
 | Campo | Valor |
 |---|---|
@@ -29,9 +29,10 @@ se o requisito é bom. Isso é do operador.
 ### Campo por campo
 
 **`hypothesis`** — `claim`, `prediction` e `experiment`, os três juntos. A
-previsão é falsificável (diz o que se observa se a afirmação estiver errada) e o
-experimento diz o que vai rodar. É esta hipótese que o ship fecha, sem
-reescrevê-la.
+previsão é falsificável (diz o que se observa se a afirmação estiver errada),
+**mensurável no ship** (cada parte tem medida que o ship consegue rodar; parte
+que só se mede depois vira feature própria, não promessa) e o experimento diz o
+que vai rodar. É esta hipótese que o ship fecha, sem reescrevê-la.
 
 **`acceptance`** — um item por critério, `id` `AC<n>`, uma frase verificável e
 um `verified_by`:
@@ -70,25 +71,19 @@ mudança toca. É delas que o ship deriva os gates. Guia rápido:
 Chave fora do arquivo sai `schema_invalid` com a lista das válidas. Na dúvida,
 abra `docs/gates-por-mudanca.md` e procure a seção que descreve a mudança.
 
-### Conhecimento, não memória
+### Conhecimento
 
-Critério sobre comportamento de Glue, Spark ou Iceberg cita a fonte:
-`sparkforge rules lookup --id <SF-...>` ou `sparkforge knowledge path --file
-<documento>`. A versão vem antes — com AQE ou sem AQE, o mesmo número significa
-outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
+Critério sobre Glue, Spark ou Iceberg cita a fonte, com a versão:
+`docs/sdd/README.md#conhecimento-citado-nunca-memória`.
 
 ### O laço
 
-1. Rascunhe os campos com `status: draft`.
-2. Lacuna que só o operador resolve: **uma pergunta por vez**.
-3. Com `explore.md` presente: `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md`.
-   Nunca escreva o `sha256` à mão.
-4. `sparkforge sdd check --repo . --feature <F>`. Cada recusa traz `field` e
-   `unlock`: corrija aquele campo e rode de novo.
-5. `status: ready` com zero recusa. Lacunas `test_not_written`,
-   `fact_not_collected` e `funcval_not_run` são esperadas aqui, desde que cada
-   uma vire tarefa no plano.
-6. Próximo passo: `sdd-design`.
+O de `docs/sdd/README.md#o-laço-de-cada-fase`. Aqui: com `explore.md`
+presente, `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md`; sempre
+`sparkforge sdd check --repo . --feature <F>`. `status: ready` exige zero
+recusa **e** a leitura do operador: mostre o define inteiro e espere o "pode
+seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
+`sdd-design`.
 
 ### Perfil operator
 
@@ -102,7 +97,8 @@ outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
   ele, ou com outro, sai `case_missing` — até o ship ficar `done`; dali em
   diante o case citado é histórico.
 - Preservar a semântica é critério, não detalhe: um `AC` com `kind: funcval`,
-  planejado por `sparkforge funcval plan` com a chave de negócio **declarada**.
+  planejado por `sparkforge funcval plan` com a chave de negócio **declarada**
+  (o caminho inteiro: `docs/sdd/README.md#caminho-da-mudança-do-operador`).
 - O aceite do operador raramente é pytest: `{kind: funcval, ref: <arquivo do
   compare --out>}` para o resultado e `{kind: fact, ref: <facts.json>#kind:<kind>}`
   para o sintoma medido. **Prefira o seletor `#kind:`** agora: o id de fact é

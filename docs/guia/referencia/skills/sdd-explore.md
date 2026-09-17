@@ -2,7 +2,7 @@
 
 # Skill `sdd-explore`
 
-Use quando houver uma ideia ainda sem forma que vai virar mudança no SparkForge ou num job Glue/PySpark do operador — "quero fazer X", "uso A ou B?", "como você atacaria isso?" — antes de qualquer define, design ou código. Escolhe o perfil (dev ou operator) primeiro, faz uma pergunta por vez, compara duas ou três abordagens com trade-offs e grava docs/sdd/<FEATURE>/explore.md, fechando com sparkforge sdd check. A fase é opcional, e requisito já claro vai direto para sdd-define.
+Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job Glue/PySpark do operador — "quero fazer X", "uso A ou B?", "como você atacaria isso?" — e ainda não há define, design nem código. Requisito já claro vai direto para sdd-define.
 
 | Campo | Valor |
 |---|---|
@@ -43,10 +43,9 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 
 1. **Uma pergunta por mensagem.** Múltipla escolha quando der. O foco é
    propósito, restrição, critério de sucesso e o que fica de fora.
-2. **Fato vem de verbo, não de memória.** Pergunta sobre o código:
-   `sparkforge code search` e `sparkforge_code_symbol`. Sobre regra do catálogo:
-   `sparkforge rules lookup --category <área>`. Sobre Glue, Spark ou Iceberg:
-   `sparkforge knowledge path --file <documento>` — e a versão antes de tudo.
+2. **Fato vem de verbo, não de memória** (regra em
+   `docs/sdd/README.md#conhecimento-citado-nunca-memória`). Regra do catálogo
+   por área: `sparkforge rules lookup --category <área>`.
 3. **Duas ou três abordagens**, cada uma com trade-offs, a recomendada primeiro
    e o porquê. Corte o que ninguém pediu (YAGNI).
 4. **O operador escolhe.** Apresente, pergunte, espere. Se ele recusar todas,
@@ -54,9 +53,9 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 5. **Grave** `docs/sdd/<FEATURE>/explore.md` a partir de
    `docs/sdd/templates/explore.md`, com `status: draft` enquanto a conversa não
    fecha.
-6. **Confira** com `sparkforge sdd check --repo . --feature <FEATURE>`. O explore
-   é a primeira fase e não leva `upstream`, então não há stamp aqui. Zero recusa
-   → `status: ready`.
+6. **Confira** com `sparkforge sdd check --repo . --feature <FEATURE>`, pelo
+   laço de `docs/sdd/README.md#o-laço-de-cada-fase`. O explore é a primeira
+   fase e não leva `upstream`, então não há stamp aqui.
 7. **Próximo passo:** `sdd-define`. Com `explore.md` presente, o define passa a
    declarar `upstream` apontando para ele.
 
@@ -64,7 +63,8 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 
 - `approaches`: `id`, `summary` e `tradeoffs` de cada abordagem considerada,
   inclusive as rejeitadas.
-- `chosen`: o `id` que o operador aprovou.
+- `chosen`: o `id` que o operador aprovou — igual a um dos `approaches[].id`,
+  letra por letra.
 - O corpo: as perguntas feitas, as respostas, e por que a escolhida venceu.
 
 Nenhuma nota de clareza, nenhum "confiança 0,9". Número que o próprio agente
