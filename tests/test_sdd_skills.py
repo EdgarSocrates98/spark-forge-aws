@@ -173,6 +173,23 @@ def test_blocos_comuns_moram_no_readme():
             assert f"docs/sdd/README.md#{ancora}" in _texto_da_skill(nome), (nome, ancora)
 
 
+def test_revisao_de_build_e_ship():
+    build = _texto_da_skill("sdd-build")
+    ship = _texto_da_skill("sdd-ship")
+    for nome, texto in (("sdd-build", build), ("sdd-ship", ship)):
+        assert "--out <ref do AC>" in texto, nome
+        assert "--out bench.json" in texto, nome
+        assert "--funcval <cmp.json> --benchmark bench.json" in texto, nome
+        assert "kind: command" in texto and "exit 0" in texto, nome
+        for comando in _COMANDO_CITADO.findall(texto):
+            if comando.startswith("funcval compare --plan"):
+                assert "--out" in comando, (nome, comando)
+    assert "## Revisão final" in build
+    assert "olho crítico" in build
+    assert "O controlador escreve `red` e `green`" in build
+    assert "unidade sob teste" in build
+
+
 def test_credito_das_bases():
     """AgentSpec e superpowers creditados, com licenca e o que veio de cada um."""
     texto = (ROOT / "vendor" / "CREDITS.md").read_text(encoding="utf-8")

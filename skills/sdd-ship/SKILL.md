@@ -37,6 +37,9 @@ disciplina desta skill.
 6. Crescimento da superfície (`python scripts/check_surface_lock.py --update`)
    vai declarado em bytes na mensagem do commit.
 7. A suíte roda em lotes, um por vez (`tests/test_suite_batches.py`).
+8. Cada `verified_by` de `kind: command` do define **roda agora** e precisa sair
+   com exit 0. O corpo do `ship.md` registra o comando e o exit de cada um;
+   exit diferente de zero volta ao build.
 
 ## Fechar a hipótese
 
@@ -118,6 +121,7 @@ substituída depois vira `status: superseded`.
 | carimbar | `sparkforge sdd stamp --repo . docs/sdd/<F>/ship.md` | `sparkforge_sdd_stamp` |
 | estado geral | `sparkforge sdd status --repo .` | `sparkforge_sdd_status` |
 | semântica (operator) | `sparkforge funcval compare --plan <p> --before <a> --after <b> --out <ref do AC>` | `sparkforge_funcval_compare` |
+| desempenho (operator) | `sparkforge benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
 | PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
 Gates que aparecem em quase toda entrega de dev:

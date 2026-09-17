@@ -22,12 +22,18 @@ vale guardar "como referência" nem "adaptar enquanto escreve o teste".
 **Ver falhar** é: rodar o comando, ler a mensagem, e a falha ser pelo motivo
 certo — o comportamento ausente, não um erro de digitação no próprio teste. Se o
 teste passou de primeira, ele não testa nada novo: pare e revise a tarefa.
+Erro de import ou de coleta (`ModuleNotFoundError`, `NameError`) só conta como
+vermelho quando o que falta é **a unidade sob teste**; faltando outra coisa (um
+auxiliar, um fixture, um typo), o teste está quebrado, não vermelho.
 
 ## Antes de começar
 
 1. `sparkforge sdd check --repo . --feature <F>` com o plan em `ready`.
 2. Branch de trabalho, nunca a principal.
-3. Leia o plano **uma vez** e extraia cada tarefa com o texto inteiro.
+3. Leia o plano **com olho crítico**, uma vez, e extraia cada tarefa com o texto
+   inteiro. Tarefa ambígua, comando que não existe, arquivo fora do manifesto
+   ou ordem que não fecha: levante a dúvida ao operador e **pare** — adivinhar
+   para seguir é como o plano errado vira código.
 4. Copie `docs/sdd/templates/build_report.md` para
    `docs/sdd/<FEATURE>/build_report.md`, com `status: draft`, `upstream.path` no
    plan, e `tasks: []` para ir preenchendo.
@@ -47,6 +53,9 @@ teste passou de primeira, ele não testa nada novo: pare e revise a tarefa.
    conferem a árvore versionada.
 6. **Revisão em dois estágios** (abaixo).
 7. Tarefa no relatório com `status: done`.
+   **O controlador escreve `red` e `green`** no `build_report.md`, a partir do
+   comando e do exit que o subagente relatou ter visto; o subagente não edita
+   o relatório. Relato sem exit volta ao subagente.
 
 ## Um subagente por tarefa
 
@@ -107,6 +116,14 @@ red {command, exit}, green {command, exit}, dúvidas.
 
 Achado corrigido volta ao **mesmo** estágio. Revisor lista achados; não dá nota.
 
+## Revisão final
+
+Depois da última tarefa e **antes do ship**, um revisor novo lê o diff inteiro
+da feature (do commit do plano até o último) contra o define e o design:
+critério sem entrega, tarefas que se contradizem, código duplicado entre
+tarefas, registro manual esquecido. Achado crítico ou importante volta ao
+build; o resultado entra no corpo do relatório.
+
 ## O relatório (`build_report.md`)
 
 - **`tasks`**: `id`, `status` (`done`, `skipped`, `blocked`), `red` e `green`.
@@ -164,8 +181,10 @@ O `case_id` é o de `sparkforge case open` (`.sparkforge/case.yaml`).
 ## Verificação antes de fechar
 
 Rode de novo, agora, os comandos que provam o que o relatório afirma. "Deve
-passar" e "passou antes da última edição" não são evidência. A suíte inteira
-roda em lotes, um por vez (`tests/test_suite_batches.py`, constante `LOTES`).
+passar" e "passou antes da última edição" não são evidência. Todo
+`verified_by` de `kind: command` do define roda aqui e precisa sair com
+exit 0. A suíte inteira roda em lotes, um por vez
+(`tests/test_suite_batches.py`, constante `LOTES`).
 
 ## Quando NÃO usar
 
