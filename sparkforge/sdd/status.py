@@ -6,12 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.checks import _avaliar
+from sparkforge.sdd.checks import evaluate
 
 
 def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
     # a mesma passada do `check`: fase, status e recusas saem dos mesmos arquivos
-    relatorio, contextos = _avaliar(repo, root, None)
+    relatorio, contextos = evaluate(repo, root, None)
     itens: list[dict[str, Any]] = []
     for nome, ctx in sorted(contextos.items()):
         atual = max(ctx.caminhos, key=PHASES.index)

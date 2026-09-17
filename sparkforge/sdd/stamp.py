@@ -120,8 +120,11 @@ def _sufixo(path: str, linhas: list[str], indice: int) -> str:
     if not resto or resto.startswith("#"):
         if _continua(linhas, indice, recuo):
             raise recusa
-        # o primeiro espaco separa a chave do valor, e o valor novo o repoe
-        return depois[1:] if resto else ""
+        # valor vazio, talvez com comentario: o valor novo entra depois de
+        # `sha256: `, e o comentario precisa de espaco antes do `#` para o YAML
+        # nao le-lo como parte do valor
+        cauda = depois[1:] if resto else ""
+        return cauda if (not cauda or cauda[:1].isspace()) else " " + cauda
     if resto[0] in "\"'":
         fim = _fim_entre_aspas(resto)
         if fim is None:
@@ -180,7 +183,7 @@ def stamp(repo: Path | str, path: str, root: str = DEFAULT_ROOT) -> dict[str, An
         raise StampError("upstream_missing", f"{upstream['path']} nao existe sob {raiz}")
     novo = text_sha256(origem)
     anterior = str(upstream.get("sha256") or "")
-    # o texto decodificado guarda o BOM como `﻿`; reencodar devolve o mesmo byte
+    # o texto decodificado guarda o BOM como U+FEFF; reencodar devolve o mesmo byte
     linhas = alvo.read_bytes().decode("utf-8").splitlines(keepends=True)
     indice = _linha_do_hash(path, linhas)
     if indice is None:

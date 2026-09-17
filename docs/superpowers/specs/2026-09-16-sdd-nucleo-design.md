@@ -228,12 +228,15 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
   `archive/` e afins sob a raiz não viram feature, mesmo com `define.md` dentro.
 - **`unresolved: path_skipped`.** A descoberta usa `varrer_source_files`
   (`sparkforge/facts/scan.py`), que poda nomes da lista de pulos (`build`,
-  `dist`, `vendor`, `secrets`, `credentials`… comparados em minúsculas). Cada
-  pulo sob a raiz sai como lacuna com nome: `feature` é a pasta de primeiro
-  nível quando há uma (`null` para arquivo direto na raiz), `path` é
-  `<root>/<relativo>`, e o `unlock` manda renomear. Sem isso, uma feature
-  `BUILD` sumia e o `check` saía `ok`. O `status` sobe para o topo as lacunas
-  cuja feature não foi descoberta.
+  `dist`, `vendor`, `secrets`, `credentials`… comparados em minúsculas). Vira
+  lacuna com nome só o pulo que esconde algo que a descoberta leria: pasta de
+  primeiro nível com nome de feature (`BUILD/`), pasta de segundo nível dentro
+  de uma (`F1/build/`) e `<fase>.md` dentro de uma. Arquivo direto na raiz,
+  `templates/vendor/` ou pasta mais funda a descoberta ignoraria de qualquer
+  jeito, e contá-los deixaria `ok` falso para sempre. `feature` é a pasta de
+  primeiro nível, `path` é `<root>/<relativo>`, e o `unlock` manda renomear.
+  Sem isso, uma feature `BUILD` sumia e o `check` saía `ok`. O `status` sobe
+  para o topo as lacunas cuja feature não foi descoberta.
 - **`upstream` onde não cabe é `schema_invalid`**, campo `upstream`: em
   `explore` (primeira fase, sem upstream) e em `define` quando a feature não
   tem `explore.md`. Antes o bloco era ignorado calado.

@@ -13,7 +13,7 @@ from sparkforge.facts.scan import Pulo, varrer_source_files
 from sparkforge.sdd import PHASES
 
 CERCA = "---"
-BOM = "﻿"
+BOM = "\ufeff"
 # o mesmo padrao de `feature` em schema/common.json
 FEATURE_RE = re.compile(r"[A-Z0-9_]+")
 

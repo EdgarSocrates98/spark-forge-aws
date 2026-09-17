@@ -20,10 +20,19 @@ import yaml
 from sparkforge.adapters import _core
 from sparkforge.adapters.cli import main
 from sparkforge.adapters.tools import TOOLS, call_tool
+from sparkforge.facts.scan import (
+    DIRECTORY_IGNORED,
+    DIRECTORY_REPARSE_POINT,
+    DIRECTORY_SENSITIVE,
+    REPARSE_POINT,
+    SENSITIVE_NAME,
+    SIZE_ABOVE_LIMIT,
+    Pulo,
+)
 from sparkforge.journal import journal_path, journaled
 from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.checks import change_kinds, check, schema_for
+from sparkforge.sdd.checks import _pulo_alcancavel, change_kinds, check, evaluate, schema_for
 from sparkforge.sdd.load import discover, load_artifact, split_frontmatter
 from sparkforge.sdd.stamp import StampError, stamp
 from sparkforge.sdd.status import status
@@ -107,13 +116,58 @@ def test_feature_com_nome_podado_pela_varredura_vira_lacuna(tmp_path):
     ]
 
 
-def test_pulo_de_arquivo_na_raiz_nao_tem_feature(tmp_path):
+def test_pulo_que_a_descoberta_nunca_leria_nao_vira_lacuna(tmp_path):
+    # arquivo na raiz, pasta que nao e feature, fundo demais dentro da feature,
+    # `.md` que nao e fase: a descoberta ignoraria todos mesmo sem a poda
     feature_limpa(tmp_path)
-    (tmp_path / "docs" / "sdd" / "secrets.md").write_bytes(b"x")
-    lacunas = check(tmp_path)["unresolved"]
-    assert [(u["code"], u["feature"], u["path"]) for u in lacunas] == [
-        ("path_skipped", None, "docs/sdd/secrets.md"),
-    ]
+    raiz = tmp_path / "docs" / "sdd"
+    (raiz / "secrets.md").write_bytes(b"x")
+    (raiz / "build").mkdir()
+    (raiz / "templates" / "vendor").mkdir(parents=True)
+    (raiz / "F1" / "notas" / "build").mkdir(parents=True)
+    (raiz / "F1" / "secrets.md").write_bytes(b"x")
+    relatorio = check(tmp_path)
+    assert _codigos(relatorio) == ([], [])
+    assert relatorio["ok"] is True
+
+
+@pytest.mark.parametrize("relativo,razao,alcancavel", [
+    ("BUILD", DIRECTORY_IGNORED, True),
+    ("SECRETS", DIRECTORY_SENSITIVE, True),
+    ("F2", DIRECTORY_REPARSE_POINT, True),
+    ("build", DIRECTORY_IGNORED, False),
+    ("F1/build", DIRECTORY_IGNORED, True),
+    ("templates/vendor", DIRECTORY_IGNORED, False),
+    ("F1/notas/build", DIRECTORY_IGNORED, False),
+    ("F1/define.md", REPARSE_POINT, True),
+    ("F1/build_report.md", SIZE_ABOVE_LIMIT, True),
+    ("F1/notas.md", REPARSE_POINT, False),
+    ("templates/define.md", REPARSE_POINT, False),
+    ("F1/notas/define.md", REPARSE_POINT, False),
+    ("secrets.md", SENSITIVE_NAME, False),
+])
+def test_so_pulo_alcancavel_pela_descoberta_conta(relativo, razao, alcancavel):
+    assert _pulo_alcancavel(Pulo(relativo=relativo, razao=razao)) is alcancavel
+
+
+def test_evaluate_e_publico_e_da_o_relatorio_do_check(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["ship"], registries=[])
+    relatorio, contextos = evaluate(tmp_path, DEFAULT_ROOT, None)
+    assert relatorio == check(tmp_path)
+    assert set(contextos) == {"F1"}
+
+
+@pytest.mark.parametrize("nome,extra", [
+    ("sparkforge_sdd_check", {}),
+    ("sparkforge_sdd_status", {}),
+    ("sparkforge_sdd_stamp", {"path": "docs/sdd/F1/design.md"}),
+])
+def test_root_path_nulo_no_mcp_usa_o_padrao(tmp_path, nome, extra):
+    feature_limpa(tmp_path)
+    resposta = call_tool(nome, {"repo": str(tmp_path), "root_path": None, **extra})
+    assert "error" not in resposta
+    assert resposta == call_tool(nome, {"repo": str(tmp_path), **extra})
 
 
 def test_pulo_dentro_da_feature_leva_o_nome_dela(tmp_path):
@@ -467,6 +521,21 @@ def test_stamp_preserva_comentario_no_fim_da_linha(tmp_path, valor):
     _sha_do_design(tmp_path, caminhos, f"  sha256: {valor}  # confere no stamp")
     assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is True
     esperado = f'  sha256: "{text_sha256(caminhos["define"])}"  # confere no stamp\n'
+    assert esperado.encode() in caminhos["design"].read_bytes()
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_stamp_hash_vazio_com_comentario_restampa(tmp_path):
+    # `sha256: # c` vira `sha256: "<hash>" # c`, com o espaco antes do `#`;
+    # sem ele o YAML le o comentario como parte do valor e o proximo stamp recusa
+    caminhos = _ate(tmp_path, "design")
+    _sha_do_design(tmp_path, caminhos, "  sha256: # preencher")
+    assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is True
+    esperado = f'  sha256: "{text_sha256(caminhos["define"])}" # preencher\n'
+    assert esperado.encode() in caminhos["design"].read_bytes()
+    _reescreve(caminhos["define"], hypothesis={"claim": "c2", "prediction": "p", "experiment": "e"})
+    assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is True
+    esperado = f'  sha256: "{text_sha256(caminhos["define"])}" # preencher\n'
     assert esperado.encode() in caminhos["design"].read_bytes()
     assert _codigos(check(tmp_path)) == ([], [])
 
@@ -1152,7 +1221,9 @@ def test_paridade_cli_mcp(tmp_path, capsys):
     # `call_tool` devolve o payload do verbo sem envelope: compara direto
     caminhos = feature_limpa(tmp_path)
     _reescreve(caminhos["ship"], registries=[])
-    (tmp_path / "docs" / "sdd" / "secrets.md").write_bytes(b"x")
+    # pasta com nome de feature podada: lacuna sem feature descoberta, que o
+    # status sobe para o topo (arquivo solto na raiz deixou de contar)
+    (tmp_path / "docs" / "sdd" / "SECRETS").mkdir()
     main(["sdd", "check", "--repo", str(tmp_path)])
     pela_cli = json.loads(capsys.readouterr().out)
     pelo_mcp = _valida(

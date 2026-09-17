@@ -24,7 +24,7 @@ from sparkforge.facts.scan import (
 from sparkforge.paths import resolve_within
 from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
-from sparkforge.sdd.load import Artifact, discover, load_artifact
+from sparkforge.sdd.load import FEATURE_RE, Artifact, discover, load_artifact
 
 _AQUI = Path(__file__).resolve().parent
 
@@ -445,14 +445,27 @@ def _check_feature(repo: Path, feature: str, caminhos: dict[str, Path]) -> _Cont
 _RAZOES_DE_PASTA = frozenset({DIRECTORY_IGNORED, DIRECTORY_SENSITIVE, DIRECTORY_REPARSE_POINT})
 
 
+def _pulo_alcancavel(pulo: Pulo) -> bool:
+    """O pulo esconde algo que `discover` leria como feature ou artefato?
+
+    So estes contam: pasta de primeiro nivel com nome de feature, pasta de segundo
+    nivel dentro de uma, e `.md` de fase dentro de uma. O resto (arquivo na raiz,
+    `templates/vendor/`, fundo demais) a descoberta ignoraria mesmo sem a poda, e
+    virar lacuna deixaria `ok` falso para sempre.
+    """
+    partes = pulo.relativo.split("/")
+    if not FEATURE_RE.fullmatch(partes[0]):
+        return False
+    if pulo.razao in _RAZOES_DE_PASTA:
+        return len(partes) <= 2
+    return len(partes) == 2 and partes[1].endswith(".md") and partes[1][: -len(".md")] in PHASES
+
+
 def _lacuna_de_pulo(root: str, pulo: Pulo) -> dict[str, Any]:
     """Um caminho que a varredura nao leu vira lacuna com nome, nunca silencio."""
-    partes = pulo.relativo.split("/")
-    e_pasta = pulo.razao in _RAZOES_DE_PASTA
-    dono = partes[0] if len(partes) > 1 or e_pasta else None
     return {
         "code": "path_skipped",
-        "feature": dono,
+        "feature": pulo.relativo.split("/")[0],
         "path": f"{root.rstrip('/')}/{pulo.relativo}",
         "unlock": (
             f"a varredura pulou {pulo.relativo} ({pulo.razao}): o nome esta na lista de "
@@ -462,7 +475,7 @@ def _lacuna_de_pulo(root: str, pulo: Pulo) -> dict[str, Any]:
     }
 
 
-def _avaliar(
+def evaluate(
     repo: Path | str, root: str, feature: str | None
 ) -> tuple[dict[str, Any], dict[str, _Contexto]]:
     """Uma varredura so: o relatorio do `check` e o contexto de cada feature.
@@ -488,6 +501,8 @@ def _avaliar(
     refused: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
     for pulo in descoberta.pulos:
+        if not _pulo_alcancavel(pulo):
+            continue
         item = _lacuna_de_pulo(root, pulo)
         if feature is None or item["feature"] == feature:
             unresolved.append(item)
@@ -508,4 +523,4 @@ def _avaliar(
 
 def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None) -> dict[str, Any]:
     """`{ok, root, features, refused, unresolved}` sobre `repo/root`."""
-    return _avaliar(repo, root, feature)[0]
+    return evaluate(repo, root, feature)[0]

@@ -9988,16 +9988,18 @@ def _h_funcval_compare(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+# `or`, e nao o default do `get`: cliente que manda `root_path: null` explicito
+# recebe a raiz padrao em vez de um `Path(None)`.
 def _h_sdd_check(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.sdd_check(args["repo"], args.get("root_path", "docs/sdd"), args.get("feature"))
+    return _core.sdd_check(args["repo"], args.get("root_path") or "docs/sdd", args.get("feature"))
 
 
 def _h_sdd_status(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.sdd_status(args["repo"], args.get("root_path", "docs/sdd"))
+    return _core.sdd_status(args["repo"], args.get("root_path") or "docs/sdd")
 
 
 def _h_sdd_stamp(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.sdd_stamp(args["repo"], args["path"], args.get("root_path", "docs/sdd"))
+    return _core.sdd_stamp(args["repo"], args["path"], args.get("root_path") or "docs/sdd")
 
 
 def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
