@@ -840,6 +840,29 @@ def test_fact_sem_id_nao_casa_com_none(tmp_path, item):
     assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
 
 
+def test_fact_por_kind(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {
+        "kind": "fact", "ref": "facts.json#kind:pyspark.conf_set",
+    }
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
+    dado = {"items": [{"id": "f1", "kind": "spark.stage.shuffle"}]}
+    (tmp_path / "facts.json").write_bytes(json.dumps(dado).encode("utf-8"))
+    assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
+    dado["items"].append({"id": "f2", "kind": "pyspark.conf_set"})
+    (tmp_path / "facts.json").write_bytes(json.dumps(dado).encode("utf-8"))
+    assert _codigos(check(tmp_path)) == ([], [])
+    # o id continua valendo, e `kind:` vazio nao casa com nada
+    meta["acceptance"][0]["verified_by"]["ref"] = "facts.json#f1"
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], [])
+    meta["acceptance"][0]["verified_by"]["ref"] = "facts.json#kind:"
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
+
+
 def test_funcval_not_run(tmp_path):
     caminhos = _so_define(tmp_path)
     meta = _define_meta(caminhos)

@@ -243,8 +243,25 @@ def _itens_de_fact(arquivo: Path) -> list[dict[str, Any]]:
     return [item for item in itens if isinstance(item, dict)]
 
 
-def _ids_de_fact(arquivo: Path) -> set[str]:
-    return {str(item["id"]) for item in _itens_de_fact(arquivo) if item.get("id")}
+_SELETOR_KIND = "kind:"
+
+
+def _fact_presente(arquivo: Path, seletor: str) -> bool:
+    """`#<id>` casa o id; `#kind:<kind>` casa qualquer fact daquele kind."""
+    itens = _itens_de_fact(arquivo)
+    if seletor.startswith(_SELETOR_KIND):
+        kind = seletor[len(_SELETOR_KIND):]
+        return bool(kind) and any(item.get("kind") == kind for item in itens)
+    return seletor in {str(item["id"]) for item in itens if item.get("id")}
+
+
+def _conferir_fact(ctx: _Contexto, artefato: Artifact, referencia: str) -> None:
+    caminho, _, seletor = referencia.partition("#")
+    alvo = resolve_within(ctx.repo, caminho) if caminho else None
+    if alvo is None or not alvo.is_file() or not _fact_presente(alvo, seletor):
+        ctx.lacuna("fact_not_collected", artefato.path,
+                   f"{seletor or referencia} nao esta em {caminho}; colete o artefato e "
+                   "rode o `sparkforge analyze` que o extrai")
 
 
 def _gate_success_source(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -305,12 +322,7 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                 continue
             _conferir_teste(ctx, artefato, campo, referencia, item["id"])
         elif prova["kind"] == "fact":
-            caminho, _, fact_id = referencia.partition("#")
-            alvo = resolve_within(ctx.repo, caminho) if caminho else None
-            if alvo is None or not alvo.is_file() or fact_id not in _ids_de_fact(alvo):
-                ctx.lacuna("fact_not_collected", artefato.path,
-                           f"{fact_id or referencia} nao esta em {caminho}; colete o artefato e "
-                           "rode o `sparkforge analyze` que o extrai")
+            _conferir_fact(ctx, artefato, referencia)
         elif prova["kind"] == "funcval":
             alvo = resolve_within(ctx.repo, referencia)
             if alvo is None or not alvo.is_file():
