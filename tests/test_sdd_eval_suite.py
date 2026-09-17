@@ -11,6 +11,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+import pytest
+
 from sparkforge.evals.suite import load_suite
 from sparkforge.sdd.checks import check
 from sparkforge.sdd.status import status
@@ -72,3 +74,25 @@ def test_gabarito_recomputado_pelo_gate():
         caso, derivar = DERIVA[pergunta.id]
         assert f"fixtures/sdd/{caso}" in pergunta.question, pergunta.id
         assert pergunta.expected == derivar(ROOT / "fixtures" / "sdd" / caso), pergunta.id
+
+
+def test_runner_conhece_a_suite_sdd():
+    from scripts import run_agentic_eval as runner
+    from sparkforge.adapters.tools import TOOLS
+
+    assert runner.SDD_SUITE_DIR == SUITE_DIR
+    assert runner._suite_dir("sdd") == SUITE_DIR
+    assert runner._suite_dir("fase0") == runner.SUITE_DIR
+    args = runner._parser().parse_args(["--suite", "sdd", "--runs", "1"])
+    assert (args.suite, args.repeat) == ("sdd", 1)
+    assert runner._parser().parse_args([]).suite == "fase0"
+    for livre in ("evals/agentic/sdd", str(SUITE_DIR), "../sdd"):
+        with pytest.raises(SystemExit):
+            runner._parser().parse_args(["--suite", livre])
+    with pytest.raises(SystemExit):
+        runner._suite_dir("evals/agentic/sdd")
+    # o fluxo inteiro chega ao workspace de prova: as fixtures vao, o gabarito nao
+    assert "fixtures" in runner.WORKSPACE_DIRS and "evals" not in runner.WORKSPACE_DIRS
+    negadas = runner._negadas(load_suite(runner._suite_dir("sdd")), "suite")
+    visiveis = set(TOOLS) - {n.removeprefix(runner.MCP_PREFIX) for n in negadas}
+    assert visiveis == {"sparkforge_sdd_check", "sparkforge_sdd_status"}

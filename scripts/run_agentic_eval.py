@@ -24,7 +24,9 @@ status de cada pergunta. Pergunta que falhou no host (`host_failed`) segue sem
 transcript, e o grader a conta como `transcript_not_found` -- nunca como erro.
 
 NENHUM VALOR DO ARGV CHEGA A UM CAMINHO, E NENHUM VALOR LIVRE CHEGA A
-`subprocess`. A suite e constante (`evals/agentic/fase0`), o modelo e as fontes
+`subprocess`. A suite e constante (`evals/agentic/fase0`, ou `evals/agentic/sdd`
+desde a feature SDD_EVAL, escolhida por comparacao em `_suite_dir` e nunca
+montada a partir do valor), o modelo e as fontes
 de configuracao sao mapeados de allowlist, o executavel e o `claude` do PATH, a
 configuracao MCP e `evals/agentic/mcp.json`, e a saida mora sempre sob
 `~/.sparkforge/agentic-evals/` -- fora de qualquer repositorio, porque
@@ -49,6 +51,7 @@ gabarito da suite nao exige -- a lista sai de `required_tools` contra
 Uso:
     python scripts/run_agentic_eval.py --repeat 3 --model haiku
     python scripts/run_agentic_eval.py --repeat 3 --model haiku --surface suite
+    python scripts/run_agentic_eval.py --suite sdd --model haiku --runs 1
     python scripts/run_agentic_eval.py --dry-run    # nao gasta
 """
 from __future__ import annotations
@@ -71,6 +74,8 @@ from sparkforge.evals.suite import QUESTION_ID, Question, Suite, load_suite  # n
 
 AGENTIC = ROOT / "evals" / "agentic"
 SUITE_DIR = AGENTIC / "fase0"
+SDD_SUITE_DIR = AGENTIC / "sdd"
+SUITES = ("fase0", "sdd")
 MCP_CONFIG = AGENTIC / "mcp.json"
 OUT_BASE = Path.home() / ".sparkforge" / "agentic-evals"
 TRANSCRIPTS = Path.home() / ".claude" / "projects"
@@ -105,7 +110,19 @@ MCP_PREFIX = "mcp__sparkforge__"
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("--repeat", type=int, default=1, help="Execucoes da suite inteira (N), 1..50.")
+    p.add_argument(
+        "--suite",
+        choices=SUITES,
+        default="fase0",
+        help="Nome da suite; cada nome e uma constante deste script, nunca um caminho.",
+    )
+    p.add_argument(
+        "--repeat",
+        "--runs",
+        type=int,
+        default=1,
+        help="Execucoes da suite inteira (N), 1..50.",
+    )
     p.add_argument(
         "--model", choices=sorted(MODELOS), help="Alias de modelo repassado ao claude -p."
     )
@@ -131,6 +148,19 @@ def _parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--dry-run", action="store_true", help="Mostra os comandos e sai.")
     return p
+
+
+def _suite_dir(nome: str) -> Path:
+    """O diretorio da suite, escolhido por comparacao entre constantes.
+
+    O valor do argv so decide QUAL constante; nenhum pedaco dele entra no
+    caminho. Suite nova entra aqui e em `SUITES`, e a mudanca fica no diff.
+    """
+    if nome == "fase0":
+        return SUITE_DIR
+    if nome == "sdd":
+        return SDD_SUITE_DIR
+    raise SystemExit(f"suite desconhecida: {nome!r}; conhecidas: {', '.join(SUITES)}")
 
 
 def _inside(caminho: Path, base: Path) -> bool:
@@ -323,7 +353,8 @@ def main(argv: list[str] | None = None) -> int:
     invalidos = [q for q in args.only if not QUESTION_ID.fullmatch(q)]
     if invalidos:
         raise SystemExit(f"--only com id invalido: {invalidos}")
-    suite = load_suite(SUITE_DIR)
+    suite_dir = _suite_dir(args.suite)
+    suite = load_suite(suite_dir)
     perguntas = [q for q in suite.questions if not args.only or q.id in args.only]
     if not perguntas:
         raise SystemExit("nenhuma pergunta selecionada")
@@ -382,7 +413,7 @@ def main(argv: list[str] | None = None) -> int:
             + "\n",
             encoding="utf-8",
         )
-        scorecard = json.dumps(eval_grade(SUITE_DIR, destino), indent=2, ensure_ascii=False)
+        scorecard = json.dumps(eval_grade(suite_dir, destino), indent=2, ensure_ascii=False)
         (destino / SCORECARD).write_text(scorecard + "\n", encoding="utf-8")
         (conjunto / f"r{rodada}.json").write_text(scorecard + "\n", encoding="utf-8")
         print(f"run {run_id}: {destino / SCORECARD}", flush=True)
