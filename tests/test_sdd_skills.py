@@ -206,6 +206,27 @@ def test_revisao_de_define_explore_plan_ship():
     assert "## Lições" in ship
 
 
+_PALAVRA_ACENTUADA = {
+    "explore": "exploração",
+    "define": "critérios",
+    "design": "decisão",
+    "plan": "código",
+    "build_report": "relatório",
+    "ship": "hipótese",
+}
+
+
+def test_templates_revisados():
+    origem = ROOT / "docs" / "sdd" / "templates"
+    for fase, palavra in _PALAVRA_ACENTUADA.items():
+        texto = (origem / f"{fase}.md").read_text(encoding="utf-8")
+        assert palavra in texto.lower(), (fase, palavra)
+        assert "`feature: EXEMPLO`" in texto, fase
+        assert "`status: draft`" in texto, fase
+    assert "unidade sob teste" in (origem / "plan.md").read_text(encoding="utf-8")
+    assert "## Lições" in (origem / "ship.md").read_text(encoding="utf-8")
+
+
 def test_credito_das_bases():
     """AgentSpec e superpowers creditados, com licenca e o que veio de cada um."""
     texto = (ROOT / "vendor" / "CREDITS.md").read_text(encoding="utf-8")

@@ -15,18 +15,26 @@ deviations:
 
 # EXEMPLO — entrega
 
-> Template da skill `sdd-ship`. `registries` sai de `change_kinds` do define,
-> pelo mapa de `sparkforge/sdd/change_kinds.yaml`: aqui `agent_or_skill` exige
-> `sync_skills` e `agents_parity`, e cada um foi rodado pela secao de
-> `docs/gates-por-mudanca.md`. `hypothesis_outcome` fecha a hipotese do define
-> sem reescreve-la (`confirmed`, `refuted` ou `abandoned`).
+> Template da skill `sdd-ship`. Troque `feature: EXEMPLO` pelo nome da
+> feature e ponha `status: draft` ao copiar. `registries` sai de
+> `change_kinds` do define, pelo mapa de `sparkforge/sdd/change_kinds.yaml`:
+> aqui `agent_or_skill` exige `sync_skills` e `agents_parity`, e cada um foi
+> rodado pela seção de `docs/gates-por-mudanca.md`. `hypothesis_outcome` fecha
+> a hipótese do define sem reescrevê-la (regra 21): `confirmed` só com a
+> previsão inteira medida.
 
-## Hipotese
+## Hipótese
 
-Confirmada: o coordenador leu o resumo no case sintetico e o teste passou.
-Se alguma parte da previsao so pode ser medida depois, diga qual e onde.
+Confirmada: o coordenador leu o resumo no case sintético e o teste passou.
+Parte da previsão sem medida mantém o ship em `draft`, ou fecha como
+`abandoned` dizendo onde será medida.
 
 ## Gates rodados
 
-- `python scripts/sync_skills.py --check`
-- `python -m pytest tests/test_agents_parity.py -q`
+- `python scripts/sync_skills.py --check` (exit 0)
+- `python -m pytest tests/test_agents_parity.py -q` (exit 0)
+- Cada `verified_by` de `kind: command` do define, com o exit.
+
+## Lições
+
+- O que a próxima feature deve fazer diferente, com a evidência no relatório.

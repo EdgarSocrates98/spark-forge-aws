@@ -16,9 +16,11 @@ tasks:
 
 # EXEMPLO — plano
 
-> Template da skill `sdd-plan`. Cada tarefa cabe em poucos minutos, nomeia o
-> teste que falha antes do codigo e traz o codigo completo no corpo. Sem
-> "TBD", sem "igual a T1", sem "tratar os erros".
+> Template da skill `sdd-plan`. Troque `feature: EXEMPLO` pelo nome da
+> feature e ponha `status: draft` ao copiar. Cada tarefa cabe em poucos
+> minutos, nomeia o teste que falha antes do código (`test_x` ou
+> `TestClasse::test_x`) e traz o código completo no corpo. Sem "TBD", sem
+> "igual a T1", sem "tratar os erros".
 
 ## T1 — resumo
 
@@ -33,13 +35,15 @@ def test_exemplo():
     assert resumir(relatorio) == {"run_id": "r1", "status": "ok", "bytes": 10}
 ```
 
-Rodar e ver falhar pelo motivo certo (`ModuleNotFoundError: exemplo`):
+Rodar e ver falhar pelo motivo certo. Aqui o `ModuleNotFoundError: exemplo`
+conta como vermelho porque o módulo ausente é a unidade sob teste; erro de
+import de qualquer outra coisa é teste quebrado, não vermelho.
 
 ```bash
 python -m pytest tests/test_exemplo.py::test_exemplo -q
 ```
 
-Codigo minimo, em `exemplo/resumo.py`:
+Código mínimo, em `exemplo/resumo.py`:
 
 ```python
 CAMPOS = ("run_id", "status", "bytes")
