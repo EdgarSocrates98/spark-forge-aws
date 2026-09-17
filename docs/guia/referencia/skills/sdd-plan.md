@@ -98,8 +98,10 @@ Corrija no lugar. Isso é checagem sua, não nota.
   para aplicá-lo numa cópia, `sparkforge benchmark` e `sparkforge funcval compare`
   para medir, e a skill `propose-change-pr` para o PR.
 - Nenhuma tarefa edita a árvore do operador direto.
-- O gate ainda exige `test` em toda tarefa; o detalhe de como o perfil operator
-  preenche esse campo é do subprojeto C.
+- O gate ainda exige `test` em toda tarefa. No operador ele aponta a checagem
+  que falha antes da mudança: pytest sobre as funções puras do job, se houver;
+  senão, um teste que o build cria nos `tests/` do repositório do operador e que
+  afirma o desfecho do `sparkforge funcval compare` ou dos achados `SF-FVAL`.
 
 ### Quando NÃO usar
 

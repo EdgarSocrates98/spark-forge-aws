@@ -40,7 +40,7 @@ um `verified_by`:
 |---|---|---|
 | `test` | node id do pytest, `tests/arquivo.py::test_nome` | antes do build, teste ausente é lacuna `test_not_written`; com o build `ready` ou `done`, é recusa `verified_by_dangling` |
 | `command` | o comando cujo exit 0 prova o critério | registra; quem roda é o ship |
-| `funcval` | o arquivo de `sparkforge funcval compare --out` | lacuna `funcval_not_run` até existir |
+| `funcval` | o arquivo de `sparkforge funcval compare --out` | lacuna `funcval_not_run` até existir; sem `funcval.check_delta`, recusa `funcval_not_comparison`; cada `funcval.unresolved`, lacuna `funcval_blind_spot` |
 | `fact` | `arquivo.json#fact_id` | lacuna `fact_not_collected` até a coleta |
 
 Prefira `test`. Critério que nada verifica é desejo, e não entra.
@@ -93,12 +93,15 @@ outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
 ### Perfil operator
 
 - Abra o case antes: `sparkforge case open --repo . --case-id <id> --now <ISO 8601>`,
-  e copie o `case_id` para o define. Sem ele, ou com outro, sai `case_missing`.
+  e copie o `case_id` para o define (ele fica em `.sparkforge/case.yaml`). Sem
+  ele, ou com outro, sai `case_missing`.
 - Preservar a semântica é critério, não detalhe: um `AC` com `kind: funcval`,
   planejado por `sparkforge funcval plan` com a chave de negócio **declarada**.
+- O aceite do operador raramente é pytest: `{kind: funcval, ref: <arquivo do
+  compare --out>}` para o resultado, `{kind: fact, ref: <facts.json>#<fact_id>}`
+  para o sintoma medido. O gate confere a forma; o veredito é do `judge`.
 - Métrica de desempenho vem de `sparkforge benchmark` entre dois runs medidos;
   custo, de `dpu_seconds` medido. Economia estimada não é métrica.
-- O detalhe do perfil operator é o subprojeto C; aqui ele só aponta o caminho.
 
 ### Quando NÃO usar
 
@@ -120,7 +123,7 @@ outra coisa. Para o que o código já faz, `sparkforge_code_symbol`.
 | semântica (operator) | `sparkforge funcval plan --facts <f> --key <k> --out <p>` | `sparkforge_funcval_plan` |
 
 Recusas desta fase: `schema_invalid`, `success_without_source`, `case_missing`,
-`upstream_missing`, `upstream_stale`. Template: `docs/sdd/templates/define.md`.
+`funcval_not_comparison`, `upstream_missing`, `upstream_stale`. Template: `docs/sdd/templates/define.md`.
 
 ### Red flags
 
