@@ -160,9 +160,13 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert _codigos(check(repo, feature=FEATURE)) == (["funcval_not_comparison"], [])
     comparacao.write_bytes(json.dumps({"items": [_DELTA]}).encode("utf-8"))
 
-    # sem o sandbox (a propria tool o apaga), o build do operador e recusado
+    # sem o sandbox (a propria tool o apaga) e com o ship done, a mudanca e historia
     call_tool("sparkforge_change_sandbox", {"repo": str(repo), "clean": True})
     assert not (repo / ".sparkforge" / "sandbox" / change_id).exists()
+    assert _codigos(check(repo, feature=FEATURE)) == ([], [])
+    # com o ship ainda aberto, o build do operador e recusado
+    ship = repo / "docs" / "sdd" / FEATURE / "ship.md"
+    ship.write_bytes(ship.read_bytes().replace(b"status: done", b"status: ready", 1))
     assert _codigos(check(repo, feature=FEATURE)) == (["change_missing"], [])
 
 

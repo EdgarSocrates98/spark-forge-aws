@@ -1094,6 +1094,20 @@ def test_change_id_aceita_proposal(tmp_path):
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
 
+def test_case_e_change_historicos_depois_do_ship(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    # depois da entrega: outro case aberto e o sandbox limpo
+    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
+    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    assert _codigos(check(tmp_path)) == ([], [])
+    # com o ship ainda aberto, as duas referencias voltam a valer
+    _reescreve(caminhos["ship"], status="ready")
+    assert _codigos(check(tmp_path)) == (["case_missing", "change_missing"], [])
+    # sem ship nenhum, idem
+    caminhos["ship"].unlink()
+    assert _codigos(check(tmp_path)) == (["case_missing", "change_missing"], [])
+
+
 def test_case_id_compara_como_texto(tmp_path):
     caminhos = feature_limpa(tmp_path, "operator")
     for fase in ("design", "plan", "build_report", "ship"):

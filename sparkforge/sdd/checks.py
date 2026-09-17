@@ -432,8 +432,14 @@ def _case_id_atual(repo: Path) -> str | None:
     return _texto_ou_none(dado.get("case_id")) if isinstance(dado, dict) else None
 
 
+def _ship_feito(ctx: _Contexto) -> bool:
+    """O ship carregou com status done: case e mudanca citados viraram historia."""
+    ship = ctx.artefatos.get("ship")
+    return ship is not None and ship.meta["status"] == "done"
+
+
 def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
-    if artefato.meta["profile"] != "operator":
+    if artefato.meta["profile"] != "operator" or _ship_feito(ctx):
         return
     declarado = _texto_ou_none(artefato.meta.get("case_id"))
     if declarado is None or declarado != _case_id_atual(ctx.repo):
@@ -462,7 +468,7 @@ def _pastas_da_mudanca(repo: Path, ident: str) -> list[tuple[Path, str]]:
 
 
 def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
-    if artefato.meta["profile"] != "operator":
+    if artefato.meta["profile"] != "operator" or _ship_feito(ctx):
         return
     ident = str(artefato.meta.get("change_id") or "")
     if not _pastas_da_mudanca(ctx.repo, ident):
