@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "suite": {
+    "id": "sdd",
+    "sha256": "47bdb24f987c7c3e0195090db8ec46ff0a89710065df504106163a8d3a9a9eb4"
+  },
+  "run": {
+    "id": "sdd-2026-09-17T08-14-52Z-r1",
+    "models": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "host_versions": [
+      "2.1.274"
+    ]
+  },
+  "questions": [
+    {
+      "id": "sdd-01",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 4,
+        "other_calls": 3,
+        "tool_errors": 1,
+        "tool_result_bytes": 1072,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 439,
+          "other": 633
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 1072
+        },
+        "tokens": {
+          "input": 94,
+          "output": 2242,
+          "cache_read": 340316,
+          "cache_creation": 56063
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "sdd-02",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 8,
+        "other_calls": 6,
+        "tool_errors": 5,
+        "tool_result_bytes": 2190,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 525,
+          "other": 1665
+        },
+        "tool_result_bytes_by_tool": {
+          "PowerShell": 1478,
+          "Bash": 712
+        },
+        "tokens": {
+          "input": 158,
+          "output": 4392,
+          "cache_read": 653667,
+          "cache_creation": 46740
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "sdd-03",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "sdd_check"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 6,
+        "other_calls": 6,
+        "tool_errors": 3,
+        "tool_result_bytes": 1764,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 0,
+          "other": 1764
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 1297,
+          "Bash": 279,
+          "PowerShell": 188
+        },
+        "tokens": {
+          "input": 134,
+          "output": 4540,
+          "cache_read": 534247,
+          "cache_creation": 46115
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "sdd-04",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 7,
+        "other_calls": 6,
+        "tool_errors": 4,
+        "tool_result_bytes": 1531,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 403,
+          "other": 1128
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 1274,
+          "PowerShell": 257
+        },
+        "tokens": {
+          "input": 142,
+          "output": 3331,
+          "cache_read": 573789,
+          "cache_creation": 45676
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "sdd-05",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 10,
+        "other_calls": 5,
+        "tool_errors": 5,
+        "tool_result_bytes": 2524,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 1566,
+          "other": 958
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 1863,
+          "PowerShell": 661
+        },
+        "tokens": {
+          "input": 184,
+          "output": 4362,
+          "cache_read": 749910,
+          "cache_creation": 61256
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "sdd-06",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 3,
+        "other_calls": 2,
+        "tool_errors": 1,
+        "tool_result_bytes": 893,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 485,
+          "other": 408
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 893
+        },
+        "tokens": {
+          "input": 72,
+          "output": 2608,
+          "cache_read": 229516,
+          "cache_creation": 57436
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    }
+  ],
+  "unmatched_transcripts": [],
+  "totals": {
+    "questions": 6,
+    "graded": 6,
+    "ungraded": 0,
+    "correct": 6,
+    "wrong": 0,
+    "answer_absent": 0,
+    "over_abstention": 0,
+    "abstention_total": 0,
+    "abstained": 0,
+    "false_certainty": 0,
+    "tools_ok": 5,
+    "tokens_unresolved_questions": 0,
+    "cost": {
+      "tool_calls": {
+        "median_low": 6,
+        "max": 10
+      },
+      "tool_result_bytes": {
+        "median_low": 1531,
+        "max": 2524
+      },
+      "tool_result_bytes_by_channel": {
+        "mcp": 0,
+        "bash": 3418,
+        "other": 6556
+      },
+      "tool_result_bytes_by_tool": {
+        "Bash": 6093,
+        "PowerShell": 2584,
+        "Read": 1297
+      },
+      "output_tokens": {
+        "median_low": 3331,
+        "max": 4540
+      }
+    }
+  }
+}

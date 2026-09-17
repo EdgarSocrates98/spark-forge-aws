@@ -11,7 +11,8 @@
     "caveman@sparkforge-caveman": true,
     "ck@sparkforge-caveman": true,
     "caveman@caveman": false,
-    "ck@cavekit": false
+    "ck@cavekit": false,
+    "agentspec@agentspec": false
   },
   "enabledMcpjsonServers": [
     "sparkforge"

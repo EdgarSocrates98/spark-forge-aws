@@ -35,6 +35,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
+| A spec desta mudança está bem posta? | `sdd check` / `sdd status` / `sdd stamp` | o frontmatter de `docs/sdd/<FEATURE>/<fase>.md`; julga contrato, cascata por hash, cobertura e TDD declarado, nunca a prosa |
 | O que estava rodando quando a sessão caiu? | `resume` (bloco `journal`) / `journal verify` | o `.sparkforge/journal.jsonl`, que `call_tool` e a CLI gravam — um `started` e um `finished` por verbo que muda estado, encadeados por hash. `started` sem `finished` é "caiu **ou** ainda roda", nunca só "caiu"; e a cadeia não detecta edição da **última** linha (quem a protege é o commit) |
 | O agente acertou, com as tools certas, e recusou onde devia? | `python -m sparkforge.evals grade` / `compare` (fora da CLI `sparkforge`: o runtime não importa a avaliação) | facts `host.*` do transcript do host (`scripts/run_agentic_eval.py` gera; o pacote só lê) e o gabarito `evals/agentic/<suite>/suite.yaml`. Não conclui: lista `k/N` e transições (regra 30) |
 | Como o revisor vê os findings no PR? | `report github` | findings de `judge` e a união dos facts; grava SARIF e resumo em `.sparkforge/report/`, com recusa nomeada para o que não tem linha no repositório |
@@ -123,7 +124,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**103 tools, 38 com `detail_level`** (recontado em 2026-09-14). Os niveis sao `summary`,
+**106 tools, 38 com `detail_level`** (recontado em 2026-09-16). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
@@ -160,6 +161,17 @@ arquivo `.py` novo. Citar só a primeira seria escolher o resultado.
   de regra descreve DEFEITO;
 - **a razao de economia sai `unresolved`** quando o corpus e menor que o envelope
   fixo do pacote. `estimated_tokens` e estimativa declarada e nunca entra numa razao.
+
+## Desenvolver: o SDD próprio
+
+Mudança não trivial neste repositório passa pelas skills `sdd-explore`, `sdd-define`,
+`sdd-design`, `sdd-plan`, `sdd-build` e `sdd-ship`, com os artefatos em
+`docs/sdd/<FEATURE>/` e cada fase conferida por `sparkforge sdd check --repo . --feature <F>`
+(`sdd status`, `sdd stamp`). Elas substituem, aqui, o ciclo de spec, plano e TDD do
+superpowers e o plugin AgentSpec (desligado em `.claude/settings.json`); debugging,
+verificação e revisão do superpowers continuam valendo. `docs/superpowers/specs/` e
+`plans/` estão congelados; o histórico do AgentSpec mora em `docs/sdd/archive/agentspec/`.
+Fluxo: `docs/sdd/README.md`.
 
 ## Verificação antes de fechar
 

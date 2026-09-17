@@ -73,6 +73,11 @@ class TestToolSurface:
             "sparkforge_benchmark",
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
+            # 2026-09-16: o SDD proprio. `check` e `status` leem os artefatos de
+            # `docs/sdd/<FEATURE>/`; `stamp` grava o hash do upstream de um deles.
+            "sparkforge_sdd_check",
+            "sparkforge_sdd_status",
+            "sparkforge_sdd_stamp",
             "sparkforge_fuse",
             "sparkforge_workload",
             "sparkforge_capacity",
@@ -286,6 +291,10 @@ class TestToolSurface:
             # uniao, findings, summary) e, com `format: sarif`, o SARIF do
             # `report github`. Idempotente: a mesma arvore da os mesmos arquivos.
             "sparkforge_scan",
+            # `sparkforge_sdd_stamp` (2026-09-16) grava `upstream.sha256` no
+            # artefato SDD, e so essa linha -- `_WRITE_IDEMPOTENT`: com o hash ja
+            # certo, nao regrava. `sdd_check` e `sdd_status` so leem e ficam fora.
+            "sparkforge_sdd_stamp",
             # `sparkforge_change_sandbox` grava as copias `before/`/`after/` e o
             # `report.json` em `.sparkforge/sandbox/<id>/`, recriadas a cada
             # execucao com o mesmo `id` para a mesma entrada (§15). A arvore
@@ -2129,6 +2138,22 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_lakeformation_access_graph", {"facts_path": str(facts_file)}
         )
 
+    if name in ("sparkforge_sdd_check", "sparkforge_sdd_status"):
+        # Raiz sem docs/sdd de proposito: sai `root_missing` em `unresolved`, e o
+        # payload valida contra o schema igual.
+        return call_tool(name, {"repo": str(tmp_path)})
+
+    if name == "sparkforge_sdd_stamp":
+        # Um artefato de verdade (`<root>/<FEATURE>/<fase>.md`) com a linha do hash
+        # vazia: o stamp grava o sha256 do define e devolve `changed: true`.
+        pasta = tmp_path / "docs" / "sdd" / "F1"
+        pasta.mkdir(parents=True)
+        (pasta / "define.md").write_bytes(b"---\nsdd: 1\n---\n")
+        (pasta / "design.md").write_bytes(
+            b"---\nupstream:\n  path: docs/sdd/F1/define.md\n  sha256: \"\"\n---\n"
+        )
+        return call_tool(name, {"repo": str(tmp_path), "path": "docs/sdd/F1/design.md"})
+
     if name == "sparkforge_debate_referee":
         # Blackboard VAZIO de proposito: a tool devolve `upheld: true` com
         # `closed: false`, que e a resposta honesta para "nada a arbitrar" -- e o
@@ -3176,6 +3201,9 @@ class TestErrorShapesValidateToo:
             },
         ),
         ("sparkforge_receipt_verify", {"repo": "<tmp>", "receipt_path": "<tmp>/nada.json"}),
+        ("sparkforge_sdd_check", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_sdd_status", {"repo": "<tmp>/nao-existe"}),
+        ("sparkforge_sdd_stamp", {"repo": "<tmp>", "path": "nao-existe.md"}),
         (
             "sparkforge_proof",
             {

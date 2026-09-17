@@ -25,6 +25,16 @@ correntes* table of `docs/superpowers/STATUS.md`, checked by
   `docs/gates-por-mudanca.md` maps each kind of change to its gates, with the defect
   each one caught in real life.
 
+## Developing this repository: the in-repo SDD
+
+Non-trivial changes go through the skills `sdd-explore`, `sdd-define`, `sdd-design`,
+`sdd-plan`, `sdd-build` and `sdd-ship`. Artifacts live in `docs/sdd/<FEATURE>/`, and
+each phase is checked by `sparkforge sdd check --repo . --feature <F>` (plus
+`sdd status` and `sdd stamp`). Here they replace the spec/plan/TDD cycle of other
+plugins (superpowers, AgentSpec); `docs/superpowers/specs/` and `plans/` are frozen,
+and the AgentSpec history is archived in `docs/sdd/archive/agentspec/`. Flow:
+`docs/sdd/README.md`.
+
 ## Mandatory recommendation schema
 
 ```yaml
@@ -110,7 +120,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**103 tools, 38 with `detail_level`** (recounted 2026-09-14) (`summary`, `normal`, `full`).
+**106 tools, 38 with `detail_level`** (recounted 2026-09-16) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.

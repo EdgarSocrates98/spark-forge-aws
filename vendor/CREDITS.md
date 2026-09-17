@@ -5,10 +5,11 @@ Este arquivo cobre **duas** procedências diferentes, e a diferença importa:
 1. **Vendorizado** (`vendor/`, este diretório) — bytes de terceiro, pinados por
    SHA e conferidos por gate sem rede. Nada aqui é nosso.
 2. **Adaptado** (`skills/aws-*`, `skills/harden-s3-bucket`,
-   `skills/provision-s3-tables-table`) — procedimento de terceiro reescrito em
-   português e recortado ao domínio deste repositório. Não é cópia byte a byte,
-   e por isso não tem pin nem `MANIFEST.sha256`: tem commit de origem citado no
-   rodapé de cada `SKILL.md`.
+   `skills/provision-s3-tables-table`, `skills/sdd-*`) — procedimento de
+   terceiro reescrito em português e recortado ao domínio deste repositório.
+   Não é cópia byte a byte, e por isso não tem pin nem `MANIFEST.sha256`: a
+   origem está citada no rodapé de cada `SKILL.md` das skills AWS e na seção
+   das skills SDD, abaixo.
 
 ## Vendorizado — ecossistema caveman
 
@@ -94,6 +95,42 @@ atribuição é o rodapé de cada `SKILL.md` mais esta seção; o aviso de licen
 esta linha: o material original é © Amazon Web Services, licenciado sob
 Apache-2.0, e o texto integral da licença está em
 <https://www.apache.org/licenses/LICENSE-2.0>.
+
+## Adaptado, não vendorizado — as skills do SDD próprio
+
+As seis skills `sdd-explore`, `sdd-define`, `sdd-design`, `sdd-plan`,
+`sdd-build` e `sdd-ship` (2026-09-16, feature `docs/sdd/SDD_SKILLS/`) e os
+templates de `docs/sdd/templates/` foram escritos em português a partir de dois
+processos de spec que o repositório usava como plugins de nível usuário:
+
+| Origem | Licença | Versão lida | O que serviu de base |
+|---|---|---|---|
+| [`obra/superpowers`](https://github.com/obra/superpowers) | **MIT** | 5.1.0 | brainstorming (uma pergunta por vez, duas ou três abordagens, portão antes do código), writing-plans (tarefa pequena com teste, comando e código completo; a lista do que é placeholder), test-driven-development (a lei do vermelho antes do verde), subagent-driven-development e seus três prompts (um subagente novo por tarefa com o texto colado, os quatro estados do implementador, revisão de spec antes da de qualidade, revisor que não confia no relato), finishing-a-development-branch (esperar a escolha antes de integrar) |
+| [`luanmorenommaciel/agentspec`](https://github.com/luanmorenommaciel/agentspec) | **MIT** | 3.5.0 | a ordem das fases (brainstorm, define, design, build, ship), o manifesto de arquivos do design, decisões com alternativas, o relatório de build, e a forma dos templates por fase |
+
+**O que é nosso**, e não está em nenhuma das duas bases:
+
+- o gate determinístico `sparkforge sdd check|status|stamp`, que recusa por nome
+  o que não fecha, no lugar do *clarity score* e das notas de confiança
+  atribuídas pelo próprio modelo;
+- a cascata por hash de texto (`upstream.sha256` e `upstream_stale`), no lugar
+  de lembrar de atualizar a fase de baixo;
+- o `verified_by` de cada critério apontando teste, comando, `funcval` ou fact
+  reais, e o `red`/`green` com comando e exit no relatório de build;
+- o conhecimento consultado por verbo (`sparkforge rules lookup`,
+  `sparkforge knowledge path`, `sparkforge code symbol`), e nunca por uma base de
+  conhecimento paralela;
+- o perfil `operator`, em que o build passa por `sparkforge change sandbox` e a
+  árvore do operador nunca é escrita pela sessão;
+- o ship que deriva os gates de `docs/gates-por-mudanca.md` pelos
+  `change_kinds` do define, e a hipótese fechada só por acréscimo.
+
+Nenhum texto foi copiado byte a byte: as skills foram reescritas e recortadas ao
+repositório, e por isso não têm pin. A licença MIT das duas bases permite obra
+derivada com atribuição; a atribuição é esta seção. Os dois materiais originais
+são © dos respectivos autores (Jesse Vincent, no `LICENSE` do superpowers 5.1.0;
+Luan Moreno, no `plugin.json` do AgentSpec 3.5.0), sob a licença MIT, cujo texto
+está em <https://opensource.org/license/mit>.
 
 ## Fora do repositório, e por quê
 

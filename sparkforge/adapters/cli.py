@@ -1181,6 +1181,30 @@ def build_parser() -> argparse.ArgumentParser:
     funcval_compare_p.add_argument("--cursor")
     _add_detail_level(funcval_compare_p)
 
+    # sdd ----------------------------------------------------------------
+    sdd_p = sub.add_parser(
+        "sdd",
+        help=(
+            "Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o "
+            "que nao fecha, sem julgar a prosa."
+        ),
+    )
+    sdd_sub = sdd_p.add_subparsers(dest="sdd_action", required=True)
+    for nome, ajuda in (
+        ("check", "Roda os gates. Sai 1 se houver recusa; lacuna sozinha sai 0."),
+        ("status", "Fase atual de cada feature e o que a impede de avancar."),
+        ("stamp", "Grava upstream.sha256 do artefato. Escreve so a linha do hash."),
+    ):
+        sdd_verbo_p = sdd_sub.add_parser(nome, help=ajuda)
+        sdd_verbo_p.add_argument("--repo", required=True, help="Raiz do repositorio.")
+        sdd_verbo_p.add_argument(
+            "--root", default="docs/sdd", help="Pasta dos artefatos, relativa a --repo."
+        )
+        if nome == "check":
+            sdd_verbo_p.add_argument("--feature", help="Confere so esta feature.")
+        if nome == "stamp":
+            sdd_verbo_p.add_argument("path", help="Artefato, relativo a --repo.")
+
     # fuse ---------------------------------------------------------------
     fuse_p = sub.add_parser(
         "fuse",
@@ -3424,6 +3448,22 @@ def _cmd_funcval_compare(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_sdd_check(args: argparse.Namespace) -> int:
+    relatorio = _core.sdd_check(args.repo, args.root, args.feature)
+    _print(relatorio)
+    return 1 if relatorio["refused"] else 0
+
+
+def _cmd_sdd_status(args: argparse.Namespace) -> int:
+    _print(_core.sdd_status(args.repo, args.root))
+    return 0
+
+
+def _cmd_sdd_stamp(args: argparse.Namespace) -> int:
+    _print(_core.sdd_stamp(args.repo, args.path, args.root))
+    return 0
+
+
 def _cmd_fuse(args: argparse.Namespace) -> int:
     full = _core.fuse_facts(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -4542,6 +4582,9 @@ _DISPATCH = {
     ("change", "propose"): _cmd_change_propose,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
+    ("sdd", "check"): _cmd_sdd_check,
+    ("sdd", "status"): _cmd_sdd_status,
+    ("sdd", "stamp"): _cmd_sdd_stamp,
     ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("arbitrate", None): _cmd_arbitrate,
@@ -4652,6 +4695,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         getattr(args, "analyze_target", None)
         or getattr(args, "case_action", None)
         or getattr(args, "funcval_action", None)
+        or getattr(args, "sdd_action", None)
         or getattr(args, "runtime_action", None)
         or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)

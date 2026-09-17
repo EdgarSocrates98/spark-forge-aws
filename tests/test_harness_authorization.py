@@ -970,7 +970,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `repo` e `file_path` (o caminho de escrita que ela so confere).
         # 94 -> 95 com `change_propose` (2026-09-14, §15 L3): `_WRITE_IDEMPOTENT`,
         # declara `repo` e os anexos (`benchmark_paths`, `funcval_path`).
-        assert len(TOOLS) - len(sem_caminho) == 95
+        # 95 -> 98 com `sdd_check`, `sdd_status` e `sdd_stamp` (2026-09-16): as
+        # tres declaram `repo`, e `stamp` tambem `path` (o artefato, relativo a
+        # `repo`). As duas primeiras sao `_READ_ONLY`, a terceira
+        # `_WRITE_IDEMPOTENT`. O conjunto de excecao nao se move.
+        assert len(TOOLS) - len(sem_caminho) == 98
 
 
 class TestAImposicaoNoDespacho:

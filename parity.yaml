@@ -561,6 +561,28 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: check spec artifacts against the SDD contract
+    tools: [sparkforge_sdd_check, sparkforge_sdd_status]
+    cli: [sdd check, sdd status]
+    knowledge: [docs/gates-por-mudanca.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: record the upstream hash of a spec artifact
+    tools: [sparkforge_sdd_stamp]
+    cli: [sdd stamp]
+    knowledge: [docs/gates-por-mudanca.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: correlate facts from multiple extractors before judging
     tools: [sparkforge_fuse]
     cli: [fuse]

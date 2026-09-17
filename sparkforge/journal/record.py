@@ -44,6 +44,7 @@ _SAIDAS_FIXAS: dict[str, tuple[str, ...]] = {
 _SAIDAS_POR_CHAVE: dict[str, tuple[str, ...]] = {
     "sparkforge_scan": ("outputs",),
     "sparkforge_receipt_emit": ("receipt_path",),
+    "sparkforge_sdd_stamp": ("path",),
 }
 
 

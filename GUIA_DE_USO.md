@@ -234,7 +234,7 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 No Desktop va em **Devin Settings > MCP**, adicione um servidor com a URL acima e
 confirme. O processo do servidor precisa ficar rodando enquanto a sessao estiver ativa.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 103 tools fazem (recontado em 2026-09-14)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 106 tools fazem (recontado em 2026-09-16)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
@@ -536,7 +536,7 @@ repositório. **Clonar é a instalação inteira**: não há `npm install`, não
 | Mensagem de commit comprimida | `/caveman-commit` |
 | Revisão de diff comprimida | `/caveman-review` |
 | Comprimir um arquivo de memória (`CLAUDE.md`, notas) | `/caveman-compress <arquivo>` |
-| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` |
+| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` (para mudança no próprio SparkForge, o fluxo é o SDD do repositório: skills `sdd-*` e `sparkforge sdd check`, em [`docs/sdd/README.md`](docs/sdd/README.md)) |
 | Delegar a subagente comprimido | skill `cavecrew` → `cavecrew-investigator`, `cavecrew-builder`, `cavecrew-reviewer` |
 | Voltar ao português normal | `stop caveman` ou `normal mode` |
 

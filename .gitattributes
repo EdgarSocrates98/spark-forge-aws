@@ -12,3 +12,9 @@ fixtures/change/** -text
 # `fixtures/journal/`: a cadeia do journal e sha256 dos BYTES de cada linha
 # (`prev`), e um CRLF introduzido pelo checkout quebraria a cadeia inteira.
 fixtures/journal/** -text
+# `fixtures/sdd/`: cada artefato de spec prende o `text_sha256` do upstream
+# (`sparkforge sdd stamp`), que normaliza CRLF para LF -- o CRLF do checkout
+# nao poe a cascata em `upstream_stale`. `-text` fica para os bytes da fixture
+# serem os mesmos em toda plataforma: o gerador gravou bytes, e o golden e a
+# suite agentica leem a copia do checkout.
+fixtures/sdd/** -text

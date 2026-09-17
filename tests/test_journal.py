@@ -67,7 +67,9 @@ class TestConjunto:
             and not nome.startswith("sparkforge_code_")
         }
         assert journaled() == esperado
-        assert len(esperado) == 27
+        # 27 -> 28 com `sdd_stamp` (2026-09-16): `_WRITE_IDEMPOTENT`, grava a linha
+        # `upstream.sha256` do artefato SDD. `sdd_check` e `sdd_status` so leem.
+        assert len(esperado) == 28
 
     def test_todo_verbo_do_journal_tem_porta_de_cli_pela_convencao(self) -> None:
         assert journaled() <= _verbos_de_cli()

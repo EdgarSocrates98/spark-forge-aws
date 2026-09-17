@@ -407,6 +407,35 @@ NON_DISPATCHABLE_SKILLS = {
         "padroes de boto3/botocore; e referencia de uso de SDK, nao muta infra "
         "por si, mas pode executar chamadas AWS se o operador pedir"
     ),
+    # As seis fases do SDD proprio (feature SDD_SKILLS, 2026-09-16). Dirigem a
+    # sessao e o operador, nao investigam artefato fechado (D-6): explore,
+    # define, design e plan fazem uma pergunta por vez e esperam a aprovacao;
+    # build despacha um subagente por tarefa e dois revisores, e subagente nao
+    # gera subagente por default; ship para antes de push e de PR.
+    "sdd-explore": (
+        "pergunta uma coisa por vez e espera o operador escolher a abordagem; "
+        "despachada, ninguem estaria la para responder"
+    ),
+    "sdd-define": (
+        "fecha criterios e hipotese com o operador, uma pergunta por vez; "
+        "subagente nao pode perguntar (V-DV-10)"
+    ),
+    "sdd-design": (
+        "apresenta o desenho por partes e espera aprovacao de cada uma; "
+        "subagente nao pode perguntar"
+    ),
+    "sdd-plan": (
+        "o plano passa pela leitura do operador antes de ficar ready; "
+        "subagente nao pode perguntar"
+    ),
+    "sdd-build": (
+        "despacha um subagente por tarefa e dois revisores; despachada inteira, "
+        "perderia a orquestracao, porque subagente nao gera subagente por default"
+    ),
+    "sdd-ship": (
+        "para antes de git push, merge e gh pr create para a escolha do operador; "
+        "despachada, ninguem estaria la para escolher"
+    ),
 }
 
 SKILL_DISPATCH_REASON = {**DISPATCHABLE_SKILLS, **NON_DISPATCHABLE_SKILLS}

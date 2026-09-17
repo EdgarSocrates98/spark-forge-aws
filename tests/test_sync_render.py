@@ -547,6 +547,15 @@ class TestRelacaoDerivada:
             # e para para confirmacao humana antes de push e de PR; despachada,
             # ninguem estaria la para confirmar.
             "propose-change-pr",
+            # As seis fases do SDD proprio (2026-09-16) dirigem a sessao e o
+            # operador; declara-las no `skills:` de um coordenador as tornaria
+            # despachaveis, e todas precisam perguntar ou despachar.
+            "sdd-explore",
+            "sdd-define",
+            "sdd-design",
+            "sdd-plan",
+            "sdd-build",
+            "sdd-ship",
         }
         orfas = [
             p.name

@@ -162,6 +162,15 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 `undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
 `SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
 
+#### Mudança no job pede spec
+
+Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
+`sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
+`profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
+nunca pela árvore do operador. `sparkforge sdd check` confere cada fase. As duas
+skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
+despacham subagentes, e subagente não faz nenhum dos dois.
+
 #### Não faz
 
 **As três leituras são estáticas, e a fronteira só aparece quando o achado vira sugestão.**
