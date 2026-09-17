@@ -198,7 +198,7 @@ Reexecutar `green` fica fora de A (executar código é outra classe de efeito); 
 | `upstream_stale` | `upstream.sha256` ≠ sha256 **de texto** do upstream (`\r\n` normalizado para `\n`, o `text_sha256` de `sparkforge/receipt/_hash.py`) | todas menos explore |
 | `acceptance_uncovered` | acceptance id do define ausente de todos os `covers` **da fase conferida** (conferido separadamente no design e no plan) | design, plan |
 | `task_without_test` | task do plan sem `test` | plan |
-| `verified_by_dangling` | `kind: test` aponta arquivo inexistente ou função ausente (conferido por `ast`, sem importar) **depois do build** — antes disso é `unresolved: test_not_written` | ship |
+| `verified_by_dangling` | `kind: test` aponta arquivo inexistente ou função ausente (conferido por `ast`, sem importar) **depois do build** — antes disso é `unresolved: test_not_written` | define, plan (quando existe `build_report.md` válido com `status: ready` ou `done`) |
 | `success_without_source` | métrica sem `source` | define |
 | `manifest_path_unknown` | `action: modify\|delete` em caminho inexistente | design |
 | `rollback_missing` | decisão sem `rollback` | design |
@@ -246,6 +246,19 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
     (plano, aspas simples ou duplas) inteiro na própria linha: valor na linha
     de baixo, bloco `|`/`>`, escalar multilinha, tag ou âncora;
   - `upstream_flow_style` — `upstream: {…}`; o `stamp` só reescreve bloco.
+- **Referência de teste é node id do pytest.** O sufixo `[...]` do
+  parametrize é descartado antes de conferir; classe aninhada vira
+  `TestA::TestB::test_c`; só conta o que o pytest coleta por padrão — função
+  `test*`, classe `Test*` e seus métodos `test*` (`::_helper` não conta).
+  `kind: test` sem `::nome` é `schema_invalid` no campo
+  `acceptance/<i>/verified_by/ref`, em qualquer fase. `verified_by_dangling`
+  só dispara com o `build_report` em `ready`/`done`; em `draft` segue
+  `test_not_written`.
+- **`fact`:** item sem `id` verdadeiro é ignorado (`#None` não casa).
+- **`change_id`** é um segmento só, sem separador, e precisa ser subpasta
+  direta de `.sparkforge/sandbox/`; `..`, `.` e `../../docs` saem
+  `change_missing`. **`case_id`** é comparado como texto nos dois lados, e
+  vazio conta como ausente.
 - O `stamp` preserva comentário de coluna zero dentro do bloco `upstream:`,
   comentário no fim da linha do hash e o BOM de UTF-8; `load_artifact` tolera
   o BOM antes da cerca.

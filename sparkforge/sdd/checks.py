@@ -172,28 +172,41 @@ def _gate_upstream(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                    f"`sparkforge sdd stamp --repo . {ctx.rel(artefato.path)}`")
 
 
-def _nomes_de_teste(arvore: ast.Module) -> set[str]:
+def _nomes_de_teste(corpo: list[ast.stmt], prefixo: str = "") -> set[str]:
+    """Os nomes que o pytest coleta por padrao: `test*` e `Test*`, com classe aninhada."""
     nomes: set[str] = set()
-    for no in arvore.body:
+    for no in corpo:
         if isinstance(no, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            nomes.add(no.name)
-        elif isinstance(no, ast.ClassDef):
-            for membro in no.body:
-                if isinstance(membro, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    nomes.add(f"{no.name}::{membro.name}")
+            if no.name.startswith("test"):
+                nomes.add(f"{prefixo}{no.name}")
+        elif isinstance(no, ast.ClassDef) and no.name.startswith("Test"):
+            nomes |= _nomes_de_teste(no.body, f"{prefixo}{no.name}::")
     return nomes
 
 
-def _teste_existe(repo: Path, referencia: str) -> bool:
+def _separa_ref(referencia: str) -> tuple[str, str]:
+    """(arquivo, nome) de um node id do pytest, sem o sufixo `[...]` do parametrize."""
     caminho, _, nome = referencia.partition("::")
+    if nome.endswith("]") and "[" in nome:
+        nome = nome[: nome.index("[")]
+    return caminho, nome
+
+
+def _ref_de_teste_valida(referencia: str) -> bool:
+    caminho, nome = _separa_ref(referencia)
+    return bool(caminho) and bool(nome) and all(nome.split("::"))
+
+
+def _teste_existe(repo: Path, referencia: str) -> bool:
+    caminho, nome = _separa_ref(referencia)
     alvo = resolve_within(repo, caminho) if caminho else None
     if alvo is None or not alvo.is_file() or not nome:
         return False
     try:
         arvore = ast.parse(alvo.read_bytes())
-    except (SyntaxError, ValueError):
+    except (OSError, SyntaxError, ValueError):
         return False
-    return nome in _nomes_de_teste(arvore)
+    return nome in _nomes_de_teste(arvore.body)
 
 
 def _conferir_teste(
@@ -201,7 +214,8 @@ def _conferir_teste(
 ) -> None:
     if _teste_existe(ctx.repo, referencia):
         return
-    if "build_report" in ctx.artefatos:
+    build = ctx.artefatos.get("build_report")
+    if build is not None and build.meta["status"] in PRONTO:
         ctx.recusa("verified_by_dangling", artefato.path, campo,
                    f"{referencia} nao existe depois do build; escreva o teste ou corrija a "
                    "referencia")
@@ -219,7 +233,7 @@ def _ids_de_fact(arquivo: Path) -> set[str]:
     itens = dado.get("items", []) if isinstance(dado, dict) else dado
     if not isinstance(itens, list):
         return set()
-    return {str(item.get("id")) for item in itens if isinstance(item, dict)}
+    return {str(item["id"]) for item in itens if isinstance(item, dict) and item.get("id")}
 
 
 def _gate_success_source(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -244,6 +258,11 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
         campo = f"acceptance/{indice}/verified_by"
         referencia = prova["ref"]
         if prova["kind"] == "test":
+            if not _ref_de_teste_valida(referencia):
+                ctx.recusa("schema_invalid", artefato.path, f"{campo}/ref",
+                           f"'{referencia}' nao e node id do pytest; use "
+                           "tests/arquivo.py::test_nome (ou ::TestClasse::test_nome)")
+                continue
             _conferir_teste(ctx, artefato, campo, referencia, item["id"])
         elif prova["kind"] == "fact":
             caminho, _, fact_id = referencia.partition("#")

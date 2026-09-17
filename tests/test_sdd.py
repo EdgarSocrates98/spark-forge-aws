@@ -595,6 +595,134 @@ def test_verified_by_dangling_depois_do_build(tmp_path):
     assert unresolved == []
 
 
+def _restampa(repo: Path, feature: str = "F1") -> None:
+    for fase in ("design", "plan", "build_report", "ship"):
+        if (repo / "docs" / "sdd" / feature / f"{fase}.md").is_file():
+            stamp(repo, f"docs/sdd/{feature}/{fase}.md")
+
+
+def _ref_do_define(repo: Path, caminhos, ref: str) -> None:
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"]["ref"] = ref
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    _restampa(repo)
+
+
+_ARQUIVO_DE_TESTE = b"""\
+def test_alvo():
+    pass
+
+
+def _helper():
+    pass
+
+
+def helper():
+    pass
+
+
+class TestA:
+    def test_m(self):
+        pass
+
+    def _aux(self):
+        pass
+
+    class TestB:
+        def test_c(self):
+            pass
+
+    class Interna:
+        def test_d(self):
+            pass
+
+
+class Suporte:
+    def test_s(self):
+        pass
+"""
+
+
+@pytest.mark.parametrize("ref", [
+    "tests/test_alvo.py::test_alvo[a-1]",
+    "tests/test_alvo.py::test_alvo[caso::com::dois-pontos]",
+    "tests/test_alvo.py::TestA::test_m",
+    "tests/test_alvo.py::TestA::test_m[x]",
+    "tests/test_alvo.py::TestA::TestB::test_c",
+])
+def test_node_id_real_do_pytest_conta(tmp_path, ref):
+    caminhos = feature_limpa(tmp_path)
+    (tmp_path / "tests" / "test_alvo.py").write_bytes(_ARQUIVO_DE_TESTE)
+    _ref_do_define(tmp_path, caminhos, ref)
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+@pytest.mark.parametrize("ref", [
+    "tests/test_alvo.py::_helper",
+    "tests/test_alvo.py::helper",
+    "tests/test_alvo.py::TestA::_aux",
+    "tests/test_alvo.py::TestA::Interna::test_d",
+    "tests/test_alvo.py::Suporte::test_s",
+    "tests/test_alvo.py::TestB::test_c",
+    "tests/test_alvo.py::TestA",
+])
+def test_so_nome_coletavel_pelo_pytest_conta(tmp_path, ref):
+    caminhos = feature_limpa(tmp_path)
+    (tmp_path / "tests" / "test_alvo.py").write_bytes(_ARQUIVO_DE_TESTE)
+    _ref_do_define(tmp_path, caminhos, ref)
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [
+        ("verified_by_dangling", "acceptance/0/verified_by")
+    ]
+
+
+@pytest.mark.parametrize("ref", ["tests/test_alvo.py", "tests/test_alvo.py::", "::test_alvo"])
+def test_ref_de_teste_sem_nome_e_schema_invalid(tmp_path, ref):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"]["ref"] = ref
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    recusa = check(tmp_path)
+    assert [(r["code"], r["field"]) for r in recusa["refused"]] == [
+        ("schema_invalid", "acceptance/0/verified_by/ref")
+    ]
+    assert recusa["unresolved"] == []
+
+
+def test_ref_de_teste_sem_nome_depois_do_build_tambem(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _ref_do_define(tmp_path, caminhos, "tests/test_alvo.py")
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [
+        ("schema_invalid", "acceptance/0/verified_by/ref")
+    ]
+
+
+def test_arquivo_de_teste_ilegivel_nao_derruba(tmp_path, monkeypatch):
+    feature_limpa(tmp_path)
+    original = Path.read_bytes
+
+    def falha(self):
+        if self.name == "test_alvo.py":
+            raise PermissionError("negado")
+        return original(self)
+
+    monkeypatch.setattr(Path, "read_bytes", falha)
+    refused, _ = _codigos(check(tmp_path))
+    assert refused == ["verified_by_dangling", "verified_by_dangling"]
+
+
+@pytest.mark.parametrize("estado,esperado", [
+    ("draft", ([], ["test_not_written", "test_not_written"])),
+    ("ready", (["verified_by_dangling", "verified_by_dangling"], [])),
+])
+def test_dangling_so_com_build_report_pronto(tmp_path, estado, esperado):
+    caminhos = _ate(tmp_path, "build_report")
+    _reescreve(caminhos["build_report"], status=estado)
+    (tmp_path / "tests" / "test_alvo.py").write_bytes(b"def test_outro():\n    pass\n")
+    assert _codigos(check(tmp_path)) == esperado
+
+
 def test_teste_em_classe_conta(tmp_path):
     caminhos = _so_define(tmp_path)
     (tmp_path / "tests" / "test_alvo.py").write_bytes(
@@ -614,6 +742,26 @@ def test_fact_not_collected_e_fact_encontrado(tmp_path):
     assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
     (tmp_path / "facts.json").write_text(json.dumps([{"id": "abc123"}]), encoding="utf-8")
     assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_fact_no_formato_real_de_facts(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "fact", "ref": "facts.json#f_abc123"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    dado = {"items": [{"id": "f_abc123", "kind": "spark.stage.shuffle", "attrs": {}}]}
+    (tmp_path / "facts.json").write_bytes(json.dumps(dado).encode("utf-8"))
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+@pytest.mark.parametrize("item", [{"kind": "x"}, {"id": None}, {"id": ""}])
+def test_fact_sem_id_nao_casa_com_none(tmp_path, item):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "fact", "ref": "facts.json#None"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    (tmp_path / "facts.json").write_bytes(json.dumps({"items": [item]}).encode("utf-8"))
+    assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
 
 
 def test_funcval_not_run(tmp_path):
