@@ -1,5 +1,9 @@
 # SDD próprio — núcleo determinístico (subprojeto A)
 
+> **Contrato vivo em `docs/sdd/CONTRATO.md`.** Este spec é registro histórico,
+> numa pasta congelada: os códigos e campos do §5, §5.0 e §13 não acompanham o
+> código. Para o que o gate faz hoje, leia o contrato vivo.
+
 **Data:** 2026-09-16
 **Estado:** implementado (subprojeto A), branch `sdd/nucleo-spec`; desvios no §13
 **Frente:** A de 5 (A núcleo · B skills dev · C perfil operador · D migração · E medida)

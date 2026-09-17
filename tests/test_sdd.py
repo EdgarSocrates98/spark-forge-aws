@@ -7,6 +7,7 @@ feature e montada em `tmp_path`.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import re
@@ -1391,6 +1392,69 @@ def test_ship_done_com_sha_divergente(tmp_path):
     assert _codigos(check(tmp_path)) == ([], [])
     _relatorio_de_mudanca(tmp_path, "proposal", "S1", novos=["SF-X"], resolvidos=["SF-PY-012"])
     assert _codigos(check(tmp_path)) == (["ship_evidence_mismatch"], [])
+
+
+_EMISSORES = ("recusa", "lacuna", "StampError")
+
+
+def _codigos_emitidos() -> set[str]:
+    """Todo codigo literal que `checks.py` e `stamp.py` emitem, lido por ast.
+
+    Chamada a `recusa`, `lacuna` ou `StampError` com codigo que nao e literal
+    reprova: codigo montado em tempo de execucao escaparia do contrato.
+    """
+    codigos: set[str] = set()
+    dinamicos: list[str] = []
+    for nome in ("checks.py", "stamp.py"):
+        arvore = ast.parse((ROOT / "sparkforge" / "sdd" / nome).read_bytes())
+        for no in ast.walk(arvore):
+            if isinstance(no, ast.Call):
+                funcao = no.func
+                chamado = funcao.attr if isinstance(funcao, ast.Attribute) else getattr(
+                    funcao, "id", None)
+                if chamado not in _EMISSORES:
+                    continue
+                primeiro = no.args[0] if no.args else None
+                if isinstance(primeiro, ast.Constant) and isinstance(primeiro.value, str):
+                    codigos.add(primeiro.value)
+                else:
+                    dinamicos.append(f"{nome}:{no.lineno}")
+            elif isinstance(no, ast.Dict):
+                for chave, valor in zip(no.keys, no.values):
+                    if (isinstance(chave, ast.Constant) and chave.value == "code"
+                            and isinstance(valor, ast.Constant)):
+                        codigos.add(valor.value)
+    assert not dinamicos, dinamicos
+    return codigos
+
+
+_LINHA_DE_CODIGO = re.compile(r"^\| `([a-z_]+)` \|")
+
+
+def _codigos_do_contrato() -> set[str]:
+    """Os codigos da primeira coluna das tabelas `| código |` de docs/sdd/CONTRATO.md."""
+    codigos: set[str] = set()
+    dentro = False
+    texto = (ROOT / "docs" / "sdd" / "CONTRATO.md").read_text(encoding="utf-8")
+    for linha in texto.splitlines():
+        if linha.startswith("| código |"):
+            dentro = True
+            continue
+        if not linha.startswith("|"):
+            dentro = False
+            continue
+        achado = _LINHA_DE_CODIGO.match(linha)
+        if dentro and achado:
+            codigos.add(achado.group(1))
+    return codigos
+
+
+def test_contrato_lista_todo_codigo():
+    """SDD_ENDURECIMENTO AC9: o contrato vivo e o codigo dizem os mesmos codigos."""
+    emitidos = _codigos_emitidos()
+    assert {"ship_evidence_missing", "ship_evidence_mismatch", "moved_change_mismatch",
+            "path_skipped", "root_missing", "not_an_artifact"} <= emitidos
+    assert _codigos_do_contrato() == emitidos
 
 
 def test_proof_e_moved_fecham_propriedades():
