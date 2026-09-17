@@ -472,3 +472,45 @@ def test_teste_do_plan_ainda_nao_escrito(tmp_path):
     meta["tasks"][0]["test"]["name"] = "test_futuro"
     _reescreve(caminhos["plan"], tasks=meta["tasks"])
     assert _codigos(check(tmp_path)) == ([], ["test_not_written"])
+
+
+def test_red_not_declared_ausente(tmp_path):
+    caminhos = _ate(tmp_path, "build_report")
+    meta = _meta(caminhos["build_report"])
+    del meta["tasks"][0]["red"]
+    _reescreve(caminhos["build_report"], tasks=meta["tasks"])
+    assert _codigos(check(tmp_path)) == (["red_not_declared"], [])
+
+
+def test_red_not_declared_exit_zero(tmp_path):
+    caminhos = _ate(tmp_path, "build_report")
+    meta = _meta(caminhos["build_report"])
+    meta["tasks"][0]["red"]["exit"] = 0
+    _reescreve(caminhos["build_report"], tasks=meta["tasks"])
+    assert _codigos(check(tmp_path)) == (["red_not_declared"], [])
+
+
+def test_task_pulada_nao_exige_red(tmp_path):
+    caminhos = _ate(tmp_path, "build_report")
+    _reescreve(caminhos["build_report"], tasks=[{"id": "T1", "status": "skipped"}])
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_claim_without_evidence(tmp_path):
+    caminhos = _ate(tmp_path, "build_report")
+    _reescreve(caminhos["build_report"], claims=[{"text": "ficou 3x mais rapido"}])
+    assert _codigos(check(tmp_path)) == (["claim_without_evidence"], [])
+
+
+def test_hypothesis_open_at_ship(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["ship"], hypothesis_outcome=None)
+    assert _codigos(check(tmp_path)) == (["hypothesis_open_at_ship"], [])
+
+
+def test_registry_unchecked(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["ship"], registries=["surface_lock"])
+    recusa = check(tmp_path)["refused"]
+    assert [r["code"] for r in recusa] == ["registry_unchecked"]
+    assert "generated_reference" in recusa[0]["unlock"]

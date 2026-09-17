@@ -289,13 +289,58 @@ def _gate_task_test(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
         _conferir_teste(ctx, artefato, campo, f"{teste['path']}::{teste['name']}", tarefa["id"])
 
 
+def _gate_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, tarefa in enumerate(artefato.meta["tasks"]):
+        if tarefa["status"] != "done":
+            continue
+        vermelho = tarefa.get("red")
+        if not vermelho or vermelho["exit"] == 0:
+            ctx.recusa("red_not_declared", artefato.path, f"tasks/{indice}/red",
+                       f"registre o comando que falhou antes do codigo de {tarefa['id']} "
+                       "(exit diferente de zero)")
+
+
+def _gate_claims(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, afirmacao in enumerate(artefato.meta["claims"]):
+        if not str(afirmacao.get("evidence_ref") or "").strip():
+            ctx.recusa("claim_without_evidence", artefato.path, f"claims/{indice}/evidence_ref",
+                       "aponte o arquivo, teste ou fact que sustenta a afirmacao")
+
+
+def _gate_hypothesis(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    if not artefato.meta.get("hypothesis_outcome"):
+        ctx.recusa("hypothesis_open_at_ship", artefato.path, "hypothesis_outcome",
+                   "feche a hipotese com confirmed, refuted ou abandoned, sem reescrever a "
+                   "afirmacao (regra 21)")
+
+
+def _gate_registries(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    define = ctx.artefatos.get("define")
+    if define is None:
+        return
+    conhecidos = change_kinds()
+    marcados = set(artefato.meta["registries"])
+    vistos: set[str] = set()
+    for chave in define.meta["change_kinds"]:
+        tipo = conhecidos.get(chave)
+        if tipo is None:
+            continue
+        for registro in tipo["registries"]:
+            if registro in marcados or registro in vistos:
+                continue
+            vistos.add(registro)
+            ctx.recusa("registry_unchecked", artefato.path, "registries",
+                       f"{registro} e exigido por '{tipo['section']}' "
+                       "(docs/gates-por-mudanca.md); rode o gate e liste-o")
+
+
 _GATES: dict[str, tuple[Gate, ...]] = {
     "explore": (),
     "define": (_gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by),
     "design": (_gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura),
     "plan": (_gate_order, _gate_upstream, _gate_cobertura, _gate_task_test),
-    "build_report": (_gate_order, _gate_upstream),
-    "ship": (_gate_order, _gate_upstream),
+    "build_report": (_gate_order, _gate_upstream, _gate_red, _gate_claims),
+    "ship": (_gate_order, _gate_upstream, _gate_hypothesis, _gate_registries),
 }
 
 
