@@ -428,11 +428,11 @@ def _conferir_achado(
                    f"'{referencia}' nao e <change_id>#<rule_id>; use #<rule_id> para o "
                    "change_id do build_report")
         return
-    if _ship_feito(ctx):
-        return  # referencia historica: o sandbox pode ter sido limpo
     if not ident:
         build = ctx.artefatos.get("build_report")
         ident = str((build.meta.get("change_id") if build is not None else None) or "")
+    if _historia(ctx, ident):
+        return
     if not _nao_movidas(_relatorio_da_mudanca(ctx.repo, ident), [regra]):
         return
     alvo = ident or "<change_id>"
@@ -487,8 +487,8 @@ def _conferir_movido(
                    f"{dono}: moved.change_id {ident} nao e o change_id do build "
                    f"({do_build or 'vazio'}); a tarefa prova a mudanca que o build registrou")
         return
-    if _ship_feito(ctx):
-        return  # referencia historica: o sandbox pode ter sido limpo
+    if _historia(ctx, ident):
+        return
     faltam = _nao_movidas(_relatorio_da_mudanca(ctx.repo, ident), movido["resolved"])
     if faltam:
         ctx.recusa("moved_not_observed", artefato.path, campo,
@@ -568,9 +568,18 @@ def _case_id_atual(repo: Path) -> str | None:
 
 
 def _ship_feito(ctx: _Contexto) -> bool:
-    """O ship carregou com status done: case e mudanca citados viraram historia."""
+    """O ship carregou com status done: o case citado virou historia."""
     ship = ctx.artefatos.get("ship")
     return ship is not None and ship.meta["status"] == "done"
+
+
+def _historia(ctx: _Contexto, ident: str) -> bool:
+    """Ship done E nenhum relatorio da mudanca: a referencia virou historia.
+
+    Relatorio presente continua conferido depois do ship; o que sustenta a
+    mudanca sumida e o `report_sha256` que o ship gravou em `evidence`.
+    """
+    return _ship_feito(ctx) and not _arquivos_de_relatorio(ctx.repo, ident)
 
 
 def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -613,6 +622,67 @@ def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                    ".sparkforge/proposal/<id>/)")
 
 
+def _ids_citados(ctx: _Contexto) -> list[str]:
+    """Os change_id em que a feature se apoia: o do build, o de moved e o de finding."""
+    ids: list[str] = []
+    build = ctx.artefatos.get("build_report")
+    if build is not None:
+        principal = _texto_ou_none(build.meta.get("change_id"))
+        if principal:
+            ids.append(principal)
+        ids.extend(t["moved"]["change_id"] for t in build.meta["tasks"] if t.get("moved"))
+    plano = ctx.artefatos.get("plan")
+    if plano is not None:
+        for tarefa in plano.meta["tasks"]:
+            prova = tarefa.get("proof")
+            ident = prova["ref"].partition("#")[0] if prova else ""
+            if prova and prova["kind"] == "finding" and ident:
+                ids.append(ident)
+    return list(dict.fromkeys(ids))
+
+
+def _sha_ou_vazio(arquivo: Path) -> str:
+    try:
+        return text_sha256(arquivo)
+    except OSError:
+        return ""
+
+
+def _hashes_vistos(ctx: _Contexto, ident: str) -> str:
+    """`<id>: <relatorio>=<sha>, ...` dos relatorios presentes, para o ship copiar."""
+    pares = [f"{ctx.rel(a)}={_sha_ou_vazio(a)}" for a in _arquivos_de_relatorio(ctx.repo, ident)]
+    return f"{ident}: {', '.join(pares)}" if pares else ""
+
+
+def _gate_evidence(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    entradas = artefato.meta.get("evidence")
+    if artefato.meta["profile"] != "operator":
+        if entradas is not None:
+            ctx.recusa("schema_invalid", artefato.path, "evidence",
+                       "evidence so vale no perfil operator; o ship dev nao cita mudanca")
+        return
+    citados = _ids_citados(ctx)
+    gravados = {entrada["change_id"] for entrada in entradas or []}
+    faltam = [ident for ident in citados if ident not in gravados]
+    if not entradas or faltam:
+        alvo = faltam or citados
+        vistos = "; ".join(filter(None, (_hashes_vistos(ctx, ident) for ident in alvo)))
+        ctx.recusa("ship_evidence_missing", artefato.path, "evidence",
+                   "grave evidence: [{change_id, report_sha256}] para "
+                   f"{', '.join(alvo) or 'o change_id do build'}, com o text_sha256 do "
+                   f"relatorio que o ship leu (presentes: {vistos or 'nenhum'}); leia o "
+                   "relatorio antes de copiar o hash")
+    for indice, entrada in enumerate(entradas or []):
+        for arquivo in _arquivos_de_relatorio(ctx.repo, entrada["change_id"]):
+            atual = _sha_ou_vazio(arquivo)
+            if atual != entrada["report_sha256"]:
+                ctx.recusa("ship_evidence_mismatch", artefato.path,
+                           f"evidence/{indice}/report_sha256",
+                           f"{ctx.rel(arquivo)} tem text_sha256 {atual or '(ilegivel)'}, e o "
+                           f"ship gravou {entrada['report_sha256']}; o relatorio mudou depois "
+                           "do ship: leia-o de novo antes de regravar o hash")
+
+
 _GATES: dict[str, tuple[Gate, ...]] = {
     "explore": (_gate_upstream,),
     "define": (
@@ -621,7 +691,7 @@ _GATES: dict[str, tuple[Gate, ...]] = {
     "design": (_gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura),
     "plan": (_gate_order, _gate_upstream, _gate_cobertura, _gate_task_test),
     "build_report": (_gate_order, _gate_upstream, _gate_red, _gate_claims, _gate_change),
-    "ship": (_gate_order, _gate_upstream, _gate_hypothesis, _gate_registries),
+    "ship": (_gate_order, _gate_upstream, _gate_hypothesis, _gate_registries, _gate_evidence),
 }
 
 

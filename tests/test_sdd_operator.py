@@ -18,6 +18,7 @@ from pathlib import Path
 import yaml
 
 from sparkforge.adapters.tools import call_tool
+from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd.checks import check
 from sparkforge.sdd.stamp import stamp
 
@@ -85,6 +86,11 @@ def _evidencias(repo: Path, raiz: str) -> Path:
     comparacao = pasta / "compare.json"
     comparacao.write_bytes(json.dumps({"items": [_DELTA]}).encode("utf-8"))
     return comparacao
+
+
+def _sha_do_relatorio(repo: Path, change_id: str) -> str:
+    """O que o ship grava em evidence: o text_sha256 do relatorio que ele leu."""
+    return text_sha256(repo / ".sparkforge" / "sandbox" / change_id / "report.json")
 
 
 def _feature_operator(repo: Path, case_id: str, change_id: str, raiz: str = RAIZ) -> None:
@@ -165,6 +171,9 @@ def _feature_operator(repo: Path, case_id: str, change_id: str, raiz: str = RAIZ
         "hypothesis_outcome": "confirmed",
         "registries": ["surface_lock", "generated_reference"],
         "deviations": [],
+        "evidence": [
+            {"change_id": change_id, "report_sha256": _sha_do_relatorio(repo, change_id)},
+        ],
     }, raiz)
 
 
@@ -183,6 +192,18 @@ def _reescreve_status(repo: Path, fase: str, status: str) -> None:
     arquivo = repo / RAIZ / FEATURE / f"{fase}.md"
     texto = arquivo.read_bytes().decode("utf-8")
     arquivo.write_bytes(texto.replace("status: done", f"status: {status}", 1).encode("utf-8"))
+
+
+def _ship_done_sem_evidencia(repo: Path) -> None:
+    """Ship em done e sem `evidence`; ele e a ultima fase, entao nada fica stale."""
+    arquivo = repo / RAIZ / FEATURE / "ship.md"
+    _, bloco, corpo = arquivo.read_bytes().decode("utf-8").split("---\n", 2)
+    meta = yaml.safe_load(bloco)
+    meta["status"] = "done"
+    del meta["evidence"]
+    arquivo.write_bytes(
+        ("---\n" + yaml.safe_dump(meta, sort_keys=False) + "---\n" + corpo).encode("utf-8")
+    )
 
 
 def test_fluxo_operator_ponta_a_ponta(tmp_path):
@@ -208,6 +229,9 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
                          {"repo": str(repo), "sandbox_id": change_id, "now": _NOW})
     assert proposta["refused"] == [], proposta
     assert (repo / ".sparkforge" / "proposal" / change_id).is_dir()
+    # com o ship done e os dois relatorios presentes, os dois casam com o hash
+    # gravado: a proposal guarda a mesma serializacao do sandbox
+    assert _check(repo) == ([], [])
 
     # comparacao sem nenhum check_delta nao e comparacao
     comparacao.write_bytes(json.dumps({"items": [{"id": "x", "kind": "funcval.analyzed"}]})
@@ -220,7 +244,8 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert not (repo / ".sparkforge" / "sandbox" / change_id).exists()
     assert _check(repo) == ([], [])
 
-    # sem nenhum dos dois e com outro case: o ship done deixa as referencias historicas
+    # sem nenhum dos dois e com outro case: o ship done deixa as referencias
+    # historicas, sustentadas pelo hash que ele gravou
     shutil.rmtree(repo / ".sparkforge" / "proposal" / change_id)
     outro = call_tool("sparkforge_case_open",
                       {"repo": str(repo), "case_id": "C-43", "now": _NOW, "reopen": True})
@@ -231,6 +256,9 @@ def test_fluxo_operator_ponta_a_ponta(tmp_path):
     assert _check(repo) == (
         ["case_missing", "change_missing", "moved_not_observed", "moved_not_observed"], []
     )
+    # ship done sem ter gravado o que leu: nada sustenta a historia
+    _ship_done_sem_evidencia(repo)
+    assert _check(repo) == (["ship_evidence_missing"], [])
 
 
 def test_spec_em_docs_sdd_desatualiza_o_sandbox(tmp_path):

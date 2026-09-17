@@ -303,14 +303,18 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
     if profile == "operator":
         build["change_id"] = "S1"
     caminhos["build_report"] = _grava(repo, feature, "build_report", build)
-    caminhos["ship"] = _grava(repo, feature, "ship", {
+    ship = {
         **comum,
         "phase": "ship",
         "upstream": _upstream(repo, caminhos["build_report"]),
         "hypothesis_outcome": "confirmed",
         "registries": ["surface_lock", "generated_reference"],
         "deviations": [],
-    })
+    }
+    if profile == "operator":
+        # S1 nao tem relatorio: a entrada existe e nao ha hash com que comparar
+        ship["evidence"] = [{"change_id": "S1", "report_sha256": "0" * 64}]
+    caminhos["ship"] = _grava(repo, feature, "ship", ship)
     return caminhos
 
 
@@ -1288,6 +1292,105 @@ def test_relatorio_por_symlink_nao_escapa(tmp_path):
     except OSError as erro:
         pytest.skip(f"symlink indisponivel: {erro}")
     assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
+
+
+def _operator_com_moved(repo: Path, ident: str = "S1") -> dict[str, Path]:
+    """Feature operator entregue cuja tarefa prova por moved sobre `ident`."""
+    caminhos = feature_limpa(repo, "operator")
+    tarefa = {"id": "T1", "status": "done",
+              "moved": {"change_id": ident, "resolved": ["SF-PY-012"]}}
+    _reescreve(caminhos["build_report"], change_id=ident, tasks=[tarefa])
+    _restampa(repo)
+    return caminhos
+
+
+def _relatorio_sha(repo: Path, ident: str = "S1") -> str:
+    return text_sha256(repo / ".sparkforge" / "sandbox" / ident / "report.json")
+
+
+def test_ship_done_sem_evidencia_recusa(tmp_path):
+    """SDD_ENDURECIMENTO AC1: change_id fabricado, ship done, nada gravado: recusa."""
+    caminhos = _operator_com_moved(tmp_path, "FALSO")
+    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox")
+    _reescreve(caminhos["ship"], evidence=None)
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [("ship_evidence_missing", "evidence")]
+    assert "FALSO" in recusa[0]["unlock"]
+    # no dev nada muda, e evidence nao e campo do dev
+    dev = tmp_path / "dev"
+    caminhos_dev = feature_limpa(dev)
+    assert _codigos(check(dev)) == ([], [])
+    _reescreve(caminhos_dev["ship"], evidence=[{"change_id": "S1", "report_sha256": "0" * 64}])
+    assert [(r["code"], r["field"]) for r in check(dev)["refused"]] == [
+        ("schema_invalid", "evidence"),
+    ]
+
+
+def test_ship_done_com_evidencia_e_sem_relatorio_e_historia(tmp_path):
+    """SDD_ENDURECIMENTO AC2: o hash gravado e o que resta quando o relatorio some."""
+    caminhos = _operator_com_moved(tmp_path, "FALSO")
+    shutil.rmtree(tmp_path / ".sparkforge" / "sandbox")
+    _reescreve(caminhos["ship"], evidence=[{"change_id": "FALSO", "report_sha256": "a" * 64}])
+    assert _codigos(check(tmp_path)) == ([], [])
+    # a entrada precisa nomear o id citado
+    _reescreve(caminhos["ship"], evidence=[{"change_id": "OUTRO", "report_sha256": "a" * 64}])
+    recusa = check(tmp_path)["refused"]
+    assert [r["code"] for r in recusa] == ["ship_evidence_missing"]
+    assert "FALSO" in recusa[0]["unlock"]
+    # o id de um proof finding explicito tambem precisa de entrada
+    meta = _meta(caminhos["plan"])
+    del meta["tasks"][0]["test"]
+    meta["tasks"][0]["proof"] = {"kind": "finding", "ref": "P9#SF-PY-012"}
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    _restampa(tmp_path)
+    _reescreve(caminhos["ship"], evidence=[{"change_id": "FALSO", "report_sha256": "a" * 64}])
+    recusa = check(tmp_path)["refused"]
+    assert [r["code"] for r in recusa] == ["ship_evidence_missing"]
+    assert "P9" in recusa[0]["unlock"] and "FALSO" not in recusa[0]["unlock"]
+
+
+def test_ship_done_com_relatorio_que_contradiz(tmp_path):
+    """SDD_ENDURECIMENTO AC3: relatorio presente continua conferido depois do ship."""
+    caminhos = _operator_com_moved(tmp_path)
+    _relatorio_de_mudanca(tmp_path, "sandbox", "S1")
+    _reescreve(caminhos["ship"], evidence=[
+        {"change_id": "S1", "report_sha256": _relatorio_sha(tmp_path)},
+    ])
+    assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
+    _relatorio_de_mudanca(tmp_path, "sandbox", "S1", resolvidos=["SF-PY-012"])
+    _reescreve(caminhos["ship"], evidence=[
+        {"change_id": "S1", "report_sha256": _relatorio_sha(tmp_path)},
+    ])
+    assert _codigos(check(tmp_path)) == ([], [])
+    # o proof finding do plan segue a mesma regra
+    meta = _meta(caminhos["plan"])
+    del meta["tasks"][0]["test"]
+    meta["tasks"][0]["proof"] = {"kind": "finding", "ref": "#SF-OUTRA"}
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    _restampa(tmp_path)
+    _reescreve(caminhos["ship"], evidence=[
+        {"change_id": "S1", "report_sha256": _relatorio_sha(tmp_path)},
+    ])
+    assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
+
+
+def test_ship_done_com_sha_divergente(tmp_path):
+    """SDD_ENDURECIMENTO AC4: relatorio presente diferente do que o ship leu."""
+    caminhos = _operator_com_moved(tmp_path)
+    _relatorio_de_mudanca(tmp_path, "sandbox", "S1", resolvidos=["SF-PY-012"])
+    _reescreve(caminhos["ship"], evidence=[{"change_id": "S1", "report_sha256": "f" * 64}])
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [
+        ("ship_evidence_mismatch", "evidence/0/report_sha256"),
+    ]
+    assert _relatorio_sha(tmp_path) in recusa[0]["unlock"]
+    # a copia da proposal tambem precisa casar
+    _reescreve(caminhos["ship"], evidence=[
+        {"change_id": "S1", "report_sha256": _relatorio_sha(tmp_path)},
+    ])
+    assert _codigos(check(tmp_path)) == ([], [])
+    _relatorio_de_mudanca(tmp_path, "proposal", "S1", novos=["SF-X"], resolvidos=["SF-PY-012"])
+    assert _codigos(check(tmp_path)) == (["ship_evidence_mismatch"], [])
 
 
 def test_proof_e_moved_fecham_propriedades():
