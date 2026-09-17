@@ -14,6 +14,20 @@ from sparkforge.sdd.checks import check
 from sparkforge.sdd.stamp import stamp
 
 ROOT = Path(__file__).resolve().parents[1]
+SKILLS_SDD = ("sdd-explore", "sdd-define", "sdd-design", "sdd-plan", "sdd-build", "sdd-ship")
+
+
+def _texto_da_skill(nome: str) -> str:
+    return (ROOT / "skills" / nome / "SKILL.md").read_text(encoding="utf-8")
+
+
+def test_seis_skills_existem():
+    for nome in SKILLS_SDD:
+        texto = _texto_da_skill(nome)
+        assert texto.startswith("---\nname: " + nome + "\n"), nome
+        for secao in ("## Quando NÃO usar", "## Referência rápida", "## Red flags"):
+            assert secao in texto, (nome, secao)
+        assert "sparkforge sdd check" in texto, nome
 
 
 def test_templates_formam_feature_valida(tmp_path):
