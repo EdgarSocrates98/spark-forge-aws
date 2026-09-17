@@ -230,15 +230,20 @@ def _conferir_teste(
                    "codigo")
 
 
-def _ids_de_fact(arquivo: Path) -> set[str]:
+def _itens_de_fact(arquivo: Path) -> list[dict[str, Any]]:
+    """Os facts de um arquivo: lista crua ou `{"items": [...]}`; o resto vira lista vazia."""
     try:
         dado = json.loads(arquivo.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return set()
+        return []
     itens = dado.get("items", []) if isinstance(dado, dict) else dado
     if not isinstance(itens, list):
-        return set()
-    return {str(item["id"]) for item in itens if isinstance(item, dict) and item.get("id")}
+        return []
+    return [item for item in itens if isinstance(item, dict)]
+
+
+def _ids_de_fact(arquivo: Path) -> set[str]:
+    return {str(item["id"]) for item in _itens_de_fact(arquivo) if item.get("id")}
 
 
 def _gate_success_source(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -255,6 +260,17 @@ def _gate_change_kinds(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
             ctx.recusa("schema_invalid", artefato.path, f"change_kinds/{indice}",
                        f"'{chave}' nao existe em sparkforge/sdd/change_kinds.yaml; use uma de: "
                        + ", ".join(sorted(conhecidos)))
+
+
+def _conferir_funcval(
+    ctx: _Contexto, artefato: Artifact, campo: str, alvo: Path, referencia: str
+) -> None:
+    # a FORMA da comparacao, nunca o veredito: divergir ou nao e das SF-FVAL no judge
+    itens = _itens_de_fact(alvo)
+    if not any(item.get("kind") == "funcval.check_delta" for item in itens):
+        ctx.recusa("funcval_not_comparison", artefato.path, campo,
+                   f"{referencia} nao tem nenhum funcval.check_delta; rode `sparkforge funcval "
+                   f"compare --plan <plano> --before <a> --after <b> --out {referencia}`")
 
 
 def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -282,6 +298,8 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                 ctx.lacuna("funcval_not_run", artefato.path,
                            f"rode `sparkforge funcval compare --out {referencia}` para "
                            f"{item['id']}")
+                continue
+            _conferir_funcval(ctx, artefato, campo, alvo, referencia)
 
 
 def _gate_manifest(ctx: _Contexto, fase: str, artefato: Artifact) -> None:

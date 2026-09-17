@@ -848,6 +848,23 @@ def test_funcval_not_run(tmp_path):
     assert _codigos(check(tmp_path)) == ([], ["funcval_not_run"])
 
 
+def test_funcval_not_comparison(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "funcval", "ref": "out/compare.json"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    (tmp_path / "out").mkdir()
+    (tmp_path / "out" / "compare.json").write_bytes(b'{"items": [{"id": "f1", "kind": "outro"}]}')
+    assert _codigos(check(tmp_path)) == (["funcval_not_comparison"], [])
+    # JSON que nem e lista de facts tambem nao e comparacao
+    (tmp_path / "out" / "compare.json").write_bytes(b"nao e json")
+    assert _codigos(check(tmp_path)) == (["funcval_not_comparison"], [])
+    (tmp_path / "out" / "compare.json").write_bytes(
+        b'{"items": [{"id": "f1", "kind": "funcval.check_delta", "subject": {}}]}'
+    )
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
 def test_command_e_declarado_e_nao_conferido(tmp_path):
     caminhos = _so_define(tmp_path)
     meta = _define_meta(caminhos)
