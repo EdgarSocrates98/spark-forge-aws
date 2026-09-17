@@ -200,7 +200,7 @@ Reexecutar `green` fica fora de A (executar código é outra classe de efeito); 
 | `task_without_test` | task do plan sem `test` | plan |
 | `verified_by_dangling` | `kind: test` aponta arquivo inexistente ou função ausente (conferido por `ast`, sem importar) **depois do build** — antes disso é `unresolved: test_not_written` | define, plan (quando existe `build_report.md` válido com `status: ready` ou `done`) |
 | `success_without_source` | métrica sem `source` | define |
-| `manifest_path_unknown` | `action: modify\|delete` em caminho inexistente | design |
+| `manifest_path_unknown` | `action: modify` em caminho inexistente, sempre; `action: delete` em caminho inexistente só **antes do build** — depois dele o arquivo sumido é o design cumprido | design (o `delete` só enquanto não existe `build_report.md` válido com `status: ready` ou `done`) |
 | `rollback_missing` | decisão sem `rollback` | design |
 | `red_not_declared` | task `done` sem `red`, ou `red.exit == 0` | build_report |
 | `claim_without_evidence` | claim sem `evidence_ref` | build_report |

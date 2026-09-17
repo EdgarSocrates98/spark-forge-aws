@@ -209,13 +209,18 @@ def _teste_existe(repo: Path, referencia: str) -> bool:
     return nome in _nomes_de_teste(arvore.body)
 
 
+def _build_pronto(ctx: _Contexto) -> bool:
+    """O build_report da feature carregou e esta ready ou done: o build ja aconteceu."""
+    build = ctx.artefatos.get("build_report")
+    return build is not None and build.meta["status"] in PRONTO
+
+
 def _conferir_teste(
     ctx: _Contexto, artefato: Artifact, campo: str, referencia: str, dono: str
 ) -> None:
     if _teste_existe(ctx.repo, referencia):
         return
-    build = ctx.artefatos.get("build_report")
-    if build is not None and build.meta["status"] in PRONTO:
+    if _build_pronto(ctx):
         ctx.recusa("verified_by_dangling", artefato.path, campo,
                    f"{referencia} nao existe depois do build; escreva o teste ou corrija a "
                    "referencia")
@@ -280,10 +285,15 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
 
 
 def _gate_manifest(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    # delete sumido depois do build pronto e o design cumprido, nao caminho errado;
+    # modify sumido e erro em qualquer fase
+    build_pronto = _build_pronto(ctx)
     for indice, item in enumerate(artefato.meta["files"]):
         if item["action"] == "create":
             continue
         alvo = resolve_within(ctx.repo, item["path"])
+        if alvo is not None and item["action"] == "delete" and build_pronto:
+            continue
         if alvo is None or not alvo.exists():
             ctx.recusa("manifest_path_unknown", artefato.path, f"files/{indice}/path",
                        f"{item['path']} nao existe para {item['action']}; confira o caminho ou "

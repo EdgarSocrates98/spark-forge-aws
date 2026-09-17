@@ -812,6 +812,40 @@ def test_manifest_path_unknown(tmp_path):
     assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
 
 
+def _design_apaga_velho(tmp_path, fase):
+    """Feature cortada depois de `fase`, com o design apagando um arquivo que existe."""
+    caminhos = _ate(tmp_path, fase)
+    (tmp_path / "sparkforge" / "velho.py").write_bytes(b"y = 2\n")
+    meta = _meta(caminhos["design"])
+    meta["files"].append({"path": "sparkforge/velho.py", "action": "delete", "reason": "r"})
+    _reescreve(caminhos["design"], files=meta["files"])
+    _restampa(tmp_path)
+    return caminhos
+
+
+def test_delete_some_depois_do_build_pronto(tmp_path):
+    caminhos = _design_apaga_velho(tmp_path, "build_report")
+    assert _codigos(check(tmp_path)) == ([], [])
+    # o build apagou o arquivo, como o design mandava: nao e erro de manifesto
+    (tmp_path / "sparkforge" / "velho.py").unlink()
+    assert _codigos(check(tmp_path)) == ([], [])
+    # com o build ainda em draft, o arquivo sumido volta a ser caminho desconhecido
+    _reescreve(caminhos["build_report"], status="draft")
+    assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
+
+
+def test_delete_sumido_sem_build_report_e_recusado(tmp_path):
+    _design_apaga_velho(tmp_path, "plan")
+    (tmp_path / "sparkforge" / "velho.py").unlink()
+    assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
+
+
+def test_modify_sumido_e_recusado_mesmo_com_build_pronto(tmp_path):
+    _ate(tmp_path, "build_report")
+    (tmp_path / "sparkforge" / "existente.py").unlink()
+    assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
+
+
 def test_rollback_missing(tmp_path):
     caminhos = _ate(tmp_path, "design")
     _reescreve(caminhos["design"], decisions=[{"id": "D1", "choice": "c"}])
