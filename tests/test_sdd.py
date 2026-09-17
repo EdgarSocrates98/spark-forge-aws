@@ -19,6 +19,7 @@ from sparkforge.sdd import DEFAULT_ROOT, PHASES
 from sparkforge.sdd.checks import change_kinds, check, schema_for
 from sparkforge.sdd.load import discover, load_artifact, split_frontmatter
 from sparkforge.sdd.stamp import StampError, stamp
+from sparkforge.sdd.status import status
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -543,3 +544,32 @@ def test_perfil_dev_nao_pede_case_nem_change(tmp_path):
     feature_limpa(tmp_path, "dev")
     assert not (tmp_path / ".sparkforge").exists()
     assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_status_mostra_fase_e_bloqueio(tmp_path):
+    feature_limpa(tmp_path, feature="F1")
+    caminhos = _ate(tmp_path / "outro", "design")  # repo separado so para montar
+    destino = tmp_path / "docs" / "sdd" / "F2"
+    destino.mkdir(parents=True)
+    for fase in ("define", "design"):
+        texto = caminhos[fase].read_bytes().decode("utf-8").replace("feature: F1", "feature: F2")
+        texto = texto.replace("docs/sdd/F1/", "docs/sdd/F2/")
+        (destino / f"{fase}.md").write_bytes(texto.encode("utf-8"))
+    stamp(tmp_path, "docs/sdd/F2/design.md")
+    _reescreve(destino / "design.md", decisions=[{"id": "D1", "choice": "c"}])
+    saida = status(tmp_path)
+    assert saida["root"] == "docs/sdd"
+    por_nome = {f["feature"]: f for f in saida["features"]}
+    assert por_nome["F1"] == {
+        "feature": "F1", "phase": "ship", "status": "done", "profile": "dev",
+        "next_phase": None, "refused": [], "unresolved": [],
+    }
+    assert por_nome["F2"]["phase"] == "design"
+    assert por_nome["F2"]["next_phase"] == "plan"
+    assert por_nome["F2"]["refused"] == ["rollback_missing"]
+
+
+def test_status_sem_raiz(tmp_path):
+    saida = status(tmp_path)
+    assert saida["features"] == []
+    assert [u["code"] for u in saida["unresolved"]] == ["root_missing"]
