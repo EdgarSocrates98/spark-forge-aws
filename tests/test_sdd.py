@@ -7,8 +7,16 @@ feature e montada em `tmp_path`.
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
+import pytest
+
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
+from sparkforge.sdd.checks import change_kinds, schema_for
 from sparkforge.sdd.load import discover, load_artifact, split_frontmatter
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_fases_e_raiz_padrao():
@@ -51,3 +59,33 @@ def test_discover_so_pega_fase_na_profundidade_certa(tmp_path):
     (raiz / "archive" / "F0").mkdir(parents=True)
     (raiz / "archive" / "F0" / "define.md").write_bytes(b"x")
     assert discover(raiz) == {"F1": {"define": raiz / "F1" / "define.md"}}
+
+
+@pytest.mark.parametrize("fase", PHASES)
+def test_todo_schema_carrega_e_fecha_propriedades(fase):
+    schema = schema_for(fase)
+    assert schema["additionalProperties"] is False
+    for campo in ("sdd", "feature", "phase", "profile", "status"):
+        assert campo in schema["required"]
+
+
+def test_change_kinds_casa_com_os_titulos_do_documento():
+    """Deriva nos dois sentidos: titulo sem chave, ou chave sem titulo."""
+    texto = (ROOT / "docs" / "gates-por-mudanca.md").read_text(encoding="utf-8")
+    linhas = texto.splitlines()
+    titulos: set[str] = set()
+    for i, linha in enumerate(linhas):
+        if not linha.startswith("## "):
+            continue
+        titulo = linha[3:].strip()
+        # o titulo da secao de lastro continua na linha seguinte
+        if i + 1 < len(linhas) and linhas[i + 1].startswith("## `"):
+            titulo = f"{titulo} {linhas[i + 1][3:].strip()}"
+        titulos.add(titulo)
+    titulos = {t for t in titulos if not t.startswith("`docs/")}
+    titulos.discard("Quando nada acima serve")
+    secoes = {v["section"] for v in change_kinds().values()}
+    assert secoes == titulos
+    for chave, valor in change_kinds().items():
+        assert re.fullmatch(r"[a-z][a-z0-9_]*", chave)
+        assert valor["registries"], chave

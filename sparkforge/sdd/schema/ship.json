@@ -1,0 +1,8 @@
+{
+  "required": ["registries", "deviations"],
+  "properties": {
+    "hypothesis_outcome": {"enum": ["confirmed", "refuted", "abandoned"]},
+    "registries": {"type": "array", "items": {"type": "string"}},
+    "deviations": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,0 +1,55 @@
+# Tipo de mudanca -> secao de docs/gates-por-mudanca.md -> registros que o ship
+# precisa listar. `section` e o titulo LITERAL da secao; tests/test_sdd.py trava a
+# deriva nos dois sentidos. `registries` sao nomes curtos, nao comandos: o
+# comando mora na secao.
+rule:
+  section: "Acrescentar ou alterar uma REGRA no catálogo"
+  registries: [rules_catalog_gates, manifest_rule_count, fixture_kind_coverage]
+rule_runtime_scope:
+  section: "Dar `runtime_scope` a uma regra — ou seja, **toda regra nova**"
+  registries: [runtime_scope_gates]
+rule_area:
+  section: "Acrescentar uma ÁREA nova (`area:` novo num `rules/catalog/*.yaml`)"
+  registries: [routing_yaml, coordinator_rule_areas]
+extractor:
+  section: "Acrescentar ou alterar um EXTRATOR de facts"
+  registries: [reachability_lists, fixture_kind_coverage, snippet_measure]
+context_funnel:
+  section: "Mexer no funil de contexto (`sparkforge/codeintel/context.py`, `ranking.py`, `budget.py`)"
+  registries: [recall_economy_gate]
+fixture_corpus:
+  section: "Acrescentar um CORPUS de fixture novo (`fixtures/<dominio>/`)"
+  registries: [fixture_corpus_gates]
+holdout:
+  section: "Acrescentar ou alterar um cenário de `evals/holdout/`"
+  registries: [holdout_gates]
+knowledge_doc:
+  section: "Editar um documento em `knowledge/`"
+  registries: [offline_manifest, sources_lock]
+runtime_matrix:
+  section: "Alterar `knowledge/glue/runtime-matrix.yaml`"
+  registries: [runtime_matrix_gates]
+terraform_blind_spots:
+  section: "Pontos cegos medidos do extrator de Terraform"
+  registries: [terraform_extractor_gates]
+disk_read:
+  section: "Ler dado do disco em código de `sparkforge/`"
+  registries: [verify_wheel]
+dependency:
+  section: "Alterar dependência: `pyproject.toml`, `requirements.txt`, `locks/` ou os workflows"
+  registries: [requirements_mirror, hash_locks]
+agent_or_skill:
+  section: "Alterar agent, skill ou seus espelhos"
+  registries: [sync_skills, agents_parity]
+tool_or_verb:
+  section: "Acrescentar ou alterar tool, verbo de CLI, agent ou skill: a referência gerada"
+  registries: [surface_lock, generated_reference]
+routing:
+  section: "Alterar `rules/catalog/routing.yaml`"
+  registries: [router_gates]
+status_numbers:
+  section: "Alterar a tabela *Números correntes* do `STATUS.md`"
+  registries: [status_numbers_gate]
+claims:
+  section: "Alterar `scripts/check_vnext_claims.py`, `docs/claims.lock.json`, ou alegação em `docs/vnext/` ou `docs/harness/`"
+  registries: [claims_gate]

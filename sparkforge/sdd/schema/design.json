@@ -1,0 +1,44 @@
+{
+  "required": ["files", "decisions", "covers"],
+  "properties": {
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "action", "reason"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "action": {"enum": ["create", "modify", "delete"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "choice"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^D[0-9]+$"},
+          "choice": {"type": "string", "minLength": 1},
+          "rejected": {"type": "array", "items": {"type": "string"}},
+          "rollback": {"type": "string"}
+        }
+      }
+    },
+    "covers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["part", "acceptance"],
+        "properties": {
+          "part": {"type": "string", "minLength": 1},
+          "acceptance": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}
