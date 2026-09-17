@@ -350,22 +350,27 @@ def _gate_registries(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        "(docs/gates-por-mudanca.md); rode o gate e liste-o")
 
 
+def _texto_ou_none(valor: Any) -> str | None:
+    texto = "" if valor is None else str(valor).strip()
+    return texto or None
+
+
 def _case_id_atual(repo: Path) -> str | None:
     arquivo = repo / CASE_DIR / CASE_FILE
     if not arquivo.is_file():
         return None
     try:
         dado = yaml.safe_load(arquivo.read_text(encoding="utf-8"))
-    except yaml.YAMLError:
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
         return None
-    return dado.get("case_id") if isinstance(dado, dict) else None
+    return _texto_ou_none(dado.get("case_id")) if isinstance(dado, dict) else None
 
 
 def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     if artefato.meta["profile"] != "operator":
         return
-    declarado = artefato.meta.get("case_id")
-    if not declarado or declarado != _case_id_atual(ctx.repo):
+    declarado = _texto_ou_none(artefato.meta.get("case_id"))
+    if declarado is None or declarado != _case_id_atual(ctx.repo):
         ctx.recusa("case_missing", artefato.path, "case_id",
                    "abra o case com `sparkforge case open` e copie o case_id dele para o define")
 
@@ -373,9 +378,12 @@ def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
 def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     if artefato.meta["profile"] != "operator":
         return
-    ident = artefato.meta.get("change_id")
-    alvo = resolve_within(ctx.repo, f"{SANDBOX_DIR}/{ident}") if ident else None
-    if alvo is None or not alvo.is_dir():
+    ident = str(artefato.meta.get("change_id") or "")
+    base = ctx.repo / SANDBOX_DIR
+    # um segmento so, sem separador: `..`, `.` e `a/../b` nao sao id de sandbox
+    segmento = bool(ident) and "/" not in ident and "\\" not in ident and ident not in (".", "..")
+    alvo = resolve_within(base, ident) if segmento else None
+    if alvo is None or alvo.parent != base.resolve() or not alvo.is_dir():
         ctx.recusa("change_missing", artefato.path, "change_id",
                    "o build do operador passa por `sparkforge change sandbox`; registre o id "
                    "do sandbox em change_id")

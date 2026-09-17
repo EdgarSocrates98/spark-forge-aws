@@ -764,6 +764,41 @@ def test_change_missing(tmp_path):
     assert _codigos(check(tmp_path)) == (["change_missing"], [])
 
 
+@pytest.mark.parametrize("ident", ["../..", ".", "..", "../../docs", "S1/../S1", "S1\\..\\S1", ""])
+def test_change_id_nao_escapa_do_sandbox(tmp_path, ident):
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    _reescreve(caminhos["build_report"], change_id=ident)
+    assert _codigos(check(tmp_path)) == (["change_missing"], [])
+
+
+def test_change_id_que_e_arquivo_nao_serve(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    (tmp_path / ".sparkforge" / "sandbox" / "ARQ").write_bytes(b"x")
+    _reescreve(caminhos["build_report"], change_id="ARQ")
+    assert _codigos(check(tmp_path)) == (["change_missing"], [])
+
+
+def test_case_id_compara_como_texto(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    for fase in ("design", "plan", "build_report", "ship"):
+        caminhos[fase].unlink()
+    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: 123\n")
+    _reescreve(caminhos["define"], case_id="123")
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+@pytest.mark.parametrize("conteudo", [b"case_id:\n", b"case_id: ''\n", b"outro: 1\n", b"- x\n"])
+def test_case_vazio_nao_casa_com_nada(tmp_path, conteudo):
+    caminhos = feature_limpa(tmp_path, "operator")
+    for fase in ("design", "plan", "build_report", "ship"):
+        caminhos[fase].unlink()
+    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(conteudo)
+    _reescreve(caminhos["define"], case_id="")
+    assert _codigos(check(tmp_path)) == (["case_missing"], [])
+
+
 def test_perfil_dev_nao_pede_case_nem_change(tmp_path):
     feature_limpa(tmp_path, "dev")
     assert not (tmp_path / ".sparkforge").exists()
