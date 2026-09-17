@@ -78,3 +78,7 @@ prompt_evo_*.md
 prompt_especialization_*.md
 prompt_new_evo.md
 prompt_analise_sf.md
+# Espaco do plugin AgentSpec. O projeto o desliga (.claude/settings.json) e o
+# historico dele mora em docs/sdd/archive/agentspec/; o que o hook recriar aqui
+# numa maquina com o plugin ligado no usuario nao entra no git.
+.claude/sdd/
