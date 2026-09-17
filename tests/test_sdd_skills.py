@@ -7,8 +7,11 @@ o formato que as skills ensinam e o formato que o gate aceita nao divergem.
 
 from __future__ import annotations
 
+import argparse
+import re
 from pathlib import Path
 
+from sparkforge.adapters.cli import build_parser
 from sparkforge.sdd import PHASES
 from sparkforge.sdd.checks import check
 from sparkforge.sdd.stamp import stamp
@@ -17,8 +20,26 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS_SDD = ("sdd-explore", "sdd-define", "sdd-design", "sdd-plan", "sdd-build", "sdd-ship")
 
 
+# `sparkforge <verbo>` entre crases, com o subcomando quando houver palavra minuscula
+# logo depois; flag (`--x`) e marcador (`<F>`) encerram a captura.
+_VERBO_CITADO = re.compile(r"`sparkforge ([a-z][a-z-]*(?: [a-z][a-z-]*)?)")
+
+
 def _texto_da_skill(nome: str) -> str:
     return (ROOT / "skills" / nome / "SKILL.md").read_text(encoding="utf-8")
+
+
+def _verbos_citados(texto: str) -> list[str]:
+    return sorted(set(_VERBO_CITADO.findall(texto)))
+
+
+def _aceito_pelo_parser(parser: argparse.ArgumentParser, verbo: str) -> bool:
+    """`--help` sai com 0 quando o parser conhece o caminho; verbo inventado sai com 2."""
+    try:
+        parser.parse_args([*verbo.split(), "--help"])
+    except SystemExit as saida:
+        return saida.code == 0
+    return False
 
 
 def test_seis_skills_existem():
@@ -53,3 +74,25 @@ def test_templates_nao_viram_feature_no_repositorio():
     relatorio = check(ROOT)
     assert "templates" not in relatorio["features"]
     assert "EXEMPLO" not in relatorio["features"]
+
+
+def test_comandos_citados_existem(capsys):
+    """Todo `sparkforge <verbo> [<sub>]` entre crases nas skills sdd-* e aceito pelo parser."""
+    parser = build_parser()
+    for nome in SKILLS_SDD:
+        verbos = _verbos_citados(_texto_da_skill(nome))
+        assert "sdd check" in verbos, nome
+        recusados = [verbo for verbo in verbos if not _aceito_pelo_parser(parser, verbo)]
+        assert not recusados, (nome, recusados)
+
+
+def test_o_detector_recusa_verbo_inventado(capsys):
+    """Guarda do teste acima: sem isto, um detector quebrado passaria por vacuidade."""
+    parser = build_parser()
+    assert _verbos_citados("rode `sparkforge sdd verify --repo .` e `sparkforge judge`") == [
+        "judge",
+        "sdd verify",
+    ]
+    assert not _aceito_pelo_parser(parser, "sdd verify")
+    assert _aceito_pelo_parser(parser, "sdd check")
+    assert _aceito_pelo_parser(parser, "judge")
