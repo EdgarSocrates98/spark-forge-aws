@@ -13,6 +13,7 @@ from sparkforge.facts.scan import Pulo, varrer_source_files
 from sparkforge.sdd import PHASES
 
 CERCA = "---"
+BOM = "﻿"
 # o mesmo padrao de `feature` em schema/common.json
 FEATURE_RE = re.compile(r"[A-Z0-9_]+")
 
@@ -26,9 +27,12 @@ class Artifact:
 
 
 def split_frontmatter(text: str) -> tuple[str | None, str]:
-    """(bloco YAML, corpo); `None` no bloco quando a cerca nao abre ou nao fecha."""
+    """(bloco YAML, corpo); `None` no bloco quando a cerca nao abre ou nao fecha.
+
+    Um BOM de UTF-8 antes da cerca e tolerado: editor do Windows grava assim.
+    """
     linhas = text.splitlines(keepends=True)
-    if not linhas or linhas[0].rstrip("\r\n") != CERCA:
+    if not linhas or linhas[0].rstrip("\r\n").removeprefix(BOM) != CERCA:
         return None, text
     for indice in range(1, len(linhas)):
         if linhas[indice].rstrip("\r\n") == CERCA:

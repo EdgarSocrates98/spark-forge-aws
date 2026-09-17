@@ -237,6 +237,18 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
 - **`upstream` onde não cabe é `schema_invalid`**, campo `upstream`: em
   `explore` (primeira fase, sem upstream) e em `define` quando a feature não
   tem `explore.md`. Antes o bloco era ignorado calado.
+- **Recusas do `stamp`** (`StampError.code`), além de `artifact_missing`,
+  `schema_invalid` e `upstream_missing`:
+  - `not_an_artifact` — o alvo não resolve para `<repo>/<root>/<FEATURE>/<fase>.md`
+    (FEATURE no padrão, fase em `PHASES`); `stamp` ganha `root` (default
+    `docs/sdd`), que CLI e MCP repassam;
+  - `sha_line_unsupported` — a linha `sha256:` não é um escalar simples
+    (plano, aspas simples ou duplas) inteiro na própria linha: valor na linha
+    de baixo, bloco `|`/`>`, escalar multilinha, tag ou âncora;
+  - `upstream_flow_style` — `upstream: {…}`; o `stamp` só reescreve bloco.
+- O `stamp` preserva comentário de coluna zero dentro do bloco `upstream:`,
+  comentário no fim da linha do hash e o BOM de UTF-8; `load_artifact` tolera
+  o BOM antes da cerca.
 
 Fora de A, de propósito: julgar se a prosa é boa ou o design é sensato. Isso é
 do agente e de review; o gate não finge avaliar qualidade.

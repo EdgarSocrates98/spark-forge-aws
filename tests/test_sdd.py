@@ -432,6 +432,126 @@ def test_stamp_recusa_sem_upstream(tmp_path):
     assert caminhos["define"].is_file()
 
 
+BOM = b"\xef\xbb\xbf"
+
+
+def _sha_do_design(tmp_path, caminhos, substituto: str) -> None:
+    """Troca a linha do hash do design por `substituto` (texto sem a quebra)."""
+    texto = caminhos["design"].read_bytes().decode("utf-8")
+    novo, n = re.subn(r'^  sha256: "[0-9a-f]*"$', lambda _: substituto, texto, flags=re.M)
+    assert n == 1
+    caminhos["design"].write_bytes(novo.encode("utf-8"))
+
+
+def test_stamp_comentario_na_coluna_zero_nao_fecha_o_bloco(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    texto = caminhos["design"].read_bytes().decode("utf-8")
+    texto = texto.replace("upstream:\n", "upstream:\n# nota do autor\n", 1)
+    caminhos["design"].write_bytes(texto.encode("utf-8"))
+    _sha_do_design(tmp_path, caminhos, '  sha256: "' + "0" * 64 + '"')
+    assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is True
+    assert b"upstream:\n# nota do autor\n" in caminhos["design"].read_bytes()
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+@pytest.mark.parametrize("valor", ['"' + "0" * 64 + '"', "'" + "0" * 64 + "'", "0" * 64, ""])
+def test_stamp_preserva_comentario_no_fim_da_linha(tmp_path, valor):
+    caminhos = _ate(tmp_path, "design")
+    _sha_do_design(tmp_path, caminhos, f"  sha256: {valor}  # confere no stamp")
+    assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is True
+    esperado = f'  sha256: "{text_sha256(caminhos["define"])}"  # confere no stamp\n'
+    assert esperado.encode() in caminhos["design"].read_bytes()
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+@pytest.mark.parametrize(
+    "linha",
+    [
+        '  sha256:\n    "' + "0" * 64 + '"',
+        "  sha256: |\n    " + "0" * 64,
+        "  sha256: " + "0" * 32 + "\n    " + "0" * 32,
+        '  sha256: "' + "0" * 32 + "\n    " + "0" * 32 + '"',
+        "  sha256: !!str " + "0" * 64,
+        "  sha256: &ancora " + "0" * 64,
+    ],
+)
+def test_stamp_recusa_linha_do_hash_que_nao_sabe_reescrever(tmp_path, linha):
+    caminhos = _ate(tmp_path, "design")
+    _sha_do_design(tmp_path, caminhos, linha)
+    antes = caminhos["design"].read_bytes()
+    assert load_artifact(caminhos["design"]).error is None
+    with pytest.raises(StampError) as erro:
+        stamp(tmp_path, "docs/sdd/F1/design.md")
+    assert erro.value.code == "sha_line_unsupported"
+    assert caminhos["design"].read_bytes() == antes
+
+
+def test_stamp_recusa_upstream_em_fluxo(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    texto = caminhos["design"].read_bytes().decode("utf-8")
+    texto, n = re.subn(
+        r'^upstream:\n  path: (\S+)\n  sha256: "[0-9a-f]*"\n',
+        lambda m: f'upstream: {{path: {m[1]}, sha256: ""}}\n',
+        texto,
+        flags=re.M,
+    )
+    assert n == 1
+    caminhos["design"].write_bytes(texto.encode("utf-8"))
+    with pytest.raises(StampError) as erro:
+        stamp(tmp_path, "docs/sdd/F1/design.md")
+    assert erro.value.code == "upstream_flow_style"
+
+
+def test_stamp_recusa_frontmatter_quebrado(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    caminhos["design"].write_bytes(b"---\nupstream: [\n---\n")
+    with pytest.raises(StampError) as erro:
+        stamp(tmp_path, "docs/sdd/F1/design.md")
+    assert erro.value.code == "schema_invalid"
+
+
+def test_stamp_so_aceita_artefato(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    corpo = caminhos["design"].read_bytes()
+    fora = {
+        "README.md": corpo,
+        "docs/sdd/templates/design.md": corpo,
+        "docs/sdd/F1/notas.md": corpo,
+        "docs/sdd/F1/sub/design.md": corpo,
+        "docs/sdd/design.md": corpo,
+        "outra/F1/design.md": corpo,
+    }
+    for relativo, conteudo in fora.items():
+        destino = tmp_path / relativo
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_bytes(conteudo)
+        with pytest.raises(StampError) as erro:
+            stamp(tmp_path, relativo)
+        assert erro.value.code == "not_an_artifact", relativo
+        assert destino.read_bytes() == conteudo
+    assert stamp(tmp_path, "outra/F1/design.md", root="outra")["changed"] is False
+
+
+def test_load_artifact_tolera_bom(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    caminhos["ship"].write_bytes(BOM + caminhos["ship"].read_bytes())
+    artefato = load_artifact(caminhos["ship"])
+    assert artefato.error is None
+    assert artefato.meta["phase"] == "ship"
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_stamp_preserva_bom(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    _sha_do_design(tmp_path, caminhos, '  sha256: "' + "0" * 64 + '"')
+    caminhos["design"].write_bytes(BOM + caminhos["design"].read_bytes())
+    assert stamp(tmp_path, "docs/sdd/F1/design.md")["changed"] is True
+    depois = caminhos["design"].read_bytes()
+    assert depois.startswith(BOM + b"---\n")
+    assert not depois[len(BOM):].startswith(BOM)
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
 def _define_meta(caminhos):
     bloco, _ = split_frontmatter(caminhos["define"].read_bytes().decode("utf-8"))
     return yaml.safe_load(bloco)
