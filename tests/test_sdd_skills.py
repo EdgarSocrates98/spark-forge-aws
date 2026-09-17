@@ -96,3 +96,12 @@ def test_o_detector_recusa_verbo_inventado(capsys):
     assert not _aceito_pelo_parser(parser, "sdd verify")
     assert _aceito_pelo_parser(parser, "sdd check")
     assert _aceito_pelo_parser(parser, "judge")
+
+
+def test_credito_das_bases():
+    """AgentSpec e superpowers creditados, com licenca e o que veio de cada um."""
+    texto = (ROOT / "vendor" / "CREDITS.md").read_text(encoding="utf-8")
+    for trecho in ("luanmorenommaciel/agentspec", "obra/superpowers", "MIT", "sdd-"):
+        assert trecho in texto, trecho
+    for nome in SKILLS_SDD:
+        assert f"`{nome}`" in texto, nome
