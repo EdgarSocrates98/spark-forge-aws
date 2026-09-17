@@ -405,3 +405,70 @@ def test_command_e_declarado_e_nao_conferido(tmp_path):
     meta["acceptance"][0]["verified_by"] = {"kind": "command", "ref": "make x"}
     _reescreve(caminhos["define"], acceptance=meta["acceptance"])
     assert _codigos(check(tmp_path)) == ([], [])
+
+
+def _meta(arquivo):
+    bloco, _ = split_frontmatter(arquivo.read_bytes().decode("utf-8"))
+    return yaml.safe_load(bloco)
+
+
+def _ate(tmp_path, fase):
+    """Feature cortada logo depois de `fase`: nada abaixo fica stale."""
+    caminhos = feature_limpa(tmp_path)
+    corta = False
+    for nome in PHASES:
+        if corta and nome in caminhos:
+            caminhos[nome].unlink()
+        if nome == fase:
+            corta = True
+    return caminhos
+
+
+def test_manifest_path_unknown(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    meta = _meta(caminhos["design"])
+    meta["files"].append({"path": "sparkforge/sumiu.py", "action": "delete", "reason": "r"})
+    _reescreve(caminhos["design"], files=meta["files"])
+    assert _codigos(check(tmp_path)) == (["manifest_path_unknown"], [])
+
+
+def test_rollback_missing(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    _reescreve(caminhos["design"], decisions=[{"id": "D1", "choice": "c"}])
+    assert _codigos(check(tmp_path)) == (["rollback_missing"], [])
+
+
+def test_acceptance_uncovered_no_design(tmp_path):
+    caminhos = _ate(tmp_path, "design")
+    _reescreve(caminhos["design"], covers=[{"part": "p", "acceptance": []}])
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["path"]) for r in recusa] == [
+        ("acceptance_uncovered", "docs/sdd/F1/design.md")
+    ]
+
+
+def test_acceptance_uncovered_no_plan(tmp_path):
+    caminhos = _ate(tmp_path, "plan")
+    meta = _meta(caminhos["plan"])
+    meta["tasks"][0]["covers"] = []
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["path"]) for r in recusa] == [
+        ("acceptance_uncovered", "docs/sdd/F1/plan.md")
+    ]
+
+
+def test_task_without_test(tmp_path):
+    caminhos = _ate(tmp_path, "plan")
+    meta = _meta(caminhos["plan"])
+    del meta["tasks"][0]["test"]
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    assert _codigos(check(tmp_path)) == (["task_without_test"], [])
+
+
+def test_teste_do_plan_ainda_nao_escrito(tmp_path):
+    caminhos = _ate(tmp_path, "plan")
+    meta = _meta(caminhos["plan"])
+    meta["tasks"][0]["test"]["name"] = "test_futuro"
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    assert _codigos(check(tmp_path)) == ([], ["test_not_written"])

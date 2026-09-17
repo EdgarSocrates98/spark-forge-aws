@@ -244,11 +244,56 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                            f"{item['id']}")
 
 
+def _gate_manifest(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, item in enumerate(artefato.meta["files"]):
+        if item["action"] == "create":
+            continue
+        alvo = resolve_within(ctx.repo, item["path"])
+        if alvo is None or not alvo.exists():
+            ctx.recusa("manifest_path_unknown", artefato.path, f"files/{indice}/path",
+                       f"{item['path']} nao existe para {item['action']}; confira o caminho ou "
+                       "use action: create")
+
+
+def _gate_rollback(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, decisao in enumerate(artefato.meta["decisions"]):
+        if not str(decisao.get("rollback") or "").strip():
+            ctx.recusa("rollback_missing", artefato.path, f"decisions/{indice}/rollback",
+                       f"diga como desfazer {decisao['id']}")
+
+
+def _gate_cobertura(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    define = ctx.artefatos.get("define")
+    if define is None:
+        return
+    if fase == "design":
+        cobertos = {ac for parte in artefato.meta["covers"] for ac in parte["acceptance"]}
+        campo = "covers"
+    else:
+        cobertos = {ac for tarefa in artefato.meta["tasks"] for ac in tarefa["covers"]}
+        campo = "tasks"
+    for item in define.meta["acceptance"]:
+        if item["id"] not in cobertos:
+            ctx.recusa("acceptance_uncovered", artefato.path, campo,
+                       f"{item['id']} do define nao aparece em nenhum covers do {fase}")
+
+
+def _gate_task_test(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, tarefa in enumerate(artefato.meta["tasks"]):
+        teste = tarefa.get("test")
+        campo = f"tasks/{indice}/test"
+        if not teste:
+            ctx.recusa("task_without_test", artefato.path, campo,
+                       f"{tarefa['id']} precisa do teste que falha antes do codigo")
+            continue
+        _conferir_teste(ctx, artefato, campo, f"{teste['path']}::{teste['name']}", tarefa["id"])
+
+
 _GATES: dict[str, tuple[Gate, ...]] = {
     "explore": (),
     "define": (_gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by),
-    "design": (_gate_order, _gate_upstream),
-    "plan": (_gate_order, _gate_upstream),
+    "design": (_gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura),
+    "plan": (_gate_order, _gate_upstream, _gate_cobertura, _gate_task_test),
     "build_report": (_gate_order, _gate_upstream),
     "ship": (_gate_order, _gate_upstream),
 }
