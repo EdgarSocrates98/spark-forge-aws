@@ -29,3 +29,10 @@ def test_historico_agentspec_arquivado():
     arquivados = _rastreados("docs/sdd/archive/agentspec")
     assert any(p.endswith("DESIGN_DEBATE_ROI_GATE.md") for p in arquivados)
     assert ".claude/sdd/" in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+
+def test_superpowers_congelado():
+    texto = (ROOT / "docs" / "superpowers" / "README.md").read_text(encoding="utf-8")
+    assert "congelad" in texto
+    assert "docs/sdd/" in texto
+    assert (ROOT / "docs" / "superpowers" / "STATUS.md").is_file()

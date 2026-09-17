@@ -35,6 +35,12 @@ em `specs/` e `plans/` são registro histórico de decisão: descrevem o que se
 pretendia numa data, não o repositório de hoje. Quando um número divergir, este
 arquivo ganha.
 
+Desde `SDD_MIGRATION` (2026-09-17), `specs/` e `plans/` estão congelados
+(`docs/superpowers/README.md`) e spec novo nasce em `docs/sdd/<FEATURE>/`. As
+entradas antigas que citam `.claude/sdd/features/`, `.claude/sdd/archive/` ou
+`.claude/sdd/reports/` apontam hoje para o mesmo arquivo sob
+`docs/sdd/archive/agentspec/`, movido sem edição.
+
 ---
 
 ## Números correntes
