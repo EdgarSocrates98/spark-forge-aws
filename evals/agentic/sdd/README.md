@@ -55,8 +55,9 @@ número desta suite vira afirmação de ganho sobre outro processo.
 
 ## Baseline
 
-`baselines/2026-09-17-haiku-4-5/`: duas execuções do mesmo comando
-(`r1.json` às 07:45Z, `r2.json` às 08:14Z, N=2) com
+`baselines/2026-09-17-haiku-4-5/`: duas invocações separadas do mesmo
+comando com `--repeat 1` (`r1.json` às 07:45Z, `r2.json` às 08:14Z, N=2) —
+por isso o `run_id` de `r2` também termina em `r1` — com
 `claude-haiku-4-5-20251001`, host `2.1.274`, superfície `full`, suite sha256
 `47bdb24f…`.
 

@@ -112,3 +112,14 @@ def test_runner_conhece_a_suite_sdd():
     negadas = runner._negadas(load_suite(runner._suite_dir("sdd")), "suite")
     visiveis = set(TOOLS) - {n.removeprefix(runner.MCP_PREFIX) for n in negadas}
     assert visiveis == {"sparkforge_sdd_check", "sparkforge_sdd_status"}
+
+
+def test_notas_de_hash_e_de_baseline():
+    """SDD_ENDURECIMENTO AC11: o comentario do hash e a origem das duas amostras."""
+    atributos = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+    bloco = atributos.split("# `fixtures/sdd/`", 1)[1].split("fixtures/sdd/** -text", 1)[0]
+    assert "text_sha256" in bloco
+    assert "BYTES" not in bloco
+    baseline = (SUITE_DIR / "README.md").read_text(encoding="utf-8").split("## Baseline", 1)[1]
+    assert "--repeat 1" in baseline
+    assert "duas invocações" in baseline
