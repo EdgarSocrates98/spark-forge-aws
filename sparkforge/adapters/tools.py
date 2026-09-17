@@ -2403,6 +2403,83 @@ _DEBATE_REFEREE_SCHEMA: dict[str, Any] = {
 }
 
 # --------------------------------------------------------------------------- #
+# sdd check / status / stamp -- o contrato conferivel dos artefatos de spec
+# --------------------------------------------------------------------------- #
+
+# Recusa e lacuna tem a mesma forma. `field` e nulo quando a falha nao e de um
+# campo, e AUSENTE nas lacunas de varredura (`path_skipped`, `root_missing`);
+# `feature` e nula quando a lacuna nao pertence a feature nenhuma.
+_SDD_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["code", "feature", "path", "unlock"],
+    "properties": {
+        "code": {"type": "string"},
+        "feature": {"type": ["string", "null"]},
+        "path": {"type": "string"},
+        "field": {"type": ["string", "null"]},
+        "unlock": {"type": "string"},
+    },
+}
+
+_SDD_CHECK_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["ok", "root", "features", "refused", "unresolved"],
+    "properties": {
+        "ok": {"type": "boolean"},
+        "root": {"type": "string"},
+        "features": {"type": "array", "items": {"type": "string"}},
+        "refused": {"type": "array", "items": _SDD_ITEM},
+        "unresolved": {"type": "array", "items": _SDD_ITEM},
+    },
+}
+
+_SDD_STATUS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["root", "features", "unresolved"],
+    "properties": {
+        "root": {"type": "string"},
+        "features": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "feature", "phase", "status", "profile", "next_phase",
+                    "refused", "unresolved",
+                ],
+                "properties": {
+                    "feature": {"type": "string"},
+                    "phase": {"type": "string"},
+                    "status": {"type": ["string", "null"]},
+                    "profile": {"type": ["string", "null"]},
+                    "next_phase": {"type": ["string", "null"]},
+                    "refused": {"type": "array", "items": {"type": "string"}},
+                    "unresolved": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        # lacunas sem linha propria: raiz ausente e caminho podado fora de feature
+        "unresolved": {"type": "array", "items": _SDD_ITEM},
+    },
+}
+
+_SDD_STAMP_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["path", "upstream", "sha256", "previous", "changed"],
+    "properties": {
+        "path": {"type": "string"},
+        "upstream": {"type": "string"},
+        "sha256": {"type": "string"},
+        "previous": {"type": "string"},
+        "changed": {"type": "boolean"},
+    },
+}
+
+_SDD_ROOT_PATH_PARAM: dict[str, Any] = {
+    "type": "string",
+    "description": "Pasta dos artefatos relativa a `repo` (padrao docs/sdd).",
+}
+
+# --------------------------------------------------------------------------- #
 # debate start / next / submit -- o executor de debate
 # --------------------------------------------------------------------------- #
 
@@ -7127,6 +7204,83 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_IDEMPOTENT,
     },
+    "sparkforge_sdd_check": {
+        "description": (
+            "Confere os artefatos de spec do SDD proprio (docs/sdd/<FEATURE>/<fase>.md: "
+            "explore, define, design, plan, build_report, ship). Julga so o frontmatter: "
+            "schema, ordem das fases, hash do upstream (cascata), cobertura dos acceptance "
+            "tests, teste por task (TDD), rollback, red declarado, evidencia de afirmacao, "
+            "hipotese fechada, registros exigidos pelo tipo de mudanca e, no perfil operator, "
+            "case e sandbox existentes. Cada falha sai em `refused` com `code` e `unlock`; o "
+            "que ele nao consegue decidir (raiz ausente, caminho que a varredura pulou) sai "
+            "em `unresolved`. NAO julga a prosa e nao chama modelo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio."},
+                "root_path": _SDD_ROOT_PATH_PARAM,
+                "feature": {
+                    "type": "string",
+                    "description": (
+                        "Confere so esta feature. Feature que nao existe e erro, salvo "
+                        "quando uma lacuna ja explica a ausencia."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _SDD_CHECK_SCHEMA,
+            "Recusas e lacunas dos gates, ou erro se `repo` nao existe ou a feature pedida "
+            "nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_sdd_status": {
+        "description": (
+            "Fase atual de cada feature do SDD, o status declarado, a proxima fase e os "
+            "codigos de recusa e lacuna que a impedem de avancar. Mesmos gates de "
+            "`sparkforge_sdd_check`, na mesma varredura, agrupados por feature; a lacuna "
+            "sem feature (raiz ausente, arquivo pulado na raiz) sai em `unresolved`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio."},
+                "root_path": _SDD_ROOT_PATH_PARAM,
+            },
+        },
+        "outputSchema": _may_fail(
+            _SDD_STATUS_SCHEMA, "Uma linha por feature, ou erro se `repo` nao existe."
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_sdd_stamp": {
+        "description": (
+            "Grava `upstream.sha256` no frontmatter de um artefato SDD, com o hash de texto "
+            "do upstream declarado. Muda so a linha do hash, preserva quebra de linha, BOM "
+            "e corpo, e nao regrava quando o hash ja confere. So escreve em "
+            "<root_path>/<FEATURE>/<fase>.md; linha de hash que ele nao sabe reescrever e "
+            "recusada por nome. Use depois de revisar uma fase cujo upstream mudou "
+            "(`upstream_stale`)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "path"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio."},
+                "path": {"type": "string", "description": "Artefato, relativo a `repo`."},
+                "root_path": _SDD_ROOT_PATH_PARAM,
+            },
+        },
+        "outputSchema": _may_fail(
+            _SDD_STAMP_SCHEMA,
+            "O hash gravado (ou ja presente), ou erro com o codigo da recusa do stamp.",
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
     "sparkforge_fuse": {
         "description": (
             "Correlaciona facts de fontes diferentes (texto SQL de "
@@ -9834,6 +9988,18 @@ def _h_funcval_compare(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_sdd_check(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.sdd_check(args["repo"], args.get("root_path", "docs/sdd"), args.get("feature"))
+
+
+def _h_sdd_status(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.sdd_status(args["repo"], args.get("root_path", "docs/sdd"))
+
+
+def _h_sdd_stamp(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.sdd_stamp(args["repo"], args["path"], args.get("root_path", "docs/sdd"))
+
+
 def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
     return _core.fuse_facts(
         args.get("facts_paths"),
@@ -10259,6 +10425,9 @@ _HANDLERS = {
     "sparkforge_economy_report": _h_economy_report,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
+    "sparkforge_sdd_check": _h_sdd_check,
+    "sparkforge_sdd_status": _h_sdd_status,
+    "sparkforge_sdd_stamp": _h_sdd_stamp,
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_arbitrate": _h_arbitrate,
