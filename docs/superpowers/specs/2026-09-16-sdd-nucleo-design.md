@@ -234,6 +234,9 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
   `<root>/<relativo>`, e o `unlock` manda renomear. Sem isso, uma feature
   `BUILD` sumia e o `check` saía `ok`. O `status` sobe para o topo as lacunas
   cuja feature não foi descoberta.
+- **`upstream` onde não cabe é `schema_invalid`**, campo `upstream`: em
+  `explore` (primeira fase, sem upstream) e em `define` quando a feature não
+  tem `explore.md`. Antes o bloco era ignorado calado.
 
 Fora de A, de propósito: julgar se a prosa é boa ou o design é sensato. Isso é
 do agente e de review; o gate não finge avaliar qualidade.

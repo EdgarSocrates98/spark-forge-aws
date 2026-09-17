@@ -141,6 +141,14 @@ def _gate_upstream(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     esperado = _upstream_esperado(ctx, fase)
     declarado = artefato.meta.get("upstream")
     if esperado is None:
+        if declarado is not None:
+            motivo = (
+                "explore e a primeira fase e nao tem upstream"
+                if fase == "explore"
+                else "define so declara upstream quando explore.md existe na feature"
+            )
+            ctx.recusa("schema_invalid", artefato.path, "upstream",
+                       f"{motivo}; remova o bloco upstream")
         return
     esperado_rel = f"{ctx.rel(ctx.caminhos[esperado])}" if esperado in ctx.caminhos else (
         f"{ctx.rel(artefato.path.parent)}/{esperado}.md"
@@ -374,7 +382,7 @@ def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
 
 
 _GATES: dict[str, tuple[Gate, ...]] = {
-    "explore": (),
+    "explore": (_gate_upstream,),
     "define": (
         _gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by, _gate_case,
     ),

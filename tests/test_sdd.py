@@ -312,6 +312,57 @@ def test_schema_invalid_fase_trocada(tmp_path):
     assert [(r["code"], r["field"]) for r in recusa] == [("schema_invalid", "phase")]
 
 
+def test_schema_invalid_feature_de_outra_pasta(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["ship"], feature="F2")
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"], r["path"]) for r in recusa] == [
+        ("schema_invalid", "feature", "docs/sdd/F1/ship.md")
+    ]
+
+
+def test_upstream_para_outro_arquivo_existente(tmp_path):
+    caminhos = feature_limpa(tmp_path)
+    _reescreve(caminhos["ship"], upstream=_upstream(tmp_path, caminhos["plan"]))
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [("upstream_missing", "upstream/path")]
+    assert "docs/sdd/F1/build_report.md" in recusa[0]["unlock"]
+
+
+_EXPLORE = {
+    "sdd": 1, "feature": "F1", "phase": "explore", "profile": "dev", "status": "done",
+    "approaches": [{"id": "a", "summary": "s"}], "chosen": "a",
+}
+
+
+def test_upstream_no_define_sem_explore_e_schema_invalid(tmp_path):
+    caminhos = _so_define(tmp_path)
+    _reescreve(caminhos["define"], upstream={"path": "docs/sdd/F1/explore.md", "sha256": ""})
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [("schema_invalid", "upstream")]
+    assert "explore.md" in recusa[0]["unlock"]
+
+
+def test_upstream_no_explore_e_schema_invalid(tmp_path):
+    caminhos = _so_define(tmp_path)
+    explore = _grava(tmp_path, "F1", "explore", {
+        **_EXPLORE, "upstream": _upstream(tmp_path, caminhos["define"]),
+    })
+    _reescreve(caminhos["define"], upstream=_upstream(tmp_path, explore))
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"], r["path"]) for r in recusa] == [
+        ("schema_invalid", "upstream", "docs/sdd/F1/explore.md")
+    ]
+
+
+def test_define_com_explore_declara_upstream(tmp_path):
+    caminhos = _so_define(tmp_path)
+    explore = _grava(tmp_path, "F1", "explore", _EXPLORE)
+    assert _codigos(check(tmp_path)) == (["upstream_missing"], [])
+    _reescreve(caminhos["define"], upstream=_upstream(tmp_path, explore))
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
 def test_phase_out_of_order(tmp_path):
     caminhos = feature_limpa(tmp_path)
     caminhos["plan"].unlink()
