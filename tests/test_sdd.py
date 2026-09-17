@@ -1350,6 +1350,20 @@ def test_ship_done_com_evidencia_e_sem_relatorio_e_historia(tmp_path):
     assert "P9" in recusa[0]["unlock"] and "FALSO" not in recusa[0]["unlock"]
 
 
+def test_ship_done_sem_change_id_no_build_recusa(tmp_path):
+    """Revisao final de SDD_ENDURECIMENTO: sem o change_id do build, nada e historia."""
+    caminhos = feature_limpa(tmp_path, "operator")
+    meta = _meta(caminhos["plan"])
+    del meta["tasks"][0]["test"]
+    meta["tasks"][0]["proof"] = {"kind": "finding", "ref": "#SF-PY-012"}
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+    _reescreve(caminhos["build_report"], change_id=None)
+    _restampa(tmp_path)
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [("ship_evidence_missing", "evidence")]
+    assert "change_id" in recusa[0]["unlock"]
+
+
 def test_ship_done_com_relatorio_que_contradiz(tmp_path):
     """SDD_ENDURECIMENTO AC3: relatorio presente continua conferido depois do ship."""
     caminhos = _operator_com_moved(tmp_path)
@@ -1420,7 +1434,7 @@ def _codigos_emitidos() -> set[str]:
                 else:
                     dinamicos.append(f"{nome}:{no.lineno}")
             elif isinstance(no, ast.Dict):
-                for chave, valor in zip(no.keys, no.values):
+                for chave, valor in zip(no.keys, no.values, strict=True):
                     if (isinstance(chave, ast.Constant) and chave.value == "code"
                             and isinstance(valor, ast.Constant)):
                         codigos.add(valor.value)

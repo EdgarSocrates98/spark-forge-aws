@@ -124,7 +124,7 @@ com `red`/`green` = `{command, exit}` e `moved` = `{change_id, resolved: [rule_i
 | `change_missing` | operator com `change_id` vazio, com separador, `.`/`..`, ou sem `.sparkforge/sandbox/<id>/` nem `.sparkforge/proposal/<id>/` como pasta; não confere com o ship em `done` | build_report |
 | `hypothesis_open_at_ship` | ship sem `hypothesis_outcome` | ship |
 | `registry_unchecked` | registro exigido pelos `change_kinds` do define ausente de `registries` (um por registro) | ship |
-| `ship_evidence_missing` | ship operator sem `evidence`, ou sem entrada para um `change_id` citado (o do build, o de cada `moved`, o prefixo de cada `proof` `finding`); o `unlock` traz o `text_sha256` de cada relatório presente | ship |
+| `ship_evidence_missing` | ship operator com o build_report sem `change_id`; sem `evidence`; ou sem entrada para um `change_id` citado (o do build, o de cada `moved`, o prefixo de cada `proof` `finding`); o `unlock` traz o `text_sha256` de cada relatório presente | ship |
 | `ship_evidence_mismatch` | relatório presente da mudança com `text_sha256` diferente do `report_sha256` gravado; **todo** relatório presente precisa casar | ship |
 
 ## Lacunas do `check`

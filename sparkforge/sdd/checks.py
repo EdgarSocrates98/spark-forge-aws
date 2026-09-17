@@ -661,6 +661,12 @@ def _gate_evidence(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
             ctx.recusa("schema_invalid", artefato.path, "evidence",
                        "evidence so vale no perfil operator; o ship dev nao cita mudanca")
         return
+    build = ctx.artefatos.get("build_report")
+    if build is not None and not _texto_ou_none(build.meta.get("change_id")):
+        ctx.recusa("ship_evidence_missing", artefato.path, "evidence",
+                   "o build_report nao registrou change_id: sem a mudanca do build, nenhuma "
+                   "evidencia vira historia; registre o id de `sparkforge change sandbox`")
+        return
     citados = _ids_citados(ctx)
     gravados = {entrada["change_id"] for entrada in entradas or []}
     faltam = [ident for ident in citados if ident not in gravados]
