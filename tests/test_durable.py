@@ -134,3 +134,14 @@ class TestReadJsonl:
         assert [r["id"] for r in blackboard.read_claims(tmp_path)] == ["c1"]
         blackboard._append_jsonl(arquivo, {"id": "c3"})
         assert [r["id"] for r in blackboard.read_claims(tmp_path)] == ["c1", "c3"]
+
+
+def test_write_atomic_bytes_preserva_quebra_de_linha(tmp_path):
+    from sparkforge.durable import write_atomic_bytes
+
+    alvo = tmp_path / "sub" / "a.md"
+    write_atomic_bytes(alvo, b"um\ndois\r\ntres\n")
+    assert alvo.read_bytes() == b"um\ndois\r\ntres\n"
+    write_atomic_bytes(alvo, b"novo\n")
+    assert alvo.read_bytes() == b"novo\n"
+    assert [p.name for p in alvo.parent.iterdir()] == ["a.md"]

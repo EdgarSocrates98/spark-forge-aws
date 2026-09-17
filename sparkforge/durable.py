@@ -1,6 +1,6 @@
 """Escrita que sobrevive a uma queda no meio -- o estado do case nunca fica pela metade.
 
-Tres primitivas, e so tres, para os arquivos que `resume`, o debate e o
+Quatro primitivas, e so quatro, para os arquivos que `resume`, o debate e o
 blackboard LEEM como estado (`case.yaml`, `plan.json`, `decision.json`, os JSONL
 do blackboard, `submissions.jsonl`, `facts.jsonl` do debate e o journal):
 
@@ -9,6 +9,8 @@ do blackboard, `submissions.jsonl`, `facts.jsonl` do debate e o journal):
   troca em si nao tem estado intermediario legivel. No Windows, `os.replace`
   levanta `PermissionError` quando outro processo tem o destino aberto sem
   `FILE_SHARE_DELETE` -- tenta de novo algumas vezes antes de desistir.
+- `write_atomic_bytes` e a mesma troca em modo binario, para arquivo que alguem
+  rele por hash e cuja quebra de linha nao pode mudar na gravacao.
 - `append_line` anexa UMA linha sob trava de arquivo. Se o arquivo termina sem
   `\\n`, sobrou a cauda de uma queda anterior: JSON valido so ganha o `\\n` que
   faltou; lixo vai para `<arquivo>.torn` (quarentena, nunca apagado) e o
@@ -56,6 +58,30 @@ def write_atomic(path: Path | str, text: str) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        _replace(temporario, destino)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(temporario)
+        raise
+
+
+def write_atomic_bytes(path: Path | str, data: bytes) -> None:
+    """`write_atomic` sem traducao de quebra de linha: grava os bytes como vieram.
+
+    `write_atomic` abre em modo texto, e no Windows isso troca `\\n` por
+    `\\r\\n`. Para quem rele o arquivo por hash (o `sdd stamp`), a troca muda o
+    conteudo que o proprio hash descreve.
+    """
+    destino = Path(path)
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporario = tempfile.mkstemp(
+        prefix=f".{destino.name}.", suffix=".tmp", dir=destino.parent
+    )
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
             fh.flush()
             os.fsync(fh.fileno())
         _replace(temporario, destino)
