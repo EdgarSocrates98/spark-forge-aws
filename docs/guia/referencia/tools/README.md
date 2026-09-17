@@ -277,6 +277,14 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 |---|---|---|
 | [`sparkforge_scan`](sparkforge_scan.md) | grava local | Roda sozinho os analyzes que cabem num repositorio e julga a uniao. |
 
+## sdd
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_sdd_check`](sparkforge_sdd_check.md) | só leitura | Confere os artefatos de spec do SDD proprio (docs/sdd/<FEATURE>/<fase>.md: explore, define, design, plan, build_report, ship). |
+| [`sparkforge_sdd_stamp`](sparkforge_sdd_stamp.md) | grava local | Grava `upstream.sha256` no frontmatter de um artefato SDD, com o hash de texto do upstream declarado. |
+| [`sparkforge_sdd_status`](sparkforge_sdd_status.md) | só leitura | Fase atual de cada feature do SDD, o status declarado, a proxima fase e os codigos de recusa e lacuna que a impedem de avancar. |
+
 ## simulate
 
 | Tool | Efeito | O que faz |

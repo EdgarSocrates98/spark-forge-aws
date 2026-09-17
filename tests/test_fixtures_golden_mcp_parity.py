@@ -89,6 +89,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_workload": "2026-09-14: o SLA declarado em workload.yaml (porta publica)",
     "sparkforge_collect_parquet_footer": "2026-09-14: a porta do coletor de footer Parquet",
     "sparkforge_change_propose": "2026-09-14: o pacote de PR montado a partir do sandbox (§15 L3)",
+    "sparkforge_sdd_check": "2026-09-16: gates do SDD proprio sobre docs/sdd",
+    "sparkforge_sdd_status": "2026-09-16: fase e bloqueio de cada feature do SDD",
+    "sparkforge_sdd_stamp": "2026-09-16: hash do upstream de um artefato SDD",
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

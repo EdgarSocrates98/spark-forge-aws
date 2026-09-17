@@ -48,6 +48,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge rules`](rules.md) | Consulta o catalogo de regras versionado. |
 | [`sparkforge runtime`](runtime.md) | Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena. |
 | [`sparkforge scan`](scan.md) | Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge/scan/. |
+| [`sparkforge sdd`](sdd.md) | Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o que nao fecha, sem julgar a prosa. |
 | [`sparkforge simulate`](simulate.md) | O que uma mudanca de configuracao move, estruturalmente: altera o valor de facts que ja existem, rederiva e julga os dois lados, e diz que achados somem e aparecem. |
 | [`sparkforge telemetry`](telemetry.md) | Os spans de tool e o transcript do host em OTLP/JSON, para um OTLP Collector. |
 | [`sparkforge tune`](tune.md) | Configuracao Spark derivada da medida, com a procedencia de cada propriedade. |
