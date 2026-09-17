@@ -8,6 +8,7 @@ quebra de linha.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 
@@ -74,6 +75,21 @@ def test_gabarito_recomputado_pelo_gate():
         caso, derivar = DERIVA[pergunta.id]
         assert f"fixtures/sdd/{caso}" in pergunta.question, pergunta.id
         assert pergunta.expected == derivar(ROOT / "fixtures" / "sdd" / caso), pergunta.id
+
+
+def test_suite_carrega_e_exige_as_tools():
+    suite = load_suite(SUITE_DIR)
+    assert len(suite.questions) == 6
+    for pergunta in suite.questions:
+        exigidas = {t if isinstance(t, str) else frozenset(t) for t in pergunta.required_tools}
+        assert exigidas & {"sdd_check", "sdd_status", frozenset({"sdd_check", "sdd_status"})}
+    # AC5: o baseline gravado foi pontuado contra ESTA suite, pergunta por pergunta
+    scorecards = sorted((SUITE_DIR / "baselines").glob("*/r*.json"))
+    assert scorecards, "nenhum baseline gravado em evals/agentic/sdd/baselines/"
+    for arquivo in scorecards:
+        dado = json.loads(arquivo.read_text(encoding="utf-8"))
+        assert dado["suite"] == {"id": "sdd", "sha256": suite.sha256}, arquivo
+        assert sorted(q["id"] for q in dado["questions"]) == sorted(DERIVA), arquivo
 
 
 def test_runner_conhece_a_suite_sdd():

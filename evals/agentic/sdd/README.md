@@ -55,6 +55,24 @@ número desta suite vira afirmação de ganho sobre outro processo.
 
 ## Baseline
 
-Estado em `baselines/`: ver a seção de hipótese de
-`docs/sdd/SDD_EVAL/ship.md`. Sem `claude` autenticado na máquina, o baseline
-fica pendente (desconhecido `U1` do define).
+`baselines/2026-09-17-haiku-4-5/r1.json`: uma execução (N=1) com
+`claude-haiku-4-5-20251001`, host `2.1.274`, superfície `full`, suite sha256
+`47bdb24f…`.
+
+| pergunta | acerto | tools exigidas | canal usado |
+|---|---|---|---|
+| `sdd-01` | correct | ok | CLI, por `Bash` e `PowerShell` |
+| `sdd-02` | correct | ok | CLI, depois de `Read` e `Glob` procurando a pasta |
+| `sdd-03` | correct | ok | CLI |
+| `sdd-04` | correct | ok | CLI |
+| `sdd-05` | correct | ok | CLI |
+| `sdd-06` | correct | ok | CLI, por `Bash` e `PowerShell` |
+
+Acerto 6/6 e tools 6/6, com **uma** amostra: é um ponto de partida, não uma
+taxa. Nenhuma pergunta usou a tool MCP; todas chegaram ao gate pela CLI
+`sparkforge sdd ...`, e o grader só reconhece a CLI chamada por `Bash`
+(`PowerShell` conta como `other`). O `sparkforge` do PATH da máquina era
+instalação editável deste repositório, não a cópia do workspace; o código de
+`sparkforge/` era o mesmo nos dois. Repetir com `--repeat 3` antes de citar
+estabilidade, e comparar com `python -m sparkforge.evals compare`, que lista
+transições e não conclui.
