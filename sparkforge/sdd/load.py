@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from sparkforge.facts.scan import iter_source_files
+from sparkforge.facts.scan import Pulo, varrer_source_files
 from sparkforge.sdd import PHASES
 
 CERCA = "---"
+# o mesmo padrao de `feature` em schema/common.json
+FEATURE_RE = re.compile(r"[A-Z0-9_]+")
 
 
 @dataclass(frozen=True)
@@ -59,12 +62,27 @@ def load_artifact(path: Path) -> Artifact:
     return Artifact(path, meta, corpo)
 
 
-def discover(root: Path) -> dict[str, dict[str, Path]]:
-    """`{feature: {fase: caminho}}` para `root/<FEATURE>/<fase>.md`, e nada mais fundo."""
+@dataclass(frozen=True)
+class Descoberta:
+    """As features achadas E o que a varredura deixou de fora sob a raiz.
+
+    Juntos de proposito: uma feature chamada `BUILD` e podada pela varredura, e
+    devolver so `features` faria ela sumir calada.
+    """
+
+    features: dict[str, dict[str, Path]]
+    pulos: tuple[Pulo, ...]
+
+
+def discover(root: Path) -> Descoberta:
+    """`root/<FEATURE>/<fase>.md`, com FEATURE no padrao do schema, e nada mais fundo."""
+    varredura = varrer_source_files(root, "*.md")
     features: dict[str, dict[str, Path]] = {}
-    for arquivo in iter_source_files(root, "*.md"):
+    for arquivo in varredura.arquivos:
         partes = arquivo.relative_to(root).parts
         if len(partes) != 2 or arquivo.stem not in PHASES:
             continue
+        if not FEATURE_RE.fullmatch(partes[0]):
+            continue
         features.setdefault(partes[0], {})[arquivo.stem] = arquivo
-    return features
+    return Descoberta(features=features, pulos=varredura.pulos)

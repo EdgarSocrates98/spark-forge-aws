@@ -17,7 +17,8 @@ def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
     if raiz is None or not raiz.is_dir():
         return {"root": root, "features": [], "unresolved": relatorio["unresolved"]}
     itens: list[dict[str, Any]] = []
-    for nome, caminhos in sorted(discover(raiz).items()):
+    features = discover(raiz).features
+    for nome, caminhos in sorted(features.items()):
         atual = max(caminhos, key=PHASES.index)
         meta = load_artifact(caminhos[atual]).meta or {}
         posicao = PHASES.index(atual)
@@ -32,4 +33,7 @@ def status(repo: Path | str, root: str = DEFAULT_ROOT) -> dict[str, Any]:
                 {u["code"] for u in relatorio["unresolved"] if u["feature"] == nome}
             ),
         })
-    return {"root": root, "features": itens, "unresolved": []}
+    # lacuna sem feature descoberta (pasta podada, arquivo na raiz) nao tem linha
+    # propria na lista; sobe para o topo para nao sumir
+    orfas = [u for u in relatorio["unresolved"] if u["feature"] not in features]
+    return {"root": root, "features": itens, "unresolved": orfas}

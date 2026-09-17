@@ -61,9 +61,62 @@ def test_discover_so_pega_fase_na_profundidade_certa(tmp_path):
     (raiz / "F1" / "define.md").write_bytes(b"---\n---\n")
     (raiz / "F1" / "notas.md").write_bytes(b"x")
     (raiz / "templates").mkdir()
+    (raiz / "templates" / "define.md").write_bytes(b"---\nfeature: <FEATURE>\n---\n")
     (raiz / "archive" / "F0").mkdir(parents=True)
     (raiz / "archive" / "F0" / "define.md").write_bytes(b"x")
-    assert discover(raiz) == {"F1": {"define": raiz / "F1" / "define.md"}}
+    descoberta = discover(raiz)
+    assert descoberta.features == {"F1": {"define": raiz / "F1" / "define.md"}}
+    assert descoberta.pulos == ()
+
+
+def test_pasta_fora_do_padrao_de_feature_nao_e_feature(tmp_path):
+    feature_limpa(tmp_path)
+    for nome in ("templates", "Minusculo", "com-hifen"):
+        pasta = tmp_path / "docs" / "sdd" / nome
+        pasta.mkdir()
+        (pasta / "define.md").write_bytes(b"---\nfeature: <FEATURE>\n---\n")
+    relatorio = check(tmp_path)
+    assert relatorio["features"] == ["F1"]
+    assert _codigos(relatorio) == ([], [])
+
+
+def test_feature_com_nome_podado_pela_varredura_vira_lacuna(tmp_path):
+    for nome in ("BUILD", "SECRETS"):
+        feature_limpa(tmp_path, feature=nome)
+    feature_limpa(tmp_path, feature="F1")
+    relatorio = check(tmp_path)
+    assert relatorio["ok"] is False
+    assert relatorio["features"] == ["F1"]
+    lacunas = relatorio["unresolved"]
+    assert [(u["code"], u["feature"], u["path"]) for u in lacunas] == [
+        ("path_skipped", "BUILD", "docs/sdd/BUILD"),
+        ("path_skipped", "SECRETS", "docs/sdd/SECRETS"),
+    ]
+    assert all("renomeie" in u["unlock"] for u in lacunas)
+    saida = status(tmp_path)
+    assert [f["feature"] for f in saida["features"]] == ["F1"]
+    assert [(u["code"], u["feature"]) for u in saida["unresolved"]] == [
+        ("path_skipped", "BUILD"), ("path_skipped", "SECRETS"),
+    ]
+
+
+def test_pulo_de_arquivo_na_raiz_nao_tem_feature(tmp_path):
+    feature_limpa(tmp_path)
+    (tmp_path / "docs" / "sdd" / "secrets.md").write_bytes(b"x")
+    lacunas = check(tmp_path)["unresolved"]
+    assert [(u["code"], u["feature"], u["path"]) for u in lacunas] == [
+        ("path_skipped", None, "docs/sdd/secrets.md"),
+    ]
+
+
+def test_pulo_dentro_da_feature_leva_o_nome_dela(tmp_path):
+    feature_limpa(tmp_path)
+    (tmp_path / "docs" / "sdd" / "F1" / "build").mkdir()
+    lacunas = check(tmp_path)["unresolved"]
+    assert [(u["code"], u["feature"], u["path"]) for u in lacunas] == [
+        ("path_skipped", "F1", "docs/sdd/F1/build"),
+    ]
+    assert status(tmp_path)["features"][0]["unresolved"] == ["path_skipped"]
 
 
 @pytest.mark.parametrize("fase", PHASES)

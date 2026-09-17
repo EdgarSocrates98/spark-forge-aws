@@ -222,6 +222,19 @@ pedida que não existe é erro de uso do verbo, não código desta tabela.
 | `fact_not_collected` | `verified_by.kind: fact` com fact que ainda não existe; `unlock` nomeia a coleta |
 | `funcval_not_run` | `verified_by.kind: funcval` sem resultado de `funcval compare` |
 
+#### 5.0 Códigos acrescentados na revisão
+
+- **Feature é só pasta no padrão do schema** (`^[A-Z0-9_]+$`). `templates/`,
+  `archive/` e afins sob a raiz não viram feature, mesmo com `define.md` dentro.
+- **`unresolved: path_skipped`.** A descoberta usa `varrer_source_files`
+  (`sparkforge/facts/scan.py`), que poda nomes da lista de pulos (`build`,
+  `dist`, `vendor`, `secrets`, `credentials`… comparados em minúsculas). Cada
+  pulo sob a raiz sai como lacuna com nome: `feature` é a pasta de primeiro
+  nível quando há uma (`null` para arquivo direto na raiz), `path` é
+  `<root>/<relativo>`, e o `unlock` manda renomear. Sem isso, uma feature
+  `BUILD` sumia e o `check` saía `ok`. O `status` sobe para o topo as lacunas
+  cuja feature não foi descoberta.
+
 Fora de A, de propósito: julgar se a prosa é boa ou o design é sensato. Isso é
 do agente e de review; o gate não finge avaliar qualidade.
 

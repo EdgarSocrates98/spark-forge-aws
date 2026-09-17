@@ -15,6 +15,12 @@ from jsonschema import Draft202012Validator
 
 from sparkforge.case.store import CASE_DIR, CASE_FILE
 from sparkforge.change.sandbox import SANDBOX_DIR
+from sparkforge.facts.scan import (
+    DIRECTORY_IGNORED,
+    DIRECTORY_REPARSE_POINT,
+    DIRECTORY_SENSITIVE,
+    Pulo,
+)
 from sparkforge.paths import resolve_within
 from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
@@ -379,7 +385,7 @@ _GATES: dict[str, tuple[Gate, ...]] = {
 }
 
 
-def check_feature(repo: Path, feature: str, caminhos: dict[str, Path]) -> _Contexto:
+def _check_feature(repo: Path, feature: str, caminhos: dict[str, Path]) -> _Contexto:
     ctx = _Contexto(repo=repo, feature=feature, caminhos=caminhos)
     _carrega(ctx)
     for fase in PHASES:
@@ -389,6 +395,26 @@ def check_feature(repo: Path, feature: str, caminhos: dict[str, Path]) -> _Conte
         for gate in _GATES[fase]:
             gate(ctx, fase, artefato)
     return ctx
+
+
+_RAZOES_DE_PASTA = frozenset({DIRECTORY_IGNORED, DIRECTORY_SENSITIVE, DIRECTORY_REPARSE_POINT})
+
+
+def _lacuna_de_pulo(root: str, pulo: Pulo) -> dict[str, Any]:
+    """Um caminho que a varredura nao leu vira lacuna com nome, nunca silencio."""
+    partes = pulo.relativo.split("/")
+    e_pasta = pulo.razao in _RAZOES_DE_PASTA
+    dono = partes[0] if len(partes) > 1 or e_pasta else None
+    return {
+        "code": "path_skipped",
+        "feature": dono,
+        "path": f"{root.rstrip('/')}/{pulo.relativo}",
+        "unlock": (
+            f"a varredura pulou {pulo.relativo} ({pulo.razao}): o nome esta na lista de "
+            "pulos de sparkforge/facts/scan.py; renomeie a pasta ou o arquivo para que "
+            "o SDD o leia"
+        ),
+    }
 
 
 def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None) -> dict[str, Any]:
@@ -406,12 +432,17 @@ def check(repo: Path | str, root: str = DEFAULT_ROOT, feature: str | None = None
                 "unlock": f"crie {root}/<FEATURE>/ ou passe --root para a pasta dos artefatos",
             }],
         }
-    todas = discover(raiz)
+    descoberta = discover(raiz)
+    todas = descoberta.features
     nomes = sorted(todas) if feature is None else [n for n in sorted(todas) if n == feature]
     refused: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
+    for pulo in descoberta.pulos:
+        item = _lacuna_de_pulo(root, pulo)
+        if feature is None or item["feature"] == feature:
+            unresolved.append(item)
     for nome in nomes:
-        ctx = check_feature(raiz_repo, nome, todas[nome])
+        ctx = _check_feature(raiz_repo, nome, todas[nome])
         refused.extend(ctx.refused)
         unresolved.extend(ctx.unresolved)
     return {
