@@ -7,6 +7,7 @@ feature e montada em `tmp_path`.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -324,3 +325,83 @@ def test_stamp_recusa_sem_upstream(tmp_path):
         stamp(tmp_path, "../fora.md")
     assert erro.value.code == "artifact_missing"
     assert caminhos["define"].is_file()
+
+
+def _define_meta(caminhos):
+    bloco, _ = split_frontmatter(caminhos["define"].read_bytes().decode("utf-8"))
+    return yaml.safe_load(bloco)
+
+
+def _so_define(tmp_path):
+    """Feature so com define: nada abaixo para ficar stale."""
+    caminhos = feature_limpa(tmp_path)
+    for fase in ("design", "plan", "build_report", "ship"):
+        caminhos[fase].unlink()
+    return caminhos
+
+
+def test_success_without_source(tmp_path):
+    caminhos = _so_define(tmp_path)
+    _reescreve(caminhos["define"], success=[{"id": "SC1", "metric": "m"}])
+    assert _codigos(check(tmp_path)) == (["success_without_source"], [])
+
+
+def test_change_kind_desconhecido_e_schema_invalid(tmp_path):
+    caminhos = _so_define(tmp_path)
+    _reescreve(caminhos["define"], change_kinds=["inventado"])
+    recusa = check(tmp_path)["refused"]
+    assert [(r["code"], r["field"]) for r in recusa] == [("schema_invalid", "change_kinds/0")]
+
+
+def test_test_not_written_antes_do_build(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"]["ref"] = "tests/test_alvo.py::test_futuro"
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], ["test_not_written"])
+
+
+def test_verified_by_dangling_depois_do_build(tmp_path):
+    feature_limpa(tmp_path)
+    (tmp_path / "tests" / "test_alvo.py").write_bytes(b"def test_outro():\n    pass\n")
+    refused, unresolved = _codigos(check(tmp_path))
+    # o plan aponta o mesmo teste: as duas referencias penduram
+    assert refused == ["verified_by_dangling", "verified_by_dangling"]
+    assert unresolved == []
+
+
+def test_teste_em_classe_conta(tmp_path):
+    caminhos = _so_define(tmp_path)
+    (tmp_path / "tests" / "test_alvo.py").write_bytes(
+        b"class TestX:\n    def test_y(self):\n        pass\n"
+    )
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"]["ref"] = "tests/test_alvo.py::TestX::test_y"
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_fact_not_collected_e_fact_encontrado(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "fact", "ref": "facts.json#abc123"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
+    (tmp_path / "facts.json").write_text(json.dumps([{"id": "abc123"}]), encoding="utf-8")
+    assert _codigos(check(tmp_path)) == ([], [])
+
+
+def test_funcval_not_run(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "funcval", "ref": "out/compare.json"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], ["funcval_not_run"])
+
+
+def test_command_e_declarado_e_nao_conferido(tmp_path):
+    caminhos = _so_define(tmp_path)
+    meta = _define_meta(caminhos)
+    meta["acceptance"][0]["verified_by"] = {"kind": "command", "ref": "make x"}
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    assert _codigos(check(tmp_path)) == ([], [])

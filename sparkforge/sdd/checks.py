@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -155,9 +156,97 @@ def _gate_upstream(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                    f"`sparkforge sdd stamp --repo . {ctx.rel(artefato.path)}`")
 
 
+def _nomes_de_teste(arvore: ast.Module) -> set[str]:
+    nomes: set[str] = set()
+    for no in arvore.body:
+        if isinstance(no, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            nomes.add(no.name)
+        elif isinstance(no, ast.ClassDef):
+            for membro in no.body:
+                if isinstance(membro, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    nomes.add(f"{no.name}::{membro.name}")
+    return nomes
+
+
+def _teste_existe(repo: Path, referencia: str) -> bool:
+    caminho, _, nome = referencia.partition("::")
+    alvo = resolve_within(repo, caminho) if caminho else None
+    if alvo is None or not alvo.is_file() or not nome:
+        return False
+    try:
+        arvore = ast.parse(alvo.read_bytes())
+    except (SyntaxError, ValueError):
+        return False
+    return nome in _nomes_de_teste(arvore)
+
+
+def _conferir_teste(
+    ctx: _Contexto, artefato: Artifact, campo: str, referencia: str, dono: str
+) -> None:
+    if _teste_existe(ctx.repo, referencia):
+        return
+    if "build_report" in ctx.artefatos:
+        ctx.recusa("verified_by_dangling", artefato.path, campo,
+                   f"{referencia} nao existe depois do build; escreva o teste ou corrija a "
+                   "referencia")
+    else:
+        ctx.lacuna("test_not_written", artefato.path,
+                   f"{referencia} ainda nao existe; o build escreve o teste de {dono} antes do "
+                   "codigo")
+
+
+def _ids_de_fact(arquivo: Path) -> set[str]:
+    try:
+        dado = json.loads(arquivo.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    itens = dado.get("items", []) if isinstance(dado, dict) else dado
+    if not isinstance(itens, list):
+        return set()
+    return {str(item.get("id")) for item in itens if isinstance(item, dict)}
+
+
+def _gate_success_source(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, item in enumerate(artefato.meta["success"]):
+        if not str(item.get("source") or "").strip():
+            ctx.recusa("success_without_source", artefato.path, f"success/{indice}/source",
+                       f"diga de onde vem o numero de {item['id']} (regra 24)")
+
+
+def _gate_change_kinds(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    conhecidos = change_kinds()
+    for indice, chave in enumerate(artefato.meta["change_kinds"]):
+        if chave not in conhecidos:
+            ctx.recusa("schema_invalid", artefato.path, f"change_kinds/{indice}",
+                       f"'{chave}' nao existe em sparkforge/sdd/change_kinds.yaml; use uma de: "
+                       + ", ".join(sorted(conhecidos)))
+
+
+def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    for indice, item in enumerate(artefato.meta["acceptance"]):
+        prova = item["verified_by"]
+        campo = f"acceptance/{indice}/verified_by"
+        referencia = prova["ref"]
+        if prova["kind"] == "test":
+            _conferir_teste(ctx, artefato, campo, referencia, item["id"])
+        elif prova["kind"] == "fact":
+            caminho, _, fact_id = referencia.partition("#")
+            alvo = resolve_within(ctx.repo, caminho) if caminho else None
+            if alvo is None or not alvo.is_file() or fact_id not in _ids_de_fact(alvo):
+                ctx.lacuna("fact_not_collected", artefato.path,
+                           f"{fact_id or referencia} nao esta em {caminho}; colete o artefato e "
+                           "rode o `sparkforge analyze` que o extrai")
+        elif prova["kind"] == "funcval":
+            alvo = resolve_within(ctx.repo, referencia)
+            if alvo is None or not alvo.is_file():
+                ctx.lacuna("funcval_not_run", artefato.path,
+                           f"rode `sparkforge funcval compare --out {referencia}` para "
+                           f"{item['id']}")
+
+
 _GATES: dict[str, tuple[Gate, ...]] = {
     "explore": (),
-    "define": (_gate_upstream,),
+    "define": (_gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by),
     "design": (_gate_order, _gate_upstream),
     "plan": (_gate_order, _gate_upstream),
     "build_report": (_gate_order, _gate_upstream),
