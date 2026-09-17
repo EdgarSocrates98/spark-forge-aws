@@ -13,6 +13,8 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+from sparkforge.case.store import CASE_DIR, CASE_FILE
+from sparkforge.change.sandbox import SANDBOX_DIR
 from sparkforge.paths import resolve_within
 from sparkforge.receipt._hash import text_sha256
 from sparkforge.sdd import DEFAULT_ROOT, PHASES
@@ -334,12 +336,45 @@ def _gate_registries(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        "(docs/gates-por-mudanca.md); rode o gate e liste-o")
 
 
+def _case_id_atual(repo: Path) -> str | None:
+    arquivo = repo / CASE_DIR / CASE_FILE
+    if not arquivo.is_file():
+        return None
+    try:
+        dado = yaml.safe_load(arquivo.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        return None
+    return dado.get("case_id") if isinstance(dado, dict) else None
+
+
+def _gate_case(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    if artefato.meta["profile"] != "operator":
+        return
+    declarado = artefato.meta.get("case_id")
+    if not declarado or declarado != _case_id_atual(ctx.repo):
+        ctx.recusa("case_missing", artefato.path, "case_id",
+                   "abra o case com `sparkforge case open` e copie o case_id dele para o define")
+
+
+def _gate_change(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    if artefato.meta["profile"] != "operator":
+        return
+    ident = artefato.meta.get("change_id")
+    alvo = resolve_within(ctx.repo, f"{SANDBOX_DIR}/{ident}") if ident else None
+    if alvo is None or not alvo.is_dir():
+        ctx.recusa("change_missing", artefato.path, "change_id",
+                   "o build do operador passa por `sparkforge change sandbox`; registre o id "
+                   "do sandbox em change_id")
+
+
 _GATES: dict[str, tuple[Gate, ...]] = {
     "explore": (),
-    "define": (_gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by),
+    "define": (
+        _gate_upstream, _gate_success_source, _gate_change_kinds, _gate_verified_by, _gate_case,
+    ),
     "design": (_gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura),
     "plan": (_gate_order, _gate_upstream, _gate_cobertura, _gate_task_test),
-    "build_report": (_gate_order, _gate_upstream, _gate_red, _gate_claims),
+    "build_report": (_gate_order, _gate_upstream, _gate_red, _gate_claims, _gate_change),
     "ship": (_gate_order, _gate_upstream, _gate_hypothesis, _gate_registries),
 }
 

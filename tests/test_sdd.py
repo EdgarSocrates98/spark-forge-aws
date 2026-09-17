@@ -514,3 +514,32 @@ def test_registry_unchecked(tmp_path):
     recusa = check(tmp_path)["refused"]
     assert [r["code"] for r in recusa] == ["registry_unchecked"]
     assert "generated_reference" in recusa[0]["unlock"]
+
+
+def test_case_missing_sem_case_id(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    for fase in ("design", "plan", "build_report", "ship"):
+        caminhos[fase].unlink()
+    _reescreve(caminhos["define"], case_id=None)
+    assert _codigos(check(tmp_path)) == (["case_missing"], [])
+
+
+def test_case_missing_case_diferente(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    for fase in ("design", "plan", "build_report", "ship"):
+        caminhos[fase].unlink()
+    (tmp_path / ".sparkforge" / "case.yaml").write_bytes(b"case_id: OUTRO\n")
+    assert _codigos(check(tmp_path)) == (["case_missing"], [])
+
+
+def test_change_missing(tmp_path):
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    (tmp_path / ".sparkforge" / "sandbox" / "S1").rmdir()
+    assert _codigos(check(tmp_path)) == (["change_missing"], [])
+
+
+def test_perfil_dev_nao_pede_case_nem_change(tmp_path):
+    feature_limpa(tmp_path, "dev")
+    assert not (tmp_path / ".sparkforge").exists()
+    assert _codigos(check(tmp_path)) == ([], [])
