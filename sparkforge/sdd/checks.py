@@ -377,10 +377,20 @@ def _gate_cobertura(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        f"{item['id']} do define nao aparece em nenhum covers do {fase}")
 
 
-def _relatorio_da_mudanca(repo: Path, ident: str) -> dict[str, Any] | None:
+def _arquivos_de_relatorio(repo: Path, ident: str) -> list[Path]:
+    """Os relatorios de `ident` que existem, confinados a pasta da mudanca (symlink incluso)."""
+    achados: list[Path] = []
     for pasta, nome in _pastas_da_mudanca(repo, ident):
+        alvo = resolve_within(pasta, nome)
+        if alvo is not None and alvo.is_file():
+            achados.append(alvo)
+    return achados
+
+
+def _relatorio_da_mudanca(repo: Path, ident: str) -> dict[str, Any] | None:
+    for arquivo in _arquivos_de_relatorio(repo, ident):
         try:
-            dado = json.loads((pasta / nome).read_text(encoding="utf-8"))
+            dado = json.loads(arquivo.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
         if isinstance(dado, dict):

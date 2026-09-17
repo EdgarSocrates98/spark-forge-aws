@@ -1273,6 +1273,23 @@ def test_moved_de_outra_mudanca(tmp_path):
     assert "S1" in recusa[0]["unlock"] and "S2" in recusa[0]["unlock"]
 
 
+def test_relatorio_por_symlink_nao_escapa(tmp_path):
+    """SDD_ENDURECIMENTO AC6: report.json que aponta para fora da pasta nao e lido."""
+    caminhos = feature_limpa(tmp_path, "operator")
+    caminhos["ship"].unlink()
+    tarefa = {"id": "T1", "status": "done",
+              "moved": {"change_id": "S1", "resolved": ["SF-PY-012"]}}
+    _reescreve(caminhos["build_report"], tasks=[tarefa])
+    fora = tmp_path / "fora.json"
+    fora.write_bytes(json.dumps({"new": [], "resolved": [{"rule_id": "SF-PY-012"}]})
+                     .encode("utf-8"))
+    try:
+        (tmp_path / ".sparkforge" / "sandbox" / "S1" / "report.json").symlink_to(fora)
+    except OSError as erro:
+        pytest.skip(f"symlink indisponivel: {erro}")
+    assert _codigos(check(tmp_path)) == (["moved_not_observed"], [])
+
+
 def test_proof_e_moved_fecham_propriedades():
     tarefa_plan = schema_for("plan")["properties"]["tasks"]["items"]
     prova = tarefa_plan["properties"]["proof"]
