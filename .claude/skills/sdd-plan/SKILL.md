@@ -23,14 +23,18 @@ critério do define tem tarefa.
 
 No frontmatter, cada tarefa tem `id` `T<n>`, `files`, `covers` (os `AC` do
 define) e `test` com `path` e `name`. Tarefa sem `test` sai `task_without_test`
-(no perfil operator, `proof` também serve; veja abaixo).
+(no perfil operator, `proof` também serve; veja abaixo). `name` é o node id do
+pytest sem o arquivo: `test_x`, ou `TestClasse::test_x` para método de classe.
+O sufixo `[...]` do parametrize é descartado antes da conferência; escreva o
+nome da função.
 
 No corpo, cada tarefa é uma seção `## T<n> — título` com passos de poucos
 minutos cada:
 
 1. **Escrever o teste que falha** — o código do teste inteiro, num bloco.
 2. **Rodar e ver falhar** — o comando exato e a falha esperada
-   (`ModuleNotFoundError`, `AssertionError` sobre o campo X).
+   (`AssertionError` sobre o campo X; `ModuleNotFoundError` só quando o módulo
+   ausente é a unidade sob teste).
 3. **Código mínimo** — o código inteiro, num bloco, com o caminho do arquivo.
 4. **Rodar e ver passar** — o mesmo comando.
 5. **Gates vizinhos** — os comandos da seção de `docs/gates-por-mudanca.md` que a

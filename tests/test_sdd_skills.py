@@ -190,6 +190,22 @@ def test_revisao_de_build_e_ship():
     assert "unidade sob teste" in build
 
 
+def test_revisao_de_define_explore_plan_ship():
+    define = _texto_da_skill("sdd-define")
+    assert "leitura do operador" in define
+    assert "mensurável no ship" in define
+    assert "`approaches[].id`" in _texto_da_skill("sdd-explore")
+    plan = _texto_da_skill("sdd-plan")
+    assert "TestClasse::test_x" in plan and "`[...]`" in plan
+    ship = _texto_da_skill("sdd-ship")
+    assert "regra 21" in ship
+    assert "previsão inteira" in ship
+    for opcao in ("merge local", "push e PR", "manter a branch", "descartar"):
+        assert opcao in ship, opcao
+    assert "confirmação digitada" in ship
+    assert "## Lições" in ship
+
+
 def test_credito_das_bases():
     """AgentSpec e superpowers creditados, com licenca e o que veio de cada um."""
     texto = (ROOT / "vendor" / "CREDITS.md").read_text(encoding="utf-8")

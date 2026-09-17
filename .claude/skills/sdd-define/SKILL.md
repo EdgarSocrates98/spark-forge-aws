@@ -22,9 +22,10 @@ se o requisito é bom. Isso é do operador.
 ## Campo por campo
 
 **`hypothesis`** — `claim`, `prediction` e `experiment`, os três juntos. A
-previsão é falsificável (diz o que se observa se a afirmação estiver errada) e o
-experimento diz o que vai rodar. É esta hipótese que o ship fecha, sem
-reescrevê-la.
+previsão é falsificável (diz o que se observa se a afirmação estiver errada),
+**mensurável no ship** (cada parte tem medida que o ship consegue rodar; parte
+que só se mede depois vira feature própria, não promessa) e o experimento diz o
+que vai rodar. É esta hipótese que o ship fecha, sem reescrevê-la.
 
 **`acceptance`** — um item por critério, `id` `AC<n>`, uma frase verificável e
 um `verified_by`:
@@ -72,7 +73,10 @@ Critério sobre Glue, Spark ou Iceberg cita a fonte, com a versão:
 
 O de `docs/sdd/README.md#o-laço-de-cada-fase`. Aqui: com `explore.md`
 presente, `sparkforge sdd stamp --repo . docs/sdd/<F>/define.md`; sempre
-`sparkforge sdd check --repo . --feature <F>`. Próximo passo: `sdd-design`.
+`sparkforge sdd check --repo . --feature <F>`. `status: ready` exige zero
+recusa **e** a leitura do operador: mostre o define inteiro e espere o "pode
+seguir". Zero recusa sozinho é forma, não sign-off. Próximo passo:
+`sdd-design`.
 
 ## Perfil operator
 

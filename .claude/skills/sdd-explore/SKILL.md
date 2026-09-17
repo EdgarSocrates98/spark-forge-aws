@@ -56,7 +56,8 @@ custa mais caro — mas o explore é opcional: se o pedido já está claro, pule
 
 - `approaches`: `id`, `summary` e `tradeoffs` de cada abordagem considerada,
   inclusive as rejeitadas.
-- `chosen`: o `id` que o operador aprovou.
+- `chosen`: o `id` que o operador aprovou — igual a um dos `approaches[].id`,
+  letra por letra.
 - O corpo: as perguntas feitas, as respostas, e por que a escolhida venceu.
 
 Nenhuma nota de clareza, nenhum "confiança 0,9". Número que o próprio agente
