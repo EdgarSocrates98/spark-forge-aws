@@ -692,6 +692,37 @@ usuário, a opção *None* de "Default subagent model" é de um admin da organiz
 arquivo versionado deste repositório impede qualquer uma das duas. Ver
 [`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md).
 
+## SDD próprio — especificar antes de construir
+
+O SparkForge tem o próprio spec-driven development, com gate determinístico: o agente
+escreve os artefatos e o pacote confere o que dá para conferir, recusando o resto por
+nome. Nenhuma fase dá nota a si mesma.
+
+| Fase | Skill | Artefato |
+|---|---|---|
+| explorar (opcional) | `sdd-explore` | `explore.md` |
+| requisitos e hipótese | `sdd-define` | `define.md` |
+| arquitetura e manifesto | `sdd-design` | `design.md` |
+| tarefas com teste | `sdd-plan` | `plan.md` |
+| TDD, vermelho antes do verde | `sdd-build` | `build_report.md` |
+| registros e desfecho da hipótese | `sdd-ship` | `ship.md` |
+
+Três verbos, na CLI e como tools MCP:
+
+```bash
+sparkforge sdd check --repo . --feature <F>   # recusas e lacunas; ok só com zero de cada
+sparkforge sdd status --repo .                # a fase de cada feature e a cascata
+sparkforge sdd stamp --repo . <artefato>      # grava o sha256 do upstream
+```
+
+Dois perfis. **dev**: mudança neste repositório, com artefatos em `docs/sdd/<FEATURE>/`.
+É o fluxo de desenvolvimento do projeto, e substitui aqui o ciclo de spec e plano do
+superpowers e o plugin AgentSpec (desligado em `.claude/settings.json`; o histórico dele
+está em `docs/sdd/archive/agentspec/`, e `docs/superpowers/specs/` e `plans/` estão
+congelados). **operator**: mudança num job do operador, com a spec em
+`.sparkforge/sdd/<FEATURE>/` e a alteração sempre por `sparkforge change sandbox`, nunca
+na árvore dele. Fluxo completo em [`docs/sdd/README.md`](docs/sdd/README.md).
+
 ## Instalação
 
 ### Instalar no próprio repositório

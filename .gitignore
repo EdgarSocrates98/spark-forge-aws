@@ -52,6 +52,10 @@ node_modules/
 # Quarentena da cauda cortada por uma queda (`sparkforge.durable.append_line`):
 # evidencia local do que a queda interrompeu, nunca estado do case.
 **/.sparkforge/**/*.torn
+# Journal da raiz: num repositorio de operador ele e a trilha do case; aqui ele so
+# registra os verbos rodados durante o desenvolvimento (carimbos, checks), e nao
+# e artefato do projeto.
+.sparkforge/journal.jsonl
 .tokensave
 
 # Material de referencia sigiloso -- nunca versionar neste repositorio publico.

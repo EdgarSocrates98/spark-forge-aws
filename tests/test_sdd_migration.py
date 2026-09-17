@@ -44,3 +44,10 @@ def test_documentos_de_entrada_apontam_o_sdd():
         assert "sdd-define" in texto, nome
         assert "sparkforge sdd check" in texto, nome
         assert "fluxo SDD em `.claude/sdd/`" not in texto, nome
+
+
+def test_readme_e_journal():
+    texto = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "sdd-define" in texto and "sparkforge sdd check" in texto
+    ignorados = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert ".sparkforge/journal.jsonl" in ignorados

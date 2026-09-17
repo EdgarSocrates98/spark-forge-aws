@@ -536,7 +536,7 @@ repositório. **Clonar é a instalação inteira**: não há `npm install`, não
 | Mensagem de commit comprimida | `/caveman-commit` |
 | Revisão de diff comprimida | `/caveman-review` |
 | Comprimir um arquivo de memória (`CLAUDE.md`, notas) | `/caveman-compress <arquivo>` |
-| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` |
+| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` (para mudança no próprio SparkForge, o fluxo é o SDD do repositório: skills `sdd-*` e `sparkforge sdd check`, em [`docs/sdd/README.md`](docs/sdd/README.md)) |
 | Delegar a subagente comprimido | skill `cavecrew` → `cavecrew-investigator`, `cavecrew-builder`, `cavecrew-reviewer` |
 | Voltar ao português normal | `stop caveman` ou `normal mode` |
 
