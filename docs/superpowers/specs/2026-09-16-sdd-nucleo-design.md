@@ -195,7 +195,7 @@ Reexecutar `green` fica fora de A (executar código é outra classe de efeito); 
 | `schema_invalid` | frontmatter ausente, YAML quebrado (com linha) ou fora do schema | todas |
 | `phase_out_of_order` | fase existe sem a anterior em `status: ready` ou `done` | todas |
 | `upstream_missing` | `upstream.path` não existe | todas menos explore |
-| `upstream_stale` | `upstream.sha256` ≠ sha256 atual do upstream | todas menos explore |
+| `upstream_stale` | `upstream.sha256` ≠ sha256 **de texto** do upstream (`\r\n` normalizado para `\n`, o `text_sha256` de `sparkforge/receipt/_hash.py`) | todas menos explore |
 | `acceptance_uncovered` | acceptance id do define ausente de todos os `covers` **da fase conferida** (conferido separadamente no design e no plan) | design, plan |
 | `task_without_test` | task do plan sem `test` | plan |
 | `verified_by_dangling` | `kind: test` aponta arquivo inexistente ou função ausente (conferido por `ast`, sem importar) **depois do build** — antes disso é `unresolved: test_not_written` | ship |
@@ -208,6 +208,10 @@ Reexecutar `green` fica fora de A (executar código é outra classe de efeito); 
 | `registry_unchecked` | ship não lista registro que `change_kinds.yaml` exige para os `change_kinds` do define | ship |
 | `case_missing` | `profile: operator` sem `case_id`, ou case inexistente | define |
 | `change_missing` | `profile: operator` sem `change_id`, ou id ausente de `.sparkforge/sandbox/` | build_report |
+
+**`explore` é opcional.** Ordem exigida: define → design → plan → build_report →
+ship. O define só declara `upstream` quando `explore.md` existe. `feature`
+pedida que não existe é erro de uso do verbo, não código desta tabela.
 
 `unresolved` quando o gate **não consegue decidir**:
 
@@ -247,8 +251,10 @@ Um teste trava a deriva: todo título `## ` de `docs/gates-por-mudanca.md`
 
 - `stamp` existe porque sha256 calculado à mão por agente erra, e cada erro vira
   `upstream_stale` falso. Grava `started`/`finished` no journal.
-- `check` e `status` aceitam `detail_level` (`summary|normal|full`). Nenhuma
-  afirmação de redução sem `economy report` (regra 28).
+- **Sem `detail_level`.** No código, a flag só existe em verbo que devolve
+  facts (`_add_detail_level` em `sparkforge/adapters/cli.py`), e a projeção
+  `summary` trabalha sobre `provenance`, que recusa de SDD não tem. Mesmo
+  tratamento de `judge`, `rules lookup` e `debate referee`.
 - `status` diz, por feature, a fase atual, o `status` e as recusas que impedem
   avançar.
 
@@ -268,14 +274,18 @@ Um teste trava a deriva: todo título `## ` de `docs/gates-por-mudanca.md`
   seção de tool/verbo, e a referência gerada);
 - uma linha na tabela de verbos do `CLAUDE.md` (teto em
   `tests/test_bootstrap_budget.py`);
-- arquivos de teste novos em `LOTES` (`tests/test_suite_batches.py`);
+- nenhuma mudança em `LOTES`: `tests/test_sdd_*.py` já cai no lote `g-z`
+  (`tests/test_suite_batches.py`);
 - `python scripts/check_vnext_claims.py` antes do commit (arquivo `.py` novo
   move alegações).
 
 ## 9. Testes
 
-- **Uma fixture por recusa** em `tests/fixtures/sdd/<codigo>/`, que dispara
-  exatamente aquela recusa, e uma feature limpa que passa sem nada.
+- **Uma feature sintética por recusa**, montada em `tmp_path` por um construtor
+  de teste, que dispara exatamente aquela recusa, e uma feature limpa que passa
+  sem nada. Não há fixture estática: o hash de upstream em arquivo versionado é
+  o caso que o checkout do Windows com `core.autocrlf=true` já quebrou uma vez
+  (PR #63).
 - **Cascata:** editar `define.md` torna `design.md` `upstream_stale`; `stamp`
   resolve.
 - **`verified_by`:** conferido por `ast` contra arquivo de teste sintético,
@@ -291,11 +301,11 @@ Todas as fixtures são sintéticas (repo público).
 
 ## 10. Critérios de aceite de A
 
-1. Cada código das tabelas do §5 tem fixture que o produz e só ele.
+1. Cada código das tabelas do §5 tem feature sintética que o produz e só ele.
 2. A feature limpa sai `ok: true`, sem `refused` nem `unresolved`.
 3. `stamp` seguido de `check` elimina `upstream_stale`.
 4. `check`, `status` e `stamp` existem na CLI e no MCP com o mesmo payload.
-5. `surface.lock`, referência gerada, `CLAUDE.md` e `LOTES` atualizados, e os
+5. `surface.lock`, referência gerada e `CLAUDE.md` atualizados, e os
    gates de `docs/gates-por-mudanca.md` aplicáveis passam.
 
 ## 11. Fora de escopo
