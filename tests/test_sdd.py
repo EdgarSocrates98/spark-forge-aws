@@ -1156,6 +1156,68 @@ def test_perfil_dev_nao_pede_case_nem_change(tmp_path):
     assert _codigos(check(tmp_path)) == ([], [])
 
 
+def _relatorio_de_mudanca(repo: Path, base: str, ident: str, novos=(), resolvidos=()) -> None:
+    """Grava o relatorio que `change sandbox` (ou `change propose`) deixaria."""
+    nome = "report.json" if base == "sandbox" else "evidence/sandbox_report.json"
+    arquivo = repo / ".sparkforge" / base / ident / nome
+    arquivo.parent.mkdir(parents=True, exist_ok=True)
+    dado = {
+        "id": ident,
+        "new": [{"rule_id": r, "subject": {"file": "job.py"}} for r in novos],
+        "resolved": [{"rule_id": r, "subject": {"file": "job.py"}} for r in resolvidos],
+    }
+    arquivo.write_bytes(json.dumps(dado).encode("utf-8"))
+
+
+def _plano_operator(tmp_path):
+    """Feature operator cortada no plan."""
+    caminhos = feature_limpa(tmp_path, "operator")
+    for fase in ("build_report", "ship"):
+        caminhos[fase].unlink()
+    return caminhos
+
+
+def _prova(caminhos, prova) -> None:
+    meta = _meta(caminhos["plan"])
+    meta["tasks"][0].pop("test", None)
+    meta["tasks"][0]["proof"] = prova
+    _reescreve(caminhos["plan"], tasks=meta["tasks"])
+
+
+def test_proof_de_tarefa_operator(tmp_path):
+    caminhos = _plano_operator(tmp_path)
+    # finding: antes do sandbox, lacuna; com a regra saindo no relatorio, limpo
+    _prova(caminhos, {"kind": "finding", "ref": "S1#SF-PY-012"})
+    assert _codigos(check(tmp_path)) == ([], ["finding_not_observed"])
+    _relatorio_de_mudanca(tmp_path, "sandbox", "S1", resolvidos=["SF-PY-012"])
+    assert _codigos(check(tmp_path)) == ([], [])
+    # regra que tambem entra em new nao saiu
+    _relatorio_de_mudanca(
+        tmp_path, "sandbox", "S1", novos=["SF-PY-012"], resolvidos=["SF-PY-012"]
+    )
+    assert _codigos(check(tmp_path)) == ([], ["finding_not_observed"])
+    # sem rule_id o ref nao tem forma
+    _prova(caminhos, {"kind": "finding", "ref": "S1"})
+    assert [(r["code"], r["field"]) for r in check(tmp_path)["refused"]] == [
+        ("schema_invalid", "tasks/0/proof/ref"),
+    ]
+    # `#<rule_id>` sem build ainda nao tem change_id para ler
+    _prova(caminhos, {"kind": "finding", "ref": "#SF-PY-012"})
+    assert _codigos(check(tmp_path)) == ([], ["finding_not_observed"])
+    # funcval e fact reaproveitam as conferencias do define
+    _prova(caminhos, {"kind": "funcval", "ref": "compare.json"})
+    assert _codigos(check(tmp_path)) == ([], ["funcval_not_run"])
+    _prova(caminhos, {"kind": "fact", "ref": "facts.json#kind:pyspark.conf_set"})
+    assert _codigos(check(tmp_path)) == ([], ["fact_not_collected"])
+    (tmp_path / "facts.json").write_bytes(b'[{"id": "f1", "kind": "pyspark.conf_set"}]')
+    assert _codigos(check(tmp_path)) == ([], [])
+    # no dev, proof nao substitui test
+    dev = tmp_path / "dev"
+    caminhos_dev = _ate(dev, "plan")
+    _prova(caminhos_dev, {"kind": "fact", "ref": "facts.json#kind:x"})
+    assert _codigos(check(dev)) == (["schema_invalid", "task_without_test"], [])
+
+
 def test_status_mostra_fase_e_bloqueio(tmp_path):
     feature_limpa(tmp_path, feature="F1")
     caminhos = _ate(tmp_path / "outro", "design")  # repo separado so para montar

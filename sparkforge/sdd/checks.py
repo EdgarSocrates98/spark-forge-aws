@@ -324,13 +324,18 @@ def _gate_verified_by(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
         elif prova["kind"] == "fact":
             _conferir_fact(ctx, artefato, referencia)
         elif prova["kind"] == "funcval":
-            alvo = resolve_within(ctx.repo, referencia)
-            if alvo is None or not alvo.is_file():
-                ctx.lacuna("funcval_not_run", artefato.path,
-                           f"rode `sparkforge funcval compare --out {referencia}` para "
-                           f"{item['id']}")
-                continue
-            _conferir_funcval(ctx, artefato, campo, alvo, referencia)
+            _conferir_ref_funcval(ctx, artefato, campo, referencia, item["id"])
+
+
+def _conferir_ref_funcval(
+    ctx: _Contexto, artefato: Artifact, campo: str, referencia: str, dono: str
+) -> None:
+    alvo = resolve_within(ctx.repo, referencia)
+    if alvo is None or not alvo.is_file():
+        ctx.lacuna("funcval_not_run", artefato.path,
+                   f"rode `sparkforge funcval compare --out {referencia}` para {dono}")
+        return
+    _conferir_funcval(ctx, artefato, campo, alvo, referencia)
 
 
 def _gate_manifest(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
@@ -372,15 +377,94 @@ def _gate_cobertura(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        f"{item['id']} do define nao aparece em nenhum covers do {fase}")
 
 
+def _relatorio_da_mudanca(repo: Path, ident: str) -> dict[str, Any] | None:
+    for pasta, nome in _pastas_da_mudanca(repo, ident):
+        try:
+            dado = json.loads((pasta / nome).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(dado, dict):
+            return dado
+    return None
+
+
+def _regras(itens: Any) -> set[str]:
+    if not isinstance(itens, list):
+        return set()
+    return {str(i["rule_id"]) for i in itens if isinstance(i, dict) and i.get("rule_id")}
+
+
+def _nao_movidas(relatorio: dict[str, Any] | None, regras: list[str]) -> list[str]:
+    """As regras que o relatorio NAO mostra saindo: fora de `resolved`, ou em `new`."""
+    if relatorio is None:
+        return list(regras)
+    saiu = _regras(relatorio.get("resolved"))
+    entrou = _regras(relatorio.get("new"))
+    return [regra for regra in regras if regra not in saiu or regra in entrou]
+
+
+_ONDE_O_RELATORIO_MORA = (
+    ".sparkforge/sandbox/<id>/report.json ou "
+    ".sparkforge/proposal/<id>/evidence/sandbox_report.json"
+)
+
+
+def _conferir_achado(
+    ctx: _Contexto, artefato: Artifact, campo: str, referencia: str, dono: str
+) -> None:
+    ident, _, regra = referencia.partition("#")
+    if not regra:
+        ctx.recusa("schema_invalid", artefato.path, f"{campo}/ref",
+                   f"'{referencia}' nao e <change_id>#<rule_id>; use #<rule_id> para o "
+                   "change_id do build_report")
+        return
+    if _ship_feito(ctx):
+        return  # referencia historica: o sandbox pode ter sido limpo
+    if not ident:
+        build = ctx.artefatos.get("build_report")
+        ident = str((build.meta.get("change_id") if build is not None else None) or "")
+    if not _nao_movidas(_relatorio_da_mudanca(ctx.repo, ident), [regra]):
+        return
+    alvo = ident or "<change_id>"
+    if _build_pronto(ctx):
+        ctx.recusa("moved_not_observed", artefato.path, campo,
+                   f"{regra} nao sai no relatorio de {alvo} ({_ONDE_O_RELATORIO_MORA}); "
+                   "a regra precisa estar em resolved e fora de new")
+    else:
+        ctx.lacuna("finding_not_observed", artefato.path,
+                   f"{dono} prova que {regra} sai; rode `sparkforge change sandbox` e "
+                   f"registre o id em change_id ({_ONDE_O_RELATORIO_MORA})")
+
+
+def _conferir_prova(
+    ctx: _Contexto, artefato: Artifact, campo: str, prova: dict[str, Any], dono: str
+) -> None:
+    if prova["kind"] == "funcval":
+        _conferir_ref_funcval(ctx, artefato, campo, prova["ref"], dono)
+    elif prova["kind"] == "fact":
+        _conferir_fact(ctx, artefato, prova["ref"])
+    else:
+        _conferir_achado(ctx, artefato, campo, prova["ref"], dono)
+
+
 def _gate_task_test(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    operador = artefato.meta["profile"] == "operator"
     for indice, tarefa in enumerate(artefato.meta["tasks"]):
         teste = tarefa.get("test")
+        prova = tarefa.get("proof")
         campo = f"tasks/{indice}/test"
-        if not teste:
+        if prova and not operador:
+            ctx.recusa("schema_invalid", artefato.path, f"tasks/{indice}/proof",
+                       "proof so vale no perfil operator; no dev a tarefa declara test")
+        if teste:
+            _conferir_teste(ctx, artefato, campo, f"{teste['path']}::{teste['name']}",
+                            tarefa["id"])
+        if prova and operador:
+            _conferir_prova(ctx, artefato, f"tasks/{indice}/proof", prova, tarefa["id"])
+        elif not teste:
+            extra = " (no operator, ou proof: funcval, fact ou finding)" if operador else ""
             ctx.recusa("task_without_test", artefato.path, campo,
-                       f"{tarefa['id']} precisa do teste que falha antes do codigo")
-            continue
-        _conferir_teste(ctx, artefato, campo, f"{teste['path']}::{teste['name']}", tarefa["id"])
+                       f"{tarefa['id']} precisa do teste que falha antes do codigo{extra}")
 
 
 def _gate_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:

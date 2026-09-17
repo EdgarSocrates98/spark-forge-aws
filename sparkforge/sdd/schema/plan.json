@@ -20,6 +20,15 @@
               "path": {"type": "string", "minLength": 1},
               "name": {"type": "string", "minLength": 1}
             }
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "ref"],
+            "properties": {
+              "kind": {"enum": ["funcval", "fact", "finding"]},
+              "ref": {"type": "string", "minLength": 1}
+            }
           }
         }
       }
