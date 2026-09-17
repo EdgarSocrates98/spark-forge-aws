@@ -42,6 +42,28 @@ def _aceito_pelo_parser(parser: argparse.ArgumentParser, verbo: str) -> bool:
     return False
 
 
+# o comando inteiro entre crases; `<...>` vira valor ficticio antes de separar
+_COMANDO_CITADO = re.compile(r"`sparkforge ([^`]*)`")
+_MARCADOR = re.compile(r"<[^<>]*>")
+
+
+def _subcomandos(parser: argparse.ArgumentParser) -> dict[str, argparse.ArgumentParser]:
+    for acao in parser._actions:
+        if isinstance(acao, argparse._SubParsersAction):
+            return acao.choices
+    return {}
+
+
+def _flags_recusadas(parser: argparse.ArgumentParser, comando: str) -> list[str]:
+    """As `--flags` do comando citado que o subparser do proprio verbo nao conhece."""
+    tokens = _MARCADOR.sub("X", comando).split()
+    atual = parser
+    while tokens and tokens[0] in _subcomandos(atual):
+        atual = _subcomandos(atual)[tokens.pop(0)]
+    conhecidas = {opcao for acao in atual._actions for opcao in acao.option_strings}
+    return [token for token in tokens if token.startswith("--") and token not in conhecidas]
+
+
 def test_seis_skills_existem():
     for nome in SKILLS_SDD:
         texto = _texto_da_skill(nome)
@@ -77,13 +99,21 @@ def test_templates_nao_viram_feature_no_repositorio():
 
 
 def test_comandos_citados_existem(capsys):
-    """Todo `sparkforge <verbo> [<sub>]` entre crases nas skills sdd-* e aceito pelo parser."""
+    """Todo `sparkforge <verbo> [<sub>]` entre crases nas skills sdd-* e aceito pelo parser,
+    e toda `--flag` citada existe no subparser daquele verbo."""
     parser = build_parser()
     for nome in SKILLS_SDD:
-        verbos = _verbos_citados(_texto_da_skill(nome))
+        texto = _texto_da_skill(nome)
+        verbos = _verbos_citados(texto)
         assert "sdd check" in verbos, nome
         recusados = [verbo for verbo in verbos if not _aceito_pelo_parser(parser, verbo)]
         assert not recusados, (nome, recusados)
+        flags = [
+            (comando, flag)
+            for comando in _COMANDO_CITADO.findall(texto)
+            for flag in _flags_recusadas(parser, comando)
+        ]
+        assert not flags, (nome, flags)
 
 
 def test_o_detector_recusa_verbo_inventado(capsys):
@@ -96,6 +126,16 @@ def test_o_detector_recusa_verbo_inventado(capsys):
     assert not _aceito_pelo_parser(parser, "sdd verify")
     assert _aceito_pelo_parser(parser, "sdd check")
     assert _aceito_pelo_parser(parser, "judge")
+
+
+def test_o_detector_recusa_flag_inventada():
+    """Guarda da conferencia de flags: sem isto, o AC3 de SDD_SKILLS passaria por vacuidade."""
+    parser = build_parser()
+    assert _flags_recusadas(parser, "funcval compare --plan <p> --out <ref do AC>") == []
+    assert _flags_recusadas(parser, "change propose --sandbox <id> --funcaval x") == ["--funcaval"]
+    assert _flags_recusadas(parser, "sdd check --repo . --raiz docs") == ["--raiz"]
+    # flag de outro verbo nao vale aqui
+    assert _flags_recusadas(parser, "benchmark --before a --funcval b") == ["--funcval"]
 
 
 def test_credito_das_bases():
