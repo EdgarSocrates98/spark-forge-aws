@@ -29,8 +29,10 @@ fora da matriz.
 
 A matriz é indexada pelo número como a página o escreve. O rótulo que a
 Clusters API e a Jobs API carregam em `spark_version` tem outra forma
-(`15.4.x-scala2.12`). A normalização guarda os segmentos numéricos iniciais
-(`15.4`). Quando o rótulo termina em `.0` e a matriz tem só o número maior
+(`15.4.x-scala2.12`): a referência de `clusters/create` documenta o campo como
+"The Spark version of the cluster, e.g. `3.3.x-scala2.11`" (lida em
+2026-09-18), o número do runtime seguido de `.x-scala` e da versão do Scala. A
+normalização guarda os segmentos numéricos iniciais (`15.4`). Quando o rótulo termina em `.0` e a matriz tem só o número maior
 (`18.0` contra `18`), a busca tenta o número maior. Versão fora da matriz
 deixa `spark` vazio: a derivação não inventa.
 
@@ -57,3 +59,4 @@ deixa `spark` vazio: a derivação não inventa.
 - Get task context in a UDF. https://docs.databricks.com/aws/en/udf/udf-task-context (retrieved 2026-09-17)
 - What is Photon? https://docs.databricks.com/aws/en/compute/photon (retrieved 2026-09-17)
 - Adaptive query execution. https://docs.databricks.com/aws/en/optimizations/aqe (retrieved 2026-09-17)
+- Clusters API, create. https://docs.databricks.com/api/workspace/clusters/create (retrieved 2026-09-18)

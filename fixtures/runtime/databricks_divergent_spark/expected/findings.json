@@ -114,6 +114,10 @@
       {
         "url": "https://docs.databricks.com/aws/en/compute/photon",
         "retrieved": "2026-09-17"
+      },
+      {
+        "url": "https://docs.databricks.com/api/workspace/clusters/create",
+        "retrieved": "2026-09-18"
       }
     ],
     "action": {

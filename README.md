@@ -80,7 +80,10 @@ de um deles vira divergência reportada — nunca valor substituído em silênci
 **Databricks.** `--databricks <versão>` declara o Databricks Runtime (`15.4` ou
 `15.4.x-scala2.12`) e deriva a versão do Spark pela matriz em
 `knowledge/databricks/runtime-matrix.md`; a versão também é lida do event log
-quando ele traz `spark.databricks.clusterUsageTags.sparkVersion`.
+quando ele traz `spark.databricks.clusterUsageTags.sparkVersion` — a fonte oficial
+documenta essa chave só como propriedade local de TaskContext, e a presença dela no
+event log entregue por cluster log delivery ainda não foi confirmada (lacuna U1):
+sem ela, a plataforma só se sabe pela flag.
 `--photon on|off` declara o Photon: ligado, as regras de plano saem em `skipped`
 com `databricks.photon.unresolved`; não declarado, SF-ENV-006 avisa. Fora deste
 incremento: `_delta_log`, Jobs API, billing em DBU e coleta pela REST API.

@@ -6000,19 +6000,19 @@
       "doc": "docs/harness/ICEBERG-GAP.md",
       "id": "VNX-767",
       "line": 116,
-      "note": "quantas fontes o lock vigia hoje. Remedido na entrega do tune com memoria, split e broadcast (2026-09-14): nenhuma tool nova, mas o `sparkforge_tune` ganhou o parametro `headroom` e onze recusas nomeadas no outputSchema. `tools.py`, `_core.py`, `cli.py`, `tuning/spark_conf.py`, `facts/spark_plan.py`, `facts/sql_metrics.py` e `facts/parquet_footer.py` cresceram, e os testes `test_tuning_spark_conf.py` e `test_facts_spark_plan.py` tambem. A fonte `BroadcastExchangeExec.scala` entrou em `knowledge/sources.lock.json`. Numero relido pela propria prova. Remedido na entrega do tune com timeouts e speculation (2026-09-14): nenhuma tool nova, mas o `sparkforge_tune` ganhou quatorze recusas nomeadas e a descricao nova. `tools.py`, `cli.py`, `tuning/spark_conf.py` e `facts/event_log.py` cresceram, e os testes `test_facts_event_log.py`, `test_tuning_spark_conf.py` e `test_fixtures_golden_mcp_parity.py` tambem. A fonte `TaskSetManager.scala` entrou em `knowledge/sources.lock.json` pela `SF-UI-007`. Numero relido pela propria prova. Remedido na matriz Databricks Runtime -> Spark (feature DATABRICKS_SPARK, T1, 2026-09-17): as quatro fontes de `knowledge/databricks/runtime-matrix.md` (release notes, UDF task context, Photon e AQE) entraram em `knowledge/sources.lock.json` via `scripts/refresh_knowledge.py --update --offline`, e o total foi de 249 para 253. Numero relido pela propria prova.",
+      "note": "quantas fontes o lock vigia hoje. Remedido na entrega do tune com memoria, split e broadcast (2026-09-14): nenhuma tool nova, mas o `sparkforge_tune` ganhou o parametro `headroom` e onze recusas nomeadas no outputSchema. `tools.py`, `_core.py`, `cli.py`, `tuning/spark_conf.py`, `facts/spark_plan.py`, `facts/sql_metrics.py` e `facts/parquet_footer.py` cresceram, e os testes `test_tuning_spark_conf.py` e `test_facts_spark_plan.py` tambem. A fonte `BroadcastExchangeExec.scala` entrou em `knowledge/sources.lock.json`. Numero relido pela propria prova. Remedido na entrega do tune com timeouts e speculation (2026-09-14): nenhuma tool nova, mas o `sparkforge_tune` ganhou quatorze recusas nomeadas e a descricao nova. `tools.py`, `cli.py`, `tuning/spark_conf.py` e `facts/event_log.py` cresceram, e os testes `test_facts_event_log.py`, `test_tuning_spark_conf.py` e `test_fixtures_golden_mcp_parity.py` tambem. A fonte `TaskSetManager.scala` entrou em `knowledge/sources.lock.json` pela `SF-UI-007`. Numero relido pela propria prova. Remedido na matriz Databricks Runtime -> Spark (feature DATABRICKS_SPARK, T1, 2026-09-17): as quatro fontes de `knowledge/databricks/runtime-matrix.md` (release notes, UDF task context, Photon e AQE) entraram em `knowledge/sources.lock.json` via `scripts/refresh_knowledge.py --update --offline`, e o total foi de 249 para 253. Numero relido pela propria prova. Remedido no M8+M9 da R1 do DATABRICKS_SPARK (2026-09-18): a referencia `clusters/create` da API do Databricks entrou no lock, citada por knowledge/databricks/runtime-matrix.md e por SF-ENV-006. Numero relido pela propria prova, nunca ajustado a mao.",
       "proof": {
         "cmd": "python -c \"import json,pathlib; d=json.loads(pathlib.Path('knowledge/sources.lock.json').read_text(encoding='utf-8')); print(len(d if isinstance(d,list) else d.get('sources',d)))\"",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 253
+          "value": 254
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "253",
+      "text": "254",
       "type": "number"
     },
     {

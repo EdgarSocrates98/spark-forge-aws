@@ -1784,6 +1784,18 @@
         "SF-EMRK-001"
       ]
     },
+    "https://docs.databricks.com/api/workspace/clusters/create": {
+      "docs": [
+        "knowledge/databricks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-18"
+      ],
+      "rules": [
+        "SF-ENV-006"
+      ]
+    },
     "https://docs.databricks.com/aws/en/compute/photon": {
       "docs": [
         "knowledge/databricks/runtime-matrix.md"
