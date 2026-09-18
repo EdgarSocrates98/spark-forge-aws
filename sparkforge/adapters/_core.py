@@ -472,6 +472,12 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
         version = str(fact.attrs.get("version") or "").strip()
         return ("event_log", "spark_version", version) if version else None
 
+    # `spark.conf_effective` vem do `SparkListenerEnvironmentUpdate`, a
+    # observacao do Spark rodando -- por isso a fonte e `event_log`, igual ao
+    # ramo acima. `pyspark.conf_set` com a MESMA chave nao conta: e o codigo
+    # PEDINDO aquele valor, nao o cluster confirmando que rodou com ele, e o
+    # `.set()` pode nem ter tido efeito. Um event log real trazer esta chave e
+    # a lacuna U1 de knowledge/databricks/runtime-matrix.md.
     if fact.kind == "spark.conf_effective" and fact.attrs.get("key") == _DATABRICKS_VERSION_KEY:
         value = str(fact.attrs.get("value") or "").strip()
         return ("event_log", "databricks_runtime", value) if value else None
