@@ -10,14 +10,17 @@ A página de versões suportadas lista, por versão, a versão do Apache Spark, 
 data de lançamento e o fim de suporte. Lida em 2026-09-17, atualizada pela
 Databricks em 2026-09-11:
 
-| Databricks Runtime | Apache Spark | Lançamento | Fim de suporte |
-|---|---|---|---|
-| 19 | 4.2.0 | 2026-06-15 | definido na transição para LTS |
-| 18 LTS | 4.1.0 | 2026-06-10 | 2029-06-10 |
-| 17.3 LTS | 4.0.0 | 2025-10-22 | 2028-10-22 |
-| 16.4 LTS | 3.5.2 | 2025-05-09 | 2028-05-09 |
-| 15.4 LTS | 3.5.0 | 2024-08-19 | 2027-08-19 |
-| 14.3 LTS | 3.5.0 | 2024-02-01 | 2027-02-01 |
+| Databricks Runtime | LTS | Apache Spark | Lançamento | Fim de suporte |
+|---|---|---|---|---|
+| 19 | não | 4.2.0 | 2026-06-15 | definido na transição para LTS |
+| 18 | sim | 4.1.0 | 2026-06-10 | 2029-06-10 |
+| 17.3 | sim | 4.0.0 | 2025-10-22 | 2028-10-22 |
+| 16.4 | sim | 3.5.2 | 2025-05-09 | 2028-05-09 |
+| 15.4 | sim | 3.5.0 | 2024-08-19 | 2027-08-19 |
+| 14.3 | sim | 3.5.0 | 2024-02-01 | 2027-02-01 |
+
+A página escreve `18 LTS`, `17.3 LTS`...; aqui o sufixo vira a coluna LTS para
+que a chave seja a mesma do YAML e do guard de drift.
 
 A página não publica Python, Scala nem Delta por versão. Esses eixos ficam
 fora da matriz.
@@ -43,8 +46,10 @@ deixa `spark` vazio: a derivação não inventa.
   `runtime_engine = PHOTON` nas APIs, não como Photon aparece no event log. Por
   isso Photon é declarado (`--photon on|off`), não detectado.
 - `spark.sql.shuffle.partitions = auto` liga o auto-optimized shuffle, que
-  escolhe o número de partições pelo plano e pelo volume. É opt-in; o default
-  é `200`. O `tune` recusa derivar número fixo por cima de `auto`.
+  escolhe o número de partições pelo plano e pelo volume. A página "Adaptive
+  query execution" (https://docs.databricks.com/aws/en/optimizations/aqe,
+  lida em 2026-09-17) diz que é opt-in e que o default é `200`. O `tune`
+  recusa derivar número fixo por cima de `auto`.
 
 ## Fontes
 
