@@ -320,7 +320,8 @@ def test_divergencia_spark_registrada():
     )
     assert sinal.measures["distinct_versions"] == 2
     golden = ROOT / "fixtures" / "runtime" / "databricks_divergent_spark" / "expected"
-    disparadas = {f["rule_id"] for f in json.loads((golden / "findings.json").read_text(encoding="utf-8"))}
+    achados = json.loads((golden / "findings.json").read_text(encoding="utf-8"))
+    disparadas = {f["rule_id"] for f in achados}
     assert "SF-ENV-001" in disparadas
 
 

@@ -68,7 +68,10 @@ TERMOS_AWS = (
     "Glue", "GlueContext", "DPU", "G.1X", "G.2X", "EMR", "Lake Formation", "Athena",
     "DynamicFrame",
 )
-CAMPOS = ("proposed_change", "rollback", "validation", "explanation", "expected_effect", "risks", "tradeoffs")
+CAMPOS = (
+    "proposed_change", "rollback", "validation", "explanation", "expected_effect",
+    "risks", "tradeoffs",
+)
 EXCECOES = {
     "SF-PQ-002": (
         "o passo com DynamicFrame e condicional a leitura via DynamicFrame, que so "
