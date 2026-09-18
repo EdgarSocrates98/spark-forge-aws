@@ -156,6 +156,22 @@ def test_tune_pelo_mcp_aceita_a_recusa_auto(tmp_path):
     assert "shuffle_partitions_auto" in {r["reason"] for r in envelope.structured["refused"]}
 
 
+def _regras_do_judge(capsys, arquivo: Path, *flags: str) -> set[str]:
+    assert cli.main(["judge", "--facts", str(arquivo), *flags]) == 0
+    return {item["rule_id"] for item in json.loads(capsys.readouterr().out)["items"]}
+
+
+def test_judge_em_producao_julga_facts_de_ambiente(tmp_path, capsys):
+    # Os facts de `build_runtime` (`env.platform`, `env.runtime_signal`,
+    # `databricks.photon`) nao estao no arquivo: sao da deteccao. Um verbo que
+    # julga e os descarta deixa SF-ENV-001, 004, 005 e 006 so em fixture.
+    arquivo = tmp_path / "facts.json"
+    arquivo.write_text(json.dumps([_conf("spark.app.name", "x").to_dict()]), encoding="utf-8")
+    assert "SF-ENV-006" in _regras_do_judge(capsys, arquivo, "--databricks", "15.4")
+    declarado = _regras_do_judge(capsys, arquivo, "--databricks", "15.4", "--photon", "off")
+    assert "SF-ENV-006" not in declarado
+
+
 def _subparsers(parser):
     for acao in parser._actions:
         if isinstance(acao, argparse._SubParsersAction):

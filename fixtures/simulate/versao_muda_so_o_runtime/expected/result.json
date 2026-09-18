@@ -1,5 +1,13 @@
 {
-  "appeared": [],
+  "appeared": [
+    {
+      "rule_id": "SF-ENV-004",
+      "subject": {
+        "symbol": "spark",
+        "type": "job_run"
+      }
+    }
+  ],
   "changes": [
     {
       "facts_changed": 1,

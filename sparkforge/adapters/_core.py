@@ -813,6 +813,42 @@ def build_runtime_context(
     return context
 
 
+def _runtime_e_facts(
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    facts: list[Fact] | None = None,
+    emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
+) -> tuple[dict[str, Any], list[Fact]]:
+    """O runtime E os facts que vao ao `judge`: os recebidos mais os da deteccao.
+
+    `build_runtime` devolve, ao lado do contexto, os facts que o justificam --
+    `env.platform`, `env.runtime_signal` e `databricks.photon`. Sao eles que
+    SF-ENV-001, 004, 005 e 006 exigem, e nenhum extrator os escreve em arquivo:
+    um verbo que julga com `build_runtime_context` os descarta, e essas regras
+    so disparam em fixture. Todo verbo que julga passa por aqui, e nao por uma
+    copia da juncao em cada um.
+
+    Sem duplicar por id: um fact de ambiente que ja veio no arquivo (a saida de
+    um `scan` anterior, por exemplo) nao entra duas vezes.
+    """
+    context, ambiente = build_runtime(
+        glue, spark, python, iceberg, athena, facts=facts, emr=emr,
+        databricks=databricks, photon=photon,
+    )
+    unidos = list(facts or [])
+    vistos = {fact.id for fact in unidos}
+    for fact in ambiente:
+        if fact.id not in vistos:
+            vistos.add(fact.id)
+            unidos.append(fact)
+    return context.to_dict(), unidos
+
+
 # --------------------------------------------------------------------------- #
 # analyze pyspark
 # --------------------------------------------------------------------------- #
@@ -2250,9 +2286,8 @@ def glue_dependency_audit(path: str, glue: str) -> dict[str, Any]:
         )
 
     facts = collect_migration(alvo)
-    context = build_runtime_context(glue=glue, facts=facts)
-    runtime = context.to_dict()
-    findings = run_judge(facts, load_catalog(), runtime)
+    runtime, julgados = _runtime_e_facts(glue=glue, facts=facts)
+    findings = run_judge(julgados, load_catalog(), runtime)
 
     dependencias = [
         {
@@ -2768,8 +2803,8 @@ def finops_report(facts_path: str, job_name: str) -> dict[str, Any]:
         rules = load_catalog()
     except CatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
-    runtime = build_runtime_context(facts=facts).to_dict()
-    findings, _skipped = run_judge(facts, rules, runtime, return_skipped=True)
+    runtime, julgados = _runtime_e_facts(facts=facts)
+    findings, _skipped = run_judge(julgados, rules, runtime, return_skipped=True)
     return build_finops_report(facts, job_name=job_name, findings=findings)
 
 
@@ -3497,18 +3532,20 @@ def root_cause(
     except CatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
-    context = build_runtime_context(
+    # `fact_count` conta o que o operador ENTREGOU; os facts de ambiente da
+    # deteccao entram no julgamento e na evidencia, nao na contagem da entrada.
+    recebidos = len(fact_list)
+    runtime, fact_list = _runtime_e_facts(
         glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
         databricks=databricks, photon=photon,
     )
-    runtime = context.to_dict()
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
 
     saida = rank_root_causes(
         fact_list, findings, skipped, runtime, all_missing=all_missing
     )
     saida["runtime"] = runtime
-    saida["fact_count"] = len(fact_list)
+    saida["fact_count"] = recebidos
     if detail_level == "summary":
         # `summary` corta o TEXTO longo -- remediacao, validacao, rollback e o
         # `risks` da regra --, e nunca o resultado: `rule_id`, `severity`,
@@ -3582,8 +3619,11 @@ def proof_change(
     versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
                "athena": athena, "emr": emr, "databricks": databricks,
                "photon": photon}
-    runtime = build_runtime_context(**{**versoes, "facts": uniao}).to_dict()
-    runtime_depois = build_runtime_context(**{**versoes, "facts": depois}).to_dict()
+    # A contagem e do que o operador entregou, como em `root_cause`; os facts de
+    # ambiente da deteccao entram nos dois julgamentos e na evidencia.
+    recebidos = {"union": len(uniao), "after": len(depois)}
+    runtime, uniao = _runtime_e_facts(**{**versoes, "facts": uniao})
+    runtime_depois, depois = _runtime_e_facts(**{**versoes, "facts": depois})
     veredictos, _ = run_judge(uniao, regras, runtime, return_skipped=True)
     achados_depois, pulados_depois = run_judge(depois, regras, runtime_depois, return_skipped=True)
 
@@ -3600,7 +3640,7 @@ def proof_change(
         emitted_by=_modulo_por_kind(),
         unresolved=lacunas,
     )
-    saida["fact_count"] = {"union": len(uniao), "after": len(depois)}
+    saida["fact_count"] = recebidos
     return saida
 
 
@@ -4251,7 +4291,7 @@ def _simulate_lado(
     from sparkforge.simulate import strip_derived
 
     derivados = run_fuse(strip_derived(facts))
-    runtime = build_runtime_context(**{**versoes, "facts": derivados}).to_dict()
+    runtime, derivados = _runtime_e_facts(**{**versoes, "facts": derivados})
     achados, pulados = run_judge(derivados, regras, runtime, return_skipped=True)
     return [a.to_dict() for a in achados], list(pulados), runtime
 
@@ -4387,7 +4427,7 @@ def pack_check(pack_dir: str) -> dict[str, Any]:
     disparos: dict[str, set[str]] = {}
     for caso in casos:
         fatos = _merge_facts_files([str(caso.facts_path)])
-        runtime = build_runtime_context(None, None, None, None, None, facts=fatos).to_dict()
+        runtime, fatos = _runtime_e_facts(facts=fatos)
         disparos[caso.name] = {achado.rule_id for achado in run_judge(fatos, regras, runtime)}
     saida = evaluate(pack, disparos, casos)
     saida["refused"] = None
@@ -4530,11 +4570,13 @@ def judge_findings(
     # -- e `run_judge` que chama `in_scope`. Os facts que serao julgados sao os
     # mesmos que alimentam a deteccao: uma regra guardada por `glue: "*"` passa
     # a avaliar quando o Terraform ja disse qual e a versao, sem flag nenhuma.
-    context = build_runtime_context(
+    # Os facts de ambiente da deteccao entram no julgamento E no `plan_digest`
+    # abaixo: um achado SF-ENV-00x sem o fact que ele cita seria evidencia
+    # pendurada.
+    runtime, fact_list = _runtime_e_facts(
         glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
         databricks=databricks, photon=photon,
     )
-    runtime = context.to_dict()
 
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
     finding_dicts = [f.to_dict() for f in findings]
@@ -4786,11 +4828,12 @@ def arbitrate_findings(
     finding_list, fact_list = _findings_e_uniao_de_facts(
         findings, findings_path, facts, facts_path
     )
-    context = build_runtime_context(
+    # A uniao que `judge` julgou inclui os facts de ambiente da deteccao; sem
+    # eles aqui, a claim de um achado SF-ENV-00x sairia desancorada.
+    runtime, fact_list = _runtime_e_facts(
         glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
         databricks=databricks, photon=photon,
     )
-    runtime = context.to_dict()
 
     # Import local, e nao no topo: `sparkforge.agentic.executor` arrasta
     # `arbitration`, `blackboard`, `decision` e `budget` inteiros, e quem
@@ -4851,10 +4894,10 @@ def debate_start(
     finding_list, fact_list = _findings_e_uniao_de_facts(
         findings, findings_path, facts, facts_path
     )
-    runtime = build_runtime_context(
+    runtime, fact_list = _runtime_e_facts(
         glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
         databricks=databricks, photon=photon,
-    ).to_dict()
+    )
     par = (
         [r.strip() for r in rules.split(",")] if isinstance(rules, str) else list(rules or [])
     )
