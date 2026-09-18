@@ -1,0 +1,60 @@
+[
+  {
+    "rule_id": "SF-PLAN-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "UDF vetorizada no plano — nativo ainda é mais rápido",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 23,
+      "symbol": "(4) ArrowEvalPython",
+      "node_id": 4,
+      "operator": "ArrowEvalPython",
+      "relation": ""
+    },
+    "evidence": [
+      "f_854281"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "`ArrowEvalPython` é `pandas_udf`: transferência colunar por Arrow em vez de pickle linha a linha. É a forma correta quando uma UDF é necessária, e por isso a severidade é baixa. O achado existe porque o runtime Python continua no caminho: na medição da AWS, 0,59 s contra 0,087 s do Spark SQL nativo. Não é defeito; é um candidato a ganho que só vale investigar depois dos P0-P2.",
+    "proposed_change": [
+      "Verificar se a lógica é expressável com funções nativas ou higher-order functions sobre array/map.",
+      "Se não for, manter — pandas_udf já é a escolha certa."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reescrita nativa pode divergir no tratamento de null e de tipo em borda."
+    ],
+    "tradeoffs": [
+      "Trocar pandas_udf por expressão nativa pode reduzir muito a legibilidade para ganho pequeno se a UDF não estiver no caminho quente."
+    ],
+    "validation": [
+      "Comparar resultado linha a linha numa amostra com nulls e bordas.",
+      "Medir antes e depois; sem medição, a troca não se justifica nesta severidade."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html",
+        "retrieved": "2026-07-31"
+      }
+    ],
+    "action": {
+      "kind": "code.replace_udf_with_native",
+      "target": "pyspark.udf",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

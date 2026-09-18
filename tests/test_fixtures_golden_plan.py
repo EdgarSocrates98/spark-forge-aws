@@ -35,6 +35,8 @@ REQUIRED_FIXTURES = {
     "python_udf_in_plan",
     "cartesian_join",
     "explain_cost_join",
+    "photon_join",
+    "photon_udf",
 }
 
 

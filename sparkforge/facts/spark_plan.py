@@ -64,8 +64,17 @@ EMITTED_KINDS = frozenset(
         "plan.unresolved",
         "plan.analyzed",
         "plan.join_side_stats",
+        "plan.photon",
     }
 )
+
+# Photon no plano fisico: nos de prefixo `Photon` e a secao
+# `== Photon Explanation ==` no fim do `explain("formatted")`. A forma e a
+# observada em Databricks Free Edition (serverless, Spark 4.2.0) e registrada em
+# `knowledge/databricks/runtime-matrix.md` §4; vale para o observado, nao para
+# todo runtime Photon (U1 e U2 do define de DATABRICKS_PHOTON_PLAN).
+_PHOTON_PREFIX = "Photon"
+_PHOTON_EXPLANATION = "photon explanation"
 
 # Operadores de leitura. `FileScan <fmt>` e a forma do modo simple; `Scan <fmt>`
 # e a do modo formatted (`nodeName` de FileSourceScanExec muda entre os dois).
@@ -988,6 +997,40 @@ class _Parser:
                 )
             )
 
+    # -- Photon ---------------------------------------------------------- #
+
+    def photon_fact(self) -> None:
+        """`plan.photon`: quantos nos do plano sao Photon, e o que o plano diz disso.
+
+        Sem nenhum no de prefixo `Photon`, nada e emitido e os goldens de plano
+        sem Photon ficam como estavam.
+        """
+        photon = [n for n in self.nodes if n.operator.startswith(_PHOTON_PREFIX)]
+        if not photon:
+            return
+        explanation = ""
+        dentro = False
+        for raw in self.lines:
+            marker = _SECTION_RE.match(raw)
+            if marker:
+                dentro = marker.group(1).strip().lower() == _PHOTON_EXPLANATION
+                continue
+            if dentro and raw.strip():
+                explanation = raw.strip()
+                break
+        self.facts.append(
+            Fact(
+                kind="plan.photon",
+                subject=_subject(self.path, photon[0]),
+                measures={"photon_operators": len(photon), "operators": len(self.nodes)},
+                attrs={
+                    "operators": sorted({n.operator for n in photon}),
+                    "explanation": explanation,
+                },
+                provenance=self.provenance,
+            )
+        )
+
     def sentinel(self) -> Fact:
         unresolved_count = sum(1 for f in self.facts if f.kind == "plan.unresolved")
         aqe = [f for f in self.facts if f.kind == "plan.aqe"]
@@ -1031,6 +1074,7 @@ def extract_plan(text: str, path: str) -> list[Fact]:
         parser.parse()
         parser.emit()
         parser.join_side_stats()
+        parser.photon_fact()
     except Exception as exc:  # nenhum insumo pode derrubar quem chamou
         parser.unresolved(0, "extraction_error", f"{type(exc).__name__}: {exc}")
 
