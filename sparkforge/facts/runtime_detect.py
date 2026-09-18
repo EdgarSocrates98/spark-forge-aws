@@ -729,31 +729,77 @@ def _build_facts(
 _PHOTON_STATES = frozenset({"on", "off"})
 
 
-def _photon(sources: dict[str, dict[str, Any]]) -> str:
-    """A declaracao de Photon, `on`/`off`, ou vazio. Duas declaracoes que
-    discordam, ou valor fora do vocabulario, contam como nao declarado."""
-    declarado = {
-        str(data.get("photon")).strip().lower()
-        for data in sources.values()
-        if isinstance(data, dict) and data.get("photon")
-    }
-    if len(declarado) == 1 and declarado <= _PHOTON_STATES:
-        return next(iter(declarado))
-    return ""
+# A unica fonte que DECLARA Photon. Toda outra fonte com a chave `photon` e
+# OBSERVACAO de artefato -- hoje so `plan`, de `plan.photon` (ver
+# `sparkforge/adapters/_core.py::_runtime_reading`).
+_PHOTON_DECLARATION_SOURCE = "cli"
 
 
-def _photon_declarado(sources: dict[str, dict[str, Any]]) -> bool:
-    """Alguma fonte declarou `photon`, valido ou nao."""
-    return any(isinstance(data, dict) and data.get("photon") for data in sources.values())
+def _photon(
+    sources: dict[str, dict[str, Any]], databricks: bool
+) -> tuple[str, str, str]:
+    """`(valor, fonte, divergencia)` de Photon, lendo as fontes uma vez.
+
+    Observacao (toda fonte que nao e `cli`) vence declaracao (`cli`): o plano
+    que mostra operador Photon e o artefato dizendo o que rodou, e `--photon`
+    e o operador dizendo o que acha. Declaracao que discorda da observacao
+    vira divergencia `photon:` nomeada, e vale o artefato. Duas leituras que
+    discordam entre si, ou valor fora do vocabulario, contam como ausentes.
+
+    Sem a plataforma databricks nada entra no contexto. So a DECLARACAO vira
+    divergencia ali ("declarado sem plataforma"): observacao sem databricks
+    nao e erro do operador, e a recusa das regras de plano ja vale pelo fact
+    `plan.photon` no engine.
+    """
+    observado: dict[str, set[str]] = {}
+    declarado: set[str] = set()
+    for name, data in sources.items():
+        if not isinstance(data, dict) or not data.get("photon"):
+            continue
+        value = str(data.get("photon")).strip().lower()
+        base = name.split(":", 1)[0]
+        if base == _PHOTON_DECLARATION_SOURCE:
+            declarado.add(value)
+        else:
+            observado.setdefault(value, set()).add(base)
+
+    if not databricks:
+        if declarado:
+            return (
+                "",
+                "none",
+                "photon: declarado sem plataforma databricks detectada; "
+                "a declaracao foi ignorada",
+            )
+        return ("", "none", "")
+
+    declaracao = next(iter(declarado)) if len(declarado) == 1 else ""
+    if declaracao not in _PHOTON_STATES:
+        declaracao = ""
+    if len(observado) == 1 and set(observado) <= _PHOTON_STATES:
+        valor, bases = next(iter(observado.items()))
+        fonte = ",".join(sorted(bases))
+        if declaracao and declaracao != valor:
+            return (
+                valor,
+                fonte,
+                f"photon: o plano mostra Photon (fonte {fonte}) e a declaracao "
+                f"{_PHOTON_DECLARATION_SOURCE} diz {declaracao}; vale o artefato",
+            )
+        return (valor, fonte, "")
+    if declaracao:
+        return (declaracao, _PHOTON_DECLARATION_SOURCE, "")
+    return ("", "none", "")
 
 
-def _photon_fact(photon: str) -> Fact:
+def _photon_fact(photon: str, fonte: str) -> Fact:
     """`databricks.photon`: so existe quando a plataforma databricks foi
-    detectada. `undeclared` e o gatilho de SF-ENV-006."""
+    detectada. `undeclared` e o gatilho de SF-ENV-006. `source` diz de onde
+    veio o estado: `plan` (observacao), `cli` (declaracao) ou `none`."""
     return Fact(
         kind="databricks.photon",
         subject={"type": "job_run", "symbol": "photon"},
-        attrs={"state": photon or "undeclared", "source": "cli" if photon else "none"},
+        attrs={"state": photon or "undeclared", "source": fonte if photon else "none"},
         provenance={"extractor": DETECTOR_ID},
     )
 
@@ -775,10 +821,13 @@ def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, 
     sempre perde para leitura direta, e o `PYSPARK_PYTHON` da classificacao
     `spark-env` chega como `python_version`.
 
-    `photon` (`on`/`off`) e DECLARACAO: vai ao contexto e ao fact
-    `databricks.photon` so com a plataforma databricks detectada. Sem ela, a
-    declaracao vira divergencia `photon:` e nao fica no contexto; com ela e sem
-    declaracao, `databricks.photon` sai com `state: undeclared`.
+    `photon` (`on`/`off`) na fonte `cli` e DECLARACAO; em qualquer outra fonte
+    (hoje `plan`, de `plan.photon`) e OBSERVACAO, e observacao vence. Vai ao
+    contexto e ao fact `databricks.photon` so com a plataforma databricks
+    detectada. Sem ela, a declaracao vira divergencia `photon:` e nao fica no
+    contexto (a observacao nao entra nem diverge); com ela, declaracao que
+    discorda da observacao vira divergencia `photon:`, e sem leitura nenhuma
+    `databricks.photon` sai com `state: undeclared`.
 
     Nao le nada do disco nem de rede -- `sources` ja vem coletado
     (coleta e Task 22). Entrada vazia ou com valores None/vazios nao
@@ -786,23 +835,16 @@ def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, 
     """
     platforms, observations, detected_from, derived = _collect(sources or {})
     context = _build_context(platforms, observations, detected_from, derived)
-    photon = _photon(sources or {})
-    if platforms.get("databricks"):
-        if photon:
-            context = replace(context, photon=photon)
-    elif _photon_declarado(sources or {}):
-        # Photon so existe no Databricks. Declarado sem a plataforma, o engine
-        # o ignoraria calado; o contexto nao o guarda, e a declaracao sai como
-        # divergencia nomeada, que o operador le.
-        context = replace(
-            context,
-            divergences=[
-                *context.divergences,
-                "photon: declarado sem plataforma databricks detectada; "
-                "a declaracao foi ignorada",
-            ],
-        )
+    databricks = bool(platforms.get("databricks"))
+    photon, fonte, divergencia = _photon(sources or {}, databricks)
+    if photon:
+        context = replace(context, photon=photon)
+    if divergencia:
+        # Photon so existe no Databricks, e a observacao vence a declaracao. Em
+        # ambos os casos o engine ficaria calado sobre a declaracao descartada;
+        # ela sai como divergencia nomeada, que o operador le.
+        context = replace(context, divergences=[*context.divergences, divergencia])
     facts = _build_facts(platforms, observations, derived)
-    if platforms.get("databricks"):
-        facts.append(_photon_fact(photon))
+    if databricks:
+        facts.append(_photon_fact(photon, fonte))
     return context, sort_facts(facts)

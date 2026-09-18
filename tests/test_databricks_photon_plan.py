@@ -112,3 +112,22 @@ def test_udf_sob_photon_continua_julgada():
     assert "SF-PLAN-002" in {f.rule_id for f in achados}
     aqe = judge(_facts("photon_join"), load_catalog(), {"spark": "4.2.0"})
     assert "SF-PLAN-004" in {f.rule_id for f in aqe}
+
+
+def test_photon_off_contra_plano_photon_diverge():
+    from sparkforge.adapters._core import build_runtime
+
+    context, facts = build_runtime(databricks="19", photon="off", facts=_facts("photon_join"))
+    assert context.photon == "on"
+    assert any(d.startswith("photon:") for d in context.divergences)
+    estado = next(f for f in facts if f.kind == "databricks.photon")
+    assert (estado.attrs["state"], estado.attrs["source"]) == ("on", "plan")
+
+
+def test_plano_photon_cala_sf_env_006():
+    from sparkforge.adapters._core import build_runtime
+
+    context, facts = build_runtime(databricks="19", facts=_facts("photon_join"))
+    assert "SF-ENV-006" not in {f.rule_id for f in judge(facts, load_catalog(), context.to_dict())}
+    _, sem_plano = build_runtime(databricks="19")
+    assert "SF-ENV-006" in {f.rule_id for f in judge(sem_plano, load_catalog(), {"databricks": "19"})}
