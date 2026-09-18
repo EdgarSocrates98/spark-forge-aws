@@ -50,7 +50,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 ### Databricks
 | Arquivo | Conteúdo |
 |---|---|
-| [`databricks/runtime-matrix.md`](databricks/runtime-matrix.md) | Databricks Runtime → Spark, só a coluna que a página de versões suportadas publica, e a normalização do rótulo da API (`15.4.x-scala2.12` → `15.4`, `18.0` cai em `18`). Databricks entra como plataforma **declarada** (`--databricks`, `--photon`), sobre os extratores Spark que já existem; as lacunas U1 (versão no event log) e U2 (Photon no event log) ficam nomeadas, e `spark.sql.shuffle.partitions = auto` é recusado pelo `tune` |
+| [`databricks/runtime-matrix.md`](databricks/runtime-matrix.md) | Databricks Runtime → Spark, só a coluna que a página de versões suportadas publica, e a normalização do rótulo da API (`15.4.x-scala2.12` → `15.4`, `18.0` cai em `18`). Databricks entra como plataforma **declarada** (`--databricks`, `--photon`); Photon também é **detectado** no texto do plano (`plan.photon`, §4), sobre os extratores Spark que já existem; as lacunas U1 (versão no event log) e U2 (Photon no event log) ficam nomeadas, e `spark.sql.shuffle.partitions = auto` é recusado pelo `tune` |
 
 ### Control-M (BMC)
 | Arquivo | Conteúdo |

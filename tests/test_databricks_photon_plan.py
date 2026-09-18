@@ -216,18 +216,25 @@ def test_sf_plan_002_ainda_casa_udf_pandas():
     """O ramo `pandas` do `any` de SF-PLAN-002 (rules/catalog/spark-plan.yaml)
     nao tinha cobertura: nenhuma fixture ou teste tinha um no `*InPandas`. O
     fact e sintetico -- subject copiado de um `plan.python_udf` real extraido
-    de `photon_udf`, trocando o operador Arrow por `MapInPandas`, que
-    `_PYTHON_UDF_OPERATORS` (sparkforge/facts/spark_plan.py) mapeia para
-    `udf_type: pandas`."""
+    de `photon_udf`, trocando o operador Arrow por `MapInPandas`, cujo
+    `udf_type` vem de `_PYTHON_UDF_OPERATORS` (sparkforge/facts/spark_plan.py)
+    em vez de fixado a mao, para o teste cair se o mapeamento mudar."""
+    from sparkforge.facts.spark_plan import _PYTHON_UDF_OPERATORS
     from sparkforge.findings.models import Fact
 
     real = next(f for f in _facts("photon_udf") if f.kind == "plan.python_udf")
     subject = dict(real.subject)
     subject["operator"] = "MapInPandas"
+    # `_subject` (sparkforge/facts/spark_plan.py) monta o symbol como
+    # "(node_id) operator" -- reconstroi aqui em vez de deixar o texto do
+    # operador Arrow original parado no campo.
+    subject["symbol"] = f"({subject['node_id']}) MapInPandas"
+    udf_type = _PYTHON_UDF_OPERATORS["MapInPandas"]
+    assert udf_type == "pandas"
     fact = Fact(
         kind="plan.python_udf",
         subject=subject,
-        attrs={"operator": "MapInPandas", "udf_type": "pandas"},
+        attrs={"operator": "MapInPandas", "udf_type": udf_type},
         provenance=real.provenance,
     )
     regra = next(r for r in load_catalog() if r["id"] == "SF-PLAN-002")

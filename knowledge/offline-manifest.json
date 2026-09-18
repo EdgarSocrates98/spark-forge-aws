@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "97c966cfb781fd0e68668f11103dc042441ec3f22a785f693ee8f81fc46f3e72"
+      "sha256": "57e54b4c99cc72f011e5316ddd907cefb991b41b160f498d3881f5fd637b9915"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -71,7 +71,7 @@
     {
       "path": "knowledge/databricks/runtime-matrix.md",
       "title": "runtime-matrix",
-      "sha256": "7c97e4eac3539d7e22a6df7a3a958e6815552af030fba4b19457cab9ec692225"
+      "sha256": "1f29781a0b643b04c0810d0adf1f1f186c464af573adacc064ef5bce44dc0a89"
     },
     {
       "path": "knowledge/devin/agents-and-subagents.md",
