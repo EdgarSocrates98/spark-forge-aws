@@ -211,6 +211,22 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
     )
 
 
+# Kinds de PLANO. Sob Databricks com Photon ligado, os operadores fisicos tem
+# outros nomes e o fallback para o Spark e por operacao (knowledge/databricks/
+# runtime-matrix.md secao 3): uma regra que procura um operador JVM pode ficar
+# calada sem que o problema tenha sumido. A regra sai em `skipped` com nome, e o
+# silencio deixa de ler como "nada encontrado".
+_PLAN_KIND_PREFIXES = ("plan.", "spark.sql.")
+
+
+def _photon_recusa(rule: dict[str, Any], runtime: dict[str, str]) -> bool:
+    if not runtime.get("databricks") or runtime.get("photon") != "on":
+        return False
+    return any(
+        str(kind).startswith(_PLAN_KIND_PREFIXES) for kind in rule.get("requires_facts") or []
+    )
+
+
 def judge(
     facts: Iterable[Fact],
     rules: Iterable[dict[str, Any]],
@@ -236,6 +252,10 @@ def judge(
         scope = rule.get("runtime_scope") or {}
         if not in_scope(scope, runtime):
             skipped.append({"rule_id": rule["id"], "reason": "runtime_scope", "scope": scope})
+            continue
+
+        if _photon_recusa(rule, runtime):
+            skipped.append({"rule_id": rule["id"], "reason": "databricks.photon.unresolved"})
             continue
 
         # Regra bloqueada por capacidade que ainda nao existe e diferente de regra

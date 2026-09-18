@@ -9,4 +9,5 @@ runtime:
 expects_kinds:
   - env.platform
   - env.runtime_signal
-expects_rules: []
+  - databricks.photon
+expects_rules: [SF-ENV-006]

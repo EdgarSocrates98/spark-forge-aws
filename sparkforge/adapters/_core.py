@@ -737,6 +737,7 @@ def build_runtime(
     facts: list[Fact] | None = None,
     emr: str | None = None,
     databricks: str | None = None,
+    photon: str | None = None,
 ) -> tuple[RuntimeContext, list[Fact]]:
     """Contexto de runtime E os facts `env.runtime_signal` que o justificam.
 
@@ -774,6 +775,7 @@ def build_runtime(
         # Numero ou rotulo do Databricks Runtime. DECLARACAO, fonte `cli`, como
         # `--emr`: perde para o event log e discordar vira divergencia.
         "databricks_runtime": databricks,
+        "photon": photon,
         "spark_version": spark,
         "python_version": python,
         "iceberg_version": iceberg,
@@ -795,9 +797,18 @@ def build_runtime_context(
     facts: list[Fact] | None = None,
     emr: str | None = None,
     databricks: str | None = None,
+    photon: str | None = None,
 ) -> RuntimeContext:
     context, _facts = build_runtime(
-        glue, spark, python, iceberg, athena, facts=facts, emr=emr, databricks=databricks
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=facts,
+        emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
     return context
 

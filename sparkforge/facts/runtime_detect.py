@@ -36,6 +36,7 @@ ai nao ha identidade nenhuma para afirmar.
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import replace
 from typing import Any
 
 from sparkforge.facts import runtime_matrix
@@ -47,7 +48,7 @@ DETECTOR_ID = "runtime_detect@0.1.0"
 # unica para `tests/test_rules_catalog_reachability.py`: uma regra que exija um
 # kind fora da uniao de todos os EMITTED_KINDS e inalcancavel e precisa declarar
 # `blocked_on`, em vez de aparecer como "faltou coletar".
-EMITTED_KINDS = frozenset({"env.runtime_signal", "env.platform"})
+EMITTED_KINDS = frozenset({"env.runtime_signal", "env.platform", "databricks.photon"})
 
 # GLUE_MATRIX morava aqui como constante compilada, sem fonte nem data de
 # consulta. Versao de Glue e fato EXTERNO -- muda por decisao da AWS, nao
@@ -709,6 +710,33 @@ def _build_facts(
     return facts
 
 
+_PHOTON_STATES = frozenset({"on", "off"})
+
+
+def _photon(sources: dict[str, dict[str, Any]]) -> str:
+    """A declaracao de Photon, `on`/`off`, ou vazio. Duas declaracoes que
+    discordam, ou valor fora do vocabulario, contam como nao declarado."""
+    declarado = {
+        str(data.get("photon")).strip().lower()
+        for data in sources.values()
+        if isinstance(data, dict) and data.get("photon")
+    }
+    if len(declarado) == 1 and declarado <= _PHOTON_STATES:
+        return next(iter(declarado))
+    return ""
+
+
+def _photon_fact(photon: str) -> Fact:
+    """`databricks.photon`: so existe quando a plataforma databricks foi
+    detectada. `undeclared` e o gatilho de SF-ENV-006."""
+    return Fact(
+        kind="databricks.photon",
+        subject={"type": "job_run", "symbol": "photon"},
+        attrs={"state": photon or "undeclared", "source": "cli" if photon else "none"},
+        provenance={"extractor": DETECTOR_ID},
+    )
+
+
 def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, list[Fact]]:
     """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal`).
 
@@ -729,5 +757,10 @@ def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, 
     """
     platforms, observations, detected_from, derived = _collect(sources or {})
     context = _build_context(platforms, observations, detected_from, derived)
+    photon = _photon(sources or {})
+    if photon:
+        context = replace(context, photon=photon)
     facts = _build_facts(platforms, observations, derived)
+    if platforms.get("databricks"):
+        facts.append(_photon_fact(photon))
     return context, sort_facts(facts)

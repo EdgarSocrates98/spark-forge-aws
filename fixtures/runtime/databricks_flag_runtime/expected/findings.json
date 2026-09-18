@@ -1,1 +1,55 @@
-[]
+[
+  {
+    "rule_id": "SF-ENV-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Databricks sem declaração de Photon, e regra de plano calada não é evidência",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "photon"
+    },
+    "evidence": [
+      "f_103ca3"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job roda no Databricks e ninguém declarou se o Photon está ligado. Com Photon, os operadores físicos têm outros nomes e o fallback para o Spark acontece por operação — com UDF, com API de RDD ou Dataset, com streaming com estado, e em consulta que termina em menos de dois segundos. Uma regra que procura um operador JVM no plano pode ficar calada sem que o problema tenha sumido. Enquanto Photon não é declarado, a ausência de achado de plano não é evidência de plano saudável.",
+    "proposed_change": [
+      "Declarar `--photon on` ou `--photon off` conforme o `runtime_engine` do cluster ou do job (`PHOTON` ou `STANDARD` na Clusters API e na Jobs API).",
+      "Com Photon ligado, ler as regras de plano em `skipped` com `databricks.photon.unresolved`, nunca como plano sem achado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Declarar `off` num cluster com Photon faz as regras de plano julgarem operadores que não rodaram."
+    ],
+    "tradeoffs": [
+      "Nenhum. Declarar Photon é contexto do job, não mudança nele."
+    ],
+    "validation": [
+      "`databricks.photon` com `attrs.state` em `on` ou `off` na execução seguinte."
+    ],
+    "rollback": [
+      "Não aplicável; é declaração de contexto",
+      "não mudança de comportamento do job."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.databricks.com/aws/en/compute/photon",
+        "retrieved": "2026-09-17"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "databricks.photon",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

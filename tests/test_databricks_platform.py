@@ -3,9 +3,13 @@ from pathlib import Path
 
 from sparkforge.adapters._core import build_runtime, runtime_sources_from_facts
 from sparkforge.facts.runtime_detect import detect_runtime
+from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.findings.models import Fact
+from sparkforge.rules.engine import judge
+from sparkforge.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
+PLANO = ROOT / "fixtures" / "plan" / "cartesian_join" / "input"
 
 _CHAVE_VERSAO = "spark.databricks.clusterUsageTags.sparkVersion"
 
@@ -47,3 +51,29 @@ def test_event_log_declara_plataforma_databricks():
     plataforma = next(f for f in facts if f.kind == "env.platform")
     assert plataforma.attrs["origins"] == {"databricks": ["event_log"]}
     assert runtime_sources_from_facts([_conf("spark.app.name", "x")]) == {}
+
+
+def test_photon_recusa_regra_de_plano():
+    fatos = extract_plan_path(PLANO / "plan.txt", repo_root=PLANO)
+    base = {"databricks": "15.4", "spark": "3.5.0"}
+    ligado, pulados = judge(fatos, load_catalog(), {**base, "photon": "on"}, return_skipped=True)
+    desligado = judge(fatos, load_catalog(), {**base, "photon": "off"})
+    sem_databricks = judge(fatos, load_catalog(), {"spark": "3.5.0", "photon": "on"})
+    assert "SF-PLAN-003" in {f.rule_id for f in desligado}
+    assert "SF-PLAN-003" in {f.rule_id for f in sem_databricks}
+    assert "SF-PLAN-003" not in {f.rule_id for f in ligado}
+    assert {"rule_id": "SF-PLAN-003", "reason": "databricks.photon.unresolved"} in pulados
+
+    context, facts = build_runtime(databricks="15.4")
+    assert context.photon == ""
+    assert next(f for f in facts if f.kind == "databricks.photon").attrs["state"] == "undeclared"
+    assert "SF-ENV-006" in {f.rule_id for f in judge(facts, load_catalog(), context.to_dict())}
+
+    context_on, facts_on = build_runtime(databricks="15.4", photon="on")
+    assert context_on.photon == "on"
+    assert next(f for f in facts_on if f.kind == "databricks.photon").attrs["state"] == "on"
+    achados_on = judge(facts_on, load_catalog(), context_on.to_dict())
+    assert "SF-ENV-006" not in {f.rule_id for f in achados_on}
+
+    _, facts_glue = build_runtime(glue="5.0", photon="on")
+    assert not any(f.kind == "databricks.photon" for f in facts_glue)
