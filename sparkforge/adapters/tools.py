@@ -402,12 +402,10 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
     "required": [
         "glue",
         "emr",
-        "databricks",
         "spark",
         "python",
         "iceberg",
         "athena",
-        "photon",
         "detected_from",
         "divergences",
     ],
@@ -426,6 +424,9 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
                 "knowledge/emr/runtime-matrix.md."
             ),
         },
+        # `databricks` e `photon` ficam FORA de `required`, de proposito: assim a
+        # mudanca e aditiva no contrato MCP congelado em `fixtures/mcp_parity`,
+        # cujo golden nao regenera. `to_dict()` emite as duas sempre.
         "databricks": {
             "type": "string",
             "description": (

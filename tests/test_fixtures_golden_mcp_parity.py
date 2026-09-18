@@ -117,7 +117,9 @@ PADROES_ALARGADOS = {
 ALTERADAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_judge": (
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
-        "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma"
+        "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma. "
+        "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
+        "T2), so em `properties`, fora de `required`"
     ),
     "sparkforge_rules_lookup": (
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
@@ -133,7 +135,25 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_resume": (
         "2026-09-15: `journal` e `in_flight_source` na saida (checkpoint/resume/event "
-        "journal, §31 P0 item 7), so em `properties`, fora de `required`"
+        "journal, §31 P0 item 7), so em `properties`, fora de `required`. "
+        "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
+        "T2), so em `properties`, fora de `required`"
+    ),
+    "sparkforge_case_get": (
+        "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
+        "T2), so em `properties`, fora de `required`"
+    ),
+    "sparkforge_case_open": (
+        "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
+        "T2), so em `properties`, fora de `required`"
+    ),
+    "sparkforge_case_update": (
+        "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
+        "T2), so em `properties`, fora de `required`"
+    ),
+    "sparkforge_runtime_detect": (
+        "2026-09-17: `databricks` e `photon` na saida (DATABRICKS_SPARK T2), so em "
+        "`properties`, fora de `required`"
     ),
 }
 # Trocas NAO aditivas aceitas, uma por (tool, caminho dentro da tool), cada uma com
@@ -395,7 +415,10 @@ class TestHandshakeLegado:
         # 16 -> 23 em 2026-09-15: `sparkforge_rules_lookup` ganhou `severity`,
         # `runtime` e `index` na entrada, os tres em `filters_applied` na saida, e
         # `rules_index`. Sete chaves novas, nenhuma removida ou alterada.
-        assert aditivas == {"stdio": 23, "http": 23}
+        # 23 -> 35 em 2026-09-17: `databricks` e `photon` no contexto de runtime
+        # da saida de seis tools (judge, resume, case_get, case_open, case_update,
+        # runtime_detect), fora de `required`. Doze chaves novas.
+        assert aditivas == {"stdio": 35, "http": 35}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
