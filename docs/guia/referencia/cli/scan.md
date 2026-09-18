@@ -23,7 +23,7 @@ sparkforge scan --help
 | `--athena` | não | texto |  |  |  |
 | `--emr` | não | texto |  |  |  |
 | `--databricks` | não | texto |  |  |  |
-| `--photon` | não | texto |  |  |  |
+| `--photon` | não | `on`, `off` |  |  | Photon ligado ('on') ou desligado ('off') no cluster ou job Databricks. Com 'on', regra que depende de plano sai em skipped com databricks.photon.unresolved; sem declaracao, SF-ENV-006 avisa que regra de plano calada nao e evidencia. |
 
 ## Tool MCP equivalente
 

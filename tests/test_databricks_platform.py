@@ -109,6 +109,17 @@ def test_flags_seguem_o_emr(capsys):
             faltando.append(("core", nome))
     assert faltando == []
 
+    # `--photon` recusa valor fora de on/off em TODO verbo, inclusive nos laços
+    # genericos de proof, simulate e scan: valor invalido nao pode virar "nao
+    # declarado" em silencio.
+    sem_choices = [
+        nome
+        for nome, sub in _subparsers(cli.build_parser())
+        for acao in sub._actions
+        if "--photon" in acao.option_strings and tuple(acao.choices or ()) != ("on", "off")
+    ]
+    assert sem_choices == []
+
     assert cli.main(["runtime", "detect", "--databricks", "15.4", "--photon", "on"]) == 0
     saida = json.loads(capsys.readouterr().out)
     assert (saida["databricks"], saida["spark"], saida["photon"]) == ("15.4", "3.5.0", "on")

@@ -2304,9 +2304,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     for flag in (
         "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
-        "--databricks", "--photon",
+        "--databricks",
     ):
         proof_p.add_argument(flag, default=None)
+    proof_p.add_argument(
+        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
+    )
 
     # simulate ----------------------------------------------------------------
     # Verbo de TOPO: altera facts de configuracao ja extraidos e julga os dois
@@ -2331,9 +2334,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     for flag in (
         "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
-        "--databricks", "--photon",
+        "--databricks",
     ):
         simulate_p.add_argument(flag, default=None)
+    simulate_p.add_argument(
+        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
+    )
 
     # gain --------------------------------------------------------------------
     # Verbo de TOPO: compara runs ja medidos; nao le artefato de job.
@@ -2377,9 +2383,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     for flag in (
         "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
-        "--databricks", "--photon",
+        "--databricks",
     ):
         scan_p.add_argument(flag, default=None)
+    scan_p.add_argument(
+        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
+    )
 
     # doctor ------------------------------------------------------------------
     doctor_p = sub.add_parser(
