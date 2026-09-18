@@ -486,7 +486,8 @@ _PHOTON_INPUT: dict[str, Any] = {
     "enum": ["on", "off"],
     "description": (
         "Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em "
-        "skipped com databricks.photon.unresolved."
+        "skipped com databricks.photon.unresolved, exceto a que so exige "
+        "plan.python_udf. Sem databricks, vira divergencia 'photon:'."
     ),
 }
 

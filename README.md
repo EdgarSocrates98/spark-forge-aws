@@ -85,7 +85,10 @@ documenta essa chave só como propriedade local de TaskContext, e a presença de
 event log entregue por cluster log delivery ainda não foi confirmada (lacuna U1):
 sem ela, a plataforma só se sabe pela flag.
 `--photon on|off` declara o Photon: ligado, as regras de plano saem em `skipped`
-com `databricks.photon.unresolved`; não declarado, SF-ENV-006 avisa. Fora deste
+com `databricks.photon.unresolved`, exceto as que só exigem `plan.python_udf` (o nó
+`ArrowEvalPython` continua no plano sob Photon, observado); não declarado, SF-ENV-006
+avisa; sem `--databricks`, a declaração vira divergência `photon:` e não entra no
+runtime. Fora deste
 incremento: `_delta_log`, Jobs API, billing em DBU e coleta pela REST API.
 
 ### Por que extração e julgamento são verbos separados

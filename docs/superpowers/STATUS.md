@@ -9482,7 +9482,9 @@ está em `docs/sdd/DATABRICKS_SPARK/`.
 runtime lida do event log (`spark.databricks.clusterUsageTags.sparkVersion`) quando presente,
 sem substituir declaração em silêncio — diverge, e a divergência vira achado; Photon
 declarado: `on` leva regra de plano (`plan.*`/`spark.sql.*`) a `skipped` com
-`databricks.photon.unresolved`; não declarado dispara a regra nova `SF-ENV-006`. `tune` recusa
+`databricks.photon.unresolved`, exceto a que só exige `plan.python_udf` (o nó `ArrowEvalPython`
+continua no plano sob Photon, observado); não declarado dispara a regra nova `SF-ENV-006`; sem
+plataforma databricks, `--photon` vira divergência `photon:` e não entra no runtime. `tune` recusa
 derivar `spark.sql.shuffle.partitions` fixo quando a propriedade já está em `auto`. Treze
 regras sem `runtime_scope` alcançáveis por job Databricks tiveram a remediação reescrita
 neutra de plataforma, auditadas por `tests/test_databricks_rule_audit.py`. A revisão final (R1)
@@ -9496,7 +9498,8 @@ arquivo:** regras de diagnóstico 191 → 192 (a nova é `SF-ENV-006`), executá
 área `SF-ENV` 5 → 6,
 fact kinds distintos 226 → 227 (`databricks.photon`), fixtures golden 510 → 514 (o par
 `databricks_skewed_stage` e os três casos de `fixtures/runtime/databricks_*`), fontes oficiais
-vigiadas 249 → 253 (quatro páginas de `docs.databricks.com`). Rotas determinísticas 99 → 101 e
+vigiadas 249 → 254 (quatro páginas de `docs.databricks.com`, +1 na revisão final, a página
+`clusters/create`). Rotas determinísticas 99 → 101 e
 vocabulário de `action.kind` 68 → 70 NÃO foram movidos pela feature: eram números velhos na
 tabela, corrigidos pela medida quando o gate os acusou. `python
 scripts/check_status_numbers.py --strict` fecha em 0 divergências.

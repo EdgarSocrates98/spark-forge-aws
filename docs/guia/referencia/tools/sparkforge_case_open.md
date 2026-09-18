@@ -21,7 +21,7 @@ Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/
 | `facts_path` | string ou array de string | não | Facts ja extraidos: o runtime do case sai do que os extratores observaram, nao so das flags. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
-| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved. |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `reopen` | boolean | não | Recomeca do zero por cima de um case que ja existe. Omitido, abrir sobre um case existente e RECUSADO: sobrescrever apagaria fase, rigor e overrides gravados. O `strict_gates` do case atual e herdado -- `strict_gates` sobe o rigor, e nada o baixa por omissao. |
 | `spark` | string | não |  |

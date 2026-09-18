@@ -148,8 +148,9 @@ def test_photon_sem_databricks_vira_divergencia():
 
 
 def test_photon_nao_cala_regra_de_udf_python():
-    # A fonte do Photon diz que UDF faz fallback para o Spark: o no de UDF Python
-    # e o que roda, e a regra que o procura continua julgando sob Photon.
+    # Sob Photon o no `ArrowEvalPython` continua no plano (observado,
+    # knowledge/databricks/runtime-matrix.md secao 4), e a regra que o procura
+    # continua julgando.
     entrada = ROOT / "fixtures" / "plan" / "python_udf_in_plan" / "input"
     fatos = extract_plan_path(entrada / "plan.txt", repo_root=entrada)
     runtime = {"databricks": "15.4", "spark": "3.5.0", "photon": "on"}

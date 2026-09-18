@@ -43,10 +43,10 @@ deixa `spark` vazio: a derivação não inventa.
   Databricks Runtime 16.3 ou mais novo. Não há fonte oficial dizendo que ela
   aparece nas `Spark Properties` do event log entregue por cluster log
   delivery. O SparkForge lê a chave quando ela está lá; a presença em log real
-  continua a confirmar. A observação da seção 4 resolve só a metade
-  serverless: `spark.conf.get` dessa chave lá levanta
-  `CONFIG_NOT_AVAILABLE.WITHOUT_SUGGESTION`, ou seja, no compute serverless a
-  chave não é acessível por `spark.conf`. Para cluster clássico — onde a
+  continua a confirmar. No serverless a pergunta não se aplica (não há event
+  log entregue); a observação da seção 4 mostra só que a chave não é legível
+  por `spark.conf` ali: `spark.conf.get` dela levanta
+  `CONFIG_NOT_AVAILABLE.WITHOUT_SUGGESTION`. Para cluster clássico — onde a
   chave é documentada — a pergunta continua aberta.
 - **U2.** A página do Photon documenta a cor dos operadores na interface e o
   `runtime_engine = PHOTON` nas APIs, não como Photon aparece no event log. Por

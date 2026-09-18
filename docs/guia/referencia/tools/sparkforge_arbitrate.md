@@ -22,7 +22,7 @@ Executor agentico DETERMINISTICO. Roda DEPOIS de `sparkforge_judge`, sobre findi
 | `findings_path` | string | não | Arquivo gerado por `sparkforge judge --out`. Aceita a lista nua e o objeto com a chave `findings` (ou `items`). |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
-| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved. |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

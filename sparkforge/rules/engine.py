@@ -229,11 +229,18 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
 # metrica SQL do event log que vierem, que leem os mesmos operadores JVM.
 _PLAN_KIND_PREFIXES = ("plan.", "spark.sql.")
 
-# Kind de plano que o Photon NAO cala. A mesma pagina do Photon diz que UDF faz
-# fallback para o Spark: o no de UDF Python e o que roda, e a regra que so o
-# procura continua julgando o que de fato executa.
+# Kind de plano que o Photon NAO cala. Observado sob Photon
+# (knowledge/databricks/runtime-matrix.md secao 4): o plano de uma UDF Python
+# continua trazendo o no `ArrowEvalPython`, que e o que a regra procura, entao
+# ela continua julgando um no que esta no plano. As duas fontes ficam lado a
+# lado, sem que uma resolva a outra: a pagina do Photon fala em fallback para o
+# Spark com UDF, e a observacao mostrou "fully supported by Photon" com o no
+# Arrow presente.
 _PHOTON_NAO_CALA = {
-    "plan.python_udf": "UDF faz fallback para o Spark; o no de UDF e o que roda",
+    "plan.python_udf": (
+        "o no ArrowEvalPython continua no plano sob Photon (observado; "
+        "knowledge/databricks/runtime-matrix.md secao 4)"
+    ),
 }
 
 
