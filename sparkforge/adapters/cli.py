@@ -1508,7 +1508,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # runtime detect ----------------------------------------------------
     runtime_p = sub.add_parser(
-        "runtime", help="Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena."
+        "runtime", help="Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena."
     )
     runtime_sub = runtime_p.add_subparsers(dest="runtime_action", required=True)
     detect_p = runtime_sub.add_parser(

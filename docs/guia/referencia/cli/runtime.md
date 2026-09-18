@@ -2,7 +2,7 @@
 
 # `sparkforge runtime`
 
-Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena.
+Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena.
 
 ## Subcomandos
 

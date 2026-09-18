@@ -3,6 +3,10 @@
 Nao le artefato bruto. So ve Facts. Regra fora do runtime_scope, ou cujo kind
 nao foi extraido, e reportada como skipped com motivo, nunca silenciosamente
 descartada: skip silencioso e falso negativo disfarcado.
+
+Motivos de pulo: `runtime_scope`, `databricks.photon.unresolved` (regra de
+plano sob Databricks com Photon declarado `on`, ver `_photon_recusa`),
+`blocked_on` e `requires_facts`.
 """
 from __future__ import annotations
 

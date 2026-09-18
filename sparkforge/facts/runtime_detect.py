@@ -752,18 +752,26 @@ def _photon_fact(photon: str) -> Fact:
 
 
 def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, list[Fact]]:
-    """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal`).
+    """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal` e,
+    sob Databricks, `databricks.photon`).
 
     `sources` mapeia nome da fonte (ex.: "event_log", "describe_cluster",
     "get_work_group", "terraform") para um dict com chaves cruas: `glue_version`,
-    `emr_release`/`emr_version`/`emr`, `spark_version`/`spark`,
-    `python_version`/`python`, `iceberg_version`/`iceberg`,
-    `athena_version`/`athena`.
+    `emr_release`/`emr_version`/`emr`, `databricks_runtime`, `photon`,
+    `spark_version`/`spark`, `python_version`/`python`,
+    `iceberg_version`/`iceberg`, `athena_version`/`athena`.
 
     `glue_version` deriva spark/python/iceberg por `GLUE_MATRIX`;
     `emr_release` deriva spark/iceberg -- e python so em 7.x -- por
-    `EMR_MATRIX`. Derivacao sempre perde para leitura direta, e o
-    `PYSPARK_PYTHON` da classificacao `spark-env` chega como `python_version`.
+    `EMR_MATRIX`; `databricks_runtime` (numero ou rotulo da API, como
+    `15.4.x-scala2.12`) deriva so spark por `DATABRICKS_MATRIX`. Derivacao
+    sempre perde para leitura direta, e o `PYSPARK_PYTHON` da classificacao
+    `spark-env` chega como `python_version`.
+
+    `photon` (`on`/`off`) e DECLARACAO: vai ao contexto e ao fact
+    `databricks.photon` so com a plataforma databricks detectada. Sem ela, a
+    declaracao vira divergencia `photon:` e nao fica no contexto; com ela e sem
+    declaracao, `databricks.photon` sai com `state: undeclared`.
 
     Nao le nada do disco nem de rede -- `sources` ja vem coletado
     (coleta e Task 22). Entrada vazia ou com valores None/vazios nao
