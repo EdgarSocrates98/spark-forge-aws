@@ -34,6 +34,7 @@ FIXTURES = ROOT / "fixtures" / "eventlog"
 # logo abaixo, que nao dispara.
 REQUIRED_FIXTURES = {
     "skewed_stage",
+    "databricks_skewed_stage",
     "rolling_parts_version_conflict",
     "duration_skew_at_threshold",
     "gc_pressure_at_threshold",

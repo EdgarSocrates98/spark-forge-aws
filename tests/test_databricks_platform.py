@@ -4,8 +4,11 @@ import inspect
 import json
 from pathlib import Path
 
+import yaml
+
 from sparkforge.adapters import _core, cli, tools
 from sparkforge.adapters._core import build_runtime, runtime_sources_from_facts
+from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.findings.models import Fact
@@ -15,8 +18,28 @@ from sparkforge.tuning.spark_conf import build_conf_advice
 
 ROOT = Path(__file__).resolve().parents[1]
 PLANO = ROOT / "fixtures" / "plan" / "cartesian_join" / "input"
+EVENTLOG = ROOT / "fixtures" / "eventlog"
 
 _CHAVE_VERSAO = "spark.databricks.clusterUsageTags.sparkVersion"
+
+
+def _achados(caso: str) -> set[tuple]:
+    entrada = EVENTLOG / caso / "input"
+    fatos = []
+    for jsonl in sorted(entrada.glob("*.jsonl")):
+        fatos.extend(extract_event_log_path(jsonl, repo_root=entrada))
+    meta = yaml.safe_load((EVENTLOG / caso / "meta.yaml").read_text(encoding="utf-8"))
+    return {
+        (f.rule_id, f.severity, repr(sorted(f.subject.items())))
+        for f in judge(fatos, load_catalog(), meta["runtime"])
+    }
+
+
+def test_fixture_pareada_mesmos_findings_neutros():
+    glue = _achados("skewed_stage")
+    databricks = _achados("databricks_skewed_stage")
+    assert glue
+    assert databricks == glue
 
 
 def _conf(chave: str, valor: str) -> Fact:
