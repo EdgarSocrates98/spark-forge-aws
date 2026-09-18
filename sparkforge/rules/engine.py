@@ -5,8 +5,9 @@ nao foi extraido, e reportada como skipped com motivo, nunca silenciosamente
 descartada: skip silencioso e falso negativo disfarcado.
 
 Motivos de pulo: `runtime_scope`, `databricks.photon.unresolved` (regra de
-plano sob Databricks com Photon declarado `on`, ver `_photon_recusa`),
-`blocked_on` e `requires_facts`.
+plano sob Photon, declarado `on` no runtime Databricks ou observado no proprio
+artefato pelo fact `plan.photon`, ver `_photon_recusa`), `blocked_on` e
+`requires_facts`.
 """
 from __future__ import annotations
 
@@ -220,9 +221,11 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
 # (https://docs.databricks.com/aws/en/compute/photon, a fonte de SF-ENV-006):
 # uma regra que procura um operador JVM pode ficar calada sem que o problema
 # tenha sumido. A regra sai em `skipped` com nome, e o silencio deixa de ler
-# como "nada encontrado". Photon chega DECLARADO no runtime, nunca detectado,
-# porque o event log nao o mostra (lacuna U2 de
-# knowledge/databricks/runtime-matrix.md).
+# como "nada encontrado". Photon chega por duas vias, e qualquer uma basta:
+# DECLARADO no runtime (databricks com photon `on`), porque o event log nao o
+# mostra (lacuna U2 de knowledge/databricks/runtime-matrix.md); ou OBSERVADO no
+# artefato, quando o plano traz nos Photon e o extrator emite `plan.photon`
+# entre os facts presentes. A segunda via nao depende de declaracao nenhuma.
 #
 # `spark.sql.` nao casa regra nenhuma do catalogo hoje (medido em 2026-09-18: as
 # regras com kind de plano exigem so `plan.*`). Fica para cobrir as regras de
@@ -241,11 +244,19 @@ _PHOTON_NAO_CALA = {
         "o no ArrowEvalPython continua no plano sob Photon (observado; "
         "knowledge/databricks/runtime-matrix.md secao 4)"
     ),
+    "plan.aqe": (
+        "o no AdaptiveSparkPlan continua no plano Photon observado "
+        "(knowledge/databricks/runtime-matrix.md secao 4), e SF-PLAN-004 le "
+        "esse no, nao um operador Photon"
+    ),
 }
 
 
-def _photon_recusa(rule: dict[str, Any], runtime: dict[str, str]) -> bool:
-    if not runtime.get("databricks") or runtime.get("photon") != "on":
+def _photon_recusa(
+    rule: dict[str, Any], runtime: dict[str, str], present_kinds: set[str]
+) -> bool:
+    declarado = bool(runtime.get("databricks")) and runtime.get("photon") == "on"
+    if not declarado and "plan.photon" not in present_kinds:
         return False
     de_plano = {
         str(kind)
@@ -282,7 +293,7 @@ def judge(
             skipped.append({"rule_id": rule["id"], "reason": "runtime_scope", "scope": scope})
             continue
 
-        if _photon_recusa(rule, runtime):
+        if _photon_recusa(rule, runtime, present_kinds):
             skipped.append({"rule_id": rule["id"], "reason": "databricks.photon.unresolved"})
             continue
 

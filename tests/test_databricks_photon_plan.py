@@ -87,3 +87,28 @@ def test_plano_sem_photon_nao_muda_veredito():
             )
         )
         assert obtido == esperado, caso
+
+
+def test_fact_de_photon_recusa_regra_de_plano_sem_declaracao():
+    from sparkforge.findings.models import Fact
+
+    base = _facts("photon_join")
+    join = Fact(
+        kind="plan.join",
+        subject={"type": "plan_node", "file": "plan.txt", "line": 1, "symbol": "(1) X",
+                 "node_id": 1, "operator": "CartesianProduct", "relation": ""},
+        attrs={"strategy": "CartesianProduct"},
+        provenance={"extractor": "teste"},
+    )
+    achados, pulados = judge([*base, join], load_catalog(), {"spark": "4.2.0"}, return_skipped=True)
+    assert "SF-PLAN-003" not in {f.rule_id for f in achados}
+    assert {"rule_id": "SF-PLAN-003", "reason": "databricks.photon.unresolved"} in pulados
+    sem_photon = judge([join], load_catalog(), {"spark": "4.2.0"})
+    assert "SF-PLAN-003" in {f.rule_id for f in sem_photon}
+
+
+def test_udf_sob_photon_continua_julgada():
+    achados = judge(_facts("photon_udf"), load_catalog(), {"spark": "4.2.0"})
+    assert "SF-PLAN-002" in {f.rule_id for f in achados}
+    aqe = judge(_facts("photon_join"), load_catalog(), {"spark": "4.2.0"})
+    assert "SF-PLAN-004" in {f.rule_id for f in aqe}
