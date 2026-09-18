@@ -29,7 +29,7 @@ Há Skills específicas para arquitetura incremental (`design-incremental-proces
 
 `knowledge/` é a fonte de verdade sobre **como Spark, Glue, EMR, Athena, Parquet e Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/` (estado da investigação). Comece por [`knowledge/INDEX.md`](knowledge/INDEX.md).
 
-Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR on EC2, configuração de application EMR Serverless, superfície corrente dos frameworks de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
+Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR on EC2, configuração de application EMR Serverless, matriz Databricks Runtime → Spark (Databricks como plataforma declarada), superfície corrente dos frameworks de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 

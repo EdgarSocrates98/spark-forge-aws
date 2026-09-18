@@ -254,7 +254,9 @@ a partir dela no nível de módulo, `version_path` deriva os degraus da ordem da
 versões, e todo `runtime_scope` é comparado contra o que ela resolve. Uma versão
 acrescentada muda o conjunto de degraus de todo par que a atravessa.
 
-**Vale para as quatro matrizes desde 2026-09-01.** `version_path.steps` e
+**Vale para as quatro matrizes de plataforma AWS desde 2026-09-01** — são cinco
+`runtime-matrix.yaml` hoje, e a quinta, a do Databricks, não passa por `version_path`
+(parágrafo seguinte). `version_path.steps` e
 `assessment.assess` recebem `platform` e leem `knowledge/emr/`, `knowledge/emr-eks/`
 e `knowledge/emr-serverless/` pela mesma porta (`release_descriptor`), então uma
 release nova em qualquer uma delas muda os degraus daquela plataforma — e só dela.
@@ -263,6 +265,17 @@ Rode o mesmo lote, mais `tests/test_release_descriptor.py` e
 `spark-8.0-preview`) **não** entra na ordem: ele é recusado pelo nome, e o teste
 `test_rotulo_fora_do_padrao_e_recusado_pelo_nome` varre os quatro YAMLs procurando
 por eles.
+
+**`knowledge/databricks/runtime-matrix.yaml` é a quinta, e tem gate próprio.** Ela só
+deriva `spark` em `runtime_detect` (`DATABRICKS_MATRIX`), não entra em
+`version_path` nem em `assessment.assess`. Alterá-la roda:
+
+```
+python -m pytest tests/test_runtime_matrix_drift.py tests/test_databricks_runtime_matrix.py -q
+```
+
+O primeiro compara a tabela de `knowledge/databricks/runtime-matrix.md` com o YAML nos
+dois sentidos; o segundo confere fonte, data e vocabulário fechado (só `spark`).
 
 Componente pode ser escalar ou vir na **forma longa** (`status` + `claims`). Nesse
 caso a fonte de cada claim precisa estar em `knowledge/sources.lock.json` — o
