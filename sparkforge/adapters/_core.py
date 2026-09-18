@@ -441,6 +441,13 @@ def _python_minor_from_interpreter(value: str) -> str:
     return match.group(1) if match else ""
 
 
+# Chave que carrega o numero do Databricks Runtime. Documentada como
+# propriedade local de TaskContext (DBR 16.3+); a presenca nas `Spark
+# Properties` do event log e a lacuna U1 de knowledge/databricks/runtime-matrix.md.
+# Quando esta la, e observacao do artefato, e por isso a fonte e `event_log`.
+_DATABRICKS_VERSION_KEY = "spark.databricks.clusterUsageTags.sparkVersion"
+
+
 # fact -> (fonte de `detect_runtime`, chave crua, valor). Uma entrada nova aqui
 # exige LER o extrator que emite o kind: o mapeamento e um contrato com o
 # formato exato dos attrs, nao um palpite sobre o nome do campo.
@@ -464,6 +471,10 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
             return None
         version = str(fact.attrs.get("version") or "").strip()
         return ("event_log", "spark_version", version) if version else None
+
+    if fact.kind == "spark.conf_effective" and fact.attrs.get("key") == _DATABRICKS_VERSION_KEY:
+        value = str(fact.attrs.get("value") or "").strip()
+        return ("event_log", "databricks_runtime", value) if value else None
 
     if fact.kind == "tf.attribute" and fact.attrs.get("key") == "glue_version":
         if not fact.attrs.get("literal") or fact.attrs.get("block") != "root":

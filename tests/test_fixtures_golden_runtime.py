@@ -37,6 +37,7 @@ REQUIRED_FIXTURES = {
     "glue_and_emr_runtime",
     "emr_only_runtime",
     "databricks_flag_runtime",
+    "databricks_event_log_runtime",
 }
 
 

@@ -1,0 +1,12 @@
+name: databricks_event_log_runtime
+proves: >
+  A versao do Databricks Runtime chega do proprio event log, sem flag, e
+  concorda com o Spark que o log declara: uma observacao, nenhuma
+  divergencia. Se um event log real traz a chave e a lacuna U1.
+runtime:
+  databricks: "15.4"
+  spark: "3.5.0"
+expects_kinds:
+  - env.platform
+  - env.runtime_signal
+expects_rules: []
