@@ -146,6 +146,10 @@ EMR_MATRIX: dict[str, dict[str, Any]] = runtime_matrix.load_emr()
 # forma de a invencao voltar por edicao distraida.
 EMR_SERVERLESS_MATRIX: dict[str, dict[str, str]] = runtime_matrix.load_emr_serverless()
 
+# Matriz Databricks Runtime -> Spark, com um componente so. Fonte e data em
+# `knowledge/databricks/runtime-matrix.yaml`.
+DATABRICKS_MATRIX: dict[str, dict[str, str]] = runtime_matrix.load_databricks()
+
 # Precedencia de resolucao quando ha mais de uma fonte para o mesmo
 # componente: event_log (Spark UI / event log do run) e o mais confiavel,
 # depois cli (a flag que o operador digitou), depois terraform (glue_version,
@@ -269,9 +273,12 @@ _PRECEDENCE: tuple[str, ...] = (
 # conjunto de facts esta a mao.
 _EMR_SERVERLESS_KEY = "emr_serverless_release"
 
+_DATABRICKS_KEY = "databricks_runtime"
+
 _PLATFORM_KEYS: dict[str, tuple[str, ...]] = {
     "emr": ("emr_release", "emr_version", "emr", _EMR_SERVERLESS_KEY),
     "glue": ("glue_version",),
+    "databricks": (_DATABRICKS_KEY,),
 }
 
 _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
@@ -304,6 +311,32 @@ def _emr_key(value: str) -> str:
     text = str(value).strip()
     lowered = text.lower()
     return text[4:] if lowered.startswith("emr-") else text
+
+
+def _databricks_key(value: str) -> str:
+    """`15.4.x-scala2.12` -> `15.4`; `16.4 LTS` -> `16.4`; `18` -> `18`.
+
+    Guarda os segmentos numericos iniciais do rotulo e para no primeiro que nao
+    e numero. E a chave da matriz e o valor de `RuntimeContext.databricks`.
+    """
+    text = str(value).strip()
+    head = text.split()[0] if text else ""
+    parts: list[str] = []
+    for chunk in head.split("-", 1)[0].split("."):
+        if not chunk.isdigit():
+            break
+        parts.append(chunk)
+    return ".".join(parts)
+
+
+def _databricks_row(value: str) -> dict[str, Any] | None:
+    """A pagina escreve `18` onde a API escreve `18.0.x-...`: sem linha para
+    `18.0`, tenta o numero maior. Fora disso, nenhuma linha -- sem inventar."""
+    key = _databricks_key(value)
+    row = DATABRICKS_MATRIX.get(key)
+    if row is None and key.endswith(".0"):
+        row = DATABRICKS_MATRIX.get(key[:-2])
+    return row
 
 
 def _apache_version(version: str) -> str:
@@ -355,7 +388,7 @@ def _distinct_values(observations: list[_Observation]) -> list[str]:
 # A normalizacao vale so para CONTAR. `_divergence_text` continua imprimindo o
 # valor cru de cada fonte: quando ha divergencia de verdade, o operador precisa
 # ver exatamente o que cada fonte disse, nao a forma normalizada.
-_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key}
+_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key, "databricks": _databricks_key}
 
 
 def _distinct_identities(component: str, observations: list[_Observation]) -> list[str]:
@@ -463,6 +496,8 @@ def _matrix_row(platform: str, value: str, key: str = "") -> dict[str, Any] | No
         if key == _EMR_SERVERLESS_KEY:
             return EMR_SERVERLESS_MATRIX.get(_emr_key(value))
         return EMR_MATRIX.get(_emr_key(value))
+    if platform == "databricks":
+        return _databricks_row(value)
     return None
 
 
@@ -539,6 +574,7 @@ def _build_context(
     all_components: dict[str, list[_Observation]] = {
         "glue": platforms.get("glue", []),
         "emr": platforms.get("emr", []),
+        "databricks": platforms.get("databricks", []),
         # Divergencia de IDENTIDADE, ao lado das de versao. `divergences` e o
         # canal que um humano le no relatorio: deixar a plataforma de fora dele
         # reproduziria, no contexto, o mesmo silencio que `env.platform` remove
@@ -550,7 +586,7 @@ def _build_context(
 
     # `glue`, `emr` e `platform` nao passam por matriz nenhuma: sao a propria
     # identidade lida da fonte, e ali string crua distinta E divergencia.
-    identity = {"glue", "emr", "platform"}
+    identity = {"glue", "emr", "databricks", "platform"}
     divergences = [
         _divergence_text(name, all_components[name])
         for name in sorted(all_components)
@@ -570,10 +606,12 @@ def _build_context(
     # O label observado nao se perde -- sobrevive em `env.platform.attrs.observed`,
     # que e onde artefato bruto pertence.
     emr_resolvido = _resolve(platforms.get("emr", []))
+    databricks_resolvido = _resolve(platforms.get("databricks", []))
 
     return RuntimeContext(
         glue=_resolve(platforms.get("glue", [])),
         emr=_emr_key(emr_resolvido) if emr_resolvido else "",
+        databricks=_databricks_key(databricks_resolvido) if databricks_resolvido else "",
         spark=_resolve(observations.get("spark", [])),
         python=_resolve(observations.get("python", [])),
         iceberg=_resolve(observations.get("iceberg", [])),

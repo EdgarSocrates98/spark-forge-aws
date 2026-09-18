@@ -36,6 +36,7 @@ REQUIRED_FIXTURES = {
     # plataforma nao e divergencia de versao (spec da Fase 5, secao 3.3).
     "glue_and_emr_runtime",
     "emr_only_runtime",
+    "databricks_flag_runtime",
 }
 
 

@@ -402,10 +402,12 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
     "required": [
         "glue",
         "emr",
+        "databricks",
         "spark",
         "python",
         "iceberg",
         "athena",
+        "photon",
         "detected_from",
         "divergences",
     ],
@@ -422,6 +424,21 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
                 "Release label do EMR on EC2 ('emr-7.5.0'), vazio fora do EMR. "
                 "Deriva spark/iceberg/python por EMR_MATRIX; ver "
                 "knowledge/emr/runtime-matrix.md."
+            ),
+        },
+        "databricks": {
+            "type": "string",
+            "description": (
+                "Numero do Databricks Runtime ('15.4'), vazio fora do Databricks. "
+                "Deriva spark pela matriz de knowledge/databricks/runtime-matrix.yaml."
+            ),
+        },
+        "photon": {
+            "type": "string",
+            "description": (
+                "Declaracao do operador: 'on', 'off', ou vazio quando nao declarado. "
+                "Com 'on' sob Databricks, regra de plano sai em skipped com "
+                "databricks.photon.unresolved."
             ),
         },
         "spark": {"type": "string"},

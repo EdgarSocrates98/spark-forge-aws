@@ -719,6 +719,7 @@ def build_runtime(
     athena: str | None = None,
     facts: list[Fact] | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
 ) -> tuple[RuntimeContext, list[Fact]]:
     """Contexto de runtime E os facts `env.runtime_signal` que o justificam.
 
@@ -753,6 +754,9 @@ def build_runtime(
         # `event_log` e de `describe_cluster` em `_PRECEDENCE`: discordar de um
         # dump vira divergencia registrada, nunca resolucao silenciosa.
         chave_do_release: emr,
+        # Numero ou rotulo do Databricks Runtime. DECLARACAO, fonte `cli`, como
+        # `--emr`: perde para o event log e discordar vira divergencia.
+        "databricks_runtime": databricks,
         "spark_version": spark,
         "python_version": python,
         "iceberg_version": iceberg,
@@ -773,9 +777,10 @@ def build_runtime_context(
     athena: str | None = None,
     facts: list[Fact] | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
 ) -> RuntimeContext:
     context, _facts = build_runtime(
-        glue, spark, python, iceberg, athena, facts=facts, emr=emr
+        glue, spark, python, iceberg, athena, facts=facts, emr=emr, databricks=databricks
     )
     return context
 

@@ -1,0 +1,13 @@
+name: databricks_flag_runtime
+proves: >
+  Databricks declarado pela flag. O rotulo da API (15.4.x-scala2.12) vira o
+  numero da matriz (15.4), e spark deriva 3.5.0 da matriz, com origem
+  cli:matrix. Uma plataforma so: env.platform com distinct_platforms 1 e
+  SF-ENV-005 avaliada e calada.
+runtime:
+  databricks: "15.4"
+  spark: "3.5.0"
+expects_kinds:
+  - env.platform
+  - env.runtime_signal
+expects_rules: []

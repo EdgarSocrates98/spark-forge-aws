@@ -151,10 +151,16 @@ class RuntimeContext:
     # Identidade de plataforma -- "quantas plataformas foram detectadas" -- e
     # outra pergunta, e vive no fact `env.platform`, nao aqui.
     emr: str = ""
+    # Numero do Databricks Runtime ("15.4"), nunca o rotulo da API
+    # ("15.4.x-scala2.12"): `in_scope` compara este valor com `_parse`.
+    databricks: str = ""
     spark: str = ""
     python: str = ""
     iceberg: str = ""
     athena: str = ""
+    # Declaracao do operador, "on" ou "off"; vazio e "nao declarado". Nao e
+    # versao: nenhuma regra o poe em `runtime_scope`. Quem le e o engine.
+    photon: str = ""
     detected_from: Sequence[str] = ()
     divergences: Sequence[str] = ()
 
@@ -162,10 +168,12 @@ class RuntimeContext:
         return {
             "glue": self.glue,
             "emr": self.emr,
+            "databricks": self.databricks,
             "spark": self.spark,
             "python": self.python,
             "iceberg": self.iceberg,
             "athena": self.athena,
+            "photon": self.photon,
             "detected_from": list(self.detected_from),
             "divergences": list(self.divergences),
         }

@@ -42,6 +42,7 @@
   "runtime": {
     "after": {
       "athena": "",
+      "databricks": "",
       "detected_from": [
         "terraform"
       ],
@@ -49,11 +50,13 @@
       "emr": "",
       "glue": "5.0",
       "iceberg": "1.7.1",
+      "photon": "",
       "python": "3.11",
       "spark": "3.5.4"
     },
     "before": {
       "athena": "",
+      "databricks": "",
       "detected_from": [
         "terraform"
       ],
@@ -61,6 +64,7 @@
       "emr": "",
       "glue": "5.0",
       "iceberg": "1.7.1",
+      "photon": "",
       "python": "3.11",
       "spark": "3.5.4"
     }
