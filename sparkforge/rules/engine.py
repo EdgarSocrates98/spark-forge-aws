@@ -219,15 +219,29 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
 # como "nada encontrado". Photon chega DECLARADO no runtime, nunca detectado,
 # porque o event log nao o mostra (lacuna U2 de
 # knowledge/databricks/runtime-matrix.md).
+#
+# `spark.sql.` nao casa regra nenhuma do catalogo hoje (medido em 2026-09-18: as
+# regras com kind de plano exigem so `plan.*`). Fica para cobrir as regras de
+# metrica SQL do event log que vierem, que leem os mesmos operadores JVM.
 _PLAN_KIND_PREFIXES = ("plan.", "spark.sql.")
+
+# Kind de plano que o Photon NAO cala. A mesma pagina do Photon diz que UDF faz
+# fallback para o Spark: o no de UDF Python e o que roda, e a regra que so o
+# procura continua julgando o que de fato executa.
+_PHOTON_NAO_CALA = {
+    "plan.python_udf": "UDF faz fallback para o Spark; o no de UDF e o que roda",
+}
 
 
 def _photon_recusa(rule: dict[str, Any], runtime: dict[str, str]) -> bool:
     if not runtime.get("databricks") or runtime.get("photon") != "on":
         return False
-    return any(
-        str(kind).startswith(_PLAN_KIND_PREFIXES) for kind in rule.get("requires_facts") or []
-    )
+    de_plano = {
+        str(kind)
+        for kind in rule.get("requires_facts") or []
+        if str(kind).startswith(_PLAN_KIND_PREFIXES)
+    }
+    return bool(de_plano - set(_PHOTON_NAO_CALA))
 
 
 def judge(

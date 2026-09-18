@@ -726,6 +726,11 @@ def _photon(sources: dict[str, dict[str, Any]]) -> str:
     return ""
 
 
+def _photon_declarado(sources: dict[str, dict[str, Any]]) -> bool:
+    """Alguma fonte declarou `photon`, valido ou nao."""
+    return any(isinstance(data, dict) and data.get("photon") for data in sources.values())
+
+
 def _photon_fact(photon: str) -> Fact:
     """`databricks.photon`: so existe quando a plataforma databricks foi
     detectada. `undeclared` e o gatilho de SF-ENV-006."""
@@ -758,8 +763,21 @@ def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, 
     platforms, observations, detected_from, derived = _collect(sources or {})
     context = _build_context(platforms, observations, detected_from, derived)
     photon = _photon(sources or {})
-    if photon:
-        context = replace(context, photon=photon)
+    if platforms.get("databricks"):
+        if photon:
+            context = replace(context, photon=photon)
+    elif _photon_declarado(sources or {}):
+        # Photon so existe no Databricks. Declarado sem a plataforma, o engine
+        # o ignoraria calado; o contexto nao o guarda, e a declaracao sai como
+        # divergencia nomeada, que o operador le.
+        context = replace(
+            context,
+            divergences=[
+                *context.divergences,
+                "photon: declarado sem plataforma databricks detectada; "
+                "a declaracao foi ignorada",
+            ],
+        )
     facts = _build_facts(platforms, observations, derived)
     if platforms.get("databricks"):
         facts.append(_photon_fact(photon))

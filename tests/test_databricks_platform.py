@@ -108,6 +108,27 @@ def test_photon_recusa_regra_de_plano():
     assert not any(f.kind == "databricks.photon" for f in facts_glue)
 
 
+def test_photon_sem_databricks_vira_divergencia():
+    context, _ = build_runtime(glue="5.0", photon="on")
+    assert context.photon == ""
+    photon = [texto for texto in context.divergences if texto.startswith("photon:")]
+    assert len(photon) == 1
+    assert "databricks" in photon[0]
+
+
+def test_photon_nao_cala_regra_de_udf_python():
+    # A fonte do Photon diz que UDF faz fallback para o Spark: o no de UDF Python
+    # e o que roda, e a regra que o procura continua julgando sob Photon.
+    entrada = ROOT / "fixtures" / "plan" / "python_udf_in_plan" / "input"
+    fatos = extract_plan_path(entrada / "plan.txt", repo_root=entrada)
+    runtime = {"databricks": "15.4", "spark": "3.5.0", "photon": "on"}
+    achados, pulados = judge(fatos, load_catalog(), runtime, return_skipped=True)
+    assert {"SF-PLAN-001", "SF-PLAN-002"} <= {f.rule_id for f in achados}
+    recusadas = {p["rule_id"] for p in pulados if p["reason"] == "databricks.photon.unresolved"}
+    assert recusadas.isdisjoint({"SF-PLAN-001", "SF-PLAN-002"})
+    assert "SF-PLAN-003" in recusadas
+
+
 def test_shuffle_partitions_auto_recusado():
     fatos = [
         _conf("spark.sql.shuffle.partitions", "auto"),
