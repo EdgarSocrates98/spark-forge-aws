@@ -43,15 +43,69 @@ deixa `spark` vazio: a derivação não inventa.
   Databricks Runtime 16.3 ou mais novo. Não há fonte oficial dizendo que ela
   aparece nas `Spark Properties` do event log entregue por cluster log
   delivery. O SparkForge lê a chave quando ela está lá; a presença em log real
-  continua a confirmar.
+  continua a confirmar. A observação da seção 4 resolve só a metade
+  serverless: `spark.conf.get` dessa chave lá levanta
+  `CONFIG_NOT_AVAILABLE.WITHOUT_SUGGESTION`, ou seja, no compute serverless a
+  chave não é acessível por `spark.conf`. Para cluster clássico — onde a
+  chave é documentada — a pergunta continua aberta.
 - **U2.** A página do Photon documenta a cor dos operadores na interface e o
   `runtime_engine = PHOTON` nas APIs, não como Photon aparece no event log. Por
-  isso Photon é declarado (`--photon on|off`), não detectado.
+  isso Photon é declarado (`--photon on|off`), não detectado. A observação da
+  seção 4 mostra Photon visível no TEXTO DO PLANO — prefixo `Photon` nos
+  nomes de operador (`PhotonRange`, `PhotonGroupingAgg`, ...) e a seção
+  `== Photon Explanation ==` de `explain(mode="formatted")` — mas isso não é
+  o event log: como Photon aparece no event log entregue continua não
+  observado, porque compute serverless não entrega event log.
 - `spark.sql.shuffle.partitions = auto` liga o auto-optimized shuffle, que
   escolhe o número de partições pelo plano e pelo volume. A página "Adaptive
   query execution" (https://docs.databricks.com/aws/en/optimizations/aqe,
-  lida em 2026-09-17) diz que é opt-in e que o default é `200`. O `tune`
-  recusa derivar número fixo por cima de `auto`.
+  lida em 2026-09-17) diz que é opt-in e que o default é `200` para o caso
+  que ela documenta. Na observação da seção 4, sob compute serverless e sem
+  nenhuma configuração do operador, o valor presente já é `auto` — os dois
+  fatos (default documentado `200`; valor observado `auto`) ficam lado a
+  lado, sem que um resolva o outro. O `tune` recusa derivar número fixo por
+  cima de `auto`.
+
+## 4. Observado em Databricks Free Edition (serverless), 2026-09-18
+
+Observação de operador, um único ambiente: conta Databricks Free Edition
+própria, compute serverless, notebook com dados sintéticos (`spark.range`).
+Tier de autoridade: observação de campo, não documentação oficial — uma
+versão, um tipo de compute, fora do escopo da matriz de runtime clássico das
+seções 1–3 (que documenta cluster, não serverless). Não generalize para
+cluster clássico nem para outra versão sem nova observação.
+
+- `spark.version` = `4.2.0`.
+- `spark.conf.get` de `spark.databricks.clusterUsageTags.sparkVersion`,
+  `spark.databricks.photon.enabled` e `spark.sql.adaptive.enabled` levanta
+  `AnalysisException [CONFIG_NOT_AVAILABLE.WITHOUT_SUGGESTION]`: no
+  serverless observado, essas três chaves não são legíveis por `spark.conf`.
+- `spark.sql.shuffle.partitions` = `auto`, sem nenhuma configuração do
+  operador; o shuffle do plano saiu como `hashpartitioning(k, 16)`.
+- `explain(mode="formatted")` de um groupBy + join mostrou os operadores
+  `PhotonRange`, `PhotonProject`, `PhotonGroupingAgg`,
+  `PhotonShuffleExchangeSink`, `PhotonShuffleMapStage`,
+  `PhotonShuffleExchangeSource`, `PhotonBroadcastHashJoin`,
+  `PhotonColumnarToRow`, `PhotonResultStage`, sob `AdaptiveSparkPlan`, com
+  uma seção `== Photon Explanation ==` dizendo "The query is fully supported
+  by Photon.".
+- `explain` de um `@F.udf` Python comum mostrou `ArrowEvalPython` entre
+  `PhotonArrowResultStage`/`PhotonArrowBatchSink` e
+  `PhotonArrowBatchSource`; a seção `== Photon Explanation ==` disse "fully
+  supported" também para essa UDF.
+- Medido pelo controlador com `sparkforge analyze plan` sobre os dois
+  planos, fora deste repositório: no plano com join o extrator emitiu só
+  `plan.analyzed` e `plan.aqe` — nenhum `plan.join`, `plan.exchange` nem
+  `plan.unresolved`; no plano da UDF emitiu `plan.python_udf` com
+  `operator: ArrowEvalPython` e `udf_type: "pandas"`, embora a UDF observada
+  fosse `@F.udf` comum, não pandas.
+
+**Lacuna do SparkForge, não fato do Databricks.** O extrator de plano não
+reconhece hoje o vocabulário `Photon*`: sob um plano Photon ele fica em
+silêncio onde o vocabulário clássico (join, exchange) teria emitido fact, e
+infere `udf_type` errado (`"pandas"`) para `ArrowEvalPython` quando a UDF é
+comum. As duas ficam como trabalho futuro do extrator (feature seguinte),
+sem data prometida.
 
 ## Fontes
 
