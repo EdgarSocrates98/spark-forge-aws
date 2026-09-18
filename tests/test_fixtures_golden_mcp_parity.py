@@ -191,7 +191,11 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
     (
         "sparkforge_tune",
         "outputSchema.oneOf[0].properties.refused.items.properties.reason.enum",
-    ): "2026-09-14: onze recusas nomeadas das quatro propriedades novas (regra 20)",
+    ): (
+        "2026-09-14: onze recusas nomeadas das quatro propriedades novas (regra 20); "
+        "2026-09-18: `shuffle_partitions_auto`, a recusa do `auto` do Databricks "
+        "(DATABRICKS_SPARK R1)"
+    ),
     ("sparkforge_arbitrate", "description"): (
         "2026-09-14: Debate ROI Gate (§11) -- cada plano de debate traz `debate_gate`, e a "
         "descricao antiga nao dizia o que o veredito significa"

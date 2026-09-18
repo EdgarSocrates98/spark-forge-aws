@@ -214,9 +214,9 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **74
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 358420 | 2201 | 52 |
 | `tool_class` | 1 | 187 | 383118 | 3529 | 73 |
-| `authorize` | 2 | 376 | 485555 | 4426 | 49 |
+| `authorize` | 2 | 376 | 485610 | 4426 | 49 |
 
-Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2188264**;
+Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2188319**;
 a saída do `grep` pelo nome, **24371**; a saída do `grep` pela definição, **361**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que

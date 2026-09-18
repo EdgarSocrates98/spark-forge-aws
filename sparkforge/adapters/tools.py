@@ -4930,6 +4930,7 @@ _TUNE_SUCCESS_SCHEMA: dict[str, Any] = {
                             "sintoma_ao_lado",
                             "sem_broadcast_medido",
                             "ja_cabe_no_timeout",
+                            "shuffle_partitions_auto",
                         ],
                     },
                     "property": {"type": "string"},

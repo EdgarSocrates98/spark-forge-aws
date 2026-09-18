@@ -8,6 +8,7 @@ import yaml
 
 from sparkforge.adapters import _core, cli, tools
 from sparkforge.adapters._core import build_runtime, runtime_sources_from_facts
+from sparkforge.adapters.mcp_envelope import envelope_da_chamada
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.spark_plan import extract_plan_path
@@ -129,6 +130,30 @@ def test_shuffle_partitions_auto_recusado():
         runtime={"databricks": "15.4", "spark": "3.5.0"},
     )
     assert any(p["key"] == "spark.sql.shuffle.partitions" for p in numerico["properties"])
+
+
+def test_tune_pelo_mcp_aceita_a_recusa_auto(tmp_path):
+    # O fio MCP valida a saida contra o outputSchema (`envelope_da_chamada`, o mesmo
+    # caminho de `adapters/mcp.py`): uma recusa fora do enum de `refused[].reason`
+    # vira erro no fio, e o verbo passa na CLI mas falha no MCP.
+    # `sparkforge_tune` nao aceita `databricks` na entrada (nem `emr`, D6): o runtime
+    # sai dos facts, e a recusa `auto` nao depende dele.
+    fatos = [
+        _conf("spark.sql.shuffle.partitions", "auto"),
+        Fact(
+            kind="spark.stage.shuffle",
+            subject={"type": "stage", "symbol": "1"},
+            measures={"write_bytes": 10 * 1024**3},
+            provenance={"extractor": "event_log@0.1.0"},
+        ),
+    ]
+    arquivo = tmp_path / "facts.json"
+    arquivo.write_text(json.dumps([f.to_dict() for f in fatos]), encoding="utf-8")
+    envelope = envelope_da_chamada(
+        "sparkforge_tune", {"facts_path": str(arquivo)}, tools.TOOLS, "stdio", tools.call_tool
+    )
+    assert not envelope.is_error, envelope.text
+    assert "shuffle_partitions_auto" in {r["reason"] for r in envelope.structured["refused"]}
 
 
 def _subparsers(parser):
