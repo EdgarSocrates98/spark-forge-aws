@@ -15,12 +15,14 @@ Aplica o catalogo de regras versionado sobre facts ja extraidos, filtrado pelo r
 | `as_of` | string | não | Dia de referencia do estado das fontes (AAAA-MM-DD). Default: hoje, UTC. |
 | `athena` | string | não |  |
 | `cursor` | string | não |  |
+| `databricks` | string | não | Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, nao observacao: perde para o event log, e discordar vira divergencia reportada em `runtime.divergences`. |
 | `emr` | string | não | Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). DECLARACAO, nao observacao: perde para o event log e para um dump de describe-cluster, e discordar de um deles vira divergencia reportada em `runtime.divergences`, nunca valor substituido em silencio. |
 | `facts` | array de object | não |  |
 | `facts_path` | string ou array de string | não | Um caminho, ou varios: os facts sao unidos e deduplicados antes de julgar. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
 | `limit` | integer | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved. |
 | `python` | string | não |  |
 | `severity` | array de string | não |  |
 | `show_skipped` | boolean | não |  |

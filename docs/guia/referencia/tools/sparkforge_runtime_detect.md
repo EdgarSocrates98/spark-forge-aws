@@ -13,10 +13,12 @@ Deriva glue/emr/spark/python/iceberg/athena dos facts ja extraidos e dos paramet
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `athena` | string | não |  |
+| `databricks` | string | não | Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, nao observacao: perde para o event log, e discordar vira divergencia reportada em `runtime.divergences`. |
 | `emr` | string | não | Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). DECLARACAO, nao observacao: perde para o event log e para um dump de describe-cluster, e discordar de um deles vira divergencia reportada em `runtime.divergences`, nunca valor substituido em silencio. |
 | `facts_path` | string ou array de string | não | Um caminho, ou varios: os facts sao unidos e deduplicados antes de derivar as fontes de versao. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

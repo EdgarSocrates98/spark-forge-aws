@@ -119,7 +119,9 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
         "fontes na saida (frente de freshness); opt-in, a resposta sem a flag e a mesma. "
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
-        "T2), so em `properties`, fora de `required`"
+        "T2), so em `properties`, fora de `required`. "
+        "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
+        "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
     "sparkforge_rules_lookup": (
         "2026-09-11: `source_freshness`/`as_of` opcionais e os campos de estado das "
@@ -145,7 +147,9 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_case_open": (
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
-        "T2), so em `properties`, fora de `required`"
+        "T2), so em `properties`, fora de `required`. "
+        "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
+        "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
     "sparkforge_case_update": (
         "2026-09-17: `runtime.databricks` e `runtime.photon` na saida (DATABRICKS_SPARK "
@@ -153,7 +157,21 @@ ALTERADAS_DEPOIS_DO_GOLDEN = {
     ),
     "sparkforge_runtime_detect": (
         "2026-09-17: `databricks` e `photon` na saida (DATABRICKS_SPARK T2), so em "
-        "`properties`, fora de `required`"
+        "`properties`, fora de `required`. "
+        "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
+        "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
+    ),
+    "sparkforge_arbitrate": (
+        "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
+        "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
+    ),
+    "sparkforge_debate_start": (
+        "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
+        "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
+    ),
+    "sparkforge_root_cause": (
+        "2026-09-18: `databricks` e `photon` opcionais na entrada, espelho de "
+        "`--databricks`/`--photon` (DATABRICKS_SPARK T9), fora de `required`"
     ),
 }
 # Trocas NAO aditivas aceitas, uma por (tool, caminho dentro da tool), cada uma com
@@ -200,6 +218,18 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
         "2026-09-14: o enum de recusa do debate e UM so (`_DEBATE_REFUSAL_REASONS`), "
         "e cresceu com as tres recusas do gate"
     ),
+    (
+        "sparkforge_judge",
+        "outputSchema.oneOf[0].properties.skipped.items.properties.reason.enum",
+    ): (
+        "2026-09-18: `databricks.photon.unresolved`, o pulo do engine sob Photon "
+        "declarado, passou a ser alcancavel pelo MCP com `photon` na entrada "
+        "(DATABRICKS_SPARK T9)"
+    ),
+    (
+        "sparkforge_judge",
+        "outputSchema.oneOf[0].properties.skipped.items.properties.reason.description",
+    ): "2026-09-18: a descricao nomeia o motivo novo do enum (DATABRICKS_SPARK T9)",
 }
 # Chamadas gravadas cujo CONTEUDO mudou porque o catalogo mudou, e nao o SDK.
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos
@@ -418,7 +448,10 @@ class TestHandshakeLegado:
         # 23 -> 35 em 2026-09-17: `databricks` e `photon` no contexto de runtime
         # da saida de seis tools (judge, resume, case_get, case_open, case_update,
         # runtime_detect), fora de `required`. Doze chaves novas.
-        assert aditivas == {"stdio": 35, "http": 35}
+        # 35 -> 47 em 2026-09-18: `databricks` e `photon` na ENTRADA de seis
+        # tools (judge, case_open, runtime_detect, arbitrate, debate_start,
+        # root_cause), espelho das flags da CLI, fora de `required`. Doze chaves.
+        assert aditivas == {"stdio": 47, "http": 47}
         reescritas = {
             t: sum(
                 f".{t}." in c and _reescrita_declarada(c, antes, agora, golden)
@@ -426,7 +459,9 @@ class TestHandshakeLegado:
             )
             for t in ("stdio", "http")
         }
-        assert reescritas == {"stdio": 8, "http": 8}
+        # 8 -> 10 em 2026-09-18: o enum `reason` do `skipped` do judge cresceu com
+        # `databricks.photon.unresolved`, e a descricao dele passou a nomea-lo.
+        assert reescritas == {"stdio": 10, "http": 10}
         # A chamada declarada: o texto serializado, alvo, direcao e os dois
         # primeiros itens do `proposed_change`. Mais ou menos que isso e conteudo
         # que mudou sem registro.

@@ -3454,6 +3454,8 @@ def root_cause(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
     all_missing: bool = False,
     detail_level: str = "full",
 ) -> dict[str, Any]:
@@ -3496,7 +3498,8 @@ def root_cause(
         raise AdapterError(str(exc), exit_code=2) from exc
 
     context = build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
+        databricks=databricks, photon=photon,
     )
     runtime = context.to_dict()
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
@@ -3544,6 +3547,8 @@ def proof_change(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
 ) -> dict[str, Any]:
     """As obrigacoes de prova de cada recomendacao aplicada, e o desfecho delas.
 
@@ -3575,7 +3580,8 @@ def proof_change(
         raise AdapterError(str(exc), exit_code=2) from exc
 
     versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
-               "athena": athena, "emr": emr}
+               "athena": athena, "emr": emr, "databricks": databricks,
+               "photon": photon}
     runtime = build_runtime_context(**{**versoes, "facts": uniao}).to_dict()
     runtime_depois = build_runtime_context(**{**versoes, "facts": depois}).to_dict()
     veredictos, _ = run_judge(uniao, regras, runtime, return_skipped=True)
@@ -3690,6 +3696,8 @@ def scan(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
 ) -> dict[str, Any]:
     """`sparkforge scan` (§22): plano por manifesto e extensao, um analyze por
     arquivo, `fuse` e `judge` sobre a uniao, e o resumo. Sem rede: so analisa o
@@ -3745,7 +3753,8 @@ def scan(
     if fundidos:
         julgado = judge_findings(
             facts=fundidos, glue=glue, spark=spark, python=python, iceberg=iceberg,
-            athena=athena, emr=emr, limit=None,
+            athena=athena, emr=emr, databricks=databricks, photon=photon,
+            limit=None,
         )
         findings = list(julgado["items"])
         runtime = julgado.get("runtime")
@@ -4256,6 +4265,8 @@ def simulate_change(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
 ) -> dict[str, Any]:
     """O que uma mudanca de configuracao move, estruturalmente (§19).
 
@@ -4285,7 +4296,8 @@ def simulate_change(
         raise AdapterError(str(exc), exit_code=2) from exc
 
     versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
-               "athena": athena, "emr": emr}
+               "athena": athena, "emr": emr, "databricks": databricks,
+               "photon": photon}
     achados_antes, pulados_antes, runtime_antes = _simulate_lado(fatos, regras, versoes)
     achados_depois, pulados_depois, runtime_depois = _simulate_lado(fatos_depois, regras, versoes)
     comparacao = diff(
@@ -4476,6 +4488,8 @@ def judge_findings(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
     severity: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
@@ -4517,7 +4531,8 @@ def judge_findings(
     # mesmos que alimentam a deteccao: uma regra guardada por `glue: "*"` passa
     # a avaliar quando o Terraform ja disse qual e a versao, sem flag nenhuma.
     context = build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
+        databricks=databricks, photon=photon,
     )
     runtime = context.to_dict()
 
@@ -4748,6 +4763,8 @@ def arbitrate_findings(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
 ) -> dict[str, Any]:
     """Roda o executor agentico deterministico e grava no blackboard de `repo`.
 
@@ -4770,7 +4787,8 @@ def arbitrate_findings(
         findings, findings_path, facts, facts_path
     )
     context = build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
+        databricks=databricks, photon=photon,
     )
     runtime = context.to_dict()
 
@@ -4820,6 +4838,8 @@ def debate_start(
     iceberg: str | None = None,
     athena: str | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
 ) -> dict[str, Any]:
     """Congela o plano de debate do par `rules` em `<repo>/.sparkforge/debate/`.
 
@@ -4832,7 +4852,8 @@ def debate_start(
         findings, findings_path, facts, facts_path
     )
     runtime = build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
+        databricks=databricks, photon=photon,
     ).to_dict()
     par = (
         [r.strip() for r in rules.split(",")] if isinstance(rules, str) else list(rules or [])
@@ -4935,6 +4956,8 @@ def runtime_detect(
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
 ) -> dict[str, Any]:
     return build_runtime_context(
         glue,
@@ -4944,6 +4967,8 @@ def runtime_detect(
         athena,
         facts=_facts_for_runtime(facts_path),
         emr=emr,
+        databricks=databricks,
+        photon=photon,
     ).to_dict()
 
 
@@ -6529,6 +6554,8 @@ def case_open(
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
     emr: str | None = None,
+    databricks: str | None = None,
+    photon: str | None = None,
     strict_gates: bool = False,
     reopen: bool = False,
 ) -> dict[str, Any]:
@@ -6571,6 +6598,8 @@ def case_open(
         athena,
         facts=_facts_for_runtime(facts_path),
         emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
     case = store.new_case(
         case_id, now, context.to_dict(), repo=repo, strict_gates=strict_gates

@@ -1,6 +1,10 @@
 """Databricks como plataforma declarada, com fronteira onde o significado muda."""
+import argparse
+import inspect
+import json
 from pathlib import Path
 
+from sparkforge.adapters import _core, cli, tools
 from sparkforge.adapters._core import build_runtime, runtime_sources_from_facts
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.spark_plan import extract_plan_path
@@ -77,3 +81,36 @@ def test_photon_recusa_regra_de_plano():
 
     _, facts_glue = build_runtime(glue="5.0", photon="on")
     assert not any(f.kind == "databricks.photon" for f in facts_glue)
+
+
+def _subparsers(parser):
+    for acao in parser._actions:
+        if isinstance(acao, argparse._SubParsersAction):
+            for nome, sub in acao.choices.items():
+                yield nome, sub
+                yield from _subparsers(sub)
+
+
+def test_flags_seguem_o_emr(capsys):
+    faltando = []
+    for nome, sub in _subparsers(cli.build_parser()):
+        opcoes = {o for acao in sub._actions for o in acao.option_strings}
+        if "--emr" in opcoes and not {"--databricks", "--photon"} <= opcoes:
+            faltando.append(("cli", nome))
+    for nome, spec in tools.TOOLS.items():
+        propriedades = spec.get("inputSchema", {}).get("properties", {})
+        if "emr" in propriedades and not {"databricks", "photon"} <= set(propriedades):
+            faltando.append(("mcp", nome))
+    for nome, funcao in inspect.getmembers(_core, inspect.isfunction):
+        if nome.startswith("_"):
+            continue
+        parametros = inspect.signature(funcao).parameters
+        if "emr" in parametros and not {"databricks", "photon"} <= set(parametros):
+            faltando.append(("core", nome))
+    assert faltando == []
+
+    assert cli.main(["runtime", "detect", "--databricks", "15.4", "--photon", "on"]) == 0
+    saida = json.loads(capsys.readouterr().out)
+    assert (saida["databricks"], saida["spark"], saida["photon"]) == ("15.4", "3.5.0", "on")
+    mcp = tools.call_tool("sparkforge_runtime_detect", {"databricks": "15.4", "photon": "off"})
+    assert (mcp["databricks"], mcp["photon"]) == ("15.4", "off")

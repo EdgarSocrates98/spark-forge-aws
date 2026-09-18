@@ -20,6 +20,8 @@ sparkforge simulate --help
 | `--iceberg` | não | texto |  |  |  |
 | `--athena` | não | texto |  |  |  |
 | `--emr` | não | texto |  |  |  |
+| `--databricks` | não | texto |  |  |  |
+| `--photon` | não | texto |  |  |  |
 
 ## Tool MCP equivalente
 

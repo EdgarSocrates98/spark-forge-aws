@@ -19,6 +19,8 @@ sparkforge root-cause --help
 | `--iceberg` | não | texto |  |  |  |
 | `--athena` | não | texto |  |  |  |
 | `--emr` | não | texto |  |  |  |
+| `--databricks` | não | texto |  |  |  |
+| `--photon` | não | `on`, `off` |  |  |  |
 | `--all-missing` | não | liga/desliga |  |  | Lista as regras nao avaliadas de TODAS as areas, e nao so das que ja tem achado. O TOTAL sai nos dois casos -- medido: 129 num case de Terraform sozinho, contra 5 no recorte. |
 | `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | `summary` corta remediacao, validacao, rollback e os riscos da regra. Nunca corta `rule_id`, severidade, evidencia nem a lacuna. |
 

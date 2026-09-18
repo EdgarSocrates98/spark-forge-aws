@@ -472,6 +472,24 @@ _EMR_INPUT: dict[str, Any] = {
     ),
 }
 
+_DATABRICKS_INPUT: dict[str, Any] = {
+    "type": "string",
+    "description": (
+        "Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, "
+        "nao observacao: perde para o event log, e discordar vira divergencia "
+        "reportada em `runtime.divergences`."
+    ),
+}
+
+_PHOTON_INPUT: dict[str, Any] = {
+    "type": "string",
+    "enum": ["on", "off"],
+    "description": (
+        "Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em "
+        "skipped com databricks.photon.unresolved."
+    ),
+}
+
 _ALTERNATIVE_ITEM: dict[str, Any] = {
     "type": "object",
     "required": ["rank", "rule_id", "recommended_skill", "reason"],
@@ -1051,11 +1069,18 @@ _JUDGE_SKIPPED_ITEM: dict[str, Any] = {
         "rule_id": {"type": "string"},
         "reason": {
             "type": "string",
-            "enum": ["runtime_scope", "blocked_on", "requires_facts"],
+            "enum": [
+                "runtime_scope",
+                "blocked_on",
+                "requires_facts",
+                "databricks.photon.unresolved",
+            ],
             "description": (
                 "runtime_scope: regra fora do runtime informado. blocked_on: "
                 "capacidade ainda nao implementada (ver campo `blocked_on`). "
-                "requires_facts: fact exigido nao foi extraido (ver campo `missing`)."
+                "requires_facts: fact exigido nao foi extraido (ver campo `missing`). "
+                "databricks.photon.unresolved: regra de plano sob Photon declarado "
+                "'on' no Databricks, onde o plano do Spark nao descreve o que roda."
             ),
         },
         "scope": {"type": "object", "description": "Presente quando reason=runtime_scope."},
@@ -4966,6 +4991,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
                 "glue": {"type": "string"},
                 "emr": _EMR_INPUT,
+                "databricks": _DATABRICKS_INPUT,
+                "photon": _PHOTON_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -5220,6 +5247,8 @@ TOOLS: dict[str, dict[str, Any]] = {
             "properties": {
                 "glue": {"type": "string"},
                 "emr": _EMR_INPUT,
+                "databricks": _DATABRICKS_INPUT,
+                "photon": _PHOTON_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -7383,6 +7412,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "glue": {"type": "string"},
                 "emr": _EMR_INPUT,
+                "databricks": _DATABRICKS_INPUT,
+                "photon": _PHOTON_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -7468,6 +7499,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "glue": {"type": "string"},
                 "emr": _EMR_INPUT,
+                "databricks": _DATABRICKS_INPUT,
+                "photon": _PHOTON_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -7566,6 +7599,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "glue": {"type": "string"},
                 "emr": _EMR_INPUT,
+                "databricks": _DATABRICKS_INPUT,
+                "photon": _PHOTON_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -7677,6 +7712,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "iceberg": {"type": "string"},
                 "athena": {"type": "string"},
                 "emr": {"type": "string"},
+                "databricks": {"type": "string"},
+                "photon": _PHOTON_INPUT,
                 "all_missing": {
                     "type": "boolean",
                     "description": (
@@ -7978,6 +8015,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "iceberg": {"type": "string"},
                 "athena": {"type": "string"},
                 "emr": {"type": "string"},
+                "databricks": {"type": "string"},
+                "photon": _PHOTON_INPUT,
             },
         },
         "outputSchema": _may_fail(
@@ -8022,6 +8061,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "iceberg": {"type": "string"},
                 "athena": {"type": "string"},
                 "emr": {"type": "string"},
+                "databricks": {"type": "string"},
+                "photon": _PHOTON_INPUT,
             },
         },
         "outputSchema": _may_fail(
@@ -8138,8 +8179,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "fail_on": {"type": "string", "enum": ["P0", "P1"]},
                 **{
                     eixo: {"type": "string", "description": f"Versao de {eixo} para o judge."}
-                    for eixo in ("glue", "spark", "python", "iceberg", "athena", "emr")
+                    for eixo in (
+                        "glue", "spark", "python", "iceberg", "athena", "emr", "databricks",
+                    )
                 },
+                "photon": _PHOTON_INPUT,
             },
         },
         "outputSchema": _may_fail(
@@ -9435,6 +9479,8 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         args["now"],
         glue=args.get("glue"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -9493,6 +9539,8 @@ def _h_runtime_detect(args: dict[str, Any]) -> dict[str, Any]:
     return _core.runtime_detect(
         glue=args.get("glue"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -9517,6 +9565,8 @@ def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
         facts_path=args.get("facts_path"),
         glue=args.get("glue"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -9539,6 +9589,8 @@ def _h_arbitrate(args: dict[str, Any]) -> dict[str, Any]:
         facts_path=args.get("facts_path"),
         glue=args.get("glue"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -9560,6 +9612,8 @@ def _h_debate_start(args: dict[str, Any]) -> dict[str, Any]:
         facts_path=args.get("facts_path"),
         glue=args.get("glue"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -9584,6 +9638,8 @@ def _h_root_cause(args: dict[str, Any]) -> dict[str, Any]:
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
         all_missing=bool(args.get("all_missing")),
         detail_level=args.get("detail_level", "full"),
     )
@@ -10071,6 +10127,8 @@ def _h_proof(args: dict[str, Any]) -> dict[str, Any]:
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
     )
 
 
@@ -10084,6 +10142,8 @@ def _h_simulate(args: dict[str, Any]) -> dict[str, Any]:
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
         emr=args.get("emr"),
+        databricks=args.get("databricks"),
+        photon=args.get("photon"),
     )
 
 
@@ -10097,7 +10157,12 @@ def _h_scan(args: dict[str, Any]) -> dict[str, Any]:
         dry_run=bool(args.get("dry_run", False)),
         output_format=args.get("format", "json"),
         fail_on=args.get("fail_on"),
-        **{e: args.get(e) for e in ("glue", "spark", "python", "iceberg", "athena", "emr")},
+        **{
+            e: args.get(e)
+            for e in (
+                "glue", "spark", "python", "iceberg", "athena", "emr", "databricks", "photon",
+            )
+        },
     )
 
 

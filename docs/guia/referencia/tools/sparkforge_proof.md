@@ -17,9 +17,11 @@ Change Proof: para cada recomendacao APLICADA (`applied`: RULE_ID ou RULE_ID:sim
 | `facts_path` | string ou array de string | sim | A UNIAO de facts do case, com os de funcval e benchmark. |
 | `findings_path` | string | sim | Findings do antes, gerados por `sparkforge judge --out`. |
 | `athena` | string | não |  |
+| `databricks` | string | não |  |
 | `emr` | string | não |  |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 
