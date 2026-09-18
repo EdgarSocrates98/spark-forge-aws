@@ -125,3 +125,19 @@ def test_flags_seguem_o_emr(capsys):
     assert (saida["databricks"], saida["spark"], saida["photon"]) == ("15.4", "3.5.0", "on")
     mcp = tools.call_tool("sparkforge_runtime_detect", {"databricks": "15.4", "photon": "off"})
     assert (mcp["databricks"], mcp["photon"]) == ("15.4", "off")
+
+
+def test_divergencia_spark_registrada():
+    context, facts = detect_runtime(
+        {"event_log": {"spark_version": "3.5.2"}, "cli": {"databricks_runtime": "15.4"}}
+    )
+    assert context.databricks == "15.4"
+    assert context.spark == "3.5.2"
+    assert any(texto.startswith("spark:") for texto in context.divergences)
+    sinal = next(
+        f for f in facts if f.kind == "env.runtime_signal" and f.attrs["component"] == "spark"
+    )
+    assert sinal.measures["distinct_versions"] == 2
+    golden = ROOT / "fixtures" / "runtime" / "databricks_divergent_spark" / "expected"
+    disparadas = {f["rule_id"] for f in json.loads((golden / "findings.json").read_text(encoding="utf-8"))}
+    assert "SF-ENV-001" in disparadas

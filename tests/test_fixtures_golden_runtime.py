@@ -38,6 +38,7 @@ REQUIRED_FIXTURES = {
     "emr_only_runtime",
     "databricks_flag_runtime",
     "databricks_event_log_runtime",
+    "databricks_divergent_spark",
 }
 
 
