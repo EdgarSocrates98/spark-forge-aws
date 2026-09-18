@@ -189,3 +189,11 @@ def test_divergencia_spark_registrada():
     golden = ROOT / "fixtures" / "runtime" / "databricks_divergent_spark" / "expected"
     disparadas = {f["rule_id"] for f in json.loads((golden / "findings.json").read_text(encoding="utf-8"))}
     assert "SF-ENV-001" in disparadas
+
+
+def test_readme_declara_databricks():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "--databricks" in readme
+    assert "knowledge/databricks/runtime-matrix.md" in readme
+    status = (ROOT / "docs" / "superpowers" / "STATUS.md").read_text(encoding="utf-8")
+    assert "DATABRICKS_SPARK" in status
