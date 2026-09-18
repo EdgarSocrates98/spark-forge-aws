@@ -56,7 +56,7 @@ Predicado que aparece em `DataFilters` mas não em `PushedFilters` foi rebaixado
 | `ReusedExchange` | shuffle reaproveitado (bom) |
 | `InMemoryTableScan` | leitura de cache |
 
-`BatchEvalPython` no meio do plano é o achado que explica pushdown ausente acima dele. `ArrowEvalPython` é `pandas_udf` — melhor, mas ainda opaco ao otimizador.
+`BatchEvalPython` no meio do plano é o achado que explica pushdown ausente acima dele. `ArrowEvalPython` é UDF com transferência por Arrow (`pandas_udf` ou UDF Python otimizada para Arrow; o plano não diz qual) — melhor que `BatchEvalPython`, mas ainda opaco ao otimizador.
 
 `Exchange` em quantidade inesperada é o sinal mais confiável de trabalho não intencional. Um "job simples" com 8 `Exchange` tem 8 shuffles a justificar.
 

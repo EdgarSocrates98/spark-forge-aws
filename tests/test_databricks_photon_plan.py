@@ -234,3 +234,11 @@ def test_sf_plan_002_ainda_casa_udf_pandas():
     achados = judge([fact], [regra], {"spark": "3.5.4"})
     assert len(achados) == 1
     assert achados[0].rule_id == "SF-PLAN-002"
+
+
+def test_knowledge_registra_o_extrator_sob_photon():
+    texto = (ROOT / "knowledge" / "databricks" / "runtime-matrix.md").read_text(encoding="utf-8")
+    secao = texto.split("## 4.", 1)[1]
+    assert "plan.photon" in secao
+    assert "databricks.photon.unresolved" in secao
+    assert "udf_type" in secao and "arrow" in secao
