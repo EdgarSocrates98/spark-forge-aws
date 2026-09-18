@@ -158,8 +158,11 @@ class RuntimeContext:
     python: str = ""
     iceberg: str = ""
     athena: str = ""
-    # Declaracao do operador, "on" ou "off"; vazio e "nao declarado". Nao e
-    # versao: nenhuma regra o poe em `runtime_scope`. Quem le e o engine.
+    # "on" ou "off"; vazio e "sem leitura". Vem da declaracao do operador
+    # (`--photon`, fonte `cli`) ou da observacao do plano (`plan.photon`, fonte
+    # `plan`), e a observacao vence; so entra com a plataforma databricks
+    # detectada. Nao e versao: nenhuma regra o poe em `runtime_scope`. Quem le
+    # e o engine.
     photon: str = ""
     detected_from: Sequence[str] = ()
     divergences: Sequence[str] = ()

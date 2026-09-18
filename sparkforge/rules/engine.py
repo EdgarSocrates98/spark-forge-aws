@@ -230,6 +230,14 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
 # `spark.sql.` nao casa regra nenhuma do catalogo hoje (medido em 2026-09-18: as
 # regras com kind de plano exigem so `plan.*`). Fica para cobrir as regras de
 # metrica SQL do event log que vierem, que leem os mesmos operadores JVM.
+#
+# A recusa e por CASE, nao por plano: um `plan.photon` em qualquer ponto da uniao
+# de facts recusa tambem regra de outro plano, ou de event log (`spark.sql.*`),
+# igual a via declarada. Hoje nenhuma regra do catalogo exige `spark.sql.*`.
+#
+# `plan.photon` casa o prefixo `plan.`: uma regra futura que exija o proprio
+# `plan.photon` seria recusada por ele mesmo. Quem a escrever precisa po-lo em
+# `_PHOTON_NAO_CALA` ou trata-lo a parte em `_photon_recusa`.
 _PLAN_KIND_PREFIXES = ("plan.", "spark.sql.")
 
 # Kind de plano que o Photon NAO cala. Observado sob Photon

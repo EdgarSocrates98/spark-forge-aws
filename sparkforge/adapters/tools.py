@@ -437,9 +437,10 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
         "photon": {
             "type": "string",
             "description": (
-                "Declaracao do operador: 'on', 'off', ou vazio quando nao declarado. "
-                "Com 'on' sob Databricks, regra de plano sai em skipped com "
-                "databricks.photon.unresolved."
+                "'on', 'off', ou vazio sem leitura. Vem da declaracao do operador "
+                "ou da observacao do plano (plan.photon, fonte plan), e a "
+                "observacao vence. Com 'on' sob Databricks, regra de plano sai em "
+                "skipped com databricks.photon.unresolved."
             ),
         },
         "spark": {"type": "string"},
@@ -487,7 +488,9 @@ _PHOTON_INPUT: dict[str, Any] = {
     "description": (
         "Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em "
         "skipped com databricks.photon.unresolved, exceto a que so exige "
-        "plan.python_udf. Sem databricks, vira divergencia 'photon:'."
+        "plan.python_udf ou plan.aqe. Plano com operador Photon (plan.photon) faz "
+        "o mesmo sem declaracao e vence 'off', que vira divergencia 'photon:'. "
+        "Sem databricks, vira divergencia 'photon:'."
     ),
 }
 
@@ -1081,7 +1084,8 @@ _JUDGE_SKIPPED_ITEM: dict[str, Any] = {
                 "capacidade ainda nao implementada (ver campo `blocked_on`). "
                 "requires_facts: fact exigido nao foi extraido (ver campo `missing`). "
                 "databricks.photon.unresolved: regra de plano sob Photon declarado "
-                "'on' no Databricks, onde o plano do Spark nao descreve o que roda."
+                "'on' no Databricks, ou diante de plano com operador Photon "
+                "(plan.photon), onde o plano do Spark nao descreve o que roda."
             ),
         },
         "scope": {"type": "object", "description": "Presente quando reason=runtime_scope."},

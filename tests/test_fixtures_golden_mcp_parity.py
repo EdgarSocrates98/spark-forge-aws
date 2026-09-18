@@ -233,7 +233,11 @@ REESCRITAS_DEPOIS_DO_GOLDEN = {
     (
         "sparkforge_judge",
         "outputSchema.oneOf[0].properties.skipped.items.properties.reason.description",
-    ): "2026-09-18: a descricao nomeia o motivo novo do enum (DATABRICKS_SPARK T9)",
+    ): (
+        "2026-09-18: a descricao nomeia o motivo novo do enum (DATABRICKS_SPARK T9); "
+        "depois diz que o plano com operador Photon (`plan.photon`) tambem leva a "
+        "ele (DATABRICKS_PHOTON_PLAN TX), sem mudar o enum"
+    ),
 }
 # Chamadas gravadas cujo CONTEUDO mudou porque o catalogo mudou, e nao o SDK.
 # So os campos listados em `_CAMPOS_DA_REGRA_REESCRITOS` sao neutralizados nos

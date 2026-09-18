@@ -660,24 +660,26 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
     `tests/test_rule_scope_by_nature.py`, que existe porque `SF-GLUE` de fato
     some.
 
-    A EXCECAO PASSOU A EXISTIR PORQUE O CASO EXISTE (photon, 2026-09-18), no
-    molde de `AREA_MAY_VANISH_WHEN`. `photon` e eixo de `RuntimeContext` que so a
-    flag `--photon` alimenta: e declaracao do operador, e nenhum artefato
-    coletado a observa (lacuna U2 de `knowledge/databricks/runtime-matrix.md`).
-    `AXES_DECLARED_ONLY` nomeia o eixo com a razao; o teste de produtor o pula,
-    o de superficie continua exigindo que ele seja DECLARAVEL, e
-    `test_declared_only_axes_are_real_axes_without_producer` reprova no dia em
-    que ele ganhar produtor -- ai a excecao tem que sair.
+    A EXCECAO EXISTIU ENQUANTO O CASO EXISTIU (photon, de 2026-09-18, feature
+    DATABRICKS_SPARK, ate a feature DATABRICKS_PHOTON_PLAN), no molde de
+    `AREA_MAY_VANISH_WHEN`. `photon` era eixo de `RuntimeContext` que so a flag
+    `--photon` alimentava: declaracao do operador, sem artefato coletado que a
+    observasse. `AXES_DECLARED_ONLY` nomeava o eixo com a razao; o teste de
+    produtor o pulava e o de superficie continuava exigindo que ele fosse
+    DECLARAVEL. Com DATABRICKS_PHOTON_PLAN o eixo ganhou produtor: o plano com
+    operador Photon emite `plan.photon`, que `_runtime_reading` le como
+    OBSERVACAO `("plan", "photon", "on")`, e a excecao saiu. A chave crua de
+    `photon` nao esta em `_PLATFORM_KEYS`/`_DIRECT_KEYS` (quem a le e
+    `runtime_detect._photon`), e por isso `_raw_keys_by_axis` a deriva do AST
+    dessa funcao -- sem isso o teste de produtor nao enxergaria a leitura.
+    O dicionario fica, vazio: e o lugar de declarar o proximo eixo so-declarado,
+    e `test_declared_only_axes_are_real_axes_without_producer` volta a morder
+    quando ele tiver entrada.
     """
 
     # eixo -> por que ele nao tem produtor. Toda entrada e caso exercido, nunca
     # permissao antecipada; a trava abaixo reprova entrada que ganhou produtor.
-    AXES_DECLARED_ONLY = {
-        "photon": (
-            "declaracao do operador (--photon), sem artefato que a observe; "
-            "ver U2 em knowledge/databricks/runtime-matrix.md"
-        ),
-    }
+    AXES_DECLARED_ONLY: dict[str, str] = {}
 
     def _axes(self):
         from sparkforge.findings.models import RuntimeContext
@@ -690,11 +692,38 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         Derivado de `_DIRECT_KEYS`/`_PLATFORM_KEYS`, que sao o vocabulario que
         `_collect` de fato le. Eixo sem chave crua nenhuma nao tem como ser
         alimentado por fonte alguma, e cai como gap -- que e o veredito certo.
+
+        `photon` nao passa por `_collect`: quem le a chave crua dele e
+        `runtime_detect._photon`, e ela sai do AST dessa funcao (as chaves
+        literais de `data.get(...)`), nunca de uma lista mantida aqui.
         """
         from sparkforge.facts.runtime_detect import _DIRECT_KEYS, _PLATFORM_KEYS
 
-        merged = {**_PLATFORM_KEYS, **_DIRECT_KEYS}
+        merged = {**_PLATFORM_KEYS, **_DIRECT_KEYS, "photon": self._photon_raw_keys()}
         return {axis: set(merged.get(axis, ())) for axis in self._axes()}
+
+    def _photon_raw_keys(self):
+        """As chaves cruas que `runtime_detect._photon` le de cada fonte: todo
+        literal de texto passado a `data.get(...)` no corpo da funcao."""
+        import ast
+        import inspect
+        import textwrap
+
+        from sparkforge.facts import runtime_detect
+
+        tree = ast.parse(textwrap.dedent(inspect.getsource(runtime_detect._photon)))  # noqa: SLF001
+        return {
+            node.args[0].value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "get"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "data"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)
+        }
 
     def _named_in_the_reader(self):
         """Todo literal de texto do CORPO de `_runtime_reading`.
