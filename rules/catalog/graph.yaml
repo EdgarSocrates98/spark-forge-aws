@@ -362,7 +362,7 @@ rules:
       `__init__.py` das duas exporta um único nome. Nenhum fact desta área declara
       versão de GraphFrames.
     proposed_change:
-      - "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, ou EMR 6.12.0+ / 7.x — onde há artefato publicado e mantido."
+      - "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, EMR 6.12.0+ / 7.x, ou Databricks Runtime 14.3, 15.4 ou 16.4 (Spark 3.5 em `knowledge/databricks/runtime-matrix.md`) — onde há artefato publicado e mantido."
       - "Se o runtime não pode mudar, tratar a dependência como build próprio: compilar GraphFrames contra o Spark do runtime, publicar o jar num repositório interno e declará-lo no IaC, assumindo a manutenção."
       - "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência."
     action:

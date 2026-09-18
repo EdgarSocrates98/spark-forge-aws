@@ -86,7 +86,7 @@
       "Aumentar spark.executor.memoryOverhead, não spark.executor.memory.",
       "Reduzir o tamanho de batch de pandas_udf, se houver.",
       "Eliminar UDF Python, que é a fonte mais comum de consumo fora do heap.",
-      "Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar."
+      "Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar; no Databricks, e em qualquer Spark sem essa métrica do Glue, ler o motivo da remoção que o event log registra para o executor perdido (`attrs.reason` de `spark.executor.lost`)."
     ],
     "expected_effect": "",
     "benchmark_ref": "",

@@ -32,7 +32,7 @@
     "risks": [
       "Alterar o permissions boundary afeta todo role que o tenha anexado, e não só este. É mudança de plataforma com raio maior que o do job.",
       "A simulação **não é a execução**: a AWS avalia policies, não tenta a chamada. Uma condição que dependa de contexto de requisição foi avaliada com o contexto do simulador, e `missing_context_values` no fact lista as chaves que faltaram.",
-      "A simulação **não cobre policy de recurso**. Bucket policy, key policy do KMS e Glue resource policy são avaliação separada, e `iam.access.unresolved` publica esse limite em todo artefato."
+      "A simulação **não cobre policy de recurso**. Bucket policy, key policy do KMS e a resource policy do catálogo de dados são avaliação separada, e `iam.access.unresolved` publica esse limite em todo artefato."
     ],
     "tradeoffs": [
       "Boundary existe para limitar o que um role pode receber. Abri-lo para acomodar uma operação reduz a garantia que ele dava a todos os outros."
