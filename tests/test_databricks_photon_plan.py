@@ -210,3 +210,27 @@ def test_arrow_eval_python_nao_afirma_pandas():
     texto = " ".join(str(x) for x in (achado.explanation, *achado.proposed_change))
     assert "é `pandas_udf`" not in texto
     assert "pandas_udf já é a escolha certa" not in texto
+
+
+def test_sf_plan_002_ainda_casa_udf_pandas():
+    """O ramo `pandas` do `any` de SF-PLAN-002 (rules/catalog/spark-plan.yaml)
+    nao tinha cobertura: nenhuma fixture ou teste tinha um no `*InPandas`. O
+    fact e sintetico -- subject copiado de um `plan.python_udf` real extraido
+    de `photon_udf`, trocando o operador Arrow por `MapInPandas`, que
+    `_PYTHON_UDF_OPERATORS` (sparkforge/facts/spark_plan.py) mapeia para
+    `udf_type: pandas`."""
+    from sparkforge.findings.models import Fact
+
+    real = next(f for f in _facts("photon_udf") if f.kind == "plan.python_udf")
+    subject = dict(real.subject)
+    subject["operator"] = "MapInPandas"
+    fact = Fact(
+        kind="plan.python_udf",
+        subject=subject,
+        attrs={"operator": "MapInPandas", "udf_type": "pandas"},
+        provenance=real.provenance,
+    )
+    regra = next(r for r in load_catalog() if r["id"] == "SF-PLAN-002")
+    achados = judge([fact], [regra], {"spark": "3.5.4"})
+    assert len(achados) == 1
+    assert achados[0].rule_id == "SF-PLAN-002"

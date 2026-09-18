@@ -130,7 +130,8 @@ def _tem_estatistica(valor: float | None) -> bool:
 _PYTHON_UDF_OPERATORS = {
     "BatchEvalPython": "python",
     # O no e o mesmo para `pandas_udf` e para UDF Python otimizada para Arrow
-    # -- o plano nao diz qual (observado em fixtures/plan/photon_udf, §4).
+    # -- o plano nao diz qual (observado em `knowledge/databricks/runtime-matrix.md`
+    # §4; a fixture em fixtures/plan/photon_udf e sintetica, derivada dela).
     "ArrowEvalPython": "arrow",
     "AggregateInPandas": "pandas",
     "FlatMapGroupsInPandas": "pandas",

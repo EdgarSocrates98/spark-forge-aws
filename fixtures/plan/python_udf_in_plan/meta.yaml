@@ -6,9 +6,9 @@ proves: >
   Arrow; o plano nao diz qual). O extrator distingue os dois em
   `attrs.udf_type`, e a distincao muda a recomendacao: trocar uma UDF em Arrow
   por funcao nativa e ganho menor que eliminar uma UDF linha a linha, que
-  serializa cada registro para o interpretador Python. Nenhuma regra consome
-  `plan.python_udf` hoje -- o fact existe para o agente e para as skills -- e
-  por isso mesmo precisa de golden: fact sem regra e o que some primeiro numa
+  serializa cada registro para o interpretador Python. SF-PLAN-001 e
+  SF-PLAN-002 consomem `plan.python_udf` -- e por isso mesmo precisa de
+  golden: campo consumido por regra e o que quebra em silencio numa
   refatoracao sem ninguem notar.
   O Scan tem PartitionFilters preenchido de proposito, para que a fixture nao
   dispare SF-PQ-002 e o corpus continue provando so o que se propoe.
