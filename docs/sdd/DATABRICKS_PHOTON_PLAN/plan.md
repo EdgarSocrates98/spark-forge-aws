@@ -3,7 +3,7 @@ sdd: 1
 feature: DATABRICKS_PHOTON_PLAN
 phase: plan
 profile: dev
-status: draft
+status: ready
 upstream:
   path: docs/sdd/DATABRICKS_PHOTON_PLAN/design.md
   sha256: "35e8417d733c178e3eb907a6e2234aed089aef5fcfceab3ba47000b04294634b"
