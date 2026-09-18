@@ -37,7 +37,7 @@
       "MEMORY_AND_DISK_SER usa menos memória e mais CPU."
     ],
     "validation": [
-      "Runtime e DPU-hours antes e depois.",
+      "Runtime e custo de compute medido antes e depois.",
       "Spill do stage dominante antes e depois.",
       "Resultado funcional idêntico por contagem, schema e agregados."
     ],

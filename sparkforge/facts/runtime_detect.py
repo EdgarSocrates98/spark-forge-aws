@@ -36,6 +36,7 @@ ai nao ha identidade nenhuma para afirmar.
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import replace
 from typing import Any
 
 from sparkforge.facts import runtime_matrix
@@ -47,7 +48,7 @@ DETECTOR_ID = "runtime_detect@0.1.0"
 # unica para `tests/test_rules_catalog_reachability.py`: uma regra que exija um
 # kind fora da uniao de todos os EMITTED_KINDS e inalcancavel e precisa declarar
 # `blocked_on`, em vez de aparecer como "faltou coletar".
-EMITTED_KINDS = frozenset({"env.runtime_signal", "env.platform"})
+EMITTED_KINDS = frozenset({"env.runtime_signal", "env.platform", "databricks.photon"})
 
 # GLUE_MATRIX morava aqui como constante compilada, sem fonte nem data de
 # consulta. Versao de Glue e fato EXTERNO -- muda por decisao da AWS, nao
@@ -145,6 +146,10 @@ EMR_MATRIX: dict[str, dict[str, Any]] = runtime_matrix.load_emr()
 # `python` NAO APARECE em linha nenhuma, e o loader recusa a chave: e a unica
 # forma de a invencao voltar por edicao distraida.
 EMR_SERVERLESS_MATRIX: dict[str, dict[str, str]] = runtime_matrix.load_emr_serverless()
+
+# Matriz Databricks Runtime -> Spark, com um componente so. Fonte e data em
+# `knowledge/databricks/runtime-matrix.yaml`.
+DATABRICKS_MATRIX: dict[str, dict[str, str]] = runtime_matrix.load_databricks()
 
 # Precedencia de resolucao quando ha mais de uma fonte para o mesmo
 # componente: event_log (Spark UI / event log do run) e o mais confiavel,
@@ -269,9 +274,12 @@ _PRECEDENCE: tuple[str, ...] = (
 # conjunto de facts esta a mao.
 _EMR_SERVERLESS_KEY = "emr_serverless_release"
 
+_DATABRICKS_KEY = "databricks_runtime"
+
 _PLATFORM_KEYS: dict[str, tuple[str, ...]] = {
     "emr": ("emr_release", "emr_version", "emr", _EMR_SERVERLESS_KEY),
     "glue": ("glue_version",),
+    "databricks": (_DATABRICKS_KEY,),
 }
 
 _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
@@ -282,6 +290,13 @@ _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
 }
 
 _ALWAYS_EMIT = frozenset({"spark"})
+
+# Os `subject.symbol` que a deteccao escreve nos seus facts, todos `job_run`:
+# `platform` (`env.platform`), `photon` (`databricks.photon`) e um componente
+# por `env.runtime_signal`. `sparkforge/reporting/locate.py` os reconhece
+# quando o fact citado nao esta no arquivo -- um facts.json gravado por versao
+# antiga do scan: o achado e de runtime, sem linha, e nao evidencia pendurada.
+SUBJECT_SYMBOLS = frozenset({"platform", "photon", *_PLATFORM_KEYS, *_DIRECT_KEYS})
 
 # O que uma matriz pode virar observacao. `hadoop` e `python_installed` estao
 # na EMR_MATRIX como fato conferido e ficam de fora daqui de proposito: nao ha
@@ -304,6 +319,38 @@ def _emr_key(value: str) -> str:
     text = str(value).strip()
     lowered = text.lower()
     return text[4:] if lowered.startswith("emr-") else text
+
+
+def _databricks_key(value: str) -> str:
+    """`15.4.x-scala2.12` -> `15.4`; `16.4 LTS` -> `16.4`; `18` -> `18`.
+
+    Guarda os segmentos numericos iniciais do rotulo e para no primeiro que nao
+    e numero. E a chave da matriz e o valor de `RuntimeContext.databricks`.
+    """
+    text = str(value).strip()
+    head = text.split()[0] if text else ""
+    parts: list[str] = []
+    for chunk in head.split("-", 1)[0].split("."):
+        if not chunk.isdigit():
+            break
+        parts.append(chunk)
+    return ".".join(parts)
+
+
+def _databricks_matrix_key(value: str) -> str:
+    """A chave da linha da matriz que `value` resolve, ou a chave normalizada.
+
+    A pagina escreve `18` onde a API escreve `18.0.x-...`: sem linha para
+    `18.0` e com linha para `18`, a chave e `18`. Fora disso, a chave
+    normalizada -- sem inventar linha."""
+    key = _databricks_key(value)
+    if key not in DATABRICKS_MATRIX and key.endswith(".0") and key[:-2] in DATABRICKS_MATRIX:
+        return key[:-2]
+    return key
+
+
+def _databricks_row(value: str) -> dict[str, Any] | None:
+    return DATABRICKS_MATRIX.get(_databricks_matrix_key(value))
 
 
 def _apache_version(version: str) -> str:
@@ -355,7 +402,10 @@ def _distinct_values(observations: list[_Observation]) -> list[str]:
 # A normalizacao vale so para CONTAR. `_divergence_text` continua imprimindo o
 # valor cru de cada fonte: quando ha divergencia de verdade, o operador precisa
 # ver exatamente o que cada fonte disse, nao a forma normalizada.
-_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key}
+#
+# Para `databricks`, a identidade e a chave que a MATRIZ resolve: `18` e
+# `18.0.x-scala2.13` achariam a mesma linha, e sao o mesmo runtime.
+_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key, "databricks": _databricks_matrix_key}
 
 
 def _distinct_identities(component: str, observations: list[_Observation]) -> list[str]:
@@ -463,6 +513,8 @@ def _matrix_row(platform: str, value: str, key: str = "") -> dict[str, Any] | No
         if key == _EMR_SERVERLESS_KEY:
             return EMR_SERVERLESS_MATRIX.get(_emr_key(value))
         return EMR_MATRIX.get(_emr_key(value))
+    if platform == "databricks":
+        return _databricks_row(value)
     return None
 
 
@@ -539,6 +591,7 @@ def _build_context(
     all_components: dict[str, list[_Observation]] = {
         "glue": platforms.get("glue", []),
         "emr": platforms.get("emr", []),
+        "databricks": platforms.get("databricks", []),
         # Divergencia de IDENTIDADE, ao lado das de versao. `divergences` e o
         # canal que um humano le no relatorio: deixar a plataforma de fora dele
         # reproduziria, no contexto, o mesmo silencio que `env.platform` remove
@@ -550,7 +603,7 @@ def _build_context(
 
     # `glue`, `emr` e `platform` nao passam por matriz nenhuma: sao a propria
     # identidade lida da fonte, e ali string crua distinta E divergencia.
-    identity = {"glue", "emr", "platform"}
+    identity = {"glue", "emr", "databricks", "platform"}
     divergences = [
         _divergence_text(name, all_components[name])
         for name in sorted(all_components)
@@ -570,10 +623,12 @@ def _build_context(
     # O label observado nao se perde -- sobrevive em `env.platform.attrs.observed`,
     # que e onde artefato bruto pertence.
     emr_resolvido = _resolve(platforms.get("emr", []))
+    databricks_resolvido = _resolve(platforms.get("databricks", []))
 
     return RuntimeContext(
         glue=_resolve(platforms.get("glue", [])),
         emr=_emr_key(emr_resolvido) if emr_resolvido else "",
+        databricks=_databricks_key(databricks_resolvido) if databricks_resolvido else "",
         spark=_resolve(observations.get("spark", [])),
         python=_resolve(observations.get("python", [])),
         iceberg=_resolve(observations.get("iceberg", [])),
@@ -671,19 +726,59 @@ def _build_facts(
     return facts
 
 
+_PHOTON_STATES = frozenset({"on", "off"})
+
+
+def _photon(sources: dict[str, dict[str, Any]]) -> str:
+    """A declaracao de Photon, `on`/`off`, ou vazio. Duas declaracoes que
+    discordam, ou valor fora do vocabulario, contam como nao declarado."""
+    declarado = {
+        str(data.get("photon")).strip().lower()
+        for data in sources.values()
+        if isinstance(data, dict) and data.get("photon")
+    }
+    if len(declarado) == 1 and declarado <= _PHOTON_STATES:
+        return next(iter(declarado))
+    return ""
+
+
+def _photon_declarado(sources: dict[str, dict[str, Any]]) -> bool:
+    """Alguma fonte declarou `photon`, valido ou nao."""
+    return any(isinstance(data, dict) and data.get("photon") for data in sources.values())
+
+
+def _photon_fact(photon: str) -> Fact:
+    """`databricks.photon`: so existe quando a plataforma databricks foi
+    detectada. `undeclared` e o gatilho de SF-ENV-006."""
+    return Fact(
+        kind="databricks.photon",
+        subject={"type": "job_run", "symbol": "photon"},
+        attrs={"state": photon or "undeclared", "source": "cli" if photon else "none"},
+        provenance={"extractor": DETECTOR_ID},
+    )
+
+
 def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, list[Fact]]:
-    """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal`).
+    """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal` e,
+    sob Databricks, `databricks.photon`).
 
     `sources` mapeia nome da fonte (ex.: "event_log", "describe_cluster",
     "get_work_group", "terraform") para um dict com chaves cruas: `glue_version`,
-    `emr_release`/`emr_version`/`emr`, `spark_version`/`spark`,
-    `python_version`/`python`, `iceberg_version`/`iceberg`,
-    `athena_version`/`athena`.
+    `emr_release`/`emr_version`/`emr`, `databricks_runtime`, `photon`,
+    `spark_version`/`spark`, `python_version`/`python`,
+    `iceberg_version`/`iceberg`, `athena_version`/`athena`.
 
     `glue_version` deriva spark/python/iceberg por `GLUE_MATRIX`;
     `emr_release` deriva spark/iceberg -- e python so em 7.x -- por
-    `EMR_MATRIX`. Derivacao sempre perde para leitura direta, e o
-    `PYSPARK_PYTHON` da classificacao `spark-env` chega como `python_version`.
+    `EMR_MATRIX`; `databricks_runtime` (numero ou rotulo da API, como
+    `15.4.x-scala2.12`) deriva so spark por `DATABRICKS_MATRIX`. Derivacao
+    sempre perde para leitura direta, e o `PYSPARK_PYTHON` da classificacao
+    `spark-env` chega como `python_version`.
+
+    `photon` (`on`/`off`) e DECLARACAO: vai ao contexto e ao fact
+    `databricks.photon` so com a plataforma databricks detectada. Sem ela, a
+    declaracao vira divergencia `photon:` e nao fica no contexto; com ela e sem
+    declaracao, `databricks.photon` sai com `state: undeclared`.
 
     Nao le nada do disco nem de rede -- `sources` ja vem coletado
     (coleta e Task 22). Entrada vazia ou com valores None/vazios nao
@@ -691,5 +786,23 @@ def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, 
     """
     platforms, observations, detected_from, derived = _collect(sources or {})
     context = _build_context(platforms, observations, detected_from, derived)
+    photon = _photon(sources or {})
+    if platforms.get("databricks"):
+        if photon:
+            context = replace(context, photon=photon)
+    elif _photon_declarado(sources or {}):
+        # Photon so existe no Databricks. Declarado sem a plataforma, o engine
+        # o ignoraria calado; o contexto nao o guarda, e a declaracao sai como
+        # divergencia nomeada, que o operador le.
+        context = replace(
+            context,
+            divergences=[
+                *context.divergences,
+                "photon: declarado sem plataforma databricks detectada; "
+                "a declaracao foi ignorada",
+            ],
+        )
     facts = _build_facts(platforms, observations, derived)
+    if platforms.get("databricks"):
+        facts.append(_photon_fact(photon))
     return context, sort_facts(facts)

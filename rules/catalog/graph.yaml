@@ -266,7 +266,7 @@ rules:
       job que configurou o checkpoint corretamente.
       O ALCANCE É O ARQUIVO, e é assim que o achado deve ser lido. `setCheckpointDir`
       é chamado no `SparkContext`, que é singleton do processo: o diretório vale para
-      a aplicação inteira, e a forma canônica de job Glue/EMR configura a sessão num
+      a aplicação inteira, e a forma canônica de job Glue, EMR ou Databricks configura a sessão num
       `build_spark()` e roda o algoritmo noutra função. Correlacionar por escopo
       léxico produziria P0 exatamente sobre essa forma correta.
       A RESSALVA É PARTE DO ACHADO, e sem ela a regra afirma mais do que a evidência
@@ -362,7 +362,7 @@ rules:
       `__init__.py` das duas exporta um único nome. Nenhum fact desta área declara
       versão de GraphFrames.
     proposed_change:
-      - "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, ou EMR 6.12.0+ / 7.x — onde há artefato publicado e mantido."
+      - "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, EMR 6.12.0+ / 7.x, ou Databricks Runtime 14.3, 15.4 ou 16.4 (Spark 3.5 em `knowledge/databricks/runtime-matrix.md`) — onde há artefato publicado e mantido."
       - "Se o runtime não pode mudar, tratar a dependência como build próprio: compilar GraphFrames contra o Spark do runtime, publicar o jar num repositório interno e declará-lo no IaC, assumindo a manutenção."
       - "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência."
     action:

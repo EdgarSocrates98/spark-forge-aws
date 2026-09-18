@@ -99,6 +99,51 @@ class TestLocalizar:
         f = _finding(subject={"type": "job_run"}, evidence=["f_sumiu"])
         assert localizar(f, {}, ["."], _existe()) == Recusa("evidencia_ausente")
 
+    def test_evidencia_ausente_da_deteccao_de_runtime_e_runtime(self):
+        # Um facts.json gravado antes de o scan gravar os facts da deteccao nao
+        # traz `env.*` nem `databricks.photon`; o SF-ENV-00x que os cita e de
+        # runtime, sem linha em arquivo nenhum, e nao evidencia pendurada.
+        # `rule_id` precisa ser uma regra que DE FATO le o kind daquele fact
+        # (`requires_facts`), senao a forma do subject sozinha nao basta mais.
+        from sparkforge.adapters._core import build_runtime
+
+        _, ambiente = build_runtime(
+            glue="5.0", emr="7.5.0", databricks="15.4", python="3.11", iceberg="1.6.1",
+            athena="3",
+        )
+        assert {f.kind for f in ambiente} == {
+            "env.platform", "env.runtime_signal", "databricks.photon",
+        }
+        regra_por_kind = {
+            "env.platform": "SF-ENV-005",
+            "env.runtime_signal": "SF-ENV-001",
+            "databricks.photon": "SF-ENV-006",
+        }
+        for fact in ambiente:
+            f = _finding(
+                rule_id=regra_por_kind[fact.kind],
+                subject=dict(fact.subject),
+                evidence=[fact.id],
+            )
+            assert localizar(f, {}, ["."], _existe()) == Recusa("runtime"), fact.subject
+        alheio = _finding(subject={"type": "job_run", "symbol": "etl"}, evidence=["f_sumiu"])
+        assert localizar(alheio, {}, ["."], _existe()) == Recusa("evidencia_ausente")
+
+    def test_subject_de_outro_extrator_com_simbolo_de_runtime_continua_evidencia_ausente(self):
+        # SF-ATH-004 exige `athena.workgroup`, nao um kind da deteccao de
+        # runtime (`env.*`/`databricks.photon`). Um workgroup do Athena
+        # chamado `athena` produz um subject `{type: job_run, symbol: athena}`
+        # -- a MESMA forma que `env.runtime_signal` do componente `athena`
+        # escreve --, mas a regra nao le nada da deteccao: a evidencia
+        # ausente e ausente de verdade, e o motivo certo continua
+        # `evidencia_ausente`, nunca `runtime`.
+        f = _finding(
+            rule_id="SF-ATH-004",
+            subject={"type": "job_run", "symbol": "athena"},
+            evidence=["f_sumiu"],
+        )
+        assert localizar(f, {}, ["."], _existe()) == Recusa("evidencia_ausente")
+
     @pytest.mark.parametrize("linha", [0, -1, "3", True, None])
     def test_linha_invalida_nao_localiza(self, linha):
         subject = {"type": "source_location", "file": "lib/job.py", "line": linha}

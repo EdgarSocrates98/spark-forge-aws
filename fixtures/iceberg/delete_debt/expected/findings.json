@@ -35,7 +35,7 @@
     "expected_effect": "",
     "benchmark_ref": "",
     "risks": [
-      "Compactação de delete files é reescrita e consome DPU; agendar fora do horário crítico."
+      "Compactação de delete files é reescrita e consome computação (DPU no Glue; tempo de cluster no Databricks ou em qualquer Spark); agendar fora do horário crítico."
     ],
     "tradeoffs": [
       "Copy-on-write encarece a escrita e mantém a leitura rápida sem manutenção recorrente."

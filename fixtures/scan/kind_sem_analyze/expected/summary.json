@@ -83,10 +83,12 @@
   },
   "runtime": {
     "athena": "",
+    "databricks": "",
     "divergences": [],
     "emr": "",
     "glue": "",
     "iceberg": "",
+    "photon": "",
     "python": "",
     "spark": ""
   }

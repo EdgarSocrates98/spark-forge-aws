@@ -328,6 +328,27 @@ PLATAFORMAS: tuple[Plataforma, ...] = (
             ),
         ),
     ),
+    Plataforma(
+        nome="databricks",
+        doc="databricks/runtime-matrix.md",
+        yaml="databricks/runtime-matrix.yaml",
+        carrega=runtime_matrix.load_databricks,
+        minimo=6,
+        componentes=frozenset({"spark"}),
+        tabelas=(
+            Tabela(
+                cabecalho=(
+                    "Databricks Runtime",
+                    "LTS",
+                    "Apache Spark",
+                    "Lançamento",
+                    "Fim de suporte",
+                ),
+                chave="Databricks Runtime",
+                colunas={"spark": "Apache Spark"},
+            ),
+        ),
+    ),
     # Control-M Automation API -- dois eixos e as recusas, tres tabelas. Ver o
     # ultimo paragrafo do docstring deste modulo sobre por que ela cabe aqui e
     # por que o `churn` e vazio.

@@ -28,7 +28,7 @@
     "proposed_change": [
       "Mover a validação para antes do `write`, sobre o DataFrame já transformado.",
       "Se a validação precisa do dado escrito (contagem no destino, por exemplo), escrever primeiro numa área de staging e só promover ao destino final depois de a validação passar.",
-      "Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior."
+      "Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior. No Databricks, o alcance não está medido no repositório; conferir a versão do Spark do Databricks Runtime em knowledge/databricks/runtime-matrix.md, e a do Python na documentação do runtime, contra o mesmo documento antes de trocar."
     ],
     "expected_effect": "",
     "benchmark_ref": "",

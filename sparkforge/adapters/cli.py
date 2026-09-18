@@ -152,6 +152,21 @@ _EMR_FLAG_HELP = (
     "medidamente errada."
 )
 
+_DATABRICKS_FLAG_HELP = (
+    "Versao do Databricks Runtime, como numero ('15.4') ou como o rotulo da "
+    "Clusters API ('15.4.x-scala2.12'). E DECLARACAO, nao observacao: perde "
+    "para a versao que o event log traz, e discordar vira divergencia reportada. "
+    "Deriva spark pela matriz de knowledge/databricks/runtime-matrix.yaml."
+)
+
+_PHOTON_FLAG_HELP = (
+    "Photon ligado ('on') ou desligado ('off') no cluster ou job Databricks. Com "
+    "'on', regra que depende de plano sai em skipped com "
+    "databricks.photon.unresolved, exceto a que so exige plan.python_udf; sem "
+    "declaracao, SF-ENV-006 avisa que regra de plano calada nao e evidencia. Sem "
+    "--databricks, a declaracao vira divergencia 'photon:' e nao entra no runtime."
+)
+
 _CODE_DB_HELP = (
     "Arquivo do indice. Default: `.sparkforge/local/codeintel/graph.sqlite3` "
     "sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora "
@@ -1246,6 +1261,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     judge_p.add_argument("--glue")
     judge_p.add_argument("--emr", help=_EMR_FLAG_HELP)
+    judge_p.add_argument("--databricks", help=_DATABRICKS_FLAG_HELP)
+    judge_p.add_argument("--photon", choices=("on", "off"), help=_PHOTON_FLAG_HELP)
     judge_p.add_argument("--spark")
     judge_p.add_argument("--python")
     judge_p.add_argument("--iceberg")
@@ -1310,6 +1327,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     arbitrate_p.add_argument("--glue")
     arbitrate_p.add_argument("--emr", help=_EMR_FLAG_HELP)
+    arbitrate_p.add_argument("--databricks", help=_DATABRICKS_FLAG_HELP)
+    arbitrate_p.add_argument("--photon", choices=("on", "off"), help=_PHOTON_FLAG_HELP)
     arbitrate_p.add_argument("--spark")
     arbitrate_p.add_argument("--python")
     arbitrate_p.add_argument("--iceberg")
@@ -1327,6 +1346,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     open_p.add_argument("--glue")
     open_p.add_argument("--emr", help=_EMR_FLAG_HELP)
+    open_p.add_argument("--databricks", help=_DATABRICKS_FLAG_HELP)
+    open_p.add_argument("--photon", choices=("on", "off"), help=_PHOTON_FLAG_HELP)
     open_p.add_argument("--spark")
     open_p.add_argument("--python")
     open_p.add_argument("--iceberg")
@@ -1488,7 +1509,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # runtime detect ----------------------------------------------------
     runtime_p = sub.add_parser(
-        "runtime", help="Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena."
+        "runtime", help="Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena."
     )
     runtime_sub = runtime_p.add_subparsers(dest="runtime_action", required=True)
     detect_p = runtime_sub.add_parser(
@@ -1496,6 +1517,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     detect_p.add_argument("--glue")
     detect_p.add_argument("--emr", help=_EMR_FLAG_HELP)
+    detect_p.add_argument("--databricks", help=_DATABRICKS_FLAG_HELP)
+    detect_p.add_argument("--photon", choices=("on", "off"), help=_PHOTON_FLAG_HELP)
     detect_p.add_argument("--spark")
     detect_p.add_argument("--python")
     detect_p.add_argument("--iceberg")
@@ -1839,6 +1862,8 @@ def build_parser() -> argparse.ArgumentParser:
     deb_start.add_argument("--repo", default=".", help="Raiz do case.")
     deb_start.add_argument("--glue")
     deb_start.add_argument("--emr", help=_EMR_FLAG_HELP)
+    deb_start.add_argument("--databricks", help=_DATABRICKS_FLAG_HELP)
+    deb_start.add_argument("--photon", choices=("on", "off"), help=_PHOTON_FLAG_HELP)
     deb_start.add_argument("--spark")
     deb_start.add_argument("--python")
     deb_start.add_argument("--iceberg")
@@ -1904,6 +1929,8 @@ def build_parser() -> argparse.ArgumentParser:
     rc_p.add_argument("--iceberg")
     rc_p.add_argument("--athena")
     rc_p.add_argument("--emr")
+    rc_p.add_argument("--databricks")
+    rc_p.add_argument("--photon", choices=("on", "off"))
     rc_p.add_argument(
         "--all-missing",
         action="store_true",
@@ -2276,8 +2303,14 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="RULE_ID ou RULE_ID:simbolo de cada recomendacao aplicada. Repetivel.",
     )
-    for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
+    for flag in (
+        "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
+        "--databricks",
+    ):
         proof_p.add_argument(flag, default=None)
+    proof_p.add_argument(
+        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
+    )
 
     # simulate ----------------------------------------------------------------
     # Verbo de TOPO: altera facts de configuracao ja extraidos e julga os dois
@@ -2300,8 +2333,14 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="camada:chave=valor, camada em tf, code, effective, emr. Repetivel.",
     )
-    for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
+    for flag in (
+        "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
+        "--databricks",
+    ):
         simulate_p.add_argument(flag, default=None)
+    simulate_p.add_argument(
+        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
+    )
 
     # gain --------------------------------------------------------------------
     # Verbo de TOPO: compara runs ja medidos; nao le artefato de job.
@@ -2343,8 +2382,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--fail-on", choices=["P0", "P1"], default=None,
         help="Sai 1 se houver finding nesta severidade (P1 inclui P0).",
     )
-    for flag in ("--glue", "--spark", "--python", "--iceberg", "--athena", "--emr"):
+    for flag in (
+        "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
+        "--databricks",
+    ):
         scan_p.add_argument(flag, default=None)
+    scan_p.add_argument(
+        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
+    )
 
     # doctor ------------------------------------------------------------------
     doctor_p = sub.add_parser(
@@ -3489,6 +3534,8 @@ def _cmd_judge(args: argparse.Namespace) -> int:
         facts_path=args.facts,
         glue=args.glue,
         emr=args.emr,
+        databricks=args.databricks,
+        photon=args.photon,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -3561,6 +3608,8 @@ def _cmd_arbitrate(args: argparse.Namespace) -> int:
             facts_path=args.facts,
             glue=args.glue,
             emr=args.emr,
+            databricks=args.databricks,
+            photon=args.photon,
             spark=args.spark,
             python=args.python,
             iceberg=args.iceberg,
@@ -3577,6 +3626,8 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         args.now,
         glue=args.glue,
         emr=args.emr,
+        databricks=args.databricks,
+        photon=args.photon,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -3665,6 +3716,8 @@ def _cmd_runtime_detect(args: argparse.Namespace) -> int:
     payload = _core.runtime_detect(
         glue=args.glue,
         emr=args.emr,
+        databricks=args.databricks,
+        photon=args.photon,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -3718,6 +3771,8 @@ def _cmd_debate_start(args: argparse.Namespace) -> int:
             facts_path=args.facts,
             glue=args.glue,
             emr=args.emr,
+            databricks=args.databricks,
+            photon=args.photon,
             spark=args.spark,
             python=args.python,
             iceberg=args.iceberg,
@@ -3746,6 +3801,8 @@ def _cmd_root_cause(args: argparse.Namespace) -> int:
         iceberg=args.iceberg,
         athena=args.athena,
         emr=args.emr,
+        databricks=args.databricks,
+        photon=args.photon,
         all_missing=args.all_missing,
         detail_level=args.detail_level,
     )
@@ -3883,6 +3940,8 @@ def _cmd_proof(args: argparse.Namespace) -> int:
             iceberg=args.iceberg,
             athena=args.athena,
             emr=args.emr,
+            databricks=args.databricks,
+            photon=args.photon,
         )
     )
     return 0
@@ -3898,6 +3957,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         args.raiz, dry_run=args.dry_run, output_format=args.format, fail_on=args.fail_on,
         glue=args.glue, spark=args.spark, python=args.python, iceberg=args.iceberg,
         athena=args.athena, emr=args.emr,
+        databricks=args.databricks, photon=args.photon,
     )
     _print(resultado)
     return 1 if (resultado.get("gate") or {}).get("tripped") else 0
@@ -3962,6 +4022,8 @@ def _cmd_simulate(args: argparse.Namespace) -> int:
             iceberg=args.iceberg,
             athena=args.athena,
             emr=args.emr,
+            databricks=args.databricks,
+            photon=args.photon,
         )
     )
     return 0

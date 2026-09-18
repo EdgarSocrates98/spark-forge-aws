@@ -1,10 +1,12 @@
 description: >-
-  glue_version = 3.0 nao move achado nenhum, mas o runtime detectado vai de 5.0
+  glue_version = 3.0 nao some com achado nenhum, mas o runtime detectado vai de 5.0
   para 3.0, e as regras de Lake Formation e migracao passam a sair do escopo:
-  a mudanca aparece em runtime e em skipped_delta, nao em appeared.
+  a mudanca aparece em runtime e em skipped_delta. O unico achado que aparece e
+  SF-ENV-004: o Spark resolvido passa a 3.1, sem AQE por default, e o fact de
+  deteccao que a regra le chega ao julgamento desde a R1 do DATABRICKS_SPARK.
 facts: [fixtures/terraform/bookmarks_with_concurrency/expected/facts.json]
 sets: ["tf:glue_version=3.0"]
 expect:
   disappeared: []
-  appeared: []
+  appeared: [SF-ENV-004]
   runtime_glue: ["5.0", "3.0"]

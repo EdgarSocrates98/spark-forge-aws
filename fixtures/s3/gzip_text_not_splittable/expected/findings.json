@@ -45,8 +45,8 @@
     ],
     "validation": [
       "Contagem de tasks do stage de leitura antes e depois.",
-      "glue.driver.workerUtilization antes e depois.",
-      "Runtime e DPU-hours antes e depois.",
+      "glue.driver.workerUtilization antes e depois; no Databricks ou em qualquer Spark, a mesma pergunta no event log, tasks por stage contra cores do cluster (`spark.stage.task_count` e `spark.cluster.cores`).",
+      "Runtime e DPU-hours antes e depois; no Databricks ou em qualquer Spark, a duração do job no event log.",
       "Contagem total de linhas idêntica após a conversão."
     ],
     "rollback": [

@@ -205,7 +205,7 @@ rules:
       depends_on:
         - SF-ICE-005
     risks:
-      - Compactação reescreve dados e cria um novo snapshot, consumindo DPU e armazenamento temporário.
+      - Compactação reescreve dados e cria um novo snapshot, consumindo computação (DPU no Glue; tempo de cluster no Databricks ou em qualquer Spark) e armazenamento temporário.
       - Alterar write.distribution-mode adiciona shuffle na escrita, aumentando o custo de cada run.
     tradeoffs:
       - Corrigir na origem encarece cada escrita e evita compactação recorrente. Compactar depois mantém a escrita barata e adiciona um job de manutenção.
@@ -258,7 +258,7 @@ rules:
       moves:
         - storage.delete_file_count
       depends_on: []
-    risks: [Compactação de delete files é reescrita e consome DPU; agendar fora do horário crítico.]
+    risks: ["Compactação de delete files é reescrita e consome computação (DPU no Glue; tempo de cluster no Databricks ou em qualquer Spark); agendar fora do horário crítico."]
     tradeoffs:
       - Copy-on-write encarece a escrita e mantém a leitura rápida sem manutenção recorrente.
     validation:
@@ -413,7 +413,7 @@ rules:
       moves:
         - scan.bytes_read
       depends_on: []
-    risks: [Rewrite de tabela grande é caro em DPU e cria um snapshot volumoso.]
+    risks: ["Rewrite de tabela grande é caro em computação (DPU no Glue; tempo de cluster no Databricks ou em qualquer Spark) e cria um snapshot volumoso."]
     tradeoffs: [Zorder custa mais que sort e só se justifica com evidência de filtros multi-coluna.]
     validation:
       - Bytes lidos por uma query de referência antes e depois.
@@ -465,7 +465,7 @@ rules:
     tradeoffs: [Escrita mais cara contra leitura mais barata e menos manutenção.]
     validation:
       - Contagem de arquivos por partição antes e depois, via metadata table files.
-      - Runtime e DPU-hours da escrita antes e depois.
+      - Runtime e DPU-hours da escrita antes e depois; no Databricks ou em qualquer Spark, a duração da escrita no event log.
       - Contagem total de linhas idêntica.
     rollback: [Restaurar write.distribution-mode anterior; afeta apenas escritas futuras.]
     sources:

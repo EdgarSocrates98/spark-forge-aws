@@ -659,7 +659,25 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
     antes do caso, no padrao oposto ao de `AREA_MAY_VANISH_WHEN` em
     `tests/test_rule_scope_by_nature.py`, que existe porque `SF-GLUE` de fato
     some.
+
+    A EXCECAO PASSOU A EXISTIR PORQUE O CASO EXISTE (photon, 2026-09-18), no
+    molde de `AREA_MAY_VANISH_WHEN`. `photon` e eixo de `RuntimeContext` que so a
+    flag `--photon` alimenta: e declaracao do operador, e nenhum artefato
+    coletado a observa (lacuna U2 de `knowledge/databricks/runtime-matrix.md`).
+    `AXES_DECLARED_ONLY` nomeia o eixo com a razao; o teste de produtor o pula,
+    o de superficie continua exigindo que ele seja DECLARAVEL, e
+    `test_declared_only_axes_are_real_axes_without_producer` reprova no dia em
+    que ele ganhar produtor -- ai a excecao tem que sair.
     """
+
+    # eixo -> por que ele nao tem produtor. Toda entrada e caso exercido, nunca
+    # permissao antecipada; a trava abaixo reprova entrada que ganhou produtor.
+    AXES_DECLARED_ONLY = {
+        "photon": (
+            "declaracao do operador (--photon), sem artefato que a observe; "
+            "ver U2 em knowledge/databricks/runtime-matrix.md"
+        ),
+    }
 
     def _axes(self):
         from sparkforge.findings.models import RuntimeContext
@@ -709,7 +727,9 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
     def test_every_runtime_axis_has_a_producer(self):
         named = self._named_in_the_reader()
         gaps = sorted(
-            axis for axis, keys in self._raw_keys_by_axis().items() if not (keys & named)
+            axis
+            for axis, keys in self._raw_keys_by_axis().items()
+            if not (keys & named) and axis not in self.AXES_DECLARED_ONLY
         )
         assert not gaps, (
             f"eixo de RuntimeContext sem produtor em _runtime_reading: {gaps}. "
@@ -727,8 +747,24 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
         named = self._named_in_the_reader()
         produced = {axis for axis, keys in self._raw_keys_by_axis().items() if keys & named}
         declared = set(TOOLS["sparkforge_judge"]["inputSchema"]["properties"]) & axes
+        # Eixo so-declarado entra do lado do produtor por construcao: ele NAO
+        # tem produtor, e ainda assim tem que ser declaravel pela flag.
+        expected = produced | set(self.AXES_DECLARED_ONLY)
 
-        assert produced == declared, sorted(produced ^ declared)
+        assert expected == declared, sorted(expected ^ declared)
+
+    def test_declared_only_axes_are_real_axes_without_producer(self):
+        """A excecao nao vira letra morta: todo eixo de `AXES_DECLARED_ONLY` e
+        eixo de `RuntimeContext` e continua sem produtor. No dia em que ganhar
+        produtor, sai da lista."""
+        axes = self._axes()
+        named = self._named_in_the_reader()
+        raw = self._raw_keys_by_axis()
+        for axis in self.AXES_DECLARED_ONLY:
+            assert axis in axes, f"{axis} nao e eixo de RuntimeContext; remova da excecao."
+            assert not (raw[axis] & named), (
+                f"{axis} ganhou produtor em _runtime_reading; remova de AXES_DECLARED_ONLY."
+            )
 
     def test_the_derivation_is_not_vacuous(self):
         """Um invariante derivado por AST falha para o lado errado quando a

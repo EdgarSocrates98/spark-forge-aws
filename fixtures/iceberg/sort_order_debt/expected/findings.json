@@ -41,7 +41,7 @@
     "expected_effect": "",
     "benchmark_ref": "",
     "risks": [
-      "Rewrite de tabela grande é caro em DPU e cria um snapshot volumoso."
+      "Rewrite de tabela grande é caro em computação (DPU no Glue; tempo de cluster no Databricks ou em qualquer Spark) e cria um snapshot volumoso."
     ],
     "tradeoffs": [
       "Zorder custa mais que sort e só se justifica com evidência de filtros multi-coluna."

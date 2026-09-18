@@ -45,7 +45,7 @@
       },
       {
         "path": "evidence/receipt.json",
-        "sha256": "ac0f8cfa11ef5fb78177a4b66f2f9c453cef25cf29ec23e604a8b4949d5fc363"
+        "sha256": "b17d8b76a2904ad226aaaefe4f45fa9a1a0c340f1d39ca0efbad3422f6a76eb8"
       },
       {
         "path": "evidence/sandbox_report.json",
@@ -69,7 +69,7 @@
     "funcval"
   ],
   "proposal": ".sparkforge/proposal/fc778c4f8222e1b0",
-  "receipt_id": "rcpt_9d808d728be2f2fd8ca248b701c963a47e89352e4ef042fe0b510aec64d2d567",
+  "receipt_id": "rcpt_3995395cb4019cb9a8830e0d309f21419f55c34dbae67f8d32284babacda2921",
   "refused": [],
   "signed": true,
   "stage": "propose_change"

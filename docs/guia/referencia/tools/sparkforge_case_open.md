@@ -16,10 +16,12 @@ Cria um case novo em .sparkforge/case.yaml, detectando o runtime Glue/EMR/Spark/
 | `now` | string | sim | Timestamp ISO 8601. |
 | `repo` | string | sim | Raiz do repositorio analisado. |
 | `athena` | string | não |  |
+| `databricks` | string | não | Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, nao observacao: perde para o event log, e discordar vira divergencia reportada em `runtime.divergences`. |
 | `emr` | string | não | Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). DECLARACAO, nao observacao: perde para o event log e para um dump de describe-cluster, e discordar de um deles vira divergencia reportada em `runtime.divergences`, nunca valor substituido em silencio. |
 | `facts_path` | string ou array de string | não | Facts ja extraidos: o runtime do case sai do que os extratores observaram, nao so das flags. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `reopen` | boolean | não | Recomeca do zero por cima de um case que ja existe. Omitido, abrir sobre um case existente e RECUSADO: sobrescrever apagaria fase, rigor e overrides gravados. O `strict_gates` do case atual e herdado -- `strict_gates` sobe o rigor, e nada o baixa por omissao. |
 | `spark` | string | não |  |

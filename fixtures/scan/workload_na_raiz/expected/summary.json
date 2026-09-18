@@ -65,10 +65,12 @@
   "refused_by_reason": {},
   "runtime": {
     "athena": "",
+    "databricks": "",
     "divergences": [],
     "emr": "",
     "glue": "",
     "iceberg": "",
+    "photon": "",
     "python": "",
     "spark": ""
   }

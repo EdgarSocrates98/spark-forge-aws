@@ -39,6 +39,7 @@
   "runtime": {
     "after": {
       "athena": "",
+      "databricks": "",
       "detected_from": [
         "event_log"
       ],
@@ -46,11 +47,13 @@
       "emr": "",
       "glue": "",
       "iceberg": "",
+      "photon": "",
       "python": "",
       "spark": "3.5.4"
     },
     "before": {
       "athena": "",
+      "databricks": "",
       "detected_from": [
         "event_log"
       ],
@@ -58,6 +61,7 @@
       "emr": "",
       "glue": "",
       "iceberg": "",
+      "photon": "",
       "python": "",
       "spark": "3.5.4"
     }

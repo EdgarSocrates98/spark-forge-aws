@@ -87,10 +87,11 @@
       "factor": 0.5
     },
     "runtime_scope": {},
-    "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
+    "explanation": "Cores alocados e ociosos são horas de compute pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
     "proposed_change": [
       "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
       "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.",
+      "Se `spark.sql.shuffle.partitions` já vale `auto` (auto-optimized shuffle do Databricks), não fixar número: o motor já escolhe pelo plano e pelo volume. Ver knowledge/databricks/runtime-matrix.md.",
       "Reduzir o número de workers se o paralelismo real não pode aumentar."
     ],
     "expected_effect": "",
@@ -104,8 +105,8 @@
     ],
     "validation": [
       "Contagem de tasks versus cores após a mudança.",
-      "glue.driver.workerUtilization antes e depois.",
-      "Runtime e DPU-hours antes e depois."
+      "glue.driver.workerUtilization antes e depois; no Databricks ou em qualquer Spark, a mesma pergunta no event log, tasks por stage contra cores do cluster (`spark.stage.task_count` e `spark.cluster.cores`).",
+      "Runtime e custo de compute medido antes e depois."
     ],
     "rollback": [
       "Reverter configuração de partições e de capacidade."

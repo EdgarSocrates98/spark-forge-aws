@@ -472,10 +472,14 @@ def test_no_fact_carries_a_version_leaves_the_context_empty(tmp_path):
         # -- nenhum fact PySpark observa plataforma, e adivinhar seria
         # julgamento entrando na camada de fato.
         "emr": "",
+        # `databricks` e `photon` seguem a mesma regra: nenhum fact PySpark
+        # declara plataforma nem Photon, e as duas chaves saem vazias.
+        "databricks": "",
         "spark": "",
         "python": "",
         "iceberg": "",
         "athena": "",
+        "photon": "",
         "detected_from": [],
         "divergences": [],
     }

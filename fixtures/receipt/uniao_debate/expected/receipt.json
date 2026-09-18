@@ -75,7 +75,7 @@
     ],
     "findings": {
       "path": "findings.json",
-      "sha256": "9c49e56860a917abb2e368b25ccd95e4dca80b4e86d4d4774c72b5ae3856af80"
+      "sha256": "281edbbbe9fe32ee88b38a9c1e899689acb545cb1a30fd3c4dd206d54a0c4132"
     },
     "report": {
       "path": "report.md",
@@ -94,7 +94,7 @@
     "tests": []
   },
   "proves": "correspondencia entre este recibo e estes artefatos -- nunca autoria",
-  "receipt_id": "rcpt_2ecf57f9acaebaaae7f782e2ae315c982ec92fac7589724a2574dc5175edf459",
+  "receipt_id": "rcpt_57327441a47b5e6061856f02f950b98334c983164437d78bbf5ac5a06b4e6366",
   "receipt_version": 1,
   "refused": [
     {

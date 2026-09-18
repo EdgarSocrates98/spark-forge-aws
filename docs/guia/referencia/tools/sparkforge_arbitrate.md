@@ -14,6 +14,7 @@ Executor agentico DETERMINISTICO. Roda DEPOIS de `sparkforge_judge`, sobre findi
 |---|---|---|---|
 | `repo` | string | sim | Raiz do case. O blackboard e os ADRs ficam em `<repo>/.sparkforge/blackboard/` -- ADR de case viaja com o case, nunca em `docs/`. |
 | `athena` | string | não |  |
+| `databricks` | string | não | Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, nao observacao: perde para o event log, e discordar vira divergencia reportada em `runtime.divergences`. |
 | `emr` | string | não | Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). DECLARACAO, nao observacao: perde para o event log e para um dump de describe-cluster, e discordar de um deles vira divergencia reportada em `runtime.divergences`, nunca valor substituido em silencio. |
 | `facts` | array de object | não |  |
 | `facts_path` | string ou array de string | não | Um caminho, ou varios: os facts sao unidos e deduplicados por id antes de arbitrar. A UNIAO e obrigatoria -- ver a descricao. |
@@ -21,6 +22,7 @@ Executor agentico DETERMINISTICO. Roda DEPOIS de `sparkforge_judge`, sobre findi
 | `findings_path` | string | não | Arquivo gerado por `sparkforge judge --out`. Aceita a lista nua e o objeto com a chave `findings` (ou `items`). |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

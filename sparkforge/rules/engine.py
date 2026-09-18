@@ -3,6 +3,10 @@
 Nao le artefato bruto. So ve Facts. Regra fora do runtime_scope, ou cujo kind
 nao foi extraido, e reportada como skipped com motivo, nunca silenciosamente
 descartada: skip silencioso e falso negativo disfarcado.
+
+Motivos de pulo: `runtime_scope`, `databricks.photon.unresolved` (regra de
+plano sob Databricks com Photon declarado `on`, ver `_photon_recusa`),
+`blocked_on` e `requires_facts`.
 """
 from __future__ import annotations
 
@@ -211,6 +215,46 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
     )
 
 
+# Kinds de PLANO. Sob Databricks com Photon ligado, os operadores fisicos tem
+# outros nomes e o fallback para o Spark e por operacao
+# (https://docs.databricks.com/aws/en/compute/photon, a fonte de SF-ENV-006):
+# uma regra que procura um operador JVM pode ficar calada sem que o problema
+# tenha sumido. A regra sai em `skipped` com nome, e o silencio deixa de ler
+# como "nada encontrado". Photon chega DECLARADO no runtime, nunca detectado,
+# porque o event log nao o mostra (lacuna U2 de
+# knowledge/databricks/runtime-matrix.md).
+#
+# `spark.sql.` nao casa regra nenhuma do catalogo hoje (medido em 2026-09-18: as
+# regras com kind de plano exigem so `plan.*`). Fica para cobrir as regras de
+# metrica SQL do event log que vierem, que leem os mesmos operadores JVM.
+_PLAN_KIND_PREFIXES = ("plan.", "spark.sql.")
+
+# Kind de plano que o Photon NAO cala. Observado sob Photon
+# (knowledge/databricks/runtime-matrix.md secao 4): o plano de uma UDF Python
+# continua trazendo o no `ArrowEvalPython`, que e o que a regra procura, entao
+# ela continua julgando um no que esta no plano. As duas fontes ficam lado a
+# lado, sem que uma resolva a outra: a pagina do Photon fala em fallback para o
+# Spark com UDF, e a observacao mostrou "fully supported by Photon" com o no
+# Arrow presente.
+_PHOTON_NAO_CALA = {
+    "plan.python_udf": (
+        "o no ArrowEvalPython continua no plano sob Photon (observado; "
+        "knowledge/databricks/runtime-matrix.md secao 4)"
+    ),
+}
+
+
+def _photon_recusa(rule: dict[str, Any], runtime: dict[str, str]) -> bool:
+    if not runtime.get("databricks") or runtime.get("photon") != "on":
+        return False
+    de_plano = {
+        str(kind)
+        for kind in rule.get("requires_facts") or []
+        if str(kind).startswith(_PLAN_KIND_PREFIXES)
+    }
+    return bool(de_plano - set(_PHOTON_NAO_CALA))
+
+
 def judge(
     facts: Iterable[Fact],
     rules: Iterable[dict[str, Any]],
@@ -236,6 +280,10 @@ def judge(
         scope = rule.get("runtime_scope") or {}
         if not in_scope(scope, runtime):
             skipped.append({"rule_id": rule["id"], "reason": "runtime_scope", "scope": scope})
+            continue
+
+        if _photon_recusa(rule, runtime):
+            skipped.append({"rule_id": rule["id"], "reason": "databricks.photon.unresolved"})
             continue
 
         # Regra bloqueada por capacidade que ainda nao existe e diferente de regra

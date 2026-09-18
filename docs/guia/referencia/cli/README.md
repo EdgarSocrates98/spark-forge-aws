@@ -46,7 +46,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge resume`](resume.md) | Payload de rehidratacao do case. |
 | [`sparkforge root-cause`](root-cause.md) | Ordena os achados por consequencia declarada e nomeia a lacuna. |
 | [`sparkforge rules`](rules.md) | Consulta o catalogo de regras versionado. |
-| [`sparkforge runtime`](runtime.md) | Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena. |
+| [`sparkforge runtime`](runtime.md) | Deteccao de runtime Glue/EMR/Databricks/Spark/Python/Iceberg/Athena. |
 | [`sparkforge scan`](scan.md) | Roda sozinho os analyzes que cabem num repositorio: artefato coletado pelo manifesto, codigo pela extensao; depois fuse, judge e um resumo em .sparkforge/scan/. |
 | [`sparkforge sdd`](sdd.md) | Confere os artefatos de spec em docs/sdd/<FEATURE>/<fase>.md: recusa por nome o que nao fecha, sem julgar a prosa. |
 | [`sparkforge simulate`](simulate.md) | O que uma mudanca de configuracao move, estruturalmente: altera o valor de facts que ja existem, rederiva e julga os dois lados, e diz que achados somem e aparecem. |

@@ -23,8 +23,12 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import PurePosixPath
 from typing import Any
+
+from sparkforge.facts.runtime_detect import EMITTED_KINDS as _KINDS_DA_DETECCAO
+from sparkforge.facts.runtime_detect import SUBJECT_SYMBOLS as _SIMBOLOS_DA_DETECCAO
 
 SUBJECTS_COM_CODIGO = frozenset({"source_location", "tf_resource"})
 SUBJECTS_LOCALIZAVEIS = SUBJECTS_COM_CODIGO | {"plan_node"}
@@ -96,6 +100,61 @@ def _de_subject(
     if line is None:
         return None
     return str(subject["file"]).replace("\\", "/"), line, _linha(subject.get("col"))
+
+
+@lru_cache(maxsize=1)
+def _regras_que_leem_a_deteccao() -> frozenset[str]:
+    """`rule_id` das regras cujo `requires_facts` intersecta `_KINDS_DA_DETECCAO`.
+
+    Cacheado porque o catalogo nao muda durante a vida do processo -- mesmo
+    padrao de `diagnosis.root_cause._governanca_declarada` -- e porque
+    `localizar` roda uma vez por finding dentro do laco de `projetar`, que
+    recarregaria o catalogo do disco a cada achado sem o cache. Catalogo
+    indisponivel devolve conjunto vazio em vez de derrubar a chamada (regra 27).
+    """
+    try:
+        from sparkforge.rules.loader import load_catalog
+
+        regras = load_catalog()
+    except Exception:  # noqa: BLE001 - medicao nunca derruba a chamada
+        return frozenset()
+    return frozenset(
+        str(regra["id"])
+        for regra in regras
+        if set(regra.get("requires_facts") or []) & _KINDS_DA_DETECCAO
+    )
+
+
+def _subject_da_deteccao(finding: Mapping[str, Any], subject: Mapping[str, Any]) -> bool:
+    """O subject que a deteccao de runtime escreve (`env.*`, `databricks.photon`)
+    -- e SO quando a REGRA do achado de fato le um kind dela.
+
+    A forma sozinha (`type: job_run`, so `type` e `symbol`, `symbol` em
+    `runtime_detect.SUBJECT_SYMBOLS`) NAO basta, e tratá-la como suficiente e
+    um risco real de mascarar evidencia ausente de verdade: outros extratores
+    emitem subject `job_run` de duas chaves com symbol ARBITRARIO --
+    `athena_workgroup` (nome do workgroup), `emr_cluster` (cluster_id),
+    `emr_serverless` (application_id), `benchmark` (path_hint). Um workgroup
+    chamado `athena`, um cluster_id `platform` ou um path_hint `spark` colide
+    com `SUBJECT_SYMBOLS` por acaso, sem ligacao nenhuma com a deteccao de
+    runtime. Por isso a segunda condicao, obrigatoria: o `requires_facts` da
+    regra do achado (achada por `rule_id`, via `_regras_que_leem_a_deteccao`)
+    precisa intersectar `runtime_detect.EMITTED_KINDS` -- so uma regra que LE
+    um kind da deteccao pode ter sido silenciada por ele faltar.
+
+    Com as duas condicoes: um facts.json gravado antes de o scan gravar os
+    facts da deteccao nao os traz, e o achado SF-ENV-00x que os cita ficaria em
+    `evidencia_ausente`. O fact faltante e de runtime, sem linha em arquivo
+    nenhum: o motivo certo e `runtime`.
+    """
+    forma = (
+        subject.get("type") == "job_run"
+        and set(subject) == {"type", "symbol"}
+        and subject.get("symbol") in _SIMBOLOS_DA_DETECCAO
+    )
+    if not forma:
+        return False
+    return str(finding.get("rule_id") or "") in _regras_que_leem_a_deteccao()
 
 
 def indice_de_callsites(facts_por_id: Mapping[str, Mapping[str, Any]]) -> Callsites:
@@ -261,7 +320,9 @@ def localizar(
         if de_stage is not None:
             return de_stage
         if faltou_evidencia:
-            return Recusa("evidencia_ausente")
+            return Recusa(
+                "runtime" if _subject_da_deteccao(finding, subject) else "evidencia_ausente"
+            )
         if subject.get("type") in SUBJECTS_DE_RUNTIME:
             return Recusa("runtime")
         return Recusa("sem_linha")

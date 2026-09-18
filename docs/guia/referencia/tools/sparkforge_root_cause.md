@@ -15,10 +15,12 @@ Ordena os achados de `judge` por consequencia DECLARADA e nomeia a LACUNA. Use q
 | `facts_path` | qualquer | sim | Arquivo de facts, ou a LISTA deles. A repeticao e o contrato: a lacuna publicada e sobre a UNIAO. |
 | `all_missing` | boolean | não | Lista as regras nao avaliadas de todas as areas. O TOTAL sai nos dois casos. |
 | `athena` | string | não |  |
+| `databricks` | string | não |  |
 | `detail_level` | string: `summary`, `normal`, `full` | não |  |
 | `emr` | string | não |  |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

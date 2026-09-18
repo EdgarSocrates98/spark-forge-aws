@@ -103,7 +103,7 @@ rules:
         chaves que faltaram.
       - >-
         A simulação **não cobre policy de recurso**. Bucket policy, key policy
-        do KMS e Glue resource policy são avaliação separada, e
+        do KMS e a resource policy do catálogo de dados são avaliação separada, e
         `iam.access.unresolved` publica esse limite em todo artefato.
     tradeoffs:
       - >-

@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "37958c15ff03abce222ce5c7bac66f2b60910de02f94f917ce7464bcb1cbe26a"
+      "sha256": "97c966cfb781fd0e68668f11103dc042441ec3f22a785f693ee8f81fc46f3e72"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -67,6 +67,11 @@
       "path": "knowledge/data-platform-finops.md",
       "title": "data-platform-finops",
       "sha256": "103ccd4f62f8914c7d994fd68ccae6ce5f416276d944b2ad7e06cbfc025234f9"
+    },
+    {
+      "path": "knowledge/databricks/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "87fb2e237ea2b9dd85a32acff9b202c5e9417e9c438d530094d2d2318d333241"
     },
     {
       "path": "knowledge/devin/agents-and-subagents.md",

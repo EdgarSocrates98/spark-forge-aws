@@ -23,7 +23,7 @@
       "ratio": 0.15
     },
     "runtime_scope": {},
-    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir.",
+    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir; no Databricks ou em qualquer Spark, a mesma medida no event log é o pico de heap por executor (`spark.executor.memory_usage`, `peak_jvm_heap_bytes`) contra `spark.executor.memory`.",
     "proposed_change": [
       "Cruzar com a série temporal de heap dos executores para classificar a causa.",
       "Se heap não está cheio, eliminar UDF Python e conversões por linha.",
@@ -38,7 +38,7 @@
     "tradeoffs": [],
     "validation": [
       "Razão gc/run após a mudança.",
-      "Runtime e DPU-hours antes e depois.",
+      "Runtime e custo de compute medido antes e depois.",
       "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra representativa que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas. É a MESMA validação que SF-PY-001 e SF-PLAN-001 exigem para a MESMA troca, e ela não fica mais barata por a troca ter chegado aqui pela via do GC em vez da via do código.",
       "Se a ação foi reduzir dado por executor ou trocar de worker: nenhum eixo de dado é exigido, e declarar isso é parte da validação — capacidade não move o resultado, e dizer qual das duas metades você aplicou é o que separa um run comparável de um experimento com duas variáveis."
     ],

@@ -47,6 +47,11 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`emr-eks/runtime-matrix.md`](emr-eks/runtime-matrix.md) | A resposta da D-4: a AWS **publica** matriz por release para EMR on EKS — Spark, Iceberg, Hudi e Delta — e **não** publica Hadoop nem Python. Comparação release a release contra o EC2, com as **4 divergências de Spark e 6 de Iceberg** que provam que a `EMR_MATRIX` não se reaproveita, e a condição que permite derivar `spark` mas veta derivar `iceberg` |
 | [`emr-eks/job-run-configuration.md`](emr-eks/job-run-configuration.md) | A definição de um job run (`describe-job-run`) e do virtual cluster (`describe-virtual-cluster`): tipos reais dos campos, a lista de **cinco níveis de precedência** entre `sparkSubmitParameters` e `applicationConfiguration`, os destinos de log **sem** o managed storage ligado por default do Serverless, `persistentAppUI` sem default publicado, `dynamicAllocation` sem `shuffleTracking`, e o formato do release label com sufixo obrigatório. Traz o placar das cinco regras candidatas, com **uma vetada** |
 
+### Databricks
+| Arquivo | Conteúdo |
+|---|---|
+| [`databricks/runtime-matrix.md`](databricks/runtime-matrix.md) | Databricks Runtime → Spark, só a coluna que a página de versões suportadas publica, e a normalização do rótulo da API (`15.4.x-scala2.12` → `15.4`, `18.0` cai em `18`). Databricks entra como plataforma **declarada** (`--databricks`, `--photon`), sobre os extratores Spark que já existem; as lacunas U1 (versão no event log) e U2 (Photon no event log) ficam nomeadas, e `spark.sql.shuffle.partitions = auto` é recusado pelo `tune` |
+
 ### Control-M (BMC)
 | Arquivo | Conteúdo |
 |---|---|

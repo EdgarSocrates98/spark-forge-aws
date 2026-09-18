@@ -238,7 +238,7 @@ rules:
     proposed_change:
       - "Ler `added_columns`, `removed_columns` e `type_changed_columns` no fact citado antes de qualquer coisa: uma coluna em `removed` e uma em `added` costuma ser renomeação, que é um evento e não dois, e a correção é diferente."
       - "Se a mudança de schema é intencional, ela não é efeito colateral de tuning: separá-la em outra entrega, com aviso ao consumidor, em vez de embarcá-la numa mudança de performance."
-      - "Localizar a origem do tipo: `cast` explícito, inferência de schema na leitura, `mergeSchema`, evolução de schema Iceberg e mudança de versão de Glue trocam tipo sem que nenhuma linha de transformação mude."
+      - "Localizar a origem do tipo: `cast` explícito, inferência de schema na leitura, `mergeSchema`, evolução de schema Iceberg e mudança de versão do runtime (Glue, EMR ou Databricks Runtime) trocam tipo sem que nenhuma linha de transformação mude."
       - "Levantar quem consome o alvo antes de aceitar coluna removida — `sparkforge analyze consumers` responde isso com artefato, e ausência de consumidor conhecido não é ausência de consumidor."
     # A acao DOMINANTE e a do bullet 2 -- tirar a mudanca de schema desta entrega
     # --, e ela e a unica PRESCRITIVA das quatro: o bullet 1 le o fact, o 3

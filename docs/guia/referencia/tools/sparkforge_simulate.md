@@ -15,9 +15,11 @@ Simulate: o que uma mudanca de configuracao move, ESTRUTURALMENTE. Cada item de 
 | `facts_path` | string ou array de string | sim | Facts do case, gerados por `sparkforge analyze * --out`. |
 | `sets` | array de string | sim | camada:chave=valor, por exemplo tf:max_concurrent_runs=1. |
 | `athena` | string | não |  |
+| `databricks` | string | não |  |
 | `emr` | string | não |  |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

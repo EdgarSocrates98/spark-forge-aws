@@ -759,7 +759,23 @@ def build_conf_advice(
         if f.kind == "spark.stage.shuffle"
     )
 
-    if not spark_version:
+    valor, classe, evidencia = _procedencia(_CHAVE_SHUFFLE, efetivo, codigo, terraform)
+
+    if valor.strip().lower() == "auto":
+        # `auto` liga o auto-optimized shuffle do Databricks, que escolhe o
+        # numero pelo plano e pelo volume. Derivar um numero fixo aqui seria
+        # propor desliga-lo sem dizer. Fonte: docs.databricks.com/aws/en/
+        # optimizations/aqe (opt-in; default 200).
+        recusas.append(
+            _recusa(
+                "shuffle_partitions_auto",
+                _CHAVE_SHUFFLE,
+                "O valor atual e `auto`: o auto-optimized shuffle ja escolhe o numero "
+                "de particoes pelo plano e pelo volume. Trocar por um numero fixo e "
+                "desliga-lo, e isso e decisao do operador, nao derivacao da medida.",
+            )
+        )
+    elif not spark_version:
         recusas.append(
             {
                 "reason": "runtime_unknown",
@@ -787,7 +803,6 @@ def build_conf_advice(
         )
     else:
         alvo_bytes, alvo_origem = _alvo(efetivo)
-        valor, classe, evidencia = _procedencia(_CHAVE_SHUFFLE, efetivo, codigo, terraform)
         propriedades.append(
             {
                 "key": _CHAVE_SHUFFLE,

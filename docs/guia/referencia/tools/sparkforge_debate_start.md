@@ -15,6 +15,7 @@ Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcul
 | `repo` | string | sim | Raiz do case. O estado do debate fica em `<repo>/.sparkforge/debate/`, e o budget e lido do `case.yaml`. |
 | `rules` | array de string | sim | O par em contradicao. O lado A defende `rules[0]`. |
 | `athena` | string | não |  |
+| `databricks` | string | não | Versao do Databricks Runtime ('15.4' ou '15.4.x-scala2.12'). DECLARACAO, nao observacao: perde para o event log, e discordar vira divergencia reportada em `runtime.divergences`. |
 | `emr` | string | não | Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). DECLARACAO, nao observacao: perde para o event log e para um dump de describe-cluster, e discordar de um deles vira divergencia reportada em `runtime.divergences`, nunca valor substituido em silencio. |
 | `facts` | array de object | não |  |
 | `facts_path` | string ou array de string | não | Um caminho, ou varios: a UNIAO dos facts do case, o mesmo conjunto do `arbitrate`. Subconjunto fabrica claim desancorada. |
@@ -22,6 +23,7 @@ Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcul
 | `findings_path` | string | não | Arquivo gerado por `sparkforge judge --out` -- o do `arbitrate`. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

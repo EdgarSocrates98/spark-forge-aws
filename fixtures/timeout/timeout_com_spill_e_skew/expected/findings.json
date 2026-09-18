@@ -104,7 +104,7 @@
       "executor_lost_min": 1
     },
     "runtime_scope": {},
-    "explanation": "O run bateu num timeout e há sintoma medido ao lado: skew de duração de task, spill sobre o input lido, tempo de GC sobre tempo de task, ou executor removido. Aumentar o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.\n\nEsta regra NÃO diz que o limite atual está certo. Ela diz que a evidência ao lado aponta para outra causa, e que a ordem de investigação começa por ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode ser exatamente a decisão certa, quando o runtime esperado é legítimo e o SLA permite.\n\nA categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC ou partição grande demais; `broadcast` aponta para um lado grande demais para broadcast; `wall_clock` é o relógio do Glue, que é consequência e não causa.",
+    "explanation": "O run bateu num timeout e há sintoma medido ao lado: skew de duração de task, spill sobre o input lido, tempo de GC sobre tempo de task, ou executor removido. Aumentar o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.\n\nEsta regra NÃO diz que o limite atual está certo. Ela diz que a evidência ao lado aponta para outra causa, e que a ordem de investigação começa por ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode ser exatamente a decisão certa, quando o runtime esperado é legítimo e o SLA permite.\n\nA categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC ou partição grande demais; `broadcast` aponta para um lado grande demais para broadcast; `wall_clock` é o limite de tempo do job na plataforma, que é consequência e não causa.",
     "proposed_change": [
       "Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.",
       "Investigar o sintoma medido que disparou esta regra, na ordem em que as measures aparecem no fact.",
@@ -123,7 +123,7 @@
       "Nova razão p95/p50 de duração de task nos stages do job, depois da mudança.",
       "Spill sobre input lido, no mesmo stage que disparou.",
       "Contagem de executores removidos no run seguinte.",
-      "Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`."
+      "Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`; no Databricks ou em qualquer Spark, contra a duração dos runs anteriores lida do event log de cada um."
     ],
     "rollback": [
       "Reverter a mudança de configuração. Nenhuma das ações propostas altera dado, então não há escrita a desfazer."

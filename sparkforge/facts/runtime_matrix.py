@@ -121,6 +121,13 @@ def _emr_serverless_path() -> Path:
     return safe_knowledge_file(knowledge_dir(), _EMR_SERVERLESS_RELATIVE)
 
 
+_DATABRICKS_RELATIVE = "databricks/runtime-matrix.yaml"
+
+
+def _databricks_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _DATABRICKS_RELATIVE)
+
+
 def _sources_lock_path() -> Path:
     return safe_knowledge_file(knowledge_dir(), "sources.lock.json")
 
@@ -597,3 +604,25 @@ def emr_serverless_sources() -> tuple[str, ...]:
 def emr_serverless_release_provenance() -> dict[str, dict[str, Any]]:
     """Fonte e data por release do EMR Serverless. Ver `_procedencia_por_release`."""
     return _procedencia_por_release(_emr_serverless_path())
+
+
+# --------------------------------------------------------------------------- #
+# Databricks Runtime
+# --------------------------------------------------------------------------- #
+
+# Um componente so: a pagina de versoes suportadas publica Apache Spark por
+# versao do Databricks Runtime, e nenhum outro eixo que alguma regra consuma.
+DATABRICKS_COMPONENTS = frozenset({"spark"})
+
+
+@lru_cache(maxsize=1)
+def load_databricks() -> dict[str, dict[str, str]]:
+    """Matriz do Databricks Runtime, indexada pelo numero como a pagina o
+    escreve (`"15.4"`, `"18"`). A normalizacao do rotulo da API
+    (`15.4.x-scala2.12`) mora em `runtime_detect._databricks_key`."""
+    return _carrega_matriz_fechada(_databricks_path(), DATABRICKS_COMPONENTS, "Databricks")
+
+
+@lru_cache(maxsize=1)
+def databricks_sources() -> tuple[str, ...]:
+    return _fontes_declaradas(_databricks_path())
