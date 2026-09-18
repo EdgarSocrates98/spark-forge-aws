@@ -134,7 +134,7 @@
     "measures": {},
     "attrs": {
       "key": "spark.version",
-      "value": "3.5.4",
+      "value": "3.5.0",
       "app_id": "application_1699000000000_0001",
       "source_event": "SparkListenerEnvironmentUpdate"
     },
