@@ -1,0 +1,32 @@
+# Matriz Databricks Runtime -> Apache Spark. Dado, nunca constante em Python.
+#
+# FONTE: a pagina de versoes suportadas do Databricks Runtime, que publica,
+# por versao, a versao do Apache Spark, a data de lancamento e o fim de
+# suporte. So a coluna Spark entra aqui: e a unica que alguma regra ou
+# derivacao consome. Python e Scala nao estao nesta pagina, e componente sem
+# fonte e eixo inventado -- o loader estoura com chave fora de `spark`.
+#
+# CHAVE: o numero da versao como a pagina o escreve ("15.4", "18"), sem
+# "LTS". O rotulo que a Clusters API e a Jobs API carregam
+# ("15.4.x-scala2.12") e normalizado para a chave em
+# `sparkforge/facts/runtime_detect.py::_databricks_key`; ver
+# `runtime-matrix.md` secao 2.
+#
+# Pagina atualizada em 2026-09-11 e lida em 2026-09-17.
+schema_version: 1
+sources:
+  - "https://docs.databricks.com/aws/en/release-notes/runtime/"
+retrieved: "2026-09-17"
+versions:
+  "19":
+    spark: "4.2.0"
+  "18":
+    spark: "4.1.0"
+  "17.3":
+    spark: "4.0.0"
+  "16.4":
+    spark: "3.5.2"
+  "15.4":
+    spark: "3.5.0"
+  "14.3":
+    spark: "3.5.0"
