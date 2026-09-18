@@ -180,6 +180,7 @@
       "Ausência de executores removidos no run seguinte.",
       "glue.ALL.memory.non-heap.used.percentage abaixo do nível anterior.",
       "Categoria de erro do Glue Observability sem OUT_OF_MEMORY_ERROR.",
+      "No Databricks, e em qualquer Spark sem Glue Observability, nenhum executor removido por OOM no event log do run seguinte.",
       "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas — a mesma validação que SF-PY-001 e SF-PLAN-001 exigem para a mesma troca.",
       "Se a ação foi reduzir o batch de pandas_udf: a coluna produzida pela UDF comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui; é o valor que responde se a UDF era linha a linha ou não.",
       "Se a ação foi só memoryOverhead: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das quatro que mexe em capacidade e não em semântica."
@@ -247,7 +248,7 @@
     ],
     "validation": [
       "Razão spill/input após a mudança.",
-      "Runtime e DPU-hours antes e depois.",
+      "Runtime e custo de compute medido antes e depois.",
       "Resultado funcional idêntico."
     ],
     "rollback": [
@@ -309,7 +310,7 @@
     "tradeoffs": [],
     "validation": [
       "Razão gc/run após a mudança.",
-      "Runtime e DPU-hours antes e depois.",
+      "Runtime e custo de compute medido antes e depois.",
       "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra representativa que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas. É a MESMA validação que SF-PY-001 e SF-PLAN-001 exigem para a MESMA troca, e ela não fica mais barata por a troca ter chegado aqui pela via do GC em vez da via do código.",
       "Se a ação foi reduzir dado por executor ou trocar de worker: nenhum eixo de dado é exigido, e declarar isso é parte da validação — capacidade não move o resultado, e dizer qual das duas metades você aplicou é o que separa um run comparável de um experimento com duas variáveis."
     ],
@@ -417,7 +418,7 @@
       "factor": 0.5
     },
     "runtime_scope": {},
-    "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
+    "explanation": "Cores alocados e ociosos são horas de compute pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
     "proposed_change": [
       "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
       "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.",
@@ -435,7 +436,7 @@
     "validation": [
       "Contagem de tasks versus cores após a mudança.",
       "glue.driver.workerUtilization antes e depois.",
-      "Runtime e DPU-hours antes e depois."
+      "Runtime e custo de compute medido antes e depois."
     ],
     "rollback": [
       "Reverter configuração de partições e de capacidade."

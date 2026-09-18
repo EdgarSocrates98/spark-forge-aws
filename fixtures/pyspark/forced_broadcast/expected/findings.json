@@ -47,7 +47,7 @@
       "Contagem distinta da chave de negócio no resultado, antes e depois, para separar troca de estratégia de troca de condição de join quando as duas vêm no mesmo diff.",
       "Valor — e não só contagem — de cada operador a jusante que dependa de ordem ou de partição: dropDuplicates, first/last, collect_list, monotonically_increasing_id e row_number com empate. É exatamente aqui que o erro aparece, porque os quatro eixos de SF-FVAL (contagem, schema, chaves, agregados) passam INTEIROS enquanto a linha que sobreviveu é outra. Se não houver nenhum operador desses a jusante, escreva isso: a ausência declarada é o que autoriza ler os quatro eixos como suficientes.",
       "Número de arquivos e distribuição de linhas por arquivo no destino, antes e depois, quando o resultado do join é escrito.",
-      "Runtime e DPU-hours antes e depois.",
+      "Runtime e custo de compute medido antes e depois.",
       "Heap do driver antes e depois."
     ],
     "rollback": [

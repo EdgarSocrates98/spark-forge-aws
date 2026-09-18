@@ -104,7 +104,7 @@
     ],
     "validation": [
       "Valor efetivo de cada chave conferido na aba Environment antes e depois.",
-      "Runtime e DPU-hours antes e depois, para confirmar que a configuração tinha efeito real."
+      "Runtime e custo de compute medido antes e depois, para confirmar que a configuração tinha efeito real."
     ],
     "rollback": [
       "Reverter o commit."

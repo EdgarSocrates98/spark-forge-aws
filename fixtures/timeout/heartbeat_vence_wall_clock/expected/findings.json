@@ -38,6 +38,7 @@
       "Ausência de executores removidos no run seguinte.",
       "glue.ALL.memory.non-heap.used.percentage abaixo do nível anterior.",
       "Categoria de erro do Glue Observability sem OUT_OF_MEMORY_ERROR.",
+      "No Databricks, e em qualquer Spark sem Glue Observability, nenhum executor removido por OOM no event log do run seguinte.",
       "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas — a mesma validação que SF-PY-001 e SF-PLAN-001 exigem para a mesma troca.",
       "Se a ação foi reduzir o batch de pandas_udf: a coluna produzida pela UDF comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui; é o valor que responde se a UDF era linha a linha ou não.",
       "Se a ação foi só memoryOverhead: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das quatro que mexe em capacidade e não em semântica."
@@ -90,7 +91,7 @@
       "executor_lost_min": 1
     },
     "runtime_scope": {},
-    "explanation": "O run bateu num timeout e há sintoma medido ao lado: skew de duração de task, spill sobre o input lido, tempo de GC sobre tempo de task, ou executor removido. Aumentar o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.\n\nEsta regra NÃO diz que o limite atual está certo. Ela diz que a evidência ao lado aponta para outra causa, e que a ordem de investigação começa por ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode ser exatamente a decisão certa, quando o runtime esperado é legítimo e o SLA permite.\n\nA categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC ou partição grande demais; `broadcast` aponta para um lado grande demais para broadcast; `wall_clock` é o relógio do Glue, que é consequência e não causa.",
+    "explanation": "O run bateu num timeout e há sintoma medido ao lado: skew de duração de task, spill sobre o input lido, tempo de GC sobre tempo de task, ou executor removido. Aumentar o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.\n\nEsta regra NÃO diz que o limite atual está certo. Ela diz que a evidência ao lado aponta para outra causa, e que a ordem de investigação começa por ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode ser exatamente a decisão certa, quando o runtime esperado é legítimo e o SLA permite.\n\nA categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC ou partição grande demais; `broadcast` aponta para um lado grande demais para broadcast; `wall_clock` é o limite de tempo do job na plataforma, que é consequência e não causa.",
     "proposed_change": [
       "Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.",
       "Investigar o sintoma medido que disparou esta regra, na ordem em que as measures aparecem no fact.",

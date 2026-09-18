@@ -100,7 +100,7 @@
     "benchmark_ref": "",
     "risks": [],
     "tradeoffs": [
-      "Obter o plano final exige executar o job, o que custa tempo e DPU."
+      "Obter o plano final exige executar o job, o que custa tempo e compute."
     ],
     "validation": [
       "Conferir na Spark UI se o AdaptiveSparkPlan da query concluída mostra isFinalPlan=true."

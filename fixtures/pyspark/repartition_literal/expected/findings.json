@@ -40,7 +40,7 @@
     ],
     "validation": [
       "Contagem e tamanho dos arquivos de saída antes e depois.",
-      "Runtime e DPU-hours antes e depois.",
+      "Runtime e custo de compute medido antes e depois.",
       "Contagem total de linhas idêntica."
     ],
     "rollback": [

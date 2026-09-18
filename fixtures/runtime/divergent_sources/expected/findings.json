@@ -37,7 +37,7 @@
     ],
     "validation": [
       "Aba Environment do Spark UI e Terraform concordando após a correção.",
-      "Versão de Iceberg confirmada no classpath, não inferida da versão de Glue."
+      "Versão de Iceberg confirmada no classpath, não inferida da versão da plataforma (Glue, EMR ou Databricks)."
     ],
     "rollback": [
       "Não aplicável; é correção de metadado de projeto",

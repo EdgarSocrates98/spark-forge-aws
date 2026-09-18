@@ -55,7 +55,7 @@ rules:
       A categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e
       muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC
       ou partição grande demais; `broadcast` aponta para um lado grande demais
-      para broadcast; `wall_clock` é o relógio do Glue, que é consequência e não
+      para broadcast; `wall_clock` é o limite de tempo do job na plataforma, que é consequência e não
       causa.
     proposed_change:
       - Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.
