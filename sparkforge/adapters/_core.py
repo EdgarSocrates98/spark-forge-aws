@@ -117,6 +117,7 @@ from sparkforge.facts.parquet_footer import (
     extract_parquet_footer_tree,
 )
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
+from sparkforge.facts.runtime_detect import EMITTED_KINDS as RUNTIME_DETECT_KINDS
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
 from sparkforge.facts.spark_plan import extract_plan_path
@@ -833,14 +834,18 @@ def _runtime_e_facts(
     so disparam em fixture. Todo verbo que julga passa por aqui, e nao por uma
     copia da juncao em cada um.
 
-    Sem duplicar por id: um fact de ambiente que ja veio no arquivo (a saida de
-    um `scan` anterior, por exemplo) nao entra duas vezes.
+    Um fact de ambiente que ja veio no arquivo (o `facts.json` de um `scan`
+    anterior, que grava a uniao julgada) nao entra duas vezes, e nao vence: ele
+    e a conclusao da deteccao DAQUELA execucao, com as declaracoes de entao. O
+    id de `databricks.photon` nao depende do estado, entao juntar por id
+    manteria o `undeclared` do arquivo e descartaria o `on` declarado agora. Os
+    kinds da deteccao que vieram no arquivo saem, e entram os de agora.
     """
     context, ambiente = build_runtime(
         glue, spark, python, iceberg, athena, facts=facts, emr=emr,
         databricks=databricks, photon=photon,
     )
-    unidos = list(facts or [])
+    unidos = [fact for fact in facts or [] if fact.kind not in RUNTIME_DETECT_KINDS]
     vistos = {fact.id for fact in unidos}
     for fact in ambiente:
         if fact.id not in vistos:
@@ -3790,17 +3795,27 @@ def scan(
     fundidos = [f.to_dict() for f in run_fuse(_facts_from_dicts(uniao))] if uniao else []
     findings: list[dict[str, Any]] = []
     runtime: dict[str, Any] | None = None
+    julgados = fundidos
     if fundidos:
-        julgado = judge_findings(
-            facts=fundidos, glue=glue, spark=spark, python=python, iceberg=iceberg,
-            athena=athena, emr=emr, databricks=databricks, photon=photon,
-            limit=None,
-        )
+        # `facts.json` e o conjunto que o `judge` julgou: os fundidos MAIS os
+        # facts da deteccao de runtime (`env.*`, `databricks.photon`), que os
+        # SF-ENV-00x citam como evidencia. Gravar so os fundidos deixaria esses
+        # achados com evidencia pendurada, e o SARIF os recusaria por
+        # `evidencia_ausente`. O `judge_findings` abaixo recebe a uniao ja
+        # pronta e nao duplica por id -- os facts de ambiente nao sao leitura
+        # de versao, entao o contexto sai o mesmo.
+        versoes = {
+            "glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
+            "athena": athena, "emr": emr, "databricks": databricks, "photon": photon,
+        }
+        _, com_ambiente = _runtime_e_facts(**versoes, facts=_facts_from_dicts(fundidos))
+        julgados = [f.to_dict() for f in com_ambiente]
+        julgado = judge_findings(facts=julgados, **versoes, limit=None)
         findings = list(julgado["items"])
         runtime = julgado.get("runtime")
 
     arquivos: dict[str, Any] = {f"facts_{nome}.json": brutos[nome] for nome in sorted(brutos)}
-    arquivos["facts.json"] = fundidos
+    arquivos["facts.json"] = julgados
     arquivos["findings.json"] = findings
     saidas = _scan_gravar(raiz, arquivos)
     saidas.append((_SCAN_DIR / "summary.json").as_posix())

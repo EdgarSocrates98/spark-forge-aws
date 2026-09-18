@@ -99,6 +99,25 @@ class TestLocalizar:
         f = _finding(subject={"type": "job_run"}, evidence=["f_sumiu"])
         assert localizar(f, {}, ["."], _existe()) == Recusa("evidencia_ausente")
 
+    def test_evidencia_ausente_da_deteccao_de_runtime_e_runtime(self):
+        # Um facts.json gravado antes de o scan gravar os facts da deteccao nao
+        # traz `env.*` nem `databricks.photon`; o SF-ENV-00x que os cita e de
+        # runtime, sem linha em arquivo nenhum, e nao evidencia pendurada.
+        from sparkforge.adapters._core import build_runtime
+
+        _, ambiente = build_runtime(
+            glue="5.0", emr="7.5.0", databricks="15.4", python="3.11", iceberg="1.6.1",
+            athena="3",
+        )
+        assert {f.kind for f in ambiente} == {
+            "env.platform", "env.runtime_signal", "databricks.photon",
+        }
+        for fact in ambiente:
+            f = _finding(subject=dict(fact.subject), evidence=[fact.id])
+            assert localizar(f, {}, ["."], _existe()) == Recusa("runtime"), fact.subject
+        alheio = _finding(subject={"type": "job_run", "symbol": "etl"}, evidence=["f_sumiu"])
+        assert localizar(alheio, {}, ["."], _existe()) == Recusa("evidencia_ausente")
+
     @pytest.mark.parametrize("linha", [0, -1, "3", True, None])
     def test_linha_invalida_nao_localiza(self, linha):
         subject = {"type": "source_location", "file": "lib/job.py", "line": linha}

@@ -77,7 +77,11 @@ def test_scan_igual_ao_fluxo_a_mao(tmp_path, capsys):
     manual = _core.judge_findings(facts=fundidos, limit=None)["items"]
     scan_findings = json.loads((saida / "findings.json").read_text(encoding="utf-8"))
     assert sorted(f["rule_id"] for f in scan_findings) == sorted(f["rule_id"] for f in manual)
-    assert len(json.loads((saida / "facts.json").read_text(encoding="utf-8"))) == len(fundidos)
+    # O `facts.json` do scan e o conjunto que o `judge` a mao JULGOU: os
+    # fundidos mais os facts da deteccao de runtime, que os SF-ENV-00x citam.
+    _, julgados_a_mao = _core._runtime_e_facts(facts=_core._facts_from_dicts(fundidos))
+    gravados = json.loads((saida / "facts.json").read_text(encoding="utf-8"))
+    assert sorted(f["id"] for f in gravados) == sorted(f.id for f in julgados_a_mao)
     assert "SF-LF-005" in {f["rule_id"] for f in scan_findings}, "o fuse destrava o P0 de LF"
 
 

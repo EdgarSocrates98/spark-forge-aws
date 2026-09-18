@@ -2,6 +2,7 @@
 import argparse
 import inspect
 import json
+import shutil
 from pathlib import Path
 
 import yaml
@@ -221,6 +222,45 @@ def test_judge_em_producao_julga_facts_de_ambiente(tmp_path, capsys):
     assert "SF-ENV-006" in _regras_do_judge(capsys, arquivo, "--databricks", "15.4")
     declarado = _regras_do_judge(capsys, arquivo, "--databricks", "15.4", "--photon", "off")
     assert "SF-ENV-006" not in declarado
+
+
+def test_scan_grava_os_facts_de_ambiente_que_os_achados_citam(tmp_path, capsys):
+    # O scan julga com os facts da deteccao e grava `findings.json` com os
+    # SF-ENV-00x que os citam; `facts.json` sem eles deixa o achado com
+    # evidencia pendurada, e SARIF e `report github` o recusam por
+    # `evidencia_ausente`.
+    repo = tmp_path / "repo"
+    (repo / "src").mkdir(parents=True)
+    shutil.copy(ROOT / "fixtures" / "scan" / "misto" / "repo" / "src" / "job.py", repo / "src")
+    assert cli.main(["scan", str(repo), "--databricks", "15.4"]) == 0
+    capsys.readouterr()
+    saida = repo / ".sparkforge" / "scan"
+    findings = json.loads((saida / "findings.json").read_text(encoding="utf-8"))
+    gravados = {f["id"] for f in json.loads((saida / "facts.json").read_text(encoding="utf-8"))}
+    assert "SF-ENV-006" in {f["rule_id"] for f in findings}
+    pendurados = {
+        (f["rule_id"], fact_id)
+        for f in findings for fact_id in f["evidence"] if fact_id not in gravados
+    }
+    assert pendurados == set()
+
+
+def test_rejulgar_a_saida_do_scan_usa_a_deteccao_nova(tmp_path, capsys):
+    # O `facts.json` do scan traz os facts da deteccao DAQUELA execucao. Julgar
+    # o arquivo de novo com outra declaracao nao pode herdar a conclusao velha:
+    # o id de `databricks.photon` nao depende do estado, e a juncao por id
+    # manteria o `undeclared` do arquivo e descartaria o `on` declarado agora.
+    repo = tmp_path / "repo"
+    (repo / "src").mkdir(parents=True)
+    shutil.copy(ROOT / "fixtures" / "scan" / "misto" / "repo" / "src" / "job.py", repo / "src")
+    assert cli.main(["scan", str(repo), "--databricks", "15.4"]) == 0
+    capsys.readouterr()
+    arquivo = repo / ".sparkforge" / "scan" / "facts.json"
+    assert "SF-ENV-006" in _regras_do_judge(capsys, arquivo, "--databricks", "15.4")
+    assert "SF-ENV-006" not in _regras_do_judge(
+        capsys, arquivo, "--databricks", "15.4", "--photon", "on"
+    )
+    assert "SF-ENV-006" not in _regras_do_judge(capsys, arquivo, "--glue", "5.0")
 
 
 def _subparsers(parser):

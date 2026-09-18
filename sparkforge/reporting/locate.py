@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any
 
+from sparkforge.facts.runtime_detect import SUBJECT_SYMBOLS as _SIMBOLOS_DA_DETECCAO
+
 SUBJECTS_COM_CODIGO = frozenset({"source_location", "tf_resource"})
 SUBJECTS_LOCALIZAVEIS = SUBJECTS_COM_CODIGO | {"plan_node"}
 SUBJECTS_DE_RUNTIME = frozenset({"job_run", "stage", "table"})
@@ -96,6 +98,22 @@ def _de_subject(
     if line is None:
         return None
     return str(subject["file"]).replace("\\", "/"), line, _linha(subject.get("col"))
+
+
+def _subject_da_deteccao(subject: Mapping[str, Any]) -> bool:
+    """O subject que a deteccao de runtime escreve (`env.*`, `databricks.photon`).
+
+    Um facts.json gravado antes de o scan gravar os facts da deteccao nao os
+    traz, e o achado SF-ENV-00x que os cita ficaria em `evidencia_ausente`. O
+    fact faltante e de runtime, sem linha em arquivo nenhum: o motivo certo e
+    `runtime`. A forma exata (`type` e `symbol`, nada mais) separa esse subject
+    do de um job run do Glue, que tambem e `job_run`.
+    """
+    return (
+        subject.get("type") == "job_run"
+        and set(subject) == {"type", "symbol"}
+        and subject.get("symbol") in _SIMBOLOS_DA_DETECCAO
+    )
 
 
 def indice_de_callsites(facts_por_id: Mapping[str, Mapping[str, Any]]) -> Callsites:
@@ -261,7 +279,7 @@ def localizar(
         if de_stage is not None:
             return de_stage
         if faltou_evidencia:
-            return Recusa("evidencia_ausente")
+            return Recusa("runtime" if _subject_da_deteccao(subject) else "evidencia_ausente")
         if subject.get("type") in SUBJECTS_DE_RUNTIME:
             return Recusa("runtime")
         return Recusa("sem_linha")

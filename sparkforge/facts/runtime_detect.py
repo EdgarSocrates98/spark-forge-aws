@@ -291,6 +291,13 @@ _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
 
 _ALWAYS_EMIT = frozenset({"spark"})
 
+# Os `subject.symbol` que a deteccao escreve nos seus facts, todos `job_run`:
+# `platform` (`env.platform`), `photon` (`databricks.photon`) e um componente
+# por `env.runtime_signal`. `sparkforge/reporting/locate.py` os reconhece
+# quando o fact citado nao esta no arquivo -- um facts.json gravado por versao
+# antiga do scan: o achado e de runtime, sem linha, e nao evidencia pendurada.
+SUBJECT_SYMBOLS = frozenset({"platform", "photon", *_PLATFORM_KEYS, *_DIRECT_KEYS})
+
 # O que uma matriz pode virar observacao. `hadoop` e `python_installed` estao
 # na EMR_MATRIX como fato conferido e ficam de fora daqui de proposito: nao ha
 # campo em `RuntimeContext` nem chave em `_DIRECT_KEYS` para eles, e derivar
