@@ -11,6 +11,7 @@ from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.findings.models import Fact
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
+from sparkforge.tuning.spark_conf import build_conf_advice
 
 ROOT = Path(__file__).resolve().parents[1]
 PLANO = ROOT / "fixtures" / "plan" / "cartesian_join" / "input"
@@ -81,6 +82,30 @@ def test_photon_recusa_regra_de_plano():
 
     _, facts_glue = build_runtime(glue="5.0", photon="on")
     assert not any(f.kind == "databricks.photon" for f in facts_glue)
+
+
+def test_shuffle_partitions_auto_recusado():
+    fatos = [
+        _conf("spark.sql.shuffle.partitions", "auto"),
+        Fact(
+            kind="spark.stage.shuffle",
+            subject={"type": "stage", "symbol": "1"},
+            measures={"write_bytes": 10 * 1024**3},
+            provenance={"extractor": "event_log@0.1.0"},
+        ),
+    ]
+    conselho = build_conf_advice(fatos, runtime={"databricks": "15.4", "spark": "3.5.0"})
+    recusa = next(
+        r for r in conselho["refused"] if r["property"] == "spark.sql.shuffle.partitions"
+    )
+    assert recusa["reason"] == "shuffle_partitions_auto"
+    assert all(p["key"] != "spark.sql.shuffle.partitions" for p in conselho["properties"])
+
+    numerico = build_conf_advice(
+        [_conf("spark.sql.shuffle.partitions", "400"), fatos[1]],
+        runtime={"databricks": "15.4", "spark": "3.5.0"},
+    )
+    assert any(p["key"] == "spark.sql.shuffle.partitions" for p in numerico["properties"])
 
 
 def _subparsers(parser):
