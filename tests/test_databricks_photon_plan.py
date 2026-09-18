@@ -131,3 +131,69 @@ def test_plano_photon_cala_sf_env_006():
     assert "SF-ENV-006" not in {f.rule_id for f in judge(facts, load_catalog(), context.to_dict())}
     _, sem_plano = build_runtime(databricks="19")
     assert "SF-ENV-006" in {f.rule_id for f in judge(sem_plano, load_catalog(), {"databricks": "19"})}
+
+
+def test_plano_photon_sem_plataforma_nao_registra_fact_nem_diverge():
+    """Sem `databricks=`, o plano Photon continua sendo lido (fica em
+    `observations`), mas `_photon` so entra em `context.photon`/divergencia/
+    fact sob a plataforma databricks. Sem plataforma nenhuma, a ausencia de
+    declaracao nao gera nem divergencia nem fact -- ver o ramo `if not
+    databricks` de `_photon` em `sparkforge/facts/runtime_detect.py`."""
+    from sparkforge.adapters._core import build_runtime
+
+    context, facts = build_runtime(facts=_facts("photon_join"))
+    assert context.photon == ""
+    assert not any(d.startswith("photon:") for d in context.divergences)
+    assert not any(f.kind == "databricks.photon" for f in facts)
+
+
+def test_plano_photon_com_declaracao_concordante_fica_sem_divergencia():
+    """`--photon on` diante de um plano que ja mostra Photon concorda com a
+    observacao: `context.photon` fica "on", a fonte do fact e "plan" (quem
+    observou), e nao ha divergencia `photon:` -- so discordancia diverge."""
+    from sparkforge.adapters._core import build_runtime
+
+    context, facts = build_runtime(databricks="19", photon="on", facts=_facts("photon_join"))
+    assert context.photon == "on"
+    estado = next(f for f in facts if f.kind == "databricks.photon")
+    assert estado.attrs == {"state": "on", "source": "plan"}
+    assert not any(d.startswith("photon:") for d in context.divergences)
+
+
+def test_plano_photon_declarado_sem_databricks_continua_divergindo():
+    """`--photon on` sem `--databricks` e a declaracao sem plataforma que o
+    ramo `if not databricks` de `_photon` marca como divergencia -- o plano
+    Photon nao muda esse caminho, so acrescenta a fonte `plan` aos sources."""
+    from sparkforge.adapters._core import build_runtime
+
+    context, facts = build_runtime(photon="on", facts=_facts("photon_join"))
+    assert context.photon == ""
+    photon_divergencias = [d for d in context.divergences if d.startswith("photon:")]
+    assert len(photon_divergencias) == 1
+    assert "declarado sem plataforma databricks detectada" in photon_divergencias[0]
+    assert not any(f.kind == "databricks.photon" for f in facts)
+
+
+def test_databricks_do_event_log_com_plano_photon_sem_flag():
+    """Plataforma databricks vinda do event log (mesmo formato de fact que
+    `tests/test_databricks_platform.py::test_event_log_declara_plataforma_databricks`
+    usa) mais um plano Photon, sem `--photon`: a observacao do plano decide
+    sozinha, fonte "plan"."""
+    from sparkforge.adapters._core import build_runtime
+    from sparkforge.findings.models import Fact
+
+    chave = "spark.databricks.clusterUsageTags.sparkVersion"
+    evento = Fact(
+        kind="spark.conf_effective",
+        subject={"type": "job_run", "symbol": chave},
+        attrs={
+            "key": chave,
+            "value": "15.4.x-scala2.12",
+            "source_event": "SparkListenerEnvironmentUpdate",
+        },
+        provenance={"extractor": "event_log@0.1.0"},
+    )
+    context, facts = build_runtime(facts=[evento, *_facts("photon_join")])
+    assert context.photon == "on"
+    estado = next(f for f in facts if f.kind == "databricks.photon")
+    assert estado.attrs == {"state": "on", "source": "plan"}
