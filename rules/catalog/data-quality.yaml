@@ -171,7 +171,7 @@ rules:
     proposed_change:
       - Mover a validação para antes do `write`, sobre o DataFrame já transformado.
       - Se a validação precisa do dado escrito (contagem no destino, por exemplo), escrever primeiro numa área de staging e só promover ao destino final depois de a validação passar.
-      - Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior.
+      - Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior. No Databricks, o alcance não está medido no repositório; conferir a versão do Spark do Databricks Runtime em knowledge/databricks/runtime-matrix.md, e a do Python na documentação do runtime, contra o mesmo documento antes de trocar.
     # `moves` declara `correctness.write_result` porque a propria regra diz que o
     # conteudo do destino muda: "abortar antes do write deixa o destino com o
     # conteudo do ciclo anterior; abortar depois deixa o destino com dado que
@@ -259,8 +259,9 @@ rules:
       porque nenhuma fonte oficial da AWS mostra Glue ou EMR rodando o driver com `-O`, e
       no Glue o único mecanismo documentado de variável de ambiente do driver
       (`--customer-driver-env-vars`) exige o prefixo `CUSTOMER_`, que impede definir
-      `PYTHONOPTIMIZE`. Sem fonte que sustente o contrário, vale o comportamento padrão do
-      interpretador: `__debug__` é verdadeiro e o `assert` executa. Mas a linguagem é
+      `PYTHONOPTIMIZE`. No Databricks ou em qualquer outro Spark, o repositório não tem
+      fonte sobre o driver com `-O`. Sem fonte que sustente o contrário, vale o
+      comportamento padrão do interpretador: `__debug__` é verdadeiro e o `assert` executa. Mas a linguagem é
       explícita — sob `-O` ou com `PYTHONOPTIMIZE` definido, o interpretador não gera
       código nenhum para `assert` —, então validação cuja ÚNICA consequência é um `assert`
       fica a uma variável de ambiente de não ter consequência nenhuma, e isso desaparece
@@ -338,7 +339,7 @@ rules:
       própria função, o extrator vai ao chamador: se a função tem EXATAMENTE UM call site
       no mesmo arquivo, a chamada é por nome e o argumento é uma variável, a evidência
       daquele call site é herdada — `true` quando o chamador persistiu antes de chamar,
-      `false` quando não persistiu. A forma canônica de biblioteca Glue é validar num
+      `false` quando não persistiu. A forma canônica de biblioteca Spark (Glue, EMR ou Databricks) é validar num
       helper e persistir no chamador, e essa forma agora é AVALIADA em vez de ignorada:
       quando a persistência existe, a regra vê e não dispara; quando não existe, ela
       dispara sobre um defeito que antes era invisível.
@@ -443,7 +444,7 @@ rules:
       uma mentira sobre um dado que o extrator não tem.
     proposed_change:
       - "Reunir os checks numa única agregação, com uma expressão por regra (`sum(when(cond, 1).otherwise(0))` por violação), e ler todas as contagens de uma linha só. Esta é a mudança que não depende de biblioteca nenhuma, e por isso vem primeiro."
-      - "Alternativa, com guarda de versão obrigatória — uma suíte que compartilha varredura. PyDeequ não instala em Glue 3.0 nem em nenhuma release EMR 6.x, e o Spark 3.4 está fora do mapa de `pydeequ/configs.py` (EMR 6.12.0 a 6.15.0); Great Expectations 1.x exige Python 3.10 ou maior. Conferir o alcance medido em knowledge/dq/validation-frameworks.md §2.2 e §1.4 antes de recomendar a alguém, e não recomendar suíte nenhuma sem antes saber em qual release o job roda."
+      - "Alternativa, com guarda de versão obrigatória — uma suíte que compartilha varredura. PyDeequ não instala em Glue 3.0 nem em nenhuma release EMR 6.x, e o Spark 3.4 está fora do mapa de `pydeequ/configs.py` (EMR 6.12.0 a 6.15.0); Great Expectations 1.x exige Python 3.10 ou maior. Conferir o alcance medido em knowledge/dq/validation-frameworks.md §2.2 e §1.4 antes de recomendar a alguém, e não recomendar suíte nenhuma sem antes saber em qual release o job roda. No Databricks, o alcance não está medido no repositório: a versão do Spark do Databricks Runtime está em knowledge/databricks/runtime-matrix.md."
     # NAO ha eixo de "custo da passada", e isso e medida e nao esquecimento:
     # nenhum fact desta area mede o tamanho do lineage varrido -- a nota de
     # `sources` diz exatamente isso. O que sobra e medivel e ja esta escrito na

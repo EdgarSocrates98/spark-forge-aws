@@ -266,7 +266,7 @@ rules:
       job que configurou o checkpoint corretamente.
       O ALCANCE É O ARQUIVO, e é assim que o achado deve ser lido. `setCheckpointDir`
       é chamado no `SparkContext`, que é singleton do processo: o diretório vale para
-      a aplicação inteira, e a forma canônica de job Glue/EMR configura a sessão num
+      a aplicação inteira, e a forma canônica de job Glue, EMR ou Databricks configura a sessão num
       `build_spark()` e roda o algoritmo noutra função. Correlacionar por escopo
       léxico produziria P0 exatamente sobre essa forma correta.
       A RESSALVA É PARTE DO ACHADO, e sem ela a regra afirma mais do que a evidência

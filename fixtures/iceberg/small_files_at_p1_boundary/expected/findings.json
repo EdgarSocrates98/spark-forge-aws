@@ -39,7 +39,7 @@
     "expected_effect": "",
     "benchmark_ref": "",
     "risks": [
-      "Compactação reescreve dados e cria um novo snapshot, consumindo DPU e armazenamento temporário.",
+      "Compactação reescreve dados e cria um novo snapshot, consumindo computação (DPU no Glue; tempo de cluster no Databricks ou em qualquer Spark) e armazenamento temporário.",
       "Alterar write.distribution-mode adiciona shuffle na escrita, aumentando o custo de cada run."
     ],
     "tradeoffs": [

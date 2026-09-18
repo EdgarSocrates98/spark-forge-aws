@@ -129,7 +129,7 @@ rules:
       - Contagem de arquivos e tamanho médio, p50 e p95 antes e depois.
       - Tempo do driver antes da primeira task, que é o proxy de listing.
       - Contagem total de linhas idêntica.
-      - Runtime e DPU-hours antes e depois.
+      - Runtime e DPU-hours antes e depois; no Databricks ou em qualquer Spark, a duração do job no event log.
     rollback: [Manter os arquivos originais até a validação concluir; então remover.]
     sources:
       - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
@@ -226,8 +226,8 @@ rules:
     tradeoffs: [Uma etapa de conversão adiciona custo e latência, e reduz o custo de todas as leituras seguintes.]
     validation:
       - Contagem de tasks do stage de leitura antes e depois.
-      - glue.driver.workerUtilization antes e depois.
-      - Runtime e DPU-hours antes e depois.
+      - glue.driver.workerUtilization antes e depois; no Databricks ou em qualquer Spark, a mesma pergunta no event log, tasks por stage contra cores do cluster (`spark.stage.task_count` e `spark.cluster.cores`).
+      - Runtime e DPU-hours antes e depois; no Databricks ou em qualquer Spark, a duração do job no event log.
       - Contagem total de linhas idêntica após a conversão.
     rollback: [Manter a origem intacta e reverter o consumo para os arquivos originais.]
     sources:

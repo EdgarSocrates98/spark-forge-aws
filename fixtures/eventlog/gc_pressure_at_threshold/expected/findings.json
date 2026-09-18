@@ -23,7 +23,7 @@
       "ratio": 0.15
     },
     "runtime_scope": {},
-    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir.",
+    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir; no Databricks ou em qualquer Spark, a mesma medida no event log é o pico de heap por executor (`spark.executor.memory_usage`, `peak_jvm_heap_bytes`) contra `spark.executor.memory`.",
     "proposed_change": [
       "Cruzar com a série temporal de heap dos executores para classificar a causa.",
       "Se heap não está cheio, eliminar UDF Python e conversões por linha.",

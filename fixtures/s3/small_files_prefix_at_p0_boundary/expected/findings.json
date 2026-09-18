@@ -46,7 +46,7 @@
       "Contagem de arquivos e tamanho médio, p50 e p95 antes e depois.",
       "Tempo do driver antes da primeira task, que é o proxy de listing.",
       "Contagem total de linhas idêntica.",
-      "Runtime e DPU-hours antes e depois."
+      "Runtime e DPU-hours antes e depois; no Databricks ou em qualquer Spark, a duração do job no event log."
     ],
     "rollback": [
       "Manter os arquivos originais até a validação concluir; então remover."

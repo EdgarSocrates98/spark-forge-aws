@@ -295,7 +295,7 @@
       "ratio": 0.15
     },
     "runtime_scope": {},
-    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir.",
+    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir; no Databricks ou em qualquer Spark, a mesma medida no event log é o pico de heap por executor (`spark.executor.memory_usage`, `peak_jvm_heap_bytes`) contra `spark.executor.memory`.",
     "proposed_change": [
       "Cruzar com a série temporal de heap dos executores para classificar a causa.",
       "Se heap não está cheio, eliminar UDF Python e conversões por linha.",
@@ -422,6 +422,7 @@
     "proposed_change": [
       "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
       "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.",
+      "Se `spark.sql.shuffle.partitions` já vale `auto` (auto-optimized shuffle do Databricks), não fixar número: o motor já escolhe pelo plano e pelo volume. Ver knowledge/databricks/runtime-matrix.md.",
       "Reduzir o número de workers se o paralelismo real não pode aumentar."
     ],
     "expected_effect": "",
@@ -435,7 +436,7 @@
     ],
     "validation": [
       "Contagem de tasks versus cores após a mudança.",
-      "glue.driver.workerUtilization antes e depois.",
+      "glue.driver.workerUtilization antes e depois; no Databricks ou em qualquer Spark, a mesma pergunta no event log, tasks por stage contra cores do cluster (`spark.stage.task_count` e `spark.cluster.cores`).",
       "Runtime e custo de compute medido antes e depois."
     ],
     "rollback": [

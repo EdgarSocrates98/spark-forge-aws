@@ -108,7 +108,7 @@
       "Nova razão p95/p50 de duração de task nos stages do job, depois da mudança.",
       "Spill sobre input lido, no mesmo stage que disparou.",
       "Contagem de executores removidos no run seguinte.",
-      "Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`."
+      "Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`; no Databricks ou em qualquer Spark, contra a duração dos runs anteriores lida do event log de cada um."
     ],
     "rollback": [
       "Reverter a mudança de configuração. Nenhuma das ações propostas altera dado, então não há escrita a desfazer."
