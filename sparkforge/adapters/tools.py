@@ -437,7 +437,10 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
         "photon": {
             "type": "string",
             "description": (
-                "'on', 'off', ou vazio sem leitura. Vem da declaracao do operador "
+                "'on', 'off', ou vazio -- sem leitura, ou com leitura mas sem a "
+                "plataforma databricks detectada (so entra aqui com databricks "
+                "detectado; sem ele, plano Photon ainda recusa regra de plano "
+                "pelo fact plan.photon, no engine). Vem da declaracao do operador "
                 "ou da observacao do plano (plan.photon, fonte plan), e a "
                 "observacao vence. Com 'on' sob Databricks, regra de plano sai em "
                 "skipped com databricks.photon.unresolved."

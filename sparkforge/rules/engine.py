@@ -233,7 +233,7 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
 #
 # A recusa e por CASE, nao por plano: um `plan.photon` em qualquer ponto da uniao
 # de facts recusa tambem regra de outro plano, ou de event log (`spark.sql.*`),
-# igual a via declarada. Hoje nenhuma regra do catalogo exige `spark.sql.*`.
+# igual a via declarada.
 #
 # `plan.photon` casa o prefixo `plan.`: uma regra futura que exija o proprio
 # `plan.photon` seria recusada por ele mesmo. Quem a escrever precisa po-lo em

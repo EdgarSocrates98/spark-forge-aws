@@ -654,7 +654,7 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
     SEM EXCECAO DECLARADA, e isso e resultado medido, nao omissao. `glue` e
     `emr` sao identidade de plataforma e poderiam precisar de regra propria --
     mas os dois TEM produtor (`tf.attribute`/`glue_version` e
-    `emr.cluster`/`emr_release`), entao a regra geral vale para os seis eixos
+    `emr.cluster`/`emr_release`), entao a regra geral vale para os oito eixos
     sem ressalva. Declarar excecao que nao e exercida seria criar a permissao
     antes do caso, no padrao oposto ao de `AREA_MAY_VANISH_WHEN` em
     `tests/test_rule_scope_by_nature.py`, que existe porque `SF-GLUE` de fato

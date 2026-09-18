@@ -134,11 +134,12 @@ def test_plano_photon_cala_sf_env_006():
 
 
 def test_plano_photon_sem_plataforma_nao_registra_fact_nem_diverge():
-    """Sem `databricks=`, o plano Photon continua sendo lido (fica em
-    `observations`), mas `_photon` so entra em `context.photon`/divergencia/
-    fact sob a plataforma databricks. Sem plataforma nenhuma, a ausencia de
-    declaracao nao gera nem divergencia nem fact -- ver o ramo `if not
-    databricks` de `_photon` em `sparkforge/facts/runtime_detect.py`."""
+    """Sem `databricks=`, o plano Photon continua sendo lido -- a leitura vai
+    para `sources["plan"]` e e tratada como observacao dentro de `_photon` --
+    mas `_photon` so entra em `context.photon`/divergencia/fact sob a
+    plataforma databricks. Sem plataforma nenhuma, a ausencia de declaracao
+    nao gera nem divergencia nem fact -- ver o ramo `if not databricks` de
+    `_photon` em `sparkforge/facts/runtime_detect.py`."""
     from sparkforge.adapters._core import build_runtime
 
     context, facts = build_runtime(facts=_facts("photon_join"))
