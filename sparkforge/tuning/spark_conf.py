@@ -759,11 +759,9 @@ def build_conf_advice(
         if f.kind == "spark.stage.shuffle"
     )
 
-    atual_shuffle, _classe_shuffle, _evidencia_shuffle = _procedencia(
-        _CHAVE_SHUFFLE, efetivo, codigo, terraform
-    )
+    valor, classe, evidencia = _procedencia(_CHAVE_SHUFFLE, efetivo, codigo, terraform)
 
-    if atual_shuffle.strip().lower() == "auto":
+    if valor.strip().lower() == "auto":
         # `auto` liga o auto-optimized shuffle do Databricks, que escolhe o
         # numero pelo plano e pelo volume. Derivar um numero fixo aqui seria
         # propor desliga-lo sem dizer. Fonte: docs.databricks.com/aws/en/
@@ -805,7 +803,6 @@ def build_conf_advice(
         )
     else:
         alvo_bytes, alvo_origem = _alvo(efetivo)
-        valor, classe, evidencia = _procedencia(_CHAVE_SHUFFLE, efetivo, codigo, terraform)
         propriedades.append(
             {
                 "key": _CHAVE_SHUFFLE,
