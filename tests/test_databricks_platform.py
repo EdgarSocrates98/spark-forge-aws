@@ -108,6 +108,24 @@ def test_photon_recusa_regra_de_plano():
     assert not any(f.kind == "databricks.photon" for f in facts_glue)
 
 
+def test_databricks_com_glue_em_producao_sao_duas_plataformas(tmp_path, capsys):
+    # Pelo caminho de producao do judge: duas plataformas declaradas sao
+    # SF-ENV-005, e o Spark que cada matriz deriva nao vira SF-ENV-001 falso.
+    arquivo = tmp_path / "facts.json"
+    arquivo.write_text(json.dumps([_conf("spark.app.name", "x").to_dict()]), encoding="utf-8")
+    regras = _regras_do_judge(capsys, arquivo, "--databricks", "15.4", "--glue", "5.0")
+    assert "SF-ENV-005" in regras
+    assert "SF-ENV-001" not in regras
+
+
+def test_event_log_databricks_de_ponta_a_ponta():
+    # AC3 sem fact montado a mao: o extrator real sobre o event log do par.
+    entrada = EVENTLOG / "databricks_skewed_stage" / "input"
+    fatos = extract_event_log_path(entrada / "eventlog.jsonl", repo_root=entrada)
+    context, _ = build_runtime(facts=fatos)
+    assert (context.databricks, context.spark) == ("15.4", "3.5.0")
+
+
 def test_rotulo_18_0_e_a_mesma_identidade_de_18():
     # A matriz escreve `18` onde a API escreve `18.0.x-...`: as duas grafias
     # resolvem a mesma linha e nao podem contar como dois runtimes.
