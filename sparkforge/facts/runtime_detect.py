@@ -330,14 +330,20 @@ def _databricks_key(value: str) -> str:
     return ".".join(parts)
 
 
-def _databricks_row(value: str) -> dict[str, Any] | None:
-    """A pagina escreve `18` onde a API escreve `18.0.x-...`: sem linha para
-    `18.0`, tenta o numero maior. Fora disso, nenhuma linha -- sem inventar."""
+def _databricks_matrix_key(value: str) -> str:
+    """A chave da linha da matriz que `value` resolve, ou a chave normalizada.
+
+    A pagina escreve `18` onde a API escreve `18.0.x-...`: sem linha para
+    `18.0` e com linha para `18`, a chave e `18`. Fora disso, a chave
+    normalizada -- sem inventar linha."""
     key = _databricks_key(value)
-    row = DATABRICKS_MATRIX.get(key)
-    if row is None and key.endswith(".0"):
-        row = DATABRICKS_MATRIX.get(key[:-2])
-    return row
+    if key not in DATABRICKS_MATRIX and key.endswith(".0") and key[:-2] in DATABRICKS_MATRIX:
+        return key[:-2]
+    return key
+
+
+def _databricks_row(value: str) -> dict[str, Any] | None:
+    return DATABRICKS_MATRIX.get(_databricks_matrix_key(value))
 
 
 def _apache_version(version: str) -> str:
@@ -389,7 +395,10 @@ def _distinct_values(observations: list[_Observation]) -> list[str]:
 # A normalizacao vale so para CONTAR. `_divergence_text` continua imprimindo o
 # valor cru de cada fonte: quando ha divergencia de verdade, o operador precisa
 # ver exatamente o que cada fonte disse, nao a forma normalizada.
-_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key, "databricks": _databricks_key}
+#
+# Para `databricks`, a identidade e a chave que a MATRIZ resolve: `18` e
+# `18.0.x-scala2.13` achariam a mesma linha, e sao o mesmo runtime.
+_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key, "databricks": _databricks_matrix_key}
 
 
 def _distinct_identities(component: str, observations: list[_Observation]) -> list[str]:

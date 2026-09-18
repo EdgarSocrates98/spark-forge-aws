@@ -108,6 +108,18 @@ def test_photon_recusa_regra_de_plano():
     assert not any(f.kind == "databricks.photon" for f in facts_glue)
 
 
+def test_rotulo_18_0_e_a_mesma_identidade_de_18():
+    # A matriz escreve `18` onde a API escreve `18.0.x-...`: as duas grafias
+    # resolvem a mesma linha e nao podem contar como dois runtimes.
+    context, _ = detect_runtime(
+        {
+            "cli": {"databricks_runtime": "18"},
+            "event_log": {"databricks_runtime": "18.0.x-scala2.13"},
+        }
+    )
+    assert not [texto for texto in context.divergences if texto.startswith("databricks:")]
+
+
 def test_photon_sem_databricks_vira_divergencia():
     context, _ = build_runtime(glue="5.0", photon="on")
     assert context.photon == ""
