@@ -212,10 +212,13 @@ def _build_finding(rule: dict[str, Any], evidence: Sequence[Fact]) -> Finding:
 
 
 # Kinds de PLANO. Sob Databricks com Photon ligado, os operadores fisicos tem
-# outros nomes e o fallback para o Spark e por operacao (knowledge/databricks/
-# runtime-matrix.md secao 3): uma regra que procura um operador JVM pode ficar
-# calada sem que o problema tenha sumido. A regra sai em `skipped` com nome, e o
-# silencio deixa de ler como "nada encontrado".
+# outros nomes e o fallback para o Spark e por operacao
+# (https://docs.databricks.com/aws/en/compute/photon, a fonte de SF-ENV-006):
+# uma regra que procura um operador JVM pode ficar calada sem que o problema
+# tenha sumido. A regra sai em `skipped` com nome, e o silencio deixa de ler
+# como "nada encontrado". Photon chega DECLARADO no runtime, nunca detectado,
+# porque o event log nao o mostra (lacuna U2 de
+# knowledge/databricks/runtime-matrix.md).
 _PLAN_KIND_PREFIXES = ("plan.", "spark.sql.")
 
 
