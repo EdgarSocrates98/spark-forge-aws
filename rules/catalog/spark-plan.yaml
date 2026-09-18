@@ -101,27 +101,30 @@ rules:
 
   - id: SF-PLAN-002
     category: spark-plan
-    title: UDF vetorizada no plano — nativo ainda é mais rápido
+    title: UDF vetorizada ou serializada em Arrow no plano — nativo ainda é mais rápido
     requires_facts: [plan.python_udf]
     when:
       same_subject: true
-      all:
+      any:
         - fact: plan.python_udf
           where: {attrs.udf_type: pandas}
+        - fact: plan.python_udf
+          where: {attrs.udf_type: arrow}
     status: confirmed
     severity_default: P3
-    # Escopo vazio: gate por `plan.python_udf` (`ArrowEvalPython`), nao por
-    # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    # Escopo vazio: gate por `plan.python_udf` (`ArrowEvalPython` e os
+    # operadores pandas), nao por versao. Ver ESCOPO (Fase 5a) no cabecalho.
     runtime_scope: {}
     explanation: >
-      `ArrowEvalPython` é `pandas_udf`: transferência colunar por Arrow em vez de pickle
-      linha a linha. É a forma correta quando uma UDF é necessária, e por isso a
-      severidade é baixa. O achado existe porque o runtime Python continua no caminho:
-      na medição da AWS, 0,59 s contra 0,087 s do Spark SQL nativo. Não é defeito; é
-      um candidato a ganho que só vale investigar depois dos P0-P2.
+      `ArrowEvalPython` é UDF com transferência colunar por Arrow em vez de pickle linha
+      a linha — `pandas_udf` ou UDF Python otimizada para Arrow; o plano não diz qual. É a
+      forma correta quando uma UDF é necessária, e por isso a severidade é baixa. O achado
+      existe porque o runtime Python continua no caminho: na medição da AWS, 0,59 s contra
+      0,087 s do Spark SQL nativo. Não é defeito; é um candidato a ganho que só vale
+      investigar depois dos P0-P2.
     proposed_change:
       - Verificar se a lógica é expressável com funções nativas ou higher-order functions sobre array/map.
-      - Se não for, manter — pandas_udf já é a escolha certa.
+      - Se não for, manter — a UDF já usa Arrow, que é a forma certa quando uma UDF é necessária.
     action:
       kind: code.replace_udf_with_native
       target: pyspark.udf
@@ -132,7 +135,7 @@ rules:
     risks:
       - Reescrita nativa pode divergir no tratamento de null e de tipo em borda.
     tradeoffs:
-      - Trocar pandas_udf por expressão nativa pode reduzir muito a legibilidade para ganho pequeno se a UDF não estiver no caminho quente.
+      - Trocar a UDF por expressão nativa pode reduzir muito a legibilidade para ganho pequeno se a UDF não estiver no caminho quente.
     validation:
       - Comparar resultado linha a linha numa amostra com nulls e bordas.
       - Medir antes e depois; sem medição, a troca não se justifica nesta severidade.

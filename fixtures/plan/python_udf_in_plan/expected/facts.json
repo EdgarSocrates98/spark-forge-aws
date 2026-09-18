@@ -134,7 +134,7 @@
     "measures": {},
     "attrs": {
       "operator": "ArrowEvalPython",
-      "udf_type": "pandas"
+      "udf_type": "arrow"
     },
     "provenance": {
       "artifact": "plan.txt",

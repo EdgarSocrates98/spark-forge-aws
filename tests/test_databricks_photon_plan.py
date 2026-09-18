@@ -198,3 +198,15 @@ def test_databricks_do_event_log_com_plano_photon_sem_flag():
     assert context.photon == "on"
     estado = next(f for f in facts if f.kind == "databricks.photon")
     assert estado.attrs == {"state": "on", "source": "plan"}
+
+
+def test_arrow_eval_python_nao_afirma_pandas():
+    udf = [f for f in _facts("photon_udf") if f.kind == "plan.python_udf"]
+    assert [f.attrs["udf_type"] for f in udf] == ["arrow"]
+    regra = next(r for r in load_catalog() if r["id"] == "SF-PLAN-002")
+    achado = next(
+        f for f in judge(_facts("photon_udf"), [regra], {"spark": "4.2.0"})
+    )
+    texto = " ".join(str(x) for x in (achado.explanation, *achado.proposed_change))
+    assert "é `pandas_udf`" not in texto
+    assert "pandas_udf já é a escolha certa" not in texto
