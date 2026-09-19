@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sparkforge.dev/schemas/business_rule.schema.json",
   "title": "Business Rule",
-  "description": "Regra atomica extraida por sf-functional-rules-specialist (skill analyze-functional-rules). Nao e um Finding: descreve comportamento do sistema analisado, nao um achado do motor sparkforge sobre codigo ou infraestrutura.",
+  "description": "Regra atomica extraida por data-quality-reviewer (skill analyze-functional-rules). Nao e um Finding: descreve comportamento do sistema analisado, nao um achado do motor sparkforge sobre codigo ou infraestrutura.",
   "type": "object",
   "required": ["rule_id", "schema_version", "statement", "status", "source"],
   "additionalProperties": false,

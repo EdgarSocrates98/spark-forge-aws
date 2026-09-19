@@ -13,7 +13,7 @@ Validacao de dado em job PySpark - PyDeequ, Great Expectations ou artesanal - se
 
 ## Skills que ele usa
 
-[`review-data-validation`](../skills/review-data-validation.md), [`review-pyspark-pr`](../skills/review-pyspark-pr.md), [`analyze-library-call-graph`](../skills/analyze-library-call-graph.md)
+[`review-data-validation`](../skills/review-data-validation.md), [`review-pyspark-pr`](../skills/review-pyspark-pr.md), [`analyze-library-call-graph`](../skills/analyze-library-call-graph.md), [`analyze-functional-rules`](../skills/analyze-functional-rules.md)
 
 ## Executores que ele despacha
 

@@ -223,7 +223,7 @@ RELACAO_MEDIDA = {
     # mesmo criterio: a fronteira da skill -- versao de runtime entre plataformas
     # -- e a mesma do coordenador que a declara.
     "compare-releases": ("sf-runtime-specialist",),
-    "iceberg-v3-readiness": ("sf-iceberg-specialist",),
+    "iceberg-v3-readiness": ("iceberg-performance-engineer", "sf-iceberg-specialist"),
     "lakeformation-fgac-guard": ("sf-lake-formation-specialist",),
     "migrate-glue-6": ("sf-runtime-specialist",),
     "spark4-compatibility": ("sf-runtime-specialist",),
@@ -347,6 +347,7 @@ RELACAO_MEDIDA = {
         "sf-lineage-specialist",
     ),
     "analyze-functional-rules": (
+        "data-quality-reviewer",
         "sf-functional-rules-specialist",
         "sf-lineage-specialist",
         "sf-schema-registry-specialist",

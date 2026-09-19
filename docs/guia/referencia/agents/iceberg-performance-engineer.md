@@ -13,7 +13,7 @@ Gargalo em tabelas Apache Iceberg no Glue Data Catalog e S3 - small files, delet
 
 ## Skills que ele usa
 
-[`optimize-iceberg-table`](../skills/optimize-iceberg-table.md), [`optimize-parquet-layout`](../skills/optimize-parquet-layout.md), [`benchmark-pyspark-job`](../skills/benchmark-pyspark-job.md)
+[`optimize-iceberg-table`](../skills/optimize-iceberg-table.md), [`optimize-parquet-layout`](../skills/optimize-parquet-layout.md), [`benchmark-pyspark-job`](../skills/benchmark-pyspark-job.md), [`iceberg-v3-readiness`](../skills/iceberg-v3-readiness.md)
 
 ## Executores que ele despacha
 
@@ -64,6 +64,15 @@ quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou dive
 "o resultado é idêntico". Chave de negócio não é derivável: sem `--key` o eixo sai em
 `undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
 `SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
+
+#### Subir o format version da tabela
+
+Antes de recomendar Iceberg format v3, rode `sparkforge_iceberg_assess_upgrade`
+sobre o diretorio do job. Ele cruza o inventario declarado de consumidores com a
+matriz de suporte de feature, uma celula por par engine/feature, cada uma com
+fonte. `UNRESOLVED` NAO e `SAFE`: sem inventario, ou sem fonte sobre a engine,
+ninguem provou que a tabela continua legivel depois da mudanca. A ferramenta
+nunca executa o upgrade -- e a mudanca para v3 e decisao de ida.
 
 #### Não faz
 
