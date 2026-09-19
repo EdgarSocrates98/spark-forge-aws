@@ -3,7 +3,7 @@ sdd: 1
 feature: CRITERIO_DE_DOMINIO
 phase: define
 profile: dev
-status: draft
+status: ready
 upstream:
   path: docs/sdd/CRITERIO_DE_DOMINIO/explore.md
   sha256: "87de88ba724c0e08dad2b2aada81c807953193c306f4316bcc5635daabe296d1"
