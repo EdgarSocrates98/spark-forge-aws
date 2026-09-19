@@ -3,15 +3,7 @@
   "mode": "offline-first",
   "network_required": false,
   "agents": [
-    "sf-evidence-verifier",
-    "sf-agent-evaluation-specialist",
-    "sf-context-engineer",
-    "sf-memory-engineer",
-    "sf-cost-reviewer",
     "sf-security-reviewer",
-    "sf-lineage-specialist",
-    "sf-schema-registry-specialist",
-    "sf-kinesis-specialist",
     "sf-lake-formation-specialist"
   ],
   "subagents": [

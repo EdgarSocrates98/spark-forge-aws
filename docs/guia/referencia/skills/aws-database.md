@@ -85,7 +85,7 @@ documentacao AWS ou o AWS MCP server.
 | Aurora MySQL | — |
 | Aurora PostgreSQL | — |
 | DocumentDB | — |
-| DynamoDB | `design-dynamodb-model` |
+| DynamoDB | — |
 | ElastiCache | — |
 | Keyspaces | — |
 | MemoryDB | — |
@@ -111,17 +111,14 @@ documentacao AWS ou o AWS MCP server.
 
 | Topico | Skill |
 | --- | --- |
-| Modelar dados no DynamoDB | `design-dynamodb-model` |
 | Desenhar grafo no Neptune | `design-neptune-graph` |
 
 ### Quando NÃO usar
 
 - **Armazenamento de objeto/arquivo/bloco** (S3, EFS, FSx, EBS): roteie para `aws-storage`.
 - **Analytics query engines** (Athena, Redshift, EMR): nao sao bancos transacionais —
-  use `optimize-athena-queries` ou as skills de performance Spark/Glue.
+  use o agent `athena-query-optimizer` ou as skills de performance Spark/Glue.
 - **Streaming** (Kafka, MSK, Kinesis): roteie para `aws-messaging-and-streaming`.
-- **Modelagem de DynamoDB**: a selecao de servico roteia aqui, mas o desenho de modelo
-  pertence a `design-dynamodb-model`.
 - **Modelagem de grafo Neptune**: a selecao roteia aqui, mas o desenho de grafo pertence
   a `design-neptune-graph`.
 - **Migracao de banco para AWS**: use o procedimento de `handoff` para o servico alvo, nao

@@ -34,9 +34,9 @@ construir saga/compensacao, human-in-the-loop, fan-out ou coordenacao async long
 Ao iniciar nova orquestracao, voce DEVE apresentar a escolha entre AWS Step Functions e
 AWS Lambda Durable Functions antes de implementar — nao escolha silenciosamente.
 
-| Use esta skill | Quando o workload envolve |
+| Use esta opcao | Quando o workload envolve |
 |---|---|
-| `design-step-functions-orchestration` | Orquestracao cujo trabalho principal e chamar servicos AWS diretamente; coordenar compute nao-Lambda (ECS/Fargate, Glue, SageMaker, Batch) via integracoes nativas; workflow visual e auditavel para compliance; ASL como especificacao entre times |
+| AWS Step Functions | Orquestracao cujo trabalho principal e chamar servicos AWS diretamente; coordenar compute nao-Lambda (ECS/Fargate, Glue, SageMaker, Batch) via integracoes nativas; workflow visual e auditavel para compliance; ASL como especificacao entre times |
 | `aws-lambda-durable-functions` | Orquestracao code-first in-process quando ja construindo em Lambda; muitos passos finos por execucao onde custo cumulativo de Step Functions Standard pode ser significativo; logica de orquestracao no mesmo codebase da aplicacao |
 
 **Tradeoff (use quando ambos servem):** Durable Functions mantem a orquestracao no codebase
@@ -94,13 +94,6 @@ de errar — nao em basicos.
 | Production readiness e observabilidade | `references/production.md` |
 | Troubleshooting (erro -> causa -> fix) | `references/troubleshooting.md` |
 
-#### Skills SparkForge relacionadas
-
-| Topico | Skill |
-| --- | --- |
-| Desenhar aplicacao Lambda serverless | `design-lambda-serverless` |
-| Desenhar orquestracao com Step Functions | `design-step-functions-orchestration` |
-
 ### Quando NÃO usar
 
 - **EC2**: nao e serverless — instancias persistentes com provisioning.
@@ -108,10 +101,6 @@ de errar — nao em basicos.
   cobre Lambda/Step Functions/EventBridge; para ECS/Fargate use documentacao AWS ou skills
   de container.
 - **Amplify hosting**: nao coberto — produto distinto de hosting de frontend.
-- **Desenho de arquitetura Lambda**: use `design-lambda-serverless` para decisoes de
-  estrutura de funcao, packaging e estrategias de deploy.
-- **Desenho de orquestracao Step Functions**: use `design-step-functions-orchestration`
-  para decisoes de ASL, estados, integracoes e padroes de workflow.
 - **Glue/Spark jobs**: nao sao serverless Lambda — use as skills de performance Glue.
 - **Bancos de dados**: roteie para `aws-database` (DynamoDB, Aurora, etc).
 

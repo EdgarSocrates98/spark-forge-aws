@@ -1,4 +1,5 @@
 """A camada sf-* sem area oca: o catalogo so julga, e o conteudo real mudou de dono."""
+import re
 from pathlib import Path
 
 import yaml
@@ -97,6 +98,39 @@ def test_todo_sf_declara_area_que_julga():
         areas = set(_front(path).get("rule_areas") or [])
         assert areas & julgam, path.name
         assert areas <= julgam, (path.name, sorted(areas - julgam))
+
+
+VIVOS = (
+    "AGENTS.md",
+    "docs/guia/05-agents-e-skills.md",
+    "docs/guia/usos/athena-e-sql.md",
+    "docs/guia/usos/iceberg-e-parquet.md",
+    "docs/guia/usos/custo-e-capacidade.md",
+    "docs/teams-catalog.md",
+    "docs/operations-guide.md",
+    "docs/vnext/AGENT-CATALOG.md",
+    "docs/vnext/DEMOS.md",
+    "knowledge/domain-tool-matrix.md",
+    "config/teams-expansion.yaml",
+    "config/agentic-expansion.yaml",
+    "skills/aws-database/SKILL.md",
+    "skills/aws-messaging-and-streaming/SKILL.md",
+    "skills/aws-serverless/SKILL.md",
+    "skills/aws-storage/SKILL.md",
+    "skills/provision-s3-tables-table/SKILL.md",
+    "sparkforge/findings/validate.py",
+)
+
+
+def test_documento_vivo_nao_cita_o_que_saiu():
+    for rel in VIVOS:
+        texto = (ROOT / rel).read_text(encoding="utf-8")
+        citados = [
+            nome
+            for nome in OCOS + SKILLS_QUE_SAIRAM
+            if re.search(rf"(?<![\w-]){re.escape(nome)}(?![\w-])", texto)
+        ]
+        assert not citados, (rel, citados)
 
 
 def test_rota_aponta_para_agente_e_area_que_existem():

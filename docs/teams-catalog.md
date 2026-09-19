@@ -16,29 +16,13 @@ Os times sao uma metafora operacional para coordenar agents especializados. A sa
 | Documentador | Registra contratos, ADRs, runbooks e uso | Memoria duravel |
 | Operador de ferramenta | Usa apenas ferramentas autorizadas e idempotentes | Resultado da operacao |
 
-## Time de Arquitetura de Solucoes de Dados
-
-Composicao: sf-data-architect como coordenador, sf-analytics-specialist, sf-functional-rules-specialist, sf-runtime-specialist, sf-storage-specialist, sf-terraform-specialist e sf-token-verifier. O time parte de requisitos e access patterns, define dominios, contratos, zonas, segurança, SLAs, ownership, custo e ADRs. O handoff para implementacao contém modelo, interfaces, riscos, testes, rollback e critérios de aceite.
-
-## Time de Arquitetura de Pipelines Completos
-
-Composicao: sf-airflow-specialist ou sf-step-functions-specialist como coordenador de fluxo, sf-pyspark-specialist, sf-runtime-specialist, sf-iceberg-specialist, sf-parquet-specialist, sf-s3-specialist, sf-athena-specialist e sf-token-verifier. O time desenha ingestao, transformacao, particao, armazenamento, orquestracao, retries, backfill, qualidade, observabilidade e custo. O gate exige idempotencia, reexecucao segura, teste de falha e medicao de bytes ou tempo.
-
 ## Time de Storage e Lakehouse
 
-Composicao: sf-storage-specialist como coordenador, sf-iceberg-specialist, sf-parquet-specialist, sf-s3-specialist, sf-athena-specialist e sf-terraform-specialist. O foco é catalogo, locking, snapshots, layout, compaction, small files, lifecycle, criptografia, policies, pruning e custo. O time entrega tabela, schema, particoes, politica de manutencao, segurança e plano de rollback.
-
-## Time de Orquestracao Serverless
-
-Composicao: sf-step-functions-specialist como coordenador, sf-lambda-serverless-specialist, sf-airflow-specialist, sf-runtime-specialist, sf-terraform-specialist e sf-token-verifier. O foco é estados, eventos, retries, timeout, idempotencia, concorrencia, DLQ, observabilidade, IAM e custo. O gate exige cenarios de erro, replay, deduplicacao e limite de impacto.
+Composicao: sf-storage-specialist como coordenador, iceberg-performance-engineer, athena-query-optimizer e sf-terraform-specialist. O foco é catalogo, locking, snapshots, layout, compaction, small files, lifecycle, criptografia, policies, pruning e custo. O time entrega tabela, schema, particoes, politica de manutencao, segurança e plano de rollback.
 
 ## Time de Grafos e Serving Operacional
 
-Composicao: sf-graph-specialist como coordenador, sf-neptune-specialist, sf-dynamodb-specialist, sf-athena-specialist, sf-s3-specialist e sf-terraform-specialist. O time compara traversal, access patterns, chaves, indices, consistencia, carga, spill, RCUs, bytes scanned e custo. O resultado inclui consultas representativas, limites de cardinalidade, testes de carga e comportamento de falha.
-
-## Time de Criacao e Evolucao de Agents
-
-Composicao: sf-agent-builder como coordenador, sf-orchestrator, sf-token-verifier, especialistas de dominio, revisor cruzado e documentador. O time define contrato, ferramentas, skills, memoria, loops, handoffs, autorização, seleção adaptativa de modelos, avaliação e observabilidade opcional. Nenhum loop é aceito sem orçamento, criterio de parada e teste de qualidade.
+Composicao: sf-graph-specialist como coordenador, sf-neptune-specialist, athena-query-optimizer, sf-storage-specialist e sf-terraform-specialist. O time compara traversal, access patterns, chaves, indices, consistencia, carga, spill, RCUs, bytes scanned e custo. O resultado inclui consultas representativas, limites de cardinalidade, testes de carga e comportamento de falha.
 
 ## Time de Revisao e Validacao
 

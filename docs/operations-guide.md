@@ -80,21 +80,19 @@ O coordenador começa pelo objetivo, detecta domínios, seleciona o menor contex
 
 | Time | Agents | Uso |
 | --- | --- | --- |
-| Arquitetura de dados | `sf-data-architect`, `sf-storage-specialist`, `sf-s3-specialist`, `sf-iceberg-specialist`, `sf-parquet-specialist` | Lakehouse, camadas, contratos, formatos e layout |
-| Arquitetura de pipelines | `sf-airflow-specialist`, `sf-step-functions-specialist`, `sf-lambda-serverless-specialist`, `sf-pyspark-specialist` | DAGs, state machines, eventos e jobs Spark |
-| Analytics e regras | `sf-analytics-specialist`, `sf-functional-rules-specialist`, `sf-athena-specialist`, `sf-token-verifier` | Dados, SQL, semântica funcional e verificação |
+| Analytics e regras | `sf-analytics-specialist`, `data-quality-reviewer`, `athena-query-optimizer`, `sf-token-verifier` | Dados, SQL, semântica funcional e verificação |
 | Plataforma | `sf-terraform-specialist`, `sf-runtime-specialist`, `sf-storage-specialist`, `sf-orchestrator` | IaC, runtime, governança, custo e coordenação |
-| Grafos e NoSQL | `sf-graph-specialist`, `sf-neptune-specialist`, `sf-dynamodb-specialist` | Grafos, Neptune, chaves, índices e consistência |
-| Engenharia de agents | `sf-agent-builder`, `sf-orchestrator`, `sf-token-verifier` | Skills, contratos, handoffs, loops e validação |
+| Grafos e NoSQL | `sf-graph-specialist`, `sf-neptune-specialist` | Grafos, Neptune, chaves, índices e consistência |
+| Engenharia de agents | `sf-orchestrator`, `sf-token-verifier` | Contratos, handoffs, loops e validação |
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli playbook sf-data-architect --repo .python -m sparkforge.adapters.cli playbook sf-airflow-specialist --repo .python -m sparkforge.adapters.cli playbook sf-agent-builder --repo .```
+```bashpython -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli playbook sf-data-architect --repo .python3 -m sparkforge.adapters.cli playbook sf-airflow-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-agent-builder --repo .```
+```bashpython3 -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli playbook sf-data-architect --repo .python -m sparkforge.adapters.cli playbook sf-airflow-specialist --repo .python -m sparkforge.adapters.cli playbook sf-agent-builder --repo .```
+```powershellpython -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
 
 ## 5. Ciclo de vida de casos
 

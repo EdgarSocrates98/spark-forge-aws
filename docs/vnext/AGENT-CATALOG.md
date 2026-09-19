@@ -53,8 +53,8 @@ usados para selecionar o perfil de execução de cada tarefa.
 | `sf-verifier` | **Executor** | Executor de validação de saídas (Phase Loop). | `sf-verifier` |
 | `sf-synthesizer` | **Executor** | Executor de síntese de relatório assinado. | `sf-synthesizer` |
 
-Seis agentes (`sf-pyspark-specialist`, `sf-storage-specialist`,
-`sf-runtime-specialist`, `sf-token-verifier`, `sf-cost-reviewer`,
+Cinco agentes (`sf-pyspark-specialist`, `sf-storage-specialist`,
+`sf-runtime-specialist`, `sf-token-verifier`,
 `sf-security-reviewer`) apareciam aqui como "Convertidos em Skill
 Lazy-Loaded". Nenhum foi convertido: todos continuam existindo como agentes
 ativos em `agents/`, roteados de fato em `rules/catalog/routing.yaml` e
@@ -77,8 +77,8 @@ skills/<skill-name>/
 ### Principais Skills de Engenharia de Dados & AWS:
 1. `optimize-pyspark-code`: Eliminação de UDFs, tuning de joins, skew e persistência.
 2. `diagnose-data-skew`: Diagnóstico de partições desbalanceadas e salting.
-3. `optimize-iceberg-tables`: Compaction, rewrite manifests, snapshot expiration, sort orders.
-4. `optimize-athena-queries`: Particionamento, formatos colunares Parquet e projeção.
+3. `optimize-iceberg-table`: Compaction, rewrite manifests, snapshot expiration, sort orders.
+4. `athena-query-optimizer`: Particionamento, formatos colunares Parquet e projeção.
 5. `tune-glue-job`: Ajuste de worker types (G.1X, G.2X, G.4X) e memória.
 6. `review-emr-cluster`: Instâncias Spot, Task fleets e Managed Scaling.
 7. `review-data-validation`: Posicionamento eficiente de checks PyDeequ / Great Expectations.

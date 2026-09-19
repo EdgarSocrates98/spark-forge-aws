@@ -228,9 +228,8 @@ nomeado caso contrário.
 | Comunicação com cliente (e-mail) | SES | Skill `amazon-ses` |
 
 Fronteira com orquestração: pipelines de orquestração de workflows (Airflow,
-Step Functions) são cobertos por `design-airflow-pipelines` e
-`design-step-functions-orchestration`; esta skill trata o transporte de
-mensagens/eventos entre produtores e consumidores, não o agendamento de tarefas.
+Step Functions) ficam fora do escopo desta skill; esta skill trata o transporte
+de mensagens/eventos entre produtores e consumidores, não o agendamento de tarefas.
 
 ## Quando NÃO usar
 
@@ -239,8 +238,8 @@ mensagens/eventos entre produtores e consumidores, não o agendamento de tarefas
 - **Comunicação com cliente (e-mail, SMS, WhatsApp, push):** esta skill apenas
   identifica o canal e roteia; não configura nem envia. Use a skill nomeada na
   tabela de Comunicação com cliente.
-- **Orquestração de workflows e agendamento de tarefas:** use
-  `design-airflow-pipelines` ou `design-step-functions-orchestration`.
+- **Orquestração de workflows e agendamento de tarefas:** fora do escopo
+  desta skill.
 - **Configurações recomendadas específicas (alarmes CloudWatch, thresholds):**
   busque skills específicas de serviço ou docs em vez de boas práticas gerais
   daqui.

@@ -261,7 +261,7 @@
       "note": ""
     },
     {
-      "context": "| **Teams** | 5 | `config/teams-expansion.yaml` | Composições de times (evidence-quality, governance, etc.) |",
+      "context": "| **Teams** | 1 | `config/teams-expansion.yaml` | Composicoes de times (governance-security) |",
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-056",
       "line": 55,
@@ -270,15 +270,15 @@
         "expect": {
           "kind": "number",
           "pattern": "(\\d+) teams",
-          "value": 5
+          "value": 1
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "5",
+      "text": "1",
       "type": "number",
-      "note": ""
+      "note": "desvio da feature SF_STUBS: config/teams-expansion.yaml perdeu 4 dos 5 times (evidence-quality, streaming-reliability, finops-data, agent-quality) cujo coordinator saiu em 405881be; so governance-security fica -- ver docs/sdd/SF_STUBS/"
     },
     {
       "context": "| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e D",
@@ -11936,6 +11936,51 @@
         "path": "sparkforge/policy/hook.py",
         "test": "tests/test_fixtures_golden_policy.py"
       }
+    },
+    {
+      "context": "> **Desvio (2026-09-19, feature `docs/sdd/SF_STUBS/`):** as 35 areas `agentic-sf-*`, os 19 agentes `sf-*` que so as declaravam e 10 skills",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
+      "id": "VNX-793",
+      "line": 3,
+      "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
+      "proof": {
+        "cmd": "git ls-tree -r --name-only 9c433b98 -- rules/catalog | grep -cE '^rules/catalog/agentic-sf-.*.yaml$'",
+        "commit": "9c433b98",
+        "kind": "historical"
+      },
+      "state": "PROVADA",
+      "text": "35",
+      "type": "number"
+    },
+    {
+      "context": "> **Desvio (2026-09-19, feature `docs/sdd/SF_STUBS/`):** as 35 areas `agentic-sf-*`, os 19 agentes `sf-*` que so as declaravam e 10 skills",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
+      "id": "VNX-794",
+      "line": 3,
+      "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
+      "proof": {
+        "cmd": "git ls-tree -r --name-only 9c433b98 -- agents | grep -cE '^agents/(sf-agent-builder|sf-agent-evaluation-specialist|sf-airflow-specialist|sf-athena-specialist|sf-context-engineer|sf-cost-reviewer|sf-data-architect|sf-dynamodb-specialist|sf-evidence-verifier|sf-functional-rules-specialist|sf-iceberg-specialist|sf-kinesis-specialist|sf-lambda-serverless-specialist|sf-lineage-specialist|sf-memory-engineer|sf-parquet-specialist|sf-s3-specialist|sf-schema-registry-specialist|sf-step-functions-specialist).md$'",
+        "commit": "9c433b98",
+        "kind": "historical"
+      },
+      "state": "PROVADA",
+      "text": "19",
+      "type": "number"
+    },
+    {
+      "context": "> **Desvio (2026-09-19, feature `docs/sdd/SF_STUBS/`):** as 35 areas `agentic-sf-*`, os 19 agentes `sf-*` que so as declaravam e 10 skills",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
+      "id": "VNX-795",
+      "line": 3,
+      "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
+      "proof": {
+        "cmd": "git ls-tree -r --name-only 9c433b98 -- skills | grep -cE '^skills/(design-agent-systems|design-airflow-pipelines|design-dynamodb-model|design-lambda-serverless|design-step-functions-orchestration|engineer-agent-context|engineer-agent-memory|optimize-athena-queries|optimize-iceberg-tables|verify-agent-evidence)/SKILL.md$'",
+        "commit": "9c433b98",
+        "kind": "historical"
+      },
+      "state": "PROVADA",
+      "text": "10",
+      "type": "number"
     }
   ],
   "extracted_from": "4c15cf6e5d141b99118e284bf57faf1aa5e6fe3e",
