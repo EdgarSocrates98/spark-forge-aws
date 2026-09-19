@@ -285,7 +285,9 @@ quatro:** parte do plano não foi medida, e a foto está incompleta.
 Diagnóstico não pede spec; mudança no job do operador pede. Antes do diff,
 `sparkforge case open` dá o `case_id`, a skill `sdd-define` escreve o define com
 `profile: operator`, e a skill `sdd-build` leva a mudança por `sparkforge change sandbox`,
-nunca pela árvore do operador. `sparkforge sdd check` confere cada fase. As duas
+nunca pela árvore do operador. `sparkforge sdd check` (`sparkforge_sdd_check`) confere
+cada fase, `sparkforge_sdd_status` diz onde cada feature está, e `sparkforge_sdd_stamp`
+recarimba a fase cujo upstream mudou. As duas
 skills rodam na sessão principal, fora do seu `skills:`: perguntam ao operador e
 despacham subagentes, e subagente não faz nenhum dos dois.
 

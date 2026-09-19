@@ -6,11 +6,8 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 
 | Skill | Quando usar |
 |---|---|
-| [`agentic-orchestration`](agentic-orchestration.md) | Use quando for necessario coordenar multiplos agents em fases limitadas, com handoffs, revisao e criterios de parada. |
-| [`analyze-analytics`](analyze-analytics.md) | Use quando for necessario analisar dados, analytics, metricas, consultas, custos e qualidade. |
 | [`analyze-batch-loop`](analyze-batch-loop.md) | Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você... |
 | [`analyze-functional-rules`](analyze-functional-rules.md) | Use quando for necessario estudar regras funcionais, contratos, estados, excecoes e criterios de aceite. |
-| [`analyze-graph-data`](analyze-graph-data.md) | Use quando for necessario modelar, analisar ou consultar dados em grafos, caminhos, comunidades e relacionamentos. |
 | [`analyze-library-call-graph`](analyze-library-call-graph.md) | Use quando o job Glue chama uma biblioteca Python com múltiplos módulos, factories, decorators ou helpers, e você precisa saber onde estão leituras, actions, caches, loops, UDFs... |
 | [`analyze-spark-plan`](analyze-spark-plan.md) | Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (B... |
 | [`analyze-spark-ui`](analyze-spark-ui.md) | Use quando houver um Spark event log, um job run id ou um Spark UI aberto de um job AWS Glue e for preciso achar stage dominante, skew de task, spill, GC, executor perdido ou su... |
@@ -27,7 +24,6 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 | [`compare-releases`](compare-releases.md) | Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — "vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter... |
 | [`design-data-architecture`](design-data-architecture.md) | Use quando for necessario desenhar arquiteturas de dados completas. |
 | [`design-incremental-processing`](design-incremental-processing.md) | Use quando um job dito incremental continua lento mesmo com pouca entrada, faz scan global, recomputa estado histórico, ou você precisa projetar bootstrap, ciclos, backfill, lat... |
-| [`design-neptune-graph`](design-neptune-graph.md) | Use quando for necessario projetar Amazon Neptune, Gremlin, openCypher, RDF, indices, carga e alta disponibilidade. |
 | [`design-s3-data-lake`](design-s3-data-lake.md) | Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lake. |
 | [`diagnose-data-skew`](diagnose-data-skew.md) | Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou de... |
 | [`diagnose-lakeformation-access`](diagnose-lakeformation-access.md) | Use quando um job Glue lê tabela governada e falha ao escrever, ou quando alguém pergunta "por que a leitura passa e a escrita não?", "tomo AccessDenied e já dei SELECT", "troqu... |
@@ -59,6 +55,5 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 | [`sdd-ship`](sdd-ship.md) | Use quando o build_report.md da feature está pronto e é hora de entregar — "entrega a feature", "fecha o ciclo", "fase ship", "posso abrir o PR?", "posso fazer merge?" — no Spar... |
 | [`spark4-compatibility`](spark4-compatibility.md) | Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e alguém pergunta "o que quebra no Spark 4?", "essa config mudou de nome?", "ANSI mode vai estourar meu... |
 | [`sparkforge-diagnose`](sparkforge-diagnose.md) | Use quando o pedido for genérico e amplo — "meu job Glue tá lento", "por que esse pipeline ficou caro", "não sei por onde começar" — e ainda não há gargalo isolado nem skill esp... |
-| [`token-efficient-agent`](token-efficient-agent.md) | Use quando o objetivo exigir economia de tokens sem reduzir evidencia, precisao, cobertura ou verificacao. |
 | [`tool-specialist-routing`](tool-specialist-routing.md) | Use quando for necessario escolher, validar ou autorizar ferramentas por especializacao, risco e contrato. |
 | [`tune-glue-job`](tune-glue-job.md) | Use quando for ajustar workers, worker type, Auto Scaling, execution class ou argumentos de um job Glue depois de já ter um gargalo comprovado — não para descobri-lo. |

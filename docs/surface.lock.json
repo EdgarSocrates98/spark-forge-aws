@@ -7,13 +7,13 @@
     "by_name_sha256": "4a0d4f892fb3ef81a68a0c25b82ba0d38388daa755cfe849a5560b474ccf9448"
   },
   "skills": {
-    "document_count": 56,
-    "total_bytes": 522870,
-    "by_name_sha256": "509eead195c0bc6a6de73c45c5c55e11d1d2efa596b8fe5e346cb555db864e52"
+    "document_count": 51,
+    "total_bytes": 516674,
+    "by_name_sha256": "4ff14971bb5e5616f7f9ca0f095375e326e7d29f20eb6a7b5c0dfdddd6153da0"
   },
   "knowledge": {
     "document_count": 53,
-    "total_bytes": 500960,
-    "by_name_sha256": "f3f4258b75507b7b602a63730cd90bc2d6b59013fb8ec9536fc7887d772655d4"
+    "total_bytes": 500967,
+    "by_name_sha256": "0e15566fb885add9f4b09692b21bfcab35ec78193cfc91d0c157ba60f25a6ef0"
   }
 }

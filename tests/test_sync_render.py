@@ -310,18 +310,8 @@ RELACAO_MEDIDA = {
         "sf-security-reviewer",
         "sf-terraform-specialist",
     ),
-    "analyze-graph-data": ("sf-graph-specialist",),
-    "design-neptune-graph": ("sf-neptune-specialist",),
-    "analyze-analytics": ("sf-analytics-specialist",),
     "analyze-functional-rules": ("data-quality-reviewer",),
-    "agentic-orchestration": ("sf-orchestrator",),
-    "token-efficient-agent": ("sf-orchestrator", "sf-token-verifier"),
-    "tool-specialist-routing": (
-        "sf-orchestrator",
-        "sf-pyspark-specialist",
-        "sf-runtime-specialist",
-        "sf-storage-specialist",
-    ),
+    "tool-specialist-routing": ("sf-runtime-specialist",),
 }
 
 
@@ -779,12 +769,10 @@ class TestSkillsReais:
             "compare-releases": "sf-runtime-specialist",
             "migrate-glue-6": "sf-runtime-specialist",
             "spark4-compatibility": "sf-runtime-specialist",
-            "analyze-graph-data": "sf-graph-specialist",
             "review-emr-cluster": "emr-infra-reviewer",
             "review-emr-eks": "emr-infra-reviewer",
-            # Desde SF_STUBS (2026-09-19): com os coordenadores ocos fora, as tres
+            # Desde SF_STUBS (2026-09-19): com os coordenadores ocos fora, as duas
             # passaram a ter um coordenador so.
-            "analyze-analytics": "sf-analytics-specialist",
             "analyze-functional-rules": "data-quality-reviewer",
             "review-data-validation": "data-quality-reviewer",
         }

@@ -31,10 +31,6 @@
           "agents/glue-incremental-performance-architect.md",
           "agents/iceberg-performance-engineer.md",
           "agents/pyspark-code-reviewer.md",
-          "agents/sf-graph-specialist.md",
-          "agents/sf-neptune-specialist.md",
-          "agents/sf-orchestrator.md",
-          "agents/sf-storage-specialist.md",
           "agents/spark-performance-architect.md"
         ],
         "docs": [
@@ -73,7 +69,7 @@
     }
   ],
   "totals": {
-    "agents": 8,
+    "agents": 4,
     "docs": 1,
     "evals": 5,
     "goldens": 2,

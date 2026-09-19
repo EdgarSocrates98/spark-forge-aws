@@ -15,17 +15,10 @@ Coordenadores despacham executores em ordem; especialistas respondem uma área; 
 | [`glue-infra-reviewer`](glue-infra-reviewer.md) | Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform. |
 | [`iceberg-performance-engineer`](iceberg-performance-engineer.md) | Gargalo em tabelas Apache Iceberg no Glue Data Catalog e S3 - small files, delete files, snapshots, manifests, metadata planning, partition spec, sort order, writes, manutencao. |
 | [`pyspark-code-reviewer`](pyspark-code-reviewer.md) | Revisao de codigo PySpark - PR, biblioteca ou job - correlacionando fonte, plano fisico pos-Catalyst e estrutura de chamadas. |
-| [`sf-analytics-specialist`](sf-analytics-specialist.md) | Analisar dados, analytics, Athena e qualidade. |
-| [`sf-graph-specialist`](sf-graph-specialist.md) | Analisar ou modelar dados em grafos. |
 | [`sf-lake-formation-specialist`](sf-lake-formation-specialist.md) | Lake Formation e governanca. |
-| [`sf-neptune-specialist`](sf-neptune-specialist.md) | Projetar ou revisar Amazon Neptune. |
-| [`sf-orchestrator`](sf-orchestrator.md) | Coordenar agents em fases limitadas - roteamento, handoffs, criterios de parada. |
-| [`sf-pyspark-specialist`](sf-pyspark-specialist.md) | Analisar PySpark - planos, joins, skew, memoria, benchmarks. |
 | [`sf-runtime-specialist`](sf-runtime-specialist.md) | Analisar Glue, EMR, runtimes, capacidade, infraestrutura e compatibilidade entre versoes numa migracao. |
 | [`sf-security-reviewer`](sf-security-reviewer.md) | IAM, KMS, S3 e exfiltracao. |
-| [`sf-storage-specialist`](sf-storage-specialist.md) | Analisar Iceberg, Parquet, catalogo, particionamento e layout. |
 | [`sf-terraform-specialist`](sf-terraform-specialist.md) | Revisar ou construir Terraform para plataformas de dados. |
-| [`sf-token-verifier`](sf-token-verifier.md) | Verificar qualidade, cobertura de evidencia e economia de tokens. |
 | [`spark-performance-architect`](spark-performance-architect.md) | Coordena diagnostico e otimizacao de job PySpark no AWS Glue - correlaciona codigo, plano fisico, Spark UI, Parquet e Iceberg para achar o gargalo dominante antes de recomendar... |
 
 ## Executors
