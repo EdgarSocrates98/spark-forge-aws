@@ -34,10 +34,26 @@ Artefato, fact, finding e regra: é isso que o resto do guia explica.
 
 ## O que é o SparkForge
 
-O SparkForge é uma ferramenta para investigar desempenho e riscos de jobs
-PySpark que rodam no AWS Glue. Ele também cobre o que fica em volta desses
-jobs: arquivos Parquet, tabelas Apache Iceberg, consultas no Amazon Athena,
-clusters Amazon EMR e a definição da infraestrutura em Terraform.
+O SparkForge investiga desempenho e riscos de jobs Spark a partir do que o job
+deixou para trás: o **artefato**. Ele lê o código PySpark, o plano físico, o event
+log, o rodapé Parquet, a metadata Iceberg, a definição do job ou do cluster, o log
+do CloudWatch e a permissão do Lake Formation, e devolve o que mediu, a regra que
+isso aciona e, onde a evidência não alcança, uma recusa com nome.
+
+O mesmo motor serve a cinco plataformas. O que muda de uma para outra é de onde vem
+a versão e qual artefato descreve a infraestrutura:
+
+| Plataforma | De onde vem a versão | Artefato de infraestrutura |
+|---|---|---|
+| AWS Glue | `--glue <versão>`, ou `glue_version` do Terraform | Terraform do job, histórico de runs |
+| Amazon EMR on EC2 | o dump de `describe-cluster`, ou `--emr <release>` | o dump do cluster |
+| Amazon EMR Serverless | não entra no runtime: a AWS não publica a matriz de release | o dump de `get-application` |
+| Amazon EMR on EKS | não entra no runtime: a matriz publicada diverge da de EC2 | os dumps do cluster virtual e do job run |
+| Databricks (declarado) | `--databricks <versão>`; o Photon por `--photon on\|off` ou reconhecido no plano | nenhum coletor |
+
+Em volta do job, ele cobre arquivos Parquet, tabelas Apache Iceberg, consultas no
+Amazon Athena, Lake Formation, IAM e a definição da infraestrutura em Terraform. O
+detalhe por plataforma está em [Extrair, julgar, compor](06-extrair-julgar-compor.md).
 
 Ele tem duas metades:
 
@@ -207,11 +223,11 @@ ficar 30% mais rápido" sem ter medido antes e depois. Veja o verbete
 ## Objetivos
 
 1. Encontrar o gargalo dominante antes de sugerir alterações.
-2. Correlacionar código, plano físico, Spark UI, CloudWatch, definição do job Glue ou do cluster EMR, e layout de dados.
+2. Correlacionar código, plano físico, Spark UI, CloudWatch, definição do job Glue ou do cluster, application ou job run do EMR, e layout de dados.
 3. Produzir recomendações baseadas em evidências, com riscos, trade-offs, validação e rollback.
 4. Melhorar runtime, DPU-hours, custo, escalabilidade e confiabilidade sem alterar o resultado funcional.
 5. Tratar Parquet e Iceberg como camadas diferentes de otimização.
-6. Ser consciente da versão do AWS Glue, da release do EMR, do Spark e do Iceberg.
+6. Ser consciente da versão do AWS Glue, da release do EMR, do Databricks Runtime (e do Photon), do Spark e do Iceberg.
 7. Dizer onde a validação de dados está e o que ela custa, sem opinar se o dado está correto.
 
 ## Regra central
@@ -223,7 +239,9 @@ ficar 30% mais rápido" sem ter medido antes e depois. Veja o verbete
 Forneça, sempre que possível:
 
 - Código do job.
-- Versão do AWS Glue, ou a release do EMR e o `describe-cluster` do cluster.
+- Versão do AWS Glue; ou a release do EMR e o `describe-cluster` do cluster (no
+  Serverless, o `get-application`; no EKS, o cluster virtual e o job run); ou a
+  versão do Databricks Runtime e se o Photon está ligado.
 - Tipo e quantidade de workers (ou instance groups/fleets, no EMR).
 - Argumentos e Spark configs.
 - Runtime e DPU-hours.
@@ -258,7 +276,8 @@ Artefato é qualquer arquivo que descreve o job ou a execução dele e que o
 SparkForge sabe ler. Exemplos: o código `.py` do job, o event log do Spark
 (`.jsonl`), o texto de um plano físico (`df.explain("formatted")`), o `.tf` do
 Terraform, um dump JSON do Glue Data Catalog, um dump de metadata de tabela
-Iceberg.
+Iceberg, o dump de `describe-cluster` de um cluster EMR on EC2 ou o de
+`get-application` de uma application EMR Serverless.
 
 Exemplo: em `sparkforge analyze pyspark --path lib/`, o artefato é a pasta
 `lib/` com o código.
@@ -546,9 +565,10 @@ Veja [catálogo de regras e regra](#catálogo-de-regras-e-regra).
 
 ### Runtime
 
-Runtime é o conjunto de versões em que o job roda: versão do Glue (ou release
-do EMR), do Spark, do Python e do Iceberg, e a versão do engine do Athena
-quando for o caso. A versão importa porque a mesma configuração pode
+Runtime é o conjunto de versões em que o job roda: versão do Glue, release do
+EMR ou versão do Databricks Runtime (com o Photon ligado ou não), e daí as do
+Spark, do Python e do Iceberg, mais a versão do engine do Athena quando for o
+caso. A versão importa porque a mesma configuração pode
 significar coisas diferentes em versões diferentes. Por exemplo, no Glue 3.0
 o AQE (Adaptive Query Execution, o recurso do Spark que reajusta o plano
 durante a execução) não é o padrão, e no Glue 4.0 e 5.x é.
@@ -559,14 +579,21 @@ Exemplo real: `sparkforge runtime detect --glue 5.0` devolve
 {
   "glue": "5.0",
   "emr": "",
+  "databricks": "",
   "spark": "3.5.4",
   "python": "3.11",
   "iceberg": "1.7.1",
   "athena": "",
+  "photon": "",
   "detected_from": ["cli"],
   "divergences": []
 }
 ```
+
+Com `sparkforge runtime detect --databricks 15.4 --photon on`, a saída real traz
+`"databricks": "15.4"`, `"spark": "3.5.0"` (derivado da matriz em
+`knowledge/databricks/runtime-matrix.yaml`) e `"photon": "on"`; `python` e
+`iceberg` saem vazios, porque a matriz Databricks só tem a coluna `spark`.
 
 `detected_from` diz de onde a versão veio (aqui, da linha de comando). Quando
 um artefato informa uma versão diferente da que você declarou, a diferença
