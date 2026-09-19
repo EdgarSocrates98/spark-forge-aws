@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/SF_STUBS/build_report.md
-  sha256: "d2db6a99103b9fe6a5717f35b8142f4f17aa83279f345fd22518cf8df7279355"
+  sha256: "759fecd61f58b4cb18c9eb42cedd1ad1da76dfe2db91f5efcb528a6fd04b4e35"
 hypothesis_outcome: confirmed
 registries: [rules_catalog_gates, manifest_rule_count, fixture_kind_coverage, routing_yaml, coordinator_rule_areas, sync_skills, agents_parity, surface_lock, generated_reference, router_gates, status_numbers_gate, offline_manifest, sources_lock, claims_gate]
 deviations:

@@ -15,7 +15,7 @@ files:
   - {path: agents/pyspark-code-reviewer.md, action: modify, reason: "recebe a secao Indice de codigo de sf-context-engineer, com as nove tools sparkforge_code_* (D4)"}
   - {path: agents/iceberg-performance-engineer.md, action: modify, reason: "recebe a skill iceberg-v3-readiness e a secao Subir o format version da tabela, com sparkforge_iceberg_assess_upgrade (D5)"}
   - {path: agents/data-quality-reviewer.md, action: modify, reason: "recebe a skill analyze-functional-rules, produtora do business_rule.schema.json (D6)"}
-  - {path: agents/sf-analytics-specialist.md, action: modify, reason: "os 11 sf-* que ficam perdem as areas ocas de rule_areas (D2); este e o representante, os outros 10 seguem a mesma tarefa"}
+  - {path: agents/sf-security-reviewer.md, action: modify, reason: "os 11 sf-* que ficam perdem as areas ocas de rule_areas (D2); este e o representante, os outros 10 seguem a mesma tarefa (o representante original, sf-analytics-specialist, saiu depois em CRITERIO_DE_DOMINIO)"}
   - {path: skills/design-airflow-pipelines/SKILL.md, action: delete, reason: "as 10 skills sem artefato e sem dono que fica saem (lista em D7); esta e a representante"}
   - {path: sparkforge/findings/schemas/business_rule.schema.json, action: modify, reason: "a descricao nomeia sf-functional-rules-specialist como produtor; passa a nomear data-quality-reviewer"}
   - {path: sparkforge/economy/router.py, action: modify, reason: "specialist_keywords aponta athena, dynamodb e step functions para skills que saem, e kinesis para streaming-reliability, que nunca existiu; as quatro entradas saem (D8)"}

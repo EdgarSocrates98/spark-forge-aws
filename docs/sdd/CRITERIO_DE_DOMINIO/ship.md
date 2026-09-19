@@ -16,6 +16,7 @@ deviations:
   - "Arquivos fora do manifesto: tests/test_platform_compilers.py, docs/guia/07-conhecimento-e-catalogo.md, docs/vnext/CURRENT-STATE.md, docs/harness/CODEINTEL-GAP.md, docs/harness/CURRENT-HARNESS-GAP.md, skills/aws-database e skills/aws-observability (com espelhos e referencia gerada)."
   - "A T2 reintroduziu um nome removido pelo SF_STUBS em docs/vnext/AGENT-CATALOG.md; tests/test_sf_stubs.py pegou no ship, corrigido em commit proprio."
   - "Revisao em dois estagios por tarefa nao rodou; o controlador conferiu relatos, gates e um git grep final."
+  - "Corrigido depois do CI do PR #89: a secao nova de docs/gates-por-mudanca.md exige chave propria em sparkforge/sdd/change_kinds.yaml (tests/test_sdd.py::test_change_kinds_casa_com_os_titulos_do_documento), e a chave domain entrou; o design do SF_STUBS trocou o representante sf-analytics-specialist, removido aqui, por sf-security-reviewer, com a cascata recarimbada."
 ---
 
 # CRITERIO_DE_DOMINIO — entrega

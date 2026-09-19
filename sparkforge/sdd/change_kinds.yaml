@@ -8,6 +8,9 @@ rule:
 rule_runtime_scope:
   section: "Dar `runtime_scope` a uma regra — ou seja, **toda regra nova**"
   registries: [runtime_scope_gates]
+domain:
+  section: "Critério de domínio: artefato antes de nome"
+  registries: [domain_criterion]
 rule_area:
   section: "Acrescentar uma ÁREA nova (`area:` novo num `rules/catalog/*.yaml`)"
   registries: [routing_yaml, coordinator_rule_areas]
