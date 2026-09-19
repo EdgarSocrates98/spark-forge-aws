@@ -83,7 +83,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 38 extratores emitem 228 kinds distintos de fact (recontado em 2026-09-18),
+Os 39 extratores emitem 233 kinds distintos de fact (recontado em 2026-09-19),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -112,6 +112,7 @@ anterior.
 | **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
 | **Job run EMR on EKS** | `analyze emr-eks` | dumps de `describe-virtual-cluster` **e** `describe-job-run` do `emr-containers`, num arquivo só |
 | **Definição `Jobs-as-Code` do Control-M** | `analyze controlm-jobs` | o JSON de definição de job versionado no repositório — o mesmo que `ctm build` valida. Com `--version <v>`, cruza as capacidades observadas com a matriz do Automation API |
+| **Definição ASL do AWS Step Functions** | `analyze step-functions` | o `.asl.json` versionado no repositório, ou a saída salva de `aws stepfunctions describe-state-machine`: um fact por estado Task, com padrão de integração, `JobName` e retry efetivo. Com o Terraform do job no mesmo pool, `fuse` liga o Task ao `aws_glue_job` |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
 | **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
@@ -228,7 +229,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 228 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 233 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

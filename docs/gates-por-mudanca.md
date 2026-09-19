@@ -106,8 +106,11 @@ todas travadas por `tests/test_criterio_de_dominio.py`:
 
 A ordem é a do artefato: primeiro o extrator que emite o fact, depois a regra que o julga,
 depois o coordenador que sabe quando investigá-la. Domínio que ainda não tem artefato
-(Airflow, DynamoDB, Kinesis, Lambda, Step Functions) não ganha agente nem área: ganha
-`unresolved` nomeando o artefato que falta. Foi por essa porta que 35 áreas e 26
+(Airflow, DynamoDB, Kinesis, Lambda) não ganha agente nem área: ganha `unresolved`
+nomeando o artefato que falta. Step Functions saiu desta lista em 2026-09-19 pela porta
+certa (`docs/sdd/STEP_FUNCTIONS/`): o extrator da definição ASL veio primeiro, a área
+`SF-SFN` julga os facts dele, e `glue-infra-reviewer` a declara com rota por
+`findings_area`. Foi por essa porta que 35 áreas e 26
 coordenadores entraram sem julgar nada, e saíram em 2026-09-19 (`docs/sdd/SF_STUBS/`,
 `docs/sdd/CRITERIO_DE_DOMINIO/`).
 

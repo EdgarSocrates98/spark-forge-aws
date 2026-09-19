@@ -770,6 +770,28 @@ rules:
       `--user-jars-first` ligado. Quem decide os dois e quem conhece o runtime e
       o classpath que o IaC monta, nao quem conhece a regra de negocio.
 
+  # SF-SFN entrou com `docs/sdd/STEP_FUNCTIONS/` (2026-09-19) e ganha ENTRADA PROPRIA
+  # pelo motivo de sempre: `rule_areas` do agente NAO roteia, e `findings_area` conta
+  # por prefixo exato do `rule_id` ate o ultimo hifen.
+  #
+  # `glue-infra-reviewer` e o dono porque as quatro regras julgam COMO o job Glue e
+  # disparado e quantas vezes ele roda -- padrao de integracao, retry do Step
+  # Functions, retry do proprio job --, a mesma conversa de `max_retries` que ele ja
+  # tem em SF-GLUE-004. PRECEDENCIA: depois de AGENT-002; um case com SF-GLUE junto vai
+  # pela rota de cima, e o destino e o mesmo.
+  - id: AGENT-086
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em como o Step Functions dispara o job Glue
+    when:
+      all:
+        - {findings_area: SF-SFN, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      A state machine que dispara o job decide se o fluxo espera o job terminar e
+      quantas vezes uma falha reexecuta o job inteiro. O conserto mora na definicao ASL
+      e no `max_retries` do `aws_glue_job` -- os dois artefatos de infraestrutura que
+      este coordenador ja le --, e nao no codigo do job.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

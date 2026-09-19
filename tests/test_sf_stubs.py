@@ -87,7 +87,8 @@ def test_catalogo_so_tem_regra_que_julga():
     catalogo = load_catalog()
     assert not list((ROOT / "rules" / "catalog").glob("agentic-sf-*.yaml"))
     assert [r["id"] for r in catalogo if r.get("executable", True) is False] == []
-    assert len(catalogo) == 157
+    # A contagem (157) era a foto do SF_STUBS, e cada area nova a derrubava sem medir
+    # nada do que este teste guarda. Quem publica a contagem e o STATUS, pelo gate.
 
 
 def test_todo_sf_declara_area_que_julga():

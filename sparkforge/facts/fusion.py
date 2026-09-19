@@ -71,6 +71,9 @@ from typing import Any
 
 from sparkforge.facts.lakeformation import EMITTED_KINDS as LF_EMITTED_KINDS
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
+from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
+from sparkforge.facts.stepfunctions import build_sfn_glue_link
 from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS
 from sparkforge.facts.timeout_diagnosis import SOURCE_KINDS as TIMEOUT_SOURCE_KINDS
 from sparkforge.facts.timeout_diagnosis import extract_timeout_diagnosis
@@ -559,6 +562,20 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
                 f"kind fora do namespace de utilization: {sorted(desconhecidos_util)}"
             )
         for fact in derivados_util:
+            combined[fact.id] = fact
+
+    # `sfn.glue_job_link` deriva AQUI pela mesma razao de `lakeformation.*`: o
+    # `sfn.task` e o `aws_glue_job` tem `subject` diferente, e o motor nao junta dois
+    # facts numa condicao. Guardado por `SOURCE_KINDS`: pool sem Step Functions sai
+    # byte a byte igual.
+    if any(f.kind in SFN_SOURCE_KINDS for f in facts):
+        derivados_sfn = build_sfn_glue_link(facts)
+        desconhecidos_sfn = {f.kind for f in derivados_sfn} - SFN_EMITTED_KINDS
+        if desconhecidos_sfn:
+            raise AssertionError(
+                f"kind fora do namespace de stepfunctions: {sorted(desconhecidos_sfn)}"
+            )
+        for fact in derivados_sfn:
             combined[fact.id] = fact
 
     return sort_facts(combined.values())

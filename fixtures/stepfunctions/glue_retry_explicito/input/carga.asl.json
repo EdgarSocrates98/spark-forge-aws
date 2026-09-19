@@ -1,0 +1,15 @@
+{
+  "Comment": "Fixture sintetica: .sync com retrier em States.TaskFailed e MaxAttempts declarado.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 120, "MaxAttempts": 1}],
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "NotificarFalha"}],
+      "End": true
+    },
+    "NotificarFalha": {"Type": "Fail", "Error": "CargaFalhou", "Cause": "O job Glue falhou."}
+  }
+}

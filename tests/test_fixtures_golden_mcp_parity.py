@@ -92,6 +92,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_sdd_check": "2026-09-16: gates do SDD proprio sobre docs/sdd",
     "sparkforge_sdd_status": "2026-09-16: fase e bloqueio de cada feature do SDD",
     "sparkforge_sdd_stamp": "2026-09-16: hash do upstream de um artefato SDD",
+    "sparkforge_analyze_step_functions": "2026-09-19: definicao ASL do AWS Step Functions",
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

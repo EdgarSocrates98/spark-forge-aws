@@ -1,11 +1,11 @@
 ---
 name: glue-infra-reviewer
-description: Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform.
+description: Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como a state machine do Step Functions dispara o job.
 skills:
   - review-glue-terraform
   - tune-glue-job
   - optimize-variable-volume-job
-rule_areas: [SF-GLUE, SF-ENV]
+rule_areas: [SF-GLUE, SF-ENV, SF-SFN]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -27,6 +27,23 @@ terminal, mais a contagem de desfecho — é o que distingue worker mal dimensio
 job que sempre foi assim. `sparkforge_analyze_cloudwatch` faz a ponte para as métricas
 do mesmo run: série vazia vira lacuna declarada, nunca zero, porque observabilidade
 desligada e janela sem dado são causas diferentes.
+
+## Quem dispara o job: Step Functions
+
+A definição do job não diz quem o chama nem quantas vezes. Quando o job roda sob uma
+state machine do AWS Step Functions, `sparkforge_analyze_step_functions` lê a definição
+ASL — o `.asl.json` do repositório, ou a saída salva de `aws stepfunctions
+describe-state-machine` — e devolve um `sfn.task` por estado `Task`: o padrão de
+integração (`request_response`, `sync`, `callback`), o `JobName` literal ou a marca de
+dinâmico, os retriers com o `MaxAttempts` efetivo (3 quando omitido, e a marca de
+omitido), o `Catch` e o `TimeoutSeconds`. Um `.asl.json` não carrega o tipo do workflow:
+sem a saída de `describe-state-machine`, o tipo sai `undeclared`, nunca `STANDARD`.
+
+A área `SF-SFN` julga esses facts. Com o Terraform do mesmo job no case,
+`sparkforge_fuse` liga o `Task` ao `aws_glue_job` de mesmo `name` (`sfn.glue_job_link`),
+e é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o retrier
+do Step Functions. A composição das duas não é documentada — afirme que as duas existem,
+nunca quantas vezes o job roda numa falha.
 
 ## Três armadilhas que a infraestrutura esconde
 

@@ -61,10 +61,15 @@ from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
 from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
 from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
 from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
+from sparkforge.facts.stepfunctions import (  # noqa: E402
+    build_sfn_glue_link,
+    extract_stepfunctions_tree,
+)
 from sparkforge.facts.terraform import (  # noqa: E402
     extract_terraform_diff,
     extract_terraform_tree,
 )
+from sparkforge.findings.models import sort_facts  # noqa: E402
 from sparkforge.migration.assessment import assess  # noqa: E402
 from sparkforge.migration.collect import collect as collect_migration  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
@@ -83,6 +88,7 @@ FIXTURES_EMR = ROOT / "fixtures" / "emr"
 FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
 FIXTURES_EMR_EKS = ROOT / "fixtures" / "emr_eks"
 FIXTURES_CONTROLM = ROOT / "fixtures" / "controlm"
+FIXTURES_STEPFUNCTIONS = ROOT / "fixtures" / "stepfunctions"
 FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
@@ -432,6 +438,24 @@ def regen_controlm(directory: Path) -> None:
     facts = extract_controlm_jobs_tree(
         input_dir, repo_root=input_dir, declared_version=meta.get("controlm_version")
     )
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_stepfunctions(directory: Path) -> None:
+    """Definicoes ASL do AWS Step Functions: `*.json` sob input/, e `main.tf` ao lado.
+
+    O PAR de `tests/test_fixtures_golden_stepfunctions.py::_extract`, e a mesma porta do
+    produto: fixture so com `.json` e o que `analyze step-functions` ve; com `.tf` ao
+    lado, extrai o Terraform e deriva `sfn.glue_job_link` como `fusion.fuse` faz.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_stepfunctions_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_sfn_glue_link(facts))
+    facts = sort_facts(facts)
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -1035,6 +1059,7 @@ def main() -> int:
                 (FIXTURES_EMR_SERVERLESS / name, regen_emr_serverless),
                 (FIXTURES_EMR_EKS / name, regen_emr_eks),
                 (FIXTURES_CONTROLM / name, regen_controlm),
+                (FIXTURES_STEPFUNCTIONS / name, regen_stepfunctions),
                 (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
@@ -1104,6 +1129,10 @@ def main() -> int:
     if FIXTURES_CONTROLM.is_dir():
         for directory in sorted(p for p in FIXTURES_CONTROLM.iterdir() if p.is_dir()):
             regen_controlm(directory)
+    # Mesma guarda de existencia: `fixtures/stepfunctions/` nasce nesta entrega.
+    if FIXTURES_STEPFUNCTIONS.is_dir():
+        for directory in sorted(p for p in FIXTURES_STEPFUNCTIONS.iterdir() if p.is_dir()):
+            regen_stepfunctions(directory)
     for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
         regen_dq(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):

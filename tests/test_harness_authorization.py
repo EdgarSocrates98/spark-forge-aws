@@ -974,7 +974,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # tres declaram `repo`, e `stamp` tambem `path` (o artefato, relativo a
         # `repo`). As duas primeiras sao `_READ_ONLY`, a terceira
         # `_WRITE_IDEMPOTENT`. O conjunto de excecao nao se move.
-        assert len(TOOLS) - len(sem_caminho) == 98
+        # 98 -> 99 com `analyze_step_functions` (2026-09-19, `docs/sdd/STEP_FUNCTIONS/`):
+        # `_READ_ONLY`, le a definicao ASL em disco e declara `path`.
+        assert len(TOOLS) - len(sem_caminho) == 99
 
 
 class TestAImposicaoNoDespacho:

@@ -42,8 +42,8 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 38 extratores emitem 228 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **157** regras de diagnóstico em YAML, **157 delas executáveis** (todas), cada uma
+Os 39 extratores emitem 233 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **161** regras de diagnóstico em YAML, **161 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
@@ -108,7 +108,7 @@ a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cl
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **106 tools MCP**.
+(`sparkforge/adapters/_core.py`), e o servidor publica **107 tools MCP**.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|

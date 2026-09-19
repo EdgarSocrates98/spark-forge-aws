@@ -509,6 +509,26 @@ def build_parser() -> argparse.ArgumentParser:
     ctm_analyze_p.add_argument("--cursor")
     _add_detail_level(ctm_analyze_p)
 
+    sfn_analyze_p = analyze_sub.add_parser(
+        "step-functions",
+        help="Extrai facts da definicao ASL de uma state machine do AWS Step Functions "
+        "(`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um "
+        "fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e "
+        "TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao.",
+    )
+    sfn_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Arquivo .json (ASL ou describe-state-machine) ou diretorio com eles.",
+    )
+    sfn_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    sfn_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sfn_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sfn_analyze_p.add_argument("--cursor")
+    _add_detail_level(sfn_analyze_p)
+
     dq_p = analyze_sub.add_parser(
         "data-quality",
         help="Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great "
@@ -3246,6 +3266,11 @@ def _cmd_analyze_emr_eks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_step_functions(args: argparse.Namespace) -> int:
+    full = _core.analyze_step_functions(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_controlm_jobs(args: argparse.Namespace) -> int:
     full = _core.analyze_controlm_jobs(args.path, version=args.version, kind=args.kind, limit=None)
     if args.out:
@@ -4610,6 +4635,7 @@ _DISPATCH = {
     ("analyze", "emr-serverless"): _cmd_analyze_emr_serverless,
     ("analyze", "emr-eks"): _cmd_analyze_emr_eks,
     ("analyze", "controlm-jobs"): _cmd_analyze_controlm_jobs,
+    ("analyze", "step-functions"): _cmd_analyze_step_functions,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,

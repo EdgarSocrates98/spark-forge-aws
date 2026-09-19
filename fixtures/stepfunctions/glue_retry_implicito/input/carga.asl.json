@@ -1,0 +1,13 @@
+{
+  "Comment": "Fixture sintetica: .sync com retrier em States.ALL e MaxAttempts omitido.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 60, "BackoffRate": 2.0}],
+      "End": true
+    }
+  }
+}

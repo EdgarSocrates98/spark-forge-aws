@@ -1,0 +1,13 @@
+{
+  "Comment": "Fixture sintetica: retry so no Step Functions, o job declara max_retries 0.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 300, "MaxAttempts": 2, "BackoffRate": 1.0}],
+      "End": true
+    }
+  }
+}

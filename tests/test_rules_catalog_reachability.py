@@ -79,6 +79,10 @@ from sparkforge.facts import (
     spark_plan,
     sql_literal,
     sql_metrics,
+    # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:
+    # sem ele aqui, os cinco kinds `sfn.*` contam como orfaos e as quatro regras
+    # seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
+    stepfunctions,
     terraform,
     timeout_diagnosis,
     utilization,
@@ -205,6 +209,10 @@ EXTRACTORS = (
     spark_plan,
     sql_literal,
     sql_metrics,
+    # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:
+    # sem ele aqui, os cinco kinds `sfn.*` contam como orfaos e as quatro regras
+    # seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
+    stepfunctions,
     terraform,
     # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 4 do
     # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds
