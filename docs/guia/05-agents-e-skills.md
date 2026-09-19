@@ -110,6 +110,73 @@ Uma variável por experimento. Sem medida de antes (baseline), não há como pro
 impacto. O manual [Investigação com case](usos/investigacao-com-case.md) mostra o
 loop rodando.
 
+### As duas camadas de agente, em detalhe
+
+Além das Skills (procedimento) e da camada determinística (extração e julgamento), o
+pacote tem duas camadas de agente:
+
+- **Coordenador** — 38 agentes em `agents/*.md` (contados em 2026-09-18): os oito
+  herdados, um por área de investigação (`spark-performance-architect`,
+  `glue-incremental-performance-architect`, `glue-infra-reviewer`,
+  `athena-query-optimizer`, `pyspark-code-reviewer`, `iceberg-performance-engineer`,
+  `emr-infra-reviewer` e `data-quality-reviewer`), e 30 `sf-*` da expansão agêntica.
+  Não executa: lê o case, decide qual executor rodar em seguida e registra no case qual
+  executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
+  `emr-infra-reviewer` lê `SF-EMR`, `SF-EMRS`, `SF-EMRK` e `SF-ENV`,
+  `data-quality-reviewer` lê `SF-DQ`, e
+  `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
+  quê* é a mesma pergunta que ele já respondia — e acumulou `SF-FVAL` pela metade que falta
+  dela, *e o resultado continuou o mesmo*, que é o mesmo par antes/depois da mesma mudança.
+  É isso, não o nome, que faz o roteamento funcionar. Ver a tabela completa em
+  [`AGENTS.md`](../../AGENTS.md).
+- **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
+  (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
+  declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
+  contrato de handoff que fazem a cadeia ser determinística entre modelos.
+
+Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-085` (85,
+contadas em 2026-09-18) de `rules/catalog/routing.yaml` mapeiam fase do case e área do
+achado dominante para o coordenador certo, e `sparkforge_next_step`/`sparkforge next-step`
+as consulta.
+
+### Despacho por plataforma
+
+**Três plataformas despacham.** Em Claude Code, o coordenador despacha os cinco executores
+como subagentes. No **Devin CLI** e no **Devin Local agent** do Devin Desktop (com o toggle
+*Subagents (Preview)* ligado), os **coordenadores** são perfis de subagente nativos: o
+Devin lê `.agents/agents/` e importa `.claude/agents/*.md`, dois diretórios que este
+repositório já publica. **Os cinco executores não estão num layout de descoberta
+documentado** — a fonte descreve `agents/<nome>.md` e `agents/<nome>/AGENT.md`, e a
+importação casa `.claude/agents/*.md`, raso; `executors/sf-judge.md` não é nenhum dos
+dois, e se a varredura recorre a documentação não diz. Nada se perde: `sparkforge playbook
+<coordenador>` lê `agents/executors/` do próprio repositório e devolve os mesmos cinco
+passos em qualquer plataforma. **E um coordenador despachado como subagente não despacha
+os executores:** por default subagente não gera subagente, e este repositório não declara
+`max-nesting` em perfil nenhum — a decomposição roda inline, que é o que o `playbook`
+devolve. O espelho do Devin é **renderizado**, não copiado — ele sai sem
+`tools:`, porque o mapeamento de valores desse campo não está documentado, e nunca com
+`model:`, porque o modelo do subagente resolve por roteador no spawn e um admin da
+organização o sobrescreve. **A omissão de `tools:` não é fronteira de segurança, e não
+teria como ser:** os dois caminhos de descoberta estão ligados por default
+(`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa**
+sobre qual vence quando os dois existem, e o default de `allowed-tools` é *"all tools"* —
+omitir é a opção **mais permissiva**, não a mais restrita. O que carrega a fronteira é a
+prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As 23 skills
+despacháveis (contadas em 2026-09-18 com `grep -l '^subagent: true' .agents/skills/*/SKILL.md`)
+declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara, no próprio
+texto, que não executa manutenção destrutiva.
+
+**O `playbook` é o piso das cinco plataformas, não um degrau que o despacho substitui.**
+**`sparkforge playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_playbook` devolve a
+mesma decomposição em passos sequenciais, lendo os mesmos arquivos de `agents/`: perde o
+paralelismo do despacho, mantém o método. Ele é o **único** caminho em Codex e Copilot CI
+— nenhuma pesquisa de fontes mediu despacho de subagente nas duas, e afirmar sem medir é o
+defeito que `parity.yaml` existe para não repetir. E continua sendo o caminho nas três que
+despacham sempre que o despacho estiver desligado: `subagents_enabled: false` é escolha do
+usuário, a opção *None* de "Default subagent model" é de um admin da organização, e nenhum
+arquivo versionado deste repositório impede qualquer uma das duas. Ver
+[`knowledge/devin/agents-and-subagents.md`](../../knowledge/devin/agents-and-subagents.md).
+
 ## Onde os arquivos moram
 
 Você só edita a **fonte**. Os espelhos são gerados por `scripts/sync_skills.py`,
@@ -196,6 +263,43 @@ sparkforge agents list --repo .
 4. Sem Python, leia `rules/catalog/*.yaml`. É YAML legível, com o mesmo limiar, a mesma
    guarda de versão e a mesma fonte que o motor usa.
 
+### Uso rápido: o que digitar em cada ferramenta
+
+No Claude Code:
+
+```text
+/sparkforge-diagnose
+/optimize-pyspark-code
+/analyze-spark-plan
+/optimize-iceberg-table
+/review-emr-cluster
+/review-emr-eks
+/review-data-validation
+```
+
+No Copilot Chat:
+
+```text
+/sparkforge-diagnose
+/analyze-spark-plan
+/review-pyspark-performance
+```
+
+No Devin, peça explicitamente:
+
+```text
+Use a skill sparkforge-diagnose para analisar este job Glue.
+```
+
+`sparkforge-diagnose` **não** despacha subagente de propósito: ela abre o case e roteia, e
+o ciclo de vida do case tem que ficar na sessão que continua. As 23 skills despacháveis
+(as que declaram `subagent: true` no espelho `.agents/skills/`) podem rodar como
+subagente. Detalhe em [`GUIA_DE_USO.md`](../../GUIA_DE_USO.md), seção 3.
+
+```text
+Use o perfil emr-infra-reviewer como subagente para revisar este cluster EMR.
+```
+
 ## Por onde começar: pergunta → agent ou skill
 
 A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
@@ -222,6 +326,54 @@ A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
 | "Quero especificar a mudança antes de construir" (spec, plano, TDD, entrega) | a sessão, sem despacho | [`sdd-explore`](referencia/skills/sdd-explore.md), [`sdd-define`](referencia/skills/sdd-define.md), [`sdd-design`](referencia/skills/sdd-design.md), [`sdd-plan`](referencia/skills/sdd-plan.md), [`sdd-build`](referencia/skills/sdd-build.md), [`sdd-ship`](referencia/skills/sdd-ship.md); veja [`docs/sdd/README.md`](../sdd/README.md) |
 
 Listas completas: [agents](referencia/agents/README.md) e [skills](referencia/skills/README.md).
+
+## Investigação de fluxos full e incrementais
+
+Para casos com latest-per-key, tabelas Iceberg bilionárias, batching, OOM e cargas muito
+variáveis, comece por:
+
+1. `PROMPT_INICIAL_MESTRE.md`
+2. `GUIA_DE_USO.md`
+3. Skill `glue-incremental-performance-architect`
+
+Há Skills específicas para arquitetura incremental (`design-incremental-processing`),
+latest-per-key (`optimize-latest-per-key`), loops de batching (`analyze-batch-loop`), call
+graph da biblioteca (`analyze-library-call-graph`), OOM (`diagnose-oom`), Terraform
+(`review-glue-terraform`) e perfis de volume (`optimize-variable-volume-job`). Desde a
+versão 0.4.0 elas são *toolkit-first*: chamam os extratores determinísticos em vez de
+descrever leitura por amostragem.
+
+## Skills de diagnóstico
+
+Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Use
+quando…"), procedimento, **Quando NÃO usar**, **Referência rápida** (sintoma →
+sinal/limiar → ação) e **Red flags**. A tabela abaixo é o núcleo de diagnóstico de job
+PySpark; a lista completa está na [referência de skills](referencia/skills/README.md).
+
+| Skill | Use quando… |
+|---|---|
+| `sparkforge-diagnose` | precisar do diagnóstico ponta a ponta e não souber o gargalo dominante |
+| `glue-incremental-performance-architect` | orquestrar investigação de fluxos full + incremental (biblioteca, OOM, batching) |
+| `optimize-pyspark-code` | revisar/refatorar código PySpark ou Spark SQL |
+| `analyze-spark-plan` | interpretar `explain()`/`EXPLAIN` e o plano físico |
+| `analyze-spark-ui` | ler Spark UI/event logs (stage lento, skew, spill, GC) |
+| `analyze-library-call-graph` | mapear actions/reads/writes escondidos numa biblioteca Python |
+| `analyze-batch-loop` | houver actions/writes dentro de loop e recomputação de DAG |
+| `design-incremental-processing` | um "incremental" fizer scan global ou recomputar histórico |
+| `optimize-latest-per-key` | calcular registro mais recente por chave em tabela grande |
+| `optimize-variable-volume-job` | o mesmo job receber de dezenas a centenas de milhões de registros |
+| `diagnose-data-skew` | poucas tasks dominarem o tempo por hot keys/nulls |
+| `diagnose-oom` | houver OOM (driver, executor, broadcast, metadata, lineage) |
+| `tune-glue-job` | ajustar workers, Auto Scaling, argumentos e custo (com baseline) |
+| `optimize-parquet-layout` | small files, listing lento e pruning ausente em Parquet/S3 |
+| `optimize-iceberg-table` | dívida de data/delete files, snapshots, manifests e manutenção Iceberg |
+| `benchmark-pyspark-job` | comprovar (não estimar) o impacto de uma mudança antes/depois |
+| `review-pyspark-pr` | revisar um PR buscando regressões de performance e custo |
+| `review-glue-terraform` | revisar o IaC do job (workers, Auto Scaling, args, observabilidade) |
+| `review-emr-cluster` | o risco estiver na definição do cluster EMR on EC2 (fleets/groups, Spot por papel, managed scaling, `Configurations`, `LogUri`) |
+| `review-emr-eks` | o risco estiver na execução de um job Amazon EMR on EKS (cluster virtual e namespace, as duas superfícies de configuração, destino de log e `persistentAppUI` por job run) |
+| `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
+| `compare-releases` | precisar saber o que muda de **componente** entre dois runtimes (release contra release, ou o mesmo rótulo entre duas plataformas) — ela lê matriz de versão e **não** avalia compatibilidade |
 
 ## `next-step` e `playbook`: a porta de entrada
 
@@ -279,6 +431,11 @@ Onze skills descrevem **procedimentos de serviços AWS**. Elas foram adaptadas d
 > de cada uma exige a **sua confirmação explícita para cada comando de escrita**. Por
 > isso elas nunca rodam como subagente: um subagente não consegue perguntar nada a
 > você. Se um agent propuser um comando de escrita, leia antes de aprovar.
+
+Procedência: adaptadas, não vendorizadas, de
+[`aws/agent-toolkit-for-aws`](https://github.com/aws/agent-toolkit-for-aws) (Apache-2.0,
+commit `10b28af8`, 2026-09-02). Licença e o que mudou na adaptação em
+[`vendor/CREDITS.md`](../../vendor/CREDITS.md), seção *Adaptado, não vendorizado*.
 
 ## Próximos passos
 
