@@ -1,5 +1,4 @@
 """A regra de prova no que o host injeta, e os verbos que ela cita."""
-import json
 import re
 from pathlib import Path
 
