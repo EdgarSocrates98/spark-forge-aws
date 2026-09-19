@@ -77,9 +77,11 @@ e as regras de 192 para 157. Todas as 157 são executáveis.
 
 - Os subagents de `config/subagents.yaml` e as tools inexistentes de
   `config/agentic-expansion.yaml` continuam como estavam (pendência do SF_STUBS).
-- `scripts/regen_fixtures.py` não regenera `knowledge_drift`, e
-  `refresh_knowledge.py --offline --update` não atualiza o `offline-manifest.json`: dois
-  atalhos que a documentação dá como existentes e não funcionam.
+- Correção (2026-09-19, depois do ship): a documentação não dá esses dois atalhos como
+  existentes. `docs/gates-por-mudanca.md` manda recalcular o `sha256` do
+  `offline-manifest.json` com `sparkforge.tools.offline._content_sha256`, e a docstring de
+  `tests/test_fixtures_golden_knowledge_drift.py` manda regenerar com
+  `SPARKFORGE_REGEN_DRIFT=1`. Quem citou os comandos errados foi o plano do SF_STUBS.
 - `docs/agentic-evolution.md` tem mojibake anterior à feature.
 
 ## Lições
