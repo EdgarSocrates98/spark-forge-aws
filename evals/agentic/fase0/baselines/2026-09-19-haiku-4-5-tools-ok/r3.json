@@ -1,0 +1,546 @@
+{
+  "schema_version": 1,
+  "suite": {
+    "id": "fase0",
+    "sha256": "cd35c816a318670b2d251ca9e87ed345241396fcf2c67b425d36e52b1cbbdebf"
+  },
+  "run": {
+    "id": "fase0-2026-09-19T03-09-37Z-r3",
+    "models": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "host_versions": [
+      "2.1.276"
+    ]
+  },
+  "questions": [
+    {
+      "id": "fase0-01",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 29,
+        "other_calls": 17,
+        "tool_errors": 10,
+        "tool_result_bytes": 36827,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 25229,
+          "other": 11598
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 32382,
+          "Read": 3943,
+          "ToolSearch": 314,
+          "PowerShell": 188
+        },
+        "tokens": {
+          "input": 508,
+          "output": 11858,
+          "cache_read": 2743458,
+          "cache_creation": 48643
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-02",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "analyze_pyspark",
+          "judge"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 13,
+        "other_calls": 11,
+        "tool_errors": 6,
+        "tool_result_bytes": 130041,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 650,
+          "other": 129391
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 126943,
+          "Bash": 1932,
+          "Grep": 688,
+          "PowerShell": 302,
+          "ToolSearch": 162,
+          "Glob": 14
+        },
+        "tokens": {
+          "input": 242,
+          "output": 7456,
+          "cache_read": 1359992,
+          "cache_creation": 128250
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-03",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 49,
+        "other_calls": 44,
+        "tool_errors": 5,
+        "tool_result_bytes": 86985,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 8739,
+          "other": 78246
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 60164,
+          "Bash": 9168,
+          "Glob": 8746,
+          "PowerShell": 8702,
+          "ToolSearch": 163,
+          "Grep": 42
+        },
+        "tokens": {
+          "input": 842,
+          "output": 19203,
+          "cache_read": 5284639,
+          "cache_creation": 84880
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-04",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 36,
+        "other_calls": 29,
+        "tool_errors": 4,
+        "tool_result_bytes": 37867,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 4206,
+          "other": 33661
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 26388,
+          "Bash": 11259,
+          "ToolSearch": 159,
+          "PowerShell": 61
+        },
+        "tokens": {
+          "input": 618,
+          "output": 15281,
+          "cache_read": 3653392,
+          "cache_creation": 49789
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-05",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "analyze_pyspark"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 56,
+        "other_calls": 53,
+        "tool_errors": 8,
+        "tool_result_bytes": 81050,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 1106,
+          "other": 79944
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 44175,
+          "Bash": 35566,
+          "PowerShell": 849,
+          "ToolSearch": 242,
+          "Grep": 218
+        },
+        "tokens": {
+          "input": 920,
+          "output": 22894,
+          "cache_read": 6615856,
+          "cache_creation": 92732
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-06",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 2,
+        "other_calls": 1,
+        "tool_errors": 0,
+        "tool_result_bytes": 2165,
+        "tool_result_bytes_by_channel": {
+          "mcp": 2083,
+          "bash": 0,
+          "other": 82
+        },
+        "tool_result_bytes_by_tool": {
+          "mcp__sparkforge__sparkforge_rules_lookup": 2083,
+          "ToolSearch": 82
+        },
+        "tokens": {
+          "input": 56,
+          "output": 1288,
+          "cache_read": 215476,
+          "cache_creation": 3546
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-07",
+      "status": "graded",
+      "answer": "wrong",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 14,
+        "other_calls": 12,
+        "tool_errors": 3,
+        "tool_result_bytes": 18453,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 166,
+          "other": 18287
+        },
+        "tool_result_bytes_by_tool": {
+          "Grep": 10639,
+          "Read": 3690,
+          "Glob": 2565,
+          "Bash": 1371,
+          "PowerShell": 188
+        },
+        "tokens": {
+          "input": 244,
+          "output": 9756,
+          "cache_read": 1223014,
+          "cache_creation": 21956
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-08",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "runtime_detect|release_describe"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 4,
+        "other_calls": 4,
+        "tool_errors": 1,
+        "tool_result_bytes": 8034,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 0,
+          "other": 8034
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 5465,
+          "Bash": 2245,
+          "PowerShell": 243,
+          "ToolSearch": 81
+        },
+        "tokens": {
+          "input": 88,
+          "output": 2240,
+          "cache_read": 363816,
+          "cache_creation": 9246
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-09",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "judge"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 25,
+        "other_calls": 22,
+        "tool_errors": 0,
+        "tool_result_bytes": 29172,
+        "tool_result_bytes_by_channel": {
+          "mcp": 1029,
+          "bash": 0,
+          "other": 28143
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 17986,
+          "Glob": 6498,
+          "Grep": 2237,
+          "Bash": 1256,
+          "mcp__sparkforge__sparkforge_analyze_pyspark": 718,
+          "mcp__sparkforge__sparkforge_code_search": 311,
+          "ToolSearch": 166
+        },
+        "tokens": {
+          "input": 438,
+          "output": 10866,
+          "cache_read": 2324755,
+          "cache_creation": 35046
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "fase0-10",
+      "status": "graded",
+      "answer": "correct",
+      "abstention": null,
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 3,
+        "other_calls": 1,
+        "tool_errors": 0,
+        "tool_result_bytes": 752,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 670,
+          "other": 82
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 670,
+          "ToolSearch": 82
+        },
+        "tokens": {
+          "input": 76,
+          "output": 2451,
+          "cache_read": 286850,
+          "cache_creation": 4669
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "abst-01",
+      "status": "graded",
+      "answer": null,
+      "abstention": "abstained",
+      "tools": {
+        "verdict": "failed",
+        "missing": [
+          "finops"
+        ],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 2,
+        "other_calls": 2,
+        "tool_errors": 0,
+        "tool_result_bytes": 2065,
+        "tool_result_bytes_by_channel": {
+          "mcp": 0,
+          "bash": 0,
+          "other": 2065
+        },
+        "tool_result_bytes_by_tool": {
+          "Read": 2016,
+          "Bash": 49
+        },
+        "tokens": {
+          "input": 62,
+          "output": 2955,
+          "cache_read": 250247,
+          "cache_creation": 3340
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "abst-02",
+      "status": "graded",
+      "answer": null,
+      "abstention": "abstained",
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 5,
+        "other_calls": 4,
+        "tool_errors": 2,
+        "tool_result_bytes": 816,
+        "tool_result_bytes_by_channel": {
+          "mcp": 276,
+          "bash": 0,
+          "other": 540
+        },
+        "tool_result_bytes_by_tool": {
+          "Bash": 461,
+          "mcp__sparkforge__sparkforge_benchmark": 276,
+          "ToolSearch": 79
+        },
+        "tokens": {
+          "input": 108,
+          "output": 5112,
+          "cache_read": 441126,
+          "cache_creation": 6072
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    },
+    {
+      "id": "abst-03",
+      "status": "graded",
+      "answer": null,
+      "abstention": "false_certainty",
+      "tools": {
+        "verdict": "ok",
+        "missing": [],
+        "order_violated": []
+      },
+      "cost": {
+        "tool_calls": 7,
+        "other_calls": 5,
+        "tool_errors": 1,
+        "tool_result_bytes": 7696,
+        "tool_result_bytes_by_channel": {
+          "mcp": 577,
+          "bash": 0,
+          "other": 7119
+        },
+        "tool_result_bytes_by_tool": {
+          "Glob": 5572,
+          "Read": 1465,
+          "mcp__sparkforge__sparkforge_analyze_plan": 577,
+          "ToolSearch": 82
+        },
+        "tokens": {
+          "input": 180,
+          "output": 5774,
+          "cache_read": 785969,
+          "cache_creation": 15064
+        },
+        "tokens_unresolved": false
+      },
+      "unresolved": []
+    }
+  ],
+  "unmatched_transcripts": [],
+  "totals": {
+    "questions": 13,
+    "graded": 13,
+    "ungraded": 0,
+    "correct": 9,
+    "wrong": 1,
+    "answer_absent": 0,
+    "over_abstention": 0,
+    "abstention_total": 3,
+    "abstained": 2,
+    "false_certainty": 1,
+    "tools_ok": 8,
+    "tokens_unresolved_questions": 0,
+    "cost": {
+      "tool_calls": {
+        "median_low": 13,
+        "max": 56
+      },
+      "tool_result_bytes": {
+        "median_low": 18453,
+        "max": 130041
+      },
+      "tool_result_bytes_by_channel": {
+        "mcp": 3965,
+        "bash": 40766,
+        "other": 397192
+      },
+      "tool_result_bytes_by_tool": {
+        "Read": 292235,
+        "Bash": 96359,
+        "Glob": 23395,
+        "Grep": 13824,
+        "PowerShell": 10533,
+        "mcp__sparkforge__sparkforge_rules_lookup": 2083,
+        "ToolSearch": 1612,
+        "mcp__sparkforge__sparkforge_analyze_pyspark": 718,
+        "mcp__sparkforge__sparkforge_analyze_plan": 577,
+        "mcp__sparkforge__sparkforge_code_search": 311,
+        "mcp__sparkforge__sparkforge_benchmark": 276
+      },
+      "output_tokens": {
+        "median_low": 7456,
+        "max": 22894
+      }
+    }
+  }
+}

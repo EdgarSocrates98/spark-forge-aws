@@ -1,4 +1,5 @@
 """A regra de prova no que o host injeta, e os verbos que ela cita."""
+import json
 import re
 from pathlib import Path
 
@@ -52,3 +53,14 @@ def test_verbos_da_regra_existem_e_cobrem_a_suite():
                 pergunta["id"],
                 alternativas,
             )
+
+
+def test_baseline_tools_ok_gravado():
+    base = ROOT / "evals" / "agentic" / "fase0" / "baselines"
+    novos = sorted(p for p in base.iterdir() if p.name.endswith("-tools-ok"))
+    assert novos, "baseline -tools-ok ausente"
+    rodadas = sorted(novos[-1].glob("r*.json"))
+    assert len(rodadas) >= 3
+    for rodada in rodadas:
+        totais = json.loads(rodada.read_text(encoding="utf-8"))["totals"]
+        assert {"tools_ok", "correct", "questions"} <= set(totais)
