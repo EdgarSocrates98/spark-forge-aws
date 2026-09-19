@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/CRITERIO_DE_DOMINIO/design.md
-  sha256: "224dc51e8039728c2084dbcc3afadc1245dd3d8cda5fbe5ab87998bee611e1db"
+  sha256: "a3dffb1296db0d515e7496b2846dd86d635bb904837439203ab8891135f4f387"
 tasks:
   - id: T1
     files: [tests/test_criterio_de_dominio.py, agents/sf-orchestrator.md, skills/agentic-orchestration/SKILL.md, agents/spark-performance-architect.md, rules/catalog/routing.yaml, config/agents.yaml, tests/test_canonical_registry.py, knowledge/tool-specialization-matrix.md, knowledge/offline-manifest.json, fixtures/knowledge_drift/filtro_por_url/expected/result.json, scripts/sync_skills.py, tests/test_sync_render.py, manifest.json, docs/surface.lock.json, docs/guia/referencia/agents/README.md, docs/claims.lock.json]
@@ -40,6 +40,7 @@ Uma area so existe com regra que julga fact emitido por extrator, e um coordenad
 existe com area que julga e com rota que um finding ou fact dispara. Criterio escrito
 em docs/gates-por-mudanca.md, secao "Criterio de dominio: artefato antes de nome".
 """
+import re
 from pathlib import Path
 
 import yaml
@@ -96,6 +97,23 @@ def _chaves(no) -> set[str]:
     return set()
 
 
+def _valores_de_caso(no) -> list[str]:
+    if isinstance(no, dict):
+        proprios = [str(no.get("contains", ""))] if "case" in no else []
+        return proprios + [v for x in no.values() for v in _valores_de_caso(x)]
+    if isinstance(no, list):
+        return [v for x in no for v in _valores_de_caso(x)]
+    return []
+
+
+def _por_artefato(rota: dict) -> bool:
+    when = rota.get("when")
+    if _chaves(when) & {"findings_area", "fact"}:
+        return True
+    casos = _valores_de_caso(when)
+    return bool(casos) and not any(re.fullmatch(r"__\w+__", c) for c in casos)
+
+
 def _rotas() -> list[dict]:
     texto = (ROOT / "rules" / "catalog" / "routing.yaml").read_text(encoding="utf-8")
     return yaml.safe_load(texto)["rules"]
@@ -122,11 +140,7 @@ def test_todo_coordenador_declara_area_que_julga():
 
 
 def test_todo_coordenador_tem_rota_por_artefato():
-    por_artefato = {
-        rota.get("recommended_agent")
-        for rota in _rotas()
-        if _chaves(rota.get("when")) & {"findings_area", "fact"}
-    }
+    por_artefato = {rota.get("recommended_agent") for rota in _rotas() if _por_artefato(rota)}
     sem = sorted(p.stem for p in _coordenadores() if p.stem not in por_artefato)
     assert not sem, sem
 
@@ -193,7 +207,7 @@ def test_o_que_so_o_nome_alcancava_saiu():
 
 ## T2 — o critério escrito, documentos e números
 
-1. Teste, em `tests/test_criterio_de_dominio.py` (acrescente `import re` aos imports):
+1. Teste, em `tests/test_criterio_de_dominio.py` (o `import re` já está lá desde a T1):
 
 ```python
 SECAO = "## Critério de domínio: artefato antes de nome"

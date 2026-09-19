@@ -40,7 +40,7 @@ files:
   - {path: docs/claims.lock.json, action: modify, reason: "arquivo .py novo e contagens movem alegacoes"}
 decisions:
   - id: D1
-    choice: "O teste novo mora em tests/test_criterio_de_dominio.py e le o proprio repositorio. Area e o prefixo do rule_id ate o ultimo hifen. Rota por artefato e a rota cujo when contem, em qualquer profundidade, uma condicao findings_area ou fact; rota cujo when so tem condicao case (scope.entrypoints) nao conta. Coordenador e todo agents/*.md fora de agents/executors/."
+    choice: "O teste novo mora em tests/test_criterio_de_dominio.py e le o proprio repositorio. Area e o prefixo do rule_id ate o ultimo hifen. Rota por artefato e a rota cujo when contem, em qualquer profundidade, uma condicao findings_area ou fact, ou uma condicao case cujo valor nao e sentinela __nome__: scope.entrypoints sai do codigo do job (AGENT-006 casa incremental), e a sentinela __agentic_*__ so um nome escrito a mao produz. Emenda do build (2026-09-19): a primeira versao nao contava condicao case nenhuma, era mais estrita que o AC4 e reprovava glue-incremental-performance-architect. Coordenador e todo agents/*.md fora de agents/executors/."
     rejected: ["estender tests/test_sf_stubs.py: aquele arquivo trava a remocao de uma feature, este trava o criterio para toda a proxima", "exigir que TODA rota do coordenador seja por artefato: quatro coordenadores com rota real tambem tem modo __agentic_*__, e o define deixou esse modo fora de escopo"]
     rollback: "git revert do commit"
   - id: D2
