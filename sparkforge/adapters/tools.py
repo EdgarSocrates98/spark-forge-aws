@@ -6128,6 +6128,47 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_step_functions": {
+        "description": (
+            "Extrai facts da definicao de uma state machine do AWS Step Functions em "
+            "Amazon States Language (ASL): o `.asl.json` versionado no repositorio, ou a "
+            "saida salva de `aws stepfunctions describe-state-machine` (objeto com "
+            "`definition` como string JSON e `type`). Emite `sfn.state_machine` (tipo "
+            "STANDARD, EXPRESS ou `undeclared` -- um `.asl.json` nao carrega o tipo, e ele "
+            "NUNCA e suposto STANDARD), um `sfn.task` por estado Task, inclusive dentro de "
+            "Parallel e Map (servico, API, padrao `request_response`/`sync`/`callback`, "
+            "JobName literal ou a marca de dinamico, retriers com o `MaxAttempts` EFETIVO -- "
+            "3 quando omitido, com a marca de omitido --, `Catch` e `TimeoutSeconds`), "
+            "`sfn.unresolved` com a razao do que nao deu para ler, e a sentinela "
+            "`sfn.analyzed`. NAO chama a API do Step Functions e NAO le historico de "
+            "execucao: le a DEFINICAO."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo .json (ASL ou describe-state-machine) ou diretorio com eles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_data_quality": {
         "description": (
             "Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do "
@@ -9954,6 +9995,16 @@ def _h_analyze_controlm_jobs(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_step_functions(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_step_functions(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_data_quality(
         args["path"],
@@ -10499,6 +10550,7 @@ _HANDLERS = {
     "sparkforge_analyze_emr_serverless": _h_analyze_emr_serverless,
     "sparkforge_analyze_emr_eks": _h_analyze_emr_eks,
     "sparkforge_analyze_controlm_jobs": _h_analyze_controlm_jobs,
+    "sparkforge_analyze_step_functions": _h_analyze_step_functions,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,

@@ -28,6 +28,17 @@ job que sempre foi assim. `sparkforge_analyze_cloudwatch` faz a ponte para as m�
 do mesmo run: série vazia vira lacuna declarada, nunca zero, porque observabilidade
 desligada e janela sem dado são causas diferentes.
 
+## Quem dispara o job: Step Functions
+
+A definição do job não diz quem o chama nem quantas vezes. Quando o job roda sob uma
+state machine do AWS Step Functions, `sparkforge_analyze_step_functions` lê a definição
+ASL — o `.asl.json` do repositório, ou a saída salva de `aws stepfunctions
+describe-state-machine` — e devolve um `sfn.task` por estado `Task`: o padrão de
+integração (`request_response`, `sync`, `callback`), o `JobName` literal ou a marca de
+dinâmico, os retriers com o `MaxAttempts` efetivo (3 quando omitido, e a marca de
+omitido), o `Catch` e o `TimeoutSeconds`. Um `.asl.json` não carrega o tipo do workflow:
+sem a saída de `describe-state-machine`, o tipo sai `undeclared`, nunca `STANDARD`.
+
 ## Três armadilhas que a infraestrutura esconde
 
 **Observabilidade ligada sem `GlueContext`.** As métricas do Glue são publicadas pelo

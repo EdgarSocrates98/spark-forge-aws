@@ -112,6 +112,7 @@ anterior.
 | **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
 | **Job run EMR on EKS** | `analyze emr-eks` | dumps de `describe-virtual-cluster` **e** `describe-job-run` do `emr-containers`, num arquivo só |
 | **Definição `Jobs-as-Code` do Control-M** | `analyze controlm-jobs` | o JSON de definição de job versionado no repositório — o mesmo que `ctm build` valida. Com `--version <v>`, cruza as capacidades observadas com a matriz do Automation API |
+| **Definição ASL do AWS Step Functions** | `analyze step-functions` | o `.asl.json` versionado no repositório, ou a saída salva de `aws stepfunctions describe-state-machine`: um fact por estado Task, com padrão de integração, `JobName` e retry efetivo. Com o Terraform do job no mesmo pool, `fuse` liga o Task ao `aws_glue_job` |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
 | **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |

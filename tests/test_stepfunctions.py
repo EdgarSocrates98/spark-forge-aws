@@ -215,3 +215,30 @@ def test_o_que_nao_le_sai_nomeado(tmp_path):
     assert task.attrs["failure_retry_matched"] is True
     assert task.attrs["failure_retry_defaulted"] is False
     assert task.measures["failure_retry_max_attempts"] == 0
+
+
+def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
+    from sparkforge.adapters.cli import main
+    from sparkforge.adapters.tools import call_tool
+
+    entrada = tmp_path / "entrada"
+    entrada.mkdir()
+    (entrada / "sm.asl.json").write_text(json.dumps(ASL_COM_PARALLEL_E_MAP), encoding="utf-8")
+    saida = tmp_path / "facts.json"
+
+    codigo = main(["analyze", "step-functions", "--path", str(entrada), "--out", str(saida)])
+    capsys.readouterr()
+    assert codigo == 0
+    pela_cli = json.loads(saida.read_text(encoding="utf-8"))
+
+    pela_tool = call_tool(
+        "sparkforge_analyze_step_functions", {"path": str(entrada), "limit": 1000}
+    )
+    assert "error" not in pela_tool, pela_tool
+    assert pela_tool["total_count"] == len(pela_cli)
+    assert pela_tool["items"] == pela_cli
+    assert pela_tool["by_kind"]["sfn.task"] == 3
+    assert pela_tool["unresolved"] == 0
+
+    erro = call_tool("sparkforge_analyze_step_functions", {"path": str(tmp_path / "nao-existe")})
+    assert "sparkforge analyze step-functions" in erro["error"]

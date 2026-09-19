@@ -436,6 +436,20 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # A definicao ASL do AWS Step Functions e codigo-fonte, como o `Jobs-as-Code` da
+  # capacidade acima: o `.asl.json` do repositorio, ou a saida salva de
+  # `describe-state-machine`. NAO HA `collect` PAR neste incremento, e a ausencia e
+  # decidida (D3 de `docs/sdd/STEP_FUNCTIONS/design.md`): a chamada exige credencial.
+  - name: extract facts from an AWS Step Functions state machine definition
+    tools: [sparkforge_analyze_step_functions]
+    cli: [analyze step-functions]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: diff component versions between two runtime releases
     tools: [sparkforge_release_diff]
     cli: [release diff]

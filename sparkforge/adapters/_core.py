@@ -123,6 +123,10 @@ from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_list
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge.facts.stepfunctions import (
+    extract_stepfunctions_path,
+    extract_stepfunctions_tree,
+)
 from sparkforge.facts.terraform import (
     extract_terraform_diff,
     extract_terraform_path,
@@ -2662,6 +2666,43 @@ def analyze_controlm_jobs(
 ) -> dict[str, Any]:
     facts = _extract_controlm_jobs_facts(path, version)
     return _facts_page(facts, "ctm.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze step-functions
+# --------------------------------------------------------------------------- #
+#
+# Le a DEFINICAO da state machine -- o `.asl.json` do repositorio ou a saida salva
+# de `aws stepfunctions describe-state-machine` -- e nunca o historico de execucao.
+# Nao ha `collect` par (D3 de `docs/sdd/STEP_FUNCTIONS/design.md`): o
+# `describe-state-machine` exige credencial, e o operador cola a saida em arquivo.
+
+
+def _extract_step_functions_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o .asl.json da state machine, para a saida salva de\n"
+            f"  `aws stepfunctions describe-state-machine`, ou para o diretorio com eles:\n"
+            f"    sparkforge analyze step-functions --path statemachines/ "
+            f"--out .sparkforge/facts_sfn.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_stepfunctions_tree(target, repo_root=target)
+    return extract_stepfunctions_path(target, repo_root=target.parent)
+
+
+def analyze_step_functions(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_step_functions_facts(path)
+    return _facts_page(facts, "sfn.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
