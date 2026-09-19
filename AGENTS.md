@@ -1,5 +1,22 @@
 # Agent Instructions — SparkForge AWS
 
+## Before answering about an artifact, run the verb
+
+A question about a repository artifact — code, plan, event log, cost, version or rule
+— is answered through the SparkForge verb, not by reading the file. Call the MCP tool
+and cite in the answer the `fact_id` or `rule_id` that supports it. Reading the
+artifact directly comes after the verb, to double-check, never instead of it.
+
+| Question about | MCP tool |
+|---|---|
+| PySpark code | `sparkforge_analyze_pyspark`, then `sparkforge_judge` |
+| physical plan (`explain`) | `sparkforge_analyze_plan`, then `sparkforge_judge` |
+| Spark event log | `sparkforge_analyze_event_log`, then `sparkforge_judge` |
+| catalog rule | `sparkforge_rules_lookup` |
+| version and runtime | `sparkforge_runtime_detect` or `sparkforge_release_describe` |
+| cost of a run | `sparkforge_finops` |
+| before and after between two runs | `sparkforge_benchmark` |
+
 This repository contains reusable Agent Skills for PySpark data engineering on AWS —
 performance on AWS Glue and on Amazon EMR — both on EC2 and Serverless — plus the placement and cost of data
 validation inside the job.

@@ -1,5 +1,22 @@
 # SparkForge AWS — Instruções do repositório
 
+## Antes de responder sobre artefato, rode o verbo
+
+Pergunta sobre um artefato do repositório — código, plano, event log, custo, versão
+ou regra — se responde pelo verbo do SparkForge, não pela leitura do arquivo. Chame a
+tool MCP e cite na resposta o `fact_id` ou o `rule_id` que a sustenta. Ler o artefato
+no olho vem depois do verbo, para conferir, nunca no lugar dele.
+
+| Pergunta sobre | Tool MCP |
+|---|---|
+| código PySpark | `sparkforge_analyze_pyspark`, depois `sparkforge_judge` |
+| plano físico (`explain`) | `sparkforge_analyze_plan`, depois `sparkforge_judge` |
+| event log do Spark | `sparkforge_analyze_event_log`, depois `sparkforge_judge` |
+| regra do catálogo | `sparkforge_rules_lookup` |
+| versão e runtime | `sparkforge_runtime_detect` ou `sparkforge_release_describe` |
+| custo de um run | `sparkforge_finops` |
+| antes e depois entre dois runs | `sparkforge_benchmark` |
+
 Ao trabalhar em código PySpark destinado ao AWS Glue:
 
 1. Verifique a versão de Glue, Spark, Python e Iceberg antes de sugerir APIs ou configurações.
