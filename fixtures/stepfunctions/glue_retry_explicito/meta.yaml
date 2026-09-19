@@ -1,0 +1,11 @@
+name: glue_retry_explicito
+proves: >
+  O ramo P2 de SF-SFN-002: `MaxAttempts` declarado (1) em `States.TaskFailed`. Alguem
+  escolheu o numero, e o achado continua dizendo que cada tentativa e um JobRun inteiro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [sfn.analyzed, sfn.state_machine, sfn.task]
+expects_rules: [SF-SFN-002]

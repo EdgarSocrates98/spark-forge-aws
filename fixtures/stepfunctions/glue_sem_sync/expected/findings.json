@@ -1,0 +1,72 @@
+[
+  {
+    "rule_id": "SF-SFN-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Job Glue disparado sem .sync: o próximo estado roda com o job ainda em execução",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/IniciarCarga",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_d6bf4a"
+    ],
+    "measured": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O estado chama `glue:startJobRun` no padrão Request Response — o `Resource` não termina em `.sync` —, e a documentação do Step Functions diz o que isso significa: \"Step Functions will not wait for a job to complete.\" O estado termina quando o Glue aceita o pedido, e o `Next` roda com o job ainda em execução. Um estado seguinte que leia a saída do job lê dado parcial ou antigo, e o desfecho do JobRun não chega à execução da state machine. O padrão que espera o job terminar é o Run a Job (`.sync`), com o recurso `arn:aws:states:::glue:startJobRun.sync`. A regra exige `Next`: um `startJobRun` terminal (`End`) é disparo deliberado sem espera, e não há estado seguinte a proteger. Ver knowledge/stepfunctions/glue-integration.md.",
+    "proposed_change": [
+      "Trocar o `Resource` para `arn:aws:states:::glue:startJobRun.sync`, para que o estado espere o JobRun terminar e falhe junto com ele.",
+      "Se o disparo sem espera é deliberado (o job segue sozinho e ninguém depende do resultado), tirar a dependência: nenhum estado seguinte pode ler a saída do job. Registrar a decisão no `Comment` do estado.",
+      "Ao trocar para `.sync`, conferir a policy da role da state machine: a política que a AWS gera para o `.sync` do Glue inclui `glue:BatchStopJobRun`, além de `glue:StartJobRun`."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Com `.sync`, a execução da state machine passa a durar o job inteiro. Em workflow EXPRESS o `.sync` não é suportado (SF-SFN-003).",
+      "Um job que hoje falha sem a state machine saber passa a falhar a execução: alarmes e Catch que nunca dispararam passam a disparar."
+    ],
+    "tradeoffs": [
+      "Esperar o job custa tempo de execução do workflow; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
+    ],
+    "validation": [
+      "`sparkforge analyze step-functions --path <definição corrigida>` mostra o `sfn.task` com `pattern: sync`, e `sparkforge judge` não produz mais SF-SFN-001 para o estado.",
+      "EIXO DE RESULTADO — numa execução de teste, o estado seguinte lê a saída completa do job: a contagem de linhas que ele lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun.",
+      "Uma execução de teste em que o job falha termina a state machine em falha (ou no Catch declarado), e não segue para o estado seguinte."
+    ],
+    "rollback": [
+      "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`). Execuções já iniciadas seguem com a definição com que começaram."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "sfn.task.resource",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

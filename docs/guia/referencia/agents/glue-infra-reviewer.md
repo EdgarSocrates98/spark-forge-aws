@@ -9,7 +9,7 @@ Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero
 | Papel | coordenador |
 | Arquivo de origem | `agents/glue-infra-reviewer.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash, Edit, Write |
-| Áreas de regra | SF-GLUE, SF-ENV |
+| Áreas de regra | SF-GLUE, SF-ENV, SF-SFN |
 
 ## Skills que ele usa
 
@@ -50,6 +50,12 @@ integração (`request_response`, `sync`, `callback`), o `JobName` literal ou a 
 dinâmico, os retriers com o `MaxAttempts` efetivo (3 quando omitido, e a marca de
 omitido), o `Catch` e o `TimeoutSeconds`. Um `.asl.json` não carrega o tipo do workflow:
 sem a saída de `describe-state-machine`, o tipo sai `undeclared`, nunca `STANDARD`.
+
+A área `SF-SFN` julga esses facts. Com o Terraform do mesmo job no case,
+`sparkforge_fuse` liga o `Task` ao `aws_glue_job` de mesmo `name` (`sfn.glue_job_link`),
+e é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o retrier
+do Step Functions. A composição das duas não é documentada — afirme que as duas existem,
+nunca quantas vezes o job roda numa falha.
 
 #### Três armadilhas que a infraestrutura esconde
 

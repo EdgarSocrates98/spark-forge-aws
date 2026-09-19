@@ -1,0 +1,9 @@
+{
+  "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:carga-expressa",
+  "name": "carga-expressa",
+  "status": "ACTIVE",
+  "definition": "{\"Comment\":\"Fixture sintetica: Glue .sync sob workflow EXPRESS.\",\"StartAt\":\"RodarCarga\",\"States\":{\"RodarCarga\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::glue:startJobRun.sync\",\"Parameters\":{\"JobName\":\"carga-diaria\"},\"End\":true}}}",
+  "roleArn": "arn:aws:iam::123456789012:role/sfn-carga",
+  "type": "EXPRESS",
+  "creationDate": "2026-09-19T10:00:00.000000-03:00"
+}

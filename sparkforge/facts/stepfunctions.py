@@ -29,6 +29,11 @@ E o nome curto que a propria AWS usa para o servico (ARN `arn:aws:states`, CLI
   `not_a_state_machine`, `definition_not_string`, `state_not_an_object`,
   `resource_absent` e `resource_dynamic`.
 - `sfn.analyzed` -- a sentinela, com as contagens.
+- `sfn.glue_job_link` -- DERIVADO, nunca lido de arquivo: `build_sfn_glue_link` liga
+  o Task do Glue ao `aws_glue_job` de mesmo `name` quando os dois estao no pool, e
+  `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
+  `job_name_dynamic`, `job_definition_absent`, `job_definition_ambiguous` e
+  `glue_max_retries_not_literal`.
 
 ## Os defaults publicados moram AQUI, com a fonte ao lado
 
@@ -57,6 +62,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -72,8 +78,13 @@ EMITTED_KINDS = frozenset(
         "sfn.task",
         "sfn.unresolved",
         "sfn.analyzed",
+        "sfn.glue_job_link",
     }
 )
+
+# O que liga a derivacao em `fusion.fuse`: sem `sfn.task` no pool, o `fuse` sai byte a
+# byte igual ao de antes (molde de `timeout_diagnosis.SOURCE_KINDS`).
+SOURCE_KINDS = frozenset({"sfn.task"})
 
 # https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
 # MaxAttempts: "(3 by default)".
@@ -440,11 +451,149 @@ def extract_stepfunctions_tree(root: Path, repo_root: Path | None = None) -> lis
     return sort_facts(facts)
 
 
+def _glue_jobs_por_nome(facts: Sequence[Fact]) -> dict[str, list[tuple[str, str]]]:
+    """Nome literal do job -> [(arquivo, endereco do recurso)], de `tf.attribute` `name`."""
+    nomes: dict[str, list[tuple[str, str]]] = {}
+    for fact in facts:
+        if fact.kind != "tf.attribute":
+            continue
+        subject = fact.subject or {}
+        attrs = fact.attrs or {}
+        simbolo = str(subject.get("symbol") or "")
+        if not simbolo.startswith("aws_glue_job."):
+            continue
+        if attrs.get("key") != "name" or attrs.get("block") != "root" or not attrs.get("literal"):
+            continue
+        arquivo = str(subject.get("file") or "")
+        nomes.setdefault(str(attrs.get("value")), []).append((arquivo, simbolo))
+    return nomes
+
+
+def _max_retries(facts: Sequence[Fact], arquivo: str, simbolo: str) -> tuple[str, int | None]:
+    """(`literal`, n), (`absent`, 0) ou (`not_literal`, None) para UM `aws_glue_job`.
+
+    `absent` vale 0 porque o atributo nao declarado nao pede retry. Valor interpolado
+    vira `tf.unresolved` sem o endereco do recurso (`terraform.py`); por isso qualquer
+    `tf.unresolved` de `max_retries` no MESMO arquivo torna a resposta `not_literal` --
+    conservador de proposito: nunca um zero que ninguem leu.
+    """
+    for fact in facts:
+        subject = fact.subject or {}
+        if fact.kind != "tf.attribute" or subject.get("symbol") != simbolo:
+            continue
+        if subject.get("file") != arquivo:
+            continue
+        attrs = fact.attrs or {}
+        if attrs.get("key") != "max_retries" or attrs.get("block") != "root":
+            continue
+        valor = (fact.measures or {}).get("value")
+        if attrs.get("literal") and isinstance(valor, int | float) and not isinstance(valor, bool):
+            return "literal", int(valor)
+        return "not_literal", None
+    interpolado = any(
+        f.kind == "tf.unresolved"
+        and (f.attrs or {}).get("key") == "max_retries"
+        and (f.subject or {}).get("file") == arquivo
+        for f in facts
+    )
+    return ("not_literal", None) if interpolado else ("absent", 0)
+
+
+def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
+    """Liga cada `sfn.task` do Glue ao `aws_glue_job` de mesmo `name` literal (D5).
+
+    Derivacao pura sobre a UNIAO dos facts, no molde de `lakeformation.build_lakeformation`:
+    o motor avalia um fact por condicao, e os dois lados tem `subject` diferente -- o
+    estado da state machine e o recurso do Terraform --, entao `same_subject` nao os
+    junta. Nao liga por substring: nome de job e chave exata na API do Glue.
+
+    `sfn_retry_effective` e o `failure_retry_max_attempts` do Task: o efetivo do
+    PRIMEIRO retrier que casa a falha do job (ver o docstring do modulo). O que nao liga
+    sai nomeado em `sfn.unresolved`, nunca como vinculo.
+    """
+    nomes = _glue_jobs_por_nome(facts)
+    saida: list[Fact] = []
+    for task in facts:
+        attrs = task.attrs or {}
+        if task.kind != "sfn.task" or attrs.get("service") != "glue":
+            continue
+        if attrs.get("api") != "startJobRun":
+            continue
+        proveniencia = {
+            "artifact": str((task.provenance or {}).get("artifact", "")),
+            "artifact_sha256": "",
+            "extractor": EXTRACTOR_ID,
+            "derived_from": [task.id],
+        }
+        nome = attrs.get("job_name")
+        if attrs.get("job_name_dynamic") or not isinstance(nome, str):
+            saida.append(
+                _unresolved(
+                    dict(task.subject),
+                    "job_name_dynamic",
+                    proveniencia,
+                    job_name_source=attrs.get("job_name_source", ""),
+                    unblocked_by="JobName literal no estado Task",
+                )
+            )
+            continue
+        candidatos = nomes.get(nome, [])
+        if len(candidatos) != 1:
+            razao = "job_definition_absent" if not candidatos else "job_definition_ambiguous"
+            saida.append(
+                _unresolved(
+                    dict(task.subject),
+                    razao,
+                    proveniencia,
+                    job_name=nome,
+                    resources=[simbolo for _, simbolo in candidatos],
+                    unblocked_by="sparkforge analyze terraform no aws_glue_job, e fuse",
+                )
+            )
+            continue
+        arquivo, simbolo = candidatos[0]
+        origem, retries = _max_retries(facts, arquivo, simbolo)
+        measures: dict[str, Any] = {}
+        efetivo = (task.measures or {}).get("failure_retry_max_attempts")
+        if efetivo is not None:
+            measures["sfn_retry_effective"] = efetivo
+        if retries is not None:
+            measures["glue_max_retries"] = retries
+        saida.append(
+            Fact(
+                kind="sfn.glue_job_link",
+                subject=dict(task.subject),
+                measures=measures,
+                attrs={
+                    "job_name": nome,
+                    "resource": simbolo,
+                    "resource_file": arquivo,
+                    "glue_max_retries_source": origem,
+                    "sfn_retry_defaulted": bool(attrs.get("failure_retry_defaulted")),
+                },
+                provenance=proveniencia,
+            )
+        )
+        if origem == "not_literal":
+            saida.append(
+                _unresolved(
+                    dict(task.subject),
+                    "glue_max_retries_not_literal",
+                    proveniencia,
+                    job_name=nome,
+                    resource=simbolo,
+                )
+            )
+    return sort_facts(saida)
+
+
 __all__ = [
     "DEFAULT_MAX_ATTEMPTS",
     "DEFAULT_TIMEOUT_SECONDS",
     "EMITTED_KINDS",
     "EXTRACTOR_ID",
+    "SOURCE_KINDS",
+    "build_sfn_glue_link",
     "extract_stepfunctions",
     "extract_stepfunctions_path",
     "extract_stepfunctions_tree",

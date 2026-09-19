@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-SFN-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Integração .sync numa state machine EXPRESS, que só suporta Request Response",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "describe-state-machine.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/RodarCarga",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_f86904"
+    ],
+    "measured": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A saída de `describe-state-machine` declara `type: EXPRESS`, e a definição chama o Glue com `.sync`. A documentação do Step Functions é direta: \"Express Workflows only support Request Response integrations.\" A combinação não é suportada, e o fluxo não espera o job como a definição foi escrita para esperar. O tipo só é lido quando vem declarado: um `.asl.json` sem a saída de `describe-state-machine` sai com `type: undeclared`, e a regra não dispara sobre suposição.",
+    "proposed_change": [
+      "Mover a chamada do Glue para uma state machine STANDARD, que suporta `.sync`, e chamá-la a partir da EXPRESS se o restante do fluxo precisa continuar EXPRESS.",
+      "Ou manter a EXPRESS e trocar para Request Response (`arn:aws:states:::glue:startJobRun`), assumindo que o fluxo não espera o job — e então nenhum estado seguinte pode depender do resultado (SF-SFN-001)."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "STANDARD e EXPRESS têm modelos de cobrança e de histórico de execução diferentes; mover o fluxo inteiro muda os dois."
+    ],
+    "tradeoffs": [
+      "Separar só a chamada do Glue numa STANDARD aninhada preserva a EXPRESS para o resto, ao custo de uma state machine a mais para manter."
+    ],
+    "validation": [
+      "`sparkforge analyze step-functions` sobre a saída nova de `describe-state-machine` mostra o `sfn.task` do Glue com `state_machine_type: STANDARD`, ou com `pattern: request_response`, e `sparkforge judge` não produz mais SF-SFN-003.",
+      "EIXO DE RESULTADO — uma execução de teste termina com o JobRun em `SUCCEEDED` antes do estado seguinte, e o destino tem a contagem que o job escreveu."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e do tipo no IaC que publica a state machine, e republicá-la."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "sfn.state_machine.type",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

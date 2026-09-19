@@ -1382,13 +1382,25 @@
       "rules": [],
       "sha256": "710eb1d3d6a14435bb7a85e24b1f525378f0678622f0fec510b5e17db696470e"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-SFN-004"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html": {
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-08-29"
+        "2026-08-29",
+        "2026-09-19"
       ],
       "rules": [
+        "SF-SFN-004",
         "SF-TIMEOUT-001"
       ]
     },
@@ -1782,6 +1794,39 @@
       ],
       "rules": [
         "SF-EMRK-001"
+      ]
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-SFN-002",
+        "SF-SFN-004"
+      ]
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-SFN-001",
+        "SF-SFN-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-SFN-001",
+        "SF-SFN-003"
       ]
     },
     "https://docs.databricks.com/api/workspace/clusters/create": {

@@ -1,0 +1,259 @@
+# Catálogo de regras — como o AWS Step Functions dispara o job Glue
+#
+# Depende de `sparkforge/facts/stepfunctions.py`, que lê a definição ASL (o
+# `.asl.json` do repositório, ou a saída salva de `aws stepfunctions
+# describe-state-machine`) e, em `fuse`, liga o estado Task ao `aws_glue_job` de mesmo
+# `name` (`sfn.glue_job_link`). As frases citadas estão em
+# `knowledge/stepfunctions/glue-integration.md`; o desenho, em
+# `docs/sdd/STEP_FUNCTIONS/design.md`.
+#
+# O QUE A ÁREA NÃO JULGA, e por quê (D4):
+# - `TimeoutSeconds` do Task contra o `Timeout` do job: o que acontece com o JobRun
+#   quando o estado expira por `States.Timeout` não é documentado;
+# - ausência de `Catch`: é política, não defeito, e a documentação só diz que o
+#   default é falhar a execução;
+# - serviços além do Glue: o extrator os registra, e nenhuma regra os julga.
+#
+# `runtime_scope: {}` nas quatro (D4), e a escolha é medida: não há fronteira de
+# versão publicada para nenhuma delas, e o ASL sozinho não detecta runtime Glue --
+# `{glue: "*"}` faria as quatro saírem em `skipped` até alguém declarar `--glue`, o
+# defeito que `docs/gates-por-mudanca.md` descreve. Quem gateia é `requires_facts`:
+# sem `sfn.task` (ou sem o `sfn.glue_job_link` que só o `fuse` deriva), a regra é
+# pulada com a razão. A auditoria de texto AWS de `tests/test_databricks_rule_audit.py`
+# fica satisfeita porque `stepfunctions` está em `SO_AWS`: o extrator só lê artefato
+# da AWS.
+#
+# A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado
+# por estado Task, nunca um por arquivo. O `subject.symbol` é o caminho do estado na
+# definição, então dois estados de mesmo nome em ramos de um Parallel são dois achados.
+
+catalog_version: 1
+schema_version: 1
+area: SF-SFN
+retrieved: 2026-09-19
+
+rules:
+
+  - id: SF-SFN-001
+    category: stepfunctions
+    title: "Job Glue disparado sem .sync: o próximo estado roda com o job ainda em execução"
+    requires_facts: [sfn.task]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.task
+          where:
+            attrs.service: glue
+            attrs.api: startJobRun
+            attrs.pattern: request_response
+            attrs.has_next: true
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O estado chama `glue:startJobRun` no padrão Request Response — o `Resource` não
+      termina em `.sync` —, e a documentação do Step Functions diz o que isso significa:
+      "Step Functions will not wait for a job to complete." O estado termina quando o
+      Glue aceita o pedido, e o `Next` roda com o job ainda em execução. Um estado
+      seguinte que leia a saída do job lê dado parcial ou antigo, e o desfecho do
+      JobRun não chega à execução da state machine. O padrão que espera o job terminar
+      é o Run a Job (`.sync`), com o recurso `arn:aws:states:::glue:startJobRun.sync`.
+      A regra exige `Next`: um `startJobRun` terminal (`End`) é disparo deliberado sem
+      espera, e não há estado seguinte a proteger. Ver
+      knowledge/stepfunctions/glue-integration.md.
+    proposed_change:
+      - "Trocar o `Resource` para `arn:aws:states:::glue:startJobRun.sync`, para que o estado espere o JobRun terminar e falhe junto com ele."
+      - "Se o disparo sem espera é deliberado (o job segue sozinho e ninguém depende do resultado), tirar a dependência: nenhum estado seguinte pode ler a saída do job. Registrar a decisão no `Comment` do estado."
+      - "Ao trocar para `.sync`, conferir a policy da role da state machine: a política que a AWS gera para o `.sync` do Glue inclui `glue:BatchStopJobRun`, além de `glue:StartJobRun`."
+    # `orchestration.change_job_definition` porque a troca e de forma da definicao (o
+    # padrao de integracao), nao de politica de execucao. `moves` evita
+    # `runtime.wall_clock` de proposito: o grupo desse eixo esta no teto de 12 que
+    # `tests/test_agentic_executor_ordering.py` e `tests/test_rules_action_field.py`
+    # travam, e o que a troca muda de verdade e o que o estado seguinte le.
+    action:
+      kind: orchestration.change_job_definition
+      target: sfn.task.resource
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "Com `.sync`, a execução da state machine passa a durar o job inteiro. Em workflow EXPRESS o `.sync` não é suportado (SF-SFN-003)."
+      - "Um job que hoje falha sem a state machine saber passa a falhar a execução: alarmes e Catch que nunca dispararam passam a disparar."
+    tradeoffs:
+      - "Esperar o job custa tempo de execução do workflow; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
+    validation:
+      - "`sparkforge analyze step-functions --path <definição corrigida>` mostra o `sfn.task` com `pattern: sync`, e `sparkforge judge` não produz mais SF-SFN-001 para o estado."
+      - "EIXO DE RESULTADO — numa execução de teste, o estado seguinte lê a saída completa do job: a contagem de linhas que ele lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun."
+      - "Uma execução de teste em que o job falha termina a state machine em falha (ou no Catch declarado), e não segue para o estado seguinte."
+    rollback:
+      - "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`). Execuções já iniciadas seguem com a definição com que começaram."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html", retrieved: 2026-09-19}
+
+  - id: SF-SFN-002
+    category: stepfunctions
+    title: "Retry do Step Functions reexecuta o job Glue inteiro a cada tentativa"
+    requires_facts: [sfn.task]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.task
+          where:
+            attrs.service: glue
+            attrs.api: startJobRun
+            attrs.pattern: sync
+            attrs.failure_retry_matched: true
+          expr: "measures.failure_retry_max_attempts > 0"
+    status: structural
+    severity_by:
+      # O numero veio do default publicado: ninguem escolheu as tres execucoes a mais.
+      - {when: "attrs.failure_retry_defaulted == True", severity: P1}
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      O estado espera o job (`.sync`) e tem um retrier cujo `ErrorEquals` contém
+      `States.ALL` ou `States.TaskFailed` — os dois nomes que casam a falha do JobRun
+      (`States.TaskFailed` "matches any known error name except for `States.Timeout`").
+      Cada tentativa chama `StartJobRun` de novo: é um JobRun novo, que relê a entrada e
+      reescreve a saída do começo, não uma retomada. Com `MaxAttempts` omitido o efetivo
+      é o default publicado — "(`3` by default)" —, e um job batch que falha roda até
+      quatro vezes antes de a execução desistir. A severidade sobe para P1 quando o
+      número veio do default. O retrier que casa é o primeiro, na ordem declarada, cujo
+      `ErrorEquals` contém um dos dois nomes; o efetivo dele está em
+      `measures.failure_retry_max_attempts` do fact de evidência, e a marca de omitido em
+      `attrs.failure_retry_defaulted`.
+    proposed_change:
+      - "Declarar `MaxAttempts` explícito no retrier que casa a falha do job, com o número de tentativas que o custo de um JobRun inteiro justifica — inclusive `0`, que desliga o retry para aquele erro."
+      - "Restringir o `ErrorEquals` aos erros transitórios que valem nova tentativa (por exemplo `Glue.ConcurrentRunsExceededException`), em vez de `States.ALL` ou `States.TaskFailed`, que casam também a falha do próprio job."
+      - "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um JobRun que escreve de novo."
+    action:
+      kind: orchestration.restrict_run_policy
+      target: sfn.task.retry
+      direction: decrease
+      requires_absent: []
+      moves:
+        - cost.dpu_seconds
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "Tirar o retry expõe a execução a falhas transitórias que hoje são absorvidas."
+      - "Trocar `States.ALL` por erros nomeados exige o nome exato do erro transitório na integração: um nome errado desliga o retry sem aviso."
+    tradeoffs:
+      - "Retry sobre o job inteiro compra resiliência com o custo de um JobRun completo por tentativa; retry no próprio Glue compra a mesma resiliência com outro custo — e as duas camadas juntas são a SF-SFN-004."
+    validation:
+      - "`sparkforge analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito."
+      - "EIXO DE RESULTADO — numa execução de teste em que o job falha na primeira tentativa, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: a tentativa extra não duplicou nem perdeu linha."
+      - "O histórico da execução (`aws stepfunctions get-execution-history`) mostra, para o estado, no máximo 1 + `MaxAttempts` agendamentos do Task."
+    rollback:
+      - "Reverter o commit da definição ASL e republicar a state machine."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html", retrieved: 2026-09-19}
+
+  # O tipo mora em `sfn.state_machine`, e o motor avalia um fact por condicao: por isso
+  # o extrator copia o tipo para `attrs.state_machine_type` de cada Task (regra 33), e a
+  # regra le um fact so. `sfn.state_machine` fica em `requires_facts` para que o tipo
+  # tenha sido LIDO, e `undeclared` nunca casa `EXPRESS`.
+  - id: SF-SFN-003
+    category: stepfunctions
+    title: "Integração .sync numa state machine EXPRESS, que só suporta Request Response"
+    requires_facts: [sfn.state_machine, sfn.task]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.task
+          where:
+            attrs.service: glue
+            attrs.pattern: sync
+            attrs.state_machine_type: EXPRESS
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A saída de `describe-state-machine` declara `type: EXPRESS`, e a definição chama o
+      Glue com `.sync`. A documentação do Step Functions é direta: "Express Workflows
+      only support Request Response integrations." A combinação não é suportada, e o
+      fluxo não espera o job como a definição foi escrita para esperar. O tipo só é lido
+      quando vem declarado: um `.asl.json` sem a saída de `describe-state-machine` sai
+      com `type: undeclared`, e a regra não dispara sobre suposição.
+    proposed_change:
+      - "Mover a chamada do Glue para uma state machine STANDARD, que suporta `.sync`, e chamá-la a partir da EXPRESS se o restante do fluxo precisa continuar EXPRESS."
+      - "Ou manter a EXPRESS e trocar para Request Response (`arn:aws:states:::glue:startJobRun`), assumindo que o fluxo não espera o job — e então nenhum estado seguinte pode depender do resultado (SF-SFN-001)."
+    # `moves: []`: a troca decide se a definicao e suportada, e nao mexe em grandeza que
+    # algum fact meca antes e depois, nem no dado que o job escreve.
+    action:
+      kind: orchestration.change_job_definition
+      target: sfn.state_machine.type
+      direction: replace
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - "STANDARD e EXPRESS têm modelos de cobrança e de histórico de execução diferentes; mover o fluxo inteiro muda os dois."
+    tradeoffs:
+      - "Separar só a chamada do Glue numa STANDARD aninhada preserva a EXPRESS para o resto, ao custo de uma state machine a mais para manter."
+    validation:
+      - "`sparkforge analyze step-functions` sobre a saída nova de `describe-state-machine` mostra o `sfn.task` do Glue com `state_machine_type: STANDARD`, ou com `pattern: request_response`, e `sparkforge judge` não produz mais SF-SFN-003."
+      - "EIXO DE RESULTADO — uma execução de teste termina com o JobRun em `SUCCEEDED` antes do estado seguinte, e o destino tem a contagem que o job escreveu."
+    rollback:
+      - "Reverter o commit da definição e do tipo no IaC que publica a state machine, e republicá-la."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html", retrieved: 2026-09-19}
+
+  # A ancora e o fact DERIVADO: sem `fuse` com o ASL e o Terraform no mesmo pool, a
+  # regra sai em `skipped` com `reason: requires_facts` -- "nao perguntei", nunca "esta
+  # tudo bem". JobName dinamico e job ausente saem em `sfn.unresolved` na derivacao.
+  - id: SF-SFN-004
+    category: stepfunctions
+    title: "Retry nas duas camadas: a state machine e o job Glue reexecutam a mesma falha"
+    requires_facts: [sfn.glue_job_link]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.glue_job_link
+          expr: "measures.sfn_retry_effective > 0 and measures.glue_max_retries > 0"
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      O estado Task do Glue tem retrier efetivo sobre a falha do job, e o `aws_glue_job`
+      de mesmo `name` declara `max_retries` maior que zero: as duas camadas de retry
+      existem sobre o mesmo job. Na API do Glue, `MaxRetries` é "The maximum number of
+      times to retry this job after a JobRun fails.", e os parâmetros de `StartJobRun`
+      não o incluem — o Step Functions não o sobrescreve. O que nenhuma das duas
+      documentações descreve é a COMPOSIÇÃO: o `.sync` acompanha o JobRunId que o
+      `StartJobRun` devolveu, e o retry do Glue é outro JobRun. Esta regra afirma só que
+      as duas camadas existem; não afirma quantas vezes o job roda numa falha, porque
+      esse número não é publicado. O vínculo entre o estado e o recurso é por `JobName`
+      literal igual ao `name` do recurso — nome dinâmico ou recurso ausente saem em
+      `sfn.unresolved`, nunca como vínculo. Ver
+      knowledge/stepfunctions/glue-integration.md, lacuna 1.
+    proposed_change:
+      - "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Step Functions (onde `MaxAttempts` e `ErrorEquals` são explícitos e aparecem no histórico da execução), ou o retrier do Step Functions restrito a erros de chamada e o retry do job no Glue."
+      - "Antes de escolher, medir: um histórico de execução real com falha (`aws stepfunctions get-execution-history`) e os JobRuns do job no mesmo intervalo (`sparkforge collect glue-job-runs`) mostram quantos JobRuns uma falha produziu de fato."
+    action:
+      kind: orchestration.restrict_run_policy
+      target: glue.max_retries
+      direction: decrease
+      requires_absent: []
+      moves:
+        - cost.dpu_seconds
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "Zerar `max_retries` tira a retentativa que hoje cobre falhas transitórias quando o job roda fora da state machine (disparo manual ou outro gatilho)."
+      - "A regra não mede quantas vezes o job rodou: o número depende da composição que a documentação não descreve."
+    tradeoffs:
+      - "Retry no Step Functions é visível no histórico da execução e configurável por erro; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
+    validation:
+      - "`sparkforge fuse` sobre os facts de `analyze step-functions` e `analyze terraform` mostra o `sfn.glue_job_link` com `glue_max_retries: 0` ou `sfn_retry_effective: 0`, e `sparkforge judge` não produz mais SF-SFN-004."
+      - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
+    rollback:
+      - "Restaurar o `max_retries` anterior no Terraform e o retrier anterior na definição ASL, e reaplicar os dois."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html", retrieved: 2026-09-19}

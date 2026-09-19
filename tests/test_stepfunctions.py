@@ -242,3 +242,80 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
 
     erro = call_tool("sparkforge_analyze_step_functions", {"path": str(tmp_path / "nao-existe")})
     assert "sparkforge analyze step-functions" in erro["error"]
+
+
+TF_CARGA_DIARIA = """resource "aws_glue_job" "carga_diaria" {
+  name        = "carga-diaria"
+  role_arn    = aws_iam_role.glue_role.arn
+  max_retries = 2
+}
+"""
+
+RUNTIME_GLUE = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
+
+
+def _glue_sync(nome_do_job: dict, retry: list, proximo: dict) -> dict:
+    return {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun.sync",
+        "Parameters": nome_do_job,
+        "Retry": retry,
+        **proximo,
+    }
+
+
+def test_fuse_liga_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge.rules.engine import judge
+    from sparkforge.rules.loader import load_catalog
+
+    asl = {
+        "StartAt": "Ligada",
+        "States": {
+            "Ligada": _glue_sync(
+                {"JobName": "carga-diaria"},
+                [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 2}],
+                {"Next": "Dinamica"},
+            ),
+            "Dinamica": _glue_sync(
+                {"JobName.$": "$.job"},
+                [{"ErrorEquals": ["States.ALL"]}],
+                {"Next": "SemDefinicao"},
+            ),
+            "SemDefinicao": _glue_sync(
+                {"JobName": "job-que-nao-esta-no-terraform"},
+                [{"ErrorEquals": ["States.ALL"]}],
+                {"End": True},
+            ),
+        },
+    }
+    (tmp_path / "sm.asl.json").write_text(json.dumps(asl), encoding="utf-8")
+    (tmp_path / "main.tf").write_text(TF_CARGA_DIARIA, encoding="utf-8")
+    so_asl = extract_stepfunctions_tree(tmp_path, repo_root=tmp_path)
+    so_tf = extract_terraform_tree(tmp_path, repo_root=tmp_path)
+
+    fundidos = fuse(so_asl + so_tf)
+
+    [link] = [f for f in fundidos if f.kind == "sfn.glue_job_link"]
+    assert link.subject["symbol"] == "States/Ligada"
+    assert link.attrs["resource"] == "aws_glue_job.carga_diaria"
+    assert link.attrs["job_name"] == "carga-diaria"
+    assert link.attrs["glue_max_retries_source"] == "literal"
+    assert link.measures == {"sfn_retry_effective": 2, "glue_max_retries": 2}
+    motivos = {
+        f.subject["symbol"]: f.attrs["reason"] for f in fundidos if f.kind == "sfn.unresolved"
+    }
+    assert motivos == {
+        "States/Dinamica": "job_name_dynamic",
+        "States/SemDefinicao": "job_definition_absent",
+    }
+
+    achados = judge(fundidos, load_catalog(), RUNTIME_GLUE)
+    quatro = [a.subject["symbol"] for a in achados if a.rule_id == "SF-SFN-004"]
+    assert quatro == ["States/Ligada"]
+
+    # fuse sem Terraform no pool nao inventa vinculo
+    assert not [f for f in fuse(so_asl) if f.kind == "sfn.glue_job_link"]
+    # e pool sem Step Functions sai do fuse sem nenhum sfn.*
+    assert not [f for f in fuse(so_tf) if f.kind.startswith("sfn.")]

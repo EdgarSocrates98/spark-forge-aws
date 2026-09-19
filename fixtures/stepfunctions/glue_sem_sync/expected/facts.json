@@ -1,0 +1,142 @@
+[
+  {
+    "id": "f_bea1fb",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_machine_count": 1,
+      "task_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_86cc07",
+    "schema_version": 1,
+    "kind": "sfn.state_machine",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_count": 2,
+      "task_count": 2
+    },
+    "attrs": {
+      "type": "undeclared",
+      "type_declared": false,
+      "query_language": "JSONata",
+      "source": "asl"
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_d6bf4a",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/IniciarCarga",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "IniciarCarga",
+      "resource": "arn:aws:states:::glue:startJobRun",
+      "service": "glue",
+      "api": "startJobRun",
+      "pattern": "request_response",
+      "integration": "optimized",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
+      "retriers": [],
+      "failure_retry_matched": false,
+      "failure_retry_defaulted": false,
+      "has_catch": false,
+      "has_next": true,
+      "end": false,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "undeclared",
+      "query_language": "JSONata"
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_073366",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/PublicarResultado",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "PublicarResultado",
+      "resource": "arn:aws:states:::lambda:invoke",
+      "service": "lambda",
+      "api": "invoke",
+      "pattern": "request_response",
+      "integration": "optimized",
+      "job_name": null,
+      "job_name_dynamic": false,
+      "job_name_source": "not_applicable",
+      "retriers": [],
+      "failure_retry_matched": false,
+      "failure_retry_defaulted": false,
+      "has_catch": false,
+      "has_next": false,
+      "end": true,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "undeclared",
+      "query_language": "JSONata"
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  }
+]

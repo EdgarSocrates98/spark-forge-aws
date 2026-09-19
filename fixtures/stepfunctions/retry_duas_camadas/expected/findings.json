@@ -1,0 +1,145 @@
+[
+  {
+    "rule_id": "SF-SFN-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Retry do Step Functions reexecuta o job Glue inteiro a cada tentativa",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/RodarCarga",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_c7c1ed"
+    ],
+    "measured": {
+      "retrier_count": 1,
+      "failure_retry_max_attempts": 2,
+      "timeout_seconds": 99999999
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O estado espera o job (`.sync`) e tem um retrier cujo `ErrorEquals` contém `States.ALL` ou `States.TaskFailed` — os dois nomes que casam a falha do JobRun (`States.TaskFailed` \"matches any known error name except for `States.Timeout`\"). Cada tentativa chama `StartJobRun` de novo: é um JobRun novo, que relê a entrada e reescreve a saída do começo, não uma retomada. Com `MaxAttempts` omitido o efetivo é o default publicado — \"(`3` by default)\" —, e um job batch que falha roda até quatro vezes antes de a execução desistir. A severidade sobe para P1 quando o número veio do default. O retrier que casa é o primeiro, na ordem declarada, cujo `ErrorEquals` contém um dos dois nomes; o efetivo dele está em `measures.failure_retry_max_attempts` do fact de evidência, e a marca de omitido em `attrs.failure_retry_defaulted`.",
+    "proposed_change": [
+      "Declarar `MaxAttempts` explícito no retrier que casa a falha do job, com o número de tentativas que o custo de um JobRun inteiro justifica — inclusive `0`, que desliga o retry para aquele erro.",
+      "Restringir o `ErrorEquals` aos erros transitórios que valem nova tentativa (por exemplo `Glue.ConcurrentRunsExceededException`), em vez de `States.ALL` ou `States.TaskFailed`, que casam também a falha do próprio job.",
+      "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um JobRun que escreve de novo."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tirar o retry expõe a execução a falhas transitórias que hoje são absorvidas.",
+      "Trocar `States.ALL` por erros nomeados exige o nome exato do erro transitório na integração: um nome errado desliga o retry sem aviso."
+    ],
+    "tradeoffs": [
+      "Retry sobre o job inteiro compra resiliência com o custo de um JobRun completo por tentativa; retry no próprio Glue compra a mesma resiliência com outro custo — e as duas camadas juntas são a SF-SFN-004."
+    ],
+    "validation": [
+      "`sparkforge analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito.",
+      "EIXO DE RESULTADO — numa execução de teste em que o job falha na primeira tentativa, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: a tentativa extra não duplicou nem perdeu linha.",
+      "O histórico da execução (`aws stepfunctions get-execution-history`) mostra, para o estado, no máximo 1 + `MaxAttempts` agendamentos do Task."
+    ],
+    "rollback": [
+      "Reverter o commit da definição ASL e republicar a state machine."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.restrict_run_policy",
+      "target": "sfn.task.retry",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "cost.dpu_seconds",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-SFN-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Retry nas duas camadas: a state machine e o job Glue reexecutam a mesma falha",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/RodarCarga",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_ee0a80"
+    ],
+    "measured": {
+      "sfn_retry_effective": 2,
+      "glue_max_retries": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O estado Task do Glue tem retrier efetivo sobre a falha do job, e o `aws_glue_job` de mesmo `name` declara `max_retries` maior que zero: as duas camadas de retry existem sobre o mesmo job. Na API do Glue, `MaxRetries` é \"The maximum number of times to retry this job after a JobRun fails.\", e os parâmetros de `StartJobRun` não o incluem — o Step Functions não o sobrescreve. O que nenhuma das duas documentações descreve é a COMPOSIÇÃO: o `.sync` acompanha o JobRunId que o `StartJobRun` devolveu, e o retry do Glue é outro JobRun. Esta regra afirma só que as duas camadas existem; não afirma quantas vezes o job roda numa falha, porque esse número não é publicado. O vínculo entre o estado e o recurso é por `JobName` literal igual ao `name` do recurso — nome dinâmico ou recurso ausente saem em `sfn.unresolved`, nunca como vínculo. Ver knowledge/stepfunctions/glue-integration.md, lacuna 1.",
+    "proposed_change": [
+      "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Step Functions (onde `MaxAttempts` e `ErrorEquals` são explícitos e aparecem no histórico da execução), ou o retrier do Step Functions restrito a erros de chamada e o retry do job no Glue.",
+      "Antes de escolher, medir: um histórico de execução real com falha (`aws stepfunctions get-execution-history`) e os JobRuns do job no mesmo intervalo (`sparkforge collect glue-job-runs`) mostram quantos JobRuns uma falha produziu de fato."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Zerar `max_retries` tira a retentativa que hoje cobre falhas transitórias quando o job roda fora da state machine (disparo manual ou outro gatilho).",
+      "A regra não mede quantas vezes o job rodou: o número depende da composição que a documentação não descreve."
+    ],
+    "tradeoffs": [
+      "Retry no Step Functions é visível no histórico da execução e configurável por erro; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
+    ],
+    "validation": [
+      "`sparkforge fuse` sobre os facts de `analyze step-functions` e `analyze terraform` mostra o `sfn.glue_job_link` com `glue_max_retries: 0` ou `sfn_retry_effective: 0`, e `sparkforge judge` não produz mais SF-SFN-004.",
+      "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
+    ],
+    "rollback": [
+      "Restaurar o `max_retries` anterior no Terraform e o retrier anterior na definição ASL, e reaplicar os dois."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.restrict_run_policy",
+      "target": "glue.max_retries",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "cost.dpu_seconds",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

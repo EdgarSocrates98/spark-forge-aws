@@ -69,6 +69,7 @@ from sparkforge.facts import (
     spark_plan,
     sql_literal,
     sql_metrics,
+    stepfunctions,
     terraform,
     timeout_diagnosis,
     utilization,
@@ -214,6 +215,9 @@ EXTRACTORS = {
     # errado de `test_no_golden_carries_a_kind_that_no_extractor_declares`:
     # golden com kind que nenhum extrator declara, em vez de kind coberto.
     "sql_metrics": sql_metrics,
+    # `stepfunctions` entra nas DUAS listas no MESMO commit de `fixtures/stepfunctions/`:
+    # sem ele aqui, os cinco kinds `sfn.*` nao sao verificados por ninguem.
+    "stepfunctions": stepfunctions,
     "terraform": terraform,
     # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 5 do
     # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds

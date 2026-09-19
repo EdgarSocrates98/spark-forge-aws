@@ -46,6 +46,10 @@ SO_AWS = {
     "lakeformation_grants": "le grants e settings do Lake Formation",
     "cloudwatch": "le `get_metric_data` do CloudWatch (`glue.metric`)",
     "cloudwatch_logs": "le `filter_log_events` do CloudWatch Logs",
+    "stepfunctions": (
+        "le a definicao ASL do AWS Step Functions (`arn:aws:states`) e deriva "
+        "`sfn.glue_job_link` do `aws_glue_job` do Terraform"
+    ),
     "utilization": (
         "deriva de `glue.metric` (seu `SOURCE_KINDS`), a metrica do Glue no CloudWatch; "
         "sem ela o `fuse` nem deriva"
