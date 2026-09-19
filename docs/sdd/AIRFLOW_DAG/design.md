@@ -60,11 +60,11 @@ files:
   - {path: docs/claims.lock.json, action: modify, reason: "arquivo .py novo e contagens movem alegacoes"}
 decisions:
   - id: D1
-    choice: "Modulo sparkforge/facts/airflow_dag.py, prefixo de kind af. (nenhum kind existente comeca com af). Le .py por ast.parse, NUNCA executa o arquivo. Kinds: af.dag (dag_id, schedule literal ou marca, default_args com retries e execution_timeout literais), af.task (operator_class, task_id, os argumentos literais que a regra julga, has_downstream efetivo), af.dependency (upstream, downstream, forma declarada), af.unresolved (reason: invalid_python, read_error, size_above_limit, dag_dinamico, arg_nao_literal, dependencia_dinamica, task_id_nao_literal), af.analyzed (sempre). Molde de leitura: sparkforge/facts/pyspark_ast.py; molde de dominio: sparkforge/facts/stepfunctions.py."
+    choice: "Modulo sparkforge/facts/airflow_dag.py, prefixo de kind af. (nenhum kind existente comeca com af). Le .py por ast.parse, NUNCA executa o arquivo. Kinds: af.dag (dag_id, schedule literal ou marca, default_args com retries e execution_timeout literais), af.task (operator_class, task_id, os argumentos literais que a regra julga, has_downstream efetivo), af.dependency (upstream, downstream, forma declarada), af.unresolved (reason: invalid_python, read_error, size_above_limit, dag_dinamico, arg_nao_literal, dependencia_dinamica, task_id_nao_literal, multiplos_dags -- dois DAGs no mesmo arquivo tornam default_args ilegivel em vez de herdar do primeiro; emenda do plano), af.analyzed (sempre). Molde de leitura: sparkforge/facts/pyspark_ast.py; molde de dominio: sparkforge/facts/stepfunctions.py."
     rejected: ["importar o DAG e usar DagBag: executa codigo do operador, e o repositorio nao executa artefato", "ler o DAG serializado do banco do Airflow: exige acesso, e o define poe fora de escopo"]
     rollback: "git revert dos commits da feature"
   - id: D2
-    choice: "Os defaults publicados moram no extrator como constantes com a URL ao lado: wait_for_completion True, deferrable False, stop_job_run_on_kill False, job_poll_interval 6 (provider Amazon) e core.default_task_retries 0 (referencia de configuracao). O fact grava o efetivo e a marca de omitido. Argumento que nao e literal (Name, f-string, Call, JinjaTemplate em string com {{ }}) vira af.unresolved nomeado, e o atributo correspondente sai ausente, nunca com o default."
+    choice: "Os defaults publicados moram no extrator como constantes com a URL ao lado: wait_for_completion True, deferrable False, stop_job_run_on_kill False, job_poll_interval 6 (provider Amazon) e core.default_task_retries 0 (referencia de configuracao). O fact grava o efetivo e a marca de omitido. Argumento que nao e literal (Name, f-string, Call, template Jinja) vira af.unresolved nomeado, e o atributo correspondente sai ausente, nunca com o default. Emenda do plano (2026-09-20): para execution_timeout, a DECLARACAO e lida do AST (a chave existe) e o VALOR so vira measure quando o timedelta tem argumentos literais; timedelta(hours=2) e ast.Call, e exigir literal no valor mataria a SF-AIRFLOW-002 em todo DAG real. Declaracao sem valor legivel nao emite af.unresolved."
     rejected: ["assumir o default quando o argumento nao e literal: seria afirmar o que nao se leu"]
     rollback: "git revert do commit"
   - id: D3
@@ -88,7 +88,7 @@ decisions:
     rejected: ["escrever os defaults so na regra: knowledge e o que o agente consulta offline"]
     rollback: "git revert do commit"
   - id: D8
-    choice: "Corpus fixtures/airflow/<caso>/input e expected, sintetico a partir dos exemplos do provider: sem_espera (001), timeout_sem_stop (002), espera_sincrona (003), retry_duas_camadas (004, DAG + main.tf), dag_limpo (negativa: espera com deferrable, sem timeout, sem retries), retry_so_no_glue (negativa), job_name_nao_literal, dag_dinamico (laco), python_invalido e taskflow_decorador (reconhece e nomeia o que nao le)."
+    choice: "Corpus fixtures/airflow/<caso>/input e expected, sintetico a partir dos exemplos do provider: sem_espera (001), timeout_sem_stop (002), espera_sincrona (003), retry_duas_camadas (004, DAG + main.tf), dag_limpo (negativa: espera com deferrable, sem timeout, sem retries), retry_so_no_glue (negativa), job_name_nao_literal, dag_dinamico (laco), python_invalido, taskflow_decorador (reconhece e nomeia o que nao le) e retry_so_no_airflow (a segunda negativa que o teste de mutacao de limiar exige, porque a expr da SF-AIRFLOW-004 tem duas comparacoes; emenda do plano). Onze fixtures."
     rejected: ["DAG real: nenhum foi observado, e caso real nunca entra no repositorio"]
     rollback: "git rm do corpus"
 covers:
@@ -119,5 +119,9 @@ covers:
   (`extract_source`, `extract_path`, `extract_tree`).
 - `SF-AIRFLOW` é nome de área que já existiu vazio e saiu no #88; volta com regra que
   julga.
+- As funcoes que leem o `aws_glue_job` do Terraform sao gemeas das de `stepfunctions.py`
+  e ficam duplicadas de proposito: um leitor de DAG nao importa um leitor de ASL. Um
+  modulo compartilhado (`sparkforge/facts/glue_terraform.py`) fica como pendencia, fora
+  desta feature.
 - O lado do Glue já é fact: `tf.attribute` com `key: name` e `key: max_retries` no mesmo
   recurso.
