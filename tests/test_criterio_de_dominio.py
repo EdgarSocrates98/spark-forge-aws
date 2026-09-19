@@ -44,6 +44,8 @@ VIVOS = (
     "knowledge/domain-tool-matrix.md",
     "knowledge/tool-specialization-matrix.md",
     "config/agents.yaml",
+    "skills/aws-database/SKILL.md",
+    "skills/aws-observability/SKILL.md",
 )
 
 

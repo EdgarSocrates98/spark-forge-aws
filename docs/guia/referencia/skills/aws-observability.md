@@ -76,8 +76,8 @@ o despacho é recusado.
 - **Detecção de ameaças de segurança**: GuardDuty, Security Hub, Detective têm
   cobertura própria; CloudTrail aqui é operational auditing, não threat hunting.
 - **Análise de Spark UI / event log de job Glue/EMR**: use `analyze-spark-ui`
-  (leitura de abas do Spark UI) ou `analyze-analytics` (facts de event log,
-  CloudWatch metrics de run) — estas skills SparkForge extraem facts
+  (leitura de abas do Spark UI e facts de event log) ou o verbo
+  `sparkforge analyze cloudwatch` (métricas de run) — estes extraem facts
   determinísticos do artefato; a observabilidade AWS aqui é configuração e
   depuração da infraestrutura de monitoramento.
 - **Revisar Terraform de plataforma de dados**: `review-terraform-data-platform`

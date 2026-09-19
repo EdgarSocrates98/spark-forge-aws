@@ -89,7 +89,7 @@ documentacao AWS ou o AWS MCP server.
 | ElastiCache | — |
 | Keyspaces | — |
 | MemoryDB | — |
-| Neptune | `design-neptune-graph` |
+| Neptune | — |
 | ODB @ AWS | — |
 | RDS for Db2 | — |
 | RDS for MariaDB | — |
@@ -107,20 +107,14 @@ documentacao AWS ou o AWS MCP server.
 | Entrega para skill de servico | `references/handoff.md` |
 | Reportar problema com a skill | `references/report-issue.md` |
 
-#### Skills SparkForge relacionadas
-
-| Topico | Skill |
-| --- | --- |
-| Desenhar grafo no Neptune | `design-neptune-graph` |
-
 ### Quando NÃO usar
 
 - **Armazenamento de objeto/arquivo/bloco** (S3, EFS, FSx, EBS): roteie para `aws-storage`.
 - **Analytics query engines** (Athena, Redshift, EMR): nao sao bancos transacionais —
   use o agent `athena-query-optimizer` ou as skills de performance Spark/Glue.
 - **Streaming** (Kafka, MSK, Kinesis): roteie para `aws-messaging-and-streaming`.
-- **Modelagem de grafo Neptune**: a selecao roteia aqui, mas o desenho de grafo pertence
-  a `design-neptune-graph`.
+- **Modelagem de grafo Neptune**: a selecao roteia aqui; o SparkForge nao tem skill de
+  desenho de grafo Neptune, porque nao coleta artefato do Neptune.
 - **Migracao de banco para AWS**: use o procedimento de `handoff` para o servico alvo, nao
   tente aconselhar migracao sem carregar a skill de servico.
 
