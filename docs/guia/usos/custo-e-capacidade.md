@@ -348,7 +348,7 @@ Detalhes em [docs/realized-gain.md](../../realized-gain.md).
 ## Para ir além
 
 - Agent de infraestrutura do job: [glue-infra-reviewer](../referencia/agents/glue-infra-reviewer.md).
-- Agent de custo: [sf-cost-reviewer](../referencia/agents/sf-cost-reviewer.md).
+- Custo: verbo `sparkforge finops`.
 - Skills: [tune-glue-job](../referencia/skills/tune-glue-job.md),
   [optimize-variable-volume-job](../referencia/skills/optimize-variable-volume-job.md),
   [aws-billing-and-cost-management](../referencia/skills/aws-billing-and-cost-management.md).

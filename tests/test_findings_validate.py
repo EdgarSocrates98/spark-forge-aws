@@ -209,7 +209,7 @@ def good_business_rule(**over):
 
 
 class TestBusinessRuleSchema:
-    """sf-functional-rules-specialist: regra do sistema analisado, nao achado do motor."""
+    """data-quality-reviewer: regra do sistema analisado, nao achado do motor."""
 
     def test_good_business_rule_validates(self):
         validate_business_rule(good_business_rule())

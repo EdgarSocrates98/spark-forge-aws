@@ -5,6 +5,7 @@ skills:
   - review-data-validation
   - review-pyspark-pr
   - analyze-library-call-graph
+  - analyze-functional-rules
 rule_areas: [SF-DQ]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---

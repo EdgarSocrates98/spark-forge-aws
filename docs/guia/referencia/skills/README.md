@@ -25,28 +25,19 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 | [`aws-storage`](aws-storage.md) | Use quando precisar escolher, comparar ou operar servicos de armazenamento AWS — S3 (General Purpose, Express One Zone, Tables, Vectors, Files), EFS, FSx (Lustre, ONTAP, OpenZFS... |
 | [`benchmark-pyspark-job`](benchmark-pyspark-job.md) | Use quando precisar comprovar — não estimar — o efeito de uma mudança de performance num job Glue, com comparação antes/depois de duração de stage, spill, GC e executor perdido,... |
 | [`compare-releases`](compare-releases.md) | Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — "vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter... |
-| [`design-agent-systems`](design-agent-systems.md) | Use quando for necessario criar agents, skills, loops, handoffs e avaliacao. |
-| [`design-airflow-pipelines`](design-airflow-pipelines.md) | Use quando for necessario projetar ou revisar Airflow e pipelines DAG. |
 | [`design-data-architecture`](design-data-architecture.md) | Use quando for necessario desenhar arquiteturas de dados completas. |
-| [`design-dynamodb-model`](design-dynamodb-model.md) | Use quando for necessario modelar DynamoDB, chaves, access patterns, indexes, capacity, streams e consistencia. |
 | [`design-incremental-processing`](design-incremental-processing.md) | Use quando um job dito incremental continua lento mesmo com pouca entrada, faz scan global, recomputa estado histórico, ou você precisa projetar bootstrap, ciclos, backfill, lat... |
-| [`design-lambda-serverless`](design-lambda-serverless.md) | Use quando for necessario projetar, analisar ou otimizar AWS Lambda, eventos, concorrencia e arquiteturas serverless. |
 | [`design-neptune-graph`](design-neptune-graph.md) | Use quando for necessario projetar Amazon Neptune, Gremlin, openCypher, RDF, indices, carga e alta disponibilidade. |
 | [`design-s3-data-lake`](design-s3-data-lake.md) | Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lake. |
-| [`design-step-functions-orchestration`](design-step-functions-orchestration.md) | Use quando for necessario desenhar, revisar ou validar AWS Step Functions, EventBridge, retries e workflows serverless. |
 | [`diagnose-data-skew`](diagnose-data-skew.md) | Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou de... |
 | [`diagnose-lakeformation-access`](diagnose-lakeformation-access.md) | Use quando um job Glue lê tabela governada e falha ao escrever, ou quando alguém pergunta "por que a leitura passa e a escrita não?", "tomo AccessDenied e já dei SELECT", "troqu... |
 | [`diagnose-oom`](diagnose-oom.md) | Use quando um job Glue falha com OutOfMemory, "Container killed by YARN", "GC overhead limit exceeded", ExecutorLostFailure, estouro de Python worker/pandas_udf, ou frases como... |
-| [`engineer-agent-context`](engineer-agent-context.md) | Use quando for necessaria a capacidade de montar e comprimir contexto sem perder evidencia. |
-| [`engineer-agent-memory`](engineer-agent-memory.md) | Use quando for necessaria a capacidade de projetar memoria auditavel por sessao, caso e dominio. |
 | [`glue-incremental-performance-architect`](glue-incremental-performance-architect.md) | Use quando investigar de ponta a ponta uma biblioteca PySpark no AWS Glue com fluxos full e incremental, latest-per-key sobre tabela Iceberg bilionária, batching por lote, OOM q... |
 | [`harden-s3-bucket`](harden-s3-bucket.md) | Use quando for proteger um bucket S3 — criar bucket novo já hardenado, auditar bucket existente contra controles de segurança, remediar finding de security hub/guardduty, config... |
 | [`iceberg-v3-readiness`](iceberg-v3-readiness.md) | Use quando alguém pergunta "posso subir essa tabela para Iceberg format v3?", "o Athena lê v3?", "vale a pena o VARIANT / os deletion vectors / o row lineage?" ou quando uma que... |
 | [`lakeformation-fgac-guard`](lakeformation-fgac-guard.md) | Use quando um job Glue declara `--enable-lakeformation-fine-grained-access` ou configuração de Full Table Access e alguém pergunta "posso passar um JAR extra?", "por que meu con... |
 | [`migrate-glue-6`](migrate-glue-6.md) | Use quando alguém pergunta "dá para subir esse job para o Glue 6.0?", "o que quebra se eu migrar de 4.0/5.0/5.1 para 6.0?", "vale a pena migrar por causa dos 30% mais barato?" o... |
-| [`optimize-athena-queries`](optimize-athena-queries.md) | Use quando for necessario otimizar consultas Athena, particionamento, Parquet, projection, federated query e custo. |
 | [`optimize-iceberg-table`](optimize-iceberg-table.md) | Use quando tabelas Apache Iceberg no Glue Data Catalog degradam por excesso de data files pequenos, delete files acumulados, snapshots ou manifests crescendo sem parar, partitio... |
-| [`optimize-iceberg-tables`](optimize-iceberg-tables.md) | Use quando for necessario otimizar tabelas Apache Iceberg e catalogos. |
 | [`optimize-latest-per-key`](optimize-latest-per-key.md) | Use quando o job calcula o registro mais recente por chave (row_number/Window, max_by, max(struct), join-back) sobre tabelas Spark/Iceberg grandes, e suspeitar de Window global... |
 | [`optimize-parquet-layout`](optimize-parquet-layout.md) | Use quando datasets Parquet no S3 (fora do Iceberg) sofrem com small files, listing lento, milhares de objetos por prefixo, arquivo por chave na escrita, ou leitura que não faz... |
 | [`optimize-pyspark-code`](optimize-pyspark-code.md) | Use quando revisar, refatorar ou otimizar código PySpark/Spark SQL para AWS Glue — script, função, módulo, PR ou trecho de DataFrame — suspeito de UDF Python evitável, collect/t... |
@@ -71,4 +62,3 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 | [`token-efficient-agent`](token-efficient-agent.md) | Use quando o objetivo exigir economia de tokens sem reduzir evidencia, precisao, cobertura ou verificacao. |
 | [`tool-specialist-routing`](tool-specialist-routing.md) | Use quando for necessario escolher, validar ou autorizar ferramentas por especializacao, risco e contrato. |
 | [`tune-glue-job`](tune-glue-job.md) | Use quando for ajustar workers, worker type, Auto Scaling, execution class ou argumentos de um job Glue depois de já ter um gargalo comprovado — não para descobri-lo. |
-| [`verify-agent-evidence`](verify-agent-evidence.md) | Use quando for necessaria a capacidade de verificar evidencias, fontes, escopo e lacunas. |

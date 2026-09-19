@@ -50,9 +50,9 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 | Categoria | Quantidade | Localização | Descrição |
 |---|---|---|---|
 | **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase (Phase Loop) |
-| **Skills** | 66 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
+| **Skills** | 56 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
 | **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens) |
-| **Teams** | 5 | `config/teams-expansion.yaml` | Composições de times (evidence-quality, governance, etc.) |
+| **Teams** | 1 | `config/teams-expansion.yaml` | Composições de times (governance-security) |
 | **Extratores de Fatos** | — | `sparkforge/facts/*.py` | Fatos determinísticos extraídos localmente |
 | **Catálogos de Regras** | — | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |
 | **Knowledge Base** | — | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns, lockfiles |

@@ -80,21 +80,19 @@ O coordenador começa pelo objetivo, detecta domínios, seleciona o menor contex
 
 | Time | Agents | Uso |
 | --- | --- | --- |
-| Arquitetura de dados | `sf-data-architect`, `sf-storage-specialist`, `sf-s3-specialist`, `sf-iceberg-specialist`, `sf-parquet-specialist` | Lakehouse, camadas, contratos, formatos e layout |
-| Arquitetura de pipelines | `sf-airflow-specialist`, `sf-step-functions-specialist`, `sf-lambda-serverless-specialist`, `sf-pyspark-specialist` | DAGs, state machines, eventos e jobs Spark |
-| Analytics e regras | `sf-analytics-specialist`, `sf-functional-rules-specialist`, `sf-athena-specialist`, `sf-token-verifier` | Dados, SQL, semântica funcional e verificação |
+| Analytics e regras | `sf-analytics-specialist`, `data-quality-reviewer`, `athena-query-optimizer`, `sf-token-verifier` | Dados, SQL, semântica funcional e verificação |
 | Plataforma | `sf-terraform-specialist`, `sf-runtime-specialist`, `sf-storage-specialist`, `sf-orchestrator` | IaC, runtime, governança, custo e coordenação |
-| Grafos e NoSQL | `sf-graph-specialist`, `sf-neptune-specialist`, `sf-dynamodb-specialist` | Grafos, Neptune, chaves, índices e consistência |
-| Engenharia de agents | `sf-agent-builder`, `sf-orchestrator`, `sf-token-verifier` | Skills, contratos, handoffs, loops e validação |
+| Grafos | `sf-graph-specialist`, `sf-neptune-specialist` | Grafos, Neptune, chaves, índices e consistência |
+| Engenharia de agents | `sf-orchestrator`, `sf-token-verifier` | Contratos, handoffs, loops e validação |
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli playbook sf-data-architect --repo .python -m sparkforge.adapters.cli playbook sf-airflow-specialist --repo .python -m sparkforge.adapters.cli playbook sf-agent-builder --repo .```
+```bashpython -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli playbook sf-data-architect --repo .python3 -m sparkforge.adapters.cli playbook sf-airflow-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-agent-builder --repo .```
+```bashpython3 -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli playbook sf-data-architect --repo .python -m sparkforge.adapters.cli playbook sf-airflow-specialist --repo .python -m sparkforge.adapters.cli playbook sf-agent-builder --repo .```
+```powershellpython -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
 
 ## 5. Ciclo de vida de casos
 
@@ -221,6 +219,8 @@ O roteamento deve se basear no artefato e na evidência. PySpark/Glue/EMR exigem
 
 Se faltar código, plano, log, schema, metadado, listagem S3, DAG, state machine, Terraform ou contrato funcional, peça o artefato ou registre `unresolved`. Nunca invente uma configuração.
 
+Airflow, Step Functions, Lambda e DynamoDB não têm coordenador dedicado desde 2026-09-19 (feature `docs/sdd/SF_STUBS/`, que removeu a camada `sf-*`/`agentic-sf-*` oca que cobria essas áreas sem produzir finding). A resposta para esses domínios é `unresolved`, nomeando o artefato que faltaria para respondê-los.
+
 ## 12. Testes e gates
 
 Antes de alterar runtime, skill, agent, regra ou espelho, capture status, leia `AGENTS.md`, rode teste focalizado e depois a suíte completa. Regras `status: structural` são declarativas e não devem ser tratadas como investigação executável.
@@ -271,7 +271,7 @@ Nenhum agent pode apagar dados, sobrescrever estado ou publicar mudança irrever
 *Autor: Manus AI. Documento operacional mantido junto com o contrato do repositório.*
 ## 15. Expansao agentic v2 e operacao offline-first
 
-A segunda onda acrescenta 10 agents coordenadores, 3 skills dispatchable, 16 subagents efemeros, 5 times cooperativos, 6 modulos de ferramentas locais e 6 novas bases de conhecimento, alem da politica offline. Os registros declarativos estao em `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
+A segunda onda acrescenta 2 agents coordenadores, 3 skills dispatchable, 16 subagents efemeros, 1 time cooperativo, 6 modulos de ferramentas locais e 6 novas bases de conhecimento, alem da politica offline (numeros de agents e times recontados em 2026-09-19: a feature `docs/sdd/SF_STUBS/` removeu os 19 agentes `sf-*` ocos e as 35 areas `agentic-sf-*`, deixando so `sf-security-reviewer` e `sf-lake-formation-specialist` em `config/agentic-expansion.yaml`, e 1 time em `config/teams-expansion.yaml`). Os registros declarativos estao em `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
 
 | Entregavel | Garantia |
 | --- | --- |

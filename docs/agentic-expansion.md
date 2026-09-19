@@ -1,5 +1,9 @@
 # Agentic Expansion e Offline First
 
+> **Desvio (2026-09-19, feature `docs/sdd/SF_STUBS/`):** as 35 áreas `agentic-sf-*`, os
+> 19 agentes `sf-*` que só as declaravam e 10 skills sem artefato saíram do repositório.
+> Este documento é registro histórico e cita nomes que não existem mais.
+
 > **Dois pacotes com nome parecido, e eles não são a mesma coisa.** Este
 > documento descreve `sparkforge/agents/` — `ConversationRoom`,
 > `AutonomyController`, `Supervisor`, `budget`, `model_policy` —, a camada de

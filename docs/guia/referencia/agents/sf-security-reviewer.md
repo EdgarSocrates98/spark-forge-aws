@@ -9,7 +9,7 @@ IAM, KMS, S3 e exfiltracao.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-security-reviewer.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-SECURITY, SF-IAC, SF-LAKE, SF-KMS, SF-IAM |
+| Áreas de regra | SF-KMS, SF-IAM |
 
 ## Skills que ele usa
 

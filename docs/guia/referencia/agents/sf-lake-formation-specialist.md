@@ -9,7 +9,7 @@ Lake Formation e governanca.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-lake-formation-specialist.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-LAKE, SF-LF, SF-GOVERNANCE, SF-SECURITY, SF-XACC |
+| Áreas de regra | SF-LF, SF-XACC |
 
 ## Skills que ele usa
 

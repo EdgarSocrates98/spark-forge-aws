@@ -1,5 +1,7 @@
 # MIGRATIONS-GLUE-GAP — o que já existe contra o que o prompt de migrações Glue pediria
 
+> **Desvio (2026-09-19, feature `docs/sdd/SF_STUBS/`):** as 35 áreas `agentic-sf-*`, os 19 agentes `sf-*` que só as declaravam e 10 skills sem artefato saíram do repositório; este documento é registro histórico e cita nomes que não existem mais.
+
 O prompt de migrações Glue propõe uma *Engineering & Migration Factory*: uma equipe de agentes
 especializados, um fluxo operacional de fases numeradas, um harness de testes com artefatos
 nomeados, uma biblioteca de erros com schema próprio e um contrato de saída do orquestrador.

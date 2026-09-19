@@ -35,11 +35,11 @@ em [Migração de versão](usos/migracao-de-versao.md).
 
 ## O catálogo de regras
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **192** regras de
+`rules/catalog/` é a forma **executável** desse conhecimento: **157** regras de
 diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data —
-**157 delas executáveis**; as outras **35** são declarações de área de coordenação
-(`executable: false`, `when: {all: []}`), que existem para a área ter nome e rota,
-não para julgar —, mais **101** rotas determinísticas em `routing.yaml`. Funciona
+**157 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
+(`executable: false`) saíram em 2026-09-19, porque nomeavam área sem julgar nada
+(feature `docs/sdd/SF_STUBS/`) —, mais **47** rotas determinísticas em `routing.yaml`. Funciona
 como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da
 escada de portabilidade. Ver [`rules/catalog/README.md`](../../rules/catalog/README.md).
 Os números correntes ficam na tabela *Números correntes* de

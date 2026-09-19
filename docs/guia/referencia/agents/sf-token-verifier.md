@@ -9,7 +9,7 @@ Verificar qualidade, cobertura de evidencia e economia de tokens.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-token-verifier.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-DQ, SF-REPORT, SF-VALIDATION |
+| Áreas de regra | SF-DQ |
 
 ## Skills que ele usa
 

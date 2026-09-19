@@ -342,9 +342,14 @@ class TestRejections:
         ganhar condicao E virar executavel, ela cai no gate de golden. Este
         teste cobre o terceiro caminho -- a que passa pelos dois e ainda assim
         produz achado.
+
+        Desde a feature `docs/sdd/SF_STUBS/` (2026-09-19) o catalogo nao tem
+        nenhuma area de coordenacao (`executable: false`): as 35 areas
+        `agentic-sf-*` saíram. `areas` abaixo e por isso uma lista vazia hoje --
+        o laco guarda a PROXIMA area de coordenacao que alguem declarar, nao
+        uma que exista neste momento.
         """
         areas = [r for r in load_catalog() if not r.get("executable", True)]
-        assert areas, "nenhuma area de coordenacao no catalogo: o filtro mudou?"
         facts = [
             Fact(kind=kind, subject={"path": "x"}, measures={"n": 1})
             for kind in ("pyspark.conf_set", "iceberg.snapshot", "glue.job")

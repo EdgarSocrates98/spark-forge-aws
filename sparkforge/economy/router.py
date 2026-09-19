@@ -94,16 +94,12 @@ class CapabilityModelRouter:
         specialist_keywords = {
             "pyspark": "optimize-pyspark-code",
             "iceberg": "optimize-iceberg-table",
-            "athena": "optimize-athena-queries",
             "emr": "review-emr-cluster",
             "glue": "tune-glue-job",
             "data quality": "review-data-validation",
             "skew": "diagnose-data-skew",
             "parquet": "optimize-parquet-layout",
             "terraform": "review-terraform-data-platform",
-            "dynamodb": "design-dynamodb-model",
-            "step functions": "design-step-functions-orchestration",
-            "kinesis": "streaming-reliability",
         }
 
         matched_skills: list[str] = []

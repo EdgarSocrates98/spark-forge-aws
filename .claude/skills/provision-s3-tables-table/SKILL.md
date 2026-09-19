@@ -1,6 +1,6 @@
 ---
 name: provision-s3-tables-table
-description: Use quando for criar uma tabela Iceberg gerenciada por Amazon S3 Tables (o produto `s3tables`, não o Glue Data Catalog tradicional) — table bucket, namespace, tabela, schema, particionamento, integração com o catálogo `s3tablescatalog` e IAM no namespace `s3tables:*`. Use também quando a pergunta for "como crio uma tabela Iceberg sem gerenciar compaction", "S3 Tables vale vs Glue Data Catalog" ou "por que `s3:*` não funciona no S3 Tables", mesmo sem citar o produto pelo nome. NÃO use para criar tabela no Glue Data Catalog tradicional (esse caminho não está aqui — use `design-s3-data-lake` para o design e `optimize-iceberg-table` para a manutenção), nem para ingerir dado (procedimento de carga é outro), nem para consultar tabela existente (`optimize-athena-queries`). Se você está prestes a rodar `aws s3tables create-table-bucket` sem checar tabelas existentes, pare — o passo 1 exige o inventário, e criar sobre nome existente é silencioso.
+description: Use quando for criar uma tabela Iceberg gerenciada por Amazon S3 Tables (o produto `s3tables`, não o Glue Data Catalog tradicional) — table bucket, namespace, tabela, schema, particionamento, integração com o catálogo `s3tablescatalog` e IAM no namespace `s3tables:*`. Use também quando a pergunta for "como crio uma tabela Iceberg sem gerenciar compaction", "S3 Tables vale vs Glue Data Catalog" ou "por que `s3:*` não funciona no S3 Tables", mesmo sem citar o produto pelo nome. NÃO use para criar tabela no Glue Data Catalog tradicional (esse caminho não está aqui — use `design-s3-data-lake` para o design e `optimize-iceberg-table` para a manutenção), nem para ingerir dado (procedimento de carga é outro), nem para consultar tabela existente (agent `athena-query-optimizer`). Se você está prestes a rodar `aws s3tables create-table-bucket` sem checar tabelas existentes, pare — o passo 1 exige o inventário, e criar sobre nome existente é silencioso.
 ---
 
 # Provisionar tabela no Amazon S3 Tables
@@ -161,7 +161,7 @@ Namespace de IAM: `s3tables:*`, **não** `s3:*`. Catálogo: `s3tablescatalog`, u
   a manutenção é `optimize-iceberg-table`.
 - **Ingestão de dado**: criar a tabela vazia é o passo 1–7; carregar dado é
   outro procedimento (a doc AWS chama a skill `ingesting-into-data-lake`).
-- **Query em tabela existente**: `optimize-athena-queries` cobre leitura.
+- **Query em tabela existente**: o agent `athena-query-optimizer` cobre leitura.
 - **Avaliar upgrade de format-version Iceberg**: `iceberg-v3-readiness`.
 - **Diagnosticar small files / snapshots acumulados**: `optimize-iceberg-table`
   sobre os metadata tables.

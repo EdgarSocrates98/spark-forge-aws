@@ -31,7 +31,7 @@ Os dois arquivos ao lado já fazem o resto:
 | `mcp_config.json` | expõe as **106 tools** por stdio (recontado em 2026-09-16). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **46 skills** e os **38 coordenadores** o Devin lê sozinho de `.agents/`, que
+As **56 skills** e os **19 coordenadores** o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
@@ -142,7 +142,7 @@ linhas lido a olho vira opinião; passado por `sparkforge analyze emr-eks` vira
 fact com namespace fechado, e `sparkforge judge` diz o que o catálogo tem a
 dizer sobre ele.
 
-As **46 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
+As **56 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
 dizendo **quando** entrar e **o que ela não julga**. Ler a fronteira antes de
 trazer o artefato economiza a investigação inteira.
 
@@ -238,7 +238,7 @@ skills moram em `.agents/skills/`, que também é nativo e serve as outras
 ferramentas ao mesmo tempo. A decisão está registrada no `STATUS.md`, com o
 critério e o gatilho que a inverteria.
 
-**`.devin/agents/`.** Mesma razão — os 38 coordenadores e 5 executores estão em
+**`.devin/agents/`.** Mesma razão — os 19 coordenadores e 5 executores estão em
 `.agents/agents/`.
 
 Duplicar qualquer um dos dois criaria duas cópias que divergem no primeiro

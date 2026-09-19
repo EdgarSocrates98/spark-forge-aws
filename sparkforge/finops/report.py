@@ -38,7 +38,7 @@ from sparkforge.findings.models import Fact
 # saida de um defeito: o custo cai um pouco, o defeito fica, e a conta volta
 # maior quando o volume crescer.
 _AREAS_DE_CODIGO = frozenset(
-    {"SF-PY", "SF-PQ", "SF-PLAN", "SF-UI", "SF-SQL", "SF-CG", "SF-GRAPH", "SF-DQ"}
+    {"SF-PY", "SF-PQ", "SF-PLAN", "SF-UI", "SF-CG", "SF-GRAPH", "SF-DQ"}
 )
 
 

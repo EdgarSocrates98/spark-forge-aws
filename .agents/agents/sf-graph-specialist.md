@@ -3,7 +3,7 @@ name: sf-graph-specialist
 description: Analisar ou modelar dados em grafos.
 skills:
   - analyze-graph-data
-rule_areas: [SF-GRAPH, SF-ANALYTICS, SF-MODEL]
+rule_areas: [SF-GRAPH]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 # Graph Specialist

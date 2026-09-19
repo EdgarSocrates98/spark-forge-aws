@@ -4,7 +4,7 @@ description: Analisar dados, analytics, Athena e qualidade.
 tools: Read, Grep, Glob, Bash
 skills:
   - analyze-analytics
-rule_areas: [SF-ANALYTICS, SF-DQ]
+rule_areas: [SF-DQ]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 # sf-analytics-specialist

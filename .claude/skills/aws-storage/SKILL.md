@@ -203,7 +203,7 @@ de cada referencia — leia antes de aconselhar sobre aquele servico.
 ## Quando NÃO usar
 
 - **Motores de consulta SQL** (Athena, Spark, Redshift, EMR): nao sao armazenamento —
-  sao compute sobre dados. Para otimizar Athena, use `optimize-athena-queries`.
+  sao compute sobre dados. Para otimizar Athena, use o agent `athena-query-optimizer`.
 - **ETL** (Glue): use as skills de performance Glue (`glue-incremental-performance-architect`,
   `tune-glue-job`).
 - **Streaming** (Kafka, MSK, Kinesis): roteie para `aws-messaging-and-streaming`.

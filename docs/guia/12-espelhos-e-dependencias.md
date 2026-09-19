@@ -10,7 +10,7 @@ A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claud
 e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é
 **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e
 `agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje 10
-das 23 despacháveis, contadas em 2026-09-18 com
+das 20 despacháveis, contadas em 2026-09-19 com
 `grep -l '^subagent: true' .agents/skills/*/SKILL.md` e `grep -l '^agent:'`), e os
 perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`,
 regenere os espelhos:

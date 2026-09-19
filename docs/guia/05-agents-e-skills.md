@@ -115,11 +115,11 @@ loop rodando.
 Além das Skills (procedimento) e da camada determinística (extração e julgamento), o
 pacote tem duas camadas de agente:
 
-- **Coordenador** — 38 agentes em `agents/*.md` (contados em 2026-09-18): os oito
+- **Coordenador** — 19 agentes em `agents/*.md` (contados em 2026-09-19): os oito
   herdados, um por área de investigação (`spark-performance-architect`,
   `glue-incremental-performance-architect`, `glue-infra-reviewer`,
   `athena-query-optimizer`, `pyspark-code-reviewer`, `iceberg-performance-engineer`,
-  `emr-infra-reviewer` e `data-quality-reviewer`), e 30 `sf-*` da expansão agêntica.
+  `emr-infra-reviewer` e `data-quality-reviewer`), e 11 `sf-*` da expansão agêntica.
   Não executa: lê o case, decide qual executor rodar em seguida e registra no case qual
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
   `emr-infra-reviewer` lê `SF-EMR`, `SF-EMRS`, `SF-EMRK` e `SF-ENV`,
@@ -134,10 +134,11 @@ pacote tem duas camadas de agente:
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
   contrato de handoff que fazem a cadeia ser determinística entre modelos.
 
-Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-085` (85,
-contadas em 2026-09-18) de `rules/catalog/routing.yaml` mapeiam fase do case e área do
-achado dominante para o coordenador certo, e `sparkforge_next_step`/`sparkforge next-step`
-as consulta.
+Qual coordenador usar é dado, não julgamento: as **31** rotas `AGENT-*` (de 47 rotas no
+total, recontadas em 2026-09-19; os ids não são contínuos desde a remoção das 54 rotas
+`AGENT-017..025, 029..070, 072..074` na feature `docs/sdd/SF_STUBS/`) de
+`rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
+coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 
 ### Despacho por plataforma
 
@@ -161,8 +162,8 @@ teria como ser:** os dois caminhos de descoberta estão ligados por default
 (`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa**
 sobre qual vence quando os dois existem, e o default de `allowed-tools` é *"all tools"* —
 omitir é a opção **mais permissiva**, não a mais restrita. O que carrega a fronteira é a
-prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As 23 skills
-despacháveis (contadas em 2026-09-18 com `grep -l '^subagent: true' .agents/skills/*/SKILL.md`)
+prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As 20 skills
+despacháveis (contadas em 2026-09-19 com `grep -l '^subagent: true' .agents/skills/*/SKILL.md`)
 declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara, no próprio
 texto, que não executa manutenção destrutiva.
 
@@ -292,7 +293,7 @@ Use a skill sparkforge-diagnose para analisar este job Glue.
 ```
 
 `sparkforge-diagnose` **não** despacha subagente de propósito: ela abre o case e roteia, e
-o ciclo de vida do case tem que ficar na sessão que continua. As 23 skills despacháveis
+o ciclo de vida do case tem que ficar na sessão que continua. As 20 skills despacháveis
 (as que declaram `subagent: true` no espelho `.agents/skills/`) podem rodar como
 subagente. Detalhe em [`GUIA_DE_USO.md`](../../GUIA_DE_USO.md), seção 3.
 
@@ -312,15 +313,14 @@ A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
 | "Uma task demora muito mais que as outras" (skew) | [`spark-performance-architect`](referencia/agents/spark-performance-architect.md) | [`diagnose-data-skew`](referencia/skills/diagnose-data-skew.md) |
 | "Minha tabela Iceberg ficou lenta" | [`iceberg-performance-engineer`](referencia/agents/iceberg-performance-engineer.md) | [`optimize-iceberg-table`](referencia/skills/optimize-iceberg-table.md) |
 | "Arquivos Parquet pequenos demais" | [`iceberg-performance-engineer`](referencia/agents/iceberg-performance-engineer.md) | [`optimize-parquet-layout`](referencia/skills/optimize-parquet-layout.md) |
-| "A consulta no Athena custa caro" | [`athena-query-optimizer`](referencia/agents/athena-query-optimizer.md) | [`optimize-athena-queries`](referencia/skills/optimize-athena-queries.md) |
+| "A consulta no Athena custa caro" | [`athena-query-optimizer`](referencia/agents/athena-query-optimizer.md) | — |
 | "Workers, auto scaling ou Terraform do Glue" | [`glue-infra-reviewer`](referencia/agents/glue-infra-reviewer.md) | [`review-glue-terraform`](referencia/skills/review-glue-terraform.md), [`tune-glue-job`](referencia/skills/tune-glue-job.md) |
 | "Cluster EMR, EMR Serverless ou EMR on EKS" | [`emr-infra-reviewer`](referencia/agents/emr-infra-reviewer.md) | [`review-emr-cluster`](referencia/skills/review-emr-cluster.md), [`review-emr-eks`](referencia/skills/review-emr-eks.md) |
 | "A validação de dado do job está no lugar certo?" | [`data-quality-reviewer`](referencia/agents/data-quality-reviewer.md) | [`review-data-validation`](referencia/skills/review-data-validation.md) |
 | "A leitura passa e a escrita dá AccessDenied" (Lake Formation) | [`sf-lake-formation-specialist`](referencia/agents/sf-lake-formation-specialist.md) | [`diagnose-lakeformation-access`](referencia/skills/diagnose-lakeformation-access.md), [`lakeformation-fgac-guard`](referencia/skills/lakeformation-fgac-guard.md) |
-| "Quanto custa e qual capacidade escolher" | [`sf-cost-reviewer`](referencia/agents/sf-cost-reviewer.md) | [`tune-glue-job`](referencia/skills/tune-glue-job.md); veja também [Custo e capacidade](usos/custo-e-capacidade.md) |
+| "Quanto custa e qual capacidade escolher" | — | verbo `sparkforge finops`, [`tune-glue-job`](referencia/skills/tune-glue-job.md); veja também [Custo e capacidade](usos/custo-e-capacidade.md) |
 | "Revisar um pull request PySpark" | [`pyspark-code-reviewer`](referencia/agents/pyspark-code-reviewer.md) | [`review-pyspark-pr`](referencia/skills/review-pyspark-pr.md) |
 | "Posso migrar para Glue 6.0 ou Spark 4?" | [`sf-runtime-specialist`](referencia/agents/sf-runtime-specialist.md) | [`migrate-glue-6`](referencia/skills/migrate-glue-6.md), [`spark4-compatibility`](referencia/skills/spark4-compatibility.md), [`compare-releases`](referencia/skills/compare-releases.md) |
-| "Desenhar ou revisar orquestração de pipeline" | [`sf-airflow-specialist`](referencia/agents/sf-airflow-specialist.md), [`sf-step-functions-specialist`](referencia/agents/sf-step-functions-specialist.md) | [`design-airflow-pipelines`](referencia/skills/design-airflow-pipelines.md), [`design-step-functions-orchestration`](referencia/skills/design-step-functions-orchestration.md) |
 | "Coordenar vários agents em fases" | [`sf-orchestrator`](referencia/agents/sf-orchestrator.md) | [`agentic-orchestration`](referencia/skills/agentic-orchestration.md) |
 | "Dois achados se contradizem" | coordenador do case | [`run-debate`](referencia/skills/run-debate.md); veja [Arbitragem e debate](usos/arbitragem-e-debate.md) |
 | "Quero especificar a mudança antes de construir" (spec, plano, TDD, entrega) | a sessão, sem despacho | [`sdd-explore`](referencia/skills/sdd-explore.md), [`sdd-define`](referencia/skills/sdd-define.md), [`sdd-design`](referencia/skills/sdd-design.md), [`sdd-plan`](referencia/skills/sdd-plan.md), [`sdd-build`](referencia/skills/sdd-build.md), [`sdd-ship`](referencia/skills/sdd-ship.md); veja [`docs/sdd/README.md`](../sdd/README.md) |

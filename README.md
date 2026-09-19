@@ -43,7 +43,7 @@ do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
 Os 38 extratores emitem 228 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **192** regras de diagnóstico em YAML, **157 delas executáveis**, cada uma
+catálogo tem **157** regras de diagnóstico em YAML, **157 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
@@ -118,13 +118,13 @@ O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mes
 | Agent Skills | `skills/`, para qualquer agente compatível com o padrão | [Referência de skills](docs/guia/referencia/skills/README.md) |
 | `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
 
-**Duas camadas de agente.** O **coordenador** (**38 coordenadores** em `agents/*.md`) lê o
+**Duas camadas de agente.** O **coordenador** (**19 coordenadores** em `agents/*.md`) lê o
 case, decide qual executor roda e registra o resultado. O **executor** (**5 executores**
 em `agents/executors/`) faz uma função só — inventário, extração, julgamento, verificação,
 síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
 as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
 desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
-traz **66 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+traz **56 skills**; as de diagnóstico e as onze de procedimento AWS estão em
 [Agents e skills](docs/guia/05-agents-e-skills.md).
 
 ## SDD próprio
