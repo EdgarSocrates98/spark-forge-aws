@@ -339,7 +339,7 @@ sf-token-verifier
 Agents: sf-lake-formation-specialist, sf-security-reviewer.
 Subagents: intake-packager, evidence-extractor, hypothesis-generator, experiment-designer, benchmark-comparator, schema-compatibility-checker, lineage-impact-analyzer, cost-estimator, security-gate, mutation-risk-checker, cross-reviewer, source-verifier, regression-judge, handoff-preparer, rollback-planner, release-gate.
 Tools: sparkforge_offline_knowledge_verify, sparkforge_offline_knowledge_search, sparkforge_context_pack, sparkforge_schema_compare, sparkforge_lineage_extract, sparkforge_eval_golden_case, sparkforge_cost_estimate.
-Teams: evidence-quality, governance-security, streaming-reliability, finops-data, agent-quality.
+Teams: governance-security.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
 
 ## Skills AWS oficiais complementares
