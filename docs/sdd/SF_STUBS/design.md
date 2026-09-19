@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/SF_STUBS/define.md
-  sha256: "9ac848ec98ac9563cd25e1a8986ed4dcb7ff51cef7247b145d554e3533f9c649"
+  sha256: "51ea5b2c5aad7ed40912f02f8a629b8d6eba90e4e30dfecee832528bd78822ce"
 files:
   - {path: tests/test_sf_stubs.py, action: create, reason: "testes de AC1 a AC4, escritos antes da remocao"}
   - {path: rules/catalog/agentic-sf-agents.yaml, action: delete, reason: "area de coordenacao sem regra executavel; os outros 34 rules/catalog/agentic-sf-*.yaml saem pelo mesmo motivo e na mesma tarefa"}
@@ -40,6 +40,8 @@ files:
   - {path: docs/superpowers/STATUS.md, action: modify, reason: "numeros correntes de regras, agents e skills (AC7)"}
   - {path: README.md, action: modify, reason: "cita 192 regras"}
   - {path: docs/guia/07-conhecimento-e-catalogo.md, action: modify, reason: "cita 192 regras"}
+  - {path: fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, action: modify, reason: "golden de assessment carrega catalog_rules e a frase de cobertura com a contagem do catalogo; os tres goldens de fixtures/scenarios regeneram so nesses campos (D10); este e o representante"}
+  - {path: evals/holdout/config_por_caminho_indireto/expected/assessment.json, action: modify, reason: "o mesmo nos dois goldens de evals/holdout (D10); este e o representante"}
   - {path: docs/claims.lock.json, action: modify, reason: "arquivo .py novo e contagens movem alegacoes do gate de lastro"}
 decisions:
   - id: D1
@@ -78,12 +80,16 @@ decisions:
     choice: "Documento vivo troca ou tira o nome que saiu: AGENTS.md, docs/guia/05-agents-e-skills.md, docs/guia/usos/athena-e-sql.md, docs/guia/usos/iceberg-e-parquet.md, docs/teams-catalog.md, docs/operations-guide.md, docs/vnext/AGENT-CATALOG.md, docs/vnext/DEMOS.md, knowledge/domain-tool-matrix.md. Documento historico ganha uma nota de desvio no topo e fica como estava: docs/delivery-report.md (relatorio de 2026-08-18), docs/agentic-expansion.md e docs/harness/MIGRATIONS-GLUE-GAP.md (mapa datado)."
     rejected: ["reescrever os historicos: a memoria do projeto trata spec e relatorio como registro, com secao de desvios"]
     rollback: "git revert do commit"
+  - id: D10
+    choice: "Os goldens de assessment que carregam a contagem do catalogo (tres em fixtures/scenarios, dois em evals/holdout) sao regenerados por scripts/regen_fixtures.py, e o diff de cada um e conferido: so catalog_rules, as contagens de regra sem guarda e a frase de cobertura mudam; findings e recusas ficam identicos."
+    rejected: ["tirar a contagem do golden: ela e a cobertura declarada do verbo, e e isso que o golden trava"]
+    rollback: "git revert do commit"
 covers:
   - {part: "catalogo e roteamento", acceptance: [AC1, AC3]}
   - {part: "agentes", acceptance: [AC2]}
   - {part: "realocacao", acceptance: [AC4, AC5]}
   - {part: "espelhos e referencia", acceptance: [AC6]}
-  - {part: "numeros e documentos", acceptance: [AC7]}
+  - {part: "numeros e documentos", acceptance: [AC7, AC8]}
 ---
 
 # SF_STUBS — desenho

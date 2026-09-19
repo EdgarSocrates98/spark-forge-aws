@@ -33,13 +33,16 @@ acceptance:
   - id: AC7
     statement: "Os numeros publicados que contavam as 35 areas (contagem do catalogo, de agents e de skills) batem com a medida nova."
     verified_by: {kind: command, ref: "python scripts/check_status_numbers.py --strict"}
+  - id: AC8
+    statement: "Nenhum documento vivo cita agente ou skill que saiu; os documentos historicos ficam como estavam, com uma nota de desvio no topo."
+    verified_by: {kind: test, ref: "tests/test_sf_stubs.py::test_documento_vivo_nao_cita_o_que_saiu"}
 success:
   - id: SC1
     metric: "Regras executaveis antes e depois (157 e 157), e nao executaveis (35 e 0)"
     source: "sparkforge.rules.loader.load_catalog() contado por executable, em 91643841 e no fim do build"
   - id: SC2
-    metric: "Goldens de findings que mudaram"
-    source: "testes de golden de fixtures e cenarios rodados sem regenerar"
+    metric: "Goldens de findings que mudaram, e, nos goldens de assessment, os campos que mudaram"
+    source: "testes de golden de fixtures e cenarios rodados sem regenerar; nos assessment.json de fixtures/scenarios e evals/holdout, que carregam a contagem do catalogo, o diff depois da regeneracao"
   - id: SC3
     metric: "Coordenadores, skills e rotas antes e depois"
     source: "agents/*.md, skills/*/SKILL.md e as rotas de rules/catalog/routing.yaml contados antes e depois"
@@ -79,3 +82,4 @@ agentes, e nenhuma casa com um finding real. É nome de domínio sem artefato.
 - AC1 a AC4 travam o resultado num teste novo, `tests/test_sf_stubs.py`.
 - AC5 é o teste que já existe e que a remoção quebraria sem a realocação.
 - AC6 e AC7 são os gates de espelho e de número publicado.
+- AC8 trava a limpeza dos documentos vivos no mesmo teste novo.
