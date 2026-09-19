@@ -205,19 +205,19 @@
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-053",
       "line": 53,
-      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido ao trazer duas skills de procedimento operacional AWS (2026-09-03): \\provision-s3-tables-table\\ e \\harden-s3-bucket\\, adaptadas de aws/agent-toolkit-for-aws, levaram as skills de 46 para 48. Numero relido pela propria prova. Remedido ao trazer nove skills oficiais AWS adaptadas (2026-09-03): aws-storage, aws-database, aws-serverless, aws-iam, aws-observability, aws-billing-and-cost-management, aws-messaging-and-streaming, aws-security, aws-sdk-python-usage, adaptadas de aws/agent-toolkit-for-aws commit 10b28af8, levaram as skills de 48 para 57. Numero relido pela propria prova. Remedido na fase 3 do executor de debate (2026-09-11): a skill `run-debate`, o driver interativo do debate, levou as skills de 58 para 59. Numero relido pela propria prova. Remedido na entrega do L3 do §15 (2026-09-14): a tool `sparkforge_change_propose` (_WRITE_IDEMPOTENT, declara repo e os anexos) levou o catalogo de 102 para 103, as que declaram caminho de 94 para 95 e as de escrita idempotente de 21 para 22; a skill `propose-change-pr` levou as skills de 59 para 60. O corpus de *.py cresceu com `sparkforge/change/proposal.py` e `tests/test_change_proposal.py`; `tools.py`, `_core.py` e `cli.py` cresceram. Numero relido pela propria prova. Remedido nas skills do SDD proprio (feature SDD_SKILLS, 2026-09-16): sdd-explore, sdd-define, sdd-design, sdd-plan, sdd-build e sdd-ship levaram as skills de 60 para 66. Numero relido pela propria prova.",
+      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova. Remedido ao trazer duas skills de procedimento operacional AWS (2026-09-03): \\provision-s3-tables-table\\ e \\harden-s3-bucket\\, adaptadas de aws/agent-toolkit-for-aws, levaram as skills de 46 para 48. Numero relido pela propria prova. Remedido ao trazer nove skills oficiais AWS adaptadas (2026-09-03): aws-storage, aws-database, aws-serverless, aws-iam, aws-observability, aws-billing-and-cost-management, aws-messaging-and-streaming, aws-security, aws-sdk-python-usage, adaptadas de aws/agent-toolkit-for-aws commit 10b28af8, levaram as skills de 48 para 57. Numero relido pela propria prova. Remedido na fase 3 do executor de debate (2026-09-11): a skill `run-debate`, o driver interativo do debate, levou as skills de 58 para 59. Numero relido pela propria prova. Remedido na entrega do L3 do §15 (2026-09-14): a tool `sparkforge_change_propose` (_WRITE_IDEMPOTENT, declara repo e os anexos) levou o catalogo de 102 para 103, as que declaram caminho de 94 para 95 e as de escrita idempotente de 21 para 22; a skill `propose-change-pr` levou as skills de 59 para 60. O corpus de *.py cresceu com `sparkforge/change/proposal.py` e `tests/test_change_proposal.py`; `tools.py`, `_core.py` e `cli.py` cresceram. Numero relido pela propria prova. Remedido nas skills do SDD proprio (feature SDD_SKILLS, 2026-09-16): sdd-explore, sdd-define, sdd-design, sdd-plan, sdd-build e sdd-ship levaram as skills de 60 para 66. Numero relido pela propria prova. Remedido na remocao da camada oca sf-* (feature SF_STUBS, 2026-09-19): saíram 10 skills sem tool nem artefato, e as skills foram de 66 para 56. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('skills').glob('*/SKILL.md'))), 'skills')\"",
         "expect": {
           "kind": "number",
           "pattern": "(\\d+) skills",
-          "value": 66
+          "value": 56
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "66",
+      "text": "56",
       "type": "number"
     },
     {
@@ -4393,19 +4393,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-430",
       "line": 62,
-      "note": "Remedida: as tres rotas de AGENT-079/080/081, dos eixos de plataforma, cresceram o arquivo. A prova le o tamanho em disco, entao o numero vem da medicao, nao da mao. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega da area de regra SF-ERR (stacktrace intelligence T3, 2026-09-08): o arquivo de teste `tests/test_rules_errors.py` entrou no corpus de *.py, e `rules/catalog/routing.yaml` cresceu com a rota AGENT-084. Numero relido pela propria prova.",
+      "note": "Remedida: as tres rotas de AGENT-079/080/081, dos eixos de plataforma, cresceram o arquivo. A prova le o tamanho em disco, entao o numero vem da medicao, nao da mao. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova. Remedido na entrega da ponte codigo-execucao (2026-09-02): a area de regra SF-BRIDGE com a rota AGENT-083, o extrator sparkforge/facts/bridge.py, o kind spark.stage.callsite e as tres fixtures de fixtures/bridge/ cresceram o que cada prova mede. Numero relido pela propria prova. Remedido na entrega da area de regra SF-ERR (stacktrace intelligence T3, 2026-09-08): o arquivo de teste `tests/test_rules_errors.py` entrou no corpus de *.py, e `rules/catalog/routing.yaml` cresceu com a rota AGENT-084. Numero relido pela propria prova. Remedido na remocao da camada oca sf-* (feature SF_STUBS, 2026-09-19): saíram 54 rotas AGENT-* de rules/catalog/routing.yaml, e o arquivo foi de 55 para 39 KB. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"rules/catalog/routing.yaml\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(len(b) // 1024)'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 55
+          "value": 39
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "55",
+      "text": "39",
       "type": "number"
     },
     {
@@ -9591,12 +9591,11 @@
       "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-503",
       "line": 61,
-      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
+      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-s3-specialist.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "kind": "artifact",
-        "path": "agents/sf-s3-specialist.md",
-        "symbol": "test_each_agent_has_name_description_and_tools",
-        "test": "tests/test_agents_parity.py"
+        "cmd": "git show 9c433b98:agents/sf-s3-specialist.md",
+        "commit": "9c433b98",
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "`s3-filesystem-specialist`",
@@ -9671,12 +9670,11 @@
       "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-508",
       "line": 66,
-      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
+      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-kinesis-specialist.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "kind": "artifact",
-        "path": "agents/sf-kinesis-specialist.md",
-        "symbol": "test_each_agent_has_name_description_and_tools",
-        "test": "tests/test_agents_parity.py"
+        "cmd": "git show 9c433b98:agents/sf-kinesis-specialist.md",
+        "commit": "9c433b98",
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "`streaming-cdc-specialist`",
@@ -9703,12 +9701,11 @@
       "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-510",
       "line": 69,
-      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
+      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-cost-reviewer.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "kind": "artifact",
-        "path": "agents/sf-cost-reviewer.md",
-        "symbol": "test_each_agent_has_name_description_and_tools",
-        "test": "tests/test_agents_parity.py"
+        "cmd": "git show 9c433b98:agents/sf-cost-reviewer.md",
+        "commit": "9c433b98",
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "`observability-finops-specialist`",
@@ -9719,12 +9716,11 @@
       "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-511",
       "line": 70,
-      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
+      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-evidence-verifier.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "kind": "artifact",
-        "path": "agents/sf-evidence-verifier.md",
-        "symbol": "test_each_agent_has_name_description_and_tools",
-        "test": "tests/test_agents_parity.py"
+        "cmd": "git show 9c433b98:agents/sf-evidence-verifier.md",
+        "commit": "9c433b98",
+        "kind": "historical"
       },
       "state": "PROVADA",
       "text": "`test-harness-specialist`",

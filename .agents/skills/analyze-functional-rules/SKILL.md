@@ -5,6 +5,7 @@ name: analyze-functional-rules
 description: Use quando for necessario estudar regras funcionais, contratos, estados, excecoes e criterios de aceite.
 
 subagent: true
+agent: data-quality-reviewer
 ---
 
 # Regras Funcionais e Contratos

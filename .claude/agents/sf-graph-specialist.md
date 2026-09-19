@@ -4,7 +4,7 @@ description: Analisar ou modelar dados em grafos.
 tools: Read, Grep, Glob, Bash
 skills:
   - analyze-graph-data
-rule_areas: [SF-GRAPH, SF-ANALYTICS, SF-MODEL]
+rule_areas: [SF-GRAPH]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 # Graph Specialist

@@ -9,7 +9,7 @@ Analisar ou modelar dados em grafos.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-graph-specialist.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-GRAPH, SF-ANALYTICS, SF-MODEL |
+| Áreas de regra | SF-GRAPH |
 
 ## Skills que ele usa
 

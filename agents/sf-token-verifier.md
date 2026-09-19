@@ -4,7 +4,7 @@ description: Verificar qualidade, cobertura de evidencia e economia de tokens.
 tools: Read, Grep, Glob, Bash
 skills:
   - token-efficient-agent
-rule_areas: [SF-DQ, SF-REPORT, SF-VALIDATION]
+rule_areas: [SF-DQ]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

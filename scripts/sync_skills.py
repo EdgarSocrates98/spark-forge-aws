@@ -229,9 +229,6 @@ DEVIN_SKILL_DISPATCH_KEYS = frozenset({"subagent", "agent"})
 # que. Uma skill despachavel a menos custa contexto do pai, e mais nada. Na
 # duvida, nao despacha.
 DISPATCHABLE_SKILLS = {
-    "verify-agent-evidence": "verifica findings contra fatos e fontes locais",
-    "engineer-agent-context": "compacta contexto preservando evidencia e kinds",
-    "engineer-agent-memory": "recupera memoria local auditavel por caso e dominio",
     "analyze-batch-loop": "extrai o loop do codigo e julga; a saida e relatorio",
     "analyze-library-call-graph": "varre a biblioteca e devolve o grafo; leitura fechada",
     "analyze-spark-plan": "interpreta um plano fisico ja salvo; nao pede nada a ninguem",
@@ -341,16 +338,9 @@ NON_DISPATCHABLE_SKILLS = {
         "reconstruir a evidencia que motivou a chamada"
     ),
     "design-data-architecture": "Especialista de dominio; despacho por coordenador",
-    "design-airflow-pipelines": "Especialista de dominio; despacho por coordenador",
-    "design-agent-systems": "Especialista de dominio; despacho por coordenador",
-    "optimize-iceberg-tables": "Especialista de dominio; despacho por coordenador",
     "design-s3-data-lake": "Especialista de dominio; despacho por coordenador",
     "review-terraform-data-platform": "Especialista de dominio; despacho por coordenador",
     "design-neptune-graph": "Especialista de dominio; despacho por coordenador",
-    "design-dynamodb-model": "Especialista de dominio; despacho por coordenador",
-    "optimize-athena-queries": "Especialista de dominio; despacho por coordenador",
-    "design-lambda-serverless": "Especialista de dominio; despacho por coordenador",
-    "design-step-functions-orchestration": "Especialista de dominio; despacho por coordenador",
     # As duas que mutam infraestrutura AWS ao vivo: procedimento operacional,
     # nao gatilho do motor. Rodam `aws s3tables create-*` e `aws s3api put-*`,
     # e a fronteira `## Nao faz` exige confirmacao explicita do operador para

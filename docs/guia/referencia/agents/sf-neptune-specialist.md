@@ -9,7 +9,7 @@ Projetar ou revisar Amazon Neptune.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-neptune-specialist.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-NEPTUNE, SF-GRAPH, SF-AWS |
+| Áreas de regra | SF-GRAPH |
 
 ## Skills que ele usa
 

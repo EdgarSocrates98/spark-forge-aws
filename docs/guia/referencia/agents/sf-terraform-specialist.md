@@ -9,7 +9,7 @@ Revisar ou construir Terraform para plataformas de dados.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-terraform-specialist.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-TERRAFORM, SF-IAC, SF-SECURITY, SF-NET |
+| Áreas de regra | SF-NET |
 
 ## Skills que ele usa
 

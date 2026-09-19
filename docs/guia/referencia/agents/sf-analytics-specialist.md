@@ -9,7 +9,7 @@ Analisar dados, analytics, Athena e qualidade.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-analytics-specialist.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-ANALYTICS, SF-DQ |
+| Áreas de regra | SF-DQ |
 
 ## Skills que ele usa
 

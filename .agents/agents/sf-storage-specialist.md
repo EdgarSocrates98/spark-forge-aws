@@ -3,7 +3,7 @@ name: sf-storage-specialist
 description: Analisar Iceberg, Parquet, catalogo, particionamento e layout.
 skills:
   - tool-specialist-routing
-rule_areas: [SF-ICE, SF-PQ, SF-CATALOG]
+rule_areas: [SF-ICE, SF-PQ]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

@@ -8,5 +8,5 @@ Gerada do código a cada mudança; os guias em `docs/guia/` explicam como usar.
 |---|---|
 | [Comandos da CLI](cli/README.md) | 48 comandos de topo |
 | [Tools MCP](tools/README.md) | 106 tools |
-| [Agents](agents/README.md) | 43 agents |
-| [Skills](skills/README.md) | 66 skills |
+| [Agents](agents/README.md) | 24 agents |
+| [Skills](skills/README.md) | 56 skills |

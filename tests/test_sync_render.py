@@ -223,7 +223,7 @@ RELACAO_MEDIDA = {
     # mesmo criterio: a fronteira da skill -- versao de runtime entre plataformas
     # -- e a mesma do coordenador que a declara.
     "compare-releases": ("sf-runtime-specialist",),
-    "iceberg-v3-readiness": ("iceberg-performance-engineer", "sf-iceberg-specialist"),
+    "iceberg-v3-readiness": ("iceberg-performance-engineer",),
     "lakeformation-fgac-guard": ("sf-lake-formation-specialist",),
     "migrate-glue-6": ("sf-runtime-specialist",),
     "spark4-compatibility": ("sf-runtime-specialist",),
@@ -271,7 +271,6 @@ RELACAO_MEDIDA = {
         "athena-query-optimizer",
         "glue-incremental-performance-architect",
         "iceberg-performance-engineer",
-        "sf-parquet-specialist",
         "spark-performance-architect",
     ),
     "optimize-pyspark-code": (
@@ -283,12 +282,7 @@ RELACAO_MEDIDA = {
         "glue-incremental-performance-architect",
         "glue-infra-reviewer",
     ),
-    "review-data-validation": (
-        "data-quality-reviewer",
-        "sf-evidence-verifier",
-        "sf-kinesis-specialist",
-        "sf-schema-registry-specialist",
-    ),
+    "review-data-validation": ("data-quality-reviewer",),
     "review-emr-cluster": ("emr-infra-reviewer",),
     "review-emr-eks": ("emr-infra-reviewer",),
     "review-glue-terraform": (
@@ -309,27 +303,8 @@ RELACAO_MEDIDA = {
         "glue-infra-reviewer",
         "spark-performance-architect",
     ),
-    "design-data-architecture": (
-        "sf-cost-reviewer",
-        "sf-data-architect",
-        "sf-kinesis-specialist",
-        "sf-lake-formation-specialist",
-        "sf-lineage-specialist",
-        "sf-schema-registry-specialist",
-        "sf-security-reviewer",
-    ),
-    "design-airflow-pipelines": ("sf-airflow-specialist",),
-    "design-agent-systems": (
-        "sf-agent-builder",
-        "sf-agent-evaluation-specialist",
-        "sf-memory-engineer",
-    ),
-    "optimize-iceberg-tables": ("sf-iceberg-specialist",),
-    "design-s3-data-lake": (
-        "sf-lake-formation-specialist",
-        "sf-s3-specialist",
-        "sf-security-reviewer",
-    ),
+    "design-data-architecture": ("sf-lake-formation-specialist", "sf-security-reviewer"),
+    "design-s3-data-lake": ("sf-lake-formation-specialist", "sf-security-reviewer"),
     "review-terraform-data-platform": (
         "sf-lake-formation-specialist",
         "sf-security-reviewer",
@@ -337,52 +312,16 @@ RELACAO_MEDIDA = {
     ),
     "analyze-graph-data": ("sf-graph-specialist",),
     "design-neptune-graph": ("sf-neptune-specialist",),
-    "design-dynamodb-model": ("sf-dynamodb-specialist",),
-    "optimize-athena-queries": (
-        "sf-athena-specialist",
-        "sf-cost-reviewer",
-    ),
-    "analyze-analytics": (
-        "sf-analytics-specialist",
-        "sf-lineage-specialist",
-    ),
-    "analyze-functional-rules": (
-        "data-quality-reviewer",
-        "sf-functional-rules-specialist",
-        "sf-lineage-specialist",
-        "sf-schema-registry-specialist",
-    ),
-    "agentic-orchestration": (
-        "sf-agent-evaluation-specialist",
-        "sf-context-engineer",
-        "sf-evidence-verifier",
-        "sf-memory-engineer",
-        "sf-orchestrator",
-    ),
-    "token-efficient-agent": (
-        "sf-agent-evaluation-specialist",
-        "sf-context-engineer",
-        "sf-cost-reviewer",
-        "sf-memory-engineer",
-        "sf-orchestrator",
-        "sf-token-verifier",
-    ),
+    "analyze-analytics": ("sf-analytics-specialist",),
+    "analyze-functional-rules": ("data-quality-reviewer",),
+    "agentic-orchestration": ("sf-orchestrator",),
+    "token-efficient-agent": ("sf-orchestrator", "sf-token-verifier"),
     "tool-specialist-routing": (
-        "sf-context-engineer",
-        "sf-evidence-verifier",
         "sf-orchestrator",
         "sf-pyspark-specialist",
         "sf-runtime-specialist",
         "sf-storage-specialist",
     ),
-    "design-lambda-serverless": ("sf-lambda-serverless-specialist",),
-    "design-step-functions-orchestration": (
-        "sf-kinesis-specialist",
-        "sf-step-functions-specialist",
-    ),
-    "verify-agent-evidence": ("sf-evidence-verifier",),
-    "engineer-agent-context": ("sf-context-engineer",),
-    "engineer-agent-memory": ("sf-memory-engineer",),
 }
 
 
@@ -843,9 +782,11 @@ class TestSkillsReais:
             "analyze-graph-data": "sf-graph-specialist",
             "review-emr-cluster": "emr-infra-reviewer",
             "review-emr-eks": "emr-infra-reviewer",
-            "verify-agent-evidence": "sf-evidence-verifier",
-            "engineer-agent-context": "sf-context-engineer",
-            "engineer-agent-memory": "sf-memory-engineer",
+            # Desde SF_STUBS (2026-09-19): com os coordenadores ocos fora, as tres
+            # passaram a ter um coordenador so.
+            "analyze-analytics": "sf-analytics-specialist",
+            "analyze-functional-rules": "data-quality-reviewer",
+            "review-data-validation": "data-quality-reviewer",
         }
 
     def test_o_frontmatter_sobrevive_a_insercao(self):

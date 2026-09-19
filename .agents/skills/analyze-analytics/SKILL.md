@@ -5,6 +5,7 @@ name: analyze-analytics
 description: Use quando for necessario analisar dados, analytics, metricas, consultas, custos e qualidade.
 
 subagent: true
+agent: sf-analytics-specialist
 ---
 
 # Analytics e Analise de Dados

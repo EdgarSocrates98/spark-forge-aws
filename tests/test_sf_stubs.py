@@ -3,6 +3,8 @@ from pathlib import Path
 
 import yaml
 
+from sparkforge.rules.loader import load_catalog
+
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
 
@@ -65,3 +67,47 @@ def test_conteudo_real_muda_de_dono():
     assert "iceberg-v3-readiness" in (_front(iceberg).get("skills") or [])
     dq = _front(AGENTS / "data-quality-reviewer.md")
     assert "analyze-functional-rules" in (dq.get("skills") or [])
+
+
+def _areas_que_julgam() -> set[str]:
+    return {r["id"].rsplit("-", 1)[0] for r in load_catalog() if r.get("executable", True)}
+
+
+def _findings_areas(no) -> list[str]:
+    if isinstance(no, dict):
+        achadas = [no["findings_area"]] if "findings_area" in no else []
+        return achadas + [a for v in no.values() for a in _findings_areas(v)]
+    if isinstance(no, list):
+        return [a for v in no for a in _findings_areas(v)]
+    return []
+
+
+def test_catalogo_so_tem_regra_que_julga():
+    catalogo = load_catalog()
+    assert not list((ROOT / "rules" / "catalog").glob("agentic-sf-*.yaml"))
+    assert [r["id"] for r in catalogo if r.get("executable", True) is False] == []
+    assert len(catalogo) == 157
+
+
+def test_todo_sf_declara_area_que_julga():
+    presentes = {p.stem for p in AGENTS.glob("sf-*.md")}
+    assert presentes.isdisjoint(OCOS), sorted(presentes & set(OCOS))
+    julgam = _areas_que_julgam()
+    for path in sorted(AGENTS.glob("sf-*.md")):
+        areas = set(_front(path).get("rule_areas") or [])
+        assert areas & julgam, path.name
+        assert areas <= julgam, (path.name, sorted(areas - julgam))
+
+
+def test_rota_aponta_para_agente_e_area_que_existem():
+    rotas = yaml.safe_load(
+        (ROOT / "rules" / "catalog" / "routing.yaml").read_text(encoding="utf-8")
+    )["rules"]
+    agentes = {p.stem for p in AGENTS.glob("*.md")}
+    julgam = _areas_que_julgam()
+    for rota in rotas:
+        agente = rota.get("recommended_agent")
+        if agente is not None:
+            assert agente in agentes, (rota["id"], agente)
+        fora = [a for a in _findings_areas(rota.get("when")) if a not in julgam]
+        assert not fora, (rota["id"], fora)

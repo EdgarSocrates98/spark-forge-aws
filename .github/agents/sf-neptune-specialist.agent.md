@@ -4,7 +4,7 @@ description: Projetar ou revisar Amazon Neptune.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-neptune-graph
-rule_areas: [SF-NEPTUNE, SF-GRAPH, SF-AWS]
+rule_areas: [SF-GRAPH]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 # Neptune Specialist

@@ -9,7 +9,7 @@ Analisar Iceberg, Parquet, catalogo, particionamento e layout.
 | Papel | coordenador |
 | Arquivo de origem | `agents/sf-storage-specialist.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash |
-| Áreas de regra | SF-ICE, SF-PQ, SF-CATALOG |
+| Áreas de regra | SF-ICE, SF-PQ |
 
 ## Skills que ele usa
 

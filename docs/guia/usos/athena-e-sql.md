@@ -231,8 +231,8 @@ Antes de subir o format version, rode também `sparkforge iceberg assess-upgrade
 ## Para ir além
 
 - Agent do Athena: [athena-query-optimizer](../referencia/agents/athena-query-optimizer.md).
-- Especialista: [sf-athena-specialist](../referencia/agents/sf-athena-specialist.md).
-- Skills: [optimize-athena-queries](../referencia/skills/optimize-athena-queries.md),
+- Especialista: [athena-query-optimizer](../referencia/agents/athena-query-optimizer.md).
+- Skills: optimize-athena-queries,
   [iceberg-v3-readiness](../referencia/skills/iceberg-v3-readiness.md),
   [optimize-parquet-layout](../referencia/skills/optimize-parquet-layout.md).
 - Referência dos comandos: [analyze](../referencia/cli/analyze.md), [fuse](../referencia/cli/fuse.md),
