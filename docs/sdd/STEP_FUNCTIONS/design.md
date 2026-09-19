@@ -29,17 +29,36 @@ files:
   - {path: tests/test_harness_authorization.py, action: modify, reason: "contagem de tools que declaram caminho"}
   - {path: parity.yaml, action: modify, reason: "capacidade com tools e cli da tool nova"}
   - {path: manifest.json, action: modify, reason: "tools e knowledge_base.rule_count"}
-  - {path: rules/catalog/action_kinds.yaml, action: modify, reason: "so se o action.kind das regras novas nao existir no vocabulario fechado"}
   - {path: docs/surface.lock.json, action: modify, reason: "tool e knowledge novos (regra 26, bytes no commit)"}
   - {path: docs/guia/referencia/tools/README.md, action: modify, reason: "referencia gerada: pagina da tool nova e do verbo"}
   - {path: docs/guia/usos/step-functions.md, action: create, reason: "manual de uso: como coletar o ASL e o que as quatro regras dizem"}
   - {path: fixtures/scenarios/glue_40_para_60_salto_longo/expected/assessment.json, action: modify, reason: "goldens de assessment carregam a contagem do catalogo (tres cenarios e dois holdout, representante)"}
   - {path: docs/superpowers/STATUS.md, action: modify, reason: "regras, tools, extratores"}
   - {path: README.md, action: modify, reason: "contagem de regras e tools"}
+  - {path: tests/test_databricks_rule_audit.py, action: modify, reason: "stepfunctions entra em SO_AWS: o extrator so le artefato AWS, e as regras SF-SFN tem runtime_scope vazio (D4)"}
+  - {path: tests/test_sf_stubs.py, action: modify, reason: "test_catalogo_so_tem_regra_que_julga afirma len == 157, a foto do SF_STUBS; passa a afirmar so que nenhuma regra e executable: false"}
+  - {path: tests/test_fixtures_golden_mcp_parity.py, action: modify, reason: "tool nova depois do golden entra em NOVAS_DEPOIS_DO_GOLDEN"}
+  - {path: docs/gates-por-mudanca.md, action: modify, reason: "a secao Criterio de dominio lista Step Functions como dominio sem artefato; deixa de listar"}
+  - {path: CLAUDE.md, action: modify, reason: "contagem de tools e de tools com detail_level publicada"}
+  - {path: AGENTS.md, action: modify, reason: "mesma contagem"}
+  - {path: GUIA_DE_USO.md, action: modify, reason: "mesma contagem"}
+  - {path: .devin/README.md, action: modify, reason: "mesma contagem"}
+  - {path: docs/guia/06-extrair-julgar-compor.md, action: modify, reason: "o verbo novo entre os analyze e as contagens"}
+  - {path: docs/guia/07-conhecimento-e-catalogo.md, action: modify, reason: "contagem de regras"}
+  - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "alegacoes de corpus de .py"}
+  - {path: docs/harness/AUTHORIZATION-CHAIN.md, action: modify, reason: "alegacoes de len(TOOLS)"}
+  - {path: docs/harness/CURRENT-HARNESS-GAP.md, action: modify, reason: "alegacoes de contagem"}
+  - {path: docs/guia/referencia/tools/sparkforge_analyze_step_functions.md, action: create, reason: "pagina gerada da tool"}
+  - {path: docs/guia/referencia/cli/analyze.md, action: modify, reason: "pagina gerada do verbo analyze, regravada por gen_reference_docs"}
+  - {path: docs/guia/referencia/agents/glue-infra-reviewer.md, action: modify, reason: "pagina gerada do coordenador"}
+  - {path: .claude/agents/glue-infra-reviewer.md, action: modify, reason: "espelho gerado por sync_skills"}
+  - {path: .agents/agents/glue-infra-reviewer.md, action: modify, reason: "espelho gerado por sync_skills"}
+  - {path: .github/agents/glue-infra-reviewer.agent.md, action: modify, reason: "espelho gerado por sync_skills"}
+  - {path: .codex/agents/glue-infra-reviewer.toml, action: modify, reason: "espelho que o sync nao gera: a secao nova a mao"}
   - {path: docs/claims.lock.json, action: modify, reason: "len(TOOLS), corpus de .py e contagens movem alegacoes"}
 decisions:
   - id: D1
-    choice: "Um modulo so, sparkforge/facts/stepfunctions.py, com prefixo de kind sfn. (a CLI oficial e aws stepfunctions, e sfn e o prefixo de ARN arn:aws:states e do nome curto usado pela propria AWS em SFN; nenhum kind existente comeca com sfn). Le .asl.json, .json com StartAt e States, e a saida de describe-state-machine (objeto com definition string e type). Caminha States recursivamente em Parallel.Branches[] e Map.ItemProcessor (e o legado Map.Iterator). Kinds: sfn.state_machine (1 por arquivo: tipo STANDARD, EXPRESS ou undeclared; query language), sfn.task (1 por Task: path do estado, resource, service, api, pattern request_response|sync|callback, job_name, job_name_dynamic, retriers com error_equals, max_attempts efetivo e max_attempts_defaulted, has_catch, timeout_seconds ou timeout_declared false), sfn.unresolved (reason: invalid_json, not_a_state_machine, definition_not_string, resource_dynamic), sfn.analyzed (sempre)."
+    choice: "Um modulo so, sparkforge/facts/stepfunctions.py, com prefixo de kind sfn. (a CLI oficial e aws stepfunctions, e sfn e o prefixo de ARN arn:aws:states e do nome curto usado pela propria AWS em SFN; nenhum kind existente comeca com sfn). Le .asl.json, .json com StartAt e States, e a saida de describe-state-machine (objeto com definition string e type). Caminha States recursivamente em Parallel.Branches[] e Map.ItemProcessor (e o legado Map.Iterator). Kinds: sfn.state_machine (1 por arquivo: tipo STANDARD, EXPRESS ou undeclared; query language), sfn.task (1 por Task: path do estado, resource, service, api, pattern request_response|sync|callback, job_name, job_name_dynamic, retriers com error_equals, max_attempts efetivo e max_attempts_defaulted, has_catch, timeout_seconds ou timeout_declared false), sfn.unresolved (reason: invalid_json, read_error, not_a_state_machine, definition_not_string, state_not_an_object, resource_absent, resource_dynamic; e na derivacao job_name_dynamic, job_definition_absent, job_definition_ambiguous, glue_max_retries_not_literal), sfn.analyzed (sempre)."
     rejected: ["ler aws_sfn_state_machine do Terraform: o definition costuma vir de templatefile ou jsonencode, fora do alcance estatico (fora de escopo no define)", "kind generico orch.*: Control-M ja tem ctm.*, e cada orquestrador tem semantica de retry propria"]
     rollback: "git revert dos commits da feature"
   - id: D2
@@ -51,11 +70,11 @@ decisions:
     rejected: ["coletor aws stepfunctions describe-state-machine: exige credencial; o operador cola a saida em arquivo e o analyze le"]
     rollback: "git revert do commit"
   - id: D4
-    choice: "Area SF-SFN em rules/catalog/stepfunctions.yaml, runtime_scope {glue: '*'} nas quatro (todas julgam como o Glue e disparado, e o eixo glue satisfaz a auditoria de texto AWS de tests/test_databricks_rule_audit.py). SF-SFN-001 (P1, structural): sfn.task service glue, api startJobRun, pattern request_response, com Next. SF-SFN-002 (P2, structural): sfn.task glue sync com retrier cujo error_equals contem States.ALL ou States.TaskFailed e max_attempts efetivo > 0; severity sobe para P1 se max_attempts_defaulted. SF-SFN-003 (P1, confirmed): sfn.task pattern sync e sfn.state_machine type EXPRESS no mesmo arquivo. SF-SFN-004 (P2, structural): sfn.glue_job_link com sfn_retry_effective > 0 e glue_max_retries > 0. Cada regra com sources das paginas citadas, validation, rollback e action de vocabulario existente quando houver."
+    choice: "Area SF-SFN em rules/catalog/stepfunctions.yaml, runtime_scope {} nas quatro: o ASL sozinho nao detecta runtime Glue, e com {glue: '*'} as regras cairiam em skipped ate alguem declarar --glue (defeito que docs/gates-por-mudanca.md descreve, e que test_rule_scope_by_nature e GLUE_GUARDED_RULES acusariam). A auditoria de texto AWS de tests/test_databricks_rule_audit.py fica satisfeita com stepfunctions em SO_AWS, porque o extrator so le artefato AWS. Emenda do plano (2026-09-19): a primeira versao era {glue: '*'}. SF-SFN-001 (P1, structural): sfn.task service glue, api startJobRun, pattern request_response, com Next. SF-SFN-002 (P2, structural): sfn.task glue sync com retrier cujo error_equals contem States.ALL ou States.TaskFailed e max_attempts efetivo > 0; severity sobe para P1 se max_attempts_defaulted. SF-SFN-003 (P1, confirmed): sfn.task pattern sync e sfn.state_machine type EXPRESS no mesmo arquivo. SF-SFN-004 (P2, structural): sfn.glue_job_link com sfn_retry_effective > 0 e glue_max_retries > 0. Cada regra com sources das paginas citadas, validation, rollback e action de vocabulario existente quando houver."
     rejected: ["regra de Timeout do Task contra o Timeout do job: o que acontece com o JobRun no States.Timeout nao e documentado (fora de escopo no define)", "regra de Catch ausente: falta de Catch e politica, nao defeito, e a documentacao so diz que o default e falhar a execucao"]
     rollback: "git revert do commit, e regen dos goldens de assessment"
   - id: D5
-    choice: "Derivacao pura build_sfn_glue_link(facts) em stepfunctions.py, chamada por fusion.fuse() como build_lakeformation: para cada sfn.task glue com job_name literal, procura tf.attribute key name com value igual e mesmo recurso aws_glue_job, e le o tf.attribute key max_retries do mesmo recurso; emite sfn.glue_job_link com job_name, resource, glue_max_retries (0 quando o atributo nao existe, com marca), sfn_retry_effective (soma dos max_attempts efetivos que casam falha de Glue). job_name dinamico sai sfn.unresolved reason job_name_dynamic; nome sem aws_glue_job correspondente sai sfn.unresolved reason job_definition_absent. EMITTED_KINDS e SOURCE_KINDS declarados."
+    choice: "Derivacao pura build_sfn_glue_link(facts) em stepfunctions.py, chamada por fusion.fuse() como build_lakeformation: para cada sfn.task glue com job_name literal, procura tf.attribute key name com value igual e mesmo recurso aws_glue_job, e le o tf.attribute key max_retries do mesmo recurso; emite sfn.glue_job_link com job_name, resource, glue_max_retries (0 quando o atributo nao existe, com marca), sfn_retry_effective (MaxAttempts efetivo do PRIMEIRO retrier cujo ErrorEquals casa falha de job Glue, porque o Step Functions varre os retriers em ordem e usa o primeiro que casa; somar acusaria retry que nunca acontece em [TaskFailed: 0, ALL: 3]. Emenda do plano, 2026-09-19). job_name dinamico sai sfn.unresolved reason job_name_dynamic; nome sem aws_glue_job correspondente sai sfn.unresolved reason job_definition_absent. EMITTED_KINDS e SOURCE_KINDS declarados."
     rejected: ["juntar no motor de regras: _same_subject agrupa por symbol ou file:line, e os dois lados tem subject diferente (o mesmo motivo do bridge.py)", "casar por substring do nome: nome de job e chave exata na API"]
     rollback: "git revert do commit"
   - id: D6
@@ -67,7 +86,7 @@ decisions:
     rejected: ["guardar as frases so no explore: knowledge e o que o agente consulta offline; o explore e registro da feature"]
     rollback: "git revert do commit"
   - id: D8
-    choice: "Corpus fixtures/stepfunctions/<caso>/input e expected, sintetico a partir dos exemplos oficiais: glue_sem_sync, glue_retry_implicito, express_com_sync (describe-state-machine), limpo, job_name_dinamico, e retry_duas_camadas (ASL + main.tf do job com max_retries 2). Golden por scripts/regen_fixtures.py."
+    choice: "Corpus fixtures/stepfunctions/<caso>/input e expected, sintetico a partir dos exemplos oficiais, dez casos: glue_sem_sync, glue_retry_implicito, glue_retry_explicito (ramo P2 de severidade), express_com_sync (describe-state-machine), glue_limpo (limpo ja existe em fixtures/sdd), job_name_dinamico, definicao_ilegivel (sfn.unresolved no golden), retry_duas_camadas (ASL + main.tf com max_retries 2), retry_so_no_step_functions e retry_so_no_glue (matam as mutacoes > para >= de test_rules_threshold_mutation). Golden por scripts/regen_fixtures.py."
     rejected: ["fixture real: nenhum ASL real foi observado, e caso real nunca entra no repositorio"]
     rollback: "git rm do corpus"
 covers:
