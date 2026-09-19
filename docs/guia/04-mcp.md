@@ -369,6 +369,26 @@ uma, está no [índice de tools](referencia/tools/README.md).
 | O cliente não mostra as tools | Servidor não cadastrado no escopo certo, ou não aprovado | `claude mcp list` ou `devin mcp list`, e aprove o servidor se ele aparecer como pendente |
 | `sparkforge_code_read` não aparece | Você está no transporte `http` | Use `stdio` |
 | Devin Desktop não conecta | Servidor HTTP parado ou porta errada | Suba de novo com `--transport http` e confira a URL `/mcp` |
+| `devin mcp list` vazio ou sem `sparkforge` | O escopo do `mcp_config.json` pode ser global em vez de projeto | Confira `.devin/mcp_config.json` |
+
+## O SDK é o 2.x, e o que o adapter passou a garantir
+
+O extra `mcp` fixa `mcp>=2,<3` desde 2026-09-11. A migração do 1.x trocou
+mais do que a API: o SDK 1.x validava os argumentos e o resultado de cada
+tool contra os schemas e montava o `structuredContent`, sem que o adapter
+escrevesse uma linha, e o 2.x não faz nada disso. As três garantias moram
+agora em `sparkforge/adapters/mcp_envelope.py`, testável sem o SDK.
+`tests/test_fixtures_golden_mcp_parity.py` compara o que o cliente recebe contra o golden que
+o 1.29 gravou em `fixtures/mcp_parity/`: no handshake legado, a única
+diferença é `outputSchema.type = "object"`, que o spec `2025-06-18` exige e o
+2.x confere — sem ela o `tools/list` inteiro falhava. O servidor também fala a
+era `2026-07-28` (`server/discover`). `tests/test_adapters_mcp.py` continua
+construindo o servidor e o app ASGI de verdade.
+
+O `.devin/mcp_config.json` existe porque `.mcp.json` usa `${CLAUDE_PLUGIN_ROOT}` —
+variável do carregador de plugin do Claude Code que nenhuma página do Devin documenta
+expandir; sem expansão, o servidor sobe e morre na primeira leitura do catálogo com
+`CatalogError`.
 
 ## Próximos passos
 

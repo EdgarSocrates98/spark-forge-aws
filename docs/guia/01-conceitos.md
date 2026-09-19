@@ -204,6 +204,37 @@ Repare também que `expected_effect` está vazio. O SparkForge não promete "vai
 ficar 30% mais rápido" sem ter medido antes e depois. Veja o verbete
 [finding](#finding) abaixo.
 
+## Objetivos
+
+1. Encontrar o gargalo dominante antes de sugerir alterações.
+2. Correlacionar código, plano físico, Spark UI, CloudWatch, definição do job Glue ou do cluster EMR, e layout de dados.
+3. Produzir recomendações baseadas em evidências, com riscos, trade-offs, validação e rollback.
+4. Melhorar runtime, DPU-hours, custo, escalabilidade e confiabilidade sem alterar o resultado funcional.
+5. Tratar Parquet e Iceberg como camadas diferentes de otimização.
+6. Ser consciente da versão do AWS Glue, da release do EMR, do Spark e do Iceberg.
+7. Dizer onde a validação de dados está e o que ela custa, sem opinar se o dado está correto.
+
+## Regra central
+
+> Não ajustar por intuição. Medir, formular hipótese, testar isoladamente e validar o resultado funcional.
+
+## Dados mínimos recomendados
+
+Forneça, sempre que possível:
+
+- Código do job.
+- Versão do AWS Glue, ou a release do EMR e o `describe-cluster` do cluster.
+- Tipo e quantidade de workers (ou instance groups/fleets, no EMR).
+- Argumentos e Spark configs.
+- Runtime e DPU-hours.
+- Volume de entrada e saída.
+- `df.explain("formatted")`.
+- Screenshots ou event logs do Spark UI.
+- Métricas do CloudWatch.
+- Quantidade e tamanho dos arquivos.
+- Metadados da tabela Iceberg.
+- SLA e frequência do job.
+
 ## Glossário
 
 Os termos estão em ordem alfabética. Cada verbete tem um exemplo curto.

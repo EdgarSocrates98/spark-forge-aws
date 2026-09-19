@@ -11,6 +11,25 @@ Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 4. [Usando pelo MCP (Claude Code, Devin, Copilot e outros)](04-mcp.md).
 5. [Agents e skills: quem faz o quê](05-agents-e-skills.md).
 
+## O detalhe do projeto
+
+O [README](../../README.md) é a porta de entrada e resume. O detalhe que ele resume mora
+aqui:
+
+6. [Extrair, julgar, compor](06-extrair-julgar-compor.md): a sequência mínima em Glue,
+   EMR e Databricks, por que extração e julgamento são verbos separados, e o que cada
+   extrator lê.
+7. [Conhecimento e catálogo](07-conhecimento-e-catalogo.md): `knowledge/`, Glue 6.0, o
+   catálogo de regras, as áreas e o bloco `action:`.
+8. [Rigor, assinatura e handoff](08-rigor-e-handoff.md): gates fail-closed, assinatura de
+   correspondência, Code Scanning e o que se commita ao pausar.
+9. [Camada agêntica](09-camada-agentica.md): as entidades, os executores L0 e o que a
+   camada não afirma.
+10. [Ecossistema caveman](10-caveman.md): compressão de output ligada por padrão, o que foi
+    medido e o que ficou de fora.
+11. [Segurança](11-seguranca.md): o que executa ao clonar, e as operações destrutivas.
+12. [Espelhos e dependências](12-espelhos-e-dependencias.md): para quem contribui.
+
 ## Manuais por tarefa
 
 | Eu quero... | Manual |

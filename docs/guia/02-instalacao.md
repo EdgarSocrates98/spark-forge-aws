@@ -250,6 +250,97 @@ Saída real, rodada na raiz do repositório:
 `knowledge/`. O valor de `checked` depende da versão do repositório. Rode este
 comando na raiz do clone, ou passe `--repo <pasta-do-clone>`.
 
+## Canais de distribuição
+
+| Canal | Como chega | Para quem |
+|---|---|---|
+| Plugin do Claude Code | `.claude-plugin/plugin.json`, instalado via marketplace ou path local | Claude Code |
+| MCP (`sparkforge.adapters.mcp`) | `.mcp.json`, transportes `stdio` e `http` | Devin Desktop, Devin CLI, GitHub Copilot |
+| `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
+| Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
+
+O servidor MCP, cliente por cliente, está em [MCP](04-mcp.md).
+
+## `pip install sparkforge-aws`: o pacote carrega o catálogo dentro dele
+
+```bash
+pip install sparkforge-aws            # CLI sparkforge sozinho
+pip install "sparkforge-aws[aws]"     # + boto3, para os extratores que leem AWS
+pip install "sparkforge-aws[mcp]"     # + servidor MCP (stdio e streamable HTTP)
+```
+
+Diferente de um `pip install` comum, este wheel não traz só código: `rules/catalog/`
+(o catálogo de regras em YAML) e `knowledge/` (a base de conhecimento sobre
+Spark, Glue, EMR, Athena, Parquet e Iceberg) vêm embarcados dentro do pacote,
+resolvidos por `loader.catalog_dir()` na mesma ordem de sempre — variável de
+ambiente, raiz do repositório e, faltando as duas, o fallback dentro do
+próprio pacote instalado. É esse terceiro degrau que faz `analyze`, `judge`,
+`next-step`, `resume` e `rules lookup` funcionarem **sem o repositório
+clonado**: um agente autônomo que sobe um sandbox efêmero, roda `pip install
+sparkforge-aws` e não tem mais nada em disco ainda assim consegue extrair
+facts, julgar contra o catálogo completo e citar a fonte de cada limiar —
+porque o catálogo veio junto no wheel, não porque o agente clonou o
+repositório antes.
+
+Para localizar `knowledge/` a partir do pacote instalado:
+
+```bash
+sparkforge knowledge path                                  # imprime a raiz
+sparkforge knowledge path --file glue/runtime-matrix.md     # imprime um arquivo específico
+```
+
+`rules lookup` também devolve os caminhos já resolvidos: cada regra retornada
+inclui os arquivos de `knowledge/` que a sua `explanation` cita, com o
+caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
+dentro de `site-packages` quando instalado por `pip`.
+
+Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
+**fora do repositório** e reproduz as fixtures golden byte a byte a partir do
+pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
+usa, não um corpus à parte (a contagem corrente de fixtures está na tabela
+*Números correntes* de [`docs/superpowers/STATUS.md`](../superpowers/STATUS.md)).
+Se `sparkforge` acabar sendo importado do repositório em vez do `site-packages`
+nesse processo, o gate falha com mensagem explícita em vez de comparar o
+repositório consigo mesmo. O gate é `python scripts/verify_wheel.py`; o que
+ele verifica está em [Espelhos e dependências](12-espelhos-e-dependencias.md).
+
+## Instalar as skills e os agents em outro repositório
+
+O pacote Python dá a CLI e o servidor MCP. As skills e os perfis de agent chegam a
+outro repositório por `scripts/install_skills.py`, que escreve os diretórios de cada
+plataforma.
+
+No próprio repositório:
+
+```bash
+cd /caminho/do/repositorio && python /caminho/do/sparkforge/scripts/install_skills.py --all
+```
+
+Apenas Claude Code:
+
+```bash
+python scripts/install_skills.py --target . --claude
+```
+
+Apenas Devin:
+
+```bash
+python scripts/install_skills.py --target . --devin
+```
+
+Apenas GitHub Copilot:
+
+```bash
+python scripts/install_skills.py --target . --copilot
+```
+
+Use `--force` para substituir arquivos existentes.
+
+A instalação escreve **no diretório atual** — por isso o `cd` no primeiro
+exemplo. `--target` é opcional e serve como confirmação explícita do destino:
+se for passado e não for o diretório atual, o script recusa e mostra o `cd`
+correto, em vez de escrever num lugar que você não estava olhando.
+
 ## Onde o projeto grava dados
 
 O SparkForge grava estado na pasta `.sparkforge/`, **dentro do diretório que
