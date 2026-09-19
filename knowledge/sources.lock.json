@@ -1800,6 +1800,38 @@
         "SF-EMRK-001"
       ]
     },
+    "https://docs.aws.amazon.com/step-functions/latest/apireference/API_CreateStateMachine.html": {
+      "docs": [
+        "knowledge/stepfunctions/glue-integration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/apireference/API_ValidateStateMachineDefinition.html": {
+      "docs": [
+        "knowledge/stepfunctions/glue-integration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html": {
+      "docs": [
+        "knowledge/stepfunctions/glue-integration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-SFN-003"
+      ]
+    },
     "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html": {
       "docs": [
         "knowledge/stepfunctions/glue-integration.md"

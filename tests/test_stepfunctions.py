@@ -319,3 +319,327 @@ def test_fuse_liga_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
     assert not [f for f in fuse(so_asl) if f.kind == "sfn.glue_job_link"]
     # e pool sem Step Functions sai do fuse sem nenhum sfn.*
     assert not [f for f in fuse(so_tf) if f.kind.startswith("sfn.")]
+
+
+# --------------------------------------------------------------------------
+# Revisao final da feature: os achados, um teste por achado.
+# --------------------------------------------------------------------------
+
+TF_DOIS_JOBS_MESMO_NOME = """resource "aws_glue_job" "a" {
+  name        = "carga-diaria"
+  role_arn    = aws_iam_role.glue_role.arn
+  max_retries = 1
+}
+
+resource "aws_glue_job" "b" {
+  name        = "carga-diaria"
+  role_arn    = aws_iam_role.glue_role.arn
+  max_retries = 1
+}
+"""
+
+TF_MAX_RETRIES_INTERPOLADO = """resource "aws_glue_job" "carga_diaria" {
+  name        = "carga-diaria"
+  role_arn    = aws_iam_role.glue_role.arn
+  max_retries = var.tentativas
+}
+"""
+
+
+def _fundir(pasta, asl: dict, tf: str = TF_CARGA_DIARIA):
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.terraform import extract_terraform_tree
+
+    pasta.mkdir(parents=True, exist_ok=True)
+    (pasta / "sm.asl.json").write_text(json.dumps(asl), encoding="utf-8")
+    (pasta / "main.tf").write_text(tf, encoding="utf-8")
+    so_asl = extract_stepfunctions_tree(pasta, repo_root=pasta)
+    so_tf = extract_terraform_tree(pasta, repo_root=pasta)
+    return fuse(so_asl + so_tf)
+
+
+def _regras(facts, regra: str) -> list:
+    from sparkforge.rules.engine import judge
+    from sparkforge.rules.loader import load_catalog
+
+    return [a for a in judge(facts, load_catalog(), RUNTIME_GLUE) if a.rule_id == regra]
+
+
+def _motivos(facts) -> list[tuple[str, str]]:
+    return sorted(
+        (f.subject["symbol"], f.attrs["reason"]) for f in facts if f.kind == "sfn.unresolved"
+    )
+
+
+def test_link_so_para_task_sync(tmp_path):
+    """Request Response: o retrier cobre so a chamada StartJobRun, nao a falha do job."""
+    asl = {
+        "StartAt": "Disparo",
+        "States": {
+            "Disparo": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun",
+                "Parameters": {"JobName": "carga-diaria"},
+                "Retry": [{"ErrorEquals": ["States.ALL"], "MaxAttempts": 2}],
+                "End": True,
+            }
+        },
+    }
+    fundidos = _fundir(tmp_path, asl)
+    assert not [f for f in fundidos if f.kind == "sfn.glue_job_link"]
+    assert not [f for f in fundidos if f.kind == "sfn.unresolved"]
+    assert not _regras(fundidos, "SF-SFN-004")
+
+
+def test_max_attempts_ilegivel_sai_nomeado_com_estado_e_indice():
+    asl = {
+        "StartAt": "Rodar",
+        "States": {
+            "Rodar": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {"JobName": "carga-diaria"},
+                "Retry": [
+                    {"ErrorEquals": ["States.ALL"], "MaxAttempts": "2"},
+                    {"ErrorEquals": ["Glue.X"], "MaxAttempts": 2.5},
+                    {"ErrorEquals": ["Glue.Y"], "MaxAttempts": -1},
+                    {"ErrorEquals": ["Glue.Z"], "MaxAttempts": 1},
+                ],
+                "End": True,
+            }
+        },
+    }
+    facts = extract_stepfunctions(asl, "sm.asl.json")
+    ilegiveis = sorted(
+        (f.subject["symbol"], f.attrs["reason"], f.attrs["retrier_index"])
+        for f in facts
+        if f.kind == "sfn.unresolved"
+    )
+    assert ilegiveis == [
+        ("States/Rodar", "max_attempts_unreadable", 0),
+        ("States/Rodar", "max_attempts_unreadable", 1),
+        ("States/Rodar", "max_attempts_unreadable", 2),
+    ]
+    [task] = [f for f in facts if f.kind == "sfn.task"]
+    assert "failure_retry_max_attempts" not in task.measures
+    assert all(
+        isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in task.measures.values()
+    )
+
+
+def test_json_profundo_e_arquivo_grande_nao_derrubam(tmp_path, monkeypatch):
+    from sparkforge.facts import scan
+
+    profundo = "[" * 200_000 + "]" * 200_000
+    (tmp_path / "fundo.asl.json").write_text(profundo, encoding="utf-8")
+    facts = extract_stepfunctions_path(tmp_path / "fundo.asl.json", repo_root=tmp_path)
+    assert [f.attrs["reason"] for f in facts if f.kind == "sfn.unresolved"] == ["json_too_deep"]
+
+    describe = {"name": "x", "type": "STANDARD", "definition": profundo}
+    facts = extract_stepfunctions(describe, "describe.json")
+    assert [f.attrs["reason"] for f in facts if f.kind == "sfn.unresolved"] == ["json_too_deep"]
+
+    (tmp_path / "grande.asl.json").write_text(json.dumps(ASL_COM_PARALLEL_E_MAP), encoding="utf-8")
+    monkeypatch.setattr(scan, "TAMANHO_MAXIMO_DADOS_BYTES", 16)
+    facts = extract_stepfunctions_path(tmp_path / "grande.asl.json", repo_root=tmp_path)
+    assert [f.attrs["reason"] for f in facts if f.kind == "sfn.unresolved"] == [
+        "size_above_limit"
+    ]
+    assert len([f for f in facts if f.kind == "sfn.analyzed"]) == 1
+
+
+ASL_POLLING = {
+    "Comment": "startJobRun sem .sync, Wait, aws-sdk glue:getJobRun e Choice",
+    "StartAt": "Iniciar",
+    "States": {
+        "Iniciar": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun",
+            "Parameters": {"JobName": "carga-diaria"},
+            "Next": "Esperar",
+        },
+        "Esperar": {"Type": "Wait", "Seconds": 60, "Next": "Consultar"},
+        "Consultar": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:getJobRun",
+            "Parameters": {"JobName": "carga-diaria", "RunId.$": "$.JobRunId"},
+            "Next": "Terminou",
+        },
+        "Terminou": {
+            "Type": "Choice",
+            "Choices": [
+                {"Variable": "$.JobRun.JobRunState", "StringEquals": "RUNNING", "Next": "Esperar"}
+            ],
+            "Default": "Fim",
+        },
+        "Fim": {"Type": "Succeed"},
+    },
+}
+
+
+def test_polling_com_get_job_run_nao_e_sf_sfn_001():
+    facts = extract_stepfunctions(ASL_POLLING, "sm.asl.json")
+    tasks = _tasks(facts)
+    assert tasks["States/Iniciar"].attrs["polled_by_get_job_run"] is True
+    consultar = tasks["States/Consultar"]
+    assert (consultar.attrs["service"], consultar.attrs["api"]) == ("glue", "getJobRun")
+    assert not _regras(facts, "SF-SFN-001")
+
+    sem_consulta = json.loads(json.dumps(ASL_POLLING))
+    del sem_consulta["States"]["Consultar"]
+    sem_consulta["States"]["Esperar"]["Next"] = "Fim"
+    facts = extract_stepfunctions(sem_consulta, "sm.asl.json")
+    assert _tasks(facts)["States/Iniciar"].attrs["polled_by_get_job_run"] is False
+    [achado] = _regras(facts, "SF-SFN-001")
+    assert achado.severity == "P2"
+    assert "o desfecho do JobRun" not in achado.explanation
+
+
+def _parallel(task_end: dict, conteiner: dict) -> dict:
+    return {
+        "StartAt": "Cargas",
+        "States": {
+            "Cargas": {
+                "Type": "Parallel",
+                "Branches": [
+                    {
+                        "StartAt": "Disparo",
+                        "States": {
+                            "Disparo": {
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::glue:startJobRun",
+                                "Parameters": {"JobName": "carga-diaria"},
+                                **task_end,
+                            }
+                        },
+                    }
+                ],
+                **conteiner,
+            },
+            "Publicar": {"Type": "Pass", "End": True},
+        },
+    }
+
+
+def test_task_end_de_ramo_herda_o_next_do_conteiner():
+    simbolo = "States/Cargas/Branches/0/States/Disparo"
+    com_next = extract_stepfunctions(_parallel({"End": True}, {"Next": "Publicar"}), "a.json")
+    task = _tasks(com_next)[simbolo]
+    assert task.attrs["has_next"] is False
+    assert task.attrs["enclosing_has_next"] is True
+    assert task.attrs["effective_has_next"] is True
+    assert [a.subject["symbol"] for a in _regras(com_next, "SF-SFN-001")] == [simbolo]
+
+    terminal = extract_stepfunctions(_parallel({"End": True}, {"End": True}), "b.json")
+    task = _tasks(terminal)[simbolo]
+    assert task.attrs["enclosing_has_next"] is False
+    assert task.attrs["effective_has_next"] is False
+    assert not _regras(terminal, "SF-SFN-001")
+
+    # No nivel de cima nao ha conteiner: o efetivo e o Next do proprio estado.
+    topo = extract_stepfunctions(ASL_COM_PARALLEL_E_MAP, "c.json")
+    assert _tasks(topo)[PEDIDOS].attrs["effective_has_next"] is True
+
+
+def test_job_name_ausente_nao_e_dinamico(tmp_path):
+    asl = {
+        "StartAt": "SemNome",
+        "States": {
+            "SemNome": _glue_sync({}, [{"ErrorEquals": ["States.ALL"]}], {"Next": "NaoTexto"}),
+            "NaoTexto": _glue_sync(
+                {"JobName": 42}, [{"ErrorEquals": ["States.ALL"]}], {"End": True}
+            ),
+        },
+    }
+    fundidos = _fundir(tmp_path, asl)
+    assert _motivos(fundidos) == [
+        ("States/NaoTexto", "job_name_absent"),
+        ("States/SemNome", "job_name_absent"),
+    ]
+    assert all(t.attrs["job_name_dynamic"] is False for t in _tasks(fundidos).values())
+
+
+def test_link_deriva_dos_tf_attribute_que_usou(tmp_path):
+    asl = {
+        "StartAt": "Ligada",
+        "States": {
+            "Ligada": _glue_sync(
+                {"JobName": "carga-diaria"},
+                [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 2}],
+                {"End": True},
+            )
+        },
+    }
+    fundidos = _fundir(tmp_path, asl)
+    [link] = [f for f in fundidos if f.kind == "sfn.glue_job_link"]
+    usados = {
+        f.attrs["key"]: f.id
+        for f in fundidos
+        if f.kind == "tf.attribute"
+        and f.attrs.get("block") == "root"
+        and f.attrs["key"] in {"name", "max_retries"}
+    }
+    [task] = [f for f in fundidos if f.kind == "sfn.task"]
+    assert link.provenance["derived_from"] == [task.id, usados["name"], usados["max_retries"]]
+
+
+def test_tipo_fora_de_standard_e_express_sai_nomeado():
+    definicao = json.dumps({"StartAt": "P", "States": {"P": {"Type": "Pass", "End": True}}})
+    facts = extract_stepfunctions({"type": "EXPRESSO", "definition": definicao}, "d.json")
+    assert [f.attrs["reason"] for f in facts if f.kind == "sfn.unresolved"] == [
+        "type_unrecognized"
+    ]
+    [maquina] = [f for f in facts if f.kind == "sfn.state_machine"]
+    assert maquina.attrs["type"] == "undeclared"
+
+
+def test_map_iterator_legado_e_lido():
+    asl = {
+        "StartAt": "Lotes",
+        "States": {
+            "Lotes": {
+                "Type": "Map",
+                "Iterator": {
+                    "StartAt": "Carga",
+                    "States": {
+                        "Carga": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                            "Parameters": {"JobName": "carga-diaria"},
+                            "End": True,
+                        }
+                    },
+                },
+                "End": True,
+            }
+        },
+    }
+    facts = extract_stepfunctions(asl, "m.json")
+    assert set(_tasks(facts)) == {"States/Lotes/Iterator/States/Carga"}
+
+
+def test_job_ambiguo_e_max_retries_nao_literal_saem_nomeados(tmp_path):
+    asl = {
+        "StartAt": "Ligada",
+        "States": {
+            "Ligada": _glue_sync(
+                {"JobName": "carga-diaria"}, [{"ErrorEquals": ["States.ALL"]}], {"End": True}
+            )
+        },
+    }
+    ambiguo = _fundir(tmp_path / "a", asl, TF_DOIS_JOBS_MESMO_NOME)
+    assert _motivos(ambiguo) == [("States/Ligada", "job_definition_ambiguous")]
+    assert not [f for f in ambiguo if f.kind == "sfn.glue_job_link"]
+
+    interpolado = _fundir(tmp_path / "b", asl, TF_MAX_RETRIES_INTERPOLADO)
+    assert _motivos(interpolado) == [("States/Ligada", "glue_max_retries_not_literal")]
+    [link] = [f for f in interpolado if f.kind == "sfn.glue_job_link"]
+    assert link.attrs["glue_max_retries_source"] == "not_literal"
+    assert "glue_max_retries" not in link.measures
+    assert not _regras(interpolado, "SF-SFN-004")
+
+
+def test_step_functions_e_extrator_de_evidencia_do_debate():
+    from sparkforge.agentic.executor import debate_evidence as de
+
+    assert de._extrator("step-functions") is extract_stepfunctions_path

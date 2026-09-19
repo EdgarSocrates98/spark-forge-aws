@@ -24,16 +24,23 @@ E o nome curto que a propria AWS usa para o servico (ARN `arn:aws:states`, CLI
   estado na definicao (`States/Cargas/Branches/0/States/Carga`): dois estados de
   mesmo nome em ramos diferentes sao duas entidades para `same_subject`. O tipo da
   state machine viaja em `attrs.state_machine_type` porque o motor avalia um fact
-  por condicao (regra 33).
-- `sfn.unresolved` -- o que nao deu para ler. Razoes: `read_error`, `invalid_json`,
-  `not_a_state_machine`, `definition_not_string`, `state_not_an_object`,
-  `resource_absent` e `resource_dynamic`.
+  por condicao (regra 33). Pelo mesmo motivo, dois atributos derivados da state
+  machine inteira: `polled_by_get_job_run` (a MESMA definicao tem um Task
+  `glue:getJobRun`, o padrao de espera por consulta) e `effective_has_next` (o
+  `Next` do proprio estado, ou -- quando o Task e `End` de um ramo de `Parallel` ou
+  `Map` -- o `Next` efetivo do conteiner mais proximo, em `enclosing_has_next`).
+- `sfn.unresolved` -- o que nao deu para ler. Razoes: `read_error`,
+  `size_above_limit`, `invalid_json`, `json_too_deep`, `not_a_state_machine`,
+  `definition_not_string`, `type_unrecognized`, `state_not_an_object`,
+  `resource_absent`, `resource_dynamic` e `max_attempts_unreadable` (com o estado e
+  o `retrier_index`).
 - `sfn.analyzed` -- a sentinela, com as contagens.
 - `sfn.glue_job_link` -- DERIVADO, nunca lido de arquivo: `build_sfn_glue_link` liga
   o Task do Glue ao `aws_glue_job` de mesmo `name` quando os dois estao no pool, e
-  `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
-  `job_name_dynamic`, `job_definition_absent`, `job_definition_ambiguous` e
-  `glue_max_retries_not_literal`.
+  `fusion.fuse` a chama. So Task `.sync` liga: em Request Response o retrier cobre a
+  chamada `StartJobRun`, nao a falha do job. As razoes de `sfn.unresolved` que so ela
+  emite: `job_name_absent`, `job_name_dynamic`, `job_definition_absent`,
+  `job_definition_ambiguous` e `glue_max_retries_not_literal`.
 
 ## Os defaults publicados moram AQUI, com a fonte ao lado
 
@@ -55,8 +62,8 @@ sai em `measures.failure_retry_max_attempts`; sem retrier que case, `0`.
 ## JobName
 
 Literal quando `JobName` e string sem `{% %}`; dinamico quando a chave e `JobName.$`
-(JSONPath) ou o valor e expressao JSONata. So o literal liga o estado ao
-`aws_glue_job` de mesmo nome.
+(JSONPath) ou o valor e expressao JSONata; ausente quando nao ha `JobName` ou ele nao
+e texto. So o literal liga o estado ao `aws_glue_job` de mesmo nome.
 """
 from __future__ import annotations
 
@@ -67,6 +74,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts import scan
 from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
@@ -96,6 +104,8 @@ DEFAULT_TIMEOUT_SECONDS = 99_999_999
 _FAILURE_ERRORS = frozenset({"States.ALL", "States.TaskFailed"})
 _DECLARED_TYPES = frozenset({"STANDARD", "EXPRESS"})
 _UNDECLARED = "undeclared"
+# Origens de `JobName` que sao expressao avaliada em execucao, e nao ausencia.
+_DYNAMIC_SOURCES = frozenset({"jsonpath", "jsonata"})
 
 
 @dataclass
@@ -215,7 +225,11 @@ def _job_attrs(state: dict[str, Any], service: str) -> dict[str, Any]:
     if service != "glue":
         return {"job_name": None, "job_name_dynamic": False, "job_name_source": "not_applicable"}
     nome, origem = _job_name(state)
-    return {"job_name": nome, "job_name_dynamic": origem != "literal", "job_name_source": origem}
+    return {
+        "job_name": nome,
+        "job_name_dynamic": origem in _DYNAMIC_SOURCES,
+        "job_name_source": origem,
+    }
 
 
 def _retriers(state: dict[str, Any]) -> list[dict[str, Any]]:
@@ -258,11 +272,25 @@ def _timeout(state: dict[str, Any]) -> tuple[bool, bool, int | None]:
     return True, True, None
 
 
-def _task_fact(state: dict[str, Any], name: str, state_path: str, leitura: _Leitura) -> Fact:
+def _task_fact(
+    state: dict[str, Any], name: str, state_path: str, enclosing_has_next: bool, leitura: _Leitura
+) -> Fact:
     recurso = state["Resource"]
     alvo = _parse_resource(recurso)
     retriers = _retriers(state)
+    for indice, retrier in enumerate(retriers):
+        if retrier["max_attempts"] is None:
+            leitura.facts.append(
+                _unresolved(
+                    _state_subject(leitura.path, state_path),
+                    "max_attempts_unreadable",
+                    leitura.provenance,
+                    retrier_index=indice,
+                )
+            )
     falha = _failure_retrier(retriers)
+    has_next = isinstance(state.get("Next"), str)
+    end = state.get("End") is True
     declarado, dinamico, segundos = _timeout(state)
     linguagem = state.get("QueryLanguage")
     attrs: dict[str, Any] = {
@@ -274,8 +302,10 @@ def _task_fact(state: dict[str, Any], name: str, state_path: str, leitura: _Leit
         "failure_retry_matched": falha is not None,
         "failure_retry_defaulted": falha is not None and falha["max_attempts_defaulted"],
         "has_catch": bool(state.get("Catch")),
-        "has_next": isinstance(state.get("Next"), str),
-        "end": state.get("End") is True,
+        "has_next": has_next,
+        "end": end,
+        "enclosing_has_next": enclosing_has_next,
+        "effective_has_next": has_next or (end and enclosing_has_next),
         "timeout_declared": declarado,
         "timeout_dynamic": dinamico,
         "state_machine_type": leitura.machine_type,
@@ -297,8 +327,15 @@ def _task_fact(state: dict[str, Any], name: str, state_path: str, leitura: _Leit
     )
 
 
-def _walk(states: dict[str, Any], base: str, leitura: _Leitura) -> None:
-    """Percorre `States`, descendo em `Parallel.Branches[]` e `Map.ItemProcessor`/`Iterator`."""
+def _walk(
+    states: dict[str, Any], base: str, leitura: _Leitura, enclosing_has_next: bool = False
+) -> None:
+    """Percorre `States`, descendo em `Parallel.Branches[]` e `Map.ItemProcessor`/`Iterator`.
+
+    `enclosing_has_next` e o `Next` EFETIVO do conteiner mais proximo: o `End` de um
+    ramo encerra o ramo, e o `Next` do `Parallel`/`Map` roda depois dele. No nivel de
+    cima nao ha conteiner, e o valor e `False`.
+    """
     for nome, corpo in states.items():
         state_path = f"{base}/States/{nome}" if base else f"States/{nome}"
         leitura.state_count += 1
@@ -314,17 +351,40 @@ def _walk(states: dict[str, Any], base: str, leitura: _Leitura) -> None:
             elif not isinstance(recurso, str) or not recurso.strip() or _is_jsonata(recurso):
                 leitura.facts.append(_unresolved(subject, "resource_dynamic", leitura.provenance))
             else:
-                leitura.facts.append(_task_fact(corpo, str(nome), state_path, leitura))
-        elif tipo == "Parallel":
+                leitura.facts.append(
+                    _task_fact(corpo, str(nome), state_path, enclosing_has_next, leitura)
+                )
+            continue
+        # O `Next` efetivo deste conteiner, para os estados dos ramos dele.
+        seguinte = isinstance(corpo.get("Next"), str) or (
+            corpo.get("End") is True and enclosing_has_next
+        )
+        if tipo == "Parallel":
             ramos = corpo.get("Branches")
             for indice, ramo in enumerate(ramos if isinstance(ramos, list) else []):
                 if isinstance(ramo, dict) and isinstance(ramo.get("States"), dict):
-                    _walk(ramo["States"], f"{state_path}/Branches/{indice}", leitura)
+                    _walk(ramo["States"], f"{state_path}/Branches/{indice}", leitura, seguinte)
         elif tipo == "Map":
             for chave in ("ItemProcessor", "Iterator"):
                 processador = corpo.get(chave)
                 if isinstance(processador, dict) and isinstance(processador.get("States"), dict):
-                    _walk(processador["States"], f"{state_path}/{chave}", leitura)
+                    _walk(processador["States"], f"{state_path}/{chave}", leitura, seguinte)
+
+
+def _mark_polling(leitura: _Leitura) -> None:
+    """`polled_by_get_job_run` em cada Task: a MESMA definicao consulta o JobRun?
+
+    O padrao de espera sem `.sync` e `startJobRun` -> `Wait` -> `glue:getJobRun` ->
+    `Choice`. O predicado e sobre a state machine inteira, e o motor avalia um fact
+    por condicao: por isso ele e derivado aqui (regra 33). Nao confere se a consulta
+    e do MESMO job -- o `RunId` e dinamico por natureza.
+    """
+    tasks = [f for f in leitura.facts if f.kind == "sfn.task"]
+    consulta = any(
+        f.attrs.get("service") == "glue" and f.attrs.get("api") == "getJobRun" for f in tasks
+    )
+    for fact in tasks:
+        fact.attrs["polled_by_get_job_run"] = consulta
 
 
 def _finish(facts: list[Fact], path: str, provenance: dict[str, Any]) -> list[Fact]:
@@ -347,6 +407,20 @@ def _finish(facts: list[Fact], path: str, provenance: dict[str, Any]) -> list[Fa
     return sort_facts(facts)
 
 
+def _loads(texto: str) -> tuple[Any, str | None]:
+    """(valor, None) ou (None, razao). Nunca levanta.
+
+    O decodificador de JSON levanta `RecursionError` com aninhamento profundo -- o
+    mesmo payload hostil em arquivo e no `definition` do `describe-state-machine`.
+    """
+    try:
+        return json.loads(texto), None
+    except RecursionError:
+        return None, "json_too_deep"
+    except ValueError:  # inclui json.JSONDecodeError
+        return None, "invalid_json"
+
+
 def extract_stepfunctions(payload: Any, path: str, artifact_sha256: str = "") -> list[Fact]:
     """Extrai Facts de um payload ja carregado: ASL, ou a saida de `describe-state-machine`."""
     provenance = _provenance(path, artifact_sha256)
@@ -354,20 +428,26 @@ def extract_stepfunctions(payload: Any, path: str, artifact_sha256: str = "") ->
         falha = _unresolved(_file_subject(path), "not_a_state_machine", provenance)
         return _finish([falha], path, provenance)
     origem, tipo, nome, definicao = "asl", _UNDECLARED, None, payload
+    desconhecido: list[Fact] = []
     if "definition" in payload:
         origem = "describe_state_machine"
         bruto = payload["definition"]
         if not isinstance(bruto, str):
             falha = _unresolved(_file_subject(path), "definition_not_string", provenance)
             return _finish([falha], path, provenance)
-        try:
-            definicao = json.loads(bruto)
-        except json.JSONDecodeError:
-            falha = _unresolved(_file_subject(path), "invalid_json", provenance, at="definition")
+        definicao, razao = _loads(bruto)
+        if razao is not None:
+            falha = _unresolved(_file_subject(path), razao, provenance, at="definition")
             return _finish([falha], path, provenance)
         declarado = payload.get("type")
         if isinstance(declarado, str) and declarado in _DECLARED_TYPES:
             tipo = declarado
+        elif "type" in payload:
+            desconhecido.append(
+                _unresolved(
+                    _file_subject(path), "type_unrecognized", provenance, value=str(declarado)
+                )
+            )
         if isinstance(payload.get("name"), str):
             nome = payload["name"]
     if not (
@@ -376,15 +456,17 @@ def extract_stepfunctions(payload: Any, path: str, artifact_sha256: str = "") ->
         and isinstance(definicao.get("States"), dict)
     ):
         falha = _unresolved(_file_subject(path), "not_a_state_machine", provenance)
-        return _finish([falha], path, provenance)
+        return _finish([*desconhecido, falha], path, provenance)
     linguagem = definicao.get("QueryLanguage")
     leitura = _Leitura(
         path=path,
         machine_type=tipo,
         query_language=linguagem if isinstance(linguagem, str) else "JSONPath",
         provenance=provenance,
+        facts=desconhecido,
     )
     _walk(definicao["States"], "", leitura)
+    _mark_polling(leitura)
     attrs: dict[str, Any] = {
         "type": tipo,
         "type_declared": tipo != _UNDECLARED,
@@ -411,23 +493,30 @@ def extract_stepfunctions(payload: Any, path: str, artifact_sha256: str = "") ->
 def extract_stepfunctions_path(path: Path, repo_root: Path | None = None) -> list[Fact]:
     """Extrai de um arquivo `.json`, ancorando o path relativo a `repo_root`.
 
-    Falha ao abrir vira `sfn.unresolved` com `read_error`; JSON invalido,
-    `invalid_json`. Nunca uma excecao que derruba quem chamou.
+    Falha ao abrir vira `sfn.unresolved` com `read_error`; arquivo acima do teto de
+    `scan._teto_para` (o mesmo que a varredura aplica), `size_above_limit`; JSON
+    invalido, `invalid_json`; aninhamento que estoura a pilha do decodificador,
+    `json_too_deep`. Nunca uma excecao que derruba quem chamou.
     """
     rel = str(path.relative_to(repo_root)) if repo_root else str(path)
     anchor = rel.replace("\\", "/")
     vazio = _provenance(anchor, "")
     try:
+        tamanho, teto = path.stat().st_size, scan._teto_para(path)
+        if tamanho > teto:
+            falha = _unresolved(
+                _file_subject(anchor), "size_above_limit", vazio, size=tamanho, limit=teto
+            )
+            return _finish([falha], anchor, vazio)
         text = path.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError) as exc:
         falha = _unresolved(_file_subject(anchor), "read_error", vazio, detail=str(exc))
         return _finish([falha], anchor, vazio)
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     provenance = _provenance(anchor, sha)
-    try:
-        parsed = json.loads(text)
-    except json.JSONDecodeError:
-        falha = _unresolved(_file_subject(anchor), "invalid_json", provenance)
+    parsed, razao = _loads(text)
+    if razao is not None:
+        falha = _unresolved(_file_subject(anchor), razao, provenance)
         return _finish([falha], anchor, provenance)
     return extract_stepfunctions(parsed, anchor, artifact_sha256=sha)
 
@@ -451,9 +540,9 @@ def extract_stepfunctions_tree(root: Path, repo_root: Path | None = None) -> lis
     return sort_facts(facts)
 
 
-def _glue_jobs_por_nome(facts: Sequence[Fact]) -> dict[str, list[tuple[str, str]]]:
-    """Nome literal do job -> [(arquivo, endereco do recurso)], de `tf.attribute` `name`."""
-    nomes: dict[str, list[tuple[str, str]]] = {}
+def _glue_jobs_por_nome(facts: Sequence[Fact]) -> dict[str, list[tuple[str, str, str]]]:
+    """Nome literal do job -> [(arquivo, endereco, id do fact)], de `tf.attribute` `name`."""
+    nomes: dict[str, list[tuple[str, str, str]]] = {}
     for fact in facts:
         if fact.kind != "tf.attribute":
             continue
@@ -465,12 +554,16 @@ def _glue_jobs_por_nome(facts: Sequence[Fact]) -> dict[str, list[tuple[str, str]
         if attrs.get("key") != "name" or attrs.get("block") != "root" or not attrs.get("literal"):
             continue
         arquivo = str(subject.get("file") or "")
-        nomes.setdefault(str(attrs.get("value")), []).append((arquivo, simbolo))
+        nomes.setdefault(str(attrs.get("value")), []).append((arquivo, simbolo, fact.id))
     return nomes
 
 
-def _max_retries(facts: Sequence[Fact], arquivo: str, simbolo: str) -> tuple[str, int | None]:
-    """(`literal`, n), (`absent`, 0) ou (`not_literal`, None) para UM `aws_glue_job`.
+def _max_retries(
+    facts: Sequence[Fact], arquivo: str, simbolo: str
+) -> tuple[str, int | None, str | None]:
+    """(`literal`, n, id), (`absent`, 0, None) ou (`not_literal`, None, id|None).
+
+    O terceiro elemento e o id do `tf.attribute` lido, que entra em `derived_from`.
 
     `absent` vale 0 porque o atributo nao declarado nao pede retry. Valor interpolado
     vira `tf.unresolved` sem o endereco do recurso (`terraform.py`); por isso qualquer
@@ -488,15 +581,15 @@ def _max_retries(facts: Sequence[Fact], arquivo: str, simbolo: str) -> tuple[str
             continue
         valor = (fact.measures or {}).get("value")
         if attrs.get("literal") and isinstance(valor, int | float) and not isinstance(valor, bool):
-            return "literal", int(valor)
-        return "not_literal", None
+            return "literal", int(valor), fact.id
+        return "not_literal", None, fact.id
     interpolado = any(
         f.kind == "tf.unresolved"
         and (f.attrs or {}).get("key") == "max_retries"
         and (f.subject or {}).get("file") == arquivo
         for f in facts
     )
-    return ("not_literal", None) if interpolado else ("absent", 0)
+    return ("not_literal", None, None) if interpolado else ("absent", 0, None)
 
 
 def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
@@ -510,6 +603,10 @@ def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
     `sfn_retry_effective` e o `failure_retry_max_attempts` do Task: o efetivo do
     PRIMEIRO retrier que casa a falha do job (ver o docstring do modulo). O que nao liga
     sai nomeado em `sfn.unresolved`, nunca como vinculo.
+
+    So Task `.sync`: sob Request Response o estado termina quando o Glue aceita o
+    pedido, e o retrier cobre a chamada `StartJobRun`, nao a falha do JobRun -- nao ha
+    retry do Step Functions sobre o job para compor com o do Glue.
     """
     nomes = _glue_jobs_por_nome(facts)
     saida: list[Fact] = []
@@ -517,7 +614,7 @@ def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
         attrs = task.attrs or {}
         if task.kind != "sfn.task" or attrs.get("service") != "glue":
             continue
-        if attrs.get("api") != "startJobRun":
+        if attrs.get("api") != "startJobRun" or attrs.get("pattern") != "sync":
             continue
         proveniencia = {
             "artifact": str((task.provenance or {}).get("artifact", "")),
@@ -527,10 +624,11 @@ def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
         }
         nome = attrs.get("job_name")
         if attrs.get("job_name_dynamic") or not isinstance(nome, str):
+            dinamico = attrs.get("job_name_source") in _DYNAMIC_SOURCES
             saida.append(
                 _unresolved(
                     dict(task.subject),
-                    "job_name_dynamic",
+                    "job_name_dynamic" if dinamico else "job_name_absent",
                     proveniencia,
                     job_name_source=attrs.get("job_name_source", ""),
                     unblocked_by="JobName literal no estado Task",
@@ -546,13 +644,15 @@ def build_sfn_glue_link(facts: Sequence[Fact]) -> list[Fact]:
                     razao,
                     proveniencia,
                     job_name=nome,
-                    resources=[simbolo for _, simbolo in candidatos],
+                    resources=[simbolo for _, simbolo, _ in candidatos],
                     unblocked_by="sparkforge analyze terraform no aws_glue_job, e fuse",
                 )
             )
             continue
-        arquivo, simbolo = candidatos[0]
-        origem, retries = _max_retries(facts, arquivo, simbolo)
+        arquivo, simbolo, nome_id = candidatos[0]
+        origem, retries, retries_id = _max_retries(facts, arquivo, simbolo)
+        usados = [nome_id] + ([retries_id] if retries_id is not None else [])
+        proveniencia = {**proveniencia, "derived_from": [task.id, *usados]}
         measures: dict[str, Any] = {}
         efetivo = (task.measures or {}).get("failure_retry_max_attempts")
         if efetivo is not None:

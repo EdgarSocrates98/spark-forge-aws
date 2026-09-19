@@ -1,0 +1,30 @@
+{
+  "Comment": "Fixture sintetica: startJobRun sem .sync, e a espera montada a mao por consulta ao JobRun.",
+  "StartAt": "IniciarCarga",
+  "States": {
+    "IniciarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Next": "Esperar"
+    },
+    "Esperar": {"Type": "Wait", "Seconds": 60, "Next": "ConsultarJobRun"},
+    "ConsultarJobRun": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:getJobRun",
+      "Parameters": {"JobName": "carga-diaria", "RunId.$": "$.JobRunId"},
+      "ResultPath": "$.consulta",
+      "Next": "Terminou"
+    },
+    "Terminou": {
+      "Type": "Choice",
+      "Choices": [
+        {"Variable": "$.consulta.JobRun.JobRunState", "StringEquals": "SUCCEEDED", "Next": "PublicarResultado"},
+        {"Variable": "$.consulta.JobRun.JobRunState", "StringEquals": "FAILED", "Next": "Falhou"}
+      ],
+      "Default": "Esperar"
+    },
+    "PublicarResultado": {"Type": "Succeed"},
+    "Falhou": {"Type": "Fail"}
+  }
+}

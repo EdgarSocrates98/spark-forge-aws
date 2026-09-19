@@ -114,6 +114,7 @@
       "s3-listing",
       "sql",
       "sql-metrics",
+      "step-functions",
       "terraform",
       "workload"
     ],

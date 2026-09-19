@@ -202,7 +202,7 @@ código só saem sob `--template`, rotulados como template. Consumo sai
     `Decision` `unresolved` com as violações citadas. Contagem de claim nunca
     escolhe vencedor;
   - **evidência nova só reextraída.** O lado aponta `{extractor, path}`. O
-    executor confere o extrator contra uma allowlist de 22, confina o caminho
+    executor confere o extrator contra uma allowlist de 23, confina o caminho
     ao case e roda o extrator. Fact escrito pelo agente não é aceito.
 
   **O que continua não existindo:** benchmark do debate contra a arbitragem

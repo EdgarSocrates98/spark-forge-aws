@@ -19,7 +19,7 @@
     "attrs": {},
     "provenance": {
       "artifact": "carga.asl.json",
-      "artifact_sha256": "d58c710a80cc00409c2ad4d927d2172470199b1aae7d1117e006775a8a4b784f",
+      "artifact_sha256": "d8488ce6382e1d9c6cf7a1f7ec32484f76c9ca5568827b2b09e7fae5a8a7b018",
       "extractor": "stepfunctions@0.1.0"
     }
   },
@@ -47,12 +47,12 @@
     },
     "provenance": {
       "artifact": "carga.asl.json",
-      "artifact_sha256": "d58c710a80cc00409c2ad4d927d2172470199b1aae7d1117e006775a8a4b784f",
+      "artifact_sha256": "d8488ce6382e1d9c6cf7a1f7ec32484f76c9ca5568827b2b09e7fae5a8a7b018",
       "extractor": "stepfunctions@0.1.0"
     }
   },
   {
-    "id": "f_676495",
+    "id": "f_c7c1ed",
     "schema_version": 1,
     "kind": "sfn.task",
     "subject": {
@@ -65,25 +65,25 @@
     },
     "measures": {
       "retrier_count": 1,
-      "failure_retry_max_attempts": 1,
+      "failure_retry_max_attempts": 2,
       "timeout_seconds": 99999999
     },
     "attrs": {
       "state_name": "RodarCarga",
-      "resource": "arn:aws:states:::glue:startJobRun.sync",
+      "resource": "arn:aws:states:::glue:startJobRun",
       "service": "glue",
       "api": "startJobRun",
-      "pattern": "sync",
+      "pattern": "request_response",
       "integration": "optimized",
-      "job_name": null,
-      "job_name_dynamic": true,
-      "job_name_source": "jsonpath",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
       "retriers": [
         {
           "error_equals": [
             "States.TaskFailed"
           ],
-          "max_attempts": 1,
+          "max_attempts": 2,
           "max_attempts_defaulted": false
         }
       ],
@@ -102,35 +102,8 @@
     },
     "provenance": {
       "artifact": "carga.asl.json",
-      "artifact_sha256": "d58c710a80cc00409c2ad4d927d2172470199b1aae7d1117e006775a8a4b784f",
+      "artifact_sha256": "d8488ce6382e1d9c6cf7a1f7ec32484f76c9ca5568827b2b09e7fae5a8a7b018",
       "extractor": "stepfunctions@0.1.0"
-    }
-  },
-  {
-    "id": "f_790926",
-    "schema_version": 1,
-    "kind": "sfn.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "carga.asl.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "States/RodarCarga",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "reason": "job_name_dynamic",
-      "job_name_source": "jsonpath",
-      "unblocked_by": "JobName literal no estado Task"
-    },
-    "provenance": {
-      "artifact": "carga.asl.json",
-      "artifact_sha256": "",
-      "extractor": "stepfunctions@0.1.0",
-      "derived_from": [
-        "f_676495"
-      ]
     }
   },
   {

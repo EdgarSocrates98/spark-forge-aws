@@ -4,7 +4,7 @@
     "schema_version": 1,
     "catalog_version": 1,
     "title": "Job Glue disparado sem .sync: o próximo estado roda com o job ainda em execução",
-    "severity": "P1",
+    "severity": "P2",
     "confidence": "high",
     "status": "structural",
     "subject": {
@@ -25,11 +25,11 @@
     },
     "threshold": {},
     "runtime_scope": {},
-    "explanation": "O estado chama `glue:startJobRun` no padrão Request Response — o `Resource` não termina em `.sync` —, e a documentação do Step Functions diz o que isso significa: \"Step Functions will not wait for a job to complete.\" O estado termina quando o Glue aceita o pedido, e o `Next` roda com o job ainda em execução. Um estado seguinte que leia a saída do job lê dado parcial ou antigo, e o desfecho do JobRun não chega à execução da state machine. O padrão que espera o job terminar é o Run a Job (`.sync`), com o recurso `arn:aws:states:::glue:startJobRun.sync`. A regra exige `Next`: um `startJobRun` terminal (`End`) é disparo deliberado sem espera, e não há estado seguinte a proteger. Ver knowledge/stepfunctions/glue-integration.md.",
+    "explanation": "O estado chama `glue:startJobRun` no padrão Request Response — o `Resource` não termina em `.sync` —, e a documentação do Step Functions diz o que isso significa: \"Step Functions will not wait for a job to complete.\" O estado seguinte roda com o job ainda em execução. Quando o Task é o `End` de um ramo de `Parallel` ou `Map`, o estado seguinte é o `Next` do contêiner, que roda quando o ramo termina. A regra não dispara quando a mesma definição consulta o JobRun com `glue:getJobRun` (espera por consulta, montada à mão) nem quando não há estado seguinte. O padrão que espera o job terminar é o Run a Job (`.sync`), com o recurso `arn:aws:states:::glue:startJobRun.sync`. Ver knowledge/stepfunctions/glue-integration.md.",
     "proposed_change": [
       "Trocar o `Resource` para `arn:aws:states:::glue:startJobRun.sync`, para que o estado espere o JobRun terminar e falhe junto com ele.",
       "Se o disparo sem espera é deliberado (o job segue sozinho e ninguém depende do resultado), tirar a dependência: nenhum estado seguinte pode ler a saída do job. Registrar a decisão no `Comment` do estado.",
-      "Ao trocar para `.sync`, conferir a policy da role da state machine: a política que a AWS gera para o `.sync` do Glue inclui `glue:BatchStopJobRun`, além de `glue:StartJobRun`."
+      "Ao trocar para `.sync`, conferir a policy da role da state machine: a política que a AWS gera para o `.sync` do Glue inclui `glue:GetJobRun`, `glue:GetJobRuns` e `glue:BatchStopJobRun`, além de `glue:StartJobRun`."
     ],
     "expected_effect": "",
     "benchmark_ref": "",
@@ -46,7 +46,7 @@
       "Uma execução de teste em que o job falha termina a state machine em falha (ou no Catch declarado), e não segue para o estado seguinte."
     ],
     "rollback": [
-      "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`). Execuções já iniciadas seguem com a definição com que começaram."
+      "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`)."
     ],
     "sources": [
       {

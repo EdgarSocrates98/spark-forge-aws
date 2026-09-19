@@ -232,7 +232,7 @@
     {
       "path": "knowledge/stepfunctions/glue-integration.md",
       "title": "glue-integration",
-      "sha256": "e5954b4ce1044137430bece541ebce969eb7c920f13b2cc03d634a8d4ed29014"
+      "sha256": "2b9f120b8ed2fd3b2a8c38453e7ab5a38103a750782c5e12859fdbe77de1164a"
     },
     {
       "path": "knowledge/storage/iceberg-catalog.md",

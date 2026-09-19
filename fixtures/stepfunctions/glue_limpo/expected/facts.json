@@ -92,10 +92,13 @@
       "has_catch": false,
       "has_next": false,
       "end": true,
+      "enclosing_has_next": true,
+      "effective_has_next": true,
       "timeout_declared": false,
       "timeout_dynamic": false,
       "state_machine_type": "undeclared",
-      "query_language": "JSONPath"
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": false
     },
     "provenance": {
       "artifact": "cargas.asl.json",
@@ -151,10 +154,13 @@
       "has_catch": false,
       "has_next": false,
       "end": true,
+      "enclosing_has_next": true,
+      "effective_has_next": true,
       "timeout_declared": false,
       "timeout_dynamic": false,
       "state_machine_type": "undeclared",
-      "query_language": "JSONPath"
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": false
     },
     "provenance": {
       "artifact": "cargas.asl.json",
@@ -195,10 +201,13 @@
       "has_catch": false,
       "has_next": false,
       "end": true,
+      "enclosing_has_next": false,
+      "effective_has_next": false,
       "timeout_declared": false,
       "timeout_dynamic": false,
       "state_machine_type": "undeclared",
-      "query_language": "JSONPath"
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": false
     },
     "provenance": {
       "artifact": "cargas.asl.json",

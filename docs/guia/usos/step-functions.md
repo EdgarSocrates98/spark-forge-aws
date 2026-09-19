@@ -2,9 +2,9 @@
 
 O **AWS Step Functions** orquestra jobs Glue por uma *state machine*, escrita em Amazon
 States Language (ASL). Este manual mostra como o SparkForge lê essa definição e confere
-três coisas sobre o job Glue que ela dispara: se o fluxo **espera** o job terminar,
-quantas vezes o **retry** reexecuta o job inteiro, e se o **tipo** do workflow suporta o
-padrão que a definição pede. Com o Terraform do job ao lado, ele mostra também quando o
+três coisas sobre o job Glue que ela dispara: se o fluxo **espera** o job terminar, se
+um **retry** reagenda o Task (até 1 + `MaxAttempts` vezes, cada vez um `StartJobRun`
+novo), e se o **tipo** do workflow suporta o padrão que a definição pede. Com o Terraform do job ao lado, ele mostra também quando o
 retry existe nas **duas camadas** — na state machine e no próprio job.
 
 O SparkForge **não** chama a API do Step Functions e não lê histórico de execução. Ele
@@ -42,7 +42,7 @@ A definição vem do repositório (o `.asl.json` que o IaC publica) ou da conta:
 | `sfn.state_machine` | definição | `type` (`STANDARD`, `EXPRESS` ou `undeclared`), linguagem de consulta, origem |
 | `sfn.task` | estado `Task`, inclusive em `Parallel` e `Map` | serviço, API, padrão (`request_response`, `sync`, `callback`), `JobName` literal ou dinâmico, retriers com o `MaxAttempts` efetivo, `Catch`, `TimeoutSeconds` |
 | `sfn.glue_job_link` | Task ligado a um `aws_glue_job` (só em `fuse`) | o retry efetivo do Step Functions e o `max_retries` do job |
-| `sfn.unresolved` | o que não deu para ler ou ligar | a razão: JSON inválido, recurso dinâmico, `JobName` dinâmico, job ausente do Terraform |
+| `sfn.unresolved` | o que não deu para ler ou ligar | a razão: JSON inválido ou fundo demais, arquivo acima do teto, tipo desconhecido, `MaxAttempts` ilegível, recurso dinâmico, `JobName` dinâmico ou ausente, job ausente do Terraform |
 | `sfn.analyzed` | arquivo | as contagens — prova de que o arquivo foi lido |
 
 Um `.asl.json` não traz o tipo do workflow: sem a saída de `describe-state-machine`, ele
@@ -52,10 +52,10 @@ sai `undeclared`, nunca `STANDARD` por suposição.
 
 | regra | dispara quando | severidade |
 |---|---|---|
-| `SF-SFN-001` | `glue:startJobRun` sem `.sync` e com `Next`: o próximo estado roda com o job em execução | P1 |
-| `SF-SFN-002` | Task `.sync` com retrier em `States.ALL` ou `States.TaskFailed` e `MaxAttempts` efetivo maior que zero: cada tentativa é um JobRun inteiro | P1 com `MaxAttempts` omitido (3 por default), P2 declarado |
+| `SF-SFN-001` | `glue:startJobRun` sem `.sync` com estado seguinte — o `Next` do estado, ou o do `Parallel`/`Map` quando o Task é `End` de ramo — e sem `glue:getJobRun` na mesma definição: o próximo estado roda com o job em execução | P2 |
+| `SF-SFN-002` | Task `.sync` com retrier em `States.ALL` ou `States.TaskFailed` e `MaxAttempts` efetivo maior que zero: o Task é agendado até 1 + `MaxAttempts` vezes, cada vez um `StartJobRun` novo | P1 com `MaxAttempts` omitido (3 por default), P2 declarado |
 | `SF-SFN-003` | `.sync` numa state machine com `type: EXPRESS` declarado | P1 |
-| `SF-SFN-004` | o Task ligado ao job tem retry efetivo e o job tem `max_retries` maior que zero | P2 |
+| `SF-SFN-004` | o Task `.sync` ligado ao job tem retry efetivo e o job tem `max_retries` maior que zero | P2 |
 
 A `SF-SFN-004` afirma só que as duas camadas existem. **Quantas vezes o job roda numa
 falha não é documentado** — o retry do Glue é outro JobRun, e o `.sync` acompanha o

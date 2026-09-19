@@ -36,6 +36,8 @@ FIXTURES = ROOT / "fixtures" / "stepfunctions"
 REQUIRED_FIXTURES = {
     # SF-SFN-001: startJobRun sem .sync, com Next.
     "glue_sem_sync",
+    # E o negativo dela: a mesma definicao consulta o JobRun (getJobRun), espera a mao.
+    "glue_polling_com_get_job_run",
     # SF-SFN-002 nos dois ramos de severidade: MaxAttempts omitido (P1) e declarado (P2).
     "glue_retry_implicito",
     "glue_retry_explicito",
@@ -48,6 +50,8 @@ REQUIRED_FIXTURES = {
     "definicao_ilegivel",
     # SF-SFN-004 (e SF-SFN-002): o ASL e o aws_glue_job com max_retries 2.
     "retry_duas_camadas",
+    # O mesmo par sem .sync: o retrier cobre so a chamada, e nao ha vinculo.
+    "retry_duas_camadas_sem_sync",
     # JobName.$ nao liga: sfn.unresolved job_name_dynamic, SF-SFN-004 calada.
     "job_name_dinamico",
     # As duas fronteiras da SF-SFN-004: liga, mas uma das camadas e zero.

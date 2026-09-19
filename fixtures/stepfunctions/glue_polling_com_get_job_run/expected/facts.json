@@ -19,12 +19,12 @@
     "attrs": {},
     "provenance": {
       "artifact": "carga.asl.json",
-      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
       "extractor": "stepfunctions@0.1.0"
     }
   },
   {
-    "id": "f_86cc07",
+    "id": "f_0a9395",
     "schema_version": 1,
     "kind": "sfn.state_machine",
     "subject": {
@@ -36,18 +36,65 @@
       "snippet": ""
     },
     "measures": {
-      "state_count": 2,
+      "state_count": 6,
       "task_count": 2
     },
     "attrs": {
       "type": "undeclared",
       "type_declared": false,
-      "query_language": "JSONata",
+      "query_language": "JSONPath",
       "source": "asl"
     },
     "provenance": {
       "artifact": "carga.asl.json",
-      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_474855",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/ConsultarJobRun",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 0,
+      "failure_retry_max_attempts": 0,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "ConsultarJobRun",
+      "resource": "arn:aws:states:::aws-sdk:glue:getJobRun",
+      "service": "glue",
+      "api": "getJobRun",
+      "pattern": "request_response",
+      "integration": "sdk",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
+      "retriers": [],
+      "failure_retry_matched": false,
+      "failure_retry_defaulted": false,
+      "has_catch": false,
+      "has_next": true,
+      "end": false,
+      "enclosing_has_next": false,
+      "effective_has_next": true,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "undeclared",
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": true
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
       "extractor": "stepfunctions@0.1.0"
     }
   },
@@ -89,59 +136,12 @@
       "timeout_declared": false,
       "timeout_dynamic": false,
       "state_machine_type": "undeclared",
-      "query_language": "JSONata",
-      "polled_by_get_job_run": false
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": true
     },
     "provenance": {
       "artifact": "carga.asl.json",
-      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
-      "extractor": "stepfunctions@0.1.0"
-    }
-  },
-  {
-    "id": "f_073366",
-    "schema_version": 1,
-    "kind": "sfn.task",
-    "subject": {
-      "type": "source_location",
-      "file": "carga.asl.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "States/PublicarResultado",
-      "snippet": ""
-    },
-    "measures": {
-      "retrier_count": 0,
-      "failure_retry_max_attempts": 0,
-      "timeout_seconds": 99999999
-    },
-    "attrs": {
-      "state_name": "PublicarResultado",
-      "resource": "arn:aws:states:::lambda:invoke",
-      "service": "lambda",
-      "api": "invoke",
-      "pattern": "request_response",
-      "integration": "optimized",
-      "job_name": null,
-      "job_name_dynamic": false,
-      "job_name_source": "not_applicable",
-      "retriers": [],
-      "failure_retry_matched": false,
-      "failure_retry_defaulted": false,
-      "has_catch": false,
-      "has_next": false,
-      "end": true,
-      "enclosing_has_next": false,
-      "effective_has_next": false,
-      "timeout_declared": false,
-      "timeout_dynamic": false,
-      "state_machine_type": "undeclared",
-      "query_language": "JSONata",
-      "polled_by_get_job_run": false
-    },
-    "provenance": {
-      "artifact": "carga.asl.json",
-      "artifact_sha256": "ebd42ca1eb657b392cfdaf036ee7ad0be8a8c750011fe1bafa935ee404c009e8",
+      "artifact_sha256": "220b934752925a5d5a00dad331b04b8c9a4f6a7d0559b9937aff3270c8d4d0d1",
       "extractor": "stepfunctions@0.1.0"
     }
   }

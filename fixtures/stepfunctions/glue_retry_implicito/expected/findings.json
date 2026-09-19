@@ -25,11 +25,11 @@
     },
     "threshold": {},
     "runtime_scope": {},
-    "explanation": "O estado espera o job (`.sync`) e tem um retrier cujo `ErrorEquals` contém `States.ALL` ou `States.TaskFailed` — os dois nomes que casam a falha do JobRun (`States.TaskFailed` \"matches any known error name except for `States.Timeout`\"). Cada tentativa chama `StartJobRun` de novo: é um JobRun novo, que relê a entrada e reescreve a saída do começo, não uma retomada. Com `MaxAttempts` omitido o efetivo é o default publicado — \"(`3` by default)\" —, e um job batch que falha roda até quatro vezes antes de a execução desistir. A severidade sobe para P1 quando o número veio do default. O retrier que casa é o primeiro, na ordem declarada, cujo `ErrorEquals` contém um dos dois nomes; o efetivo dele está em `measures.failure_retry_max_attempts` do fact de evidência, e a marca de omitido em `attrs.failure_retry_defaulted`.",
+    "explanation": "O estado espera o job (`.sync`) e tem um retrier cujo `ErrorEquals` contém `States.ALL` ou `States.TaskFailed` — os dois nomes que casam a falha do JobRun (`States.TaskFailed` \"matches any known error name except for `States.Timeout`\"). O Step Functions agenda o Task até 1 + `MaxAttempts` vezes; cada agendamento é um `StartJobRun` novo, não uma retomada. Com `MaxAttempts` omitido o efetivo é o default publicado — \"(`3` by default)\". A severidade sobe para P1 quando o número veio do default. O retrier que casa é o primeiro, na ordem declarada, cujo `ErrorEquals` contém um dos dois nomes; o efetivo dele está em `measures.failure_retry_max_attempts` do fact de evidência, e a marca de omitido em `attrs.failure_retry_defaulted`.",
     "proposed_change": [
       "Declarar `MaxAttempts` explícito no retrier que casa a falha do job, com o número de tentativas que o custo de um JobRun inteiro justifica — inclusive `0`, que desliga o retry para aquele erro.",
-      "Restringir o `ErrorEquals` aos erros transitórios que valem nova tentativa (por exemplo `Glue.ConcurrentRunsExceededException`), em vez de `States.ALL` ou `States.TaskFailed`, que casam também a falha do próprio job.",
-      "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um JobRun que escreve de novo."
+      "Restringir o `ErrorEquals` aos erros nomeados transitórios que valem nova tentativa, em vez de `States.ALL` ou `States.TaskFailed`, que casam também a falha do próprio job.",
+      "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um StartJobRun novo."
     ],
     "expected_effect": "",
     "benchmark_ref": "",

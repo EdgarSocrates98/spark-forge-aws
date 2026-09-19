@@ -51,7 +51,9 @@
       "artifact_sha256": "",
       "extractor": "stepfunctions@0.1.0",
       "derived_from": [
-        "f_c7c1ed"
+        "f_c7c1ed",
+        "f_ad6896",
+        "f_c7ef7b"
       ]
     }
   },
@@ -124,10 +126,13 @@
       "has_catch": false,
       "has_next": false,
       "end": true,
+      "enclosing_has_next": false,
+      "effective_has_next": false,
       "timeout_declared": false,
       "timeout_dynamic": false,
       "state_machine_type": "undeclared",
-      "query_language": "JSONPath"
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": false
     },
     "provenance": {
       "artifact": "carga.asl.json",
