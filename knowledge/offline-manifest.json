@@ -81,7 +81,7 @@
     {
       "path": "knowledge/domain-tool-matrix.md",
       "title": "domain-tool-matrix",
-      "sha256": "6fd4e4af533fc925633f8013afa53850031449ea84b8004690d70938214da9d7"
+      "sha256": "e48f074008310828188cbea7dbcc2d68b8fdc46ce6b3d16219821c991de58cde"
     },
     {
       "path": "knowledge/dq/validation-frameworks.md",
@@ -267,7 +267,7 @@
     {
       "path": "knowledge/tool-specialization-matrix.md",
       "title": "tool-specialization-matrix",
-      "sha256": "5c66dc69b98cb4de0acf0220814bd3a9b5008dd426e7e54b79e9a0fb466bf86e"
+      "sha256": "d161eb6344bf4be9820f5f58cc72943cb5e8664c5d5c9c1abadb2e9e6e255d3d"
     }
   ]
 }

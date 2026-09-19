@@ -2,11 +2,8 @@
   "name": "sparkforge-aws",
   "version": "0.5.0",
   "skills": [
-    "agentic-orchestration",
-    "analyze-analytics",
     "analyze-batch-loop",
     "analyze-functional-rules",
-    "analyze-graph-data",
     "analyze-library-call-graph",
     "analyze-spark-plan",
     "analyze-spark-ui",
@@ -23,7 +20,6 @@
     "compare-releases",
     "design-data-architecture",
     "design-incremental-processing",
-    "design-neptune-graph",
     "design-s3-data-lake",
     "diagnose-data-skew",
     "diagnose-lakeformation-access",
@@ -55,7 +51,6 @@
     "sdd-ship",
     "spark4-compatibility",
     "sparkforge-diagnose",
-    "token-efficient-agent",
     "tool-specialist-routing",
     "tune-glue-job"
   ],

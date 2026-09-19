@@ -71,7 +71,7 @@ def test_registry_loading():
     registry = get_default_registry()
     assert len(registry.agents) > 0
     assert len(registry.skills) > 0
-    assert registry.get_agent("sf-pyspark-specialist") is not None
+    assert registry.get_agent("sf-runtime-specialist") is not None
     assert registry.get_skill("optimize-pyspark-code") is not None
 
 

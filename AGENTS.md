@@ -41,6 +41,9 @@ correntes* table of `docs/superpowers/STATUS.md`, checked by
 - Before committing a change to this repository, run the gates that change touches.
   `docs/gates-por-mudanca.md` maps each kind of change to its gates, with the defect
   each one caught in real life.
+- A new domain enters through a collectable artifact, never through an agent name:
+  criterion and gate in `docs/gates-por-mudanca.md`, section *Critério de domínio:
+  artefato antes de nome*.
 
 ## Developing this repository: the in-repo SDD
 
@@ -319,20 +322,11 @@ descriptions and code comments are written in normal English. Cloning is the who
 installation — nothing here reaches the network (`tests/test_vendor_caveman.py`).
 Durable memory across sessions is `.sparkforge/case.yaml` plus the journal.
 
-## Coordinators especializados
-sf-analytics-specialist
+## Coordinators sf-*
 sf-lake-formation-specialist
-sf-security-reviewer
-
-## Coordinators completos
-sf-graph-specialist
-sf-neptune-specialist
-sf-orchestrator
-sf-pyspark-specialist
 sf-runtime-specialist
-sf-storage-specialist
+sf-security-reviewer
 sf-terraform-specialist
-sf-token-verifier
 
 ## Agentic Expansion Inventory
 Agents: sf-lake-formation-specialist, sf-security-reviewer.

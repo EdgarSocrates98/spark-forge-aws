@@ -22,7 +22,7 @@ O SparkForge agora combina agents especializados, mem¢ria compartilhada por cas
 |---|---|---|
 | Autonomia controlada | `AutonomyController` | Escolhe a menor pr¢xima etapa e para por or‡amento, estagna‡Æo ou sucesso |
 | Mem¢ria compartilhada | `ConversationRoom` | Mant‚m fatos, decisäes, referˆncias e snapshots sem reenviar o hist¢rico inteiro |
-| Economia de tokens | `budget.py` e `token-efficient-agent` | Deduplica, ranqueia por relevƒncia, preserva decisäes e limita contexto |
+| Economia de tokens | `budget.py` | Deduplica, ranqueia por relevƒncia, preserva decisäes e limita contexto |
 | Especializa‡Æo | agents de PySpark, runtime, storage, orquestra‡Æo e verifica‡Æo | Reduz escopo, fan-out e chamadas sem ganho |
 | Governan‡a de ferramentas | allowlist, aprova‡Æo e rollback | Evita a‡äes mut veis e ferramentas fora do contrato |
 | Conhecimento | `knowledge/agentic-engineering.md`, `token-economy.md` e matriz | Padroniza decisäes e melhora handoffs |

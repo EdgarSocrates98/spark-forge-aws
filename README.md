@@ -118,13 +118,13 @@ O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mes
 | Agent Skills | `skills/`, para qualquer agente compatível com o padrão | [Referência de skills](docs/guia/referencia/skills/README.md) |
 | `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
 
-**Duas camadas de agente.** O **coordenador** (**19 coordenadores** em `agents/*.md`) lê o
+**Duas camadas de agente.** O **coordenador** (**12 coordenadores** em `agents/*.md`) lê o
 case, decide qual executor roda e registra o resultado. O **executor** (**5 executores**
 em `agents/executors/`) faz uma função só — inventário, extração, julgamento, verificação,
 síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
 as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
 desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
-traz **56 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+traz **51 skills**; as de diagnóstico e as onze de procedimento AWS estão em
 [Agents e skills](docs/guia/05-agents-e-skills.md).
 
 ## SDD próprio

@@ -23,11 +23,11 @@ def test_platform_compiler_all_targets(tmp_path):
     # Verify Antigravity generated files
     ag_files = results["antigravity"]
     assert len(ag_files) > 0
-    ag_agent_md = tmp_path / ".agents" / "agents" / "sf-orchestrator.md"
+    ag_agent_md = tmp_path / ".agents" / "agents" / "sf-runtime-specialist.md"
     assert ag_agent_md.is_file()
     content = ag_agent_md.read_text(encoding="utf-8")
     assert "GENERATED FROM CANONICAL SOURCE" in content
-    assert "sf-orchestrator" in content
+    assert "sf-runtime-specialist" in content
 
     # Verify Cursor MDC rules
     cursor_files = results["cursor"]

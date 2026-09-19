@@ -554,22 +554,6 @@ rules:
       definição do job, e nenhum se resolve editando transformação.
 
 # Fallback: nenhuma regra casou.
-  - id: AGENT-011
-    phase_in: [diagnosis, hypothesis]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_orchestrator__"}
-    recommended_agent: sf-orchestrator
-    reason: >
-      Explicit agentic orchestration mode.
-  - id: AGENT-012
-    phase_in: [diagnosis, hypothesis]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_pyspark__"}
-    recommended_agent: sf-pyspark-specialist
-    reason: >
-      Explicit PySpark specialist mode.
   - id: AGENT-013
     phase_in: [diagnosis, hypothesis]
     when:
@@ -578,22 +562,6 @@ rules:
     recommended_agent: sf-runtime-specialist
     reason: >
       Explicit runtime specialist mode.
-  - id: AGENT-014
-    phase_in: [diagnosis, hypothesis]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_storage__"}
-    recommended_agent: sf-storage-specialist
-    reason: >
-      Explicit storage specialist mode.
-  - id: AGENT-015
-    phase_in: [verification, documentation]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_token_audit__"}
-    recommended_agent: sf-token-verifier
-    reason: >
-      Explicit token and quality audit mode.
   - id: AGENT-026
     phase_in: [diagnosis, hypothesis, design]
     when:
@@ -602,30 +570,6 @@ rules:
     recommended_agent: sf-terraform-specialist
     reason: >
       Explicit sf-terraform-specialist mode.
-  - id: AGENT-027
-    phase_in: [diagnosis, hypothesis, design]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_graph__"}
-    recommended_agent: sf-graph-specialist
-    reason: >
-      Explicit sf-graph-specialist mode.
-  - id: AGENT-028
-    phase_in: [diagnosis, hypothesis, design]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_neptune__"}
-    recommended_agent: sf-neptune-specialist
-    reason: >
-      Explicit sf-neptune-specialist mode.
-  - id: AGENT-016
-    phase_in: [diagnosis, hypothesis, design]
-    when:
-      all:
-        - {case: scope.entrypoints, contains: "__agentic_analytics__"}
-    recommended_agent: sf-analytics-specialist
-    reason: >
-      Explicit sf-analytics-specialist mode.
   - id: AGENT-071
     phase_in: [diagnosis, hypothesis, design, verification, documentation]
     when:

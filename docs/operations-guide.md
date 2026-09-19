@@ -80,19 +80,19 @@ O coordenador começa pelo objetivo, detecta domínios, seleciona o menor contex
 
 | Time | Agents | Uso |
 | --- | --- | --- |
-| Analytics e regras | `sf-analytics-specialist`, `data-quality-reviewer`, `athena-query-optimizer`, `sf-token-verifier` | Dados, SQL, semântica funcional e verificação |
-| Plataforma | `sf-terraform-specialist`, `sf-runtime-specialist`, `sf-storage-specialist`, `sf-orchestrator` | IaC, runtime, governança, custo e coordenação |
-| Grafos | `sf-graph-specialist`, `sf-neptune-specialist` | Grafos, Neptune, chaves, índices e consistência |
-| Engenharia de agents | `sf-orchestrator`, `sf-token-verifier` | Contratos, handoffs, loops e validação |
+| Analytics e regras | `data-quality-reviewer`, `athena-query-optimizer` | Dados, SQL, semântica funcional e verificação |
+| Plataforma | `sf-terraform-specialist`, `sf-runtime-specialist`, `iceberg-performance-engineer`, `spark-performance-architect` | IaC, runtime, governança, custo e coordenação |
+| Grafos | `pyspark-code-reviewer` | Grafos, Neptune, chaves, índices e consistência |
+| Engenharia de agents | `spark-performance-architect` | Contratos, handoffs, loops e validação |
 
 Linux — Bash:
-```bashpython -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
+```bashpython -m sparkforge.adapters.cli playbook iceberg-performance-engineer --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook spark-performance-architect --repo .```
 
 macOS — Terminal:
-```bashpython3 -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python3 -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
+```bashpython3 -m sparkforge.adapters.cli playbook iceberg-performance-engineer --repo .python3 -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python3 -m sparkforge.adapters.cli playbook spark-performance-architect --repo .```
 
 Windows — PowerShell:
-```powershellpython -m sparkforge.adapters.cli playbook sf-storage-specialist --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .```
+```powershellpython -m sparkforge.adapters.cli playbook iceberg-performance-engineer --repo .python -m sparkforge.adapters.cli playbook sf-runtime-specialist --repo .python -m sparkforge.adapters.cli playbook spark-performance-architect --repo .```
 
 ## 5. Ciclo de vida de casos
 
@@ -177,13 +177,13 @@ Nunca hardcode a lista de modelos. O coordenador consulta o inventário da conta
 O padrão é trace desligado e conteúdo oculto. `record_usage_when_available` grava uso real quando fornecido; `estimate_when_unavailable` marca estimativas; `token_notice` avisa sobre custo. Para depuração autorizada, faça backup, habilite temporariamente, execute e restaure.
 
 Linux — Bash:
-```bashcp config/agents.yaml config/agents.yaml.baksed -i 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i 's/show_content: false/show_content: true/' config/agents.yamlpython -m sparkforge.adapters.cli playbook sf-orchestrator --repo .mv config/agents.yaml.bak config/agents.yaml```
+```bashcp config/agents.yaml config/agents.yaml.baksed -i 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i 's/show_content: false/show_content: true/' config/agents.yamlpython -m sparkforge.adapters.cli playbook spark-performance-architect --repo .mv config/agents.yaml.bak config/agents.yaml```
 
 macOS — Terminal:
-```bashcp config/agents.yaml config/agents.yaml.baksed -i '' 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i '' 's/show_content: false/show_content: true/' config/agents.yamlpython3 -m sparkforge.adapters.cli playbook sf-orchestrator --repo .mv config/agents.yaml.bak config/agents.yaml```
+```bashcp config/agents.yaml config/agents.yaml.baksed -i '' 's/trace_view: false/trace_view: true/' config/agents.yamlsed -i '' 's/show_content: false/show_content: true/' config/agents.yamlpython3 -m sparkforge.adapters.cli playbook spark-performance-architect --repo .mv config/agents.yaml.bak config/agents.yaml```
 
 Windows — PowerShell:
-```powershellCopy-Item .\config\agents.yaml .\config\agents.yaml.bak(Get-Content .\config\agents.yaml) -replace 'trace_view: false','trace_view: true' | Set-Content .\config\agents.yaml -Encoding utf8(Get-Content .\config\agents.yaml) -replace 'show_content: false','show_content: true' | Set-Content .\config\agents.yaml -Encoding utf8python -m sparkforge.adapters.cli playbook sf-orchestrator --repo .Move-Item -Force .\config\agents.yaml.bak .\config\agents.yaml```
+```powershellCopy-Item .\config\agents.yaml .\config\agents.yaml.bak(Get-Content .\config\agents.yaml) -replace 'trace_view: false','trace_view: true' | Set-Content .\config\agents.yaml -Encoding utf8(Get-Content .\config\agents.yaml) -replace 'show_content: false','show_content: true' | Set-Content .\config\agents.yaml -Encoding utf8python -m sparkforge.adapters.cli playbook spark-performance-architect --repo .Move-Item -Force .\config\agents.yaml.bak .\config\agents.yaml```
 
 ## 9. Sincronização de skills e agents
 

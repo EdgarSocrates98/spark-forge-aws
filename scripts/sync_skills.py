@@ -242,9 +242,7 @@ DISPATCHABLE_SKILLS = {
     "review-emr-eks": "revisa o job run do emr-containers que ja esta em disco",
     "review-glue-terraform": "revisa o .tf que ja esta em disco",
     "review-pyspark-pr": "revisa um diff fechado e classifica risco",
-    "analyze-analytics": "Especialista de dominio; despacho por coordenador",
     "analyze-functional-rules": "Especialista de dominio; despacho por coordenador",
-    "analyze-graph-data": "Especialista de dominio; despacho por coordenador",
     # As tres de Glue 6 que LEEM e julgam, sem decisao de terceiro no caminho:
     # os artefatos (codigo, .tf, requirements, .jar) ja estao em disco, e o
     # veredito sai do catalogo e da matriz.
@@ -272,7 +270,6 @@ NON_DISPATCHABLE_SKILLS = {
         "coleta da AWS ao vivo e recomenda mudanca de permissao; a decisao sobe "
         "a quem responde pela governanca, e um subagente nao pode perguntar"
     ),
-    "agentic-orchestration": "coordena no agente pai",
     # Ela e o DRIVER do debate: conduz o laco next -> submit e, idealmente,
     # despacha um subagente POR LADO. Despacha-la inteira para um subagente
     # juntaria os dois lados num contexto so -- o lado A leria o raciocinio
@@ -288,7 +285,6 @@ NON_DISPATCHABLE_SKILLS = {
         "roda git/gh na arvore do operador e para para confirmacao humana antes de "
         "push e de abrir o PR; despachada, ninguem estaria la para confirmar"
     ),
-    "token-efficient-agent": "aplica contexto no agente atual",
     "tool-specialist-routing": "valida roteamento no agente atual",
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,
     # por default, nao gera subagente proprio (`max-nesting`): despachar quem
@@ -340,7 +336,6 @@ NON_DISPATCHABLE_SKILLS = {
     "design-data-architecture": "Especialista de dominio; despacho por coordenador",
     "design-s3-data-lake": "Especialista de dominio; despacho por coordenador",
     "review-terraform-data-platform": "Especialista de dominio; despacho por coordenador",
-    "design-neptune-graph": "Especialista de dominio; despacho por coordenador",
     # As duas que mutam infraestrutura AWS ao vivo: procedimento operacional,
     # nao gatilho do motor. Rodam `aws s3tables create-*` e `aws s3api put-*`,
     # e a fronteira `## Nao faz` exige confirmacao explicita do operador para

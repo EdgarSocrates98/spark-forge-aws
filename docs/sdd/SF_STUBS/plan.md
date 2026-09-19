@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/SF_STUBS/design.md
-  sha256: "b7fbc3837368426f28d89ce589daa7f25af6ef920f273ac738f74753a64941a9"
+  sha256: "dadfea9d6c1bcfbfcba7d916fb42e91a6681d1d604ba4b734500132579815e2b"
 tasks:
   - id: T1
     files: [tests/test_sf_stubs.py, agents/pyspark-code-reviewer.md, agents/iceberg-performance-engineer.md, agents/data-quality-reviewer.md, sparkforge/findings/schemas/business_rule.schema.json, tests/test_sync_render.py, docs/guia/referencia/agents/README.md, docs/surface.lock.json, docs/claims.lock.json]
