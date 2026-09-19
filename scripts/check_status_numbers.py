@@ -330,18 +330,86 @@ MEDIDAS_PROSA: dict[str, Callable[[], int]] = {
     "Tools com `detail_level`": _tools_com_detail_level,
 }
 
+# Em 2026-09-18 o `README.md` virou porta de entrada curta, e o detalhe foi para
+# `docs/guia/06..12`. As frases com numero foram junto, e as ancoras as seguiram:
+# o README guarda as contagens de topo, e cada guia guarda as suas. Numero repetido
+# nos dois lados tem ancora nos dois -- copia sem ancora e o `158 kinds` de novo.
+_GUIA = "docs/guia/"
+
 PROSA: tuple[Alegacao, ...] = (
     Alegacao("README.md", r"Os (\d+) extratores emitem", "Extratores de facts"),
     Alegacao(
         "README.md", r"extratores emitem (\d+) kinds distintos", "Fact kinds distintos emitidos"
     ),
-    Alegacao("README.md", r"nenhum dos (\d+) kinds a nomeia", "Fact kinds distintos emitidos"),
     Alegacao(
         "README.md", r"\*\*(\d+)\*\* regras de diagnóstico em YAML", "Regras de diagnóstico"
     ),
     Alegacao("README.md", r"\*\*(\d+) delas executáveis\*\*", "Regras executáveis"),
-    Alegacao("README.md", r"As (\d+) executáveis se distribuem", "Regras executáveis"),
-    Alegacao("README.md", r"Cada uma das (\d+) carrega um bloco", "Regras executáveis"),
+    Alegacao("README.md", r"\*\*(\d+) tools MCP\*\*", "Tools MCP"),
+    Alegacao("README.md", r"\*\*(\d+) coordenadores\*\*", "Coordenadores"),
+    Alegacao("README.md", r"\*\*(\d+) executores\*\*", "Executores"),
+    Alegacao("README.md", r"\*\*(\d+) skills\*\*", "Skills"),
+    Alegacao(
+        _GUIA + "06-extrair-julgar-compor.md", r"Os (\d+) extratores emitem", "Extratores de facts"
+    ),
+    Alegacao(
+        _GUIA + "06-extrair-julgar-compor.md",
+        r"extratores emitem (\d+) kinds distintos",
+        "Fact kinds distintos emitidos",
+    ),
+    Alegacao(
+        _GUIA + "06-extrair-julgar-compor.md",
+        r"nenhum dos (\d+) kinds a nomeia",
+        "Fact kinds distintos emitidos",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"\*\*(\d+)\*\* regras de\s+diagnóstico em YAML",
+        "Regras de diagnóstico",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"\*\*(\d+) delas executáveis\*\*",
+        "Regras executáveis",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"mais \*\*(\d+)\*\* rotas determinísticas",
+        "Rotas determinísticas",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"As (\d+) executáveis se distribuem",
+        "Regras executáveis",
+    ),
+    Alegacao(
+        _GUIA + "07-conhecimento-e-catalogo.md",
+        r"Cada uma das (\d+) carrega um bloco",
+        "Regras executáveis",
+    ),
+    Alegacao(
+        _GUIA + "05-agents-e-skills.md", r"\*\*Coordenador\*\* — (\d+) agentes em", "Coordenadores"
+    ),
+    Alegacao(
+        _GUIA + "05-agents-e-skills.md",
+        r"As (\d+) skills\s+despacháveis\s+\(contadas",
+        "Skills que declaram despacho",
+    ),
+    Alegacao(
+        _GUIA + "05-agents-e-skills.md",
+        r"As (\d+) skills despacháveis\s+\(as que declaram",
+        "Skills que declaram despacho",
+    ),
+    Alegacao(
+        _GUIA + "09-camada-agentica.md",
+        r"`sparkforge/agentic/` \((\d+) módulos",
+        "Módulos da camada agêntica",
+    ),
+    Alegacao(
+        _GUIA + "12-espelhos-e-dependencias.md",
+        r"hoje \d+\s+das (\d+) despacháveis",
+        "Skills que declaram despacho",
+    ),
     Alegacao("GUIA_DE_USO.md", r"faz tudo o que as (\d+) tools fazem", "Tools MCP"),
     Alegacao(".devin/README.md", r"expõe as \*\*(\d+) tools\*\*", "Tools MCP"),
     Alegacao("AGENTS.md", r"\*\*(\d+) tools, \d+ with `detail_level`\*\*", "Tools MCP"),

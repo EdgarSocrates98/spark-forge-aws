@@ -1,1036 +1,232 @@
 # SparkForge AWS
 
-Sistema especialista de diagnóstico, tuning, revisão e benchmarking para jobs **PySpark no AWS Glue e no Amazon EMR — on EC2 e Serverless**, com foco em **Amazon S3, Parquet, Apache Iceberg, Glue Data Catalog, Spark UI e CloudWatch**.
+O SparkForge julga jobs Spark por artefato. Ele lê o que o job deixou — código PySpark,
+plano físico, event log, rodapé Parquet, metadata Iceberg, definição do job ou do
+cluster, log do CloudWatch, permissão do Lake Formation — e devolve **facts** medidos,
+**findings** com a regra e a fonte que os sustentam, e **recusa com nome** para o que a
+evidência não alcança. Roda sobre AWS Glue, Amazon EMR (on EC2, Serverless e on EKS) e
+Databricks declarado, com Photon reconhecido no plano.
 
-O eixo de infraestrutura é o único que é específico da plataforma: a análise de código, plano físico, event log, Parquet e Iceberg é agnóstica por construção, e por isso o mesmo motor julga um job Glue definido em Terraform, um cluster EMR on EC2 definido por `describe-cluster` e uma application EMR Serverless definida por `get-application`. Além de performance, o pacote lê **validação de dados** dentro do job — onde o check roda, se ele tem consequência e quantas passadas sobre o dado ele custa — que é pergunta de engenharia de dados, não de tuning.
+O que ele **não** é:
 
-O pacote foi estruturado para funcionar em:
-
-- Claude Code: `.claude/skills` e `.claude/agents`
-- Devin: `.agents/skills` e `.agents/agents` (o Devin também importa `.claude/agents`)
-- GitHub Copilot: `.github/copilot-instructions.md`, `.github/instructions`, `.github/prompts` e `.github/agents`
-- Qualquer agente compatível com o padrão Agent Skills: `skills/`
+- **Não chama provider de modelo.** `sparkforge/` não importa `anthropic`, `openai`,
+  `bedrock` nem `litellm`. Quem gasta token é o host que executa os agents.
+- **Não estima ganho sem medida.** "Vai ficar 30% mais rápido" exige o run que ainda não
+  aconteceu. `expected_gain` é recusado pelo schema, e um ganho só entra citando o
+  `fact_id` de um `bench.run_delta` medido.
+- **Não aplica mudança.** Todo verbo descreve. `change sandbox` aplica numa cópia, nunca
+  na árvore do operador.
 
 **Primeira vez aqui?** Comece pelo [Guia do SparkForge](docs/guia/README.md): manuais
-simples por tarefa, com receita rápida para copiar e colar, e uma referência de cada
-comando, tool, agent e skill gerada do código.
+por tarefa, com receita para copiar e colar, e uma referência de cada comando, tool,
+agent e skill gerada do código.
 
-## Investigação de fluxos full e incrementais
+## Como ele pensa: extrair, julgar, compor
 
-Para casos com latest-per-key, tabelas Iceberg bilionárias, batching, OOM e cargas muito variáveis, comece por:
+Três etapas, e cada uma é um verbo diferente.
 
-1. `PROMPT_INICIAL_MESTRE.md`
-2. `GUIA_DE_USO.md`
-3. Skill `glue-incremental-performance-architect`
+| Etapa | Verbo | Lê | Devolve |
+|---|---|---|---|
+| Extrair | `analyze <alvo>` | o artefato, offline | facts (`fact_id`, `kind`, `measures`, `attrs`) |
+| Julgar | `judge` | facts + catálogo de regras | findings, com `evidence` apontando o `fact_id` |
+| Compor | `workload`, `capacity`, `finops`, `tune`, `benchmark`, `funcval`, `arbitrate`... | facts que outro verbo já extraiu | uma resposta maior, ou a recusa nomeada |
 
-Há Skills específicas para arquitetura incremental (`design-incremental-processing`), latest-per-key (`optimize-latest-per-key`), loops de batching (`analyze-batch-loop`), call graph da biblioteca (`analyze-library-call-graph`), OOM (`diagnose-oom`), Terraform (`review-glue-terraform`) e perfis de volume (`optimize-variable-volume-job`). Desde a versão 0.4.0 elas são *toolkit-first*: chamam os extratores determinísticos em vez de descrever leitura por amostragem.
+**Fact → regra → recusa nomeada.** Custo é fact, limiar é regra, valor proposto não é
+nenhum dos dois — mora em `tune`, fora do catálogo. Onde falta base, sai `refused` com a
+medida que destravaria a resposta, ou um fact `*.unresolved`. "Não sei, e para saber você
+precisa do event log" vale mais que um número sem lastro.
 
-## Base de conhecimento
+**Por que extração e julgamento são verbos separados.** Facts de código-fonte são caros
+de recomputar; o catálogo muda mais depressa que o código. Separar os dois permite
+**rejulgar facts antigos com um catálogo novo sem reprocessar o código-fonte**, e o diff
+do resultado mostra só o que mudou no julgamento. Detalhe em
+[Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-`knowledge/` é a fonte de verdade sobre **como Spark, Glue, EMR, Athena, Parquet e Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/` (estado da investigação). Comece por [`knowledge/INDEX.md`](knowledge/INDEX.md).
+Os 38 extratores emitem 228 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **192** regras de diagnóstico em YAML, **157 delas executáveis**, cada uma
+com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
+vocabulário fechado. As contagens passam pelo gate
+`python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
+a tabela *Números correntes* de [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md)
+guarda as demais. O catálogo por área está em
+[Conhecimento e catálogo](docs/guia/07-conhecimento-e-catalogo.md).
 
-Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR on EC2, configuração de application EMR Serverless, matriz Databricks Runtime → Spark (Databricks como plataforma declarada), superfície corrente dos frameworks de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
+## Plataformas, e o que cada uma exige
 
-Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
+A análise de código, plano, event log, Parquet e Iceberg é a mesma em qualquer
+plataforma. Muda o eixo de infraestrutura, e muda de onde vem a versão — que é o que
+decide qual limiar vale.
 
-**AWS Glue 6.0** é suportado e analisado: matriz de runtime com procedência por fonte, áreas de regra para a fronteira do Spark 4 (`SF-SPARK4`) e para o Lake Formation FGAC (`SF-LF`), compatibilidade de feature Iceberg por engine como dado, e cenários de migração por par de versões. A documentação dedicada — incluindo o guia de decisão e o que a ferramenta **não** sabe — está em [`docs/aws/glue/6.0/`](docs/aws/glue/6.0/).
+| Plataforma | De onde vem a versão | Artefato de infraestrutura | Matriz de runtime |
+|---|---|---|---|
+| AWS Glue | `--glue <versão>`, ou `glue_version` do Terraform | `analyze terraform`, `analyze glue-job-runs` | [`knowledge/glue/runtime-matrix.md`](knowledge/glue/runtime-matrix.md) |
+| EMR on EC2 | o dump de `describe-cluster`, ou `--emr <release>` declarado | `analyze emr-cluster` | [`knowledge/emr/runtime-matrix.md`](knowledge/emr/runtime-matrix.md) |
+| EMR Serverless | não entra no runtime: a AWS não publica a matriz de release | `analyze emr-serverless` | [`knowledge/emr-serverless/runtime-matrix.md`](knowledge/emr-serverless/runtime-matrix.md) |
+| EMR on EKS | não entra no runtime: a matriz publicada diverge da de EC2, e `--emr` é recusado sobre facts `emrc.*` | `analyze emr-eks` | [`knowledge/emr-eks/runtime-matrix.md`](knowledge/emr-eks/runtime-matrix.md) |
+| Databricks (declarado) | `--databricks <versão>` (`15.4` ou `15.4.x-scala2.12`); Photon por `--photon on\|off` ou pelo fact `plan.photon` | nenhum coletor: sem `_delta_log`, Jobs API, DBU ou REST API | [`knowledge/databricks/runtime-matrix.md`](knowledge/databricks/runtime-matrix.md) |
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **192** regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data — **157 delas executáveis**; as outras **35** são declarações de área de coordenação (`executable: false`, `when: {all: []}`), que existem para a área ter nome e rota, não para julgar —, mais **101** rotas determinísticas em `routing.yaml`. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md). Os números correntes ficam na tabela *Números correntes* de [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md), e `python scripts/check_status_numbers.py --strict` reprova linha que nenhuma medida produz.
+Declaração perde para observação. `--emr` perde para o dump e para o event log, e a
+discordância vira divergência reportada, nunca valor trocado em silêncio. Sob Databricks,
+um plano com operadores Photon põe as regras de plano em `skipped` com
+`databricks.photon.unresolved` — com ou sem a flag —, e sem declaração nem plano Photon a
+regra `SF-ENV-006` avisa. As regras `SF-ENV` julgam ambiente e versão em qualquer
+plataforma. O AWS Glue 6.0 e a fronteira do Spark 4 têm documentação própria em
+[`docs/aws/glue/6.0/`](docs/aws/glue/6.0/README.md). O detalhe, plataforma por plataforma,
+está em [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md).
 
-As 157 executáveis se distribuem em 28 áreas (medido em 2026-09-17 com `area_of`): `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-GRAPH` 6 (grafo com GraphFrames), `SF-UI` 7 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 6 (ambiente e versão, incluindo Photon não declarado sob Databricks), `SF-FVAL` 5 (validação funcional), `SF-ICE` 8 (Iceberg, incluindo a classe do catálogo de sessão, a operação SQL que exige as extensões e o conflito de versão da biblioteca), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-LF` 10 (Lake Formation FGAC e FTA), `SF-MIG` 4 (migração entre versões), `SF-PLAN` 4 (plano físico), `SF-SPARK4` 4 (fronteira do Spark 4), `SF-KMS` 2, `SF-TIMEOUT` 2, `SF-WASTE` 2, `SF-IAM` 3 (a camada que negou: boundary, service control policy ou `Deny` explícito), `SF-XACC` 3 (cross-account: o catálogo de outra conta, o nome do resource link e o alvo dele), e uma cada em `SF-BRIDGE`, `SF-CG` e `SF-NET`. **Conte área com `area_of`, nunca somando lista escrita à mão** — `SF-EMR` é prefixo de `SF-EMRS` e de `SF-EMRK`, e comparar por `startswith` mede a fronteira ao contrário. A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
-
-Cada uma das 157 carrega um bloco **`action:`** — `kind` (70 no vocabulário fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`), `requires_absent`, `moves` (23 eixos, cada um `nature: measure` ou `risk`) e `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem MCP e sem Python. O vocabulário é travado **nas duas direções**: `kind`, eixo ou direção que o catálogo não declara reprova o gate, e `kind` declarado que regra nenhuma usa também — dez foram apagados por não serem ação dominante de regra nenhuma. `expected_gain` é **recusado pelo schema**: afirmar quanto se economizaria exige o custo do run que não aconteceu.
-
-## Camada determinística (Fase 0)
-
-Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
-inclui um analisador determinístico: extração de facts via AST estático
-(nunca importa nem executa código analisado), julgamento contra um catálogo
-de 81 regras versionado em YAML, e um ciclo de vida de case
-(`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
-
-### Sequência mínima
+## Início rápido
 
 ```bash
-pip install -e .
+pip install sparkforge-aws            # ou, no clone: pip install -e .
 sparkforge runtime detect --glue 5.0
 sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
 sparkforge judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
 sparkforge next-step --repo . --findings .sparkforge/findings.json
 ```
 
-No EMR on EC2 a sequência é a mesma, com uma diferença que importa: a release
-não precisa ser declarada, porque o dump do cluster a carrega. `--facts` é
-repetível, e `judge` correlaciona as fontes numa chamada só — código e
-infraestrutura juntos, que é o que faz um achado de código ser julgado contra
-o Spark que aquele cluster realmente roda.
+`--facts` é repetível: `judge` correlaciona código e infraestrutura numa chamada só. No
+EMR on EC2 a release vem do dump, sem flag de versão:
 
 ```bash
 sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
-sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
 sparkforge judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
   --out .sparkforge/findings.json
 ```
 
-`--emr` existe nos três verbos que aceitam runtime (`judge`, `case open`,
-`runtime detect`) e serve a quem sabe a release e **não** tem o dump. É
-declaração, não observação: perde para o dump e para o event log, e discordar
-de um deles vira divergência reportada — nunca valor substituído em silêncio.
+No Databricks, a versão e o Photon são declarados:
 
-**Databricks.** `--databricks <versão>` declara o Databricks Runtime (`15.4` ou
-`15.4.x-scala2.12`) e deriva a versão do Spark pela matriz em
-`knowledge/databricks/runtime-matrix.md`; a versão também é lida do event log
-quando ele traz `spark.databricks.clusterUsageTags.sparkVersion` — a fonte oficial
-documenta essa chave só como propriedade local de TaskContext, e a presença dela no
-event log entregue por cluster log delivery ainda não foi confirmada (lacuna U1):
-sem ela, a plataforma só se sabe pela flag.
-`--photon on|off` declara o Photon: ligado, as regras de plano saem em `skipped`
-com `databricks.photon.unresolved`, exceto as que só exigem `plan.python_udf` ou
-`plan.aqe` (os nós `ArrowEvalPython` e `AdaptiveSparkPlan` continuam no plano sob
-Photon, observado). Um plano com operadores Photon (fact `plan.photon`) também
-liga essa recusa, sem a flag, e a recusa vale sempre — com ou sem
-`--databricks`, porque ela é movida só pelo fact do plano. Com a plataforma
-databricks detectada, a observação também vence a declaração no runtime:
-`off` diante do plano Photon vira divergência `photon:` e o estado fica
-`on`; sem declaração nem plano Photon, SF-ENV-006 avisa. Sem
-`--databricks`, a declaração vira a divergência "declarado sem plataforma" e
-não entra no runtime — a observação do plano tampouco entra, e a recusa das
-regras de plano continua valendo do mesmo jeito, pelo fact. Fora deste
-incremento: `_delta_log`, Jobs API, billing em DBU e coleta pela REST API.
+```bash
+sparkforge judge --facts .sparkforge/facts.json --databricks 15.4 --photon on \
+  --out .sparkforge/findings.json
+```
 
-### Por que extração e julgamento são verbos separados
+O pacote instalado carrega o catálogo de regras e `knowledge/` dentro do wheel:
+`analyze`, `judge`, `next-step`, `resume` e `rules lookup` funcionam sem o repositório
+clonado. Extras, verificação e erros comuns em [Instalação](docs/guia/02-instalacao.md);
+a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cli.md).
 
-`analyze` (extração) e `judge` (julgamento) nunca são o mesmo passo. Facts
-extraídos de código-fonte são caros de recomputar — exigem re-parsear a
-árvore inteira — mas o catálogo de regras evolui com frequência maior que o
-código: um limiar corrigido, uma regra nova, uma fonte atualizada. Separar os
-dois verbos permite **rejulgar facts antigos com um catálogo novo sem
-reprocessar o código-fonte**, o que torna a evolução do conhecimento
-auditável: cada revisão do catálogo pode ser aplicada retroativamente ao
-mesmo conjunto de facts e o diff do resultado mostra exatamente o que mudou
-no julgamento, isolado de qualquer mudança no código analisado.
+## Canais
 
-### Canais de distribuição
+O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
+(`sparkforge/adapters/_core.py`), e o servidor publica **106 tools MCP**.
 
-| Canal | Como chega | Para quem |
+| Canal | Como chega | Onde está o detalhe |
 |---|---|---|
-| Plugin do Claude Code | `.claude-plugin/plugin.json`, instalado via marketplace ou path local | Claude Code |
-| MCP (`sparkforge.adapters.mcp`) | `.mcp.json`, transportes `stdio` e `http` | Devin Desktop, Devin CLI, GitHub Copilot |
-| `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
-| Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
+| Claude Code | plugin (`.claude-plugin/plugin.json`), `.claude/skills`, `.claude/agents`, MCP por `.mcp.json` | [MCP](docs/guia/04-mcp.md), [Agents e skills](docs/guia/05-agents-e-skills.md) |
+| Devin (CLI e Desktop) | `.agents/skills`, `.agents/agents` (e importa `.claude/agents`), MCP por `.devin/mcp_config.json` (stdio) ou HTTP | [MCP](docs/guia/04-mcp.md#devin-cli-stdio) |
+| GitHub Copilot | `.github/copilot-instructions.md`, `.github/instructions`, `.github/prompts`, `.github/agents`; usa a CLI | [Agents e skills](docs/guia/05-agents-e-skills.md#github-copilot) |
+| Agent Skills | `skills/`, para qualquer agente compatível com o padrão | [Referência de skills](docs/guia/referencia/skills/README.md) |
+| `pip` e espelhos markdown | `pip install sparkforge-aws` dá a CLI `sparkforge` em qualquer shell ou CI; sem MCP e sem Python, `rules/catalog/*.yaml`, `skills/` e `knowledge/` se leem direto | [Instalação](docs/guia/02-instalacao.md#canais-de-distribuição) |
 
-#### `pip install sparkforge-aws`: o pacote carrega o catálogo dentro dele
+**Duas camadas de agente.** O **coordenador** (**38 coordenadores** em `agents/*.md`) lê o
+case, decide qual executor roda e registra o resultado. O **executor** (**5 executores**
+em `agents/executors/`) faz uma função só — inventário, extração, julgamento, verificação,
+síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
+as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
+desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
+traz **66 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+[Agents e skills](docs/guia/05-agents-e-skills.md).
 
-```bash
-pip install sparkforge-aws            # CLI sparkforge sozinho
-pip install "sparkforge-aws[aws]"     # + boto3, para os extratores que leem AWS
-pip install "sparkforge-aws[mcp]"     # + servidor MCP (stdio e streamable HTTP)
-```
+## SDD próprio
 
-Diferente de um `pip install` comum, este wheel não traz só código: `rules/catalog/`
-(o catálogo de regras em YAML) e `knowledge/` (a base de conhecimento sobre
-Spark, Glue, EMR, Athena, Parquet e Iceberg) vêm embarcados dentro do pacote,
-resolvidos por `loader.catalog_dir()` na mesma ordem de sempre — variável de
-ambiente, raiz do repositório e, faltando as duas, o fallback dentro do
-próprio pacote instalado. É esse terceiro degrau que faz `analyze`, `judge`,
-`next-step`, `resume` e `rules lookup` funcionarem **sem o repositório
-clonado**: um agente autônomo que sobe um sandbox efêmero, roda `pip install
-sparkforge-aws` e não tem mais nada em disco ainda assim consegue extrair
-facts, julgar contra o catálogo completo e citar a fonte de cada limiar —
-porque o catálogo veio junto no wheel, não porque o agente clonou o
-repositório antes.
+Mudança não trivial passa por spec antes de código, com gate determinístico: o agente
+escreve os artefatos, e o pacote confere o que dá para conferir e recusa o resto por
+nome. As skills `sdd-explore`, `sdd-define`, `sdd-design`, `sdd-plan`, `sdd-build` e
+`sdd-ship` produzem `docs/sdd/<FEATURE>/<fase>.md`; `sparkforge sdd check --repo .
+--feature <F>` confere schema, cascata por hash, cobertura e TDD declarado, e
+`sdd status` e `sdd stamp` mostram a fase e gravam o hash do upstream. Dois perfis:
+**dev** (este repositório) e **operator** (o job do operador, com a mudança sempre por
+`sparkforge change sandbox`). Fluxo completo em [`docs/sdd/README.md`](docs/sdd/README.md).
 
-Para localizar `knowledge/` a partir do pacote instalado:
+## Investigação, prova e handoff
 
-```bash
-sparkforge knowledge path                                  # imprime a raiz
-sparkforge knowledge path --file glue/runtime-matrix.md     # imprime um arquivo específico
-```
+O case (`.sparkforge/case.yaml`) atravessa sessões e ferramentas. Com `--strict-gates`,
+a fase só avança com a evidência que destrava cada gate — o benchmark, o call graph, o
+plano de validação funcional —, nunca com a flag. `report sign` e `report verify` provam
+**correspondência** entre relatório e findings, não autoria. `report github` projeta os
+findings em SARIF para o Code Scanning.
 
-`rules lookup` também devolve os caminhos já resolvidos: cada regra retornada
-inclui os arquivos de `knowledge/` que a sua `explanation` cita, com o
-caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
-dentro de `site-packages` quando instalado por `pip`.
-
-Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 164 fixtures golden byte a byte a partir do
-pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
-usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
-repositório em vez do `site-packages` nesse processo, o gate falha com
-mensagem explícita em vez de comparar o repositório consigo mesmo.
-
-#### Ligando o servidor MCP
-
-Instale o extra `mcp` (ele traz `mcp>=2,<3`, `starlette`, `uvicorn` e os pins de
-segurança das transitivas):
-
-```bash
-pip install "sparkforge-aws[mcp]"
-```
-
-Depois escolha o transporte pela plataforma.
-
-**Claude Code, Devin CLI e CI — stdio.** O arquivo `.mcp.json` na raiz configura o
-Claude Code. Para o Devin CLI, o arquivo correto é `.devin/mcp_config.json`, porque
-`.mcp.json` usa `${CLAUDE_PLUGIN_ROOT}` — variável do carregador de plugin do Claude Code
-que nenhuma página do Devin documenta expandir; sem expansão, o servidor sobe e morre na
-primeira leitura do catálogo com `CatalogError`.
-
-```jsonc
-// .devin/mcp_config.json
-{
-  "mcpServers": {
-    "sparkforge": {
-      "command": "python",
-      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
-    }
-  }
-}
-```
-
-Ou, sem editar arquivo:
-
-```bash
-devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
-devin mcp list
-```
-
-**Devin Desktop — streamable HTTP.** O Desktop configura MCP por `serverUrl`. Sobe o
-servidor localmente:
-
-```bash
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
-```
-
-E aponte o Desktop para `http://127.0.0.1:8765/mcp`. Mantenha o processo rodando durante
-a sessão.
-
-##### Verificação rápida
-
-Em qualquer plataforma, após conectar o MCP, peça ao agente:
-
-```text
-Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
-```
-
-Na linha de comando, sem MCP, a CLI faz o mesmo:
-
-```bash
-sparkforge runtime detect --glue 5.0
-```
-
-##### Troubleshooting
-
-- **`CatalogError: .../${CLAUDE_PLUGIN_ROOT}/...`:** você usou `.mcp.json` no Devin em vez de `.devin/mcp_config.json`.
-- **`ModuleNotFoundError` para `mcp`:** instale o extra `[mcp]`; a CLI sozinha não precisa dele, mas o servidor sim.
-- **No Desktop, `connection refused`:** o servidor HTTP não está rodando na URL e porta configuradas.
-- **`devin mcp list` vazio ou sem `sparkforge`:** o escopo do `mcp_config.json` pode ser global em vez de projeto; confira `.devin/mcp_config.json`.
-
-Para detalhes completos, veja [`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
-
-O extra `mcp` fixa `mcp>=2,<3` desde 2026-09-11. A migração do 1.x trocou
-mais do que a API: o SDK 1.x validava os argumentos e o resultado de cada
-tool contra os schemas e montava o `structuredContent`, sem que o adapter
-escrevesse uma linha, e o 2.x não faz nada disso. As três garantias moram
-agora em `sparkforge/adapters/mcp_envelope.py`, testável sem o SDK.
-`tests/test_fixtures_golden_mcp_parity.py` compara o que o cliente recebe contra o golden que
-o 1.29 gravou em `fixtures/mcp_parity/`: no handshake legado, a única
-diferença é `outputSchema.type = "object"`, que o spec `2025-06-18` exige e o
-2.x confere — sem ela o `tools/list` inteiro falhava. O servidor também fala a
-era `2026-07-28` (`server/discover`). `tests/test_adapters_mcp.py` continua
-construindo o servidor e o app ASGI de verdade.
-
-### O que pode ser extraído
-
-Os 38 extratores emitem 228 kinds distintos de fact (recontado em 2026-09-18),
-e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
-Cada verbo abaixo tem uma tool MCP de mesmo nome.
-
-**Quatro deles não leem artefato nenhum**, e a diferença é de natureza:
-`call_graph.py`, `bridge.py`, `exception.py` e `lakeformation.py` são derivação
-pura sobre a UNIÃO dos facts que os outros já resolveram. O par mais próximo
-disso é `lakeformation.py` e `lakeformation_grants.py`: mesmo namespace, e um
-deriva enquanto o outro lê artefato. Eles existem porque o
-motor de regras avalia **um fact por condição** e nunca combina `attrs` de dois
-— quando a pergunta precisa cruzar duas fontes, ou quando o predicado não cabe
-nos seis comparadores de `sparkforge/rules/expr.py`, quem cruza é uma etapa
-anterior.
-
-| Artefato | Verbo | Lê |
-|---|---|---|
-| Código PySpark | `analyze pyspark` | árvore `*.py`, por AST — nunca importa o código |
-| Plano físico | `analyze plan` | saída colada de `explain("formatted")` |
-| Event log do Spark | `analyze event-log` | `*.jsonl` de uma execução |
-| Métricas SQL do plano | `analyze sql-metrics` | o mesmo event log, pela ótica de quanto cada fonte custou |
-| Metadata Iceberg | `analyze iceberg` | dump das metadata tables |
-| Glue Data Catalog | `analyze catalog-schema` | dump de `GetTables`/`GetTable` |
-| Terraform do Glue | `analyze terraform` | HCL com `aws_glue_job` |
-| SQL | `analyze sql` | `*.sql` e literais de `spark.sql(...)` |
-| Workgroup do Athena | `analyze athena-workgroup` | dump de `get_work_group` |
-| **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
-| **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
-| **Job run EMR on EKS** | `analyze emr-eks` | dumps de `describe-virtual-cluster` **e** `describe-job-run` do `emr-containers`, num arquivo só |
-| **Definição `Jobs-as-Code` do Control-M** | `analyze controlm-jobs` | o JSON de definição de job versionado no repositório — o mesmo que `ctm build` valida. Com `--version <v>`, cruza as capacidades observadas com a matriz do Automation API |
-| **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
-| **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
-| Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
-| Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
-| Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
-| Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
-| **Rodapé do Parquet** | `analyze parquet-footer` | dump de `collect parquet-footer` — row group, estatística por coluna, dicionário, page index, bloom filter e codec |
-| **Log do CloudWatch** | `analyze cloudwatch-logs` | resposta de `filter_log_events` já em disco — artefato SEPARADO do de `analyze cloudwatch`, que lê `get_metric_data` |
-| **Decisao de IAM** | `analyze iam-access` | artefato de `collect iam-access` — a resposta de `SimulatePrincipalPolicy`, com a CAMADA que negou (boundary, SCP, deny explícito ou implícito). Simulação, não parse de policy |
-| **Permissao do Lake Formation** | `analyze lakeformation-grants` | artefato de `collect lakeformation` — grant por principal, registro da localização S3, e o data lake settings da conta. É o único artefato que descreve **quem pode o quê** em vez de o que o job faz |
-| **Assinatura de erro** | `analyze error-signatures` | derivado de `spark.exception` e de `cloudwatch.log_event`: casa a exceção contra as 17 assinaturas de `knowledge/errors/`, por três portas (`exception_class`, `message_head`, `log_line`) |
-| Métricas do CloudWatch | `analyze cloudwatch` | artefato de `collect cloudwatch` já em disco |
-| Histórico de runs Glue | `analyze glue-job-runs` | diretório de artefatos de run, um JSON por run terminal |
-| **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
-| **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
-| **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
-| **O agente acertou, com as tools certas, e recusou onde devia?** | `python -m sparkforge.evals grade` / `compare` — fora da CLI `sparkforge`, porque o runtime não importa a avaliação (`tests/test_harness_boundary.py`) | transcripts do Claude Code gerados por `scripts/run_agentic_eval.py` (fora do CI) e o gabarito `evals/agentic/<suite>/suite.yaml`; o compare lê N scorecards por lado e não conclui — ver `evals/README.md` |
-| Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
-| Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
-| Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
-| Custo por run, e capacidade contra código | `finops` | `glue.job_run`/`glue.run_cost` de `analyze glue-job-runs`, `workload.declared` para o SLA, e os sintomas de `analyze event-log`/`analyze sql-metrics` quando a alavanca é código |
-| Configuração Spark derivada da medida | `tune` | `spark.stage.shuffle` de `analyze event-log` para o shuffle medido, `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` para a procedência de cada propriedade |
-| Contexto que a execução consumiu | `economy report` | os spans do ledger que `call_tool` alimenta, mais a superfície em repouso e o transcript do host quando houver |
-| Runtime | `runtime detect` | todas as fontes acima, cruzadas |
-
-Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
-AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
-essa etapa inteira. `collect emr-eks` é o único que faz **duas** chamadas de API
-(`describe-virtual-cluster` e `describe-job-run`) e grava **um** arquivo: os dois
-ids são obrigatórios, porque a própria API não aceita um job run sem o cluster
-virtual que o contém. `collect glue-job-runs` grava um artefato por run em
-estado terminal em `.sparkforge/artifacts/glue_job_run/`; run já em disco com
-hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é teto de
-paginação, não filtro de data. `rules/catalog/` não tem nenhuma regra com
-`blocked_on` — o que falta para uma regra disparar é sempre coleta, nunca
-código.
-
-**Oito** desses verbos mudam o alcance do projeto, e é por isso que aparecem
-em negrito — contados na tabela, não somados: a linha dizia "sete" e a tabela já
-trazia sete antes de `analyze emr-eks` entrar. `analyze emr-cluster` responde sobre a **definição do cluster** —
-instance fleets contra instance groups, opção de compra por papel, managed
-scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
-alimenta a release do EMR no `RuntimeContext`, de modo que os limiares passem
-a ser avaliados contra a versão certa fora do Glue. `analyze emr-serverless` faz a
-mesma pergunta sobre o **outro** modelo de execução do EMR — capacidade
-pré-inicializada faturada com a application ociosa, janela de auto-stop, destino
-de log e segredo em `runtimeConfiguration` — a partir de uma única chamada
-(`get-application`), em namespace disjunto (`emrs.*`) e área própria (`SF-EMRS`);
-ele **não** alimenta `RuntimeContext`, porque a AWS não publica a matriz de
-release do Serverless, e a razão está escrita em
-`knowledge/emr-serverless/runtime-matrix.md`. `analyze emr-eks` faz a mesma
-pergunta sobre o **terceiro** modelo de execução — cluster virtual mapeado a um
-namespace de Kubernetes, papel de execução declarado por job run, destino de log
-por execução, e as **duas** superfícies de configuração
-(`configurationOverrides.applicationConfiguration` e
-`jobDriver.sparkSubmitParameters`, com a segunda vencendo a primeira) —, em
-namespace disjunto (`emrc.*`) e área própria (`SF-EMRK`). Ele também **não**
-alimenta `RuntimeContext`, mas por razão oposta à do Serverless: a AWS **publica**
-a matriz de release do EKS, e ela **diverge** da de EC2 em células reais — por
-isso `--emr` é **recusado** sobre um conjunto de facts `emrc.*`, em vez de
-preencher `spark`, `python` e `iceberg` com a tabela errada. A medida está em
-`knowledge/emr-eks/runtime-matrix.md`. `analyze data-quality`
-responde sobre **onde a validação está**, não sobre se o dado está correto:
-reconhece o check artesanal, a `VerificationSuite` do PyDeequ e o Great
-Expectations pela forma do código — nunca por lista de nomes —, e o achado é
-sobre o check rodar depois do write, não ter consequência nenhuma, ou pesar N
-passadas sobre um alvo que ninguém persistiu. Uma suíte não custa "uma
-passada": ela compartilha scan por agrupamento, e restrição de unicidade paga
-a sua própria.
-
-`analyze graph` é o terceiro, e lê o **mesmo `.py` pela terceira vez** — depois de
-`analyze pyspark` e `analyze data-quality` —, com um vocabulário fechado de
-GraphFrames que só é lido em módulo que **importa** a biblioteca: `find`,
-`degrees` e `validate` são nomes que qualquer objeto de usuário pode ter, e
-casá-los sem essa evidência produziria acusação falsa. A área `SF-GRAPH` tem
-quatro regras, e a primeira é a única P0 do repositório cujo modo de falha é o
-algoritmo **levantar exceção** em vez de degradar: `connectedComponents` exige
-diretório de checkpoint e lança `java.io.IOException` na primeira iteração — com
-três saídas legítimas escritas no `.py` (`algorithm="graphx"`,
-`checkpointInterval<=0`, `use_local_checkpoints=True`), mais duas por
-`spark.conf.set` dentro do próprio job, e uma sexta forma em que a conf é
-ilegível e o motor declara o ponto cego em vez de acusar. A segunda regra é a
-única do catálogo guardada por uma **faixa de um minor de Spark**: não há
-artefato de GraphFrames publicado para Spark 3.3 em linhagem nenhuma — nove das
-34 células da matriz Glue×EMR —, e a capacidade de escrever `{spark: [">=3.3",
-"<3.4"]}` num `runtime_scope` nasceu aí.
-
-`benchmark` é o quarto, e não é um `analyze`: ele não lê artefato nenhum e
-não executa nada — compara **dois conjuntos de facts** que `analyze event-log`
-já produziu, um por execução, e emite `bench.run_delta`, `bench.stage_delta`,
-`bench.unmatched`, `bench.analyzed` e `bench.unresolved`. É o produtor que o
-gate de `benchmark_ref` nunca teve: `sparkforge validate --findings` rejeita
-`expected_effect` que quantifique ganho sem citar o `fact_id` de um
-`bench.run_delta`, e a área `SF-BENCH` julga a **validade da comparação** antes
-de qualquer conclusão sobre o job. `total_task_ms` é tempo de task somado —
-trabalho, não relógio: o event log não carrega duração wall-clock, e uma alta
-ali pede confirmação no relógio antes de reverter a mudança.
-
-`funcval` são os dois últimos, e formam a outra metade do mesmo experimento:
-`benchmark` julga o tempo, `funcval` julga o **resultado**. `funcval plan` deriva
-o que medir dos facts que já existem — o alvo vem do `pyspark.write`, o schema e
-os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível —, e
-`funcval compare` lê os dois resultados que **o operador** mediu e emite
-`funcval.check_delta`, `funcval.analyzed` e `funcval.unresolved`. Nenhum dos dois
-executa consulta, roda Spark ou chama AWS.
-
-Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 228 kinds a nomeia, então ou ela entra declarada em
-`funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
-eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
-dado correto, e a procedência de cada check existe para que ninguém confunda o que
-o repositório derivou com o que alguém afirmou. **Os quatro eixos são proxies:**
-contagem, schema, chaves e agregados iguais não provam que o dado é o mesmo —
-duas linhas podem trocar valores entre si e os quatro passam. A área afirma
-"nenhum dos quatro proxies detectou divergência", nunca "o resultado é idêntico",
-e o próprio comparador carrega esse limite em
-`funcval.analyzed.attrs.proxy_limit`.
-
-```bash
-# o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
-aws emr describe-cluster --cluster-id j-XXXX > cluster.json
-sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
-
-# onde o job valida dado, e o que acontece quando o check falha
-sparkforge analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
-
-# o mesmo lib/, pela ótica do GraphFrames — sem import da biblioteca, só sentinela
-sparkforge analyze graph --path lib/ --out .sparkforge/facts-graph.json
-
-# o antes e o depois, comparados — e o fact_id que o benchmark_ref cita
-sparkforge analyze event-log --path before.jsonl --out .sparkforge/before.json
-sparkforge analyze event-log --path after.jsonl  --out .sparkforge/after.json
-sparkforge benchmark --before .sparkforge/before.json \
-                     --after .sparkforge/after.json \
-                     --out .sparkforge/bench.json
-sparkforge validate --findings .sparkforge/findings.json \
-                    --facts .sparkforge/bench.json
-```
-
-### Rigor: gates que trancam e relatório que carrega prova
-
-Duas garantias que o motor não tinha, e as duas são **opcionais por construção**.
-
-**Gates fail-closed.** O `case.yaml` tem quatro gates. Abrir o case com
-`--strict-gates` grava a escolha de rigor **no case** — não na invocação —, e a
-partir daí `set_phase` recusa a transição enquanto faltar a evidência dos gates
-que guardam a fase pedida:
-
-```bash
-sparkforge case open --repo . --case-id perf-2026-08 \
-  --now 2026-08-04T09:00:00Z --strict-gates
-
-# `report` é guardada pelos TRÊS gates com produtor, então a transição precisa
-# das três evidências: o benchmark destrava `baseline_captured`, o call graph
-# destrava `flows_mapped` e o plano de validação destrava
-# `functional_validation_defined`. Faltando uma, bloqueia — com a mensagem
-# nomeando qual fact falta e o comando que o produz.
-sparkforge analyze call-graph --facts .sparkforge/facts.json \
-                              --out .sparkforge/facts_callgraph.json
-sparkforge funcval plan --facts .sparkforge/facts.json \
-                        --facts .sparkforge/facts-catalog.json \
-                        --out .sparkforge/facts_funcval_plan.json
-sparkforge case update --repo . --phase report \
-  --facts .sparkforge/bench.json \
-  --facts .sparkforge/facts_callgraph.json \
-  --facts .sparkforge/facts_funcval_plan.json
-```
-
-O que destrava é **evidência**, nunca a flag: `case update --gate X --gate-value
-true` continua gravando o booleano e não libera nada. Quem produz a chave de cada
-gate é dado, no bloco `gates` de `rules/catalog/routing.yaml`, com o comando exato
-em `produced_by`. Só gate **com** produtor endurece — hoje `baseline_captured`
-(`bench.run_delta`, da Fase 4a), `flows_mapped`
-(`callgraph.reachable_spark_work`) e `functional_validation_defined`
-(`funcval.plan`, da Fase 4c). `dominant_bottleneck_identified` continua advisory,
-porque endurecer gate sem produtor é o impasse que a Fase 0 recusou
-conscientemente: gate rígido vira beco sem saída quando o dado simplesmente não
-existe — e dominância é ordenação entre candidatos, que nenhum fact do
-vocabulário afirma.
-
-Quando o dado genuinamente não existe — job descontinuado, ambiente que sumiu —,
-passar por cima custa uma frase, e a frase fica gravada no case e aparece no
-`resume`:
-
-```bash
-sparkforge case update --repo . --override-gate baseline_captured \
-  --reason "job descontinuado; nao ha ambiente para rodar o depois" \
-  --now 2026-08-04T11:30:00Z
-```
-
-Abrir um case por cima de outro é **recusado**: sobrescrever apagaria a fase, o
-rigor e os overrides gravados, e uma invocação sem `--strict-gates` desligaria em
-silêncio o rigor que alguém ligou. Recomeçar do zero continua possível, com nome:
-`sparkforge case open --reopen`. Ele herda o `strict_gates` do case atual — o
-rigor sobe com `--strict-gates` e nunca desce por omissão de flag.
-
-O gate confere a **presença do kind**, não o conteúdo do fact: ele prova que a
-análise rodou e produziu o artefato que destrava, e **não** que ela cobriu todo o
-`scope.entrypoints` nem que o benchmark é do job certo. O limite é decisão
-registrada, e vai escrito na própria mensagem de bloqueio.
-
-**Assinatura de correspondência.** `report sign` escreve um bloco no fim do
-relatório; `report verify` confere e diz **qual** das quatro partes divergiu —
-versão da assinatura, evidência, catálogo ou corpo — em vez de devolver só
-"inválido". Os dois existem na CLI e como tool MCP (`sparkforge_report_sign`,
-`sparkforge_report_verify`):
-
-```bash
-sparkforge report sign   --report relatorio.md --findings .sparkforge/findings.json
-sparkforge report verify --report relatorio.md --findings .sparkforge/findings.json
-```
-
-O arquivo é o de **findings**, e não o de facts: `rule_id`, `catalog_version` e
-`schema_version` só existem lá. O hash cobre os `fact_id` citados, os `rule_id`
-que dispararam, as duas versões e o **corpo** do relatório — sem o corpo, alguém
-reescreveria o texto inteiro mantendo a assinatura válida. Editar a prosa depois
-de assinar invalida, e é para isso que serve: reassinar é barato.
-
-O bloco declara também o `signature_version` sob o qual foi assinado. Ele já
-entrava dentro do hash — é o que garante que duas regras de normalização nunca
-produzam a mesma assinatura —, mas sem a declaração o `verify` não tinha como
-dizer **por que** não fechou: um relatório assinado sob a regra anterior saía
-igual a um corpo adulterado. Com ela, versão diferente vira `version_mismatch`,
-e o corpo sai como **não avaliável** em vez de acusado.
-
-Ela prova **correspondência**, nunca **autoria**: não há chave nem segredo, e
-qualquer pessoa com os mesmos findings produz exatamente a mesma assinatura.
-Assinatura de autoria (HMAC, GPG) foi recusada no desenho — exigiria distribuir e
-guardar um segredo, superfície que o projeto hoje não tem —, e o limite vai
-escrito dentro do bloco que o relatório carrega, porque bloco que sugira
-autoridade mente por omissão.
-
-### No GitHub: Code Scanning e resumo de PR
-
-`sparkforge report github` projeta os findings de `judge` em SARIF 2.1.0 para o
-Code Scanning (aba Security e diff do PR), num resumo Markdown para o
-`$GITHUB_STEP_SUMMARY` e em anotações `::error` no diff. Só entra no SARIF o
-finding com linha num arquivo do repositório; o de execução (event log, job run)
-sai no resumo com o motivo, e nenhum some. `--fail-on P0` deixa o check
-vermelho. Não chama rede: quem sobe o SARIF é a action `upload-sarif`. Guia e
-workflow de exemplo em [`docs/github-code-scanning.md`](docs/github-code-scanning.md)
-e [`examples/github/sparkforge.yml`](examples/github/sparkforge.yml).
-
-### Fluxo de handoff
-
-`sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
-do mesmo payload que `sparkforge resume` produz — os dois nunca divergem
-porque vêm da mesma função. Ao encerrar ou pausar uma investigação, commite:
+Ao pausar, `sparkforge handoff --repo .` escreve `.sparkforge/handoff.md`, e cinco
+arquivos pequenos viram o barramento entre sessões:
 
 ```bash
 git add .sparkforge/case.yaml .sparkforge/facts.json .sparkforge/findings.json .sparkforge/handoff.md .sparkforge/artifacts/manifest.json
 ```
 
-Esses cinco arquivos são pequenos, derivados, e são o barramento de handoff
-entre sessões e ferramentas (Devin, Claude Code, CI).
+`.sparkforge/artifacts/**` nunca é commitado, exceto o `manifest.json`: o artefato bruto
+pode carregar dado de negócio e ter centenas de MB. O manifesto guarda `sha256`, origem e
+o comando exato de recoleta. Detalhe em [Rigor, assinatura e handoff](docs/guia/08-rigor-e-handoff.md).
 
-**`.sparkforge/artifacts/**` nunca é commitado**, exceto o `manifest.json`
-acima — o `.gitignore` já bloqueia isso. É onde ficam os artefatos brutos
-coletados (event logs, planos físicos, saída de Terraform): podem carregar
-dados de negócio e chegar a centenas de MB. O que substitui o artefato bruto
-no commit é o manifesto: ele registra `sha256`, `source` (origem) e
-`collect_command` (comando exato de recoleta) para cada artefato, de modo
-que uma sessão que retome em outra ferramenta saiba exatamente o que falta e
-como coletar de novo.
+## Camada agêntica e economia
 
-## Objetivos
+`sparkforge arbitrate` roda depois de `judge` e grava `Claim`, `Evidence`,
+`Contradiction`, `Unknown` e `Decision` no blackboard do case. Quando a arbitragem não
+fecha, `sparkforge debate start|next|submit` conduz o debate como máquina de estados; o
+argumento é escrito pelo host, nunca dentro do pacote. Os dois executores são **L0**:
+`applied_changes` sai sempre `false`, e o ADR é proposta com `rollback` obrigatório.
 
-1. Encontrar o gargalo dominante antes de sugerir alterações.
-2. Correlacionar código, plano físico, Spark UI, CloudWatch, definição do job Glue ou do cluster EMR, e layout de dados.
-3. Produzir recomendações baseadas em evidências, com riscos, trade-offs, validação e rollback.
-4. Melhorar runtime, DPU-hours, custo, escalabilidade e confiabilidade sem alterar o resultado funcional.
-5. Tratar Parquet e Iceberg como camadas diferentes de otimização.
-6. Ser consciente da versão do AWS Glue, da release do EMR, do Spark e do Iceberg.
-7. Dizer onde a validação de dados está e o que ela custa, sem opinar se o dado está correto.
-
-## Skills incluídas
-
-Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Use quando…"), procedimento, **Quando NÃO usar**, **Referência rápida** (sintoma → sinal/limiar → ação) e **Red flags**.
-
-| Skill | Use quando… |
-|---|---|
-| `sparkforge-diagnose` | precisar do diagnóstico ponta a ponta e não souber o gargalo dominante |
-| `glue-incremental-performance-architect` | orquestrar investigação de fluxos full + incremental (biblioteca, OOM, batching) |
-| `optimize-pyspark-code` | revisar/refatorar código PySpark ou Spark SQL |
-| `analyze-spark-plan` | interpretar `explain()`/`EXPLAIN` e o plano físico |
-| `analyze-spark-ui` | ler Spark UI/event logs (stage lento, skew, spill, GC) |
-| `analyze-library-call-graph` | mapear actions/reads/writes escondidos numa biblioteca Python |
-| `analyze-batch-loop` | houver actions/writes dentro de loop e recomputação de DAG |
-| `design-incremental-processing` | um "incremental" fizer scan global ou recomputar histórico |
-| `optimize-latest-per-key` | calcular registro mais recente por chave em tabela grande |
-| `optimize-variable-volume-job` | o mesmo job receber de dezenas a centenas de milhões de registros |
-| `diagnose-data-skew` | poucas tasks dominarem o tempo por hot keys/nulls |
-| `diagnose-oom` | houver OOM (driver, executor, broadcast, metadata, lineage) |
-| `tune-glue-job` | ajustar workers, Auto Scaling, argumentos e custo (com baseline) |
-| `optimize-parquet-layout` | small files, listing lento e pruning ausente em Parquet/S3 |
-| `optimize-iceberg-table` | dívida de data/delete files, snapshots, manifests e manutenção Iceberg |
-| `benchmark-pyspark-job` | comprovar (não estimar) o impacto de uma mudança antes/depois |
-| `review-pyspark-pr` | revisar um PR buscando regressões de performance e custo |
-| `review-glue-terraform` | revisar o IaC do job (workers, Auto Scaling, args, observabilidade) |
-| `review-emr-cluster` | o risco estiver na definição do cluster EMR on EC2 (fleets/groups, Spot por papel, managed scaling, `Configurations`, `LogUri`) |
-| `review-emr-eks` | o risco estiver na execução de um job Amazon EMR on EKS (cluster virtual e namespace, as duas superfícies de configuração, destino de log e `persistentAppUI` por job run) |
-| `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
-| `compare-releases` | precisar saber o que muda de **componente** entre dois runtimes (release contra release, ou o mesmo rótulo entre duas plataformas) — ela lê matriz de versão e **não** avalia compatibilidade |
-
-### Skills AWS complementares — procedimento de serviço, não diagnóstico
-
-Onze skills de procedimento operacional AWS vivem aqui **adaptadas** de
-[`aws/agent-toolkit-for-aws`](https://github.com/aws/agent-toolkit-for-aws)
-(Apache-2.0, commit `10b28af8`, 2026-09-02): `provision-s3-tables-table`,
-`harden-s3-bucket`, `aws-storage`, `aws-database`, `aws-serverless`, `aws-iam`,
-`aws-observability`, `aws-billing-and-cost-management`,
-`aws-messaging-and-streaming`, `aws-security` e `aws-sdk-python-usage`.
-
-Elas respondem sobre o **serviço AWS** — qual storage escolher, como configurar
-IAM, como ler CUR. Não diagnosticam job PySpark: para gargalo, plano físico,
-Iceberg, event log e code review, use as skills determinísticas acima.
-
-São **não-despacháveis**: podem mutar infraestrutura ao vivo, e a fronteira
-`## Não faz` de cada uma exige confirmação explícita do operador por comando de
-escrita. Procedência e licença em [`vendor/CREDITS.md`](vendor/CREDITS.md),
-seção *Adaptado, não vendorizado*.
-
-## Camada agêntica — executores determinísticos, e o que ela ainda não é
-
-`sparkforge/agentic/` (13 módulos) traz entidades de primeira classe e engines
-para trabalho agêntico auditável: `Claim`, `Evidence` (com tiers de autoridade
-T1-T6), `Hypothesis`, `Experiment`, `Decision`, `Unknown`, `Contradiction`,
-`Objection`, `Rebuttal`; mais blackboard JSONL, protocolo de debate, arbitragem
-com detecção de falso consenso, ADR automático, memória institucional,
-budget e níveis de autonomia L0-L5.
-
-`sparkforge/agentic/executor/` (10 módulos em 2026-09-11) é o **produtor**
-dessas entidades, e ele é determinístico. `sparkforge arbitrate` roda depois de
-`judge` e escreve no blackboard do case — num case rodado, `blackboard summary`
-deixa de devolver zero.
-
-**Executor de debate (2026-09-11).** Quando a arbitragem não fecha, o
-`arbitrate` emite um `DebatePlan` e para, com `debate.unresolved`. Desde
-2026-09-11 esse plano tem executor: `sparkforge debate start|next|submit`
-(tools `sparkforge_debate_start|next|submit`). É uma máquina de estados L0 que
-diz de quem é a vez, recusa por nome a submissão fora do protocolo e só aceita
-evidência nova **reextraída** por extrator da allowlist. O fechamento é sempre
-do `referee`. O argumento é escrito pelo host, pela skill `run-debate` ou por
-`scripts/run_debate.py` (`claude -p`), nunca dentro do pacote. O placar da
-suíte `evals/agentic/debate/` sai de `python -m sparkforge.evals debate --run
-<nome>`.
-
-**O que ela NÃO é, e isso governa o resto.** Nenhum `AgentRuntime` concreto
-mora no pacote, e nada aqui chama provider — quem gasta token é o host que
-executa os agents. Os executores são **L0**: `applied_changes` sai sempre
-`false`, e o ADR é proposta com `rollback` obrigatório, nunca registro de coisa
-feita.
-
-Por isso **não há afirmação de ganho** publicada em lugar nenhum. Os dois lados
-rodam, mas o debate alcança um único par de regras (`SF-GRAPH-005` ×
-`SF-LF-001`, de 157 com `action`). Esse par só existe na união dos facts de dois
-jobs, e o baseline de modelo foi deliberadamente não rodado. Detalhe em
+**Não há benchmark da camada agêntica, e por isso não há afirmação de ganho.** O debate
+alcança um único par de regras, que só existe na união dos facts de dois jobs; o baseline
+de modelo não foi rodado. Detalhe em [Camada agêntica](docs/guia/09-camada-agentica.md) e
 [`evals/README.md`](evals/README.md).
 
-```bash
-sparkforge arbitrate --findings f.json --facts a.json --facts b.json --repo .
-sparkforge debate start --rules A,B --findings f.json --facts a.json --facts b.json --repo .
-sparkforge debate next --debate <id> --repo .                 # brief da vez, ou done
-sparkforge debate submit --debate <id> --file s.json --repo . # submissao do lado
-sparkforge blackboard summary --repo .        # contagem do blackboard do case
-sparkforge decisions list --repo .            # decisões do case e da memória
-sparkforge decisions explain <id> --repo .    # rollback e falsification_condition
-sparkforge budget show --repo .               # budget DECLARADO no case.yaml
-sparkforge budget show --template             # defaults do código, rotulados
-sparkforge autonomy show --level L3           # perfil de autonomia
-```
+Economia se mede, não se afirma. `sparkforge economy report` lê os spans que cada chamada
+grava e separa **byte de payload**, que o SparkForge produz e sempre existe, de **token de
+provider**, que só aparece com o transcript do host — sem ele sai `tokens_unresolved`, e
+os dois nunca se somam. `detail_level` (`summary`, `normal`, `full`) muda o tamanho da
+resposta; antes de afirmar que reduziu, leia o número. As medidas com data, e o
+denominador de cada uma, estão nos documentos auditados por
+`python scripts/check_vnext_claims.py`: seções 10 e 14 de
+[`docs/harness/CODEINTEL-GAP.md`](docs/harness/CODEINTEL-GAP.md). Como medir uma sessão:
+[Economia de contexto](docs/guia/usos/economia-de-contexto.md). A compressão de output
+(caveman, ligada por padrão e vendorizada sem `npm`) está em
+[Ecossistema caveman](docs/guia/10-caveman.md).
 
-`--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO
-dos facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles
-findings. Alimentá-lo com um subconjunto fabrica claim desancorada que a execução
-real não produz. A tool MCP equivalente é `sparkforge_arbitrate`, e ela é
-`LOCAL_MUTATION`, como as três `sparkforge_debate_start|next|submit`.
+## Segurança e operações destrutivas
 
-Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que
-falta: [`docs/agentic-evolution-report.md`](docs/agentic-evolution-report.md).
+Clonar e abrir o Claude Code **executa código**: o hook de policy (`PreToolUse`), os hooks
+de `SessionStart` e o servidor MCP. `tests/test_execution_surface.py` trava a **string
+exata** de cada comando, e um deny-list recusa `curl`, `| sh`, `eval` e parentes. A policy
+de `.sparkforge/policy.yaml` decide o que o agente faz sozinho, o que pede confirmação e o
+que é proibido.
 
-## Coordenadores e executores
+Nenhuma skill e nenhum agent executam manutenção destrutiva. Expirar snapshot, remover
+arquivo órfão, mudar particionamento ou sobrescrever partição é **proposto**, com escopo,
+retenção, dry run quando houver e rollback — e quem confirma é o operador. As onze skills
+AWS de procedimento podem mutar infraestrutura viva, e por isso são não-despacháveis e
+exigem confirmação por comando de escrita. Detalhe em [Segurança](docs/guia/11-seguranca.md)
+e [Política de segurança](docs/guia/usos/politica-de-seguranca.md).
 
-Além das Skills (procedimento) e da camada determinística (extração e julgamento), o
-pacote tem duas camadas de agente:
+## Mapa da documentação
 
-- **Coordenador** — 8 agentes em `agents/*.md`, um por área de investigação
-  (`spark-performance-architect`, `glue-incremental-performance-architect`,
-  `glue-infra-reviewer`, `athena-query-optimizer`, `pyspark-code-reviewer`,
-  `iceberg-performance-engineer`, `emr-infra-reviewer` e `data-quality-reviewer`). Não
-  executa: lê o case, decide qual executor rodar em seguida e registra no case qual
-  executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
-  `emr-infra-reviewer` lê `SF-EMR`, `SF-EMRS` e `SF-ENV` — três desde a Fase 5d —,
-  `data-quality-reviewer` lê `SF-DQ`, e
-  `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
-  quê* é a mesma pergunta que ele já respondia — e acumulou `SF-FVAL` pela metade que falta
-  dela, *e o resultado continuou o mesmo*, que é o mesmo par antes/depois da mesma mudança.
-  É isso, não o nome, que faz o roteamento funcionar. Ver a tabela completa em `AGENTS.md`.
-- **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
-  (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
-  declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
-  contrato de handoff que fazem a cadeia ser determinística entre modelos.
-
-Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-010` de
-`rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
-coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
-
-**Três plataformas despacham.** Em Claude Code, o coordenador despacha os cinco executores
-como subagentes. No **Devin CLI** e no **Devin Local agent** do Devin Desktop (com o toggle
-*Subagents (Preview)* ligado), os **oito coordenadores** são perfis de subagente nativos: o
-Devin lê `.agents/agents/` e importa `.claude/agents/*.md`, dois diretórios que este
-repositório já publica. **Os cinco executores não estão num layout de descoberta
-documentado** — a fonte descreve `agents/<nome>.md` e `agents/<nome>/AGENT.md`, e a
-importação casa `.claude/agents/*.md`, raso; `executors/sf-judge.md` não é nenhum dos
-dois, e se a varredura recorre a documentação não diz. Nada se perde: `sparkforge playbook
-<coordenador>` lê `agents/executors/` do próprio repositório e devolve os mesmos cinco
-passos em qualquer plataforma. **E um coordenador despachado como subagente não despacha
-os executores:** por default subagente não gera subagente, e este repositório não declara
-`max-nesting` em perfil nenhum — a decomposição roda inline, que é o que o `playbook`
-devolve. O espelho do Devin é **renderizado**, não copiado — ele sai sem
-`tools:`, porque o mapeamento de valores desse campo não está documentado, e nunca com
-`model:`, porque o modelo do subagente resolve por roteador no spawn e um admin da
-organização o sobrescreve. **A omissão de `tools:` não é fronteira de segurança, e não
-teria como ser:** os dois caminhos de descoberta estão ligados por default
-(`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa**
-sobre qual vence quando os dois existem, e o default de `allowed-tools` é *"all tools"* —
-omitir é a opção **mais permissiva**, não a mais restrita. O que carrega a fronteira é a
-prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As doze skills
-despacháveis declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara,
-no próprio texto, que não executa manutenção destrutiva.
-
-**O `playbook` é o piso das cinco plataformas, não um degrau que o despacho substitui.**
-**`sparkforge playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_playbook` devolve a
-mesma decomposição em passos sequenciais, lendo os mesmos arquivos de `agents/`: perde o
-paralelismo do despacho, mantém o método. Ele é o **único** caminho em Codex e Copilot CI
-— nenhuma pesquisa de fontes mediu despacho de subagente nas duas, e afirmar sem medir é o
-defeito que `parity.yaml` existe para não repetir. E continua sendo o caminho nas três que
-despacham sempre que o despacho estiver desligado: `subagents_enabled: false` é escolha do
-usuário, a opção *None* de "Default subagent model" é de um admin da organização, e nenhum
-arquivo versionado deste repositório impede qualquer uma das duas. Ver
-[`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md).
-
-## SDD próprio — especificar antes de construir
-
-O SparkForge tem o próprio spec-driven development, com gate determinístico: o agente
-escreve os artefatos e o pacote confere o que dá para conferir, recusando o resto por
-nome. Nenhuma fase dá nota a si mesma.
-
-| Fase | Skill | Artefato |
-|---|---|---|
-| explorar (opcional) | `sdd-explore` | `explore.md` |
-| requisitos e hipótese | `sdd-define` | `define.md` |
-| arquitetura e manifesto | `sdd-design` | `design.md` |
-| tarefas com teste | `sdd-plan` | `plan.md` |
-| TDD, vermelho antes do verde | `sdd-build` | `build_report.md` |
-| registros e desfecho da hipótese | `sdd-ship` | `ship.md` |
-
-Três verbos, na CLI e como tools MCP:
-
-```bash
-sparkforge sdd check --repo . --feature <F>   # recusas e lacunas; ok só com zero de cada
-sparkforge sdd status --repo .                # a fase de cada feature e a cascata
-sparkforge sdd stamp --repo . <artefato>      # grava o sha256 do upstream
-```
-
-Dois perfis. **dev**: mudança neste repositório, com artefatos em `docs/sdd/<FEATURE>/`.
-É o fluxo de desenvolvimento do projeto, e substitui aqui o ciclo de spec e plano do
-superpowers e o plugin AgentSpec (desligado em `.claude/settings.json`; o histórico dele
-está em `docs/sdd/archive/agentspec/`, e `docs/superpowers/specs/` e `plans/` estão
-congelados). **operator**: mudança num job do operador, com a spec em
-`.sparkforge/sdd/<FEATURE>/` e a alteração sempre por `sparkforge change sandbox`, nunca
-na árvore dele. Fluxo completo em [`docs/sdd/README.md`](docs/sdd/README.md).
-
-## Instalação
-
-### Instalar no próprio repositório
-
-```bash
-cd /caminho/do/repositorio && python /caminho/do/sparkforge/scripts/install_skills.py --all
-```
-
-### Apenas Claude Code
-
-```bash
-python scripts/install_skills.py --target . --claude
-```
-
-### Apenas Devin
-
-```bash
-python scripts/install_skills.py --target . --devin
-```
-
-### Apenas GitHub Copilot
-
-```bash
-python scripts/install_skills.py --target . --copilot
-```
-
-Use `--force` para substituir arquivos existentes.
-
-A instalação escreve **no diretório atual** — por isso o `cd` no primeiro
-exemplo. `--target` é opcional e serve como confirmação explícita do destino:
-se for passado e não for o diretório atual, o script recusa e mostra o `cd`
-correto, em vez de escrever num lugar que você não estava olhando.
-
-### Manutenção dos espelhos (contribuidores)
-
-A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claude/skills/` e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e `agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje duas das doze), e os perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`, regenere os espelhos:
-
-```bash
-python scripts/sync_skills.py          # regenera os espelhos
-python scripts/sync_skills.py --check   # falha se algo divergir (útil em CI)
-```
-
-O repositório tem **três** espelhos gerados, e cada um tem seu `--check` rodando no CI.
-Editar a fonte e esquecer o espelho quebra a build — de propósito, porque drift em
-manifesto silencioso é pior que erro barulhento:
-
-| Espelho | Fonte | Comando | Por que existe |
-|---|---|---|---|
-| `.claude/`, `.agents/`, `.github/` | `skills/`, `agents/` | `python scripts/sync_skills.py --check` | Cada plataforma lê de um diretório próprio |
-| `requirements.txt` | `pyproject.toml` | `python scripts/gen_requirements.py --check` | Ferramenta de SCA não lê `pyproject.toml` sem lockfile — e scan que não roda não é scan que passa |
-| `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
-
-O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 164 fixtures golden byte a byte.
-
-`locks/py3.10.txt`, `locks/py3.11.txt` e `locks/py3.12.txt` **não** entram nessa tabela, e a diferença importa.
-Espelho é projeção: sai do `pyproject.toml` sozinho, offline, e por isso `--check` pode
-regenerá-lo e comparar. Lock é **resolução**: ele diz qual versão de cada pacote — diretos e
-transitivos — o ambiente instala, e produzir isso exige consultar o índice do PyPI. Por isso
-`python scripts/gen_lock.py` precisa de rede e de `uv`, enquanto
-`python scripts/gen_lock.py --check`, o que roda no CI, é offline e confere forma, cobertura
-e consistência. O CI instala com `pip install --require-hashes`, modo em que qualquer
-dependência fora do arquivo vira erro em vez de virar versão escolhida na hora — e é isso
-que dá sentido ao job `audit`: auditar piso não responde nada, porque `PyYAML>=6.0` não tem
-CVE, a versão instalada é que tem.
-
-Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
-de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o
-espelho é exatamente o que o tradutor produz para aquela plataforma**. Igualdade nunca
-poderia pegar campo que a plataforma exige e a fonte não tem, nem campo que a fonte tem e a
-plataforma não deve receber; a derivação pega os dois, e o gate acusa também **órfão em
-qualquer profundidade e de qualquer extensão** — `.agents/agents/<nome>/AGENT.md` é layout
-de descoberta do Devin, e passar por ali publicaria perfil que ninguém revisou.
-
-## Ecossistema caveman — economia de token nativa
-
-A compressão de output, de [Julius Brussee](https://github.com/JuliusBrussee), está
-embutida neste repositório e **ligada por padrão**. Clonar é a instalação inteira:
-não há `npm install`, não há `npx`, não há `package.json`, e nada aqui vai à rede.
-
-| Peça | O que faz | Como chega | Instalar? |
-|---|---|---|---|
-| [`caveman`](https://github.com/JuliusBrussee/caveman) | Modo de comunicação comprimido: corta o output do agente preservando a substância técnica | `vendor/caveman/`, plugin declarado em `.claude/settings.json` | **Nada** |
-| [`cavekit`](https://github.com/JuliusBrussee/cavekit) (`ck`) | Loop de spec-driven development sobre um `SPEC.md`: grill → spec → research → review → build, com backprop de bug para invariante | `vendor/cavekit/`, mesmo marketplace | **Nada** |
-
-Créditos, licenças, SHAs pinados e os patches locais: [`vendor/CREDITS.md`](vendor/CREDITS.md).
-
-O invariante "nenhum caminho padrão usa `npm` ou `npx`" tem gate próprio em
-`tests/test_vendor_caveman.py::TestSemNpm` — inclusive contra o `plugin.json` do
-projeto de terceiro, que pode mudar num bump futuro.
-
-### O que já está ligado sem instalar nada
-
-`vendor/` é um **marketplace de plugin local**, declarado em `.claude/settings.json`:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "sparkforge-caveman": { "source": { "source": "directory", "path": "./vendor" } }
-  },
-  "enabledPlugins": { "caveman@sparkforge-caveman": true, "ck@sparkforge-caveman": true }
-}
-```
-
-O caminho é **relativo**, para que funcione em qualquer clone; ele é resolvido a partir
-do diretório em que o Claude Code foi aberto, então abra-o na raiz do repositório.
-A instalação é cópia de disco — não há rede envolvida.
-
-**Sem Node na máquina também funciona.** Os dois hooks do plugin caveman são
-`node ...`; sem Node eles não rodam e o ruleset não seria injetado — as skills
-continuariam carregando, e o caveman deixaria de ser "ligado por padrão" sem que nada
-acusasse. O `.claude/settings.json` tem um fallback em shell que só dispara quando
-`node` não está no `PATH`:
-
-```sh
-command -v node >/dev/null 2>&1 || cat "$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md"
-```
-
-Com Node é no-op, sem injeção dupla. Sem Node, perde-se apenas o flag de modo
-(`/caveman lite|full|ultra`) e o `/caveman-stats`, que dependem do hook em JS.
-
-O modo é fixado em [`.caveman/config.json`](.caveman/config.json) como `full` — o
-*repo-local config* que o caveman resolve **antes** da configuração de usuário. Quem já
-usa caveman em outro nível não perde a própria configuração fora deste repositório, e
-troca o modo só na sessão atual com `/caveman lite|full|ultra`.
-
-As mesmas duas linhas de `enabledPlugins` **desligam** `caveman@caveman` e `ck@cavekit`
-dentro deste projeto. Não é hostilidade com quem já os instalou globalmente: dois
-caveman ligados injetam o ruleset duas vezes por sessão, que é exatamente o oposto de
-economizar token. Vale a cópia vendorizada, que é a pinada e revisada.
-
-### Vendorizado, medido e **não** ligado: `caveman-shrink`
-
-`vendor/caveman/src/mcp-servers/caveman-shrink/` é um proxy MCP do mesmo autor, **sem
-dependência nenhuma**, que comprime o campo `description` do catálogo de tools antes do
-modelo lê-lo. Está em disco e pronto — e continua desligado, porque foi medido contra os
-41 tools do servidor `sparkforge` em 2026-08-07:
-
-| | bytes |
+| Quero... | Onde |
 |---|---|
-| `tools/list` cru | 146 438 |
-| `tools/list` pelo proxy | 146 295 |
-| **Economia** | **143 bytes — 0,1 %** |
-
-As regras dele cortam artigo, filler e hedging **em inglês** (`the`, `just`, `really`); as
-descrições deste catálogo são em português. Nomes de tool e `inputSchema` saem idênticos —
-o proxy está correto, só não tem o que cortar aqui. Pôr um proxy no caminho do MCP por
-0,1 % seria risco sem retorno. Como ligar, se o catálogo passar a ter descrição em inglês:
-[`vendor/CREDITS.md`](vendor/CREDITS.md).
-
-### O que ficou de fora, e por quê
-
-Duas peças do mesmo autor **não** entram aqui, porque nenhuma das duas cabe em
-"clonar é a instalação inteira":
-
-| Projeto | Por que fica fora |
-|---|---|
-| [`cavemem`](https://github.com/JuliusBrussee/cavemem) | Memória entre sessões. Depende de `better-sqlite3`, módulo **nativo** compilado por plataforma — vendorizar prebuilds seria commitar binário para win32/linux/darwin × x64/arm64. E **não economiza token**: o `SessionStart` dele *injeta* contexto da sessão anterior. É memória, não compressão. |
-| [`caveman-code`](https://www.npmjs.com/package/@juliusbrussee/caveman-code) | Agente de terminal próprio, 15 MB desempacotados com `better-sqlite3` nativo na árvore. Roda **fora** do Claude Code — é um cliente alternativo, não um componente deste projeto. |
-
-Quem quiser qualquer um dos dois instala globalmente, por conta própria e fora deste
-repositório: `npm install -g cavemem && cavemem install`.
-
-### Procedência e atualização
-
-`vendor/` não é espelho gerado de nada deste repositório — é código de terceiro pinado.
-O que o mantém honesto:
-
-| Arquivo | Papel |
-|---|---|
-| [`vendor/PINS.json`](vendor/PINS.json) | SHA upstream, lista de arquivos mantidos e patches locais, por projeto |
-| `vendor/MANIFEST.sha256` | sha256 de cada arquivo vendorizado |
-| `scripts/vendor_caveman.py` | Reconstrói a árvore a partir dos pins (usa rede) |
-| `python scripts/vendor_caveman.py --check` | Gate **sem rede**: falha se qualquer byte divergir. Roda em `tests/test_vendor_caveman.py` |
-
-Atualizar é editar o `sha` em `PINS.json`, rodar o script, revisar o diff e rodar a suíte.
-
-### Agentes que não são o Claude Code
-
-Devin, GitHub Copilot e Codex não carregam plugin nem hook. Para eles o ruleset caveman
-está inline em [`AGENTS.md`](AGENTS.md), seção "Output compression — caveman mode", junto
-com o que a compressão **não** pode tocar aqui: o schema `recommendation:`/`Finding`
-inteiro, números, versões, `rule_id`, `fact_id`, strings de erro e blocos de código. A
-forma portátil de arquivo único é `vendor/caveman/dist/caveman.skill`.
-
-## Uso rápido
-
-### Claude Code
-
-```text
-/sparkforge-diagnose
-/optimize-pyspark-code
-/analyze-spark-plan
-/optimize-iceberg-table
-/review-emr-cluster
-/review-emr-eks
-/review-data-validation
-```
-
-### GitHub Copilot
-
-No Copilot Chat:
-
-```text
-/sparkforge-diagnose
-/analyze-spark-plan
-/review-pyspark-performance
-```
-
-### Devin
-
-Peça explicitamente:
-
-```text
-Use a skill sparkforge-diagnose para analisar este job Glue.
-```
-
-`sparkforge-diagnose` **não** despacha subagente de propósito: ela abre o case e roteia, e
-o ciclo de vida do case tem que ficar na sessão que continua. As doze skills despacháveis
-— as quatro `review-*`, as quatro `analyze-*`, `diagnose-oom`, `diagnose-data-skew`,
-`optimize-pyspark-code` e `optimize-parquet-layout` — declaram `subagent: true` e podem
-rodar como subagente. Detalhe em [`GUIA_DE_USO.md`](GUIA_DE_USO.md), seção 3.
-
-```text
-Use o perfil emr-infra-reviewer como subagente para revisar este cluster EMR.
-```
-
-## Dados mínimos recomendados
-
-Forneça, sempre que possível:
-
-- Código do job.
-- Versão do AWS Glue, ou a release do EMR e o `describe-cluster` do cluster.
-- Tipo e quantidade de workers (ou instance groups/fleets, no EMR).
-- Argumentos e Spark configs.
-- Runtime e DPU-hours.
-- Volume de entrada e saída.
-- `df.explain("formatted")`.
-- Screenshots ou event logs do Spark UI.
-- Métricas do CloudWatch.
-- Quantidade e tamanho dos arquivos.
-- Metadados da tabela Iceberg.
-- SLA e frequência do job.
+| Começar, com receita para copiar e colar | [`docs/guia/README.md`](docs/guia/README.md) |
+| O glossário, os objetivos e os dados mínimos a juntar | [Conceitos](docs/guia/01-conceitos.md) |
+| Instalar, e usar sem o repositório clonado | [Instalação](docs/guia/02-instalacao.md) |
+| Ler a saída da CLI e seus códigos de saída | [CLI](docs/guia/03-cli.md) |
+| Ligar o MCP em cada cliente | [MCP](docs/guia/04-mcp.md) |
+| Saber qual agent ou skill usar | [Agents e skills](docs/guia/05-agents-e-skills.md) |
+| O que cada extrator lê, plataforma por plataforma | [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md) |
+| O conhecimento, o catálogo e as áreas de regra | [Conhecimento e catálogo](docs/guia/07-conhecimento-e-catalogo.md) |
+| Gates, assinatura, Code Scanning e handoff | [Rigor, assinatura e handoff](docs/guia/08-rigor-e-handoff.md) |
+| Arbitragem, debate e o que a camada agêntica não afirma | [Camada agêntica](docs/guia/09-camada-agentica.md) |
+| Compressão de output | [Ecossistema caveman](docs/guia/10-caveman.md) |
+| O que executa ao clonar | [Segurança](docs/guia/11-seguranca.md) |
+| Manter espelhos, locks e wheel (contribuidores) | [Espelhos e dependências](docs/guia/12-espelhos-e-dependencias.md) |
+| Um manual por tarefa: job lento, custo, Iceberg, Lake Formation, migração | [Manuais por tarefa](docs/guia/README.md#manuais-por-tarefa) |
+| Cada comando, tool, agent e skill, gerado do código | [Referência](docs/guia/README.md#referência-completa) |
+| Como Spark, Glue, EMR, Athena, Parquet e Iceberg se comportam | [`knowledge/INDEX.md`](knowledge/INDEX.md) |
+| As regras em YAML, legíveis sem Python | [`rules/catalog/README.md`](rules/catalog/README.md) |
+| Especificar uma mudança antes de construir | [`docs/sdd/README.md`](docs/sdd/README.md) |
+| Qual gate cada tipo de mudança toca | [`docs/gates-por-mudanca.md`](docs/gates-por-mudanca.md) |
+| Os números correntes, e o estado de cada fase | [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md) |
+| O protocolo que todo agent segue | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md), [`AGENTS.md`](AGENTS.md) |
+| Fluxos full e incrementais (latest-per-key, batching, OOM) | [`PROMPT_INICIAL_MESTRE.md`](PROMPT_INICIAL_MESTRE.md), [`GUIA_DE_USO.md`](GUIA_DE_USO.md) |
+| Contribuir | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| Créditos de terceiros | [`vendor/CREDITS.md`](vendor/CREDITS.md) |
 
 ## Regra central
 
-> Não ajustar por intuição. Medir, formular hipótese, testar isoladamente e validar o resultado funcional.
-
-## Segurança
-
-### Superfície de execução
-
-Clonar este repositório e abrir o Claude Code **executa código** antes de alguém digitar
-qualquer coisa: hooks de `SessionStart` e o comando de cada servidor MCP. Um PR que toque
-nesses arquivos não muda "a configuração do projeto" — muda o que roda na máquina de todo
-contribuidor, e num diff grande passa como linha de JSON.
-
-`tests/test_execution_surface.py` é a lista fechada disso. Não é allowlist de *padrão* —
-padrão vaza, `node .*` autorizaria `node -e "..."` — é a **string exata** de cada comando,
-em três superfícies: `.claude/settings.json` (nosso), o `plugin.json` do caveman
-vendorizado (de terceiro) e os servidores de `.mcp.json`. Mudar qualquer uma obriga a
-passar pelo teste, e a mudança aparece na revisão como o que de fato é.
-
-Camada dois: um deny-list das construções que transformam um hook em canal de execução
-arbitrária — `curl`/`wget`, `| sh`, `base64`, `eval`, `$(...)`, crase, `chmod +x`, `npm`.
-`>/dev/null` e `2>&1` ficam de fora do deny-list de propósito: redirecionar não busca nem
-decodifica nada, e o fallback legítimo usa os dois.
-
-O que executa hoje, na íntegra:
-
-| Superfície | Comando |
-|---|---|
-| `.claude/settings.json`, `SessionStart` | `command -v node >/dev/null 2>&1 \|\| { echo '...'; cat "$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md"; }` |
-| `vendor/caveman` plugin, `SessionStart` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-activate.js"` |
-| `vendor/caveman` plugin, `UserPromptSubmit` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-mode-tracker.js"` |
-| `.mcp.json` | `python -m sparkforge.adapters.mcp --transport stdio` |
-
-Os dois hooks em JS são código de terceiro. Auditados em 2026-08-07 no SHA pinado:
-**nenhuma chamada de rede**, um único `execFileSync` em forma argv (sem shell, sem caminho
-de injeção), e escritas confinadas a `~/.claude/.caveman-*` e aos arquivos de agente do
-próprio plugin. `caveman-stats.js` **lê os transcripts de sessão** (`~/.claude/projects/**`)
-para calcular economia de token — leitura local, sem rede.
-
-`.claude/settings.local.json` é por máquina e nunca commitado: guarda o allowlist de
-permissões de quem trabalha ali. Está no `.gitignore` do repositório desde 2026-08-07 —
-antes disso dependia do gitignore global de uma máquina só.
-
-### Operações destrutivas
-
-As Skills não executam automaticamente alterações destrutivas. Operações como expiração de snapshots, remoção de arquivos órfãos, mudanças de particionamento e overwrite devem ser propostas com escopo, retenção, dry run quando disponível e plano de rollback.
+> Não ajustar por intuição. Medir, formular hipótese, testar isoladamente e validar o
+> resultado funcional.
