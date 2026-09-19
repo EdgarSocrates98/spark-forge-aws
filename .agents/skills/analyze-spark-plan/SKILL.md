@@ -1,16 +1,17 @@
 ---
 name: analyze-spark-plan
-description: Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin, CartesianProduct), Sort, Window, HashAggregate, Generate/explode, UDF Python no plano (BatchEvalPython/ArrowEvalPython) e o antes/depois do AQE. Use também quando a pergunta for "por que não usa broadcast", "por que lê a tabela inteira", "o filtro não desceu pro scan" ou "quantos shuffles esse job tem", mesmo sem citar explain. Salve o `explain` num arquivo e rode `sparkforge analyze plan`: ele emite `plan.file_scan`, `plan.join`, `plan.python_udf`, `plan.aqe` e `plan.exchange`, julgados por `SF-PLAN-001..004`, `SF-PQ-002` e `SF-PQ-004`. Para concluir causa (skew, spill, OOM), junte `analyze pyspark` e o `analyze event-log` da execução: o plano diz o que foi declarado, não o que custou.
+description: Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin, CartesianProduct), Sort, Window, HashAggregate, Generate/explode, UDF Python no plano (BatchEvalPython/ArrowEvalPython) e o antes/depois do AQE — inclusive sob Photon (Databricks), via `plan.photon`. Use também quando a pergunta for "por que não usa broadcast", "por que lê a tabela inteira", "o filtro não desceu pro scan" ou "quantos shuffles esse job tem", mesmo sem citar explain. Salve o `explain` num arquivo e rode `sparkforge analyze plan`: ele emite `plan.file_scan`, `plan.join`, `plan.python_udf`, `plan.aqe`, `plan.exchange` e `plan.photon`, julgados por `SF-PLAN-001..004`, `SF-PQ-002` e `SF-PQ-004`. Para concluir causa (skew, spill, OOM), junte `analyze pyspark` e o `analyze event-log` da execução: o plano diz o que foi declarado, não o que custou.
 subagent: true
 ---
 
 # Analyze Spark Plan
 
-`sparkforge analyze plan` lê a saída de `explain()` e a transforma em facts. O que ele **não** faz é inventar o que o texto não diz: `explain()` é saída para humano, não formato de máquina, e o extrator declara o ponto cego em vez de meio-parsear. Três limites valem antes de qualquer conclusão:
+`sparkforge analyze plan` lê a saída de `explain()` e a transforma em facts. O que ele **não** faz é inventar o que o texto não diz: `explain()` é saída para humano, não formato de máquina, e o extrator declara o ponto cego em vez de meio-parsear. Quatro limites valem antes de qualquer conclusão:
 
 - **Modo.** `formatted` é o preferido (um campo por linha, sem ambiguidade de vírgula); `simple` e `extended` são suportados — de `extended`/`cost` só a seção `== Physical Plan ==` é interpretada, e as seções lógicas são ignoradas de propósito, contadas em `measures.skipped_logical_lines`, nunca em `unresolved`. `codegen` é **rejeitado**: é Java gerado, não plano, e vira `plan.unresolved` com `reason: unsupported_mode`.
 - **Truncamento.** O Spark corta listas longas de campos com `... 56 more fields`. Contar o que sobrou inflaria em silêncio a razão de `SF-PQ-004`, então o extrator não emite `read_schema_columns` nem `referenced_columns` nesse caso: emite `plan.unresolved` com `reason: truncated_field_list`, e a regra não dispara. **Não leia isso como "sem achado"** — leia como "não deu para contar".
 - **Plano declarado ≠ plano executado.** O plano não revela distribuição real de dados, spill, GC, nem a estratégia de join que o AQE efetivamente escolheu em runtime. `SF-PLAN-004` existe justamente para marcar o plano como não-final quando o AQE está ligado.
+- **Photon (Databricks).** Nó de prefixo `Photon` (`PhotonProject`, `PhotonShuffleExchangeSink` etc.) emite o fact `plan.photon`, e a presença dele pula toda regra de plano cujos `requires_facts` sejam kind `plan.*`/`spark.sql.*`, em `skipped` com motivo `databricks.photon.unresolved` — exceto a regra que só exige `plan.python_udf` e/ou `plan.aqe`, porque `ArrowEvalPython` e `AdaptiveSparkPlan` continuam no plano sob Photon observado (`knowledge/databricks/runtime-matrix.md` §4). Sem nó `Photon` no plano, nada muda.
 
 O checklist de leitura em `knowledge/spark/plan-reading.md` continua sendo o trabalho de domínio — o extrator ancora e o `judge` julga, mas quem interpreta a árvore é você.
 
@@ -23,7 +24,7 @@ O checklist de leitura em `knowledge/spark/plan-reading.md` continua sendo o tra
    sparkforge analyze plan --path <plano>.txt --out .sparkforge/facts_plan.json
    ```
 
-   Sai `plan.file_scan` (tabela particionada, `PartitionFilters` vazio, colunas de `ReadSchema` vs. referenciadas), `plan.join` (com e sem equi-condição), `plan.python_udf` (`BatchEvalPython`/`ArrowEvalPython`), `plan.exchange` e `plan.aqe`. O `subject` de cada fact é o **nó** do plano (`{"type": "plan_node", "symbol": "(1) Scan parquet db.tabela"}`), não a linha do arquivo de texto: o operador age sobre "a leitura de `db.tabela` no nó 1", e `file`/`line` acompanham só como procedência. Confira `unresolved` na saída antes de seguir.
+   Sai `plan.file_scan` (tabela particionada, `PartitionFilters` vazio, colunas de `ReadSchema` vs. referenciadas), `plan.join` (com e sem equi-condição), `plan.python_udf` (`BatchEvalPython` com `udf_type: python`, `ArrowEvalPython` com `udf_type: arrow` — o plano não distingue `pandas_udf` de UDF Python otimizada para Arrow), `plan.exchange`, `plan.aqe` e, sob nó de prefixo `Photon`, `plan.photon`. O `subject` de cada fact é o **nó** do plano (`{"type": "plan_node", "symbol": "(1) Scan parquet db.tabela"}`), não a linha do arquivo de texto: o operador age sobre "a leitura de `db.tabela` no nó 1", e `file`/`line` acompanham só como procedência. Confira `unresolved` na saída antes de seguir.
 3. **Leia de baixo para cima.** O plano executa das folhas (`Scan`) para a raiz. Percorra o checklist de `knowledge/spark/plan-reading.md` seção 6: `PartitionFilters` presente onde a tabela é particionada, `ReadSchema` só com as colunas usadas, contagem de `Exchange` justificável, ausência de `CartesianProduct`/`BroadcastNestedLoopJoin`, presença de `BatchEvalPython`/`ArrowEvalPython`, fan-out de `Generate`, estratégia de cada join confirmada (não só assumida).
 4. **Nunca conclua estratégia de join só pelo `explain()`.** Com AQE ligado (default em Glue 4.0/5.x), o plano pode ser reescrito depois de cada shuffle. O plano final está na aba SQL do Spark UI, ou no event log real — não no `explain()` do código. `SF-PLAN-004` marca isso como achado próprio.
 5. **Correlacione com o que o código pede.** `sparkforge analyze pyspark --path <arquivo ou diretório> --out .sparkforge/facts.json` extrai os facts estáticos por AST (`pyspark.join`, `pyspark.udf`, `pyspark.explode`, `pyspark.partitioning`, `pyspark.chain`, `pyspark.withcolumn_run`) que dão nome de arquivo e linha a cada operador suspeito do plano.
@@ -42,10 +43,11 @@ Julgadas direto dos facts do plano (`sparkforge analyze plan`):
 |---|---|---|
 | `Scan` de tabela particionada com `PartitionFilters` vazio | `SF-PQ-002` | `plan.file_scan` |
 | `ReadSchema` muito maior que as colunas referenciadas | `SF-PQ-004` | `plan.file_scan` |
-| `BatchEvalPython` (UDF Python pickled) | `SF-PLAN-001` | `plan.python_udf` |
-| `ArrowEvalPython` (UDF vetorizada) | `SF-PLAN-002` | `plan.python_udf` |
+| `BatchEvalPython` (`udf_type: python`, UDF pickled) | `SF-PLAN-001` | `plan.python_udf` |
+| `ArrowEvalPython` (`udf_type: arrow` — não distingue `pandas_udf` de UDF otimizada para Arrow) | `SF-PLAN-002` | `plan.python_udf` |
 | Join sem equi-condição (`CartesianProduct`, `BroadcastNestedLoopJoin`) | `SF-PLAN-003` | `plan.join` |
 | Plano não-final do AQE | `SF-PLAN-004` | `plan.aqe` |
+| Nó de prefixo `Photon` (Databricks) | — (pula `SF-PLAN-*`/`SF-PQ-*` com `databricks.photon.unresolved`, exceto o que só exige `plan.python_udf`/`plan.aqe`) | `plan.photon` |
 
 Correlacionadas ao código (`sparkforge analyze pyspark`), para ancorar o operador em arquivo e linha:
 
