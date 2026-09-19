@@ -18,7 +18,7 @@ Deriva glue/emr/spark/python/iceberg/athena dos facts ja extraidos e dos paramet
 | `facts_path` | string ou array de string | não | Um caminho, ou varios: os facts sao unidos e deduplicados antes de derivar as fontes de versao. |
 | `glue` | string | não |  |
 | `iceberg` | string | não |  |
-| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf ou plan.aqe. Plano com operador Photon (plan.photon) faz o mesmo sem declaracao e vence 'off', que vira divergencia 'photon:'. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não |  |
 | `spark` | string | não |  |
 

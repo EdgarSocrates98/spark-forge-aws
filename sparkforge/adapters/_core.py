@@ -557,6 +557,15 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
             return None
         return ("get_work_group", "athena_version", str(engine))
 
+    # `plan.photon` so existe quando o plano fisico tem no de prefixo `Photon`
+    # (`sparkforge/facts/spark_plan.py`): e o artefato mostrando que o Photon
+    # rodou, OBSERVACAO e nao declaracao. Por isso a fonte e `plan`, e nao
+    # `cli`, e `detect_runtime` a poe acima de `--photon`: declaracao que
+    # discorda vira divergencia `photon:`. Plano sem no Photon nao emite o
+    # fact, e nao ha leitura `off` a fazer daqui -- ausencia nao e observacao.
+    if fact.kind == "plan.photon":
+        return ("plan", "photon", "on")
+
     return None
 
 

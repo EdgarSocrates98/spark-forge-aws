@@ -49,13 +49,25 @@ deixa `spark` vazio: a derivação não inventa.
   `CONFIG_NOT_AVAILABLE.WITHOUT_SUGGESTION`. Para cluster clássico — onde a
   chave é documentada — a pergunta continua aberta.
 - **U2.** A página do Photon documenta a cor dos operadores na interface e o
-  `runtime_engine = PHOTON` nas APIs, não como Photon aparece no event log. Por
-  isso Photon é declarado (`--photon on|off`), não detectado. A observação da
-  seção 4 mostra Photon visível no TEXTO DO PLANO — prefixo `Photon` nos
-  nomes de operador (`PhotonRange`, `PhotonGroupingAgg`, ...) e a seção
-  `== Photon Explanation ==` de `explain(mode="formatted")` — mas isso não é
-  o event log: como Photon aparece no event log entregue continua não
-  observado, porque compute serverless não entrega event log.
+  `runtime_engine = PHOTON` nas APIs, não como Photon aparece no event log.
+  Photon é declarado (`--photon on|off`) OU detectado pelo TEXTO DO PLANO —
+  o prefixo `Photon` nos nomes de operador (`PhotonRange`,
+  `PhotonGroupingAgg`, ...), que é o que o SparkForge lê como o fact
+  `plan.photon` (seção 4). A seção `== Photon Explanation ==` de
+  `explain(mode="formatted")` NÃO cria o fact — ela só preenche
+  `attrs.explanation` quando presente, com a primeira linha não vazia, ou
+  "" quando ausente. A observação de `plan.photon` vence a declaração
+  quando as duas divergem, e a recusa das regras de plano que o fact move
+  vale sempre — com ou sem `databricks` detectado (seção 4). Só a
+  PRECEDÊNCIA sobre a declaração é condicionada: o fact só entra no
+  contexto do runtime, produzindo a divergência `photon:`, sob a
+  plataforma databricks detectada. Sem ela, a observação do plano não
+  entra no contexto e qualquer `--photon` declarado vira a divergência
+  "declarado sem plataforma" (seção 4) — a recusa das regras de plano
+  continua valendo do mesmo jeito, movida só pelo fact, sem depender do
+  runtime. Isso não é o event log: como Photon aparece no event log
+  entregue continua não observado, porque compute serverless não entrega
+  event log.
 - `spark.sql.shuffle.partitions = auto` liga o auto-optimized shuffle, que
   escolhe o número de partições pelo plano e pelo volume. A página "Adaptive
   query execution" (https://docs.databricks.com/aws/en/optimizations/aqe,
@@ -94,18 +106,43 @@ cluster clássico nem para outra versão sem nova observação.
   `PhotonArrowBatchSource`; a seção `== Photon Explanation ==` disse "fully
   supported" também para essa UDF.
 - Medido pelo controlador com `sparkforge analyze plan` sobre os dois
-  planos, fora deste repositório: no plano com join o extrator emitiu só
-  `plan.analyzed` e `plan.aqe` — nenhum `plan.join`, `plan.exchange` nem
-  `plan.unresolved`; no plano da UDF emitiu `plan.python_udf` com
-  `operator: ArrowEvalPython` e `udf_type: "pandas"`, embora a UDF observada
-  fosse `@F.udf` comum, não pandas.
+  planos, fora deste repositório, em 2026-09-18: o extrator ainda não
+  reconhecia o vocabulário `Photon*` — no plano com join emitiu só
+  `plan.analyzed` e `plan.aqe`, nenhum `plan.join`/`plan.exchange`; no plano
+  da UDF emitiu `plan.python_udf` com `udf_type: "pandas"` para um
+  `ArrowEvalPython` que vinha de `@F.udf` comum, não pandas. Só a segunda
+  lacuna foi corrigida: o vocabulário `Photon*` continua sem leitura de
+  join ou exchange — mapear operador Photon para `plan.join`/`plan.exchange`
+  ficou fora de escopo. O que mudou, desde 2026-09-18, é que o silêncio
+  sobre join e exchange sob Photon virou recusa com nome
+  (`databricks.photon.unresolved`), não leitura.
 
-**Lacuna do SparkForge, não fato do Databricks.** O extrator de plano não
-reconhece hoje o vocabulário `Photon*`: sob um plano Photon ele fica em
-silêncio onde o vocabulário clássico (join, exchange) teria emitido fact, e
-infere `udf_type` errado (`"pandas"`) para `ArrowEvalPython` quando a UDF é
-comum. As duas ficam como trabalho futuro do extrator (feature seguinte),
-sem data prometida.
+**O que o SparkForge faz com um plano Photon, desde 2026-09-18.** O
+extrator reconhece os operadores de prefixo `Photon` e emite um fact
+`plan.photon` por plano (`measures.photon_operators`; `measures.operators`,
+o total de nós do plano, Photon ou não; `attrs.operators` com os nomes
+Photon distintos ordenados; `attrs.explanation` com a primeira linha NÃO
+VAZIA da seção `== Photon Explanation ==`, ou "" quando a seção não existe
+ou está toda em branco). Um plano sem nó de prefixo `Photon` não emite o
+fact — inclusive um plano Photon de outro runtime cujo prefixo não case, que
+volta ao silêncio de antes. Com `plan.photon` entre os facts, o engine
+recusa toda regra que exige kind de plano — em `skipped` com motivo
+`databricks.photon.unresolved` — sem precisar de `--photon` nem de
+`--databricks`, exceto a regra cujos kinds de plano exigidos estejam TODOS
+entre `plan.python_udf` e `plan.aqe`; essa fica isenta e continua sendo
+julgada. Uma declaração `--photon off` diante desse fact vira divergência,
+não silêncio (seção 3, U2) — mas só sob a plataforma databricks detectada:
+com ela, a divergência `photon:` diz que "vale o artefato" e o estado fica
+`on` com `source: plan` (SF-ENV-006 deixa de disparar); sem databricks
+detectado, a declaração vira a divergência "declarado sem plataforma" e não
+entra no runtime nem no fact `databricks.photon` — mas a recusa das regras
+de plano, movida só pelo fact `plan.photon`, vale do mesmo jeito. E
+`ArrowEvalPython` sai com `udf_type: arrow`, porque o plano não distingue
+`pandas_udf` de UDF Python otimizada para Arrow. Limites: a forma é a
+observada num único ambiente (Free Edition, serverless, Spark 4.2.0,
+2026-09-18); o texto de suporte parcial da seção de explicação (fallback
+para Spark comum) não foi visto, só "fully supported"; e Photon pelo event
+log continua não observado (U2).
 
 ## Fontes
 

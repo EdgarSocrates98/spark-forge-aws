@@ -1,0 +1,92 @@
+== Physical Plan ==
+AdaptiveSparkPlan (17)
++- == Initial Plan ==
+   PhotonResultStage (16)
+   +- PhotonColumnarToRow (15)
+      +- PhotonProject (14)
+         +- PhotonBroadcastHashJoin Inner (13)
+            :- PhotonGroupingAgg (7)
+            :  +- PhotonShuffleExchangeSource (6)
+            :     +- PhotonShuffleMapStage (5)
+            :        +- PhotonShuffleExchangeSink (4)
+            :           +- PhotonGroupingAgg (3)
+            :              +- PhotonProject (2)
+            :                 +- PhotonRange (1)
+            +- PhotonShuffleExchangeSource (12)
+               +- PhotonShuffleMapStage (11)
+                  +- PhotonShuffleExchangeSink (10)
+                     +- PhotonProject (9)
+                        +- PhotonRange (8)
+
+
+(1) PhotonRange
+Output [1]: [id#11254L]
+Arguments: Range (0, 2000000, step=1, splits=8)
+
+(2) PhotonProject
+Input [1]: [id#11254L]
+Arguments: [id#11254L, (id#11254L % 100) AS k#11256L]
+
+(3) PhotonGroupingAgg
+Input [2]: [id#11254L, k#11256L]
+Arguments: [k#11256L], [partial_count(1) AS count#11266L, partial_sum(id#11254L) AS sum#11268L], [count#11265L, sum#11267L], [k#11256L, count#11266L, sum#11268L], false
+
+(4) PhotonShuffleExchangeSink
+Input [3]: [k#11256L, count#11266L, sum#11268L]
+Arguments: hashpartitioning(k#11256L, 16)
+
+(5) PhotonShuffleMapStage
+Input [3]: [k#11256L, count#11266L, sum#11268L]
+Arguments: ENSURE_REQUIREMENTS, [id=#7384]
+
+(6) PhotonShuffleExchangeSource
+Input [3]: [k#11256L, count#11266L, sum#11268L]
+Arguments: false
+
+(7) PhotonGroupingAgg
+Input [3]: [k#11256L, count#11266L, sum#11268L]
+Arguments: [k#11256L], [finalmerge_count(merge count#11266L) AS count(1)#11263L, finalmerge_sum(merge sum#11268L) AS sum(id)#11264L], [count(1)#11263L, sum(id)#11264L], [k#11256L, count(1)#11263L AS n#11257L, sum(id)#11264L AS s#11258L], true
+
+(8) PhotonRange
+Output [1]: [id#11259L]
+Arguments: Range (0, 100, step=1, splits=8)
+
+(9) PhotonProject
+Input [1]: [id#11259L]
+Arguments: [id#11259L AS k#11260L, concat(c, cast(id#11259L as string)) AS nome#11262]
+
+(10) PhotonShuffleExchangeSink
+Input [2]: [k#11260L, nome#11262]
+Arguments: SinglePartition
+
+(11) PhotonShuffleMapStage
+Input [2]: [k#11260L, nome#11262]
+Arguments: EXECUTOR_BROADCAST, [id=#7394]
+
+(12) PhotonShuffleExchangeSource
+Input [2]: [k#11260L, nome#11262]
+Arguments: false
+
+(13) PhotonBroadcastHashJoin
+Left keys [1]: [k#11256L]
+Right keys [1]: [k#11260L]
+Join type: Inner
+Join condition: None
+
+(14) PhotonProject
+Input [5]: [k#11256L, n#11257L, s#11258L, k#11260L, nome#11262]
+Arguments: [k#11256L, n#11257L, s#11258L, nome#11262]
+
+(15) PhotonColumnarToRow
+Input [4]: [k#11256L, n#11257L, s#11258L, nome#11262]
+
+(16) PhotonResultStage
+Input [4]: [k#11256L, n#11257L, s#11258L, nome#11262]
+
+(17) AdaptiveSparkPlan
+Output [4]: [k#11256L, n#11257L, s#11258L, nome#11262]
+Arguments: isFinalPlan=false
+
+
+== Photon Explanation ==
+The query is fully supported by Photon.

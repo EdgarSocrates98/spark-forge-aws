@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "97c966cfb781fd0e68668f11103dc042441ec3f22a785f693ee8f81fc46f3e72"
+      "sha256": "57e54b4c99cc72f011e5316ddd907cefb991b41b160f498d3881f5fd637b9915"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -71,7 +71,7 @@
     {
       "path": "knowledge/databricks/runtime-matrix.md",
       "title": "runtime-matrix",
-      "sha256": "87fb2e237ea2b9dd85a32acff9b202c5e9417e9c438d530094d2d2318d333241"
+      "sha256": "6e881af558dc52dc13df8baf1ad73995ae7bfd41bc95196ad84871ec6c6762c4"
     },
     {
       "path": "knowledge/devin/agents-and-subagents.md",
@@ -212,7 +212,7 @@
     {
       "path": "knowledge/spark/plan-reading.md",
       "title": "plan-reading",
-      "sha256": "9d96dd55ae8a4f98c29e8661661d72b8e480c269780c28841ecf1357438654ac"
+      "sha256": "f319a7edbcd8462de771634f13c7edf0164202652d36fa1f02d894518345b1d1"
     },
     {
       "path": "knowledge/spark/shuffle-join-skew.md",

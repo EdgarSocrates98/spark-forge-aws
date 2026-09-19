@@ -162,9 +162,12 @@ _DATABRICKS_FLAG_HELP = (
 _PHOTON_FLAG_HELP = (
     "Photon ligado ('on') ou desligado ('off') no cluster ou job Databricks. Com "
     "'on', regra que depende de plano sai em skipped com "
-    "databricks.photon.unresolved, exceto a que so exige plan.python_udf; sem "
-    "declaracao, SF-ENV-006 avisa que regra de plano calada nao e evidencia. Sem "
-    "--databricks, a declaracao vira divergencia 'photon:' e nao entra no runtime."
+    "databricks.photon.unresolved, exceto a que so exige plan.python_udf ou "
+    "plan.aqe. Plano com operador Photon (fact plan.photon) liga a mesma recusa "
+    "sem a flag e vence a declaracao: declarar 'off' diante dele vira divergencia "
+    "'photon:'. Sem declaracao nem plano Photon, SF-ENV-006 avisa que regra de "
+    "plano calada nao e evidencia. Sem --databricks, a declaracao vira "
+    "divergencia 'photon:' e nao entra no runtime."
 )
 
 _CODE_DB_HELP = (

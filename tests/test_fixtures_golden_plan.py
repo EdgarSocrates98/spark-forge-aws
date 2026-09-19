@@ -35,6 +35,8 @@ REQUIRED_FIXTURES = {
     "python_udf_in_plan",
     "cartesian_join",
     "explain_cost_join",
+    "photon_join",
+    "photon_udf",
 }
 
 
@@ -155,7 +157,7 @@ class TestAdversarial:
         udfs = {
             f.attrs["operator"]: f.attrs["udf_type"] for f in facts if f.kind == "plan.python_udf"
         }
-        assert udfs == {"BatchEvalPython": "python", "ArrowEvalPython": "pandas"}
+        assert udfs == {"BatchEvalPython": "python", "ArrowEvalPython": "arrow"}
 
         by_rule = {f.rule_id: f.severity for f in findings}
         assert by_rule == {"SF-PLAN-001": "P1", "SF-PLAN-002": "P3"}

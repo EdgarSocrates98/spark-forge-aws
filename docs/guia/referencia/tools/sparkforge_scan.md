@@ -21,7 +21,7 @@ Roda sozinho os analyzes que cabem num repositorio e julga a uniao. Artefato col
 | `format` | string: `json`, `sarif` | não |  |
 | `glue` | string | não | Versao de glue para o judge. |
 | `iceberg` | string | não | Versao de iceberg para o judge. |
-| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf. Sem databricks, vira divergencia 'photon:'. |
+| `photon` | string: `on`, `off` | não | Photon ligado ou desligado no Databricks. Com 'on', regra de plano sai em skipped com databricks.photon.unresolved, exceto a que so exige plan.python_udf ou plan.aqe. Plano com operador Photon (plan.photon) faz o mesmo sem declaracao e vence 'off', que vira divergencia 'photon:'. Sem databricks, vira divergencia 'photon:'. |
 | `python` | string | não | Versao de python para o judge. |
 | `spark` | string | não | Versao de spark para o judge. |
 
