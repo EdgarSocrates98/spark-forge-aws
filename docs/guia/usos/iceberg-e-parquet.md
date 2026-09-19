@@ -252,8 +252,7 @@ O SparkForge só recomenda. Ele não roda manutenção.
 ## Para ir além
 
 - Agent de Iceberg: [iceberg-performance-engineer](../referencia/agents/iceberg-performance-engineer.md).
-- Especialistas: [iceberg-performance-engineer](../referencia/agents/iceberg-performance-engineer.md),
-  [sf-storage-specialist](../referencia/agents/sf-storage-specialist.md).
+- Especialista: [sf-storage-specialist](../referencia/agents/sf-storage-specialist.md).
 - Skills: [optimize-iceberg-table](../referencia/skills/optimize-iceberg-table.md),
   [optimize-parquet-layout](../referencia/skills/optimize-parquet-layout.md),
   [iceberg-v3-readiness](../referencia/skills/iceberg-v3-readiness.md).

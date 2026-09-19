@@ -11981,6 +11981,26 @@
       "state": "PROVADA",
       "text": "10",
       "type": "number"
+    },
+    {
+      "context": "a lista completa dos 19 agentes sf-* ocos removidos está em OCOS, tests/test_sf_stubs.py) — não como skill,",
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "id": "VNX-796",
+      "line": 64,
+      "proof": {
+        "cmd": "python -c 'import sys; sys.path.insert(0, \"tests\"); from test_sf_stubs import OCOS; print(len(OCOS))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 19
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "19",
+      "type": "number",
+      "note": "Adicionada no fechamento da revisao final da feature SF_STUBS (2026-09-19): o item 8 da revisao restaurou a contagem \"Seis agentes\" em AGENT-CATALOG.md e, para nao citar o nome do agente removido (tests/test_sf_stubs.py::test_documento_vivo_nao_cita_o_que_saiu proibe citar sf-cost-reviewer em docs vivos), a linha passou a apontar para a tupla OCOS como a lista completa dos 19 agentes sf-* ocos que a feature removeu. A prova conta o len() real da tupla."
     }
   ],
   "extracted_from": "4c15cf6e5d141b99118e284bf57faf1aa5e6fe3e",

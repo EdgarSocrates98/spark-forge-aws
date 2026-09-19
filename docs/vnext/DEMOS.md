@@ -33,7 +33,7 @@ Desenhar arquitetura de Change Data Capture (CDC) do DynamoDB / RDS para Apache 
 
 ### Execução na Factory
 - **Rota**: `Tier 4 (Specialist Model)`
-- **Skills Carregadas (Progressive Disclosure)**: `streaming-reliability`, `optimize-iceberg-table`, `data-contracts-schema-evolution`
+- **Skills Carregadas (Progressive Disclosure)**: `optimize-iceberg-table` (`streaming-reliability` e `data-contracts-schema-evolution` não existem em `skills/` e foram removidas do exemplo)
 - **Output**: Especificação de arquitetura, sizing de DPU e políticas IAM com privilégio mínimo.
 
 ---

@@ -321,11 +321,10 @@ Durable memory across sessions is `.sparkforge/case.yaml` plus the journal.
 
 ## Coordinators especializados
 sf-analytics-specialist
-data-quality-reviewer
+sf-lake-formation-specialist
+sf-security-reviewer
 
 ## Coordinators completos
-athena-query-optimizer
-iceberg-performance-engineer
 sf-graph-specialist
 sf-neptune-specialist
 sf-orchestrator

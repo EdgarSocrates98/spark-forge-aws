@@ -320,9 +320,11 @@ class Alegacao:
 # `STATUS.md`, e por isso moram fora de `MEDIDAS`: a checagem de orfa em
 # `auditar()` reprovaria por elas.
 MEDIDAS_PROSA: dict[str, Callable[[], int]] = {
-    # "Executavel" e regra com `status` -- as 35 sem o campo sao declaracoes de
-    # area de coordenacao (`executable: false`, `when: {all: []}`), que existem
-    # para a area ter nome e rota, nao para julgar.
+    # "Executavel" e regra com `status`. Ate 2026-09-18 havia 35 regras sem o
+    # campo -- declaracoes de area de coordenacao (`executable: false`,
+    # `when: {all: []}`), que existiam para a area ter nome e rota, nao para
+    # julgar. A feature `docs/sdd/SF_STUBS/` (2026-09-19) removeu as 35 areas
+    # `agentic-sf-*`: desde entao toda regra do catalogo tem `status`.
     "Regras executáveis": lambda: sum(1 for r in _catalogo() if r.get("status")),
     # Medido por `inspect.signature` sobre a funcao que cada tool despacha em
     # `sparkforge/adapters/_core.py`, e nao por busca de texto no schema: o

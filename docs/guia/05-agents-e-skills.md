@@ -134,10 +134,11 @@ pacote tem duas camadas de agente:
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
   contrato de handoff que fazem a cadeia ser determinística entre modelos.
 
-Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-085` (85,
-contadas em 2026-09-18) de `rules/catalog/routing.yaml` mapeiam fase do case e área do
-achado dominante para o coordenador certo, e `sparkforge_next_step`/`sparkforge next-step`
-as consulta.
+Qual coordenador usar é dado, não julgamento: as **31** rotas `AGENT-*` (de 47 rotas no
+total, recontadas em 2026-09-19; os ids não são contínuos desde a remoção das 54 rotas
+`AGENT-017..025, 029..070, 072..074` na feature `docs/sdd/SF_STUBS/`) de
+`rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
+coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 
 ### Despacho por plataforma
 
@@ -317,7 +318,7 @@ A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
 | "Cluster EMR, EMR Serverless ou EMR on EKS" | [`emr-infra-reviewer`](referencia/agents/emr-infra-reviewer.md) | [`review-emr-cluster`](referencia/skills/review-emr-cluster.md), [`review-emr-eks`](referencia/skills/review-emr-eks.md) |
 | "A validação de dado do job está no lugar certo?" | [`data-quality-reviewer`](referencia/agents/data-quality-reviewer.md) | [`review-data-validation`](referencia/skills/review-data-validation.md) |
 | "A leitura passa e a escrita dá AccessDenied" (Lake Formation) | [`sf-lake-formation-specialist`](referencia/agents/sf-lake-formation-specialist.md) | [`diagnose-lakeformation-access`](referencia/skills/diagnose-lakeformation-access.md), [`lakeformation-fgac-guard`](referencia/skills/lakeformation-fgac-guard.md) |
-| "Quanto custa e qual capacidade escolher" | verbo `sparkforge finops` | [`tune-glue-job`](referencia/skills/tune-glue-job.md); veja também [Custo e capacidade](usos/custo-e-capacidade.md) |
+| "Quanto custa e qual capacidade escolher" | — | verbo `sparkforge finops`, [`tune-glue-job`](referencia/skills/tune-glue-job.md); veja também [Custo e capacidade](usos/custo-e-capacidade.md) |
 | "Revisar um pull request PySpark" | [`pyspark-code-reviewer`](referencia/agents/pyspark-code-reviewer.md) | [`review-pyspark-pr`](referencia/skills/review-pyspark-pr.md) |
 | "Posso migrar para Glue 6.0 ou Spark 4?" | [`sf-runtime-specialist`](referencia/agents/sf-runtime-specialist.md) | [`migrate-glue-6`](referencia/skills/migrate-glue-6.md), [`spark4-compatibility`](referencia/skills/spark4-compatibility.md), [`compare-releases`](referencia/skills/compare-releases.md) |
 | "Coordenar vários agents em fases" | [`sf-orchestrator`](referencia/agents/sf-orchestrator.md) | [`agentic-orchestration`](referencia/skills/agentic-orchestration.md) |

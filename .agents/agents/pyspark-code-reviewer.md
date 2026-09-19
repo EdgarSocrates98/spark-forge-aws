@@ -165,7 +165,7 @@ despacham subagentes, e subagente não faz nenhum dos dois.
 
 Antes de ler arquivo, consulte o índice local. Ele responde onde um símbolo
 está, quem o chama e o que quebra se ele mudar, sem que ninguém leia o arquivo
-inteiro — que é a razão de este agente existir.
+inteiro — que é o que torna a revisão estrutural barata.
 
 - `sparkforge_code_status` — o índice está fresco? Nunca confie em grafo antigo
   em silêncio; a resposta diz o que mudou desde a última sincronização.
