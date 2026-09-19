@@ -529,6 +529,27 @@ def build_parser() -> argparse.ArgumentParser:
     sfn_analyze_p.add_argument("--cursor")
     _add_detail_level(sfn_analyze_p)
 
+    af_analyze_p = analyze_sub.add_parser(
+        "airflow-dag",
+        help="Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e "
+        "NUNCA executado: um fact por operador instanciado, com classe, task_id, os "
+        "argumentos literais que as regras julgam (job_name, wait_for_completion, "
+        "deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias "
+        "declaradas, e a marca do que nao e literal.",
+    )
+    af_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Arquivo .py do DAG ou diretorio com eles (a pasta de DAGs).",
+    )
+    af_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    af_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    af_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    af_analyze_p.add_argument("--cursor")
+    _add_detail_level(af_analyze_p)
+
     dq_p = analyze_sub.add_parser(
         "data-quality",
         help="Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great "
@@ -3266,6 +3287,11 @@ def _cmd_analyze_emr_eks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_airflow_dag(args: argparse.Namespace) -> int:
+    full = _core.analyze_airflow_dag(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_step_functions(args: argparse.Namespace) -> int:
     full = _core.analyze_step_functions(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -4636,6 +4662,7 @@ _DISPATCH = {
     ("analyze", "emr-eks"): _cmd_analyze_emr_eks,
     ("analyze", "controlm-jobs"): _cmd_analyze_controlm_jobs,
     ("analyze", "step-functions"): _cmd_analyze_step_functions,
+    ("analyze", "airflow-dag"): _cmd_analyze_airflow_dag,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,

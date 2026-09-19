@@ -245,3 +245,29 @@ def test_o_teto_de_tamanho_e_o_erro_de_leitura_saem_nomeados(tmp_path):
     assert [f.attrs["reason"] for f in facts if f.kind == "af.unresolved"] == ["read_error"]
 
     assert json.loads(json.dumps([f.to_dict() for f in facts]))
+
+
+def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
+    from sparkforge.adapters.cli import main
+    from sparkforge.adapters.tools import call_tool
+
+    entrada = tmp_path / "dags"
+    entrada.mkdir()
+    (entrada / "carga_diaria.py").write_text(DAG_COM_TRES_TASKS, encoding="utf-8")
+    saida = tmp_path / "facts.json"
+
+    codigo = main(["analyze", "airflow-dag", "--path", str(entrada), "--out", str(saida)])
+    capsys.readouterr()
+    assert codigo == 0
+    pela_cli = json.loads(saida.read_text(encoding="utf-8"))
+
+    pela_tool = call_tool("sparkforge_analyze_airflow_dag", {"path": str(entrada), "limit": 1000})
+    assert "error" not in pela_tool, pela_tool
+    assert pela_tool["total_count"] == len(pela_cli)
+    assert pela_tool["items"] == pela_cli
+    assert pela_tool["by_kind"]["af.task"] == 3
+    assert pela_tool["by_kind"]["af.dependency"] == 2
+    assert pela_tool["unresolved"] == 1
+
+    erro = call_tool("sparkforge_analyze_airflow_dag", {"path": str(tmp_path / "nao-existe")})
+    assert "sparkforge analyze airflow-dag" in erro["error"]

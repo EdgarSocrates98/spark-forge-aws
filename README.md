@@ -108,7 +108,7 @@ a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cl
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **107 tools MCP**.
+(`sparkforge/adapters/_core.py`), e o servidor publica **108 tools MCP**.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|

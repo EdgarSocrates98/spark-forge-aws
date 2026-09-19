@@ -976,7 +976,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `_WRITE_IDEMPOTENT`. O conjunto de excecao nao se move.
         # 98 -> 99 com `analyze_step_functions` (2026-09-19, `docs/sdd/STEP_FUNCTIONS/`):
         # `_READ_ONLY`, le a definicao ASL em disco e declara `path`.
-        assert len(TOOLS) - len(sem_caminho) == 99
+        # 99 -> 100 com `analyze_airflow_dag` (2026-09-20, `docs/sdd/AIRFLOW_DAG/`):
+        # `_READ_ONLY`, le o arquivo .py do DAG em disco e declara `path`.
+        assert len(TOOLS) - len(sem_caminho) == 100
 
 
 class TestAImposicaoNoDespacho:

@@ -46,6 +46,17 @@ e é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e 
 do Step Functions. A composição das duas não é documentada — afirme que as duas existem,
 nunca quantas vezes o job roda numa falha.
 
+## Quem dispara o job: Airflow
+
+Quando quem chama o job é um DAG do Apache Airflow, `sparkforge_analyze_airflow_dag` lê
+o arquivo `.py` por AST — **nunca o importa nem o executa** — e devolve um `af.task` por
+operador instanciado. Para o `GlueJobOperator`, três defaults decidem o que acontece com
+o job e nenhum aparece no código PySpark nem no event log: `wait_for_completion` (default
+`True`), `deferrable` (default `False`) e `stop_job_run_on_kill` (default `False`). O
+fact traz o valor efetivo e a marca de omitido; argumento que não é literal (variável,
+f-string, `{{ jinja }}`) sai ausente e a lacuna sai nomeada em `af.unresolved`, nunca
+como o default.
+
 ## Três armadilhas que a infraestrutura esconde
 
 **Observabilidade ligada sem `GlueContext`.** As métricas do Glue são publicadas pelo

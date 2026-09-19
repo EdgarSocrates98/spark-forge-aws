@@ -58,6 +58,7 @@ class TestToolSurface:
             "sparkforge_analyze_emr_eks",
             "sparkforge_analyze_controlm_jobs",
             "sparkforge_analyze_step_functions",
+            "sparkforge_analyze_airflow_dag",
             "sparkforge_analyze_data_quality",
             "sparkforge_analyze_graph",
             "sparkforge_analyze_call_graph",
@@ -1901,6 +1902,17 @@ _STEP_FUNCTIONS_ASL = json.dumps(
     }
 )
 
+# DAG com um GlueJobOperator: rende `af.task` com os campos que as regras SF-AIRFLOW
+# leem, e nao so a sentinela que sai de qualquer `.py`.
+_AIRFLOW_DAG_SOURCE = '''from datetime import datetime
+
+from airflow import DAG
+from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+
+with DAG(dag_id="carga", schedule="@daily", start_date=datetime(2026, 1, 1)) as dag:
+    carga = GlueJobOperator(task_id="carga", job_name="carga-diaria")
+'''
+
 _CONSUMER_INVENTORY = """consumers:
   - table: glue_catalog.curated.pedidos
     service: athena
@@ -2456,6 +2468,13 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         sfn_path.write_text(_STEP_FUNCTIONS_ASL, encoding="utf-8")
         resultado = call_tool("sparkforge_analyze_step_functions", {"path": str(sfn_path)})
         assert resultado["by_kind"].get("sfn.task") == 1, resultado["by_kind"]
+        return resultado
+
+    if name == "sparkforge_analyze_airflow_dag":
+        dag_path = tmp_path / "carga_diaria.py"
+        dag_path.write_text(_AIRFLOW_DAG_SOURCE, encoding="utf-8")
+        resultado = call_tool("sparkforge_analyze_airflow_dag", {"path": str(dag_path)})
+        assert resultado["by_kind"].get("af.task") == 1, resultado["by_kind"]
         return resultado
 
     if name == "sparkforge_analyze_data_quality":
@@ -3139,6 +3158,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_emr_eks", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_controlm_jobs", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_step_functions", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_airflow_dag", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
