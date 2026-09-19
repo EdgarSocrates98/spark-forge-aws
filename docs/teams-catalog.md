@@ -18,15 +18,15 @@ Os times sao uma metafora operacional para coordenar agents especializados. A sa
 
 ## Time de Storage e Lakehouse
 
-Composicao: sf-storage-specialist como coordenador, iceberg-performance-engineer, athena-query-optimizer e sf-terraform-specialist. O foco é catalogo, locking, snapshots, layout, compaction, small files, lifecycle, criptografia, policies, pruning e custo. O time entrega tabela, schema, particoes, politica de manutencao, segurança e plano de rollback.
+Composicao: iceberg-performance-engineer como coordenador, athena-query-optimizer e sf-terraform-specialist. O foco é catalogo, locking, snapshots, layout, compaction, small files, lifecycle, criptografia, policies, pruning e custo. O time entrega tabela, schema, particoes, politica de manutencao, segurança e plano de rollback.
 
 ## Time de Grafos e Serving Operacional
 
-Composicao: sf-graph-specialist como coordenador, sf-neptune-specialist, athena-query-optimizer, sf-storage-specialist e sf-terraform-specialist. O time compara traversal, access patterns, chaves, indices, consistencia, carga, spill, RCUs, bytes scanned e custo. O resultado inclui consultas representativas, limites de cardinalidade, testes de carga e comportamento de falha.
+Composicao: pyspark-code-reviewer como coordenador, athena-query-optimizer, iceberg-performance-engineer e sf-terraform-specialist. O time compara traversal, access patterns, chaves, indices, consistencia, carga, spill, RCUs, bytes scanned e custo. O resultado inclui consultas representativas, limites de cardinalidade, testes de carga e comportamento de falha.
 
 ## Time de Revisao e Validacao
 
-Composicao: sf-token-verifier como coordenador, revisor de regras, especialista tecnico relevante, sf-terraform-specialist quando houver infraestrutura e documentador. O time verifica cobertura, evidência, qualidade, custo, segurança, regressao, rollback e legibilidade. A revisão deve separar defeitos bloqueantes, riscos aceitos, perguntas abertas e melhorias futuras.
+Composicao: spark-performance-architect como coordenador, revisor de regras, especialista tecnico relevante, sf-terraform-specialist quando houver infraestrutura e documentador. O time verifica cobertura, evidência, qualidade, custo, segurança, regressao, rollback e legibilidade. A revisão deve separar defeitos bloqueantes, riscos aceitos, perguntas abertas e melhorias futuras.
 
 ## Protocolo de handoff
 

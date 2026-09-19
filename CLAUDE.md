@@ -199,6 +199,8 @@ invariantes: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma 
 
 - Área de regra nova precisa de rota em `rules/catalog/routing.yaml` **e** de coordenador
   que a declare.
+- Domínio novo entra por artefato, nunca por nome de agente: critério e gate em
+  `docs/gates-por-mudanca.md`, seção *Critério de domínio*.
 - Extrator novo entra nas duas listas manuais de teste e na medida de snippet.
 - Fonte citada por regra nova entra em `knowledge/sources.lock.json` via
   `python scripts/refresh_knowledge.py --offline --update`.

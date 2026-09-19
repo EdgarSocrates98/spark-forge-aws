@@ -93,6 +93,24 @@ analisado, use `runtime_scope: {}` e deixe `requires_facts` gatear."*
 passa a valer, declarada por uma fonte? Se não existe, o escopo é `{}`. `{glue: ">=X"}`
 como forma de dizer "isto é sobre Glue" é o defeito — quem diz isso é `requires_facts`.
 
+## Critério de domínio: artefato antes de nome
+
+Domínio novo entra por **artefato coletável**, nunca por nome de agente. Três portas,
+todas travadas por `tests/test_criterio_de_dominio.py`:
+
+| nível | exige | teste |
+|---|---|---|
+| área | ao menos uma regra executável e sem `blocked_on`; nenhuma regra `executable: false` no catálogo commitado | `test_toda_area_tem_regra_que_julga`, `test_catalogo_nao_tem_area_de_coordenacao` |
+| coordenador | ao menos uma área de `rule_areas` com regra que julga | `test_todo_coordenador_declara_area_que_julga` |
+| rota | ao menos uma rota em `routing.yaml` que dispara por `findings_area` ou `fact`; rota que só lê `scope.entrypoints` (`__agentic_*__`) não conta | `test_todo_coordenador_tem_rota_por_artefato` |
+
+A ordem é a do artefato: primeiro o extrator que emite o fact, depois a regra que o julga,
+depois o coordenador que sabe quando investigá-la. Domínio que ainda não tem artefato
+(Airflow, DynamoDB, Kinesis, Lambda, Step Functions) não ganha agente nem área: ganha
+`unresolved` nomeando o artefato que falta. Foi por essa porta que 35 áreas e 26
+coordenadores entraram sem julgar nada, e saíram em 2026-09-19 (`docs/sdd/SF_STUBS/`,
+`docs/sdd/CRITERIO_DE_DOMINIO/`).
+
 ## Acrescentar uma ÁREA nova (`area:` novo num `rules/catalog/*.yaml`)
 
 Tudo o que uma regra cobra, mais três coisas que só a área cobra:

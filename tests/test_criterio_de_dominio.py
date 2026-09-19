@@ -32,6 +32,20 @@ SAIRAM_SKILLS = (
 )
 SDD_TOOLS = ("sparkforge_sdd_check", "sparkforge_sdd_status", "sparkforge_sdd_stamp")
 
+SECAO = "## Critério de domínio: artefato antes de nome"
+VIVOS = (
+    "AGENTS.md",
+    "docs/guia/05-agents-e-skills.md",
+    "docs/guia/usos/iceberg-e-parquet.md",
+    "docs/operations-guide.md",
+    "docs/teams-catalog.md",
+    "docs/vnext/AGENT-CATALOG.md",
+    "docs/agentic-evolution.md",
+    "knowledge/domain-tool-matrix.md",
+    "knowledge/tool-specialization-matrix.md",
+    "config/agents.yaml",
+)
+
 
 def _front(path: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8").split("---")[1]) or {}
@@ -117,3 +131,26 @@ def test_o_que_so_o_nome_alcancava_saiu():
     arquiteto = (AGENTS / "spark-performance-architect.md").read_text(encoding="utf-8")
     faltam = [t for t in SDD_TOOLS if t not in arquiteto]
     assert not faltam, faltam
+
+
+def test_criterio_escrito_e_apontado():
+    gates = (ROOT / "docs" / "gates-por-mudanca.md").read_text(encoding="utf-8")
+    assert SECAO in gates
+    inicio = gates.index(SECAO)
+    fim = gates.find("\n## ", inicio + 1)
+    secao = gates[inicio:fim]
+    assert "tests/test_criterio_de_dominio.py" in secao
+    for arquivo in ("CLAUDE.md", "AGENTS.md"):
+        texto = (ROOT / arquivo).read_text(encoding="utf-8")
+        assert "docs/gates-por-mudanca.md" in texto and "artefato" in texto.lower(), arquivo
+
+
+def test_documento_vivo_nao_cita_o_que_saiu():
+    for rel in VIVOS:
+        texto = (ROOT / rel).read_text(encoding="utf-8")
+        citados = [
+            nome
+            for nome in SAIRAM_AGENTES + SAIRAM_SKILLS
+            if re.search(rf"(?<![\w-]){re.escape(nome)}(?![\w-])", texto)
+        ]
+        assert not citados, (rel, citados)
