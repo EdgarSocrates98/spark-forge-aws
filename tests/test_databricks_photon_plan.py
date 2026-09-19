@@ -154,7 +154,8 @@ def test_plano_photon_cala_sf_env_006():
     context, facts = build_runtime(databricks="19", facts=_facts("photon_join"))
     assert "SF-ENV-006" not in {f.rule_id for f in judge(facts, load_catalog(), context.to_dict())}
     _, sem_plano = build_runtime(databricks="19")
-    assert "SF-ENV-006" in {f.rule_id for f in judge(sem_plano, load_catalog(), {"databricks": "19"})}
+    sem_plano_ids = {f.rule_id for f in judge(sem_plano, load_catalog(), {"databricks": "19"})}
+    assert "SF-ENV-006" in sem_plano_ids
 
 
 def test_plano_photon_sem_plataforma_nao_registra_fact_nem_diverge():
