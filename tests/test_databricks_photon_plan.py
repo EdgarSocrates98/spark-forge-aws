@@ -116,12 +116,36 @@ def test_udf_sob_photon_continua_julgada():
 
 def test_photon_off_contra_plano_photon_diverge():
     from sparkforge.adapters._core import build_runtime
+    from sparkforge.findings.models import Fact
 
     context, facts = build_runtime(databricks="19", photon="off", facts=_facts("photon_join"))
     assert context.photon == "on"
     assert any(d.startswith("photon:") for d in context.divergences)
     estado = next(f for f in facts if f.kind == "databricks.photon")
     assert (estado.attrs["state"], estado.attrs["source"]) == ("on", "plan")
+
+    # A divergencia nao e so registro: a recusa das regras de plano vale sobre
+    # os facts que `build_runtime` devolveu MAIS os facts do plano (o runtime
+    # nao devolve o plano de volta) -- `photon_join` nao tem `plan.join`/
+    # `plan.file_scan`, entao usa-se o mesmo `Fact` sintetico de AC2
+    # (CartesianProduct) para provar que a regra que o exigiria e pulada.
+    join = Fact(
+        kind="plan.join",
+        subject={"type": "plan_node", "file": "plan.txt", "line": 1, "symbol": "(1) X",
+                 "node_id": 1, "operator": "CartesianProduct", "relation": ""},
+        attrs={"strategy": "CartesianProduct"},
+        provenance={"extractor": "teste"},
+    )
+    catalogo = load_catalog()
+    achados, pulados = judge(
+        [*facts, *_facts("photon_join"), join], catalogo, context.to_dict(), return_skipped=True
+    )
+    exige_plano = {"plan.join", "plan.file_scan"}
+    catalogo_por_id = {r["id"]: r for r in catalogo}
+    for achado in achados:
+        regra = catalogo_por_id[achado.rule_id]
+        assert not (exige_plano & set(regra.get("requires_facts") or [])), achado.rule_id
+    assert {"rule_id": "SF-PLAN-003", "reason": "databricks.photon.unresolved"} in pulados
 
 
 def test_plano_photon_cala_sf_env_006():
@@ -245,7 +269,10 @@ def test_sf_plan_002_ainda_casa_udf_pandas():
 
 def test_knowledge_registra_o_extrator_sob_photon():
     texto = (ROOT / "knowledge" / "databricks" / "runtime-matrix.md").read_text(encoding="utf-8")
-    secao = texto.split("## 4.", 1)[1]
+    secao = texto.split("## 4.", 1)[1].split("\n## ", 1)[0]
     assert "plan.photon" in secao
     assert "databricks.photon.unresolved" in secao
     assert "udf_type" in secao and "arrow" in secao
+    # AC8: a §4 deixou de listar o silencio sobre Photon como lacuna aberta --
+    # o extrator agora le o plano. A frase nao pode voltar por descuido.
+    assert "Lacuna do SparkForge" not in secao

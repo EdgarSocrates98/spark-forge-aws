@@ -1,12 +1,13 @@
 name: photon_udf
 proves: >
-  Plano fisico com Photon e uma UDF Python vetorizada, observado em Databricks
-  Free Edition (serverless, Spark 4.2.0, 2026-09-18) sobre dados sinteticos de
-  `spark.range`: o `ArrowEvalPython` fica entre operadores Photon de ponte
-  Arrow (`PhotonArrowBatchSink`, `PhotonArrowResultStage`,
-  `PhotonArrowBatchSource`). O extrator emite `plan.photon` com 7 nos Photon
-  de 8, e a UDF continua saindo como `plan.python_udf`, o que faz SF-PLAN-002
-  disparar.
+  Plano fisico com Photon e uma UDF Python comum (`@F.udf`, nao pandas_udf),
+  observado em Databricks Free Edition (serverless, Spark 4.2.0, 2026-09-18)
+  sobre dados sinteticos de `spark.range`: o `ArrowEvalPython` fica entre
+  operadores Photon de ponte Arrow (`PhotonArrowBatchSink`,
+  `PhotonArrowResultStage`, `PhotonArrowBatchSource`). O plano nao distingue
+  pandas de Arrow (D4): o extrator emite `plan.photon` com 7 nos Photon de 8,
+  e a UDF continua saindo como `plan.python_udf` com `udf_type: arrow`, o que
+  faz SF-PLAN-002 disparar.
 runtime:
   databricks: "19"
   spark: "4.2.0"

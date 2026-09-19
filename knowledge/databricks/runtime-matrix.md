@@ -51,15 +51,23 @@ deixa `spark` vazio: a derivação não inventa.
 - **U2.** A página do Photon documenta a cor dos operadores na interface e o
   `runtime_engine = PHOTON` nas APIs, não como Photon aparece no event log.
   Photon é declarado (`--photon on|off`) OU detectado pelo TEXTO DO PLANO —
-  prefixo `Photon` nos nomes de operador (`PhotonRange`, `PhotonGroupingAgg`,
-  ...) e a seção `== Photon Explanation ==` de `explain(mode="formatted")`,
-  que o SparkForge lê como o fact `plan.photon` (seção 4) e cuja observação
-  vence a declaração quando as duas divergem — só sob a plataforma
-  databricks detectada. Sem ela, a observação do plano não entra no
-  contexto e qualquer `--photon` declarado vira a divergência "declarado
-  sem plataforma" (seção 4). Isso não é o event log: como Photon aparece no
-  event log entregue continua não observado, porque compute serverless não
-  entrega event log.
+  o prefixo `Photon` nos nomes de operador (`PhotonRange`,
+  `PhotonGroupingAgg`, ...), que é o que o SparkForge lê como o fact
+  `plan.photon` (seção 4). A seção `== Photon Explanation ==` de
+  `explain(mode="formatted")` NÃO cria o fact — ela só preenche
+  `attrs.explanation` quando presente, com a primeira linha não vazia, ou
+  "" quando ausente. A observação de `plan.photon` vence a declaração
+  quando as duas divergem, e a recusa das regras de plano que o fact move
+  vale sempre — com ou sem `databricks` detectado (seção 4). Só a
+  PRECEDÊNCIA sobre a declaração é condicionada: o fact só entra no
+  contexto do runtime, produzindo a divergência `photon:`, sob a
+  plataforma databricks detectada. Sem ela, a observação do plano não
+  entra no contexto e qualquer `--photon` declarado vira a divergência
+  "declarado sem plataforma" (seção 4) — a recusa das regras de plano
+  continua valendo do mesmo jeito, movida só pelo fact, sem depender do
+  runtime. Isso não é o event log: como Photon aparece no event log
+  entregue continua não observado, porque compute serverless não entrega
+  event log.
 - `spark.sql.shuffle.partitions = auto` liga o auto-optimized shuffle, que
   escolhe o número de partições pelo plano e pelo volume. A página "Adaptive
   query execution" (https://docs.databricks.com/aws/en/optimizations/aqe,

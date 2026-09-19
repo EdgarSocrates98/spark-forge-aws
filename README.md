@@ -88,11 +88,15 @@ sem ela, a plataforma só se sabe pela flag.
 com `databricks.photon.unresolved`, exceto as que só exigem `plan.python_udf` ou
 `plan.aqe` (os nós `ArrowEvalPython` e `AdaptiveSparkPlan` continuam no plano sob
 Photon, observado). Um plano com operadores Photon (fact `plan.photon`) também
-liga essa recusa, sem a flag, e vence a declaração — `off` diante dele vira
-divergência `photon:` e o estado fica `on`; sem declaração nem plano Photon,
-SF-ENV-006 avisa. Sem `--databricks`, a declaração vira divergência `photon:` e
-não entra no runtime. Fora deste incremento: `_delta_log`, Jobs API, billing em
-DBU e coleta pela REST API.
+liga essa recusa, sem a flag, e a recusa vale sempre — com ou sem
+`--databricks`, porque ela é movida só pelo fact do plano. Com a plataforma
+databricks detectada, a observação também vence a declaração no runtime:
+`off` diante do plano Photon vira divergência `photon:` e o estado fica
+`on`; sem declaração nem plano Photon, SF-ENV-006 avisa. Sem
+`--databricks`, a declaração vira a divergência "declarado sem plataforma" e
+não entra no runtime — a observação do plano tampouco entra, e a recusa das
+regras de plano continua valendo do mesmo jeito, pelo fact. Fora deste
+incremento: `_delta_log`, Jobs API, billing em DBU e coleta pela REST API.
 
 ### Por que extração e julgamento são verbos separados
 
@@ -238,7 +242,7 @@ construindo o servidor e o app ASGI de verdade.
 
 ### O que pode ser extraído
 
-Os 38 extratores emitem 227 kinds distintos de fact (recontado em 2026-09-17),
+Os 38 extratores emitem 228 kinds distintos de fact (recontado em 2026-09-18),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -374,7 +378,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 227 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 228 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
