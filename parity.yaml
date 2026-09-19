@@ -443,6 +443,8 @@ capabilities:
   - name: extract facts from an AWS Step Functions state machine definition
     tools: [sparkforge_analyze_step_functions]
     cli: [analyze step-functions]
+    knowledge:
+      - knowledge/stepfunctions/glue-integration.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

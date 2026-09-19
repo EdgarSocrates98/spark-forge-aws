@@ -230,6 +230,11 @@
       "sha256": "9b1f2c75b250d1e45c4734d5d844813d9cb1279adb0da29045b153b0c4fcb4a7"
     },
     {
+      "path": "knowledge/stepfunctions/glue-integration.md",
+      "title": "glue-integration",
+      "sha256": "e5954b4ce1044137430bece541ebce969eb7c920f13b2cc03d634a8d4ed29014"
+    },
+    {
       "path": "knowledge/storage/iceberg-catalog.md",
       "title": "iceberg-catalog",
       "sha256": "75f0c925b7eb3b3aa1ace7c003bb74ebb31d9aa88e7878762e366e078ff8ea93"
