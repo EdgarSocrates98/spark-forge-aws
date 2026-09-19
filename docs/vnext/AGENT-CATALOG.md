@@ -56,7 +56,7 @@ usados para selecionar o perfil de execução de cada tarefa.
 Seis agentes apareciam aqui como "Convertidos em Skill Lazy-Loaded". Nenhum foi
 convertido: a linha foi removida, não reescrita, quando a alegação falsa saiu do
 manifesto (`docs/claims.lock.json`, VNX-163 a VNX-168, para o motivo de cada um). Um
-deles, `sf-cost-reviewer`, era um coordenador de FinOps, de fato removido em 2026-09-19
+deles, o coordenador de FinOps, foi removido em 2026-09-19
 na feature `docs/sdd/SF_STUBS/` (a lista completa dos 19 agentes `sf-*` ocos removidos
 está em `OCOS`, `tests/test_sf_stubs.py`) — não como skill, apenas removido junto com a
 camada `sf-*`/`agentic-sf-*` oca. Dos outros cinco, três saíram depois, também em
