@@ -83,7 +83,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 40 extratores emitem 239 kinds distintos de fact (recontado em 2026-09-19),
+Os 41 extratores emitem 242 kinds distintos de fact (recontado em 2026-09-20),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -230,7 +230,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 239 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 242 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
