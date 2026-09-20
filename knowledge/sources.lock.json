@@ -1858,13 +1858,24 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-19"
+        "2026-09-19",
+        "2026-09-20"
       ],
       "rules": [
         "SF-SFNX-001",
         "SF-SFNX-002",
         "SF-SFNX-003"
       ]
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html": {
+      "docs": [
+        "knowledge/stepfunctions/execution-history.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-20"
+      ],
+      "rules": []
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_ValidateStateMachineDefinition.html": {
       "docs": [

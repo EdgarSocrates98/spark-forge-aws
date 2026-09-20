@@ -49,6 +49,20 @@ kinds, nao cinco.
   sabe julgar; a recusa e por artefato, e nao pelo pool, pela mesma razao que o lado
   medido e chaveado por `(artefato, nome do estado)`).
 
+## A ORDEM DO ARQUIVO nao importa, e e por isso que `--reverse-order` funciona
+
+O extrator ordena por `id` (`sorted(eventos, key=lambda e: int(e["id"]))`), nunca pela
+ordem em que os eventos aparecem no arquivo. A pagina do `HistoryEvent` sustenta que
+essa e a ordem dos eventos -- "The id of the event. Events are numbered sequentially,
+starting at one." -- e a do `GetExecutionHistory` publica o parametro que produz a outra
+ordem: "Use the `reverseOrder` parameter to get the latest events first". Uma pagina
+gravada com `--reverse-order` le igual a uma crescente.
+
+A consequencia esta no `status`: com `--reverse-order` a PRIMEIRA pagina e o FIM do
+historico, e por isso ela sai `truncated: true` com `status` resolvido. Truncamento e
+`status` sao condicoes separadas -- o `status` so e `unresolved` quando o evento terminal
+da execucao nao esta na pagina salva.
+
 ## Como uma tentativa e PAREADA, e por que pela cadeia
 
 A API publica `previousEventId` em todo evento, e o encadeamento e por RAMO: dentro de

@@ -2,7 +2,9 @@
 
 > **Lido em 2026-09-19.** A página de referência da API `GetExecutionHistory`, mais as
 > três páginas do guia já citadas em
-> [`glue-integration.md`](glue-integration.md). Quem consome: o extrator
+> [`glue-integration.md`](glue-integration.md). **Relido em 2026-09-20**, com a página do
+> tipo `HistoryEvent` acrescentada: dela vêm o `id` sequencial (§1) e a descrição do
+> `previousEventId` que a lacuna 8 nomeia (§5). Quem consome: o extrator
 > `sparkforge/facts/sfn_history.py` e as três regras de
 > `rules/catalog/sfn-history.yaml`. Frase entre aspas é citação literal; o resto é
 > leitura nossa, e diz de qual frase veio.
@@ -23,6 +25,17 @@
 - Paginação: "If `nextToken` is returned, there are more results available". `maxResults`
   tem default 100 e máximo 1000. Uma saída salva **com** `nextToken` é uma página, não o
   histórico: sai `sfn.unresolved: truncated`.
+- **A ordem do arquivo não importa, e por isso `--reverse-order` funciona.** "By default,
+  the results are returned in ascending order of the `timeStamp` of the events. Use the
+  `reverseOrder` parameter to get the latest events first", e o parâmetro é descrito como
+  "Lists events in descending order of their `timeStamp`". O extrator não depende da
+  ordem do arquivo: ele ordena pelo `id` (`sparkforge/facts/sfn_history.py:535`,
+  `sorted(eventos, key=lambda e: int(e["id"]))`), e a página do `HistoryEvent` sustenta
+  que isso é a ordem dos eventos — "The id of the event. Events are numbered
+  sequentially, starting at one." Uma página gravada em ordem decrescente lê igual a uma
+  crescente. **A consequência é a do item seguinte**: com `--reverse-order` a primeira
+  página é o FIM do histórico, e é ali que `truncated: true` e um `status` resolvido
+  aparecem juntos.
 - **Truncamento e `status` são independentes, e a leitura nossa aqui é do código, não da
   página.** O `status` da execução sai `unresolved` quando o evento terminal dela
   (`ExecutionSucceeded`, `ExecutionFailed`, `ExecutionAborted`, `ExecutionTimedOut`) não
@@ -114,7 +127,8 @@ com `dpu_seconds` medido.
 
 ## Fontes
 
-- Referência da API do AWS Step Functions — `GetExecutionHistory`: a lista de eventos, o veto a EXPRESS, `includeExecutionData`, `nextToken`/`maxResults` e a forma de cada `*EventDetails`. https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html (retrieved 2026-09-19)
+- Referência da API do AWS Step Functions — `GetExecutionHistory`: a lista de eventos, o veto a EXPRESS, `includeExecutionData`, `nextToken`/`maxResults`, `reverseOrder` e a forma de cada `*EventDetails`. https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html (retrieved 2026-09-20)
+- Referência da API do AWS Step Functions — `HistoryEvent`: o `id` sequencial, o `previousEventId` e a lista de `Valid Values` do `type`. https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html (retrieved 2026-09-20)
 - Guia do AWS Step Functions — padrões de integração com serviços: Request Response, `.sync`, o abort. https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html (retrieved 2026-09-19)
 - Guia do AWS Step Functions — tratamento de erro: `MaxAttempts`, `States.TaskFailed`, `States.ALL`. https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html (retrieved 2026-09-19)
 - Guia do AWS Step Functions — integração com o AWS Glue: o recurso `arn:aws:states:::glue:startJobRun.sync` e a política gerada. https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html (retrieved 2026-09-19)
