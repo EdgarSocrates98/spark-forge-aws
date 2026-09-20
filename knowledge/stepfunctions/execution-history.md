@@ -22,8 +22,17 @@
   inventado.
 - Paginação: "If `nextToken` is returned, there are more results available". `maxResults`
   tem default 100 e máximo 1000. Uma saída salva **com** `nextToken` é uma página, não o
-  histórico: sai `sfn.unresolved: truncated`, e o `status` da execução fica
-  `unresolved` em vez de ser adivinhado.
+  histórico: sai `sfn.unresolved: truncated`.
+- **Truncamento e `status` são independentes, e a leitura nossa aqui é do código, não da
+  página.** O `status` da execução sai `unresolved` quando o evento terminal dela
+  (`ExecutionSucceeded`, `ExecutionFailed`, `ExecutionAborted`, `ExecutionTimedOut`) não
+  está na página salva — nunca um desfecho adivinhado —, e isso é outra condição:
+  `sparkforge/facts/sfn_history.py:536` deriva o `status` dos eventos lidos
+  (`_desfecho_da_execucao`), e as linhas 538 e 542 emitem `truncated` e
+  `execution_terminal_absent` em dois `if` separados. Uma página truncada que **contém**
+  o evento terminal sai `truncated: true` **e** `status: succeeded` ao mesmo tempo. O
+  contrário também existe: página inteira, sem `nextToken`, de uma execução ainda em voo
+  sai `truncated: false` e `status: unresolved`.
 
 ## 2. A forma de cada evento, e o que ela sustenta
 

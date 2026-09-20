@@ -99,8 +99,13 @@ sparkforge judge --facts /tmp/sf/juntos.json
 `sfn.unresolved` com `execution_data_absent`.
 
 **Se a saída tiver `nextToken`, ela é uma página, não o histórico.** O SparkForge lê o
-que está lá, marca `truncated`, e deixa o `status` da execução em `unresolved` — nunca
-sucesso por suposição.
+que está lá e marca `truncated`.
+
+**`truncated` e `status` são duas perguntas diferentes.** O `status` da execução sai
+`unresolved` quando o evento terminal dela não está **na página salva** — nunca sucesso
+por suposição. Truncada com o terminal dentro (a primeira página de um
+`--reverse-order`, por exemplo) sai `truncated: true` e `status: failed` ao mesmo tempo;
+inteira, de uma execução ainda em voo, sai `truncated: false` e `status: unresolved`.
 
 | kind | um por | o que diz |
 |---|---|---|
