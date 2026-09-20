@@ -448,6 +448,42 @@ def test_json_profundo_e_arquivo_grande_nao_derrubam(tmp_path, monkeypatch):
     assert len([f for f in facts if f.kind == "sfn.analyzed"]) == 1
 
 
+def test_memory_error_do_decodificador_vira_recusa_nomeada(tmp_path, monkeypatch):
+    """O `_loads` daqui e o de `sfn_history.py` sao gemeos, e tratavam falhas diferentes.
+
+    `sfn_history._loads` ja nomeava `MemoryError` como `json_too_large`; este nao, e
+    `extract_stepfunctions_path` chamado direto -- fora de `_tree`, que tem `except
+    Exception` -- propagaria o erro e quebraria o "NUNCA levanta excecao por payload
+    malformado" do proprio docstring do modulo. Payload hostil grande o bastante e a
+    terceira forma de falha do decodificador, ao lado de `RecursionError` e
+    `ValueError`, e ela nao derruba quem chamou.
+    """
+    import json as _json
+
+    from sparkforge.facts import stepfunctions
+
+    def _estoura(*args, **kwargs):
+        raise MemoryError("payload hostil")
+
+    (tmp_path / "hostil.asl.json").write_text(
+        _json.dumps({"StartAt": "A", "States": {}}), encoding="utf-8"
+    )
+    monkeypatch.setattr(stepfunctions.json, "loads", _estoura)
+
+    facts = extract_stepfunctions_path(tmp_path / "hostil.asl.json", repo_root=tmp_path)
+    assert [f.attrs["reason"] for f in facts if f.kind == "sfn.unresolved"] == [
+        "json_too_large"
+    ]
+    # A sentinela sai do mesmo jeito: o arquivo foi visitado, e isso continua verdade.
+    assert len([f for f in facts if f.kind == "sfn.analyzed"]) == 1
+
+    # E pelo `definition` do `describe-state-machine`, que e o outro chamador.
+    facts = extract_stepfunctions(
+        {"name": "x", "type": "STANDARD", "definition": "{}"}, "describe.json"
+    )
+    assert "json_too_large" in [f.attrs["reason"] for f in facts if f.kind == "sfn.unresolved"]
+
+
 ASL_POLLING = {
     "Comment": "startJobRun sem .sync, Wait, aws-sdk glue:getJobRun e Choice",
     "StartAt": "Iniciar",

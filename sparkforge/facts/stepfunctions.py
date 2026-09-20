@@ -30,8 +30,9 @@ E o nome curto que a propria AWS usa para o servico (ARN `arn:aws:states`, CLI
   `Next` do proprio estado, ou -- quando o Task e `End` de um ramo de `Parallel` ou
   `Map` -- o `Next` efetivo do conteiner mais proximo, em `enclosing_has_next`).
 - `sfn.unresolved` -- o que nao deu para ler. Razoes: `read_error`,
-  `size_above_limit`, `invalid_json`, `json_too_deep`, `not_a_state_machine`,
-  `definition_not_string`, `type_unrecognized`, `state_not_an_object`,
+  `size_above_limit`, `invalid_json`, `json_too_deep`, `json_too_large`,
+  `not_a_state_machine`, `definition_not_string`, `type_unrecognized`,
+  `state_not_an_object`,
   `resource_absent`, `resource_dynamic` e `max_attempts_unreadable` (com o estado e
   o `retrier_index`).
 - `sfn.analyzed` -- a sentinela, com as contagens.
@@ -410,13 +411,19 @@ def _finish(facts: list[Fact], path: str, provenance: dict[str, Any]) -> list[Fa
 def _loads(texto: str) -> tuple[Any, str | None]:
     """(valor, None) ou (None, razao). Nunca levanta.
 
-    O decodificador de JSON levanta `RecursionError` com aninhamento profundo -- o
-    mesmo payload hostil em arquivo e no `definition` do `describe-state-machine`.
+    O decodificador de JSON levanta `RecursionError` com aninhamento profundo e
+    `MemoryError` com payload hostil -- o mesmo payload em arquivo e no `definition` do
+    `describe-state-machine`. As tres formas de falha saem nomeadas, e nenhuma derruba
+    quem chamou: `extract_stepfunctions_path` chamado direto fica fora do
+    `except Exception` de `_tree`, e o modulo promete NUNCA levantar por payload
+    malformado. Gemeo de `sfn_history._loads`, e as duas tratam as mesmas tres.
     """
     try:
         return json.loads(texto), None
     except RecursionError:
         return None, "json_too_deep"
+    except MemoryError:
+        return None, "json_too_large"
     except ValueError:  # inclui json.JSONDecodeError
         return None, "invalid_json"
 
@@ -496,7 +503,8 @@ def extract_stepfunctions_path(path: Path, repo_root: Path | None = None) -> lis
     Falha ao abrir vira `sfn.unresolved` com `read_error`; arquivo acima do teto de
     `scan._teto_para` (o mesmo que a varredura aplica), `size_above_limit`; JSON
     invalido, `invalid_json`; aninhamento que estoura a pilha do decodificador,
-    `json_too_deep`. Nunca uma excecao que derruba quem chamou.
+    `json_too_deep`; payload hostil que estoura a memoria dele, `json_too_large`. Nunca
+    uma excecao que derruba quem chamou.
     """
     rel = str(path.relative_to(repo_root)) if repo_root else str(path)
     anchor = rel.replace("\\", "/")
