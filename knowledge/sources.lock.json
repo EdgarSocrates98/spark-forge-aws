@@ -1853,7 +1853,9 @@
       "rules": []
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/stepfunctions/execution-history.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-09-19"
@@ -1888,6 +1890,7 @@
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html": {
       "docs": [
+        "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1902,6 +1905,7 @@
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html": {
       "docs": [
+        "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1916,6 +1920,7 @@
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html": {
       "docs": [
+        "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,

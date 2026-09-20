@@ -218,6 +218,13 @@ código faz.
 Corpus que mora **fora** de `fixtures/` (hoje só `evals/holdout/`) não entra nessa
 contagem, e a razão é o propósito dele — ver a seção seguinte.
 
+> **Corpus com DOIS artefatos do mesmo domínio** (2026-09-20, `fixtures/sfn_history/`):
+> quando a fixture precisa de dois artefatos que a produção lê por **verbos diferentes**
+> — ali, a definição ASL e o histórico de execução —, eles ficam em **subdiretórios**
+> de `input/`, e o `_extract` do golden chama cada extrator no seu. Juntos no mesmo
+> diretório, cada extrator leria o arquivo do outro e sairia um `unresolved` cruzado por
+> fixture: ruído que não é medida, e que muda todo golden quando o outro extrator muda.
+
 ## Acrescentar ou alterar um cenário de `evals/holdout/`
 
 ```
