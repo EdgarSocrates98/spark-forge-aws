@@ -79,6 +79,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.facts import scan
+from sparkforge.facts.glue_terraform import glue_jobs_por_nome, glue_max_retries
 from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
@@ -928,63 +929,6 @@ def extract_airflow_dag_tree(root: Path, repo_root: Path | None = None) -> list[
     return sort_facts(facts)
 
 
-def _glue_jobs_por_nome(facts: Sequence[Fact]) -> dict[str, list[tuple[str, str, str]]]:
-    """Nome literal do job -> [(arquivo, endereco, id do fact)], de `tf.attribute` `name`.
-
-    GEMEA de `stepfunctions._glue_jobs_por_nome`, e duplicada de proposito NESTE
-    incremento: um leitor de DAG nao deveria importar um leitor de ASL para saber ler
-    Terraform. O lugar certo da funcao e um modulo proprio -- ver "Duvidas" no fim de
-    `docs/sdd/AIRFLOW_DAG/plan.md` --, e ele nao esta no manifesto deste desenho.
-    """
-    nomes: dict[str, list[tuple[str, str, str]]] = {}
-    for fact in facts:
-        if fact.kind != "tf.attribute":
-            continue
-        subject = fact.subject or {}
-        attrs = fact.attrs or {}
-        simbolo = str(subject.get("symbol") or "")
-        if not simbolo.startswith("aws_glue_job."):
-            continue
-        if attrs.get("key") != "name" or attrs.get("block") != "root" or not attrs.get("literal"):
-            continue
-        arquivo = str(subject.get("file") or "")
-        nomes.setdefault(str(attrs.get("value")), []).append((arquivo, simbolo, fact.id))
-    return nomes
-
-
-def _max_retries(
-    facts: Sequence[Fact], arquivo: str, simbolo: str
-) -> tuple[str, int | None, str | None]:
-    """(`literal`, n, id), (`absent`, 0, None) ou (`not_literal`, None, id|None).
-
-    `absent` vale 0 porque o atributo nao declarado nao pede retry. Valor interpolado
-    vira `tf.unresolved` sem o endereco do recurso (`terraform.py`); por isso qualquer
-    `tf.unresolved` de `max_retries` no MESMO arquivo torna a resposta `not_literal` --
-    conservador de proposito: nunca um zero que ninguem leu. Gemea de
-    `stepfunctions._max_retries`, pelo mesmo motivo da funcao acima.
-    """
-    for fact in facts:
-        subject = fact.subject or {}
-        if fact.kind != "tf.attribute" or subject.get("symbol") != simbolo:
-            continue
-        if subject.get("file") != arquivo:
-            continue
-        attrs = fact.attrs or {}
-        if attrs.get("key") != "max_retries" or attrs.get("block") != "root":
-            continue
-        valor = (fact.measures or {}).get("value")
-        if attrs.get("literal") and isinstance(valor, int | float) and not isinstance(valor, bool):
-            return "literal", int(valor), fact.id
-        return "not_literal", None, fact.id
-    interpolado = any(
-        f.kind == "tf.unresolved"
-        and (f.attrs or {}).get("key") == "max_retries"
-        and (f.subject or {}).get("file") == arquivo
-        for f in facts
-    )
-    return ("not_literal", None, None) if interpolado else ("absent", 0, None)
-
-
 def build_af_glue_link(facts: Sequence[Fact]) -> list[Fact]:
     """Liga cada `af.task` do `GlueJobOperator` ao `aws_glue_job` de mesmo `name` (D5).
 
@@ -997,7 +941,7 @@ def build_af_glue_link(facts: Sequence[Fact]) -> list[Fact]:
     o de `default_args`, ou o default publicado (`core.default_task_retries`, 0). O que
     nao liga sai nomeado em `af.unresolved`, nunca como vinculo.
     """
-    nomes = _glue_jobs_por_nome(facts)
+    nomes = glue_jobs_por_nome(facts)
     saida: list[Fact] = []
     for task in facts:
         attrs = task.attrs or {}
@@ -1037,7 +981,7 @@ def build_af_glue_link(facts: Sequence[Fact]) -> list[Fact]:
             )
             continue
         arquivo, simbolo, nome_id = candidatos[0]
-        origem, retries, retries_id = _max_retries(facts, arquivo, simbolo)
+        origem, retries, retries_id = glue_max_retries(facts, arquivo, simbolo)
         usados = [nome_id] + ([retries_id] if retries_id is not None else [])
         proveniencia = {**proveniencia, "derived_from": [task.id, *usados]}
         measures: dict[str, Any] = {}
