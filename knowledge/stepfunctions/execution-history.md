@@ -29,8 +29,8 @@
   the results are returned in ascending order of the `timeStamp` of the events. Use the
   `reverseOrder` parameter to get the latest events first", e o parâmetro é descrito como
   "Lists events in descending order of their `timeStamp`". O extrator não depende da
-  ordem do arquivo: ele ordena pelo `id` (`sparkforge/facts/sfn_history.py:535`,
-  `sorted(eventos, key=lambda e: int(e["id"]))`), e a página do `HistoryEvent` sustenta
+  ordem do arquivo: `extract_sfn_history` ordena pelo `id`
+  (`sorted(eventos, key=lambda e: int(e["id"]))`), e a página do `HistoryEvent` sustenta
   que isso é a ordem dos eventos — "The id of the event. Events are numbered
   sequentially, starting at one." Uma página gravada em ordem decrescente lê igual a uma
   crescente. **A consequência é a do item seguinte**: com `--reverse-order` a primeira
@@ -39,10 +39,11 @@
 - **Truncamento e `status` são independentes, e a leitura nossa aqui é do código, não da
   página.** O `status` da execução sai `unresolved` quando o evento terminal dela
   (`ExecutionSucceeded`, `ExecutionFailed`, `ExecutionAborted`, `ExecutionTimedOut`) não
-  está na página salva — nunca um desfecho adivinhado —, e isso é outra condição:
-  `sparkforge/facts/sfn_history.py:536` deriva o `status` dos eventos lidos
-  (`_desfecho_da_execucao`), e as linhas 538 e 542 emitem `truncated` e
-  `execution_terminal_absent` em dois `if` separados. Uma página truncada que **contém**
+  está na página salva — nunca um desfecho adivinhado —, e isso é outra condição: em
+  `sparkforge/facts/sfn_history.py`, `_desfecho_da_execucao` deriva o `status` dos
+  eventos **lidos** (percorrendo-os de trás para frente atrás de um dos quatro), e
+  `extract_sfn_history` emite `truncated` e `execution_terminal_absent` em dois `if`
+  separados, nenhum dos quais lê o outro. Uma página truncada que **contém**
   o evento terminal sai `truncated: true` **e** `status: succeeded` ao mesmo tempo. O
   contrário também existe: página inteira, sem `nextToken`, de uma execução ainda em voo
   sai `truncated: false` e `status: unresolved`.
@@ -62,11 +63,12 @@ Todo evento tem `id`, `previousEventId`, `timestamp` e `type`.
 | `TaskStateExited` | `stateExitedEventDetails.name` | o estado saiu — publica o **mesmo nome**, e o extrator **não** o lê |
 | `ExecutionSucceeded`, `ExecutionFailed`, `ExecutionAborted`, `ExecutionTimedOut` | `error` e `cause` | **o desfecho da execução** |
 
-**Dois eventos publicam o nome do estado, e o extrator lê um só.** O
-`TaskStateExited` traz `stateExitedEventDetails.name`, o mesmo nome; o extrator não o
-lê em lugar nenhum — `stateEnteredEventDetails` é o único que ele acessa
-(`sparkforge/facts/sfn_history.py:570`). A razão é de ordem, não de conteúdo: o nome
-tem que ser resolvido para o `TaskScheduled`, que é onde a tentativa começa, e só o
+**Dois eventos publicam o nome do estado, e o extrator lê um só.** O `TaskStateExited`
+traz `stateExitedEventDetails.name`, o mesmo nome; o extrator não o lê em lugar nenhum.
+`stateEnteredEventDetails` é o único bloco de nome que ele acessa — no laço de
+`extract_sfn_history` que resolve o estado de cada `TaskScheduled` —, e
+`stateExitedEventDetails` não aparece no módulo. A razão é de ordem, não de conteúdo: o
+nome tem que ser resolvido para o `TaskScheduled`, que é onde a tentativa começa, e só o
 `TaskStateEntered` vem **antes** dele na cadeia. O `TaskStateExited` sai depois da
 última tentativa do estado, e num estado com retry ele aparece uma vez para várias
 tentativas — nomear por ele seria nomear tarde demais e com granularidade errada.
