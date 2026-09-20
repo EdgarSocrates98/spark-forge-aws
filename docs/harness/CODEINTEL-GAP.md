@@ -214,9 +214,9 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **77
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 366934 | 2202 | 52 |
 | `tool_class` | 1 | 187 | 391632 | 3529 | 73 |
-| `authorize` | 2 | 376 | 493759 | 4426 | 49 |
+| `authorize` | 2 | 376 | 493781 | 4426 | 49 |
 
-Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2258911**;
+Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2258933**;
 a saída do `grep` pelo nome, **24905**; a saída do `grep` pela definição, **361**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -245,7 +245,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **50** símbolos em **12415** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **242044** bytes. O `grep` pela definição contendo o fragmento continua menor
+  no mesmo corpus, tem **242728** bytes. O `grep` pela definição contendo o fragmento continua menor
   (**11707** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
