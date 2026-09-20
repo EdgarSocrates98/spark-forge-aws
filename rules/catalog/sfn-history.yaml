@@ -17,6 +17,17 @@
 #   publicada, e seria número inventado;
 # - custo de uma tentativa, e economia de tirá-la: regras 13 e 25 do `CLAUDE.md`. O
 #   fact traz o `JobRunId`, e quem responde custo é `finops`, com `dpu_seconds` medido;
+# - execução RETOMADA por redrive: `ExecutionRedriven` no histórico significa que o Task
+#   foi reagendado dentro da MESMA execução, e nada no arquivo separa as tentativas de
+#   antes das de depois. Ali o confronto com o teto declarado não acontece — sai
+#   `sfn.unresolved: redrive_in_execution` no lugar do `sfn.retry_observado`, e a
+#   `SF-SFNX-001` fica **sem âncora naquele arquivo**. Não é `skipped`: o `judge` só
+#   põe a regra em `skipped` quando o KIND INTEIRO falta do pool, e com outro histórico
+#   limpo no mesmo case o `sfn.retry_observado` dele está lá e a regra avalia
+#   normalmente — calada sobre o arquivo com redrive, não sobre o case. Medir o redrive
+#   em vez de
+#   recusá-lo exigiria a forma do evento, que ninguém leu (lacuna 9 de
+#   `knowledge/stepfunctions/execution-history.md`);
 # - quantas vezes o job Glue rodou por tentativa: a composição entre o retry do Step
 #   Functions e o `MaxRetries` do Glue continua sem documentação (lacuna 1 de
 #   `knowledge/stepfunctions/glue-integration.md`). O que esta área mede é o número de
@@ -88,6 +99,15 @@ rules:
       knowledge/stepfunctions/glue-integration.md). E não afirma custo nenhum: o
       `JobRunId` de cada tentativa está em `sfn.job_run`, e é por ele que
       `sparkforge finops` responde custo com `dpu_seconds` medido.
+      A contagem **não atravessa um redrive**. Com `ExecutionRedriven` no histórico, a
+      execução foi RETOMADA e o Task é reagendado dentro da MESMA execução, sem que nada
+      no arquivo separe as tentativas de antes das de depois: ali
+      `build_sfn_retry_observado` emite `sfn.unresolved: redrive_in_execution` no lugar
+      do fact que esta regra ancora, e ela fica sem âncora naquele arquivo. Não é
+      `skipped`: a regra só é pulada quando o kind inteiro falta do pool, e com outra
+      execução limpa no mesmo case ela avalia normalmente, calada apenas sobre o arquivo
+      com redrive. As tentativas continuam
+      medidas e publicadas — o que se recusa é a COMPARAÇÃO com o teto declarado.
     proposed_change:
       - "Conferir qual versão da definição estava publicada no instante da execução (`aws stepfunctions describe-state-machine --state-machine-arn <arn>` traz a definição corrente; o histórico de versões, se houver, traz a da época) antes de mudar qualquer coisa: o achado compara um ASL do repositório com uma execução que pode ter rodado outro."
       - "Se a definição confere, procurar o segundo caminho de reagendamento: um `Choice` que volta ao mesmo estado, ou um retrier anterior na ordem declarada cujo `ErrorEquals` também casa a falha do job."

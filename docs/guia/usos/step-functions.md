@@ -148,7 +148,7 @@ a diferença entre "o histórico é este" e "esta é a parte que eu salvei".
 | `sfn.attempt` | tentativa de Task (`<estado>#<ordem>`) | nome do estado, ordem, padrão de integração, resultado, duração, `error`, `cause`, e o prazo declarado do Task |
 | `sfn.job_run` | `JobRunId` lido do `output` do `TaskSubmitted` | o id, o `JobName` quando vem junto, e de qual chave ele foi lido |
 | `sfn.retry_observado` | **execução e estado** (o par arquivo + nome), só em `fuse` com o ASL | tentativas observadas contra o teto declarado |
-| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `attempt_unanchored`, `execution_data_absent`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable` e `glue_attempt_absent` |
+| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `state_name_in_concurrent_branches`, `state_entries_chain_unwalkable`, `attempt_unanchored`, `execution_data_absent`, `execution_redriven`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable`, `redrive_in_execution` e `glue_attempt_absent` |
 | `sfn.analyzed` | arquivo | as contagens — prova de que o arquivo foi lido |
 
 **O `sfn.retry_observado` é por execução E por estado, e isso importa com mais de um
@@ -168,6 +168,56 @@ arquivo tem tentativa medida e **nenhuma** delas é `glue:startJobRun` — a int
 a alcança. A recusa é por arquivo e lista o `<serviço>:<api>` de cada tentativa dele, que
 é por onde o próximo passo aparece. Ela não sai para o arquivo que **tem**
 `glue:startJobRun`: esse tem confronto.
+
+**Redrive: a contagem para de ser comparável, e a recusa diz isso.** Quando o histórico
+traz `ExecutionRedriven`, a execução foi **retomada**: o Task é reagendado dentro da
+MESMA execução, e nada no arquivo separa as tentativas de antes das de depois. As
+tentativas continuam medidas e publicadas; o que sai é o **confronto** — por execução e
+por estado sai `sfn.unresolved: redrive_in_execution` no lugar do `sfn.retry_observado`,
+e a `SF-SFNX-001` fica sem âncora naquele arquivo. A recusa é por **arquivo**: uma
+execução sem redrive, salva ao lado no mesmo case, continua tendo confronto. Medir o
+redrive em vez de recusá-lo exigiria saber quantas tentativas caíram antes e quantas
+depois, e a forma do evento não foi lida (lacuna 9 de
+`knowledge/stepfunctions/execution-history.md`).
+
+**Estado de mesmo nome em ramos concorrentes: sem índice, e sem tentativa.** Dentro de um
+`Parallel`, dois ramos podem ter um estado com o mesmo nome — e o histórico publica
+**nome**, não caminho. O extrator junta os `TaskStateEntered` distintos a que os
+`TaskScheduled` daquele nome se encadeiam; se dois deles forem mutuamente
+não-ancestrais — nenhum alcança o outro subindo `previousEventId` —, o nome não
+identifica um estado naquele arquivo: nenhum `sfn.attempt` dele é emitido e sai
+`sfn.unresolved: state_name_in_concurrent_branches` com o nome e com quantas entradas
+ele tinha.
+
+**E isso alcança o `Map` inline, não só o `Parallel`.** Cada iteração de um `Map`
+pendura o seu `TaskStateEntered` no `MapStateStarted` comum, então **todo** estado
+dentro de um `Map` inline tem tantas entradas mutuamente não-ancestrais quantas forem as
+iterações — e cai na mesma recusa. Isso vale **inclusive com `MaxConcurrency: 1`**, que é
+sequencial no relógio e concorrente na cadeia: quatrocentas iterações produzem zero
+tentativas numeradas, não quatrocentas. O `Map` **distribuído** (`mapRunArn`) fica fora
+por outro motivo: o extrator não segue as execuções filhas dele.
+
+**A recusa cala a ordem; o `JobRunId` sobrevive.** O `sfn.job_run` de cada submissão
+daquele nome **continua saindo** — o `JobRunId` está escrito literalmente no `output` do
+`TaskSubmitted`, não depende de ordem nenhuma, e é a única ponte para
+`sparkforge finops`. O que ele perde é a afirmação de ordem: o `subject.symbol` é o nome
+do estado **sem** o `#<n>`, não há `attempt_index` nas medidas, e
+`attrs.attempt_index_refused` nomeia a recusa que calou o número. O discriminador é
+`measures.submitted_event_id`, o `id` do evento que publicou o valor.
+Reentrada **sequencial** — um retry, ou um `Choice` que volta ao mesmo estado — não cai
+aqui: a entrada anterior está na cadeia da seguinte, as duas se alcançam, e a numeração
+1..n continua valendo.
+
+**E há uma segunda recusa, para quando o passeio não deu para fazer.** "Não se alcançam"
+tem duas causas. Só quando os **dois** passeios do par chegaram à raiz limpos é que houve
+concorrência de verdade, e aí o nome é `state_name_in_concurrent_branches`. Quando pelo
+menos um deles parou antes — o `id` referenciado não está no arquivo (página faltando,
+histórico truncado, evento recusado antes) ou a cadeia entrou em ciclo —, não se
+demonstrou concorrência nenhuma, e sai `sfn.unresolved:
+state_entries_chain_unwalkable`, com a parada (`chain_broken` ou `chain_cycle`) em
+`attrs.detail` e com quantas entradas ficaram impassáveis em
+`measures.unwalkable_entry_count`. Nos dois casos a numeração se cala — o que muda é o
+próximo passo: num, olhar a definição; no outro, buscar a página que falta.
 
 ### As três regras
 

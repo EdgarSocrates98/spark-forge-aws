@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_085c79",
+    "id": "f_c772ed",
     "schema_version": 1,
     "kind": "sfn.analyzed",
     "subject": {
@@ -14,20 +14,20 @@
     "measures": {
       "execution_count": 1,
       "attempt_count": 1,
-      "job_run_count": 1,
-      "unresolved_count": 2
+      "job_run_count": 3,
+      "unresolved_count": 1
     },
     "attrs": {
       "extractor": "sfn_history@0.1.0"
     },
     "provenance": {
       "artifact": "historico/execucao.json",
-      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
       "extractor": "sfn_history@0.1.0"
     }
   },
   {
-    "id": "f_f17dee",
+    "id": "f_dc5e2a",
     "schema_version": 1,
     "kind": "sfn.attempt",
     "subject": {
@@ -35,34 +35,35 @@
       "file": "historico/execucao.json",
       "line": 0,
       "col": 0,
-      "symbol": "CargaLonga#1",
+      "symbol": "Preparacao#1",
       "snippet": ""
     },
     "measures": {
       "attempt_index": 1,
-      "timeout_seconds": 7200
+      "duration_seconds": 238.0,
+      "timeout_seconds": 3600
     },
     "attrs": {
-      "state_name": "CargaLonga",
+      "state_name": "Preparacao",
       "service": "glue",
       "api": "startJobRun",
       "resource": "startJobRun.sync",
       "pattern": "sync",
-      "result": "none",
-      "terminal_present": false,
+      "result": "succeeded",
+      "terminal_present": true,
       "submitted": true,
-      "execution_outcome": "unresolved",
-      "execution_outcome_class": "unresolved",
-      "job_run_outcome_observed": false
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
     },
     "provenance": {
       "artifact": "historico/execucao.json",
-      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
       "extractor": "sfn_history@0.1.0"
     }
   },
   {
-    "id": "f_98721e",
+    "id": "f_1df018",
     "schema_version": 1,
     "kind": "sfn.execution",
     "subject": {
@@ -74,26 +75,26 @@
       "snippet": ""
     },
     "measures": {
-      "read_event_count": 5,
+      "read_event_count": 19,
       "attempt_count": 1,
-      "job_run_count": 1,
-      "duration_seconds": 4.0
+      "job_run_count": 3,
+      "duration_seconds": 1263.0
     },
     "attrs": {
-      "status": "unresolved",
-      "status_class": "unresolved",
+      "status": "succeeded",
+      "status_class": "finished",
       "source": "get_execution_history",
-      "truncated": true,
+      "truncated": false,
       "arn_declared": false
     },
     "provenance": {
       "artifact": "historico/execucao.json",
-      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
       "extractor": "sfn_history@0.1.0"
     }
   },
   {
-    "id": "f_b1a1d3",
+    "id": "f_22ec2e",
     "schema_version": 1,
     "kind": "sfn.job_run",
     "subject": {
@@ -101,27 +102,85 @@
       "file": "historico/execucao.json",
       "line": 0,
       "col": 0,
-      "symbol": "CargaLonga#1",
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "submitted_event_id": 13
+    },
+    "attrs": {
+      "job_run_id": "jr_dddddddd1",
+      "job_name": "carga-ramo-a",
+      "state_name": "Carga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output",
+      "attempt_index_refused": "state_name_in_concurrent_branches"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_867f6b",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "submitted_event_id": 14
+    },
+    "attrs": {
+      "job_run_id": "jr_dddddddd2",
+      "job_name": "carga-ramo-b",
+      "state_name": "Carga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output",
+      "attempt_index_refused": "state_name_in_concurrent_branches"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_5c4629",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Preparacao#1",
       "snippet": ""
     },
     "measures": {
       "attempt_index": 1
     },
     "attrs": {
-      "job_run_id": "jr_ffffffff1",
-      "job_name": "carga-longa",
-      "state_name": "CargaLonga",
+      "job_run_id": "jr_dddddddd0",
+      "job_name": "preparacao",
+      "state_name": "Preparacao",
       "read_from": "JobRunId",
       "source": "task_submitted_output"
     },
     "provenance": {
       "artifact": "historico/execucao.json",
-      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
       "extractor": "sfn_history@0.1.0"
     }
   },
   {
-    "id": "f_61124a",
+    "id": "f_fe86bd",
     "schema_version": 1,
     "kind": "sfn.unresolved",
     "subject": {
@@ -129,23 +188,25 @@
       "file": "historico/execucao.json",
       "line": 0,
       "col": 0,
-      "symbol": "",
+      "symbol": "Carga",
       "snippet": ""
     },
     "measures": {
-      "read_events": 5
+      "entry_count": 2,
+      "attempt_count": 2
     },
     "attrs": {
-      "reason": "truncated"
+      "reason": "state_name_in_concurrent_branches",
+      "state_name": "Carga"
     },
     "provenance": {
       "artifact": "historico/execucao.json",
-      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
       "extractor": "sfn_history@0.1.0"
     }
   },
   {
-    "id": "f_bae972",
+    "id": "f_e8ac48",
     "schema_version": 1,
     "kind": "sfn.unresolved",
     "subject": {
@@ -153,42 +214,20 @@
       "file": "historico/execucao.json",
       "line": 0,
       "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "reason": "execution_terminal_absent"
-    },
-    "provenance": {
-      "artifact": "historico/execucao.json",
-      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
-      "extractor": "sfn_history@0.1.0"
-    }
-  },
-  {
-    "id": "f_3136c9",
-    "schema_version": 1,
-    "kind": "sfn.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "historico/execucao.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "CargaLonga",
+      "symbol": "Preparacao",
       "snippet": ""
     },
     "measures": {},
     "attrs": {
       "reason": "asl_absent",
-      "state_name": "CargaLonga"
+      "state_name": "Preparacao"
     },
     "provenance": {
       "artifact": "historico/execucao.json",
       "artifact_sha256": "",
       "extractor": "sfn_history@0.1.0",
       "derived_from": [
-        "f_f17dee"
+        "f_dc5e2a"
       ]
     }
   }

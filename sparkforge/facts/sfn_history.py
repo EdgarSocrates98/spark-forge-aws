@@ -33,18 +33,25 @@ kinds, nao cinco.
 - `sfn.unresolved` -- o que nao deu para ler. Razoes: `read_error`,
   `size_above_limit`, `invalid_json`, `json_too_deep`, `json_too_large`,
   `not_an_execution_history`, `truncated`, `event_not_an_object`,
-  `event_type_unknown`, `event_id_duplicated`, `state_unresolved`, `attempt_unanchored`,
-  `execution_terminal_absent`, `execution_data_absent` e `job_run_id_unrecognized`.
-  O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
-  `measures`, e nao em `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres
-  recusas iguais sobre o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por
-  id e deixaria uma so.
+  `event_type_unknown`, `event_id_duplicated`, `state_unresolved`,
+  `state_name_in_concurrent_branches`, `state_entries_chain_unwalkable`,
+  `attempt_unanchored`, `execution_terminal_absent`, `execution_data_absent`,
+  `execution_redriven` e `job_run_id_unrecognized`.
+  O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`,
+  `measures.read_events`, `measures.submitted_event_id`) fica em `measures`, e nao em
+  `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres recusas iguais sobre
+  o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por id e deixaria uma so.
+  Duas recusas de RAZAO diferente colidem pelo mesmo motivo, e foi o que aconteceu com
+  `truncated` e `execution_terminal_absent` ate 2026-09-20.
 - `sfn.analyzed` -- a sentinela, com as contagens.
 - `sfn.retry_observado` -- DERIVADO, nunca lido de arquivo: `build_sfn_retry_observado`
   casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
   ASL declara, e `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
   `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`,
-  `declared_ceiling_unreadable` e `glue_attempt_absent` (um ARTEFATO tem tentativa
+  `declared_ceiling_unreadable`, `redrive_in_execution` (o artefato tem
+  `ExecutionRedriven`: o Task foi reagendado dentro da MESMA execucao, e a contagem
+  deixa de ser comparavel com o teto declarado -- as tentativas continuam publicadas, e
+  o que se recusa e a COMPARACAO) e `glue_attempt_absent` (um ARTEFATO tem tentativa
   medida, e nenhuma delas e `glue:startJobRun` -- a unica integracao que o confronto
   sabe julgar; a recusa e por artefato, e nao pelo pool, pela mesma razao que o lado
   medido e chaveado por `(artefato, nome do estado)`).
@@ -82,6 +89,47 @@ quebrada, raiz e ciclo saem em recusa nomeada, que e onde a premissa errada apar
 Cadeia que chega a raiz sem achar, evento referenciado ausente do arquivo, ou ciclo:
 `sfn.unresolved` nomeado. NUNCA um chute -- atribuir a tentativa ao estado errado num
 `Parallel` seria pior do que nao atribuir.
+
+## O NOME identifica um estado? So quando as entradas dele se alcancam
+
+O historico publica o NOME do estado (`stateEnteredEventDetails.name`), nunca o caminho
+dele na definicao. Dentro de um `Parallel`, dois ramos podem ter um estado de mesmo
+nome -- e ai o nome nao identifica nada. O MESMO VALE PARA O `Map` INLINE, e o alcance
+nao e menor por ser o segundo: cada iteracao pendura o seu `TaskStateEntered` no
+`MapStateStarted` comum, entao todo estado de dentro de um `Map` tem tantas entradas
+mutuamente nao-ancestrais quantas forem as iteracoes -- inclusive com
+`MaxConcurrency: 1`, que e sequencial no relogio e concorrente na cadeia. O `Map`
+DISTRIBUIDO (`mapRunArn`) continua fora por outro motivo: o extrator nao segue as
+execucoes filhas dele. Ate 2026-09-20 o contador era chaveado so pelo
+nome, e a primeira tentativa do segundo ramo saia com `attempt_index: 2`: um indice que
+o arquivo nao sustenta, e que e o `subject.symbol` por onde `SF-SFNX-002` e
+`SF-SFNX-003` apontam o achado.
+
+O criterio e ANCESTRALIDADE, nao a presenca de um `Parallel` no arquivo. Para um nome,
+juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled` daquele nome se
+encadeiam; se DOIS deles forem mutuamente nao-ancestrais -- nenhum alcanca o outro
+subindo `previousEventId` --, nenhum `sfn.attempt` daquele nome e emitido e sai uma
+recusa nomeada.
+
+A RECUSA CALA A ORDEM, NAO O VALOR. O `sfn.job_run` daquele nome continua saindo, com o
+`subject.symbol` sem o `#<n>` e sem `attempt_index` nas medidas: o `JobRunId` esta
+escrito no `output` do `TaskSubmitted`, nao depende de ordem nenhuma, e e a unica ponte
+para `sparkforge finops`. O discriminador vai para `measures`
+(`submitted_event_id`), porque sem o `#<n>` os facts de um mesmo nome teriam subject
+igual.
+
+A RECUSA SAO DUAS, porque a causa sao duas. Quando os dois passeios do par chegaram a
+raiz limpos e mesmo assim nao se cruzaram, houve concorrencia de verdade e sai
+`state_name_in_concurrent_branches`. Quando pelo menos um deles parou em `chain_broken`
+ou `chain_cycle`, nao se demonstrou concorrencia nenhuma -- o passeio e que nao deu para
+fazer --, e sai `state_entries_chain_unwalkable` com a parada em `attrs.detail`. Recusar
+nos dois casos e legitimo; chamar os dois pelo mesmo nome seria recusa com o nome
+errado, que a regra 20 trata como pior do que recusa sem nome.
+
+Reentrada SEQUENCIAL nao cai ali: um retry, ou um `Choice` que volta, deixa a entrada
+anterior na cadeia da seguinte, e as duas se alcancam. E por isso que o criterio e
+indiferente a lacuna U1 -- se o `Retry` reentra no estado nao esta publicado, e a
+resposta nao muda a numeracao nos dois casos.
 
 ## Tres atributos DERIVADOS aqui (regra 33)
 
@@ -137,20 +185,18 @@ EMITTED_KINDS = frozenset(
 SOURCE_KINDS = frozenset({"sfn.attempt"})
 
 # https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html
-# Os tipos que a pagina publicava na leitura de 2026-09-19. Tipo fora desta lista nao e
-# erro do artefato -- e a API que cresceu --, e por isso sai em `sfn.unresolved`
-# `event_type_unknown` com o nome, em vez de ser ignorado em silencio.
+# Os 62 `Valid Values` do campo `type`, conferidos na releitura de 2026-09-20. Tipo fora
+# desta lista nao e erro do artefato -- e a API que cresceu --, e por isso sai em
+# `sfn.unresolved` `event_type_unknown` com o nome, em vez de ser ignorado em silencio.
 #
-# ELA NAO E A LISTA INTEIRA, e a diferenca foi MEDIDA na releitura de 2026-09-20: os
-# `Valid Values` do campo `type` publicam 62 tipos, e estes 59 sao um subconjunto
-# proprio. Faltam `EvaluationFailed`, `ExecutionRedriven` e `MapRunRedriven` -- os tres
-# posteriores a leitura original. Nenhum deles produz fact em nenhum outro tipo, e o
-# desenho ja os absorve: cada um sai em `event_type_unknown` com o nome, e desde
-# `971daa73` continua na travessia da cadeia, entao nao apaga tentativa nenhuma.
-# Acrescenta-los seria mudanca de comportamento (a recusa some) e nao entra num commit de
-# prosa; a lacuna 9 de `knowledge/stepfunctions/execution-history.md` diz o que ganharia
-# quem os acrescentasse -- em especial `ExecutionRedriven`, que e a execucao RETOMADA e
-# muda o que "quantas vezes o Task foi agendado" significa.
+# ELA E A LISTA INTEIRA desde a feature `docs/sdd/SFN_TENTATIVA/`. Os tres que faltavam
+# -- posteriores a leitura original -- entraram aqui, e nao entraram iguais:
+# `EvaluationFailed` e `MapRunRedriven` sao tipo conhecido que nao produz fact nem
+# recusa, como os demais `MapRun*`; `ExecutionRedriven` e a execucao RETOMADA, e ele muda
+# o que "quantas vezes o Task foi agendado" significa -- o redrive reagenda o Task dentro
+# da MESMA execucao, e nada aqui separa as tentativas de antes das de depois. Por isso
+# ele sai em `sfn.unresolved` `execution_redriven`, e `build_sfn_retry_observado` recusa
+# a COMPARACAO com o teto declarado no ASL. As tentativas continuam medidas.
 _TIPOS_CONHECIDOS = frozenset(
     {
         "ActivityFailed",
@@ -161,8 +207,10 @@ _TIPOS_CONHECIDOS = frozenset(
         "ActivityTimedOut",
         "ChoiceStateEntered",
         "ChoiceStateExited",
+        "EvaluationFailed",
         "ExecutionAborted",
         "ExecutionFailed",
+        "ExecutionRedriven",
         "ExecutionStarted",
         "ExecutionSucceeded",
         "ExecutionTimedOut",
@@ -180,6 +228,7 @@ _TIPOS_CONHECIDOS = frozenset(
         "MapIterationSucceeded",
         "MapRunAborted",
         "MapRunFailed",
+        "MapRunRedriven",
         "MapRunStarted",
         "MapRunSucceeded",
         "MapStateAborted",
@@ -396,6 +445,141 @@ def _ancestral(
         atual = pai
 
 
+def _ancestrais(
+    evento: dict[str, Any], por_id: dict[int, dict[str, Any]]
+) -> tuple[set[int], str]:
+    """(ids alcancados subindo `previousEventId`, razao de parada).
+
+    O mesmo passeio de `_ancestral`, sem o filtro por tipo: aqui a pergunta nao e "qual
+    ancestral" e sim "A alcanca B?". A RAZAO DE PARADA SAI JUNTO, e pelo mesmo motivo
+    que ela existe la -- `chain_root`, `chain_broken` e `chain_cycle` sao coisas
+    diferentes, e confundi-las esconderia truncamento atras de "nao achei".
+
+    Um conjunto menor nunca inventa alcance, e alcance a menos so faz RECUSAR mais, que
+    e o lado seguro de errar. Mas o NOME da recusa depende da parada: duas entradas que
+    nao se alcancam porque a cadeia QUEBROU nao estao em ramos concorrentes, e dizer
+    que estao seria recusa com o nome errado, que a regra 20 trata como pior do que
+    recusa sem nome.
+    """
+    vistos: set[int] = set()
+    atual = evento
+    while True:
+        anterior = atual.get("previousEventId")
+        if isinstance(anterior, bool) or not isinstance(anterior, int) or anterior <= 0:
+            return vistos, "chain_root"
+        if anterior in vistos:
+            return vistos, "chain_cycle"
+        vistos.add(anterior)
+        pai = por_id.get(anterior)
+        if pai is None:
+            return vistos, "chain_broken"
+        atual = pai
+
+
+def _nomes_sem_identidade(
+    tentativas: dict[int, dict[str, Any]], por_id: dict[int, dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """Nome do estado -> a recusa, quando DUAS entradas dele nao se alcancam.
+
+    Para um nome, juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled`
+    daquele nome se encadeiam. Reentrada SEQUENCIAL -- um retry, ou um `Choice` que
+    volta ao mesmo estado -- deixa a entrada anterior na cadeia da seguinte: as duas se
+    alcancam, e a numeracao 1..n continua valendo. Ramos concorrentes divergem num
+    evento comum e nunca se alcancam: ali o NOME nao identifica um estado, e o
+    `attempt_index` seria invencao -- ele e o `subject.symbol` por onde `SF-SFNX-002` e
+    `SF-SFNX-003` apontam o achado.
+
+    ## DUAS recusas, porque sao duas coisas
+
+    "B nao alcanca A e A nao alcanca B" tem duas causas, e chama-las pelo mesmo nome
+    seria recusa com o nome errado (regra 20):
+
+    - `state_name_in_concurrent_branches` -- os DOIS passeios do par chegaram a raiz
+      limpos, e mesmo assim nenhum passou pelo outro. Isso e concorrencia de verdade:
+      ramos de um `Parallel`, **ou iteracoes de um `Map` inline**, que divergem no
+      `ParallelStateStarted`/`MapStateStarted` comum. O nome da recusa fala de ramo
+      porque foi ali que ela nasceu; o alcance dela inclui a iteracao de `Map`,
+      inclusive com `MaxConcurrency: 1`, que e sequencial no relogio e concorrente na
+      cadeia -- cada iteracao pendura o seu `TaskStateEntered` no mesmo evento;
+    - `state_entries_chain_unwalkable` -- pelo menos um dos passeios NAO deu para
+      fazer: parou em `chain_broken` (o id referenciado nao esta no arquivo: pagina
+      faltando, historico truncado, evento recusado antes) ou em `chain_cycle`. Aqui
+      nao ha concorrencia demonstrada nenhuma -- ha um passeio interrompido --, e
+      afirmar `Parallel` num arquivo que nao tem nenhum seria pior do que nao nomear.
+
+    Recusar nos dois casos e legitimo: sem o passeio inteiro, o indice nao tem base. O
+    que muda e o nome, e com ele o proximo passo do operador -- num caso, olhar a
+    definicao; no outro, buscar a pagina que falta.
+
+    O discriminador tem de entrar em `measures`, e nao so em `attrs`: `Fact.id` e sha1
+    de `kind + subject + measures`, as duas recusas tem o MESMO subject
+    (`<arquivo>` + nome do estado), e `fusion.fuse` indexa por id. Por isso a segunda
+    leva `unwalkable_entry_count`, que e medida e nao enfeite: quantas das entradas
+    daquele nome nao deram para percorrer.
+
+    O criterio NAO pergunta se o `Retry` reentra no estado, que e justamente a lacuna
+    que ninguem mediu (U1 de `docs/sdd/SFN_TENTATIVA/define.md`): qualquer que seja a
+    resposta, reentrada sequencial e ancestral e ramo concorrente nao e.
+
+    O `previousEventId` ser o do MESMO RAMO continua sendo premissa nossa, nao
+    publicada (lacuna 8 de `knowledge/stepfunctions/execution-history.md`). Se ela
+    estiver errada, o efeito e recusar DEMAIS -- duas entradas sequenciais pareceriam
+    nao-ancestrais --, nunca afirmar de menos.
+    """
+    entradas_por_nome: dict[str, list[int]] = {}
+    for identificador in sorted(tentativas):
+        estado = tentativas[identificador]
+        lista = entradas_por_nome.setdefault(estado["state_name"], [])
+        if estado["entry_id"] not in lista:
+            lista.append(estado["entry_id"])
+    vazio: tuple[set[int], str] = (set(), "chain_broken")
+    sem_identidade: dict[str, dict[str, Any]] = {}
+    for nome, entradas in entradas_por_nome.items():
+        if len(entradas) < 2:
+            continue
+        passeio = {
+            entrada: _ancestrais(por_id[entrada], por_id)
+            for entrada in entradas
+            if entrada in por_id
+        }
+        disjuntos = [
+            (a, b)
+            for indice, a in enumerate(entradas)
+            for b in entradas[indice + 1 :]
+            if b not in passeio.get(a, vazio)[0] and a not in passeio.get(b, vazio)[0]
+        ]
+        if not disjuntos:
+            continue
+        # A CONCORRENCIA E DEMONSTRADA POR UM PAR, nao pelo conjunto: basta um par cujos
+        # DOIS passeios chegaram a raiz limpos para que o nome esteja provadamente em
+        # ramos (ou iteracoes) concorrentes. Sem nenhum par assim, o que se mediu foi
+        # passeio interrompido, e a recusa e a outra.
+        if any(
+            passeio.get(a, vazio)[1] == "chain_root" and passeio.get(b, vazio)[1] == "chain_root"
+            for a, b in disjuntos
+        ):
+            sem_identidade[nome] = {
+                "reason": "state_name_in_concurrent_branches",
+                "entry_count": len(entradas),
+            }
+            continue
+        travadas = {
+            entrada
+            for par in disjuntos
+            for entrada in par
+            if passeio.get(entrada, vazio)[1] != "chain_root"
+        }
+        sem_identidade[nome] = {
+            "reason": "state_entries_chain_unwalkable",
+            "entry_count": len(entradas),
+            "unwalkable_entry_count": len(travadas),
+            "detail": ",".join(
+                sorted({passeio.get(entrada, vazio)[1] for entrada in travadas})
+            ),
+        }
+    return sem_identidade
+
+
 def _job_run(saida: Any) -> tuple[str | None, str | None, str | None, list[str]]:
     """(job_run_id, job_name, chave lida, chaves de topo). U1 mora aqui.
 
@@ -564,12 +748,38 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
     status, classe = _desfecho_da_execucao(ordenados)
 
     if truncado:
+        # `read_events` vai para `measures`, e nao para `attrs`: esta recusa sai JUNTO
+        # com `execution_terminal_absent` sempre que a pagina salva acaba antes do fim
+        # da execucao, as duas tem o mesmo kind e o mesmo `subject` (o arquivo), e
+        # `Fact.id` e sha1 de `kind + subject + measures`. Com o numero so em `attrs`,
+        # as duas viravam o MESMO id e `fusion.fuse` deixava uma so.
         leitura.facts.append(
-            _unresolved(_file_subject(path), "truncated", provenance, read_events=len(ordenados))
+            _unresolved(
+                _file_subject(path),
+                "truncated",
+                provenance,
+                measures={"read_events": len(ordenados)},
+            )
         )
     if status == "unresolved" and ordenados:
         leitura.facts.append(
             _unresolved(_file_subject(path), "execution_terminal_absent", provenance)
+        )
+
+    # `ExecutionRedriven` e a execucao RETOMADA: o Task e reagendado DENTRO da mesma
+    # execucao, e nada no arquivo separa as tentativas de antes das de depois. A
+    # leitura continua valendo -- o que deixa de valer e a comparacao com o teto
+    # declarado no ASL, e quem a recusa e `build_sfn_retry_observado` (D3).
+    for evento in ordenados:
+        if str(evento.get("type")) != "ExecutionRedriven":
+            continue
+        leitura.facts.append(
+            _unresolved(
+                _file_subject(path),
+                "execution_redriven",
+                provenance,
+                measures={"event_id": int(evento["id"])},
+            )
         )
 
     # 1. Um agendamento -> uma tentativa. O estado vem da cadeia, nunca da ordem.
@@ -598,6 +808,10 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
         ordem_por_estado[nome] = ordem_por_estado.get(nome, 0) + 1
         tentativas[int(evento["id"])] = {
             "state_name": nome,
+            # O `id` do `TaskStateEntered` de onde o nome veio. E ele que decide se o
+            # nome identifica UM estado naquele historico (D1), e por isso ele fica
+            # guardado em vez de descartado assim que o nome foi lido.
+            "entry_id": int(entrada["id"]),
             "index": ordem_por_estado[nome],
             "scheduled": evento,
             "terminal": None,
@@ -628,9 +842,45 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
         elif alvo["terminal"] is None:
             alvo["terminal"] = evento
 
+    # 2.5 O NOME identifica UM estado? So quando as entradas dele se alcancam (D1).
+    #
+    # A recusa sai DEPOIS do passo 2 de proposito. Tirar as tentativas antes dele
+    # faria cada terminal e cada `TaskSubmitted` daquele nome cair em
+    # `attempt_unanchored` -- "nao achei o agendamento" --, que e outra coisa e
+    # esconderia a lacuna de verdade atras de ruido por evento.
+    concorrentes = _nomes_sem_identidade(tentativas, por_id)
+    for nome in sorted(concorrentes):
+        recusa = concorrentes[nome]
+        quantas = sum(1 for e in tentativas.values() if e["state_name"] == nome)
+        medidas: dict[str, Any] = {
+            "entry_count": recusa["entry_count"],
+            "attempt_count": quantas,
+        }
+        extra: dict[str, Any] = {"state_name": nome}
+        if "unwalkable_entry_count" in recusa:
+            medidas["unwalkable_entry_count"] = recusa["unwalkable_entry_count"]
+            extra["detail"] = recusa["detail"]
+        leitura.facts.append(
+            _unresolved(
+                _attempt_subject(path, nome),
+                recusa["reason"],
+                provenance,
+                measures=medidas,
+                **extra,
+            )
+        )
+
     # 3. Os facts, em ordem de agendamento.
     for identificador in sorted(tentativas):
         estado = tentativas[identificador]
+        recusado = concorrentes.get(estado["state_name"])
+        if recusado is not None:
+            # A recusa cala a NUMERACAO. O `JobRunId` sobrevive a ela (D6 da rodada de
+            # correcao): ele e um valor lido literalmente do arquivo, nao uma ordem.
+            leitura.facts.extend(
+                _job_run_sem_ordem(estado, recusado["reason"], leitura)
+            )
+            continue
         leitura.facts.extend(_fatos_da_tentativa(estado, status, classe, leitura))
 
     inicio = _instante(ordenados[0].get("timestamp")) if ordenados else None
@@ -766,6 +1016,79 @@ def _fatos_da_tentativa(
         )
     )
     return saida
+
+
+def _job_run_sem_ordem(
+    estado: dict[str, Any], razao: str, leitura: _Leitura
+) -> list[Fact]:
+    """O `sfn.job_run` de uma tentativa cujo NOME foi recusado: valor, nunca ordem.
+
+    Quando o nome do estado nao identifica um estado naquele historico -- ramos de um
+    `Parallel`, iteracoes de um `Map` inline, cadeia impassavel --, o `attempt_index` e
+    invencao e a recusa o cala. O `JobRunId` NAO e invencao: ele esta escrito no
+    `output` do `TaskSubmitted`, e nao depende de ordem nenhuma. Ele e tambem a UNICA
+    ponte para `sparkforge finops`, que responde custo com `dpu_seconds` medido; apaga-lo
+    trocaria um indice que o arquivo nao sustenta por uma medida que ele sustenta.
+
+    O `subject.symbol` e o nome do estado SEM o `#<n>`, porque o numero e exatamente o
+    que foi recusado, e `attrs.attempt_index_refused` nomeia a recusa que o calou -- e
+    dai que o operador chega na `sfn.unresolved` do mesmo nome.
+
+    O discriminador esta em `measures`: com o `#<n>` fora do simbolo, duas submissoes do
+    mesmo nome no mesmo arquivo teriam subject igual, e `Fact.id` e sha1 de
+    `kind + subject + measures` (precedente do #92). `submitted_event_id` e o `id` do
+    evento que publicou o valor -- procedencia, e nao desempate inventado.
+
+    As duas recusas de leitura do `output` continuam saindo pelo mesmo nome que no
+    caminho normal: `execution_data_absent` quando `includeExecutionData` esta desligado,
+    `job_run_id_unrecognized` quando a forma nao casa (U1). Emitir o JobRun legivel e
+    calar o ilegivel seria afirmacao parcial, que e o que a regra 20 proibe.
+    """
+    submetido = estado["submitted"]
+    if submetido is None:
+        return []
+    nome_do_estado = estado["state_name"]
+    subject = _attempt_subject(leitura.path, nome_do_estado)
+    medidas = {"submitted_event_id": int(submetido["id"])}
+    bruto = _detalhes(submetido)
+    if "output" not in bruto:
+        return [
+            _unresolved(
+                subject,
+                "execution_data_absent",
+                leitura.provenance,
+                measures=medidas,
+                state_name=nome_do_estado,
+            )
+        ]
+    corrida, nome, chave, chaves = _job_run(bruto["output"])
+    if corrida is None:
+        return [
+            _unresolved(
+                subject,
+                "job_run_id_unrecognized",
+                leitura.provenance,
+                measures=medidas,
+                state_name=nome_do_estado,
+                output_keys=chaves,
+            )
+        ]
+    return [
+        Fact(
+            kind="sfn.job_run",
+            subject=subject,
+            measures=medidas,
+            attrs={
+                "job_run_id": corrida,
+                "job_name": nome,
+                "state_name": nome_do_estado,
+                "read_from": chave,
+                "source": "task_submitted_output",
+                "attempt_index_refused": razao,
+            },
+            provenance=leitura.provenance,
+        )
+    ]
 
 
 def extract_sfn_history_path(path: Path, repo_root: Path | None = None) -> list[Fact]:
@@ -928,6 +1251,23 @@ def _glue_attempt_absent(facts: Sequence[Fact]) -> list[Fact]:
     return saida
 
 
+def _artefatos_com_redrive(facts: Sequence[Fact]) -> set[str]:
+    """Os artefatos em que o extrator leu um `ExecutionRedriven`.
+
+    A derivacao nao ve eventos -- ela ve facts --, e por isso le a recusa que o
+    extrator ja emitiu (`sfn.unresolved: execution_redriven`, uma por evento) em vez de
+    reabrir o arquivo. A granularidade e a MESMA do lado medido,
+    `(artefato, nome do estado)`: um redrive numa execucao nao recusa o confronto da
+    execucao ao lado, salva no mesmo case.
+    """
+    return {
+        str((fact.provenance or {}).get("artifact") or "")
+        for fact in facts
+        if fact.kind == "sfn.unresolved"
+        and (fact.attrs or {}).get("reason") == "execution_redriven"
+    }
+
+
 def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     """Confronta o retry DECLARADO no ASL com o OBSERVADO no historico (D5).
 
@@ -959,6 +1299,7 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     tentativas = _glue_por_execucao(facts)
     declaradas = _glue_por_estado(facts, "sfn.task")
     ha_asl = any(f.kind == "sfn.task" for f in facts)
+    com_redrive = _artefatos_com_redrive(facts)
     # A recusa sai ANTES do confronto e e por ARTEFATO, nao pelo pool: um arquivo cujas
     # tentativas nao tem nenhuma `glue:startJobRun` nao fica calado porque OUTRO arquivo
     # do case tem. Quando nenhum artefato tem Glue, `tentativas` fica vazio e isto e
@@ -979,6 +1320,16 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
             "extractor": EXTRACTOR_ID,
             "derived_from": sorted(f.id for f in grupo),
         }
+        # O redrive vem ANTES do ASL de proposito: com `ExecutionRedriven` no arquivo,
+        # nao ha confronto a fazer, e dizer `asl_absent` mandaria o operador buscar uma
+        # definicao que nao destravaria nada. A comparacao e que foi recusada.
+        if artefato in com_redrive:
+            saida.append(
+                _unresolved(
+                    dict(subject), "redrive_in_execution", proveniencia, state_name=nome
+                )
+            )
+            continue
         if not ha_asl:
             saida.append(
                 _unresolved(dict(subject), "asl_absent", proveniencia, state_name=nome)

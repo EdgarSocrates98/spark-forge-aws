@@ -66,6 +66,24 @@ REQUIRED_FIXTURES = {
     # Historico com tentativa demais e SEM ASL: o confronto nao acontece, a lacuna sai
     # nomeada, e a SF-SFNX-001 fica em `skipped` -- "nao perguntei", nunca "esta tudo bem".
     "historico_sem_asl",
+    # Execucao RETOMADA: `ExecutionRedriven` no historico, e o ASL com `MaxAttempts` ao
+    # lado. O confronto com o teto declarado e RECUSADO (`redrive_in_execution`), e a
+    # SF-SFNX-001 fica calada sobre uma contagem que soma as tentativas de antes e as
+    # de depois do redrive. As tentativas continuam publicadas.
+    "execucao_com_redrive",
+    # Dois ramos de um `Parallel` com um estado de mesmo nome: o nome nao identifica um
+    # estado, nenhum `sfn.attempt` dele sai, e o de nome unico do mesmo historico
+    # continua virando tentativa com indice.
+    "parallel_estado_homonimo",
+    # O alcance da recusa de nome nao para no `Parallel`: duas iteracoes de um `Map`
+    # INLINE caem nela pelo mesmo criterio, e e por isso que esta fixture existe -- o
+    # define so falava de `Parallel`. E e ela que prova a outra metade: o `sfn.job_run`
+    # de cada iteracao SOBREVIVE a recusa, sem `#<n>` no simbolo e sem `attempt_index`.
+    "map_inline_iteracoes",
+    # A NEGATIVA das duas acima, e a que impede a correcao de virar regressao: o mesmo
+    # estado reentrado TRES vezes em sequencia continua numerado 1..3. E ela que mata a
+    # troca do teste de ancestralidade por um teste so de contagem de entradas.
+    "retry_em_ramo_unico",
 }
 
 

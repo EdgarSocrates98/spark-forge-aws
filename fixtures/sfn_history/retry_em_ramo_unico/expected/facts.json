@@ -1,0 +1,284 @@
+[
+  {
+    "id": "f_0cf108",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 3,
+      "job_run_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_79d338",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 598.0,
+      "timeout_seconds": 3600
+    },
+    "attrs": {
+      "state_name": "CargaComLaco",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "failed",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true,
+      "error": "Glue.AWSGlueException",
+      "cause": "JobRun jr_eeeeeeee1 FAILED"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_c12d4d",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco#2",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 2,
+      "duration_seconds": 595.0,
+      "timeout_seconds": 3600
+    },
+    "attrs": {
+      "state_name": "CargaComLaco",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "failed",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true,
+      "error": "Glue.AWSGlueException",
+      "cause": "JobRun jr_eeeeeeee2 FAILED"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_c30b03",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco#3",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 3,
+      "duration_seconds": 715.0,
+      "timeout_seconds": 3600
+    },
+    "attrs": {
+      "state_name": "CargaComLaco",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "succeeded",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a2649",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "read_event_count": 20,
+      "attempt_count": 3,
+      "job_run_count": 3,
+      "duration_seconds": 1921.0
+    },
+    "attrs": {
+      "status": "succeeded",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_8c4f24",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_eeeeeeee1",
+      "job_name": "carga-com-laco",
+      "state_name": "CargaComLaco",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca4e42",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco#2",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 2
+    },
+    "attrs": {
+      "job_run_id": "jr_eeeeeeee2",
+      "job_name": "carga-com-laco",
+      "state_name": "CargaComLaco",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_0c2371",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco#3",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 3
+    },
+    "attrs": {
+      "job_run_id": "jr_eeeeeeee3",
+      "job_name": "carga-com-laco",
+      "state_name": "CargaComLaco",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "fbe6b5244bd9c79ef246413e7475233e3fea67a4e19e32a0a516210a1f808374",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_557b4d",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComLaco",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaComLaco"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_79d338",
+        "f_c12d4d",
+        "f_c30b03"
+      ]
+    }
+  }
+]

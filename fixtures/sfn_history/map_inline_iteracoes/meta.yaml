@@ -1,0 +1,29 @@
+name: map_inline_iteracoes
+proves: >
+  O alcance da recusa de nome NAO PARA NO `Parallel`, e o `JobRunId` SOBREVIVE a ela.
+  Duas iteracoes de um `Map` INLINE (sem `mapRunArn`: nao ha Distributed Map aqui), cada
+  uma com um estado `Carga`. As entradas (ids 6 e 7) penduram no `MapIterationStarted` da
+  propria iteracao e divergem no `MapStateStarted` comum (id 3), exatamente como ramos de
+  um `Parallel`: nenhuma alcanca a outra subindo `previousEventId`. Por isso nenhum
+  `sfn.attempt` de `Carga` e emitido e sai `state_name_in_concurrent_branches` -- e o
+  define desta feature so falava de `Parallel`, entao esta fixture e a medida de que o
+  comportamento alcanca tambem o `Map` inline, inclusive com `MaxConcurrency: 1`, que e
+  sequencial no relogio e concorrente na cadeia.
+  O `sfn.job_run` de cada iteracao CONTINUA saindo: o `JobRunId` e um valor lido
+  literalmente do `output` do `TaskSubmitted`, nao uma ordem, e e a unica ponte para
+  `sparkforge finops`. O `subject.symbol` sai sem o `#<n>` e nao ha `attempt_index` nas
+  medidas -- o discriminador e `submitted_event_id`, que e o `id` do evento que publicou
+  o valor, e sem ele os dois facts colidiriam no mesmo `Fact.id`. Sem ASL no case, e sem
+  `sfn.attempt` nenhum, a derivacao do confronto nao roda e as tres regras da area ficam
+  caladas.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: []
