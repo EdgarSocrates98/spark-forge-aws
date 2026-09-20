@@ -970,10 +970,15 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
                 kind="sfn.retry_observado",
                 subject=dict(subject),
                 measures={"tentativas_observadas": len(grupo), "teto_declarado": 1 + teto},
+                # Tudo o que vem do `sfn.task` carrega o prefixo `declared_`, e a marca
+                # e uniforme de proposito: `job_name` e `pattern` sem ela pareciam
+                # MEDIDOS ao lado de `declared_retry_matched`. E o historico tem
+                # `pattern` proprio (no `sfn.attempt`), que pode divergir do declarado
+                # quando o ASL do repositorio nao e o que executou.
                 attrs={
                     "state_name": nome,
-                    "job_name": attrs_da_tarefa.get("job_name"),
-                    "pattern": attrs_da_tarefa.get("pattern"),
+                    "declared_job_name": attrs_da_tarefa.get("job_name"),
+                    "declared_pattern": attrs_da_tarefa.get("pattern"),
                     "declared_retry_matched": bool(
                         attrs_da_tarefa.get("failure_retry_matched")
                     ),

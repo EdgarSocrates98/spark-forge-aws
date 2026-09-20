@@ -229,8 +229,8 @@
     },
     "attrs": {
       "state_name": "CargaDiaria",
-      "job_name": "carga-diaria",
-      "pattern": "sync",
+      "declared_job_name": "carga-diaria",
+      "declared_pattern": "sync",
       "declared_retry_matched": true,
       "declared_retry_defaulted": false,
       "execution_outcome": "succeeded"

@@ -533,6 +533,41 @@ def test_duas_execucoes_nao_somam_tentativas_uma_da_outra():
         assert set(confronto.provenance["derived_from"]) == esperado
 
 
+def test_o_padrao_declarado_pode_divergir_do_medido():
+    """O `pattern` do ASL e o do historico sao dois, e o `sfn.retry_observado` so tem um.
+
+    Por isso o que vem do `sfn.task` carrega `declared_`: o ASL do repositorio pode ja
+    ter `.sync` enquanto a execucao lida rodou sem ele (ou o contrario). Lendo
+    `attrs.pattern` sem marca, quem julga o fact derivado acharia estar lendo a medida.
+    """
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.stepfunctions import extract_stepfunctions
+
+    sem_sync = {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+            _evento(
+                3,
+                2,
+                "TaskScheduled",
+                2,
+                taskScheduledEventDetails={"resource": "startJobRun", "resourceType": "glue"},
+            ),
+            _evento(4, 3, "TaskSucceeded", 9),
+            _evento(5, 4, "ExecutionSucceeded", 10),
+        ]
+    }
+    historico = extract_sfn_history(sem_sync, "sem-sync.json")
+    definicao = extract_stepfunctions(ASL_COM_RETRY_DE_DUAS, "carga.asl.json")
+
+    [tentativa] = _de(historico, "sfn.attempt")
+    assert tentativa.attrs["pattern"] == "request_response"
+
+    [confronto] = [f for f in fuse(definicao + historico) if f.kind == "sfn.retry_observado"]
+    assert confronto.attrs["declared_pattern"] == "sync"
+
+
 def test_o_grupo_e_ordenado_pelo_indice_da_tentativa_e_nao_pelo_hash():
     """`grupo[-1]` tem de ser a ULTIMA tentativa, nao a de id que calhou de ser maior.
 
@@ -667,8 +702,13 @@ def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):
     assert confronto.subject["symbol"] == "CargaDiaria"
     assert confronto.measures == {"tentativas_observadas": 3, "teto_declarado": 2}
     assert confronto.attrs["state_name"] == "CargaDiaria"
-    assert confronto.attrs["job_name"] == "carga-diaria"
-    assert confronto.attrs["pattern"] == "sync"
+    # DECLARADO e MEDIDO com a MESMA marca: tudo o que vem do `sfn.task` carrega o
+    # prefixo `declared_`. Sem ele, `job_name` e `pattern` pareciam medidos ao lado de
+    # `declared_retry_matched`, e o historico tem `pattern` PROPRIO, que pode divergir.
+    assert confronto.attrs["declared_job_name"] == "carga-diaria"
+    assert confronto.attrs["declared_pattern"] == "sync"
+    assert "job_name" not in confronto.attrs
+    assert "pattern" not in confronto.attrs
     assert confronto.attrs["declared_retry_defaulted"] is False
     # A proveniencia liga o confronto as tres tentativas E ao `sfn.task`: sem isso, o
     # achado citaria um fact que ninguem consegue reencontrar.
