@@ -34,7 +34,8 @@ kinds, nao cinco.
   `size_above_limit`, `invalid_json`, `json_too_deep`, `json_too_large`,
   `not_an_execution_history`, `truncated`, `event_not_an_object`,
   `event_type_unknown`, `event_id_duplicated`, `state_unresolved`, `attempt_unanchored`,
-  `execution_terminal_absent`, `execution_data_absent` e `job_run_id_unrecognized`.
+  `execution_terminal_absent`, `execution_data_absent`, `execution_redriven` e
+  `job_run_id_unrecognized`.
   O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
   `measures`, e nao em `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres
   recusas iguais sobre o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por
@@ -44,7 +45,10 @@ kinds, nao cinco.
   casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
   ASL declara, e `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
   `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`,
-  `declared_ceiling_unreadable` e `glue_attempt_absent` (um ARTEFATO tem tentativa
+  `declared_ceiling_unreadable`, `redrive_in_execution` (o artefato tem
+  `ExecutionRedriven`: o Task foi reagendado dentro da MESMA execucao, e a contagem
+  deixa de ser comparavel com o teto declarado -- as tentativas continuam publicadas, e
+  o que se recusa e a COMPARACAO) e `glue_attempt_absent` (um ARTEFATO tem tentativa
   medida, e nenhuma delas e `glue:startJobRun` -- a unica integracao que o confronto
   sabe julgar; a recusa e por artefato, e nao pelo pool, pela mesma razao que o lado
   medido e chaveado por `(artefato, nome do estado)`).
@@ -137,20 +141,18 @@ EMITTED_KINDS = frozenset(
 SOURCE_KINDS = frozenset({"sfn.attempt"})
 
 # https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html
-# Os tipos que a pagina publicava na leitura de 2026-09-19. Tipo fora desta lista nao e
-# erro do artefato -- e a API que cresceu --, e por isso sai em `sfn.unresolved`
-# `event_type_unknown` com o nome, em vez de ser ignorado em silencio.
+# Os 62 `Valid Values` do campo `type`, conferidos na releitura de 2026-09-20. Tipo fora
+# desta lista nao e erro do artefato -- e a API que cresceu --, e por isso sai em
+# `sfn.unresolved` `event_type_unknown` com o nome, em vez de ser ignorado em silencio.
 #
-# ELA NAO E A LISTA INTEIRA, e a diferenca foi MEDIDA na releitura de 2026-09-20: os
-# `Valid Values` do campo `type` publicam 62 tipos, e estes 59 sao um subconjunto
-# proprio. Faltam `EvaluationFailed`, `ExecutionRedriven` e `MapRunRedriven` -- os tres
-# posteriores a leitura original. Nenhum deles produz fact em nenhum outro tipo, e o
-# desenho ja os absorve: cada um sai em `event_type_unknown` com o nome, e desde
-# `971daa73` continua na travessia da cadeia, entao nao apaga tentativa nenhuma.
-# Acrescenta-los seria mudanca de comportamento (a recusa some) e nao entra num commit de
-# prosa; a lacuna 9 de `knowledge/stepfunctions/execution-history.md` diz o que ganharia
-# quem os acrescentasse -- em especial `ExecutionRedriven`, que e a execucao RETOMADA e
-# muda o que "quantas vezes o Task foi agendado" significa.
+# ELA E A LISTA INTEIRA desde a feature `docs/sdd/SFN_TENTATIVA/`. Os tres que faltavam
+# -- posteriores a leitura original -- entraram aqui, e nao entraram iguais:
+# `EvaluationFailed` e `MapRunRedriven` sao tipo conhecido que nao produz fact nem
+# recusa, como os demais `MapRun*`; `ExecutionRedriven` e a execucao RETOMADA, e ele muda
+# o que "quantas vezes o Task foi agendado" significa -- o redrive reagenda o Task dentro
+# da MESMA execucao, e nada aqui separa as tentativas de antes das de depois. Por isso
+# ele sai em `sfn.unresolved` `execution_redriven`, e `build_sfn_retry_observado` recusa
+# a COMPARACAO com o teto declarado no ASL. As tentativas continuam medidas.
 _TIPOS_CONHECIDOS = frozenset(
     {
         "ActivityFailed",
@@ -161,8 +163,10 @@ _TIPOS_CONHECIDOS = frozenset(
         "ActivityTimedOut",
         "ChoiceStateEntered",
         "ChoiceStateExited",
+        "EvaluationFailed",
         "ExecutionAborted",
         "ExecutionFailed",
+        "ExecutionRedriven",
         "ExecutionStarted",
         "ExecutionSucceeded",
         "ExecutionTimedOut",
@@ -180,6 +184,7 @@ _TIPOS_CONHECIDOS = frozenset(
         "MapIterationSucceeded",
         "MapRunAborted",
         "MapRunFailed",
+        "MapRunRedriven",
         "MapRunStarted",
         "MapRunSucceeded",
         "MapStateAborted",
@@ -572,6 +577,22 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
             _unresolved(_file_subject(path), "execution_terminal_absent", provenance)
         )
 
+    # `ExecutionRedriven` e a execucao RETOMADA: o Task e reagendado DENTRO da mesma
+    # execucao, e nada no arquivo separa as tentativas de antes das de depois. A
+    # leitura continua valendo -- o que deixa de valer e a comparacao com o teto
+    # declarado no ASL, e quem a recusa e `build_sfn_retry_observado` (D3).
+    for evento in ordenados:
+        if str(evento.get("type")) != "ExecutionRedriven":
+            continue
+        leitura.facts.append(
+            _unresolved(
+                _file_subject(path),
+                "execution_redriven",
+                provenance,
+                measures={"event_id": int(evento["id"])},
+            )
+        )
+
     # 1. Um agendamento -> uma tentativa. O estado vem da cadeia, nunca da ordem.
     tentativas: dict[int, dict[str, Any]] = {}
     ordem_por_estado: dict[str, int] = {}
@@ -928,6 +949,23 @@ def _glue_attempt_absent(facts: Sequence[Fact]) -> list[Fact]:
     return saida
 
 
+def _artefatos_com_redrive(facts: Sequence[Fact]) -> set[str]:
+    """Os artefatos em que o extrator leu um `ExecutionRedriven`.
+
+    A derivacao nao ve eventos -- ela ve facts --, e por isso le a recusa que o
+    extrator ja emitiu (`sfn.unresolved: execution_redriven`, uma por evento) em vez de
+    reabrir o arquivo. A granularidade e a MESMA do lado medido,
+    `(artefato, nome do estado)`: um redrive numa execucao nao recusa o confronto da
+    execucao ao lado, salva no mesmo case.
+    """
+    return {
+        str((fact.provenance or {}).get("artifact") or "")
+        for fact in facts
+        if fact.kind == "sfn.unresolved"
+        and (fact.attrs or {}).get("reason") == "execution_redriven"
+    }
+
+
 def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     """Confronta o retry DECLARADO no ASL com o OBSERVADO no historico (D5).
 
@@ -959,6 +997,7 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     tentativas = _glue_por_execucao(facts)
     declaradas = _glue_por_estado(facts, "sfn.task")
     ha_asl = any(f.kind == "sfn.task" for f in facts)
+    com_redrive = _artefatos_com_redrive(facts)
     # A recusa sai ANTES do confronto e e por ARTEFATO, nao pelo pool: um arquivo cujas
     # tentativas nao tem nenhuma `glue:startJobRun` nao fica calado porque OUTRO arquivo
     # do case tem. Quando nenhum artefato tem Glue, `tentativas` fica vazio e isto e
@@ -979,6 +1018,16 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
             "extractor": EXTRACTOR_ID,
             "derived_from": sorted(f.id for f in grupo),
         }
+        # O redrive vem ANTES do ASL de proposito: com `ExecutionRedriven` no arquivo,
+        # nao ha confronto a fazer, e dizer `asl_absent` mandaria o operador buscar uma
+        # definicao que nao destravaria nada. A comparacao e que foi recusada.
+        if artefato in com_redrive:
+            saida.append(
+                _unresolved(
+                    dict(subject), "redrive_in_execution", proveniencia, state_name=nome
+                )
+            )
+            continue
         if not ha_asl:
             saida.append(
                 _unresolved(dict(subject), "asl_absent", proveniencia, state_name=nome)

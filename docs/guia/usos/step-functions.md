@@ -148,7 +148,7 @@ a diferença entre "o histórico é este" e "esta é a parte que eu salvei".
 | `sfn.attempt` | tentativa de Task (`<estado>#<ordem>`) | nome do estado, ordem, padrão de integração, resultado, duração, `error`, `cause`, e o prazo declarado do Task |
 | `sfn.job_run` | `JobRunId` lido do `output` do `TaskSubmitted` | o id, o `JobName` quando vem junto, e de qual chave ele foi lido |
 | `sfn.retry_observado` | **execução e estado** (o par arquivo + nome), só em `fuse` com o ASL | tentativas observadas contra o teto declarado |
-| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `attempt_unanchored`, `execution_data_absent`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable` e `glue_attempt_absent` |
+| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `attempt_unanchored`, `execution_data_absent`, `execution_redriven`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable`, `redrive_in_execution` e `glue_attempt_absent` |
 | `sfn.analyzed` | arquivo | as contagens — prova de que o arquivo foi lido |
 
 **O `sfn.retry_observado` é por execução E por estado, e isso importa com mais de um
@@ -168,6 +168,17 @@ arquivo tem tentativa medida e **nenhuma** delas é `glue:startJobRun` — a int
 a alcança. A recusa é por arquivo e lista o `<serviço>:<api>` de cada tentativa dele, que
 é por onde o próximo passo aparece. Ela não sai para o arquivo que **tem**
 `glue:startJobRun`: esse tem confronto.
+
+**Redrive: a contagem para de ser comparável, e a recusa diz isso.** Quando o histórico
+traz `ExecutionRedriven`, a execução foi **retomada**: o Task é reagendado dentro da
+MESMA execução, e nada no arquivo separa as tentativas de antes das de depois. As
+tentativas continuam medidas e publicadas; o que sai é o **confronto** — por execução e
+por estado sai `sfn.unresolved: redrive_in_execution` no lugar do `sfn.retry_observado`,
+e a `SF-SFNX-001` fica sem âncora naquele arquivo. A recusa é por **arquivo**: uma
+execução sem redrive, salva ao lado no mesmo case, continua tendo confronto. Medir o
+redrive em vez de recusá-lo exigiria saber quantas tentativas caíram antes e quantas
+depois, e a forma do evento não foi lida (lacuna 9 de
+`knowledge/stepfunctions/execution-history.md`).
 
 ### As três regras
 
