@@ -2,7 +2,9 @@
   "schema_version": 1,
   "sources": {
     "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/airflow/glue-operator.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-09-20"
@@ -14,7 +16,9 @@
       ]
     },
     "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/airflow/glue-operator.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-09-20"
@@ -24,7 +28,9 @@
       ]
     },
     "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/airflow/glue-operator.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-09-20"
@@ -1416,6 +1422,7 @@
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html": {
       "docs": [
+        "knowledge/airflow/glue-operator.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1429,6 +1436,7 @@
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html": {
       "docs": [
+        "knowledge/airflow/glue-operator.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,

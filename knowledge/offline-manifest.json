@@ -26,7 +26,12 @@
     {
       "path": "knowledge/airflow-pipelines.md",
       "title": "airflow-pipelines",
-      "sha256": "8585285617f34c09d1202f01e778ee0876211f8f4a12638e9382cc2c47d2f349"
+      "sha256": "19094312373c54c4246534127af5c376b9b8a715700361e3ac97a7357006389a"
+    },
+    {
+      "path": "knowledge/airflow/glue-operator.md",
+      "title": "glue-operator",
+      "sha256": "1ea710a9daa24e41885dc19a38464753035676271e7b86ad5f05e707ff2ccc64"
     },
     {
       "path": "knowledge/anti-patterns.md",

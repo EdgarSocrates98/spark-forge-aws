@@ -459,6 +459,8 @@ capabilities:
   - name: extract facts from an Apache Airflow DAG file
     tools: [sparkforge_analyze_airflow_dag]
     cli: [analyze airflow-dag]
+    knowledge:
+      - knowledge/airflow/glue-operator.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
