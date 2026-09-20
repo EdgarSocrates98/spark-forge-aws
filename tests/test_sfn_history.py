@@ -276,6 +276,47 @@ def test_historico_incompleto_sai_nomeado_sem_perder_o_que_leu(tmp_path):
     assert len(_de(facts, "sfn.attempt")) == 3
 
 
+def test_tipo_desconhecido_no_meio_da_cadeia_nao_apaga_a_tentativa():
+    """A cadeia de `previousEventId` passa POR CIMA do evento que o extrator nao conhece.
+
+    `HistoryEventType` cresce: um tipo novo entre o `TaskStateEntered` e o
+    `TaskScheduled` e a API que andou, nao o artefato que quebrou. Descarta-lo da
+    travessia partia a cadeia (`chain_broken`) e zerava as tentativas do ramo inteiro
+    -- o extrator deixava de medir o que estava ali, por causa de um evento que nao
+    era sobre a tentativa. Ele continua FORA de tudo o mais, e a recusa continua saindo.
+    """
+    no_meio = {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+            _evento(3, 2, "EventoDoFuturo", 2),
+            _evento(4, 3, "TaskScheduled", 3, **_agendado()),
+            _evento(5, 4, "TaskSubmitted", 4, **_submetido({"JobRunId": "jr_meio"})),
+            _evento(6, 5, "TaskSucceeded", 9),
+            _evento(7, 6, "ExecutionSucceeded", 10),
+        ]
+    }
+    facts = extract_sfn_history(no_meio, "no-meio.json")
+
+    [tentativa] = _de(facts, "sfn.attempt")
+    assert tentativa.attrs["state_name"] == "Carga"
+    assert tentativa.attrs["result"] == "succeeded"
+    assert tentativa.subject["symbol"] == "Carga#1"
+    [corrida] = _de(facts, "sfn.job_run")
+    assert corrida.attrs["job_run_id"] == "jr_meio"
+
+    # A recusa continua ao lado: "a API cresceu" e informacao, nao ruido a esconder.
+    [falha] = _de(facts, "sfn.unresolved")
+    assert falha.attrs["reason"] == "event_type_unknown"
+    assert falha.attrs["type"] == "EventoDoFuturo"
+
+    # E ele nao entra em nada alem da travessia: a contagem de eventos so conta os
+    # lidos, e o instante final vem do ultimo evento CONHECIDO.
+    [execucao] = _de(facts, "sfn.execution")
+    assert execucao.measures["event_count"] == 6
+    assert execucao.attrs["status"] == "succeeded"
+
+
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     from sparkforge.adapters.cli import main
     from sparkforge.adapters.tools import call_tool

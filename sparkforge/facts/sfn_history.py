@@ -413,9 +413,21 @@ def _finish(facts: list[Fact], path: str, provenance: dict[str, Any]) -> list[Fa
     return sort_facts(facts)
 
 
-def _valida_eventos(brutos: list[Any], leitura: _Leitura) -> list[dict[str, Any]]:
-    """Os eventos que sao objeto com `id` inteiro. O resto sai nomeado."""
+def _valida_eventos(
+    brutos: list[Any], leitura: _Leitura
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """(limpos, com_id). O resto sai nomeado.
+
+    `limpos` sao os eventos que o extrator LE: objeto, com `id` inteiro, e de tipo
+    conhecido. `com_id` e mais amplo de proposito -- objeto com `id` inteiro, inclusive
+    o de tipo desconhecido --, e serve SO para a travessia da cadeia de
+    `previousEventId`. Um tipo que a lista publicada nao tem e a API que cresceu, nao o
+    artefato que quebrou: descarta-lo da travessia partiria a cadeia num
+    `chain_broken` e apagaria as tentativas do ramo inteiro. Ele continua fora de
+    `ordenados`, das contagens e de todo fact -- e a recusa continua saindo.
+    """
     limpos: list[dict[str, Any]] = []
+    com_id: list[dict[str, Any]] = []
     for indice, bruto in enumerate(brutos):
         if not isinstance(bruto, dict):
             leitura.facts.append(
@@ -438,6 +450,7 @@ def _valida_eventos(brutos: list[Any], leitura: _Leitura) -> list[dict[str, Any]
                 )
             )
             continue
+        com_id.append(bruto)
         if str(bruto.get("type")) not in _TIPOS_CONHECIDOS:
             leitura.facts.append(
                 _unresolved(
@@ -450,7 +463,7 @@ def _valida_eventos(brutos: list[Any], leitura: _Leitura) -> list[dict[str, Any]
             )
             continue
         limpos.append(bruto)
-    return limpos
+    return limpos, com_id
 
 
 def _desfecho_da_execucao(eventos: list[dict[str, Any]]) -> tuple[str, str]:
@@ -471,8 +484,11 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
         return _finish([falha], path, provenance)
 
     leitura = _Leitura(path=path, provenance=provenance)
-    eventos = _valida_eventos(brutos, leitura)
-    por_id = {int(e["id"]): e for e in eventos}
+    eventos, com_id = _valida_eventos(brutos, leitura)
+    # `por_id` e a travessia, e leva TODO evento com `id` -- inclusive o de tipo
+    # desconhecido, para que ele nao parta a cadeia. `ordenados` e a leitura, e leva so
+    # os de tipo conhecido.
+    por_id = {int(e["id"]): e for e in com_id}
     ordenados = sorted(eventos, key=lambda e: int(e["id"]))
     status, classe = _desfecho_da_execucao(ordenados)
 
