@@ -53,6 +53,13 @@ decisions:
     choice: "A prosa da area SF-SFNX e da SF-SFNX-001 passa a dizer que a contagem nao atravessa um redrive, e por que. Regra que afirma o que o extrator recusa foi achado IMPORTANTE em duas das tres features anteriores (#91 e #92), e a correcao entra no mesmo commit da mudanca de comportamento."
     rejected: ["Deixar a prosa para um commit de documentacao depois: e exatamente o que produziu os dois achados anteriores."]
     rollback: "git revert do commit da regra; o texto volta, e o golden dos findings e regenerado pelo caminho do proprio teste."
+  - id: D6
+    choice: "A recusa cala a NUMERACAO, nao o valor: no caminho de `state_name_in_concurrent_branches` o `sfn.job_run` continua saindo, com `subject.symbol` igual ao nome do estado SEM o `#<n>` e sem `attempt_index` nas `measures`. O `JobRunId` e um VALOR que o arquivo publica literalmente, nao uma ordem, e e a unica ponte para o `finops`. Decidido pelo operador em 2026-09-20, depois que a revisao final mediu o alcance real: iteracoes de um `Map` INLINE divergem no `MapStateStarted` comum exatamente como ramos de um `Parallel`, entao todo estado dentro de um `Map` cai na recusa -- 400 iteracoes produziam 400 tentativas e passaram a produzir zero, com os `JobRunId` indo junto."
+    rejected:
+      - "Declarar a perda e seguir: menor diff, e cortaria a ponte para o `finops` em todo job com `Map` ou `Parallel`, por um defeito que e so de ORDEM."
+      - "Restringir a recusa ao `Parallel`, exigindo que o ancestral comum seja um `ParallelStateStarted`: `Map` inline voltaria a ser numerado com o mesmo indice errado que a feature existe para tirar."
+      - "Emitir so o `sfn.job_run` legivel e calar o ilegivel: afirmacao parcial, que a regra 20 proibe. As duas recusas de leitura do `output` saem no mesmo caminho."
+    rollback: "git revert do commit do F2; o `sfn.job_run` volta a ser calado junto com a tentativa, e as fixtures `map_inline_iteracoes` e `parallel_estado_homonimo` voltam pelo golden regenerado."
 covers:
   - {part: "tipos conhecidos e a razao do redrive", acceptance: [AC1]}
   - {part: "recusa do confronto na derivacao", acceptance: [AC2]}

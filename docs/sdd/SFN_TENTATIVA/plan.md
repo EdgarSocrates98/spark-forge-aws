@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/SFN_TENTATIVA/design.md
-  sha256: "8734aee895b2bda59de194f2c173d470cf7b5350cd5d602cfcf82a917fed9c14"
+  sha256: "2b1c5a1dac4929640b309954ebb6f9ed47d153c1ceddac8259b03569f5ed4d26"
 tasks:
   - id: T1
     files: [tests/test_sfn_history.py, sparkforge/facts/sfn_history.py, rules/catalog/sfn-history.yaml, fixtures/sfn_history/retry_acima_do_declarado/expected/findings.json, docs/guia/usos/step-functions.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]
