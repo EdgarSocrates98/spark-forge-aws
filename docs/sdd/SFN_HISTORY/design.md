@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/SFN_HISTORY/define.md
-  sha256: "7689f8a81b9dfa2c7bd9398bca5abdeec47d1a814240ad575e917e16cd18410a"
+  sha256: "3bf9ee33edd322694a301a5e7be794ab9e831c94d1110c12db3fc5f98ffef818"
 files:
   - {path: sparkforge/facts/sfn_history.py, action: create, reason: "extrator do historico (sfn.execution, sfn.attempt, sfn.job_run, sfn.unresolved, sfn.analyzed) e a derivacao pura sfn.retry_observado (D1, D2, D5)"}
   - {path: tests/test_sfn_history.py, action: create, reason: "AC1, AC2, AC3 e AC7"}
@@ -59,6 +59,7 @@ files:
   - {path: docs/harness/AUTHORIZATION-CHAIN.md, action: modify, reason: "alegacoes de len(TOOLS)"}
   - {path: docs/harness/CURRENT-HARNESS-GAP.md, action: modify, reason: "alegacoes de contagem"}
   - {path: docs/harness/ICEBERG-GAP.md, action: modify, reason: "alegacao da contagem de fontes vigiadas"}
+  - {path: docs/gates-por-mudanca.md, action: modify, reason: "a secao do criterio de dominio cita os dominios que entraram por artefato"}
   - {path: docs/claims.lock.json, action: modify, reason: "arquivo .py novo e contagens movem alegacoes"}
 decisions:
   - id: D1

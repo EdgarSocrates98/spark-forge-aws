@@ -34,8 +34,8 @@ acceptance:
     statement: "sparkforge analyze sfn-history --path le arquivo ou diretorio e devolve os facts, e a tool MCP sparkforge_analyze_sfn_history faz o mesmo."
     verified_by: {kind: test, ref: "tests/test_sfn_history.py::test_cli_e_tool_devolvem_os_mesmos_facts"}
   - id: AC8
-    statement: "A area SF-SFNX passa pelo criterio de dominio: regra que julga, coordenador que a declara e rota por findings_area."
-    verified_by: {kind: test, ref: "tests/test_criterio_de_dominio.py::test_todo_coordenador_tem_rota_por_artefato"}
+    statement: "A area SF-SFNX passa pelo criterio de dominio: regra que julga, coordenador que a declara (o teste que fica vermelho sem a area) e rota por findings_area."
+    verified_by: {kind: test, ref: "tests/test_criterio_de_dominio.py::test_todo_coordenador_declara_area_que_julga"}
   - id: AC9
     statement: "knowledge/stepfunctions/execution-history.md registra as frases citadas da pagina da API lida em 2026-09-19, o que cada evento sustenta, e as lacunas; o bundle offline continua integro."
     verified_by: {kind: command, ref: "python scripts/verify_offline_bundle.py"}
