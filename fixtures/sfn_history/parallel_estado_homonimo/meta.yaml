@@ -2,8 +2,11 @@ name: parallel_estado_homonimo
 proves: >
   AC3. Dois ramos de um `Parallel` com um estado chamado `Carga` em cada: as entradas
   (ids 9 e 10) apontam para o MESMO `ParallelStateStarted` e nenhuma esta na cadeia da
-  outra. Nenhum `sfn.attempt` de `Carga` e emitido, nenhum `sfn.job_run` dela e ligado,
-  e sai `sfn.unresolved: state_name_in_concurrent_branches` com o nome. Antes, o
+  outra. Nenhum `sfn.attempt` de `Carga` e emitido, e sai
+  `sfn.unresolved: state_name_in_concurrent_branches` com o nome. O `sfn.job_run` de
+  cada ramo CONTINUA saindo (decisao do operador, 2026-09-20): a recusa cala a ORDEM, e
+  o `JobRunId` e um valor lido do arquivo, nao uma ordem -- sai com o simbolo sem
+  `#<n>`, sem `attempt_index` e com `submitted_event_id` como discriminador. Antes, o
   segundo ramo saia com `attempt_index: 2` -- um indice que o arquivo nao sustenta, e
   que e o `subject.symbol` por onde SF-SFNX-002 e SF-SFNX-003 apontam o achado. O
   estado de nome UNICO do mesmo historico (`Preparacao`) continua virando tentativa com
