@@ -12,11 +12,11 @@
       "file": "carga_diaria.py",
       "line": 15,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_404c6b"
+      "f_86cc59"
     ],
     "measured": {
       "retries_effective": 0

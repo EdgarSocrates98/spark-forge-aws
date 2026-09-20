@@ -84,7 +84,7 @@
     }
   },
   {
-    "id": "f_404c6b",
+    "id": "f_86cc59",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -92,7 +92,7 @@
       "file": "carga_diaria.py",
       "line": 15,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {
@@ -125,7 +125,7 @@
     }
   },
   {
-    "id": "f_af01d1",
+    "id": "f_4d023d",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -133,7 +133,7 @@
       "file": "carga_diaria.py",
       "line": 20,
       "col": 15,
-      "symbol": "publicar",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {

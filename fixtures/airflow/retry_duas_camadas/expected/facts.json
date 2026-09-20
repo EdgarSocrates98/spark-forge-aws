@@ -57,7 +57,7 @@
     }
   },
   {
-    "id": "f_eb12a4",
+    "id": "f_cc1025",
     "schema_version": 1,
     "kind": "af.glue_job_link",
     "subject": {
@@ -65,7 +65,7 @@
       "file": "carga_com_retry.py",
       "line": 16,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {
@@ -84,14 +84,14 @@
       "artifact_sha256": "",
       "extractor": "airflow_dag@0.1.0",
       "derived_from": [
-        "f_ecb39c",
+        "f_b36dcd",
         "f_ad6896",
         "f_a84f22"
       ]
     }
   },
   {
-    "id": "f_ecb39c",
+    "id": "f_b36dcd",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -99,7 +99,7 @@
       "file": "carga_com_retry.py",
       "line": 16,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {

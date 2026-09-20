@@ -12,11 +12,11 @@
       "file": "carga_com_timeout.py",
       "line": 14,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_295673"
+      "f_8e9b27"
     ],
     "measured": {
       "retries_effective": 0,

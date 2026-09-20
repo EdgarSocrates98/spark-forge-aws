@@ -57,7 +57,7 @@
     }
   },
   {
-    "id": "f_b56fcd",
+    "id": "f_bc3797",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -65,7 +65,7 @@
       "file": "dispara_com_prazo.py",
       "line": 14,
       "col": 15,
-      "symbol": "disparar",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {

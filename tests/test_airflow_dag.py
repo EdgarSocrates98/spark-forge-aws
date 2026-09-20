@@ -50,7 +50,26 @@ with DAG(
 
 
 def _por_kind(facts, kind):
-    return {f.subject["symbol"]: f for f in facts if f.kind == kind}
+    """As tasks por `task_id`: o `subject` da `af.task` nao afirma simbolo.
+
+    Ver `test_o_subject_da_task_nao_afirma_simbolo_de_codigo`: a task ancora
+    localizacao, e quem carrega o `task_id` e `attrs`.
+    """
+    return {f.attrs["task_id"]: f for f in facts if f.kind == kind}
+
+
+def _task_id_derivado(facts, fact):
+    """O `task_id` da `af.task` de que ESTE fact derivou, pela propria procedencia.
+
+    Os facts de `build_af_glue_link` copiam o subject da task, que nao nomeia a
+    task. `provenance.derived_from` e a referencia que sobra -- e a mesma que a
+    derivacao declara.
+    """
+    tasks = {f.id: f for f in facts if f.kind == "af.task"}
+    for origem in (fact.provenance or {}).get("derived_from", []):
+        if origem in tasks:
+            return tasks[origem].attrs["task_id"]
+    return ""
 
 
 def test_dag_vira_fact_com_operador_e_argumentos_literais():
@@ -124,6 +143,27 @@ def test_dag_vira_fact_com_operador_e_argumentos_literais():
         "dependency_count": 2,
         "unresolved_count": 1,
     }
+
+
+def test_o_subject_da_task_nao_afirma_simbolo_de_codigo():
+    """`task_id` e variavel de modulo, e `subject.symbol` promete SIMBOLO indexado.
+
+    O gold set de recuperacao (`sparkforge/economy/goldset.py`) segue a cadeia
+    `finding.evidence -> fact.subject.{file, symbol}` e exige que o simbolo
+    exista no indice de codigo daquele arquivo `.py`. Um `task_id` ali dentro
+    pede do pack um `def`/`class` que nunca existiu, e a ancora nao fecha.
+
+    A task se identifica por LOCALIZACAO -- `file` e `line` --, que e o que
+    `_subject_group_key` usa quando nao ha `symbol`, e e o mesmo recorte do
+    `sfn.task`. O `task_id` continua em `attrs`, onde a regra o le.
+    """
+    facts = extract_airflow_dag(DAG_COM_TRES_TASKS, "dags/carga_diaria.py")
+
+    tasks = [f for f in facts if f.kind == "af.task"]
+    assert {t.attrs["task_id"] for t in tasks} == {"carga", "enriquecer", "publicar"}
+    assert {t.subject["symbol"] for t in tasks} == {""}
+    # A identidade nao sumiu: a linha separa as tres tasks do mesmo arquivo.
+    assert len({(t.subject["file"], t.subject["line"]) for t in tasks}) == 3
 
 
 def test_dependencias_viram_fact_e_o_que_nao_le_sai_nomeado(tmp_path):
@@ -320,7 +360,9 @@ def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
     fundidos = fuse(so_dag + so_tf)
 
     [link] = [f for f in fundidos if f.kind == "af.glue_job_link"]
-    assert link.subject["symbol"] == "ligada"
+    # O vinculo herda o subject da task: localizacao, sem simbolo afirmado.
+    assert link.subject == _por_kind(fundidos, "af.task")["ligada"].subject
+    assert _task_id_derivado(fundidos, link) == "ligada"
     assert link.attrs["resource"] == "aws_glue_job.carga_diaria"
     assert link.attrs["job_name"] == "carga-diaria"
     assert link.attrs["glue_max_retries_source"] == "literal"
@@ -328,7 +370,7 @@ def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
     assert len(link.provenance["derived_from"]) == 3
 
     motivos = {
-        f.subject["symbol"]: f.attrs["reason"]
+        _task_id_derivado(fundidos, f): f.attrs["reason"]
         for f in fundidos
         if f.kind == "af.unresolved" and f.attrs["reason"] != "arg_nao_literal"
     }
@@ -338,8 +380,9 @@ def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
     }
 
     achados = judge(fundidos, load_catalog(), RUNTIME_GLUE)
-    quatro = [a.subject["symbol"] for a in achados if a.rule_id == "SF-AIRFLOW-004"]
-    assert quatro == ["ligada"]
+    [quatro] = [a for a in achados if a.rule_id == "SF-AIRFLOW-004"]
+    # O achado aponta a LOCALIZACAO da task `ligada`, nao um simbolo de codigo.
+    assert quatro.subject == _por_kind(fundidos, "af.task")["ligada"].subject
 
     # fuse sem Terraform no pool nao inventa vinculo
     assert not [f for f in fuse(so_dag) if f.kind == "af.glue_job_link"]
@@ -445,7 +488,7 @@ def test_a_derivacao_nomeia_o_terraform_ambiguo_e_o_max_retries_nao_literal(tmp_
         + extract_terraform_tree(tmp_path, repo_root=tmp_path)
     )
     ambiguo = [f for f in fundidos if (f.attrs or {}).get("reason") == "job_definition_ambiguous"]
-    assert [f.subject["symbol"] for f in ambiguo] == ["ligada"]
+    assert [_task_id_derivado(fundidos, f) for f in ambiguo] == ["ligada"]
     assert ambiguo[0].attrs["resources"] == [
         "aws_glue_job.carga_diaria",
         "aws_glue_job.carga_diaria_bis",
@@ -468,7 +511,7 @@ def test_a_derivacao_nomeia_o_terraform_ambiguo_e_o_max_retries_nao_literal(tmp_
     assert link.attrs["glue_max_retries_source"] == "not_literal"
     assert "glue_max_retries" not in link.measures
     assert [
-        f.subject["symbol"]
+        _task_id_derivado(fundidos, f)
         for f in fundidos
         if (f.attrs or {}).get("reason") == "glue_max_retries_not_literal"
     ] == ["ligada"]

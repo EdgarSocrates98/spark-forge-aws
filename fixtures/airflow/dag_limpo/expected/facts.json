@@ -57,7 +57,7 @@
     }
   },
   {
-    "id": "f_1bfb37",
+    "id": "f_1c3b46",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -65,7 +65,7 @@
       "file": "carga_limpa.py",
       "line": 14,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {

@@ -57,7 +57,7 @@
     }
   },
   {
-    "id": "f_295673",
+    "id": "f_8e9b27",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -65,7 +65,7 @@
       "file": "carga_com_timeout.py",
       "line": 14,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {

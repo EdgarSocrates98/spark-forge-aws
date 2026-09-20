@@ -57,7 +57,7 @@
     }
   },
   {
-    "id": "f_65c17f",
+    "id": "f_29a00c",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -65,7 +65,7 @@
       "file": "carga_sincrona.py",
       "line": 14,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {

@@ -12,11 +12,11 @@
       "file": "carga_com_retry.py",
       "line": 16,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_eb12a4"
+      "f_cc1025"
     ],
     "measured": {
       "airflow_retries_effective": 2,

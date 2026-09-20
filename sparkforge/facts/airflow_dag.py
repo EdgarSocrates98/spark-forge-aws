@@ -19,9 +19,11 @@ E o prefixo curto de Airflow, e nenhum kind existente comeca com ele (D1).
 - `af.dag` -- um por chamada `DAG(...)` lida. `attrs.dag_id` e `attrs.schedule` so
   aparecem quando sao literais; `measures.default_retries` e
   `measures.default_execution_timeout_seconds`, quando `default_args` e legivel.
-- `af.task` -- um por operador instanciado. `subject.symbol` e o `task_id` literal
-  quando ha um, senao o nome da variavel; `attrs.var_name` traz sempre o nome da
-  variavel, que e por onde as dependencias se referem a task.
+- `af.task` -- um por operador instanciado. O `subject` NAO afirma simbolo: ancora
+  `file` e `line`, como o `sfn.task` faz, porque `task_id` e variavel de modulo e
+  `subject.symbol` promete simbolo que o indice de codigo tem. `attrs.task_id` traz
+  o `task_id` literal quando ha um, e `attrs.var_name` sempre o nome da variavel,
+  que e por onde as dependencias se referem a task.
 - `af.dependency` -- um por elo declarado por `>>`, `<<`, `set_downstream` ou
   `set_upstream`, com `attrs.form` dizendo qual das quatro formas o declarou.
 - `af.unresolved` -- o que nao deu para ler. Razoes: `invalid_python`, `read_error`,
@@ -799,7 +801,13 @@ def _emite_tarefas(leitura: _Leitura) -> None:
         leitura.facts.append(
             Fact(
                 kind="af.task",
-                subject=_node_subject(leitura.path, tarefa.node, tarefa.symbol),
+                # Sem `symbol`: `task_id` e variavel de modulo, e `subject.symbol`
+                # promete simbolo INDEXADO daquele arquivo (`economy/goldset.py`
+                # segue `evidence -> subject.{file, symbol}` e o exige no indice).
+                # A task se identifica por localizacao, como `sfn.task`; o
+                # `task_id` mora em `attrs`, e o agrupamento interno abaixo
+                # continua usando `tarefa.symbol`, que nunca sai no fact.
+                subject=_node_subject(leitura.path, tarefa.node, ""),
                 measures=dict(tarefa.measures),
                 attrs=attrs,
                 provenance=leitura.provenance,

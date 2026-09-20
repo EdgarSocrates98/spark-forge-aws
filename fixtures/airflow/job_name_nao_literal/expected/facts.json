@@ -57,7 +57,7 @@
     }
   },
   {
-    "id": "f_83f33e",
+    "id": "f_6ff721",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
@@ -65,7 +65,7 @@
       "file": "carga.py",
       "line": 14,
       "col": 12,
-      "symbol": "carga",
+      "symbol": "",
       "snippet": ""
     },
     "measures": {
@@ -97,6 +97,33 @@
     }
   },
   {
+    "id": "f_84305c",
+    "schema_version": 1,
+    "kind": "af.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "job_name_dynamic",
+      "job_name_source": "jinja",
+      "unblocked_by": "`job_name` escrito como string literal na task"
+    },
+    "provenance": {
+      "artifact": "carga.py",
+      "artifact_sha256": "",
+      "extractor": "airflow_dag@0.1.0",
+      "derived_from": [
+        "f_6ff721"
+      ]
+    }
+  },
+  {
     "id": "f_f33ae3",
     "schema_version": 1,
     "kind": "af.unresolved",
@@ -119,33 +146,6 @@
       "artifact": "carga.py",
       "artifact_sha256": "33017257348bd1291a93d06398af87a74c2aae6a5e7c218563ab7e57990b5b95",
       "extractor": "airflow_dag@0.1.0"
-    }
-  },
-  {
-    "id": "f_f33ae3",
-    "schema_version": 1,
-    "kind": "af.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "carga.py",
-      "line": 14,
-      "col": 12,
-      "symbol": "carga",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "reason": "job_name_dynamic",
-      "job_name_source": "jinja",
-      "unblocked_by": "`job_name` escrito como string literal na task"
-    },
-    "provenance": {
-      "artifact": "carga.py",
-      "artifact_sha256": "",
-      "extractor": "airflow_dag@0.1.0",
-      "derived_from": [
-        "f_83f33e"
-      ]
     }
   },
   {
