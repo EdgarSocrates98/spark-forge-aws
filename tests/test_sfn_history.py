@@ -684,13 +684,55 @@ def test_tentativa_que_nao_e_glue_sai_em_recusa_nomeada():
     assert recusa.attrs["observed"] == ["aws-sdk:glue:startJobRun"]
     assert recusa.measures["attempt_count"] == 1
 
-    # E com `glue:startJobRun` no pool, ela nao sai: recusa que aparece em todo case
-    # nao informa nada.
+    # E com `glue:startJobRun` NAQUELE artefato, ela nao sai: recusa que aparece em todo
+    # case nao informa nada.
     com_glue = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
     motivos = {
         f.attrs["reason"] for f in fuse(com_glue) if f.kind == "sfn.unresolved"
     }
     assert "glue_attempt_absent" not in motivos
+
+
+def test_recusa_de_glue_ausente_e_por_artefato_e_nao_pelo_pool():
+    """A lacuna de UM arquivo nao fica calada porque OUTRO arquivo tem Glue (B0).
+
+    A derivacao ja chaveia o lado medido por `(artefato, nome do estado)`, porque retry
+    e orcamento de uma execucao. A recusa tem de estar na mesma granularidade: com o
+    arquivo A cheio de `glue:startJobRun` e o arquivo B so de `aws-sdk:glue`, condicionar
+    a recusa ao POOL deixaria a lacuna de B silenciosa -- e a regra 20 pede o contrario.
+    """
+    from sparkforge.facts.fusion import fuse
+
+    pelo_sdk = {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+            _evento(
+                3,
+                2,
+                "TaskScheduled",
+                2,
+                taskScheduledEventDetails={
+                    "resource": "startJobRun",
+                    "resourceType": "aws-sdk:glue",
+                },
+            ),
+            _evento(4, 3, "TaskSucceeded", 9),
+            _evento(5, 4, "ExecutionSucceeded", 10),
+        ]
+    }
+    com_glue = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
+    sem_glue = extract_sfn_history(pelo_sdk, "pelo-sdk.json")
+
+    recusas = [
+        f
+        for f in fuse(com_glue + sem_glue)
+        if f.kind == "sfn.unresolved" and f.attrs["reason"] == "glue_attempt_absent"
+    ]
+    # UMA recusa, e e a do artefato que nao tem Glue -- nao a do pool inteiro.
+    assert [f.subject["file"] for f in recusas] == ["pelo-sdk.json"]
+    assert recusas[0].attrs["observed"] == ["aws-sdk:glue:startJobRun"]
+    assert recusas[0].measures["attempt_count"] == 1
 
 
 def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):

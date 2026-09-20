@@ -44,8 +44,10 @@ kinds, nao cinco.
   casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
   ASL declara, e `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
   `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`,
-  `declared_ceiling_unreadable` e `glue_attempt_absent` (ha tentativa medida, e nenhuma
-  delas e `glue:startJobRun` -- a unica integracao que o confronto sabe julgar).
+  `declared_ceiling_unreadable` e `glue_attempt_absent` (um ARTEFATO tem tentativa
+  medida, e nenhuma delas e `glue:startJobRun` -- a unica integracao que o confronto
+  sabe julgar; a recusa e por artefato, e nao pelo pool, pela mesma razao que o lado
+  medido e chaveado por `(artefato, nome do estado)`).
 
 ## Como uma tentativa e PAREADA, e por que pela cadeia
 
@@ -842,7 +844,7 @@ def _glue_por_execucao(facts: Sequence[Fact]) -> dict[tuple[str, str], list[Fact
 
 
 def _glue_attempt_absent(facts: Sequence[Fact]) -> list[Fact]:
-    """A recusa de quando ha tentativa medida e NENHUMA delas e `glue:startJobRun`.
+    """A recusa do ARTEFATO cujas tentativas nao tem nenhuma `glue:startJobRun`.
 
     O confronto de retry so sabe julgar essa integracao, e o filtro nao alcanca as
     outras formas de chamar o mesmo servico -- a integracao `aws-sdk`, por exemplo,
@@ -852,6 +854,13 @@ def _glue_attempt_absent(facts: Sequence[Fact]) -> list[Fact]:
     de "esta tudo bem". Uma recusa por ARTEFATO, que e a unidade que o operador aponta,
     NOMEANDO `<servico>:<api>` de cada tentativa daquele arquivo -- e dai que sai o
     proximo passo, porque e a lista do que o filtro teria de alcancar.
+
+    A GRANULARIDADE E A MESMA DA DERIVACAO, e por isso a condicao e por artefato e nao
+    pelo pool: `_glue_por_execucao` ja chaveia o lado medido por
+    `(artefato, nome do estado)`. Olhar o pool deixaria a lacuna do arquivo B silenciosa
+    so porque o arquivo A, ao lado dele no mesmo case, tem `glue:startJobRun` -- a
+    mesma regra 20 quebrada um grau abaixo. O artefato que TEM Glue nao ganha recusa
+    nenhuma: ele tem confronto.
     """
     por_artefato: dict[str, list[Fact]] = {}
     for fact in facts:
@@ -859,8 +868,14 @@ def _glue_attempt_absent(facts: Sequence[Fact]) -> list[Fact]:
             continue
         artefato = str((fact.provenance or {}).get("artifact") or "")
         por_artefato.setdefault(artefato, []).append(fact)
+    com_glue = {
+        str((fact.provenance or {}).get("artifact") or "")
+        for _, fact in _glue_de_kind(facts, "sfn.attempt")
+    }
     saida: list[Fact] = []
     for artefato in sorted(por_artefato):
+        if artefato in com_glue:
+            continue
         grupo = por_artefato[artefato]
         observados = sorted(
             {
@@ -914,13 +929,13 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     `dpu_seconds` medido.
     """
     tentativas = _glue_por_execucao(facts)
-    if not tentativas:
-        # Ha `sfn.attempt` no pool (o `fuse` so chama esta funcao quando ha), e nenhum
-        # deles e `glue:startJobRun`. A lacuna sai com nome, nunca uma lista vazia.
-        return sort_facts(_glue_attempt_absent(facts))
     declaradas = _glue_por_estado(facts, "sfn.task")
     ha_asl = any(f.kind == "sfn.task" for f in facts)
-    saida: list[Fact] = []
+    # A recusa sai ANTES do confronto e e por ARTEFATO, nao pelo pool: um arquivo cujas
+    # tentativas nao tem nenhuma `glue:startJobRun` nao fica calado porque OUTRO arquivo
+    # do case tem. Quando nenhum artefato tem Glue, `tentativas` fica vazio e isto e
+    # tudo o que sai -- nunca uma lista vazia em silencio.
+    saida: list[Fact] = _glue_attempt_absent(facts)
     for artefato, nome in sorted(tentativas):
         # Pelo INDICE da tentativa, com `f.id` so como desempate estavel. `Fact.id` e
         # sha1 do conteudo -- ordem de hash, nao ordem de tentativa --, e com ele
