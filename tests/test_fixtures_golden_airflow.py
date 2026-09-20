@@ -37,6 +37,8 @@ REQUIRED_FIXTURES = {
     "sem_espera",
     # SF-AIRFLOW-002: execution_timeout declarado e stop_job_run_on_kill ausente.
     "timeout_sem_stop",
+    # O negativo da espera na SF-AIRFLOW-002: os dois sinais, sem esperar o job.
+    "timeout_sem_espera",
     # SF-AIRFLOW-003: espera o job sem deferrable.
     "espera_sincrona",
     # SF-AIRFLOW-004: DAG + o aws_glue_job com max_retries 2.

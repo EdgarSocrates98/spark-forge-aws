@@ -787,12 +787,15 @@ rules:
         - {findings_area: SF-SFN, count_gt: 0}
     recommended_agent: glue-infra-reviewer
     reason: >
-      A state machine que dispara o job decide se o fluxo espera o job terminar e
-      quantas vezes uma falha reexecuta o job inteiro. O conserto mora na definicao ASL
-      e no `max_retries` do `aws_glue_job` -- os dois artefatos de infraestrutura que
-      este coordenador ja le --, e nao no codigo do job.
+      A state machine que dispara o job decide se o fluxo espera o job terminar, e ela e
+      o segundo lugar onde a retentativa do job esta declarada -- o `max_retries` do
+      `aws_glue_job` e o primeiro. Quantas vezes uma falha reexecuta o job inteiro e o
+      que a documentacao NAO diz (U1 de `docs/sdd/STEP_FUNCTIONS/define.md`): o que se
+      afirma e que as duas camadas existem sobre o mesmo job. O conserto mora na
+      definicao ASL e no Terraform -- os dois artefatos de infraestrutura que este
+      coordenador ja le --, e nao no codigo do job.
 
-  # SF-AIRFLOW entrou com `docs/sdd/AIRFLOW_DAG/` (2026-09-20) e ganha ENTRADA PROPRIA
+  # SF-AIRFLOW entrou com `docs/sdd/AIRFLOW_DAG/` (2026-09-19) e ganha ENTRADA PROPRIA
   # pelo motivo de sempre: `rule_areas` do agente NAO roteia, e `findings_area` conta
   # por prefixo exato do `rule_id` ate o ultimo hifen.
   #
@@ -810,11 +813,14 @@ rules:
         - {findings_area: SF-AIRFLOW, count_gt: 0}
     recommended_agent: glue-infra-reviewer
     reason: >
-      O DAG que dispara o job decide se o fluxo espera o job terminar, o que acontece
-      com o JobRun quando a task e morta, se a espera segura um slot de worker, e
-      quantas vezes uma falha reexecuta o job inteiro. O conserto mora no arquivo do DAG
-      e no `max_retries` do `aws_glue_job` -- artefato de infraestrutura, que este
-      coordenador ja le --, e nao no codigo do job.
+      O DAG que dispara o job decide se o fluxo espera o job terminar, se o operador
+      pede a parada do JobRun quando a task e morta, e se a espera segura um slot de
+      worker. Ele e tambem o segundo lugar onde a retentativa do job esta declarada --
+      quantas vezes uma falha reexecuta o job inteiro e o que a documentacao NAO diz (U1
+      de `docs/sdd/AIRFLOW_DAG/define.md`), e o que se afirma e que as duas camadas
+      existem sobre o mesmo job. O conserto mora no arquivo do DAG e no `max_retries` do
+      `aws_glue_job` -- artefato de infraestrutura, que este coordenador ja le --, e nao
+      no codigo do job.
 
 fallback:
   recommended_skill: sparkforge-diagnose

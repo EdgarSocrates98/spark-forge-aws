@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/AIRFLOW_DAG/design.md
-  sha256: "fe564b871bdc9c32ff5a7f3667afcb65c9faf431b04e42cd78b3d835c59226db"
+  sha256: "cab63e877c117ac89954b53077f1fdb212bb12555e135ca62d4de9761cedca0e"
 tasks:
   - id: T1
     files: [sparkforge/facts/airflow_dag.py, tests/test_airflow_dag.py, docs/superpowers/STATUS.md, README.md, docs/guia/06-extrair-julgar-compor.md, docs/harness/CODEINTEL-GAP.md, docs/claims.lock.json]

@@ -219,7 +219,7 @@ O roteamento deve se basear no artefato e na evidência. PySpark/Glue/EMR exigem
 
 Se faltar código, plano, log, schema, metadado, listagem S3, DAG, state machine, Terraform ou contrato funcional, peça o artefato ou registre `unresolved`. Nunca invente uma configuração.
 
-Airflow, Step Functions, Lambda e DynamoDB não têm coordenador dedicado desde 2026-09-19 (feature `docs/sdd/SF_STUBS/`, que removeu a camada `sf-*`/`agentic-sf-*` oca que cobria essas áreas sem produzir finding). A resposta para esses domínios é `unresolved`, nomeando o artefato que faltaria para respondê-los.
+Lambda e DynamoDB não têm coordenador dedicado desde 2026-09-19 (feature `docs/sdd/SF_STUBS/`, que removeu a camada `sf-*`/`agentic-sf-*` oca que cobria essas áreas sem produzir finding). A resposta para esses dois domínios é `unresolved`, nomeando o artefato que faltaria para respondê-los. Step Functions e Airflow saíram dessa lista quando ganharam área de regra que julga artefato e rota determinística: `SF-SFN` com `AGENT-086` (feature `docs/sdd/STEP_FUNCTIONS/`) e `SF-AIRFLOW` com `AGENT-087` (feature `docs/sdd/AIRFLOW_DAG/`), as duas roteadas por `findings_area` para `glue-infra-reviewer`.
 
 ## 12. Testes e gates
 

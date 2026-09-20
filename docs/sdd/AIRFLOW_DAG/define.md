@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/AIRFLOW_DAG/explore.md
-  sha256: "ff72cb42c4a1088421f9ec859d2850b2b4a4fb4c5d40ef84ad3cf8b94d9cfc88"
+  sha256: "8fe3edb8e268b552a468d495ab294975dc0467572b2943e07c529b5f8ebbd604"
 hypothesis:
   claim: "O arquivo .py de um DAG basta, lido por AST, para julgar como ele dispara um job Glue: se espera o job, se o mata junto com a task, se segura o worker enquanto espera, e, cruzado com a definicao Terraform do job pelo job_name literal, se ha duas camadas de retry sobre o mesmo job."
   prediction: "Sobre fixtures sinteticas, cada uma das quatro regras novas dispara na fixture que a reproduz e fica calada nas negativas (DAG com wait_for_completion default e sem retry, e DAG que so o Glue retenta); argumento nao literal (variavel, f-string, chamada) e DAG gerado em laco saem af.unresolved nomeado, nunca como fact afirmado; o criterio de dominio passa com a area SF-AIRFLOW; e nenhum golden de achado existente muda. Se alguma regra ficar calada na sua fixture, disparar numa negativa, ou se algum golden de achado existente mudar, a afirmacao esta errada."
@@ -22,7 +22,7 @@ acceptance:
     statement: "SF-AIRFLOW-001 dispara quando um GlueJobOperator declara wait_for_completion=False e tem tarefa a jusante: a proxima task roda com o job ainda em execucao."
     verified_by: {kind: test, ref: "tests/test_fixtures_golden_airflow.py::test_golden"}
   - id: AC4
-    statement: "SF-AIRFLOW-002 dispara quando um GlueJobOperator tem execution_timeout declarado (na task ou em default_args) e stop_job_run_on_kill ausente ou False: o Airflow mata a task e o job Glue continua rodando e cobrando."
+    statement: "SF-AIRFLOW-002 dispara quando um GlueJobOperator espera o job (wait_for_completion ausente ou True), tem execution_timeout declarado (na task ou em default_args) e stop_job_run_on_kill ausente ou False: o Airflow mata a task e o operador NAO para o JobRun. O que acontece com o JobRun depois disso e a lacuna U3, e nem o AC nem a regra o afirmam."
     verified_by: {kind: test, ref: "tests/test_fixtures_golden_airflow.py::test_golden"}
   - id: AC5
     statement: "SF-AIRFLOW-003 dispara quando um GlueJobOperator espera o job (wait_for_completion ausente ou True) com deferrable ausente ou False: a espera segura um slot de worker pelo tempo do job."
@@ -37,7 +37,7 @@ acceptance:
     statement: "A area SF-AIRFLOW passa pelo criterio de dominio: regra que julga, coordenador que a declara e rota por findings_area."
     verified_by: {kind: test, ref: "tests/test_criterio_de_dominio.py::test_todo_coordenador_tem_rota_por_artefato"}
   - id: AC9
-    statement: "knowledge/airflow/glue-operator.md registra as frases citadas das paginas oficiais lidas em 2026-09-20 e as lacunas nomeadas, e o bundle offline continua integro."
+    statement: "knowledge/airflow/glue-operator.md registra as frases citadas das paginas oficiais lidas em 2026-09-19 e as lacunas nomeadas, e o bundle offline continua integro."
     verified_by: {kind: command, ref: "python scripts/verify_offline_bundle.py"}
   - id: AC10
     statement: "Os registros que extrator, regra, area, tool e documento de knowledge movem estao em dia."

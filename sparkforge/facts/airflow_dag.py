@@ -25,8 +25,8 @@ E o prefixo curto de Airflow, e nenhum kind existente comeca com ele (D1).
 - `af.dependency` -- um por elo declarado por `>>`, `<<`, `set_downstream` ou
   `set_upstream`, com `attrs.form` dizendo qual das quatro formas o declarou.
 - `af.unresolved` -- o que nao deu para ler. Razoes: `invalid_python`, `read_error`,
-  `size_above_limit`, `dag_dinamico`, `multiplos_dags`, `arg_nao_literal`,
-  `dependencia_dinamica` e `task_id_nao_literal`.
+  `size_above_limit`, `dag_dinamico`, `operador_em_funcao`, `taskflow_decorador`,
+  `multiplos_dags`, `arg_nao_literal`, `dependencia_dinamica` e `task_id_nao_literal`.
 - `af.analyzed` -- a sentinela, com as contagens.
 - `af.glue_job_link` -- DERIVADO, nunca lido de arquivo: `build_af_glue_link` liga a
   task do `GlueJobOperator` ao `aws_glue_job` de mesmo `name` quando os dois estao no
@@ -308,7 +308,14 @@ class _Escopo:
 
     def dinamico(self, node: ast.AST) -> bool:
         """DAG ou operador montado em laco, comprehension ou funcao: fora do alcance."""
-        return self.loop_depth.get(id(node), 0) > 0 or self.in_function.get(id(node), False)
+        return self.em_laco(node) or self.em_funcao(node)
+
+    def em_laco(self, node: ast.AST) -> bool:
+        return self.loop_depth.get(id(node), 0) > 0
+
+    def em_funcao(self, node: ast.AST) -> bool:
+        """Dentro de `def`/`async def` -- inclusive a funcao decorada com `@dag`."""
+        return self.in_function.get(id(node), False)
 
 
 def _alvos_de_atribuicao(tree: ast.AST) -> dict[int, str]:
@@ -388,6 +395,9 @@ def _le_dags(tree: ast.AST, leitura: _Leitura, escopo: _Escopo, alvos: dict[int,
             agenda_no, origem = _kwarg(node, "schedule_interval"), "schedule_interval"
         agenda = _literal(agenda_no)
         attrs["schedule_declared"] = agenda_no is not None
+        # A MARCA de literal sai sempre, como `dag_id_literal`: sem ela, `schedule`
+        # ausente por ser `schedule=VARIAVEL` seria indistinguivel de nao declarado.
+        attrs["schedule_literal"] = isinstance(agenda, str)
         attrs["schedule_source"] = origem if agenda_no is not None else "absent"
         if isinstance(agenda, str):
             attrs["schedule"] = agenda
@@ -596,13 +606,21 @@ def _le_operadores(tree: ast.AST, leitura: _Leitura, escopo: _Escopo,
             continue
         var = alvos.get(id(node), "")
         if escopo.dinamico(node):
+            # Laco e `def` sao lacunas DIFERENTES, e por isso tem razao diferente: o
+            # laco monta N tasks que nao se sabe contar, e a funcao (tipicamente a
+            # decorada com `@dag`) monta uma task que este extrator nao segue.
+            em_laco = escopo.em_laco(node)
             leitura.facts.append(
                 _unresolved(
                     _node_subject(leitura.path, node, var),
-                    "dag_dinamico",
+                    "dag_dinamico" if em_laco else "operador_em_funcao",
                     leitura.provenance,
                     at=classe,
-                    unblocked_by="operador instanciado no nivel de modulo, fora de laco e def",
+                    unblocked_by=(
+                        "operador instanciado no nivel de modulo, fora de laco e def"
+                        if em_laco
+                        else "operador instanciado no nivel de modulo, fora de `def`"
+                    ),
                 )
             )
             continue
@@ -741,7 +759,11 @@ def _le_dependencias(tree: ast.AST, leitura: _Leitura, escopo: _Escopo) -> None:
         if not isinstance(node, ast.Call):
             continue
         nome = _nome_chamado(node)
-        if nome in _FUNCOES_DE_DEPENDENCIA and not isinstance(node.func, ast.Attribute):
+        # `chain(a, b)` e `baseoperator.chain(a, b)` sao a MESMA declaracao, e o
+        # extrator nao le nenhuma das duas: sem este ramo, a forma com ponto sumia em
+        # silencio, porque `chain` nao esta em `_METODOS_DE_DEPENDENCIA`. As duas
+        # familias sao disjuntas, e por isso o nome basta para decidir.
+        if nome in _FUNCOES_DE_DEPENDENCIA:
             leitura.facts.append(
                 _unresolved(
                     _node_subject(leitura.path, node, ""),

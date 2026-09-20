@@ -50,7 +50,7 @@
     "sources": [
       {
         "url": "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html",
-        "retrieved": "2026-09-20"
+        "retrieved": "2026-09-19"
       },
       {
         "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html",

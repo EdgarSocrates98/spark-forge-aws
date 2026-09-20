@@ -94,6 +94,7 @@
       ]
     },
     "evidence_extractors": [
+      "airflow-dag",
       "athena-workgroup",
       "catalog-schema",
       "consumers",

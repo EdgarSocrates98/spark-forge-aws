@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_c1d3ad",
+    "id": "f_f46a2f",
     "schema_version": 1,
     "kind": "af.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "carga_sincrona.py",
+      "file": "dispara_com_prazo.py",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -19,21 +19,21 @@
     },
     "attrs": {},
     "provenance": {
-      "artifact": "carga_sincrona.py",
-      "artifact_sha256": "425103e9a7c9a5fcd3b153466e1adf196dfded469963af9285473483847c7a4f",
+      "artifact": "dispara_com_prazo.py",
+      "artifact_sha256": "d9645ab070f4d91657a9cf692d88ebf06c0218a20be290727e2f05aa171a355f",
       "extractor": "airflow_dag@0.1.0"
     }
   },
   {
-    "id": "f_dbbc18",
+    "id": "f_e24e87",
     "schema_version": 1,
     "kind": "af.dag",
     "subject": {
       "type": "source_location",
-      "file": "carga_sincrona.py",
+      "file": "dispara_com_prazo.py",
       "line": 7,
       "col": 5,
-      "symbol": "carga_sincrona",
+      "symbol": "dispara_com_prazo",
       "snippet": ""
     },
     "measures": {
@@ -41,50 +41,51 @@
     },
     "attrs": {
       "dag_id_literal": true,
-      "dag_id": "carga_sincrona",
+      "dag_id": "dispara_com_prazo",
       "schedule_declared": true,
       "schedule_literal": true,
       "schedule_source": "schedule",
-      "schedule": "@daily",
+      "schedule": "0 5 * * *",
       "default_args_source": "inline",
       "default_retries_declared": true,
       "default_execution_timeout_declared": false
     },
     "provenance": {
-      "artifact": "carga_sincrona.py",
-      "artifact_sha256": "425103e9a7c9a5fcd3b153466e1adf196dfded469963af9285473483847c7a4f",
+      "artifact": "dispara_com_prazo.py",
+      "artifact_sha256": "d9645ab070f4d91657a9cf692d88ebf06c0218a20be290727e2f05aa171a355f",
       "extractor": "airflow_dag@0.1.0"
     }
   },
   {
-    "id": "f_65c17f",
+    "id": "f_b56fcd",
     "schema_version": 1,
     "kind": "af.task",
     "subject": {
       "type": "source_location",
-      "file": "carga_sincrona.py",
+      "file": "dispara_com_prazo.py",
       "line": 14,
-      "col": 12,
-      "symbol": "carga",
+      "col": 15,
+      "symbol": "disparar",
       "snippet": ""
     },
     "measures": {
-      "retries_effective": 0
+      "retries_effective": 0,
+      "execution_timeout_seconds": 7200
     },
     "attrs": {
       "operator_class": "GlueJobOperator",
       "operator_family": "glue_job",
       "task_id_literal": true,
-      "var_name": "carga",
-      "task_id": "carga",
+      "var_name": "disparar",
+      "task_id": "disparar",
       "retries_source": "default_args",
       "retries_defaulted": false,
-      "execution_timeout_declared": false,
-      "execution_timeout_source": "absent",
+      "execution_timeout_declared": true,
+      "execution_timeout_source": "task",
       "job_name": "carga-diaria",
       "job_name_source": "literal",
-      "wait_for_completion_effective": true,
-      "wait_for_completion_defaulted": true,
+      "wait_for_completion_effective": false,
+      "wait_for_completion_defaulted": false,
       "deferrable_effective": false,
       "deferrable_defaulted": true,
       "stop_job_run_on_kill_effective": false,
@@ -92,8 +93,8 @@
       "has_downstream": false
     },
     "provenance": {
-      "artifact": "carga_sincrona.py",
-      "artifact_sha256": "425103e9a7c9a5fcd3b153466e1adf196dfded469963af9285473483847c7a4f",
+      "artifact": "dispara_com_prazo.py",
+      "artifact_sha256": "d9645ab070f4d91657a9cf692d88ebf06c0218a20be290727e2f05aa171a355f",
       "extractor": "airflow_dag@0.1.0"
     }
   }

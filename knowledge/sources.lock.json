@@ -7,7 +7,7 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-20"
+        "2026-09-19"
       ],
       "rules": [
         "SF-AIRFLOW-001",
@@ -21,7 +21,7 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-20"
+        "2026-09-19"
       ],
       "rules": [
         "SF-AIRFLOW-004"
@@ -33,7 +33,7 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-20"
+        "2026-09-19"
       ],
       "rules": [
         "SF-AIRFLOW-002"

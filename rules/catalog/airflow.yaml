@@ -34,7 +34,7 @@
 catalog_version: 1
 schema_version: 1
 area: SF-AIRFLOW
-retrieved: 2026-09-20
+retrieved: 2026-09-19
 
 rules:
 
@@ -95,11 +95,11 @@ rules:
     rollback:
       - "Reverter o commit do arquivo do DAG e republicá-lo pelo caminho que publica a pasta de DAGs. Execuções já iniciadas seguem com a versão com que começaram."
     sources:
-      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-20}
+      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-19}
 
   - id: SF-AIRFLOW-002
     category: airflow-dag
-    title: "execution_timeout com stop_job_run_on_kill ausente: o Airflow mata a task e o job Glue continua cobrando"
+    title: "execution_timeout com stop_job_run_on_kill ausente: o Airflow mata a task e o operador não para o JobRun"
     requires_facts: [af.task]
     when:
       same_subject: true
@@ -107,25 +107,29 @@ rules:
         - fact: af.task
           where:
             attrs.operator_family: glue_job
+            attrs.wait_for_completion_effective: true
             attrs.execution_timeout_declared: true
             attrs.stop_job_run_on_kill_effective: false
     status: structural
     severity_default: P1
     runtime_scope: {}
     explanation: >
-      A task tem `execution_timeout` declarado — na própria task ou em `default_args` —
-      e `stop_job_run_on_kill` ausente ou `False`. A documentação do Airflow diz o que o
-      prazo faz: "If you want a task to have a maximum runtime, set its
-      `execution_timeout` attribute to a `datetime.timedelta` value that is the maximum
-      permissible runtime." E o provider diz o que o outro parâmetro faz quando é
-      `True`: "If True, Operator will stop the job run when task is killed", com default
-      `False`. Juntas, as duas frases sustentam uma coisa só, e é só essa que a regra
-      afirma: quando o prazo estoura e a task é morta, o operador NÃO para o JobRun. O
-      que a documentação do provider não descreve — e por isso a regra não afirma — é o
-      que acontece com o JobRun depois disso (U3 do `define`): o Glue continua
-      executando e faturando até terminar por conta própria ou bater no `Timeout` do
-      job, e o DAG já marcou a task como falha. A regra julga a DECLARAÇÃO do prazo, não
-      o valor dele: o valor só vira medida quando é `timedelta(**literais)`.
+      A task espera o job (`wait_for_completion` ausente ou `True`), tem
+      `execution_timeout` declarado — na própria task ou em `default_args` — e
+      `stop_job_run_on_kill` ausente ou `False`. A espera é parte da condição porque sem
+      ela a task termina assim que o JobRun começa, e o prazo não chega a matar nada. A
+      documentação do Airflow diz o que o prazo faz: "If you want a task to have a
+      maximum runtime, set its `execution_timeout` attribute to a `datetime.timedelta`
+      value that is the maximum permissible runtime." E o provider diz o que o outro
+      parâmetro faz quando é `True`: "If True, Operator will stop the job run when task
+      is killed", com default `False`. Juntas, as duas frases sustentam uma coisa só, e
+      é só essa que a regra afirma: quando o prazo estoura e a task é morta, o operador
+      NÃO para o JobRun. O que acontece com o JobRun depois disso a documentação do
+      provider não descreve, e por isso a regra NÃO afirma (U3 do `define`): se ele
+      segue executando, por quanto tempo, e o que esse tempo cobra ficam sem fonte. O
+      que se sabe é que o DAG já marcou a task como falha e que parar o JobRun não foi
+      pedido a ninguém. A regra julga a DECLARAÇÃO do prazo, não o valor dele: o valor
+      só vira medida quando é `timedelta(**literais)`.
     proposed_change:
       - "Declarar `stop_job_run_on_kill=True` na task, para que matar a task pare o JobRun."
       - "Ou tirar o `execution_timeout` da task do Glue e deixar o prazo onde o job o conhece: o `timeout` do `aws_glue_job`, que o Glue impõe ao próprio JobRun."
@@ -140,7 +144,7 @@ rules:
       depends_on: []
     risks:
       - "Com `stop_job_run_on_kill=True`, matar a task passa a interromper um JobRun no meio: escrita não transacional deixa saída parcial no destino."
-      - "A role do Airflow precisa de `glue:BatchStopJobRun` para parar o job; sem a permissão, o parâmetro fica ligado e a parada falha."
+      - "Parar o JobRun é uma chamada à API do Glue feita com a credencial do Airflow: sem a permissão correspondente, o parâmetro fica ligado e a parada falha. QUAL ação de IAM o operador chama não está em nenhuma das fontes citadas por esta regra — lacuna 6 de knowledge/airflow/glue-operator.md —, e por isso a regra não a nomeia: confira na política que a role do ambiente usa hoje."
     tradeoffs:
       - "Parar o job junto com a task economiza o resto do JobRun e arrisca saída parcial; deixar o job correr preserva a escrita e paga o run inteiro que ninguém vai usar."
     validation:
@@ -150,8 +154,8 @@ rules:
     rollback:
       - "Reverter o commit do arquivo do DAG e republicá-lo."
     sources:
-      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-20}
-      - {url: "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html", retrieved: 2026-09-20}
+      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-19}
+      - {url: "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html", retrieved: 2026-09-19}
 
   - id: SF-AIRFLOW-003
     category: airflow-dag
@@ -207,7 +211,7 @@ rules:
     rollback:
       - "Reverter o commit do arquivo do DAG e republicá-lo. Tarefas já diferidas terminam pelo triggerer; as novas voltam ao caminho síncrono."
     sources:
-      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-20}
+      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-19}
 
   # A ancora e o fact DERIVADO: sem `fuse` com o DAG e o Terraform no mesmo pool, a
   # regra sai em `skipped` com `reason: requires_facts` -- "nao perguntei", nunca "esta
@@ -265,6 +269,6 @@ rules:
     rollback:
       - "Restaurar o `max_retries` anterior no Terraform e o `retries` anterior no DAG, e reaplicar os dois."
     sources:
-      - {url: "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html", retrieved: 2026-09-20}
+      - {url: "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html", retrieved: 2026-09-19}
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html", retrieved: 2026-09-19}
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html", retrieved: 2026-09-19}

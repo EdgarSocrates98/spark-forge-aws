@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/AIRFLOW_DAG/define.md
-  sha256: "dfe531954bb5423c0becaddc6a6929acb53c295cf2be2d6c99143f8c3ec7d2ae"
+  sha256: "76faac9ecdf9b65cb1298e49e6a1dbf2e145d4b4d86f58698386b74cf12d3593"
 files:
   - {path: sparkforge/facts/airflow_dag.py, action: create, reason: "extrator por AST (af.dag, af.task, af.dependency, af.unresolved, af.analyzed) e a derivacao pura af.glue_job_link (D1, D2, D5)"}
   - {path: tests/test_airflow_dag.py, action: create, reason: "AC1, AC2, AC6 e AC7"}

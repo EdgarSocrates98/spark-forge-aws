@@ -49,7 +49,7 @@ produz — e reprova também as frases deste manual que publicam contagem.
 
 ## As áreas
 
-As 165 executáveis se distribuem em 30 áreas (medido em 2026-09-20 com `area_of`):
+As 165 executáveis se distribuem em 30 áreas (medido em 2026-09-19 com `area_of`):
 `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12
 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6
 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura

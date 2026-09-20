@@ -345,3 +345,130 @@ def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
     assert not [f for f in fuse(so_dag) if f.kind == "af.glue_job_link"]
     # e pool sem Airflow sai do fuse sem nenhum af.*
     assert not [f for f in fuse(so_tf) if f.kind.startswith("af.")]
+
+
+DAG_COM_O_QUE_NAO_SE_LE = '''
+from datetime import datetime, timedelta
+
+from airflow import DAG
+from airflow.models import baseoperator
+from airflow.decorators import dag
+from airflow.operators.empty import EmptyOperator
+from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+
+PRAZO = timedelta(hours=1)
+
+with DAG(
+    dag_id="cargas",
+    schedule=AGENDA,
+    start_date=datetime(2026, 1, 1),
+) as principal:
+    abrir = EmptyOperator(task_id="abrir")
+    carga = GlueJobOperator(
+        task_id="carga",
+        job_name="carga-diaria",
+        execution_timeout=PRAZO,
+    )
+    fechar = EmptyOperator(task_id="fechar")
+
+    abrir.set_downstream(carga)
+    fechar << carga
+    baseoperator.chain(abrir, fechar)
+
+
+@dag(schedule="@daily", start_date=datetime(2026, 1, 1))
+def fluxo():
+    dentro = GlueJobOperator(task_id="dentro", job_name="carga-dentro")
+    return dentro
+'''
+
+
+def test_o_que_a_leitura_estatica_nao_alcanca_sai_com_razao_PROPRIA():
+    """Cada lacuna tem nome proprio: `dag_dinamico` nao e o apelido de todas elas."""
+    facts = extract_airflow_dag(DAG_COM_O_QUE_NAO_SE_LE, "dags/cargas.py")
+
+    # `schedule=AGENDA` nao e literal: a MARCA sai, como `dag_id_literal` faz.
+    [dag_fact] = [f for f in facts if f.kind == "af.dag"]
+    assert dag_fact.attrs["schedule_declared"] is True
+    assert dag_fact.attrs["schedule_literal"] is False
+    assert "schedule" not in dag_fact.attrs
+
+    # `execution_timeout=PRAZO`: a DECLARACAO e lida, o valor nao vira medida, e
+    # nenhum `af.unresolved` sai -- nada do que a regra le deixou de ser lido (D2).
+    tasks = _por_kind(facts, "af.task")
+    carga = tasks["carga"]
+    assert carga.attrs["execution_timeout_declared"] is True
+    assert carga.attrs["execution_timeout_source"] == "task"
+    assert "execution_timeout_seconds" not in carga.measures
+
+    elos = sorted(
+        (f.attrs["upstream"], f.attrs["downstream"], f.attrs["form"])
+        for f in facts
+        if f.kind == "af.dependency"
+    )
+    assert elos == [
+        ("abrir", "carga", "set_downstream"),
+        ("carga", "fechar", "lshift"),
+    ]
+
+    razoes = sorted(
+        (f.attrs["reason"], f.attrs.get("form") or f.subject["symbol"])
+        for f in facts
+        if f.kind == "af.unresolved"
+    )
+    assert razoes == [
+        # `baseoperator.chain(...)` chamado como ATRIBUTO nao some em silencio.
+        ("dependencia_dinamica", "chain"),
+        # Operador classico dentro de `def`: razao propria, nao `dag_dinamico`.
+        ("operador_em_funcao", "dentro"),
+        ("taskflow_decorador", "fluxo"),
+    ]
+
+
+def test_a_derivacao_nomeia_o_terraform_ambiguo_e_o_max_retries_nao_literal(tmp_path):
+    """Os dois ramos de `build_af_glue_link` que nenhuma fixture exercita."""
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.terraform import extract_terraform_tree
+
+    (tmp_path / "cargas.py").write_text(DAG_PAREADO, encoding="utf-8")
+    (tmp_path / "main.tf").write_text(
+        TF_CARGA_DIARIA
+        + '\nresource "aws_glue_job" "carga_diaria_bis" {\n'
+        '  name        = "carga-diaria"\n'
+        "  role_arn    = aws_iam_role.glue_role.arn\n"
+        "  max_retries = var.retries\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    fundidos = fuse(
+        extract_airflow_dag_tree(tmp_path, repo_root=tmp_path)
+        + extract_terraform_tree(tmp_path, repo_root=tmp_path)
+    )
+    ambiguo = [f for f in fundidos if (f.attrs or {}).get("reason") == "job_definition_ambiguous"]
+    assert [f.subject["symbol"] for f in ambiguo] == ["ligada"]
+    assert ambiguo[0].attrs["resources"] == [
+        "aws_glue_job.carga_diaria",
+        "aws_glue_job.carga_diaria_bis",
+    ]
+    assert not [f for f in fundidos if f.kind == "af.glue_job_link"]
+
+    (tmp_path / "main.tf").write_text(
+        'resource "aws_glue_job" "carga_diaria" {\n'
+        '  name        = "carga-diaria"\n'
+        "  role_arn    = aws_iam_role.glue_role.arn\n"
+        "  max_retries = var.retries\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    fundidos = fuse(
+        extract_airflow_dag_tree(tmp_path, repo_root=tmp_path)
+        + extract_terraform_tree(tmp_path, repo_root=tmp_path)
+    )
+    [link] = [f for f in fundidos if f.kind == "af.glue_job_link"]
+    assert link.attrs["glue_max_retries_source"] == "not_literal"
+    assert "glue_max_retries" not in link.measures
+    assert [
+        f.subject["symbol"]
+        for f in fundidos
+        if (f.attrs or {}).get("reason") == "glue_max_retries_not_literal"
+    ] == ["ligada"]

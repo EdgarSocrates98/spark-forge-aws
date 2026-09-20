@@ -110,7 +110,7 @@ depois o coordenador que sabe quando investigá-la. Domínio que ainda não tem 
 artefato que falta. Step Functions saiu desta lista em 2026-09-19 pela porta certa
 (`docs/sdd/STEP_FUNCTIONS/`): o extrator da definição ASL veio primeiro, a área
 `SF-SFN` julga os facts dele, e `glue-infra-reviewer` a declara com rota por
-`findings_area`. Airflow saiu em 2026-09-20 pela mesma porta
+`findings_area`. Airflow saiu em 2026-09-19 pela mesma porta
 (`docs/sdd/AIRFLOW_DAG/`): o extrator do arquivo `.py` do DAG veio primeiro, a área
 `SF-AIRFLOW` julga os facts dele, e o mesmo coordenador a declara com a rota
 `AGENT-087`. Foi por essa porta que 35 áreas e 26

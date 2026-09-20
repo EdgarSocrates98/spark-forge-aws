@@ -53,7 +53,7 @@ vez de julgar um valor que ninguém leu.
 | regra | dispara quando | severidade |
 |---|---|---|
 | `SF-AIRFLOW-001` | `wait_for_completion=False` e a task tem tarefa a jusante: a próxima roda com o job em execução | P2 |
-| `SF-AIRFLOW-002` | `execution_timeout` declarado (na task ou em `default_args`) e `stop_job_run_on_kill` ausente ou `False`: o Airflow mata a task e o operador não para o JobRun | P1 |
+| `SF-AIRFLOW-002` | a task espera o job, tem `execution_timeout` declarado (na task ou em `default_args`) e `stop_job_run_on_kill` ausente ou `False`: o Airflow mata a task e o operador não para o JobRun | P1 |
 | `SF-AIRFLOW-003` | a task espera o job (default `True`) sem `deferrable` (default `False`): o slot de worker fica preso pelo tempo do job | P3 |
 | `SF-AIRFLOW-004` | a task ligada ao job tem `retries` efetivo maior que zero e o job tem `max_retries` maior que zero | P2 |
 
@@ -67,7 +67,8 @@ retry do Glue é outro JobRun. Medir exige os JobRuns do intervalo de uma falha 
 - Não importa nem executa o DAG, e por isso não resolve DAG montado em laço, por factory
   ou por import: sai `af.unresolved` com `dag_dinamico`.
 - Não lê a TaskFlow API além de reconhecer `@dag`, `@task` e `@task_group` e nomear o
-  que não leu.
+  que não leu (`taskflow_decorador`). Operador clássico instanciado **dentro** de uma
+  função — o caso comum sob `@dag` — sai com razão própria, `operador_em_funcao`.
 - Não lê metadado do Airflow em execução (task instances, duração, retentativas que
   aconteceram): isso exige acesso ao banco ou à API.
 - Não lê dependência **entre DAGs** (`ExternalTaskSensor`, `TriggerDagRunOperator`).

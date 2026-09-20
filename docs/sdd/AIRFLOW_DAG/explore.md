@@ -29,7 +29,7 @@ chosen: A
 ## Origem
 
 Segundo domínio pela porta do critério, depois do STEP_FUNCTIONS (#90). Pedido do
-operador em 2026-09-20: "Airflow pela mesma porta".
+operador em 2026-09-19: "Airflow pela mesma porta".
 
 ## Perfil
 
@@ -45,7 +45,7 @@ operador em 2026-09-20: "Airflow pela mesma porta".
 - A área `SF-AIRFLOW` existiu como área de coordenação oca e saiu no SF_STUBS (#88). O
   nome volta agora com regra que julga.
 
-## Fontes lidas (2026-09-20)
+## Fontes lidas (2026-09-19)
 
 - `https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html`,
   parâmetros do `GlueJobOperator` e seus defaults:
@@ -70,7 +70,7 @@ operador em 2026-09-20: "Airflow pela mesma porta".
 
 ## Perguntas feitas
 
-1. Qual escopo? Resposta (2026-09-20): A, DAG mais o cruzamento com o job Glue.
+1. Qual escopo? Resposta (2026-09-19): A, DAG mais o cruzamento com o job Glue.
 
 ## Abordagens
 

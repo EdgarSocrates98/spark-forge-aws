@@ -43,6 +43,7 @@
       "dag_id_literal": true,
       "dag_id": "carga_limpa",
       "schedule_declared": true,
+      "schedule_literal": true,
       "schedule_source": "schedule",
       "schedule": "0 6 * * *",
       "default_args_source": "inline",

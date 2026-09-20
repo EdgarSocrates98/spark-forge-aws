@@ -1,6 +1,6 @@
 # GlueJobOperator do Airflow: espera, prazo, forma de esperar e retry
 
-> **Lido em 2026-09-20.** Três páginas oficiais do Apache Airflow — uma do provider
+> **Lido em 2026-09-19.** Três páginas oficiais do Apache Airflow — uma do provider
 > Amazon e duas do core — mais as duas páginas da API do AWS Glue já citadas em
 > `knowledge/stepfunctions/glue-integration.md`. Quem consome: o extrator
 > `sparkforge/facts/airflow_dag.py` (os defaults publicados moram lá, com a URL ao
@@ -80,11 +80,18 @@ saem em `af.unresolved` com a razão, nunca como vínculo.
    TaskFlow API (`@task`, `@dag`) e argumento resolvido em execução (variável,
    f-string, `{{ jinja }}`) saem em `af.unresolved` nomeado. Importar o DAG para
    resolvê-los executaria código do operador, e o repositório não executa artefato.
+6. **Qual permissão parar o JobRun exige.** A página do provider diz que com
+   `stop_job_run_on_kill=True` o operador "will stop the job run when task is killed", e
+   **não** publica qual ação de IAM ele chama para isso. As duas páginas da API do Glue
+   lidas aqui são as de Jobs e de Job runs, e nenhuma delas é a de permissões. Por isso
+   a `SF-AIRFLOW-002` nomeia o risco sem nomear a ação. O que destrava: a página de
+   permissões da API do Glue, ou a política que a role do ambiente usa hoje, lida com
+   `sparkforge analyze iam-access`.
 
 ## Fontes
 
-- Provider Amazon — `GlueJobOperator`: `wait_for_completion`, `deferrable`, `stop_job_run_on_kill`, `job_poll_interval` e `job_name`, com os defaults. https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html (retrieved 2026-09-20)
-- Guia do Apache Airflow — referência de configuração: `core.default_task_retries`, `core.default_task_retry_delay` e `core.default_task_execution_timeout`. https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html (retrieved 2026-09-20)
-- Guia do Apache Airflow — tasks: `execution_timeout`. https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html (retrieved 2026-09-20)
+- Provider Amazon — `GlueJobOperator`: `wait_for_completion`, `deferrable`, `stop_job_run_on_kill`, `job_poll_interval` e `job_name`, com os defaults. https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html (retrieved 2026-09-19)
+- Guia do Apache Airflow — referência de configuração: `core.default_task_retries`, `core.default_task_retry_delay` e `core.default_task_execution_timeout`. https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html (retrieved 2026-09-19)
+- Guia do Apache Airflow — tasks: `execution_timeout`. https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html (retrieved 2026-09-19)
 - API do AWS Glue — Jobs: `MaxRetries`. https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html (retrieved 2026-09-19)
 - API do AWS Glue — Job runs: os parâmetros de `StartJobRun`. https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html (retrieved 2026-09-19)
