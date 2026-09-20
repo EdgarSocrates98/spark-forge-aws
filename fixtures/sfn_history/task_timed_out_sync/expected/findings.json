@@ -1,0 +1,71 @@
+[
+  {
+    "rule_id": "SF-SFNX-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Task .sync expirou: o histórico não registra o fim do JobRun que ele acompanhava",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaHoraria#1",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2791dc"
+    ],
+    "measured": {
+      "attempt_index": 1,
+      "duration_seconds": 900.0,
+      "timeout_seconds": 900
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A tentativa terminou em `TaskTimedOut`: o estado expirou pelo próprio `TimeoutSeconds` antes que o JobRun terminasse. Num Task `.sync` é o Step Functions que acompanha o JobRun, e quando ele para de acompanhar o histórico deixa de registrar o desfecho — o último evento sobre aquele JobRun é o `TaskSubmitted`. O `JobRunId` está em `sfn.job_run`; o que aconteceu com ele depois, não. A regra afirma que o desfecho **não foi observado**, e nada além disso: ela não afirma que o job continuou rodando, nem que ele foi interrompido — a documentação do abort do `.sync` não descreve o caso de timeout (lacuna 2 de knowledge/stepfunctions/glue-integration.md). E não afirma custo: dizer \"você pagou por um job órfão\" exigiria o `dpu_seconds` de um run que ninguém leu (regra 13 do CLAUDE.md). **O timeout é consequência antes de ser causa** (regra 15): antes de aumentar `TimeoutSeconds`, leia por que o JobRun passou do prazo — skew, spill, GC ou executor perdido ao lado trocam uma falha rápida por uma falha cara.",
+    "proposed_change": [
+      "Ler o desfecho real daquele JobRun antes de tocar em qualquer limite: `aws glue get-job-run --job-name <nome> --run-id <JobRunId>` sobre o `JobRunId` que está em `sfn.job_run` diz se ele terminou, falhou, ou continuou depois do Task expirar.",
+      "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge analyze event-log`), e aumentar o limite só adia a mesma falha.",
+      "Declarar o que acontece com o JobRun quando o Task expira: um estado de limpeza no `Catch` do timeout chamando `glue:batchStopJobRun` torna a resposta determinística, em vez de depender de comportamento não documentado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar `TimeoutSeconds` sem saber por que o job passou do prazo troca uma falha rápida por uma falha cara (`SF-TIMEOUT-001`).",
+      "Parar o JobRun no `Catch` sem que a escrita do job seja idempotente pode deixar o destino em estado parcial — a interrupção acontece no meio de uma escrita.",
+      "Alcance: o que a AWS faz com o JobRun quando o `.sync` expira não está publicado. O conserto determinístico é declarar a limpeza, não confiar no default."
+    ],
+    "tradeoffs": [
+      "Prazo curto falha rápido e deixa dúvida sobre o job; prazo longo resolve a dúvida e segura a execução da state machine pelo tempo inteiro do job."
+    ],
+    "validation": [
+      "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele: é a medida que falta, e ela existe.",
+      "Depois da correção, `sparkforge analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge judge` não produz mais SF-SFNX-002.",
+      "EIXO DE RESULTADO — o destino tem a mesma contagem total e por chave de negócio que uma execução de referência: um JobRun órfão que terminou sozinho pode ter escrito depois do Task expirar, e essa contagem é a única prova de que não houve duplicação."
+    ],
+    "rollback": [
+      "Reverter o commit da definição (o `TimeoutSeconds` anterior, ou o estado de limpeza acrescentado) e republicar a state machine."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "timeout.investigate_symptom_first",
+      "target": "sfn.task.timeout",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

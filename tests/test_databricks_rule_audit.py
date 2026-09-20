@@ -50,6 +50,13 @@ SO_AWS = {
         "le a definicao ASL do AWS Step Functions (`arn:aws:states`) e deriva "
         "`sfn.glue_job_link` do `aws_glue_job` do Terraform"
     ),
+    # Sem esta entrada, as tres regras SF-SFNX (sem eixo de plataforma no
+    # `runtime_scope`) contariam como alcancaveis num job Databricks -- e o artefato
+    # que elas leem so existe na AWS.
+    "sfn_history": (
+        "le o historico de execucao do AWS Step Functions (`get-execution-history`) e "
+        "deriva `sfn.retry_observado` contra o `sfn.task` do ASL"
+    ),
     # O ARTEFATO nao e da AWS -- o arquivo .py de um DAG do Apache Airflow --, e a
     # entrada aqui nao e sobre ele: as quatro regras SF-AIRFLOW julgam so o
     # `GlueJobOperator`, que chama `StartJobRun` da API do AWS Glue, e a derivacao

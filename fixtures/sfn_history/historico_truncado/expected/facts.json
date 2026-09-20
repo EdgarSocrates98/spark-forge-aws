@@ -1,0 +1,194 @@
+[
+  {
+    "id": "f_085c79",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "unresolved_count": 2
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_f17dee",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaLonga#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "timeout_seconds": 7200
+    },
+    "attrs": {
+      "state_name": "CargaLonga",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "none",
+      "terminal_present": false,
+      "submitted": true,
+      "execution_outcome": "unresolved",
+      "execution_outcome_class": "unresolved",
+      "job_run_outcome_observed": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_29573f",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 5,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "duration_seconds": 4.0
+    },
+    "attrs": {
+      "status": "unresolved",
+      "status_class": "unresolved",
+      "source": "get_execution_history",
+      "truncated": true,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_b1a1d3",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaLonga#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_ffffffff1",
+      "job_name": "carga-longa",
+      "state_name": "CargaLonga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_bae972",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "truncated",
+      "read_events": 5
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_bae972",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "execution_terminal_absent"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "8a0f159d5af1710372c4fe4e064c1420ceac81860d5a3267adb23a66db521fad",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_3136c9",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaLonga",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaLonga"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_f17dee"
+      ]
+    }
+  }
+]

@@ -9,7 +9,7 @@ Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero
 | Papel | coordenador |
 | Arquivo de origem | `agents/glue-infra-reviewer.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash, Edit, Write |
-| Áreas de regra | SF-GLUE, SF-ENV, SF-SFN, SF-AIRFLOW |
+| Áreas de regra | SF-GLUE, SF-ENV, SF-SFN, SF-SFNX, SF-AIRFLOW |
 
 ## Skills que ele usa
 

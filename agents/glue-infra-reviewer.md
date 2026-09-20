@@ -6,7 +6,7 @@ skills:
   - review-glue-terraform
   - tune-glue-job
   - optimize-variable-volume-job
-rule_areas: [SF-GLUE, SF-ENV, SF-SFN, SF-AIRFLOW]
+rule_areas: [SF-GLUE, SF-ENV, SF-SFN, SF-SFNX, SF-AIRFLOW]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

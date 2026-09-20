@@ -1,0 +1,152 @@
+[
+  {
+    "id": "f_5af0ca",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "d3f6ecf5423d6bc7270fee7f846563f2c93d2f27c0a313bd7524c12d74087f57",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_2791dc",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaHoraria#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 900.0,
+      "timeout_seconds": 900
+    },
+    "attrs": {
+      "state_name": "CargaHoraria",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "timed_out",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "failed",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": false,
+      "error": "States.Timeout",
+      "cause": "Task timed out after 900 seconds"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "d3f6ecf5423d6bc7270fee7f846563f2c93d2f27c0a313bd7524c12d74087f57",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_27d604",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 7,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "duration_seconds": 903.0
+    },
+    "attrs": {
+      "status": "failed",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "d3f6ecf5423d6bc7270fee7f846563f2c93d2f27c0a313bd7524c12d74087f57",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_122afc",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaHoraria#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_cccccccc1",
+      "job_name": "carga-horaria",
+      "state_name": "CargaHoraria",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "d3f6ecf5423d6bc7270fee7f846563f2c93d2f27c0a313bd7524c12d74087f57",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_412581",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaHoraria",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaHoraria"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_2791dc"
+      ]
+    }
+  }
+]

@@ -1,0 +1,173 @@
+[
+  {
+    "id": "f_a17348",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "cce40eea0abfe7327ddb29f55c8fbab9deb39c97b750eebf6813d4fdab007eaa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_419de9",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 538.0
+    },
+    "attrs": {
+      "state_name": "CargaDiaria",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "succeeded",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "cce40eea0abfe7327ddb29f55c8fbab9deb39c97b750eebf6813d4fdab007eaa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_3a8297",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 7,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "duration_seconds": 543.0
+    },
+    "attrs": {
+      "status": "succeeded",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "cce40eea0abfe7327ddb29f55c8fbab9deb39c97b750eebf6813d4fdab007eaa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_75975f",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_99999999",
+      "job_name": "carga-diaria",
+      "state_name": "CargaDiaria",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "cce40eea0abfe7327ddb29f55c8fbab9deb39c97b750eebf6813d4fdab007eaa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_bae972",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "event_type_unknown",
+      "type": "VariableSetEventDetailsEntered",
+      "event_id": 6
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "cce40eea0abfe7327ddb29f55c8fbab9deb39c97b750eebf6813d4fdab007eaa",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_fe6037",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaDiaria"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_419de9"
+      ]
+    }
+  }
+]

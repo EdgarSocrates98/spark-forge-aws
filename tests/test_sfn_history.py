@@ -302,3 +302,116 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
 
     erro = call_tool("sparkforge_analyze_sfn_history", {"path": str(tmp_path / "nao-existe")})
     assert "sparkforge analyze sfn-history" in erro["error"]
+
+
+ASL_COM_RETRY_DE_UMA = {
+    "StartAt": "CargaDiaria",
+    "States": {
+        "CargaDiaria": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun.sync",
+            "Parameters": {"JobName": "carga-diaria"},
+            "Retry": [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 1}],
+            "End": True,
+        }
+    },
+}
+
+
+def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.stepfunctions import extract_stepfunctions
+
+    historico = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
+    definicao = extract_stepfunctions(ASL_COM_RETRY_DE_UMA, "carga.asl.json")
+
+    fundidos = fuse(definicao + historico)
+    [confronto] = [f for f in fundidos if f.kind == "sfn.retry_observado"]
+    assert confronto.subject["symbol"] == "CargaDiaria"
+    assert confronto.measures == {"tentativas_observadas": 3, "teto_declarado": 2}
+    assert confronto.attrs["state_name"] == "CargaDiaria"
+    assert confronto.attrs["job_name"] == "carga-diaria"
+    assert confronto.attrs["pattern"] == "sync"
+    assert confronto.attrs["declared_retry_defaulted"] is False
+    # A proveniencia liga o confronto as tres tentativas E ao `sfn.task`: sem isso, o
+    # achado citaria um fact que ninguem consegue reencontrar.
+    derivados = set(confronto.provenance["derived_from"])
+    assert derivados == {f.id for f in historico if f.kind == "sfn.attempt"} | {
+        f.id for f in definicao if f.kind == "sfn.task"
+    }
+
+    # Sem o ASL no pool, nenhum confronto e a lacuna sai nomeada.
+    so_historico = fuse(historico)
+    assert not [f for f in so_historico if f.kind == "sfn.retry_observado"]
+    motivos = {
+        f.attrs["reason"] for f in so_historico if f.kind == "sfn.unresolved"
+    }
+    assert "asl_absent" in motivos
+
+    # ASL presente, estado com OUTRO nome: perguntou-se e nao bateu, que e diferente
+    # de nao ter perguntado.
+    outro = extract_stepfunctions(
+        {
+            "StartAt": "CargaMensal",
+            "States": {
+                "CargaMensal": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                    "Parameters": {"JobName": "carga-mensal"},
+                    "End": True,
+                }
+            },
+        },
+        "mensal.asl.json",
+    )
+    fundidos = fuse(outro + historico)
+    assert not [f for f in fundidos if f.kind == "sfn.retry_observado"]
+    motivos = {f.attrs["reason"] for f in fundidos if f.kind == "sfn.unresolved"}
+    assert "state_name_absent_in_asl" in motivos
+
+    # Dois estados de MESMO nome em ramos de um Parallel: o historico so sabe o nome,
+    # e escolher um seria chutar.
+    ambiguo = extract_stepfunctions(
+        {
+            "StartAt": "Cargas",
+            "States": {
+                "Cargas": {
+                    "Type": "Parallel",
+                    "Branches": [
+                        {
+                            "StartAt": "CargaDiaria",
+                            "States": {
+                                "CargaDiaria": {
+                                    "Type": "Task",
+                                    "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                                    "Parameters": {"JobName": "carga-diaria"},
+                                    "End": True,
+                                }
+                            },
+                        },
+                        {
+                            "StartAt": "CargaDiaria",
+                            "States": {
+                                "CargaDiaria": {
+                                    "Type": "Task",
+                                    "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                                    "Parameters": {"JobName": "carga-diaria-bis"},
+                                    "End": True,
+                                }
+                            },
+                        },
+                    ],
+                    "End": True,
+                }
+            },
+        },
+        "ambiguo.asl.json",
+    )
+    fundidos = fuse(ambiguo + historico)
+    assert not [f for f in fundidos if f.kind == "sfn.retry_observado"]
+    [falha] = [
+        f
+        for f in fundidos
+        if f.kind == "sfn.unresolved" and f.attrs["reason"] == "state_name_ambiguous"
+    ]
+    assert falha.attrs["declared_count"] == 2

@@ -77,6 +77,10 @@ from sparkforge.facts import (
     run_cost,
     runtime_detect,
     s3_listing,
+    # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
+    # ele aqui, `sfn.attempt` e `sfn.retry_observado` contam como orfaos e as tres
+    # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
+    sfn_history,
     spark_plan,
     sql_literal,
     sql_metrics,
@@ -211,6 +215,10 @@ EXTRACTORS = (
     run_cost,
     runtime_detect,
     s3_listing,
+    # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
+    # ele aqui, `sfn.attempt` e `sfn.retry_observado` contam como orfaos e as tres
+    # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
+    sfn_history,
     spark_plan,
     sql_literal,
     sql_metrics,

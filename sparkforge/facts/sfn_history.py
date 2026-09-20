@@ -33,6 +33,10 @@ kinds, nao cinco.
   `event_type_unknown`, `state_unresolved`, `attempt_unanchored`,
   `execution_terminal_absent`, `execution_data_absent` e `job_run_id_unrecognized`.
 - `sfn.analyzed` -- a sentinela, com as contagens.
+- `sfn.retry_observado` -- DERIVADO, nunca lido de arquivo: `build_sfn_retry_observado`
+  casa as tentativas de um estado com o `sfn.task` de MESMO NOME que o ASL declara, e
+  `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite: `asl_absent`,
+  `state_name_absent_in_asl`, `state_name_ambiguous` e `declared_ceiling_unreadable`.
 
 ## Como uma tentativa e PAREADA, e por que pela cadeia
 
@@ -76,6 +80,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -94,8 +99,14 @@ EMITTED_KINDS = frozenset(
         "sfn.job_run",
         "sfn.unresolved",
         "sfn.analyzed",
+        "sfn.retry_observado",
     }
 )
+
+# O que liga a derivacao em `fusion.fuse`: sem `sfn.attempt` no pool, o `fuse` sai byte
+# a byte igual ao de antes (molde de `timeout_diagnosis.SOURCE_KINDS` e do
+# `stepfunctions.SOURCE_KINDS`).
+SOURCE_KINDS = frozenset({"sfn.attempt"})
 
 # https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html
 # Os tipos de `HistoryEventType` que a pagina publica. Tipo fora desta lista nao e
@@ -714,9 +725,134 @@ def extract_sfn_history_tree(root: Path, repo_root: Path | None = None) -> list[
     return sort_facts(facts)
 
 
+def _glue_por_estado(facts: Sequence[Fact], kind: str) -> dict[str, list[Fact]]:
+    """Nome do estado -> facts daquele kind que chamam `glue:startJobRun`.
+
+    Serve para os dois lados do confronto: `sfn.attempt` (medido) e `sfn.task`
+    (declarado). O `subject` dos dois e diferente -- o do ASL e o CAMINHO do estado na
+    definicao, o do historico e `<nome>#<ordem>` --, e por isso `same_subject` nao os
+    junta e a derivacao existe (o mesmo motivo de `bridge.py` e de
+    `build_sfn_glue_link`).
+    """
+    por_nome: dict[str, list[Fact]] = {}
+    for fact in facts:
+        if fact.kind != kind:
+            continue
+        attrs = fact.attrs or {}
+        if attrs.get("service") != "glue" or attrs.get("api") != "startJobRun":
+            continue
+        nome = attrs.get("state_name")
+        if not isinstance(nome, str) or not nome:
+            continue
+        por_nome.setdefault(nome, []).append(fact)
+    return por_nome
+
+
+def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
+    """Confronta o retry DECLARADO no ASL com o OBSERVADO no historico (D5).
+
+    Derivacao pura sobre a UNIAO dos facts, no molde de `bridge.py`: o motor avalia um
+    fact por condicao, e o que ele precisa comparar -- quantas vezes o Task foi
+    agendado contra quantas vezes ele PODIA ser -- mora em dois facts de `subject`
+    diferente.
+
+    O pareamento e pelo NOME do estado, porque o historico so publica o nome: o
+    `stateEnteredEventDetails.name`. Nao ha caminho de estado no historico, e por isso
+    dois estados de mesmo nome em ramos de um `Parallel` sao AMBIGUIDADE, nao escolha.
+
+    O `teto_declarado` e `1 + failure_retry_max_attempts` do `sfn.task`: o Step
+    Functions agenda o Task uma vez, mais `MaxAttempts` reagendamentos. O efetivo, a
+    marca de `MaxAttempts` omitido e a regra de qual retrier casa a falha do job moram
+    em `stepfunctions.py`, com a frase citada ao lado -- aqui so se LE o que ele mediu.
+
+    Nada aqui atribui custo (regras 13 e 25): o fact diz quantas vezes, e o `JobRunId`
+    de cada tentativa esta em `sfn.job_run`, que e por onde `finops` responde custo com
+    `dpu_seconds` medido.
+    """
+    tentativas = _glue_por_estado(facts, "sfn.attempt")
+    if not tentativas:
+        return []
+    declaradas = _glue_por_estado(facts, "sfn.task")
+    ha_asl = any(f.kind == "sfn.task" for f in facts)
+    saida: list[Fact] = []
+    for nome in sorted(tentativas):
+        grupo = sorted(tentativas[nome], key=lambda f: f.id)
+        arquivo = str((grupo[0].subject or {}).get("file") or "")
+        subject = _attempt_subject(arquivo, nome)
+        proveniencia = {
+            "artifact": str((grupo[0].provenance or {}).get("artifact", "")),
+            "artifact_sha256": "",
+            "extractor": EXTRACTOR_ID,
+            "derived_from": sorted(f.id for f in grupo),
+        }
+        if not ha_asl:
+            saida.append(
+                _unresolved(dict(subject), "asl_absent", proveniencia, state_name=nome)
+            )
+            continue
+        candidatas = declaradas.get(nome) or []
+        if not candidatas:
+            saida.append(
+                _unresolved(
+                    dict(subject), "state_name_absent_in_asl", proveniencia, state_name=nome
+                )
+            )
+            continue
+        if len(candidatas) > 1:
+            saida.append(
+                _unresolved(
+                    dict(subject),
+                    "state_name_ambiguous",
+                    proveniencia,
+                    state_name=nome,
+                    declared_count=len(candidatas),
+                )
+            )
+            continue
+        tarefa = candidatas[0]
+        teto = (tarefa.measures or {}).get("failure_retry_max_attempts")
+        if isinstance(teto, bool) or not isinstance(teto, int):
+            saida.append(
+                _unresolved(
+                    dict(subject),
+                    "declared_ceiling_unreadable",
+                    proveniencia,
+                    state_name=nome,
+                )
+            )
+            continue
+        attrs_da_tarefa = tarefa.attrs or {}
+        saida.append(
+            Fact(
+                kind="sfn.retry_observado",
+                subject=dict(subject),
+                measures={"tentativas_observadas": len(grupo), "teto_declarado": 1 + teto},
+                attrs={
+                    "state_name": nome,
+                    "job_name": attrs_da_tarefa.get("job_name"),
+                    "pattern": attrs_da_tarefa.get("pattern"),
+                    "declared_retry_matched": bool(
+                        attrs_da_tarefa.get("failure_retry_matched")
+                    ),
+                    "declared_retry_defaulted": bool(
+                        attrs_da_tarefa.get("failure_retry_defaulted")
+                    ),
+                    "execution_outcome": (grupo[-1].attrs or {}).get("execution_outcome"),
+                },
+                provenance={
+                    **proveniencia,
+                    "derived_from": sorted({*proveniencia["derived_from"], tarefa.id}),
+                },
+            )
+        )
+    return sort_facts(saida)
+
+
 __all__ = [
     "EMITTED_KINDS",
     "EXTRACTOR_ID",
+    "SOURCE_KINDS",
+    "build_sfn_retry_observado",
     "extract_sfn_history",
     "extract_sfn_history_path",
     "extract_sfn_history_tree",

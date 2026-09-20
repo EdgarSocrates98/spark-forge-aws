@@ -1,0 +1,253 @@
+# Catálogo de regras — o que ACONTECEU numa execução do AWS Step Functions
+#
+# Depende de `sparkforge/facts/sfn_history.py`, que lê a saída salva de
+# `aws stepfunctions get-execution-history` e, em `fuse`, confronta as tentativas
+# observadas com o retry que o ASL declara (`sfn.retry_observado`). As frases citadas
+# estão em `knowledge/stepfunctions/execution-history.md`; o desenho, em
+# `docs/sdd/SFN_HISTORY/design.md`.
+#
+# POR QUE UMA ÁREA PRÓPRIA, e não mais quatro regras em `SF-SFN` (D4): `SF-SFN` julga o
+# que a definição DECLARA; esta julga o que a execução REGISTROU. Misturar as duas na
+# mesma área tiraria do operador exatamente a distinção que esta feature existe para
+# fazer — e é ela que decide o conserto, porque retry declarado se corrige na definição
+# e tentativa observada demais pode ser sintoma de outra coisa inteira.
+#
+# O QUE A ÁREA NÃO JULGA, e por quê (D4):
+# - duração de tentativa acima de um limiar: limiar de duração de job não tem fonte
+#   publicada, e seria número inventado;
+# - custo de uma tentativa, e economia de tirá-la: regras 13 e 25 do `CLAUDE.md`. O
+#   fact traz o `JobRunId`, e quem responde custo é `finops`, com `dpu_seconds` medido;
+# - quantas vezes o job Glue rodou por tentativa: a composição entre o retry do Step
+#   Functions e o `MaxRetries` do Glue continua sem documentação (lacuna 1 de
+#   `knowledge/stepfunctions/glue-integration.md`). O que esta área mede é o número de
+#   AGENDAMENTOS do Task, que é o que o histórico registra;
+# - histórico de state machine EXPRESS: a API não o suporta, e ele vai para o
+#   CloudWatch Logs;
+# - serviços além do Glue: o extrator os registra, e nenhuma regra os julga.
+#
+# `runtime_scope: {}` nas três (D4), e a escolha é medida: não há fronteira de versão
+# publicada para nenhuma delas, e o histórico sozinho não detecta runtime Glue --
+# `{glue: "*"}` faria as três saírem em `skipped` até alguém declarar `--glue`, o
+# defeito que `docs/gates-por-mudanca.md` descreve. Quem gateia é `requires_facts`: sem
+# `sfn.attempt` (ou sem o `sfn.retry_observado` que só o `fuse` deriva), a regra é
+# pulada com a razão. A auditoria de texto AWS de `tests/test_databricks_rule_audit.py`
+# fica satisfeita porque `sfn_history` está em `SO_AWS`: o extrator só lê artefato da
+# AWS.
+#
+# AS TRÊS SÃO `confirmed`, e é a diferença de natureza com `SF-SFN`: elas afirmam que
+# algo ACONTECEU, lido do artefato de execução, não que a configuração tem uma
+# propriedade. `SF-SFN-002` e `structural` sobre o mesmo retry; esta área é o lado
+# medido dele.
+#
+# A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado por
+# tentativa (`<estado>#<ordem>`) nas duas últimas, e um por estado na primeira.
+#
+# TRÊS PREDICADOS DERIVADOS no extrator (regra 33), porque `sparkforge/rules/expr.py`
+# tem seis comparadores e nenhuma função: `execution_outcome_class` (que junta
+# `ExecutionAborted` e `ExecutionTimedOut` num valor só, porque `in` não existe),
+# `terminal_present` e `job_run_outcome_observed`.
+
+catalog_version: 1
+schema_version: 1
+area: SF-SFNX
+retrieved: 2026-09-20
+
+rules:
+
+  # A ancora e o fact DERIVADO: sem `fuse` com o historico e o ASL no mesmo pool, a
+  # regra sai em `skipped` com `reason: requires_facts` -- "nao perguntei", nunca "esta
+  # tudo bem". ASL ausente, estado com outro nome e nome ambiguo saem em
+  # `sfn.unresolved` na derivacao.
+  - id: SF-SFNX-001
+    category: stepfunctions-execution
+    title: "Tentativas observadas acima do que o retry declarado permite"
+    requires_facts: [sfn.retry_observado]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.retry_observado
+          expr: "measures.tentativas_observadas > measures.teto_declarado"
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      O histórico da execução registra mais agendamentos do Task do que o retry
+      declarado no ASL permite. O Step Functions agenda o Task uma vez e o reagenda até
+      `MaxAttempts` vezes — teto efetivo de `1 + MaxAttempts` —, e cada agendamento de
+      um `glue:startJobRun` é um `StartJobRun` novo, não uma retomada. O número
+      observado está em `measures.tentativas_observadas`, lido dos eventos
+      `TaskScheduled` do estado; o teto, em `measures.teto_declarado`. A diferença tem
+      três leituras possíveis, e o achado **não escolhe entre elas**: o ASL lido não é o
+      que estava publicado quando a execução rodou; existe outro retrier casando a
+      falha antes do que o extrator mediu; ou o estado foi reentrado pelo fluxo (um
+      `Choice` que volta), e aí cada entrada traz o seu próprio orçamento de retry. As
+      três se decidem pela mesma evidência: a versão da definição no instante da
+      execução. Esta regra **não** afirma quantos JobRuns do Glue a falha produziu — o
+      `MaxRetries` do próprio job é outra camada, e a composição delas não é
+      documentada (`SF-SFN-004`, e a lacuna 1 de
+      knowledge/stepfunctions/glue-integration.md). E não afirma custo nenhum: o
+      `JobRunId` de cada tentativa está em `sfn.job_run`, e é por ele que
+      `sparkforge finops` responde custo com `dpu_seconds` medido.
+    proposed_change:
+      - "Conferir qual versão da definição estava publicada no instante da execução (`aws stepfunctions describe-state-machine --state-machine-arn <arn>` traz a definição corrente; o histórico de versões, se houver, traz a da época) antes de mudar qualquer coisa: o achado compara um ASL do repositório com uma execução que pode ter rodado outro."
+      - "Se a definição confere, procurar o segundo caminho de reagendamento: um `Choice` que volta ao mesmo estado, ou um retrier anterior na ordem declarada cujo `ErrorEquals` também casa a falha do job."
+      - "Se o retry é o esperado e o número é o desejado, declarar `MaxAttempts` explícito no retrier que casa a falha, com o número que um JobRun inteiro por tentativa justifica — inclusive `0`."
+    # `orchestration.restrict_run_policy` com o mesmo alvo e a mesma direcao da
+    # `SF-SFN-002` (`sfn.task.retry`, `decrease`): mesma direcao nao e contradicao para
+    # `tests/test_rules_action_field.py`, e as duas propoem a mesma familia de conserto
+    # -- uma pela definicao, esta pela medida. `runtime.wall_clock` esta FORA de
+    # proposito: ele e o maior grupo de restricao (12) e
+    # `tests/test_agentic_executor_ordering.py` trava esse teto.
+    action:
+      kind: orchestration.restrict_run_policy
+      target: sfn.task.retry
+      direction: decrease
+      requires_absent: []
+      moves:
+        - cost.dpu_seconds
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "O ASL lido pode não ser o que executou. O achado compara artefato do repositório com execução da conta, e nada no histórico traz a definição."
+      - "Reduzir o retry expõe a execução a falhas transitórias que hoje são absorvidas."
+      - "Se o job não escreve de forma idempotente, cada tentativa a mais já deixou efeito no destino — e reduzir o retry agora não desfaz o que as anteriores escreveram."
+    tradeoffs:
+      - "Retry sobre o job inteiro compra resiliência ao custo de um JobRun completo por tentativa. Descobrir que o observado passa do declarado não diz qual dos dois está errado — diz que eles não batem."
+    validation:
+      - "`sparkforge analyze sfn-history` sobre um histórico novo, depois da correção, mostra `tentativas_observadas` menor ou igual a `teto_declarado`, e `sparkforge judge` não produz mais SF-SFNX-001 para o estado."
+      - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: as tentativas extras não duplicaram nem perderam linha."
+      - "Os `JobRunId` de `sfn.job_run` do intervalo, conferidos em `sparkforge collect glue-job-runs`, são exatamente os que a camada de retry escolhida declara — nem mais, nem menos."
+    rollback:
+      - "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`)."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html", retrieved: 2026-09-19}
+
+  # A ancora e a TENTATIVA, e os tres predicados de igualdade que ela le sao os que
+  # `expr.py` consegue avaliar. `job_run_outcome_observed` e derivado no extrator
+  # (regra 33): ele e verdadeiro so num `.sync` que terminou em sucesso ou falha.
+  - id: SF-SFNX-002
+    category: stepfunctions-execution
+    title: "Task .sync expirou: o histórico não registra o fim do JobRun que ele acompanhava"
+    requires_facts: [sfn.attempt]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.attempt
+          where:
+            attrs.service: glue
+            attrs.api: startJobRun
+            attrs.pattern: sync
+            attrs.result: timed_out
+            attrs.job_run_outcome_observed: false
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A tentativa terminou em `TaskTimedOut`: o estado expirou pelo próprio
+      `TimeoutSeconds` antes que o JobRun terminasse. Num Task `.sync` é o Step
+      Functions que acompanha o JobRun, e quando ele para de acompanhar o histórico
+      deixa de registrar o desfecho — o último evento sobre aquele JobRun é o
+      `TaskSubmitted`. O `JobRunId` está em `sfn.job_run`; o que aconteceu com ele
+      depois, não. A regra afirma que o desfecho **não foi observado**, e nada além
+      disso: ela não afirma que o job continuou rodando, nem que ele foi interrompido —
+      a documentação do abort do `.sync` não descreve o caso de timeout (lacuna 2 de
+      knowledge/stepfunctions/glue-integration.md). E não afirma custo: dizer "você
+      pagou por um job órfão" exigiria o `dpu_seconds` de um run que ninguém leu
+      (regra 13 do CLAUDE.md).
+      **O timeout é consequência antes de ser causa** (regra 15): antes de aumentar
+      `TimeoutSeconds`, leia por que o JobRun passou do prazo — skew, spill, GC ou
+      executor perdido ao lado trocam uma falha rápida por uma falha cara.
+    proposed_change:
+      - "Ler o desfecho real daquele JobRun antes de tocar em qualquer limite: `aws glue get-job-run --job-name <nome> --run-id <JobRunId>` sobre o `JobRunId` que está em `sfn.job_run` diz se ele terminou, falhou, ou continuou depois do Task expirar."
+      - "Com o desfecho em mãos, classificar: JobRun que terminou DEPOIS do prazo é dimensionamento do prazo; JobRun que travou é diagnóstico do job (event log, `sparkforge analyze event-log`), e aumentar o limite só adia a mesma falha."
+      - "Declarar o que acontece com o JobRun quando o Task expira: um estado de limpeza no `Catch` do timeout chamando `glue:batchStopJobRun` torna a resposta determinística, em vez de depender de comportamento não documentado."
+    # `timeout.investigate_symptom_first` com `direction: investigate` e `moves: []` e a
+    # regra 15 escrita em vocabulario fechado: ler a causa antes de mexer no limite. A
+    # acao nao move grandeza nenhuma porque ela nao muda nada -- ela mede.
+    action:
+      kind: timeout.investigate_symptom_first
+      target: sfn.task.timeout
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - "Aumentar `TimeoutSeconds` sem saber por que o job passou do prazo troca uma falha rápida por uma falha cara (`SF-TIMEOUT-001`)."
+      - "Parar o JobRun no `Catch` sem que a escrita do job seja idempotente pode deixar o destino em estado parcial — a interrupção acontece no meio de uma escrita."
+      - "Alcance: o que a AWS faz com o JobRun quando o `.sync` expira não está publicado. O conserto determinístico é declarar a limpeza, não confiar no default."
+    tradeoffs:
+      - "Prazo curto falha rápido e deixa dúvida sobre o job; prazo longo resolve a dúvida e segura a execução da state machine pelo tempo inteiro do job."
+    validation:
+      - "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele: é a medida que falta, e ela existe."
+      - "Depois da correção, `sparkforge analyze sfn-history` sobre um histórico novo mostra a tentativa com `result: succeeded` ou `failed` — `job_run_outcome_observed` verdadeiro —, e `sparkforge judge` não produz mais SF-SFNX-002."
+      - "EIXO DE RESULTADO — o destino tem a mesma contagem total e por chave de negócio que uma execução de referência: um JobRun órfão que terminou sozinho pode ter escrito depois do Task expirar, e essa contagem é a única prova de que não houve duplicação."
+    rollback:
+      - "Reverter o commit da definição (o `TimeoutSeconds` anterior, ou o estado de limpeza acrescentado) e republicar a state machine."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html", retrieved: 2026-09-19}
+
+  - id: SF-SFNX-003
+    category: stepfunctions-execution
+    title: "Execução parou com um Task .sync agendado e sem evento terminal próprio"
+    requires_facts: [sfn.attempt]
+    when:
+      same_subject: true
+      all:
+        - fact: sfn.attempt
+          where:
+            attrs.service: glue
+            attrs.api: startJobRun
+            attrs.pattern: sync
+            attrs.terminal_present: false
+            attrs.execution_outcome_class: stopped
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A execução terminou em `ExecutionAborted` ou `ExecutionTimedOut` —
+      `execution_outcome_class: stopped`, o valor que o extrator deriva justamente
+      porque o motor de regras não tem `in` (regra 33) — e o Task `.sync` do Glue foi
+      agendado sem nunca ganhar evento terminal próprio. A execução parou por fora, e o
+      último que o histórico sabe daquele Task é que ele foi agendado (e, quando há
+      `TaskSubmitted`, submetido, com o `JobRunId` em `sfn.job_run`). A regra afirma o
+      que está no artefato: **a execução parou com o Task em voo**. Ela não afirma que
+      o job continuou rodando — isso depende do que a AWS faz com o JobRun no abort do
+      `.sync`, e a lacuna está nomeada em
+      knowledge/stepfunctions/execution-history.md. E não afirma custo nem economia
+      (regras 13 e 25). A diferença para a `SF-SFNX-002` é qual dos dois relógios
+      parou: lá o do Task, aqui o da execução.
+    proposed_change:
+      - "Ler o desfecho do `JobRunId` daquela tentativa (`aws glue get-job-run`): é a única fonte que diz se o job parou junto com a execução ou seguiu sozinho."
+      - "Declarar a limpeza em vez de depender do default: um `Catch` de `States.ALL` no estado, ou um passo de encerramento que chame `glue:batchStopJobRun` sobre o `JobRunId` — e a role da state machine precisa da permissão correspondente, que a política que a AWS gera para o `.sync` do Glue já inclui."
+      - "Se abortar a execução é operação rotineira (plantão parando carga), escrever o procedimento com o passo de conferir o JobRun: o operador que aborta precisa saber que o job pode não ter parado."
+    # `orchestration.change_job_definition` com alvo PROPRIO
+    # (`sfn.state_machine.abort_handling`) e `direction: add`: a mudanca acrescenta o
+    # tratamento que hoje nao existe. `moves` traz so `correctness.write_result`
+    # (`nature: risk`, fora da restricao de grupo): o que a limpeza muda e o que fica
+    # escrito no destino quando alguem para a execucao.
+    action:
+      kind: orchestration.change_job_definition
+      target: sfn.state_machine.abort_handling
+      direction: add
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "Parar o JobRun no abort sem escrita idempotente deixa o destino em estado parcial: a interrupção cai no meio de uma escrita."
+      - "Alcance: o que acontece com o JobRun quando a execução é abortada não está descrito para o caso de timeout da execução, e a leitura registrada aqui é essa lacuna, não uma resposta."
+      - "Acrescentar `Catch` muda o caminho de falha da state machine: estados que nunca rodaram passam a rodar, e alarmes que nunca dispararam passam a disparar."
+    tradeoffs:
+      - "Parar o job junto com a execução torna o abort determinístico ao custo de perder trabalho que talvez terminasse sozinho; deixar o job seguir preserva o trabalho ao custo de ninguém saber que ele existe."
+    validation:
+      - "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele — é a medida que o histórico não tem."
+      - "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge judge` não produz mais SF-SFNX-003."
+      - "EIXO DE RESULTADO — depois de um abort de teste, o destino tem a contagem por chave de negócio de antes do abort, ou a de uma execução completa: nunca uma terceira, que é o que escrita parcial produz."
+    rollback:
+      - "Reverter o commit da definição (o `Catch` ou o passo de encerramento acrescentado) e republicar a state machine."
+    sources:
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html", retrieved: 2026-09-19}

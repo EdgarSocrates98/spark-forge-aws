@@ -1,0 +1,10 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T08:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T08:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaLonga"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T08:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1", "timeoutInSeconds": 7200}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T08:00:03.000000+00:00", "type": "TaskStarted", "taskStartedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T08:00:04.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_ffffffff1\", \"JobName\": \"carga-longa\"}"}}
+  ],
+  "nextToken": "AAAAKgAAAAIAAAAAAAAAAg=="
+}

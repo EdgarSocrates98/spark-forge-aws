@@ -1,0 +1,12 @@
+{
+  "events": [
+    {"id": 1, "previousEventId": 0, "timestamp": "2026-09-18T09:00:00.000000+00:00", "type": "ExecutionStarted"},
+    {"id": 2, "previousEventId": 1, "timestamp": "2026-09-18T09:00:01.000000+00:00", "type": "TaskStateEntered", "stateEnteredEventDetails": {"name": "CargaDiaria"}},
+    {"id": 3, "previousEventId": 2, "timestamp": "2026-09-18T09:00:02.000000+00:00", "type": "TaskScheduled", "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "region": "us-east-1"}},
+    {"id": 4, "previousEventId": 3, "timestamp": "2026-09-18T09:00:03.000000+00:00", "type": "TaskSubmitted", "taskSubmittedEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue", "output": "{\"JobRunId\": \"jr_99999999\", \"JobName\": \"carga-diaria\"}"}},
+    {"id": 5, "previousEventId": 4, "timestamp": "2026-09-18T09:09:00.000000+00:00", "type": "TaskSucceeded", "taskSucceededEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"}},
+    {"id": 6, "previousEventId": 5, "timestamp": "2026-09-18T09:09:01.000000+00:00", "type": "VariableSetEventDetailsEntered"},
+    {"id": 7, "previousEventId": 5, "timestamp": "2026-09-18T09:09:02.000000+00:00", "type": "TaskStateExited", "stateExitedEventDetails": {"name": "CargaDiaria"}},
+    {"id": 8, "previousEventId": 7, "timestamp": "2026-09-18T09:09:03.000000+00:00", "type": "ExecutionSucceeded"}
+  ]
+}

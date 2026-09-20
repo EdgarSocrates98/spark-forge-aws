@@ -67,6 +67,7 @@ from sparkforge.facts import (
     run_cost,
     runtime_detect,
     s3_listing,
+    sfn_history,
     spark_plan,
     sql_literal,
     sql_metrics,
@@ -221,6 +222,14 @@ EXTRACTORS = {
     # errado de `test_no_golden_carries_a_kind_that_no_extractor_declares`:
     # golden com kind que nenhum extrator declara, em vez de kind coberto.
     "sql_metrics": sql_metrics,
+    # `sfn_history` entra nas DUAS listas no MESMO commit de `fixtures/sfn_history/`:
+    # sem ele aqui, os kinds `sfn.execution`, `sfn.attempt`, `sfn.job_run` e
+    # `sfn.retry_observado` nao sao verificados por ninguem. `sfn.unresolved` e
+    # `sfn.analyzed` ele COMPARTILHA com `stepfunctions` de proposito (D1 de
+    # `docs/sdd/SFN_HISTORY/design.md`): o prefixo e o mesmo porque o dominio e o
+    # mesmo, e o kind e que diz a natureza -- `sfn.task` e declaracao, `sfn.attempt`
+    # e medida.
+    "sfn_history": sfn_history,
     # `stepfunctions` entra nas DUAS listas no MESMO commit de `fixtures/stepfunctions/`:
     # sem ele aqui, os cinco kinds `sfn.*` nao sao verificados por ninguem.
     "stepfunctions": stepfunctions,

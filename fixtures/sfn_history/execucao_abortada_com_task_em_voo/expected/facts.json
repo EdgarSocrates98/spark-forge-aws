@@ -1,0 +1,149 @@
+[
+  {
+    "id": "f_5af0ca",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "3362400957e471fadb319f14c64f3a6408042cc43d276645d53fda2c4c329807",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_30a5b3",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaNoturna#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "timeout_seconds": 7200
+    },
+    "attrs": {
+      "state_name": "CargaNoturna",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "none",
+      "terminal_present": false,
+      "submitted": true,
+      "execution_outcome": "aborted",
+      "execution_outcome_class": "stopped",
+      "job_run_outcome_observed": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "3362400957e471fadb319f14c64f3a6408042cc43d276645d53fda2c4c329807",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_b021a6",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 6,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "duration_seconds": 2400.0
+    },
+    "attrs": {
+      "status": "aborted",
+      "status_class": "stopped",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "3362400957e471fadb319f14c64f3a6408042cc43d276645d53fda2c4c329807",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_8abd28",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaNoturna#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_dddddddd1",
+      "job_name": "carga-noturna",
+      "state_name": "CargaNoturna",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "3362400957e471fadb319f14c64f3a6408042cc43d276645d53fda2c4c329807",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_73db6d",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaNoturna",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaNoturna"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_30a5b3"
+      ]
+    }
+  }
+]

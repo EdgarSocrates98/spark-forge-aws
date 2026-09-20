@@ -1,0 +1,232 @@
+[
+  {
+    "id": "f_208d30",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 2,
+      "job_run_count": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "e707b90762e810d6733d58837edc45ba140fc2d3e462602e7ee212b5f94c610d",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_8656a9",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComOutroOutput#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 597.0
+    },
+    "attrs": {
+      "state_name": "CargaComOutroOutput",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "succeeded",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "e707b90762e810d6733d58837edc45ba140fc2d3e462602e7ee212b5f94c610d",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_282540",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDado#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 598.0
+    },
+    "attrs": {
+      "state_name": "CargaSemDado",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "succeeded",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "e707b90762e810d6733d58837edc45ba140fc2d3e462602e7ee212b5f94c610d",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_966735",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 12,
+      "attempt_count": 2,
+      "job_run_count": 0,
+      "duration_seconds": 1202.0
+    },
+    "attrs": {
+      "status": "succeeded",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "e707b90762e810d6733d58837edc45ba140fc2d3e462602e7ee212b5f94c610d",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_2eaa96",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComOutroOutput",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaComOutroOutput"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_8656a9"
+      ]
+    }
+  },
+  {
+    "id": "f_8e6c06",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaComOutroOutput#1",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "job_run_id_unrecognized",
+      "state_name": "CargaComOutroOutput",
+      "output_keys": [
+        "SdkHttpMetadata",
+        "SdkResponseMetadata"
+      ]
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "e707b90762e810d6733d58837edc45ba140fc2d3e462602e7ee212b5f94c610d",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_8bb41a",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDado",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaSemDado"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_282540"
+      ]
+    }
+  },
+  {
+    "id": "f_f4533e",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaSemDado#1",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "execution_data_absent",
+      "state_name": "CargaSemDado"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "e707b90762e810d6733d58837edc45ba140fc2d3e462602e7ee212b5f94c610d",
+      "extractor": "sfn_history@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,20 @@
+name: task_timed_out_sync
+proves: >
+  O POSITIVO de SF-SFNX-002. O Task `.sync` expirou pelo proprio `TimeoutSeconds` (900
+  medidos no `taskScheduledEventDetails`), e o historico NAO registra o fim do JobRun
+  `jr_cccccccc1` que ele acompanhava: `job_run_outcome_observed` e falso. A execucao
+  terminou em `ExecutionFailed`, entao `execution_outcome_class` e `finished` e a
+  SF-SFNX-003 fica calada -- as duas nao se sobrepoem. Sem ASL no case: o confronto de
+  retry nao acontece, e a lacuna sai nomeada em `asl_absent`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sfn.analyzed
+  - sfn.attempt
+  - sfn.execution
+  - sfn.job_run
+  - sfn.unresolved
+expects_rules: [SF-SFNX-002]

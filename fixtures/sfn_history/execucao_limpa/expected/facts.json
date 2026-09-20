@@ -1,0 +1,150 @@
+[
+  {
+    "id": "f_5af0ca",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4e22758e8b34422fd82fb59e337c2371fca7c034e5c60089e4841d425942f7a",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_c6e0a6",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 1078.0,
+      "timeout_seconds": 3600
+    },
+    "attrs": {
+      "state_name": "CargaDiaria",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "succeeded",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4e22758e8b34422fd82fb59e337c2371fca7c034e5c60089e4841d425942f7a",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_a1b209",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "event_count": 8,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "duration_seconds": 1082.0
+    },
+    "attrs": {
+      "status": "succeeded",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4e22758e8b34422fd82fb59e337c2371fca7c034e5c60089e4841d425942f7a",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_75975f",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_eeeeeeee1",
+      "job_name": "carga-diaria",
+      "state_name": "CargaDiaria",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "b4e22758e8b34422fd82fb59e337c2371fca7c034e5c60089e4841d425942f7a",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_fe6037",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "CargaDiaria"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_c6e0a6"
+      ]
+    }
+  }
+]
