@@ -54,13 +54,22 @@ Todo evento tem `id`, `previousEventId`, `timestamp` e `type`.
 | evento | campos que importam | o que sustenta |
 |---|---|---|
 | `ExecutionStarted` | — | o instante inicial da execução |
-| `TaskStateEntered` | `stateEnteredEventDetails.name` | **o nome do estado** — a única fonte dele no histórico |
+| `TaskStateEntered` | `stateEnteredEventDetails.name` | **o nome do estado** — a fonte que o extrator usa, e a única que ANTECEDE a tentativa |
 | `TaskScheduled` | `taskScheduledEventDetails` com `resource`, `resourceType`, `parameters`, `region`, `timeoutInSeconds` | **uma tentativa** começou; o serviço, o padrão de integração e o prazo declarado |
 | `TaskStarted` | `taskStartedEventDetails` | a chamada saiu |
 | `TaskSubmitted` | `taskSubmittedEventDetails.output` | o `JobRunId` do Glue (§3) |
 | `TaskSucceeded`, `TaskFailed`, `TaskTimedOut`, `TaskStartFailed`, `TaskSubmitFailed` | `error` e `cause` nos que os têm | **a tentativa terminou**, e como |
-| `TaskStateExited` | `stateExitedEventDetails.name` | o estado saiu |
+| `TaskStateExited` | `stateExitedEventDetails.name` | o estado saiu — publica o **mesmo nome**, e o extrator **não** o lê |
 | `ExecutionSucceeded`, `ExecutionFailed`, `ExecutionAborted`, `ExecutionTimedOut` | `error` e `cause` | **o desfecho da execução** |
+
+**Dois eventos publicam o nome do estado, e o extrator lê um só.** O
+`TaskStateExited` traz `stateExitedEventDetails.name`, o mesmo nome; o extrator não o
+lê em lugar nenhum — `stateEnteredEventDetails` é o único que ele acessa
+(`sparkforge/facts/sfn_history.py:570`). A razão é de ordem, não de conteúdo: o nome
+tem que ser resolvido para o `TaskScheduled`, que é onde a tentativa começa, e só o
+`TaskStateEntered` vem **antes** dele na cadeia. O `TaskStateExited` sai depois da
+última tentativa do estado, e num estado com retry ele aparece uma vez para várias
+tentativas — nomear por ele seria nomear tarde demais e com granularidade errada.
 
 **O encadeamento é por ramo, e é ele que pareia.** `previousEventId` aponta para o
 evento anterior *daquele ramo*: dentro de `Parallel` e de `Map`, eventos de ramos
