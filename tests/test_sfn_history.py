@@ -317,6 +317,43 @@ def test_tipo_desconhecido_no_meio_da_cadeia_nao_apaga_a_tentativa():
     assert execucao.attrs["status"] == "succeeded"
 
 
+def test_id_de_evento_repetido_sai_nomeado(tmp_path):
+    """`id` repetido nao e leitura, e ate aqui ele passava calado (A7).
+
+    `por_id` e `tentativas` sao dict por `id`, e a segunda ocorrencia sobrescrevia a
+    primeira -- mas `ordem_por_estado` ja tinha contado as duas. Dois `TaskScheduled`
+    com `id: 3` viravam UMA tentativa, com indice 2, e nenhuma recusa: o extrator
+    afirmava uma ordem de tentativa que o arquivo nao sustenta. O `id` e unico na
+    execucao pela propria API, entao repeti-lo e arquivo montado a mao, paginas
+    concatenadas ou colagem errada -- e isso tem nome.
+    """
+    repetido = {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+            _evento(3, 2, "TaskScheduled", 2, **_agendado()),
+            _evento(3, 2, "TaskScheduled", 3, **_agendado()),
+            _evento(4, 3, "TaskSucceeded", 9),
+            _evento(5, 4, "ExecutionSucceeded", 10),
+        ]
+    }
+    facts = extract_sfn_history(repetido, "repetido.json")
+
+    [recusa] = [
+        f for f in _de(facts, "sfn.unresolved") if f.attrs["reason"] == "event_id_duplicated"
+    ]
+    assert recusa.measures["event_id"] == 3
+    assert recusa.attrs["type"] == "TaskScheduled"
+
+    # O repetido e DESCARTADO, e a primeira ocorrencia vence: a tentativa volta a ter
+    # o indice que o arquivo sustenta, e a contagem de eventos nao conta o que nao leu.
+    [tentativa] = _de(facts, "sfn.attempt")
+    assert tentativa.measures["attempt_index"] == 1
+    assert tentativa.subject["symbol"] == "Carga#1"
+    [execucao] = _de(facts, "sfn.execution")
+    assert execucao.measures["event_count"] == 5
+
+
 def test_recusas_do_mesmo_arquivo_nao_colidem_de_id():
     """Tres recusas iguais em `attrs` sao UMA recusa para o `fuse` (A3).
 

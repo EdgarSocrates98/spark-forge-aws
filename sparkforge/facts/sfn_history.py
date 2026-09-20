@@ -30,7 +30,7 @@ kinds, nao cinco.
 - `sfn.unresolved` -- o que nao deu para ler. Razoes: `read_error`,
   `size_above_limit`, `invalid_json`, `json_too_deep`, `json_too_large`,
   `not_an_execution_history`, `truncated`, `event_not_an_object`,
-  `event_type_unknown`, `state_unresolved`, `attempt_unanchored`,
+  `event_type_unknown`, `event_id_duplicated`, `state_unresolved`, `attempt_unanchored`,
   `execution_terminal_absent`, `execution_data_absent` e `job_run_id_unrecognized`.
   O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
   `measures`, e nao em `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres
@@ -443,9 +443,17 @@ def _valida_eventos(
     artefato que quebrou: descarta-lo da travessia partiria a cadeia num
     `chain_broken` e apagaria as tentativas do ramo inteiro. Ele continua fora de
     `ordenados`, das contagens e de todo fact -- e a recusa continua saindo.
+
+    `id` REPETIDO nao entra em nenhum dos dois. Ele e unico na execucao pela propria
+    API, e repeti-lo e arquivo montado a mao, paginas concatenadas ou colagem errada.
+    Antes, `por_id` e `tentativas` (dict por `id`) deixavam o ultimo vencer enquanto
+    `ordem_por_estado` ja tinha contado os dois -- saia UMA tentativa afirmando um
+    indice que o arquivo nao sustenta, e nenhuma recusa. Agora vence a PRIMEIRA
+    ocorrencia, na ordem do arquivo, e cada repeticao sai em `event_id_duplicated`.
     """
     limpos: list[dict[str, Any]] = []
     com_id: list[dict[str, Any]] = []
+    vistos: set[int] = set()
     for indice, bruto in enumerate(brutos):
         if not isinstance(bruto, dict):
             leitura.facts.append(
@@ -468,6 +476,18 @@ def _valida_eventos(
                 )
             )
             continue
+        if identificador in vistos:
+            leitura.facts.append(
+                _unresolved(
+                    _file_subject(leitura.path),
+                    "event_id_duplicated",
+                    leitura.provenance,
+                    measures={"event_id": identificador, "index": indice},
+                    type=str(bruto.get("type")),
+                )
+            )
+            continue
+        vistos.add(identificador)
         com_id.append(bruto)
         if str(bruto.get("type")) not in _TIPOS_CONHECIDOS:
             leitura.facts.append(
