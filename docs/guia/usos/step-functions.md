@@ -150,17 +150,41 @@ a diferença entre "o histórico é este" e "esta é a parte que eu salvei".
 | `sfn.execution` | arquivo | `status` pelo evento terminal (`unresolved` quando ele não está no arquivo), duração, contagem dos eventos **lidos** (`read_event_count` — o que não é objeto, o de tipo desconhecido e o de `id` repetido ficam de fora, cada um com a sua recusa), `truncated` |
 | `sfn.attempt` | tentativa de Task (`<estado>#<ordem>`) | nome do estado, ordem, padrão de integração, resultado, duração, `error`, `cause`, e o prazo declarado do Task |
 | `sfn.job_run` | `JobRunId` lido do `output` do `TaskSubmitted` | o id, o `JobName` quando vem junto, e de qual chave ele foi lido |
-| `sfn.retry_observado` | estado, só em `fuse` com o ASL | tentativas observadas contra o teto declarado |
-| `sfn.unresolved` | o que não deu para ler ou parear | truncamento, cadeia quebrada, tipo de evento desconhecido, `execution_data_absent`, `job_run_id_unrecognized`, ASL ausente ou ambíguo |
+| `sfn.retry_observado` | **execução e estado** (o par arquivo + nome), só em `fuse` com o ASL | tentativas observadas contra o teto declarado |
+| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `attempt_unanchored`, `execution_data_absent`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable` e `glue_attempt_absent` |
 | `sfn.analyzed` | arquivo | as contagens — prova de que o arquivo foi lido |
+
+**O `sfn.retry_observado` é por execução E por estado, e isso importa com mais de um
+histórico no case.** Retry é orçamento de **uma** execução: somar as tentativas de dois
+runs do mesmo estado acusaria de estourar o teto dois runs que cabem nele. O lado medido
+é agrupado pelo par (arquivo do histórico, nome do estado); o lado declarado, o
+`sfn.task` do ASL, continua pareado só pelo nome, porque o ASL é outro artefato e nada
+nele diz de que execução ele é — e um mesmo `sfn.task` pareia legitimamente com várias
+execuções.
+
+**Duas recusas que você pode ver e que não são erro seu.** `event_id_duplicated` sai
+quando o arquivo repete o `id` de um evento — página colada duas vezes, ou histórico
+montado à mão: a primeira ocorrência vence, a repetição é descartada e a ordem das
+tentativas continua sendo a que o arquivo sustenta. `glue_attempt_absent` sai quando um
+arquivo tem tentativa medida e **nenhuma** delas é `glue:startJobRun` — a integração
+`aws-sdk`, por exemplo, publica `resourceType: aws-sdk:glue`, e o confronto de retry não
+a alcança. A recusa é por arquivo e lista o `<serviço>:<api>` de cada tentativa dele, que
+é por onde o próximo passo aparece. Ela não sai para o arquivo que **tem**
+`glue:startJobRun`: esse tem confronto.
 
 ### As três regras
 
 | regra | dispara quando | severidade |
 |---|---|---|
 | `SF-SFNX-001` | os agendamentos do Task passam do teto `1 + MaxAttempts` que o ASL declara (exige os dois artefatos no `fuse`) | P2 |
-| `SF-SFNX-002` | a tentativa `.sync` terminou em `TaskTimedOut`: o desfecho do JobRun que ela acompanhava não foi observado | P1 |
+| `SF-SFNX-002` | a tentativa `.sync` terminou em `TaskTimedOut` **depois de ter sido submetida** (`submitted: true`): o desfecho do JobRun que ela acompanhava não foi observado | P1 |
 | `SF-SFNX-003` | a execução terminou em `Aborted` ou `TimedOut` com o Task `.sync` agendado e sem evento terminal próprio | P1 |
+
+A `SF-SFNX-002` **só fala quando a submissão aconteceu**, e a condição não é
+decorativa: um `.sync` que expira ANTES do `TaskSubmitted` — prazo que não cobriu nem o
+`StartJobRun` — não deixou `JobRunId` nenhum, e ali não há job órfão a investigar, há um
+prazo curto demais. Sem a condição, o achado mandaria você rodar
+`aws glue get-job-run` sobre um identificador que o histórico não registra.
 
 **Nenhuma delas fala em custo.** Atribuir custo a uma tentativa exigiria o `dpu_seconds`
 de um run que ninguém leu. O que o histórico entrega é o `JobRunId` — e é com ele que
