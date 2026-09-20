@@ -975,3 +975,139 @@ def test_redrive_recusa_o_confronto_em_vez_de_comparar():
         if f.kind == "sfn.unresolved" and f.attrs["reason"] == "redrive_in_execution"
     ]
     assert [f.subject["file"] for f in recusas] == ["redrive.json"]
+
+
+# Dois ramos de um `Parallel`, cada um com um estado chamado `Carga`. As duas entradas
+# (ids 9 e 10) apontam para o MESMO `ParallelStateStarted` (id 8) e nenhuma esta na
+# cadeia da outra: e ai que o nome deixa de identificar um estado.
+HISTORICO_COM_PARALLEL_HOMONIMO = {
+    "events": [
+        _evento(1, 0, "ExecutionStarted", 0),
+        _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Preparacao"}),
+        _evento(3, 2, "TaskScheduled", 2, **_agendado()),
+        _evento(4, 3, "TaskSubmitted", 3, **_submetido({"JobRunId": "jr_prep"})),
+        _evento(5, 4, "TaskSucceeded", 20),
+        _evento(6, 5, "TaskStateExited", 21, stateExitedEventDetails={"name": "Preparacao"}),
+        _evento(7, 6, "ParallelStateEntered", 22, stateEnteredEventDetails={"name": "Cargas"}),
+        _evento(8, 7, "ParallelStateStarted", 23),
+        _evento(9, 8, "TaskStateEntered", 24, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(10, 8, "TaskStateEntered", 24, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(11, 9, "TaskScheduled", 25, **_agendado()),
+        _evento(12, 10, "TaskScheduled", 25, **_agendado()),
+        _evento(13, 11, "TaskSubmitted", 26, **_submetido({"JobRunId": "jr_ramo_a"})),
+        _evento(14, 12, "TaskSubmitted", 26, **_submetido({"JobRunId": "jr_ramo_b"})),
+        _evento(15, 13, "TaskSucceeded", 50),
+        _evento(16, 14, "TaskSucceeded", 51),
+        _evento(17, 16, "ParallelStateSucceeded", 52),
+        _evento(18, 17, "ParallelStateExited", 53, stateExitedEventDetails={"name": "Cargas"}),
+        _evento(19, 18, "ExecutionSucceeded", 54),
+    ]
+}
+
+
+# O MESMO estado entra TRES vezes, uma depois da outra, por um `Choice` que volta. Cada
+# entrada esta na cadeia da seguinte: as tres se alcancam, e o nome continua
+# identificando um estado so.
+HISTORICO_DE_RAMO_UNICO_COM_TRES_ENTRADAS = {
+    "events": [
+        _evento(1, 0, "ExecutionStarted", 0),
+        _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(3, 2, "TaskScheduled", 2, **_agendado()),
+        _evento(4, 3, "TaskSubmitted", 3, **_submetido({"JobRunId": "jr_1"})),
+        _evento(
+            5,
+            4,
+            "TaskFailed",
+            30,
+            taskFailedEventDetails={"error": "Glue.AWSGlueException", "cause": "falhou"},
+        ),
+        _evento(6, 5, "TaskStateExited", 31, stateExitedEventDetails={"name": "Carga"}),
+        _evento(7, 6, "ChoiceStateEntered", 32, stateEnteredEventDetails={"name": "Repetir"}),
+        _evento(8, 7, "ChoiceStateExited", 33, stateExitedEventDetails={"name": "Repetir"}),
+        _evento(9, 8, "TaskStateEntered", 34, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(10, 9, "TaskScheduled", 35, **_agendado()),
+        _evento(11, 10, "TaskSubmitted", 36, **_submetido({"JobRunId": "jr_2"})),
+        _evento(
+            12,
+            11,
+            "TaskFailed",
+            60,
+            taskFailedEventDetails={"error": "Glue.AWSGlueException", "cause": "falhou"},
+        ),
+        _evento(13, 12, "TaskStateExited", 61, stateExitedEventDetails={"name": "Carga"}),
+        _evento(14, 13, "ChoiceStateEntered", 62, stateEnteredEventDetails={"name": "Repetir"}),
+        _evento(15, 14, "ChoiceStateExited", 63, stateExitedEventDetails={"name": "Repetir"}),
+        _evento(16, 15, "TaskStateEntered", 64, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(17, 16, "TaskScheduled", 65, **_agendado()),
+        _evento(18, 17, "TaskSubmitted", 66, **_submetido({"JobRunId": "jr_3"})),
+        _evento(19, 18, "TaskSucceeded", 90),
+        _evento(20, 19, "ExecutionSucceeded", 91),
+    ]
+}
+
+
+def test_estado_homonimo_em_ramos_diferentes_sai_recusado_sem_indice():
+    """Dois ramos de um `Parallel` com um estado de mesmo nome: o nome nao identifica (AC3).
+
+    O contador `ordem_por_estado` era chaveado so pelo NOME, e a primeira tentativa do
+    segundo ramo saia com `attempt_index: 2` -- um indice que o arquivo nao sustenta, e
+    que e o `subject.symbol` por onde a `SF-SFNX-002` e a `SF-SFNX-003` apontam o
+    achado. A deteccao e por ANCESTRALIDADE: as duas entradas de `Carga` divergem no
+    `ParallelStateStarted` comum, e nenhuma alcanca a outra subindo `previousEventId`.
+    """
+    facts = extract_sfn_history(HISTORICO_COM_PARALLEL_HOMONIMO, "parallel.json")
+
+    # Nenhuma tentativa de `Carga`, e nenhum `sfn.job_run` dela: o indice seria invencao.
+    assert [t.attrs["state_name"] for t in _de(facts, "sfn.attempt")] == ["Preparacao"]
+    assert [c.attrs["job_run_id"] for c in _de(facts, "sfn.job_run")] == ["jr_prep"]
+
+    [recusa] = _de(facts, "sfn.unresolved")
+    assert recusa.attrs["reason"] == "state_name_in_concurrent_branches"
+    assert recusa.attrs["state_name"] == "Carga"
+    assert recusa.subject["symbol"] == "Carga"
+    assert recusa.measures == {"entry_count": 2, "attempt_count": 2}
+
+    # O estado de nome UNICO do mesmo historico continua virando tentativa, com indice.
+    [preparacao] = _de(facts, "sfn.attempt")
+    assert preparacao.subject["symbol"] == "Preparacao#1"
+    assert preparacao.measures["attempt_index"] == 1
+    assert preparacao.attrs["result"] == "succeeded"
+
+    # E as contagens da execucao contam o que SAIU, nao o que foi lido.
+    [execucao] = _de(facts, "sfn.execution")
+    assert execucao.measures["attempt_count"] == 1
+    assert execucao.measures["job_run_count"] == 1
+    assert execucao.measures["read_event_count"] == 19
+
+
+def test_ramo_unico_com_retry_mantem_os_indices():
+    """Reentrada SEQUENCIAL continua numerada 1..n -- e e ela que impede a regressao (AC4).
+
+    Este e o negativo de D1, e a razao de o criterio ser ancestralidade e nao contagem
+    de entradas: com "mais de uma entrada => recusa", este historico perderia
+    exatamente a numeracao que a `SF-SFNX-001` existe para medir.
+
+    O criterio e indiferente a lacuna U1 POR CONSTRUCAO: se o `Retry` reentrar no
+    estado, a reentrada e sequencial como esta aqui e as entradas se alcancam; se nao
+    reentrar, ha uma entrada so. Nos dois casos a numeracao e a mesma, e por isso nao e
+    preciso saber a resposta para agir.
+    """
+    facts = extract_sfn_history(HISTORICO_DE_RAMO_UNICO_COM_TRES_ENTRADAS, "ramo-unico.json")
+
+    assert _de(facts, "sfn.unresolved") == []
+    tentativas = sorted(_de(facts, "sfn.attempt"), key=lambda f: f.measures["attempt_index"])
+    assert [t.measures["attempt_index"] for t in tentativas] == [1, 2, 3]
+    assert [t.subject["symbol"] for t in tentativas] == ["Carga#1", "Carga#2", "Carga#3"]
+    assert {t.attrs["state_name"] for t in tentativas} == {"Carga"}
+    corridas = sorted(_de(facts, "sfn.job_run"), key=lambda f: f.measures["attempt_index"])
+    assert [c.attrs["job_run_id"] for c in corridas] == ["jr_1", "jr_2", "jr_3"]
+
+    # E o caso de UMA entrada com varios agendamentos -- o que as onze fixtures do
+    # corpus ja tinham -- continua igual: nada aqui depende de quantas entradas ha.
+    facts = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
+    tentativas = sorted(_de(facts, "sfn.attempt"), key=lambda f: f.measures["attempt_index"])
+    assert [t.subject["symbol"] for t in tentativas] == [
+        "CargaDiaria#1",
+        "CargaDiaria#2",
+        "CargaDiaria#3",
+    ]

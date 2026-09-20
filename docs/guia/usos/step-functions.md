@@ -148,7 +148,7 @@ a diferença entre "o histórico é este" e "esta é a parte que eu salvei".
 | `sfn.attempt` | tentativa de Task (`<estado>#<ordem>`) | nome do estado, ordem, padrão de integração, resultado, duração, `error`, `cause`, e o prazo declarado do Task |
 | `sfn.job_run` | `JobRunId` lido do `output` do `TaskSubmitted` | o id, o `JobName` quando vem junto, e de qual chave ele foi lido |
 | `sfn.retry_observado` | **execução e estado** (o par arquivo + nome), só em `fuse` com o ASL | tentativas observadas contra o teto declarado |
-| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `attempt_unanchored`, `execution_data_absent`, `execution_redriven`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable`, `redrive_in_execution` e `glue_attempt_absent` |
+| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `state_name_in_concurrent_branches`, `attempt_unanchored`, `execution_data_absent`, `execution_redriven`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable`, `redrive_in_execution` e `glue_attempt_absent` |
 | `sfn.analyzed` | arquivo | as contagens — prova de que o arquivo foi lido |
 
 **O `sfn.retry_observado` é por execução E por estado, e isso importa com mais de um
@@ -179,6 +179,18 @@ execução sem redrive, salva ao lado no mesmo case, continua tendo confronto. M
 redrive em vez de recusá-lo exigiria saber quantas tentativas caíram antes e quantas
 depois, e a forma do evento não foi lida (lacuna 9 de
 `knowledge/stepfunctions/execution-history.md`).
+
+**Estado de mesmo nome em ramos concorrentes: sem índice, e sem tentativa.** Dentro de um
+`Parallel`, dois ramos podem ter um estado com o mesmo nome — e o histórico publica
+**nome**, não caminho. O extrator junta os `TaskStateEntered` distintos a que os
+`TaskScheduled` daquele nome se encadeiam; se dois deles forem mutuamente
+não-ancestrais — nenhum alcança o outro subindo `previousEventId` —, o nome não
+identifica um estado naquele arquivo: nenhum `sfn.attempt` dele é emitido, nenhum
+`sfn.job_run` dele é ligado, e sai `sfn.unresolved:
+state_name_in_concurrent_branches` com o nome e com quantas entradas ele tinha.
+Reentrada **sequencial** — um retry, ou um `Choice` que volta ao mesmo estado — não cai
+aqui: a entrada anterior está na cadeia da seguinte, as duas se alcançam, e a numeração
+1..n continua valendo.
 
 ### As três regras
 

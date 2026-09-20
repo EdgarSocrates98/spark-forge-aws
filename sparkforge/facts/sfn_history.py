@@ -33,7 +33,8 @@ kinds, nao cinco.
 - `sfn.unresolved` -- o que nao deu para ler. Razoes: `read_error`,
   `size_above_limit`, `invalid_json`, `json_too_deep`, `json_too_large`,
   `not_an_execution_history`, `truncated`, `event_not_an_object`,
-  `event_type_unknown`, `event_id_duplicated`, `state_unresolved`, `attempt_unanchored`,
+  `event_type_unknown`, `event_id_duplicated`, `state_unresolved`,
+  `state_name_in_concurrent_branches`, `attempt_unanchored`,
   `execution_terminal_absent`, `execution_data_absent`, `execution_redriven` e
   `job_run_id_unrecognized`.
   O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
@@ -86,6 +87,26 @@ quebrada, raiz e ciclo saem em recusa nomeada, que e onde a premissa errada apar
 Cadeia que chega a raiz sem achar, evento referenciado ausente do arquivo, ou ciclo:
 `sfn.unresolved` nomeado. NUNCA um chute -- atribuir a tentativa ao estado errado num
 `Parallel` seria pior do que nao atribuir.
+
+## O NOME identifica um estado? So quando as entradas dele se alcancam
+
+O historico publica o NOME do estado (`stateEnteredEventDetails.name`), nunca o caminho
+dele na definicao. Dentro de um `Parallel`, dois ramos podem ter um estado de mesmo
+nome -- e ai o nome nao identifica nada. Ate 2026-09-20 o contador era chaveado so pelo
+nome, e a primeira tentativa do segundo ramo saia com `attempt_index: 2`: um indice que
+o arquivo nao sustenta, e que e o `subject.symbol` por onde `SF-SFNX-002` e
+`SF-SFNX-003` apontam o achado.
+
+O criterio e ANCESTRALIDADE, nao a presenca de um `Parallel` no arquivo. Para um nome,
+juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled` daquele nome se
+encadeiam; se DOIS deles forem mutuamente nao-ancestrais -- nenhum alcanca o outro
+subindo `previousEventId` --, nenhum `sfn.attempt` daquele nome e emitido, nenhum
+`sfn.job_run` dele e ligado, e sai `sfn.unresolved: state_name_in_concurrent_branches`.
+
+Reentrada SEQUENCIAL nao cai ali: um retry, ou um `Choice` que volta, deixa a entrada
+anterior na cadeia da seguinte, e as duas se alcancam. E por isso que o criterio e
+indiferente a lacuna U1 -- se o `Retry` reentra no estado nao esta publicado, e a
+resposta nao muda a numeracao nos dois casos.
 
 ## Tres atributos DERIVADOS aqui (regra 33)
 
@@ -401,6 +422,78 @@ def _ancestral(
         atual = pai
 
 
+def _ancestrais(evento: dict[str, Any], por_id: dict[int, dict[str, Any]]) -> set[int]:
+    """Todo `id` que a cadeia de `previousEventId` alcanca subindo a partir de `evento`.
+
+    O mesmo passeio de `_ancestral`, sem o filtro por tipo e sem razao de parada
+    nomeada: aqui a pergunta nao e "qual ancestral" e sim "A alcanca B?". Raiz, cadeia
+    quebrada e ciclo terminam o passeio devolvendo o que ja foi visto -- um conjunto
+    menor nunca inventa alcance, e alcance a menos so faz RECUSAR mais, que e o lado
+    seguro de errar.
+    """
+    vistos: set[int] = set()
+    atual = evento
+    while True:
+        anterior = atual.get("previousEventId")
+        if isinstance(anterior, bool) or not isinstance(anterior, int) or anterior <= 0:
+            return vistos
+        if anterior in vistos:
+            return vistos
+        vistos.add(anterior)
+        pai = por_id.get(anterior)
+        if pai is None:
+            return vistos
+        atual = pai
+
+
+def _nomes_em_ramos_concorrentes(
+    tentativas: dict[int, dict[str, Any]], por_id: dict[int, dict[str, Any]]
+) -> dict[str, int]:
+    """Nome do estado -> quantas entradas ele tem, quando DUAS delas nao se alcancam.
+
+    Para um nome, juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled`
+    daquele nome se encadeiam. Reentrada SEQUENCIAL -- um retry, ou um `Choice` que
+    volta ao mesmo estado -- deixa a entrada anterior na cadeia da seguinte: as duas se
+    alcancam, e a numeracao 1..n continua valendo. Ramos concorrentes de um `Parallel`
+    divergem no `ParallelStateStarted` comum e nunca se alcancam: ali o NOME nao
+    identifica um estado, e o `attempt_index` seria invencao -- ele e o
+    `subject.symbol` por onde `SF-SFNX-002` e `SF-SFNX-003` apontam o achado.
+
+    O criterio NAO pergunta se o `Retry` reentra no estado, que e justamente a lacuna
+    que ninguem mediu (U1 de `docs/sdd/SFN_TENTATIVA/define.md`): qualquer que seja a
+    resposta, reentrada sequencial e ancestral e ramo concorrente nao e.
+
+    O `previousEventId` ser o do MESMO RAMO continua sendo premissa nossa, nao
+    publicada (lacuna 8 de `knowledge/stepfunctions/execution-history.md`). Se ela
+    estiver errada, o efeito e recusar DEMAIS -- duas entradas sequenciais pareceriam
+    nao-ancestrais --, nunca afirmar de menos.
+    """
+    entradas_por_nome: dict[str, list[int]] = {}
+    for identificador in sorted(tentativas):
+        estado = tentativas[identificador]
+        lista = entradas_por_nome.setdefault(estado["state_name"], [])
+        if estado["entry_id"] not in lista:
+            lista.append(estado["entry_id"])
+    concorrentes: dict[str, int] = {}
+    for nome, entradas in entradas_por_nome.items():
+        if len(entradas) < 2:
+            continue
+        alcance = {
+            entrada: _ancestrais(por_id[entrada], por_id)
+            for entrada in entradas
+            if entrada in por_id
+        }
+        pares = [
+            (a, b) for indice, a in enumerate(entradas) for b in entradas[indice + 1 :]
+        ]
+        if any(
+            b not in alcance.get(a, set()) and a not in alcance.get(b, set())
+            for a, b in pares
+        ):
+            concorrentes[nome] = len(entradas)
+    return concorrentes
+
+
 def _job_run(saida: Any) -> tuple[str | None, str | None, str | None, list[str]]:
     """(job_run_id, job_name, chave lida, chaves de topo). U1 mora aqui.
 
@@ -619,6 +712,10 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
         ordem_por_estado[nome] = ordem_por_estado.get(nome, 0) + 1
         tentativas[int(evento["id"])] = {
             "state_name": nome,
+            # O `id` do `TaskStateEntered` de onde o nome veio. E ele que decide se o
+            # nome identifica UM estado naquele historico (D1), e por isso ele fica
+            # guardado em vez de descartado assim que o nome foi lido.
+            "entry_id": int(entrada["id"]),
             "index": ordem_por_estado[nome],
             "scheduled": evento,
             "terminal": None,
@@ -649,9 +746,30 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
         elif alvo["terminal"] is None:
             alvo["terminal"] = evento
 
+    # 2.5 O NOME identifica UM estado? So quando as entradas dele se alcancam (D1).
+    #
+    # A recusa sai DEPOIS do passo 2 de proposito. Tirar as tentativas antes dele
+    # faria cada terminal e cada `TaskSubmitted` daquele nome cair em
+    # `attempt_unanchored` -- "nao achei o agendamento" --, que e outra coisa e
+    # esconderia a lacuna de verdade atras de ruido por evento.
+    concorrentes = _nomes_em_ramos_concorrentes(tentativas, por_id)
+    for nome in sorted(concorrentes):
+        quantas = sum(1 for e in tentativas.values() if e["state_name"] == nome)
+        leitura.facts.append(
+            _unresolved(
+                _attempt_subject(path, nome),
+                "state_name_in_concurrent_branches",
+                provenance,
+                measures={"entry_count": concorrentes[nome], "attempt_count": quantas},
+                state_name=nome,
+            )
+        )
+
     # 3. Os facts, em ordem de agendamento.
     for identificador in sorted(tentativas):
         estado = tentativas[identificador]
+        if estado["state_name"] in concorrentes:
+            continue
         leitura.facts.extend(_fatos_da_tentativa(estado, status, classe, leitura))
 
     inicio = _instante(ordenados[0].get("timestamp")) if ordenados else None
