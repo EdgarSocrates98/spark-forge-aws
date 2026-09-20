@@ -17,7 +17,10 @@ kinds, nao cinco.
 
 ## O que sai
 
-- `sfn.execution` -- um por arquivo lido. `attrs.status` vem do evento terminal da
+- `sfn.execution` -- um por arquivo lido. `measures.read_event_count` e o numero de
+  eventos que o extrator LEU, e pode ser menor do que o tamanho de `events` no arquivo:
+  o que nao e objeto, o de tipo desconhecido e o de `id` repetido ficam de fora, cada um
+  com o seu `sfn.unresolved`. `attrs.status` vem do evento terminal da
   execucao (`succeeded`, `failed`, `aborted`, `timed_out`) e e `unresolved` quando
   nenhum deles esta no arquivo -- NUNCA `succeeded` por suposicao. `attrs.arn` so
   existe quando a saida salva traz `executionArn`: a resposta de
@@ -603,7 +606,12 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
     inicio = _instante(ordenados[0].get("timestamp")) if ordenados else None
     fim = _instante(ordenados[-1].get("timestamp")) if ordenados else None
     medidas: dict[str, Any] = {
-        "event_count": len(ordenados),
+        # `read_event_count`, e nao `event_count`: sao os eventos que o extrator LEU.
+        # O que nao e objeto, o de tipo desconhecido e o de `id` repetido ficam de fora
+        # (cada um com o seu `sfn.unresolved`), e por isso este numero pode ser MENOR
+        # do que o tamanho de `events` no arquivo. O nome tinha de dizer isso: chamado
+        # de "contagem de eventos", ele afirmaria uma leitura completa que nao houve.
+        "read_event_count": len(ordenados),
         "attempt_count": sum(1 for f in leitura.facts if f.kind == "sfn.attempt"),
         "job_run_count": sum(1 for f in leitura.facts if f.kind == "sfn.job_run"),
     }

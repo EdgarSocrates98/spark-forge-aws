@@ -104,7 +104,7 @@ sucesso por suposição.
 
 | kind | um por | o que diz |
 |---|---|---|
-| `sfn.execution` | arquivo | `status` pelo evento terminal (`unresolved` quando ele não está no arquivo), duração, contagem de eventos, `truncated` |
+| `sfn.execution` | arquivo | `status` pelo evento terminal (`unresolved` quando ele não está no arquivo), duração, contagem dos eventos **lidos** (`read_event_count` — o que não é objeto, o de tipo desconhecido e o de `id` repetido ficam de fora, cada um com a sua recusa), `truncated` |
 | `sfn.attempt` | tentativa de Task (`<estado>#<ordem>`) | nome do estado, ordem, padrão de integração, resultado, duração, `error`, `cause`, e o prazo declarado do Task |
 | `sfn.job_run` | `JobRunId` lido do `output` do `TaskSubmitted` | o id, o `JobName` quando vem junto, e de qual chave ele foi lido |
 | `sfn.retry_observado` | estado, só em `fuse` com o ASL | tentativas observadas contra o teto declarado |

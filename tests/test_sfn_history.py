@@ -116,8 +116,10 @@ def test_historico_vira_execucao_e_tentativas():
     assert execucao.attrs["arn_declared"] is False
     assert execucao.attrs["source"] == "get_execution_history"
     assert execucao.attrs["truncated"] is False
+    # `read_event_count` conta os eventos LIDOS, nao os do arquivo: desconhecido, nao
+    # objeto e `id` repetido ficam de fora, e o nome tem de dizer isso (A10).
     assert execucao.measures == {
-        "event_count": 15,
+        "read_event_count": 15,
         "attempt_count": 3,
         "job_run_count": 3,
         "duration_seconds": 91.0,
@@ -313,7 +315,8 @@ def test_tipo_desconhecido_no_meio_da_cadeia_nao_apaga_a_tentativa():
     # E ele nao entra em nada alem da travessia: a contagem de eventos so conta os
     # lidos, e o instante final vem do ultimo evento CONHECIDO.
     [execucao] = _de(facts, "sfn.execution")
-    assert execucao.measures["event_count"] == 6
+    assert execucao.measures["read_event_count"] == 6
+    assert "event_count" not in execucao.measures
     assert execucao.attrs["status"] == "succeeded"
 
 
@@ -351,7 +354,7 @@ def test_id_de_evento_repetido_sai_nomeado(tmp_path):
     assert tentativa.measures["attempt_index"] == 1
     assert tentativa.subject["symbol"] == "Carga#1"
     [execucao] = _de(facts, "sfn.execution")
-    assert execucao.measures["event_count"] == 5
+    assert execucao.measures["read_event_count"] == 5
 
 
 def test_recusas_do_mesmo_arquivo_nao_colidem_de_id():

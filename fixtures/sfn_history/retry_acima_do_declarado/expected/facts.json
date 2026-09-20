@@ -165,7 +165,7 @@
     }
   },
   {
-    "id": "f_e3251e",
+    "id": "f_51aa48",
     "schema_version": 1,
     "kind": "sfn.execution",
     "subject": {
@@ -177,7 +177,7 @@
       "snippet": ""
     },
     "measures": {
-      "event_count": 15,
+      "read_event_count": 15,
       "attempt_count": 3,
       "job_run_count": 3,
       "duration_seconds": 2161.0

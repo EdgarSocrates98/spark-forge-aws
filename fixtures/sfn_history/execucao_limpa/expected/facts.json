@@ -63,7 +63,7 @@
     }
   },
   {
-    "id": "f_a1b209",
+    "id": "f_386a8a",
     "schema_version": 1,
     "kind": "sfn.execution",
     "subject": {
@@ -75,7 +75,7 @@
       "snippet": ""
     },
     "measures": {
-      "event_count": 8,
+      "read_event_count": 8,
       "attempt_count": 1,
       "job_run_count": 1,
       "duration_seconds": 1082.0
