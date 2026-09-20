@@ -23,6 +23,10 @@ files:
   - {path: docs/superpowers/STATUS.md, action: modify, reason: "AC7: a contagem de fixtures golden, que as tres fixtures movem"}
   - {path: docs/claims.lock.json, action: modify, reason: "as alegacoes de bytes do corpus *.py que a edicao de sfn_history.py move, remediadas por id"}
   - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "os numeros auditados que as mesmas alegacoes publicam"}
+  - {path: docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md, action: modify, reason: "a mesma alegacao de bytes do corpus *.py que docs/claims.lock.json remedia publica um numero aqui; o gate de lastro a listou por id e a remediacao tocou este arquivo. Achado F5 da revisao final"}
+  - {path: fixtures/sfn_history/map_inline_iteracoes/meta.yaml, action: create, reason: "a fixture do F2: duas iteracoes de um Map INLINE caem na mesma recusa de nome que os ramos de um Parallel, e os dois sfn.job_run sobrevivem a ela sem #<n> e sem attempt_index. O define so falava de Parallel, e nao havia fixture de Map nenhuma no corpus"}
+  - {path: fixtures/sfn_history/parallel_estado_homonimo/expected/facts.json, action: modify, reason: "o F2 aplicado a fixture que ja exercitava o caminho da recusa: os dois sfn.job_run dos ramos passam a sair, e job_run_count vai de 1 para 3. Regenerado pelo nome"}
+  - {path: fixtures/sfn_history/historico_truncado/expected/facts.json, action: modify, reason: "o F4, divida anterior a esta feature: read_events sai de attrs para measures e os dois facts que colidiam no id f_bae972 passam a sobreviver ao fuse. Regenerado pelo nome"}
 decisions:
   - id: D1
     choice: "O caso homonimo e detectado por ANCESTRALIDADE entre as entradas de mesmo nome, nao pela presenca de um Parallel no arquivo. Para um nome de estado, o extrator junta os `TaskStateEntered` distintos aos quais os `TaskScheduled` daquele nome se encadeiam; se DOIS deles forem mutuamente nao-ancestrais -- nenhum alcanca o outro subindo `previousEventId` --, o nome nao identifica um estado naquele historico: nenhum `sfn.attempt` dele e emitido e sai `sfn.unresolved` nomeado."
