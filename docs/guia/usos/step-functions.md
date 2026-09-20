@@ -148,7 +148,7 @@ a diferença entre "o histórico é este" e "esta é a parte que eu salvei".
 | `sfn.attempt` | tentativa de Task (`<estado>#<ordem>`) | nome do estado, ordem, padrão de integração, resultado, duração, `error`, `cause`, e o prazo declarado do Task |
 | `sfn.job_run` | `JobRunId` lido do `output` do `TaskSubmitted` | o id, o `JobName` quando vem junto, e de qual chave ele foi lido |
 | `sfn.retry_observado` | **execução e estado** (o par arquivo + nome), só em `fuse` com o ASL | tentativas observadas contra o teto declarado |
-| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `state_name_in_concurrent_branches`, `attempt_unanchored`, `execution_data_absent`, `execution_redriven`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable`, `redrive_in_execution` e `glue_attempt_absent` |
+| `sfn.unresolved` | o que não deu para ler ou parear | `truncated`, `execution_terminal_absent`, cadeia quebrada, `event_type_unknown`, `event_id_duplicated`, `event_not_an_object`, `state_unresolved`, `state_name_in_concurrent_branches`, `state_entries_chain_unwalkable`, `attempt_unanchored`, `execution_data_absent`, `execution_redriven`, `job_run_id_unrecognized`; e na derivação, `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`, `declared_ceiling_unreadable`, `redrive_in_execution` e `glue_attempt_absent` |
 | `sfn.analyzed` | arquivo | as contagens — prova de que o arquivo foi lido |
 
 **O `sfn.retry_observado` é por execução E por estado, e isso importa com mais de um
@@ -191,6 +191,17 @@ state_name_in_concurrent_branches` com o nome e com quantas entradas ele tinha.
 Reentrada **sequencial** — um retry, ou um `Choice` que volta ao mesmo estado — não cai
 aqui: a entrada anterior está na cadeia da seguinte, as duas se alcançam, e a numeração
 1..n continua valendo.
+
+**E há uma segunda recusa, para quando o passeio não deu para fazer.** "Não se alcançam"
+tem duas causas. Só quando os **dois** passeios do par chegaram à raiz limpos é que houve
+concorrência de verdade, e aí o nome é `state_name_in_concurrent_branches`. Quando pelo
+menos um deles parou antes — o `id` referenciado não está no arquivo (página faltando,
+histórico truncado, evento recusado antes) ou a cadeia entrou em ciclo —, não se
+demonstrou concorrência nenhuma, e sai `sfn.unresolved:
+state_entries_chain_unwalkable`, com a parada (`chain_broken` ou `chain_cycle`) em
+`attrs.detail` e com quantas entradas ficaram impassáveis em
+`measures.unwalkable_entry_count`. Nos dois casos a numeração se cala — o que muda é o
+próximo passo: num, olhar a definição; no outro, buscar a página que falta.
 
 ### As três regras
 

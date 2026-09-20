@@ -34,9 +34,9 @@ kinds, nao cinco.
   `size_above_limit`, `invalid_json`, `json_too_deep`, `json_too_large`,
   `not_an_execution_history`, `truncated`, `event_not_an_object`,
   `event_type_unknown`, `event_id_duplicated`, `state_unresolved`,
-  `state_name_in_concurrent_branches`, `attempt_unanchored`,
-  `execution_terminal_absent`, `execution_data_absent`, `execution_redriven` e
-  `job_run_id_unrecognized`.
+  `state_name_in_concurrent_branches`, `state_entries_chain_unwalkable`,
+  `attempt_unanchored`, `execution_terminal_absent`, `execution_data_absent`,
+  `execution_redriven` e `job_run_id_unrecognized`.
   O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
   `measures`, e nao em `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres
   recusas iguais sobre o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por
@@ -100,8 +100,16 @@ o arquivo nao sustenta, e que e o `subject.symbol` por onde `SF-SFNX-002` e
 O criterio e ANCESTRALIDADE, nao a presenca de um `Parallel` no arquivo. Para um nome,
 juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled` daquele nome se
 encadeiam; se DOIS deles forem mutuamente nao-ancestrais -- nenhum alcanca o outro
-subindo `previousEventId` --, nenhum `sfn.attempt` daquele nome e emitido, nenhum
-`sfn.job_run` dele e ligado, e sai `sfn.unresolved: state_name_in_concurrent_branches`.
+subindo `previousEventId` --, nenhum `sfn.attempt` daquele nome e emitido e sai uma
+recusa nomeada.
+
+A RECUSA SAO DUAS, porque a causa sao duas. Quando os dois passeios do par chegaram a
+raiz limpos e mesmo assim nao se cruzaram, houve concorrencia de verdade e sai
+`state_name_in_concurrent_branches`. Quando pelo menos um deles parou em `chain_broken`
+ou `chain_cycle`, nao se demonstrou concorrencia nenhuma -- o passeio e que nao deu para
+fazer --, e sai `state_entries_chain_unwalkable` com a parada em `attrs.detail`. Recusar
+nos dois casos e legitimo; chamar os dois pelo mesmo nome seria recusa com o nome
+errado, que a regra 20 trata como pior do que recusa sem nome.
 
 Reentrada SEQUENCIAL nao cai ali: um retry, ou um `Choice` que volta, deixa a entrada
 anterior na cadeia da seguinte, e as duas se alcancam. E por isso que o criterio e
@@ -422,42 +430,77 @@ def _ancestral(
         atual = pai
 
 
-def _ancestrais(evento: dict[str, Any], por_id: dict[int, dict[str, Any]]) -> set[int]:
-    """Todo `id` que a cadeia de `previousEventId` alcanca subindo a partir de `evento`.
+def _ancestrais(
+    evento: dict[str, Any], por_id: dict[int, dict[str, Any]]
+) -> tuple[set[int], str]:
+    """(ids alcancados subindo `previousEventId`, razao de parada).
 
-    O mesmo passeio de `_ancestral`, sem o filtro por tipo e sem razao de parada
-    nomeada: aqui a pergunta nao e "qual ancestral" e sim "A alcanca B?". Raiz, cadeia
-    quebrada e ciclo terminam o passeio devolvendo o que ja foi visto -- um conjunto
-    menor nunca inventa alcance, e alcance a menos so faz RECUSAR mais, que e o lado
-    seguro de errar.
+    O mesmo passeio de `_ancestral`, sem o filtro por tipo: aqui a pergunta nao e "qual
+    ancestral" e sim "A alcanca B?". A RAZAO DE PARADA SAI JUNTO, e pelo mesmo motivo
+    que ela existe la -- `chain_root`, `chain_broken` e `chain_cycle` sao coisas
+    diferentes, e confundi-las esconderia truncamento atras de "nao achei".
+
+    Um conjunto menor nunca inventa alcance, e alcance a menos so faz RECUSAR mais, que
+    e o lado seguro de errar. Mas o NOME da recusa depende da parada: duas entradas que
+    nao se alcancam porque a cadeia QUEBROU nao estao em ramos concorrentes, e dizer
+    que estao seria recusa com o nome errado, que a regra 20 trata como pior do que
+    recusa sem nome.
     """
     vistos: set[int] = set()
     atual = evento
     while True:
         anterior = atual.get("previousEventId")
         if isinstance(anterior, bool) or not isinstance(anterior, int) or anterior <= 0:
-            return vistos
+            return vistos, "chain_root"
         if anterior in vistos:
-            return vistos
+            return vistos, "chain_cycle"
         vistos.add(anterior)
         pai = por_id.get(anterior)
         if pai is None:
-            return vistos
+            return vistos, "chain_broken"
         atual = pai
 
 
-def _nomes_em_ramos_concorrentes(
+def _nomes_sem_identidade(
     tentativas: dict[int, dict[str, Any]], por_id: dict[int, dict[str, Any]]
-) -> dict[str, int]:
-    """Nome do estado -> quantas entradas ele tem, quando DUAS delas nao se alcancam.
+) -> dict[str, dict[str, Any]]:
+    """Nome do estado -> a recusa, quando DUAS entradas dele nao se alcancam.
 
     Para um nome, juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled`
     daquele nome se encadeiam. Reentrada SEQUENCIAL -- um retry, ou um `Choice` que
     volta ao mesmo estado -- deixa a entrada anterior na cadeia da seguinte: as duas se
-    alcancam, e a numeracao 1..n continua valendo. Ramos concorrentes de um `Parallel`
-    divergem no `ParallelStateStarted` comum e nunca se alcancam: ali o NOME nao
-    identifica um estado, e o `attempt_index` seria invencao -- ele e o
-    `subject.symbol` por onde `SF-SFNX-002` e `SF-SFNX-003` apontam o achado.
+    alcancam, e a numeracao 1..n continua valendo. Ramos concorrentes divergem num
+    evento comum e nunca se alcancam: ali o NOME nao identifica um estado, e o
+    `attempt_index` seria invencao -- ele e o `subject.symbol` por onde `SF-SFNX-002` e
+    `SF-SFNX-003` apontam o achado.
+
+    ## DUAS recusas, porque sao duas coisas
+
+    "B nao alcanca A e A nao alcanca B" tem duas causas, e chama-las pelo mesmo nome
+    seria recusa com o nome errado (regra 20):
+
+    - `state_name_in_concurrent_branches` -- os DOIS passeios do par chegaram a raiz
+      limpos, e mesmo assim nenhum passou pelo outro. Isso e concorrencia de verdade:
+      ramos de um `Parallel`, **ou iteracoes de um `Map` inline**, que divergem no
+      `ParallelStateStarted`/`MapStateStarted` comum. O nome da recusa fala de ramo
+      porque foi ali que ela nasceu; o alcance dela inclui a iteracao de `Map`,
+      inclusive com `MaxConcurrency: 1`, que e sequencial no relogio e concorrente na
+      cadeia -- cada iteracao pendura o seu `TaskStateEntered` no mesmo evento;
+    - `state_entries_chain_unwalkable` -- pelo menos um dos passeios NAO deu para
+      fazer: parou em `chain_broken` (o id referenciado nao esta no arquivo: pagina
+      faltando, historico truncado, evento recusado antes) ou em `chain_cycle`. Aqui
+      nao ha concorrencia demonstrada nenhuma -- ha um passeio interrompido --, e
+      afirmar `Parallel` num arquivo que nao tem nenhum seria pior do que nao nomear.
+
+    Recusar nos dois casos e legitimo: sem o passeio inteiro, o indice nao tem base. O
+    que muda e o nome, e com ele o proximo passo do operador -- num caso, olhar a
+    definicao; no outro, buscar a pagina que falta.
+
+    O discriminador tem de entrar em `measures`, e nao so em `attrs`: `Fact.id` e sha1
+    de `kind + subject + measures`, as duas recusas tem o MESMO subject
+    (`<arquivo>` + nome do estado), e `fusion.fuse` indexa por id. Por isso a segunda
+    leva `unwalkable_entry_count`, que e medida e nao enfeite: quantas das entradas
+    daquele nome nao deram para percorrer.
 
     O criterio NAO pergunta se o `Retry` reentra no estado, que e justamente a lacuna
     que ninguem mediu (U1 de `docs/sdd/SFN_TENTATIVA/define.md`): qualquer que seja a
@@ -474,24 +517,52 @@ def _nomes_em_ramos_concorrentes(
         lista = entradas_por_nome.setdefault(estado["state_name"], [])
         if estado["entry_id"] not in lista:
             lista.append(estado["entry_id"])
-    concorrentes: dict[str, int] = {}
+    vazio: tuple[set[int], str] = (set(), "chain_broken")
+    sem_identidade: dict[str, dict[str, Any]] = {}
     for nome, entradas in entradas_por_nome.items():
         if len(entradas) < 2:
             continue
-        alcance = {
+        passeio = {
             entrada: _ancestrais(por_id[entrada], por_id)
             for entrada in entradas
             if entrada in por_id
         }
-        pares = [
-            (a, b) for indice, a in enumerate(entradas) for b in entradas[indice + 1 :]
+        disjuntos = [
+            (a, b)
+            for indice, a in enumerate(entradas)
+            for b in entradas[indice + 1 :]
+            if b not in passeio.get(a, vazio)[0] and a not in passeio.get(b, vazio)[0]
         ]
+        if not disjuntos:
+            continue
+        # A CONCORRENCIA E DEMONSTRADA POR UM PAR, nao pelo conjunto: basta um par cujos
+        # DOIS passeios chegaram a raiz limpos para que o nome esteja provadamente em
+        # ramos (ou iteracoes) concorrentes. Sem nenhum par assim, o que se mediu foi
+        # passeio interrompido, e a recusa e a outra.
         if any(
-            b not in alcance.get(a, set()) and a not in alcance.get(b, set())
-            for a, b in pares
+            passeio.get(a, vazio)[1] == "chain_root" and passeio.get(b, vazio)[1] == "chain_root"
+            for a, b in disjuntos
         ):
-            concorrentes[nome] = len(entradas)
-    return concorrentes
+            sem_identidade[nome] = {
+                "reason": "state_name_in_concurrent_branches",
+                "entry_count": len(entradas),
+            }
+            continue
+        travadas = {
+            entrada
+            for par in disjuntos
+            for entrada in par
+            if passeio.get(entrada, vazio)[1] != "chain_root"
+        }
+        sem_identidade[nome] = {
+            "reason": "state_entries_chain_unwalkable",
+            "entry_count": len(entradas),
+            "unwalkable_entry_count": len(travadas),
+            "detail": ",".join(
+                sorted({passeio.get(entrada, vazio)[1] for entrada in travadas})
+            ),
+        }
+    return sem_identidade
 
 
 def _job_run(saida: Any) -> tuple[str | None, str | None, str | None, list[str]]:
@@ -752,16 +823,25 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
     # faria cada terminal e cada `TaskSubmitted` daquele nome cair em
     # `attempt_unanchored` -- "nao achei o agendamento" --, que e outra coisa e
     # esconderia a lacuna de verdade atras de ruido por evento.
-    concorrentes = _nomes_em_ramos_concorrentes(tentativas, por_id)
+    concorrentes = _nomes_sem_identidade(tentativas, por_id)
     for nome in sorted(concorrentes):
+        recusa = concorrentes[nome]
         quantas = sum(1 for e in tentativas.values() if e["state_name"] == nome)
+        medidas: dict[str, Any] = {
+            "entry_count": recusa["entry_count"],
+            "attempt_count": quantas,
+        }
+        extra: dict[str, Any] = {"state_name": nome}
+        if "unwalkable_entry_count" in recusa:
+            medidas["unwalkable_entry_count"] = recusa["unwalkable_entry_count"]
+            extra["detail"] = recusa["detail"]
         leitura.facts.append(
             _unresolved(
                 _attempt_subject(path, nome),
-                "state_name_in_concurrent_branches",
+                recusa["reason"],
                 provenance,
-                measures={"entry_count": concorrentes[nome], "attempt_count": quantas},
-                state_name=nome,
+                measures=medidas,
+                **extra,
             )
         )
 

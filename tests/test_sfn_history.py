@@ -1111,3 +1111,128 @@ def test_ramo_unico_com_retry_mantem_os_indices():
         "CargaDiaria#2",
         "CargaDiaria#3",
     ]
+
+
+# RAMO UNICO, sem `Parallel` nenhum: as duas entradas de `Carga` (ids 2 e 8) estao na
+# MESMA linha de execucao. O que as separa e o evento de id STRING (o `"7"`), que o
+# modulo ja recusa como `event_not_an_object` e que por isso fica fora de `por_id`: a
+# cadeia da segunda entrada QUEBRA nele. Nao ha concorrencia nenhuma aqui.
+HISTORICO_COM_CADEIA_QUEBRADA = {
+    "events": [
+        _evento(1, 0, "ExecutionStarted", 0),
+        _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(3, 2, "TaskScheduled", 2, **_agendado()),
+        _evento(4, 3, "TaskSubmitted", 3, **_submetido({"JobRunId": "jr_1"})),
+        _evento(
+            5,
+            4,
+            "TaskFailed",
+            30,
+            taskFailedEventDetails={"error": "Glue.AWSGlueException", "cause": "falhou"},
+        ),
+        _evento(6, 5, "TaskStateExited", 31, stateExitedEventDetails={"name": "Carga"}),
+        _evento("7", 6, "PassStateEntered", 32, stateEnteredEventDetails={"name": "Espera"}),
+        _evento(8, 7, "TaskStateEntered", 33, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(9, 8, "TaskScheduled", 34, **_agendado()),
+        _evento(10, 9, "TaskSubmitted", 35, **_submetido({"JobRunId": "jr_2"})),
+        _evento(11, 10, "TaskSucceeded", 60),
+        _evento(12, 11, "ExecutionSucceeded", 61),
+    ]
+}
+
+
+# CICLO na cadeia, tambem sem `Parallel`: o passeio a partir da segunda entrada (id 8)
+# entra em `6 -> 7 -> 6` e nunca chega a raiz. O ciclo fica FORA do caminho dos eventos
+# de Task, para que a unica recusa do arquivo seja a do nome.
+HISTORICO_COM_CICLO_NA_CADEIA = {
+    "events": [
+        _evento(1, 0, "ExecutionStarted", 0),
+        _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(3, 2, "TaskScheduled", 2, **_agendado()),
+        _evento(4, 3, "TaskSubmitted", 3, **_submetido({"JobRunId": "jr_1"})),
+        _evento(
+            5,
+            4,
+            "TaskFailed",
+            30,
+            taskFailedEventDetails={"error": "Glue.AWSGlueException", "cause": "falhou"},
+        ),
+        _evento(6, 7, "PassStateEntered", 31, stateEnteredEventDetails={"name": "Espera"}),
+        _evento(7, 6, "PassStateExited", 32, stateExitedEventDetails={"name": "Espera"}),
+        _evento(8, 6, "TaskStateEntered", 33, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(9, 8, "TaskScheduled", 34, **_agendado()),
+        _evento(10, 9, "TaskSubmitted", 35, **_submetido({"JobRunId": "jr_2"})),
+        _evento(11, 10, "TaskSucceeded", 60),
+        _evento(12, 11, "ExecutionSucceeded", 61),
+    ]
+}
+
+
+def test_cadeia_impassavel_nao_sai_com_o_nome_de_ramos_concorrentes():
+    """Recusar nos dois casos e legitimo; chamar os dois pelo mesmo nome nao e.
+
+    `_ancestral` tem tres razoes de parada de proposito -- `chain_root`,
+    `chain_broken` e `chain_cycle` --, e a docstring dela diz por que: confundi-las
+    esconderia truncamento atras de "nao achei". O passeio de ancestralidade tem de
+    devolver a razao pelo mesmo motivo. "B nao alcanca A e A nao alcanca B" so e
+    CONCORRENCIA quando os dois passeios chegaram a raiz limpos; com a cadeia
+    interrompida ou em ciclo, o que houve foi um passeio que nao deu para fazer -- e
+    afirmar `Parallel` num arquivo que nao tem nenhum e recusa com o nome errado, que
+    a regra 20 trata como pior do que recusa sem nome.
+    """
+    for nome_do_caso, payload, parada in (
+        ("quebrada", HISTORICO_COM_CADEIA_QUEBRADA, "chain_broken"),
+        ("ciclo", HISTORICO_COM_CICLO_NA_CADEIA, "chain_cycle"),
+    ):
+        facts = extract_sfn_history(payload, "x.json")
+        razoes = {f.attrs["reason"] for f in _de(facts, "sfn.unresolved")}
+        assert "state_name_in_concurrent_branches" not in razoes, nome_do_caso
+        [recusa] = [
+            f
+            for f in _de(facts, "sfn.unresolved")
+            if f.attrs["reason"] == "state_entries_chain_unwalkable"
+        ]
+        assert recusa.subject["symbol"] == "Carga", nome_do_caso
+        assert recusa.attrs["state_name"] == "Carga", nome_do_caso
+        assert recusa.attrs["detail"] == parada, nome_do_caso
+        assert recusa.measures == {
+            "entry_count": 2,
+            "attempt_count": 2,
+            "unwalkable_entry_count": 1,
+        }, nome_do_caso
+
+    # O DISCRIMINADOR TEM DE ESTAR EM `measures` (precedente do #92). As duas recusas
+    # tem o mesmo `subject` -- `<arquivo>` mais o nome do estado -- e a mesma contagem
+    # de entradas e de tentativas. `Fact.id` e sha1 de `kind + subject + measures`, e
+    # `attrs` nao entra: com o discriminador so la, o `fuse` derrubaria uma das duas.
+    quebrada = extract_sfn_history(HISTORICO_COM_CADEIA_QUEBRADA, "x.json")
+    concorrente = extract_sfn_history(HISTORICO_COM_PARALLEL_HOMONIMO, "x.json")
+    [uma] = [
+        f
+        for f in _de(quebrada, "sfn.unresolved")
+        if f.attrs["reason"] == "state_entries_chain_unwalkable"
+    ]
+    [outra] = [
+        f
+        for f in _de(concorrente, "sfn.unresolved")
+        if f.attrs["reason"] == "state_name_in_concurrent_branches"
+    ]
+    assert uma.subject == outra.subject
+    assert uma.id != outra.id
+
+
+def test_ramos_concorrentes_continua_saindo_quando_os_dois_passeios_chegam_a_raiz():
+    """A negativa do teste acima: com a cadeia intacta, a recusa continua a de ramos.
+
+    Sem esta metade, "nunca dizer ramos concorrentes" passaria o teste anterior e
+    apagaria a recusa que a feature existe para produzir.
+    """
+    facts = extract_sfn_history(HISTORICO_COM_PARALLEL_HOMONIMO, "parallel.json")
+    [recusa] = [
+        f
+        for f in _de(facts, "sfn.unresolved")
+        if f.attrs["reason"] == "state_name_in_concurrent_branches"
+    ]
+    assert recusa.measures == {"entry_count": 2, "attempt_count": 2}
+    assert "unwalkable_entry_count" not in recusa.measures
+    assert "detail" not in recusa.attrs
