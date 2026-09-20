@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/GLUE_TERRAFORM/design.md
-  sha256: "1b7d286faae321eb343753270acfa88b04098004c99d0a22f71596894c61dfb9"
+  sha256: "31f4c2b96eecce27a6b489fe259ea171ba41916b69eec11b4e0aa4d0f855a837"
 tasks:
   - id: T1
     files: [tests/test_glue_terraform.py, sparkforge/facts/glue_terraform.py, sparkforge/facts/stepfunctions.py, sparkforge/facts/airflow_dag.py, docs/claims.lock.json, docs/harness/CODEINTEL-GAP.md]
