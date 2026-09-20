@@ -1,0 +1,176 @@
+[
+  {
+    "id": "f_a17348",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "execution_count": 1,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "extractor": "sfn_history@0.1.0"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_dc5e2a",
+    "schema_version": 1,
+    "kind": "sfn.attempt",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Preparacao#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1,
+      "duration_seconds": 238.0,
+      "timeout_seconds": 3600
+    },
+    "attrs": {
+      "state_name": "Preparacao",
+      "service": "glue",
+      "api": "startJobRun",
+      "resource": "startJobRun.sync",
+      "pattern": "sync",
+      "result": "succeeded",
+      "terminal_present": true,
+      "submitted": true,
+      "execution_outcome": "succeeded",
+      "execution_outcome_class": "finished",
+      "job_run_outcome_observed": true
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_62d40f",
+    "schema_version": 1,
+    "kind": "sfn.execution",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "read_event_count": 19,
+      "attempt_count": 1,
+      "job_run_count": 1,
+      "duration_seconds": 1263.0
+    },
+    "attrs": {
+      "status": "succeeded",
+      "status_class": "finished",
+      "source": "get_execution_history",
+      "truncated": false,
+      "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_5c4629",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Preparacao#1",
+      "snippet": ""
+    },
+    "measures": {
+      "attempt_index": 1
+    },
+    "attrs": {
+      "job_run_id": "jr_dddddddd0",
+      "job_name": "preparacao",
+      "state_name": "Preparacao",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_fe86bd",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "entry_count": 2,
+      "attempt_count": 2
+    },
+    "attrs": {
+      "reason": "state_name_in_concurrent_branches",
+      "state_name": "Carga"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_e8ac48",
+    "schema_version": 1,
+    "kind": "sfn.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Preparacao",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "asl_absent",
+      "state_name": "Preparacao"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "",
+      "extractor": "sfn_history@0.1.0",
+      "derived_from": [
+        "f_dc5e2a"
+      ]
+    }
+  }
+]
