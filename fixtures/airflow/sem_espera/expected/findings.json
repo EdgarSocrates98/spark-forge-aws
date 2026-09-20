@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-AIRFLOW-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "GlueJobOperator com wait_for_completion=False e tarefa a jusante: a próxima task roda com o job em execução",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_diaria.py",
+      "line": 15,
+      "col": 12,
+      "symbol": "carga",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_404c6b"
+    ],
+    "measured": {
+      "retries_effective": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A task declara `wait_for_completion=False` e tem tarefa a jusante declarada no DAG. O parâmetro é descrito pelo provider como \"Whether to wait for job run completion\", e o default publicado é `True`: escrever `False` é a decisão de NÃO esperar. A task termina quando o Glue aceita o `StartJobRun`, e a tarefa seguinte roda com o job ainda em execução — se ela lê a saída do job, lê dado parcial ou antigo, e o desfecho do JobRun não chega ao DAG. A regra exige tarefa a jusante: um disparo terminal, sem nada depois dele, é disparo deliberado sem espera, e não há tarefa seguinte a proteger. As dependências que o fact conhece são as declaradas por `>>`, `<<`, `set_downstream` e `set_upstream` e lidas estaticamente; elo montado em laço sai em `af.unresolved`, e então esta regra fica calada em vez de afirmar ordem que ninguém leu. Ver knowledge/airflow/glue-operator.md.",
+    "proposed_change": [
+      "Tirar o `wait_for_completion=False` (o default é esperar), para que a task só termine quando o JobRun terminar e falhe junto com ele.",
+      "Se o disparo sem espera é deliberado, tirar a dependência: nenhuma tarefa seguinte pode ler a saída do job. Registrar a decisão no `doc_md` do DAG.",
+      "Se a tarefa seguinte precisa do resultado mas o slot de worker não pode ficar preso, esperar de forma diferida: `deferrable=True` mantém a espera e devolve o slot (SF-AIRFLOW-003)."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Com a espera, a execução do DAG passa a durar o job inteiro, e o slot de worker fica ocupado por esse tempo se `deferrable` continuar `False`.",
+      "Um job que hoje falha sem o DAG saber passa a falhar a task: alertas e SLA de DAG que nunca dispararam passam a disparar."
+    ],
+    "tradeoffs": [
+      "Esperar o job custa tempo de execução da task; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
+    ],
+    "validation": [
+      "`sparkforge analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-001 para a task.",
+      "EIXO DE RESULTADO — numa execução de teste, a tarefa seguinte lê a saída completa do job: a contagem de linhas que ela lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun.",
+      "Uma execução de teste em que o job falha marca a task como `failed` e não segue para a tarefa a jusante."
+    ],
+    "rollback": [
+      "Reverter o commit do arquivo do DAG e republicá-lo pelo caminho que publica a pasta de DAGs. Execuções já iniciadas seguem com a versão com que começaram."
+    ],
+    "sources": [
+      {
+        "url": "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html",
+        "retrieved": "2026-09-20"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "airflow.task.wait_for_completion",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

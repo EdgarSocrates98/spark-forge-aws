@@ -1,0 +1,159 @@
+[
+  {
+    "id": "f_cdb7f3",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_diaria.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 1,
+      "task_count": 2,
+      "dependency_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga_diaria.py",
+      "artifact_sha256": "6883aace4181522a2f620eada11f182c71d830edc823f34846bc2a9e1eaf1ba4",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_c9e964",
+    "schema_version": 1,
+    "kind": "af.dag",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_diaria.py",
+      "line": 8,
+      "col": 5,
+      "symbol": "carga_diaria",
+      "snippet": ""
+    },
+    "measures": {
+      "default_retries": 0
+    },
+    "attrs": {
+      "dag_id_literal": true,
+      "dag_id": "carga_diaria",
+      "schedule_declared": true,
+      "schedule_source": "schedule",
+      "schedule": "0 3 * * *",
+      "default_args_source": "inline",
+      "default_retries_declared": true,
+      "default_execution_timeout_declared": false
+    },
+    "provenance": {
+      "artifact": "carga_diaria.py",
+      "artifact_sha256": "6883aace4181522a2f620eada11f182c71d830edc823f34846bc2a9e1eaf1ba4",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_35e575",
+    "schema_version": 1,
+    "kind": "af.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_diaria.py",
+      "line": 22,
+      "col": 4,
+      "symbol": "carga >> publicar",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "upstream": "carga",
+      "downstream": "publicar",
+      "upstream_var": "carga",
+      "downstream_var": "publicar",
+      "form": "rshift",
+      "resolved": true
+    },
+    "provenance": {
+      "artifact": "carga_diaria.py",
+      "artifact_sha256": "6883aace4181522a2f620eada11f182c71d830edc823f34846bc2a9e1eaf1ba4",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_404c6b",
+    "schema_version": 1,
+    "kind": "af.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_diaria.py",
+      "line": 15,
+      "col": 12,
+      "symbol": "carga",
+      "snippet": ""
+    },
+    "measures": {
+      "retries_effective": 0
+    },
+    "attrs": {
+      "operator_class": "GlueJobOperator",
+      "operator_family": "glue_job",
+      "task_id_literal": true,
+      "var_name": "carga",
+      "task_id": "carga",
+      "retries_source": "default_args",
+      "retries_defaulted": false,
+      "execution_timeout_declared": false,
+      "execution_timeout_source": "absent",
+      "job_name": "carga-diaria",
+      "job_name_source": "literal",
+      "wait_for_completion_effective": false,
+      "wait_for_completion_defaulted": false,
+      "deferrable_effective": false,
+      "deferrable_defaulted": true,
+      "stop_job_run_on_kill_effective": false,
+      "stop_job_run_on_kill_defaulted": true,
+      "has_downstream": true
+    },
+    "provenance": {
+      "artifact": "carga_diaria.py",
+      "artifact_sha256": "6883aace4181522a2f620eada11f182c71d830edc823f34846bc2a9e1eaf1ba4",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_af01d1",
+    "schema_version": 1,
+    "kind": "af.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_diaria.py",
+      "line": 20,
+      "col": 15,
+      "symbol": "publicar",
+      "snippet": ""
+    },
+    "measures": {
+      "retries_effective": 0
+    },
+    "attrs": {
+      "operator_class": "EmptyOperator",
+      "operator_family": "",
+      "task_id_literal": true,
+      "var_name": "publicar",
+      "task_id": "publicar",
+      "retries_source": "default_args",
+      "retries_defaulted": false,
+      "execution_timeout_declared": false,
+      "execution_timeout_source": "absent",
+      "has_downstream": false
+    },
+    "provenance": {
+      "artifact": "carga_diaria.py",
+      "artifact_sha256": "6883aace4181522a2f620eada11f182c71d830edc823f34846bc2a9e1eaf1ba4",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

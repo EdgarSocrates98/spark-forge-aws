@@ -1,0 +1,13 @@
+name: espera_sincrona
+proves: >
+  O POSITIVO de SF-AIRFLOW-003, e o caso em que NENHUM dos tres argumentos foi escrito:
+  `wait_for_completion` efetivo True e `deferrable` efetivo False, os dois pelo default
+  publicado e os dois com `_defaulted: true`. Sem `execution_timeout` e sem tarefa a
+  jusante, as outras duas regras do DAG ficam caladas.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.dag, af.task]
+expects_rules: [SF-AIRFLOW-003]

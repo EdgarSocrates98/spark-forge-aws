@@ -35,11 +35,11 @@ em [Migração de versão](usos/migracao-de-versao.md).
 
 ## O catálogo de regras
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **161** regras de
+`rules/catalog/` é a forma **executável** desse conhecimento: **165** regras de
 diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data —
-**161 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
+**165 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
 (`executable: false`) saíram em 2026-09-19, porque nomeavam área sem julgar nada
-(feature `docs/sdd/SF_STUBS/`) —, mais **41** rotas determinísticas em `routing.yaml`. Funciona
+(feature `docs/sdd/SF_STUBS/`) —, mais **42** rotas determinísticas em `routing.yaml`. Funciona
 como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da
 escada de portabilidade. Ver [`rules/catalog/README.md`](../../rules/catalog/README.md).
 Os números correntes ficam na tabela *Números correntes* de
@@ -49,7 +49,7 @@ produz — e reprova também as frases deste manual que publicam contagem.
 
 ## As áreas
 
-As 161 executáveis se distribuem em 29 áreas (medido em 2026-09-19 com `area_of`):
+As 165 executáveis se distribuem em 30 áreas (medido em 2026-09-20 com `area_of`):
 `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12
 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6
 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura
@@ -60,7 +60,7 @@ classe do catálogo de sessão, a operação SQL que exige as extensões e o con
 versão da biblioteca), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4
 (validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-LF` 10 (Lake Formation FGAC e
 FTA), `SF-MIG` 4 (migração entre versões), `SF-PLAN` 4 (plano físico), `SF-SPARK4` 4
-(fronteira do Spark 4), `SF-SFN` 4 (como o AWS
+(fronteira do Spark 4), `SF-AIRFLOW` 4 (como o DAG do Apache Airflow dispara o job Glue), `SF-SFN` 4 (como o AWS
 Step Functions dispara o job Glue), `SF-KMS` 2, `SF-TIMEOUT` 2, `SF-WASTE` 2, `SF-IAM` 3 (a
 camada que negou: boundary, service control policy ou `Deny` explícito), `SF-XACC` 3
 (cross-account: o catálogo de outra conta, o nome do resource link e o alvo dele),
@@ -72,7 +72,7 @@ artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## O bloco `action:`
 
-Cada uma das 161 carrega um bloco **`action:`** — `kind` (70 no vocabulário
+Cada uma das 165 carrega um bloco **`action:`** — `kind` (70 no vocabulário
 fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`),
 `requires_absent`, `moves` (23 eixos, cada um `nature: measure` ou `risk`) e
 `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_32e122",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "quebrado.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 0,
+      "task_count": 0,
+      "dependency_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "quebrado.py",
+      "artifact_sha256": "2e3bc21bbdc0eaeda6c3c828e5a5a56b2bccd6b1035e4aa7b2e8107fe581427d",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_cbfe0c",
+    "schema_version": 1,
+    "kind": "af.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "quebrado.py",
+      "line": 3,
+      "col": 9,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "invalid_python",
+      "detail": "'(' was never closed"
+    },
+    "provenance": {
+      "artifact": "quebrado.py",
+      "artifact_sha256": "2e3bc21bbdc0eaeda6c3c828e5a5a56b2bccd6b1035e4aa7b2e8107fe581427d",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

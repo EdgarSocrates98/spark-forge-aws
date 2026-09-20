@@ -50,6 +50,16 @@ SO_AWS = {
         "le a definicao ASL do AWS Step Functions (`arn:aws:states`) e deriva "
         "`sfn.glue_job_link` do `aws_glue_job` do Terraform"
     ),
+    # O ARTEFATO nao e da AWS -- o arquivo .py de um DAG do Apache Airflow --, e a
+    # entrada aqui nao e sobre ele: as quatro regras SF-AIRFLOW julgam so o
+    # `GlueJobOperator`, que chama `StartJobRun` da API do AWS Glue, e a derivacao
+    # `af.glue_job_link` le o `aws_glue_job` do Terraform. Sem esta entrada, as
+    # quatro (sem eixo de plataforma no `runtime_scope`) contariam como alcancaveis
+    # num job Databricks, e o texto delas cita Glue.
+    "airflow_dag": (
+        "le o DAG do Airflow, e as regras julgam so o `GlueJobOperator` (StartJobRun "
+        "da API do AWS Glue); deriva `af.glue_job_link` do `aws_glue_job` do Terraform"
+    ),
     "utilization": (
         "deriva de `glue.metric` (seu `SOURCE_KINDS`), a metrica do Glue no CloudWatch; "
         "sem ela o `fuse` nem deriva"

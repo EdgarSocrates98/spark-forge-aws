@@ -1,0 +1,270 @@
+# Catálogo de regras — como o DAG do Apache Airflow dispara o job Glue
+#
+# Depende de `sparkforge/facts/airflow_dag.py`, que lê o arquivo `.py` do DAG por AST
+# (nunca o executa) e, em `fuse`, liga a task ao `aws_glue_job` de mesmo `name`
+# (`af.glue_job_link`). As frases citadas estão em
+# `knowledge/airflow/glue-operator.md`; o desenho, em `docs/sdd/AIRFLOW_DAG/design.md`.
+#
+# O QUE A ÁREA NÃO JULGA, e por quê (D4):
+# - código pesado no top-level do DAG: o que é "pesado" não se mede por AST sem
+#   heurística, e heurística não é fact;
+# - retry sem escrita idempotente: é a `SF-GLUE-004`, que já existe pelo lado do job;
+# - dependência ENTRE DAGs (`ExternalTaskSensor`, `TriggerDagRunOperator`): fora de
+#   escopo no `define` (abordagem C do explore);
+# - operadores de EMR, Athena e afins: o extrator os registra, e nenhuma regra os julga.
+#
+# `runtime_scope: {}` nas quatro (D4), e a escolha é medida: não há fronteira de versão
+# de Glue publicada para nenhuma delas, e o arquivo do DAG sozinho não detecta runtime
+# Glue -- `{glue: "*"}` faria as quatro saírem em `skipped` até alguém declarar
+# `--glue`, o defeito que `docs/gates-por-mudanca.md` descreve. Quem gateia é
+# `requires_facts`: sem `af.task` (ou sem o `af.glue_job_link` que só o `fuse` deriva),
+# a regra é pulada com a razão. A auditoria de texto AWS de
+# `tests/test_databricks_rule_audit.py` fica satisfeita porque `airflow_dag` está em
+# `SO_AWS`: as quatro regras julgam só o `GlueJobOperator`, que chama `StartJobRun` da
+# API do AWS Glue.
+#
+# A ÂNCORA de cada regra é o fact que ela julga, com `same_subject: true`: um achado por
+# task, nunca um por arquivo. O `subject.symbol` é o `task_id` literal quando há um.
+#
+# POR QUE `attrs.operator_family` e não o nome da classe: `sparkforge/rules/expr.py` tem
+# seis comparadores e nenhuma função, e `where` só compara por igualdade (regra 33). O
+# predicado "é um operador de job Glue" -- que precisa aceitar `GlueJobOperator` e o
+# legado `AwsGlueJobOperator` -- é derivado no extrator e chega aqui como valor.
+
+catalog_version: 1
+schema_version: 1
+area: SF-AIRFLOW
+retrieved: 2026-09-20
+
+rules:
+
+  - id: SF-AIRFLOW-001
+    category: airflow-dag
+    title: "GlueJobOperator com wait_for_completion=False e tarefa a jusante: a próxima task roda com o job em execução"
+    requires_facts: [af.task]
+    when:
+      same_subject: true
+      all:
+        - fact: af.task
+          where:
+            attrs.operator_family: glue_job
+            attrs.wait_for_completion_effective: false
+            attrs.has_downstream: true
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      A task declara `wait_for_completion=False` e tem tarefa a jusante declarada no
+      DAG. O parâmetro é descrito pelo provider como "Whether to wait for job run
+      completion", e o default publicado é `True`: escrever `False` é a decisão de NÃO
+      esperar. A task termina quando o Glue aceita o `StartJobRun`, e a tarefa seguinte
+      roda com o job ainda em execução — se ela lê a saída do job, lê dado parcial ou
+      antigo, e o desfecho do JobRun não chega ao DAG. A regra exige tarefa a jusante:
+      um disparo terminal, sem nada depois dele, é disparo deliberado sem espera, e não
+      há tarefa seguinte a proteger. As dependências que o fact conhece são as
+      declaradas por `>>`, `<<`, `set_downstream` e `set_upstream` e lidas
+      estaticamente; elo montado em laço sai em `af.unresolved`, e então esta regra
+      fica calada em vez de afirmar ordem que ninguém leu. Ver
+      knowledge/airflow/glue-operator.md.
+    proposed_change:
+      - "Tirar o `wait_for_completion=False` (o default é esperar), para que a task só termine quando o JobRun terminar e falhe junto com ele."
+      - "Se o disparo sem espera é deliberado, tirar a dependência: nenhuma tarefa seguinte pode ler a saída do job. Registrar a decisão no `doc_md` do DAG."
+      - "Se a tarefa seguinte precisa do resultado mas o slot de worker não pode ficar preso, esperar de forma diferida: `deferrable=True` mantém a espera e devolve o slot (SF-AIRFLOW-003)."
+    # `orchestration.change_job_definition` porque a troca e de forma da declaracao da
+    # task, nao de politica de execucao. `moves` evita `runtime.wall_clock` de
+    # proposito: o grupo desse eixo esta no teto de 12 que
+    # `tests/test_agentic_executor_ordering.py` trava, e o que a troca muda de verdade e
+    # o que a tarefa seguinte le.
+    action:
+      kind: orchestration.change_job_definition
+      target: airflow.task.wait_for_completion
+      direction: replace
+      requires_absent: []
+      moves:
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "Com a espera, a execução do DAG passa a durar o job inteiro, e o slot de worker fica ocupado por esse tempo se `deferrable` continuar `False`."
+      - "Um job que hoje falha sem o DAG saber passa a falhar a task: alertas e SLA de DAG que nunca dispararam passam a disparar."
+    tradeoffs:
+      - "Esperar o job custa tempo de execução da task; disparar sem esperar custa a garantia de ordem entre o job e o resto do fluxo."
+    validation:
+      - "`sparkforge analyze airflow-dag --path <DAG corrigido>` mostra o `af.task` com `wait_for_completion_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-001 para a task."
+      - "EIXO DE RESULTADO — numa execução de teste, a tarefa seguinte lê a saída completa do job: a contagem de linhas que ela lê é igual à que o JobRun escreveu, conferida no destino depois do `SUCCEEDED` do JobRun."
+      - "Uma execução de teste em que o job falha marca a task como `failed` e não segue para a tarefa a jusante."
+    rollback:
+      - "Reverter o commit do arquivo do DAG e republicá-lo pelo caminho que publica a pasta de DAGs. Execuções já iniciadas seguem com a versão com que começaram."
+    sources:
+      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-20}
+
+  - id: SF-AIRFLOW-002
+    category: airflow-dag
+    title: "execution_timeout com stop_job_run_on_kill ausente: o Airflow mata a task e o job Glue continua cobrando"
+    requires_facts: [af.task]
+    when:
+      same_subject: true
+      all:
+        - fact: af.task
+          where:
+            attrs.operator_family: glue_job
+            attrs.execution_timeout_declared: true
+            attrs.stop_job_run_on_kill_effective: false
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A task tem `execution_timeout` declarado — na própria task ou em `default_args` —
+      e `stop_job_run_on_kill` ausente ou `False`. A documentação do Airflow diz o que o
+      prazo faz: "If you want a task to have a maximum runtime, set its
+      `execution_timeout` attribute to a `datetime.timedelta` value that is the maximum
+      permissible runtime." E o provider diz o que o outro parâmetro faz quando é
+      `True`: "If True, Operator will stop the job run when task is killed", com default
+      `False`. Juntas, as duas frases sustentam uma coisa só, e é só essa que a regra
+      afirma: quando o prazo estoura e a task é morta, o operador NÃO para o JobRun. O
+      que a documentação do provider não descreve — e por isso a regra não afirma — é o
+      que acontece com o JobRun depois disso (U3 do `define`): o Glue continua
+      executando e faturando até terminar por conta própria ou bater no `Timeout` do
+      job, e o DAG já marcou a task como falha. A regra julga a DECLARAÇÃO do prazo, não
+      o valor dele: o valor só vira medida quando é `timedelta(**literais)`.
+    proposed_change:
+      - "Declarar `stop_job_run_on_kill=True` na task, para que matar a task pare o JobRun."
+      - "Ou tirar o `execution_timeout` da task do Glue e deixar o prazo onde o job o conhece: o `timeout` do `aws_glue_job`, que o Glue impõe ao próprio JobRun."
+      - "Se os dois prazos existem de propósito, alinhá-los: `execution_timeout` do Airflow maior que o `timeout` do job, para que o job termine por si antes de a task ser morta."
+    action:
+      kind: orchestration.change_job_definition
+      target: airflow.task.stop_job_run_on_kill
+      direction: add
+      requires_absent: []
+      moves:
+        - cost.dpu_seconds
+      depends_on: []
+    risks:
+      - "Com `stop_job_run_on_kill=True`, matar a task passa a interromper um JobRun no meio: escrita não transacional deixa saída parcial no destino."
+      - "A role do Airflow precisa de `glue:BatchStopJobRun` para parar o job; sem a permissão, o parâmetro fica ligado e a parada falha."
+    tradeoffs:
+      - "Parar o job junto com a task economiza o resto do JobRun e arrisca saída parcial; deixar o job correr preserva a escrita e paga o run inteiro que ninguém vai usar."
+    validation:
+      - "`sparkforge analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge judge` não produz mais SF-AIRFLOW-002 para a task."
+      - "EIXO DE RESULTADO — numa execução de teste em que o prazo estoura, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que antes da execução: a interrupção não deixou linha parcial."
+      - "`aws glue get-job-run --job-name <job> --run-id <id>` mostra o JobRun em `STOPPED` no mesmo minuto em que a task foi marcada como falha, e não `RUNNING` depois dela."
+    rollback:
+      - "Reverter o commit do arquivo do DAG e republicá-lo."
+    sources:
+      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-20}
+      - {url: "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html", retrieved: 2026-09-20}
+
+  - id: SF-AIRFLOW-003
+    category: airflow-dag
+    title: "Espera síncrona do job Glue: o slot de worker do Airflow fica preso pelo tempo do job"
+    requires_facts: [af.task]
+    when:
+      same_subject: true
+      all:
+        - fact: af.task
+          where:
+            attrs.operator_family: glue_job
+            attrs.wait_for_completion_effective: true
+            attrs.deferrable_effective: false
+    status: structural
+    severity_default: P3
+    runtime_scope: {}
+    explanation: >
+      A task espera o job terminar (`wait_for_completion` ausente ou `True` — o default
+      publicado é `True`) e não pede espera diferida (`deferrable` ausente ou `False` —
+      o default publicado é `False`). O provider descreve `deferrable` como "If True,
+      the operator will wait asynchronously for the job to complete", e o contraste é o
+      ponto: na espera síncrona o processo do worker fica ocupado consultando o job a
+      cada `job_poll_interval` (default publicado `6` segundos) do começo ao fim do
+      JobRun. Um job batch de horas segura um slot de worker por horas fazendo polling.
+      A regra não afirma que a espera é errada — esperar é o comportamento correto para
+      quem depende do resultado —, nem que o DAG está com falta de slot: ela nomeia o
+      custo da forma de espera escolhida. A severidade é P3 porque o efeito é capacidade
+      do Airflow, não correção do dado.
+    proposed_change:
+      - "Declarar `deferrable=True` na task, para que a espera saia do worker e vá para o triggerer."
+      - "Antes disso, confirmar que existe um processo `triggerer` rodando no ambiente: sem ele a task diferida fica parada. Em ambiente gerenciado (MWAA), conferir a versão que o publica."
+      - "Se o resultado do job não é lido por nenhuma tarefa a jusante, a outra saída é não esperar (`wait_for_completion=False`) — e aí vale a SF-AIRFLOW-001: nenhuma tarefa pode depender do job."
+    # `cost.provisioned_capacity_time`: o que a troca move e o tempo em que o slot de
+    # worker fica ocupado, com ou sem trabalho de CPU. NAO e `runtime.wall_clock` (o job
+    # dura o mesmo) nem `capacity.worker_count` (o numero de workers declarado nao muda).
+    action:
+      kind: orchestration.change_job_definition
+      target: airflow.task.deferrable
+      direction: replace
+      requires_absent: []
+      moves:
+        - cost.provisioned_capacity_time
+      depends_on: []
+    risks:
+      - "A task diferida depende do processo `triggerer`: sem ele rodando, a task fica em `deferred` indefinidamente. Ver a lacuna 3 de knowledge/airflow/glue-operator.md — o arquivo do DAG não diz se o ambiente tem triggerer, e o extrator não o afirma."
+      - "O caminho diferido do operador é código diferente do síncrono: um job que hoje termina bem pode expor um modo de falha que o caminho síncrono não exercitava."
+    tradeoffs:
+      - "A espera diferida devolve o slot e paga com uma peça a mais na infraestrutura; a espera síncrona é mais simples e paga com o slot ocupado pelo tempo do job."
+    validation:
+      - "`sparkforge analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-003 para a task."
+      - "EIXO DE RESULTADO — numa execução de teste, o destino tem a mesma contagem total e por chave de negócio que a execução síncrona equivalente: mudar a forma de esperar não muda o que o job escreve."
+      - "Na execução de teste, a task passa pelo estado `deferred` e o slot fica livre no intervalo: o número de tarefas em execução no pool durante o job é menor do que era."
+    rollback:
+      - "Reverter o commit do arquivo do DAG e republicá-lo. Tarefas já diferidas terminam pelo triggerer; as novas voltam ao caminho síncrono."
+    sources:
+      - {url: "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html", retrieved: 2026-09-20}
+
+  # A ancora e o fact DERIVADO: sem `fuse` com o DAG e o Terraform no mesmo pool, a
+  # regra sai em `skipped` com `reason: requires_facts` -- "nao perguntei", nunca "esta
+  # tudo bem". `job_name` nao literal e job ausente saem em `af.unresolved` na derivacao.
+  - id: SF-AIRFLOW-004
+    category: airflow-dag
+    title: "Retry nas duas camadas: o Airflow e o job Glue reexecutam a mesma falha"
+    requires_facts: [af.glue_job_link]
+    when:
+      same_subject: true
+      all:
+        - fact: af.glue_job_link
+          expr: "measures.airflow_retries_effective > 0 and measures.glue_max_retries > 0"
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      A task do `GlueJobOperator` tem `retries` efetivo maior que zero — da própria
+      task, de `default_args`, e nunca do default publicado, que é `0` conforme
+      `core.default_task_retries`, "The number of retries each task is going to have by
+      default" — e o `aws_glue_job` de mesmo `name` declara `max_retries` maior que
+      zero. As duas camadas de retry existem sobre o mesmo job. Cada retentativa do
+      Airflow chama `StartJobRun` de novo: é um JobRun novo, que relê a entrada e
+      reescreve a saída do começo, não uma retomada. Na API do Glue, `MaxRetries` é "The
+      maximum number of times to retry this job after a JobRun fails.", e os parâmetros
+      de `StartJobRun` não o incluem — leitura nossa: o Airflow não o sobrescreve. O que
+      nenhuma das duas documentações descreve é a COMPOSIÇÃO das duas camadas (U1 do
+      `define`). Esta regra afirma só que as duas existem; não afirma quantas vezes o
+      job roda numa falha, porque esse número não é publicado. O vínculo entre a task e
+      o recurso é por `job_name` literal igual ao `name` do recurso — nome em Jinja,
+      variável ou recurso ausente saem em `af.unresolved`, nunca como vínculo. Ver
+      knowledge/airflow/glue-operator.md, lacuna 1.
+    proposed_change:
+      - "Escolher UMA camada de retry para a falha do job: `max_retries = 0` no `aws_glue_job` e o retry no Airflow (onde `retries` e `retry_delay` são explícitos e aparecem no histórico da task), ou `retries = 0` na task e o retry no próprio Glue."
+      - "Antes de escolher, medir: os JobRuns do job no intervalo de uma falha real (`sparkforge collect glue-job-runs`) ao lado das tentativas da task no Airflow mostram quantos JobRuns uma falha produziu de fato."
+      - "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um JobRun que escreve de novo (SF-GLUE-004)."
+    action:
+      kind: orchestration.restrict_run_policy
+      target: glue.max_retries
+      direction: decrease
+      requires_absent: []
+      moves:
+        - cost.dpu_seconds
+        - correctness.write_result
+      depends_on: []
+    risks:
+      - "Zerar `max_retries` tira a retentativa que hoje cobre falhas transitórias quando o job roda fora do DAG (disparo manual ou outro gatilho)."
+      - "A regra não mede quantas vezes o job rodou: o número depende da composição que a documentação não descreve."
+    tradeoffs:
+      - "Retry no Airflow é visível no histórico da task e configurável por DAG; retry no Glue vale para qualquer gatilho do job. Manter as duas é escolha possível, desde que alguém tenha medido o que ela custa."
+    validation:
+      - "`sparkforge fuse` sobre os facts de `analyze airflow-dag` e `analyze terraform` mostra o `af.glue_job_link` com `glue_max_retries: 0` ou `airflow_retries_effective: 0`, e `sparkforge judge` não produz mais SF-AIRFLOW-004."
+      - "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e por chave de negócio que uma execução sem falha, e o número de JobRuns do intervalo é o que a camada escolhida declara."
+      - "O histórico da task no Airflow mostra, para a falha, no máximo 1 + `retries` tentativas, e `get-job-runs` mostra o número de JobRuns que a camada escolhida justifica."
+    rollback:
+      - "Restaurar o `max_retries` anterior no Terraform e o `retries` anterior no DAG, e reaplicar os dois."
+    sources:
+      - {url: "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html", retrieved: 2026-09-20}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html", retrieved: 2026-09-19}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html", retrieved: 2026-09-19}

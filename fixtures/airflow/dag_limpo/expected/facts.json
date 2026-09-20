@@ -1,0 +1,99 @@
+[
+  {
+    "id": "f_567a20",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_limpa.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 1,
+      "task_count": 1,
+      "dependency_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga_limpa.py",
+      "artifact_sha256": "65e92498d57304133d4138c028810925cc9fcbf0574f2b7c71e4c802f2b4a543",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_3969bd",
+    "schema_version": 1,
+    "kind": "af.dag",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_limpa.py",
+      "line": 7,
+      "col": 5,
+      "symbol": "carga_limpa",
+      "snippet": ""
+    },
+    "measures": {
+      "default_retries": 0
+    },
+    "attrs": {
+      "dag_id_literal": true,
+      "dag_id": "carga_limpa",
+      "schedule_declared": true,
+      "schedule_source": "schedule",
+      "schedule": "0 6 * * *",
+      "default_args_source": "inline",
+      "default_retries_declared": true,
+      "default_execution_timeout_declared": false
+    },
+    "provenance": {
+      "artifact": "carga_limpa.py",
+      "artifact_sha256": "65e92498d57304133d4138c028810925cc9fcbf0574f2b7c71e4c802f2b4a543",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_1bfb37",
+    "schema_version": 1,
+    "kind": "af.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_limpa.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "carga",
+      "snippet": ""
+    },
+    "measures": {
+      "retries_effective": 0
+    },
+    "attrs": {
+      "operator_class": "GlueJobOperator",
+      "operator_family": "glue_job",
+      "task_id_literal": true,
+      "var_name": "carga",
+      "task_id": "carga",
+      "retries_source": "default_args",
+      "retries_defaulted": false,
+      "execution_timeout_declared": false,
+      "execution_timeout_source": "absent",
+      "job_name": "carga-diaria",
+      "job_name_source": "literal",
+      "wait_for_completion_effective": true,
+      "wait_for_completion_defaulted": false,
+      "deferrable_effective": true,
+      "deferrable_defaulted": false,
+      "stop_job_run_on_kill_effective": true,
+      "stop_job_run_on_kill_defaulted": false,
+      "has_downstream": false
+    },
+    "provenance": {
+      "artifact": "carga_limpa.py",
+      "artifact_sha256": "65e92498d57304133d4138c028810925cc9fcbf0574f2b7c71e4c802f2b4a543",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

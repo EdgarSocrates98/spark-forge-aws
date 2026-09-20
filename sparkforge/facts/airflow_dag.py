@@ -30,8 +30,9 @@ E o prefixo curto de Airflow, e nenhum kind existente comeca com ele (D1).
 - `af.analyzed` -- a sentinela, com as contagens.
 - `af.glue_job_link` -- DERIVADO, nunca lido de arquivo: `build_af_glue_link` liga a
   task do `GlueJobOperator` ao `aws_glue_job` de mesmo `name` quando os dois estao no
-  pool, e `fusion.fuse` a chama (D5). Ela entra em `EMITTED_KINDS` na T3, junto com o
-  golden que a cobre.
+  pool, e `fusion.fuse` a chama (D5). As razoes de `af.unresolved` que so ela emite:
+  `job_name_dynamic`, `job_name_absent`, `job_definition_absent`,
+  `job_definition_ambiguous` e `glue_max_retries_not_literal`.
 
 Nenhum fact deste modulo carrega `subject.snippet`: `tests/test_harness_untrusted.py`
 mede quais extratores produzem snippet, e este nao entra em `EXTRATORES_COM_SNIPPET`.
@@ -70,6 +71,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -87,8 +89,17 @@ EMITTED_KINDS = frozenset(
         "af.dependency",
         "af.unresolved",
         "af.analyzed",
+        "af.glue_job_link",
     }
 )
+
+# O que liga a derivacao em `fusion.fuse`: sem `af.task` no pool, o `fuse` sai byte a
+# byte igual ao de antes (molde de `timeout_diagnosis.SOURCE_KINDS`).
+SOURCE_KINDS = frozenset({"af.task"})
+
+# As duas origens de `job_name` que a derivacao recusa por serem resolvidas em
+# execucao. `absent` e diferente das duas: o argumento nem foi escrito.
+_ORIGENS_DINAMICAS = frozenset({"jinja", "nao_literal"})
 
 # https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html
 # wait_for_completion (default True): "Whether to wait for job run completion".
@@ -887,6 +898,153 @@ def extract_airflow_dag_tree(root: Path, repo_root: Path | None = None) -> list[
     return sort_facts(facts)
 
 
+def _glue_jobs_por_nome(facts: Sequence[Fact]) -> dict[str, list[tuple[str, str, str]]]:
+    """Nome literal do job -> [(arquivo, endereco, id do fact)], de `tf.attribute` `name`.
+
+    GEMEA de `stepfunctions._glue_jobs_por_nome`, e duplicada de proposito NESTE
+    incremento: um leitor de DAG nao deveria importar um leitor de ASL para saber ler
+    Terraform. O lugar certo da funcao e um modulo proprio -- ver "Duvidas" no fim de
+    `docs/sdd/AIRFLOW_DAG/plan.md` --, e ele nao esta no manifesto deste desenho.
+    """
+    nomes: dict[str, list[tuple[str, str, str]]] = {}
+    for fact in facts:
+        if fact.kind != "tf.attribute":
+            continue
+        subject = fact.subject or {}
+        attrs = fact.attrs or {}
+        simbolo = str(subject.get("symbol") or "")
+        if not simbolo.startswith("aws_glue_job."):
+            continue
+        if attrs.get("key") != "name" or attrs.get("block") != "root" or not attrs.get("literal"):
+            continue
+        arquivo = str(subject.get("file") or "")
+        nomes.setdefault(str(attrs.get("value")), []).append((arquivo, simbolo, fact.id))
+    return nomes
+
+
+def _max_retries(
+    facts: Sequence[Fact], arquivo: str, simbolo: str
+) -> tuple[str, int | None, str | None]:
+    """(`literal`, n, id), (`absent`, 0, None) ou (`not_literal`, None, id|None).
+
+    `absent` vale 0 porque o atributo nao declarado nao pede retry. Valor interpolado
+    vira `tf.unresolved` sem o endereco do recurso (`terraform.py`); por isso qualquer
+    `tf.unresolved` de `max_retries` no MESMO arquivo torna a resposta `not_literal` --
+    conservador de proposito: nunca um zero que ninguem leu. Gemea de
+    `stepfunctions._max_retries`, pelo mesmo motivo da funcao acima.
+    """
+    for fact in facts:
+        subject = fact.subject or {}
+        if fact.kind != "tf.attribute" or subject.get("symbol") != simbolo:
+            continue
+        if subject.get("file") != arquivo:
+            continue
+        attrs = fact.attrs or {}
+        if attrs.get("key") != "max_retries" or attrs.get("block") != "root":
+            continue
+        valor = (fact.measures or {}).get("value")
+        if attrs.get("literal") and isinstance(valor, int | float) and not isinstance(valor, bool):
+            return "literal", int(valor), fact.id
+        return "not_literal", None, fact.id
+    interpolado = any(
+        f.kind == "tf.unresolved"
+        and (f.attrs or {}).get("key") == "max_retries"
+        and (f.subject or {}).get("file") == arquivo
+        for f in facts
+    )
+    return ("not_literal", None, None) if interpolado else ("absent", 0, None)
+
+
+def build_af_glue_link(facts: Sequence[Fact]) -> list[Fact]:
+    """Liga cada `af.task` do `GlueJobOperator` ao `aws_glue_job` de mesmo `name` (D5).
+
+    Derivacao pura sobre a UNIAO dos facts, no molde de `build_sfn_glue_link`: o motor
+    avalia um fact por condicao, e os dois lados tem `subject` diferente -- a task do
+    DAG e o recurso do Terraform --, entao `same_subject` nao os junta. Nao liga por
+    substring: nome de job e chave exata na API do Glue.
+
+    `airflow_retries_effective` e o `retries_effective` da task: o da propria task, ou
+    o de `default_args`, ou o default publicado (`core.default_task_retries`, 0). O que
+    nao liga sai nomeado em `af.unresolved`, nunca como vinculo.
+    """
+    nomes = _glue_jobs_por_nome(facts)
+    saida: list[Fact] = []
+    for task in facts:
+        attrs = task.attrs or {}
+        if task.kind != "af.task" or attrs.get("operator_family") != "glue_job":
+            continue
+        proveniencia: dict[str, Any] = {
+            "artifact": str((task.provenance or {}).get("artifact", "")),
+            "artifact_sha256": "",
+            "extractor": EXTRACTOR_ID,
+            "derived_from": [task.id],
+        }
+        nome = attrs.get("job_name")
+        if not isinstance(nome, str):
+            origem = str(attrs.get("job_name_source", ""))
+            saida.append(
+                _unresolved(
+                    dict(task.subject),
+                    "job_name_dynamic" if origem in _ORIGENS_DINAMICAS else "job_name_absent",
+                    proveniencia,
+                    job_name_source=origem,
+                    unblocked_by="`job_name` escrito como string literal na task",
+                )
+            )
+            continue
+        candidatos = nomes.get(nome, [])
+        if len(candidatos) != 1:
+            razao = "job_definition_absent" if not candidatos else "job_definition_ambiguous"
+            saida.append(
+                _unresolved(
+                    dict(task.subject),
+                    razao,
+                    proveniencia,
+                    job_name=nome,
+                    resources=[simbolo for _, simbolo, _ in candidatos],
+                    unblocked_by="sparkforge analyze terraform no aws_glue_job, e fuse",
+                )
+            )
+            continue
+        arquivo, simbolo, nome_id = candidatos[0]
+        origem, retries, retries_id = _max_retries(facts, arquivo, simbolo)
+        usados = [nome_id] + ([retries_id] if retries_id is not None else [])
+        proveniencia = {**proveniencia, "derived_from": [task.id, *usados]}
+        measures: dict[str, Any] = {}
+        efetivo = (task.measures or {}).get("retries_effective")
+        if efetivo is not None:
+            measures["airflow_retries_effective"] = efetivo
+        if retries is not None:
+            measures["glue_max_retries"] = retries
+        saida.append(
+            Fact(
+                kind="af.glue_job_link",
+                subject=dict(task.subject),
+                measures=measures,
+                attrs={
+                    "job_name": nome,
+                    "resource": simbolo,
+                    "resource_file": arquivo,
+                    "glue_max_retries_source": origem,
+                    "airflow_retries_defaulted": bool(attrs.get("retries_defaulted")),
+                },
+                provenance=proveniencia,
+            )
+        )
+        if origem == "not_literal":
+            saida.append(
+                _unresolved(
+                    dict(task.subject),
+                    "glue_max_retries_not_literal",
+                    proveniencia,
+                    job_name=nome,
+                    resource=simbolo,
+                    unblocked_by="`max_retries` escrito como numero literal no aws_glue_job",
+                )
+            )
+    return sort_facts(saida)
+
+
 __all__ = [
     "DEFAULT_DEFERRABLE",
     "DEFAULT_JOB_POLL_INTERVAL",
@@ -895,6 +1053,8 @@ __all__ = [
     "DEFAULT_WAIT_FOR_COMPLETION",
     "EMITTED_KINDS",
     "EXTRACTOR_ID",
+    "SOURCE_KINDS",
+    "build_af_glue_link",
     "extract_airflow_dag",
     "extract_airflow_dag_path",
     "extract_airflow_dag_tree",

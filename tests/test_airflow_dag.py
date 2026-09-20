@@ -271,3 +271,77 @@ def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
 
     erro = call_tool("sparkforge_analyze_airflow_dag", {"path": str(tmp_path / "nao-existe")})
     assert "sparkforge analyze airflow-dag" in erro["error"]
+
+
+TF_CARGA_DIARIA = """resource "aws_glue_job" "carga_diaria" {
+  name        = "carga-diaria"
+  role_arn    = aws_iam_role.glue_role.arn
+  max_retries = 2
+}
+"""
+
+RUNTIME_GLUE = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
+
+DAG_PAREADO = '''
+from datetime import datetime
+
+from airflow import DAG
+from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+
+with DAG(
+    dag_id="cargas",
+    schedule="@daily",
+    start_date=datetime(2026, 1, 1),
+    default_args={"retries": 2},
+) as dag:
+    ligada = GlueJobOperator(
+        task_id="ligada", job_name="carga-diaria", deferrable=True
+    )
+    dinamica = GlueJobOperator(
+        task_id="dinamica", job_name="{{ var.value.job }}", deferrable=True
+    )
+    sem_definicao = GlueJobOperator(
+        task_id="sem_definicao", job_name="job-que-nao-esta-no-terraform", deferrable=True
+    )
+'''
+
+
+def test_fuse_liga_a_task_ao_job_e_nomeia_o_que_nao_liga(tmp_path):
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.terraform import extract_terraform_tree
+    from sparkforge.rules.engine import judge
+    from sparkforge.rules.loader import load_catalog
+
+    (tmp_path / "cargas.py").write_text(DAG_PAREADO, encoding="utf-8")
+    (tmp_path / "main.tf").write_text(TF_CARGA_DIARIA, encoding="utf-8")
+    so_dag = extract_airflow_dag_tree(tmp_path, repo_root=tmp_path)
+    so_tf = extract_terraform_tree(tmp_path, repo_root=tmp_path)
+
+    fundidos = fuse(so_dag + so_tf)
+
+    [link] = [f for f in fundidos if f.kind == "af.glue_job_link"]
+    assert link.subject["symbol"] == "ligada"
+    assert link.attrs["resource"] == "aws_glue_job.carga_diaria"
+    assert link.attrs["job_name"] == "carga-diaria"
+    assert link.attrs["glue_max_retries_source"] == "literal"
+    assert link.measures == {"airflow_retries_effective": 2, "glue_max_retries": 2}
+    assert len(link.provenance["derived_from"]) == 3
+
+    motivos = {
+        f.subject["symbol"]: f.attrs["reason"]
+        for f in fundidos
+        if f.kind == "af.unresolved" and f.attrs["reason"] != "arg_nao_literal"
+    }
+    assert motivos == {
+        "dinamica": "job_name_dynamic",
+        "sem_definicao": "job_definition_absent",
+    }
+
+    achados = judge(fundidos, load_catalog(), RUNTIME_GLUE)
+    quatro = [a.subject["symbol"] for a in achados if a.rule_id == "SF-AIRFLOW-004"]
+    assert quatro == ["ligada"]
+
+    # fuse sem Terraform no pool nao inventa vinculo
+    assert not [f for f in fuse(so_dag) if f.kind == "af.glue_job_link"]
+    # e pool sem Airflow sai do fuse sem nenhum af.*
+    assert not [f for f in fuse(so_tf) if f.kind.startswith("af.")]

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "f_2d0650",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_taskflow.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 0,
+      "task_count": 0,
+      "dependency_count": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga_taskflow.py",
+      "artifact_sha256": "0862c8ceba7a0641882946383008b1487ae03bb62316542aa382528484f06455",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_f7df51",
+    "schema_version": 1,
+    "kind": "af.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_taskflow.py",
+      "line": 8,
+      "col": 0,
+      "symbol": "carga_taskflow",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "taskflow_decorador",
+      "decorators": [
+        "dag"
+      ],
+      "unblocked_by": "operador instanciado como classe, fora da TaskFlow API"
+    },
+    "provenance": {
+      "artifact": "carga_taskflow.py",
+      "artifact_sha256": "0862c8ceba7a0641882946383008b1487ae03bb62316542aa382528484f06455",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_aaeca6",
+    "schema_version": 1,
+    "kind": "af.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_taskflow.py",
+      "line": 10,
+      "col": 4,
+      "symbol": "extrair",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "taskflow_decorador",
+      "decorators": [
+        "task"
+      ],
+      "unblocked_by": "operador instanciado como classe, fora da TaskFlow API"
+    },
+    "provenance": {
+      "artifact": "carga_taskflow.py",
+      "artifact_sha256": "0862c8ceba7a0641882946383008b1487ae03bb62316542aa382528484f06455",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

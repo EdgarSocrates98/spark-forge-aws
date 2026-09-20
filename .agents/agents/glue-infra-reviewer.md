@@ -5,7 +5,7 @@ skills:
   - review-glue-terraform
   - tune-glue-job
   - optimize-variable-volume-job
-rule_areas: [SF-GLUE, SF-ENV, SF-SFN]
+rule_areas: [SF-GLUE, SF-ENV, SF-SFN, SF-AIRFLOW]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -55,6 +55,14 @@ o job e nenhum aparece no código PySpark nem no event log: `wait_for_completion
 fact traz o valor efetivo e a marca de omitido; argumento que não é literal (variável,
 f-string, `{{ jinja }}`) sai ausente e a lacuna sai nomeada em `af.unresolved`, nunca
 como o default.
+
+A área `SF-AIRFLOW` julga esses facts. Com o Terraform do mesmo job no case,
+`sparkforge_fuse` liga a task ao `aws_glue_job` de mesmo `name` (`af.glue_job_link`), e
+é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o `retries`
+do Airflow. A composição das duas não é documentada — afirme que as duas existem, nunca
+quantas vezes o job roda numa falha. E lembre do que a leitura estática **não** alcança:
+DAG montado em laço, TaskFlow API e argumento em Jinja saem em `af.unresolved` com a
+razão, e nenhuma regra dispara sobre eles.
 
 ## Três armadilhas que a infraestrutura esconde
 

@@ -1,0 +1,12 @@
+name: dag_limpo
+proves: >
+  O NEGATIVO da area. Espera o job, espera de forma diferida, e mata o JobRun junto com
+  a task: os tres argumentos escritos a mao, com `_defaulted: false` nos tres. Nenhuma
+  das quatro regras dispara.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.dag, af.task]
+expects_rules: []

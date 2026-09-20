@@ -1,0 +1,22 @@
+name: job_name_nao_literal
+proves: >
+  O NEGATIVO de SF-AIRFLOW-004 por nome nao literal. O `retries` do Airflow e 2 e o
+  Terraform tem `max_retries = 2`, mas `{{ var.value.glue_job }}` e template do Jinja,
+  resolvido em execucao: nao ha vinculo, saem dois `af.unresolved` -- `arg_nao_literal`
+  do extrator e `job_name_dynamic` da derivacao --, e SF-AIRFLOW-004 fica calada em vez
+  de adivinhar o job.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - af.analyzed
+  - af.dag
+  - af.task
+  - af.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

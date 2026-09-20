@@ -69,6 +69,9 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
+from sparkforge.facts.airflow_dag import EMITTED_KINDS as AF_EMITTED_KINDS
+from sparkforge.facts.airflow_dag import SOURCE_KINDS as AF_SOURCE_KINDS
+from sparkforge.facts.airflow_dag import build_af_glue_link
 from sparkforge.facts.lakeformation import EMITTED_KINDS as LF_EMITTED_KINDS
 from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
@@ -576,6 +579,20 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
                 f"kind fora do namespace de stepfunctions: {sorted(desconhecidos_sfn)}"
             )
         for fact in derivados_sfn:
+            combined[fact.id] = fact
+
+    # `af.glue_job_link` deriva AQUI pela mesma razao de `sfn.glue_job_link`: a
+    # `af.task` e o `aws_glue_job` tem `subject` diferente, e o motor nao junta dois
+    # facts numa condicao. Guardado por `SOURCE_KINDS`: pool sem Airflow sai byte a
+    # byte igual.
+    if any(f.kind in AF_SOURCE_KINDS for f in facts):
+        derivados_af = build_af_glue_link(facts)
+        desconhecidos_af = {f.kind for f in derivados_af} - AF_EMITTED_KINDS
+        if desconhecidos_af:
+            raise AssertionError(
+                f"kind fora do namespace de airflow_dag: {sorted(desconhecidos_af)}"
+            )
+        for fact in derivados_af:
             combined[fact.id] = fact
 
     return sort_facts(combined.values())

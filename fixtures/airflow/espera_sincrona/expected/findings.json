@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-AIRFLOW-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Espera síncrona do job Glue: o slot de worker do Airflow fica preso pelo tempo do job",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_sincrona.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "carga",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_65c17f"
+    ],
+    "measured": {
+      "retries_effective": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A task espera o job terminar (`wait_for_completion` ausente ou `True` — o default publicado é `True`) e não pede espera diferida (`deferrable` ausente ou `False` — o default publicado é `False`). O provider descreve `deferrable` como \"If True, the operator will wait asynchronously for the job to complete\", e o contraste é o ponto: na espera síncrona o processo do worker fica ocupado consultando o job a cada `job_poll_interval` (default publicado `6` segundos) do começo ao fim do JobRun. Um job batch de horas segura um slot de worker por horas fazendo polling. A regra não afirma que a espera é errada — esperar é o comportamento correto para quem depende do resultado —, nem que o DAG está com falta de slot: ela nomeia o custo da forma de espera escolhida. A severidade é P3 porque o efeito é capacidade do Airflow, não correção do dado.",
+    "proposed_change": [
+      "Declarar `deferrable=True` na task, para que a espera saia do worker e vá para o triggerer.",
+      "Antes disso, confirmar que existe um processo `triggerer` rodando no ambiente: sem ele a task diferida fica parada. Em ambiente gerenciado (MWAA), conferir a versão que o publica.",
+      "Se o resultado do job não é lido por nenhuma tarefa a jusante, a outra saída é não esperar (`wait_for_completion=False`) — e aí vale a SF-AIRFLOW-001: nenhuma tarefa pode depender do job."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A task diferida depende do processo `triggerer`: sem ele rodando, a task fica em `deferred` indefinidamente. Ver a lacuna 3 de knowledge/airflow/glue-operator.md — o arquivo do DAG não diz se o ambiente tem triggerer, e o extrator não o afirma.",
+      "O caminho diferido do operador é código diferente do síncrono: um job que hoje termina bem pode expor um modo de falha que o caminho síncrono não exercitava."
+    ],
+    "tradeoffs": [
+      "A espera diferida devolve o slot e paga com uma peça a mais na infraestrutura; a espera síncrona é mais simples e paga com o slot ocupado pelo tempo do job."
+    ],
+    "validation": [
+      "`sparkforge analyze airflow-dag` mostra o `af.task` com `deferrable_effective: true`, e `sparkforge judge` não produz mais SF-AIRFLOW-003 para a task.",
+      "EIXO DE RESULTADO — numa execução de teste, o destino tem a mesma contagem total e por chave de negócio que a execução síncrona equivalente: mudar a forma de esperar não muda o que o job escreve.",
+      "Na execução de teste, a task passa pelo estado `deferred` e o slot fica livre no intervalo: o número de tarefas em execução no pool durante o job é menor do que era."
+    ],
+    "rollback": [
+      "Reverter o commit do arquivo do DAG e republicá-lo. Tarefas já diferidas terminam pelo triggerer; as novas voltam ao caminho síncrono."
+    ],
+    "sources": [
+      {
+        "url": "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html",
+        "retrieved": "2026-09-20"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "airflow.task.deferrable",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "cost.provisioned_capacity_time"
+      ],
+      "depends_on": []
+    }
+  }
+]
