@@ -150,6 +150,17 @@ com `dpu_seconds` medido.
    dois minutos —, ou uma frase oficial. Enquanto isso, a premissa errada não sai calada:
    ela apareceria como `chain_broken`, `chain_root` ou `chain_cycle`, ou como um
    `state_unresolved`.
+9. **A lista de tipos conhecidos do extrator é um subconjunto próprio da publicada.**
+   Medido na releitura de 2026-09-20: os `Valid Values` do campo `type` do `HistoryEvent`
+   trazem 62 tipos, e `_TIPOS_CONHECIDOS` tem 59 — faltam `EvaluationFailed`,
+   `ExecutionRedriven` e `MapRunRedriven`, posteriores à leitura original. Nenhum deles
+   perde dado hoje: cada um sai em `sfn.unresolved: event_type_unknown` com o nome, e
+   continua na travessia da cadeia, então não apaga tentativa alguma. O que destrava, e
+   por que vale a pena: **`ExecutionRedriven` é a execução RETOMADA**, e ele muda o que
+   "quantas vezes o Task foi agendado" significa — um redrive reagenda o Task dentro da
+   MESMA execução, e nada aqui hoje separa as tentativas de antes do redrive das de
+   depois. Enquanto ninguém ler um histórico real com redrive, isso é forma publicada
+   sem medida, e o extrator prefere a recusa nomeada.
 
 ## Fontes
 

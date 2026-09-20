@@ -136,10 +136,21 @@ EMITTED_KINDS = frozenset(
 # `stepfunctions.SOURCE_KINDS`).
 SOURCE_KINDS = frozenset({"sfn.attempt"})
 
-# https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html
-# Os tipos de `HistoryEventType` que a pagina publica. Tipo fora desta lista nao e
+# https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html
+# Os tipos que a pagina publicava na leitura de 2026-09-19. Tipo fora desta lista nao e
 # erro do artefato -- e a API que cresceu --, e por isso sai em `sfn.unresolved`
 # `event_type_unknown` com o nome, em vez de ser ignorado em silencio.
+#
+# ELA NAO E A LISTA INTEIRA, e a diferenca foi MEDIDA na releitura de 2026-09-20: os
+# `Valid Values` do campo `type` publicam 62 tipos, e estes 59 sao um subconjunto
+# proprio. Faltam `EvaluationFailed`, `ExecutionRedriven` e `MapRunRedriven` -- os tres
+# posteriores a leitura original. Nenhum deles produz fact em nenhum outro tipo, e o
+# desenho ja os absorve: cada um sai em `event_type_unknown` com o nome, e desde
+# `971daa73` continua na travessia da cadeia, entao nao apaga tentativa nenhuma.
+# Acrescenta-los seria mudanca de comportamento (a recusa some) e nao entra num commit de
+# prosa; a lacuna 9 de `knowledge/stepfunctions/execution-history.md` diz o que ganharia
+# quem os acrescentasse -- em especial `ExecutionRedriven`, que e a execucao RETOMADA e
+# muda o que "quantas vezes o Task foi agendado" significa.
 _TIPOS_CONHECIDOS = frozenset(
     {
         "ActivityFailed",
