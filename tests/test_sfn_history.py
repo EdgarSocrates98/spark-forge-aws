@@ -496,6 +496,65 @@ def test_duas_execucoes_nao_somam_tentativas_uma_da_outra():
         assert set(confronto.provenance["derived_from"]) == esperado
 
 
+def test_tentativa_que_nao_e_glue_sai_em_recusa_nomeada():
+    """O confronto de retry so sabe julgar `glue:startJobRun` -- e diz isso (A5).
+
+    A integracao `aws-sdk` publica `resourceType: "aws-sdk:glue"` e `resource:
+    "startJobRun"`: mesmo servico, outra forma de chamar, e o filtro dos dois lados de
+    `_glue_de_kind` nao a alcanca. A derivacao devolvia `[]` em silencio, e o operador
+    via um case sem `sfn.retry_observado` e sem uma linha dizendo por que -- contra a
+    regra 20, que pede a lacuna NOMEADA. "Nao sei julgar esta integracao" e diferente
+    de "esta tudo bem".
+    """
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.stepfunctions import extract_stepfunctions
+
+    pelo_sdk = {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+            _evento(
+                3,
+                2,
+                "TaskScheduled",
+                2,
+                taskScheduledEventDetails={
+                    "resource": "startJobRun",
+                    "resourceType": "aws-sdk:glue",
+                },
+            ),
+            _evento(4, 3, "TaskSucceeded", 9),
+            _evento(5, 4, "ExecutionSucceeded", 10),
+        ]
+    }
+    historico = extract_sfn_history(pelo_sdk, "pelo-sdk.json")
+    definicao = extract_stepfunctions(ASL_COM_RETRY_DE_DUAS, "carga.asl.json")
+
+    # A tentativa foi medida -- o que falta e o confronto, nao a leitura.
+    [tentativa] = _de(historico, "sfn.attempt")
+    assert tentativa.attrs["service"] == "aws-sdk:glue"
+
+    fundidos = fuse(definicao + historico)
+    assert not [f for f in fundidos if f.kind == "sfn.retry_observado"]
+    [recusa] = [
+        f
+        for f in fundidos
+        if f.kind == "sfn.unresolved" and f.attrs["reason"] == "glue_attempt_absent"
+    ]
+    assert recusa.subject["file"] == "pelo-sdk.json"
+    # A recusa NOMEIA o que estava la, que e por onde o operador fecha a lacuna.
+    assert recusa.attrs["observed"] == ["aws-sdk:glue:startJobRun"]
+    assert recusa.measures["attempt_count"] == 1
+
+    # E com `glue:startJobRun` no pool, ela nao sai: recusa que aparece em todo case
+    # nao informa nada.
+    com_glue = extract_sfn_history(HISTORICO_COM_TRES_TENTATIVAS, "execucao.json")
+    motivos = {
+        f.attrs["reason"] for f in fuse(com_glue) if f.kind == "sfn.unresolved"
+    }
+    assert "glue_attempt_absent" not in motivos
+
+
 def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):
     from sparkforge.facts.fusion import fuse
     from sparkforge.facts.stepfunctions import extract_stepfunctions

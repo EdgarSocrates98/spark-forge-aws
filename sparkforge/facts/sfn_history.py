@@ -40,8 +40,9 @@ kinds, nao cinco.
 - `sfn.retry_observado` -- DERIVADO, nunca lido de arquivo: `build_sfn_retry_observado`
   casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
   ASL declara, e `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
-  `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous` e
-  `declared_ceiling_unreadable`.
+  `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous`,
+  `declared_ceiling_unreadable` e `glue_attempt_absent` (ha tentativa medida, e nenhuma
+  delas e `glue:startJobRun` -- a unica integracao que o confronto sabe julgar).
 
 ## Como uma tentativa e PAREADA, e por que pela cadeia
 
@@ -812,6 +813,50 @@ def _glue_por_execucao(facts: Sequence[Fact]) -> dict[tuple[str, str], list[Fact
     return por_chave
 
 
+def _glue_attempt_absent(facts: Sequence[Fact]) -> list[Fact]:
+    """A recusa de quando ha tentativa medida e NENHUMA delas e `glue:startJobRun`.
+
+    O confronto de retry so sabe julgar essa integracao, e o filtro nao alcanca as
+    outras formas de chamar o mesmo servico -- a integracao `aws-sdk`, por exemplo,
+    publica `resourceType: "aws-sdk:glue"` e `resource: "startJobRun"`. Devolver `[]`
+    em silencio deixaria o operador com um case sem confronto e sem uma linha dizendo
+    por que, e a regra 20 pede o contrario: "nao sei julgar esta integracao" e diferente
+    de "esta tudo bem". Uma recusa por ARTEFATO, que e a unidade que o operador aponta,
+    NOMEANDO `<servico>:<api>` de cada tentativa daquele arquivo -- e dai que sai o
+    proximo passo, porque e a lista do que o filtro teria de alcancar.
+    """
+    por_artefato: dict[str, list[Fact]] = {}
+    for fact in facts:
+        if fact.kind != "sfn.attempt":
+            continue
+        artefato = str((fact.provenance or {}).get("artifact") or "")
+        por_artefato.setdefault(artefato, []).append(fact)
+    saida: list[Fact] = []
+    for artefato in sorted(por_artefato):
+        grupo = por_artefato[artefato]
+        observados = sorted(
+            {
+                f"{(f.attrs or {}).get('service') or ''}:{(f.attrs or {}).get('api') or ''}"
+                for f in grupo
+            }
+        )
+        saida.append(
+            _unresolved(
+                _file_subject(artefato),
+                "glue_attempt_absent",
+                {
+                    "artifact": artefato,
+                    "artifact_sha256": "",
+                    "extractor": EXTRACTOR_ID,
+                    "derived_from": sorted(f.id for f in grupo),
+                },
+                measures={"attempt_count": len(grupo)},
+                observed=observados,
+            )
+        )
+    return saida
+
+
 def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     """Confronta o retry DECLARADO no ASL com o OBSERVADO no historico (D5).
 
@@ -842,7 +887,9 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     """
     tentativas = _glue_por_execucao(facts)
     if not tentativas:
-        return []
+        # Ha `sfn.attempt` no pool (o `fuse` so chama esta funcao quando ha), e nenhum
+        # deles e `glue:startJobRun`. A lacuna sai com nome, nunca uma lista vazia.
+        return sort_facts(_glue_attempt_absent(facts))
     declaradas = _glue_por_estado(facts, "sfn.task")
     ha_asl = any(f.kind == "sfn.task" for f in facts)
     saida: list[Fact] = []
