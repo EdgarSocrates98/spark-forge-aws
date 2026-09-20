@@ -113,8 +113,13 @@ com `dpu_seconds` medido.
 
 **A `SF-SFNX-001` não fala sobre execução retomada.** Com `ExecutionRedriven` no
 histórico, `build_sfn_retry_observado` emite `sfn.unresolved: redrive_in_execution` no
-lugar do fact que a regra ancora, e ela sai em `skipped` — "não perguntei", nunca "está
-tudo bem". A razão está na lacuna 9.
+lugar do fact que a regra ancora, e ela fica **sem âncora naquele arquivo** — "não
+perguntei", nunca "está tudo bem". **Não é `skipped`**, e a diferença é medível: o
+`judge` só põe a regra em `skipped` quando o kind inteiro falta do pool, e com dois
+históricos no case — um deles limpo — o `sfn.retry_observado` do limpo está lá, a regra
+avalia normalmente e fica calada apenas sobre o arquivo com redrive. Quem nomeia a
+lacuna daquele arquivo é a própria recusa, não o estado da regra. A razão está na
+lacuna 9.
 
 ## 5. Lacunas nomeadas
 
