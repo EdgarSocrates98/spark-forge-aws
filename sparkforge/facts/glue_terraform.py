@@ -6,18 +6,47 @@ ESTE MODULO NAO E EXTRATOR. Ele nao le artefato, nao tem `EXTRACTOR_ID`, nao tem
 `build_sfn_glue_link` (`stepfunctions.py`) e `build_af_glue_link` (`airflow_dag.py`)
 usam para montar os facts delas.
 
-A ausencia de `EMITTED_KINDS` e o que o mantem fora das TRES varreduras do repositorio:
-a de `scripts/check_status_numbers.py::_extratores`, a de `pkgutil` em
-`tests/test_harness_untrusted.py`, e as duas listas manuais
-(`tests/test_rules_catalog_reachability.py`, `tests/test_fixtures_kind_coverage.py`),
-cujo `EMITTABLE` faz `frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS))` e
-levantaria `AttributeError` se alguem o acrescentasse la. O precedente do lugar sao
-`runtime_matrix` e `pricing`, que moram em `facts/` pelo mesmo motivo.
+A ausencia de `EMITTED_KINDS` e o que o mantem fora das varreduras que o repositorio
+faz sobre `sparkforge/facts/`. As conferidas em 2026-09-20 -- lista do que foi
+conferido, NAO um conjunto fechado:
 
-As duas funcoes moraram duplicadas em `stepfunctions.py` e `airflow_dag.py` do
-incremento do Step Functions ate este: a copia foi deliberada, esta registrada em
-`docs/sdd/AIRFLOW_DAG/ship.md`, e tres revisoes finais seguidas conferiram a mao que
-elas nao tinham divergido.
+- `sparkforge/diagnosis/root_cause.py::_modulo_por_kind`, a unica de PRODUCAO: monta o
+  mapa `kind -> modulo que o emite` por `getattr(modulo, "EMITTED_KINDS", None)` e
+  ignora quem nao tem;
+- `scripts/check_status_numbers.py::_extratores`, que filtra pelo mesmo `getattr`;
+- `tests/test_harness_untrusted.py`, que varre com `pkgutil` e pula por `hasattr`;
+- `tests/test_databricks_rule_audit.py::_extratores`, pelo mesmo `hasattr`;
+- `tests/test_rules_errors.py::_kinds_emitidos`, pelo mesmo `getattr`;
+- as duas listas MANUAIS, que nao descobrem por varredura e por isso levantariam
+  `AttributeError` se alguem acrescentasse este modulo la: o `EMITTABLE` de
+  `tests/test_rules_catalog_reachability.py` faz
+  `frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS))`, e o de
+  `tests/test_fixtures_kind_coverage.py` faz o mesmo sobre `EXTRACTORS.values()`,
+  porque la `EXTRACTORS` e dict.
+
+O precedente do lugar sao `runtime_matrix` e `pricing`, que moram em `facts/` pelo
+mesmo motivo.
+
+As duas funcoes (`_glue_jobs_por_nome` e `_max_retries`, como se chamavam la) moraram
+duplicadas em `stepfunctions.py` e `airflow_dag.py` do incremento do Airflow
+(`f155fddf`) ate este: em `b324aa3b`, o incremento do Step Functions, havia UMA
+definicao de cada uma, em `stepfunctions.py`, e foi o incremento do Airflow que criou
+a copia. A copia foi deliberada e esta registrada em `docs/sdd/AIRFLOW_DAG/ship.md`,
+que e o unico `ship.md` com registro de conferencia a mao de que as copias nao tinham
+divergido; `docs/sdd/SFN_HISTORY/ship.md` registra a duplicacao, nao uma conferencia.
+
+Tres comportamentos vieram das copias antigas e foram PRESERVADOS de proposito -- o
+`out_of_scope` do define proibe corrigi-los nesta feature. Ficam nomeados aqui para
+que a proxima pessoa nao os descubra achando que sao novos:
+
+- `glue_max_retries` trunca `value` float sem avisar: `value: 2.9` devolve
+  `("literal", 2, id)`, porque a conversao e `int(valor)`.
+- `glue_jobs_por_nome` indexa sob a chave literal `"None"` o `name` com
+  `literal: True` e sem `value`, porque a chave e `str(attrs.get("value"))`.
+- `glue_jobs_por_nome` troca `subject.file` ausente por `""`, e esse `""` viaja no
+  primeiro elemento da tupla como o arquivo a casar -- inclusive de volta para
+  `glue_max_retries`, onde ele NAO casa com o proprio fact de origem (cujo
+  `subject.file` e ausente, e nao `""`), e a resposta sai `("absent", 0, None)`.
 """
 from __future__ import annotations
 

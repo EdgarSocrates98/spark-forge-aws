@@ -110,19 +110,26 @@ def test_as_tres_origens_de_max_retries_e_o_indice_por_nome():
 
 
 def test_o_modulo_auxiliar_nao_conta_como_extrator():
-    """AC3: `EMITTED_KINDS` e o que distingue extrator de auxiliar, nas TRES varreduras.
+    """AC3: `EMITTED_KINDS` e o que distingue extrator de auxiliar nas varreduras.
 
     A regra do `CLAUDE.md` que manda por extrator novo nas duas listas manuais NAO vale
-    aqui, e este teste e o lugar onde isso esta escrito de forma executavel.
+    aqui, e este teste e o lugar onde isso esta escrito de forma executavel. A lista
+    das varreduras conferidas esta no docstring de `sparkforge/facts/glue_terraform.py`;
+    os tres arquivos varridos abaixo sao os que CITARIAM o modulo pelo nome, nao todas
+    elas -- as que descobrem por `pkgutil`/`glob` ja o ignoram por nao ter o atributo.
     """
     assert not hasattr(glue_terraform, "EMITTED_KINDS")
     assert not hasattr(glue_terraform, "EXTRACTOR_ID")
     assert not [n for n in dir(glue_terraform) if n.startswith("extract_")]
 
-    # As duas listas manuais fazem `frozenset().union(*(m.EMITTED_KINDS for m in
-    # EXTRACTORS))`: o modulo la dentro levantaria AttributeError na COLETA, e a
-    # mensagem nao diria por que. A conferencia e por texto para nao importar os
-    # modulos de teste um do outro.
+    # As duas listas manuais fazem union de `EMITTED_KINDS` sobre `EXTRACTORS`, com
+    # sintaxe diferente porque o container e diferente: em
+    # test_rules_catalog_reachability.py e
+    # `frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS))`, e em
+    # test_fixtures_kind_coverage.py e `... for m in EXTRACTORS.values())`, porque la
+    # `EXTRACTORS` e dict. Mesmo efeito: o modulo la dentro levantaria AttributeError
+    # na COLETA, e a mensagem nao diria por que. A conferencia e por texto para nao
+    # importar os modulos de teste um do outro.
     for arquivo in (
         "tests/test_rules_catalog_reachability.py",
         "tests/test_fixtures_kind_coverage.py",
