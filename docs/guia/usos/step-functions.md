@@ -107,6 +107,44 @@ por suposição. Truncada com o terminal dentro (a primeira página de um
 `--reverse-order`, por exemplo) sai `truncated: true` e `status: failed` ao mesmo tempo;
 inteira, de uma execução ainda em voo, sai `truncated: false` e `status: unresolved`.
 
+### O que fazer quando o histórico passa de uma página
+
+`--max-results 1000` já é o teto que a API permite (1000 é o máximo declarado), então
+para uma execução com mais eventos do que isso a receita acima **não basta** — e paginar
+é a única saída. A API diz como: "Make the call again using the returned token to
+retrieve the next page. Keep all other arguments unchanged."
+
+O SparkForge lê **um arquivo como uma execução**. Juntar as páginas num arquivo só é o
+remédio, e salvar cada página como um `.json` separado no mesmo diretório **não** é o
+mesmo: o `analyze` daria um `sfn.execution` por página e, no `fuse`, as tentativas de uma
+mesma execução seriam contadas em grupos diferentes (o agrupamento é por arquivo), o que
+subestima o retry observado.
+
+```bash
+# 1. Salvar as paginas (repetir enquanto a saida tiver nextToken)
+aws stepfunctions get-execution-history --execution-arn <arn> \
+  --include-execution-data --max-results 1000 > /tmp/sf/pag-1.json
+aws stepfunctions get-execution-history --execution-arn <arn> \
+  --include-execution-data --max-results 1000 \
+  --next-token "$(python -c "import json,sys;print(json.load(open(sys.argv[1]))['nextToken'])" /tmp/sf/pag-1.json)" \
+  > /tmp/sf/pag-2.json
+
+# 2. Juntar num arquivo so, SEM nextToken -- e esse que o analyze le
+python - /tmp/sf/pag-*.json <<'PY' > /tmp/sf/execucao.json
+import json, sys
+eventos = [e for p in sys.argv[1:] for e in json.load(open(p))["events"]]
+json.dump({"events": eventos}, sys.stdout)
+PY
+```
+
+A ordem em que as páginas entram não importa: o extrator ordena pelo `id` do evento, que
+a API numera sequencialmente. E se a colagem repetir um evento, ele não passa calado —
+sai `sfn.unresolved` com `event_id_duplicated`, a primeira ocorrência vence, e a contagem
+de tentativas continua a que o arquivo sustenta.
+
+Enquanto o arquivo for uma página só, o `truncated` fica lá e é assim que deve ser: ele é
+a diferença entre "o histórico é este" e "esta é a parte que eu salvei".
+
 | kind | um por | o que diz |
 |---|---|---|
 | `sfn.execution` | arquivo | `status` pelo evento terminal (`unresolved` quando ele não está no arquivo), duração, contagem dos eventos **lidos** (`read_event_count` — o que não é objeto, o de tipo desconhecido e o de `id` repetido ficam de fora, cada um com a sua recusa), `truncated` |
