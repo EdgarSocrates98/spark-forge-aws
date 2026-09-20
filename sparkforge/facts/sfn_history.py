@@ -92,7 +92,13 @@ Cadeia que chega a raiz sem achar, evento referenciado ausente do arquivo, ou ci
 
 O historico publica o NOME do estado (`stateEnteredEventDetails.name`), nunca o caminho
 dele na definicao. Dentro de um `Parallel`, dois ramos podem ter um estado de mesmo
-nome -- e ai o nome nao identifica nada. Ate 2026-09-20 o contador era chaveado so pelo
+nome -- e ai o nome nao identifica nada. O MESMO VALE PARA O `Map` INLINE, e o alcance
+nao e menor por ser o segundo: cada iteracao pendura o seu `TaskStateEntered` no
+`MapStateStarted` comum, entao todo estado de dentro de um `Map` tem tantas entradas
+mutuamente nao-ancestrais quantas forem as iteracoes -- inclusive com
+`MaxConcurrency: 1`, que e sequencial no relogio e concorrente na cadeia. O `Map`
+DISTRIBUIDO (`mapRunArn`) continua fora por outro motivo: o extrator nao segue as
+execucoes filhas dele. Ate 2026-09-20 o contador era chaveado so pelo
 nome, e a primeira tentativa do segundo ramo saia com `attempt_index: 2`: um indice que
 o arquivo nao sustenta, e que e o `subject.symbol` por onde `SF-SFNX-002` e
 `SF-SFNX-003` apontam o achado.
@@ -102,6 +108,13 @@ juntam-se os `TaskStateEntered` distintos a que os `TaskScheduled` daquele nome 
 encadeiam; se DOIS deles forem mutuamente nao-ancestrais -- nenhum alcanca o outro
 subindo `previousEventId` --, nenhum `sfn.attempt` daquele nome e emitido e sai uma
 recusa nomeada.
+
+A RECUSA CALA A ORDEM, NAO O VALOR. O `sfn.job_run` daquele nome continua saindo, com o
+`subject.symbol` sem o `#<n>` e sem `attempt_index` nas medidas: o `JobRunId` esta
+escrito no `output` do `TaskSubmitted`, nao depende de ordem nenhuma, e e a unica ponte
+para `sparkforge finops`. O discriminador vai para `measures`
+(`submitted_event_id`), porque sem o `#<n>` os facts de um mesmo nome teriam subject
+igual.
 
 A RECUSA SAO DUAS, porque a causa sao duas. Quando os dois passeios do par chegaram a
 raiz limpos e mesmo assim nao se cruzaram, houve concorrencia de verdade e sai
@@ -848,7 +861,13 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
     # 3. Os facts, em ordem de agendamento.
     for identificador in sorted(tentativas):
         estado = tentativas[identificador]
-        if estado["state_name"] in concorrentes:
+        recusado = concorrentes.get(estado["state_name"])
+        if recusado is not None:
+            # A recusa cala a NUMERACAO. O `JobRunId` sobrevive a ela (D6 da rodada de
+            # correcao): ele e um valor lido literalmente do arquivo, nao uma ordem.
+            leitura.facts.extend(
+                _job_run_sem_ordem(estado, recusado["reason"], leitura)
+            )
             continue
         leitura.facts.extend(_fatos_da_tentativa(estado, status, classe, leitura))
 
@@ -985,6 +1004,79 @@ def _fatos_da_tentativa(
         )
     )
     return saida
+
+
+def _job_run_sem_ordem(
+    estado: dict[str, Any], razao: str, leitura: _Leitura
+) -> list[Fact]:
+    """O `sfn.job_run` de uma tentativa cujo NOME foi recusado: valor, nunca ordem.
+
+    Quando o nome do estado nao identifica um estado naquele historico -- ramos de um
+    `Parallel`, iteracoes de um `Map` inline, cadeia impassavel --, o `attempt_index` e
+    invencao e a recusa o cala. O `JobRunId` NAO e invencao: ele esta escrito no
+    `output` do `TaskSubmitted`, e nao depende de ordem nenhuma. Ele e tambem a UNICA
+    ponte para `sparkforge finops`, que responde custo com `dpu_seconds` medido; apaga-lo
+    trocaria um indice que o arquivo nao sustenta por uma medida que ele sustenta.
+
+    O `subject.symbol` e o nome do estado SEM o `#<n>`, porque o numero e exatamente o
+    que foi recusado, e `attrs.attempt_index_refused` nomeia a recusa que o calou -- e
+    dai que o operador chega na `sfn.unresolved` do mesmo nome.
+
+    O discriminador esta em `measures`: com o `#<n>` fora do simbolo, duas submissoes do
+    mesmo nome no mesmo arquivo teriam subject igual, e `Fact.id` e sha1 de
+    `kind + subject + measures` (precedente do #92). `submitted_event_id` e o `id` do
+    evento que publicou o valor -- procedencia, e nao desempate inventado.
+
+    As duas recusas de leitura do `output` continuam saindo pelo mesmo nome que no
+    caminho normal: `execution_data_absent` quando `includeExecutionData` esta desligado,
+    `job_run_id_unrecognized` quando a forma nao casa (U1). Emitir o JobRun legivel e
+    calar o ilegivel seria afirmacao parcial, que e o que a regra 20 proibe.
+    """
+    submetido = estado["submitted"]
+    if submetido is None:
+        return []
+    nome_do_estado = estado["state_name"]
+    subject = _attempt_subject(leitura.path, nome_do_estado)
+    medidas = {"submitted_event_id": int(submetido["id"])}
+    bruto = _detalhes(submetido)
+    if "output" not in bruto:
+        return [
+            _unresolved(
+                subject,
+                "execution_data_absent",
+                leitura.provenance,
+                measures=medidas,
+                state_name=nome_do_estado,
+            )
+        ]
+    corrida, nome, chave, chaves = _job_run(bruto["output"])
+    if corrida is None:
+        return [
+            _unresolved(
+                subject,
+                "job_run_id_unrecognized",
+                leitura.provenance,
+                measures=medidas,
+                state_name=nome_do_estado,
+                output_keys=chaves,
+            )
+        ]
+    return [
+        Fact(
+            kind="sfn.job_run",
+            subject=subject,
+            measures=medidas,
+            attrs={
+                "job_run_id": corrida,
+                "job_name": nome,
+                "state_name": nome_do_estado,
+                "read_from": chave,
+                "source": "task_submitted_output",
+                "attempt_index_refused": razao,
+            },
+            provenance=leitura.provenance,
+        )
+    ]
 
 
 def extract_sfn_history_path(path: Path, repo_root: Path | None = None) -> list[Fact]:

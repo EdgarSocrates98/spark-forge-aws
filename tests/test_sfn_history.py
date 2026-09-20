@@ -1057,9 +1057,16 @@ def test_estado_homonimo_em_ramos_diferentes_sai_recusado_sem_indice():
     """
     facts = extract_sfn_history(HISTORICO_COM_PARALLEL_HOMONIMO, "parallel.json")
 
-    # Nenhuma tentativa de `Carga`, e nenhum `sfn.job_run` dela: o indice seria invencao.
+    # Nenhuma tentativa de `Carga`: o indice seria invencao. O `JobRunId` de cada ramo
+    # CONTINUA saindo -- ele e um valor lido do arquivo, nao uma ordem --, com o simbolo
+    # sem `#<n>` e sem `attempt_index`.
     assert [t.attrs["state_name"] for t in _de(facts, "sfn.attempt")] == ["Preparacao"]
-    assert [c.attrs["job_run_id"] for c in _de(facts, "sfn.job_run")] == ["jr_prep"]
+    corridas = sorted(_de(facts, "sfn.job_run"), key=lambda f: f.attrs["job_run_id"])
+    assert [c.attrs["job_run_id"] for c in corridas] == ["jr_prep", "jr_ramo_a", "jr_ramo_b"]
+    dos_ramos = [c for c in corridas if c.attrs["state_name"] == "Carga"]
+    assert {c.subject["symbol"] for c in dos_ramos} == {"Carga"}
+    assert all("attempt_index" not in c.measures for c in dos_ramos)
+    assert len({c.id for c in dos_ramos}) == 2
 
     [recusa] = _de(facts, "sfn.unresolved")
     assert recusa.attrs["reason"] == "state_name_in_concurrent_branches"
@@ -1076,7 +1083,7 @@ def test_estado_homonimo_em_ramos_diferentes_sai_recusado_sem_indice():
     # E as contagens da execucao contam o que SAIU, nao o que foi lido.
     [execucao] = _de(facts, "sfn.execution")
     assert execucao.measures["attempt_count"] == 1
-    assert execucao.measures["job_run_count"] == 1
+    assert execucao.measures["job_run_count"] == 3
     assert execucao.measures["read_event_count"] == 19
 
 
@@ -1236,3 +1243,74 @@ def test_ramos_concorrentes_continua_saindo_quando_os_dois_passeios_chegam_a_rai
     assert recusa.measures == {"entry_count": 2, "attempt_count": 2}
     assert "unwalkable_entry_count" not in recusa.measures
     assert "detail" not in recusa.attrs
+
+
+# `Map` INLINE, sem `Parallel` nenhum: duas iteracoes do mesmo `Map`, cada uma com um
+# estado `Carga`. As entradas (ids 6 e 7) penduram no `MapIterationStarted` da propria
+# iteracao, e as duas divergem no `MapStateStarted` comum (id 3) -- exatamente como
+# ramos de um `Parallel`. O `JobRunId` de cada iteracao esta escrito no arquivo.
+HISTORICO_COM_MAP_INLINE = {
+    "events": [
+        _evento(1, 0, "ExecutionStarted", 0),
+        _evento(2, 1, "MapStateEntered", 1, stateEnteredEventDetails={"name": "PorArquivo"}),
+        _evento(3, 2, "MapStateStarted", 2),
+        _evento(4, 3, "MapIterationStarted", 3),
+        _evento(5, 3, "MapIterationStarted", 3),
+        _evento(6, 4, "TaskStateEntered", 4, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(7, 5, "TaskStateEntered", 4, stateEnteredEventDetails={"name": "Carga"}),
+        _evento(8, 6, "TaskScheduled", 5, **_agendado()),
+        _evento(9, 7, "TaskScheduled", 5, **_agendado()),
+        _evento(10, 8, "TaskSubmitted", 6, **_submetido({"JobRunId": "jr_it1"})),
+        _evento(11, 9, "TaskSubmitted", 6, **_submetido({"JobRunId": "jr_it2"})),
+        _evento(12, 10, "TaskSucceeded", 40),
+        _evento(13, 11, "TaskSucceeded", 41),
+        _evento(14, 13, "MapStateSucceeded", 42),
+        _evento(15, 14, "MapStateExited", 43, stateExitedEventDetails={"name": "PorArquivo"}),
+        _evento(16, 15, "ExecutionSucceeded", 44),
+    ]
+}
+
+
+def test_map_inline_cala_a_numeracao_e_preserva_o_job_run():
+    """A recusa cala a ORDEM, que o nome nao sustenta; nao o id que o arquivo publica.
+
+    Iteracoes de um `Map` inline divergem no `MapStateStarted` comum exatamente como
+    ramos de um `Parallel`, entao todo estado dentro de um `Map` cai na recusa -- e com
+    ela caia tambem o `sfn.job_run`, que nao depende de ordem nenhuma.
+
+    O `JobRunId` e um VALOR, nao uma ordem: ele esta escrito literalmente no `output`
+    do `TaskSubmitted`, e e a unica ponte para `sparkforge finops`. Apaga-lo seria
+    jogar fora medida que o arquivo sustenta por causa de um indice que ele nao
+    sustenta. O `subject.symbol` sai SEM o `#<n>`, porque o numero e justamente o que
+    foi recusado.
+    """
+    facts = extract_sfn_history(HISTORICO_COM_MAP_INLINE, "map.json")
+
+    # A numeracao continua calada: nenhum `sfn.attempt` de `Carga`.
+    assert _de(facts, "sfn.attempt") == []
+    [recusa] = _de(facts, "sfn.unresolved")
+    assert recusa.attrs["reason"] == "state_name_in_concurrent_branches"
+    assert recusa.attrs["state_name"] == "Carga"
+
+    corridas = sorted(_de(facts, "sfn.job_run"), key=lambda f: f.attrs["job_run_id"])
+    assert [c.attrs["job_run_id"] for c in corridas] == ["jr_it1", "jr_it2"]
+    for corrida in corridas:
+        # Sem `#<n>` no simbolo e sem `attempt_index` nas medidas: nada aqui afirma
+        # ordem. O que fica e a procedencia -- o `id` do evento que publicou o valor.
+        assert corrida.subject["symbol"] == "Carga"
+        assert "attempt_index" not in corrida.measures
+        assert corrida.attrs["state_name"] == "Carga"
+        assert corrida.attrs["attempt_index_refused"] == "state_name_in_concurrent_branches"
+    assert [c.measures["submitted_event_id"] for c in corridas] == [10, 11]
+
+    # OS IDS NAO COLIDEM. `Fact.id` e sha1 de `kind + subject + measures`, e os dois
+    # `sfn.job_run` tem o MESMO subject agora que ele perdeu o `#<n>`: sem o
+    # discriminador em `measures`, `fusion.fuse` deixaria um so (precedente do #92).
+    assert len({c.id for c in corridas}) == 2
+
+    # E a sentinela conta o que SAIU: zero tentativas, dois JobRuns.
+    [execucao] = _de(facts, "sfn.execution")
+    assert execucao.measures["attempt_count"] == 0
+    assert execucao.measures["job_run_count"] == 2
+    [sentinela] = _de(facts, "sfn.analyzed")
+    assert sentinela.measures["job_run_count"] == 2

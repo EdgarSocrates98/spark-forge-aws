@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_a17348",
+    "id": "f_c772ed",
     "schema_version": 1,
     "kind": "sfn.analyzed",
     "subject": {
@@ -14,7 +14,7 @@
     "measures": {
       "execution_count": 1,
       "attempt_count": 1,
-      "job_run_count": 1,
+      "job_run_count": 3,
       "unresolved_count": 1
     },
     "attrs": {
@@ -63,7 +63,7 @@
     }
   },
   {
-    "id": "f_62d40f",
+    "id": "f_1df018",
     "schema_version": 1,
     "kind": "sfn.execution",
     "subject": {
@@ -77,7 +77,7 @@
     "measures": {
       "read_event_count": 19,
       "attempt_count": 1,
-      "job_run_count": 1,
+      "job_run_count": 3,
       "duration_seconds": 1263.0
     },
     "attrs": {
@@ -86,6 +86,64 @@
       "source": "get_execution_history",
       "truncated": false,
       "arn_declared": false
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_22ec2e",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "submitted_event_id": 13
+    },
+    "attrs": {
+      "job_run_id": "jr_dddddddd1",
+      "job_name": "carga-ramo-a",
+      "state_name": "Carga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output",
+      "attempt_index_refused": "state_name_in_concurrent_branches"
+    },
+    "provenance": {
+      "artifact": "historico/execucao.json",
+      "artifact_sha256": "902a38581cd78b9aa4544c022475db9700da91552fb210270e64693de1a0c9d9",
+      "extractor": "sfn_history@0.1.0"
+    }
+  },
+  {
+    "id": "f_867f6b",
+    "schema_version": 1,
+    "kind": "sfn.job_run",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Carga",
+      "snippet": ""
+    },
+    "measures": {
+      "submitted_event_id": 14
+    },
+    "attrs": {
+      "job_run_id": "jr_dddddddd2",
+      "job_name": "carga-ramo-b",
+      "state_name": "Carga",
+      "read_from": "JobRunId",
+      "source": "task_submitted_output",
+      "attempt_index_refused": "state_name_in_concurrent_branches"
     },
     "provenance": {
       "artifact": "historico/execucao.json",

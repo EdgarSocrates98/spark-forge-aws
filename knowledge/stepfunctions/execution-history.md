@@ -154,8 +154,17 @@ tudo bem". A razão está na lacuna 9.
    de numerar estados de mesmo nome em ramos concorrentes. Para um nome, ele junta os
    `TaskStateEntered` distintos a que os `TaskScheduled` daquele nome se encadeiam; se
    dois deles forem mutuamente **não-ancestrais** — nenhum alcança o outro subindo
-   `previousEventId` —, nenhum `sfn.attempt` daquele nome é emitido, nenhum `sfn.job_run`
-   dele é ligado, e sai `sfn.unresolved: state_name_in_concurrent_branches`. Antes disso,
+   `previousEventId` —, nenhum `sfn.attempt` daquele nome é emitido e sai
+   `sfn.unresolved: state_name_in_concurrent_branches`. **O alcance disso não para no
+   `Parallel`**: cada iteração de um `Map` **inline** pendura o seu `TaskStateEntered` no
+   `MapStateStarted` comum, então todo estado dentro de um `Map` inline cai na mesma
+   recusa — inclusive com `MaxConcurrency: 1`, que é sequencial no relógio e concorrente
+   na cadeia. O `Map` **distribuído** (`mapRunArn`) fica fora pela lacuna 6, que é outra
+   coisa: lá o extrator não segue as execuções filhas. **A recusa cala a ORDEM, não o
+   valor**: o `sfn.job_run` de cada submissão daquele nome continua saindo, com o
+   `subject.symbol` sem o `#<n>`, sem `attempt_index` nas medidas e com
+   `measures.submitted_event_id` como discriminador — o `JobRunId` está escrito no
+   `output` do `TaskSubmitted` e não depende de ordem nenhuma. Antes disso,
    o contador era chaveado só pelo nome, e a primeira tentativa do segundo ramo saía com
    `attempt_index: 2` — um índice que o arquivo não sustenta, e que é o `subject.symbol`
    por onde `SF-SFNX-002` e `SF-SFNX-003` apontam o achado. Reentrada **sequencial** —
@@ -166,8 +175,15 @@ tudo bem". A razão está na lacuna 9.
    parecer não-ancestrais, e o efeito seria recusar um estado que o arquivo sustenta. O
    que destrava: **um histórico real de execução com `Parallel` ou `Map`** — conferir se
    a cadeia de um ramo pula os `id` do outro é uma leitura de dois minutos —, ou uma
-   frase oficial. O corpus sintético (`parallel_estado_homonimo` e `retry_em_ramo_unico`)
-   exercita o **mecanismo**, não a premissa.
+   frase oficial. O corpus sintético (`parallel_estado_homonimo`, `map_inline_iteracoes`
+   e `retry_em_ramo_unico`) exercita o **mecanismo**, não a premissa.
+   **A recusa são duas, e a diferença é o passeio.** "Não se alcançam" só é concorrência
+   quando os **dois** passeios do par chegaram à raiz limpos. Quando pelo menos um deles
+   parou em `chain_broken` (o `id` referenciado não está no arquivo) ou `chain_cycle`,
+   não se demonstrou concorrência nenhuma, e sai `sfn.unresolved:
+   state_entries_chain_unwalkable`, com a parada em `attrs.detail`. Recusar nos dois
+   casos é legítimo; chamar os dois de "ramos concorrentes" seria recusa com o nome
+   errado num arquivo que pode não ter `Parallel` nenhum (regra 20).
 9. **A lista de tipos conhecidos do extrator já é a publicada, e o redrive virou recusa
    em vez de medida.** Medido na releitura de 2026-09-20: os `Valid Values` do campo
    `type` do `HistoryEvent` trazem 62 tipos, e `_TIPOS_CONHECIDOS` tinha 59. **Em

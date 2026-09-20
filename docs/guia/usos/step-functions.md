@@ -185,9 +185,25 @@ depois, e a forma do evento não foi lida (lacuna 9 de
 **nome**, não caminho. O extrator junta os `TaskStateEntered` distintos a que os
 `TaskScheduled` daquele nome se encadeiam; se dois deles forem mutuamente
 não-ancestrais — nenhum alcança o outro subindo `previousEventId` —, o nome não
-identifica um estado naquele arquivo: nenhum `sfn.attempt` dele é emitido, nenhum
-`sfn.job_run` dele é ligado, e sai `sfn.unresolved:
-state_name_in_concurrent_branches` com o nome e com quantas entradas ele tinha.
+identifica um estado naquele arquivo: nenhum `sfn.attempt` dele é emitido e sai
+`sfn.unresolved: state_name_in_concurrent_branches` com o nome e com quantas entradas
+ele tinha.
+
+**E isso alcança o `Map` inline, não só o `Parallel`.** Cada iteração de um `Map`
+pendura o seu `TaskStateEntered` no `MapStateStarted` comum, então **todo** estado
+dentro de um `Map` inline tem tantas entradas mutuamente não-ancestrais quantas forem as
+iterações — e cai na mesma recusa. Isso vale **inclusive com `MaxConcurrency: 1`**, que é
+sequencial no relógio e concorrente na cadeia: quatrocentas iterações produzem zero
+tentativas numeradas, não quatrocentas. O `Map` **distribuído** (`mapRunArn`) fica fora
+por outro motivo: o extrator não segue as execuções filhas dele.
+
+**A recusa cala a ordem; o `JobRunId` sobrevive.** O `sfn.job_run` de cada submissão
+daquele nome **continua saindo** — o `JobRunId` está escrito literalmente no `output` do
+`TaskSubmitted`, não depende de ordem nenhuma, e é a única ponte para
+`sparkforge finops`. O que ele perde é a afirmação de ordem: o `subject.symbol` é o nome
+do estado **sem** o `#<n>`, não há `attempt_index` nas medidas, e
+`attrs.attempt_index_refused` nomeia a recusa que calou o número. O discriminador é
+`measures.submitted_event_id`, o `id` do evento que publicou o valor.
 Reentrada **sequencial** — um retry, ou um `Choice` que volta ao mesmo estado — não cai
 aqui: a entrada anterior está na cadeia da seguinte, as duas se alcançam, e a numeração
 1..n continua valendo.
