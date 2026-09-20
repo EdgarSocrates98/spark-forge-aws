@@ -70,9 +70,10 @@ A definição diz quantas vezes o Task **pode** ser reagendado. Só o histórico
 vezes ele **foi** — e é ele que separa retry declarado de retry observado.
 
 ```bash
-# 1. Salvar o historico (o operador roda isto na conta; o SparkForge nao chama a API)
+# 1. Salvar o historico (o operador roda isto na conta; o SparkForge nao chama a API).
+#    SEM limitar a paginacao: a CLI junta as paginas sozinha, e a saida sai inteira.
 aws stepfunctions get-execution-history \
-  --execution-arn <arn> --include-execution-data --max-results 1000 \
+  --execution-arn <arn> --include-execution-data \
   > /tmp/sf/execucao.json
 
 # 2. Extrair os facts do historico
@@ -109,27 +110,23 @@ inteira, de uma execução ainda em voo, sai `truncated: false` e `status: unres
 
 ### O que fazer quando o histórico passa de uma página
 
-`--max-results 1000` já é o teto que a API permite (1000 é o máximo declarado), então
-para uma execução com mais eventos do que isso a receita acima **não basta** — e paginar
-é a única saída. A API diz como: "Make the call again using the returned token to
-retrieve the next page. Keep all other arguments unchanged."
+**O jeito mais barato é não deixar ele virar página.** A CLI já junta as páginas
+sozinha: o `help` de `aws stepfunctions get-execution-history` (medido na aws-cli
+2.36.38) diz que a operação "is a paginated operation. Multiple API calls may be issued
+in order to retrieve the entire data set of results. You can disable pagination by
+providing the `--no-paginate` argument." Deixada em paz, ela emite quantas chamadas
+forem precisas e a saída salva traz o histórico inteiro, sem `nextToken`. Quem **limita**
+a coleta é o operador — `--max-items`, `--no-paginate`, ou um salvamento que não veio da
+CLI (SDK, console). É daí que sai uma página, e é por isso que o `truncated` existe.
 
-O SparkForge lê **um arquivo como uma execução**. Juntar as páginas num arquivo só é o
-remédio, e salvar cada página como um `.json` separado no mesmo diretório **não** é o
+Já tendo as páginas separadas, **junte-as num arquivo só**. O SparkForge lê **um arquivo
+como uma execução**, e salvar cada página como um `.json` no mesmo diretório **não** é o
 mesmo: o `analyze` daria um `sfn.execution` por página e, no `fuse`, as tentativas de uma
-mesma execução seriam contadas em grupos diferentes (o agrupamento é por arquivo), o que
+mesma execução cairiam em grupos diferentes (o agrupamento é por arquivo), o que
 subestima o retry observado.
 
 ```bash
-# 1. Salvar as paginas (repetir enquanto a saida tiver nextToken)
-aws stepfunctions get-execution-history --execution-arn <arn> \
-  --include-execution-data --max-results 1000 > /tmp/sf/pag-1.json
-aws stepfunctions get-execution-history --execution-arn <arn> \
-  --include-execution-data --max-results 1000 \
-  --next-token "$(python -c "import json,sys;print(json.load(open(sys.argv[1]))['nextToken'])" /tmp/sf/pag-1.json)" \
-  > /tmp/sf/pag-2.json
-
-# 2. Juntar num arquivo so, SEM nextToken -- e esse que o analyze le
+# Juntar as paginas num arquivo so, SEM nextToken -- e esse que o analyze le
 python - /tmp/sf/pag-*.json <<'PY' > /tmp/sf/execucao.json
 import json, sys
 eventos = [e for p in sys.argv[1:] for e in json.load(open(p))["events"]]
