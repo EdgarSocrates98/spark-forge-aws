@@ -14,6 +14,7 @@ files:
   - {path: sparkforge/facts/airflow_dag.py, action: modify, reason: "o mesmo, nos chamadores das linhas 1000 e 1040. A docstring que declarava a duplicacao de proposito sai junto: ela deixa de ser verdade"}
   - {path: docs/claims.lock.json, action: modify, reason: "um .py novo em sparkforge/ move as alegacoes de bytes e de contagem do corpus. As que caírem saem na lista de ids do gate, e so essas sao remediadas"}
   - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "os numeros auditados que as mesmas alegacoes publicam. Se o gate nao listar nenhuma, este arquivo nao e tocado -- e isso e desvio a relatar, nao a forcar"}
+  - {path: docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md, action: modify, reason: "o manifesto so previa CODEINTEL-GAP.md, mas a alegacao VNX-726 (proporcao de referencias nao resolvidas por UNKNOWN_RECEIVER) e publicada AQUI e mede o mesmo corpus de *.py. O gate a listou, e documento auditado que o gate lista entra no manifesto -- senao a remediacao toca arquivo que o design nao previu"}
 decisions:
   - id: D1
     choice: "Modulo auxiliar `sparkforge/facts/glue_terraform.py`, SEM `EMITTED_KINDS`. O precedente esta na docstring de `scripts/check_status_numbers.py::_extratores`: `runtime_matrix` e `pricing` moram em `facts/` e nao sao extratores, porque nao emitem kind."
