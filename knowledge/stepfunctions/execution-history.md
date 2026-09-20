@@ -111,6 +111,11 @@ JobRun órfão" exige o `dpu_seconds` de um run que ninguém leu, e é o que a r
 histórico entrega é o `JobRunId` — e é por ele que `sparkforge finops` responde custo
 com `dpu_seconds` medido.
 
+**A `SF-SFNX-001` não fala sobre execução retomada.** Com `ExecutionRedriven` no
+histórico, `build_sfn_retry_observado` emite `sfn.unresolved: redrive_in_execution` no
+lugar do fact que a regra ancora, e ela sai em `skipped` — "não perguntei", nunca "está
+tudo bem". A razão está na lacuna 9.
+
 ## 5. Lacunas nomeadas
 
 1. **A forma do `output` do `TaskSubmitted` do Glue.** Não publicada (§3). O extrator lê
@@ -142,27 +147,47 @@ com `dpu_seconds` medido.
    o `subject.symbol` é `<estado>#<ordem>`. `sparkforge report github` não ancora esses
    achados numa linha do arquivo.
 8. **O `previousEventId` por RAMO não está publicado, e é a premissa de todo o
-   pareamento.** Nas duas páginas da API relidas em 2026-09-20, o campo tem uma descrição
-   e só uma: "The id of the previous event." Nada ali diz que, dentro de um `Parallel` ou
-   de um `Map`, o anterior é o do **mesmo ramo** — e é exatamente disso que o extrator
-   depende para atribuir cada `TaskScheduled` ao estado certo (§2). Com um só ramo a
-   distinção não aparece: a cadeia e a ordem de `id` coincidem, e é por isso que o corpus
-   sintético não a testa. O que destrava: **um histórico real de execução com `Parallel`
-   ou `Map`** — conferir se a cadeia de um ramo pula os `id` do outro é uma leitura de
-   dois minutos —, ou uma frase oficial. Enquanto isso, a premissa errada não sai calada:
-   ela apareceria como `chain_broken`, `chain_root` ou `chain_cycle`, ou como um
-   `state_unresolved`.
-9. **A lista de tipos conhecidos do extrator é um subconjunto próprio da publicada.**
-   Medido na releitura de 2026-09-20: os `Valid Values` do campo `type` do `HistoryEvent`
-   trazem 62 tipos, e `_TIPOS_CONHECIDOS` tem 59 — faltam `EvaluationFailed`,
-   `ExecutionRedriven` e `MapRunRedriven`, posteriores à leitura original. Nenhum deles
-   perde dado hoje: cada um sai em `sfn.unresolved: event_type_unknown` com o nome, e
-   continua na travessia da cadeia, então não apaga tentativa alguma. O que destrava, e
-   por que vale a pena: **`ExecutionRedriven` é a execução RETOMADA**, e ele muda o que
-   "quantas vezes o Task foi agendado" significa — um redrive reagenda o Task dentro da
-   MESMA execução, e nada aqui hoje separa as tentativas de antes do redrive das de
-   depois. Enquanto ninguém ler um histórico real com redrive, isso é forma publicada
-   sem medida, e o extrator prefere a recusa nomeada.
+   pareamento — inclusive da recusa nova.** Nas duas páginas da API relidas em
+   2026-09-20, o campo tem uma descrição e só uma: "The id of the previous event." Nada
+   ali diz que, dentro de um `Parallel` ou de um `Map`, o anterior é o do **mesmo ramo**.
+   **O que mudou em 2026-09-20** (feature `docs/sdd/SFN_TENTATIVA/`): o extrator deixou
+   de numerar estados de mesmo nome em ramos concorrentes. Para um nome, ele junta os
+   `TaskStateEntered` distintos a que os `TaskScheduled` daquele nome se encadeiam; se
+   dois deles forem mutuamente **não-ancestrais** — nenhum alcança o outro subindo
+   `previousEventId` —, nenhum `sfn.attempt` daquele nome é emitido, nenhum `sfn.job_run`
+   dele é ligado, e sai `sfn.unresolved: state_name_in_concurrent_branches`. Antes disso,
+   o contador era chaveado só pelo nome, e a primeira tentativa do segundo ramo saía com
+   `attempt_index: 2` — um índice que o arquivo não sustenta, e que é o `subject.symbol`
+   por onde `SF-SFNX-002` e `SF-SFNX-003` apontam o achado. Reentrada **sequencial** —
+   um retry, ou um `Choice` que volta — não cai ali: a entrada anterior está na cadeia da
+   seguinte, as duas se alcançam, e a numeração 1..n continua valendo. **O critério
+   depende da premissa, e errar nela continua sendo recusa a mais, nunca afirmação a
+   menos**: se o encadeamento não fosse por ramo, duas entradas sequenciais poderiam
+   parecer não-ancestrais, e o efeito seria recusar um estado que o arquivo sustenta. O
+   que destrava: **um histórico real de execução com `Parallel` ou `Map`** — conferir se
+   a cadeia de um ramo pula os `id` do outro é uma leitura de dois minutos —, ou uma
+   frase oficial. O corpus sintético (`parallel_estado_homonimo` e `retry_em_ramo_unico`)
+   exercita o **mecanismo**, não a premissa.
+9. **A lista de tipos conhecidos do extrator já é a publicada, e o redrive virou recusa
+   em vez de medida.** Medido na releitura de 2026-09-20: os `Valid Values` do campo
+   `type` do `HistoryEvent` trazem 62 tipos, e `_TIPOS_CONHECIDOS` tinha 59. **Em
+   2026-09-20** (feature `docs/sdd/SFN_TENTATIVA/`) os três que faltavam entraram, e não
+   entraram iguais: `EvaluationFailed` e `MapRunRedriven` são tipo conhecido que não
+   produz fact nem recusa, como os demais `MapRun*`; `ExecutionRedriven` entra com razão
+   própria. **`ExecutionRedriven` é a execução RETOMADA**, e ele muda o que "quantas
+   vezes o Task foi agendado" significa: um redrive reagenda o Task dentro da MESMA
+   execução, e nada no arquivo separa as tentativas de antes das de depois. O extrator
+   emite `sfn.unresolved: execution_redriven` por evento, e `build_sfn_retry_observado`
+   emite `sfn.unresolved: redrive_in_execution` **no lugar** do `sfn.retry_observado`
+   para o artefato que tem uma delas — as tentativas continuam medidas e publicadas, e o
+   que se recusa é a **comparação** com o teto declarado no ASL. **O que continua aberto
+   é MEDIR o redrive em vez de recusá-lo.** A forma do evento `ExecutionRedriven` não foi
+   lida: se ele traz um contador de redrive, ou o `id` do evento em que a retomada
+   começou, não está em nenhuma das páginas citadas aqui (U3 de
+   `docs/sdd/SFN_TENTATIVA/define.md`). Com esse campo, as tentativas de antes e as de
+   depois se separariam e o confronto voltaria a existir, uma contagem por rodada. O que
+   destrava: **a página do `HistoryEvent` lida com esse foco**, ou um histórico real com
+   redrive.
 
 ## Fontes
 
