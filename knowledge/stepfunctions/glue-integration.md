@@ -65,7 +65,7 @@ estado como erro, e o primeiro retrier, na ordem declarada, cujo `ErrorEquals` c
 | SF-SFN-001 | Request Response com estado seguinte efetivo e sem `getJobRun` na definição: o estado seguinte roda com o job em execução | que o job vai falhar |
 | SF-SFN-002 | retrier efetivo sobre a falha do job `.sync`: o Task é agendado até 1 + `MaxAttempts` vezes, cada vez um `StartJobRun` novo; P1 quando o número é o default | que retry é errado |
 | SF-SFN-003 | `.sync` sob `type: EXPRESS` declarado | nada quando o tipo é `undeclared`; nem se a API recusaria publicar (lacuna 4) |
-| SF-SFN-004 | as duas camadas de retry existem sobre o mesmo job `.sync` | quantas vezes o job roda numa falha (lacuna 1) |
+| SF-SFN-004 | as duas camadas de retry existem sobre o mesmo job `.sync` | quantas vezes o job roda numa falha (lacuna 1); o lado medido disso é `SF-SFNX-001`, que conta os agendamentos do Task no histórico |
 
 O vínculo da SF-SFN-004 é por `JobName` literal igual ao `name` do `aws_glue_job`, feito
 em `fuse`, e só para Task `.sync`: em Request Response o retrier cobre a chamada
@@ -81,6 +81,13 @@ Terraform saem em `sfn.unresolved` com a razão, nunca como vínculo.
    afirmar a contagem de tentativas: um histórico de execução real com falha
    (`get-execution-history`) junto dos JobRuns do mesmo intervalo, ou documentação
    oficial que a descreva.
+
+   **Metade disso já é mecanismo, desde 2026-09-20.**
+   [`execution-history.md`](execution-history.md) e o verbo `analyze sfn-history` leem o
+   histórico salvo e entregam o número de agendamentos do Task e o `JobRunId` de cada
+   um; `SF-SFNX-001` confronta esse número com o teto declarado aqui. O que continua
+   faltando é o **outro lado**: os JobRuns do mesmo intervalo, que dizem quantas vezes
+   o job rodou de fato. A lacuna é de artefato real, não de mecanismo.
 2. **JobRun quando o Task expira.** A leitura registrada em
    `docs/sdd/STEP_FUNCTIONS/define.md` não achou o que acontece com o JobRun quando o
    estado expira por `States.Timeout`: a descrição do abort do `.sync` não inclui

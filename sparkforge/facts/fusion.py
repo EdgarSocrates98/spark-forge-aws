@@ -74,6 +74,9 @@ from sparkforge.facts.airflow_dag import SOURCE_KINDS as AF_SOURCE_KINDS
 from sparkforge.facts.airflow_dag import build_af_glue_link
 from sparkforge.facts.lakeformation import EMITTED_KINDS as LF_EMITTED_KINDS
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.sfn_history import EMITTED_KINDS as SFN_HISTORY_EMITTED_KINDS
+from sparkforge.facts.sfn_history import SOURCE_KINDS as SFN_HISTORY_SOURCE_KINDS
+from sparkforge.facts.sfn_history import build_sfn_retry_observado
 from sparkforge.facts.stepfunctions import EMITTED_KINDS as SFN_EMITTED_KINDS
 from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
 from sparkforge.facts.stepfunctions import build_sfn_glue_link
@@ -593,6 +596,22 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
                 f"kind fora do namespace de airflow_dag: {sorted(desconhecidos_af)}"
             )
         for fact in derivados_af:
+            combined[fact.id] = fact
+
+    # `sfn.retry_observado` deriva AQUI pela mesma razao do `sfn.glue_job_link` logo
+    # acima, e com o mesmo molde: o `sfn.attempt` (medido) e o `sfn.task` (declarado)
+    # tem `subject` diferente, e o motor nao junta dois facts numa condicao. Guardado
+    # por `SOURCE_KINDS`: pool sem historico de execucao sai byte a byte igual.
+    if any(f.kind in SFN_HISTORY_SOURCE_KINDS for f in facts):
+        derivados_historico = build_sfn_retry_observado(facts)
+        desconhecidos_historico = {
+            f.kind for f in derivados_historico
+        } - SFN_HISTORY_EMITTED_KINDS
+        if desconhecidos_historico:
+            raise AssertionError(
+                f"kind fora do namespace de sfn_history: {sorted(desconhecidos_historico)}"
+            )
+        for fact in derivados_historico:
             combined[fact.id] = fact
 
     return sort_facts(combined.values())

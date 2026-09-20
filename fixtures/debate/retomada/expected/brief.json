@@ -113,6 +113,7 @@
       "plan",
       "pyspark",
       "s3-listing",
+      "sfn-history",
       "sql",
       "sql-metrics",
       "step-functions",

@@ -1,0 +1,76 @@
+[
+  {
+    "rule_id": "SF-SFNX-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Execução parou com um Task .sync agendado e sem evento terminal próprio",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaNoturna#1",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_30a5b3"
+    ],
+    "measured": {
+      "attempt_index": 1,
+      "timeout_seconds": 7200
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A execução terminou em `ExecutionAborted` ou `ExecutionTimedOut` — `execution_outcome_class: stopped`, o valor que o extrator deriva justamente porque o motor de regras não tem `in` (regra 33) — e o Task `.sync` do Glue foi agendado sem nunca ganhar evento terminal próprio. A execução parou por fora, e o último que o histórico sabe daquele Task é que ele foi agendado (e, quando há `TaskSubmitted`, submetido, com o `JobRunId` em `sfn.job_run`). A regra afirma o que está no artefato: **a execução parou com o Task em voo**. Ela não afirma que o job continuou rodando — isso depende do que a AWS faz com o JobRun no abort do `.sync`, e a lacuna está nomeada em knowledge/stepfunctions/execution-history.md. E não afirma custo nem economia (regras 13 e 25). A diferença para a `SF-SFNX-002` é qual dos dois relógios parou: lá o do Task, aqui o da execução.",
+    "proposed_change": [
+      "Ler o desfecho do `JobRunId` daquela tentativa (`aws glue get-job-run`): é a única fonte que diz se o job parou junto com a execução ou seguiu sozinho.",
+      "Declarar a limpeza em vez de depender do default: um `Catch` de `States.ALL` no estado, ou um passo de encerramento que chame `glue:batchStopJobRun` sobre o `JobRunId` — e a role da state machine precisa da permissão correspondente, que a política que a AWS gera para o `.sync` do Glue já inclui.",
+      "Se abortar a execução é operação rotineira (plantão parando carga), escrever o procedimento com o passo de conferir o JobRun: o operador que aborta precisa saber que o job pode não ter parado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Parar o JobRun no abort sem escrita idempotente deixa o destino em estado parcial: a interrupção cai no meio de uma escrita.",
+      "Alcance: o que acontece com o JobRun quando a execução é abortada não está descrito para o caso de timeout da execução, e a leitura registrada aqui é essa lacuna, não uma resposta.",
+      "Acrescentar `Catch` muda o caminho de falha da state machine: estados que nunca rodaram passam a rodar, e alarmes que nunca dispararam passam a disparar."
+    ],
+    "tradeoffs": [
+      "Parar o job junto com a execução torna o abort determinístico ao custo de perder trabalho que talvez terminasse sozinho; deixar o job seguir preserva o trabalho ao custo de ninguém saber que ele existe."
+    ],
+    "validation": [
+      "`aws glue get-job-run` sobre o `JobRunId` da tentativa devolve o estado terminal dele — é a medida que o histórico não tem.",
+      "Depois da correção, um abort de teste produz um histórico em que o Task tem evento terminal próprio (`TaskFailed` pelo `Catch`, ou `TaskStateAborted`), e `sparkforge judge` não produz mais SF-SFNX-003.",
+      "EIXO DE RESULTADO — depois de um abort de teste, o destino tem a contagem por chave de negócio de antes do abort, ou a de uma execução completa: nunca uma terceira, que é o que escrita parcial produz."
+    ],
+    "rollback": [
+      "Reverter o commit da definição (o `Catch` ou o passo de encerramento acrescentado) e republicar a state machine."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "sfn.state_machine.abort_handling",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

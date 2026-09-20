@@ -83,7 +83,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 40 extratores emitem 239 kinds distintos de fact (recontado em 2026-09-19),
+Os 41 extratores emitem 243 kinds distintos de fact (recontado em 2026-09-20),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -113,6 +113,7 @@ anterior.
 | **Job run EMR on EKS** | `analyze emr-eks` | dumps de `describe-virtual-cluster` **e** `describe-job-run` do `emr-containers`, num arquivo só |
 | **Definição `Jobs-as-Code` do Control-M** | `analyze controlm-jobs` | o JSON de definição de job versionado no repositório — o mesmo que `ctm build` valida. Com `--version <v>`, cruza as capacidades observadas com a matriz do Automation API |
 | **Definição ASL do AWS Step Functions** | `analyze step-functions` | o `.asl.json` versionado no repositório, ou a saída salva de `aws stepfunctions describe-state-machine`: um fact por estado Task, com padrão de integração, `JobName` e retry efetivo. Com o Terraform do job no mesmo pool, `fuse` liga o Task ao `aws_glue_job` |
+| **Histórico de execução do AWS Step Functions** | `analyze sfn-history` | a saída salva de `aws stepfunctions get-execution-history`: uma tentativa por par `TaskScheduled`/terminal, com ordem, resultado, duração e o `JobRunId` do Glue. Com o ASL do mesmo state machine no pool, `fuse` confronta o retry declarado com o observado |
 | **Arquivo `.py` de um DAG do Apache Airflow** | `analyze airflow-dag` | o DAG lido por AST e nunca executado: um fact por operador instanciado, com os argumentos literais que decidem se o fluxo espera o job, se o mata junto com a task e se segura o worker, mais as dependências declaradas. Com o Terraform do job no mesmo pool, `fuse` liga a task ao `aws_glue_job` |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
 | **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
@@ -230,7 +231,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 239 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 243 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

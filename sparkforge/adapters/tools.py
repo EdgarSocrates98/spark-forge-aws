@@ -6128,6 +6128,50 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_sfn_history": {
+        "description": (
+            "Extrai facts do HISTORICO de execucao de uma state machine do AWS Step "
+            "Functions: a saida salva de `aws stepfunctions get-execution-history` (o "
+            "objeto de resposta com `events`, ou a lista crua de eventos). Emite "
+            "`sfn.execution` (status pelo evento terminal -- `unresolved` quando ele nao "
+            "esta no arquivo, NUNCA sucesso por suposicao --, duracao e contagem dos "
+            "eventos LIDOS), um `sfn.attempt` por TENTATIVA de Task (nome do estado pela "
+            "cadeia "
+            "de `previousEventId`, ordem, padrao de integracao, resultado, duracao, erro e "
+            "cause), `sfn.job_run` com o JobRunId do Glue lido do `output` do "
+            "TaskSubmitted, `sfn.unresolved` com a razao do que nao deu para ler ou parear "
+            "(historico truncado, cadeia quebrada, evento de tipo desconhecido, "
+            "`includeExecutionData` desligado, output de forma nao reconhecida), e a "
+            "sentinela `sfn.analyzed`. NAO chama a API e NAO le a definicao: para a "
+            "definicao ASL, use `sparkforge_analyze_step_functions`. A API nao suporta "
+            "state machine EXPRESS. Nao atribui custo a tentativa nenhuma."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo .json salvo de get-execution-history, ou diretorio com eles."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_step_functions": {
         "description": (
             "Extrai facts da definicao de uma state machine do AWS Step Functions em "
@@ -10036,6 +10080,16 @@ def _h_analyze_controlm_jobs(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_sfn_history(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_sfn_history(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_step_functions(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_step_functions(
         args["path"],
@@ -10602,6 +10656,7 @@ _HANDLERS = {
     "sparkforge_analyze_emr_eks": _h_analyze_emr_eks,
     "sparkforge_analyze_controlm_jobs": _h_analyze_controlm_jobs,
     "sparkforge_analyze_step_functions": _h_analyze_step_functions,
+    "sparkforge_analyze_sfn_history": _h_analyze_sfn_history,
     "sparkforge_analyze_airflow_dag": _h_analyze_airflow_dag,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_graph": _h_analyze_graph,

@@ -1852,6 +1852,31 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html": {
+      "docs": [
+        "knowledge/stepfunctions/execution-history.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19",
+        "2026-09-20"
+      ],
+      "rules": [
+        "SF-SFNX-001",
+        "SF-SFNX-002",
+        "SF-SFNX-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html": {
+      "docs": [
+        "knowledge/stepfunctions/execution-history.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-20"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_ValidateStateMachineDefinition.html": {
       "docs": [
         "knowledge/stepfunctions/glue-integration.md"
@@ -1876,6 +1901,7 @@
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html": {
       "docs": [
+        "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1884,11 +1910,13 @@
       ],
       "rules": [
         "SF-SFN-002",
-        "SF-SFN-004"
+        "SF-SFN-004",
+        "SF-SFNX-001"
       ]
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html": {
       "docs": [
+        "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1897,11 +1925,13 @@
       ],
       "rules": [
         "SF-SFN-001",
-        "SF-SFN-002"
+        "SF-SFN-002",
+        "SF-SFNX-003"
       ]
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html": {
       "docs": [
+        "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1910,7 +1940,9 @@
       ],
       "rules": [
         "SF-SFN-001",
-        "SF-SFN-003"
+        "SF-SFN-003",
+        "SF-SFNX-002",
+        "SF-SFNX-003"
       ]
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html": {

@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "1758307742dab85e566628d750c3b7466e8d1334bf34446a5d67914df10473b5"
+      "sha256": "4b57346991862ec8642fcd007d163a32da636ec536a7ecbe73f133ee90d78c5e"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -235,9 +235,14 @@
       "sha256": "9b1f2c75b250d1e45c4734d5d844813d9cb1279adb0da29045b153b0c4fcb4a7"
     },
     {
+      "path": "knowledge/stepfunctions/execution-history.md",
+      "title": "execution-history",
+      "sha256": "933a964859f5b2e3c68cd183de781bf16343626dd288d6b1861ea499d44b92e3"
+    },
+    {
       "path": "knowledge/stepfunctions/glue-integration.md",
       "title": "glue-integration",
-      "sha256": "2b9f120b8ed2fd3b2a8c38453e7ab5a38103a750782c5e12859fdbe77de1164a"
+      "sha256": "79c7f931ce62c8a1c7e6ef9bd98941a5bf2cd34773a270464188cd4f59cad578"
     },
     {
       "path": "knowledge/storage/iceberg-catalog.md",

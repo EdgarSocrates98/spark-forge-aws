@@ -822,6 +822,32 @@ rules:
       `aws_glue_job` -- artefato de infraestrutura, que este coordenador ja le --, e nao
       no codigo do job.
 
+  # SF-SFNX entrou com `docs/sdd/SFN_HISTORY/` (2026-09-20) e ganha ENTRADA PROPRIA pelo
+  # motivo de sempre: `rule_areas` do agente NAO roteia, e `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-SFNX-001` -> `SF-SFNX`). Sem esta
+  # entrada, um case cujo unico achado e uma tentativa observada voltaria de `next_step`
+  # com `recommended_agent: None`.
+  #
+  # O MESMO dono de SF-SFN (`glue-infra-reviewer`), e nao um coordenador novo: as tres
+  # regras julgam COMO o job Glue foi disparado e quantas vezes ele rodou, a mesma
+  # conversa de `max_retries` que ele ja tem em SF-GLUE-004 e em SF-SFN. Uma area so nao
+  # justifica coordenador novo, e o criterio de dominio exige area que julga.
+  #
+  # PRECEDENCIA: depois de AGENT-002 (`glue-infra-reviewer`) e de AGENT-086 (SF-SFN); um
+  # case com SF-GLUE ou SF-SFN junto vai pelas rotas de cima, e o destino e o mesmo.
+  - id: AGENT-088
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante no que a execucao do Step Functions registrou
+    when:
+      all:
+        - {findings_area: SF-SFNX, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O historico da execucao diz quantas vezes o Task foi agendado de verdade, e o que
+      ficou sem desfecho quando o relogio do Task ou o da execucao parou. O conserto
+      mora na definicao ASL, no prazo declarado e no tratamento de abort -- os
+      artefatos de infraestrutura que este coordenador ja le --, e nao no codigo do job.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

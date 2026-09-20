@@ -63,6 +63,10 @@ from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
 from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
+from sparkforge.facts.sfn_history import (  # noqa: E402
+    build_sfn_retry_observado,
+    extract_sfn_history_tree,
+)
 from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
 from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
 from sparkforge.facts.stepfunctions import (  # noqa: E402
@@ -93,6 +97,7 @@ FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
 FIXTURES_EMR_EKS = ROOT / "fixtures" / "emr_eks"
 FIXTURES_CONTROLM = ROOT / "fixtures" / "controlm"
 FIXTURES_STEPFUNCTIONS = ROOT / "fixtures" / "stepfunctions"
+FIXTURES_SFN_HISTORY = ROOT / "fixtures" / "sfn_history"
 FIXTURES_AIRFLOW = ROOT / "fixtures" / "airflow"
 FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
@@ -481,6 +486,32 @@ def regen_airflow(directory: Path) -> None:
     if any(input_dir.rglob("*.tf")):
         facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
         facts.extend(build_af_glue_link(facts))
+    facts = sort_facts(facts)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_sfn_history(directory: Path) -> None:
+    """Historico de execucao do Step Functions: `*.json` sob input/historico/ (ou
+    input/), e a definicao ASL sob input/definicao/ quando houver.
+
+    O PAR de `tests/test_fixtures_golden_sfn_history.py::_extract`, e a mesma porta do
+    produto: dois verbos, dois `--path`. Os dois artefatos ficam em subdiretorios
+    porque a producao os separa -- juntos, cada extrator leria o arquivo do outro e
+    sairia um `sfn.unresolved` cruzado por fixture, ruido que nao e medida. A
+    derivacao roda sob a MESMA guarda de `fusion.fuse`: sem `sfn.attempt` no pool,
+    nada deriva.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    historico = input_dir / "historico"
+    definicao = input_dir / "definicao"
+    alvo = historico if historico.is_dir() else input_dir
+    facts = list(extract_sfn_history_tree(alvo, repo_root=input_dir))
+    if definicao.is_dir():
+        facts.extend(extract_stepfunctions_tree(definicao, repo_root=input_dir))
+    if any(f.kind == "sfn.attempt" for f in facts):
+        facts.extend(build_sfn_retry_observado(facts))
     facts = sort_facts(facts)
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
@@ -1086,6 +1117,7 @@ def main() -> int:
                 (FIXTURES_EMR_EKS / name, regen_emr_eks),
                 (FIXTURES_CONTROLM / name, regen_controlm),
                 (FIXTURES_STEPFUNCTIONS / name, regen_stepfunctions),
+                (FIXTURES_SFN_HISTORY / name, regen_sfn_history),
                 (FIXTURES_AIRFLOW / name, regen_airflow),
                 (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
@@ -1160,6 +1192,10 @@ def main() -> int:
     if FIXTURES_STEPFUNCTIONS.is_dir():
         for directory in sorted(p for p in FIXTURES_STEPFUNCTIONS.iterdir() if p.is_dir()):
             regen_stepfunctions(directory)
+    # Mesma guarda de existencia: `fixtures/sfn_history/` nasce nesta entrega.
+    if FIXTURES_SFN_HISTORY.is_dir():
+        for directory in sorted(p for p in FIXTURES_SFN_HISTORY.iterdir() if p.is_dir()):
+            regen_sfn_history(directory)
     # Mesma guarda de existencia: `fixtures/airflow/` nasce nesta entrega.
     if FIXTURES_AIRFLOW.is_dir():
         for directory in sorted(p for p in FIXTURES_AIRFLOW.iterdir() if p.is_dir()):

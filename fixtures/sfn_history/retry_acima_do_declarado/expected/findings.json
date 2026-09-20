@@ -1,0 +1,144 @@
+[
+  {
+    "rule_id": "SF-SFN-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Retry do Step Functions reexecuta o job Glue inteiro a cada tentativa",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "definicao/carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/CargaDiaria",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_04d8cd"
+    ],
+    "measured": {
+      "retrier_count": 1,
+      "failure_retry_max_attempts": 1,
+      "timeout_seconds": 99999999
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O estado espera o job (`.sync`) e tem um retrier cujo `ErrorEquals` contém `States.ALL` ou `States.TaskFailed` — os dois nomes que casam a falha do JobRun (`States.TaskFailed` \"matches any known error name except for `States.Timeout`\"). O Step Functions agenda o Task até 1 + `MaxAttempts` vezes; cada agendamento é um `StartJobRun` novo, não uma retomada. Com `MaxAttempts` omitido o efetivo é o default publicado — \"(`3` by default)\". A severidade sobe para P1 quando o número veio do default. O retrier que casa é o primeiro, na ordem declarada, cujo `ErrorEquals` contém um dos dois nomes; o efetivo dele está em `measures.failure_retry_max_attempts` do fact de evidência, e a marca de omitido em `attrs.failure_retry_defaulted`.",
+    "proposed_change": [
+      "Declarar `MaxAttempts` explícito no retrier que casa a falha do job, com o número de tentativas que o custo de um JobRun inteiro justifica — inclusive `0`, que desliga o retry para aquele erro.",
+      "Restringir o `ErrorEquals` aos erros nomeados transitórios que valem nova tentativa, em vez de `States.ALL` ou `States.TaskFailed`, que casam também a falha do próprio job.",
+      "Se o job escreve em modo append, tornar a escrita idempotente antes de manter qualquer retry: cada tentativa é um StartJobRun novo."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tirar o retry expõe a execução a falhas transitórias que hoje são absorvidas.",
+      "Trocar `States.ALL` por erros nomeados exige o nome exato do erro transitório na integração: um nome errado desliga o retry sem aviso."
+    ],
+    "tradeoffs": [
+      "Retry sobre o job inteiro compra resiliência com o custo de um JobRun completo por tentativa; retry no próprio Glue compra a mesma resiliência com outro custo — e as duas camadas juntas são a SF-SFN-004."
+    ],
+    "validation": [
+      "`sparkforge analyze step-functions` mostra o retrier com `max_attempts_defaulted: false` e o `MaxAttempts` escolhido, e `sparkforge judge` não produz mais SF-SFN-002 para o estado, ou a produz em P2 quando o retry foi mantido de propósito.",
+      "EIXO DE RESULTADO — numa execução de teste em que o job falha na primeira tentativa, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: a tentativa extra não duplicou nem perdeu linha.",
+      "O histórico da execução (`aws stepfunctions get-execution-history`) mostra, para o estado, no máximo 1 + `MaxAttempts` agendamentos do Task."
+    ],
+    "rollback": [
+      "Reverter o commit da definição ASL e republicar a state machine."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.restrict_run_policy",
+      "target": "sfn.task.retry",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "cost.dpu_seconds",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-SFNX-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tentativas observadas acima do que o retry declarado permite",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "historico/execucao.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_0e26c9"
+    ],
+    "measured": {
+      "tentativas_observadas": 3,
+      "teto_declarado": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O histórico da execução registra mais agendamentos do Task do que o retry declarado no ASL permite. O Step Functions agenda o Task uma vez e o reagenda até `MaxAttempts` vezes — teto efetivo de `1 + MaxAttempts` —, e cada agendamento de um `glue:startJobRun` é um `StartJobRun` novo, não uma retomada. O número observado está em `measures.tentativas_observadas`, lido dos eventos `TaskScheduled` do estado; o teto, em `measures.teto_declarado`. A diferença tem três leituras possíveis, e o achado **não escolhe entre elas**: o ASL lido não é o que estava publicado quando a execução rodou; existe outro retrier casando a falha antes do que o extrator mediu; ou o estado foi reentrado pelo fluxo (um `Choice` que volta), e aí cada entrada traz o seu próprio orçamento de retry. As três se decidem pela mesma evidência: a versão da definição no instante da execução. Esta regra **não** afirma quantos JobRuns do Glue a falha produziu — o `MaxRetries` do próprio job é outra camada, e a composição delas não é documentada (`SF-SFN-004`, e a lacuna 1 de knowledge/stepfunctions/glue-integration.md). E não afirma custo nenhum: o `JobRunId` de cada tentativa está em `sfn.job_run`, e é por ele que `sparkforge finops` responde custo com `dpu_seconds` medido.",
+    "proposed_change": [
+      "Conferir qual versão da definição estava publicada no instante da execução (`aws stepfunctions describe-state-machine --state-machine-arn <arn>` traz a definição corrente; o histórico de versões, se houver, traz a da época) antes de mudar qualquer coisa: o achado compara um ASL do repositório com uma execução que pode ter rodado outro.",
+      "Se a definição confere, procurar o segundo caminho de reagendamento: um `Choice` que volta ao mesmo estado, ou um retrier anterior na ordem declarada cujo `ErrorEquals` também casa a falha do job.",
+      "Se o retry é o esperado e o número é o desejado, declarar `MaxAttempts` explícito no retrier que casa a falha, com o número que um JobRun inteiro por tentativa justifica — inclusive `0`."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "O ASL lido pode não ser o que executou. O achado compara artefato do repositório com execução da conta, e nada no histórico traz a definição.",
+      "Reduzir o retry expõe a execução a falhas transitórias que hoje são absorvidas.",
+      "Se o job não escreve de forma idempotente, cada tentativa a mais já deixou efeito no destino — e reduzir o retry agora não desfaz o que as anteriores escreveram."
+    ],
+    "tradeoffs": [
+      "Retry sobre o job inteiro compra resiliência ao custo de um JobRun completo por tentativa. Descobrir que o observado passa do declarado não diz qual dos dois está errado — diz que eles não batem."
+    ],
+    "validation": [
+      "`sparkforge analyze sfn-history` sobre um histórico novo, depois da correção, mostra `tentativas_observadas` menor ou igual a `teto_declarado`, e `sparkforge judge` não produz mais SF-SFNX-001 para o estado.",
+      "EIXO DE RESULTADO — numa execução de teste com falha induzida, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que uma execução sem falha: as tentativas extras não duplicaram nem perderam linha.",
+      "Os `JobRunId` de `sfn.job_run` do intervalo, conferidos em `sparkforge collect glue-job-runs`, são exatamente os que a camada de retry escolhida declara — nem mais, nem menos."
+    ],
+    "rollback": [
+      "Reverter o commit da definição ASL e republicar a state machine pelo mesmo caminho que a publica (IaC ou `update-state-machine`)."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.restrict_run_policy",
+      "target": "sfn.task.retry",
+      "direction": "decrease",
+      "requires_absent": [],
+      "moves": [
+        "cost.dpu_seconds",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

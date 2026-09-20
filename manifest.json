@@ -80,7 +80,7 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 165,
+    "rule_count": 168,
     "retrieved": "2026-08-01"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
@@ -108,6 +108,7 @@
     "sparkforge_analyze_plan",
     "sparkforge_analyze_pyspark",
     "sparkforge_analyze_s3_listing",
+    "sparkforge_analyze_sfn_history",
     "sparkforge_analyze_sql",
     "sparkforge_analyze_sql_metrics",
     "sparkforge_analyze_step_functions",

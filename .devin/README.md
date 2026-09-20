@@ -28,7 +28,7 @@ Os dois arquivos ao lado já fazem o resto:
 
 | Arquivo | O que faz |
 |---|---|
-| `mcp_config.json` | expõe as **108 tools** por stdio (recontado em 2026-09-19). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
+| `mcp_config.json` | expõe as **109 tools** por stdio (recontado em 2026-09-20). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
 As **51 skills** e os **12 coordenadores** o Devin lê sozinho de `.agents/`, que

@@ -529,6 +529,27 @@ def build_parser() -> argparse.ArgumentParser:
     sfn_analyze_p.add_argument("--cursor")
     _add_detail_level(sfn_analyze_p)
 
+    sfnh_analyze_p = analyze_sub.add_parser(
+        "sfn-history",
+        help="Extrai facts do HISTORICO de execucao de uma state machine do AWS Step "
+        "Functions (a saida salva de `aws stepfunctions get-execution-history`): uma "
+        "tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro "
+        "e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, "
+        "nunca a definicao.",
+    )
+    sfnh_analyze_p.add_argument(
+        "--path",
+        required=True,
+        help="Arquivo .json salvo de get-execution-history, ou diretorio com eles.",
+    )
+    sfnh_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    sfnh_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sfnh_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sfnh_analyze_p.add_argument("--cursor")
+    _add_detail_level(sfnh_analyze_p)
+
     af_analyze_p = analyze_sub.add_parser(
         "airflow-dag",
         help="Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e "
@@ -3297,6 +3318,11 @@ def _cmd_analyze_step_functions(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_sfn_history(args: argparse.Namespace) -> int:
+    full = _core.analyze_sfn_history(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_controlm_jobs(args: argparse.Namespace) -> int:
     full = _core.analyze_controlm_jobs(args.path, version=args.version, kind=args.kind, limit=None)
     if args.out:
@@ -4662,6 +4688,7 @@ _DISPATCH = {
     ("analyze", "emr-eks"): _cmd_analyze_emr_eks,
     ("analyze", "controlm-jobs"): _cmd_analyze_controlm_jobs,
     ("analyze", "step-functions"): _cmd_analyze_step_functions,
+    ("analyze", "sfn-history"): _cmd_analyze_sfn_history,
     ("analyze", "airflow-dag"): _cmd_analyze_airflow_dag,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "graph"): _cmd_analyze_graph,
