@@ -317,6 +317,50 @@ def test_tipo_desconhecido_no_meio_da_cadeia_nao_apaga_a_tentativa():
     assert execucao.attrs["status"] == "succeeded"
 
 
+def test_recusas_do_mesmo_arquivo_nao_colidem_de_id():
+    """Tres recusas iguais em `attrs` sao UMA recusa para o `fuse` (A3).
+
+    `Fact.id` e sha1 de `kind + subject + measures`, e `provenance` nao entra. Tres
+    eventos de tipo desconhecido no MESMO arquivo tem o mesmo kind e o mesmo subject de
+    arquivo, e o discriminador vivia so em `attrs` -- fora do hash. Os tres viravam o
+    mesmo id, e `fusion.fuse` (`combined[fact.id] = fact`) deixava um. Contar recusa
+    errado e pior do que nao contar: a regra 20 pede a lacuna NOMEADA, e tres eventos
+    que a API nao publica nao sao um.
+    """
+    from sparkforge.facts.fusion import fuse
+
+    tres_desconhecidos = {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "EventoDoFuturo", 1),
+            _evento(3, 2, "EventoDoFuturo", 2),
+            _evento(4, 3, "EventoDoFuturo", 3),
+            _evento(5, 4, "ExecutionSucceeded", 4),
+        ]
+    }
+    facts = extract_sfn_history(tres_desconhecidos, "tres.json")
+    recusas = _de(facts, "sfn.unresolved")
+    assert len(recusas) == 3
+    assert len({f.id for f in recusas}) == 3, "tres recusas, tres ids"
+    assert sorted(f.measures["event_id"] for f in recusas) == [2, 3, 4]
+
+    # E o `fuse` as preserva: e ele que indexa por id e descartava as repetidas.
+    sobreviventes = [
+        f
+        for f in fuse(facts)
+        if f.kind == "sfn.unresolved" and f.attrs["reason"] == "event_type_unknown"
+    ]
+    assert len(sobreviventes) == 3
+
+    # O mesmo vale para `event_not_an_object`, cujo discriminador e o INDICE na lista.
+    nao_objetos = {"events": ["a", "b", "c"]}
+    facts = extract_sfn_history(nao_objetos, "nao-objetos.json")
+    recusas = _de(facts, "sfn.unresolved")
+    assert len({f.id for f in recusas}) == 3
+    assert sorted(f.measures["index"] for f in recusas) == [0, 1, 2]
+    assert len([f for f in fuse(facts) if f.kind == "sfn.unresolved"]) == 3
+
+
 def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
     from sparkforge.adapters.cli import main
     from sparkforge.adapters.tools import call_tool

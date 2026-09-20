@@ -121,7 +121,7 @@
     }
   },
   {
-    "id": "f_bae972",
+    "id": "f_011730",
     "schema_version": 1,
     "kind": "sfn.unresolved",
     "subject": {
@@ -132,11 +132,12 @@
       "symbol": "",
       "snippet": ""
     },
-    "measures": {},
+    "measures": {
+      "event_id": 6
+    },
     "attrs": {
       "reason": "event_type_unknown",
-      "type": "VariableSetEventDetailsEntered",
-      "event_id": 6
+      "type": "VariableSetEventDetailsEntered"
     },
     "provenance": {
       "artifact": "historico/execucao.json",

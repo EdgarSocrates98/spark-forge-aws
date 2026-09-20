@@ -32,6 +32,10 @@ kinds, nao cinco.
   `not_an_execution_history`, `truncated`, `event_not_an_object`,
   `event_type_unknown`, `state_unresolved`, `attempt_unanchored`,
   `execution_terminal_absent`, `execution_data_absent` e `job_run_id_unrecognized`.
+  O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
+  `measures`, e nao em `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres
+  recusas iguais sobre o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por
+  id e deixaria uma so.
 - `sfn.analyzed` -- a sentinela, com as contagens.
 - `sfn.retry_observado` -- DERIVADO, nunca lido de arquivo: `build_sfn_retry_observado`
   casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
@@ -249,11 +253,24 @@ def _provenance(path: str, sha: str) -> dict[str, Any]:
 
 
 def _unresolved(
-    subject: dict[str, Any], reason: str, provenance: dict[str, Any], **extra: Any
+    subject: dict[str, Any],
+    reason: str,
+    provenance: dict[str, Any],
+    measures: dict[str, Any] | None = None,
+    **extra: Any,
 ) -> Fact:
+    """A recusa nomeada. O discriminador NUMERICO vai em `measures`, e a razao e o id.
+
+    `Fact.id` e sha1 de `kind + subject + measures`, e `attrs` nao entra. Tres recusas
+    do mesmo tipo sobre o mesmo arquivo tem subject igual, e com o discriminador so em
+    `attrs` elas viram o MESMO id -- `fusion.fuse` indexa por id e deixaria uma. Por
+    isso `event_id`, `index` e afins moram em `measures`, que e numerico por schema e
+    entra no hash.
+    """
     return Fact(
         kind="sfn.unresolved",
         subject=subject,
+        measures=dict(measures or {}),
         attrs={"reason": reason, **extra},
         provenance=provenance,
     )
@@ -435,7 +452,7 @@ def _valida_eventos(
                     _file_subject(leitura.path),
                     "event_not_an_object",
                     leitura.provenance,
-                    index=indice,
+                    measures={"index": indice},
                 )
             )
             continue
@@ -446,7 +463,7 @@ def _valida_eventos(
                     _file_subject(leitura.path),
                     "event_not_an_object",
                     leitura.provenance,
-                    index=indice,
+                    measures={"index": indice},
                 )
             )
             continue
@@ -457,8 +474,8 @@ def _valida_eventos(
                     _file_subject(leitura.path),
                     "event_type_unknown",
                     leitura.provenance,
+                    measures={"event_id": identificador},
                     type=str(bruto.get("type")),
-                    event_id=identificador,
                 )
             )
             continue
@@ -519,7 +536,7 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
                     _file_subject(path),
                     "state_unresolved",
                     provenance,
-                    event_id=int(evento["id"]),
+                    measures={"event_id": int(evento["id"])},
                     detail=razao or "state_name_absent",
                 )
             )
@@ -546,7 +563,7 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
                     _file_subject(path),
                     "attempt_unanchored",
                     provenance,
-                    event_id=int(evento["id"]),
+                    measures={"event_id": int(evento["id"])},
                     type=tipo,
                     detail=razao or "scheduled_not_an_attempt",
                 )
