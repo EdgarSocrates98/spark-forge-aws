@@ -2,7 +2,7 @@
 
 # Agent `glue-infra-reviewer`
 
-Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como o job e disparado de fora - a state machine do Step Functions e o DAG do Apache Airflow (espera, prazo, forma de esperar e as duas camadas de retry) - a definicao ASL e o historico de execucao, que diz quantas vezes o job rodou de verdade.
+Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como o job e disparado de fora - a state machine do Step Functions e o DAG do Apache Airflow (espera, prazo, forma de esperar e as duas camadas de retry) - a definicao ASL e o historico de execucao, que diz quantas vezes o Task foi agendado de verdade.
 
 | Campo | Valor |
 |---|---|
