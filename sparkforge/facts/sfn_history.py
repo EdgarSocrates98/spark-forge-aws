@@ -65,11 +65,14 @@ da execucao nao esta na pagina salva.
 
 ## Como uma tentativa e PAREADA, e por que pela cadeia
 
-A API publica `previousEventId` em todo evento, e o encadeamento e por RAMO: dentro de
-`Parallel` e de `Map` os eventos de ramos diferentes se intercalam na ordem de `id`,
-mas cada um aponta para o anterior DO SEU ramo. Por isso o pareamento sobe a cadeia a
+A API publica `previousEventId` em todo evento, e a unica frase dela sobre o campo e
+"The id of the previous event." Que o anterior seja o do MESMO RAMO -- dentro de
+`Parallel` e de `Map` os eventos de ramos diferentes se intercalam na ordem de `id`, e
+cada cadeia continua correta -- e PREMISSA NOSSA, nao publicada: lacuna 8 de
+`knowledge/stepfunctions/execution-history.md`. Por isso o pareamento sobe a cadeia a
 partir do proprio evento ate o primeiro ancestral do tipo procurado, e nunca usa "o
-ultimo visto ate aqui", que erraria exatamente nesses dois casos.
+ultimo visto ate aqui", que erraria exatamente nesses dois casos -- e por isso cadeia
+quebrada, raiz e ciclo saem em recusa nomeada, que e onde a premissa errada apareceria.
 
 - de um `TaskScheduled` sobe-se ate o `TaskStateEntered` -> o NOME do estado;
 - de um terminal (`TaskSucceeded`, `TaskFailed`, `TaskTimedOut`, `TaskStartFailed`,

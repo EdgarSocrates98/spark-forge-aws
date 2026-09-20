@@ -71,13 +71,19 @@ tem que ser resolvido para o `TaskScheduled`, que é onde a tentativa começa, e
 última tentativa do estado, e num estado com retry ele aparece uma vez para várias
 tentativas — nomear por ele seria nomear tarde demais e com granularidade errada.
 
-**O encadeamento é por ramo, e é ele que pareia.** `previousEventId` aponta para o
-evento anterior *daquele ramo*: dentro de `Parallel` e de `Map`, eventos de ramos
-diferentes se intercalam na ordem de `id`, mas cada cadeia continua correta. Por isso o
+**O encadeamento é o que pareia, e a premissa dele é NOSSA — ver a lacuna 8.** A única
+frase citada sobre o campo é a da página do `HistoryEvent`: "The id of the previous
+event." Ela diz que existe um anterior; **não** diz que o anterior é o do mesmo ramo.
+Que dentro de `Parallel` e de `Map` os eventos de ramos diferentes se intercalem na
+ordem de `id` e mesmo assim cada cadeia continue correta é **leitura nossa, não
+publicada**, e é a premissa de todo o pareamento de tentativas desta feature. Por isso o
 extrator sobe a cadeia a partir do próprio evento — de um `TaskScheduled` até o
 `TaskStateEntered`, de um terminal até o `TaskScheduled` — em vez de usar "o último
-visto". Cadeia quebrada, raiz alcançada sem achar, ou ciclo: `sfn.unresolved` nomeado,
-nunca um chute.
+visto": se a premissa vale, subir a cadeia é o único jeito certo; se ela não vale, "o
+último visto" estaria errado do mesmo jeito. Cadeia quebrada, raiz alcançada sem achar,
+ou ciclo: `sfn.unresolved` nomeado (`chain_broken`, `chain_root`, `chain_cycle`), nunca
+um chute — e é por essas três recusas que a premissa errada apareceria, em vez de virar
+uma tentativa atribuída ao estado errado em silêncio.
 
 ## 3. O `JobRunId` do Glue, e por que ele é uma lacuna
 
@@ -133,6 +139,17 @@ com `dpu_seconds` medido.
 7. **`sfn.*` do histórico sai com `line: 0`.** O extrator lê JSON sem posição de linha, e
    o `subject.symbol` é `<estado>#<ordem>`. `sparkforge report github` não ancora esses
    achados numa linha do arquivo.
+8. **O `previousEventId` por RAMO não está publicado, e é a premissa de todo o
+   pareamento.** Nas duas páginas da API relidas em 2026-09-20, o campo tem uma descrição
+   e só uma: "The id of the previous event." Nada ali diz que, dentro de um `Parallel` ou
+   de um `Map`, o anterior é o do **mesmo ramo** — e é exatamente disso que o extrator
+   depende para atribuir cada `TaskScheduled` ao estado certo (§2). Com um só ramo a
+   distinção não aparece: a cadeia e a ordem de `id` coincidem, e é por isso que o corpus
+   sintético não a testa. O que destrava: **um histórico real de execução com `Parallel`
+   ou `Map`** — conferir se a cadeia de um ramo pula os `id` do outro é uma leitura de
+   dois minutos —, ou uma frase oficial. Enquanto isso, a premissa errada não sai calada:
+   ela apareceria como `chain_broken`, `chain_root` ou `chain_cycle`, ou como um
+   `state_unresolved`.
 
 ## Fontes
 
