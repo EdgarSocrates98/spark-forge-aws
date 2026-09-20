@@ -533,6 +533,69 @@ def test_duas_execucoes_nao_somam_tentativas_uma_da_outra():
         assert set(confronto.provenance["derived_from"]) == esperado
 
 
+def test_o_grupo_e_ordenado_pelo_indice_da_tentativa_e_nao_pelo_hash():
+    """`grupo[-1]` tem de ser a ULTIMA tentativa, nao a de id que calhou de ser maior.
+
+    O grupo era `sorted(..., key=lambda f: f.id)`, e `Fact.id` e sha1 do conteudo: uma
+    ordem de hash, nao uma ordem de tentativa. `grupo[-1].attrs["execution_outcome"]`
+    virava escolha arbitraria. Para o estado `Carga`, a tentativa 2 tem id MENOR que a
+    1 (`f_e4e5b3` < `f_ed540c`), e por isso a ordem de hash inverte as duas.
+
+    Nenhum historico REAL produz duas tentativas da mesma execucao com
+    `execution_outcome` diferente -- ele e por arquivo. Por isso o caso e montado sobre
+    a derivacao direto, que e onde o contrato mora: o que este teste trava e a ORDEM,
+    para que o proximo campo lido de `grupo[-1]` ou de `grupo[0]` nao herde um hash.
+    """
+    from sparkforge.facts.sfn_history import build_sfn_retry_observado
+    from sparkforge.facts.stepfunctions import extract_stepfunctions
+    from sparkforge.findings.models import Fact
+
+    def _tentativa(indice: int, desfecho: str) -> Fact:
+        return Fact(
+            kind="sfn.attempt",
+            subject={
+                "type": "source_location",
+                "file": "execucao.json",
+                "line": 0,
+                "col": 0,
+                "symbol": f"Carga#{indice}",
+                "snippet": "",
+            },
+            measures={"attempt_index": indice},
+            attrs={
+                "state_name": "Carga",
+                "service": "glue",
+                "api": "startJobRun",
+                "execution_outcome": desfecho,
+            },
+            provenance={
+                "artifact": "execucao.json",
+                "artifact_sha256": "",
+                "extractor": "sfn_history@0.1.0",
+            },
+        )
+
+    primeira, segunda = _tentativa(1, "primeira"), _tentativa(2, "segunda")
+    assert segunda.id < primeira.id, "a premissa do caso: o hash inverte as duas"
+
+    definicao = extract_stepfunctions(ASL_COM_RETRY_DE_DUAS, "carga.asl.json")
+    [confronto] = [
+        f
+        for f in build_sfn_retry_observado([*definicao, primeira, segunda])
+        if f.kind == "sfn.retry_observado"
+    ]
+    assert confronto.attrs["execution_outcome"] == "segunda"
+    assert confronto.measures["tentativas_observadas"] == 2
+
+    # E a ordem nao depende da ordem em que os facts chegaram.
+    [invertido] = [
+        f
+        for f in build_sfn_retry_observado([*definicao, segunda, primeira])
+        if f.kind == "sfn.retry_observado"
+    ]
+    assert invertido.to_dict() == confronto.to_dict()
+
+
 def test_tentativa_que_nao_e_glue_sai_em_recusa_nomeada():
     """O confronto de retry so sabe julgar `glue:startJobRun` -- e diz isso (A5).
 

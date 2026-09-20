@@ -914,7 +914,13 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     ha_asl = any(f.kind == "sfn.task" for f in facts)
     saida: list[Fact] = []
     for artefato, nome in sorted(tentativas):
-        grupo = sorted(tentativas[(artefato, nome)], key=lambda f: f.id)
+        # Pelo INDICE da tentativa, com `f.id` so como desempate estavel. `Fact.id` e
+        # sha1 do conteudo -- ordem de hash, nao ordem de tentativa --, e com ele
+        # sozinho `grupo[-1]` (de onde sai `execution_outcome`) era escolha arbitraria.
+        grupo = sorted(
+            tentativas[(artefato, nome)],
+            key=lambda f: ((f.measures or {}).get("attempt_index", 0), f.id),
+        )
         subject = _attempt_subject(artefato, nome)
         proveniencia = {
             "artifact": artefato,
