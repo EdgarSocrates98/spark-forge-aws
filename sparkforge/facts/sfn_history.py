@@ -37,10 +37,12 @@ kinds, nao cinco.
   `state_name_in_concurrent_branches`, `state_entries_chain_unwalkable`,
   `attempt_unanchored`, `execution_terminal_absent`, `execution_data_absent`,
   `execution_redriven` e `job_run_id_unrecognized`.
-  O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`) fica em
-  `measures`, e nao em `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres
-  recusas iguais sobre o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por
-  id e deixaria uma so.
+  O discriminador NUMERICO da recusa (`measures.event_id`, `measures.index`,
+  `measures.read_events`, `measures.submitted_event_id`) fica em `measures`, e nao em
+  `attrs`: `Fact.id` e sha1 de `kind + subject + measures`, e tres recusas iguais sobre
+  o mesmo arquivo virariam o mesmo id -- `fusion.fuse` indexa por id e deixaria uma so.
+  Duas recusas de RAZAO diferente colidem pelo mesmo motivo, e foi o que aconteceu com
+  `truncated` e `execution_terminal_absent` ate 2026-09-20.
 - `sfn.analyzed` -- a sentinela, com as contagens.
 - `sfn.retry_observado` -- DERIVADO, nunca lido de arquivo: `build_sfn_retry_observado`
   casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
@@ -746,8 +748,18 @@ def extract_sfn_history(payload: Any, path: str, artifact_sha256: str = "") -> l
     status, classe = _desfecho_da_execucao(ordenados)
 
     if truncado:
+        # `read_events` vai para `measures`, e nao para `attrs`: esta recusa sai JUNTO
+        # com `execution_terminal_absent` sempre que a pagina salva acaba antes do fim
+        # da execucao, as duas tem o mesmo kind e o mesmo `subject` (o arquivo), e
+        # `Fact.id` e sha1 de `kind + subject + measures`. Com o numero so em `attrs`,
+        # as duas viravam o MESMO id e `fusion.fuse` deixava uma so.
         leitura.facts.append(
-            _unresolved(_file_subject(path), "truncated", provenance, read_events=len(ordenados))
+            _unresolved(
+                _file_subject(path),
+                "truncated",
+                provenance,
+                measures={"read_events": len(ordenados)},
+            )
         )
     if status == "unresolved" and ordenados:
         leitura.facts.append(

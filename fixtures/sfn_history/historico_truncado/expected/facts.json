@@ -121,7 +121,7 @@
     }
   },
   {
-    "id": "f_bae972",
+    "id": "f_61124a",
     "schema_version": 1,
     "kind": "sfn.unresolved",
     "subject": {
@@ -132,10 +132,11 @@
       "symbol": "",
       "snippet": ""
     },
-    "measures": {},
-    "attrs": {
-      "reason": "truncated",
+    "measures": {
       "read_events": 5
+    },
+    "attrs": {
+      "reason": "truncated"
     },
     "provenance": {
       "artifact": "historico/execucao.json",

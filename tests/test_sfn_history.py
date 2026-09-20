@@ -1314,3 +1314,50 @@ def test_map_inline_cala_a_numeracao_e_preserva_o_job_run():
     assert execucao.measures["job_run_count"] == 2
     [sentinela] = _de(facts, "sfn.analyzed")
     assert sentinela.measures["job_run_count"] == 2
+
+
+def test_truncado_e_terminal_ausente_nao_colidem_no_mesmo_id():
+    """Duas recusas do mesmo arquivo, e o `fuse` tem de deixar as DUAS de pe.
+
+    `truncated` e `execution_terminal_absent` saem juntas sempre que a pagina salva
+    acaba antes do fim da execucao -- e as duas tem o mesmo `subject` (o arquivo) e o
+    mesmo kind. A primeira passava `read_events` como `**extra`, que vai para `attrs`; a
+    segunda nao tinha discriminador nenhum. `Fact.id` e sha1 de
+    `kind + subject + measures`, `attrs` NAO entra, e `fusion.fuse` indexa por id: as
+    duas viravam o mesmo id e uma era descartada. A divida e anterior a esta feature --
+    `fixtures/sfn_history/historico_truncado/expected/facts.json` tinha dois facts com
+    o id `f_bae972`.
+
+    `read_events` e MEDIDA, e e por isso que a correcao e move-la para `measures` em
+    vez de inventar um desempate: quantos eventos o extrator leu da pagina que sobrou.
+    """
+    from sparkforge.facts.fusion import fuse
+
+    truncado = {
+        "nextToken": "AAAAKgAAAAIAAAAAAAAAAw==",
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(
+                2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "CargaLonga"}
+            ),
+            _evento(3, 2, "TaskScheduled", 2, **_agendado(timeoutInSeconds=7200)),
+            _evento(4, 3, "TaskStarted", 3),
+            _evento(5, 4, "TaskSubmitted", 4, **_submetido({"JobRunId": "jr_longo"})),
+        ],
+    }
+    facts = extract_sfn_history(truncado, "truncado.json")
+    recusas = {f.attrs["reason"]: f for f in _de(facts, "sfn.unresolved")}
+    assert set(recusas) == {"truncated", "execution_terminal_absent"}
+    assert recusas["truncated"].measures == {"read_events": 5}
+    assert "read_events" not in recusas["truncated"].attrs
+    assert recusas["truncated"].id != recusas["execution_terminal_absent"].id
+
+    # E o `fuse` deixa as duas de pe -- que e onde a colisao aparecia.
+    fundidos = fuse(facts)
+    sobreviventes = sorted(
+        f.attrs["reason"]
+        for f in fundidos
+        if f.kind == "sfn.unresolved"
+        and f.attrs["reason"] in {"truncated", "execution_terminal_absent"}
+    )
+    assert sobreviventes == ["execution_terminal_absent", "truncated"]
