@@ -123,9 +123,18 @@ rules:
       - {url: "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html", retrieved: 2026-09-19}
       - {url: "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html", retrieved: 2026-09-19}
 
-  # A ancora e a TENTATIVA, e os tres predicados de igualdade que ela le sao os que
+  # A ancora e a TENTATIVA, e os predicados de igualdade que ela le sao os que
   # `expr.py` consegue avaliar. `job_run_outcome_observed` e derivado no extrator
   # (regra 33): ele e verdadeiro so num `.sync` que terminou em sucesso ou falha.
+  #
+  # `attrs.submitted: true` NAO e redundante, e e ele que separa dois casos que o
+  # timeout junta. Quando o Task `.sync` expira ANTES do `TaskSubmitted` -- prazo curto
+  # demais, ou o `StartJobRun` que nem chegou a responder -- nao existe `sfn.job_run`
+  # nenhum: nenhum `JobRunId` foi lido, e nenhum existe no artefato. Sem esta condicao a
+  # regra dispararia ali, e a explicacao ("o `JobRunId` esta em `sfn.job_run`") e o
+  # `proposed_change` (`aws glue get-job-run` sobre ele) mandariam o operador consultar
+  # um identificador que o historico nao registra. A fixture
+  # `task_timed_out_sem_submissao` e o negativo que mata a remocao desta linha.
   - id: SF-SFNX-002
     category: stepfunctions-execution
     title: "Task .sync expirou: o histórico não registra o fim do JobRun que ele acompanhava"
@@ -139,6 +148,7 @@ rules:
             attrs.api: startJobRun
             attrs.pattern: sync
             attrs.result: timed_out
+            attrs.submitted: true
             attrs.job_run_outcome_observed: false
     status: confirmed
     severity_default: P1
@@ -149,7 +159,10 @@ rules:
       Functions que acompanha o JobRun, e quando ele para de acompanhar o histórico
       deixa de registrar o desfecho — o último evento sobre aquele JobRun é o
       `TaskSubmitted`. O `JobRunId` está em `sfn.job_run`; o que aconteceu com ele
-      depois, não. A regra afirma que o desfecho **não foi observado**, e nada além
+      depois, não. A regra só fala quando a submissão ACONTECEU
+      (`attrs.submitted: true`): um `.sync` que expira antes dela não deixou `JobRunId`
+      nenhum para ler, e ali não há job órfão a investigar — há um prazo que não cobriu
+      nem o `StartJobRun`. A regra afirma que o desfecho **não foi observado**, e nada além
       disso: ela não afirma que o job continuou rodando, nem que ele foi interrompido —
       a documentação do abort do `.sync` não descreve o caso de timeout (lacuna 2 de
       knowledge/stepfunctions/glue-integration.md). E não afirma custo: dizer "você

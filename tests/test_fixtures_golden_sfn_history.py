@@ -48,6 +48,9 @@ REQUIRED_FIXTURES = {
     "retry_dentro_do_declarado",
     # SF-SFNX-002: TaskTimedOut num Task `.sync`.
     "task_timed_out_sync",
+    # O NEGATIVO dela: um `.sync` que expira ANTES do `TaskSubmitted`. Nao ha
+    # `sfn.job_run`, e a regra que manda ler o `JobRunId` tem de ficar calada.
+    "task_timed_out_sem_submissao",
     # SF-SFNX-003: ExecutionAborted com o Task `.sync` agendado e sem terminal proprio.
     "execucao_abortada_com_task_em_voo",
     # O negativo das tres: uma execucao que correu e terminou.
