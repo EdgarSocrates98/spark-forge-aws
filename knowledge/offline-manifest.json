@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "57e54b4c99cc72f011e5316ddd907cefb991b41b160f498d3881f5fd637b9915"
+      "sha256": "1758307742dab85e566628d750c3b7466e8d1334bf34446a5d67914df10473b5"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -26,7 +26,12 @@
     {
       "path": "knowledge/airflow-pipelines.md",
       "title": "airflow-pipelines",
-      "sha256": "8585285617f34c09d1202f01e778ee0876211f8f4a12638e9382cc2c47d2f349"
+      "sha256": "19094312373c54c4246534127af5c376b9b8a715700361e3ac97a7357006389a"
+    },
+    {
+      "path": "knowledge/airflow/glue-operator.md",
+      "title": "glue-operator",
+      "sha256": "1a35e81ba115e774f97a359f11db424c55d5cf7607d5ad75ac1b29a566b5e6af"
     },
     {
       "path": "knowledge/anti-patterns.md",

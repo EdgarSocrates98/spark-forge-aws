@@ -1,6 +1,44 @@
 {
   "schema_version": 1,
   "sources": {
+    "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html": {
+      "docs": [
+        "knowledge/airflow/glue-operator.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-AIRFLOW-001",
+        "SF-AIRFLOW-002",
+        "SF-AIRFLOW-003"
+      ]
+    },
+    "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html": {
+      "docs": [
+        "knowledge/airflow/glue-operator.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-AIRFLOW-004"
+      ]
+    },
+    "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html": {
+      "docs": [
+        "knowledge/airflow/glue-operator.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-19"
+      ],
+      "rules": [
+        "SF-AIRFLOW-002"
+      ]
+    },
     "https://api.github.com/repos/graphframes/graphframes/releases": {
       "docs": [
         "knowledge/graph/availability.md",
@@ -1384,6 +1422,7 @@
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html": {
       "docs": [
+        "knowledge/airflow/glue-operator.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1391,11 +1430,13 @@
         "2026-09-19"
       ],
       "rules": [
+        "SF-AIRFLOW-004",
         "SF-SFN-004"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html": {
       "docs": [
+        "knowledge/airflow/glue-operator.md",
         "knowledge/stepfunctions/glue-integration.md"
       ],
       "pinned": false,
@@ -1404,6 +1445,7 @@
         "2026-09-19"
       ],
       "rules": [
+        "SF-AIRFLOW-004",
         "SF-SFN-004",
         "SF-TIMEOUT-001"
       ]

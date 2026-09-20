@@ -1,0 +1,14 @@
+name: timeout_sem_stop
+proves: >
+  O POSITIVO de SF-AIRFLOW-002. `execution_timeout` declarado e `stop_job_run_on_kill`
+  omitido -- o default publicado e False. Esta fixture tambem e a que prova a refinacao
+  de D2 escrita no plano: `timedelta(hours=2)` e um `ast.Call`, e mesmo assim a
+  DECLARACAO e lida (`execution_timeout_declared: true`) e o valor vira medida
+  (`execution_timeout_seconds: 7200`). `deferrable=True` mantem SF-AIRFLOW-003 calada.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.dag, af.task]
+expects_rules: [SF-AIRFLOW-002]

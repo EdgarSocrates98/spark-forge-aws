@@ -23,6 +23,7 @@ import pytest
 
 from sparkforge.errors import matcher
 from sparkforge.facts import (
+    airflow_dag,
     athena_workgroup,
     benchmark,
     bridge,
@@ -98,6 +99,11 @@ FIXTURES = ROOT / "fixtures"
 # kind que precisa de golden, venha ele de arquivo ou de outro fact --, e
 # `tests/test_fixtures_golden_exception.py` e quem monta a cadeia inteira.
 EXTRACTORS = {
+    # `airflow_dag` entra nas DUAS listas no MESMO commit de `fixtures/airflow/`: sem
+    # ele aqui, os seis kinds `af.*` nao sao verificados por ninguem e o criterio de
+    # golden -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser avaliado,
+    # que e pior do que falhar.
+    "airflow_dag": airflow_dag,
     "athena_workgroup": athena_workgroup,
     "benchmark": benchmark,
     "bridge": bridge,

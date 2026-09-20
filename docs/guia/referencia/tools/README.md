@@ -8,6 +8,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 
 | Tool | Efeito | O que faz |
 |---|---|---|
+| [`sparkforge_analyze_airflow_dag`](sparkforge_analyze_airflow_dag.md) | só leitura | Extrai facts do arquivo `.py` de um DAG do Apache Airflow. |
 | [`sparkforge_analyze_athena_workgroup`](sparkforge_analyze_athena_workgroup.md) | só leitura | Extrai facts de um dump JSON de workgroups do Athena (`get_work_group`): engine version efetiva, state, bytes_scanned_cutoff. |
 | [`sparkforge_analyze_call_graph`](sparkforge_analyze_call_graph.md) | só leitura | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA extraidos (tipicamente `sparkforge_analyze_pyspark` gravado em disco via `--out`) -- funcao pura sobre... |
 | [`sparkforge_analyze_catalog_schema`](sparkforge_analyze_catalog_schema.md) | só leitura | Extrai facts de um dump JSON ja coletado do Glue Data Catalog (`GetTables`/`GetTable`): schema, colunas, chaves de particao, contagem de particoes e table properties. |

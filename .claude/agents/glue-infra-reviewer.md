@@ -1,12 +1,12 @@
 ---
 name: glue-infra-reviewer
-description: Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como a state machine do Step Functions dispara o job.
+description: Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como o job e disparado de fora - a state machine do Step Functions e o DAG do Apache Airflow (espera, prazo, forma de esperar e as duas camadas de retry).
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-glue-terraform
   - tune-glue-job
   - optimize-variable-volume-job
-rule_areas: [SF-GLUE, SF-ENV, SF-SFN]
+rule_areas: [SF-GLUE, SF-ENV, SF-SFN, SF-AIRFLOW]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -45,6 +45,25 @@ A área `SF-SFN` julga esses facts. Com o Terraform do mesmo job no case,
 e é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o retrier
 do Step Functions. A composição das duas não é documentada — afirme que as duas existem,
 nunca quantas vezes o job roda numa falha.
+
+## Quem dispara o job: Airflow
+
+Quando quem chama o job é um DAG do Apache Airflow, `sparkforge_analyze_airflow_dag` lê
+o arquivo `.py` por AST — **nunca o importa nem o executa** — e devolve um `af.task` por
+operador instanciado. Para o `GlueJobOperator`, três defaults decidem o que acontece com
+o job e nenhum aparece no código PySpark nem no event log: `wait_for_completion` (default
+`True`), `deferrable` (default `False`) e `stop_job_run_on_kill` (default `False`). O
+fact traz o valor efetivo e a marca de omitido; argumento que não é literal (variável,
+f-string, `{{ jinja }}`) sai ausente e a lacuna sai nomeada em `af.unresolved`, nunca
+como o default.
+
+A área `SF-AIRFLOW` julga esses facts. Com o Terraform do mesmo job no case,
+`sparkforge_fuse` liga a task ao `aws_glue_job` de mesmo `name` (`af.glue_job_link`), e
+é aí que as duas camadas de retry aparecem juntas: o `max_retries` do job e o `retries`
+do Airflow. A composição das duas não é documentada — afirme que as duas existem, nunca
+quantas vezes o job roda numa falha. E lembre do que a leitura estática **não** alcança:
+DAG montado em laço, TaskFlow API e argumento em Jinja saem em `af.unresolved` com a
+razão, e nenhuma regra dispara sobre eles.
 
 ## Três armadilhas que a infraestrutura esconde
 

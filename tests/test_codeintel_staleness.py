@@ -369,6 +369,11 @@ def test_reconstruir_do_zero_e_sincronizar_dao_o_mesmo_grafo_sobre_este_reposito
     assert primeira.completa
     assert not segunda.completa
     assert segunda.mudancas.novos == (
+        # Em ordem alfabetica, os `.py` do repositorio que NAO compilam de
+        # proposito -- cada um e a entrada de uma fixture que mede a recusa:
+        # `invalid_python` do extrator de DAG do Airflow, e o arquivo que o
+        # grafo de chamadas nao consegue parsear.
+        "fixtures/airflow/python_invalido/input/quebrado.py",
         "fixtures/graph/fonte_que_nao_compila/input/carga_quebrada.py",
     )
     assert terceira.mudancas.vazio

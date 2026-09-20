@@ -452,6 +452,22 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # O arquivo `.py` do DAG e codigo-fonte, como a definicao ASL da capacidade acima.
+  # NAO HA `collect` PAR, e a ausencia e decidida (D1 de `docs/sdd/AIRFLOW_DAG/design.md`):
+  # o metadado do Airflow em execucao exige acesso ao banco ou a API, e o `define` o poe
+  # fora de escopo. O bloco `knowledge:` entra na T4, com o documento.
+  - name: extract facts from an Apache Airflow DAG file
+    tools: [sparkforge_analyze_airflow_dag]
+    cli: [analyze airflow-dag]
+    knowledge:
+      - knowledge/airflow/glue-operator.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: diff component versions between two runtime releases
     tools: [sparkforge_release_diff]
     cli: [release diff]

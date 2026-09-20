@@ -1,0 +1,591 @@
+[
+  {
+    "id": "f_ac353e",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 1,
+      "task_count": 1,
+      "dependency_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga.py",
+      "artifact_sha256": "c7d51f8f936515c22e78bd8efac61dd0929154f3b971d5998c06c07a2d85b16d",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_ae63ff",
+    "schema_version": 1,
+    "kind": "af.dag",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.py",
+      "line": 7,
+      "col": 5,
+      "symbol": "carga_com_retry_no_airflow",
+      "snippet": ""
+    },
+    "measures": {
+      "default_retries": 2
+    },
+    "attrs": {
+      "dag_id_literal": true,
+      "dag_id": "carga_com_retry_no_airflow",
+      "schedule_declared": true,
+      "schedule_literal": true,
+      "schedule_source": "schedule",
+      "schedule": "0 5 * * *",
+      "default_args_source": "inline",
+      "default_retries_declared": true,
+      "default_execution_timeout_declared": false
+    },
+    "provenance": {
+      "artifact": "carga.py",
+      "artifact_sha256": "c7d51f8f936515c22e78bd8efac61dd0929154f3b971d5998c06c07a2d85b16d",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_7f71bc",
+    "schema_version": 1,
+    "kind": "af.glue_job_link",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "airflow_retries_effective": 2,
+      "glue_max_retries": 0
+    },
+    "attrs": {
+      "job_name": "carga-diaria",
+      "resource": "aws_glue_job.carga_diaria",
+      "resource_file": "main.tf",
+      "glue_max_retries_source": "literal",
+      "airflow_retries_defaulted": false
+    },
+    "provenance": {
+      "artifact": "carga.py",
+      "artifact_sha256": "",
+      "extractor": "airflow_dag@0.1.0",
+      "derived_from": [
+        "f_6ff721",
+        "f_ad6896",
+        "f_c7ef7b"
+      ]
+    }
+  },
+  {
+    "id": "f_6ff721",
+    "schema_version": 1,
+    "kind": "af.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "retries_effective": 2
+    },
+    "attrs": {
+      "operator_class": "GlueJobOperator",
+      "operator_family": "glue_job",
+      "task_id_literal": true,
+      "var_name": "carga",
+      "task_id": "carga",
+      "retries_source": "default_args",
+      "retries_defaulted": false,
+      "execution_timeout_declared": false,
+      "execution_timeout_source": "absent",
+      "job_name": "carga-diaria",
+      "job_name_source": "literal",
+      "wait_for_completion_effective": true,
+      "wait_for_completion_defaulted": true,
+      "deferrable_effective": true,
+      "deferrable_defaulted": false,
+      "stop_job_run_on_kill_effective": false,
+      "stop_job_run_on_kill_defaulted": true,
+      "has_downstream": false
+    },
+    "provenance": {
+      "artifact": "carga.py",
+      "artifact_sha256": "c7d51f8f936515c22e78bd8efac61dd0929154f3b971d5998c06c07a2d85b16d",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_224ef5",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c135f1",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 12,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://bucket-exemplo/scripts/carga_diaria.py",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d8b1d6",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_f1bd4b",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_b05b73",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 18,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://bucket-exemplo/spark-logs/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_589c14",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 19,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-continuous-cloudwatch-log",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ad6896",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 2,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "carga-diaria",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ec1d11",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--job-bookmark-option",
+      "value": "job-bookmark-disable",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ef32d2",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 21,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--TempDir",
+      "value": "s3://bucket-exemplo/temp/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_dad012",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 25,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {
+      "value": 1
+    },
+    "attrs": {
+      "key": "max_concurrent_runs",
+      "value": "1",
+      "present": true,
+      "literal": true,
+      "block": "execution_property"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_cfa02d",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 3,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "aws_iam_role.glue_role.arn",
+      "present": true,
+      "literal": false,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_269215",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 4,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_2cc2cd",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.1X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_dd9968",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {
+      "value": 6
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "6",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c7ef7b",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 7,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {
+      "value": 0
+    },
+    "attrs": {
+      "key": "max_retries",
+      "value": "0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_eeaf7d",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 8,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {
+      "value": 480
+    },
+    "attrs": {
+      "key": "timeout",
+      "value": "480",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ffa6fc",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 16,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_13bf6c",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_930a24",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.carga_diaria"
+    },
+    "measures": {
+      "attribute_count": 16
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "carga_diaria"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "2261df109645e1fb5487e7d6fa418c989e74879c97bf5e86e84c94d5b7a61c7f",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

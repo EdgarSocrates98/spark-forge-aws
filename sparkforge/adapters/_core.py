@@ -61,6 +61,10 @@ from sparkforge.diagnosis import rank_root_causes
 from sparkforge.economy.report import build_context_report
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts import lakeformation_matrix as _lf_matrix
+from sparkforge.facts.airflow_dag import (
+    extract_airflow_dag_path,
+    extract_airflow_dag_tree,
+)
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
     extract_athena_workgroup_tree,
@@ -2703,6 +2707,42 @@ def analyze_step_functions(
 ) -> dict[str, Any]:
     facts = _extract_step_functions_facts(path)
     return _facts_page(facts, "sfn.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze airflow-dag
+# --------------------------------------------------------------------------- #
+#
+# Le o ARQUIVO `.py` do DAG, por AST, e NUNCA o importa nem o executa (D1 de
+# `docs/sdd/AIRFLOW_DAG/design.md`). Nao ha `collect` par e a ausencia e decidida: o
+# metadado do Airflow em execucao (task instances, duracao, retentativas que
+# aconteceram) exige acesso ao banco ou a API, e esta fora de escopo no `define`.
+
+
+def _extract_airflow_dag_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o arquivo .py do DAG ou para a pasta de DAGs:\n"
+            f"    sparkforge analyze airflow-dag --path dags/ "
+            f"--out .sparkforge/facts_airflow.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_airflow_dag_tree(target, repo_root=target)
+    return extract_airflow_dag_path(target, repo_root=target.parent)
+
+
+def analyze_airflow_dag(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_airflow_dag_facts(path)
+    return _facts_page(facts, "af.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #

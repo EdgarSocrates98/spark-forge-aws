@@ -33,6 +33,7 @@ import pytest
 # `blocked_on` sobre um modulo que ja esta no repositorio.
 from sparkforge.errors import matcher
 from sparkforge.facts import (
+    airflow_dag,
     athena_workgroup,
     benchmark,
     bridge,
@@ -91,6 +92,10 @@ from sparkforge.facts import (
 from sparkforge.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (
+    # `airflow_dag` entra nas DUAS listas manuais no MESMO commit da area SF-AIRFLOW:
+    # sem ele aqui, os seis kinds `af.*` contam como orfaos e as quatro regras seriam
+    # forcadas a `blocked_on` sobre um extrator que esta no repositorio.
+    airflow_dag,
     athena_workgroup,
     # `matcher` (`sparkforge/errors/matcher.py`) e o unico desta tupla fora de
     # `sparkforge/facts/`. Ele emite `error.signature_match` e

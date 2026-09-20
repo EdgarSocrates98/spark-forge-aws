@@ -1,0 +1,75 @@
+[
+  {
+    "id": "f_f91613",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cargas_por_dominio.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 0,
+      "task_count": 0,
+      "dependency_count": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cargas_por_dominio.py",
+      "artifact_sha256": "a9aa50261830ae9ae2b2002ac30a1b0572d5692922f1d39e550c8ce4655966b5",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_fce93c",
+    "schema_version": 1,
+    "kind": "af.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cargas_por_dominio.py",
+      "line": 14,
+      "col": 8,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dag_dinamico",
+      "at": "GlueJobOperator",
+      "unblocked_by": "operador instanciado no nivel de modulo, fora de laco e def"
+    },
+    "provenance": {
+      "artifact": "cargas_por_dominio.py",
+      "artifact_sha256": "a9aa50261830ae9ae2b2002ac30a1b0572d5692922f1d39e550c8ce4655966b5",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_6b1443",
+    "schema_version": 1,
+    "kind": "af.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "cargas_por_dominio.py",
+      "line": 8,
+      "col": 9,
+      "symbol": "dag",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dag_dinamico",
+      "at": "DAG",
+      "unblocked_by": "DAG declarado no nivel de modulo, fora de laco e de funcao"
+    },
+    "provenance": {
+      "artifact": "cargas_por_dominio.py",
+      "artifact_sha256": "a9aa50261830ae9ae2b2002ac30a1b0572d5692922f1d39e550c8ce4655966b5",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

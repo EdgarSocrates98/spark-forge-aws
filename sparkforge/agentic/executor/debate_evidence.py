@@ -50,9 +50,10 @@ from sparkforge.durable import append_text_line, read_records
 
 # nome publico -> (modulo em `sparkforge.facts`, funcao). O nome e o do verbo
 # `sparkforge analyze <nome>` que le o mesmo artefato, para o agente reconhecer o
-# que ja usa. Import tardio por `importlib`: carregar os 23 extratores para
+# que ja usa. Import tardio por `importlib`: carregar os 24 extratores para
 # validar um nome custaria o motor inteiro a cada `submit`.
 EVIDENCE_EXTRACTORS: dict[str, tuple[str, str]] = {
+    "airflow-dag": ("airflow_dag", "extract_airflow_dag_path"),
     "athena-workgroup": ("athena_workgroup", "extract_athena_workgroup_path"),
     "catalog-schema": ("catalog_schema", "extract_catalog_schema_path"),
     "consumers": ("consumers", "extract_consumers_path"),

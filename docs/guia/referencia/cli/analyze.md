@@ -8,6 +8,7 @@ Extrai facts deterministicos de codigo-fonte.
 
 | Subcomando | O que faz |
 |---|---|
+| [`sparkforge analyze airflow-dag`](#sparkforge-analyze-airflow-dag) | Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal. |
 | [`sparkforge analyze athena-workgroup`](#sparkforge-analyze-athena-workgroup) | Extrai facts de um dump JSON de workgroups do Athena. |
 | [`sparkforge analyze call-graph`](#sparkforge-analyze-call-graph) | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos. |
 | [`sparkforge analyze catalog-schema`](#sparkforge-analyze-catalog-schema) | Extrai facts de um dump JSON do Glue Data Catalog. |
@@ -37,6 +38,29 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
 | [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
 | [`sparkforge analyze workload`](#sparkforge-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
+
+## `sparkforge analyze airflow-dag`
+
+Extrai facts do arquivo .py de um DAG do Apache Airflow, lido por AST e NUNCA executado: um fact por operador instanciado, com classe, task_id, os argumentos literais que as regras julgam (job_name, wait_for_completion, deferrable, stop_job_run_on_kill, retries, execution_timeout), as dependencias declaradas, e a marca do que nao e literal.
+
+```bash
+sparkforge analyze airflow-dag --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo .py do DAG ou diretorio com eles (a pasta de DAGs). |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON) neste arquivo. |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_airflow_dag`](../tools/sparkforge_analyze_airflow_dag.md)
 
 ## `sparkforge analyze athena-workgroup`
 

@@ -1,0 +1,100 @@
+[
+  {
+    "id": "f_c1d3ad",
+    "schema_version": 1,
+    "kind": "af.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_sincrona.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "dag_count": 1,
+      "task_count": 1,
+      "dependency_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga_sincrona.py",
+      "artifact_sha256": "425103e9a7c9a5fcd3b153466e1adf196dfded469963af9285473483847c7a4f",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_dbbc18",
+    "schema_version": 1,
+    "kind": "af.dag",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_sincrona.py",
+      "line": 7,
+      "col": 5,
+      "symbol": "carga_sincrona",
+      "snippet": ""
+    },
+    "measures": {
+      "default_retries": 0
+    },
+    "attrs": {
+      "dag_id_literal": true,
+      "dag_id": "carga_sincrona",
+      "schedule_declared": true,
+      "schedule_literal": true,
+      "schedule_source": "schedule",
+      "schedule": "@daily",
+      "default_args_source": "inline",
+      "default_retries_declared": true,
+      "default_execution_timeout_declared": false
+    },
+    "provenance": {
+      "artifact": "carga_sincrona.py",
+      "artifact_sha256": "425103e9a7c9a5fcd3b153466e1adf196dfded469963af9285473483847c7a4f",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  },
+  {
+    "id": "f_29a00c",
+    "schema_version": 1,
+    "kind": "af.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_sincrona.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "retries_effective": 0
+    },
+    "attrs": {
+      "operator_class": "GlueJobOperator",
+      "operator_family": "glue_job",
+      "task_id_literal": true,
+      "var_name": "carga",
+      "task_id": "carga",
+      "retries_source": "default_args",
+      "retries_defaulted": false,
+      "execution_timeout_declared": false,
+      "execution_timeout_source": "absent",
+      "job_name": "carga-diaria",
+      "job_name_source": "literal",
+      "wait_for_completion_effective": true,
+      "wait_for_completion_defaulted": true,
+      "deferrable_effective": false,
+      "deferrable_defaulted": true,
+      "stop_job_run_on_kill_effective": false,
+      "stop_job_run_on_kill_defaulted": true,
+      "has_downstream": false
+    },
+    "provenance": {
+      "artifact": "carga_sincrona.py",
+      "artifact_sha256": "425103e9a7c9a5fcd3b153466e1adf196dfded469963af9285473483847c7a4f",
+      "extractor": "airflow_dag@0.1.0"
+    }
+  }
+]

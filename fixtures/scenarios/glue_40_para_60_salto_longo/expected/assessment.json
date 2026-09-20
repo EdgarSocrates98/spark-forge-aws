@@ -1624,10 +1624,10 @@
     "source_runtime": "4.0",
     "target_runtime": "6.0",
     "steps": 3,
-    "catalog_rules": 161,
+    "catalog_rules": 165,
     "version_guarded_rules": 26,
-    "unguarded_rules": 135,
-    "reachable_rules": 160,
+    "unguarded_rules": 139,
+    "reachable_rules": 164,
     "axes": [
       {
         "axis": "glue",
@@ -1653,7 +1653,7 @@
       "iceberg",
       "spark"
     ],
-    "statement": "COBERTURA DECLARADA. Plataforma: AWS Glue. Caminho: 4.0 -> 6.0, 3 degrau(s). Catalogo: 161 regras, das quais 26 guardadas por versao (27 contagens por eixo -- uma regra com dois eixos conta nos dois) e 135 sem guarda, alcancaveis em qualquer runtime. Por eixo de `runtime_scope` -- `glue`: 21 no catalogo, 21 alcancadas por este caminho, chave de runtime presente; `iceberg`: 1 no catalogo, 1 alcancadas por este caminho, chave de runtime presente; `spark`: 5 no catalogo, 4 alcancadas por este caminho, chave de runtime presente. O eixo `glue` tem 21 regras neste catalogo, e este caminho alcancou 21 delas. Portanto: assessment sem achado significa `nenhuma das regras alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao cobre esta nomeado -- aqui, em `missing_evidence` e em `component_diff_unresolved` --, porque listar a recusa e a diferenca entre nao saber e nao ter perguntado."
+    "statement": "COBERTURA DECLARADA. Plataforma: AWS Glue. Caminho: 4.0 -> 6.0, 3 degrau(s). Catalogo: 165 regras, das quais 26 guardadas por versao (27 contagens por eixo -- uma regra com dois eixos conta nos dois) e 139 sem guarda, alcancaveis em qualquer runtime. Por eixo de `runtime_scope` -- `glue`: 21 no catalogo, 21 alcancadas por este caminho, chave de runtime presente; `iceberg`: 1 no catalogo, 1 alcancadas por este caminho, chave de runtime presente; `spark`: 5 no catalogo, 4 alcancadas por este caminho, chave de runtime presente. O eixo `glue` tem 21 regras neste catalogo, e este caminho alcancou 21 delas. Portanto: assessment sem achado significa `nenhuma das regras alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao cobre esta nomeado -- aqui, em `missing_evidence` e em `component_diff_unresolved` --, porque listar a recusa e a diferenca entre nao saber e nao ter perguntado."
   },
   "component_diff": [
     {

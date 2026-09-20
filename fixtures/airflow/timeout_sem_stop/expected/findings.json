@@ -1,0 +1,71 @@
+[
+  {
+    "rule_id": "SF-AIRFLOW-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "execution_timeout com stop_job_run_on_kill ausente: o Airflow mata a task e o operador não para o JobRun",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_com_timeout.py",
+      "line": 14,
+      "col": 12,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_8e9b27"
+    ],
+    "measured": {
+      "retries_effective": 0,
+      "execution_timeout_seconds": 7200
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A task espera o job (`wait_for_completion` ausente ou `True`), tem `execution_timeout` declarado — na própria task ou em `default_args` — e `stop_job_run_on_kill` ausente ou `False`. A espera é parte da condição porque sem ela a task termina assim que o JobRun começa, e o prazo não chega a matar nada. A documentação do Airflow diz o que o prazo faz: \"If you want a task to have a maximum runtime, set its `execution_timeout` attribute to a `datetime.timedelta` value that is the maximum permissible runtime.\" E o provider diz o que o outro parâmetro faz quando é `True`: \"If True, Operator will stop the job run when task is killed\", com default `False`. Juntas, as duas frases sustentam uma coisa só, e é só essa que a regra afirma: quando o prazo estoura e a task é morta, o operador NÃO para o JobRun. O que acontece com o JobRun depois disso a documentação do provider não descreve, e por isso a regra NÃO afirma (U3 do `define`): se ele segue executando, por quanto tempo, e o que esse tempo cobra ficam sem fonte. O que se sabe é que o DAG já marcou a task como falha e que parar o JobRun não foi pedido a ninguém. A regra julga a DECLARAÇÃO do prazo, não o valor dele: o valor só vira medida quando é `timedelta(**literais)`.",
+    "proposed_change": [
+      "Declarar `stop_job_run_on_kill=True` na task, para que matar a task pare o JobRun.",
+      "Ou tirar o `execution_timeout` da task do Glue e deixar o prazo onde o job o conhece: o `timeout` do `aws_glue_job`, que o Glue impõe ao próprio JobRun.",
+      "Se os dois prazos existem de propósito, alinhá-los: `execution_timeout` do Airflow maior que o `timeout` do job, para que o job termine por si antes de a task ser morta."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Com `stop_job_run_on_kill=True`, matar a task passa a interromper um JobRun no meio: escrita não transacional deixa saída parcial no destino.",
+      "Parar o JobRun é uma chamada à API do Glue feita com a credencial do Airflow: sem a permissão correspondente, o parâmetro fica ligado e a parada falha. QUAL ação de IAM o operador chama não está em nenhuma das fontes citadas por esta regra — lacuna 6 de knowledge/airflow/glue-operator.md —, e por isso a regra não a nomeia: confira na política que a role do ambiente usa hoje."
+    ],
+    "tradeoffs": [
+      "Parar o job junto com a task economiza o resto do JobRun e arrisca saída parcial; deixar o job correr preserva a escrita e paga o run inteiro que ninguém vai usar."
+    ],
+    "validation": [
+      "`sparkforge analyze airflow-dag` mostra o `af.task` com `stop_job_run_on_kill_effective: true` (ou sem `execution_timeout_declared`), e `sparkforge judge` não produz mais SF-AIRFLOW-002 para a task.",
+      "EIXO DE RESULTADO — numa execução de teste em que o prazo estoura, o destino tem a mesma contagem total e a mesma contagem por chave de negócio que antes da execução: a interrupção não deixou linha parcial.",
+      "`aws glue get-job-run --job-name <job> --run-id <id>` mostra o JobRun em `STOPPED` no mesmo minuto em que a task foi marcada como falha, e não `RUNNING` depois dela."
+    ],
+    "rollback": [
+      "Reverter o commit do arquivo do DAG e republicá-lo."
+    ],
+    "sources": [
+      {
+        "url": "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html",
+        "retrieved": "2026-09-19"
+      },
+      {
+        "url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+        "retrieved": "2026-09-19"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.change_job_definition",
+      "target": "airflow.task.stop_job_run_on_kill",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "cost.dpu_seconds"
+      ],
+      "depends_on": []
+    }
+  }
+]

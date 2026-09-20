@@ -21,6 +21,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from sparkforge.errors.matcher import build_signature_matches  # noqa: E402
+from sparkforge.facts.airflow_dag import (  # noqa: E402
+    build_af_glue_link,
+    extract_airflow_dag_tree,
+)
 from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
 from sparkforge.facts.benchmark import build_benchmark  # noqa: E402
 from sparkforge.facts.call_graph import build_call_graph  # noqa: E402
@@ -89,6 +93,7 @@ FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
 FIXTURES_EMR_EKS = ROOT / "fixtures" / "emr_eks"
 FIXTURES_CONTROLM = ROOT / "fixtures" / "controlm"
 FIXTURES_STEPFUNCTIONS = ROOT / "fixtures" / "stepfunctions"
+FIXTURES_AIRFLOW = ROOT / "fixtures" / "airflow"
 FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
@@ -455,6 +460,27 @@ def regen_stepfunctions(directory: Path) -> None:
     if any(input_dir.rglob("*.tf")):
         facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
         facts.extend(build_sfn_glue_link(facts))
+    facts = sort_facts(facts)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_airflow(directory: Path) -> None:
+    """DAGs do Apache Airflow: `*.py` sob input/, e `main.tf` ao lado quando houver.
+
+    O PAR de `tests/test_fixtures_golden_airflow.py::_extract`, e a mesma porta do
+    produto: fixture so com `.py` e o que `analyze airflow-dag` ve; com `.tf` ao lado,
+    extrai o Terraform e deriva `af.glue_job_link` como `fusion.fuse` faz. Os `.py`
+    daqui sao DAG, e NAO passam por `extract_tree` do PySpark: o corpus de
+    `pyspark_ast` e outro, e repetir os dois aqui faria uma mudanca em `pyspark_ast`
+    quebrar este golden pelo motivo errado.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_airflow_dag_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+        facts.extend(build_af_glue_link(facts))
     facts = sort_facts(facts)
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
@@ -1060,6 +1086,7 @@ def main() -> int:
                 (FIXTURES_EMR_EKS / name, regen_emr_eks),
                 (FIXTURES_CONTROLM / name, regen_controlm),
                 (FIXTURES_STEPFUNCTIONS / name, regen_stepfunctions),
+                (FIXTURES_AIRFLOW / name, regen_airflow),
                 (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
@@ -1133,6 +1160,10 @@ def main() -> int:
     if FIXTURES_STEPFUNCTIONS.is_dir():
         for directory in sorted(p for p in FIXTURES_STEPFUNCTIONS.iterdir() if p.is_dir()):
             regen_stepfunctions(directory)
+    # Mesma guarda de existencia: `fixtures/airflow/` nasce nesta entrega.
+    if FIXTURES_AIRFLOW.is_dir():
+        for directory in sorted(p for p in FIXTURES_AIRFLOW.iterdir() if p.is_dir()):
+            regen_airflow(directory)
     for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
         regen_dq(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):

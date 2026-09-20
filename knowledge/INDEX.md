@@ -86,6 +86,12 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 |---|---|
 | [`devin/agents-and-subagents.md`](devin/agents-and-subagents.md) | Superfície oficial de **agents e subagents do Devin** (CLI e Devin Local): diretórios de descoberta, frontmatter literal, importação de `.claude/agents/*.md`, `.agents/skills/`, modelo default por router, `max-nesting`, `subagents_enabled`, MCP e atalhos. Traz o bloco de **vetos** `V-DV-*` e o que isso faz com a nota de `parity.yaml` |
 
+### Orquestração: quem dispara o job Glue
+| Arquivo | Conteúdo |
+|---|---|
+| [`airflow/glue-operator.md`](airflow/glue-operator.md) | Os parâmetros do `GlueJobOperator` que decidem o que acontece com o job — `wait_for_completion`, `deferrable`, `stop_job_run_on_kill`, `job_poll_interval` — com o **default publicado** ao lado da frase que o publica, o `execution_timeout` e o `core.default_task_retries` do core, e o `MaxRetries` do lado do Glue. Traz **6 lacunas nomeadas**, entre elas a composição dos dois retries e o que o JobRun faz quando a task é morta. Consome: `sparkforge/facts/airflow_dag.py` e `rules/catalog/airflow.yaml` |
+| [`stepfunctions/glue-integration.md`](stepfunctions/glue-integration.md) | Como a state machine dispara o job: os padrões de integração do `arn:aws:states:::glue:startJobRun`, o que espera o job e o que não espera, e o `Retry` do ASL ao lado do `max_retries` do `aws_glue_job` — **a mesma lacuna** do lado do Airflow: quantas vezes uma falha reexecuta o job inteiro não está documentado. Consome: `sparkforge/facts/stepfunctions.py` e `rules/catalog/stepfunctions.yaml` |
+
 ### Transversal
 | Arquivo | Conteúdo |
 |---|---|

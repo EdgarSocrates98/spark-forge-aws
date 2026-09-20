@@ -6169,6 +6169,47 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_airflow_dag": {
+        "description": (
+            "Extrai facts do arquivo `.py` de um DAG do Apache Airflow. Le por AST e "
+            "NUNCA importa nem executa o DAG. Emite `af.dag` (dag_id e schedule quando "
+            "literais, e o `default_args` com `retries` e `execution_timeout`), um "
+            "`af.task` por operador instanciado (classe, `task_id`, e para o "
+            "`GlueJobOperator` o `job_name` literal, o EFETIVO de "
+            "`wait_for_completion`/`deferrable`/`stop_job_run_on_kill` com a marca de "
+            "omitido -- os defaults publicados sao True, False e False --, o `retries` "
+            "efetivo e se `execution_timeout` esta declarado), `af.dependency` por elo "
+            "declarado com `>>`, `<<`, `set_downstream` ou `set_upstream`, "
+            "`af.unresolved` com a razao do que nao deu para ler (argumento nao literal, "
+            "DAG montado em laco, TaskFlow, Python invalido), e a sentinela "
+            "`af.analyzed`. Argumento que nao e literal NAO vira o default: o atributo "
+            "sai ausente e a lacuna sai nomeada. Com o Terraform do job no mesmo pool, "
+            "`sparkforge_fuse` liga a task ao `aws_glue_job` de mesmo nome."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo .py do DAG ou diretorio com eles.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_data_quality": {
         "description": (
             "Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do "
@@ -10005,6 +10046,16 @@ def _h_analyze_step_functions(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_airflow_dag(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_airflow_dag(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_data_quality(
         args["path"],
@@ -10551,6 +10602,7 @@ _HANDLERS = {
     "sparkforge_analyze_emr_eks": _h_analyze_emr_eks,
     "sparkforge_analyze_controlm_jobs": _h_analyze_controlm_jobs,
     "sparkforge_analyze_step_functions": _h_analyze_step_functions,
+    "sparkforge_analyze_airflow_dag": _h_analyze_airflow_dag,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,

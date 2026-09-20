@@ -141,7 +141,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**107 tools, 39 com `detail_level`** (recontado em 2026-09-19). Os niveis sao `summary`,
+**108 tools, 40 com `detail_level`** (recontado em 2026-09-19). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
