@@ -2,7 +2,7 @@
 
 # Agent `glue-infra-reviewer`
 
-Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como o job e disparado de fora - a state machine do Step Functions e o DAG do Apache Airflow (espera, prazo, forma de esperar e as duas camadas de retry).
+Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform, e como o job e disparado de fora - a state machine do Step Functions e o DAG do Apache Airflow (espera, prazo, forma de esperar e as duas camadas de retry) - a definicao ASL e o historico de execucao, que diz quantas vezes o job rodou de verdade.
 
 | Campo | Valor |
 |---|---|
@@ -75,6 +75,20 @@ do Airflow. A composição das duas não é documentada — afirme que as duas e
 quantas vezes o job roda numa falha. E lembre do que a leitura estática **não** alcança:
 DAG montado em laço, TaskFlow API e argumento em Jinja saem em `af.unresolved` com a
 razão, e nenhuma regra dispara sobre eles.
+
+##### E o que aconteceu de verdade: o histórico de execução
+
+A definição diz quantas vezes o job **pode** ser reagendado; só o histórico diz quantas
+vezes ele **foi**. `sparkforge_analyze_sfn_history` lê a saída salva de `aws
+stepfunctions get-execution-history` e devolve um `sfn.attempt` por tentativa de Task —
+nome do estado, ordem, resultado, duração, erro e `cause` — e um `sfn.job_run` com o
+`JobRunId` que cada tentativa produziu. Com a definição ASL no mesmo case, `fuse`
+confronta os dois e emite `sfn.retry_observado`: tentativas observadas contra o teto
+declarado. O histórico não traz custo, e nenhum achado o atribui — o que ele traz é o
+`JobRunId`, que é por onde `sparkforge_finops` responde custo com `dpu_seconds` medido.
+
+A API **não** suporta state machine EXPRESS, e o histórico dela vai para o CloudWatch
+Logs: nesse caso, `sparkforge_analyze_cloudwatch_logs`.
 
 #### Três armadilhas que a infraestrutura esconde
 

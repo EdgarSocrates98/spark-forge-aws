@@ -58,6 +58,7 @@ class TestToolSurface:
             "sparkforge_analyze_emr_eks",
             "sparkforge_analyze_controlm_jobs",
             "sparkforge_analyze_step_functions",
+            "sparkforge_analyze_sfn_history",
             "sparkforge_analyze_airflow_dag",
             "sparkforge_analyze_data_quality",
             "sparkforge_analyze_graph",
@@ -1913,6 +1914,58 @@ with DAG(dag_id="carga", schedule="@daily", start_date=datetime(2026, 1, 1)) as 
     carga = GlueJobOperator(task_id="carga", job_name="carga-diaria")
 '''
 
+# Historico com UMA tentativa de Glue `.sync` que falhou, com o JobRunId no output do
+# TaskSubmitted: rende `sfn.attempt` e `sfn.job_run` com os campos que as regras
+# SF-SFNX leem, e nao so a sentinela que sai de qualquer `.json`.
+_SFN_HISTORY_EVENTS = [
+    {
+        "id": 1,
+        "previousEventId": 0,
+        "timestamp": "2026-09-18T03:00:00+00:00",
+        "type": "ExecutionStarted",
+    },
+    {
+        "id": 2,
+        "previousEventId": 1,
+        "timestamp": "2026-09-18T03:00:01+00:00",
+        "type": "TaskStateEntered",
+        "stateEnteredEventDetails": {"name": "CargaDiaria"},
+    },
+    {
+        "id": 3,
+        "previousEventId": 2,
+        "timestamp": "2026-09-18T03:00:02+00:00",
+        "type": "TaskScheduled",
+        "taskScheduledEventDetails": {"resource": "startJobRun.sync", "resourceType": "glue"},
+    },
+    {
+        "id": 4,
+        "previousEventId": 3,
+        "timestamp": "2026-09-18T03:00:03+00:00",
+        "type": "TaskSubmitted",
+        "taskSubmittedEventDetails": {
+            "resource": "startJobRun.sync",
+            "resourceType": "glue",
+            "output": json.dumps({"JobRunId": "jr_amostra"}),
+        },
+    },
+    {
+        "id": 5,
+        "previousEventId": 4,
+        "timestamp": "2026-09-18T03:00:30+00:00",
+        "type": "TaskFailed",
+        "taskFailedEventDetails": {"error": "Glue.AWSGlueException", "cause": "FAILED"},
+    },
+    {
+        "id": 6,
+        "previousEventId": 5,
+        "timestamp": "2026-09-18T03:00:31+00:00",
+        "type": "ExecutionFailed",
+        "executionFailedEventDetails": {"error": "Glue.AWSGlueException"},
+    },
+]
+_SFN_EXECUTION_HISTORY = json.dumps({"events": _SFN_HISTORY_EVENTS})
+
 _CONSUMER_INVENTORY = """consumers:
   - table: glue_catalog.curated.pedidos
     service: athena
@@ -2461,6 +2514,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
         assert resultado["by_kind"].get("ctm.capability_incompatible") == 1, resultado["by_kind"]
         assert resultado["by_kind"].get("ctm.version_declared") == 1, resultado["by_kind"]
+        return resultado
+
+    if name == "sparkforge_analyze_sfn_history":
+        sfnh_path = tmp_path / "execucao.json"
+        sfnh_path.write_text(_SFN_EXECUTION_HISTORY, encoding="utf-8")
+        resultado = call_tool("sparkforge_analyze_sfn_history", {"path": str(sfnh_path)})
+        assert resultado["by_kind"].get("sfn.attempt") == 1, resultado["by_kind"]
+        assert resultado["by_kind"].get("sfn.job_run") == 1, resultado["by_kind"]
         return resultado
 
     if name == "sparkforge_analyze_step_functions":
@@ -3158,6 +3219,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_emr_eks", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_controlm_jobs", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_step_functions", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_sfn_history", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_airflow_dag", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),

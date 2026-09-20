@@ -108,6 +108,7 @@
     "sparkforge_analyze_plan",
     "sparkforge_analyze_pyspark",
     "sparkforge_analyze_s3_listing",
+    "sparkforge_analyze_sfn_history",
     "sparkforge_analyze_sql",
     "sparkforge_analyze_sql_metrics",
     "sparkforge_analyze_step_functions",

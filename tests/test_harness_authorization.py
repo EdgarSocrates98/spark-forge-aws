@@ -978,7 +978,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `_READ_ONLY`, le a definicao ASL em disco e declara `path`.
         # 99 -> 100 com `analyze_airflow_dag` (2026-09-19, `docs/sdd/AIRFLOW_DAG/`):
         # `_READ_ONLY`, le o arquivo .py do DAG em disco e declara `path`.
-        assert len(TOOLS) - len(sem_caminho) == 100
+        # 100 -> 101 com `analyze_sfn_history` (2026-09-20, `docs/sdd/SFN_HISTORY/`):
+        # `_READ_ONLY`, le o historico de execucao salvo em disco e declara `path`.
+        assert len(TOOLS) - len(sem_caminho) == 101
 
 
 class TestAImposicaoNoDespacho:

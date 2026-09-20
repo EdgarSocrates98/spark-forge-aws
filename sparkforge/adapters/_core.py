@@ -124,6 +124,10 @@ from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import EMITTED_KINDS as RUNTIME_DETECT_KINDS
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
+from sparkforge.facts.sfn_history import (
+    extract_sfn_history_path,
+    extract_sfn_history_tree,
+)
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.sql_metrics import extract_sql_metrics_path
@@ -2706,6 +2710,46 @@ def analyze_step_functions(
     detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_step_functions_facts(path)
+    return _facts_page(facts, "sfn.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze sfn-history
+# --------------------------------------------------------------------------- #
+#
+# Le o HISTORICO de execucao -- a saida salva de `aws stepfunctions
+# get-execution-history` -- e nunca a definicao. O par dele e
+# `analyze step-functions`, que le a definicao: um diz o que DEVIA acontecer, o
+# outro o que ACONTECEU, e o `fuse` confronta os dois.
+#
+# Nao ha `collect` par (D3 de `docs/sdd/SFN_HISTORY/design.md`): a chamada exige
+# credencial, e o operador salva a saida em arquivo. A API nao suporta EXPRESS.
+
+
+def _extract_sfn_history_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o JSON salvo de `aws stepfunctions get-execution-history`,\n"
+            f"  ou para o diretorio com eles:\n"
+            f"    sparkforge analyze sfn-history --path historicos/ "
+            f"--out .sparkforge/facts_sfn_history.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_sfn_history_tree(target, repo_root=target)
+    return extract_sfn_history_path(target, repo_root=target.parent)
+
+
+def analyze_sfn_history(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_sfn_history_facts(path)
     return _facts_page(facts, "sfn.unresolved", kind, limit, cursor, detail_level)
 
 

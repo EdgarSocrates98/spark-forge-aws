@@ -452,6 +452,21 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # O HISTORICO de execucao e o par da capacidade acima, e a diferenca e de natureza: a
+  # definicao diz o que DEVIA acontecer, o historico diz o que ACONTECEU. NAO HA
+  # `collect` PAR neste incremento, e a ausencia e decidida (D3 de
+  # `docs/sdd/SFN_HISTORY/design.md`): a chamada exige credencial, e a API nao suporta
+  # state machine EXPRESS.
+  - name: extract facts from an AWS Step Functions execution history
+    tools: [sparkforge_analyze_sfn_history]
+    cli: [analyze sfn-history]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   # O arquivo `.py` do DAG e codigo-fonte, como a definicao ASL da capacidade acima.
   # NAO HA `collect` PAR, e a ausencia e decidida (D1 de `docs/sdd/AIRFLOW_DAG/design.md`):
   # o metadado do Airflow em execucao exige acesso ao banco ou a API, e o `define` o poe

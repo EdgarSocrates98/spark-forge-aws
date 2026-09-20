@@ -94,6 +94,7 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_sdd_stamp": "2026-09-16: hash do upstream de um artefato SDD",
     "sparkforge_analyze_step_functions": "2026-09-19: definicao ASL do AWS Step Functions",
     "sparkforge_analyze_airflow_dag": "2026-09-19: arquivo .py de um DAG do Apache Airflow",
+    "sparkforge_analyze_sfn_history": "2026-09-20: historico de execucao do AWS Step Functions",
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

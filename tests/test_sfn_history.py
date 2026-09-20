@@ -274,3 +274,31 @@ def test_historico_incompleto_sai_nomeado_sem_perder_o_que_leu(tmp_path):
     [execucao] = _de(facts, "sfn.execution")
     assert execucao.attrs["source"] == "event_list"
     assert len(_de(facts, "sfn.attempt")) == 3
+
+
+def test_cli_e_tool_devolvem_os_mesmos_facts(tmp_path, capsys):
+    from sparkforge.adapters.cli import main
+    from sparkforge.adapters.tools import call_tool
+
+    entrada = tmp_path / "entrada"
+    entrada.mkdir()
+    (entrada / "execucao.json").write_text(
+        json.dumps(HISTORICO_COM_TRES_TENTATIVAS), encoding="utf-8"
+    )
+    saida = tmp_path / "facts.json"
+
+    codigo = main(["analyze", "sfn-history", "--path", str(entrada), "--out", str(saida)])
+    capsys.readouterr()
+    assert codigo == 0
+    pela_cli = json.loads(saida.read_text(encoding="utf-8"))
+
+    pela_tool = call_tool("sparkforge_analyze_sfn_history", {"path": str(entrada), "limit": 1000})
+    assert "error" not in pela_tool, pela_tool
+    assert pela_tool["total_count"] == len(pela_cli)
+    assert pela_tool["items"] == pela_cli
+    assert pela_tool["by_kind"]["sfn.attempt"] == 3
+    assert pela_tool["by_kind"]["sfn.job_run"] == 3
+    assert pela_tool["unresolved"] == 0
+
+    erro = call_tool("sparkforge_analyze_sfn_history", {"path": str(tmp_path / "nao-existe")})
+    assert "sparkforge analyze sfn-history" in erro["error"]
