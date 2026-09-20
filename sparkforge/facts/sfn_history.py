@@ -34,9 +34,10 @@ kinds, nao cinco.
   `execution_terminal_absent`, `execution_data_absent` e `job_run_id_unrecognized`.
 - `sfn.analyzed` -- a sentinela, com as contagens.
 - `sfn.retry_observado` -- DERIVADO, nunca lido de arquivo: `build_sfn_retry_observado`
-  casa as tentativas de um estado com o `sfn.task` de MESMO NOME que o ASL declara, e
-  `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite: `asl_absent`,
-  `state_name_absent_in_asl`, `state_name_ambiguous` e `declared_ceiling_unreadable`.
+  casa as tentativas de um estado NUMA EXECUCAO com o `sfn.task` de MESMO NOME que o
+  ASL declara, e `fusion.fuse` a chama. As razoes de `sfn.unresolved` que so ela emite:
+  `asl_absent`, `state_name_absent_in_asl`, `state_name_ambiguous` e
+  `declared_ceiling_unreadable`.
 
 ## Como uma tentativa e PAREADA, e por que pela cadeia
 
@@ -725,8 +726,8 @@ def extract_sfn_history_tree(root: Path, repo_root: Path | None = None) -> list[
     return sort_facts(facts)
 
 
-def _glue_por_estado(facts: Sequence[Fact], kind: str) -> dict[str, list[Fact]]:
-    """Nome do estado -> facts daquele kind que chamam `glue:startJobRun`.
+def _glue_de_kind(facts: Sequence[Fact], kind: str) -> list[tuple[str, Fact]]:
+    """(nome do estado, fact) dos facts daquele kind que chamam `glue:startJobRun`.
 
     Serve para os dois lados do confronto: `sfn.attempt` (medido) e `sfn.task`
     (declarado). O `subject` dos dois e diferente -- o do ASL e o CAMINHO do estado na
@@ -734,7 +735,7 @@ def _glue_por_estado(facts: Sequence[Fact], kind: str) -> dict[str, list[Fact]]:
     junta e a derivacao existe (o mesmo motivo de `bridge.py` e de
     `build_sfn_glue_link`).
     """
-    por_nome: dict[str, list[Fact]] = {}
+    casados: list[tuple[str, Fact]] = []
     for fact in facts:
         if fact.kind != kind:
             continue
@@ -744,8 +745,38 @@ def _glue_por_estado(facts: Sequence[Fact], kind: str) -> dict[str, list[Fact]]:
         nome = attrs.get("state_name")
         if not isinstance(nome, str) or not nome:
             continue
+        casados.append((nome, fact))
+    return casados
+
+
+def _glue_por_estado(facts: Sequence[Fact], kind: str) -> dict[str, list[Fact]]:
+    """Nome do estado -> facts DECLARADOS daquele kind. So o nome, porque so ele existe.
+
+    O ASL e outro artefato, e nada nele diz de que execucao ele e: o pareamento pelo
+    nome e o unico que o historico permite.
+    """
+    por_nome: dict[str, list[Fact]] = {}
+    for nome, fact in _glue_de_kind(facts, kind):
         por_nome.setdefault(nome, []).append(fact)
     return por_nome
+
+
+def _glue_por_execucao(facts: Sequence[Fact]) -> dict[tuple[str, str], list[Fact]]:
+    """(artefato, nome do estado) -> as tentativas MEDIDAS daquela execucao.
+
+    A chave leva o artefato porque cada EXECUCAO tem o seu proprio orcamento de retry.
+    Agrupar so pelo nome somaria as tentativas de execucoes diferentes, e a
+    `SF-SFNX-001` acusaria de estourar o teto dois runs que CABEM no retry declarado.
+    O artefato e a unidade que o historico da: um arquivo de `get-execution-history` e
+    uma execucao. Duas execucoes salvas no MESMO arquivo continuariam somando, e nao ha
+    campo que as separe -- `executionArn` so existe quando quem salvou o acrescentou, e
+    ele nao viaja por evento.
+    """
+    por_chave: dict[tuple[str, str], list[Fact]] = {}
+    for nome, fact in _glue_de_kind(facts, "sfn.attempt"):
+        artefato = str((fact.provenance or {}).get("artifact") or "")
+        por_chave.setdefault((artefato, nome), []).append(fact)
+    return por_chave
 
 
 def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
@@ -760,6 +791,13 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     `stateEnteredEventDetails.name`. Nao ha caminho de estado no historico, e por isso
     dois estados de mesmo nome em ramos de um `Parallel` sao AMBIGUIDADE, nao escolha.
 
+    Os DOIS LADOS SAO CHAVEADOS DIFERENTE, e a assimetria e deliberada. O lado MEDIDO
+    e por `(artefato, nome do estado)`: retry e orcamento de UMA execucao, e somar as
+    tentativas de duas acusaria de estourar o teto dois runs que cabem nele. O lado
+    DECLARADO continua so pelo nome, porque o ASL e outro artefato e nada nele diz de
+    que execucao ele e -- e um `sfn.task` pode, legitimamente, parear com varias
+    execucoes. Sai um `sfn.retry_observado` por execucao e por estado.
+
     O `teto_declarado` e `1 + failure_retry_max_attempts` do `sfn.task`: o Step
     Functions agenda o Task uma vez, mais `MaxAttempts` reagendamentos. O efetivo, a
     marca de `MaxAttempts` omitido e a regra de qual retrier casa a falha do job moram
@@ -769,18 +807,17 @@ def build_sfn_retry_observado(facts: Sequence[Fact]) -> list[Fact]:
     de cada tentativa esta em `sfn.job_run`, que e por onde `finops` responde custo com
     `dpu_seconds` medido.
     """
-    tentativas = _glue_por_estado(facts, "sfn.attempt")
+    tentativas = _glue_por_execucao(facts)
     if not tentativas:
         return []
     declaradas = _glue_por_estado(facts, "sfn.task")
     ha_asl = any(f.kind == "sfn.task" for f in facts)
     saida: list[Fact] = []
-    for nome in sorted(tentativas):
-        grupo = sorted(tentativas[nome], key=lambda f: f.id)
-        arquivo = str((grupo[0].subject or {}).get("file") or "")
-        subject = _attempt_subject(arquivo, nome)
+    for artefato, nome in sorted(tentativas):
+        grupo = sorted(tentativas[(artefato, nome)], key=lambda f: f.id)
+        subject = _attempt_subject(artefato, nome)
         proveniencia = {
-            "artifact": str((grupo[0].provenance or {}).get("artifact", "")),
+            "artifact": artefato,
             "artifact_sha256": "",
             "extractor": EXTRACTOR_ID,
             "derived_from": sorted(f.id for f in grupo),

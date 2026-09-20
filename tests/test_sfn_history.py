@@ -318,6 +318,99 @@ ASL_COM_RETRY_DE_UMA = {
 }
 
 
+ASL_COM_RETRY_DE_DUAS = {
+    "StartAt": "Carga",
+    "States": {
+        "Carga": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun.sync",
+            "Parameters": {"JobName": "carga"},
+            "Retry": [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 2}],
+            "End": True,
+        }
+    },
+}
+
+
+def _historico_de_duas_tentativas(job_run_a: str, job_run_b: str) -> dict:
+    """Uma execucao com DUAS tentativas do estado `Carga`, as duas falhando."""
+    return {
+        "events": [
+            _evento(1, 0, "ExecutionStarted", 0),
+            _evento(2, 1, "TaskStateEntered", 1, stateEnteredEventDetails={"name": "Carga"}),
+            _evento(3, 2, "TaskScheduled", 2, **_agendado()),
+            _evento(4, 3, "TaskSubmitted", 3, **_submetido({"JobRunId": job_run_a})),
+            _evento(
+                5,
+                4,
+                "TaskFailed",
+                30,
+                taskFailedEventDetails={"error": "Glue.AWSGlueException", "cause": "falhou"},
+            ),
+            _evento(6, 5, "TaskScheduled", 31, **_agendado()),
+            _evento(7, 6, "TaskSubmitted", 32, **_submetido({"JobRunId": job_run_b})),
+            _evento(
+                8,
+                7,
+                "TaskFailed",
+                60,
+                taskFailedEventDetails={"error": "Glue.AWSGlueException", "cause": "falhou"},
+            ),
+            _evento(
+                9,
+                8,
+                "ExecutionFailed",
+                61,
+                executionFailedEventDetails={"error": "Glue.AWSGlueException"},
+            ),
+        ]
+    }
+
+
+def test_duas_execucoes_nao_somam_tentativas_uma_da_outra():
+    """Cada EXECUCAO tem o seu proprio orcamento de retry (A1).
+
+    O pareamento com o `sfn.task` do ASL e pelo NOME do estado -- e o unico que o
+    historico permite --, mas o lado MEDIDO e por EXECUCAO: dois historicos do mesmo
+    estado no mesmo pool sao duas execucoes, nao uma com o dobro das tentativas.
+    Somar os dois faria a `SF-SFNX-001` acusar dois runs que CABEM no retry declarado.
+    """
+    from sparkforge.facts.fusion import fuse
+    from sparkforge.facts.stepfunctions import extract_stepfunctions
+
+    primeira = extract_sfn_history(
+        _historico_de_duas_tentativas("jr_1a", "jr_1b"), "execucao-a.json"
+    )
+    segunda = extract_sfn_history(
+        _historico_de_duas_tentativas("jr_2a", "jr_2b"), "execucao-b.json"
+    )
+    definicao = extract_stepfunctions(ASL_COM_RETRY_DE_DUAS, "carga.asl.json")
+
+    fundidos = fuse(definicao + primeira + segunda)
+    confrontos = sorted(
+        (f for f in fundidos if f.kind == "sfn.retry_observado"),
+        key=lambda f: f.subject["file"],
+    )
+    assert [f.subject["file"] for f in confrontos] == ["execucao-a.json", "execucao-b.json"]
+    for confronto in confrontos:
+        assert confronto.subject["symbol"] == "Carga"
+        # 1 + MaxAttempts = 3, e cada execucao agendou 2: nenhuma passa do teto.
+        assert confronto.measures == {"tentativas_observadas": 2, "teto_declarado": 3}
+        assert confronto.measures["tentativas_observadas"] <= confronto.measures[
+            "teto_declarado"
+        ]
+    # A proveniencia de cada um cita SO as tentativas daquela execucao, mais o `sfn.task`.
+    por_arquivo = {
+        "execucao-a.json": primeira,
+        "execucao-b.json": segunda,
+    }
+    for confronto in confrontos:
+        esperado = {
+            f.id for f in por_arquivo[confronto.subject["file"]] if f.kind == "sfn.attempt"
+        } | {f.id for f in definicao if f.kind == "sfn.task"}
+        assert set(confronto.provenance["derived_from"]) == esperado
+
+
 def test_fuse_confronta_o_retry_declarado_com_o_observado(tmp_path):
     from sparkforge.facts.fusion import fuse
     from sparkforge.facts.stepfunctions import extract_stepfunctions
