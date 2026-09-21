@@ -296,7 +296,7 @@ def feature_limpa(repo: Path, profile: str = "dev", feature: str = "F1") -> dict
         "tasks": [{
             "id": "T1",
             "status": "done",
-            "red": {"command": "pytest tests/test_alvo.py", "exit": 1},
+            "red": {"command": "pytest tests/test_alvo.py::test_alvo", "exit": 1},
             "green": {"command": "pytest tests/test_alvo.py", "exit": 0},
         }],
         "claims": [{"text": "t", "evidence_ref": "tests/test_alvo.py::test_alvo"}],
@@ -1046,7 +1046,8 @@ def test_red_not_declared_exit_zero(tmp_path):
 def test_task_pulada_nao_exige_red(tmp_path):
     caminhos = _ate(tmp_path, "build_report")
     _reescreve(caminhos["build_report"], tasks=[{"id": "T1", "status": "skipped"}])
-    assert _codigos(check(tmp_path)) == ([], [])
+    # a tarefa pulada nao deve red; o criterio que so ela cobria fica sem vermelho
+    assert _codigos(check(tmp_path)) == (["acceptance_never_red"], [])
 
 
 def test_claim_without_evidence(tmp_path):
