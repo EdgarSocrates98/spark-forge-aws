@@ -1,0 +1,64 @@
+# Operacao do job Glue Spark -> permissao que ela exige, por modelo de acesso.
+#
+# Lido por `sparkforge/facts/lakeformation_missing_grant.py::load_table`. Cada linha
+# cita a fonte pela chave de `fontes` e traz a frase literal em `quote`. Linha sem
+# fonte ou sem frase reprova a carga: a tabela nao e escrita de memoria.
+#
+# Duas correcoes medidas contra a fonte em 2026-09-21 (docs/sdd/LF_GRANTS/define.md):
+# escrita sob FTA exige ALL, e nao INSERT, porque a pagina de FTA do Glue e mais
+# especifica que a referencia generica; e DATA_LOCATION_ACCESS nao autoriza escrita
+# de dado -- "is not needed to query or update underlying data".
+fontes:
+  lf_reference: "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html"
+  fta: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html"
+  fgac_considerations: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+operacoes:
+  - operation: read
+    model: fta
+    side: lf
+    resource_level: table
+    requires: [SELECT]
+    source: lf_reference
+    quote: "A principal with this permission can view a table in the Data Catalog, and can query the underlying data in Amazon S3 at the location specified by the table."
+  - operation: read
+    model: fgac
+    side: lf
+    resource_level: table
+    requires: [SELECT]
+    source: lf_reference
+    quote: "A principal with this permission can view a table in the Data Catalog, and can query the underlying data in Amazon S3 at the location specified by the table."
+  - operation: write
+    model: fta
+    side: lf
+    resource_level: table
+    requires: [ALL]
+    source: fta
+    quote: "AWS Glue Spark jobs that write/delete data in Amazon S3 require AWS Lake Formation ALL permission."
+  - operation: overwrite
+    model: fta
+    side: lf
+    resource_level: table
+    requires: [ALL]
+    source: fta
+    quote: "AWS Glue Spark jobs that write/delete data in Amazon S3 require AWS Lake Formation ALL permission."
+  - operation: write
+    model: fgac
+    side: iam
+    resource_level: table
+    requires: ["s3:PutObject"]
+    source: fgac_considerations
+    quote: "If your job runtime role has the necessary S3 permissions, you can use it to run write operations"
+  - operation: overwrite
+    model: fgac
+    side: iam
+    resource_level: table
+    requires: ["s3:PutObject", "s3:DeleteObject"]
+    source: fgac_considerations
+    quote: "If your job runtime role has the necessary S3 permissions, you can use it to run write operations"
+  - operation: create
+    model: fta
+    side: lf
+    resource_level: database
+    requires: [CREATE_TABLE]
+    source: lf_reference
+    quote: "A principal with this permission can create a metadata table or resource link in the Data Catalog within the specified database."
