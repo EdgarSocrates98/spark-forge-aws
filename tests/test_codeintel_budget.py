@@ -2,9 +2,9 @@
 
 AS QUATRO AFIRMACOES QUE ESTE ARQUIVO EXISTE PARA PRENDER
 ----------------------------------------------------------
-1. O TETO E EM BYTE, E O BYTE E DE UTF-8. Este repositorio ja tem quatro
-   estimadores de token, todos `len/4`, nenhum contando byte -- e todos
-   subestimam texto acentuado, que e todo texto deste projeto. Um teto sobre
+1. O TETO E EM BYTE, E O BYTE E DE UTF-8. Este repositorio tem um estimador
+   de token por caractere, `len/4`, que nao conta byte -- e ele
+   subestima texto acentuado, que e todo texto deste projeto. Um teto sobre
    estimativa para de segurar no dia em que a estimativa erra para menos, e
    ninguem descobre porque nada compara com a verdade.
 2. A ARITMETICA E INTEIRA, E O MOTIVO ESTA MEDIDO E E MAIS FRACO DO QUE PARECE.
@@ -31,9 +31,9 @@ from sparkforge.codeintel import budget
 def test_a_estimativa_conta_byte_de_utf8_e_nao_caractere():
     """"ç" e um caractere e dois bytes.
 
-    Os quatro estimadores deste repositorio usam `len(texto)`, que conta
-    caractere. Sobre texto em portugues eles subestimam sistematicamente, e um
-    teto construido sobre eles seria menor que a saida real.
+    O estimador por caractere deste repositorio usa `len(texto)`, que conta
+    caractere. Sobre texto em portugues ele subestima sistematicamente, e um
+    teto construido sobre ele seria menor que a saida real.
     """
     assert len("ç") == 1
     assert len("ç".encode()) == 2

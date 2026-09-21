@@ -23,11 +23,18 @@ def estimate_tokens(value: Any) -> int:
 
     E heuristica, nao medida: nunca se veste de token de provider (regra 24 do
     CLAUDE.md). E conta caractere, nao byte UTF-8, e por isso subestima texto acentuado.
+
+    Valor que o JSON nao serializa -- set, bytes, Path, objeto, dict com chaves de tipos
+    misturados -- cai para `str(valor)`, que e o que `sparkforge.tools.estimate_tokens`
+    contava antes de virar alias desta funcao: a API publica nunca levantou para eles.
     """
     if isinstance(value, str):
         text = value
     else:
-        text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+        try:
+            text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+        except (TypeError, ValueError):
+            text = str(value)
     return max(1, (len(text) + 3) // 4)
 
 def fingerprint(value: Any) -> str:
