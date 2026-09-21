@@ -107,6 +107,7 @@ def test_todo_sf_declara_area_que_julga():
 
 VIVOS = (
     "AGENTS.md",
+    "docs/agentic-expansion.md",
     "docs/guia/05-agents-e-skills.md",
     "docs/guia/usos/athena-e-sql.md",
     "docs/guia/usos/iceberg-e-parquet.md",
