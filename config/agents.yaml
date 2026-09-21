@@ -16,9 +16,15 @@ defaults:
   - snapshot
 agents:
 - name: sf-inventory
+  # `sparkforge_inventory` saiu daqui (docs/sdd/CONFIG_OCA/, 2026-09-20): nao existe em
+  # `sparkforge.adapters.tools.TOOLS` (109 tools), e o proprio contrato do executor,
+  # `agents/executors/sf-inventory.md`, nao a cita em lugar nenhum -- as tools que ele
+  # roda sao `sparkforge_doctor`, `sparkforge_runtime_detect`, `sparkforge_case_get`,
+  # `sparkforge_collect_verify`, a familia `sparkforge_collect_*` e `sparkforge_scan`.
+  # Era nome sem artefato, registrado como defeito em
+  # `docs/superpowers/specs/2026-08-29-context-accounting-design.md` desde 2026-08-29.
   role: inventory
   allowed_tools:
-  - sparkforge_inventory
   - sparkforge_runtime_detect
   knowledge_refs:
   - knowledge/INDEX.md
