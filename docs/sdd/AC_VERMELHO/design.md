@@ -17,6 +17,8 @@ files:
   - {path: skills/sdd-build/SKILL.md, action: modify, reason: "o red de cada tarefa cita o node id do criterio que prova; recusa nova na lista da fase"}
   - {path: docs/surface.lock.json, action: modify, reason: "editar SKILL.md move os bytes da superficie de skills (regra 26)"}
   - {path: docs/claims.lock.json, action: modify, reason: "o .py novo move alegacoes de corpus; so as que o gate de lastro listar"}
+  - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "o gate de lastro moveu o numero de corpus publicado aqui quando o .py de teste novo entrou; so o que a saida do gate listar"}
+  - {path: docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md, action: modify, reason: "o gate de lastro moveu o numero de corpus publicado aqui quando o .py de teste novo entrou; so o que a saida do gate listar"}
   - {path: tests/test_sdd.py, action: modify, reason: "feature_limpa registra red com o arquivo e exit 1, que nao conta; medido com o gate dev-only, 6 testes caem. O red passa a citar o node id, e test_task_pulada_nao_exige_red passa a esperar acceptance_never_red (a tarefa pulada deixa o AC1 sem vermelho)"}
   - {path: .claude/skills/sdd-define/SKILL.md, action: modify, reason: "espelho gerado por scripts/sync_skills.py; o AC5 e sync_skills.py --check"}
   - {path: .claude/skills/sdd-build/SKILL.md, action: modify, reason: "espelho gerado por scripts/sync_skills.py; o AC5 e sync_skills.py --check"}
