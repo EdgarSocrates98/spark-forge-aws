@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/AC_VERMELHO/design.md
-  sha256: "de23815ff0a4144e7c06f50a5beefdab0ce5374e235c1496100bb3c76ce704df"
+  sha256: "b1c78ad94b04dad58fbcea2f1781af552d759fc77a753d806b1b685e82402ec0"
 tasks:
   - id: T1
     files: [tests/test_sdd_ac_vermelho.py, sparkforge/sdd/checks.py, sparkforge/sdd/schema/define.json, docs/sdd/CONTRATO.md, tests/test_sdd.py, docs/claims.lock.json]
