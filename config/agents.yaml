@@ -30,6 +30,12 @@ agents:
   - knowledge/INDEX.md
   - knowledge/cross-service-constraints.md
 - name: sf-extractor
+  # ATENCAO antes de por este arquivo em `VIVOS` de `tests/test_sf_stubs.py`: o valor
+  # abaixo COLIDE por nome com `evidence-extractor`, um dos 16 contratos que
+  # `docs/sdd/CONFIG_OCA/` removeu de `subagents/`. Nao e referencia pendurada -- `role`
+  # e string livre que `sparkforge/registry/loader.py` copia para o `AgentManifest`, e
+  # nao resolve para arquivo nenhum. Por isso ele fica fora do MAPA do gate. Mas o teste
+  # de documento vivo casa por NOME, e poria este arquivo vermelho sem excecao escrita.
   role: evidence-extractor
   allowed_tools:
   - sparkforge_collect_event_log
