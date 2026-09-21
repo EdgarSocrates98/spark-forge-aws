@@ -83,7 +83,7 @@ def _escolha_com_piso(chunks: list[ContextChunk], orcamento: int) -> list[Contex
 
 def _caso_sintetico(semente: int) -> tuple[list[ContextChunk], int]:
     """Chunks de 0 a 40 caracteres (repetidos, para exercitar a deduplicacao) e um orcamento."""
-    sorteio = random.Random(semente)
+    sorteio = random.Random(semente)  # noqa: S311 -- deterministico p/ teste, nao cripto
     chunks = [
         ContextChunk(
             source_file=f"f{indice}.py",

@@ -2999,23 +2999,23 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **778** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **779** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "Relida em 2026-09-21 (docs/sdd/AC_VERMELHO/): tests/test_sdd_ac_vermelho.py acrescentou um .py ao corpus.",
+      "note": "Relida em 2026-09-21 (docs/sdd/AC_VERMELHO/): tests/test_sdd_ac_vermelho.py acrescentou um .py ao corpus. Relida em 2026-09-21 (docs/sdd/TOKEN_ESTIMATE_UNICO/): tests/test_token_estimate_unico.py acrescentou um .py ao corpus.",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 778
+          "value": 779
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "778",
+      "text": "779",
       "type": "number"
     },
     {
@@ -3696,23 +3696,23 @@
       "type": "number"
     },
     {
-      "context": "  no mesmo corpus, tem **243041** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "  no mesmo corpus, tem **243470** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "Relida em 2026-09-20 (docs/sdd/CONFIG_OCA/), pelo mesmo corpus.",
+      "note": "Relida em 2026-09-20 (docs/sdd/CONFIG_OCA/), pelo mesmo corpus. Relida em 2026-09-21 (docs/sdd/TOKEN_ESTIMATE_UNICO/): tests/test_token_estimate_unico.py acrescentou um .py ao corpus.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 243041
+          "value": 243470
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "243041",
+      "text": "243470",
       "type": "number"
     },
     {
@@ -7658,19 +7658,20 @@
       "note": ""
     },
     {
-      "context": "| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/agents/budget.py:estimate_tokens()`, `sparkforge/tools/cost.py:estimate_tokens()`, e mais duas cópias em linha dentro de `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py`. As duas primeiras arredondam para cima; as duas em linha truncam. A mesma pergunta, quatro implementações, e essas **divergem** — ao contrário das quatro de segredo | `tests/test_economy_engine.py` |",
+      "context": "| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe **uma vez**: `sparkforge/agents/budget.py:estimate_tokens()` (comprimento sobre quatro, arredondado para cima e nunca zero). `sparkforge/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py` a chamam — até TOKEN_ESTIMATE_UNICO eram quatro cópias, duas delas com piso. Parcial porque conta caractere e não byte UTF-8, e subestima texto acentuado; `sparkforge/codeintel/budget.py:estimar_tokens()` mede byte e fica fora de propósito, porque não decide corte | `tests/test_token_estimate_unico.py` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-603",
       "line": 179,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/budget.py",
-        "test": "tests/test_agent_runtime.py"
+        "symbol": "estimate_tokens",
+        "test": "tests/test_token_estimate_unico.py"
       },
       "state": "PROVADA",
       "text": "Estimador de token local, conservador, sem download",
       "type": "capability",
-      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): economy/budget.py, agents/supervisor.py, agents/model_policy.py e tests/test_agent_autonomy.py sairam sem uso em producao; a prova passou a apontar para o que ficou."
+      "note": "Remedido em 2026-09-15 (item 3 da revisao critica): economy/budget.py, agents/supervisor.py, agents/model_policy.py e tests/test_agent_autonomy.py sairam sem uso em producao; a prova passou a apontar para o que ficou. Remedido em 2026-09-21 (TOKEN_ESTIMATE_UNICO): as quatro copias viraram uma, agents/budget.py:estimate_tokens, que tools/cost.py reexporta e context/funnel.py e providers/mock.py chamam; a prova passou a ser tests/test_token_estimate_unico.py, que confere a identidade."
     },
     {
       "context": "| Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres por token é heurística e devolve `is_estimate: True` em todo retorno; `sparkforge/agents/observability.py` devolve `None` quando o total é desconhecido, em vez de somar zero | `tests/test_agent_runtime.py` |",
