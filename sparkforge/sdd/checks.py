@@ -517,18 +517,29 @@ def _gate_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        "(exit diferente de zero)")
 
 
+def _caminho_normal(texto: str) -> str:
+    """`\\` vira `/` e o `./` inicial some: o mesmo caminho escrito de dois jeitos casa."""
+    return texto.replace("\\", "/").removeprefix("./")
+
+
+# exit 5 no pytest e "nenhum teste coletado": nada foi visto falhar
+_SAIDAS_QUE_NAO_SAO_VERMELHO = frozenset({0, 5})
+
+
 def _vermelho_cita(referencia: str, vermelho: dict[str, Any] | None) -> bool:
     """O `red` viu `referencia` falhar: o node id no comando, ou so o arquivo com exit 2.
 
     Exit 2 no pytest e erro de coleta e deixa o arquivo inteiro vermelho; exit 1 com so
-    o arquivo nao diz qual teste falhou. A comparacao e por token do comando, para que
-    `::test_x` nao case `::test_x_outro`.
+    o arquivo nao diz qual teste falhou; exit 5 e nenhum teste coletado. A comparacao e
+    por token do comando, para que `::test_x` nao case `::test_x_outro`, e a referencia
+    passa pela mesma normalizacao do token. Confere citacao, nao execucao.
     """
-    if not vermelho or vermelho["exit"] == 0:
+    if not vermelho or vermelho["exit"] in _SAIDAS_QUE_NAO_SAO_VERMELHO:
         return False
-    arquivo, _ = _separa_ref(referencia)
+    referencia = _caminho_normal(referencia)
+    arquivo = _caminho_normal(_separa_ref(referencia)[0])
     for bruto in str(vermelho["command"]).split():
-        token = bruto.strip("'\"").replace("\\", "/").removeprefix("./")
+        token = _caminho_normal(bruto.strip("'\""))
         if token == referencia or token.startswith(f"{referencia}["):
             return True
         if vermelho["exit"] == 2 and token == arquivo:
@@ -565,7 +576,8 @@ def _gate_acceptance_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
             continue
         donas = [do_build[t["id"]] for t in plano.meta["tasks"]
                  if item["id"] in t["covers"] and t["id"] in do_build]
-        if any(_vermelho_cita(prova["ref"], tarefa.get("red")) for tarefa in donas):
+        if any(tarefa["status"] == "done" and _vermelho_cita(prova["ref"], tarefa.get("red"))
+               for tarefa in donas):
             continue
         if any(_red_recusado(tarefa) for tarefa in donas):
             continue

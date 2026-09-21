@@ -139,6 +139,70 @@ def test_feature_entregue_e_historico_e_nao_e_conferida(tmp_path):
     assert [r for r in relatorio["refused"] if r["code"] == "acceptance_never_red"] == []
 
 
+def test_referencia_normalizada_como_o_token(tmp_path):
+    """F1: `./` e `\\` no `verified_by.ref` somem como somem no token do comando."""
+    caminhos = _sem_ship(tmp_path)
+    meta = _define_meta(caminhos)
+    for ref in (f"./{NODE}", NODE.replace("/", "\\")):
+        meta["acceptance"][0]["verified_by"]["ref"] = ref
+        _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+        _restampa(tmp_path)
+        _red(caminhos, f"pytest ./{NODE}", 1)
+        assert "acceptance_never_red" not in _codigos(check(tmp_path))[0], ref
+        # so o arquivo, com exit 2, tambem casa a referencia normalizada
+        _red(caminhos, "pytest tests/test_alvo.py", 2)
+        assert "acceptance_never_red" not in _codigos(check(tmp_path))[0], ref
+
+
+def test_so_tarefa_done_conta_como_vermelho(tmp_path):
+    """F2: tarefa `skipped` ou `blocked` que cita o node nao viu o criterio vermelho."""
+    caminhos = _sem_ship(tmp_path)
+    plano = _meta(caminhos["plan"])
+    plano["tasks"].append({
+        "id": "T2", "files": [], "covers": ["AC1"],
+        "test": {"path": "tests/test_alvo.py", "name": "test_alvo"},
+    })
+    _reescreve(caminhos["plan"], tasks=plano["tasks"])
+    for status in ("skipped", "blocked"):
+        build = _meta(caminhos["build_report"])
+        build["tasks"] = [
+            {"id": "T1", "status": "done",
+             "red": {"command": "python -m pytest tests/test_alvo.py::test_outro -q", "exit": 1},
+             "green": {"command": f"python -m pytest {NODE} -q", "exit": 0}},
+            {"id": "T2", "status": status,
+             "red": {"command": f"python -m pytest {NODE} -q", "exit": 1}},
+        ]
+        _reescreve(caminhos["build_report"], tasks=build["tasks"])
+        _restampa(tmp_path)
+        assert "acceptance_never_red" in _codigos(check(tmp_path))[0], status
+
+
+def test_exit_5_nao_e_vermelho(tmp_path):
+    """F3: exit 5 do pytest e nenhum teste coletado, nao falha vista."""
+    caminhos = _sem_ship(tmp_path)
+    _red(caminhos, f"python -m pytest {NODE} -q", 5)
+    assert _codigos(check(tmp_path)) == (["acceptance_never_red"], [])
+
+
+def test_guarda_so_de_espaco_unicode_e_recusada(tmp_path):
+    """F4: `guard` feito so de espaco Unicode (ex.: U+200B) nao e motivo."""
+    caminhos = _sem_ship(tmp_path)
+    meta = _define_meta(caminhos)
+    for vazio in ("​", "  ", "﻿", "_ - ."):
+        meta["acceptance"][0]["guard"] = vazio
+        _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+        _restampa(tmp_path)
+        recusas = check(tmp_path)["refused"]
+        assert ("schema_invalid", "docs/sdd/F1/define.md", "acceptance/0/guard") in {
+            (r["code"], r["path"], r["field"]) for r in recusas
+        }, repr(vazio)
+    # motivo com letra acentuada passa no schema
+    meta["acceptance"][0]["guard"] = "ávido por regressão"
+    _reescreve(caminhos["define"], acceptance=meta["acceptance"])
+    _restampa(tmp_path)
+    assert "schema_invalid" not in _codigos(check(tmp_path))[0]
+
+
 def test_feature_operator_nao_e_conferida(tmp_path):
     """D5: so o perfil dev e conferido; no operator o contrato de `moved` fica como era."""
     operador = feature_limpa(tmp_path / "operador", "operator")
