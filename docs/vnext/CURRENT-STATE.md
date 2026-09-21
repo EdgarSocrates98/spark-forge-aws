@@ -51,7 +51,7 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 |---|---|---|---|
 | **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase (Phase Loop) |
 | **Skills** | 51 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
-| **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens) |
+| **Subagents** | 0 | — (o registro e os contratos saíram em `docs/sdd/CONFIG_OCA/`) | Não há mais contrato efêmero: nenhum módulo de `sparkforge/`, `scripts/` ou `tests/` os lia |
 | **Teams** | 1 | `config/teams-expansion.yaml` | Composições de times (governance-security) |
 | **Extratores de Fatos** | — | `sparkforge/facts/*.py` | Fatos determinísticos extraídos localmente |
 | **Catálogos de Regras** | — | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |
@@ -77,7 +77,7 @@ artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 
 ## 4. Weaknesses & Dívida Técnica (Fragilidades)
 
-1. **Fragmentação de Registros**: Definições de agentes e skills espalhadas por múltiplos arquivos (`config/agents.yaml`, `config/subagents.yaml`, `config/agentic-expansion.yaml`, `config/teams-expansion.yaml`, `agents/*.md`, `skills/*`).
+1. **Fragmentação de Registros**: Definições de agentes e skills espalhadas por múltiplos arquivos (`config/agents.yaml`, `config/agentic-expansion.yaml`, `config/teams-expansion.yaml`, `agents/*.md`, `skills/*`).
 2. **Sincronização Manual de Plataformas**: A geração de espelhos para IDEs depende de scripts Python pontuais (`sync_skills.py`, `install_skills.py`) em vez de um compilador canônico com pipeline de exportação padronizado.
 3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não há engine unificado que aplique a cascata de 7 tiers (Tier 0 Deterministic → Tier 1 Cache → Tier 2 Retrieval → Tier 3 Cheap → Tier 4 Specialist → Tier 5 Premium → Tier 6 Multi-Agent).
 4. **Model Router Inicial**: Seleção de modelos baseada em regras simples em vez de avaliação multidimensional (complexidade × risco × capacidade × custo × privacidade).

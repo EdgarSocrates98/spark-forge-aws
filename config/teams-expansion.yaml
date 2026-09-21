@@ -4,4 +4,7 @@ teams:
   - name: governance-security
     coordinator: sf-security-reviewer
     members: [sf-lake-formation-specialist]
-    handoffs: [security-gate, schema-compatibility-checker, mutation-risk-checker]
+    # `handoffs` saiu com os 16 contratos de `subagents/` (docs/sdd/CONFIG_OCA/, 2026-09-20):
+    # os tres nomes apontavam para arquivos que nao existem mais. Chave ausente vira lista
+    # vazia em `sparkforge/registry/loader.py`; `handoffs: []` seria convite a reencher sem
+    # criterio, como no D2.

@@ -1,8 +1,18 @@
 # Agentic Expansion e Offline First
 
-> **Desvio (2026-09-19, feature `docs/sdd/SF_STUBS/`):** as 35 áreas `agentic-sf-*`, os
-> 19 agentes `sf-*` que só as declaravam e 10 skills sem artefato saíram do repositório.
-> Este documento é registro histórico e cita nomes que não existem mais.
+> **Este documento é vivo, e passou a ser conferido (2026-09-20).** Até aqui ele carregava
+> um aviso de "registro histórico" e, sob esse aviso, prosa remedida a cada limpeza — as
+> duas coisas ao mesmo tempo. Três medidas desempataram: `docs/operations-guide.md`, que é
+> documento vivo, manda o leitor para cá como *a arquitetura detalhada*; o AC4 de
+> `docs/sdd/CONFIG_OCA/define.md` cobra dele o estado de **hoje**, e histórico se corrige
+> com nota de desvio, não com reescrita; e os comandos da seção *Verificação* rodam nesta
+> árvore. Agora ele está na tupla `VIVOS` de `tests/test_sf_stubs.py`, que recusa citação
+> de nome removido — antes, o AC4 apontava para um teste cego justamente para ele.
+>
+> O histórico das duas limpezas: a feature `docs/sdd/SF_STUBS/` (2026-09-19) removeu as 35
+> áreas `agentic-sf-*`, os 19 agentes `sf-*` que só as declaravam e 10 skills sem artefato;
+> `docs/sdd/CONFIG_OCA/` (2026-09-20) removeu as 7 tools declaradas que não existiam e os
+> 16 contratos de `subagents/`.
 
 > **Dois pacotes com nome parecido, e eles não são a mesma coisa.** Este
 > documento descreve `sparkforge/agents/` — `ConversationRoom`,
@@ -18,7 +28,20 @@
 
 ## O que foi criado
 
-A expansao adiciona dez agents permanentes, dezesseis subagents efemeros, seis ferramentas locais deterministicas, seis knowledge bases novas, cinco times cooperativos e um manifesto SHA-256 para todos os documentos locais. Os registries sao `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`.
+Medido nesta árvore em 2026-09-20, os registros declaram **2** agents permanentes
+(`sf-security-reviewer` e `sf-lake-formation-specialist`), **1** time cooperativo, e um
+bloco `knowledge` de **8** entradas que não são 8 bases: são **7 documentos `.md` mais o
+manifesto de checksums** `knowledge/offline-manifest.json`, que lista, ele próprio, **56**
+documentos locais. Contar o manifesto como base é somar o índice ao acervo. Os blocos
+`tools` e `subagents` saíram inteiros: **0** ferramentas e **0** subagents declarados —
+nenhuma das sete tools existia em `sparkforge.adapters.tools.TOOLS`, e os dezesseis
+contratos de `subagents/` não tinham leitor em `sparkforge/`, `scripts/` nem `tests/`
+(feature `docs/sdd/CONFIG_OCA/`). Os registros que restam são
+`config/agentic-expansion.yaml` e `config/teams-expansion.yaml`; `config/subagents.yaml`
+não existe mais. A frase anterior prometia dez agents, dezesseis subagents, seis
+ferramentas, seis knowledge bases e cinco times, e estava defasada desde o SF_STUBS, não
+só desde esta mudança. Os seis módulos de `sparkforge/tools/` listados abaixo continuam
+existindo — eles são código, não nome declarado em registro.
 
 ## Garantia sem internet
 
@@ -52,22 +75,33 @@ O comando `offline verify` valida o SHA-256 de cada arquivo listado no manifesto
 
 ## Ordem de cooperacao
 
-1. O coordenador empacota objetivo e artefatos com `intake-packager`.
-2. `evidence-extractor` produz fatos locais.
-3. O especialista permanente formula hipoteses e pede `cross-reviewer`.
-4. `schema-compatibility-checker`, `lineage-impact-analyzer`, `security-gate` ou `cost-estimator` executam gates focados.
-5. `regression-judge`, `rollback-planner` e `release-gate` fecham a validacao.
-6. O supervisor escreve handoff com unresolved e next_step quando faltar evidencia.
+A ordem que este documento prescrevia — seis passos por dez contratos efêmeros de
+`subagents/` — **não existe mais**, e não foi substituída por outra igual: os 16 contratos
+saíram porque nenhum módulo de `sparkforge/`, `scripts/` ou `tests/` os lia, e o registro
+declara hoje **0** subagents.
 
-## Times novos
+A ordem que **existe**, medida nesta árvore em 2026-09-20, é o laço de executores, e ela
+não é efêmera — é arquivo de contrato:
 
-| Time | Coordenador | Missao |
-| --- | --- | --- |
-| Evidence Quality | `sf-evidence-verifier` | Evidencia, avaliacao, contexto e memoria |
-| Governance Security | `sf-security-reviewer` | Lake governance, lineage, schema e mutacao |
-| Streaming Reliability | `sf-kinesis-specialist` | Lag, replay, checkpoint e resiliencia |
-| FinOps Data | `sf-cost-reviewer` | Custo de dados, infraestrutura e tokens |
-| Agent Quality | `sf-agent-evaluation-specialist` | Golden cases, regressao e seguranca |
+`sf-inventory` → `sf-extractor` → `sf-judge` → `sf-verifier` → `sf-synthesizer`
+
+São **5** contratos em `agents/executors/`, e **12** agentes de `agents/` os declaram no
+campo `executors:` do frontmatter. Cada um faz **uma** função do laço e devolve ao
+coordenador; quem manda em todos é `AGENT_PROTOCOL.md`. O inventário é o único que pode
+começar do zero, e o que falta coletar sai em `case.open_questions` com o comando de
+recoleta — nunca como afirmação sem artefato.
+
+## Times
+
+| Time | Coordenador | Membros | Handoffs |
+| --- | --- | --- | --- |
+| `governance-security` | `sf-security-reviewer` | `sf-lake-formation-specialist` | — |
+
+**1** time, lido de `config/teams-expansion.yaml` pelo `CanonicalRegistry`. A tabela
+anterior listava cinco, quatro deles coordenados por agentes que o SF_STUBS removeu. A
+coluna `Handoffs` está vazia de propósito: os três nomes que havia apontavam para
+contratos apagados, e `handoffs` ausente vira lista vazia em
+`sparkforge/registry/loader.py` — chave vazia seria convite a reencher sem critério.
 
 ## Limites
 

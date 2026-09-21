@@ -6,33 +6,6 @@
     "sf-security-reviewer",
     "sf-lake-formation-specialist"
   ],
-  "subagents": [
-    "intake-packager",
-    "evidence-extractor",
-    "hypothesis-generator",
-    "experiment-designer",
-    "benchmark-comparator",
-    "schema-compatibility-checker",
-    "lineage-impact-analyzer",
-    "cost-estimator",
-    "security-gate",
-    "mutation-risk-checker",
-    "cross-reviewer",
-    "source-verifier",
-    "regression-judge",
-    "handoff-preparer",
-    "rollback-planner",
-    "release-gate"
-  ],
-  "tools": [
-    "sparkforge_offline_knowledge_verify",
-    "sparkforge_offline_knowledge_search",
-    "sparkforge_context_pack",
-    "sparkforge_schema_compare",
-    "sparkforge_lineage_extract",
-    "sparkforge_eval_golden_case",
-    "sparkforge_cost_estimate"
-  ],
   "knowledge": [
     "knowledge/streaming-reliability.md",
     "knowledge/lake-governance.md",
