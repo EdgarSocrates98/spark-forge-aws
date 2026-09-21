@@ -71,7 +71,7 @@ Campo fora do schema da fase é `schema_invalid`.
 | campo | forma |
 |---|---|
 | `hypothesis` | `{claim, prediction, experiment}`, os três não vazios |
-| `acceptance` | ≥ 1: `{id: AC<n>, statement, verified_by: {kind, ref}}` |
+| `acceptance` | ≥ 1: `{id: AC<n>, statement, verified_by: {kind, ref}, guard?}`; `guard` é o motivo, texto com ao menos uma letra ou dígito, de uma guarda de regressão (passa antes e depois por desenho) e isenta o item de `acceptance_never_red` |
 | `success` | `{id: SC<n>, metric, source?}` |
 | `out_of_scope` | lista de texto |
 | `unknowns` | opcional: `{id: U<n>, blocks?, unlock}` |
@@ -105,7 +105,7 @@ com `red`/`green` = `{command, exit}` e `moved` = `{change_id, resolved: [rule_i
 
 | código | quando | fase |
 |---|---|---|
-| `schema_invalid` | frontmatter ausente, não UTF-8, YAML quebrado (com a linha), fora do schema, `phase`/`feature` diferentes do arquivo/pasta; `upstream` em `explore`, ou no `define` sem `explore.md`; `change_kinds` fora do mapa; `verified_by.kind: test` sem `::nome`; `proof` ou `moved` no dev; `evidence` no ship dev; `proof` `finding` sem `#<rule_id>` | todas |
+| `schema_invalid` | frontmatter ausente, não UTF-8, YAML quebrado (com a linha), fora do schema, `phase`/`feature` diferentes do arquivo/pasta; `upstream` em `explore`, ou no `define` sem `explore.md`; `change_kinds` fora do mapa; `verified_by.kind: test` sem `::nome`; `proof` ou `moved` no dev; `evidence` no ship dev; `proof` `finding` sem `#<rule_id>`; `guard` vazio, sem letra nem dígito (só espaço, inclusive Unicode como U+200B, ou só pontuação) ou fora de texto | todas |
 | `phase_out_of_order` | a fase anterior não existe ou não está em `ready`/`done` (anterior recusada por schema não repete a causa) | design, plan, build_report, ship |
 | `upstream_missing` | sem bloco `upstream`, `upstream.path` inexistente ou que não é o upstream esperado da fase | todas menos explore |
 | `upstream_stale` | `upstream.sha256` diferente do `text_sha256` do upstream (CRLF normalizado para LF) | todas menos explore |
@@ -120,6 +120,7 @@ com `red`/`green` = `{command, exit}` e `moved` = `{change_id, resolved: [rule_i
 | `moved_not_observed` | regra de `moved.resolved`, ou de `proof` `finding` com o build pronto, que o relatório da mudança não mostra em `resolved`, ou mostra também em `new`, ou relatório ausente/ilegível; não confere quando o ship está em `done` **e** nenhum relatório existe | plan, build_report |
 | `moved_change_mismatch` | `moved.change_id` diferente do `change_id` do build_report, em qualquer status | build_report |
 | `red_not_declared` | tarefa `done` sem `red`, ou com `red.exit` 0 (no operator, `moved` dispensa `red`) | build_report |
+| `acceptance_never_red` | só no perfil `dev`, com o build_report em `ready`/`done` e o ship ausente ou fora de `done`: `acceptance` de `kind: test` sem `guard` que nenhuma tarefa `done` do plan com o AC em `covers` viu vermelho — o `red` dela precisa de `exit` diferente de zero e de 5 (nenhum teste coletado) **e** citar o node id do `verified_by` no comando, ou só o arquivo com `exit` 2 (erro de coleta), com `\` e `./` inicial normalizados dos dois lados; o gate confere a **citação** do node id no comando declarado, não a execução — um `red` com `--deselect` do node, ou com o node num comentário, passaria; tarefa já recusada por `red_not_declared` não repete a causa, nem ship recusado por schema | build_report |
 | `claim_without_evidence` | claim sem `evidence_ref` | build_report |
 | `change_missing` | operator com `change_id` vazio, com separador, `.`/`..`, ou sem `.sparkforge/sandbox/<id>/` nem `.sparkforge/proposal/<id>/` como pasta; não confere com o ship em `done` | build_report |
 | `hypothesis_open_at_ship` | ship sem `hypothesis_outcome` | ship |

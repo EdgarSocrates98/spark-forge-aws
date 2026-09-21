@@ -517,6 +517,76 @@ def _gate_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
                        "(exit diferente de zero)")
 
 
+def _caminho_normal(texto: str) -> str:
+    """`\\` vira `/` e o `./` inicial some: o mesmo caminho escrito de dois jeitos casa."""
+    return texto.replace("\\", "/").removeprefix("./")
+
+
+# exit 5 no pytest e "nenhum teste coletado": nada foi visto falhar
+_SAIDAS_QUE_NAO_SAO_VERMELHO = frozenset({0, 5})
+
+
+def _vermelho_cita(referencia: str, vermelho: dict[str, Any] | None) -> bool:
+    """O `red` viu `referencia` falhar: o node id no comando, ou so o arquivo com exit 2.
+
+    Exit 2 no pytest e erro de coleta e deixa o arquivo inteiro vermelho; exit 1 com so
+    o arquivo nao diz qual teste falhou; exit 5 e nenhum teste coletado. A comparacao e
+    por token do comando, para que `::test_x` nao case `::test_x_outro`, e a referencia
+    passa pela mesma normalizacao do token. Confere citacao, nao execucao.
+    """
+    if not vermelho or vermelho["exit"] in _SAIDAS_QUE_NAO_SAO_VERMELHO:
+        return False
+    referencia = _caminho_normal(referencia)
+    arquivo = _caminho_normal(_separa_ref(referencia)[0])
+    for bruto in str(vermelho["command"]).split():
+        token = _caminho_normal(bruto.strip("'\""))
+        if token == referencia or token.startswith(f"{referencia}["):
+            return True
+        if vermelho["exit"] == 2 and token == arquivo:
+            return True
+    return False
+
+
+def _red_recusado(tarefa: dict[str, Any]) -> bool:
+    """A tarefa que `_gate_red` ja recusou com `red_not_declared`: a causa nao se repete."""
+    vermelho = tarefa.get("red")
+    return tarefa["status"] == "done" and (not vermelho or vermelho["exit"] == 0)
+
+
+def _gate_acceptance_red(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
+    """Todo `kind: test` sem `guard` foi visto vermelho por uma tarefa que o cobre.
+
+    A ligacao e derivada, nunca registrada (D1 do design AC_VERMELHO): o `covers` do plan
+    diz quem cobre o criterio, e o `red` do build_report diz o que falhou. Feature com o
+    ship em `done` e historia e nao e conferida (D2). So o perfil dev: no operator o
+    criterio e quase sempre funcval ou fact, e a tarefa prova por `moved` (D5).
+    """
+    if artefato.meta["profile"] != "dev":
+        return
+    define = ctx.artefatos.get("define")
+    plano = ctx.artefatos.get("plan")
+    if define is None or plano is None or not _build_pronto(ctx) or _ship_feito(ctx):
+        return
+    if "ship" in ctx.caminhos and "ship" not in ctx.artefatos:
+        return  # o ship existe e foi recusado por schema: nao se sabe se e historia
+    do_build = {tarefa["id"]: tarefa for tarefa in artefato.meta["tasks"]}
+    for item in define.meta["acceptance"]:
+        prova = item["verified_by"]
+        if prova["kind"] != "test" or item.get("guard"):
+            continue
+        donas = [do_build[t["id"]] for t in plano.meta["tasks"]
+                 if item["id"] in t["covers"] and t["id"] in do_build]
+        if any(tarefa["status"] == "done" and _vermelho_cita(prova["ref"], tarefa.get("red"))
+               for tarefa in donas):
+            continue
+        if any(_red_recusado(tarefa) for tarefa in donas):
+            continue
+        ctx.recusa("acceptance_never_red", artefato.path, "tasks",
+                   f"{item['id']}: nenhuma tarefa que o cobre viu {prova['ref']} vermelho; "
+                   "o red de uma delas cita esse node id (ou so o arquivo, com exit 2), "
+                   "ou o define declara guard com o motivo")
+
+
 def _gate_claims(ctx: _Contexto, fase: str, artefato: Artifact) -> None:
     for indice, afirmacao in enumerate(artefato.meta["claims"]):
         if not str(afirmacao.get("evidence_ref") or "").strip():
@@ -696,7 +766,9 @@ _GATES: dict[str, tuple[Gate, ...]] = {
     ),
     "design": (_gate_order, _gate_upstream, _gate_manifest, _gate_rollback, _gate_cobertura),
     "plan": (_gate_order, _gate_upstream, _gate_cobertura, _gate_task_test),
-    "build_report": (_gate_order, _gate_upstream, _gate_red, _gate_claims, _gate_change),
+    "build_report": (
+        _gate_order, _gate_upstream, _gate_red, _gate_acceptance_red, _gate_claims, _gate_change,
+    ),
     "ship": (_gate_order, _gate_upstream, _gate_hypothesis, _gate_registries, _gate_evidence),
 }
 

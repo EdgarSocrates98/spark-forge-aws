@@ -50,7 +50,10 @@ auxiliar, um fixture, um typo), o teste está quebrado, não vermelho.
 ### Por tarefa
 
 1. **Vermelho.** Escreva o teste da tarefa. Rode o comando do plano. Veja a
-   falha certa. Anote `red: {command, exit}` com o exit **que apareceu**.
+   falha certa. Anote `red: {command, exit}` com o exit **que apareceu**. O
+   comando cita o **node id** de cada critério `kind: test` que a tarefa cobre
+   (`python -m pytest tests/a.py::test_x tests/a.py::test_y -q`); só o arquivo
+   conta apenas com exit 2, erro de coleta.
 2. **Verde.** Escreva o mínimo que faz o teste passar. Rode o mesmo comando.
    Anote `green: {command, exit: 0}`.
 3. **Refatore** mantendo verde.
@@ -136,6 +139,12 @@ build; o resultado entra no corpo do relatório.
 - **`tasks`**: `id`, `status` (`done`, `skipped`, `blocked`), `red` e `green`.
   Tarefa `done` sem `red`, ou com `red.exit` igual a zero, sai
   `red_not_declared`.
+- **Cada critério `kind: test` visto vermelho.** No perfil `dev`, com o relatório
+  em `ready` ou `done` e o ship fora de `done`, todo `acceptance` de `kind: test` sem `guard`
+  precisa de uma tarefa que o cubra (`covers` do plan) cujo `red` tenha exit
+  diferente de zero e cite o node id do `verified_by` — ou o arquivo, com exit 2.
+  Sem isso, `acceptance_never_red`. Arquivo com exit 1 não conta: não diz qual
+  teste falhou.
 - **Tarefa sem vermelho próprio** (regenerar referência, lock de superfície):
   o `red` é o gate que falhou **antes** da regeneração, se você o viu falhar.
   Se não viu, `status: skipped` e uma nota no corpo. Exit inventado é o defeito
@@ -216,7 +225,7 @@ exit 0. A suíte inteira roda em lotes, um por vez
 | desempenho (operator) | `sparkforge benchmark --before <a> --after <b> --out bench.json` | `sparkforge_benchmark` |
 | pacote do PR (operator) | `sparkforge change propose --sandbox <id> --repo . --funcval <cmp.json> --benchmark bench.json` | `sparkforge_change_propose` |
 
-Recusas desta fase: `red_not_declared`, `claim_without_evidence`,
+Recusas desta fase: `red_not_declared`, `acceptance_never_red`, `claim_without_evidence`,
 `change_missing`, `moved_not_observed`, `moved_change_mismatch`,
 `verified_by_dangling`, `upstream_stale`. Contrato completo:
 `docs/sdd/CONTRATO.md`. Template: `docs/sdd/templates/build_report.md`.

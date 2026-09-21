@@ -46,6 +46,14 @@ um `verified_by`:
 
 Prefira `test`. Critério que nada verifica é desejo, e não entra.
 
+**`kind: test` precisa ser visto vermelho.** No perfil `dev`, com o build pronto e
+o ship fora de `done`, o check exige uma tarefa do plan com o AC em `covers` cujo `red`, no
+build_report, tenha exit diferente de zero e cite o node id do `verified_by` — ou só
+o arquivo, com exit 2 (erro de coleta). Sem isso, `acceptance_never_red`. A exceção é
+a **guarda de regressão**, o teste que passa antes e depois por desenho (o que impede
+"recusar mais" de virar "recusar tudo"): declare `guard: "<o motivo>"` no item. O
+motivo é o que a revisão lê; `guard` vazio é `schema_invalid`.
+
 **`success`** — `metric` e `source`, sempre. O `source` diz de onde vem o número
 (o comando, o arquivo, o fact). Sem ele, `success_without_source`. Token de
 provider só com transcript do host; dólar só com `cost_basis` nomeado.
@@ -133,6 +141,7 @@ Recusas desta fase: `schema_invalid`, `success_without_source`, `case_missing`,
 ### Red flags
 
 - Critério sem `verified_by`, ou com "conferir manualmente".
+- `guard` num critério que devia falhar antes do código, ou com motivo que não diz por que ele passa sempre.
 - Nota de clareza, pontuação ou confiança escrita no artefato.
 - Métrica sem `source`, ou token estimado por contagem de caracteres.
 - `sha256` digitado à mão.
