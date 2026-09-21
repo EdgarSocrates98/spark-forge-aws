@@ -1,4 +1,10 @@
-"""Deterministic context policies for token-efficient agent collaboration."""
+"""Deterministic context policies for token-efficient agent collaboration.
+
+`estimate_tokens` e a UNICA estimativa de token por caracteres do pacote:
+`sparkforge/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge/context/funnel.py`
+e `sparkforge/providers/mock.py` a chamam. `sparkforge/codeintel/budget.py::estimar_tokens`
+fica de fora de proposito -- mede bytes UTF-8 e nao decide corte; a docstring dele diz por que.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -8,10 +14,27 @@ from typing import Any
 
 
 def estimate_tokens(value: Any) -> int:
+    """Estimativa de token por caracteres: teto de `len/4`, minimo 1.
+
+    O teto e o lado conservador. Quem corta por orcamento com ela cabe no maximo o que
+    cabia com o piso, nunca mais, e texto curto nunca vale zero token. Valor que nao e
+    texto vira JSON com chaves ordenadas antes da conta, para que o mesmo valor de o
+    mesmo numero em qualquer execucao.
+
+    E heuristica, nao medida: nunca se veste de token de provider (regra 24 do
+    CLAUDE.md). E conta caractere, nao byte UTF-8, e por isso subestima texto acentuado.
+
+    Valor que o JSON nao serializa -- set, bytes, Path, objeto, dict com chaves de tipos
+    misturados -- cai para `str(valor)`, que e o que `sparkforge.tools.estimate_tokens`
+    contava antes de virar alias desta funcao: a API publica nunca levantou para eles.
+    """
     if isinstance(value, str):
         text = value
     else:
-        text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+        try:
+            text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+        except (TypeError, ValueError):
+            text = str(value)
     return max(1, (len(text) + 3) // 4)
 
 def fingerprint(value: Any) -> str:

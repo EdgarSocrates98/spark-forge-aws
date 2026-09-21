@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from sparkforge.agents.budget import estimate_tokens
+
 
 class MockModelProvider:
     """Zero-cost, offline deterministic model provider."""
@@ -15,8 +17,8 @@ class MockModelProvider:
         self.call_history.append({"prompt": prompt, "tier": tier})
         return {
             "content": self.default_response,
-            "input_tokens": len(prompt) // 4,
-            "output_tokens": len(self.default_response) // 4,
+            "input_tokens": estimate_tokens(prompt),
+            "output_tokens": estimate_tokens(self.default_response),
             "cached_tokens": 0,
             "cost_usd": 0.0,
         }

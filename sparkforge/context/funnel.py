@@ -8,6 +8,8 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 
+from sparkforge.agents.budget import estimate_tokens
+
 
 @dataclass
 class ContextChunk:
@@ -77,11 +79,12 @@ class ContextFunnel:
         # 2. Deduplicate
         unique_chunks, dropped = self.deduplicate_chunks(sorted_chunks)
 
-        # 3. Fit in budget (estimate 4 chars per token)
+        # 3. Fit in budget, with the package's single token estimate (ceiling of len/4):
+        # the ceiling fits at most what the old floor fitted, never more.
         fitted_chunks = []
         total_tokens = 0
         for c in unique_chunks:
-            tokens_est = max(1, len(c.content) // 4)
+            tokens_est = estimate_tokens(c.content)
             if total_tokens + tokens_est <= self.max_tokens_budget:
                 fitted_chunks.append(c)
                 total_tokens += tokens_est
