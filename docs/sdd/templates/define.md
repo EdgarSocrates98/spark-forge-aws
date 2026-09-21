@@ -47,6 +47,11 @@ O coordenador do case abre o relatório inteiro para ler três campos.
   `command`, `funcval` ou `fact` (`arquivo#id` ou `arquivo#kind:<kind>`). O
   teste pode ainda não existir; o `check` devolve `test_not_written` até o
   build escrevê-lo.
+- `guard: "<motivo>"` num item de `acceptance` declara guarda de regressão: um
+  teste que passa antes e depois por desenho. Ele fica isento de
+  `acceptance_never_red` (regra do perfil `dev`); sem `guard`, todo `kind: test` precisa de uma tarefa
+  cujo `red` cite o node id dele (ou o arquivo, com exit 2). `guard` vazio é
+  `schema_invalid`.
 - A previsão da hipótese é mensurável no ship, parte por parte.
 - `success` sempre com `source`: de onde vem o número.
 - `change_kinds` sai da lista fechada de `sparkforge/sdd/change_kinds.yaml`; é
