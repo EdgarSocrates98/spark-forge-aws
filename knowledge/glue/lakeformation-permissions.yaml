@@ -47,14 +47,14 @@ operacoes:
     resource_level: table
     requires: ["s3:PutObject"]
     source: fgac_considerations
-    quote: "If your job runtime role has the necessary S3 permissions, you can use it to run write operations"
+    quote: "Writing to a Lake Formation table uses IAM permission rather than Lake Formation granted permissions. If your job runtime role has the necessary S3 permissions, you can use it to run write operations."
   - operation: overwrite
     model: fgac
     side: iam
     resource_level: table
     requires: ["s3:PutObject", "s3:DeleteObject"]
     source: fgac_considerations
-    quote: "If your job runtime role has the necessary S3 permissions, you can use it to run write operations"
+    quote: "Writing to a Lake Formation table uses IAM permission rather than Lake Formation granted permissions. If your job runtime role has the necessary S3 permissions, you can use it to run write operations."
   - operation: create
     model: fta
     side: lf
