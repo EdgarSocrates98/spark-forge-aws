@@ -93,6 +93,7 @@ def _derivados_de_facts(pool):
         funcval,
         fusion,
         lakeformation,
+        lakeformation_missing_grant,
         run_cost,
         runtime_detect,
         timeout_diagnosis,
@@ -125,6 +126,10 @@ def _derivados_de_facts(pool):
     # do modulo: a entrega que criou `sparkforge/facts/lakeformation.py`
     # registrou-o nas duas listas de cobertura de kind e nao nesta.
     yield "lakeformation", lakeformation.build_lakeformation(pool)
+    # `lakeformation_missing_grant` deriva de `error.signature_match` mais grant,
+    # decisao de IAM e operacao, e nao de caminho. Sem esta chamada a guarda
+    # fail-closed para com o nome do modulo.
+    yield "lakeformation_missing_grant", lakeformation_missing_grant.build_missing_grant(pool)
     # `exception` deriva de `spark.stage.failure.attrs.reason`, e nao de
     # caminho. Ele COPIA o `subject` do fact de origem -- entao se um dia
     # `spark.stage.failure` passar a carregar snippet, `exception` propaga, e e

@@ -42,7 +42,7 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 41 extratores emitem 243 kinds distintos de fact, e só `collect *` toca a AWS. O
+Os 42 extratores emitem 245 kinds distintos de fact, e só `collect *` toca a AWS. O
 catálogo tem **168** regras de diagnóstico em YAML, **168 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
