@@ -18,7 +18,18 @@
 
 ## O que foi criado
 
-A expansao adiciona dez agents permanentes, dezesseis subagents efemeros, seis ferramentas locais deterministicas, seis knowledge bases novas, cinco times cooperativos e um manifesto SHA-256 para todos os documentos locais. Os registries sao `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`.
+Medido nesta árvore em 2026-09-20, os registros declaram **2** agents permanentes
+(`sf-security-reviewer` e `sf-lake-formation-specialist`), **8** documentos de knowledge,
+**1** time cooperativo, e o manifesto SHA-256 de todos os documentos locais. Os blocos
+`tools` e `subagents` saíram inteiros: **0** ferramentas e **0** subagents declarados —
+nenhuma das sete tools existia em `sparkforge.adapters.tools.TOOLS`, e os dezesseis
+contratos de `subagents/` não tinham leitor em `sparkforge/`, `scripts/` nem `tests/`
+(feature `docs/sdd/CONFIG_OCA/`). Os registros que restam são
+`config/agentic-expansion.yaml` e `config/teams-expansion.yaml`; `config/subagents.yaml`
+não existe mais. A frase anterior prometia dez agents, dezesseis subagents, seis
+ferramentas, seis knowledge bases e cinco times, e estava defasada desde o SF_STUBS, não
+só desde esta mudança. Os seis módulos de `sparkforge/tools/` listados abaixo continuam
+existindo — eles são código, não nome declarado em registro.
 
 ## Garantia sem internet
 

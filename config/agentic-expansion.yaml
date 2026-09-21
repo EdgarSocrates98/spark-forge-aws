@@ -6,24 +6,6 @@
     "sf-security-reviewer",
     "sf-lake-formation-specialist"
   ],
-  "subagents": [
-    "intake-packager",
-    "evidence-extractor",
-    "hypothesis-generator",
-    "experiment-designer",
-    "benchmark-comparator",
-    "schema-compatibility-checker",
-    "lineage-impact-analyzer",
-    "cost-estimator",
-    "security-gate",
-    "mutation-risk-checker",
-    "cross-reviewer",
-    "source-verifier",
-    "regression-judge",
-    "handoff-preparer",
-    "rollback-planner",
-    "release-gate"
-  ],
   "knowledge": [
     "knowledge/streaming-reliability.md",
     "knowledge/lake-governance.md",

@@ -6,6 +6,10 @@ import yaml
 
 from sparkforge.rules.loader import load_catalog
 
+# Importadas, nao recopiadas: a feature CONFIG_OCA declara as duas tuplas no teste que
+# guarda a remocao, e uma segunda copia aqui divergiria no primeiro nome que voltasse.
+from tests.test_config_declarado_existe import SUBAGENTS_QUE_SAIRAM, TOOLS_QUE_SAIRAM
+
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
 
@@ -128,7 +132,7 @@ def test_documento_vivo_nao_cita_o_que_saiu():
         texto = (ROOT / rel).read_text(encoding="utf-8")
         citados = [
             nome
-            for nome in OCOS + SKILLS_QUE_SAIRAM
+            for nome in OCOS + SKILLS_QUE_SAIRAM + TOOLS_QUE_SAIRAM + SUBAGENTS_QUE_SAIRAM
             if re.search(rf"(?<![\w-]){re.escape(nome)}(?![\w-])", texto)
         ]
         assert not citados, (rel, citados)

@@ -100,3 +100,45 @@ def test_toda_tool_declarada_existe():
         "uma das sete passou a existir de verdade: tire-a de TOOLS_QUE_SAIRAM e deixe o "
         "gate do declarado cuidar dela"
     )
+
+
+SUBAGENTS_QUE_SAIRAM = (
+    "benchmark-comparator",
+    "cost-estimator",
+    "cross-reviewer",
+    "evidence-extractor",
+    "experiment-designer",
+    "handoff-preparer",
+    "hypothesis-generator",
+    "intake-packager",
+    "lineage-impact-analyzer",
+    "mutation-risk-checker",
+    "regression-judge",
+    "release-gate",
+    "rollback-planner",
+    "schema-compatibility-checker",
+    "security-gate",
+    "source-verifier",
+)
+
+
+def test_o_registro_de_subagents_saiu_e_ninguem_o_le():
+    """AC3: os 16 stubs sairam, e a medida que autorizou continua valendo.
+
+    Os contratos existiam -- 16 de 16 -- e eram BYTE-IDENTICOS abaixo de `## Contract`;
+    a descricao de cada um era o proprio nome com o hifen trocado por espaco. Nenhum
+    modulo de `sparkforge/`, `scripts/` ou `tests/` os lia, ao contrario de `skills/` e
+    `agents/`, que varios leem. A lacuna U1 do define -- um consumidor FORA do
+    repositorio -- nao e alcancavel daqui, e o rollback do D3 e a rede dela.
+    """
+    assert not (ROOT / "config" / "subagents.yaml").exists()
+    assert not (ROOT / "subagents").exists()
+
+    # E nenhum modulo passou a citar o que saiu.
+    for diretorio in ("sparkforge", "scripts", "tests"):
+        for arquivo in sorted((ROOT / diretorio).rglob("*.py")):
+            if arquivo.name == "test_config_declarado_existe.py":
+                continue
+            texto = arquivo.read_text(encoding="utf-8")
+            assert "config/subagents.yaml" not in texto, arquivo
+            assert "subagents/" not in texto, arquivo

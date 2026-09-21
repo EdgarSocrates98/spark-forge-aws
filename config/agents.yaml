@@ -90,7 +90,6 @@ autonomy_focus:
 - documentation
 - validation
 expansion_registry: config/agentic-expansion.yaml
-subagents_registry: config/subagents.yaml
 teams_registry: config/teams-expansion.yaml
 offline:
   network_required: false

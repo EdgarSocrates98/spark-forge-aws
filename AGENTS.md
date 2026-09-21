@@ -330,8 +330,7 @@ sf-terraform-specialist
 
 ## Agentic Expansion Inventory
 Agents: sf-lake-formation-specialist, sf-security-reviewer.
-Subagents: intake-packager, evidence-extractor, hypothesis-generator, experiment-designer, benchmark-comparator, schema-compatibility-checker, lineage-impact-analyzer, cost-estimator, security-gate, mutation-risk-checker, cross-reviewer, source-verifier, regression-judge, handoff-preparer, rollback-planner, release-gate.
-Tools: sparkforge_offline_knowledge_verify, sparkforge_offline_knowledge_search, sparkforge_context_pack, sparkforge_schema_compare, sparkforge_lineage_extract, sparkforge_eval_golden_case, sparkforge_cost_estimate.
+Subagents: none. Tools declared in this registry: none. The sixteen ephemeral contracts and the seven declared tool names left in `docs/sdd/CONFIG_OCA/` (2026-09-20): the contracts had no reader in `sparkforge/`, `scripts/` or `tests/`, and none of the seven names existed in `sparkforge.adapters.tools.TOOLS`. The six modules under `sparkforge/tools/` behind them are code and still exist.
 Teams: governance-security.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
 

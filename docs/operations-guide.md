@@ -271,11 +271,10 @@ Nenhum agent pode apagar dados, sobrescrever estado ou publicar mudança irrever
 *Autor: Manus AI. Documento operacional mantido junto com o contrato do repositório.*
 ## 15. Expansao agentic v2 e operacao offline-first
 
-A segunda onda acrescenta 2 agents coordenadores, 3 skills dispatchable, 16 subagents efemeros, 1 time cooperativo, 6 modulos de ferramentas locais e 6 novas bases de conhecimento, alem da politica offline (numeros de agents e times recontados em 2026-09-19: a feature `docs/sdd/SF_STUBS/` removeu os 19 agentes `sf-*` ocos e as 35 areas `agentic-sf-*`, deixando so `sf-security-reviewer` e `sf-lake-formation-specialist` em `config/agentic-expansion.yaml`, e 1 time em `config/teams-expansion.yaml`). Os registros declarativos estao em `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
+A segunda onda acrescenta 2 agents coordenadores, 3 skills dispatchable, 1 time cooperativo e 8 bases de conhecimento, alem da politica offline (numeros de agents e times recontados em 2026-09-19: a feature `docs/sdd/SF_STUBS/` removeu os 19 agentes `sf-*` ocos e as 35 areas `agentic-sf-*`, deixando so `sf-security-reviewer` e `sf-lake-formation-specialist` em `config/agentic-expansion.yaml`, e 1 time em `config/teams-expansion.yaml`; subagents e tools recontados em 2026-09-20 pela feature `docs/sdd/CONFIG_OCA/`: **0** e **0**, porque os 16 contratos de `subagents/` nao tinham leitor e nenhuma das 7 tools declaradas existia em `sparkforge.adapters.tools.TOOLS` — os 6 modulos de `sparkforge/tools/` por tras delas continuam existindo, como codigo). Os registros declarativos estao em `config/agentic-expansion.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
 
 | Entregavel | Garantia |
 | --- | --- |
-| Subagents | `max_rounds: 1`, `network: forbidden`, sem mutacoes globais |
 | Ferramentas | Somente leitura, deterministicas, sem DNS, HTTP, SDK cloud ou telemetria |
 | Conhecimento | 43 documentos locais listados em `knowledge/offline-manifest.json` |
 | Integridade | SHA-256 divergente interrompe a operacao confiavel |
