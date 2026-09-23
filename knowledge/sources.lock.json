@@ -2,6 +2,7 @@
   "schema_version": 1,
   "sources": {
     "https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/operators/glue/index.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/airflow/glue-operator.md"
       ],
@@ -13,9 +14,11 @@
         "SF-AIRFLOW-001",
         "SF-AIRFLOW-002",
         "SF-AIRFLOW-003"
-      ]
+      ],
+      "sha256": "c61a7d8e8084d773faff157e249870183b28d5ab03e2f00b7582c84ebb8efc00"
     },
     "https://airflow.apache.org/docs/apache-airflow/stable/configurations-ref.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/airflow/glue-operator.md"
       ],
@@ -25,9 +28,11 @@
       ],
       "rules": [
         "SF-AIRFLOW-004"
-      ]
+      ],
+      "sha256": "65e55534e309cbc8efd81897b1e9eac54999e41f4c8c7cd48a8d985c78cbf6bc"
     },
     "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/airflow/glue-operator.md"
       ],
@@ -37,9 +42,11 @@
       ],
       "rules": [
         "SF-AIRFLOW-002"
-      ]
+      ],
+      "sha256": "00086e2aefab9bfb29fedcc47a98b0079e61118eaad927475bd897c7da71bb82"
     },
     "https://api.github.com/repos/graphframes/graphframes/releases": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md",
         "knowledge/graph/graphframes-api.md"
@@ -48,9 +55,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "847e48a3b398e4bc7a9b3e91bcdfea5d40677cdc06f2efd6b384b1bee8ff6dcf"
     },
     "https://api.github.com/repos/great-expectations/great_expectations/contents/great_expectations?ref=1.19.1": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -58,9 +67,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "4523db36a0d4d7cf0f4fb823bc3336f692d750c81c99f572a73d480d398bc033"
     },
     "https://api.github.com/repos/great-expectations/great_expectations/releases/tags/1.0.0": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -68,10 +79,12 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7a5f35a4078e230ad0201e4dfddc0d2cbc78f88fdcc25ef7607293af7f3b180c"
     },
     "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/workers-and-capacity.md"
       ],
@@ -82,9 +95,10 @@
       "rules": [
         "SF-GLUE-005"
       ],
-      "sha256": "75a0f76d58e06dd7008d35ac7885f1161e6011ee1f6e041d6b4490e30088f541"
+      "sha256": "80c3f9ad7336648722c25f07e2be4d6a5eea9c4d2a66fcc02a4678863058099e"
     },
     "https://aws.amazon.com/about-aws/whats-new/2025/11/aws-glue-5-1": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md"
       ],
@@ -92,9 +106,11 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "526a0cdc19ba2a7380db43a9db7e2ea5bb4cb617d731cc26c7c76b94b875c09a"
     },
     "https://aws.amazon.com/about-aws/whats-new/2026/08/aws-glue-6-0-price-reduction-iceberg-v3/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md"
       ],
@@ -102,9 +118,11 @@
       "retrieved": [
         "2026-08-22"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7f7f8438ed27002f045d8862c6fc15a98cde1dc9599f64770d43162a81f2c281"
     },
     "https://aws.amazon.com/blogs/aws/aws-glue-6-0-now-available-with-30-lower-price-and-full-apache-iceberg-v3-support/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md"
       ],
@@ -112,10 +130,12 @@
       "retrieved": [
         "2026-08-22"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9995b6d43007644bcc1d06e47d31c0a5ad5b583c117756a662baa12d4032c999"
     },
     "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-performance.md"
       ],
@@ -127,9 +147,10 @@
         "SF-ICE-001",
         "SF-ICE-004"
       ],
-      "sha256": "831655bd5cb1533b6e6b35015bf85429fd4a6011c11c151a2cc8970b6fb35048"
+      "sha256": "d88db7ef92d308702727ece4fa96a7990c0b2be20d19e5f1d73d0eee326a6ff6"
     },
     "https://aws.amazon.com/blogs/big-data/enhance-monitoring-and-debugging-for-aws-glue-jobs-using-new-job-observability-metrics/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/observability.md"
       ],
@@ -137,10 +158,12 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "913e7e65c44ac971e218d59e522e927a0b37015a5ea9e152b12291353ddaac2e"
     },
     "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/athena/performance.md",
         "knowledge/cross-service-constraints.md",
@@ -156,9 +179,10 @@
         "SF-ENV-002",
         "SF-ICE-002"
       ],
-      "sha256": "6ec33d8b72b6ee91d2f4d892dc22aabcae93ad55f0dbc871d558ef2c18783b7b"
+      "sha256": "5f410261fe765fd58c57b82676df259da7f5bc4ab3cab243a11c220a8dd32e6b"
     },
     "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-flex-jobs-cost-savings-on-etl-workloads/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/job-arguments.md",
         "knowledge/glue/workers-and-capacity.md"
@@ -167,10 +191,12 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "57e34a189e61d7c609a0720fd568abffda9b204f85ca5159e565d615555b081b"
     },
     "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/athena/performance.md"
       ],
@@ -181,9 +207,10 @@
       "rules": [
         "SF-ATH-004"
       ],
-      "sha256": "fb6c38d1cb01b79533e1acd8499b67776ccb3064056d3eb8c96ee45e02445b56"
+      "sha256": "21ee2711d263ef0c17bf3d4d27b852668a72cd02c1812524c28cde5df573b94a"
     },
     "https://aws.amazon.com/blogs/big-data/scale-your-aws-glue-for-apache-spark-jobs-with-new-larger-worker-types-g-4x-and-g-8x": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/workers-and-capacity.md"
       ],
@@ -191,9 +218,11 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "825016f0152bfec71ae6732ade1d33f0bc7571859bcca9ea7bf3800c8ba37f13"
     },
     "https://aws.amazon.com/blogs/big-data/test-data-quality-at-scale-with-deequ/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -201,9 +230,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b5825ff799f342e6205bcda29ffcf1bc99e49c9a051930d428fd435c4e36a473"
     },
     "https://aws.amazon.com/blogs/big-data/testing-data-quality-at-scale-with-pydeequ/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -211,10 +242,12 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7f9d7e6eba0b0575172253c41ee7e76e1493e5991ebb2c1b118b9c289103bee3"
     },
     "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/athena/performance.md",
         "knowledge/storage/parquet-layout.md"
@@ -227,9 +260,10 @@
         "SF-ATH-001",
         "SF-PQ-005"
       ],
-      "sha256": "f46960f80928d464b5e92bf1a6ceb8bf355a3e6cb17c0bf2eefbb30ac17a5b35"
+      "sha256": "1971095ed230c7e8a90a18a03b12b7bb38e101b50e91dfb074edd00fbfde3ad3"
     },
     "https://aws.amazon.com/emr/pricing/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -240,10 +274,12 @@
       "rules": [
         "SF-EMRS-001",
         "SF-EMRS-005"
-      ]
+      ],
+      "sha256": "19a38945af86b3f9593c2902e94558228093be9a6b0357efa455f12ae6c67324"
     },
     "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html": {
-      "checked_at": "2026-08-26",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/observability.md"
       ],
@@ -252,9 +288,10 @@
         "2026-08-26"
       ],
       "rules": [],
-      "sha256": "670ca2f90816d11fa1f96b83c3a33f02813ac7e9bb282a6c5b631e237f6a662a"
+      "sha256": "afa5af39469811f9da92e431aaa2312b8eca9e5001cc31e7490a6c2fd1f31c21"
     },
     "https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -264,9 +301,11 @@
         "SF-IAM-001",
         "SF-IAM-002",
         "SF-IAM-003"
-      ]
+      ],
+      "sha256": "f4987eeb3da8c68c8a918b26847ee041d92163b4fca0a34cd273fb64cbf42afa"
     },
     "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -274,9 +313,11 @@
       ],
       "rules": [
         "SF-IAM-001"
-      ]
+      ],
+      "sha256": "17ebd3d5daaca21776ca1d8b5cb0a35a24022177f97a7ad15b70c746ade900a5"
     },
     "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -284,10 +325,11 @@
       ],
       "rules": [
         "SF-IAM-003"
-      ]
+      ],
+      "sha256": "1dbbfa38ec8685b07aa47941cc9f832bad1dde69fcd7816766ccd6a88a4d018a"
     },
     "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/athena/performance.md",
         "knowledge/cross-service-constraints.md"
@@ -304,6 +346,7 @@
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
     },
     "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-evolving-table-schema.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-v3.md"
       ],
@@ -311,9 +354,11 @@
       "retrieved": [
         "2026-09-01"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "dff1337c228799200f6b3c28dff0e49d7624451e9f55f4f7fe83c7f22dae07a3"
     },
     "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-updating-iceberg-table-data.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-v3.md"
       ],
@@ -321,9 +366,11 @@
       "retrieved": [
         "2026-09-01"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "2f9577f41e2e44e79ed2f6668c8e379f1af8f7011ee99f5c478aa9884ec55871"
     },
     "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-v3.md"
       ],
@@ -331,9 +378,11 @@
       "retrieved": [
         "2026-09-01"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "5f33c66dea0b60dc0fa7520eb6584e0eeed11919c7fe670f83fc444f7eb60bd9"
     },
     "https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -343,9 +392,11 @@
       ],
       "rules": [
         "SF-EMRK-003"
-      ]
+      ],
+      "sha256": "f0d7a5a1d4a3832aebca71c7dbfa54ec04a6dd608fc7d07c8499bff3d1408c83"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ConfigurationOverrides.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -353,9 +404,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9619852306166ab5dcfbf0e06c1d5fd11cf0a27f692842a08fc20e1e45e35b33"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ContainerProvider.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -363,9 +416,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9d8f23ec6321b143c24411fb1a7d1dfdce384c49573ce0b6fb81e10e35a3897a"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeJobRun.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -375,9 +430,11 @@
       ],
       "rules": [
         "SF-EMRK-001"
-      ]
+      ],
+      "sha256": "446b0bcb414c4fdde0d5fafd9405e1f9e2d2b508bf9464d7d9e3c10d76221198"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeVirtualCluster.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -385,9 +442,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "05277983460c0095e6d3a5413d639c08dfd2b3f1ca3980448bee3e51f65e3921"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_EksInfo.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -395,9 +454,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "44a9da589838d3fdafd905f4fd46eec6bfbd92280bba68413107a9d687f3ad58"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_JobDriver.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -405,9 +466,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "e4b7c7f93aecfa73f6f6728a4e1580d16a245c948b6d4dfcae17adf119138f3c"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_JobRun.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -415,9 +478,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "923dced9ddbe264ac91653b414db86c2bef2177cd304e9e9f8317d4077892b32"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ManagedLogs.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -427,9 +492,11 @@
       ],
       "rules": [
         "SF-EMRK-002"
-      ]
+      ],
+      "sha256": "e12e9a2dbc667650de060958c6d66f36dfd98ef3bbe87b0957e08a42582daf85"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -440,9 +507,11 @@
       "rules": [
         "SF-EMRK-002",
         "SF-EMRK-003"
-      ]
+      ],
+      "sha256": "68807cb081804d37b9afa2a63f50aad454f86d419fd5dadd603cc86208ca9af3"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -453,9 +522,11 @@
       "rules": [
         "SF-EMRK-001",
         "SF-EMRK-004"
-      ]
+      ],
+      "sha256": "0e12d628dc12a1d0b241a9f7d9cee7a1f7e6267ef376c1924ba91a23f8d438fa"
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_VirtualCluster.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -463,9 +534,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "700032749f3952ce85dcf1e22c78254585b8a9e0f7107de9edb169413dd08d63"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Application.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -473,9 +546,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "995bef9d45885969758562b7cd40419c88b07c13fc28f8a5b1d098b1237c0368"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStartConfig.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -483,9 +558,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7a6bc6e9545df270de7e670110576c32e18c62dd32c1c6d1910d820ce5894289"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -496,9 +573,11 @@
       "rules": [
         "SF-EMRS-001",
         "SF-EMRS-005"
-      ]
+      ],
+      "sha256": "3596051d2afb7d34041aaa565642a7035f58eb2d2ba1300f8fc98335e6838d4a"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_CloudWatchLoggingConfiguration.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -508,9 +587,11 @@
       ],
       "rules": [
         "SF-EMRS-003"
-      ]
+      ],
+      "sha256": "26018f4168ca24ff5728eb1acacd65fde931834d844ff0bcd872e17a89ab5f83"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Configuration.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -520,9 +601,11 @@
       ],
       "rules": [
         "SF-EMRS-002"
-      ]
+      ],
+      "sha256": "04c026b1c0afd8f4dfc5ae232550d1b8d8af34aa4c32e4906598e1aaa0ee1323"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_GetApplication.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -532,9 +615,11 @@
       ],
       "rules": [
         "SF-EMRS-002"
-      ]
+      ],
+      "sha256": "106e03a05929a93d46076beda66ec9149ea8ac1d840d95757fa59a212d75b607"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -545,9 +630,11 @@
       "rules": [
         "SF-EMRS-003",
         "SF-EMRS-004"
-      ]
+      ],
+      "sha256": "58298425ab28550f75fa86678713c39985350a6e9176c9b25bdba0cd2f4d8581"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MaximumAllowedResources.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -557,9 +644,11 @@
       ],
       "rules": [
         "SF-EMRS-006"
-      ]
+      ],
+      "sha256": "a223267740b3c173712339d3765c1364cb3127be282125baf30276eef4c3c703"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MonitoringConfiguration.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -569,9 +658,11 @@
       ],
       "rules": [
         "SF-EMRS-003"
-      ]
+      ],
+      "sha256": "c8626c29127cae1f402d1dbf432ad9525fd81b16a6c5e421f4f8f21536bfef8c"
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_WorkerResourceConfig.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -581,9 +672,11 @@
       ],
       "rules": [
         "SF-EMRS-006"
-      ]
+      ],
+      "sha256": "3a710dda6a78add8cd31b60938de3de298c8f20b85b439fa1d7d461ecf333d54"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/applications.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -593,9 +686,11 @@
       ],
       "rules": [
         "SF-EMRS-006"
-      ]
+      ],
+      "sha256": "be07ae946969734eb9fc3dba3e85e3cc6244bad55c0072fe8c5c620f941c7070"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -610,9 +705,11 @@
         "SF-EMRS-004",
         "SF-EMRS-005",
         "SF-EMRS-006"
-      ]
+      ],
+      "sha256": "64224eb2a1f8504b3cd9d73d996b9a2e3b58086f69c26fa92d45d2348d6ee33e"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -623,9 +720,11 @@
       "rules": [
         "SF-EMRS-003",
         "SF-EMRS-004"
-      ]
+      ],
+      "sha256": "679e60a8ad42a6824c2c4566589013c191bf5ad2e4bc4ed4db4bade4c098b9c6"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -637,9 +736,11 @@
         "SF-EMRS-001",
         "SF-EMRS-005",
         "SF-EMRS-006"
-      ]
+      ],
+      "sha256": "25ab38e403ab9fd9870c6107b5781621bf5247774100cb66cfc98a6bfaa6fd2c"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-version-emr-spark-8.0-preview.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md"
       ],
@@ -647,9 +748,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "031330754362df72675de3e7838ef20e30c9209dbdebc998e72fad983c68ee3f"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-version-emr-spark-8.0.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md"
       ],
@@ -657,9 +760,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b07f204a609bd4d5adeab29353c122fc6eade9f5a21d8f44cfee9bb633ee08e6"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-versions.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md"
       ],
@@ -667,9 +772,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "32c984b9f964a589e49e6bdc6691d5a6bdc7a73619ab370ee2647331f28e7a54"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/secrets-manager.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
       ],
@@ -679,9 +786,11 @@
       ],
       "rules": [
         "SF-EMRS-002"
-      ]
+      ],
+      "sha256": "42bebc419c42fcbf2f7ff46eed78674544fb5fb2d173a5925bb241729ae5d32a"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-iceberg.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md"
       ],
@@ -689,9 +798,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "5da44c0b003ea89eae669bae4c2768bd0174903a51df0f4dbf00a074b4cafc28"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-python-libraries.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md"
       ],
@@ -699,9 +810,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "493cce6830c44dd1c76067fb95a67756178d412ba3e4eae066626758effa5b3c"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-python.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md"
       ],
@@ -709,9 +822,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "d14853563b75fb2a30d225609eab26fb6cb2b73f6d9dade4d522ef57e1261a8c"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/data-protection.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -721,9 +836,11 @@
       ],
       "rules": [
         "SF-EMRK-001"
-      ]
+      ],
+      "sha256": "888f41fb669b84d4017c65861a3fbd2c77e3a2383f1b516fbb908b3fa2e934a6"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images-considerations.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -731,9 +848,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "fe477ce298d99362fa4bc3f692afde3a7242fcade4e7901c522f46e204190981"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images-tag.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -741,9 +860,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "cd08330b9726f06b7ec41995d4f977dde302caccd554b2cfad2ff7a062b13767"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -751,9 +872,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "61cfdc524cac83ffef9dfa5691724baa979f2ce464f322ca5af78381e1f8f5b7"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.32.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -761,9 +884,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "86706f2c08012da7f69218de2457cec714adccde031e8b82c5fc98223cc774bb"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.33.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -771,9 +896,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "820cd425e10d3e8915722fe2ef65b8cc0eae6f7caf6ef61e466090d384ef9861"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.34.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -781,9 +908,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7108a312b0acfc82be6ca25af506b41111052bea838fc3c5072c38216be700f9"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.35.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -791,9 +920,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "03ca4e57c55fb59962bd1cc203fecd3546f59bf3de623f8ea885a30e5e92fef8"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.36.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -801,9 +932,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7db7eeecbb174e78ca65b5c5fdcd97a75ade0aba6077b51343888e2c7dfbc439"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.10.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -811,9 +944,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "20871be5bd4b7d6d8870ab52b2698c65f513bd824876c090e8df91746521de68"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.11.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -821,9 +956,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "423ecaacb7dfde0f8cc70241adfe1214c14f9c76141d6118253f391e87289dbc"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.12.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -831,9 +968,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "60dfc67066cbb29531971deadfa842c0eb086834d440cd762a76ecb1feb0e959"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.13.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -841,9 +980,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "df617232c259e5b75ee02b6e1c720570adadde160f5481d52ed98f1046f72878"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.14.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -851,9 +992,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "29bdb9d815b6ed1a63e204d42e1fb45ad3dd561fb45ab894aa61049f459df030"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.15.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -861,9 +1004,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "e8f67e348e60fea61bea03bdd0312cfdabbfa014cb4ca1079f4df7abe199074d"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.2.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -871,9 +1016,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "917285e63ae9988be8285ca8edc8060010b8c9eac4859a2b0265645172ba83e4"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.3.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -881,9 +1028,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "02d88a6ff4cb45d592800851460735b2d4cf94fa5311d8c5bafbe360c70c4a1e"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.4.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -891,9 +1040,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "a43368fa66507a30840196ad61bd02e28b37d25f07a04f71da7f9ca4993b52cb"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.5.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -901,9 +1052,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "ac3fa53bc4f03d786dc1143eb32b56634d9d7714c45fc925ea624aeb7227befe"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.6.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -911,9 +1064,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9af69e271ad86c766c692d9eaee99cc66fe2b427e5ee7bd92bcffcfa3b6ed3ab"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.7.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -921,9 +1076,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "ed0c4706135a6e2c851034cd9f2fc690956d3e4cdd4be7931cf449db439045ea"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.8.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -931,9 +1088,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9efcf35b74b70b6922347e0b27d193a1cde6f292c72af27c5d5277ed5c0d15d4"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.9.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -941,9 +1100,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "db7858a4acd9b24d8c4d849bd5451d9a77d5cc6369f6b31bcbc60287ccea8dad"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.0.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -951,9 +1112,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "c354d260ed6732974b34a8e87922a51a0cf148de56c79f57df03f7c222ad434d"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.1.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -961,9 +1124,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "6ea3ec5784a530bb258164057de36c0571c7afbbc3d60b9155b174a681f07b20"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.10.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -971,9 +1136,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "cd6d65e946a5d9717d01e99d2b4da40c0cbeed85822a91ccc134d208fa0a48c2"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.11.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -981,9 +1148,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "af3e86eb11b8ad4f685d86a108d37e2b6f95f83da548e56362b2017edb83a7db"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.12.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -991,9 +1160,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "54e25f5ce0b5129f7b21c5757bd51e5bc810ac1143d7f63f22946403dc5a57d8"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.13.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1001,9 +1172,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "5e1dce6f2465e4c547236b8c7a8575f3db98c588b4c3a3cb146fd20a2f5e46cf"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.2.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1011,9 +1184,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "acf5d35b1a09e0eb40154b0b7d59c28b9920bfb44057578040a57c8c7d8161c4"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.3.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1021,9 +1196,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "4fb2e3084a54a7e3b2c7a5de2818ac5c309c22de8cc33bd00d5e27bab75c39aa"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.4.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1031,9 +1208,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "181a134e8f98271e65ceda0bd60131b1583553d710cf26b1c3b6bd9788321134"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.5.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1041,9 +1220,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "44b49c452cb96217859ed5d0aa168e0842dde7e3e573508611794a8262e75744"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.6.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1051,9 +1232,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "3d6f97b5a0850ae07757d8e3f1a26d54d691e75bbe015ffa9e80a465cafaa569"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.7.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1061,9 +1244,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "6a0eff34d32dc5a6fcfb9210185df04ef1400f989473991b768c20ec87cd0711"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.8.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1071,9 +1256,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "c4abe15be27be7734ed120273e719381e256864dec909fd82e6ff6d3e85e83d9"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.9.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1081,9 +1268,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "6953ac6aa4234685297422b842d63b11a9b942bffec1b15a1761a9d8c1d04034"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-CLI.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1093,9 +1282,11 @@
       ],
       "rules": [
         "SF-EMRK-004"
-      ]
+      ],
+      "sha256": "6a2d17049f52dc5d3534a9c06e9b7d9e402f96bad762581504c3224203a9fdc3"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-cloudwatch.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1105,9 +1296,11 @@
       ],
       "rules": [
         "SF-EMRK-002"
-      ]
+      ],
+      "sha256": "ed09eccb477a5bfa926ec6fab8942e2647195d26d9a3073cab5d2bcf4069a5af"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-s3.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1117,9 +1310,11 @@
       ],
       "rules": [
         "SF-EMRK-002"
-      ]
+      ],
+      "sha256": "035411f9ba54fc7c0f1bd7ecd74a4d407d3c2540d59780a81c5158cecd2bfa40"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-submit.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1129,9 +1324,11 @@
       ],
       "rules": [
         "SF-EMRK-003"
-      ]
+      ],
+      "sha256": "6b52d9114e898ee3cee1d15d78aaab2da1795ed1d99620de71c95b7629f464f6"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-log-rotation.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1141,9 +1338,11 @@
       ],
       "rules": [
         "SF-EMRK-003"
-      ]
+      ],
+      "sha256": "77d01f144ab2d03befec58dd1c0d14eb7cac8222ada25af8b7e82629d9b94359"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-releases.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md",
         "knowledge/emr-eks/runtime-matrix.md"
@@ -1152,9 +1351,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "324fc63d49575bf65754b03d53bcdbe56b1fa5128fa87ee5a11f079f587780f3"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-spark-8.0.0.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/runtime-matrix.md"
       ],
@@ -1162,9 +1363,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "2eadbef98eb59296ab4b3d6fed85127283443e9a7562adae05bc249a0424e36f"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security-best-practices.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1174,9 +1377,11 @@
       ],
       "rules": [
         "SF-EMRK-001"
-      ]
+      ],
+      "sha256": "5bbebc755efe28757640290c942a3d295f962b56a0f8dca42b17b7b06358a966"
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1187,9 +1392,11 @@
       "rules": [
         "SF-EMRK-002",
         "SF-EMRK-003"
-      ]
+      ],
+      "sha256": "14990ff9c05ad8b59f1778c506aefa97346ff7062a513d9f48ad2d90cf576302"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1199,9 +1406,11 @@
       ],
       "rules": [
         "SF-EMR-009"
-      ]
+      ],
+      "sha256": "29c803110203a6675b24fd9187d204e078a2358a2f09d0c0f8d31d2326926fe6"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1212,9 +1421,11 @@
       "rules": [
         "SF-EMR-003",
         "SF-EMR-008"
-      ]
+      ],
+      "sha256": "7cdc0407b829ce12884147b4d335cfbe4c9f0c524199c67ddb3efd006f44454e"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1224,9 +1435,11 @@
       ],
       "rules": [
         "SF-EMR-008"
-      ]
+      ],
+      "sha256": "3d6dd60abd2124a21a2b88ac14e9bcab3fa7e5912400da12dd008f17fdfeda3c"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1236,9 +1449,11 @@
       ],
       "rules": [
         "SF-EMR-007"
-      ]
+      ],
+      "sha256": "8bf7eb4d3cdddafa35311231f19c1e43227b68df3c43ccb0d157e06b4055b98f"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-debugging.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1248,9 +1463,11 @@
       ],
       "rules": [
         "SF-EMR-006"
-      ]
+      ],
+      "sha256": "dd2c4612b1bc27b724a697c2975530bf7bddfc2455eea8593c83d8f9aac9a53f"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1260,9 +1477,11 @@
       ],
       "rules": [
         "SF-EMR-004"
-      ]
+      ],
+      "sha256": "699b8c11b7228f82ada98217b3d85fbdd3de8172dc02e95178511550382ace51"
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-longrunning-transient.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1272,9 +1491,11 @@
       ],
       "rules": [
         "SF-EMR-009"
-      ]
+      ],
+      "sha256": "a30a0f6c7dd5a10f394ae566532e5ac7e285423bb9b4796bac794a732c52e099"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-serverless/runtime-matrix.md",
         "knowledge/storage/iceberg-v3.md"
@@ -1284,9 +1505,11 @@
         "2026-08-04",
         "2026-08-22"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "09d5f23bfa2df534d84175e9d9e32748b24e13ba721ea109d0b94cf4771bc829"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/runtime-matrix.md",
         "knowledge/graph/availability.md"
@@ -1299,9 +1522,11 @@
       "rules": [
         "SF-GRAPH-002",
         "SF-GRAPH-005"
-      ]
+      ],
+      "sha256": "a065844ffe11ad933fca09e540118819fe1a7027635cb8b9e563506241be6e8c"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1311,10 +1536,11 @@
       ],
       "rules": [
         "SF-EMR-002"
-      ]
+      ],
+      "sha256": "ca255f11aa265fc382c8b9273f4d58236a67ce3776ade2be37a0adcd3825aabd"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html": {
-      "checked_at": "2026-08-01",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/runtime-matrix.md"
       ],
@@ -1328,7 +1554,7 @@
       "sha256": "01de6295778aa672ec1c782a3dda23f0abb955b6d5ee490eeb855dd134f9b40f"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-7.x.html": {
-      "checked_at": "2026-08-01",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/runtime-matrix.md"
       ],
@@ -1342,6 +1568,7 @@
       "sha256": "17d7c767deae8fae9a6bdeed6180831777395e610827998e546919796974c515"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-commit-protocol-reqs.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1351,9 +1578,11 @@
       ],
       "rules": [
         "SF-EMR-005"
-      ]
+      ],
+      "sha256": "4737651713a667053d47c3373217ca1e70a9a56a71b9657430d5e73ed48424eb"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-committer-reqs.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1363,9 +1592,11 @@
       ],
       "rules": [
         "SF-EMR-005"
-      ]
+      ],
+      "sha256": "0d249bd54886cf6c366cd9ceae47046dddff5740c7dc1cc0d515b3feee4998a6"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md",
         "knowledge/emr/cluster-configuration.md"
@@ -1378,9 +1609,11 @@
       "rules": [
         "SF-EMR-001",
         "SF-EMR-003"
-      ]
+      ],
+      "sha256": "da25c03e190441249ba58fe2169f4eb8fc0ff4d97481dabe675da4b7bf07e69a"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-s3-optimized-commit-protocol.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr/cluster-configuration.md"
       ],
@@ -1390,9 +1623,11 @@
       ],
       "rules": [
         "SF-EMR-005"
-      ]
+      ],
+      "sha256": "e64957a04945cd9a454ad16c4da221528c8a36a9d6fedf1888d2355bea3e949c"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md",
         "knowledge/emr/cluster-configuration.md"
@@ -1404,10 +1639,11 @@
       ],
       "rules": [
         "SF-EMR-002"
-      ]
+      ],
+      "sha256": "7a6646c19f3df727ce852fbaa8334a4c4f6abf0e765268d3ec92e97264b0d61d"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/cross-service-constraints.md",
         "knowledge/glue/job-arguments.md",
@@ -1421,6 +1657,7 @@
       "sha256": "710eb1d3d6a14435bb7a85e24b1f525378f0678622f0fec510b5e17db696470e"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/airflow/glue-operator.md",
         "knowledge/stepfunctions/glue-integration.md"
@@ -1432,9 +1669,11 @@
       "rules": [
         "SF-AIRFLOW-004",
         "SF-SFN-004"
-      ]
+      ],
+      "sha256": "319b639a8ee3f46111a7ad77b1580bf24f880e103fb37642dcda3735e5857d3e"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/airflow/glue-operator.md",
         "knowledge/stepfunctions/glue-integration.md"
@@ -1448,9 +1687,11 @@
         "SF-AIRFLOW-004",
         "SF-SFN-004",
         "SF-TIMEOUT-001"
-      ]
+      ],
+      "sha256": "79c1cf36c67f4292efa630a5915fc15f24226e957d0c760974d79b72fa0ec1e9"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -1463,9 +1704,11 @@
       "rules": [
         "SF-GRAPH-005",
         "SF-ICE-009"
-      ]
+      ],
+      "sha256": "806b56dc784ecca8495912385fcbe41bb2d8d63a7f3f8588df7f7ef85f6de9cb"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md"
       ],
@@ -1476,9 +1719,11 @@
       "rules": [
         "SF-GRAPH-002",
         "SF-GRAPH-005"
-      ]
+      ],
+      "sha256": "5e6272d318b858a6e9e0e99e45cde9a26a40f786bde30654ee2f76e15a9dc5b3"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-release-notes.rss": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md"
       ],
@@ -1486,9 +1731,11 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "5ae569f56998485ae0776cee902fd859492f1d8a18efb315bc666c9b212645d8"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/connect-glu-iceberg-rest.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-v3.md"
       ],
@@ -1496,9 +1743,11 @@
       "retrieved": [
         "2026-09-01"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "1089f7f355bebd0c55e7b6673e2e25c1b4f39294a8cbc23cc98d6b5392cf5f6f"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1508,10 +1757,11 @@
         "SF-KMS-001",
         "SF-KMS-002",
         "SF-NET-001"
-      ]
+      ],
+      "sha256": "7f929115bea701119d35cd25167dbd5fb7f3054b672510b18e0c9844c0e19fe6"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/lakeformation-fgac.md",
         "knowledge/glue/runtime-matrix.md"
@@ -1530,6 +1780,7 @@
       "sha256": "8df8427d8f815c4d9c443c40d22b5082d9c3129cb8bc053ad5969ad119044439"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/lakeformation-fgac.md"
       ],
@@ -1540,9 +1791,11 @@
       "rules": [
         "SF-LF-004",
         "SF-LF-009"
-      ]
+      ],
+      "sha256": "bda2f8668d054e6e4013b82398dec5a9e86cfbd02170367f93c5c991a31bd5b7"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md",
         "knowledge/spark/spark4-migration.md",
@@ -1561,10 +1814,11 @@
         "SF-MIG-003",
         "SF-MIG-004",
         "SF-SPARK4-004"
-      ]
+      ],
+      "sha256": "b13d41aa592283aadd62825414a88ba1523536eb4a2086ed3471781d4ac6eb39"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/cross-service-constraints.md",
         "knowledge/glue/job-arguments.md",
@@ -1589,6 +1843,7 @@
       "sha256": "db732c3ad0ea1f566cc26dbe6e96226e6dc024c66be1e3755d94c6e8ab367dc3"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/performance.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/job-arguments.md",
         "knowledge/glue/workers-and-capacity.md"
@@ -1597,9 +1852,11 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "97641fd58e43ec3f332284b1bb87fce6e095b0d1722632bde1342929e3308257"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/release-notes.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md"
       ],
@@ -1607,9 +1864,11 @@
       "retrieved": [
         "2026-08-21"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "1777ce21b09507eb5407445dea16acf0824078d6259e5def1b782c4499473d34"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/lakeformation-fgac.md"
       ],
@@ -1624,9 +1883,11 @@
         "SF-LF-005",
         "SF-LF-007",
         "SF-LF-009"
-      ]
+      ],
+      "sha256": "59914c71e2bf80b1ede35dbdc4a5187ddee41c6c3ace97b95a98b255ce1c5d2d"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/lakeformation-fgac.md"
       ],
@@ -1649,9 +1910,11 @@
         "SF-LF-010",
         "SF-XACC-002",
         "SF-XACC-003"
-      ]
+      ],
+      "sha256": "1fa29434fb8d60da2ea3b3d2d2437aba0a0953adb62140ffb7f1d0598e216b49"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/lakeformation-fgac.md"
       ],
@@ -1664,9 +1927,11 @@
         "SF-LF-003",
         "SF-LF-006",
         "SF-LF-009"
-      ]
+      ],
+      "sha256": "3d73e302afaf7830c8d1896acc12d9ea9d19ea1faa4fb9e45e3568bda4d81b61"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/lakeformation-fgac.md"
       ],
@@ -1676,9 +1941,11 @@
       ],
       "rules": [
         "SF-ERR-017"
-      ]
+      ],
+      "sha256": "27def22c555d151e19ca88143f4d914fb92324ff974ca9eeb109547b81013ca9"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1686,9 +1953,11 @@
       ],
       "rules": [
         "SF-NET-001"
-      ]
+      ],
+      "sha256": "702c21bbea6aea11ac7d16d61f23be2d2290506cf5242e40d7d2a31eef9e501f"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1696,10 +1965,12 @@
       ],
       "rules": [
         "SF-ERR-004"
-      ]
+      ],
+      "sha256": "5995fa53aedc5278d991b77754f707a0e2f3698f50f288ea23451eb914bc22bb"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/workers-and-capacity.md"
       ],
@@ -1710,9 +1981,10 @@
       "rules": [
         "SF-GLUE-005"
       ],
-      "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
+      "sha256": "1602de97218ed6216d6d22bbdb07e7d74ab18b5d7c16ff3b4def015150bd6503"
     },
     "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1720,9 +1992,11 @@
       ],
       "rules": [
         "SF-GLUE-007"
-      ]
+      ],
+      "sha256": "ca1d372eb2ab5aee04f9dbddd3016ce820d155c4c502ba6026ab32540c283f94"
     },
     "https://docs.aws.amazon.com/lake-formation/latest/APIReference/API_GetTemporaryGlueTableCredentials.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1730,9 +2004,11 @@
       ],
       "rules": [
         "SF-ERR-014"
-      ]
+      ],
+      "sha256": "4951ead81b203998426996d1de27025e7e80ef04f893f5a1c50791705a34429b"
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1740,9 +2016,11 @@
       ],
       "rules": [
         "SF-XACC-001"
-      ]
+      ],
+      "sha256": "5b33793c239501453c58c0250f63a918916f57e7cd767b5e2ada67877f0cc5be"
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1750,9 +2028,11 @@
       ],
       "rules": [
         "SF-ERR-006"
-      ]
+      ],
+      "sha256": "f6823a6fde529ff8d3146ae1e034eeb762d2caa4f1ecdaa89cf644aa339162d2"
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/full-table-credential-vending.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1760,9 +2040,11 @@
       ],
       "rules": [
         "SF-LF-007"
-      ]
+      ],
+      "sha256": "5ac36bdf5661a23a5f34db43cb68dc823634d4fb62de2dc46076d7dae4423160"
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1770,9 +2052,11 @@
       ],
       "rules": [
         "SF-LF-010"
-      ]
+      ],
+      "sha256": "9e739116424826fa7f8d59e53b20edf495da11e28bb06719468c8467b1af78ec"
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/upgrade-glue-lake-formation.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1780,9 +2064,11 @@
       ],
       "rules": [
         "SF-LF-008"
-      ]
+      ],
+      "sha256": "e421723e8bd89d33c14b3729e0e7b174807a20481729be983660fd0f876d9323"
     },
     "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1790,9 +2076,11 @@
       ],
       "rules": [
         "SF-IAM-002"
-      ]
+      ],
+      "sha256": "e59a53daf4139a5c03e87c06eb4921f525173dd9f83f2dafd9278b499a6671cf"
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/execution-model.md"
       ],
@@ -1800,10 +2088,11 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "ac7b57d8b0f101a4154181f18752bd661a02f52873397d21ceaf7c721eac12eb"
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1818,7 +2107,7 @@
       "sha256": "1a3820aae96e7d2edca0ef5bedd41cf7cff918465c3b72cfaa331157d230078a"
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -1831,6 +2120,7 @@
       "sha256": "e426dc396a6cb32e557e8600437593c20ff8ee5cb024dbee0de7a99385816777"
     },
     "https://docs.aws.amazon.com/secretsmanager/latest/userguide/integrating-emr.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -1840,9 +2130,11 @@
       ],
       "rules": [
         "SF-EMRK-001"
-      ]
+      ],
+      "sha256": "6fcf74bf681672793f78541e64a66e92b3744277067b04ede321b33fcb34946b"
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_CreateStateMachine.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/glue-integration.md"
       ],
@@ -1850,9 +2142,11 @@
       "retrieved": [
         "2026-09-19"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "49f69c50c190b943a9fc44288f5169dedb8ff598ff1cad62b52f9fb8239fc628"
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetExecutionHistory.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/execution-history.md"
       ],
@@ -1865,9 +2159,11 @@
         "SF-SFNX-001",
         "SF-SFNX-002",
         "SF-SFNX-003"
-      ]
+      ],
+      "sha256": "f7e3e1740d299baf23afdd058b640dad0784bd8fd941c7d851ae756f581acdf7"
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_HistoryEvent.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/execution-history.md"
       ],
@@ -1875,9 +2171,11 @@
       "retrieved": [
         "2026-09-20"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "2a54e5b1f38777727418d723504e75d9220acad3204d400e8b34f197e6260f68"
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_ValidateStateMachineDefinition.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/glue-integration.md"
       ],
@@ -1885,9 +2183,11 @@
       "retrieved": [
         "2026-09-19"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "381708284c4f9e2930df9fbdd2aa10ebe17d2be3b49971d3ac3fb0bdf6aa1283"
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/glue-integration.md"
       ],
@@ -1897,9 +2197,11 @@
       ],
       "rules": [
         "SF-SFN-003"
-      ]
+      ],
+      "sha256": "ef5b37432ede235018d6daa712a5706d1c1caedaabbc3563e07b7e5716443112"
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
@@ -1912,9 +2214,11 @@
         "SF-SFN-002",
         "SF-SFN-004",
         "SF-SFNX-001"
-      ]
+      ],
+      "sha256": "fa936e0644c924adb81b0ad0d1de455a471ef9dfba8488d79081e3347ee3fe45"
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
@@ -1927,9 +2231,11 @@
         "SF-SFN-001",
         "SF-SFN-002",
         "SF-SFNX-003"
-      ]
+      ],
+      "sha256": "6197e5d8ffd8d46eaab676347fd0adc9532b8b879e3875caad067f132182d755"
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/execution-history.md",
         "knowledge/stepfunctions/glue-integration.md"
@@ -1943,9 +2249,11 @@
         "SF-SFN-003",
         "SF-SFNX-002",
         "SF-SFNX-003"
-      ]
+      ],
+      "sha256": "cd2766edcc606dc5705ad8e872838386ce3d88f52248cbbd5a2f6b94df63df79"
     },
     "https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/stepfunctions/glue-integration.md"
       ],
@@ -1953,9 +2261,11 @@
       "retrieved": [
         "2026-09-19"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "8890b66dd499ab844768357dcab87aeb0479ff06e3c18dfa7fabe5c25ece4918"
     },
     "https://docs.databricks.com/api/workspace/clusters/create": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/databricks/runtime-matrix.md"
       ],
@@ -1965,9 +2275,11 @@
       ],
       "rules": [
         "SF-ENV-006"
-      ]
+      ],
+      "sha256": "cbc29f2e2c7d0deb44007e2e791906605399cf359d3bef3751ace0f362f9d278"
     },
     "https://docs.databricks.com/aws/en/compute/photon": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/databricks/runtime-matrix.md"
       ],
@@ -1977,9 +2289,11 @@
       ],
       "rules": [
         "SF-ENV-006"
-      ]
+      ],
+      "sha256": "13c2b8ab483644672079cfb6ff4d50a83835ecc14386c9d9301228456761ea3a"
     },
     "https://docs.databricks.com/aws/en/optimizations/aqe": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/databricks/runtime-matrix.md"
       ],
@@ -1987,9 +2301,11 @@
       "retrieved": [
         "2026-09-17"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "212106bdc3803651bde86264b3bed85f57b3a1706dacc474ecfa33ef008dedcd"
     },
     "https://docs.databricks.com/aws/en/release-notes/runtime/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/databricks/runtime-matrix.md"
       ],
@@ -1997,9 +2313,11 @@
       "retrieved": [
         "2026-09-17"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "8276625109e438818c55f44b3200339d1689e2eddb0b02c6124ad8f36d2e7f85"
     },
     "https://docs.databricks.com/aws/en/udf/udf-task-context": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/databricks/runtime-matrix.md"
       ],
@@ -2007,9 +2325,11 @@
       "retrieved": [
         "2026-09-17"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "312e0474c3458e3e781059f7eac815f753771423aecf50a4121e9712b1bc48e7"
     },
     "https://docs.devin.ai/cli/changelog/stable.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2017,9 +2337,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "1db7539e5730cb10d27591d79cd13881db5dfb6a534016ed28e99ce7938f33ed"
     },
     "https://docs.devin.ai/cli/extensibility/mcp/configuration.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2027,9 +2349,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "feaa918df89a8394b1affe72be08003c7399f2c6a02372e9cb3f0bdd809c8a9a"
     },
     "https://docs.devin.ai/cli/extensibility/mcp/overview.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2037,9 +2361,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "0d22f6604189d6364515f32c8ef5c98b10dc3202638e4b0b0ea34b7dfc45d99f"
     },
     "https://docs.devin.ai/cli/extensibility/skills/creating-skills.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2047,9 +2373,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "127a4bd5064236dc17197e0d2f25c89dd968fd35b3040112560fc18bb909d25d"
     },
     "https://docs.devin.ai/cli/extensibility/skills/overview.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2057,9 +2385,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "1df7ad3e5519c937a537dc2ac7e198b7af44742569d76d1fe27f7bd26fca0a54"
     },
     "https://docs.devin.ai/cli/models.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2067,9 +2397,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b9ad3e26facf79c5906ef3ce868e317c8f2700ace22fabc00095a7149269629b"
     },
     "https://docs.devin.ai/cli/reference/commands.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2077,9 +2409,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "dbb2970000feb970f77ea20599140552e1bbaee1a27f1b71bc9227f4908ef4c1"
     },
     "https://docs.devin.ai/cli/reference/configuration/config-file.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2087,9 +2421,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "955c999d9908c42a823bf8b1ccb77172e76dc9af9658dd136fe664271cc1c899"
     },
     "https://docs.devin.ai/cli/reference/configuration/global-vs-local.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2097,9 +2433,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "af3489a930ab2f8bcea3f9b27242817da815c5aa2015a8dafba9311e70aa4a31"
     },
     "https://docs.devin.ai/cli/reference/configuration/read-config-from.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2107,9 +2445,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9cd38365b2db2f8bc431f4869d9d6f2ef66f92c20e34f2394ed34dd04fb4b181"
     },
     "https://docs.devin.ai/cli/reference/keyboard-shortcuts.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2117,9 +2457,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "18c2c87e23678cdbd0b2232dac32b68460a6b42d571535ae12d7a59764c2e659"
     },
     "https://docs.devin.ai/cli/reference/permissions.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2127,9 +2469,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "894fdc77556c2996b2cfd8db61e9745c303b45ad0a192c018245281d9cc17563"
     },
     "https://docs.devin.ai/cli/subagents.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2137,9 +2481,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "73a6ab2e5913e90c38b29943899dbd5c7e4697729846c52b0b8bb2a8adf14abf"
     },
     "https://docs.devin.ai/desktop/advanced.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2147,9 +2493,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "a012fdf3a72a4c7f6517c3d35c9b4120da8ad4690b6a5381d24e384ecb0f9163"
     },
     "https://docs.devin.ai/desktop/agent-command-center.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2157,9 +2505,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "d0c07908a7eab1c9f5c4d05b757a937675874e46dd503ccf964af063e70450a5"
     },
     "https://docs.devin.ai/desktop/cascade/agents-md.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2167,9 +2517,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "e0750f9094acaa7dcee8d10ae821d696752489001b3291f813ee9c9a2f9fe7da"
     },
     "https://docs.devin.ai/desktop/cascade/cascade.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2177,9 +2529,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "63b5466c75d6c56ccc7c83d916ebe4bd3c479a0515ddc10b7d3892e7140c6d8c"
     },
     "https://docs.devin.ai/desktop/cascade/skills.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2187,9 +2541,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b9fa8ca8b6bd835487ff0a84ac5abaecc80c6d3b78b5f618c1c20c7f93b0685a"
     },
     "https://docs.devin.ai/desktop/cascade/workflows.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2197,9 +2553,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "cdc4495b994996d6f1a529833b36ad0ca5c595d4ef89d4055697c0ac37b2a007"
     },
     "https://docs.devin.ai/desktop/devin-local.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2207,9 +2565,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "0b3eafd1d9e562964c5ff2a4973b7f231007717d9cc60c0af83c04a49c67c3ba"
     },
     "https://docs.devin.ai/desktop/devin.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2217,9 +2577,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "384c67e0d52483bf3f3f038809315eb5f5040a9336fe34d7ea0b11357edfd1d6"
     },
     "https://docs.devin.ai/desktop/models.md": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2227,9 +2589,11 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "63f51e4f098a28d8ce74fca34f1ef5e78b2a927c989ceda639933b28bb5ae9ae"
     },
     "https://docs.devin.ai/llms.txt": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/devin/agents-and-subagents.md"
       ],
@@ -2237,7 +2601,8 @@
       "retrieved": [
         "2026-08-04"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "6ff2714c4d2c878c239c868fbe2ffc836da33803c4625cc742ae3d64a0e6a3ca"
     },
     "https://docs.greatexpectations.io/docs/0.18/reference/learn/migration_guide/": {
       "docs": [
@@ -2250,6 +2615,7 @@
       "rules": []
     },
     "https://docs.greatexpectations.io/docs/core/connect_to_data/dataframes/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2257,9 +2623,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9fdb3115d0a43154d257b56f32763c2a4dd4bdef92ad820aa75e08a9e7c1772d"
     },
     "https://docs.greatexpectations.io/docs/core/define_expectations/create_an_expectation": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2267,9 +2635,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "c2af2e13549b99254ac3ce9e498a79543f537a9cba2edd0c5bc9c35ca621f7e5"
     },
     "https://docs.greatexpectations.io/docs/core/define_expectations/test_an_expectation": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2277,9 +2647,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "c0a4ffce0abb104c09cadae19a4c05be709a86241d91151e54cd8dd4b86c3b85"
     },
     "https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2287,9 +2659,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "7090a26e7fedf5052018b5a1779a56fb84c261bda363830be3c9c87398b85e72"
     },
     "https://docs.python.org/3/using/cmdline.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2297,12 +2671,14 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "0f506d931bdaead99dd29dde70f0911b091980e23354edbebe504e196889442f"
     },
     "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm": {
       "docs": [
         "knowledge/controlm/automation-api-matrix.md"
       ],
+      "last_error": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm: HTTP Error 403: Forbidden",
       "pinned": false,
       "retrieved": [
         "2026-09-01"
@@ -2315,6 +2691,7 @@
       "docs": [
         "knowledge/controlm/automation-api-matrix.md"
       ],
+      "last_error": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm: HTTP Error 403: Forbidden",
       "pinned": false,
       "retrieved": [
         "2026-09-01",
@@ -2333,6 +2710,7 @@
       "docs": [
         "knowledge/controlm/automation-api-matrix.md"
       ],
+      "last_error": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm: HTTP Error 403: Forbidden",
       "pinned": false,
       "retrieved": [
         "2026-09-01"
@@ -2345,6 +2723,7 @@
       "docs": [
         "knowledge/controlm/automation-api-matrix.md"
       ],
+      "last_error": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_SecretsInCode.htm: HTTP Error 403: Forbidden",
       "pinned": false,
       "retrieved": [
         "2026-09-01"
@@ -2355,6 +2734,7 @@
       "docs": [
         "knowledge/controlm/automation-api-matrix.md"
       ],
+      "last_error": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm: HTTP Error 403: Forbidden",
       "pinned": false,
       "retrieved": [
         "2026-09-01"
@@ -2410,7 +2790,8 @@
       "rules": []
     },
     "https://github.com/awslabs/python-deequ": {
-      "checked_at": "2026-08-03",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2421,9 +2802,10 @@
       "rules": [
         "SF-DQ-004"
       ],
-      "sha256": "68e7ef8d4659c195276280ac4e7393d91b72bcfc4687f05fb2d3cbfecbacd625"
+      "sha256": "a7d91c245d2e935268de0d009cb363241ad714b5f6e02be82939d53d8191f282"
     },
     "https://graphframes.io/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2431,9 +2813,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "6294a1ad6b57e192570bf4320f5d2eec2f30a2896c1194c0315bf880c7e80c8f"
     },
     "https://graphframes.io/02-quick-start/01-installation.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md",
         "knowledge/graph/graphframes-api.md"
@@ -2445,9 +2829,11 @@
       "rules": [
         "SF-GRAPH-002",
         "SF-GRAPH-005"
-      ]
+      ],
+      "sha256": "92fa4053c006259fd8de408592a33f7dec2b3fb862eb555385c9522e0f7d9ecc"
     },
     "https://graphframes.io/04-user-guide/03-centralities.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2455,9 +2841,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b0390b3966bfdf907004a962bdca8898ce9954fee96656c227e9a7efe65df841"
     },
     "https://graphframes.io/04-user-guide/05-traversals.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2468,9 +2856,11 @@
       "rules": [
         "SF-GRAPH-001",
         "SF-GRAPH-006"
-      ]
+      ],
+      "sha256": "da61a349df9dad370416ee0151b61404d921bf672f13a8c1201f483ba0636fc0"
     },
     "https://graphframes.io/04-user-guide/06-graph-clustering.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2480,9 +2870,11 @@
       ],
       "rules": [
         "SF-GRAPH-006"
-      ]
+      ],
+      "sha256": "b2e9e19faa6213df1f56ccf0f01f3d877cdb0fc910d5a3e44b55cfb06f94995c"
     },
     "https://iceberg.apache.org/docs/latest/spark-configuration/": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -2493,10 +2885,12 @@
         "SF-ICE-006",
         "SF-ICE-008",
         "SF-ICE-009"
-      ]
+      ],
+      "sha256": "abb4ed6ce7c30e47350fff5a0e4be7ddf02abbf194dcb5a9c86f8f29e78adfe4"
     },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
-      "checked_at": "2026-07-31",
+      "changed_at": "2026-09-21",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-performance.md"
       ],
@@ -2510,9 +2904,10 @@
         "SF-ICE-003",
         "SF-ICE-005"
       ],
-      "sha256": "b5ecdfa5f41670d9876019651bacdfb4bb275ff2fa4d1b8075f9480b6aca84d0"
+      "sha256": "8a2014f2a5dd0974df14bce38e81fc330663414d768b04ceb233f78d65b1a67c"
     },
     "https://iceberg.apache.org/docs/latest/spark-queries/#inspecting-tables": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-performance.md"
       ],
@@ -2520,9 +2915,11 @@
       "retrieved": [
         "2026-07-30"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "86d5b16a88bf197905101aea08851464c27ae2765cd8e66c0af1ad14e919aadd"
     },
     "https://iceberg.apache.org/docs/latest/spark-writes/": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -2532,9 +2929,11 @@
       "rules": [
         "SF-ERR-005",
         "SF-ICE-008"
-      ]
+      ],
+      "sha256": "5c366580ea6c29a7df93617a56de3f9835207a93622b9126644d9986dc8913f9"
     },
     "https://parquet.apache.org/docs/file-format/data-pages/compression/": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -2542,9 +2941,11 @@
       ],
       "rules": [
         "SF-PQ-009"
-      ]
+      ],
+      "sha256": "d96ecad80744803be9a7ead7443b3111f349312acc2d2be8aed7b29a7b49eba5"
     },
     "https://parquet.apache.org/docs/file-format/metadata/": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -2553,9 +2954,11 @@
       "rules": [
         "SF-PQ-007",
         "SF-PQ-008"
-      ]
+      ],
+      "sha256": "1be7586123b9ea78b33fb8362aeed5ff0cd254dfc7e5516188601debb76734e3"
     },
     "https://pypi.org/pypi/graphframes-py/json": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md"
       ],
@@ -2563,9 +2966,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "321c2679cb824473922a793b4f2e45b9ceb1dec0749a13ab31ce3081a3451be2"
     },
     "https://pypi.org/pypi/graphframes/json": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md"
       ],
@@ -2573,9 +2978,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "45ee582fbdaa1124a829661c2338479efc427d7e7ff5d073db557466be673dd0"
     },
     "https://pypi.org/pypi/great-expectations/json": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2583,9 +2990,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "9c11a43ebc42a19fb93f9351d45c17d1309888e7ed3c7c7eaba9a21125ca5a4e"
     },
     "https://pypi.org/pypi/pydeequ/json": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2593,7 +3002,8 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "3433f78cbd2ab2b321ead7d4bce69b61b3820fdfea0e4b133cae44244acc606f"
     },
     "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md": {
       "docs": [
@@ -2616,6 +3026,7 @@
       "rules": []
     },
     "https://raw.githubusercontent.com/apache/spark/v3.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2623,9 +3034,11 @@
       "retrieved": [
         "2026-08-28"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "98f5c7e43a4172dedc24bb934b03d0f88752e23b2389fb38b4430283e5a06f39"
     },
     "https://raw.githubusercontent.com/apache/spark/v3.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2633,9 +3046,11 @@
       "retrieved": [
         "2026-08-28"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "62922854c5283db5f2c4b7171a9b8f898c4e712732c16d1955444b20047c9226"
     },
     "https://raw.githubusercontent.com/apache/spark/v3.5.4/core/src/main/scala/org/apache/spark/scheduler/TaskSetManager.scala": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -2643,9 +3058,11 @@
       ],
       "rules": [
         "SF-UI-007"
-      ]
+      ],
+      "sha256": "7306c582ed964b9941e0dbb9d03083beeeaa322a179c57ae4ad3163014d78121"
     },
     "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2653,9 +3070,11 @@
       "retrieved": [
         "2026-08-28"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "4a9aac8a2a4fd74afe0ccc82042fff8c5311acf51a8af141ffb13921d0e7db66"
     },
     "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/exchange/BroadcastExchangeExec.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2663,9 +3082,11 @@
       "retrieved": [
         "2026-09-14"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b058e8b2f18b94ca752b1cb6a72099516b058589ea33ce2ce22695cf76ca6042"
     },
     "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/metric/SQLMetrics.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2673,9 +3094,11 @@
       "retrieved": [
         "2026-08-28"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "423725759abbb079c5d711ad347c12408fac41ac36cdf77a8dacd90ca7c49d84"
     },
     "https://raw.githubusercontent.com/apache/spark/v3.5.6/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2683,9 +3106,11 @@
       "retrieved": [
         "2026-08-28"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "ca433cafc547456f8d4113c3aa860ec01264afb6a4e783dfc621bb7b03738d09"
     },
     "https://raw.githubusercontent.com/apache/spark/v4.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/spark/sql-metrics.md"
       ],
@@ -2693,9 +3118,11 @@
       "retrieved": [
         "2026-08-28"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "b6420c02e1aaaecb9c1afb534129af951153c591d174950885b79b3aa47ace7f"
     },
     "https://raw.githubusercontent.com/awslabs/python-deequ/v1.6.0/pydeequ/configs.py": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
@@ -2703,9 +3130,11 @@
       "retrieved": [
         "2026-08-03"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "92954582c92e38b458bbdc23b4bdbcd99bc302ca673026b1522fe4f3dde34d8a"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/apache/spark/sql/graphframes/GraphFramesConf.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2715,9 +3144,11 @@
       ],
       "rules": [
         "SF-GRAPH-001"
-      ]
+      ],
+      "sha256": "70cf4903e4a49d5983410b08af08539251d4a46a0466a48b1053f67be7db9b53"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2728,9 +3159,11 @@
       "rules": [
         "SF-GRAPH-001",
         "SF-GRAPH-006"
-      ]
+      ],
+      "sha256": "80f95405bdbba34396ecb1c5afbcdc96b8ff21fc8c0d24ab8528165cc5d18c0e"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/__init__.py": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2738,9 +3171,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "cc2011d764fa16d8864961c0812fb709e708e1244d149d91e72e106c4d05a3c5"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/graphframe.py": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2748,9 +3183,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "5c2ab7eebadfc506ac60c3fd28393e1f8a64bb486450d26b3ba837bdc676c041"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/lib/pregel.py": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2758,9 +3195,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "ae4c39bb5aea45ad0576fb62d0118044ccc1b82b5b72f9feb51e2b290e6dc451"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/python/graphframes/graphframe.py": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2768,9 +3207,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "70536dc1f6535bb404b228315bcb07584d3287d6206e214148611251bbb2a570"
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/src/main/scala/org/graphframes/lib/ConnectedComponents.scala": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/graphframes-api.md"
       ],
@@ -2781,7 +3222,8 @@
       "rules": [
         "SF-GRAPH-001",
         "SF-GRAPH-006"
-      ]
+      ],
+      "sha256": "dfd3bc8a31dab97dc8b2a6335e4d7b78ef3466f2fa979e807549660e19f55831"
     },
     "https://raw.githubusercontent.com/great-expectations/great_expectations/1.19.1/great_expectations/validator/validator.py": {
       "docs": [
@@ -2816,6 +3258,7 @@
       "rules": []
     },
     "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/maven-metadata.xml": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md"
       ],
@@ -2825,9 +3268,11 @@
       ],
       "rules": [
         "SF-GRAPH-002"
-      ]
+      ],
+      "sha256": "e7b1005cc6d7149906c8ea3e2e044b161a0bc0d2fa0183c33f17c69fb064d99d"
     },
     "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.13/maven-metadata.xml": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md"
       ],
@@ -2835,9 +3280,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "ac92e005456e0422e2668d9e497f8ab002507b58346410c47a51773e3461ccfa"
     },
     "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark4_2.13/maven-metadata.xml": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/graph/availability.md"
       ],
@@ -2845,9 +3292,11 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "78ba3b6885de4ccdf48fd2ec42cd6a21e3f5c939b19882406ddb52cc3b850db0"
     },
     "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md"
       ],
@@ -2857,12 +3306,14 @@
       ],
       "rules": [
         "SF-MIG-001"
-      ]
+      ],
+      "sha256": "ca2644d1dc59871fe6556accd26f349126f089bfc309d33b3a7422b2ec0301b5"
     },
     "https://spark-packages.org/package/graphframes/graphframes": {
       "docs": [
         "knowledge/graph/availability.md"
       ],
+      "last_error": "https://spark-packages.org/package/graphframes/graphframes: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1016)>",
       "pinned": false,
       "retrieved": [
         "2026-08-05"
@@ -2950,7 +3401,7 @@
       ]
     },
     "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -2962,6 +3413,7 @@
       "sha256": "0b640a7519e75ed47c9d3fc074ae7cb109a62420ff0a581302b2ca00c676c627"
     },
     "https://spark.apache.org/docs/latest/configuration.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -2984,9 +3436,11 @@
         "SF-ERR-021",
         "SF-TIMEOUT-002",
         "SF-UI-007"
-      ]
+      ],
+      "sha256": "c21577fcc155bdc7449e2d78250d112b87407b09db985727a312549ab3ea2025"
     },
     "https://spark.apache.org/docs/latest/running-on-kubernetes.html": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
       ],
@@ -2994,9 +3448,11 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "1ec81794b0e67e1e0c2c9bbb52a750ac4ff2d163ed4c879785af52a4bbffe9ef"
     },
     "https://spark.apache.org/docs/latest/sql-data-sources-parquet.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -3004,9 +3460,11 @@
       ],
       "rules": [
         "SF-ERR-023"
-      ]
+      ],
+      "sha256": "e71eaaaad18a458d2d844ca3805c9bf8675b50999cf370fb5565d35d114d70a9"
     },
     "https://spark.apache.org/docs/latest/sql-getting-started.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -3014,9 +3472,11 @@
       ],
       "rules": [
         "SF-ERR-018"
-      ]
+      ],
+      "sha256": "eacdd4c6fcb4e0128304e250db007a065fe7cf63eee92da2c47e628383e44aa8"
     },
     "https://spark.apache.org/docs/latest/sql-migration-guide.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -3024,10 +3484,11 @@
       ],
       "rules": [
         "SF-ERR-022"
-      ]
+      ],
+      "sha256": "a65868cff365d9fd04ba99233a4789d8535b98dbeb7e4b0285d1dafb82e87bcc"
     },
     "https://spark.apache.org/docs/latest/sql-performance-tuning.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -3039,7 +3500,7 @@
       "sha256": "f8a6abaec155d6eff86e750b815b2d8059b70304d3e64bde30f9d1978ea6a280"
     },
     "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html": {
-      "checked_at": "2026-07-31",
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -3051,6 +3512,7 @@
       "sha256": "0c641ce521fee80c2e09865345b29250149442d0f14d5023bfc1ade7615692a1"
     },
     "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select.html": {
+      "checked_at": "2026-09-21",
       "docs": [],
       "pinned": false,
       "retrieved": [
@@ -3058,9 +3520,11 @@
       ],
       "rules": [
         "SF-ERR-019"
-      ]
+      ],
+      "sha256": "1701f8c278b2c8f48fee4a5004d7788e51953fb97ebeb77712cfc936be346f9d"
     },
     "https://www.dremio.com/blog/compaction-in-apache-iceberg-fine-tuning-your-iceberg-tables-data-files/": {
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/storage/iceberg-performance.md"
       ],
@@ -3068,10 +3532,11 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [],
+      "sha256": "88d28c51f6304a4131b85222d44def57bc9da853feefd06c8038c4bc2f96706d"
     },
     "https://www.vldb.org/pvldb/vol11/p1781-schelter.pdf": {
-      "checked_at": "2026-08-03",
+      "checked_at": "2026-09-21",
       "docs": [
         "knowledge/dq/validation-frameworks.md"
       ],
