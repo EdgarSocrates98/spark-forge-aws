@@ -125,13 +125,16 @@ def _glue(versao: str) -> Fact:
     )
 
 
-def _registrada(sim: bool = True) -> Fact:
+LOCAL = "arn:aws:s3:::sparkforge-demo/default/dim_cliente"
+
+
+def _registrada(sim: bool = True, arn: str = LOCAL, tabela: str = TABELA) -> Fact:
     return Fact(
         kind="lakeformation.registered_location",
-        subject={"type": "table", "file": "lf.json", "symbol": TABELA, "catalog_id": ""},
+        subject={"type": "table", "file": "lf.json", "symbol": tabela, "catalog_id": ""},
         attrs={
             "registered": sim,
-            "resource_arn": "arn:aws:s3:::sparkforge-demo/default/dim_cliente",
+            "resource_arn": arn,
             "role_arn": "",
             "hybrid_access_enabled": None,
             "with_federation": None,
@@ -141,16 +144,20 @@ def _registrada(sim: bool = True) -> Fact:
 
 
 def _decisao(
-    acao: str, decisao: str, denied_by: str = "implicit_deny", role: str = ROLE
+    acao: str,
+    decisao: str,
+    denied_by: str = "implicit_deny",
+    role: str = ROLE,
+    recurso: str = "*",
 ) -> Fact:
     return Fact(
         kind="iam.access_decision",
-        subject={"type": "job_run", "file": "iam.json", "symbol": f"{role}#{acao}@*"},
+        subject={"type": "job_run", "file": "iam.json", "symbol": f"{role}#{acao}@{recurso}"},
         measures={"matched_statements": 0},
         attrs={
             "role_arn": role,
             "action": acao,
-            "resource": "*",
+            "resource": recurso,
             "decision": decisao,
             "allowed": decisao == "allowed",
             "denied_by": "" if decisao == "allowed" else denied_by,
@@ -181,6 +188,7 @@ def cenario_fgac_escrita_negada() -> list[Fact]:
         _modelo("fgac"),
         _glue("5.1"),
         _escrita(),
+        _registrada(False),
         _decisao("s3:PutObject", "implicitDeny"),
     ]
 
@@ -882,6 +890,7 @@ def test_fgac_escrita_registrada_e_conflito_declarado():
     (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
     assert recusa.attrs["reason"] == "conflito_declarado_fgac_escrita_registrada"
     assert "knowledge/glue/lakeformation-fgac.md" in recusa.attrs["unblocked_by"]
+    assert "secao 6" in recusa.attrs["unblocked_by"]
     assert "missing" not in recusa.attrs
 
 
@@ -911,13 +920,17 @@ def test_fgac_escrita_em_runtime_sem_suporte_nao_e_permissao():
     assert recusa.attrs["runtime"] == "5.0"
 
 
-def test_fgac_decisao_de_outro_role_nao_acusa_o_job():
-    base = [_gatilho(), _modelo("fgac"), _glue("5.1")]
+def test_fgac_negacao_de_outro_role_ao_lado_do_job_e_principal_ambiguo():
+    base = [_gatilho(), _modelo("fgac"), _glue("5.1"), _registrada(False)]
     # A negacao e de outro role, ao lado de um allowed do role do job: com dois roles
     # decididos nada diz qual e o do job, e a negacao alheia nao vira acusacao.
     so_outro = [*base, _escrita(), _decisao("s3:PutObject", "allowed", role=ROLE),
                 _decisao("s3:PutObject", "implicitDeny", role=OUTRO_ROLE)]
     assert _razoes(build_missing_grant(so_outro)) == ["principal_ambiguo"]
+
+
+def test_fgac_registro_qualificado_por_catalogo_casa_pelo_sufixo():
+    base = [_gatilho(), _modelo("fgac"), _glue("5.1")]
     # Registro de nome qualificado com catalogo casa pelo sufixo, como na T2.
     registrada = Fact(
         kind="lakeformation.registered_location",
@@ -932,8 +945,157 @@ def test_fgac_decisao_de_outro_role_nao_acusa_o_job():
 
 
 def test_fgac_overwrite_sem_simulacao_recusa_cada_acao():
-    pool = [_gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode="overwrite")]
+    pool = [
+        _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode="overwrite"),
+        _registrada(False),
+    ]
     recusas = _so_recusas(build_missing_grant(pool))
     assert sorted(r.attrs["action"] for r in recusas) == ["s3:DeleteObject", "s3:PutObject"]
     assert {r.attrs["reason"] for r in recusas} == {"acao_iam_nao_simulada"}
     assert all("collect iam-access" in r.attrs["unblocked_by"] for r in recusas)
+
+
+def _fgac_51(*resto: Fact) -> list[Fact]:
+    return [_gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(), *resto]
+
+
+def test_fgac_sem_registro_coletado_recusa_e_nao_cobra_o_iam():
+    # Sem saber se a tabela e registrada, cobrar o IAM seria escolher o lado que o
+    # conflito declarado da secao 6 deixa em aberto.
+    for extra in ([], [_registrada(False, tabela="staging.outra")]):
+        pool = _fgac_51(*extra, _decisao("s3:PutObject", "implicitDeny"))
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "registro_nao_coletado"
+        assert "conflito declarado" in recusa.attrs["unblocked_by"]
+        assert "sparkforge collect lakeformation" in recusa.attrs["unblocked_by"]
+
+
+def test_fgac_negacoes_da_mesma_acao_em_dois_recursos_nao_colapsam():
+    explicita = _decisao(
+        "s3:PutObject", "explicitDeny", denied_by="explicit_deny", recurso=LOCAL + "/*"
+    )
+    implicita = _decisao("s3:PutObject", "implicitDeny", recurso="*")
+    ida = build_missing_grant(_fgac_51(_registrada(False), explicita, implicita))
+    volta = build_missing_grant(_fgac_51(_registrada(False), implicita, explicita))
+    assert [f.to_dict() for f in ida] == [f.to_dict() for f in volta]
+    faltas = _de(ida, "lakeformation.missing_grant")
+    assert len(faltas) == 2
+    assert sorted(f.attrs["denied_by"] for f in faltas) == ["explicit_deny", "implicit_deny"]
+    assert sorted(f.attrs["iam_resource"] for f in faltas) == ["*", LOCAL + "/*"]
+
+
+def test_fgac_negacao_em_outro_bucket_nao_acusa_a_tabela():
+    pool = _fgac_51(
+        _registrada(False),
+        _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
+        _decisao("s3:PutObject", "implicitDeny", recurso="arn:aws:s3:::outro-bucket/x/*"),
+    )
+    assert build_missing_grant(pool) == []
+
+
+def test_fgac_negacao_no_caminho_da_tabela_acusa():
+    pool = _fgac_51(
+        _registrada(False),
+        _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/part-0.parquet"),
+    )
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["iam_resource"] == LOCAL + "/part-0.parquet"
+    assert falta.attrs["missing"] == ["s3:PutObject"]
+
+
+def test_fgac_so_simulada_fora_da_tabela_recusa_nao_simulada():
+    pool = _fgac_51(
+        _registrada(False),
+        _decisao("s3:PutObject", "implicitDeny", recurso="arn:aws:s3:::outro-bucket/x/*"),
+    )
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
+    assert "localizacao da tabela" in recusa.attrs["unblocked_by"]
+
+
+def test_fgac_sem_localizacao_e_dois_recursos_recusa():
+    pool = _fgac_51(
+        _registrada(False, arn=""),
+        _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
+        _decisao("s3:PutObject", "implicitDeny", recurso="arn:aws:s3:::outro-bucket/x/*"),
+    )
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
+    assert recusa.attrs["action"] == "s3:PutObject"
+    assert "localizacao" in recusa.attrs["unblocked_by"]
+    # Um recurso so: e a pergunta que o operador fez ao coletor, e ela e aceita.
+    um = _fgac_51(_registrada(False, arn=""), _decisao("s3:PutObject", "implicitDeny"))
+    (falta,) = _de(build_missing_grant(um), "lakeformation.missing_grant")
+    assert falta.attrs["iam_resource"] == "*"
+
+
+def _glue_com(distintas: int, versao: str) -> Fact:
+    return Fact(
+        kind="env.runtime_signal",
+        subject={"type": "job_run", "symbol": "glue"},
+        measures={"distinct_versions": distintas, "source_count": distintas},
+        attrs={"component": "glue", "resolved": versao, "observed": [versao]},
+        provenance={"extractor": "runtime_detect@0.1.0"},
+    )
+
+
+def _tf_glue(valor: str, literal: bool = True, block: str = "root") -> Fact:
+    return Fact(
+        kind="tf.attribute",
+        subject={"type": "tf_resource", "file": "main.tf", "symbol": "aws_glue_job.etl"},
+        attrs={
+            "key": "glue_version", "value": valor, "present": True,
+            "literal": literal, "block": block,
+        },
+        provenance=PROV,
+    )
+
+
+def _fgac_sem_runtime(*runtime: Fact) -> list[Fact]:
+    return [
+        _gatilho(), _modelo("fgac"), *runtime, _escrita(), _registrada(False),
+        _decisao("s3:PutObject", "implicitDeny"),
+    ]
+
+
+def test_runtime_divergente_por_sinal_ou_por_terraform():
+    for runtime in (
+        [_glue("5.1"), _glue("5.0")],
+        [_glue_com(2, "5.1")],
+        [_tf_glue("5.1"), _tf_glue("4.0")],
+    ):
+        (recusa,) = _so_recusas(build_missing_grant(_fgac_sem_runtime(*runtime)))
+        assert recusa.attrs["reason"] == "runtime_divergente", runtime
+        assert recusa.attrs["unblocked_by"]
+
+
+def test_runtime_sem_celula_na_matriz_recusa():
+    (recusa,) = _so_recusas(build_missing_grant(_fgac_sem_runtime(_glue("6.0"))))
+    assert recusa.attrs["reason"] == "runtime_sem_celula_na_matriz"
+    assert recusa.attrs["runtime"] == "6.0"
+
+
+def test_glue_version_do_terraform_so_conta_literal_na_raiz():
+    (falta,) = _de(
+        build_missing_grant(_fgac_sem_runtime(_tf_glue("5.1"))), "lakeformation.missing_grant"
+    )
+    assert falta.attrs["runtime"] == "5.1"
+    for ignorado in (_tf_glue("var.glue", literal=False), _tf_glue("5.1", block="args")):
+        (recusa,) = _so_recusas(build_missing_grant(_fgac_sem_runtime(ignorado)))
+        assert recusa.attrs["reason"] == "runtime_ausente"
+
+
+def test_fgac_em_runtime_sem_o_modelo_spark_native_recusa_por_nome_proprio():
+    (recusa,) = _so_recusas(build_missing_grant(_fgac_sem_runtime(_glue("4.0"))))
+    assert recusa.attrs["reason"] == "fgac_spark_native_inexistente_no_runtime"
+    assert recusa.attrs["runtime"] == "4.0"
+    assert "nao existia" in recusa.attrs["unblocked_by"]
+
+
+def test_fta_registro_qualificado_por_catalogo_casa_no_lado_lf():
+    pool = [
+        *cenario_fta_append_sem_all(),
+        _registrada(False, tabela="glue_catalog.default.dim_cliente"),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "fta_escrita_em_alvo_nao_registrado"

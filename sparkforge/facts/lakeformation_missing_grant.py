@@ -19,7 +19,8 @@ e fact (regra 33 do CLAUDE.md).
 Sob FTA, a credencial do Lake Formation le e escreve: cobra-se o grant. Sob FGAC,
 a leitura cobra o grant e a escrita cobra o IAM do runtime role. Escrita em alvo
 REGISTRADO sob FGAC e o conflito declarado da secao 6 de
-`knowledge/glue/lakeformation-fgac.md`, e sai recusa nomeada, sem lado escolhido.
+`knowledge/glue/lakeformation-fgac.md`, e sai recusa nomeada, sem lado escolhido; sem
+registro coletado tambem, porque "nao registrada" nao e presumido.
 """
 from __future__ import annotations
 
@@ -198,14 +199,31 @@ _DESTRAVA = {
         "a matriz de versao declara que esta versao nao escreve sob FGAC Spark-native "
         "(eixo fgac_spark_native_write); a causa e versao, nao permissao"
     ),
+    "fgac_spark_native_inexistente_no_runtime": (
+        "a matriz de versao declara que o modelo FGAC Spark-native nao existia nesta "
+        "versao (eixo fgac_spark_native_write, not_applicable): nao ha escrita sob FGAC "
+        "a cobrar; a causa e versao, nao permissao"
+    ),
+    "registro_nao_coletado": (
+        "sob FGAC, a escrita em localizacao registrada e o conflito declarado (secao 6 de "
+        "knowledge/glue/lakeformation-fgac.md); sem saber se a tabela e registrada, o "
+        "lado IAM nao e cobrado; rode `sparkforge collect lakeformation` incluindo o "
+        "registro da localizacao (`--resource-arn`)"
+    ),
+    "recurso_iam_nao_ligado_a_tabela": (
+        "as decisoes de IAM desta acao cobrem mais de um recurso e o case nao da a "
+        "localizacao S3 da tabela para escolher entre eles; rode "
+        "`sparkforge collect lakeformation` com `--resource-arn` na localizacao da tabela"
+    ),
     "conflito_declarado_fgac_escrita_registrada": (
         "escrita em localizacao registrada sob FGAC e o conflito declarado da secao 6 de "
         "knowledge/glue/lakeformation-fgac.md; as tres saidas que a documentacao sustenta "
         "estao la, e nenhuma e escolhida aqui (regra 32)"
     ),
     "acao_iam_nao_simulada": (
-        "a acao exigida nao foi simulada para o role do job; rode "
-        "`sparkforge collect iam-access` incluindo-a"
+        "a acao exigida nao foi simulada para o role do job, ou foi simulada so fora da "
+        "localizacao da tabela; rode `sparkforge collect iam-access` incluindo-a, com "
+        "`--resource-arn` na localizacao da tabela"
     ),
 }
 
@@ -471,6 +489,27 @@ def _cobre(concedidas: Sequence[str], permissao: str) -> bool:
     return "ALL" in concedidas or permissao in concedidas
 
 
+def _registros(recurso: str, facts: Sequence[Fact]) -> list[Fact]:
+    """Os registros de localizacao da tabela, pelo mesmo `_casa` das operacoes."""
+    return [
+        f
+        for f in facts
+        if f.kind == "lakeformation.registered_location" and _casa(_tabela_de(f), recurso)
+    ]
+
+
+def _pertence(recurso_iam: str, local: str) -> bool:
+    """A decisao de IAM fala da localizacao da tabela: `*`, um prefixo que a contem
+    (`bucket/*`, o ARN do bucket) ou um objeto dentro dela. Outro bucket, ou outro
+    prefixo, nao."""
+    if recurso_iam.strip() == "*":
+        return True
+    base = recurso_iam.strip()
+    base = base[:-2] if base.endswith("/*") else base.rstrip("/")
+    local = local.rstrip("/")
+    return base == local or local.startswith(base + "/") or base.startswith(local + "/")
+
+
 def _lado_lf(
     recurso: str, operacao: str, origem: Fact, linha: dict[str, Any], modelo: str,
     gatilho: Fact, facts: Sequence[Fact],
@@ -482,10 +521,7 @@ def _lado_lf(
             )
         ]
     nao_registrada = any(
-        f.kind == "lakeformation.registered_location"
-        and _tabela_de(f) == recurso
-        and (f.attrs or {}).get("registered") is False
-        for f in facts
+        (f.attrs or {}).get("registered") is False for f in _registros(recurso, facts)
     )
     if modelo == "fta" and operacao in {"write", "overwrite"} and nao_registrada:
         return [
@@ -593,34 +629,36 @@ def _lado_iam(
     if razao is not None:
         return [_unresolved(razao, recurso, gatilho, operation=operacao)]
     celula = lakeformation_matrix.capability(str(versao), EIXO_ESCRITA_FGAC) or {}
+    # `not_applicable` e o 4.0, onde o modelo nao existia; `not_supported`, o 5.0, onde
+    # ele existia e nao escrevia. Frases diferentes da matriz, razoes diferentes.
+    por_status = {
+        "not_applicable": "fgac_spark_native_inexistente_no_runtime",
+        "not_supported": "escrita_fgac_nao_suportada_no_runtime",
+    }
     status = celula.get("status")
-    if status in {"not_supported", "not_applicable"}:
-        return [
-            _unresolved(
-                "escrita_fgac_nao_suportada_no_runtime", recurso, gatilho,
-                operation=operacao, runtime=versao,
-            )
-        ]
     if status != "supported":
-        return [
-            _unresolved(
-                "runtime_sem_celula_na_matriz", recurso, gatilho,
-                operation=operacao, runtime=versao,
-            )
-        ]
-    registrada = any(
-        f.kind == "lakeformation.registered_location"
-        and _casa(_tabela_de(f), recurso)
-        and (f.attrs or {}).get("registered") is True
-        for f in facts
-    )
-    if registrada:
+        razao = por_status.get(str(status), "runtime_sem_celula_na_matriz")
+        return [_unresolved(razao, recurso, gatilho, operation=operacao, runtime=versao)]
+    registros = _registros(recurso, facts)
+    if any((f.attrs or {}).get("registered") is True for f in registros):
         return [
             _unresolved(
                 "conflito_declarado_fgac_escrita_registrada", recurso, gatilho,
                 operation=operacao, runtime=versao,
             )
         ]
+    # Sem registro nao se sabe se o alvo e o conflito declarado: nao registrada nao e
+    # presumido.
+    if not registros:
+        return [
+            _unresolved(
+                "registro_nao_coletado", recurso, gatilho, operation=operacao, runtime=versao
+            )
+        ]
+    # A localizacao da tabela e o `resource_arn` que o operador pediu ao coletor; duas
+    # diferentes para a mesma tabela nao dizem qual e, e contam como nenhuma.
+    locais = {str((f.attrs or {}).get("resource_arn") or "") for f in registros} - {""}
+    local = locais.pop() if len(locais) == 1 else ""
     # O role do job sai das decisoes de IAM, como no lado LF: a negacao de outro role
     # nao acusa este.
     principal, candidatas = _principal(facts, [])
@@ -641,7 +679,25 @@ def _lado_iam(
     ]
     saida: list[Fact] = []
     for acao in linha["requires"]:
-        da_acao = [d for d in decisoes if (d.attrs or {}).get("action") == acao]
+        # Ordem por recurso e id: a saida nao depende da ordem do pool.
+        da_acao = sorted(
+            (d for d in decisoes if (d.attrs or {}).get("action") == acao),
+            key=lambda d: (str((d.attrs or {}).get("resource") or ""), d.id),
+        )
+        if local:
+            da_acao = [
+                d for d in da_acao if _pertence(str((d.attrs or {}).get("resource") or ""), local)
+            ]
+        elif len({str((d.attrs or {}).get("resource") or "") for d in da_acao}) > 1:
+            # Sem a localizacao da tabela, qual dos recursos simulados e ela nao se sabe.
+            # Um recurso so e a pergunta que o operador fez ao coletor, e fica.
+            saida.append(
+                _unresolved(
+                    "recurso_iam_nao_ligado_a_tabela", recurso, gatilho,
+                    operation=operacao, action=acao,
+                )
+            )
+            continue
         if not da_acao:
             saida.append(
                 _unresolved(
@@ -651,10 +707,14 @@ def _lado_iam(
             continue
         for negada in (d for d in da_acao if (d.attrs or {}).get("allowed") is False):
             attrs = negada.attrs or {}
+            recurso_iam = str(attrs.get("resource") or "")
             saida.append(
                 Fact(
                     kind="lakeformation.missing_grant",
-                    subject={"type": "table", "symbol": f"{recurso}#{operacao}#iam#{acao}"},
+                    subject={
+                        "type": "table",
+                        "symbol": f"{recurso}#{operacao}#iam#{acao}@{recurso_iam}",
+                    },
                     measures={},
                     attrs={
                         "resource": recurso,
@@ -663,6 +723,7 @@ def _lado_iam(
                         "side": "iam",
                         "principal": principal,
                         "action": acao,
+                        "iam_resource": recurso_iam,
                         "decision": str(attrs.get("decision") or ""),
                         "denied_by": str(attrs.get("denied_by") or ""),
                         "runtime": versao,
