@@ -272,19 +272,26 @@ def _recurso_da_mensagem(gatilho: Fact) -> str | None:
     return _ler_nome(casou.group(1)) if casou else None
 
 
-def _clausula_e_fim(gatilho: Fact) -> tuple[str | None, bool]:
-    """A clausula `permission(s) ... on <token>`, e se ela termina no fim do texto."""
+def _clausula_e_fim(gatilho: Fact) -> tuple[str | None, bool, bool]:
+    """A clausula `permission(s) ... on <token>`, se ela termina no fim do texto, e se
+    termina sem token depois de `on`. Quando `_RECURSO_RE` casa, e a clausula dele que
+    conta: com dois "permission(s)" no texto, e ele que decide onde o nome termina."""
     texto = _texto(gatilho)
+    casou = _RECURSO_RE.search(texto)
+    if casou is not None:
+        return texto[casou.start() : casou.end()], casou.end() == len(texto), False
     permissao = _PERMISSAO_RE.search(texto)
     if permissao is None:
-        return None, False
+        return None, False, False
     fim_da_linha = texto.find("\n", permissao.end())
     on = _ON_RE.search(
         texto, permissao.end(), len(texto) if fim_da_linha < 0 else fim_da_linha
     )
     if on is None:
-        return None, False
-    return texto[permissao.start() : on.end()], on.end() == len(texto)
+        return None, False, False
+    no_fim = on.end() == len(texto)
+    sem_nome = no_fim and on.group(0).strip().lower() == "on"
+    return texto[permissao.start() : on.end()], no_fim, sem_nome
 
 
 def _no_teto(gatilho: Fact) -> bool:
@@ -567,12 +574,16 @@ def _recurso(gatilho: Fact, lista: Sequence[Fact]) -> tuple[str | None, Fact | N
     if bruto is not None:
         return None, _unresolved("recurso_nao_e_tabela", bruto, gatilho)
     nomeado = _recurso_da_mensagem(gatilho)
-    clausula, no_fim = _clausula_e_fim(gatilho)
-    if _no_teto(gatilho) and (clausula is None or no_fim):
+    clausula, no_fim, sem_nome = _clausula_e_fim(gatilho)
+    if sem_nome or (_no_teto(gatilho) and (clausula is None or no_fim)):
         # O trecho bateu no teto e o nome, se ha, encosta no corte: ele pode ser o
         # prefixo de outro (`dim_cliente` de `dim_cliente_hist`), e sem clausula o
         # candidato unico acusaria a tabela do pool no lugar da que a mensagem nomeia.
-        return None, _unresolved("trecho_truncado", "", gatilho, matched=_texto(gatilho))
+        # `on` sem nome no fim e corte em qualquer tamanho: a assinatura so casa com
+        # `permission(s) on` na mensagem inteira, e o `strip` do matcher tira o espaco
+        # que deixaria o trecho com 200 caracteres. `matched` e a clausula, nao o texto
+        # inteiro: as duas portas do mesmo corte dao uma recusa so.
+        return None, _unresolved("trecho_truncado", "", gatilho, matched=clausula or "")
     if nomeado is None and clausula is not None:
         # Ha `on` depois de "permission(s)" e o nome nao foi lido: o candidato
         # unico do pool nao e a tabela que a mensagem nomeia.

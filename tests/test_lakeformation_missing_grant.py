@@ -785,3 +785,79 @@ def test_recusas_de_clausulas_diferentes_nao_colapsam():
         "permission(s) on 'minha",
     ]
     assert len({r.id for r in recusas}) == 2
+
+
+def _gatilhos_reais(mensagem: str, classe: str = "AccessDeniedException") -> dict[str, Fact]:
+    """Os gatilhos ERR-LF-001 que o matcher real grava, por porta."""
+    from sparkforge.errors.matcher import build_signature_matches
+    from sparkforge.facts.exception import build_exceptions
+
+    log = Fact(
+        kind="cloudwatch.log_event",
+        subject={"type": "job_run", "job_name": "etl-dim", "job_run_id": "jr_1"},
+        attrs={"message": mensagem},
+        provenance=PROV,
+    )
+    falha = Fact(
+        kind="spark.stage.failure",
+        subject={"type": "stage", "stage_id": 3},
+        attrs={"reason": f"com.amazonaws.lakeformation.{classe}: " + mensagem},
+        provenance=PROV,
+    )
+    return {
+        f.attrs["matched_on"]: f
+        for f in build_signature_matches([log, *build_exceptions([falha])])
+        if f.kind == "error.signature_match" and f.attrs["signature_id"] == "ERR-LF-001"
+    }
+
+
+def test_corte_logo_depois_do_on_e_truncado_nas_duas_portas():
+    # Pela cabeca da excecao o `strip` tira o espaco depois de "on" e o trecho fica com
+    # 199 caracteres: o nome sumiu no corte, e isso nao e forma que o extrator nao le.
+    mensagem = "y" * (TETO - len(FRASE)) + FRASE + "staging.outra"
+    por_porta = _gatilhos_reais(mensagem)
+    assert sorted(por_porta) == ["log_line", "message_head"]
+    for porta, gatilho in por_porta.items():
+        pool = [gatilho, *cenario_fta_append_sem_all()[1:]]
+        assert _razoes(build_missing_grant(pool)) == ["trecho_truncado"], porta
+
+
+def test_nome_inteiro_antes_do_teto_e_lido_nas_duas_portas():
+    # 200 caracteres ou mais, e o nome termina antes do corte: nada foi cortado nele.
+    mensagem = _encostado(FRASE + TABELA + " (Service: AWSGlue; Status Code: 400)")
+    for porta, gatilho in _gatilhos_reais(mensagem).items():
+        pool = [gatilho, *cenario_fta_append_sem_all()[1:]]
+        (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+        assert falta.attrs["resource"] == TABELA, porta
+
+
+def test_classe_longa_nao_conta_no_teto_da_cabeca():
+    # A cabeca fica abaixo do teto e so `classe: cabeca` passa dele: o nome no fim e
+    # inteiro, e nao ha corte a presumir.
+    mensagem = "y" * 20 + " " + FRASE + TABELA
+    classe = "C" * (TETO - len(mensagem) + 10) + "AccessDeniedException"
+    gatilho = _gatilhos_reais(mensagem, classe=classe)["message_head"]
+    assert len(gatilho.attrs["matched_class"]) > TETO
+    pool = [gatilho, *cenario_fta_append_sem_all()[1:]]
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["resource"] == TABELA
+
+
+def test_segundo_permission_s_decide_onde_o_nome_termina():
+    linha = ("Check permission(s) based on role. " + "y" * 200)[: TETO - len(FRASE) - 16]
+    trecho = (linha + " " + FRASE + "default.dim_cliente_hist")[:TETO]
+    assert trecho.endswith("default.dim_cli")
+    pool = [
+        _gatilho(linha=trecho),
+        *cenario_fta_append_sem_all()[1:],
+        _grant(["ALL"], tabela="default.dim_cli"),
+    ]
+    assert _razoes(build_missing_grant(pool)) == ["trecho_truncado"]
+
+
+def test_truncado_das_duas_portas_e_uma_recusa_so():
+    mensagem = _encostado(FRASE + "default.dim_cliente", "_hist (Service: AWSGlue)")
+    gatilhos = list(_gatilhos_reais(mensagem).values())
+    assert len(gatilhos) == 2
+    pool = [*gatilhos, *cenario_fta_append_sem_all()[1:]]
+    assert _razoes(build_missing_grant(pool)) == ["trecho_truncado"]

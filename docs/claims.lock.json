@@ -3696,23 +3696,23 @@
       "type": "number"
     },
     {
-      "context": "  no mesmo corpus, tem **246127** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "  no mesmo corpus, tem **246320** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453. Relida na segunda rodada da revisao da T2 (2026-09-25): 245453 -> 245751. Relida na terceira rodada da revisao da T2 (2026-09-25): 245751 -> 246127.",
+      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453. Relida na segunda rodada da revisao da T2 (2026-09-25): 245453 -> 245751. Relida na terceira rodada da revisao da T2 (2026-09-25): 245751 -> 246127. Relida na quarta rodada da revisao da T2 (2026-09-25): 246127 -> 246320.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 246127
+          "value": 246320
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "246127",
+      "text": "246320",
       "type": "number"
     },
     {
