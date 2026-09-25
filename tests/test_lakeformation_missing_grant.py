@@ -1614,3 +1614,13 @@ def test_fontes_da_tabela_estao_no_lock():
     lock = json.loads((RAIZ / "knowledge/sources.lock.json").read_text(encoding="utf-8"))
     for url in load_table()["fontes"].values():
         assert url in lock["sources"], url
+
+
+def test_runtime_ausente_manda_para_o_caminho_que_produz_a_versao():
+    # `runtime detect` nunca vira `env.runtime_signal` com `component: glue`
+    # (sparkforge/facts/runtime_detect.py), entao mandar o operador para la nao destrava
+    # nada. O que da a versao hoje e o `glue_version` literal do Terraform.
+    (recusa,) = _so_recusas(build_missing_grant(_fgac_sem_runtime()))
+    texto = recusa.attrs["unblocked_by"]
+    assert "runtime detect" not in texto
+    assert "analyze terraform" in texto and "glue_version" in texto

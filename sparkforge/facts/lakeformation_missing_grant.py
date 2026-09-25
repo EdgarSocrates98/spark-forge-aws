@@ -205,8 +205,8 @@ _DESTRAVA = {
         "afirmado sem fonte"
     ),
     "runtime_ausente": (
-        "a escrita sob FGAC depende da versao do Glue; rode `sparkforge runtime detect` ou "
-        "`sparkforge analyze terraform` sobre o job (glue_version)"
+        "a escrita sob FGAC depende da versao do Glue; declare `glue_version` literal no "
+        "`aws_glue_job` e junte a saida de `sparkforge analyze terraform` ao case"
     ),
     "runtime_divergente": (
         "o case observa mais de uma versao de Glue; resolva a divergencia antes"
