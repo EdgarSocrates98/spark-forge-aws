@@ -54,7 +54,18 @@ SOURCE_KINDS = frozenset({"error.signature_match"})
 
 IAM_ALLOWED_PRINCIPALS = "IAM_ALLOWED_PRINCIPALS"
 
-_RECURSO_RE = re.compile(r"permission\(s\)\s+on\s+([A-Za-z0-9_.\-]+)", re.IGNORECASE)
+# O nome termina em espaco, "(" ou fim de linha: sem a guarda, "on s3://..." e
+# "on arn:..." viravam as tabelas `s3` e `arn`.
+_RECURSO_RE = re.compile(
+    r"permission\(s\)\s+on\s+([A-Za-z0-9_.\-]+)(?=\s|\(|$)", re.IGNORECASE
+)
+_NAO_TABELA_RE = re.compile(r"permission\(s\)\s+on\s+((?:s3://|arn:)\S*)", re.IGNORECASE)
+
+# `pyspark_ast` grava `mode` so para append/overwrite/overwritePartitions.
+_MODOS_OVERWRITE = frozenset({"overwrite", "overwritepartitions"})
+# `writeTo` sem `mode` termina em create/replace/createOrReplace/merge, e o fact nao
+# carrega o terminal: a operacao e desconhecida, nunca um `write` presumido.
+_TERMINAL_NAO_MEDIDO = "writeTo"
 
 _SQL = {
     "insert_into": "write",
@@ -68,8 +79,25 @@ _SQL = {
 
 _DESTRAVA = {
     "recurso_ambiguo": (
-        "a mensagem nao nomeia o recurso e o case tem mais de uma tabela com grant ou "
-        "registro coletado; colete so a tabela da falha com `sparkforge collect lakeformation`"
+        "a mensagem nao nomeia o recurso, ou o nomeia sem database, e o case tem mais de "
+        "uma tabela com grant ou registro coletado que serve; colete so a tabela da falha "
+        "com `sparkforge collect lakeformation`"
+    ),
+    "recurso_nao_e_tabela": (
+        "a mensagem nomeia localizacao S3 ou ARN, nao tabela do catalogo; o fact so cobre "
+        "grant de tabela"
+    ),
+    "operacao_com_alvo_nao_resolvido": (
+        "o alvo vem de variavel que o extrator de codigo nao resolve; a operacao nao foi "
+        "avaliada"
+    ),
+    "terminal_de_escrita_nao_medido": (
+        "writeTo sem modo termina em create/replace/createOrReplace/merge, e o fact "
+        "pyspark.write nao carrega o terminal"
+    ),
+    "catalogo_ambiguo": (
+        "grants da mesma tabela em mais de um catalogo coletado; colete so o catalogo da "
+        "falha"
     ),
     "operacao_nao_medida": (
         "nenhum fact de operacao sobre o recurso; rode `sparkforge analyze pyspark` sobre o "
@@ -177,36 +205,81 @@ def _tabela_de(fact: Fact) -> str:
     return str((fact.subject or {}).get("symbol", "")).split("#", 1)[0]
 
 
-def _recurso_da_mensagem(gatilho: Fact) -> str | None:
+def _texto(gatilho: Fact) -> str:
     attrs = gatilho.attrs or {}
-    texto = str(attrs.get("matched_line") or attrs.get("matched_class") or "")
-    casou = _RECURSO_RE.search(texto)
+    return str(attrs.get("matched_line") or attrs.get("matched_class") or "")
+
+
+def _recurso_da_mensagem(gatilho: Fact) -> str | None:
+    casou = _RECURSO_RE.search(_texto(gatilho))
     return casou.group(1).rstrip(".") if casou else None
 
 
-def _candidato_unico(facts: Sequence[Fact]) -> str | None:
+def _recurso_nao_tabela(gatilho: Fact) -> str | None:
+    casou = _NAO_TABELA_RE.search(_texto(gatilho))
+    return casou.group(1) if casou else None
+
+
+def _tabelas_do_pool(facts: Sequence[Fact]) -> list[str]:
     tabelas = {
         _tabela_de(f)
         for f in facts
         if f.kind in {"lakeformation.grant", "lakeformation.registered_location"}
     }
     tabelas.discard("")
-    return tabelas.pop() if len(tabelas) == 1 else None
+    return sorted(tabelas)
+
+
+def _candidato_unico(facts: Sequence[Fact]) -> str | None:
+    tabelas = _tabelas_do_pool(facts)
+    return tabelas[0] if len(tabelas) == 1 else None
 
 
 def _casa(alvo: str, recurso: str) -> bool:
-    return alvo == recurso or alvo.split(".")[-1] == recurso.split(".")[-1]
+    """Com os dois lados qualificados, casa pelo sufixo de segmentos
+    (`glue_catalog.default.t` casa `default.t`, `staging.t` nao casa `default.t`); so
+    pelo ultimo segmento quando um dos lados nao e qualificado."""
+    a, r = alvo.split("."), recurso.split(".")
+    if len(a) > 1 and len(r) > 1:
+        n = min(len(a), len(r))
+        return a[-n:] == r[-n:]
+    return a[-1] == r[-1]
 
 
-def _operacoes(recurso: str, facts: Sequence[Fact]) -> list[tuple[str, Fact]] | str:
+def _canonizar(recurso: str, facts: Sequence[Fact]) -> tuple[str | None, list[str]]:
+    """O recurso da mensagem contra as tabelas com grant ou registro no pool. Nome
+    exato fica; uma unica qualificada que casa vira o recurso; mais de uma e ambigua
+    (`None`, com as candidatas); nenhuma deixa o nome como veio."""
+    tabelas = _tabelas_do_pool(facts)
+    if recurso in tabelas:
+        return recurso, []
+    casam = [t for t in tabelas if "." in t and _casa(t, recurso)]
+    if len(casam) > 1:
+        return None, casam
+    return (casam[0] if casam else recurso), []
+
+
+def _operacao_de_escrita(attrs: dict[str, Any]) -> str:
+    modo = str(attrs.get("mode") or "").lower()
+    if modo in _MODOS_OVERWRITE:
+        return "overwrite"
+    if not modo and attrs.get("api") == "dataframe_writer_v2":
+        return _TERMINAL_NAO_MEDIDO
+    return "write"
+
+
+def _operacoes(
+    recurso: str, facts: Sequence[Fact]
+) -> tuple[list[tuple[str, Fact]], list[str]] | str:
+    """As operacoes sobre o recurso, uma por tipo, e as operacoes sem alvo que ficaram
+    de fora porque outra tinha alvo -- estas saem recusadas, nunca caladas."""
     todas: list[tuple[str, str, Fact]] = []
     for f in facts:
         attrs = f.attrs or {}
         if f.kind == "pyspark.read":
             todas.append(("read", str(attrs.get("target") or ""), f))
         elif f.kind == "pyspark.write":
-            op = "overwrite" if attrs.get("mode") == "overwrite" else "write"
-            todas.append((op, str(attrs.get("target") or ""), f))
+            todas.append((_operacao_de_escrita(attrs), str(attrs.get("target") or ""), f))
         elif f.kind == "sql.write_statement" and attrs.get("operation") in _SQL:
             todas.append((_SQL[attrs["operation"]], str(attrs.get("table") or ""), f))
     if not todas:
@@ -215,10 +288,11 @@ def _operacoes(recurso: str, facts: Sequence[Fact]) -> list[tuple[str, Fact]] | 
     escolhidas = [t for t in com_alvo if _casa(t[1], recurso)] if com_alvo else todas
     if not escolhidas:
         return "operacao_nao_ligada_ao_recurso"
+    sem_alvo = sorted({op for op, alvo, _f in todas if not alvo}) if com_alvo else []
     por_operacao: dict[str, Fact] = {}
-    for op, _alvo, f in escolhidas:
+    for op, _alvo, f in sorted(escolhidas, key=lambda t: (t[0], t[2].id)):
         por_operacao.setdefault(op, f)
-    return sorted(por_operacao.items())
+    return sorted(por_operacao.items()), sem_alvo
 
 
 def _modelo(facts: Sequence[Fact]) -> str:
@@ -256,6 +330,10 @@ def _principal(facts: Sequence[Fact], grants: Sequence[Fact]) -> str | None:
     roles.discard("")
     if len(roles) == 1:
         return roles.pop()
+    # Mais de um role decidido: o grant de um principal unico nao diz qual deles e o
+    # do job. O recurso aos grants so vale sem decisao de IAM nenhuma.
+    if roles:
+        return None
     principais = {str((g.attrs or {}).get("principal") or "") for g in grants}
     principais -= {"", IAM_ALLOWED_PRINCIPALS}
     return principais.pop() if len(principais) == 1 else None
@@ -290,6 +368,13 @@ def _lado_lf(
     grants = [f for f in facts if f.kind == "lakeformation.grant" and _tabela_de(f) == recurso]
     if not grants:
         return [_unresolved("grant_nao_coletado", recurso, gatilho, operation=operacao)]
+    catalogos = sorted({str((g.subject or {}).get("catalog_id") or "") for g in grants} - {""})
+    if len(catalogos) > 1:
+        return [
+            _unresolved(
+                "catalogo_ambiguo", recurso, gatilho, operation=operacao, catalog_ids=catalogos
+            )
+        ]
     # Tabela aberta a `IAM_ALLOWED_PRINCIPALS` com ALL e governada pelo IAM: falta de
     # grant do LF nao e a causa, e SF-LF-008 ja fala dela.
     if any(
@@ -340,14 +425,25 @@ def _lado_iam(
 
 
 def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
-    operacoes = _operacoes(recurso, facts)
-    if isinstance(operacoes, str):
-        return [_unresolved(operacoes, recurso, gatilho)]
+    resultado = _operacoes(recurso, facts)
+    if isinstance(resultado, str):
+        return [_unresolved(resultado, recurso, gatilho)]
+    operacoes, sem_alvo = resultado
+    saida: list[Fact] = [
+        _unresolved("operacao_com_alvo_nao_resolvido", recurso, gatilho, operation=op)
+        for op in sem_alvo
+    ]
     modelo = _modelo(facts)
     if modelo not in {"fta", "fgac"}:
-        return [_unresolved(modelo, recurso, gatilho)]
-    saida: list[Fact] = []
+        return [*saida, _unresolved(modelo, recurso, gatilho)]
     for operacao, origem in operacoes:
+        if operacao == _TERMINAL_NAO_MEDIDO:
+            saida.append(
+                _unresolved(
+                    "terminal_de_escrita_nao_medido", recurso, gatilho, operation=operacao
+                )
+            )
+            continue
         linha = requirement(operacao, modelo)
         if linha is None:
             saida.append(
@@ -369,25 +465,44 @@ def build_missing_grant(facts: Sequence[Fact]) -> list[Fact]:
     """Deriva `lakeformation.missing_grant` da uniao dos facts. Sem `ERR-LF-001` no
     pool, devolve lista vazia: sem falha observada nao ha permissao ausente a afirmar."""
     lista = list(facts)
-    gatilhos = [
-        f
-        for f in lista
-        if f.kind == "error.signature_match" and (f.attrs or {}).get("signature_id") == GATILHO
-    ]
+    # Ordem por id (com o artefato e a linha para desempatar gatilhos de mesmo id): o
+    # primeiro gatilho de cada recurso, ou de cada recusa, e quem da a proveniencia, e
+    # a saida nao depende da ordem do pool.
+    gatilhos = sorted(
+        (
+            f
+            for f in lista
+            if f.kind == "error.signature_match"
+            and (f.attrs or {}).get("signature_id") == GATILHO
+        ),
+        key=lambda f: (f.id, str((f.provenance or {}).get("artifact") or ""), _texto(f)),
+    )
     if not gatilhos:
         return []
     saida: dict[str, Fact] = {}
     recursos: dict[str, Fact] = {}
     for gatilho in gatilhos:
-        recurso = _recurso_da_mensagem(gatilho) or _candidato_unico(lista)
+        bruto = _recurso_nao_tabela(gatilho)
+        if bruto is not None:
+            recusa = _unresolved("recurso_nao_e_tabela", bruto, gatilho)
+            saida.setdefault(recusa.id, recusa)
+            continue
+        nomeado = _recurso_da_mensagem(gatilho)
+        recurso, candidatas = (
+            _canonizar(nomeado, lista)
+            if nomeado
+            else (_candidato_unico(lista), _tabelas_do_pool(lista))
+        )
         if recurso is None:
-            recusa = _unresolved("recurso_ambiguo", "", gatilho)
-            saida[recusa.id] = recusa
+            recusa = _unresolved(
+                "recurso_ambiguo", nomeado or "", gatilho, candidates=candidatas
+            )
+            saida.setdefault(recusa.id, recusa)
             continue
         recursos.setdefault(recurso, gatilho)
     for recurso, gatilho in recursos.items():
         for fact in _derivar(recurso, gatilho, lista):
-            saida[fact.id] = fact
+            saida.setdefault(fact.id, fact)
     return sort_facts(list(saida.values()))
 
 

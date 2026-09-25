@@ -3696,23 +3696,23 @@
       "type": "number"
     },
     {
-      "context": "  no mesmo corpus, tem **245145** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "  no mesmo corpus, tem **245453** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus.",
+      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 245145
+          "value": 245453
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "245145",
+      "text": "245453",
       "type": "number"
     },
     {

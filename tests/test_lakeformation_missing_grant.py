@@ -25,23 +25,27 @@ LINHA = (
 )
 
 
-def _gatilho(sig: str = "ERR-LF-001", linha: str = LINHA) -> Fact:
+def _gatilho(
+    sig: str = "ERR-LF-001", linha: str = LINHA, artefato: str = "logs/erro.json"
+) -> Fact:
     return Fact(
         kind="error.signature_match",
         subject={"type": "job_run", "symbol": "etl-dim", "signature_id": sig},
         attrs={"signature_id": sig, "matched_on": "log_line", "matched_line": linha},
-        provenance={"extractor": "matcher@0.1.0", "artifact": "logs/erro.json"},
+        provenance={"extractor": "matcher@0.1.0", "artifact": artefato},
     )
 
 
-def _grant(perms: list[str], principal: str = ROLE, tabela: str = TABELA) -> Fact:
+def _grant(
+    perms: list[str], principal: str = ROLE, tabela: str = TABELA, catalog_id: str = ""
+) -> Fact:
     return Fact(
         kind="lakeformation.grant",
         subject={
             "type": "table",
             "file": "lf.json",
             "symbol": f"{tabela}#{principal}",
-            "catalog_id": "",
+            "catalog_id": catalog_id,
         },
         measures={"permission_count": len(perms)},
         attrs={
@@ -57,8 +61,12 @@ def _grant(perms: list[str], principal: str = ROLE, tabela: str = TABELA) -> Fac
     )
 
 
-def _escrita(mode: str = "append", target: str | None = TABELA) -> Fact:
-    attrs: dict = {"api": "v1", "mode": mode}
+def _escrita(
+    mode: str | None = "append", target: str | None = TABELA, api: str = "v1"
+) -> Fact:
+    attrs: dict = {"api": api}
+    if mode is not None:
+        attrs["mode"] = mode
     if target is not None:
         attrs["target"] = target
     return Fact(
@@ -132,13 +140,15 @@ def _registrada(sim: bool = True) -> Fact:
     )
 
 
-def _decisao(acao: str, decisao: str, denied_by: str = "implicit_deny") -> Fact:
+def _decisao(
+    acao: str, decisao: str, denied_by: str = "implicit_deny", role: str = ROLE
+) -> Fact:
     return Fact(
         kind="iam.access_decision",
-        subject={"type": "job_run", "file": "iam.json", "symbol": f"{ROLE}#{acao}@*"},
+        subject={"type": "job_run", "file": "iam.json", "symbol": f"{role}#{acao}@*"},
         measures={"matched_statements": 0},
         attrs={
-            "role_arn": ROLE,
+            "role_arn": role,
             "action": acao,
             "resource": "*",
             "decision": decisao,
@@ -253,7 +263,6 @@ def test_fta_escrita_em_alvo_nao_registrado_recusa():
     assert _de(build_missing_grant(leitura), "lakeformation.missing_grant")
 
 
-
 def test_tabela_de_operacao_cita_fonte_e_cobre_o_extrator():
     tabela = load_table()
     fontes = tabela["fontes"]
@@ -272,3 +281,221 @@ def test_tabela_de_operacao_cita_fonte_e_cobre_o_extrator():
     assert requirement("read", "fta")["requires"] == ["SELECT"]
     assert "DATA_LOCATION_ACCESS" not in requirement("write", "fta")["requires"]
     assert requirement("write", "fgac")["side"] == "iam"
+
+
+OUTRO_ROLE = "arn:aws:iam::111111111111:role/glue-outro"
+SEM_NOME = "AccessDeniedException: Insufficient Lake Formation permission(s)"
+
+
+def _linha(recurso: str) -> str:
+    return (
+        "AccessDeniedException: Insufficient Lake Formation permission(s) on "
+        f"{recurso} (Service: AWSGlue; Status Code: 400)"
+    )
+
+
+def _sql(operacao: str, tabela: str = TABELA) -> Fact:
+    return Fact(
+        kind="sql.write_statement",
+        subject={"type": "source_location", "file": "job.py", "line": 30},
+        attrs={"operation": operacao, "table": tabela},
+        provenance=PROV,
+    )
+
+
+def _razoes(saida: list[Fact]) -> list[str]:
+    return sorted(
+        f.attrs["reason"] for f in _de(saida, "lakeformation.missing_grant.unresolved")
+    )
+
+
+def test_nome_curto_na_mensagem_canoniza_contra_o_grant():
+    pool = [_gatilho(linha=_linha("dim_cliente")), *cenario_fta_append_sem_all()[1:]]
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["resource"] == TABELA
+    assert falta.attrs["missing"] == ["ALL"]
+    # Colado no parentese tambem e nome de tabela.
+    colado = [_gatilho(linha=_linha("dim_cliente(x)")), *cenario_fta_append_sem_all()[1:]]
+    assert _de(build_missing_grant(colado), "lakeformation.missing_grant")
+
+
+def test_nome_curto_com_homonimas_recusa_recurso_ambiguo():
+    pool = [
+        _gatilho(linha=_linha("dim_cliente")),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"]),
+        _grant(["DESCRIBE"], tabela="staging.dim_cliente"),
+    ]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+    assert recusa.attrs["reason"] == "recurso_ambiguo"
+    assert recusa.attrs["candidates"] == ["default.dim_cliente", "staging.dim_cliente"]
+
+
+def test_homonima_de_outro_database_nao_casa():
+    # Le staging.dim_cliente e escreve default.dim_cliente: o SELECT de default nao
+    # e cobrado pela leitura de staging.
+    pool = [
+        _gatilho(),
+        _fta(),
+        _leitura("staging.dim_cliente"),
+        _escrita(),
+        _grant(["DESCRIBE"]),
+    ]
+    faltas = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert [f.attrs["operation"] for f in faltas] == ["write"]
+    # Catalogo na frente continua casando pelo sufixo.
+    com_catalogo = [
+        _gatilho(),
+        _fta(),
+        _leitura("glue_catalog.default.dim_cliente"),
+        _grant(["DESCRIBE"]),
+    ]
+    (falta,) = _de(build_missing_grant(com_catalogo), "lakeformation.missing_grant")
+    assert falta.attrs["operation"] == "read"
+
+
+def test_operacao_sem_alvo_ao_lado_de_outra_recusa_por_nome():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _leitura(),
+        _escrita(target=None),
+        _grant(["DESCRIBE", "SELECT"]),
+    ]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+    assert recusa.attrs["reason"] == "operacao_com_alvo_nao_resolvido"
+    assert recusa.attrs["operation"] == "write"
+    assert "variavel" in recusa.attrs["unblocked_by"]
+
+
+def test_mais_de_um_role_na_decisao_de_iam_e_principal_ambiguo():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["ALL"], principal=OUTRO_ROLE),
+        _decisao("s3:PutObject", "allowed"),
+        _decisao("s3:PutObject", "allowed", role=OUTRO_ROLE + "-b"),
+    ]
+    assert _razoes(build_missing_grant(pool)) == ["principal_ambiguo"]
+
+
+def test_mensagem_que_nomeia_s3_ou_arn_nao_e_tabela():
+    for bruto in (
+        "s3://sparkforge-demo/default/dim_cliente",
+        "arn:aws:glue:us-east-1:111111111111:table/default/dim_cliente",
+    ):
+        pool = [_gatilho(linha=_linha(bruto)), *cenario_fta_append_sem_all()[1:]]
+        saida = build_missing_grant(pool)
+        assert _de(saida, "lakeformation.missing_grant") == [], bruto
+        (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+        assert recusa.attrs["reason"] == "recurso_nao_e_tabela"
+        assert recusa.attrs["resource"] == bruto
+
+
+def test_modo_de_escrita_sem_caixa():
+    for modo in ("Overwrite", "overwritePartitions"):
+        pool = [_gatilho(), _fta(), _escrita(mode=modo), _grant(["DESCRIBE"])]
+        (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+        assert falta.attrs["operation"] == "overwrite", modo
+
+
+def test_write_to_sem_modo_recusa_terminal_nao_medido():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(mode=None, api="dataframe_writer_v2"),
+        _grant(["DESCRIBE", "SELECT"]),
+    ]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    assert _razoes(saida) == ["terminal_de_escrita_nao_medido"]
+
+
+def test_gatilhos_repetidos_dao_a_mesma_saida_em_qualquer_ordem():
+    a = _gatilho(artefato="logs/a.json")
+    b = _gatilho(artefato="logs/b.json")
+    resto = cenario_fta_append_sem_all()[1:]
+    ida = build_missing_grant([a, b, *resto])
+    volta = build_missing_grant([b, a, *resto])
+    assert [f.to_dict() for f in ida] == [f.to_dict() for f in volta]
+    # A mesma politica vale para a recusa de recurso ambiguo.
+    a2 = _gatilho(linha=SEM_NOME, artefato="logs/a.json")
+    b2 = _gatilho(linha=SEM_NOME, artefato="logs/b.json")
+    dois = [_fta(), _escrita(), _grant(["ALL"]), _grant(["ALL"], tabela="x.outra")]
+    ida = build_missing_grant([a2, b2, *dois])
+    volta = build_missing_grant([b2, a2, *dois])
+    assert [f.to_dict() for f in ida] == [f.to_dict() for f in volta]
+
+
+def test_grants_da_mesma_tabela_em_dois_catalogos_recusa():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"], catalog_id="111111111111"),
+        _grant(["ALL"], principal=OUTRO_ROLE, catalog_id="222222222222"),
+        _decisao("s3:PutObject", "allowed"),
+    ]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    assert _razoes(saida) == ["catalogo_ambiguo"]
+
+
+def test_mensagem_sem_recurso_e_duas_tabelas_recusa_recurso_ambiguo():
+    pool = [
+        _gatilho(linha=SEM_NOME),
+        _fta(),
+        _escrita(),
+        _grant(["ALL"]),
+        _grant(["ALL"], tabela="staging.outra"),
+    ]
+    assert _razoes(build_missing_grant(pool)) == ["recurso_ambiguo"]
+
+
+def test_operacao_em_outro_alvo_recusa_nao_ligada():
+    pool = [_gatilho(), _fta(), _leitura("staging.fato_venda"), _grant(["DESCRIBE"])]
+    assert _razoes(build_missing_grant(pool)) == ["operacao_nao_ligada_ao_recurso"]
+
+
+def test_sem_grant_coletado_recusa():
+    saida = build_missing_grant([_gatilho(), _fta(), _escrita()])
+    assert _razoes(saida) == ["grant_nao_coletado"]
+    (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+    assert "collect lakeformation" in recusa.attrs["unblocked_by"]
+
+
+def test_dois_principais_sem_decisao_de_iam_recusa():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"]),
+        _grant(["DESCRIBE"], principal=OUTRO_ROLE),
+    ]
+    assert _razoes(build_missing_grant(pool)) == ["principal_ambiguo"]
+
+
+def test_create_table_exige_permissao_de_database_nao_coletada():
+    pool = [_gatilho(), _fta(), _sql("create_table"), _grant(["ALL"])]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+    assert recusa.attrs["reason"] == "permissao_de_database_nao_coletada"
+    assert recusa.attrs["operation"] == "create"
+
+
+def test_iam_allowed_principals_com_all_nao_acusa():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"]),
+        _grant(["ALL"], principal="IAM_ALLOWED_PRINCIPALS"),
+    ]
+    assert build_missing_grant(pool) == []
