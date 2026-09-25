@@ -54,12 +54,16 @@ SOURCE_KINDS = frozenset({"error.signature_match"})
 
 IAM_ALLOWED_PRINCIPALS = "IAM_ALLOWED_PRINCIPALS"
 
-# Duas formas de clausula: "permission(s) on X" e "permission(s): Required Select on X".
-_PREFIXO = (
-    r"permission\(s\)"
-    r"(?:\s*:\s*required(?:\s+[A-Za-z_]+(?:\s*,\s*[A-Za-z_]+)*)?)?"
-    r"\s+on\s+"
-)
+# O texto do gatilho e um TRECHO: `sparkforge/errors/matcher.py` grava
+# `matched_line = mensagem[:_TRECHO]` (200) e `sparkforge/facts/exception.py` grava
+# `message_head[:200]`. A assinatura casou na mensagem INTEIRA; o trecho pode ter
+# cortado o nome do recurso, ou a clausula toda.
+_TETO_DO_TRECHO = 200
+
+# A unica forma de clausula que o matcher entrega: a assinatura exige o literal
+# "permission(s) on". Outra forma (": Required Describe on default") nao e lida e
+# sai `recurso_nao_lido`, porque o token depois dela pode ser database.
+_PREFIXO = r"permission\(s\)\s+on\s+"
 # O token depois de `on` e LIDO por `_ler_nome`; o que ele nao le vira `recurso_nao_lido`.
 _RECURSO_RE = re.compile(_PREFIXO + r"(\S+)", re.IGNORECASE)
 _NAO_TABELA_RE = re.compile(
@@ -73,6 +77,9 @@ _PERMISSAO_RE = re.compile(r"permission\(s\)", re.IGNORECASE)
 _ON_RE = re.compile(r"\bon\b\s*\S*", re.IGNORECASE)
 _NOME_RE = re.compile(r"[A-Za-z0-9_\-]+(?:\.[A-Za-z0-9_\-]+)*")
 _ASPAS = "'\"`"
+# O que pode colar no fim do nome: pontuacao de frase, fecho de parentese e de JSON,
+# e aspas.
+_CAUDA = ",;:.)}" + _ASPAS
 
 # `pyspark_ast` grava `mode` so para append/overwrite/overwritePartitions.
 _MODOS_OVERWRITE = frozenset({"overwrite", "overwritepartitions"})
@@ -94,9 +101,15 @@ _SQL = {
 
 _DESTRAVA = {
     "recurso_ambiguo": (
-        "a mensagem nao nomeia o recurso, ou o nomeia sem database, e o case tem mais de "
-        "uma tabela com grant ou registro coletado que serve; colete so a tabela da falha "
-        "com `sparkforge collect lakeformation`"
+        "o case tem mais de uma tabela com grant ou registro coletado que serve: a "
+        "mensagem nao nomeia o recurso, ou o nome que ela da casa com mais de uma tabela "
+        "qualificada (sem database, ou sem o catalogo que as separa); colete so a tabela "
+        "da falha com `sparkforge collect lakeformation`"
+    ),
+    "trecho_truncado": (
+        f"o trecho da mensagem que o matcher guarda tem {_TETO_DO_TRECHO} caracteres, e o "
+        "corte caiu antes do nome do recurso ou pode ter caido dentro dele; o fact nao "
+        "presume a tabela; colete a mensagem inteira do log"
     ),
     "recurso_nao_nomeado": (
         "a mensagem nao nomeia tabela e o case nao tem grant nem registro de onde "
@@ -214,7 +227,10 @@ def _prov(gatilho: Fact) -> dict[str, Any]:
 def _unresolved(
     reason: str, recurso: str, gatilho: Fact, **extra: Any
 ) -> Fact:
-    rotulo = "#".join(p for p in (recurso, reason, str(extra.get("operation") or "")) if p)
+    # `matched` (o trecho que nao foi lido) entra no rotulo: sem ele, duas recusas de
+    # gatilhos com textos diferentes colapsariam num id so.
+    partes = (recurso, reason, *(str(extra.get(k) or "") for k in ("operation", "matched")))
+    rotulo = "#".join(p for p in partes if p)
     return Fact(
         kind="lakeformation.missing_grant.unresolved",
         subject={"type": "table", "symbol": rotulo},
@@ -241,11 +257,13 @@ def _texto(gatilho: Fact) -> str:
 
 
 def _ler_nome(token: str) -> str | None:
-    """O nome de tabela no token depois de `on`: cortado no "(", sem `,;:.` no fim e
-    sem um par de aspas em volta. O que sobra fora de `db.tabela` nao e lido."""
-    nome = token.split("(", 1)[0].rstrip(",;:.")
-    if len(nome) >= 2 and nome[0] in _ASPAS and nome[-1] == nome[0]:
-        nome = nome[1:-1]
+    """O nome de tabela no token depois de `on`: cortado no "(", sem `_CAUDA` no fim e
+    sem a aspa de abertura quando a mesma aspa saiu da cauda. O que sobra fora de
+    `db.tabela` nao e lido."""
+    bruto = token.split("(", 1)[0]
+    nome = bruto.rstrip(_CAUDA)
+    if nome[:1] in tuple(_ASPAS) and nome[0] in bruto[len(nome) :]:
+        nome = nome[1:]
     return nome if _NOME_RE.fullmatch(nome) else None
 
 
@@ -254,16 +272,29 @@ def _recurso_da_mensagem(gatilho: Fact) -> str | None:
     return _ler_nome(casou.group(1)) if casou else None
 
 
-def _clausula(gatilho: Fact) -> str | None:
+def _clausula_e_fim(gatilho: Fact) -> tuple[str | None, bool]:
+    """A clausula `permission(s) ... on <token>`, e se ela termina no fim do texto."""
     texto = _texto(gatilho)
     permissao = _PERMISSAO_RE.search(texto)
     if permissao is None:
-        return None
+        return None, False
     fim_da_linha = texto.find("\n", permissao.end())
     on = _ON_RE.search(
         texto, permissao.end(), len(texto) if fim_da_linha < 0 else fim_da_linha
     )
-    return texto[permissao.start() : on.end()] if on else None
+    if on is None:
+        return None, False
+    return texto[permissao.start() : on.end()], on.end() == len(texto)
+
+
+def _no_teto(gatilho: Fact) -> bool:
+    """O trecho gravado bateu no teto. Pela porta `message_head` o texto e
+    `classe: cabeca`, e so a cabeca foi cortada."""
+    attrs = gatilho.attrs or {}
+    texto = _texto(gatilho)
+    if attrs.get("matched_on") == "message_head":
+        texto = texto.split(": ", 1)[-1]
+    return len(texto) >= _TETO_DO_TRECHO
 
 
 def _recurso_nao_tabela(gatilho: Fact) -> str | None:
@@ -496,8 +527,8 @@ def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
         _unresolved("operacao_com_alvo_nao_resolvido", recurso, gatilho, operation=op)
         for op in sem_alvo
     ]
-    if not operacoes:
-        return saida
+    # O modelo nao depende do alvo: a recusa dele sai tambem quando so ha operacao
+    # sem alvo, e nao e calada pela recusa de alvo.
     modelo = _modelo(facts)
     if modelo not in {"fta", "fgac"}:
         return [*saida, _unresolved(modelo, recurso, gatilho)]
@@ -530,6 +561,33 @@ def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
     return saida
 
 
+def _recurso(gatilho: Fact, lista: Sequence[Fact]) -> tuple[str | None, Fact | None]:
+    """A tabela que o gatilho acusa, ou a recusa que diz por que ela nao sai."""
+    bruto = _recurso_nao_tabela(gatilho)
+    if bruto is not None:
+        return None, _unresolved("recurso_nao_e_tabela", bruto, gatilho)
+    nomeado = _recurso_da_mensagem(gatilho)
+    clausula, no_fim = _clausula_e_fim(gatilho)
+    if _no_teto(gatilho) and (clausula is None or no_fim):
+        # O trecho bateu no teto e o nome, se ha, encosta no corte: ele pode ser o
+        # prefixo de outro (`dim_cliente` de `dim_cliente_hist`), e sem clausula o
+        # candidato unico acusaria a tabela do pool no lugar da que a mensagem nomeia.
+        return None, _unresolved("trecho_truncado", "", gatilho, matched=_texto(gatilho))
+    if nomeado is None and clausula is not None:
+        # Ha `on` depois de "permission(s)" e o nome nao foi lido: o candidato
+        # unico do pool nao e a tabela que a mensagem nomeia.
+        return None, _unresolved("recurso_nao_lido", "", gatilho, matched=clausula)
+    recurso, candidatas = (
+        _canonizar(nomeado, lista)
+        if nomeado
+        else (_candidato_unico(lista), _tabelas_do_pool(lista))
+    )
+    if recurso is None:
+        razao = "recurso_ambiguo" if candidatas else "recurso_nao_nomeado"
+        return None, _unresolved(razao, nomeado or "", gatilho, candidates=candidatas)
+    return recurso, None
+
+
 def build_missing_grant(facts: Sequence[Fact]) -> list[Fact]:
     """Deriva `lakeformation.missing_grant` da uniao dos facts. Sem `ERR-LF-001` no
     pool, devolve lista vazia: sem falha observada nao ha permissao ausente a afirmar."""
@@ -551,30 +609,11 @@ def build_missing_grant(facts: Sequence[Fact]) -> list[Fact]:
     saida: dict[str, Fact] = {}
     recursos: dict[str, Fact] = {}
     for gatilho in gatilhos:
-        bruto = _recurso_nao_tabela(gatilho)
-        if bruto is not None:
-            recusa = _unresolved("recurso_nao_e_tabela", bruto, gatilho)
+        recurso, recusa = _recurso(gatilho, lista)
+        if recusa is not None:
             saida.setdefault(recusa.id, recusa)
-            continue
-        nomeado = _recurso_da_mensagem(gatilho)
-        clausula = _clausula(gatilho)
-        if nomeado is None and clausula is not None:
-            # Ha `on` depois de "permission(s)" e o nome nao foi lido: o candidato
-            # unico do pool nao e a tabela que a mensagem nomeia.
-            recusa = _unresolved("recurso_nao_lido", "", gatilho, matched=clausula)
-            saida.setdefault(recusa.id, recusa)
-            continue
-        recurso, candidatas = (
-            _canonizar(nomeado, lista)
-            if nomeado
-            else (_candidato_unico(lista), _tabelas_do_pool(lista))
-        )
-        if recurso is None:
-            razao = "recurso_ambiguo" if candidatas else "recurso_nao_nomeado"
-            recusa = _unresolved(razao, nomeado or "", gatilho, candidates=candidatas)
-            saida.setdefault(recusa.id, recusa)
-            continue
-        recursos.setdefault(recurso, gatilho)
+        elif recurso is not None:
+            recursos.setdefault(recurso, gatilho)
     for recurso, gatilho in recursos.items():
         for fact in _derivar(recurso, gatilho, lista):
             saida.setdefault(fact.id, fact)

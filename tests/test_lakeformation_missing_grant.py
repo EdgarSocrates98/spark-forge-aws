@@ -517,7 +517,7 @@ def test_nome_com_pontuacao_ou_aspas_e_lido_e_nao_troca_de_tabela():
         " on 'staging.outra' (Service: AWSGlue)",
         ' on "staging.outra"',
         " on `staging.outra`,",
-        ": Required Select on staging.outra",
+        " on staging.outra)",
     ):
         pool = [_gatilho(linha=SEM_NOME + resto), *cenario_fta_append_sem_all()[1:]]
         (recusa,) = _so_recusas(build_missing_grant(pool))
@@ -526,7 +526,13 @@ def test_nome_com_pontuacao_ou_aspas_e_lido_e_nao_troca_de_tabela():
 
 
 def test_clausula_on_ilegivel_recusa_recurso_nao_lido():
-    for resto in (' on "staging"."outra"', " on 'minha tabela'", " on staging.outra)"):
+    # ": Required Select on" nunca vem do matcher (a assinatura exige
+    # "permission(s) on"); ler o token depois dele trocaria database por tabela.
+    for resto in (
+        ' on "staging"."outra"',
+        " on 'minha tabela'",
+        ": Required Describe on default",
+    ):
         pool = [_gatilho(linha=SEM_NOME + resto), *cenario_fta_append_sem_all()[1:]]
         (recusa,) = _so_recusas(build_missing_grant(pool))
         assert recusa.attrs["reason"] == "recurso_nao_lido", resto
@@ -647,3 +653,135 @@ def test_linha_hostil_com_prefixo_repetido_nao_trava():
     inicio = time.perf_counter()
     build_missing_grant(pool)
     assert time.perf_counter() - inicio < 2.0
+
+
+# O matcher guarda 200 caracteres da mensagem (matcher.py `_TRECHO`,
+# exception.py `message_head[:200]`); a assinatura casou na mensagem inteira.
+TETO = 200
+FRASE = "AccessDeniedException: Insufficient Lake Formation permission(s) on "
+
+
+def _encostado(frase: str, resto: str = "") -> str:
+    """Uma mensagem cujo corte em `TETO` cai logo depois de `frase`."""
+    return "y" * (TETO - len(frase) - 1) + " " + frase + resto
+
+
+def test_trecho_cortado_recusa_truncado_e_nao_acusa_o_candidato_unico():
+    cenarios = {
+        # (a) o corte cai antes da clausula: o candidato unico seria outra tabela.
+        "antes_da_clausula": ("y" * 190 + " " + FRASE + "staging.outra")[:TETO],
+        # (b) o corte cai no meio de default.dim_cliente_hist.
+        "no_meio_do_nome": _encostado(FRASE + "default.dim_cliente", "_hist (x)")[:TETO],
+        # (c) o corte cai logo depois de "on ".
+        "logo_depois_do_on": _encostado(FRASE, "staging.outra")[:TETO],
+    }
+    for nome, trecho in cenarios.items():
+        assert len(trecho) == TETO, nome
+        pool = [_gatilho(linha=trecho), *cenario_fta_append_sem_all()[1:]]
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "trecho_truncado", nome
+        assert "mensagem inteira" in recusa.attrs["unblocked_by"], nome
+        assert "nao presume" in recusa.attrs["unblocked_by"], nome
+    # Abaixo do teto e sem clausula, o candidato unico continua valendo.
+    curto = [_gatilho(linha=SEM_NOME), *cenario_fta_append_sem_all()[1:]]
+    (falta,) = _de(build_missing_grant(curto), "lakeformation.missing_grant")
+    assert falta.attrs["resource"] == TABELA
+
+
+def test_gatilho_real_guarda_o_teto_e_recusa_truncado():
+    # Monta o gatilho pelo caminho REAL do matcher e do extrator de excecao: se o
+    # teto mudar la, este teste acusa.
+    from sparkforge.errors.matcher import build_signature_matches
+    from sparkforge.facts.exception import build_exceptions
+    from sparkforge.facts.lakeformation_missing_grant import _TETO_DO_TRECHO
+
+    mensagem = _encostado(FRASE + "default.dim_cliente", "_hist (Service: AWSGlue)")
+    log = Fact(
+        kind="cloudwatch.log_event",
+        subject={"type": "job_run", "job_name": "etl-dim", "job_run_id": "jr_1"},
+        attrs={"message": mensagem},
+        provenance=PROV,
+    )
+    falha = Fact(
+        kind="spark.stage.failure",
+        subject={"type": "stage", "stage_id": 3},
+        attrs={"reason": "com.amazonaws.lakeformation.AccessDeniedException: " + mensagem},
+        provenance=PROV,
+    )
+    gatilhos = [
+        f
+        for f in build_signature_matches([log, *build_exceptions([falha])])
+        if f.kind == "error.signature_match" and f.attrs["signature_id"] == "ERR-LF-001"
+    ]
+    por_porta = {f.attrs["matched_on"]: f for f in gatilhos}
+    assert sorted(por_porta) == ["log_line", "message_head"]
+    assert len(por_porta["log_line"].attrs["matched_line"]) == _TETO_DO_TRECHO
+    cabeca = por_porta["message_head"].attrs["matched_class"].split(": ", 1)[1]
+    assert len(cabeca) == _TETO_DO_TRECHO
+    for porta, gatilho in por_porta.items():
+        pool = [gatilho, *cenario_fta_append_sem_all()[1:]]
+        assert _razoes(build_missing_grant(pool)) == ["trecho_truncado"], porta
+
+
+def test_operacao_sem_alvo_nao_cala_a_recusa_de_modelo():
+    for modelo, razao in (([], "modelo_ausente"), ([_modelo("both")], "modelo_both")):
+        pool = [_gatilho(), *modelo, _escrita(target=None), _grant(["DESCRIBE"])]
+        assert _razoes(build_missing_grant(pool)) == sorted(
+            [razao, "operacao_com_alvo_nao_resolvido"]
+        )
+
+
+def test_nome_exato_sem_caixa_ganha_da_qualificada_que_casa_pelo_sufixo():
+    pool = [
+        _gatilho(linha=_linha("Default.Dim_Cliente")),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"]),
+        _grant(["DESCRIBE"], tabela="glue_catalog.default.dim_cliente"),
+    ]
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["resource"] == TABELA
+
+
+def test_write_to_sem_alvo_sai_com_operacao_mapeada():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(mode=None, target=None, api="dataframe_writer_v2"),
+        _grant(["DESCRIBE"]),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "operacao_com_alvo_nao_resolvido"
+    assert recusa.attrs["operation"] == "write"
+
+
+def test_nome_com_cauda_de_json_ou_parentese_e_lido():
+    for resto in (" on dim_cliente;'", ' on default.dim_cliente"}', " on default.dim_cliente)"):
+        pool = [_gatilho(linha=SEM_NOME + resto), *cenario_fta_append_sem_all()[1:]]
+        (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+        assert falta.attrs["resource"] == TABELA, resto
+
+
+def test_nome_qualificado_que_casa_duas_tabelas_de_catalogo_e_ambiguo():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"], tabela="cat_a.default.dim_cliente"),
+        _grant(["DESCRIBE"], tabela="cat_b.default.dim_cliente"),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "recurso_ambiguo"
+    assert recusa.attrs["resource"] == TABELA
+    assert "casa com mais de uma" in recusa.attrs["unblocked_by"]
+
+
+def test_recusas_de_clausulas_diferentes_nao_colapsam():
+    a = _gatilho(linha=SEM_NOME + ' on "staging"."outra"', artefato="logs/a.json")
+    b = _gatilho(linha=SEM_NOME + " on 'minha tabela'", artefato="logs/b.json")
+    recusas = _so_recusas(build_missing_grant([a, b, *cenario_fta_append_sem_all()[1:]]))
+    assert sorted(r.attrs["matched"] for r in recusas) == [
+        'permission(s) on "staging"."outra"',
+        "permission(s) on 'minha",
+    ]
+    assert len({r.id for r in recusas}) == 2
