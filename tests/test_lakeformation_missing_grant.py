@@ -7,6 +7,7 @@ artefato de `collect lakeformation`); aqui cada ramo do extrator e medido sozinh
 """
 from __future__ import annotations
 
+from sparkforge.facts.fusion import fuse
 from sparkforge.facts.lakeformation_missing_grant import (
     EMITTED_KINDS,
     OPERACOES_MAPEADAS,
@@ -15,6 +16,7 @@ from sparkforge.facts.lakeformation_missing_grant import (
     requirement,
 )
 from sparkforge.findings.models import Fact
+from sparkforge.simulate.diff import DERIVED_KINDS
 
 PROV = {"extractor": "teste@0.0.0", "artifact": "memoria"}
 ROLE = "arn:aws:iam::111111111111:role/glue-curated"
@@ -1418,3 +1420,34 @@ def test_modo_nao_lido_sem_alvo_sai_como_alvo_nao_resolvido():
     (recusa,) = _so_recusas(build_missing_grant(pool))
     assert recusa.attrs["reason"] == "operacao_com_alvo_nao_resolvido"
     assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
+
+
+def _tf_conf_resolver() -> Fact:
+    chave = "spark.hadoop.fs.s3.credentialsResolverClass"
+    return Fact(
+        kind="tf.spark_conf",
+        subject={
+            "type": "tf_resource",
+            "file": "main.tf",
+            "line": 9,
+            "symbol": f"aws_glue_job.etl#{chave}",
+        },
+        attrs={
+            "key": chave,
+            "value": "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver",
+            "source_argument": "--conf",
+            "block": "default_arguments",
+        },
+        provenance=PROV,
+    )
+
+
+def test_fuse_deriva_missing_grant():
+    # Sem `lakeformation.filesystem` no pool: `fuse` precisa deriva-lo primeiro
+    # (build_lakeformation) e so depois cruzar, senao o modelo sai ausente.
+    pool = [_gatilho(), _tf_conf_resolver(), _escrita(), _grant(["SELECT"])]
+    kinds = {f.kind for f in fuse(pool)}
+    assert "lakeformation.missing_grant" in kinds
+    assert EMITTED_KINDS <= DERIVED_KINDS
+    sem_falha = [_tf_conf_resolver(), _escrita(), _grant(["SELECT"])]
+    assert not {f.kind for f in fuse(sem_falha)} & EMITTED_KINDS

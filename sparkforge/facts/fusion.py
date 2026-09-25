@@ -74,6 +74,13 @@ from sparkforge.facts.airflow_dag import SOURCE_KINDS as AF_SOURCE_KINDS
 from sparkforge.facts.airflow_dag import build_af_glue_link
 from sparkforge.facts.lakeformation import EMITTED_KINDS as LF_EMITTED_KINDS
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.lakeformation_missing_grant import (
+    EMITTED_KINDS as MISSING_GRANT_EMITTED_KINDS,
+)
+from sparkforge.facts.lakeformation_missing_grant import (
+    SOURCE_KINDS as MISSING_GRANT_SOURCE_KINDS,
+)
+from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
 from sparkforge.facts.sfn_history import EMITTED_KINDS as SFN_HISTORY_EMITTED_KINDS
 from sparkforge.facts.sfn_history import SOURCE_KINDS as SFN_HISTORY_SOURCE_KINDS
 from sparkforge.facts.sfn_history import build_sfn_retry_observado
@@ -539,6 +546,22 @@ def fuse(facts: Sequence[Fact]) -> list[Fact]:
         )
     for fact in derivados_lf:
         combined[fact.id] = fact
+
+    # `lakeformation.missing_grant` deriva AQUI, DEPOIS de `lakeformation.*`: o
+    # modelo de acesso que ele le (`access_model`, `filesystem`, `iceberg_catalog`)
+    # so existe depois da derivacao acima, e por isso ele recebe `combined` e nao
+    # `facts`. A guarda por `SOURCE_KINDS` mantem o `fuse` igual para quem nao tem
+    # falha de Lake Formation no pool, o mesmo molde do timeout abaixo.
+    if any(f.kind in MISSING_GRANT_SOURCE_KINDS for f in facts):
+        derivados_mg = build_missing_grant(list(combined.values()))
+        desconhecidos_mg = {f.kind for f in derivados_mg} - MISSING_GRANT_EMITTED_KINDS
+        if desconhecidos_mg:
+            raise AssertionError(
+                "kind fora do namespace de lakeformation_missing_grant: "
+                f"{sorted(desconhecidos_mg)}"
+            )
+        for fact in derivados_mg:
+            combined[fact.id] = fact
 
     # `spark.timeout.*` deriva AQUI pela mesma razao de `lakeformation.*`: ate
     # 2026-09-12 `extract_timeout_diagnosis` nao tinha chamador de producao, e as

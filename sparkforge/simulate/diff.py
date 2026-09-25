@@ -1,8 +1,9 @@
 """Remocao dos derivados e comparacao dos dois lados.
 
 Os dois lados passam pelo MESMO pipeline: tirar os kinds que `fusion`,
-`lakeformation` e `timeout_diagnosis` derivam e rederiva-los. Assim a diferenca
-so pode vir do `--set`, e nunca de uma rederivacao que so um lado sofreu.
+`lakeformation`, `lakeformation_missing_grant` e `timeout_diagnosis` derivam e
+rederiva-los. Assim a diferenca so pode vir do `--set`, e nunca de uma
+rederivacao que so um lado sofreu.
 
 A comparacao e por `(rule_id, chave estavel do subject)`. Alterar
 `measures.value` muda o `Fact.id`, e a chave estavel ignora o que muda sem
@@ -15,12 +16,20 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from sparkforge.facts import fusion, lakeformation, timeout_diagnosis
+from sparkforge.facts import (
+    fusion,
+    lakeformation,
+    lakeformation_missing_grant,
+    timeout_diagnosis,
+)
 from sparkforge.findings.models import Fact
 from sparkforge.proof.keys import stable_key
 
 DERIVED_KINDS = frozenset(
-    fusion.EMITTED_KINDS | lakeformation.EMITTED_KINDS | timeout_diagnosis.EMITTED_KINDS
+    fusion.EMITTED_KINDS
+    | lakeformation.EMITTED_KINDS
+    | lakeformation_missing_grant.EMITTED_KINDS
+    | timeout_diagnosis.EMITTED_KINDS
 )
 AVALIADA = "evaluated"
 

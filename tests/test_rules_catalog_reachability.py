@@ -71,6 +71,7 @@ from sparkforge.facts import (
     # `lakeformation.grant`/`registered_location`/`data_lake_settings`. Sem ele
     # aqui, os cinco kinds de permissao contam como orfaos.
     lakeformation_grants,
+    lakeformation_missing_grant,
     migration,
     parquet_footer,
     pyspark_ast,
@@ -177,6 +178,10 @@ EXTRACTORS = (
     # `blocked_on` sobre extrator que ja esta no repositorio -- a mentira que
     # este arquivo existe para impedir.
     lakeformation_grants,
+    # `lakeformation_missing_grant` deriva o kind que `ERR-LF-001` declarava em
+    # `evidence_required` desde antes de o motor ler Lake Formation. Entra nas DUAS
+    # listas no commit que o liga ao `fuse()`, antes da regra que o consome.
+    lakeformation_missing_grant,
     # `funcval` entra nas DUAS listas no mesmo commit da Fase 4c: sem ele aqui,
     # os quatro kinds `funcval.*` contam como orfaos e as cinco regras SF-FVAL
     # da Task 6 seriam obrigadas a declarar `blocked_on` sobre um modulo que ja

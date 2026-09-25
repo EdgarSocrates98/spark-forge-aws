@@ -3696,23 +3696,23 @@
       "type": "number"
     },
     {
-      "context": "  no mesmo corpus, tem **249499** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "  no mesmo corpus, tem **249669** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453. Relida na segunda rodada da revisao da T2 (2026-09-25): 245453 -> 245751. Relida na terceira rodada da revisao da T2 (2026-09-25): 245751 -> 246127. Relida na quarta rodada da revisao da T2 (2026-09-25): 246127 -> 246320. Relida na T3 (2026-09-25): o lado IAM sob FGAC cresceu os dois arquivos com linhas contendo `source`, 246320 -> 246544. Relida na correcao da revisao da T3 (2026-09-25): registro nao coletado, recurso da decisao de IAM e runtime sem o modelo cresceram os dois arquivos com linhas contendo `source`, 246544 -> 248364. Relida na segunda rodada da revisao da T3 (2026-09-25): a regra de pertenca da decisao de IAM, a ressalva do registro e as recusas de decisao malformada e desconhecida cresceram os dois arquivos com linhas contendo `source`, 248364 -> 249135. Relida na correcao da qualidade da T3 pelo controlador (2026-09-25): 249135 -> 249273. Relida na tarefa extra do pyspark_ast da LF_GRANTS (2026-09-25): 249273 -> 249498. Relida na correcao da revisao da tarefa extra (modo de escrita) da LF_GRANTS (2026-09-25): 249498 -> 249499.",
+      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453. Relida na segunda rodada da revisao da T2 (2026-09-25): 245453 -> 245751. Relida na terceira rodada da revisao da T2 (2026-09-25): 245751 -> 246127. Relida na quarta rodada da revisao da T2 (2026-09-25): 246127 -> 246320. Relida na T3 (2026-09-25): o lado IAM sob FGAC cresceu os dois arquivos com linhas contendo `source`, 246320 -> 246544. Relida na correcao da revisao da T3 (2026-09-25): registro nao coletado, recurso da decisao de IAM e runtime sem o modelo cresceram os dois arquivos com linhas contendo `source`, 246544 -> 248364. Relida na segunda rodada da revisao da T3 (2026-09-25): a regra de pertenca da decisao de IAM, a ressalva do registro e as recusas de decisao malformada e desconhecida cresceram os dois arquivos com linhas contendo `source`, 248364 -> 249135. Relida na correcao da qualidade da T3 pelo controlador (2026-09-25): 249135 -> 249273. Relida na tarefa extra do pyspark_ast da LF_GRANTS (2026-09-25): 249273 -> 249498. Relida na correcao da revisao da tarefa extra (modo de escrita) da LF_GRANTS (2026-09-25): 249498 -> 249499. Relida na T4 da LF_GRANTS (2026-09-25): a ligacao de `build_missing_grant` ao `fuse()` e o teste que a mede cresceram `fusion.py` e o teste com linhas contendo `source`, 249499 -> 249669.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 249499
+          "value": 249669
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "249499",
+      "text": "249669",
       "type": "number"
     },
     {
