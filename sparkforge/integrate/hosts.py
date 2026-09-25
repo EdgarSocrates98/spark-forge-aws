@@ -1,8 +1,9 @@
 """Onde cada host le agents, skills e MCP de USUARIO (D4).
 
 Tabela declarativa, com a fonte oficial de cada caminho (lida em 2026-09-25, T1).
-Nenhum caminho sai de variavel de ambiente espalhada: `home`, `windows` e `appdata`
-entram por parametro, e o teste aponta os tres para `tmp_path`.
+Nenhum caminho sai de variavel de ambiente: `home`, `windows` e `appdata` entram
+por parametro, e o teste aponta os tres para `tmp_path`. Sem `appdata`, ele e
+derivado do `home` (`home/AppData/Roaming`), nunca lido do ambiente.
 
 `~/.agents/skills` e lido por Devin, Codex e Copilot CLI; os tres gravam a mesma
 renderizacao, a da plataforma `devin` -- a mesma que o espelho `.agents/skills` do
@@ -51,11 +52,17 @@ def claude_plugin_dir(home: Path) -> Path:
     return claude_marketplace_dir(home) / "plugins" / PLUGIN
 
 
+def default_appdata(home: Path) -> Path:
+    """O `%APPDATA%` derivado do HOME. Com `home` injetado, o APPDATA do ambiente
+    nunca e lido: quem quer o real (o CLI) passa `appdata` explicito."""
+    return Path(home) / "AppData" / "Roaming"
+
+
 def devin_config_dir(home: Path, *, windows: bool, appdata: Path | None) -> Path:
     """`~/.config/devin`, ou `%APPDATA%\\devin` no Windows."""
     if not windows:
         return Path(home) / ".config" / "devin"
-    base = Path(appdata) if appdata else Path(home) / "AppData" / "Roaming"
+    base = Path(appdata) if appdata else default_appdata(home)
     return base / "devin"
 
 
@@ -67,14 +74,12 @@ def host(
     appdata: Path | None = None,
 ) -> Host:
     """O `Host` de `nome` sob `home`. `windows=None` e `os.name == "nt"`, e
-    `appdata=None` le `APPDATA` -- so o CLI deixa os dois no default."""
+    `appdata=None` e `default_appdata(home)` -- nunca o APPDATA do ambiente."""
     if nome not in HOSTS:
         raise ValueError(f"host desconhecido: {nome!r}; conhecidos: {list(HOSTS)}")
     home = Path(home)
     if windows is None:
         windows = os.name == "nt"
-    if appdata is None and os.environ.get("APPDATA"):
-        appdata = Path(os.environ["APPDATA"])
     compartilhadas = home / ".agents" / "skills"
     if nome == "claude":
         plugin = claude_plugin_dir(home)
@@ -154,6 +159,7 @@ __all__ = [
     "Host",
     "claude_marketplace_dir",
     "claude_plugin_dir",
+    "default_appdata",
     "devin_config_dir",
     "host",
     "mcp_command",

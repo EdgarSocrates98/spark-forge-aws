@@ -686,3 +686,33 @@ def test_chave_fora_do_home_recusa_sem_apagar(tmp_path, forma):
     (recusa,) = resultado["refused"]
     assert recusa["reason"] == "manifesto_fora_do_home"
     assert recusa["key"] == chave
+
+
+def test_appdata_vem_do_home_e_o_manifesto_so_guarda_relativo(tmp_path, monkeypatch):
+    raiz = _raiz_minima(tmp_path)
+    real = tmp_path / "appdata_real"
+    monkeypatch.setenv("APPDATA", str(real))
+
+    # `home` injetado e sem `appdata`: o APPDATA vem do home, nunca do ambiente.
+    home = tmp_path / "home"
+    assert integrate("devin", home=home, windows=True, root=raiz)["refused"] == []
+    assert not real.exists(), "com home injetado, integrate leu o APPDATA real"
+    assert (home / "AppData" / "Roaming" / "devin" / "agents" / "sf-falso.md").is_file()
+    assert detach("devin", home=home)["refused"] == []
+    assert not (home / "AppData").exists()
+
+    # APPDATA explicito fora do HOME: chave relativa a raiz declarada, e o detach
+    # poda os diretorios vazios dos dois lados sem apagar as raizes.
+    fora = tmp_path / "appdata_fora"
+    casa = tmp_path / "casa"
+    assert integrate("devin", home=casa, windows=True, appdata=fora, root=raiz)["refused"] == []
+    manifesto = _manifesto(casa)
+    chaves = [*manifesto["files"], *(c["path"] for c in manifesto["hosts"]["devin"]["config"])]
+    assert all(not Path(c).is_absolute() and ":" not in c for c in chaves), chaves
+    assert ".agents/skills/sdd-plan/SKILL.md" in chaves
+    assert "%APPDATA%/devin/agents/sf-falso.md" in chaves
+    assert "%APPDATA%/devin/mcp_config.json" in chaves
+    assert detach("devin", home=casa, appdata=fora)["refused"] == []
+    assert not (fora / "devin").exists()
+    assert fora.is_dir()
+    assert not (casa / ".agents").exists()

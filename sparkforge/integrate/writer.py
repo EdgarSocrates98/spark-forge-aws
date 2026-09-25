@@ -2,10 +2,11 @@
 
 Toda escrita fora do repositorio passa por aqui e fica registrada em
 `~/.sparkforge/integrations.json` (formato 2): em `files`, cada arquivo gravado
-(caminho relativo ao HOME, em POSIX) com UM sha256 e o conjunto de hosts donos;
-em `hosts`, por host, a versao do pacote que o gravou e as entradas de config
-inseridas. O manifesto e o que torna `detach` seguro -- sem
-ele, apagar pelo nome levaria junto arquivo do usuario com o mesmo nome.
+(caminho relativo a uma raiz declarada, HOME ou APPDATA, em POSIX) com UM sha256
+e o conjunto de hosts donos; em `hosts`, por host, a versao do pacote que o
+gravou e as entradas de config inseridas. O manifesto e o que torna `detach`
+seguro -- sem ele, apagar pelo nome levaria junto arquivo do usuario com o mesmo
+nome.
 
 Tres regras para arquivo que ja existe no destino:
 
@@ -39,7 +40,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from sparkforge.integrate import render, sources
-from sparkforge.integrate.hosts import Host
+from sparkforge.integrate.hosts import Host, default_appdata
 
 MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
 SCHEMA = 2
@@ -90,13 +91,90 @@ def gravar_atomico(caminho: Path, dados: bytes) -> None:
         raise
 
 
+# --------------------------------------------------------------------------
+# As duas raizes declaradas: HOME e APPDATA (D4)
+# --------------------------------------------------------------------------
+# O manifesto nunca guarda caminho absoluto. Cada chave e relativa a uma raiz
+# declarada: ao HOME, em POSIX, ou ao APPDATA, com o prefixo `%APPDATA%/` -- o
+# Devin no Windows grava em `%APPDATA%\devin`, que pode estar em outro disco.
+
+APPDATA_PREFIX = "%APPDATA%/"
+
+
 def chave_segura(chave: str) -> bool:
-    """Relativa, POSIX, sem `..`, sem unidade e sem barra invertida: so assim
-    `home / chave` fica dentro do HOME."""
-    if not chave or "\\" in chave or ":" in chave:
+    """Relativa, POSIX, sem `..`, sem unidade e sem barra invertida: so assim a
+    chave fica dentro da raiz declarada."""
+    if chave.startswith(APPDATA_PREFIX):
+        chave = chave[len(APPDATA_PREFIX):]
+    if not chave or "\\" in chave or ":" in chave or "%" in chave:
         return False
     partes = PurePosixPath(chave)
     return not partes.is_absolute() and ".." not in partes.parts
+
+
+def _dentro(caminho: Path, raiz: Path) -> bool:
+    return caminho == raiz or raiz in caminho.parents
+
+
+def _podar(caminho: Path, raiz: Path) -> None:
+    """Apaga os diretorios que ficaram vazios, subindo ate a raiz, sem ela."""
+    pai = caminho.parent
+    raiz = Path(raiz)
+    while pai != raiz and raiz in pai.parents and pai.is_dir() and not any(pai.iterdir()):
+        pai.rmdir()
+        pai = pai.parent
+
+
+class Disco:
+    """Onde a integracao le e grava: as raizes declaradas e o modo (dry-run).
+
+    `appdata=None` e `home/AppData/Roaming`: com `home` injetado, o APPDATA do
+    ambiente nunca e lido aqui -- quem quer o real (o CLI) o passa explicito.
+    """
+
+    def __init__(self, home: Path, appdata: Path | None = None, *, dry_run: bool = False):
+        self.home = Path(home)
+        self.appdata = default_appdata(self.home) if appdata is None else Path(appdata)
+        self.dry_run = dry_run
+
+    def _raiz(self, caminho: Path) -> tuple[Path, str]:
+        caminho = Path(caminho)
+        if _dentro(caminho, self.home):
+            return self.home, ""
+        if _dentro(caminho, self.appdata):
+            return self.appdata, APPDATA_PREFIX
+        raise ValueError(f"fora do HOME e do APPDATA declarados: {caminho}")
+
+    def chave(self, caminho: Path) -> str:
+        """A chave do manifesto para `caminho`."""
+        raiz, prefixo = self._raiz(caminho)
+        return prefixo + Path(caminho).relative_to(raiz).as_posix()
+
+    def local(self, chave: str) -> Path:
+        """O caminho em disco de uma chave ja conferida por `chave_segura`."""
+        if chave.startswith(APPDATA_PREFIX):
+            return self.appdata / chave[len(APPDATA_PREFIX):]
+        return self.home / chave
+
+    def ler(self, caminho: Path) -> bytes | None:
+        caminho = Path(caminho)
+        return caminho.read_bytes() if caminho.is_file() else None
+
+    def gravar(self, caminho: Path, dados: bytes) -> None:
+        if not self.dry_run:
+            gravar_atomico(caminho, dados)
+
+    def apagar(self, caminho: Path) -> None:
+        if self.dry_run:
+            return
+        caminho = Path(caminho)
+        caminho.unlink()
+        _podar(caminho, self._raiz(caminho)[0])
+
+
+# --------------------------------------------------------------------------
+# Manifesto
+# --------------------------------------------------------------------------
 
 
 def _manifesto_vazio() -> dict[str, Any]:
@@ -144,8 +222,8 @@ def _chaves(dados: dict[str, Any]) -> list[str]:
 
 
 def load_manifest(home: Path) -> dict[str, Any]:
-    """O manifesto do HOME. Ilegivel, ou com caminho que sai do HOME, levanta
-    `ManifestoRecusado` antes de qualquer escrita ou remocao."""
+    """O manifesto do HOME. Ilegivel, ou com caminho que sai da raiz declarada,
+    levanta `ManifestoRecusado` antes de qualquer escrita ou remocao."""
     caminho = manifest_path(home)
     if not caminho.is_file():
         return _manifesto_vazio()
@@ -181,15 +259,6 @@ def save_manifest(home: Path, manifesto: dict[str, Any]) -> bool:
     return True
 
 
-def rel(home: Path, caminho: Path) -> str:
-    """Relativo ao HOME, em POSIX; fora dele (um `APPDATA` em outro disco), absoluto.
-    `Path(home) / rel(...)` devolve o caminho certo nos dois casos."""
-    caminho, home = Path(caminho), Path(home)
-    if caminho == home or home in caminho.parents:
-        return caminho.relative_to(home).as_posix()
-    return caminho.as_posix()
-
-
 def owners(manifesto: dict[str, Any], relativo: str) -> list[str]:
     return list((manifesto["files"].get(relativo) or {}).get("owners") or [])
 
@@ -218,6 +287,11 @@ def _adotar(
         registro["preexistente"] = True
 
 
+# --------------------------------------------------------------------------
+# Arquivos de agents e skills
+# --------------------------------------------------------------------------
+
+
 def plan_files(h: Host, root: Path) -> list[tuple[Path, bytes]]:
     """Os arquivos que o host `h` recebe, ja renderizados para a plataforma dele."""
     agents_src = sources.agents_dir(root)
@@ -239,22 +313,11 @@ def plan_files(h: Host, root: Path) -> list[tuple[Path, bytes]]:
     return plano
 
 
-def _podar(caminho: Path, home: Path) -> None:
-    """Apaga os diretorios que ficaram vazios, subindo ate o HOME, sem ele."""
-    pai = caminho.parent
-    home = Path(home)
-    while pai != home and home in pai.parents and pai.is_dir() and not any(pai.iterdir()):
-        pai.rmdir()
-        pai = pai.parent
-
-
 def remove_owned(
-    home: Path,
+    disco: Disco,
     manifesto: dict[str, Any],
     nome: str,
     relativos: list[str],
-    *,
-    dry_run: bool,
 ) -> dict[str, list]:
     """Tira `nome` dos donos de `relativos`. O arquivo so sai do disco quando `nome`
     era o ultimo dono, o sha256 em disco ainda e o gravado e ele nao e
@@ -269,22 +332,22 @@ def remove_owned(
         if registro is None:
             continue
         outros = [o for o in registro.get("owners") or [] if o != nome]
-        caminho = Path(home) / relativo
+        caminho = disco.local(relativo)
         if outros:
             mantidos.append(relativo)
-            if not dry_run:
+            if not disco.dry_run:
                 registro["owners"] = outros
             continue
+        atual = disco.ler(caminho)
         if registro.get("preexistente"):
             preexistentes.append(relativo)
-        elif caminho.is_file() and sha256_bytes(caminho.read_bytes()) != registro["sha256"]:
+        elif atual is not None and sha256_bytes(atual) != registro["sha256"]:
             recusas.append({"reason": "editado_pelo_usuario", "path": relativo})
         else:
             removidos.append(relativo)
-            if not dry_run and caminho.is_file():
-                caminho.unlink()
-                _podar(caminho, home)
-        if not dry_run:
+            if atual is not None:
+                disco.apagar(caminho)
+        if not disco.dry_run:
             del arquivos[relativo]
     return {
         "removed": removidos,
@@ -298,23 +361,22 @@ def apply_files(
     nome: str,
     plano: list[tuple[Path, bytes]],
     *,
-    home: Path,
+    disco: Disco,
     manifesto: dict[str, Any],
     version: str,
-    dry_run: bool,
 ) -> dict[str, Any]:
     """Grava o plano de `nome` e atualiza o manifesto em memoria."""
-    home = Path(home)
     escritos: list[str] = []
     iguais: list[str] = []
     recusas: list[dict[str, str]] = []
     vistos: set[str] = set()
     for destino, dados in plano:
-        relativo = rel(home, destino)
+        relativo = disco.chave(destino)
         sha = sha256_bytes(dados)
         registrado = recorded_sha(manifesto, relativo)
-        if destino.is_file():
-            atual = sha256_bytes(destino.read_bytes())
+        em_disco = disco.ler(destino)
+        if em_disco is not None:
+            atual = sha256_bytes(em_disco)
             if registrado is None and atual != sha:
                 recusas.append({"reason": "arquivo_do_usuario", "path": relativo})
                 continue
@@ -326,23 +388,23 @@ def apply_files(
             if atual == sha:
                 iguais.append(relativo)
                 vistos.add(relativo)
-                if not dry_run:
+                if not disco.dry_run:
                     _adotar(manifesto, relativo, nome, sha, preexistente=registrado is None)
                 continue
         escritos.append(relativo)
         vistos.add(relativo)
-        if not dry_run:
-            gravar_atomico(destino, dados)
+        disco.gravar(destino, dados)
+        if not disco.dry_run:
             _adotar(manifesto, relativo, nome, sha, preexistente=False)
     anteriores = [r for r in host_files(manifesto, nome) if r not in vistos]
-    orfaos = remove_owned(home, manifesto, nome, anteriores, dry_run=dry_run)
-    if not dry_run:
+    orfaos = remove_owned(disco, manifesto, nome, anteriores)
+    if not disco.dry_run:
         entrada = manifesto["hosts"].setdefault(nome, {})
         entrada["package_version"] = version
         entrada.setdefault("config", [])
     return {
         "host": nome,
-        "dry_run": dry_run,
+        "dry_run": disco.dry_run,
         "written": escritos,
         "unchanged": iguais,
         "removed": orfaos["removed"],
@@ -372,18 +434,22 @@ def _guardar_registro(
         registros.append(registro)
 
 
-def _json_de_config(caminho: Path) -> tuple[str, dict[str, Any] | None]:
-    """(texto, dados), com `dados=None` quando o arquivo nao e JSON de objeto."""
-    if not caminho.is_file():
-        return "", {}
-    texto = caminho.read_text(encoding="utf-8")
+def _texto_de(disco: Disco, caminho: Path) -> str | None:
+    dados = disco.ler(caminho)
+    return None if dados is None else dados.decode("utf-8").replace("\r\n", "\n")
+
+
+def _json_de_config(texto: str | None) -> dict[str, Any] | None:
+    """Os dados do JSON de config, `{}` sem arquivo, ou `None` se nao e JSON de objeto."""
+    if texto is None or not texto.strip():
+        return {}
     try:
-        dados = json.loads(texto) if texto.strip() else {}
+        dados = json.loads(texto)
     except json.JSONDecodeError:
-        return texto, None
+        return None
     if not isinstance(dados, dict) or not isinstance(dados.get("mcpServers", {}), dict):
-        return texto, None
-    return texto, dados
+        return None
+    return dados
 
 
 def apply_json_config(
@@ -391,14 +457,14 @@ def apply_json_config(
     caminho: Path,
     entrada: dict[str, Any],
     *,
-    home: Path,
+    disco: Disco,
     manifesto: dict[str, Any],
-    dry_run: bool,
 ) -> dict[str, Any]:
     """Poe `mcpServers.sparkforge` no JSON de config do host e nada mais."""
-    relativo = rel(home, caminho)
+    relativo = disco.chave(caminho)
     registro = _registro_de_config(manifesto, nome, relativo)
-    texto, dados = _json_de_config(caminho)
+    texto = _texto_de(disco, caminho)
+    dados = _json_de_config(texto)
     if dados is None:
         return {"path": relativo, "status": "refused", "reason": "config_invalida"}
     servidores = dados.get("mcpServers")
@@ -412,12 +478,12 @@ def apply_json_config(
         registro = {
             "path": relativo,
             "format": "json",
-            "created": not caminho.is_file(),
+            "created": texto is None,
             "had_mcp_servers": servidores is not None,
         }
-    if not dry_run:
-        if status == "written":
-            gravar_atomico(caminho, novo_texto.encode("utf-8"))
+    if status == "written":
+        disco.gravar(caminho, novo_texto.encode("utf-8"))
+    if not disco.dry_run:
         _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
 
@@ -437,13 +503,14 @@ _TABELA_SPARKFORGE = re.compile(r"^\s*\[mcp_servers\.sparkforge\]", re.MULTILINE
 
 
 def toml_block(comando: str, args: list[str]) -> str:
-    """O bloco com `[mcp_servers.sparkforge]`. `json.dumps` produz string e array
-    validos de TOML (o escape do JSON e subconjunto do escape de string basica)."""
+    """O bloco com `[mcp_servers.sparkforge]`, com as strings escritas pelo mesmo
+    `_toml_string` do renderizador (string basica de TOML sem dependencia)."""
+    lista = ", ".join(render._toml_string(arg) for arg in args)
     return (
         f"{INICIO_TOML}\n"
         "[mcp_servers.sparkforge]\n"
-        f"command = {json.dumps(comando, ensure_ascii=False)}\n"
-        f"args = {json.dumps(args, ensure_ascii=False)}\n"
+        f"command = {render._toml_string(comando)}\n"
+        f"args = [{lista}]\n"
         f"{FIM_TOML}\n"
     )
 
@@ -463,14 +530,13 @@ def apply_toml_config(
     caminho: Path,
     bloco: str,
     *,
-    home: Path,
+    disco: Disco,
     manifesto: dict[str, Any],
-    dry_run: bool,
 ) -> dict[str, Any]:
     """Poe (ou troca) o bloco marcado no TOML de config; o resto nao e tocado."""
-    relativo = rel(home, caminho)
-    existia = caminho.is_file()
-    texto = caminho.read_text(encoding="utf-8") if existia else ""
+    relativo = disco.chave(caminho)
+    lido = _texto_de(disco, caminho)
+    texto = lido or ""
     limites = _limites_do_bloco(texto)
     if limites == "quebrado":
         return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
@@ -486,11 +552,11 @@ def apply_toml_config(
     registro = _registro_de_config(manifesto, nome, relativo) or {
         "path": relativo,
         "format": "toml",
-        "created": not existia,
+        "created": lido is None,
     }
-    if not dry_run:
-        if status == "written":
-            gravar_atomico(caminho, novo.encode("utf-8"))
+    if status == "written":
+        disco.gravar(caminho, novo.encode("utf-8"))
+    if not disco.dry_run:
         _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
 
@@ -500,24 +566,15 @@ def apply_toml_config(
 # --------------------------------------------------------------------------
 
 
-def _gravar_ou_apagar(caminho: Path, texto: str, *, apagar: bool, home: Path) -> None:
-    if apagar:
-        caminho.unlink()
-        _podar(caminho, home)
-    else:
-        gravar_atomico(caminho, texto.encode("utf-8"))
-
-
-def revert_json_config(
-    registro: dict[str, Any], *, home: Path, dry_run: bool
-) -> dict[str, Any]:
+def revert_json_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, Any]:
     """Tira `mcpServers.sparkforge`; o resto do JSON fica. Se o integrate criou o
     arquivo e ele ficou vazio, o arquivo sai."""
     relativo = registro["path"]
-    caminho = Path(home) / relativo
-    if not caminho.is_file():
+    caminho = disco.local(relativo)
+    texto = _texto_de(disco, caminho)
+    if texto is None:
         return {"path": relativo, "status": "absent"}
-    _, dados = _json_de_config(caminho)
+    dados = _json_de_config(texto)
     if dados is None:
         return {"path": relativo, "status": "refused", "reason": "config_invalida"}
     servidores = dict(dados.get("mcpServers") or {})
@@ -530,21 +587,20 @@ def revert_json_config(
     else:
         novo.pop("mcpServers", None)
     apagar = bool(registro.get("created")) and not novo
-    if not dry_run:
-        texto = json.dumps(novo, indent=2, ensure_ascii=False) + "\n"
-        _gravar_ou_apagar(caminho, texto, apagar=apagar, home=home)
+    if apagar:
+        disco.apagar(caminho)
+    else:
+        disco.gravar(caminho, (json.dumps(novo, indent=2, ensure_ascii=False) + "\n").encode())
     return {"path": relativo, "status": "deleted" if apagar else "reverted"}
 
 
-def revert_toml_config(
-    registro: dict[str, Any], *, home: Path, dry_run: bool
-) -> dict[str, Any]:
+def revert_toml_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, Any]:
     """Tira o bloco marcado e a linha em branco que o integrate pos antes dele."""
     relativo = registro["path"]
-    caminho = Path(home) / relativo
-    if not caminho.is_file():
+    caminho = disco.local(relativo)
+    texto = _texto_de(disco, caminho)
+    if texto is None:
         return {"path": relativo, "status": "absent"}
-    texto = caminho.read_text(encoding="utf-8")
     limites = _limites_do_bloco(texto)
     if limites == "quebrado":
         return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
@@ -557,15 +613,17 @@ def revert_toml_config(
     ]
     novo = "\n\n".join(partes) + ("\n" if partes else "")
     apagar = bool(registro.get("created")) and not novo.strip()
-    if not dry_run:
-        _gravar_ou_apagar(caminho, novo, apagar=apagar, home=home)
+    if apagar:
+        disco.apagar(caminho)
+    else:
+        disco.gravar(caminho, novo.encode("utf-8"))
     return {"path": relativo, "status": "deleted" if apagar else "reverted"}
 
 
-def revert_config(registro: dict[str, Any], *, home: Path, dry_run: bool) -> dict[str, Any]:
+def revert_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, Any]:
     if registro.get("format") == "toml":
-        return revert_toml_config(registro, home=home, dry_run=dry_run)
-    return revert_json_config(registro, home=home, dry_run=dry_run)
+        return revert_toml_config(registro, disco=disco)
+    return revert_json_config(registro, disco=disco)
 
 
 def drop_manifest_if_empty(home: Path, manifesto: dict[str, Any]) -> None:

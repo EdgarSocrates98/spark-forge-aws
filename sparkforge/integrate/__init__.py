@@ -27,7 +27,7 @@ def _nomes(alvo: str) -> list[str]:
 
 
 def _configurar(
-    h: Host, *, home: Path, manifesto: dict[str, Any], dry_run: bool, python: str | None
+    h: Host, *, disco: writer.Disco, manifesto: dict[str, Any], python: str | None
 ) -> list[dict[str, Any]]:
     """O servidor MCP na config de usuario do host, mesclado (D6)."""
     if h.mcp_config is None:
@@ -37,13 +37,13 @@ def _configurar(
         return [
             writer.apply_toml_config(
                 h.name, h.mcp_config, writer.toml_block(comando, args),
-                home=home, manifesto=manifesto, dry_run=dry_run,
+                disco=disco, manifesto=manifesto,
             )
         ]
     return [
         writer.apply_json_config(
             h.name, h.mcp_config, mcp_entry(h.name, python),
-            home=home, manifesto=manifesto, dry_run=dry_run,
+            disco=disco, manifesto=manifesto,
         )
     ]
 
@@ -78,47 +78,49 @@ def integrate(
     python: str | None = None,
     root: Path | None = None,
 ) -> dict[str, Any]:
-    """Grava a integracao de `alvo` (um host ou `all`) sob `home`."""
-    home = Path(home)
+    """Grava a integracao de `alvo` (um host ou `all`) sob `home`.
+
+    `appdata=None` e `home/AppData/Roaming`; o CLI passa o `%APPDATA%` real."""
+    disco = writer.Disco(home, appdata, dry_run=dry_run)
     raiz = sources.content_root() if root is None else Path(root)
     try:
-        manifesto = writer.load_manifest(home)
+        manifesto = writer.load_manifest(disco.home)
     except writer.ManifestoRecusado as recusa:
-        return _recusado(home, dry_run, recusa)
+        return _recusado(disco.home, dry_run, recusa)
     relatorios: list[dict[str, Any]] = []
     for nome in _nomes(alvo):
-        h = _host(nome, home=home, windows=windows, appdata=appdata)
+        h = _host(nome, home=disco.home, windows=windows, appdata=disco.appdata)
         plano = writer.plan_files(h, raiz)
         relatorio = writer.apply_files(
-            nome, plano, home=home, manifesto=manifesto, version=__version__,
-            dry_run=dry_run,
+            nome, plano, disco=disco, manifesto=manifesto, version=__version__
         )
-        relatorio["config"] = _configurar(
-            h, home=home, manifesto=manifesto, dry_run=dry_run, python=python
-        )
+        relatorio["config"] = _configurar(h, disco=disco, manifesto=manifesto, python=python)
         relatorios.append(relatorio)
     if not dry_run:
-        writer.save_manifest(home, manifesto)
+        writer.save_manifest(disco.home, manifesto)
     return {
         "dry_run": dry_run,
-        "manifest": writer.manifest_path(home).as_posix(),
+        "manifest": writer.manifest_path(disco.home).as_posix(),
         "hosts": relatorios,
         "refused": _recusas(relatorios),
     }
 
 
-def detach(alvo: str, *, home: Path, dry_run: bool = False) -> dict[str, Any]:
+def detach(
+    alvo: str, *, home: Path, dry_run: bool = False, appdata: Path | None = None
+) -> dict[str, Any]:
     """Remove o que o manifesto registrou para `alvo` (D7).
 
     So sai arquivo que ainda tem o sha256 gravado e que nenhum outro host usa;
-    o editado depois fica, como recusa `editado_pelo_usuario`. Da config de
-    usuario sai so a entrada que o integrate pos.
+    o editado depois fica, como recusa `editado_pelo_usuario`, e o `preexistente`
+    fica sempre. Da config de usuario sai so a entrada que o integrate pos.
+    `appdata` e o mesmo que o integrate recebeu.
     """
-    home = Path(home)
+    disco = writer.Disco(home, appdata, dry_run=dry_run)
     try:
-        manifesto = writer.load_manifest(home)
+        manifesto = writer.load_manifest(disco.home)
     except writer.ManifestoRecusado as recusa:
-        return _recusado(home, dry_run, recusa)
+        return _recusado(disco.home, dry_run, recusa)
     relatorios: list[dict[str, Any]] = []
     for nome in _nomes(alvo):
         entrada = manifesto["hosts"].get(nome)
@@ -127,22 +129,21 @@ def detach(alvo: str, *, home: Path, dry_run: bool = False) -> dict[str, Any]:
             continue
         registros = list(entrada.get("config") or [])
         relatorio = writer.remove_owned(
-            home, manifesto, nome, writer.host_files(manifesto, nome), dry_run=dry_run
+            disco, manifesto, nome, writer.host_files(manifesto, nome)
         )
         relatorio["host"] = nome
         relatorio["status"] = "detached"
         relatorio["config"] = [
-            writer.revert_config(registro, home=home, dry_run=dry_run)
-            for registro in registros
+            writer.revert_config(registro, disco=disco) for registro in registros
         ]
         if not dry_run:
             del manifesto["hosts"][nome]
         relatorios.append(relatorio)
     if not dry_run:
-        writer.drop_manifest_if_empty(home, manifesto)
+        writer.drop_manifest_if_empty(disco.home, manifesto)
     return {
         "dry_run": dry_run,
-        "manifest": writer.manifest_path(home).as_posix(),
+        "manifest": writer.manifest_path(disco.home).as_posix(),
         "hosts": relatorios,
         "refused": _recusas(relatorios),
     }
