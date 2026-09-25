@@ -1195,10 +1195,14 @@ rules:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-09}
 
   # SF-LF-010 usa `absent:`, e e a UNICA da area que usa. O motivo: ela afirma
-  # sobre o que o job NAO declarou, e ausencia de `lakeformation.access_model` e
-  # exatamente isso. A condicao de fact vem junto porque grupo so de `absent`
-  # nao produz evidencia, e achado sem evidencia nao vira Finding
-  # (`rules/engine.py::_evaluate_when`).
+  # sobre o que o job NAO declarou. Sao DOIS `absent`, um por modelo: FGAC entra
+  # por `lakeformation.access_model` (o argumento de job) e FTA por
+  # `lakeformation.fta_declared` (o resolver de credencial). FTA nao produz
+  # `access_model`, e com um `absent` so a regra acusava o job que declara FTA
+  # (feature LF_FTA_DECLARADO). `absent: lakeformation.filesystem` nao serviria:
+  # ele sai tambem so com `fs.s3.impl`, sem pedir credencial nenhuma. A condicao
+  # de fact vem junto porque grupo so de `absent` nao produz evidencia, e achado
+  # sem evidencia nao vira Finding (`rules/engine.py::_evaluate_when`).
   - id: SF-LF-010
     category: lakeformation-governance
     governance_decision_required: false
@@ -1215,12 +1219,16 @@ rules:
           where:
             attrs.registered: true
         - absent: lakeformation.access_model
+        - absent: lakeformation.fta_declared
     status: structural
     severity_default: P2
     runtime_scope: {}
     explanation: >
       A localização da tabela está **registrada** no Lake Formation, e o job não
-      declara nem controle de acesso fino nem Full Table Access.
+      declara nem controle de acesso fino (o argumento
+      `--enable-lakeformation-fine-grained-access`) nem Full Table Access (o
+      resolver de credencial `AWSLakeFormationCredentialResolver` em
+      `spark.hadoop.fs.s3.credentialsResolverClass`).
 
 
       **A palavra que decide é `regardless`.** A documentação da AWS declara que,
@@ -1263,7 +1271,15 @@ rules:
         A regra afirma sobre a AUSÊNCIA de declaração de modelo de acesso no
         case. Um job que ligue FGAC ou FTA por caminho que este motor não lê --
         `non_overridable_arguments`, conexão, bootstrap -- é acusado sem estar
-        errado, e a evidência do achado é o que permite ver isso.
+        errado, e a evidência do achado é o que permite ver isso. Um job que só
+        marque o catálogo com `.glue.lakeformation-enabled`, sem o resolver,
+        também é acusado: o significado dessa chave sob FGAC está como a
+        verificar no documento de conhecimento, e ela sozinha não conta como
+        declaração.
+      - >-
+        FTA **declarado** cala a regra mesmo quando não tem efeito: o resolver
+        é chave de EMRFS, e sob S3A (default do Glue 5.1) é ignorado sem erro.
+        Esse caso não é desta regra; quem o acusa é `SF-LF-004`, no Glue 5.1.
       - >-
         **O `absent:` é avaliado no nível do CONJUNTO, e não por entidade.** Num
         case com vários jobs, um único que declare modelo de acesso faz a regra
@@ -1298,7 +1314,8 @@ rules:
         conjunto de colunas passam a ser exigidos.
     rollback:
       - >-
-        Remover o modelo de acesso declarado devolve o job ao estado anterior. É
+        Remover o modelo de acesso declarado -- o argumento de FGAC ou o
+        resolver de credencial do FTA -- devolve o job ao estado anterior. É
         rollback de configuração, e não de dado.
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
