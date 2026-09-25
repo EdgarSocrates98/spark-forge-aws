@@ -499,3 +499,140 @@ def test_iam_allowed_principals_com_all_nao_acusa():
         _grant(["ALL"], principal="IAM_ALLOWED_PRINCIPALS"),
     ]
     assert build_missing_grant(pool) == []
+
+
+def _so_recusas(saida: list[Fact]) -> list[Fact]:
+    assert _de(saida, "lakeformation.missing_grant") == []
+    return _de(saida, "lakeformation.missing_grant.unresolved")
+
+
+def test_nome_com_pontuacao_ou_aspas_e_lido_e_nao_troca_de_tabela():
+    # O pool so tem grant de default.dim_cliente; a mensagem nomeia OUTRA tabela.
+    # Ler mal o nome e cair no candidato unico acusaria a tabela errada.
+    for resto in (
+        " on staging.outra, retry later",
+        " on staging.outra; (Service: AWSGlue)",
+        " on staging.outra: denied",
+        " on staging.outra.",
+        " on 'staging.outra' (Service: AWSGlue)",
+        ' on "staging.outra"',
+        " on `staging.outra`,",
+        ": Required Select on staging.outra",
+    ):
+        pool = [_gatilho(linha=SEM_NOME + resto), *cenario_fta_append_sem_all()[1:]]
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "operacao_nao_ligada_ao_recurso", resto
+        assert recusa.attrs["resource"] == "staging.outra", resto
+
+
+def test_clausula_on_ilegivel_recusa_recurso_nao_lido():
+    for resto in (' on "staging"."outra"', " on 'minha tabela'", " on staging.outra)"):
+        pool = [_gatilho(linha=SEM_NOME + resto), *cenario_fta_append_sem_all()[1:]]
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "recurso_nao_lido", resto
+        assert "nao presume" in recusa.attrs["unblocked_by"]
+        assert "on" in recusa.attrs["matched"], resto
+
+
+def test_s3a_e_s3n_nao_sao_tabela():
+    for bruto in ("s3a://sparkforge-demo/default/dim_cliente", "s3n://b/k"):
+        pool = [_gatilho(linha=_linha(bruto)), *cenario_fta_append_sem_all()[1:]]
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "recurso_nao_e_tabela", bruto
+        assert recusa.attrs["resource"] == bruto
+
+
+def test_mais_de_um_role_nomeia_as_candidatas():
+    outro = OUTRO_ROLE + "-b"
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["ALL"], principal=OUTRO_ROLE),
+        _decisao("s3:PutObject", "allowed"),
+        _decisao("s3:PutObject", "allowed", role=outro),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "principal_ambiguo"
+    assert recusa.attrs["candidates"] == sorted([ROLE, outro])
+    assert "mais de um role na decisao de IAM" in recusa.attrs["unblocked_by"]
+
+
+def test_sem_decisao_de_iam_e_sem_principal_nomeado_recusa_nao_coletado():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"], principal="IAM_ALLOWED_PRINCIPALS"),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "principal_nao_coletado"
+    assert "collect iam-access" in recusa.attrs["unblocked_by"]
+
+
+def test_mensagem_sem_recurso_e_pool_sem_tabela_recusa_nao_nomeado():
+    pool = [_gatilho(linha=SEM_NOME), _fta(), _escrita()]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "recurso_nao_nomeado"
+    assert "collect" in recusa.attrs["unblocked_by"]
+
+
+def test_api_ambigua_sem_modo_recusa_terminal_nao_medido():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(mode=None, api="ambigua"),
+        _grant(["DESCRIBE", "SELECT"]),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "terminal_de_escrita_nao_medido"
+    assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
+    assert recusa.attrs["writer_api"] == "ambigua"
+    assert "ambigua" in recusa.attrs["unblocked_by"]
+
+
+def test_write_to_sem_modo_sai_com_operacao_mapeada():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(mode=None, api="dataframe_writer_v2"),
+        _grant(["DESCRIBE", "SELECT"]),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
+    assert recusa.attrs["writer_api"] == "writeTo"
+
+
+def test_operacao_sem_alvo_sozinha_nao_e_presumida():
+    pool = [_gatilho(), _fta(), _escrita(target=None), _grant(["DESCRIBE"])]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "operacao_com_alvo_nao_resolvido"
+    assert recusa.attrs["operation"] == "write"
+    assert "deste tipo" in recusa.attrs["unblocked_by"]
+
+
+def test_catalogo_vazio_ao_lado_de_outro_e_ambiguo():
+    pool = [
+        _gatilho(),
+        _fta(),
+        _escrita(),
+        _grant(["DESCRIBE"]),
+        _grant(["ALL"], principal=OUTRO_ROLE, catalog_id="222222222222"),
+        _decisao("s3:PutObject", "allowed"),
+    ]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "catalogo_ambiguo"
+    assert recusa.attrs["catalog_ids"] == ["", "222222222222"]
+
+
+def test_alvo_e_mensagem_sem_diferenca_de_caixa():
+    # O Glue Data Catalog guarda nomes em minusculas.
+    pool = [_gatilho(), _fta(), _escrita(target="Default.Dim_Cliente"), _grant(["DESCRIBE"])]
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["operation"] == "write"
+    mensagem = [
+        _gatilho(linha=_linha("Default.Dim_Cliente")),
+        *cenario_fta_append_sem_all()[1:],
+    ]
+    (falta,) = _de(build_missing_grant(mensagem), "lakeformation.missing_grant")
+    assert falta.attrs["resource"] == TABELA

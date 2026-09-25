@@ -54,18 +54,30 @@ SOURCE_KINDS = frozenset({"error.signature_match"})
 
 IAM_ALLOWED_PRINCIPALS = "IAM_ALLOWED_PRINCIPALS"
 
-# O nome termina em espaco, "(" ou fim de linha: sem a guarda, "on s3://..." e
-# "on arn:..." viravam as tabelas `s3` e `arn`.
-_RECURSO_RE = re.compile(
-    r"permission\(s\)\s+on\s+([A-Za-z0-9_.\-]+)(?=\s|\(|$)", re.IGNORECASE
+# Duas formas de clausula: "permission(s) on X" e "permission(s): Required Select on X".
+_PREFIXO = (
+    r"permission\(s\)"
+    r"(?:\s*:\s*required(?:\s+[A-Za-z_]+(?:\s*,\s*[A-Za-z_]+)*)?)?"
+    r"\s+on\s+"
 )
-_NAO_TABELA_RE = re.compile(r"permission\(s\)\s+on\s+((?:s3://|arn:)\S*)", re.IGNORECASE)
+# O token depois de `on` e LIDO por `_ler_nome`; o que ele nao le vira `recurso_nao_lido`.
+_RECURSO_RE = re.compile(_PREFIXO + r"(\S+)", re.IGNORECASE)
+_NAO_TABELA_RE = re.compile(
+    _PREFIXO + r"['\"`]?((?:s3[an]?://|arn:)[^\s'\"`,;]*)", re.IGNORECASE
+)
+# Qualquer `on` depois de "permission(s)" conta como clausula: com ela, o atalho do
+# candidato unico acusaria a tabela do pool no lugar da que a mensagem nomeia.
+_CLAUSULA_RE = re.compile(r"permission\(s\).*?\bon\b\s*\S*", re.IGNORECASE)
+_NOME_RE = re.compile(r"[A-Za-z0-9_\-]+(?:\.[A-Za-z0-9_\-]+)*")
+_ASPAS = "'\"`"
 
 # `pyspark_ast` grava `mode` so para append/overwrite/overwritePartitions.
 _MODOS_OVERWRITE = frozenset({"overwrite", "overwritepartitions"})
 # `writeTo` sem `mode` termina em create/replace/createOrReplace/merge, e o fact nao
-# carrega o terminal: a operacao e desconhecida, nunca um `write` presumido.
-_TERMINAL_NAO_MEDIDO = "writeTo"
+# carrega o terminal; `ambigua` (`write` e `writeTo` na mesma cadeia) e codigo que o
+# parse nao entende. Sem `mode`, a operacao e desconhecida, nunca um `write` presumido.
+# A chave e o `api` do fact; o valor sai em `writer_api` da recusa.
+_TERMINAL_NAO_MEDIDO = {"dataframe_writer_v2": "writeTo", "ambigua": "ambigua"}
 
 _SQL = {
     "insert_into": "write",
@@ -83,21 +95,31 @@ _DESTRAVA = {
         "uma tabela com grant ou registro coletado que serve; colete so a tabela da falha "
         "com `sparkforge collect lakeformation`"
     ),
+    "recurso_nao_nomeado": (
+        "a mensagem nao nomeia tabela e o case nao tem grant nem registro de onde "
+        "inferir; colete os grants da tabela da falha com `sparkforge collect lakeformation`"
+    ),
+    "recurso_nao_lido": (
+        "a mensagem nomeia um recurso numa forma que o extrator nao le; o fact nao presume "
+        "a tabela"
+    ),
     "recurso_nao_e_tabela": (
         "a mensagem nomeia localizacao S3 ou ARN, nao tabela do catalogo; o fact so cobre "
         "grant de tabela"
     ),
     "operacao_com_alvo_nao_resolvido": (
-        "o alvo vem de variavel que o extrator de codigo nao resolve; a operacao nao foi "
-        "avaliada"
+        "uma operacao deste tipo tem alvo que vem de variavel que o extrator de codigo nao "
+        "resolve; ela nao foi avaliada"
     ),
     "terminal_de_escrita_nao_medido": (
-        "writeTo sem modo termina em create/replace/createOrReplace/merge, e o fact "
-        "pyspark.write nao carrega o terminal"
+        "a escrita nao tem modo medido e o terminal nao e lido: writeTo sem modo termina "
+        "em create/replace/createOrReplace/merge, e API de escrita ambigua (write e "
+        "writeTo na mesma cadeia) e codigo que o parse nao entende; o fact pyspark.write "
+        "nao carrega a operacao"
     ),
     "catalogo_ambiguo": (
-        "grants da mesma tabela em mais de um catalogo coletado; colete so o catalogo da "
-        "falha"
+        "grants da mesma tabela em mais de um catalogo coletado (catalog_id vazio conta "
+        "como um deles); colete so o catalogo da falha"
     ),
     "operacao_nao_medida": (
         "nenhum fact de operacao sobre o recurso; rode `sparkforge analyze pyspark` sobre o "
@@ -120,8 +142,13 @@ _DESTRAVA = {
         "sobre ele"
     ),
     "principal_ambiguo": (
-        "mais de um principal com grant na tabela e nenhuma decisao de IAM que diga qual e o "
-        "role do job; rode `sparkforge collect iam-access` para o runtime role"
+        "mais de um role na decisao de IAM, ou nenhuma decisao de IAM e grants de mais de "
+        "um principal na tabela: nada diz qual e o role do job; rode "
+        "`sparkforge collect iam-access` so para o runtime role"
+    ),
+    "principal_nao_coletado": (
+        "sem decisao de IAM e sem grant de principal nomeado na tabela; colete a decisao "
+        "de IAM do role do job com `sparkforge collect iam-access`"
     ),
     "permissao_de_database_nao_coletada": (
         "create exige permissao no DATABASE, e `collect lakeformation` coleta grant de tabela"
@@ -210,9 +237,23 @@ def _texto(gatilho: Fact) -> str:
     return str(attrs.get("matched_line") or attrs.get("matched_class") or "")
 
 
+def _ler_nome(token: str) -> str | None:
+    """O nome de tabela no token depois de `on`: cortado no "(", sem `,;:.` no fim e
+    sem um par de aspas em volta. O que sobra fora de `db.tabela` nao e lido."""
+    nome = token.split("(", 1)[0].rstrip(",;:.")
+    if len(nome) >= 2 and nome[0] in _ASPAS and nome[-1] == nome[0]:
+        nome = nome[1:-1]
+    return nome if _NOME_RE.fullmatch(nome) else None
+
+
 def _recurso_da_mensagem(gatilho: Fact) -> str | None:
     casou = _RECURSO_RE.search(_texto(gatilho))
-    return casou.group(1).rstrip(".") if casou else None
+    return _ler_nome(casou.group(1)) if casou else None
+
+
+def _clausula(gatilho: Fact) -> str | None:
+    casou = _CLAUSULA_RE.search(_texto(gatilho))
+    return casou.group(0) if casou else None
 
 
 def _recurso_nao_tabela(gatilho: Fact) -> str | None:
@@ -238,8 +279,9 @@ def _candidato_unico(facts: Sequence[Fact]) -> str | None:
 def _casa(alvo: str, recurso: str) -> bool:
     """Com os dois lados qualificados, casa pelo sufixo de segmentos
     (`glue_catalog.default.t` casa `default.t`, `staging.t` nao casa `default.t`); so
-    pelo ultimo segmento quando um dos lados nao e qualificado."""
-    a, r = alvo.split("."), recurso.split(".")
+    pelo ultimo segmento quando um dos lados nao e qualificado. Sem caixa: o Glue Data
+    Catalog guarda nomes em minusculas."""
+    a, r = alvo.lower().split("."), recurso.lower().split(".")
     if len(a) > 1 and len(r) > 1:
         n = min(len(a), len(r))
         return a[-n:] == r[-n:]
@@ -251,8 +293,9 @@ def _canonizar(recurso: str, facts: Sequence[Fact]) -> tuple[str | None, list[st
     exato fica; uma unica qualificada que casa vira o recurso; mais de uma e ambigua
     (`None`, com as candidatas); nenhuma deixa o nome como veio."""
     tabelas = _tabelas_do_pool(facts)
-    if recurso in tabelas:
-        return recurso, []
+    exatas = [t for t in tabelas if t.lower() == recurso.lower()]
+    if len(exatas) == 1:
+        return exatas[0], []
     casam = [t for t in tabelas if "." in t and _casa(t, recurso)]
     if len(casam) > 1:
         return None, casam
@@ -263,16 +306,22 @@ def _operacao_de_escrita(attrs: dict[str, Any]) -> str:
     modo = str(attrs.get("mode") or "").lower()
     if modo in _MODOS_OVERWRITE:
         return "overwrite"
-    if not modo and attrs.get("api") == "dataframe_writer_v2":
-        return _TERMINAL_NAO_MEDIDO
+    api = str(attrs.get("api") or "")
+    if not modo and api in _TERMINAL_NAO_MEDIDO:
+        return _TERMINAL_NAO_MEDIDO[api]
     return "write"
+
+
+def _mapeada(operacao: str) -> str:
+    """A operacao de `OPERACOES_MAPEADAS` de uma escrita de terminal nao medido."""
+    return "write" if operacao in _TERMINAL_NAO_MEDIDO.values() else operacao
 
 
 def _operacoes(
     recurso: str, facts: Sequence[Fact]
 ) -> tuple[list[tuple[str, Fact]], list[str]] | str:
-    """As operacoes sobre o recurso, uma por tipo, e as operacoes sem alvo que ficaram
-    de fora porque outra tinha alvo -- estas saem recusadas, nunca caladas."""
+    """As operacoes sobre o recurso, uma por tipo, e as operacoes sem alvo -- estas
+    nunca sao presumidas sobre o recurso: saem recusadas, nunca caladas."""
     todas: list[tuple[str, str, Fact]] = []
     for f in facts:
         attrs = f.attrs or {}
@@ -284,11 +333,10 @@ def _operacoes(
             todas.append((_SQL[attrs["operation"]], str(attrs.get("table") or ""), f))
     if not todas:
         return "operacao_nao_medida"
-    com_alvo = [t for t in todas if t[1]]
-    escolhidas = [t for t in com_alvo if _casa(t[1], recurso)] if com_alvo else todas
-    if not escolhidas:
+    escolhidas = [t for t in todas if t[1] and _casa(t[1], recurso)]
+    sem_alvo = sorted({_mapeada(op) for op, alvo, _f in todas if not alvo})
+    if not escolhidas and not sem_alvo:
         return "operacao_nao_ligada_ao_recurso"
-    sem_alvo = sorted({op for op, alvo, _f in todas if not alvo}) if com_alvo else []
     por_operacao: dict[str, Fact] = {}
     for op, _alvo, f in sorted(escolhidas, key=lambda t: (t[0], t[2].id)):
         por_operacao.setdefault(op, f)
@@ -321,22 +369,23 @@ def _modelo(facts: Sequence[Fact]) -> str:
     return "fta" if fta else "modelo_ausente"
 
 
-def _principal(facts: Sequence[Fact], grants: Sequence[Fact]) -> str | None:
+def _principal(facts: Sequence[Fact], grants: Sequence[Fact]) -> tuple[str, list[str]]:
+    """O principal do job, ou a razao da recusa com as candidatas: `("", [...])` e
+    ambiguo, `("", [])` e nenhum coletado."""
     roles = {
         str((f.attrs or {}).get("role_arn") or "")
         for f in facts
         if f.kind == "iam.access_decision"
     }
     roles.discard("")
-    if len(roles) == 1:
-        return roles.pop()
     # Mais de um role decidido: o grant de um principal unico nao diz qual deles e o
     # do job. O recurso aos grants so vale sem decisao de IAM nenhuma.
-    if roles:
-        return None
-    principais = {str((g.attrs or {}).get("principal") or "") for g in grants}
-    principais -= {"", IAM_ALLOWED_PRINCIPALS}
-    return principais.pop() if len(principais) == 1 else None
+    if not roles:
+        roles = {str((g.attrs or {}).get("principal") or "") for g in grants}
+        roles -= {"", IAM_ALLOWED_PRINCIPALS}
+    if len(roles) == 1:
+        return roles.pop(), []
+    return "", sorted(roles)
 
 
 def _cobre(concedidas: Sequence[str], permissao: str) -> bool:
@@ -368,7 +417,8 @@ def _lado_lf(
     grants = [f for f in facts if f.kind == "lakeformation.grant" and _tabela_de(f) == recurso]
     if not grants:
         return [_unresolved("grant_nao_coletado", recurso, gatilho, operation=operacao)]
-    catalogos = sorted({str((g.subject or {}).get("catalog_id") or "") for g in grants} - {""})
+    # Vazio conta como catalogo distinto: "" ao lado de "222..." nao diz que sao o mesmo.
+    catalogos = sorted({str((g.subject or {}).get("catalog_id") or "") for g in grants})
     if len(catalogos) > 1:
         return [
             _unresolved(
@@ -382,9 +432,12 @@ def _lado_lf(
         for g in grants
     ):
         return []
-    principal = _principal(facts, grants)
-    if principal is None:
-        return [_unresolved("principal_ambiguo", recurso, gatilho, operation=operacao)]
+    principal, candidatas = _principal(facts, grants)
+    if not principal:
+        razao = "principal_ambiguo" if candidatas else "principal_nao_coletado"
+        return [
+            _unresolved(razao, recurso, gatilho, operation=operacao, candidates=candidatas)
+        ]
     do_principal = [g for g in grants if (g.attrs or {}).get("principal") == principal]
     concedidas = sorted(
         {str(p) for g in do_principal for p in (g.attrs or {}).get("permissions") or []}
@@ -433,14 +486,20 @@ def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
         _unresolved("operacao_com_alvo_nao_resolvido", recurso, gatilho, operation=op)
         for op in sem_alvo
     ]
+    if not operacoes:
+        return saida
     modelo = _modelo(facts)
     if modelo not in {"fta", "fgac"}:
         return [*saida, _unresolved(modelo, recurso, gatilho)]
     for operacao, origem in operacoes:
-        if operacao == _TERMINAL_NAO_MEDIDO:
+        if operacao in _TERMINAL_NAO_MEDIDO.values():
             saida.append(
                 _unresolved(
-                    "terminal_de_escrita_nao_medido", recurso, gatilho, operation=operacao
+                    "terminal_de_escrita_nao_medido",
+                    recurso,
+                    gatilho,
+                    operation=_mapeada(operacao),
+                    writer_api=operacao,
                 )
             )
             continue
@@ -488,15 +547,21 @@ def build_missing_grant(facts: Sequence[Fact]) -> list[Fact]:
             saida.setdefault(recusa.id, recusa)
             continue
         nomeado = _recurso_da_mensagem(gatilho)
+        clausula = _clausula(gatilho)
+        if nomeado is None and clausula is not None:
+            # Ha `on` depois de "permission(s)" e o nome nao foi lido: o candidato
+            # unico do pool nao e a tabela que a mensagem nomeia.
+            recusa = _unresolved("recurso_nao_lido", "", gatilho, matched=clausula)
+            saida.setdefault(recusa.id, recusa)
+            continue
         recurso, candidatas = (
             _canonizar(nomeado, lista)
             if nomeado
             else (_candidato_unico(lista), _tabelas_do_pool(lista))
         )
         if recurso is None:
-            recusa = _unresolved(
-                "recurso_ambiguo", nomeado or "", gatilho, candidates=candidatas
-            )
+            razao = "recurso_ambiguo" if candidatas else "recurso_nao_nomeado"
+            recusa = _unresolved(razao, nomeado or "", gatilho, candidates=candidatas)
             saida.setdefault(recusa.id, recusa)
             continue
         recursos.setdefault(recurso, gatilho)
