@@ -18,6 +18,7 @@ import pytest
 from sparkforge.facts.glue_resource_link import extract_glue_resource_link_tree
 from sparkforge.facts.iam_access import extract_iam_access_tree
 from sparkforge.facts.lakeformation_grants import extract_lakeformation_tree
+from sparkforge.findings.models import Fact
 from sparkforge.lakeformation.graph import (
     STATUS_BLOCKING,
     STATUS_GRANTED,
@@ -273,3 +274,69 @@ def test_nenhuma_fixture_produz_acesso_conclusivamente_verdadeiro(caso):
         e["status"] == STATUS_BLOCKING and e["permission_type"] in {"ram_share", "kms_decrypt"}
         for e in grafo["edges"]
     )
+
+
+_ROLE = "arn:aws:iam::111111111111:role/glue-curated"
+_PROV = {"extractor": "teste@0.0.0", "artifact": "memoria"}
+
+
+def _grant_select() -> Fact:
+    return Fact(
+        kind="lakeformation.grant",
+        subject={"type": "table", "file": "lf.json", "symbol": f"db.t#{_ROLE}", "catalog_id": ""},
+        measures={"permission_count": 1},
+        attrs={
+            "principal": _ROLE,
+            "is_iam_allowed_principals": False,
+            "permissions": ["SELECT"],
+            "permissions_with_grant_option": [],
+            "has_select": True,
+            "has_all": False,
+            "has_describe": False,
+        },
+        provenance=_PROV,
+    )
+
+
+def _falta_all(side: str = "lf", principal: str = _ROLE, resource: str = "db.t") -> Fact:
+    return Fact(
+        kind="lakeformation.missing_grant",
+        subject={"type": "table", "symbol": f"{resource}#write#{side}"},
+        attrs={
+            "resource": resource,
+            "operation": "write",
+            "model": "fta",
+            "side": side,
+            "principal": principal,
+            "requires": ["ALL"],
+            "missing": ["ALL"],
+            "granted": ["SELECT"],
+        },
+        provenance={"extractor": "lakeformation_missing_grant@0.1.0"},
+    )
+
+
+def test_grafo_usa_missing_grant_quando_existe():
+    for falta in (_falta_all(), _falta_all(resource="DB.T")):
+        grafo = build_access_graph(
+            [_grant_select(), falta], principal_arn=_ROLE, target_table="db.t"
+        )
+        aresta = _por_tipo(grafo, "lf_grant")
+        assert aresta["status"] == "missing"
+        assert "ALL" in aresta["evidence"] and "write" in aresta["evidence"]
+
+
+def test_grafo_sem_missing_grant_inalterado():
+    grafo = build_access_graph([_grant_select()], principal_arn=_ROLE, target_table="db.t")
+    aresta = _por_tipo(grafo, "lf_grant")
+    assert aresta["status"] == STATUS_GRANTED
+    assert aresta["evidence"] == "grant medido com SELECT ou ALL"
+
+
+def test_falta_de_outro_lado_ou_outro_principal_nao_muda_a_perna_lf():
+    outro = "arn:aws:iam::111111111111:role/outro"
+    for falta in (_falta_all(side="iam"), _falta_all(principal=outro)):
+        grafo = build_access_graph(
+            [_grant_select(), falta], principal_arn=_ROLE, target_table="db.t"
+        )
+        assert _por_tipo(grafo, "lf_grant")["status"] == STATUS_GRANTED
