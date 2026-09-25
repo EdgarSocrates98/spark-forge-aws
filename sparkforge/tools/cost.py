@@ -3,11 +3,15 @@
 `estimate_tokens` e heuristica -- 4 caracteres por token -- e nao substitui a
 contagem do provedor. Todo retorno carrega `is_estimate: True` para que nenhum
 consumidor trate o numero como medicao.
+
+A funcao e a de `sparkforge.agents.budget`, reexportada pelo mesmo nome porque
+`sparkforge.tools` a publica e `sparkforge/tools/cli.py` a chama: uma definicao so,
+e `is` prova que e a mesma.
 """
 
+from sparkforge.agents.budget import estimate_tokens
 
-def estimate_tokens(text):
-    return max(1, (len(str(text)) + 3) // 4)
+__all__ = ["budget_report", "estimate_tokens"]
 
 
 def budget_report(messages, limit=12000):

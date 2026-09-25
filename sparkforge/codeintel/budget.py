@@ -11,12 +11,11 @@ e deliberada.
 
 Token nao e mensuravel offline. A secao 52 proibe tokenizer que baixe modelo, e
 com razao -- baixar tokenizer quebra o "offline" inteiro da secao 7. O que sobra
-e ESTIMATIVA, e este repositorio ja tem quatro delas: `agents/budget.py` usa
-`(len+3)//4`, `context/funnel.py` usa `len//4`, e `providers/mock.py` usa
-`len//4` duas vezes. Elas divergem no arredondamento -- para uma string de 5
-caracteres a primeira devolve 2 e a segunda 1 -- e nenhuma conta bytes UTF-8, o
-que faz as tres subestimarem qualquer texto acentuado, que e todo texto deste
-projeto.
+e ESTIMATIVA. Havia quatro delas, divergindo no arredondamento; desde
+TOKEN_ESTIMATE_UNICO ha uma so, `agents/budget.py:estimate_tokens` (teto de
+`len/4`, minimo 1), que `tools/cost.py` reexporta e `context/funnel.py` e
+`providers/mock.py` chamam. Ela conta caractere e nao byte UTF-8, o que a faz
+subestimar qualquer texto acentuado, que e todo texto deste projeto.
 
 Um teto aplicado sobre estimativa e um teto que nao segura: ele para de segurar
 no dia em que a estimativa erra para menos, e ninguem descobre porque nada
@@ -46,10 +45,10 @@ Porque a unidade e outra e o papel e outro: la a estimativa DECIDE o corte, aqui
 o byte decide e a estimativa acompanha. Trocar `estimate_tokens` pela formula da
 secao 52 mudaria o resultado de `select_context` para toda memoria de agente
 deste repositorio -- registros diferentes seriam escolhidos, com o mesmo
-orcamento. Isso e mudanca de comportamento fora desta tarefa, e mudanca de
-comportamento em silencio e o que a regra de preservar semantica recusa. A
-consolidacao dos quatro estimadores continua devida, com esse custo medido e
-declarado, e nao acontece de carona aqui.
+orcamento. Isso e mudanca de comportamento, e mudanca de comportamento em
+silencio e o que a regra de preservar semantica recusa. A consolidacao das
+estimativas por caractere foi feita em TOKEN_ESTIMATE_UNICO (`docs/sdd/`) e
+deixou este modulo de fora por esta razao.
 """
 
 from __future__ import annotations

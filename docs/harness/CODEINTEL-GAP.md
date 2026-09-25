@@ -176,7 +176,7 @@ por excesso até esta revisão.
 | Seleção de contexto com escore por termo e orçamento | EXISTE, com teste | `sparkforge/agents/budget.py:select_context()` deduplica por fingerprint, pontua por termo da query, dá peso a tipos preservados e corta pelo orçamento de token. É ranking mais orçamento, no formato que a SPEC descreve — sobre registros de conversa de agente, não sobre símbolo de código | `tests/test_agent_runtime.py` |
 | Empacotamento com prioridade por tipo e corte reportado | EXISTE, com teste | `sparkforge/tools/context.py:pack_context()` prioriza fato e decisão sobre snapshot e tarefa, deduplica e reporta `truncated` em vez de cortar em silêncio — contexto descartado sem aviso vira evidência que some | `tests/test_offline_expansion.py` |
 | Funil de contexto com deduplicação por hash e corte por orçamento | EXISTE, com teste | `sparkforge/context/funnel.py:ContextFunnel.build_minimal_context()` ordena por relevância, deduplica por hash de conteúdo e encaixa no orçamento. Limite declarado: a relevância é **entrada**, com valor padrão fixo — nada no módulo a deriva | `tests/test_context_funnel.py` |
-| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/agents/budget.py:estimate_tokens()`, `sparkforge/tools/cost.py:estimate_tokens()`, e mais duas cópias em linha dentro de `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py`. As duas primeiras arredondam para cima; as duas em linha truncam. A mesma pergunta, quatro implementações, e essas **divergem** — ao contrário das quatro de segredo | `tests/test_agent_runtime.py` (exercita `sparkforge/agents/budget.py`; nenhum teste chama `estimate_tokens` direto) |
+| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe **uma vez**: `sparkforge/agents/budget.py:estimate_tokens()` (comprimento sobre quatro, arredondado para cima e nunca zero). `sparkforge/tools/cost.py` a reexporta pelo mesmo nome, e `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py` a chamam — até TOKEN_ESTIMATE_UNICO eram quatro cópias, duas delas com piso. Parcial porque conta caractere e não byte UTF-8, e subestima texto acentuado; `sparkforge/codeintel/budget.py:estimar_tokens()` mede byte e fica fora de propósito, porque não decide corte | `tests/test_token_estimate_unico.py` |
 | Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres por token é heurística e devolve `is_estimate: True` em todo retorno; `sparkforge/agents/observability.py` devolve `None` quando o total é desconhecido, em vez de somar zero | `tests/test_agent_runtime.py` |
 | Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_count` e `next_cursor`, e o arquivo escrito carrega a comparação inteira, nunca a página. Quem extrai `items` sem conferir `next_cursor` julga a primeira página — e há teste medindo exatamente isso | `tests/test_adapters_tools.py` |
 | Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()` casa nome e nome qualificado pelo FTS5. O termo nunca chega cru ao `MATCH` — passa por `construir_consulta()`, que é o construtor de consulta que a SPEC exige em lugar de interpolar texto de terceiro. A ordem é `(rank, path, start_line, node_id)`: sem o desempate, empate de relevância deixaria a ordem por conta do SQLite e o teste de determinismo falharia de forma intermitente | `tests/test_codeintel_search.py` |
@@ -281,8 +281,8 @@ qualquer melhoria de recuperação, contra a ordem em que a SPEC lista as fases.
 a tabela e a resolução que a alimenta; o que esta seção mede continua sendo o eixo de busca por
 nome, que é o que ela media quando foi escrita.
 
-Todos os valores são **bytes** UTF-8, nunca tokens. Os quatro estimadores de token deste
-repositório dividem o comprimento por uma constante e divergem entre si no arredondamento: byte é
+Todos os valores são **bytes** UTF-8, nunca tokens. A estimativa de token deste repositório
+divide o comprimento por uma constante e conta caractere, não byte: byte é
 observação, token seria estimativa vendida como medida.
 
 **A conclusão que a medição sustenta, e só ela:** o índice paga contra leitura de arquivo, que é o
@@ -371,8 +371,8 @@ apenas `arquivo:linha`, o que apagava a identidade de todo fato cujo subject ide
 sumia sem ser redeclarado. Devolver os dois encareceu o envelope, e essa é a troca certa: um
 resumo que não diz de **quem** fala não é resumo, é ruído menor.
 
-Todos os valores são **bytes**, nunca tokens. Os estimadores de token deste repositório dividem
-o comprimento do texto por uma constante e divergem entre si no arredondamento: byte é
+Todos os valores são **bytes**, nunca tokens. A estimativa de token deste repositório divide
+o comprimento do texto por uma constante e conta caractere, não byte: byte é
 observação, token seria estimativa vendida como medida.
 
 O default é `full` de propósito. Mudá-lo mudaria a saída de todo chamador existente e de todo
@@ -422,10 +422,10 @@ O que o SFCI acrescenta de verdade é curto e vale a pena:
   consulta por **símbolo**: "onde `RuntimeContext` é construído", "quem chama
   `validate_output`", "qual o impacto de mudar isto". A busca determinística já existe em
   `OfflineKnowledgeIndex.search`, sobre `knowledge/` — falta o corpo de código.
-- **Orçamento de token medido em vez de estimado.** As quatro cópias de estimador dividem
-  comprimento por quatro; nenhuma delas mede. Não é preciso um tokenizer baixado para
-  melhorar: um estimador conservador único, com nome único, já é ganho — e o ganho maior é
-  deixar de ter quatro respostas para a mesma pergunta.
+- **Orçamento de token medido em vez de estimado.** A estimativa de token virou uma só
+  (`agents/budget.py:estimate_tokens`, TOKEN_ESTIMATE_UNICO), e ela ainda divide comprimento
+  por quatro; nada mede. Não é preciso um tokenizer baixado para melhorar: o estimador único
+  já é o ganho menor, e o que falta é ele contar byte e não caractere.
 - **Redução do custo do próprio envelope.** Ver a pré-condição de envelope, adiante.
 - **Uma superfície de tool que sabe economizar.** `detail_level` deixou de ser zero na fase J1;
   projeção de campo continua em zero, e é economia disponível hoje, sem índice nenhum.
@@ -456,7 +456,7 @@ A lista é longa, e é a maior parte da SPEC:
 - **Conteúdo de terceiro como dado não confiável**: já é invariante travado, com teste que
   deriva o conjunto de extratores executando-os.
 
-As três implementações de empacotamento de contexto e as quatro de estimativa de token são o
+As três implementações de empacotamento de contexto (e as quatro de estimativa de token, já uma só) são o
 sinal mais claro de que a ordem certa é consolidar, não somar. Escrever uma quinta seria repetir
 o erro que a duplicação de detector de segredo já cobra caro.
 
@@ -502,7 +502,7 @@ fase de segurança, não à de índice.
 ### 4. O que NÃO fazer, e por quê
 
 - **Não escrever um quinto empacotador de contexto.** Já há três (`ContextFunnel`,
-  `pack_context`, `select_context`) e quatro estimadores de token. Um objeto de contexto novo
+  `pack_context`, `select_context`); os estimadores de token já são um só. Um objeto de contexto novo
   que ignore os três repete, na superfície mais cara do sistema, o defeito que a duplicação de
   detector de segredo já demonstrou: quatro implementações da mesma pergunta, corrigidas em
   lugares diferentes, é como um controle de segurança apodrece sem que nada acuse.
@@ -559,8 +559,8 @@ quarta.
 índice havia economia disponível sem índice. A fase J1 entregou metade dela: controle de
 verbosidade existe hoje nas tools que devolvem facts, e procedência deixou de ser copiada fato a
 fato. A outra metade continua parada — projeção de campo não existe em tool nenhuma, paginação
-existe em **38** delas, e os quatro estimadores de token e os três empacotadores de contexto
-continuam sendo quatro e três.
+existe em **38** delas, e os três empacotadores de contexto continuam sendo três (os estimadores
+de token viraram um só em TOKEN_ESTIMATE_UNICO).
 
 Ordem que a medição sugeriu, com o que as fases J0 a J3 fizeram dela:
 
@@ -568,7 +568,7 @@ Ordem que a medição sugeriu, com o que as fases J0 a J3 fizeram dela:
    política de git do estado local fechada, denylist e poda de árvore de dependência na
    varredura, confinamento aplicado dentro dela.
 2. **Baratear o que já é devolvido** — metade feita. `detail_level` e procedência por
-   referência existem; projeção de campo e o estimador único de token, não.
+   referência existem, e o estimador único de token também (TOKEN_ESTIMATE_UNICO); projeção de campo, não.
 3. **Decidir a cadeia de autorização** — decidido, não ligado. `authorize()` passa a ver
    argumento; nenhum caminho de execução o consulta.
 4. **Persistir** — feito na parte completa, aberto na incremental. Banco, schema, FTS e índice
@@ -713,8 +713,8 @@ O eixo de consulta por símbolo abriu; o resto da fase continua fechado.
 - **Expansão determinística de query por dicionário versionado** — ausente.
 - **Teto duro de token na saída, e ordem de redução declarada** — a paginação limita quantidade
   de itens, não tamanho.
-- **Estimador de token local, conservador, sem download**, parcial — continua havendo quatro, e
-  elas divergem no arredondamento.
+- **Estimador de token local, conservador, sem download**, parcial — há um só desde
+  TOKEN_ESTIMATE_UNICO, e ele conta caractere, não byte UTF-8.
 
 E a fase carrega o que mede se ela deu certo, que também não existe:
 
