@@ -1278,3 +1278,22 @@ def test_duas_decisoes_do_mesmo_recurso_dao_a_mesma_evidencia_em_qualquer_ordem(
     ida = build_missing_grant(_fgac_51(_registrada(False), a, b))
     volta = build_missing_grant(_fgac_51(_registrada(False), b, a))
     assert [f.to_dict() for f in ida] == [f.to_dict() for f in volta]
+
+
+def test_implicita_e_allowed_no_mesmo_prefixo_da_tabela_recusa_contraditoria():
+    # Dois artefatos de iam-access dizem o oposto sobre o mesmo par (acao, recurso):
+    # nenhum dos dois fala sozinho pela tabela.
+    pool = _fgac_51(
+        _registrada(False),
+        _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*", arquivo="iam_a.json"),
+        _decisao(PUT, "allowed", recurso=LOCAL + "/*", arquivo="iam_b.json"),
+    )
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "decisoes_iam_contraditorias"
+    assert "mesmo recurso" in recusa.attrs["unblocked_by"]
+
+
+def test_ressalva_do_registro_cobre_localizacao_mais_larga_que_a_tabela():
+    saida = build_missing_grant(cenario_fgac_escrita_negada())
+    (falta,) = _de(saida, "lakeformation.missing_grant")
+    assert "mais larga que a tabela" in falta.attrs["caveat"]

@@ -233,6 +233,11 @@ _DESTRAVA = {
         "a decisao de IAM desta acao sobre a tabela nao tem `allowed` booleano: nao se "
         "sabe se negou; recolete com `sparkforge collect iam-access`"
     ),
+    "decisoes_iam_contraditorias": (
+        "duas decisoes de IAM desta acao no mesmo recurso da tabela, uma allowed e outra "
+        "implicitDeny (artefatos diferentes): nenhuma fala sozinha; recolete com "
+        "`sparkforge collect iam-access` numa coleta so"
+    ),
     "decisao_iam_desconhecida": (
         "a decisao de IAM desta acao sobre a tabela nega com um nome fora de "
         "implicitDeny/explicitDeny, e o fact nao le o que ela quer dizer; confira o "
@@ -253,7 +258,9 @@ _ESCOPO_DO_REGISTRO = "exact_arn"
 _RESSALVA_DO_REGISTRO = (
     "registered False veio de DescribeResource no ARN exato da localizacao; registro "
     "num prefixo pai nao foi conferido, e se existir o caso e o conflito declarado "
-    "(secao 6 de knowledge/glue/lakeformation-fgac.md), nao falta de IAM"
+    "(secao 6 de knowledge/glue/lakeformation-fgac.md), nao falta de IAM. A localizacao "
+    "e o `--resource-arn` passado ao collect: se ele for mais larga que a tabela (o "
+    "bucket), uma policy escopada ao prefixo da tabela tambem nega em `<localizacao>/*`"
 )
 
 _DECISOES_NEGADAS = frozenset({"implicitDeny", "explicitDeny"})
@@ -601,6 +608,10 @@ def _decisoes_da_tabela(
             coberta = coberta or alcance == "exato"
         elif decisao == "explicitDeny" or (decisao == "implicitDeny" and alcance == "exato"):
             acusam.append(d)
+    explicitas = [d for d in acusam if (d.attrs or {}).get("decision") == "explicitDeny"]
+    if coberta and acusam and not explicitas:
+        # So implicitDeny exato ao lado de allowed exato: o mesmo par diz o oposto.
+        return [], "decisoes_iam_contraditorias"
     if acusam or coberta:
         return acusam, None
     if _desconhecidas(decisoes, acao, local):
