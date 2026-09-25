@@ -131,13 +131,13 @@
     {
       "path": "knowledge/glue/lakeformation-fgac.md",
       "title": "lakeformation-fgac",
-      "sha256": "afa77c50663f7fac7ff2627b5b4b663ce04b9105c8144cd3c8a2d42cdd3adbcc",
+      "sha256": "c9cda03cb0383b132bbcf8895cc4bcafed98eb996c5b735e4e7fc2ced332b61a",
       "bytes": null
     },
     {
       "path": "knowledge/glue/lakeformation-index.md",
       "title": "lakeformation-index",
-      "sha256": "5d389cf059ac078b750432dca727441479509160a3dd48e6c5506eb1b31de67d"
+      "sha256": "72660962df3505abee31180813c9773f26c6c896278fb3bf030e2d4dc35c22aa"
     },
     {
       "path": "knowledge/glue/observability.md",
