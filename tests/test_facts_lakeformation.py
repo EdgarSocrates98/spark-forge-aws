@@ -236,6 +236,51 @@ class TestFilesystem:
         ] is False
 
 
+_RESOLVER_LF = "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver"
+_EMRFS = "com.amazon.ws.emr.hadoop.fs.EmrFileSystem"
+
+
+class TestFtaDeclarado:
+    """FTA nao tem argumento de job: o pedido e o resolver de credencial.
+
+    `lakeformation.fta_declared` existe porque `absent:` so confere kind. Sem
+    ele, `SF-LF-010` so sabia perguntar por `access_model`, que FTA nunca
+    produz, e acusava o job que declara FTA (feature LF_FTA_DECLARADO).
+    """
+
+    def test_resolver_do_lake_formation_declara_fta(self):
+        saida = build_lakeformation(
+            [
+                _tf_conf("spark.hadoop.fs.s3.credentialsResolverClass", _RESOLVER_LF),
+                _tf_conf("spark.hadoop.fs.s3.impl", _EMRFS),
+            ]
+        )
+        fs = _de(saida, "lakeformation.filesystem")
+        fta = _de(saida, "lakeformation.fta_declared")
+        assert len(fta) == 1
+        assert fta[0].subject == fs[0].subject
+        assert fta[0].provenance == fs[0].provenance
+        assert fta[0].attrs["marker"] == "spark.hadoop.fs.s3.credentialsResolverClass"
+        assert fta[0].attrs["emrfs_restored"] is True
+        assert fta[0].attrs["source"] == "terraform"
+
+    def test_so_a_superficie_com_resolver_declara_fta(self):
+        """Trocar o filesystem nao pede credencial do Lake Formation."""
+        saida = build_lakeformation(
+            [
+                _tf_conf("spark.hadoop.fs.s3.credentialsResolverClass", _RESOLVER_LF),
+                _codigo("spark.hadoop.fs.s3.impl", _EMRFS),
+                _efetiva(
+                    "spark.hadoop.fs.s3.credentialsResolverClass", "com.exemplo.MeuResolver"
+                ),
+            ]
+        )
+        assert len(_de(saida, "lakeformation.filesystem")) == 3
+        fta = _de(saida, "lakeformation.fta_declared")
+        assert [f.attrs["source"] for f in fta] == ["terraform"]
+        assert fta[0].attrs["emrfs_restored"] is False
+
+
 class TestRecusaNomeada:
     def test_com_modelo_declarado_a_lacuna_de_permissao_e_nomeada(self):
         saida = build_lakeformation([_tf_attr(FGAC_ARGUMENT, "true")])
@@ -258,6 +303,7 @@ class TestContratoDoModulo:
                 _tf_attr(FGAC_ARGUMENT, "true"),
                 _tf_conf("spark.sql.catalog.spark_catalog", "org.x.C"),
                 _tf_conf("spark.hadoop.fs.s3.impl", "com.amazon.ws.emr.hadoop.fs.EmrFileSystem"),
+                _tf_conf("spark.hadoop.fs.s3.credentialsResolverClass", _RESOLVER_LF),
             ]
         )
         assert {f.kind for f in saida} <= EMITTED_KINDS

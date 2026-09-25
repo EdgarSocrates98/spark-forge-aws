@@ -72,6 +72,7 @@ EMITTED_KINDS = frozenset(
         "lakeformation.access_model",
         "lakeformation.iceberg_catalog",
         "lakeformation.filesystem",
+        "lakeformation.fta_declared",
         "lakeformation.unresolved",
     }
 )
@@ -117,7 +118,9 @@ def build_lakeformation(facts: Sequence[Fact]) -> list[Fact]:
     saida: list[Fact] = []
     saida.extend(_access_models(facts))
     saida.extend(_iceberg_catalogs(facts))
-    saida.extend(_filesystems(facts))
+    filesystems = _filesystems(facts)
+    saida.extend(filesystems)
+    saida.extend(_fta_declarados(filesystems))
     saida.extend(_unresolved(facts, saida))
     return sort_facts(saida)
 
@@ -193,7 +196,8 @@ def _access_models(facts: Sequence[Fact]) -> list[Fact]:
     conjunto de configuracoes de Spark. Inventar um `model: "fta"` ancorado numa
     chave de conf qualquer daria ao FTA uma declaracao que ele nao tem, e o
     subject sairia de um lugar arbitrario. A superficie de FTA e
-    `lakeformation.filesystem`, e e por ela que as regras de FTA perguntam.
+    `lakeformation.filesystem`, e e por ela que as regras de FTA perguntam; a
+    pergunta "o job declara FTA?" e `lakeformation.fta_declared`, derivado dela.
     """
     marcadores = _marcadores_de_fta(facts)
     saida: list[Fact] = []
@@ -344,6 +348,43 @@ def _filesystems(facts: Sequence[Fact]) -> list[Fact]:
                     "extractor": EXTRACTOR_ID,
                 },
                 provenance=anchor.provenance,
+            )
+        )
+    return saida
+
+
+def _fta_declarados(filesystems: Sequence[Fact]) -> list[Fact]:
+    """Um fact por superficie que pede o resolver de credencial do Lake Formation.
+
+    E o predicado que `SF-LF-010` precisa e o motor nao alcanca: `absent:` so
+    confere KIND, e `lakeformation.filesystem` sai tambem quando so
+    `spark.hadoop.fs.s3.impl` foi declarado, sem pedir credencial nenhuma.
+    `access_model` nao serve porque FTA nao o produz (docstring de
+    `_access_models`). O fact herda subject e proveniencia do filesystem da
+    mesma superficie, e registra -- sem julgar -- se o EMRFS foi restaurado:
+    FTA declarado sob S3A e pedido ignorado, e quem diz isso e outra regra.
+
+    A chave por catalogo (`.glue.lakeformation-enabled`) sozinha NAO conta: o
+    que ela significa sob FGAC esta como a verificar na §7 do documento de
+    conhecimento, e dar a ela o peso de declaracao seria afirmar alem da fonte.
+    """
+    saida: list[Fact] = []
+    for fs in filesystems:
+        attrs = fs.attrs or {}
+        if not attrs.get("lf_credentials_resolver_declared"):
+            continue
+        saida.append(
+            Fact(
+                kind="lakeformation.fta_declared",
+                subject=dict(fs.subject or {}),
+                measures={},
+                attrs={
+                    "marker": _RESOLVER_KEY,
+                    "emrfs_restored": attrs["emrfs_restored"],
+                    "source": attrs["source"],
+                    "extractor": EXTRACTOR_ID,
+                },
+                provenance=fs.provenance,
             )
         )
     return saida
