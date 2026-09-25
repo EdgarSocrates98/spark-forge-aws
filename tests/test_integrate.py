@@ -232,7 +232,11 @@ def test_manifesto_dry_run_e_idempotencia(tmp_path):
     primeira = integrate("devin", home=home, windows=False)
     assert primeira["refused"] == []
     manifesto = json.loads((home / ".sparkforge" / "integrations.json").read_text("utf-8"))
-    arquivos = manifesto["hosts"]["devin"]["files"]
+    arquivos = {
+        relativo: registro["sha256"]
+        for relativo, registro in manifesto["files"].items()
+        if "devin" in registro["owners"]
+    }
     assert manifesto["hosts"]["devin"]["package_version"] == __version__
     assert set(arquivos) == set(primeira["hosts"][0]["written"])
     for relativo, sha in arquivos.items():
@@ -467,3 +471,143 @@ def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     assert meu.read_text(encoding="utf-8") == "do usuario\n"
     assert not (home / ".sparkforge" / "integrations.json").exists()
     assert detach("devin", home=home)["hosts"][0]["status"] == "not_integrated"
+
+
+# --------------------------------------------------------------------------
+# Manifesto por arquivo: um sha256 e o conjunto de donos (D5)
+# --------------------------------------------------------------------------
+
+AGENT_FALSO = "---\nname: sf-falso\ndescription: agent de teste\n---\ncorpo\n"
+
+
+def _skill(nome: str) -> str:
+    return f"---\nname: {nome}\ndescription: skill de teste\n---\ncorpo\n"
+
+
+def _raiz_falsa(base: Path, arquivos: dict[str, str]) -> Path:
+    """Uma raiz com `skills/` e `agents/` minimos: `arquivos` e {relativo: texto}."""
+    for relativo, texto in {"agents/sf-falso.md": AGENT_FALSO, **arquivos}.items():
+        caminho = base / relativo
+        caminho.parent.mkdir(parents=True, exist_ok=True)
+        caminho.write_bytes(texto.encode("utf-8"))
+    return base
+
+
+def _manifesto(home: Path) -> dict:
+    return json.loads((home / ".sparkforge" / "integrations.json").read_text("utf-8"))
+
+
+def _sha(texto: str) -> str:
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
+
+def test_skill_compartilhada_sobe_de_versao_sem_recusa_falsa(tmp_path):
+    home = tmp_path / "home"
+
+    def versao(n: int, ref: str) -> Path:
+        return _raiz_falsa(tmp_path / f"v{n}", {
+            "skills/sdd-plan/SKILL.md": _skill("sdd-plan"),
+            "skills/sdd-plan/ref.md": ref,
+        })
+
+    v1, v2, v3 = versao(1, "A\n"), versao(2, "B\n"), versao(3, "C\n")
+    ref = home / ".agents" / "skills" / "sdd-plan" / "ref.md"
+    for nome in ("devin", "codex", "copilot"):
+        assert integrate(nome, home=home, windows=False, root=v1)["refused"] == []
+    # So o Devin sobe para v2: os outros donos continuam donos do MESMO arquivo.
+    assert integrate("devin", home=home, windows=False, root=v2)["refused"] == []
+    assert ref.read_text(encoding="utf-8") == "B\n"
+    for nome in ("codex", "copilot", "devin"):
+        resultado = integrate(nome, home=home, windows=False, root=v3)
+        assert resultado["refused"] == [], (nome, resultado["refused"])
+    assert ref.read_text(encoding="utf-8") == "C\n"
+    manifesto = _manifesto(home)
+    assert manifesto["schema"] == 2
+    assert manifesto["files"][".agents/skills/sdd-plan/ref.md"] == {
+        "sha256": _sha("C\n"), "owners": ["codex", "copilot", "devin"],
+    }
+
+    for nome in ("devin", "codex", "copilot"):
+        assert detach(nome, home=home)["refused"] == []
+    assert not (home / ".agents").exists()
+
+
+def test_skill_removida_do_bundle_sai_quando_o_ultimo_dono_sai(tmp_path):
+    home = tmp_path / "home"
+    comum = {"skills/sdd-plan/SKILL.md": _skill("sdd-plan")}
+    v1 = _raiz_falsa(tmp_path / "v1", {
+        **comum, "skills/sdd-build/SKILL.md": _skill("sdd-build"),
+        "skills/sdd-build/ref.md": "X\n",
+    })
+    v2 = _raiz_falsa(tmp_path / "v2", {
+        **comum, "skills/sdd-build/SKILL.md": _skill("sdd-build"),
+        "skills/sdd-build/ref.md": "Y\n",
+    })
+    v3 = _raiz_falsa(tmp_path / "v3", comum)
+    build = home / ".agents" / "skills" / "sdd-build"
+    for nome in ("devin", "codex"):
+        assert integrate(nome, home=home, windows=False, root=v1)["refused"] == []
+    assert integrate("devin", home=home, windows=False, root=v2)["refused"] == []
+
+    # A skill sai do bundle: o Devin deixa de ser dono, o Codex ainda e.
+    assert integrate("devin", home=home, windows=False, root=v3)["refused"] == []
+    assert (build / "ref.md").read_text(encoding="utf-8") == "Y\n"
+    # O Codex, ultimo dono, sai dela: o arquivo sai do disco, sem orfao.
+    resultado = integrate("codex", home=home, windows=False, root=v3)
+    assert resultado["refused"] == []
+    assert not build.exists()
+    assert not [k for k in _manifesto(home)["files"] if "sdd-build" in k]
+
+
+def test_manifesto_v1_migra_para_um_sha_por_arquivo(tmp_path):
+    from sparkforge.integrate import writer
+
+    home = tmp_path / "home"
+    compartilhado = home / ".agents" / "skills" / "sdd-plan" / "SKILL.md"
+    compartilhado.parent.mkdir(parents=True)
+    compartilhado.write_bytes(b"B\n")
+    v1 = {
+        "schema": 1,
+        "hosts": {
+            "codex": {"package_version": "0.1", "config": [],
+                      "files": {".agents/skills/sdd-plan/SKILL.md": _sha("A\n")}},
+            "devin": {"package_version": "0.2", "config": [],
+                      "files": {".agents/skills/sdd-plan/SKILL.md": _sha("B\n"),
+                                ".config/devin/agents/x.md": _sha("x\n")}},
+        },
+    }
+    caminho = home / ".sparkforge" / "integrations.json"
+    caminho.parent.mkdir(parents=True)
+    caminho.write_text(json.dumps(v1), encoding="utf-8")
+    manifesto = writer.load_manifest(home)
+    assert manifesto["schema"] == 2
+    # Com donos divergentes, vale o sha que esta em disco.
+    assert manifesto["files"] == {
+        ".agents/skills/sdd-plan/SKILL.md": {"sha256": _sha("B\n"), "owners": ["codex", "devin"]},
+        ".config/devin/agents/x.md": {"sha256": _sha("x\n"), "owners": ["devin"]},
+    }
+    assert manifesto["hosts"]["devin"] == {"package_version": "0.2", "config": []}
+
+
+def test_arquivo_preexistente_identico_nunca_sai_no_detach(tmp_path):
+    raiz = _raiz_falsa(tmp_path / "raiz", {"skills/sdd-plan/SKILL.md": _skill("sdd-plan")})
+    modelo = tmp_path / "modelo"
+    integrate("copilot", home=modelo, root=raiz)
+    relativo = ".agents/skills/sdd-plan/SKILL.md"
+
+    home = tmp_path / "home"
+    preexistente = home / relativo
+    preexistente.parent.mkdir(parents=True)
+    preexistente.write_bytes((modelo / relativo).read_bytes())
+    antes = preexistente.read_bytes()
+
+    assert integrate("copilot", home=home, root=raiz)["refused"] == []
+    manifesto = _manifesto(home)
+    resultado = detach("copilot", home=home)
+    assert preexistente.is_file(), "o detach apagou arquivo que ja estava no HOME"
+    assert preexistente.read_bytes() == antes
+    assert not (home / ".copilot" / "agents").exists()
+    assert resultado["refused"] == []
+    assert relativo in resultado["hosts"][0]["kept_preexisting"]
+    assert relativo not in resultado["hosts"][0]["removed"]
+    assert manifesto["files"][relativo]["preexistente"] is True

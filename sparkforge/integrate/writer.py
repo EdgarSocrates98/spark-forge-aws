@@ -1,9 +1,10 @@
 """Plano de escrita no HOME, manifesto, dry-run e idempotencia (D5).
 
 Toda escrita fora do repositorio passa por aqui e fica registrada em
-`~/.sparkforge/integrations.json`: por host, cada arquivo gravado (caminho
-relativo ao HOME, em POSIX, e sha256), a versao do pacote que o gravou e as
-entradas de config inseridas. O manifesto e o que torna `detach` seguro -- sem
+`~/.sparkforge/integrations.json` (formato 2): em `files`, cada arquivo gravado
+(caminho relativo ao HOME, em POSIX) com UM sha256 e o conjunto de hosts donos;
+em `hosts`, por host, a versao do pacote que o gravou e as entradas de config
+inseridas. O manifesto e o que torna `detach` seguro -- sem
 ele, apagar pelo nome levaria junto arquivo do usuario com o mesmo nome.
 
 Tres regras para arquivo que ja existe no destino:
@@ -15,8 +16,16 @@ Tres regras para arquivo que ja existe no destino:
 - algum host o registrou e o sha256 mudou: o usuario editou depois, sai recusa
   `editado_pelo_usuario` e ele fica.
 
-Um arquivo de `~/.agents/skills` pode ser de mais de um host; os donos sao os
-hosts que o listam no manifesto, e so o ultimo a sair o apaga.
+Um arquivo de `~/.agents/skills` pode ser de mais de um host. O sha256 e do
+ARQUIVO, nao do dono: com um sha por host, o host que nao regravou ficava com o
+sha velho e acusava edicao do usuario que nao houve. So o ultimo dono a sair
+apaga o arquivo.
+
+Arquivo que ja estava no HOME com o conteudo identico ao que gravariamos e
+adotado com `preexistente: true`: fica registrado (a proxima execucao nao o trata
+como alheio), mas nenhum detach o apaga -- ele nao nasceu daqui.
+
+O formato 1 (um mapa `files` por host) e migrado ao carregar.
 """
 from __future__ import annotations
 
@@ -30,7 +39,7 @@ from sparkforge.integrate import render, sources
 from sparkforge.integrate.hosts import Host
 
 MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
-SCHEMA = 1
+SCHEMA = 2
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -41,12 +50,40 @@ def manifest_path(home: Path) -> Path:
     return Path(home) / MANIFEST_RELATIVE
 
 
+def _manifesto_vazio() -> dict[str, Any]:
+    return {"schema": SCHEMA, "files": {}, "hosts": {}}
+
+
+def _migrar_v1(dados: dict[str, Any], home: Path) -> dict[str, Any]:
+    """Formato 1 -> 2: um sha por arquivo, com os donos. Donos com sha divergente
+    ficam com o que esta em disco; sem nenhum igual ao disco, o do primeiro."""
+    shas: dict[str, list[str]] = {}
+    donos: dict[str, list[str]] = {}
+    hosts: dict[str, Any] = {}
+    for nome, entrada in sorted((dados.get("hosts") or {}).items()):
+        entrada = dict(entrada)
+        for relativo, sha in sorted((entrada.pop("files", None) or {}).items()):
+            shas.setdefault(relativo, []).append(sha)
+            donos.setdefault(relativo, []).append(nome)
+        hosts[nome] = entrada
+    arquivos: dict[str, Any] = {}
+    for relativo, candidatos in sorted(shas.items()):
+        caminho = Path(home) / relativo
+        em_disco = sha256_bytes(caminho.read_bytes()) if caminho.is_file() else None
+        sha = em_disco if em_disco in candidatos else candidatos[0]
+        arquivos[relativo] = {"sha256": sha, "owners": sorted(donos[relativo])}
+    return {"schema": SCHEMA, "files": arquivos, "hosts": hosts}
+
+
 def load_manifest(home: Path) -> dict[str, Any]:
     caminho = manifest_path(home)
     if not caminho.is_file():
-        return {"schema": SCHEMA, "hosts": {}}
+        return _manifesto_vazio()
     dados = json.loads(caminho.read_text(encoding="utf-8"))
+    if dados.get("schema", 1) < 2:
+        dados = _migrar_v1(dados, home)
     dados.setdefault("schema", SCHEMA)
+    dados.setdefault("files", {})
     dados.setdefault("hosts", {})
     return dados
 
@@ -76,17 +113,31 @@ def rel(home: Path, caminho: Path) -> str:
 
 
 def owners(manifesto: dict[str, Any], relativo: str) -> list[str]:
-    return sorted(
-        nome
-        for nome, entrada in manifesto.get("hosts", {}).items()
-        if relativo in (entrada.get("files") or {})
-    )
+    return list((manifesto["files"].get(relativo) or {}).get("owners") or [])
 
 
 def recorded_sha(manifesto: dict[str, Any], relativo: str) -> str | None:
-    for nome in owners(manifesto, relativo):
-        return manifesto["hosts"][nome]["files"][relativo]
-    return None
+    return (manifesto["files"].get(relativo) or {}).get("sha256")
+
+
+def host_files(manifesto: dict[str, Any], nome: str) -> list[str]:
+    """Os arquivos de que `nome` e dono."""
+    return sorted(
+        relativo
+        for relativo, registro in manifesto["files"].items()
+        if nome in (registro.get("owners") or [])
+    )
+
+
+def _adotar(
+    manifesto: dict[str, Any], relativo: str, nome: str, sha: str, *, preexistente: bool
+) -> None:
+    """`nome` passa a ser dono de `relativo`, cujo conteudo e `sha`."""
+    registro = manifesto["files"].setdefault(relativo, {"sha256": sha, "owners": []})
+    registro["sha256"] = sha
+    registro["owners"] = sorted({*registro.get("owners", []), nome})
+    if preexistente:
+        registro["preexistente"] = True
 
 
 def plan_files(h: Host, root: Path) -> list[tuple[Path, bytes]]:
@@ -127,19 +178,28 @@ def remove_owned(
     *,
     dry_run: bool,
 ) -> dict[str, list]:
-    """Tira de `nome` os arquivos `relativos`, apagando so o que e so dele e ainda
-    tem o sha256 gravado. O manifesto e alterado em memoria; quem chama o salva."""
+    """Tira `nome` dos donos de `relativos`. O arquivo so sai do disco quando `nome`
+    era o ultimo dono, o sha256 em disco ainda e o gravado e ele nao e
+    `preexistente`. O manifesto e alterado em memoria; quem chama o salva."""
     removidos: list[str] = []
     mantidos: list[str] = []
+    preexistentes: list[str] = []
     recusas: list[dict[str, str]] = []
-    arquivos = manifesto["hosts"][nome].setdefault("files", {})
+    arquivos = manifesto["files"]
     for relativo in sorted(relativos):
-        gravado = arquivos.get(relativo)
-        outros = [o for o in owners(manifesto, relativo) if o != nome]
+        registro = arquivos.get(relativo)
+        if registro is None:
+            continue
+        outros = [o for o in registro.get("owners") or [] if o != nome]
         caminho = Path(home) / relativo
         if outros:
             mantidos.append(relativo)
-        elif caminho.is_file() and sha256_bytes(caminho.read_bytes()) != gravado:
+            if not dry_run:
+                registro["owners"] = outros
+            continue
+        if registro.get("preexistente"):
+            preexistentes.append(relativo)
+        elif caminho.is_file() and sha256_bytes(caminho.read_bytes()) != registro["sha256"]:
             recusas.append({"reason": "editado_pelo_usuario", "path": relativo})
         else:
             removidos.append(relativo)
@@ -147,8 +207,13 @@ def remove_owned(
                 caminho.unlink()
                 _podar(caminho, home)
         if not dry_run:
-            arquivos.pop(relativo, None)
-    return {"removed": removidos, "kept_shared": mantidos, "refused": recusas}
+            del arquivos[relativo]
+    return {
+        "removed": removidos,
+        "kept_shared": mantidos,
+        "kept_preexisting": preexistentes,
+        "refused": recusas,
+    }
 
 
 def apply_files(
@@ -165,38 +230,38 @@ def apply_files(
     escritos: list[str] = []
     iguais: list[str] = []
     recusas: list[dict[str, str]] = []
-    novos: dict[str, str] = {}
+    vistos: set[str] = set()
     for destino, dados in plano:
         relativo = rel(home, destino)
         sha = sha256_bytes(dados)
+        registrado = recorded_sha(manifesto, relativo)
         if destino.is_file():
             atual = sha256_bytes(destino.read_bytes())
-            registrado = recorded_sha(manifesto, relativo)
             if registrado is None and atual != sha:
                 recusas.append({"reason": "arquivo_do_usuario", "path": relativo})
                 continue
-            if registrado is not None and atual != registrado and atual != sha:
+            if registrado is not None and atual not in (registrado, sha):
                 recusas.append({"reason": "editado_pelo_usuario", "path": relativo})
+                if nome in owners(manifesto, relativo):
+                    vistos.add(relativo)
                 continue
             if atual == sha:
                 iguais.append(relativo)
-                novos[relativo] = sha
+                vistos.add(relativo)
+                if not dry_run:
+                    _adotar(manifesto, relativo, nome, sha, preexistente=registrado is None)
                 continue
         escritos.append(relativo)
-        novos[relativo] = sha
+        vistos.add(relativo)
         if not dry_run:
             destino.parent.mkdir(parents=True, exist_ok=True)
             destino.write_bytes(dados)
-    entrada = manifesto["hosts"].get(nome) or {}
-    anteriores = sorted(set(entrada.get("files") or {}) - set(novos))
-    orfaos: dict[str, list] = {"removed": [], "kept_shared": [], "refused": []}
-    if anteriores:
-        manifesto["hosts"].setdefault(nome, entrada)
-        orfaos = remove_owned(home, manifesto, nome, anteriores, dry_run=dry_run)
+            _adotar(manifesto, relativo, nome, sha, preexistente=False)
+    anteriores = [r for r in host_files(manifesto, nome) if r not in vistos]
+    orfaos = remove_owned(home, manifesto, nome, anteriores, dry_run=dry_run)
     if not dry_run:
         entrada = manifesto["hosts"].setdefault(nome, {})
         entrada["package_version"] = version
-        entrada["files"] = dict(sorted(novos.items()))
         entrada.setdefault("config", [])
     return {
         "host": nome,
@@ -430,7 +495,7 @@ def revert_config(registro: dict[str, Any], *, home: Path, dry_run: bool) -> dic
 
 def drop_manifest_if_empty(home: Path, manifesto: dict[str, Any]) -> None:
     """Sem host integrado, o manifesto sai do HOME; senao, e regravado."""
-    if manifesto.get("hosts"):
+    if manifesto.get("hosts") or manifesto.get("files"):
         save_manifest(home, manifesto)
         return
     caminho = manifest_path(home)

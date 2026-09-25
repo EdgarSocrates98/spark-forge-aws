@@ -111,7 +111,7 @@ def detach(alvo: str, *, home: Path, dry_run: bool = False) -> dict[str, Any]:
             continue
         registros = list(entrada.get("config") or [])
         relatorio = writer.remove_owned(
-            home, manifesto, nome, list(entrada.get("files") or {}), dry_run=dry_run
+            home, manifesto, nome, writer.host_files(manifesto, nome), dry_run=dry_run
         )
         relatorio["host"] = nome
         relatorio["status"] = "detached"
