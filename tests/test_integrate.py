@@ -40,14 +40,16 @@ def _relativos(base: Path) -> list[str]:
 
 
 def test_wheel_embute_skills_e_agents(tmp_path):
+    # So a AUSENCIA do modulo `build` pula; com ele instalado, build que falha e
+    # vermelho -- um skip aqui esconderia justamente o empacotamento quebrado.
+    pytest.importorskip("build")
     out = tmp_path / "dist"
     build = subprocess.run(
         [sys.executable, "-m", "build", "--wheel", "--outdir", str(out), str(ROOT)],
         capture_output=True,
         text=True,
     )
-    if build.returncode != 0:
-        pytest.skip(f"`python -m build` indisponivel ou falhou: {build.stderr[-400:]}")
+    assert build.returncode == 0, f"`python -m build` falhou: {build.stderr[-800:]}"
     (roda,) = sorted(out.glob("*.whl"))
     prefixo = "sparkforge/integrate/bundle/"
     with zipfile.ZipFile(roda) as wheel:
@@ -177,6 +179,34 @@ def test_conteudo_e_o_da_renderizacao_do_sync_skills():
     ) == exemplo.read_bytes()
     with pytest.raises(ValueError, match="description"):
         render.render_agent("---\nname: x\n---\ncorpo\n", "codex")
+
+
+def test_o_gravado_por_integrate_e_o_espelho_do_repo(tmp_path):
+    """AC6 pelo que chega ao disco: um erro na tabela de `hosts.py` (plataforma,
+    padrao de nome ou diretorio trocado) fica vermelho aqui."""
+    home = tmp_path / "home"
+    for nome in ("devin", "copilot", "codex"):
+        assert integrate(nome, home=home, windows=False)["refused"] == []
+
+    espelho = _conteudo(ROOT / ".agents" / "skills")
+    assert _conteudo(home / ".agents" / "skills") == espelho
+    assert _conteudo(home / ".config" / "devin" / "agents") == _conteudo(
+        ROOT / ".agents" / "agents"
+    )
+    assert _conteudo(home / ".copilot" / "agents") == _conteudo(ROOT / ".github" / "agents")
+
+    tomllib = pytest.importorskip("tomllib")
+    gravados = sorted((home / ".codex" / "agents").glob("*.toml"))
+    assert [p.stem for p in gravados] == [p.stem for p in sources.agent_files(ROOT)]
+    for arquivo in gravados:
+        texto = (ROOT / "agents" / f"{arquivo.stem}.md").read_text(encoding="utf-8")
+        dados = tomllib.loads(arquivo.read_text(encoding="utf-8"))
+        frente = _frontmatter_yaml(texto)
+        assert dados == {
+            "name": frente["name"],
+            "description": frente["description"],
+            "developer_instructions": _corpo_do_markdown(texto),
+        }, arquivo.name
 
 
 def _foto(base: Path) -> dict[str, tuple[bytes, int]]:
