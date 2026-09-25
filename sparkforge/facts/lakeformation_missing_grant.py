@@ -91,13 +91,17 @@ _CAUDA = ",;:.)}" + _ASPAS
 # de `insertInto(t, overwrite=<literal>)` e do nome de terminal V2
 # (append/overwrite/overwritePartitions).
 _MODOS_OVERWRITE = frozenset({"overwrite", "overwritepartitions"})
-# `mode_unresolved: true` no fact: o modo vem de expressao que o parse nao le. Write e
-# overwrite cobram permissoes diferentes, e presumir write calaria um DeleteObject
-# negado. Escrita V1 sem `mode` e sem a marca continua write: o default de
+# `mode_unresolved: true` no fact: o modo vem de expressao que o parse nao le. Os
+# requisitos de write estao contidos nos de overwrite: o que falta para write falta em
+# qualquer modo e e acusado (com `mode_unresolved` no fact); coberto o write, a recusa
+# so sai quando overwrite cobra mais do que write, e presumir write calaria o que so o
+# overwrite pede. Escrita V1 sem `mode` e sem a marca continua write: o default de
 # save/saveAsTable/parquet e `error` (errorifexists) e o de `insertInto` e append
 # ("Disabled by default"), pelas docstrings de `DataFrameWriter` em
 # `pyspark/sql/readwriter.py`.
 _MODO_NAO_LIDO = "modo_nao_lido"
+_WRITE_COBERTO = "write esta coberto"
+_WRITE_RECUSADO = "write tem recusa propria nesta saida, sem falta acusada"
 # `writeTo` sem `mode` termina em create/replace/createOrReplace/merge, e o fact nao
 # carrega o terminal; `ambigua` (`write` e `writeTo` na mesma cadeia) e codigo que o
 # parse nao entende. Sem `mode`, a operacao e desconhecida, nunca um `write` presumido.
@@ -150,9 +154,8 @@ _DESTRAVA = {
     ),
     "modo_de_escrita_nao_lido": (
         "o modo da escrita vem de expressao que o parse nao le (`.mode(x)`, `mode=x`, "
-        "`insertInto(..., overwrite=x)` ou argumento desempacotado); write e overwrite "
-        "cobram permissoes diferentes (overwrite sob FGAC cobra tambem s3:DeleteObject), "
-        "e o fact nao presume write; torne o modo literal no codigo e rode "
+        "`insertInto(..., overwrite=x)` ou argumento desempacotado); {write}, e so o "
+        "overwrite pediria mais ({extra}); torne o modo literal no codigo e rode "
         "`sparkforge analyze pyspark` de novo"
     ),
     "catalogo_ambiguo": (
@@ -864,6 +867,53 @@ def _lado_iam(
     return saida
 
 
+def _modo_nao_lido(
+    recurso: str, origem: Fact, modelo: str, gatilho: Fact, facts: Sequence[Fact],
+    medidas: set[str],
+) -> list[Fact]:
+    """Escrita de modo nao lido: avaliada como write, cujos requisitos estao contidos
+    nos de overwrite. O que falta para write falta em qualquer modo e e acusado; so
+    com write sem falta acusada, e overwrite cobrando mais, a escrita sai recusada."""
+    if "overwrite" in medidas:
+        # Um overwrite medido sobre a mesma tabela ja cobra tudo o que o modo pediria.
+        return []
+    write = requirement("write", modelo)
+    if write is None:
+        return [
+            _unresolved(
+                "operacao_sem_requisito_declarado", recurso, gatilho, operation="write",
+                model=modelo,
+            )
+        ]
+    lado = _lado_lf if write["side"] == "lf" else _lado_iam
+    avaliada = lado(recurso, "write", origem, write, modelo, gatilho, facts)
+    acusou = any(f.kind == "lakeformation.missing_grant" for f in avaliada)
+    saida: list[Fact] = []
+    if "write" not in medidas:
+        # Uma escrita de modo lido como write ja fala por write: a avaliacao daqui so
+        # decide se o modo importa, e nao duplica o fact dela.
+        for f in avaliada:
+            f.attrs["mode_unresolved"] = True
+        saida.extend(avaliada)
+    overwrite = requirement("overwrite", modelo) or write
+    extra = [a for a in overwrite["requires"] if a not in write["requires"]]
+    if not acusou and extra:
+        saida.append(
+            _unresolved(
+                "modo_de_escrita_nao_lido",
+                recurso,
+                gatilho,
+                operation="write",
+                overwrite_only=extra,
+                unblocked_by=_DESTRAVA["modo_de_escrita_nao_lido"].format(
+                    write=_WRITE_COBERTO if not avaliada else _WRITE_RECUSADO,
+                    extra=", ".join(extra),
+                ),
+            )
+        )
+    return saida
+
+
 def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
     resultado = _operacoes(recurso, facts)
     if isinstance(resultado, str):
@@ -878,13 +928,10 @@ def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
     modelo = _modelo(facts)
     if modelo not in {"fta", "fgac"}:
         return [*saida, _unresolved(modelo, recurso, gatilho)]
+    medidas = {op for op, _origem in operacoes}
     for operacao, origem in operacoes:
         if operacao == _MODO_NAO_LIDO:
-            saida.append(
-                _unresolved(
-                    "modo_de_escrita_nao_lido", recurso, gatilho, operation=_mapeada(operacao)
-                )
-            )
+            saida.extend(_modo_nao_lido(recurso, origem, modelo, gatilho, facts, medidas))
             continue
         if operacao in _TERMINAL_NAO_MEDIDO.values():
             saida.append(

@@ -343,3 +343,30 @@ class TestWriteMode:
         attrs = _write('df.writeTo("db.t").overwrite(cond)\n')
         assert attrs["mode"] == "overwrite"
         assert "mode_unresolved" not in attrs
+
+    def test_chain_save_mode_kwarg_literal_is_recorded(self):
+        # `DataFrameWriter.mode(saveMode)`: o nome do parametro e `saveMode`.
+        attrs = _write('df.write.mode(saveMode="overwrite").parquet(caminho)\n')
+        assert attrs["mode"] == "overwrite"
+        assert "target" not in attrs
+        assert "mode_unresolved" not in attrs
+
+    def test_chain_save_mode_kwarg_variable_or_unpacked_is_unresolved(self):
+        for src in (
+            'df.write.mode(saveMode=m).parquet("s3://b/p")\n',
+            'df.write.mode(*modos).parquet("s3://b/p")\n',
+            'df.write.mode(**opcoes).parquet("s3://b/p")\n',
+        ):
+            attrs = _write(src)
+            assert "mode" not in attrs, src
+            assert attrs["mode_unresolved"] is True, src
+
+    def test_last_chain_mode_wins(self):
+        # Cada `.mode(...)` sobrescreve o anterior no writer: vence o mais perto do
+        # terminal. O literal do que perdeu nao e destino.
+        attrs = _write('df.write.mode("overwrite").mode("append").parquet(caminho)\n')
+        assert attrs["mode"] == "append"
+        assert "target" not in attrs
+        attrs = _write('df.write.mode("append").mode("overwrite").parquet(caminho)\n')
+        assert attrs["mode"] == "overwrite"
+        assert "target" not in attrs

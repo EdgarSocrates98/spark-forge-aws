@@ -1330,13 +1330,79 @@ def test_fgac_modo_nao_lido_nao_presume_write_e_nao_cala_delete_object():
     assert recusa.attrs["reason"] == "modo_de_escrita_nao_lido"
     assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
     assert "s3:DeleteObject" in recusa.attrs["unblocked_by"]
+    assert "write esta coberto" in recusa.attrs["unblocked_by"]
 
 
-def test_fta_modo_nao_lido_recusa_em_vez_de_acusar_write():
-    pool = [_gatilho(), _fta(), _escrita_modo_nao_lido(), _grant(["DESCRIBE", "SELECT"])]
+def test_fgac_modo_nao_lido_acusa_put_object_negado_que_falta_em_qualquer_modo():
+    # write e overwrite cobram s3:PutObject: negado, falta seja qual for o modo.
+    pool = [
+        _gatilho(),
+        _modelo("fgac"),
+        _glue("5.1"),
+        _escrita_modo_nao_lido(),
+        _registrada(False),
+        _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/*"),
+    ]
+    saida = build_missing_grant(pool)
+    (falta,) = _de(saida, "lakeformation.missing_grant")
+    assert falta.attrs["action"] == "s3:PutObject"
+    assert falta.attrs["operation"] == "write"
+    assert falta.attrs["mode_unresolved"] is True
+    assert "modo_de_escrita_nao_lido" not in _razoes(saida)
+
+
+def test_fgac_modo_nao_lido_com_put_object_coberto_e_delete_object_negado_recusa():
+    # O DeleteObject negado so falta se o modo for overwrite, e o modo nao foi lido.
+    pool = [
+        _gatilho(),
+        _modelo("fgac"),
+        _glue("5.1"),
+        _escrita_modo_nao_lido(),
+        _registrada(False),
+        _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
+        _decisao("s3:DeleteObject", "implicitDeny", recurso=LOCAL + "/*"),
+    ]
     saida = build_missing_grant(pool)
     assert _de(saida, "lakeformation.missing_grant") == []
     assert _razoes(saida) == ["modo_de_escrita_nao_lido"]
+
+
+def test_fta_modo_nao_lido_acusa_all_de_write_sem_recusa_de_modo():
+    # Sob FTA write e overwrite cobram o mesmo [ALL]: o modo nao muda a resposta.
+    pool = [_gatilho(), _fta(), _escrita_modo_nao_lido(), _grant(["DESCRIBE", "SELECT"])]
+    saida = build_missing_grant(pool)
+    (falta,) = _de(saida, "lakeformation.missing_grant")
+    assert falta.attrs["operation"] == "write"
+    assert falta.attrs["missing"] == ["ALL"]
+    assert falta.attrs["mode_unresolved"] is True
+    assert _razoes(saida) == []
+
+
+def test_fgac_modo_nao_lido_com_put_object_nao_simulado_nao_diz_write_coberto():
+    pool = [
+        _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita_modo_nao_lido(),
+        _registrada(False),
+    ]
+    saida = build_missing_grant(pool)
+    assert _razoes(saida) == ["acao_iam_nao_simulada", "modo_de_escrita_nao_lido"]
+    (modo,) = [r for r in _so_recusas(saida) if r.attrs["reason"] == "modo_de_escrita_nao_lido"]
+    assert "write esta coberto" not in modo.attrs["unblocked_by"]
+
+
+def test_modo_nao_lido_ao_lado_de_write_lido_nao_duplica_a_falta():
+    pool = [
+        _gatilho(), _fta(), _escrita(), _escrita_modo_nao_lido(),
+        _grant(["DESCRIBE", "SELECT"]),
+    ]
+    saida = build_missing_grant(pool)
+    (falta,) = _de(saida, "lakeformation.missing_grant")
+    assert "mode_unresolved" not in falta.attrs
+    assert _razoes(saida) == []
+
+
+def test_fta_modo_nao_lido_com_all_concedido_nao_recusa():
+    pool = [_gatilho(), _fta(), _escrita_modo_nao_lido(), _grant(["ALL"])]
+    assert build_missing_grant(pool) == []
 
 
 def test_escrita_v1_sem_modo_e_sem_marca_continua_write():

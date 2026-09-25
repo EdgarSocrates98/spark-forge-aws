@@ -756,6 +756,22 @@ def _modo_do_terminal(node: ast.Call, method: str) -> tuple[str | None, bool, An
     return mode, unresolved, valor
 
 
+def _modo_da_cadeia(mode_calls: Sequence[ast.Call]) -> tuple[str | None, bool]:
+    """`(modo, nao_lido)` dos `.mode(saveMode)` da cadeia. Cada um sobrescreve o
+    anterior no writer, e `mode(None)` nao faz nada (`DataFrameWriter.mode` em
+    `readwriter.py`): vence o ultimo que impoe modo, o mais perto do terminal."""
+    for call in reversed(mode_calls):
+        valor = _argumento(call, 0, "saveMode")
+        if valor is _DESEMPACOTADO:
+            return None, True
+        if valor is None:
+            continue
+        mode, unresolved = _modo_literal(valor)
+        if mode is not None or unresolved:
+            return mode, unresolved
+    return None, False
+
+
 def _write_fact(
     node: ast.Call,
     method: str,
@@ -767,20 +783,17 @@ def _write_fact(
 ) -> Fact:
     attrs: dict[str, Any] = {"api": _write_api(methods)}
 
-    mode_call = next(
-        (
-            c
-            for c in _chain_calls(node)
-            if isinstance(c.func, ast.Attribute) and c.func.attr == "mode"
-        ),
-        None,
-    )
+    mode_calls = [
+        c
+        for c in _chain_calls(node)
+        if c is not node and isinstance(c.func, ast.Attribute) and c.func.attr == "mode"
+    ]
     # Precedencia: o argumento do terminal, depois o `.mode(...)` da cadeia, depois o
     # nome do terminal V2. Um modo que vem de expressao nao literal sai como
     # `mode_unresolved: true`, sem valor inventado em `mode`.
     mode, unresolved, mode_arg = _modo_do_terminal(node, method)
-    if mode is None and not unresolved and mode_call is not None and mode_call.args:
-        mode, unresolved = _modo_literal(mode_call.args[0])
+    if mode is None and not unresolved:
+        mode, unresolved = _modo_da_cadeia(mode_calls)
     if mode is None and method in _WRITE_MODE_NAMES:
         mode, unresolved = method, False
     if mode is not None:
@@ -792,7 +805,7 @@ def _write_fact(
     # literal ("append", "overwrite"...) nao e um destino e nao pode vazar para
     # `target` quando o caminho (ex.: `.parquet(caminho_var)`) nao e literal.
     terminal_args = [a for a in node.args if a is not mode_arg]
-    elos = [c for c in _chain_calls(node) if c is not mode_call and c is not node]
+    elos = [c for c in _chain_calls(node) if c not in mode_calls and c is not node]
     target = next(
         (v for a in terminal_args if isinstance(v := _literal(a), str)), None
     ) or _first_literal_str_arg(elos)
