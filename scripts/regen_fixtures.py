@@ -58,6 +58,7 @@ from sparkforge.facts.lakeformation import build_lakeformation  # noqa: E402
 from sparkforge.facts.lakeformation_grants import (  # noqa: E402
     extract_lakeformation_tree,
 )
+from sparkforge.facts.lakeformation_missing_grant import build_missing_grant  # noqa: E402
 from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
 from sparkforge.facts.parquet_footer import extract_parquet_footer  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
@@ -683,8 +684,17 @@ def regen_cloudwatch_logs(directory: Path) -> None:
             facts.extend(extract_s3_listing_path(dump, repo_root=input_dir))
     if any(input_dir.glob("*.py")):
         facts.extend(extract_migration_tree(input_dir, repo_root=input_dir))
+    # O artefato de `collect lakeformation` entra sob guarda de DIRETORIO, pela mesma
+    # razao de `catalog/` e `s3/`: `*.json` na raiz ja e o log.
+    permissoes = input_dir / "lf"
+    if permissoes.is_dir():
+        facts.extend(extract_lakeformation_tree(permissoes, repo_root=input_dir))
     facts.extend(build_lakeformation(facts))
     facts.extend(build_signature_matches(facts))
+    # `build_missing_grant` vem por ULTIMO: ele le o match de ERR-LF-001, que so
+    # existe depois do matcher, e o modelo de acesso, que so existe depois de
+    # `build_lakeformation`.
+    facts.extend(build_missing_grant(facts))
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 

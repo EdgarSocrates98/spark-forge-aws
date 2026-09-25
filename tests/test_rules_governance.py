@@ -162,7 +162,9 @@ class TestAsQuatroAreasDeGovernanca:
         import collections
 
         por_area = collections.Counter(area_of(r["id"]) for r in _no_recorte())
-        assert por_area["SF-LF"] == 10
+        # 10 -> 11 em 2026-09-25 com `SF-LF-011`, a permissão que falta atrás de
+        # `ERR-LF-001`. Entra no recorte pela ÁREA.
+        assert por_area["SF-LF"] == 11
         assert por_area["SF-IAM"] == 3
         assert por_area["SF-KMS"] == 2
         # 1 -> 3 em 2026-09-10 com `SF-XACC-002` e `SF-XACC-003`, as duas do
@@ -172,7 +174,7 @@ class TestAsQuatroAreasDeGovernanca:
         # `SF-ERR` que julgam negação em runtime, e quatro de segredo em texto
         # claro (`security.move_secret_to_manager`).
         assert por_area["SF-ERR"] == 5
-        assert sum(por_area.values()) == 27
+        assert sum(por_area.values()) == 28
 
 
 def test_o_arquivo_de_vocabulario_nao_move_a_contagem_de_regras():

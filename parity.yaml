@@ -684,7 +684,9 @@ capabilities:
   - name: trace the access path to a governed table as a graph
     tools: [sparkforge_lakeformation_access_graph]
     cli: [lakeformation access-graph]
-    knowledge: [knowledge/glue/lakeformation-fgac.md]
+    # A perna lf_grant cobra a operacao pelo fact `lakeformation.missing_grant`, que le
+    # a tabela operacao -> permissao citada.
+    knowledge: [knowledge/glue/lakeformation-fgac.md, knowledge/glue/lakeformation-permissions.yaml]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

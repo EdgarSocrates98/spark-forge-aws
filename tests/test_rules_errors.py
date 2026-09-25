@@ -420,7 +420,12 @@ class TestOQueAAreaNaoCarrega:
         tres nomeiam `pyspark.skew_join`, `eventlog.executor_oom`,
         `spark.plan.cartesian_product`, `iceberg.commit_conflict`,
         `iceberg.concurrent_writer`, `lakeformation.missing_grant` e
-        `ram.unaccepted_share` -- e NENHUM deles e emitido por este motor.
+        `ram.unaccepted_share` -- e, medido em 2026-09-09, NENHUM deles era
+        emitido por este motor. Desde 2026-09-21 `lakeformation.missing_grant`
+        e emitido (`sparkforge/facts/lakeformation_missing_grant.py`) e
+        consumido por `SF-LF-011`, e `ram.unaccepted_share` foi para
+        `evidence_out_of_reach` de `ERR-LF-001`; `SF-ERR-006` segue com o
+        substituto medido.
 
         Copiar esses nomes para `requires_facts` produziria regra que nunca
         dispara: `requires_facts` insatisfeito para sempre, `when` mudo,
@@ -481,9 +486,11 @@ def test_o_catalogo_de_assinaturas_nao_encolheu_sem_aviso():
     # Formation -- ERR-LF-002 a ERR-LF-005 --, e elas sao as primeiras do
     # catalogo cujo `evidence_required` nomeia kind que o motor EMITE
     # (`lakeformation.access_model`, `lakeformation.filesystem`). ERR-LF-001,
-    # a mais antiga da familia, nomeia `lakeformation.missing_grant` e
-    # `ram.unaccepted_share`, que nao existem -- e por isso `SF-ERR-006` teve
-    # de usar um substituto medido.
+    # a mais antiga da familia, nomeava `lakeformation.missing_grant` e
+    # `ram.unaccepted_share`, que nao existiam -- e por isso `SF-ERR-006` teve
+    # de usar um substituto medido. Desde 2026-09-21 `lakeformation.missing_grant`
+    # e emitido e `SF-LF-011` o consome; `ram.unaccepted_share` foi para
+    # `evidence_out_of_reach`.
     # 23 desde 2026-09-09 (Lote B). As SEIS acrescidas sao as do §7 do prompt
     # de origem que a FONTE sustenta -- e as DOZE restantes foram recusadas
     # com motivo, no cabecalho de `rules/catalog/errors.yaml`: wrapper que

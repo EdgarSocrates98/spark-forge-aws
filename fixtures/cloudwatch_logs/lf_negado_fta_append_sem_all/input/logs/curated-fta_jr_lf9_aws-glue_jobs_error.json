@@ -1,0 +1,22 @@
+{
+  "end": "2026-09-21T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1790000000500,
+      "logStreamName": "jr_lf9",
+      "message": "2026-09-21 10:08:04,910 ERROR [main] lakeformation.Client: AccessDeniedException: Insufficient Lake Formation permission(s) on analytics.dim_cliente",
+      "timestamp": 1790000000000
+    }
+  ],
+  "events_collected": 1,
+  "filter_pattern": "?ERROR ?Exception",
+  "job_name": "curated-fta",
+  "job_run_id": "jr_lf9",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_lf9",
+  "max_events": 500,
+  "start": "2026-09-21T10:00:00Z",
+  "status": "ok",
+  "truncated": false
+}

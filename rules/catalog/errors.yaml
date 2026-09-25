@@ -68,6 +68,11 @@
 #                 `iceberg.concurrent_writer`                     NENHUM EXISTE
 #   ERR-LF-001    `lakeformation.missing_grant`,
 #                 `ram.unaccepted_share`                          NENHUM EXISTE
+#   ATUALIZADO em 2026-09-21 (docs/sdd/LF_GRANTS/): `lakeformation.missing_grant`
+#   passou a ser emitido por `sparkforge/facts/lakeformation_missing_grant.py`, e
+#   `SF-LF-011` o consome. `ram.unaccepted_share` continua sem coletor e foi movido
+#   para `evidence_out_of_reach` da assinatura. `SF-ERR-006` fica como esta: ela
+#   dispara sem grant coletado, que e o caso que o fact novo recusa por nome.
 #
 # As assinaturas foram escritas antes do motor ter esses extratores, e os nomes
 # delas são o que alguém ESPERAVA que existisse. Copiá-los para `requires_facts`
@@ -896,13 +901,17 @@ rules:
       tem um elo faltando, e que ele já custou este run.
 
 
-      **O que a regra NÃO afirma:** QUAL elo. A assinatura `ERR-LF-001` declara
-      `lakeformation.missing_grant` e `ram.unaccepted_share` em
-      `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que
-      este motor emite -- nada aqui lê Lake Formation nem AWS RAM, e o estado
-      dos dois vive em recursos de OUTRA conta, fora do alcance do `.tf` do
-      job. Por isso a ação é `investigate`: a regra localiza a cadeia a
-      conferir, e é o operador que a percorre.
+      **O que a regra NÃO afirma:** QUAL elo. Esta regra lê só a assinatura e o
+      Terraform, e o estado da cadeia vive em recursos de OUTRA conta, fora do
+      alcance do `.tf` do job. Por isso a ação é `investigate`: a regra
+      localiza a cadeia a conferir, e é o operador que a percorre. A assinatura
+      `ERR-LF-001` exige `lakeformation.missing_grant` em `evidence_required`,
+      e desde 2026-09-21 esse kind é emitido quando a operação do código foi
+      lida e o lado dela foi medido: no lado do Lake Formation, o grant
+      coletado; no lado IAM (escrita sob FGAC), o registro da localização, o
+      runtime e a decisão de IAM do role. Com ele, `SF-LF-011` nomeia a
+      permissão. `ram.unaccepted_share` saiu para `evidence_out_of_reach`:
+      nada aqui lê o AWS RAM.
 
 
       A irmã é `SF-XACC-001`, que marca a mesma dependência a partir do
@@ -1778,6 +1787,12 @@ rules:
   # `lakeformation.filesystem`, que `sparkforge/facts/lakeformation.py` EMITE, e
   # o `evidence_required` da assinatura e o `requires_facts` da regra passam a
   # dizer a mesma coisa.
+  #
+  #   ATUALIZADO em 2026-09-21 (docs/sdd/LF_GRANTS/): `lakeformation.missing_grant`
+  #   passou a ser emitido por `sparkforge/facts/lakeformation_missing_grant.py`, e
+  #   `SF-LF-011` o consome. `ram.unaccepted_share` continua sem coletor e foi movido
+  #   para `evidence_out_of_reach` da assinatura. `SF-ERR-006` fica como esta: ela
+  #   dispara sem grant coletado, que e o caso que o fact novo recusa por nome.
   #
   # PROCEDENCIA DO TEXTO, dita sem folga: a pagina de troubleshooting do AWS
   # Glue NAO publica string de erro literal -- ela publica TITULO DE SINTOMA.

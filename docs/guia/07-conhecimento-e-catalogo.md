@@ -17,7 +17,12 @@ físico, matriz de runtime Glue, worker types e capacidade, argumentos de job,
 métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR
 on EC2, configuração de application EMR Serverless, matriz Databricks Runtime →
 Spark (Databricks como plataforma declarada), superfície corrente dos frameworks
-de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
+de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg, e Lake
+Formation: os dois modelos de acesso (FGAC e Full Table Access) em
+`knowledge/glue/lakeformation-fgac.md`, a matriz de capacidade por versão de Glue
+em `knowledge/glue/lakeformation-matrix.yaml` e, desde 2026-09-25, a tabela que
+diz qual permissão cada operação do job exige em cada modelo, com a frase da AWS
+por trás de cada linha, em `knowledge/glue/lakeformation-permissions.yaml`.
 
 Ler [`knowledge/cross-service-constraints.md`](../../knowledge/cross-service-constraints.md)
 antes de recomendar mudança de versão, formato de tabela ou particionamento — são
@@ -35,9 +40,9 @@ em [Migração de versão](usos/migracao-de-versao.md).
 
 ## O catálogo de regras
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **168** regras de
+`rules/catalog/` é a forma **executável** desse conhecimento: **169** regras de
 diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data —
-**168 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
+**169 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
 (`executable: false`) saíram em 2026-09-19, porque nomeavam área sem julgar nada
 (feature `docs/sdd/SF_STUBS/`) —, mais **43** rotas determinísticas em `routing.yaml`. Funciona
 como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da
@@ -49,7 +54,7 @@ produz — e reprova também as frases deste manual que publicam contagem.
 
 ## As áreas
 
-As 168 executáveis se distribuem em 31 áreas (medido em 2026-09-20 com `area_of`):
+As 169 executáveis se distribuem em 31 áreas (medido em 2026-09-25 com `area_of`):
 `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12
 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6
 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura
@@ -58,7 +63,7 @@ Glue), `SF-GRAPH` 6 (grafo com GraphFrames), `SF-UI` 7 (event log), `SF-ATH` 5
 Databricks), `SF-FVAL` 5 (validação funcional), `SF-ICE` 8 (Iceberg, incluindo a
 classe do catálogo de sessão, a operação SQL que exige as extensões e o conflito de
 versão da biblioteca), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4
-(validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-LF` 10 (Lake Formation FGAC e
+(validação de dados), `SF-EMRK` 4 (EMR on EKS), `SF-LF` 11 (Lake Formation FGAC e
 FTA), `SF-MIG` 4 (migração entre versões), `SF-PLAN` 4 (plano físico), `SF-SPARK4` 4
 (fronteira do Spark 4), `SF-AIRFLOW` 4 (como o DAG do Apache Airflow dispara o job Glue), `SF-SFNX` 3 (o que a execução do Step Functions registrou), `SF-SFN` 4 (como o AWS
 Step Functions dispara o job Glue), `SF-KMS` 2, `SF-TIMEOUT` 2, `SF-WASTE` 2, `SF-IAM` 3 (a
@@ -72,7 +77,7 @@ artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## O bloco `action:`
 
-Cada uma das 168 carrega um bloco **`action:`** — `kind` (70 no vocabulário
+Cada uma das 169 carrega um bloco **`action:`** — `kind` (70 no vocabulário
 fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`),
 `requires_absent`, `moves` (23 eixos, cada um `nature: measure` ou `risk`) e
 `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem

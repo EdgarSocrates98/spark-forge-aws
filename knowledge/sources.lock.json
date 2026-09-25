@@ -1760,6 +1760,18 @@
       ],
       "sha256": "7f929115bea701119d35cd25167dbd5fb7f3054b672510b18e0c9844c0e19fe6"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/getting-started-min-privs-job.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-25"
+      ],
+      "rules": [
+        "SF-LF-011"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -1874,7 +1886,8 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-09"
+        "2026-09-09",
+        "2026-09-21"
       ],
       "rules": [
         "SF-ERR-015",
@@ -1882,9 +1895,9 @@
         "SF-LF-004",
         "SF-LF-005",
         "SF-LF-007",
-        "SF-LF-009"
-      ],
-      "sha256": "59914c71e2bf80b1ede35dbdc4a5187ddee41c6c3ace97b95a98b255ce1c5d2d"
+        "SF-LF-009",
+        "SF-LF-011"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
       "checked_at": "2026-09-21",
@@ -1895,7 +1908,8 @@
       "retrieved": [
         "2026-08-22",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-21"
       ],
       "rules": [
         "SF-ERR-014",
@@ -1908,6 +1922,7 @@
         "SF-LF-008",
         "SF-LF-009",
         "SF-LF-010",
+        "SF-LF-011",
         "SF-XACC-002",
         "SF-XACC-003"
       ],
@@ -2042,6 +2057,16 @@
         "SF-LF-007"
       ],
       "sha256": "5ac36bdf5661a23a5f34db43cb68dc823634d4fb62de2dc46076d7dae4423160"
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-21"
+      ],
+      "rules": [
+        "SF-LF-011"
+      ]
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html": {
       "checked_at": "2026-09-21",

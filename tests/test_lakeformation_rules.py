@@ -31,11 +31,20 @@ import copy
 import pytest
 
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
 from sparkforge.facts.terraform import extract_terraform, extract_terraform_tree
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 from sparkforge.rules.version_scope import in_scope
 from tests.test_fixtures_golden_infra_code import FIXTURES, run_fixture
+from tests.test_lakeformation_missing_grant import (
+    cenario_fgac_escrita_negada,
+    cenario_fgac_escrita_registrada,
+    cenario_fta_append_sem_all,
+    cenario_fta_leitura_sem_select,
+    cenario_grant_que_cobre,
+    cenario_sem_operacao,
+)
 
 POSITIVO_JAR = FIXTURES / "fgac_com_jar_extra"
 POSITIVO_STREAM = FIXTURES / "fgac_em_job_streaming"
@@ -371,3 +380,27 @@ class TestSFLF004FTASemEMRFS:
             "com.exemplo.MeuResolver",
         )
         assert "SF-LF-004" not in _judge_source_em(src, RUNTIME_GLUE_51)
+
+
+# ---------------------------------------------------------------------------
+# SF-LF-011 -- a falha observada (ERR-LF-001) cruzada com a permissao medida.
+# Os cenarios sao os do extrator: tres acusam (AC1, AC2, AC4) e tres nao (AC3,
+# AC5, AC8). `runtime_scope: {}` -- o runtime do judge nao decide nada aqui.
+
+
+def _sf_lf_011_dispara(pool) -> bool:
+    facts = list(pool) + build_missing_grant(pool)
+    return "SF-LF-011" in {f.rule_id for f in judge(facts, load_catalog(), RUNTIME_GLUE_50)}
+
+
+def test_sf_lf_011_dispara_so_com_permissao_nomeada():
+    disparam = (
+        cenario_fta_append_sem_all,
+        cenario_fta_leitura_sem_select,
+        cenario_fgac_escrita_negada,
+    )
+    for cenario in disparam:
+        assert _sf_lf_011_dispara(cenario()), cenario.__name__
+    calam = (cenario_grant_que_cobre, cenario_fgac_escrita_registrada, cenario_sem_operacao)
+    for cenario in calam:
+        assert not _sf_lf_011_dispara(cenario()), cenario.__name__

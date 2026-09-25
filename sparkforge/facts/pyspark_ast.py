@@ -74,6 +74,14 @@ _WRITE_TERMINALS = frozenset(
     }
 )
 _WRITE_MODE_NAMES = frozenset({"append", "overwrite", "overwritePartitions"})
+# Posicao do parametro `mode` nos terminais V1 que o aceitam, pelas assinaturas de
+# `DataFrameWriter` em `pyspark/sql/readwriter.py`: save/saveAsTable(path|name, format,
+# mode, ...) e parquet/csv/json/orc(path, mode, ...). Cada um chama `self.mode(mode)`
+# antes de escrever, e `mode(None)` nao faz nada: o argumento dado vence o `.mode(...)`
+# da cadeia. `insertInto(tableName, overwrite)` e tratado a parte.
+_MODE_PARAM_POS = {"save": 2, "saveAsTable": 2, "parquet": 1, "csv": 1, "json": 1, "orc": 1}
+# Argumento que um `*args`/`**kwargs` pode carregar: o parse nao sabe o valor.
+_DESEMPACOTADO = object()
 _ACTIONS = frozenset(
     {
         "collect",
@@ -693,6 +701,77 @@ def _write_api(methods: Sequence[str]) -> str:
     return "dataframe_writer_v1"
 
 
+def _argumento(node: ast.Call, pos: int, nome: str) -> Any:
+    """O no do parametro `nome` (posicao `pos`) na chamada; `None` quando ausente;
+    `_DESEMPACOTADO` quando um `*args` antes dele ou um `**kwargs` pode carrega-lo."""
+    for kw in node.keywords:
+        if kw.arg == nome:
+            return kw.value
+    for i, arg in enumerate(node.args):
+        if isinstance(arg, ast.Starred):
+            return _DESEMPACOTADO
+        if i == pos:
+            return arg
+    if any(kw.arg is None for kw in node.keywords):
+        return _DESEMPACOTADO
+    return None
+
+
+def _modo_literal(valor: ast.AST) -> tuple[str | None, bool]:
+    """`(modo, nao_lido)` de um argumento de modo; `None` literal nao impoe modo."""
+    if isinstance(valor, ast.Constant) and valor.value is None:
+        return None, False
+    lit = _literal(valor)
+    if isinstance(lit, str):
+        return lit, False
+    return None, True
+
+
+def _modo_do_terminal(node: ast.Call, method: str) -> tuple[str | None, bool, Any]:
+    """`(modo, nao_lido, no_do_argumento)` que o proprio terminal impoe.
+
+    `insertInto(t, overwrite)`: literal verdadeiro e "overwrite", falso e "append"
+    (`self.mode("overwrite" if overwrite else "append")` em `readwriter.py`); sem
+    `overwrite`, o terminal nao impoe modo, e o default dele e append ("Disabled by
+    default", docstring de `insertInto`)."""
+    if method == "insertInto":
+        valor = _argumento(node, 1, "overwrite")
+        if valor is _DESEMPACOTADO:
+            return None, True, None
+        if valor is None or (isinstance(valor, ast.Constant) and valor.value is None):
+            return None, False, None
+        lit = _literal(valor)
+        if lit is None:
+            return None, True, valor
+        return ("overwrite" if lit else "append"), False, valor
+    pos = _MODE_PARAM_POS.get(method)
+    if pos is None:
+        return None, False, None
+    valor = _argumento(node, pos, "mode")
+    if valor is _DESEMPACOTADO:
+        return None, True, None
+    if valor is None:
+        return None, False, None
+    mode, unresolved = _modo_literal(valor)
+    return mode, unresolved, valor
+
+
+def _modo_da_cadeia(mode_calls: Sequence[ast.Call]) -> tuple[str | None, bool]:
+    """`(modo, nao_lido)` dos `.mode(saveMode)` da cadeia. Cada um sobrescreve o
+    anterior no writer, e `mode(None)` nao faz nada (`DataFrameWriter.mode` em
+    `readwriter.py`): vence o ultimo que impoe modo, o mais perto do terminal."""
+    for call in reversed(mode_calls):
+        valor = _argumento(call, 0, "saveMode")
+        if valor is _DESEMPACOTADO:
+            return None, True
+        if valor is None:
+            continue
+        mode, unresolved = _modo_literal(valor)
+        if mode is not None or unresolved:
+            return mode, unresolved
+    return None, False
+
+
 def _write_fact(
     node: ast.Call,
     method: str,
@@ -704,25 +783,32 @@ def _write_fact(
 ) -> Fact:
     attrs: dict[str, Any] = {"api": _write_api(methods)}
 
-    mode_call = next(
-        (
-            c
-            for c in _chain_calls(node)
-            if isinstance(c.func, ast.Attribute) and c.func.attr == "mode"
-        ),
-        None,
-    )
-    mode = _first_literal_str_arg([mode_call]) if mode_call is not None else None
+    mode_calls = [
+        c
+        for c in _chain_calls(node)
+        if c is not node and isinstance(c.func, ast.Attribute) and c.func.attr == "mode"
+    ]
+    # Precedencia: o argumento do terminal, depois o `.mode(...)` da cadeia, depois o
+    # nome do terminal V2. Um modo que vem de expressao nao literal sai como
+    # `mode_unresolved: true`, sem valor inventado em `mode`.
+    mode, unresolved, mode_arg = _modo_do_terminal(node, method)
+    if mode is None and not unresolved:
+        mode, unresolved = _modo_da_cadeia(mode_calls)
     if mode is None and method in _WRITE_MODE_NAMES:
-        mode = method
+        mode, unresolved = method, False
     if mode is not None:
         attrs["mode"] = mode
+    elif unresolved:
+        attrs["mode_unresolved"] = True
 
-    # Alvo procurado excluindo o elo `.mode(...)`: seu literal ("append",
-    # "overwrite"...) nao e um destino e nao pode vazar para `target` quando o
-    # argumento do call terminal (ex.: `.parquet(caminho_var)`) nao e literal.
-    non_mode_calls = [c for c in _chain_calls(node) if c is not mode_call]
-    target = _first_literal_str_arg([node]) or _first_literal_str_arg(non_mode_calls)
+    # Alvo procurado excluindo o elo `.mode(...)` e o modo posicional do terminal: o
+    # literal ("append", "overwrite"...) nao e um destino e nao pode vazar para
+    # `target` quando o caminho (ex.: `.parquet(caminho_var)`) nao e literal.
+    terminal_args = [a for a in node.args if a is not mode_arg]
+    elos = [c for c in _chain_calls(node) if c not in mode_calls and c is not node]
+    target = next(
+        (v for a in terminal_args if isinstance(v := _literal(a), str)), None
+    ) or _first_literal_str_arg(elos)
     if target is not None:
         attrs["target"] = target
 

@@ -251,3 +251,122 @@ class TestExtractTree:
         bom_partitioning = facts_of("pyspark.partitioning", bom_facts)[0]
         assert plain_partitioning.id == bom_partitioning.id
         assert [f.to_dict() for f in plain_facts] == [f.to_dict() for f in bom_facts]
+
+
+def _write(src):
+    got = facts_of("pyspark.write", extract_source(src, "job.py"))
+    assert len(got) == 1, got
+    return got[0].attrs
+
+
+class TestWriteMode:
+    """O modo que o terminal impoe: `mode=` (ou a posicao dele) e `insertInto(overwrite=)`.
+
+    Em `pyspark/sql/readwriter.py`, save/saveAsTable/parquet/csv/json/orc chamam
+    `self.mode(mode)` antes de escrever, e `mode(None)` nao faz nada; `insertInto` faz
+    `self.mode("overwrite" if overwrite else "append")` quando `overwrite` nao e None.
+    O argumento do terminal vence o `.mode(...)` da cadeia.
+    """
+
+    def test_kwarg_mode_literal_is_recorded(self):
+        attrs = _write('df.write.parquet("s3://b/p", mode="overwrite")\n')
+        assert attrs["mode"] == "overwrite"
+        assert attrs["target"] == "s3://b/p"
+        assert "mode_unresolved" not in attrs
+
+    def test_kwarg_mode_on_save_as_table(self):
+        assert _write('df.write.saveAsTable("db.t", mode="append")\n')["mode"] == "append"
+
+    def test_kwarg_mode_beats_chain_mode(self):
+        attrs = _write('df.write.mode("append").save("s3://b/p", mode="overwrite")\n')
+        assert attrs["mode"] == "overwrite"
+
+    def test_positional_mode_is_recorded_and_is_not_the_target(self):
+        attrs = _write('df.write.parquet(caminho, "overwrite")\n')
+        assert attrs["mode"] == "overwrite"
+        assert "target" not in attrs
+        attrs = _write('df.write.save("s3://b/p", "parquet", "append")\n')
+        assert attrs["mode"] == "append"
+
+    def test_kwarg_mode_none_is_a_no_op(self):
+        attrs = _write('df.write.mode("append").parquet("s3://b/p", mode=None)\n')
+        assert attrs["mode"] == "append"
+        attrs = _write('df.write.parquet("s3://b/p", mode=None)\n')
+        assert "mode" not in attrs and "mode_unresolved" not in attrs
+
+    def test_insert_into_overwrite_literal(self):
+        assert _write('df.write.insertInto("db.t", overwrite=True)\n')["mode"] == "overwrite"
+        assert _write('df.write.insertInto("db.t", True)\n')["mode"] == "overwrite"
+
+    def test_insert_into_overwrite_false_is_append_and_beats_chain(self):
+        attrs = _write('df.write.mode("overwrite").insertInto("db.t", overwrite=False)\n')
+        assert attrs["mode"] == "append"
+        assert attrs["target"] == "db.t"
+
+    def test_insert_into_overwrite_variable_is_unresolved(self):
+        attrs = _write('df.write.insertInto("db.t", overwrite=flag)\n')
+        assert "mode" not in attrs
+        assert attrs["mode_unresolved"] is True
+
+    def test_insert_into_overwrite_literal_beats_chain_variable(self):
+        attrs = _write('df.write.mode(m).insertInto("db.t", overwrite=True)\n')
+        assert attrs["mode"] == "overwrite"
+        assert "mode_unresolved" not in attrs
+
+    def test_chain_mode_variable_is_unresolved(self):
+        attrs = _write('df.write.mode(m).parquet("s3://b/p")\n')
+        assert "mode" not in attrs
+        assert attrs["mode_unresolved"] is True
+        assert attrs["target"] == "s3://b/p"
+
+    def test_kwarg_mode_variable_is_unresolved_even_with_chain_literal(self):
+        attrs = _write('df.write.mode("append").parquet("s3://b/p", mode=m)\n')
+        assert "mode" not in attrs
+        assert attrs["mode_unresolved"] is True
+
+    def test_unpacked_kwargs_may_carry_mode(self):
+        attrs = _write('df.write.save("s3://b/p", **opcoes)\n')
+        assert "mode" not in attrs
+        assert attrs["mode_unresolved"] is True
+
+    def test_shape_unchanged_without_mode(self):
+        assert _write('df.write.parquet("s3://b/p")\n') == {
+            "api": "dataframe_writer_v1",
+            "target": "s3://b/p",
+        }
+        assert _write('df.write.insertInto("db.t")\n') == {
+            "api": "dataframe_writer_v1",
+            "target": "db.t",
+        }
+
+    def test_writer_v2_overwrite_condition_is_not_a_mode(self):
+        attrs = _write('df.writeTo("db.t").overwrite(cond)\n')
+        assert attrs["mode"] == "overwrite"
+        assert "mode_unresolved" not in attrs
+
+    def test_chain_save_mode_kwarg_literal_is_recorded(self):
+        # `DataFrameWriter.mode(saveMode)`: o nome do parametro e `saveMode`.
+        attrs = _write('df.write.mode(saveMode="overwrite").parquet(caminho)\n')
+        assert attrs["mode"] == "overwrite"
+        assert "target" not in attrs
+        assert "mode_unresolved" not in attrs
+
+    def test_chain_save_mode_kwarg_variable_or_unpacked_is_unresolved(self):
+        for src in (
+            'df.write.mode(saveMode=m).parquet("s3://b/p")\n',
+            'df.write.mode(*modos).parquet("s3://b/p")\n',
+            'df.write.mode(**opcoes).parquet("s3://b/p")\n',
+        ):
+            attrs = _write(src)
+            assert "mode" not in attrs, src
+            assert attrs["mode_unresolved"] is True, src
+
+    def test_last_chain_mode_wins(self):
+        # Cada `.mode(...)` sobrescreve o anterior no writer: vence o mais perto do
+        # terminal. O literal do que perdeu nao e destino.
+        attrs = _write('df.write.mode("overwrite").mode("append").parquet(caminho)\n')
+        assert attrs["mode"] == "append"
+        assert "target" not in attrs
+        attrs = _write('df.write.mode("append").mode("overwrite").parquet(caminho)\n')
+        assert attrs["mode"] == "overwrite"
+        assert "target" not in attrs

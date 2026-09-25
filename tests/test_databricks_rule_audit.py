@@ -67,6 +67,15 @@ SO_AWS = {
         "le o DAG do Airflow, e as regras julgam so o `GlueJobOperator` (StartJobRun "
         "da API do AWS Glue); deriva `af.glue_job_link` do `aws_glue_job` do Terraform"
     ),
+    # O gatilho e `error.signature_match` (generico), mas o fact so sai cruzando
+    # `ERR-LF-001` com `lakeformation.grant`/`registered_location` e
+    # `lakeformation.access_model`, de extratores desta lista. Sem esta entrada,
+    # SF-LF-011 (`runtime_scope: {}`, o gate e `requires_facts`) contaria como
+    # alcancavel num job Databricks. Acrescentada em 2026-09-25 (LF_GRANTS).
+    "lakeformation_missing_grant": (
+        "deriva de `ERR-LF-001` cruzado com grant e registro do Lake Formation "
+        "(`collect lakeformation`) e com o modelo de acesso declarado no job"
+    ),
     "utilization": (
         "deriva de `glue.metric` (seu `SOURCE_KINDS`), a metrica do Glue no CloudWatch; "
         "sem ela o `fuse` nem deriva"

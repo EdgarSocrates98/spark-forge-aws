@@ -73,6 +73,8 @@ from sparkforge.facts.consumers import extract_consumers_path
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
 from sparkforge.facts.lakeformation import build_lakeformation
+from sparkforge.facts.lakeformation_grants import extract_lakeformation_tree
+from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
 from sparkforge.facts.migration import extract_migration_tree
 from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
 from sparkforge.facts.s3_listing import extract_s3_listing_path
@@ -127,6 +129,11 @@ REQUIRED_FIXTURES = {
     "metadata_fetch_failed_com_shuffle",
     "upgrade_exception_com_conf_legada",
     "file_not_found_com_listagem",
+    # LF_GRANTS (2026-09-21): o par que prende SF-LF-011 pelo caminho inteiro --
+    # log com ERR-LF-001, Terraform com FTA, codigo com a escrita e o artefato de
+    # `collect lakeformation` em `input/lf/`. A negativa tem o MESMO log e grant ALL.
+    "lf_negado_fta_append_sem_all",
+    "lf_negado_fta_grant_all",
 }
 
 # As QUATRO de `knowledge/errors/` que sao trecho de MENSAGEM e nao classe de
@@ -212,8 +219,17 @@ def _derive(directory: Path):
     # artefato: ele deriva o companheiro que as regras da familia de Lake
     # Formation exigem (`lakeformation.access_model`,
     # `lakeformation.filesystem`), e o matcher nao depende dele.
+    # O artefato de `collect lakeformation` entra sob guarda de DIRETORIO, pela mesma
+    # razao de `catalog/` e `s3/`: `*.json` na raiz ja e o log.
+    permissoes = entrada / "lf"
+    if permissoes.is_dir():
+        facts.extend(extract_lakeformation_tree(permissoes, repo_root=entrada))
     facts.extend(build_lakeformation(facts))
     facts.extend(build_signature_matches(facts))
+    # `build_missing_grant` vem por ULTIMO: ele le o match de ERR-LF-001, que so
+    # existe depois do matcher, e o modelo de acesso, que so existe depois de
+    # `build_lakeformation`.
+    facts.extend(build_missing_grant(facts))
     return facts
 
 

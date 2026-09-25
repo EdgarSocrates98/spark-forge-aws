@@ -22,6 +22,7 @@ expects_kinds:
   - cloudwatch.log_event
   - cloudwatch.logs.analyzed
   - error.signature_match
+  - lakeformation.missing_grant.unresolved
   - tf.attribute
   - tf.module_analyzed
   - tf.observability.spark_ui

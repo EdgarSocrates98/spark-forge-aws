@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from sparkforge.facts.lakeformation_missing_grant import casa_tabela
+
 
 @dataclass
 class PermissionEdge:
@@ -304,6 +306,33 @@ def build_access_graph(
                 STATUS_UNRESOLVED,
                 "nenhum `lakeformation.grant` no case para este par; destravaria: "
                 "`collect lakeformation` sobre " + target_table,
+            )
+        )
+    elif faltas_do_par := [
+        f
+        for f in lista
+        if getattr(f, "kind", "") == "lakeformation.missing_grant"
+        and _attrs(f).get("side") == "lf"
+        and casa_tabela(str(_attrs(f).get("resource", "")), target_table)
+        and _attrs(f).get("principal") == principal_arn
+    ]:
+        # D8: com o fact de LF_GRANTS no case, o que a perna exige vem da OPERACAO
+        # medida, e nao do SELECT fixo abaixo -- que acusaria leitura num job que
+        # falhou escrevendo. O nome casa pela MESMA funcao do fact (`casa_tabela`: sem
+        # caixa, e pelo sufixo de segmentos com os dois lados qualificados).
+        exigidas = sorted(
+            {
+                f"{_attrs(f).get('operation')}: {', '.join(_attrs(f).get('missing') or [])}"
+                for f in faltas_do_par
+            }
+        )
+        arestas.append(
+            _aresta(
+                principal_arn,
+                alvo_lf,
+                "lf_grant",
+                STATUS_MISSING,
+                "grant medido nao cobre a operacao -- falta " + "; ".join(exigidas),
             )
         )
     elif any(_attrs(f).get("has_select") or _attrs(f).get("has_all") for f in do_par):
