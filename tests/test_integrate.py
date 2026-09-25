@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from sparkforge import __version__
-from sparkforge.integrate import integrate, render, sources
+from sparkforge.integrate import detach, integrate, render, sources
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -340,3 +340,54 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
     recusado = integrate("codex", home=tmp_path / "alheia")
     assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
     assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge]\ncommand = "meu"\n'
+
+
+def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
+    home = tmp_path / "home"
+    meu = home / "notas.txt"
+    meu.parent.mkdir(parents=True)
+    meu.write_text("do usuario\n", encoding="utf-8")
+    config_devin = home / ".config" / "devin" / "mcp_config.json"
+    config_devin.parent.mkdir(parents=True)
+    original_devin = {"mcpServers": {"outro": {"command": "node"}}, "extra": 1}
+    config_devin.write_text(json.dumps(original_devin), encoding="utf-8")
+    config_codex = home / ".codex" / "config.toml"
+    config_codex.parent.mkdir(parents=True)
+    config_codex.write_text(CONFIG_CODEX, encoding="utf-8")
+
+    for host in ("devin", "codex", "copilot"):
+        assert integrate(host, home=home, windows=False)["refused"] == []
+    editado = home / ".copilot" / "agents" / "sf-runtime-specialist.agent.md"
+    editado.write_text("meu ajuste\n", encoding="utf-8")
+    compartilhada = home / ".agents" / "skills" / "sdd-plan" / "SKILL.md"
+
+    # dry-run lista e nao remove nada.
+    antes = _foto(home)
+    ensaio = detach("devin", home=home, dry_run=True)
+    assert ensaio["hosts"][0]["status"] == "detached"
+    assert _foto(home) == antes
+
+    # Devin sai; a skill compartilhada fica, porque Codex e Copilot ainda a usam.
+    detach("devin", home=home)
+    assert not (home / ".config" / "devin" / "agents").exists()
+    assert json.loads(config_devin.read_text(encoding="utf-8")) == original_devin
+    assert compartilhada.is_file()
+
+    # Codex sai; o config.toml volta a ser o do usuario, byte a byte.
+    detach("codex", home=home)
+    assert config_codex.read_text(encoding="utf-8") == CONFIG_CODEX
+    assert not (home / ".codex" / "agents").exists()
+    assert compartilhada.is_file()
+
+    # Copilot sai por ultimo: a skill compartilhada vai junto; o editado fica.
+    resultado = detach("copilot", home=home)
+    assert {"host": "copilot", "reason": "editado_pelo_usuario",
+            "path": ".copilot/agents/sf-runtime-specialist.agent.md"} in resultado["refused"]
+    assert editado.read_text(encoding="utf-8") == "meu ajuste\n"
+    assert not compartilhada.exists()
+    assert not (home / ".agents").exists()
+    # O mcp-config.json do Copilot foi criado pelo integrate e ficou vazio: sai.
+    assert not (home / ".copilot" / "mcp-config.json").exists()
+    assert meu.read_text(encoding="utf-8") == "do usuario\n"
+    assert not (home / ".sparkforge" / "integrations.json").exists()
+    assert detach("devin", home=home)["hosts"][0]["status"] == "not_integrated"

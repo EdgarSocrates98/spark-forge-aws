@@ -94,4 +94,42 @@ def integrate(
     }
 
 
-__all__ = ["INTEGRAVEIS", "integrate"]
+def detach(alvo: str, *, home: Path, dry_run: bool = False) -> dict[str, Any]:
+    """Remove o que o manifesto registrou para `alvo` (D7).
+
+    So sai arquivo que ainda tem o sha256 gravado e que nenhum outro host usa;
+    o editado depois fica, como recusa `editado_pelo_usuario`. Da config de
+    usuario sai so a entrada que o integrate pos.
+    """
+    home = Path(home)
+    manifesto = writer.load_manifest(home)
+    relatorios: list[dict[str, Any]] = []
+    for nome in _nomes(alvo):
+        entrada = manifesto["hosts"].get(nome)
+        if entrada is None:
+            relatorios.append({"host": nome, "status": "not_integrated", "refused": []})
+            continue
+        registros = list(entrada.get("config") or [])
+        relatorio = writer.remove_owned(
+            home, manifesto, nome, list(entrada.get("files") or {}), dry_run=dry_run
+        )
+        relatorio["host"] = nome
+        relatorio["status"] = "detached"
+        relatorio["config"] = [
+            writer.revert_config(registro, home=home, dry_run=dry_run)
+            for registro in registros
+        ]
+        if not dry_run:
+            del manifesto["hosts"][nome]
+        relatorios.append(relatorio)
+    if not dry_run:
+        writer.drop_manifest_if_empty(home, manifesto)
+    return {
+        "dry_run": dry_run,
+        "manifest": writer.manifest_path(home).as_posix(),
+        "hosts": relatorios,
+        "refused": _recusas(relatorios),
+    }
+
+
+__all__ = ["INTEGRAVEIS", "detach", "integrate"]

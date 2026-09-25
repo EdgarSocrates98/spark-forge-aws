@@ -353,3 +353,87 @@ def apply_toml_config(
             caminho.write_bytes(novo.encode("utf-8"))
         _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
+
+
+# --------------------------------------------------------------------------
+# detach: devolver a config de usuario ao que era (D7)
+# --------------------------------------------------------------------------
+
+
+def _gravar_ou_apagar(caminho: Path, texto: str, *, apagar: bool, home: Path) -> None:
+    if apagar:
+        caminho.unlink()
+        _podar(caminho, home)
+    else:
+        caminho.write_bytes(texto.encode("utf-8"))
+
+
+def revert_json_config(
+    registro: dict[str, Any], *, home: Path, dry_run: bool
+) -> dict[str, Any]:
+    """Tira `mcpServers.sparkforge`; o resto do JSON fica. Se o integrate criou o
+    arquivo e ele ficou vazio, o arquivo sai."""
+    relativo = registro["path"]
+    caminho = Path(home) / relativo
+    if not caminho.is_file():
+        return {"path": relativo, "status": "absent"}
+    _, dados = _json_de_config(caminho)
+    if dados is None:
+        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
+    servidores = dict(dados.get("mcpServers") or {})
+    if "sparkforge" not in servidores:
+        return {"path": relativo, "status": "absent"}
+    del servidores["sparkforge"]
+    novo = dict(dados)
+    if servidores or registro.get("had_mcp_servers"):
+        novo["mcpServers"] = servidores
+    else:
+        novo.pop("mcpServers", None)
+    apagar = bool(registro.get("created")) and not novo
+    if not dry_run:
+        texto = json.dumps(novo, indent=2, ensure_ascii=False) + "\n"
+        _gravar_ou_apagar(caminho, texto, apagar=apagar, home=home)
+    return {"path": relativo, "status": "deleted" if apagar else "reverted"}
+
+
+def revert_toml_config(
+    registro: dict[str, Any], *, home: Path, dry_run: bool
+) -> dict[str, Any]:
+    """Tira o bloco marcado e a linha em branco que o integrate pos antes dele."""
+    relativo = registro["path"]
+    caminho = Path(home) / relativo
+    if not caminho.is_file():
+        return {"path": relativo, "status": "absent"}
+    texto = caminho.read_text(encoding="utf-8")
+    limites = _limites_do_bloco(texto)
+    if limites == "quebrado":
+        return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
+    if limites is None:
+        return {"path": relativo, "status": "absent"}
+    partes = [
+        parte
+        for parte in (texto[: limites[0]].rstrip("\n"), texto[limites[1]:].lstrip("\n"))
+        if parte
+    ]
+    novo = "\n\n".join(partes) + ("\n" if partes else "")
+    apagar = bool(registro.get("created")) and not novo.strip()
+    if not dry_run:
+        _gravar_ou_apagar(caminho, novo, apagar=apagar, home=home)
+    return {"path": relativo, "status": "deleted" if apagar else "reverted"}
+
+
+def revert_config(registro: dict[str, Any], *, home: Path, dry_run: bool) -> dict[str, Any]:
+    if registro.get("format") == "toml":
+        return revert_toml_config(registro, home=home, dry_run=dry_run)
+    return revert_json_config(registro, home=home, dry_run=dry_run)
+
+
+def drop_manifest_if_empty(home: Path, manifesto: dict[str, Any]) -> None:
+    """Sem host integrado, o manifesto sai do HOME; senao, e regravado."""
+    if manifesto.get("hosts"):
+        save_manifest(home, manifesto)
+        return
+    caminho = manifest_path(home)
+    if caminho.is_file():
+        caminho.unlink()
+        _podar(caminho, home)
