@@ -2999,23 +2999,23 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **782** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **783** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida no fechamento da LF_GRANTS (2026-09-25): 780 -> 782, os dois job.py de fixtures/cloudwatch_logs/lf_negado_fta_append_sem_all e lf_negado_fta_grant_all.",
+      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida no fechamento da LF_GRANTS (2026-09-25): 780 -> 782, os dois job.py de fixtures/cloudwatch_logs/lf_negado_fta_append_sem_all e lf_negado_fta_grant_all. Relida no rebase da LF_FTA_DECLARADO sobre a main (2026-09-25): 782 -> 783, arquivos que a main trouxe.",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 782
+          "value": 783
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "782",
+      "text": "783",
       "type": "number"
     },
     {
@@ -3696,23 +3696,23 @@
       "type": "number"
     },
     {
-      "context": "  no mesmo corpus, tem **251825** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "  no mesmo corpus, tem **252254** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453. Relida na segunda rodada da revisao da T2 (2026-09-25): 245453 -> 245751. Relida na terceira rodada da revisao da T2 (2026-09-25): 245751 -> 246127. Relida na quarta rodada da revisao da T2 (2026-09-25): 246127 -> 246320. Relida na T3 (2026-09-25): o lado IAM sob FGAC cresceu os dois arquivos com linhas contendo `source`, 246320 -> 246544. Relida na correcao da revisao da T3 (2026-09-25): registro nao coletado, recurso da decisao de IAM e runtime sem o modelo cresceram os dois arquivos com linhas contendo `source`, 246544 -> 248364. Relida na segunda rodada da revisao da T3 (2026-09-25): a regra de pertenca da decisao de IAM, a ressalva do registro e as recusas de decisao malformada e desconhecida cresceram os dois arquivos com linhas contendo `source`, 248364 -> 249135. Relida na correcao da qualidade da T3 pelo controlador (2026-09-25): 249135 -> 249273. Relida na tarefa extra do pyspark_ast da LF_GRANTS (2026-09-25): 249273 -> 249498. Relida na correcao da revisao da tarefa extra (modo de escrita) da LF_GRANTS (2026-09-25): 249498 -> 249499. Relida na T4 da LF_GRANTS (2026-09-25): a ligacao de `build_missing_grant` ao `fuse()` e o teste que a mede cresceram `fusion.py` e o teste com linhas contendo `source`, 249499 -> 249669. Relida na T5 da LF_GRANTS (2026-09-25): o teste da regra `SF-LF-011` e os dois testes da assinatura e das fontes cresceram os arquivos de teste com linhas contendo `source`, 249669 -> 249897. Relida no fechamento da LF_GRANTS (2026-09-25): a regra `SF-LF-011` e o grafo de acesso que cobra a operacao cresceram arquivos com linhas contendo `source`, 249897 -> 250455. Relida na revisao final da LF_GRANTS (2026-09-25): a fonte que nomeia as acoes da escrita sob FGAC e os testes dela cresceram arquivos com linhas contendo `source`, 250455 -> 251276. Relida na LF_FTA_DECLARADO (2026-09-25): o kind lakeformation.fta_declared (attrs.source) e os testes dele cresceram arquivos com linhas contendo `source`, 251276 -> 251707. Relida na correcao da revisao da LF_FTA_DECLARADO (2026-09-25): o docstring de `_fta_declarados` ganhou o risco do `spark.conf.set` tardio, com linha contendo `source: code`, 251707 -> 251825.",
+      "note": "Relida em 2026-09-21 (docs/sdd/LF_GRANTS/): sparkforge/facts/lakeformation_missing_grant.py e tests/test_lakeformation_missing_grant.py cresceram o corpus. Relida de novo na correcao da revisao da T2 (2026-09-24): os dois arquivos cresceram com linhas contendo `source`, 245145 -> 245453. Relida na segunda rodada da revisao da T2 (2026-09-25): 245453 -> 245751. Relida na terceira rodada da revisao da T2 (2026-09-25): 245751 -> 246127. Relida na quarta rodada da revisao da T2 (2026-09-25): 246127 -> 246320. Relida na T3 (2026-09-25): o lado IAM sob FGAC cresceu os dois arquivos com linhas contendo `source`, 246320 -> 246544. Relida na correcao da revisao da T3 (2026-09-25): registro nao coletado, recurso da decisao de IAM e runtime sem o modelo cresceram os dois arquivos com linhas contendo `source`, 246544 -> 248364. Relida na segunda rodada da revisao da T3 (2026-09-25): a regra de pertenca da decisao de IAM, a ressalva do registro e as recusas de decisao malformada e desconhecida cresceram os dois arquivos com linhas contendo `source`, 248364 -> 249135. Relida na correcao da qualidade da T3 pelo controlador (2026-09-25): 249135 -> 249273. Relida na tarefa extra do pyspark_ast da LF_GRANTS (2026-09-25): 249273 -> 249498. Relida na correcao da revisao da tarefa extra (modo de escrita) da LF_GRANTS (2026-09-25): 249498 -> 249499. Relida na T4 da LF_GRANTS (2026-09-25): a ligacao de `build_missing_grant` ao `fuse()` e o teste que a mede cresceram `fusion.py` e o teste com linhas contendo `source`, 249499 -> 249669. Relida na T5 da LF_GRANTS (2026-09-25): o teste da regra `SF-LF-011` e os dois testes da assinatura e das fontes cresceram os arquivos de teste com linhas contendo `source`, 249669 -> 249897. Relida no fechamento da LF_GRANTS (2026-09-25): a regra `SF-LF-011` e o grafo de acesso que cobra a operacao cresceram arquivos com linhas contendo `source`, 249897 -> 250455. Relida na revisao final da LF_GRANTS (2026-09-25): a fonte que nomeia as acoes da escrita sob FGAC e os testes dela cresceram arquivos com linhas contendo `source`, 250455 -> 251276. Relida na LF_FTA_DECLARADO (2026-09-25): o kind lakeformation.fta_declared (attrs.source) e os testes dele cresceram arquivos com linhas contendo `source`, 251276 -> 251707. Relida na correcao da revisao da LF_FTA_DECLARADO (2026-09-25): o docstring de `_fta_declarados` ganhou o risco do `spark.conf.set` tardio, com linha contendo `source: code`, 251707 -> 251825. Relida no rebase da LF_FTA_DECLARADO sobre a main (2026-09-25): 251825 -> 252254, arquivos que a main trouxe.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 251825
+          "value": 252254
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "251825",
+      "text": "252254",
       "type": "number"
     },
     {
