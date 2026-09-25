@@ -424,20 +424,65 @@ def _frontmatter_list(front: list[str], key: str) -> list[str]:
     return values
 
 
+class EscalarYamlNaoSuportado(ValueError):
+    """Escalar de frontmatter que a leitura por linha nao le sem errar.
+
+    Sem biblioteca de YAML (este modulo so usa a biblioteca padrao), escalar em
+    bloco (`>-`, `|`), continuacao indentada e escape de aspas duplas sairiam com
+    o valor errado -- e descricao errada publicada e pior que recusa.
+    """
+
+
+_BLOCO_YAML = re.compile(r"^[|>][-+0-9]*$")
+
+
+def _valor_escalar(key: str, bruto: str, continua: bool) -> str | None:
+    """O valor de `key: bruto`, ou `EscalarYamlNaoSuportado` quando nao da para ler."""
+    def recusa(motivo: str) -> EscalarYamlNaoSuportado:
+        return EscalarYamlNaoSuportado(
+            f"escalar_yaml_nao_suportado: `{key}` {motivo}; escreva o valor numa "
+            "linha so, sem aspas ou entre aspas sem escape"
+        )
+
+    if _BLOCO_YAML.match(bruto):
+        raise recusa(f"em bloco ({bruto!r})")
+    if continua:
+        raise recusa("continua na linha de baixo")
+    if bruto[:1] == '"':
+        if len(bruto) < 2 or not bruto.endswith('"') or "\\" in bruto:
+            raise recusa("entre aspas duplas com escape")
+        return bruto[1:-1] or None
+    if bruto[:1] == "'":
+        miolo = bruto[1:-1]
+        if len(bruto) < 2 or not bruto.endswith("'") or "'" in miolo.replace("''", ""):
+            raise recusa("entre aspas simples mal fechadas")
+        return miolo.replace("''", "'") or None
+    return bruto or None
+
+
 def _frontmatter_scalar(front: list[str], key: str) -> str | None:
     """Le um escalar de topo do frontmatter, ou `None` se ele nao estiver la.
 
     Irmao de `_frontmatter_list`, e pela mesma razao: nao ha round-trip de YAML
-    em caminho nenhum deste arquivo, entao a leitura tambem e por linha.
+    em caminho nenhum deste arquivo, entao a leitura tambem e por linha. O que a
+    leitura por linha nao le certo levanta `EscalarYamlNaoSuportado`.
     """
-    for line in front:
+    for index, line in enumerate(front):
         content = line.rstrip("\r\n")
         if content[:1] in (" ", "\t"):
             continue
         match = _TOP_LEVEL_KEY.match(content)
         if match and match.group(1) == key:
-            return content.split(":", 1)[1].strip().strip("'\"") or None
+            bruto = content.split(":", 1)[1].strip()
+            seguinte = front[index + 1].rstrip("\r\n") if index + 1 < len(front) else ""
+            continua = bool(bruto) and seguinte[:1] in (" ", "\t") and bool(seguinte.strip())
+            return _valor_escalar(key, bruto, continua)
     return None
+
+
+# Controle que a string basica do TOML proibe e que o `json.dumps` deixa passar
+# cru: o DEL (U+007F). Os de U+0000 a U+001F o JSON ja escapa.
+_CONTROLE_TOML = re.compile("[\x7f]")
 
 
 def _toml_string(valor: str) -> str:
@@ -445,9 +490,12 @@ def _toml_string(valor: str) -> str:
 
     O escape do JSON e um subconjunto do escape de string basica do TOML, entao
     `json.dumps` serve sem depender de biblioteca de TOML -- que o Python 3.10 nao
-    tem, e que o projeto nao traz como dependencia.
+    tem, e que o projeto nao traz como dependencia. O que o JSON deixa cru e o
+    TOML proibe (U+007F) sai como `\\uXXXX`.
     """
-    return json.dumps(valor, ensure_ascii=False)
+    return _CONTROLE_TOML.sub(
+        lambda m: f"\\u{ord(m.group()):04X}", json.dumps(valor, ensure_ascii=False)
+    )
 
 
 def _codex_toml(text: str) -> str:
@@ -616,6 +664,7 @@ def render_agent_file(src: Path, platform: str) -> bytes:
 
 __all__ = [
     "DEVIN_BUILTIN_PROFILE_NAMES",
+    "EscalarYamlNaoSuportado",
     "DEVIN_DROPPED_KEYS",
     "DEVIN_SKILL_DISPATCH_KEYS",
     "DISPATCHABLE_SKILLS",

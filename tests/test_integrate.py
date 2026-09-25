@@ -82,6 +82,52 @@ def _corpo_do_markdown(texto: str) -> str:
     return texto[fim + len("\n---"):].lstrip("\r\n").replace("\r\n", "\n")
 
 
+def _frontmatter_yaml(texto: str) -> dict:
+    """O frontmatter pelo leitor de YAML de verdade: o valor que o Codex deve receber."""
+    import yaml
+
+    texto = texto.replace("\r\n", "\n")
+    return yaml.safe_load(texto[len("---\n"): texto.index("\n---", 3)])
+
+
+def test_codex_toml_escapa_controle_que_o_json_deixa():
+    tomllib = pytest.importorskip("tomllib")
+    texto = "---\nname: x\ndescription: d\x7fe\n---\ncorpo \x7f fim\x1f\ttab\n"
+    saida = render.render_agent(texto, "codex")
+    assert "\x7f" not in saida
+    dados = tomllib.loads(saida)
+    assert dados["description"] == "d\x7fe"
+    assert dados["developer_instructions"] == "corpo \x7f fim\x1f\ttab\n"
+
+
+@pytest.mark.parametrize(
+    "linhas",
+    [
+        "description: >-\n  dobrado\n  em duas",
+        "description: |\n  literal",
+        "description: >\n  dobrado",
+        'description: "com \\"escape\\""',
+        "description: plano que\n  continua na linha de baixo",
+    ],
+)
+def test_codex_recusa_escalar_yaml_que_nao_le(linhas):
+    texto = f"---\nname: x\n{linhas}\ntools: Read\n---\ncorpo\n"
+    with pytest.raises(ValueError, match="escalar_yaml_nao_suportado"):
+        render.render_agent(texto, "codex")
+
+
+def test_codex_le_as_aspas_que_sabe_ler():
+    tomllib = pytest.importorskip("tomllib")
+    for linha, esperado in [
+        ("description: 'it''s'", "it's"),
+        ('description: "sem escape"', "sem escape"),
+        ("description: plano - com hifen", "plano - com hifen"),
+    ]:
+        texto = f"---\nname: x\n{linha}\n---\ncorpo\n"
+        dados = tomllib.loads(render.render_agent(texto, "codex"))
+        assert dados["description"] == esperado, linha
+
+
 def test_conteudo_e_o_da_renderizacao_do_sync_skills():
     from scripts import sync_skills
 
@@ -123,7 +169,7 @@ def test_conteudo_e_o_da_renderizacao_do_sync_skills():
         dados = tomllib.loads(render.render_agent_file(src, "codex").decode("utf-8"))
         assert set(dados) == {"name", "description", "developer_instructions"}
         assert dados["name"] == src.stem
-        assert dados["description"] in texto
+        assert dados["description"] == _frontmatter_yaml(texto)["description"], src
         assert dados["developer_instructions"] == _corpo_do_markdown(texto)
     exemplo = sources.skill_files(ROOT)[0]
     assert render.render_skill_file(
