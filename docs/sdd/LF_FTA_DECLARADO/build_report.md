@@ -51,3 +51,38 @@ change_id: null
 
 Sem revisão por subagente. Conferência do controlador: diff de findings de cada golden lido;
 nenhum golden sem resolver perdeu `SF-LF-010`.
+
+## Rodada de correção da revisão (2026-09-25)
+
+Revisão por tarefa não foi feita; a revisão única, depois do ship, achou um crítico e cinco
+menores. O que esta rodada fez:
+
+- **C1.** `tests/test_fixtures_golden_scan.py::test_golden[misto]` falhava:
+  `fixtures/scan/misto/repo/infra/main.tf:23` declara o resolver, e o `fuse` passou a
+  emitir `lakeformation.fta_declared` (`after_fuse` 69 → 70). Regenerado por
+  `SPARKFORGE_REGEN_SCAN=1`; a única diferença é essa contagem, e o fact novo é o único
+  `lakeformation.fta_declared` do scan (`source: terraform`). Nenhum gate do ship rodava o
+  golden de scan. Os 58 módulos `tests/test_fixtures_golden*.py` rodaram um por vez, e só o
+  de scan falhou (commit `aa4e1450`).
+- **M1.** Sem versão do Glue detectada, ou num Glue 4.0, nem `SF-LF-010` nem `SF-LF-004`
+  acusam registrada + resolver + sem EMRFS; `SF-LF-004` sai em `skipped` por
+  `runtime_scope`. Conferido à mão com `judge --show-skipped`; declarado em `risks` de
+  `SF-LF-010` e nos *Limites declarados* do STATUS, sem mudar código.
+- **M2.** O texto citava a §7 (que é sob FGAC) para não contar a chave de catálogo sozinha; a
+  razão é a §5: FTA exige chave E resolver, e só o resolver faz o Lake Formation vender a
+  credencial. Corrigido em `_fta_declarados` e em `risks`. A incoerência com
+  `_marcadores_de_fta`, que conta a chave sozinha para `both`, ficou registrada, sem mudança.
+- **M3.** `spark.conf.set` depois da sessão pode não chegar ao filesystem e ainda assim cala
+  `SF-LF-010`: hipótese não verificada, declarada em `risks` e no docstring (commit
+  `1a6ee077`). `grant_de_leitura_em_local_registrado` mudou só nesses `risks`.
+- **M5.** O agente `sf-lake-formation-specialist` (e o `.codex`), a skill
+  `lakeformation-fgac-guard` e `docs/aws/glue/6.0/lakeformation.md` ganharam o kind; espelhos
+  por `sync_skills.py`, referência regenerada, superfície +157 bytes (commit `ff04d1ad`).
+- **M6.** `fixtures/sarif/terraform/input/facts.json` é cópia estática de
+  `infra_code/fgac_com_fta_no_mesmo_job`, feita à mão no PR #50; `regen_sarif` só grava
+  `expected/`, e nada no repositório gera o `input/`. Ficou como está: difere da origem só
+  pelo fact novo, e o golden de sarif passa.
+
+Lacunas de `scripts/regen_fixtures.py`: sem argumento ele pula `fixtures/lakeformation/`,
+`fixtures/iam_access/` e `fixtures/resource_link/`, e `fixtures/scan/` fica fora do script
+(regenera pelo próprio teste, com `SPARKFORGE_REGEN_SCAN=1`).
