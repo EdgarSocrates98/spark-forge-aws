@@ -27,7 +27,7 @@
   },
   "dry_run": false,
   "facts": {
-    "after_fuse": 69,
+    "after_fuse": 70,
     "extracted": 67
   },
   "findings": {
