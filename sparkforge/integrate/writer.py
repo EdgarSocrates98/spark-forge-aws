@@ -205,3 +205,76 @@ def apply_files(
         "removed": orfaos["removed"],
         "refused": recusas + orfaos["refused"],
     }
+
+
+# --------------------------------------------------------------------------
+# Config de usuario em JSON (Devin, Copilot): so `mcpServers.sparkforge` (D6)
+# --------------------------------------------------------------------------
+
+
+def _registro_de_config(
+    manifesto: dict[str, Any], nome: str, relativo: str
+) -> dict[str, Any] | None:
+    for registro in manifesto["hosts"].get(nome, {}).get("config") or []:
+        if registro["path"] == relativo:
+            return registro
+    return None
+
+
+def _guardar_registro(
+    manifesto: dict[str, Any], nome: str, registro: dict[str, Any]
+) -> None:
+    registros = manifesto["hosts"].setdefault(nome, {}).setdefault("config", [])
+    if registro not in registros:
+        registros.append(registro)
+
+
+def _json_de_config(caminho: Path) -> tuple[str, dict[str, Any] | None]:
+    """(texto, dados), com `dados=None` quando o arquivo nao e JSON de objeto."""
+    if not caminho.is_file():
+        return "", {}
+    texto = caminho.read_text(encoding="utf-8")
+    try:
+        dados = json.loads(texto) if texto.strip() else {}
+    except json.JSONDecodeError:
+        return texto, None
+    if not isinstance(dados, dict) or not isinstance(dados.get("mcpServers", {}), dict):
+        return texto, None
+    return texto, dados
+
+
+def apply_json_config(
+    nome: str,
+    caminho: Path,
+    entrada: dict[str, Any],
+    *,
+    home: Path,
+    manifesto: dict[str, Any],
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Poe `mcpServers.sparkforge` no JSON de config do host e nada mais."""
+    relativo = rel(home, caminho)
+    registro = _registro_de_config(manifesto, nome, relativo)
+    texto, dados = _json_de_config(caminho)
+    if dados is None:
+        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
+    servidores = dados.get("mcpServers")
+    if isinstance(servidores, dict) and "sparkforge" in servidores and registro is None:
+        return {"path": relativo, "status": "refused", "reason": "sparkforge_ja_configurado"}
+    novo = dict(dados)
+    novo["mcpServers"] = {**(servidores or {}), "sparkforge": entrada}
+    novo_texto = json.dumps(novo, indent=2, ensure_ascii=False) + "\n"
+    status = "unchanged" if novo_texto == texto else "written"
+    if registro is None:
+        registro = {
+            "path": relativo,
+            "format": "json",
+            "created": not caminho.is_file(),
+            "had_mcp_servers": servidores is not None,
+        }
+    if not dry_run:
+        if status == "written":
+            caminho.parent.mkdir(parents=True, exist_ok=True)
+            caminho.write_bytes(novo_texto.encode("utf-8"))
+        _guardar_registro(manifesto, nome, registro)
+    return {"path": relativo, "status": status}

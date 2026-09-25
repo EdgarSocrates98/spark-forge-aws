@@ -177,3 +177,109 @@ def test_manifesto_dry_run_e_idempotencia(tmp_path):
     assert {"host": "copilot", "reason": "arquivo_do_usuario",
             "path": ".agents/skills/sdd-plan/SKILL.md"} in recusado["refused"]
     assert alheio.read_text(encoding="utf-8") == "minha skill\n"
+
+
+def _agents_renderizados(plataforma: str, padrao: str, executores: bool) -> dict[str, bytes]:
+    """O que `scripts/sync_skills.py` renderiza para os agents de `plataforma`."""
+    from scripts import sync_skills
+
+    esperado = {
+        padrao.format(stem=src.stem): sync_skills.render_agent(
+            src.read_text(encoding="utf-8"), plataforma
+        ).encode("utf-8")
+        for src in sources.agent_files(ROOT)
+    }
+    if executores:
+        for src in sources.executor_files(ROOT):
+            esperado[f"executors/{src.name}"] = sync_skills.render_agent(
+                src.read_text(encoding="utf-8"), plataforma
+            ).encode("utf-8")
+    return esperado
+
+
+def _skills_do_devin() -> dict[str, bytes]:
+    """`~/.agents/skills` recebe o que o espelho `.agents/skills` do repo recebe."""
+    from scripts import sync_skills
+
+    base = ROOT / ".agents" / "skills"
+    return {
+        src.relative_to(ROOT / "skills").as_posix(): sync_skills.rendered_skill_bytes(
+            src, base / src.relative_to(ROOT / "skills")
+        )
+        for src in sources.skill_files(ROOT)
+    }
+
+
+def _conteudo(base: Path) -> dict[str, bytes]:
+    return {
+        p.relative_to(base).as_posix(): p.read_bytes()
+        for p in sorted(base.rglob("*"))
+        if p.is_file()
+    }
+
+
+def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
+    home = tmp_path / "home"
+    config = home / ".config" / "devin" / "mcp_config.json"
+    config.parent.mkdir(parents=True)
+    outro = {"command": "node", "args": ["servidor.js"]}
+    config.write_text(json.dumps({"mcpServers": {"outro": outro}}), encoding="utf-8")
+
+    resultado = integrate("devin", home=home, windows=False)
+    assert resultado["refused"] == []
+    assert _conteudo(home / ".config" / "devin" / "agents") == _agents_renderizados(
+        "devin", "{stem}.md", executores=True
+    )
+    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
+    dados = json.loads(config.read_text(encoding="utf-8"))
+    assert dados["mcpServers"]["outro"] == outro
+    assert dados["mcpServers"]["sparkforge"] == {
+        "command": sys.executable,
+        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+    }
+    assert "PYTHONPATH" not in json.dumps(dados)
+
+    # Windows: o diretorio de config do Devin e %APPDATA%\devin.
+    appdata = tmp_path / "home_win" / "AppData" / "Roaming"
+    integrate("devin", home=tmp_path / "home_win", windows=True, appdata=appdata)
+    assert (appdata / "devin" / "agents" / "sf-runtime-specialist.md").is_file()
+    assert (appdata / "devin" / "mcp_config.json").is_file()
+
+    # `sparkforge` que o SparkForge nao escreveu: recusa, e o arquivo fica igual.
+    alheio = tmp_path / "home_alheia" / ".config" / "devin" / "mcp_config.json"
+    alheio.parent.mkdir(parents=True)
+    texto = json.dumps({"mcpServers": {"sparkforge": {"command": "meu"}}})
+    alheio.write_text(texto, encoding="utf-8")
+    recusado = integrate("devin", home=tmp_path / "home_alheia", windows=False)
+    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
+    assert alheio.read_text(encoding="utf-8") == texto
+
+    quebrado = tmp_path / "home_quebrada" / ".config" / "devin" / "mcp_config.json"
+    quebrado.parent.mkdir(parents=True)
+    quebrado.write_text("{ nao e json", encoding="utf-8")
+    recusado = integrate("devin", home=tmp_path / "home_quebrada", windows=False)
+    assert [r["reason"] for r in recusado["refused"]] == ["config_invalida"]
+    assert quebrado.read_text(encoding="utf-8") == "{ nao e json"
+
+
+def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
+    home = tmp_path / "home"
+    config = home / ".copilot" / "mcp-config.json"
+    config.parent.mkdir(parents=True)
+    outro = {"type": "local", "command": "uvx", "args": ["x"], "tools": ["*"]}
+    config.write_text(json.dumps({"mcpServers": {"outro": outro}}), encoding="utf-8")
+
+    resultado = integrate("copilot", home=home)
+    assert resultado["refused"] == []
+    assert _conteudo(home / ".copilot" / "agents") == _agents_renderizados(
+        "github", "{stem}.agent.md", executores=True
+    )
+    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
+    dados = json.loads(config.read_text(encoding="utf-8"))
+    assert dados["mcpServers"]["outro"] == outro
+    assert dados["mcpServers"]["sparkforge"] == {
+        "type": "local",
+        "command": sys.executable,
+        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+        "tools": ["*"],
+    }
