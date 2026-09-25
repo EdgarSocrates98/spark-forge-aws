@@ -319,7 +319,12 @@ resolve. As saídas que a própria documentação sustenta são três, e todas m
 desenho em vez de mudar a API de escrita:
 
 1. o alvo **não** ser registrado no Lake Formation — aí a escrita é do runtime
-   role, e o que resta é `s3:PutObject`, `s3:DeleteObject` e KMS;
+   role, e o que resta é `s3:PutObject`, `s3:DeleteObject` e KMS. As ações S3 vêm
+   da página de permissões mínimas de job ETL, que não separa append de overwrite:
+   *"Data targets require s3:ListBucket, s3:PutObject, and s3:DeleteObject
+   permissions."* (`s3:ListBucket` é ação de bucket); KMS, quando o alvo usa
+   SSE-KMS: *"The job role needs the kms:ReEncrypt, kms:GenerateDataKey, and
+   kms:DescribeKey permissions."*, mais `kms:Decrypt`;
 2. trocar o job para **FTA** — aí quem escreve é a credencial do Lake Formation,
    com `ALL` no grant, e valem os requisitos da seção 5, EMRFS incluído;
 3. **separar** leitura e escrita em dois jobs, porque FGAC e FTA não coexistem
@@ -360,3 +365,4 @@ O que a fonte desta coleta não afirma, e por isso não está escrito acima:
 - Migrating AWS Glue for Spark jobs to AWS Glue version 5.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html (retrieved 2026-09-09)
 - Migrating AWS Glue for Spark jobs to AWS Glue version 5.1. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html (retrieved 2026-09-09)
 - Troubleshooting — AWS Glue with Lake Formation. https://docs.aws.amazon.com/glue/latest/dg/security-lf-troubleshooting.html (retrieved 2026-09-09)
+- Review IAM permissions needed for ETL jobs — AWS Glue. https://docs.aws.amazon.com/glue/latest/dg/getting-started-min-privs-job.html (retrieved 2026-09-25)

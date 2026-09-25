@@ -47,7 +47,8 @@ Todas saem com código 2 e o motivo entre colchetes:
 
 Antes e depois passam pelo mesmo pipeline:
 
-1. Tiram os kinds que `fusion`, `lakeformation` e `timeout_diagnosis` derivam.
+1. Tiram os kinds que `fusion`, `lakeformation`, `lakeformation_missing_grant` e
+   `timeout_diagnosis` derivam.
 2. Rederivam com `fuse()`.
 3. Detectam o runtime sobre os facts rederivados. Trocar `glue_version` muda o
    runtime do lado de depois.

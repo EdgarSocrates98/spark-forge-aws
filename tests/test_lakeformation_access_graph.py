@@ -340,3 +340,24 @@ def test_falta_de_outro_lado_ou_outro_principal_nao_muda_a_perna_lf():
             [_grant_select(), falta], principal_arn=_ROLE, target_table="db.t"
         )
         assert _por_tipo(grafo, "lf_grant")["status"] == STATUS_GRANTED
+
+
+def test_grafo_casa_o_fact_com_alvo_qualificado_pelo_catalogo():
+    # O fact e o grafo casam o nome da tabela pela mesma funcao (`casa_tabela`):
+    # `glue_catalog.db.t` casa `db.t` pelo sufixo, e `staging.t` nao casa.
+    grant = _grant_select()
+    grant.subject["symbol"] = f"glue_catalog.db.t#{_ROLE}"
+    grafo = build_access_graph(
+        [grant, _falta_all(resource="db.t")],
+        principal_arn=_ROLE,
+        target_table="glue_catalog.db.t",
+    )
+    aresta = _por_tipo(grafo, "lf_grant")
+    assert aresta["status"] == "missing"
+    assert "ALL" in aresta["evidence"]
+    outro = build_access_graph(
+        [grant, _falta_all(resource="staging.t")],
+        principal_arn=_ROLE,
+        target_table="glue_catalog.db.t",
+    )
+    assert _por_tipo(outro, "lf_grant")["status"] == STATUS_GRANTED

@@ -20,7 +20,7 @@ e que ninguém havia escrito.
 | Pedido | Onde a resposta está |
 |---|---|
 | `overview` | §1–§3 de [`lakeformation-fgac.md`](lakeformation-fgac.md) — o que FGAC exige, proíbe e custa |
-| `fgac` | idem, mais as 11 regras `SF-LF` em `rules/catalog/lakeformation.yaml` (a `SF-LF-011`, de 2026-09-25, nomeia a permissão que falta atrás de `ERR-LF-001`) |
+| `fgac` | idem, mais as 11 regras `SF-LF` em `rules/catalog/lakeformation.yaml` (a `SF-LF-011`, de 2026-09-25, nomeia a permissão que falta atrás de `ERR-LF-001`, pela tabela operação → permissão de [`lakeformation-permissions.yaml`](lakeformation-permissions.yaml) — **legível por máquina**, com `source` e `quote` por linha) |
 | `fta` | §5 de [`lakeformation-fgac.md`](lakeformation-fgac.md), e os eixos `fta_*` de [`lakeformation-matrix.yaml`](lakeformation-matrix.yaml) |
 | `cross-account` | `rules/catalog/glue-cross-account.yaml` (`SF-XACC`), `SF-LF-007`, e `ERR-LF-002` |
 | `resource-links` | §1 de [`lakeformation-fgac.md`](lakeformation-fgac.md) — *"cross-account só por resource link, com nome idêntico"*, e desde 2026-09-10 com **fact medido**: `sparkforge collect glue-resource-link` produz `glue.resource_link` e `glue.resource_link.target`, `SF-XACC-002` e `SF-XACC-003` julgam sobre eles, e a perna do grafo de acesso deixou de sair `unresolved` |

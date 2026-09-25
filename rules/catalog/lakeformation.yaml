@@ -1357,7 +1357,11 @@ rules:
       também nega ali. O fact do lado IAM carrega `registration_scope: exact_arn`
       e `caveat`: o `registered: false` veio do ARN exato da localização, e
       registro num prefixo pai não foi conferido. Se ele existir, o caso é o
-      conflito declarado, e não falta de IAM.
+      conflito declarado, e não falta de IAM. Carrega também `unchecked`: a
+      fonte das ações (*"Data targets require s3:ListBucket, s3:PutObject, and
+      s3:DeleteObject permissions."*) não separa append de overwrite, e a
+      escrita cobra `s3:PutObject` e `s3:DeleteObject`; `s3:ListBucket` (ação de
+      bucket) e KMS (ações `kms:*` sob SSE-KMS, e a key policy) não são simulados.
 
 
       **O modo de escrita pode não ter sido lido.** Com `mode_unresolved: true`
@@ -1420,8 +1424,9 @@ rules:
         Com `side: lf`, recoletar com `sparkforge collect lakeformation`; com
         `side: iam`, recoletar com `sparkforge collect iam-access --role-arn
         <runtime-role> --resource-arn <localização>/* --action <attrs.action>`,
-        repetindo `--action` para cada ação que a operação exige (no overwrite
-        sob FGAC, `s3:PutObject` e `s3:DeleteObject`). Rodar `sparkforge fuse` de novo: o
+        repetindo `--action` para cada ação que a operação exige (na escrita
+        sob FGAC, append ou overwrite, `s3:PutObject` e `s3:DeleteObject`).
+        Rodar `sparkforge fuse` de novo: o
         `lakeformation.missing_grant` do recurso precisa sumir.
       - >-
         Reexecutar o job e confirmar que `ERR-LF-001` sai do log do run. Nenhum
@@ -1434,3 +1439,4 @@ rules:
       - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html", retrieved: 2026-09-21}
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-21}
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-21}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/getting-started-min-privs-job.html", retrieved: 2026-09-25}

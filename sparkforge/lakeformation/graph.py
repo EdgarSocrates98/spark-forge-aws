@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from sparkforge.facts.lakeformation_missing_grant import casa_tabela
+
 
 @dataclass
 class PermissionEdge:
@@ -311,12 +313,13 @@ def build_access_graph(
         for f in lista
         if getattr(f, "kind", "") == "lakeformation.missing_grant"
         and _attrs(f).get("side") == "lf"
-        and str(_attrs(f).get("resource", "")).lower() == target_table.lower()
+        and casa_tabela(str(_attrs(f).get("resource", "")), target_table)
         and _attrs(f).get("principal") == principal_arn
     ]:
         # D8: com o fact de LF_GRANTS no case, o que a perna exige vem da OPERACAO
         # medida, e nao do SELECT fixo abaixo -- que acusaria leitura num job que
-        # falhou escrevendo. Sem caixa: o Glue Data Catalog guarda nomes em minusculas.
+        # falhou escrevendo. O nome casa pela MESMA funcao do fact (`casa_tabela`: sem
+        # caixa, e pelo sufixo de segmentos com os dois lados qualificados).
         exigidas = sorted(
             {
                 f"{_attrs(f).get('operation')}: {', '.join(_attrs(f).get('missing') or [])}"

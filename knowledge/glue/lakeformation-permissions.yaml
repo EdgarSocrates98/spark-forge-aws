@@ -8,10 +8,25 @@
 # escrita sob FTA exige ALL, e nao INSERT, porque a pagina de FTA do Glue e mais
 # especifica que a referencia generica; e DATA_LOCATION_ACCESS nao autoriza escrita
 # de dado -- "is not needed to query or update underlying data".
+#
+# `section`, opcional, e o titulo da secao da fonte cujo corpo `quote` cita: na
+# referencia de permissoes do Lake Formation o nome da permissao e o titulo, e a frase
+# descreve o que ela concede. Linha do lado IAM nao tem `section`: a acao tem de estar
+# escrita na propria frase (`test_cada_permissao_exigida_esta_escrita_na_frase_...`).
+#
+# Escrita sob FGAC, corrigida na revisao final da LF_GRANTS (2026-09-25): a frase de
+# `fgac_considerations` diz QUEM autoriza (o IAM do runtime role) e nao nomeia acao
+# nenhuma; ela fica em `side_source`/`side_quote`. As acoes vem de `glue_etl_min_privs`,
+# que nomeia o que um alvo de dados exige e nao separa append de overwrite -- por isso
+# write e overwrite exigem o mesmo par. A mesma frase nomeia `s3:ListBucket`, que e
+# acao de BUCKET: a simulacao em `<localizacao>/*` nao a responde, e ela vai em
+# `unchecked`, nao em `requires`. KMS (as acoes `kms:*` quando o alvo usa SSE-KMS, e a
+# key policy) tambem nao e simulado pelo coletor; o fact declara as duas lacunas.
 fontes:
   lf_reference: "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html"
   fta: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html"
   fgac_considerations: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html"
+  glue_etl_min_privs: "https://docs.aws.amazon.com/glue/latest/dg/getting-started-min-privs-job.html"
 operacoes:
   - operation: read
     model: fta
@@ -19,6 +34,7 @@ operacoes:
     resource_level: table
     requires: [SELECT]
     source: lf_reference
+    section: SELECT
     quote: "A principal with this permission can view a table in the Data Catalog, and can query the underlying data in Amazon S3 at the location specified by the table."
   - operation: read
     model: fgac
@@ -26,6 +42,7 @@ operacoes:
     resource_level: table
     requires: [SELECT]
     source: lf_reference
+    section: SELECT
     quote: "A principal with this permission can view a table in the Data Catalog, and can query the underlying data in Amazon S3 at the location specified by the table."
   - operation: write
     model: fta
@@ -45,20 +62,27 @@ operacoes:
     model: fgac
     side: iam
     resource_level: table
-    requires: ["s3:PutObject"]
-    source: fgac_considerations
-    quote: "Writing to a Lake Formation table uses IAM permission rather than Lake Formation granted permissions. If your job runtime role has the necessary S3 permissions, you can use it to run write operations."
+    requires: ["s3:PutObject", "s3:DeleteObject"]
+    unchecked: ["s3:ListBucket", "kms"]
+    source: glue_etl_min_privs
+    quote: "Data targets require s3:ListBucket, s3:PutObject, and s3:DeleteObject permissions."
+    side_source: fgac_considerations
+    side_quote: "Writing to a Lake Formation table uses IAM permission rather than Lake Formation granted permissions. If your job runtime role has the necessary S3 permissions, you can use it to run write operations."
   - operation: overwrite
     model: fgac
     side: iam
     resource_level: table
     requires: ["s3:PutObject", "s3:DeleteObject"]
-    source: fgac_considerations
-    quote: "Writing to a Lake Formation table uses IAM permission rather than Lake Formation granted permissions. If your job runtime role has the necessary S3 permissions, you can use it to run write operations."
+    unchecked: ["s3:ListBucket", "kms"]
+    source: glue_etl_min_privs
+    quote: "Data targets require s3:ListBucket, s3:PutObject, and s3:DeleteObject permissions."
+    side_source: fgac_considerations
+    side_quote: "Writing to a Lake Formation table uses IAM permission rather than Lake Formation granted permissions. If your job runtime role has the necessary S3 permissions, you can use it to run write operations."
   - operation: create
     model: fta
     side: lf
     resource_level: database
     requires: [CREATE_TABLE]
     source: lf_reference
+    section: CREATE_TABLE
     quote: "A principal with this permission can create a metadata table or resource link in the Data Catalog within the specified database."

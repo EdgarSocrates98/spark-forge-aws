@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from dataclasses import replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -282,6 +283,18 @@ _RESSALVA_DO_REGISTRO = (
     "bucket), uma policy escopada ao prefixo da tabela tambem nega em `<localizacao>/*`"
 )
 
+# O que a linha do lado IAM declara em `unchecked`, e por que o fact nao cobra.
+_NAO_CONFERIDO = {
+    "s3:ListBucket": (
+        "s3:ListBucket (a fonte a nomeia, mas e acao de bucket: a simulacao em "
+        "`<localizacao>/*` nao a responde)"
+    ),
+    "kms": (
+        "KMS (as acoes kms:* quando o alvo usa SSE-KMS, e a key policy da chave: o "
+        "coletor de IAM nao simula nenhuma das duas)"
+    ),
+}
+
 _DECISOES_NEGADAS = frozenset({"implicitDeny", "explicitDeny"})
 _S3_RE = re.compile(r"^(?:s3[an]?://|arn:aws[a-z-]*:s3:::)", re.IGNORECASE)
 
@@ -306,8 +319,11 @@ def load_table() -> dict[str, Any]:
         for campo in _CAMPOS:
             if not linha.get(campo):
                 problemas.append(f"{rotulo}: sem `{campo}`")
-        if linha.get("source") and linha["source"] not in fontes:
-            problemas.append(f"{rotulo}: `source` {linha['source']!r} fora de `fontes`")
+        for chave in ("source", "side_source"):
+            if linha.get(chave) and linha[chave] not in fontes:
+                problemas.append(f"{rotulo}: `{chave}` {linha[chave]!r} fora de `fontes`")
+        if bool(linha.get("side_source")) != bool(linha.get("side_quote")):
+            problemas.append(f"{rotulo}: `side_source` e `side_quote` vem juntos")
     if problemas:
         raise ValueError(
             "knowledge/glue/lakeformation-permissions.yaml invalido:\n  "
@@ -431,7 +447,7 @@ def _candidato_unico(facts: Sequence[Fact]) -> str | None:
     return tabelas[0] if len(tabelas) == 1 else None
 
 
-def _casa(alvo: str, recurso: str) -> bool:
+def casa_tabela(alvo: str, recurso: str) -> bool:
     """Com os dois lados qualificados, casa pelo sufixo de segmentos
     (`glue_catalog.default.t` casa `default.t`, `staging.t` nao casa `default.t`); so
     pelo ultimo segmento quando um dos lados nao e qualificado. Sem caixa: o Glue Data
@@ -451,7 +467,7 @@ def _canonizar(recurso: str, facts: Sequence[Fact]) -> tuple[str | None, list[st
     exatas = [t for t in tabelas if t.lower() == recurso.lower()]
     if len(exatas) == 1:
         return exatas[0], []
-    casam = [t for t in tabelas if "." in t and _casa(t, recurso)]
+    casam = [t for t in tabelas if "." in t and casa_tabela(t, recurso)]
     if len(casam) > 1:
         return None, casam
     return (casam[0] if casam else recurso), []
@@ -491,7 +507,7 @@ def _operacoes(
             todas.append((_SQL[attrs["operation"]], str(attrs.get("table") or ""), f))
     if not todas:
         return "operacao_nao_medida"
-    escolhidas = [t for t in todas if t[1] and _casa(t[1], recurso)]
+    escolhidas = [t for t in todas if t[1] and casa_tabela(t[1], recurso)]
     sem_alvo = sorted({_mapeada(op) for op, alvo, _f in todas if not alvo})
     if not escolhidas and not sem_alvo:
         return "operacao_nao_ligada_ao_recurso"
@@ -551,11 +567,12 @@ def _cobre(concedidas: Sequence[str], permissao: str) -> bool:
 
 
 def _registros(recurso: str, facts: Sequence[Fact]) -> list[Fact]:
-    """Os registros de localizacao da tabela, pelo mesmo `_casa` das operacoes."""
+    """Os registros de localizacao da tabela, pelo mesmo `casa_tabela` das operacoes."""
     return [
         f
         for f in facts
-        if f.kind == "lakeformation.registered_location" and _casa(_tabela_de(f), recurso)
+        if f.kind == "lakeformation.registered_location"
+        and casa_tabela(_tabela_de(f), recurso)
     ]
 
 
@@ -791,6 +808,13 @@ def _falta_iam(
 ) -> Fact:
     attrs = negada.attrs or {}
     recurso_iam = str(attrs.get("resource") or "")
+    fontes = load_table()["fontes"]
+    nao_conferido = [_NAO_CONFERIDO.get(u, u) for u in linha.get("unchecked") or []]
+    citacao_do_lado = (
+        {"side_source": fontes[linha["side_source"]], "side_quote": linha["side_quote"]}
+        if linha.get("side_source")
+        else {}
+    )
     return Fact(
         kind="lakeformation.missing_grant",
         subject={"type": "table", "symbol": f"{recurso}#{operacao}#iam#{acao}@{recurso_iam}"},
@@ -808,10 +832,14 @@ def _falta_iam(
             "runtime": versao,
             "registration_scope": _ESCOPO_DO_REGISTRO,
             "caveat": _RESSALVA_DO_REGISTRO,
+            "unchecked": (
+                "nao conferido pelo fact: " + "; ".join(nao_conferido) if nao_conferido else ""
+            ),
             "requires": list(linha["requires"]),
             "missing": [acao],
-            "source": load_table()["fontes"][linha["source"]],
+            "source": fontes[linha["source"]],
             "quote": linha["quote"],
+            **citacao_do_lado,
             "signature_id": GATILHO,
             "evidence": sorted({gatilho.id, origem.id, negada.id}),
             "extractor": EXTRACTOR_ID,
@@ -833,18 +861,17 @@ def _lado_iam(
     # O role do job sai das decisoes de IAM, como no lado LF: a negacao de outro role
     # nao acusa este.
     principal, candidatas = _principal(facts, [])
-    if candidatas:
+    if not principal:
+        # Sem decisao de IAM nenhuma nao ha role do job: nenhuma acao deixou de ser
+        # simulada "para o role do job", o role e que nao foi coletado.
+        razao = "principal_ambiguo" if candidatas else "principal_nao_coletado"
         return [
-            _unresolved(
-                "principal_ambiguo", recurso, gatilho, operation=operacao, candidates=candidatas
-            )
+            _unresolved(razao, recurso, gatilho, operation=operacao, candidates=candidatas)
         ]
     decisoes = [
         f
         for f in facts
-        if f.kind == "iam.access_decision"
-        and principal
-        and (f.attrs or {}).get("role_arn") == principal
+        if f.kind == "iam.access_decision" and (f.attrs or {}).get("role_arn") == principal
     ]
     saida: list[Fact] = []
     for acao in linha["requires"]:
@@ -892,9 +919,9 @@ def _modo_nao_lido(
     if "write" not in medidas:
         # Uma escrita de modo lido como write ja fala por write: a avaliacao daqui so
         # decide se o modo importa, e nao duplica o fact dela.
-        for f in avaliada:
-            f.attrs["mode_unresolved"] = True
-        saida.extend(avaliada)
+        saida.extend(
+            replace(f, attrs={**(f.attrs or {}), "mode_unresolved": True}) for f in avaliada
+        )
     overwrite = requirement("overwrite", modelo) or write
     extra = [a for a in overwrite["requires"] if a not in write["requires"]]
     if not acusou and extra:
@@ -1031,6 +1058,7 @@ __all__ = [
     "OPERACOES_MAPEADAS",
     "SOURCE_KINDS",
     "build_missing_grant",
+    "casa_tabela",
     "load_table",
     "requirement",
 ]

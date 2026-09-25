@@ -299,6 +299,71 @@ def test_tabela_de_operacao_cita_fonte_e_cobre_o_extrator():
     assert requirement("write", "fgac")["side"] == "iam"
 
 
+def test_cada_permissao_exigida_esta_escrita_na_frase_ou_no_titulo_da_secao():
+    # A frase citada tem de NOMEAR o que a linha exige. As linhas da referencia de
+    # permissoes do LF citam o corpo da secao, e o nome da permissao e o titulo dela
+    # (`section`); linha do lado IAM nao tem esse recurso: a acao tem de estar na frase.
+    for linha in load_table()["operacoes"]:
+        for permissao in linha["requires"]:
+            if linha["side"] == "iam":
+                assert permissao in linha["quote"], (permissao, linha)
+            else:
+                assert permissao in linha["quote"] or permissao == linha.get("section"), (
+                    permissao,
+                    linha,
+                )
+
+
+def test_escrita_sob_fgac_exige_o_que_a_fonte_nomeia_sem_separar_write_de_overwrite():
+    # A fonte nomeia o que um alvo de dados exige e nao separa append de overwrite.
+    write, overwrite = requirement("write", "fgac"), requirement("overwrite", "fgac")
+    assert write["requires"] == overwrite["requires"] == ["s3:PutObject", "s3:DeleteObject"]
+    assert write["quote"] == overwrite["quote"]
+    fonte = load_table()["fontes"][write["source"]]
+    assert fonte == "https://docs.aws.amazon.com/glue/latest/dg/getting-started-min-privs-job.html"
+    # O lado IAM continua citado pela frase que diz que a escrita sob FGAC e do IAM.
+    assert "uses IAM permission" in write["side_quote"]
+    assert write["side_source"] in load_table()["fontes"]
+
+
+def test_fgac_append_com_delete_object_negado_acusa_delete_object():
+    pool = [
+        _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode="append"),
+        _registrada(False),
+        _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
+        _decisao("s3:DeleteObject", "implicitDeny", recurso=LOCAL + "/*"),
+    ]
+    saida = build_missing_grant(pool)
+    (falta,) = _de(saida, "lakeformation.missing_grant")
+    assert falta.attrs["operation"] == "write"
+    assert falta.attrs["missing"] == ["s3:DeleteObject"]
+    assert falta.attrs["requires"] == ["s3:PutObject", "s3:DeleteObject"]
+    assert _razoes(saida) == []
+
+
+def test_fgac_escrita_com_as_duas_acoes_permitidas_nao_acusa_em_modo_nenhum():
+    for escrita in (_escrita(mode="append"), _escrita(mode="overwrite"),
+                    _escrita_modo_nao_lido()):
+        pool = [
+            _gatilho(), _modelo("fgac"), _glue("5.1"), escrita, _registrada(False),
+            _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
+            _decisao("s3:DeleteObject", "allowed", recurso=LOCAL + "/*"),
+        ]
+        assert build_missing_grant(pool) == [], escrita.attrs
+
+
+def test_fgac_acusacao_do_lado_iam_declara_o_que_nao_foi_conferido():
+    (falta,) = _de(
+        build_missing_grant(cenario_fgac_escrita_negada()), "lakeformation.missing_grant"
+    )
+    # A fonte tambem nomeia s3:ListBucket, e SSE-KMS pede kms:*; o fact nao cobra
+    # nenhum dos dois e diz isso na acusacao.
+    assert "s3:ListBucket" in falta.attrs["unchecked"]
+    assert "KMS" in falta.attrs["unchecked"]
+    assert "key policy" in falta.attrs["unchecked"]
+    assert "uses IAM permission" in falta.attrs["side_quote"]
+
+
 OUTRO_ROLE = "arn:aws:iam::111111111111:role/glue-outro"
 SEM_NOME = "AccessDeniedException: Insufficient Lake Formation permission(s)"
 
@@ -952,15 +1017,42 @@ def test_fgac_registro_qualificado_por_catalogo_casa_pelo_sufixo():
     ]
 
 
-def test_fgac_overwrite_sem_simulacao_recusa_cada_acao():
-    pool = [
-        _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode="overwrite"),
-        _registrada(False),
-    ]
-    recusas = _so_recusas(build_missing_grant(pool))
-    assert sorted(r.attrs["action"] for r in recusas) == ["s3:DeleteObject", "s3:PutObject"]
-    assert {r.attrs["reason"] for r in recusas} == {"acao_iam_nao_simulada"}
-    assert all("collect iam-access" in r.attrs["unblocked_by"] for r in recusas)
+def test_fgac_escrita_sem_simulacao_das_acoes_recusa_cada_acao():
+    # O role do job e conhecido (decidido para outra acao); as duas acoes da escrita
+    # nao foram simuladas. Vale para append e overwrite: a fonte nao os separa.
+    for modo in ("append", "overwrite"):
+        pool = [
+            _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode=modo),
+            _registrada(False), _decisao("s3:GetObject", "allowed", recurso=LOCAL + "/*"),
+        ]
+        recusas = _so_recusas(build_missing_grant(pool))
+        assert sorted(r.attrs["action"] for r in recusas) == [
+            "s3:DeleteObject", "s3:PutObject"
+        ]
+        assert {r.attrs["reason"] for r in recusas} == {"acao_iam_nao_simulada"}
+        assert all("collect iam-access" in r.attrs["unblocked_by"] for r in recusas)
+
+
+def test_fgac_sem_decisao_de_iam_nenhuma_recusa_principal_nao_coletado():
+    # Sem decisao de IAM no pool nao ha role do job: a acao nao deixou de ser
+    # simulada "para o role do job" -- o role nem foi coletado.
+    for modo in ("append", "overwrite"):
+        pool = [
+            _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode=modo),
+            _registrada(False),
+        ]
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "principal_nao_coletado"
+        assert recusa.attrs["operation"] == ("overwrite" if modo == "overwrite" else "write")
+        assert "collect iam-access" in recusa.attrs["unblocked_by"]
+
+
+def _do_put(saida: list[Fact]) -> list[Fact]:
+    """So o que a saida diz de s3:PutObject. Write sob FGAC exige tambem
+    s3:DeleteObject (a fonte nao separa append de overwrite); nos cenarios que medem
+    a semantica de uma decisao de PutObject, DeleteObject nao simulado tem recusa
+    propria, que nao e o que eles medem."""
+    return [f for f in saida if (f.attrs or {}).get("action") == "s3:PutObject"]
 
 
 def _fgac_51(*resto: Fact) -> list[Fact]:
@@ -1000,7 +1092,7 @@ def test_fgac_negacao_em_outro_bucket_nao_acusa_a_tabela():
         _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
         _decisao("s3:PutObject", "implicitDeny", recurso="arn:aws:s3:::outro-bucket/x/*"),
     )
-    assert build_missing_grant(pool) == []
+    assert _do_put(build_missing_grant(pool)) == []
 
 
 def test_fgac_negacao_implicita_num_objeto_da_tabela_nao_fala_pela_tabela():
@@ -1010,7 +1102,7 @@ def test_fgac_negacao_implicita_num_objeto_da_tabela_nao_fala_pela_tabela():
         _registrada(False),
         _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/part-0.parquet"),
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
 
 
@@ -1019,7 +1111,7 @@ def test_fgac_so_simulada_fora_da_tabela_recusa_nao_simulada():
         _registrada(False),
         _decisao("s3:PutObject", "implicitDeny", recurso="arn:aws:s3:::outro-bucket/x/*"),
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
     assert "localizacao da tabela" in recusa.attrs["unblocked_by"]
 
@@ -1030,7 +1122,7 @@ def test_fgac_sem_localizacao_e_dois_recursos_recusa():
         _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
         _decisao("s3:PutObject", "implicitDeny", recurso="arn:aws:s3:::outro-bucket/x/*"),
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
     assert recusa.attrs["action"] == "s3:PutObject"
     assert "localizacao" in recusa.attrs["unblocked_by"]
@@ -1041,7 +1133,7 @@ def test_fgac_sem_localizacao_negacao_implicita_num_recurso_so_recusa():
     # Sem a localizacao, nenhum implicitDeny fala pela tabela, nem o de `*`: uma
     # policy escopada a ela tambem nega ali.
     um = _fgac_51(_registrada(False, arn=""), _decisao("s3:PutObject", "implicitDeny"))
-    (recusa,) = _so_recusas(build_missing_grant(um))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(um)))
     assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
 
 
@@ -1147,13 +1239,13 @@ def test_implicita_em_estrela_ao_lado_de_allowed_escopado_nao_acusa():
         _decisao(PUT, "implicitDeny", recurso="*"),
         _decisao(PUT, "allowed", recurso=LOCAL + "/*"),
     )
-    assert build_missing_grant(pool) == []
+    assert _do_put(build_missing_grant(pool)) == []
 
 
 def test_so_implicita_em_estrela_recusa_nao_simulada():
     # a3
     pool = _fgac_51(_registrada(False), _decisao(PUT, "implicitDeny", recurso="*"))
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
     assert "--resource-arn <localizacao>/*" in recusa.attrs["unblocked_by"]
 
@@ -1176,7 +1268,7 @@ def test_implicita_no_bucket_nu_ou_na_localizacao_sem_barra_nao_acusa():
             _decisao(PUT, "implicitDeny", recurso=recurso),
             _decisao(PUT, "allowed", recurso=LOCAL + "/*"),
         )
-        assert build_missing_grant(pool) == [], recurso
+        assert _do_put(build_missing_grant(pool)) == [], recurso
 
 
 def test_registro_no_bucket_nao_acusa_pelo_prefixo_de_outra_tabela():
@@ -1187,7 +1279,7 @@ def test_registro_no_bucket_nao_acusa_pelo_prefixo_de_outra_tabela():
         _decisao(PUT, "allowed", recurso=BUCKET + "/default/dim_cliente/*"),
         _decisao(PUT, "implicitDeny", recurso=BUCKET + "/staging/outra/*"),
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
 
 
@@ -1197,7 +1289,7 @@ def test_prefixo_irmao_nao_pertence_a_tabela():
         _explicito(LOCAL + "_hist/*"),
     ):
         pool = _fgac_51(_registrada(False), decisao)
-        (recusa,) = _so_recusas(build_missing_grant(pool))
+        (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
         assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
 
 
@@ -1210,7 +1302,7 @@ def test_prefixo_do_bucket_acusa_so_com_explicit_deny():
     implicita = _fgac_51(
         _registrada(False), _decisao(PUT, "implicitDeny", recurso=BUCKET + "/*")
     )
-    (recusa,) = _so_recusas(build_missing_grant(implicita))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(implicita)))
     assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
 
 
@@ -1252,7 +1344,7 @@ def test_decisao_sem_allowed_booleano_recusa_malformada():
     pool = _fgac_51(
         _registrada(False), _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*", allowed=None)
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "decisao_iam_malformada"
     assert "allowed" in recusa.attrs["unblocked_by"]
 
@@ -1261,7 +1353,7 @@ def test_decisao_negada_com_nome_desconhecido_recusa():
     pool = _fgac_51(
         _registrada(False), _decisao(PUT, "denied", recurso=LOCAL + "/*")
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "decisao_iam_desconhecida"
     assert recusa.attrs["decision"] == "denied"
 
@@ -1273,7 +1365,7 @@ def test_duas_localizacoes_para_a_mesma_tabela_nao_escolhem_a_primeira():
         [_registrada(False), _registrada(False, arn=outra)],
         [_registrada(False, arn=outra), _registrada(False)],
     ):
-        (recusa,) = _so_recusas(build_missing_grant(_fgac_51(*registros, negada)))
+        (recusa,) = _so_recusas(_do_put(build_missing_grant(_fgac_51(*registros, negada))))
         assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
 
 
@@ -1293,7 +1385,7 @@ def test_implicita_e_allowed_no_mesmo_prefixo_da_tabela_recusa_contraditoria():
         _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*", arquivo="iam_a.json"),
         _decisao(PUT, "allowed", recurso=LOCAL + "/*", arquivo="iam_b.json"),
     )
-    (recusa,) = _so_recusas(build_missing_grant(pool))
+    (recusa,) = _so_recusas(_do_put(build_missing_grant(pool)))
     assert recusa.attrs["reason"] == "decisoes_iam_contraditorias"
     assert "mesmo recurso" in recusa.attrs["unblocked_by"]
 
@@ -1317,10 +1409,9 @@ def _escrita_modo_nao_lido(target: str | None = TABELA) -> Fact:
     )
 
 
-def test_fgac_modo_nao_lido_nao_presume_write_e_nao_cala_delete_object():
-    # PutObject allowed no prefixo da tabela cobriria um write presumido e a saida
-    # seria [] -- "o grant cobre". Se o modo for overwrite, DeleteObject nao foi
-    # simulado: a operacao e desconhecida e sai recusada por nome.
+def test_fgac_modo_nao_lido_com_put_object_permitido_recusa_delete_object_nao_simulado():
+    # Write e overwrite exigem as mesmas duas acoes: PutObject allowed nao cobre a
+    # escrita, e DeleteObject nao simulado sai recusado, com a marca de modo.
     pool = [
         _gatilho(),
         _modelo("fgac"),
@@ -1330,12 +1421,10 @@ def test_fgac_modo_nao_lido_nao_presume_write_e_nao_cala_delete_object():
         _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
     ]
     saida = build_missing_grant(pool)
-    assert _de(saida, "lakeformation.missing_grant") == []
     (recusa,) = _so_recusas(saida)
-    assert recusa.attrs["reason"] == "modo_de_escrita_nao_lido"
-    assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
-    assert "s3:DeleteObject" in recusa.attrs["unblocked_by"]
-    assert "write esta coberto" in recusa.attrs["unblocked_by"]
+    assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
+    assert recusa.attrs["action"] == "s3:DeleteObject"
+    assert recusa.attrs["mode_unresolved"] is True
 
 
 def test_fgac_modo_nao_lido_acusa_put_object_negado_que_falta_em_qualquer_modo():
@@ -1347,17 +1436,19 @@ def test_fgac_modo_nao_lido_acusa_put_object_negado_que_falta_em_qualquer_modo()
         _escrita_modo_nao_lido(),
         _registrada(False),
         _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/*"),
+        _decisao("s3:DeleteObject", "allowed", recurso=LOCAL + "/*"),
     ]
     saida = build_missing_grant(pool)
     (falta,) = _de(saida, "lakeformation.missing_grant")
     assert falta.attrs["action"] == "s3:PutObject"
     assert falta.attrs["operation"] == "write"
     assert falta.attrs["mode_unresolved"] is True
-    assert "modo_de_escrita_nao_lido" not in _razoes(saida)
+    assert _razoes(saida) == []
 
 
-def test_fgac_modo_nao_lido_com_put_object_coberto_e_delete_object_negado_recusa():
-    # O DeleteObject negado so falta se o modo for overwrite, e o modo nao foi lido.
+def test_fgac_modo_nao_lido_com_delete_object_negado_acusa_em_qualquer_modo():
+    # Antes da fonte que nomeia as acoes, DeleteObject so pesava no overwrite e o modo
+    # nao lido saia recusado; a fonte cobra as duas em qualquer escrita.
     pool = [
         _gatilho(),
         _modelo("fgac"),
@@ -1368,8 +1459,10 @@ def test_fgac_modo_nao_lido_com_put_object_coberto_e_delete_object_negado_recusa
         _decisao("s3:DeleteObject", "implicitDeny", recurso=LOCAL + "/*"),
     ]
     saida = build_missing_grant(pool)
-    assert _de(saida, "lakeformation.missing_grant") == []
-    assert _razoes(saida) == ["modo_de_escrita_nao_lido"]
+    (falta,) = _de(saida, "lakeformation.missing_grant")
+    assert falta.attrs["action"] == "s3:DeleteObject"
+    assert falta.attrs["mode_unresolved"] is True
+    assert _razoes(saida) == []
 
 
 def test_fta_modo_nao_lido_acusa_all_de_write_sem_recusa_de_modo():
@@ -1383,15 +1476,61 @@ def test_fta_modo_nao_lido_acusa_all_de_write_sem_recusa_de_modo():
     assert _razoes(saida) == []
 
 
-def test_fgac_modo_nao_lido_com_put_object_nao_simulado_nao_diz_write_coberto():
-    pool = [
+def _tabela_em_que_overwrite_cobra_mais(monkeypatch) -> None:
+    """Nenhuma linha da tabela citada tem hoje overwrite cobrando mais que write; o
+    ramo `modo_de_escrita_nao_lido` e generico, e continua medido com esta tabela."""
+    from sparkforge.facts import lakeformation_missing_grant as modulo
+
+    real = modulo.requirement
+
+    def falsa(operation: str, model: str):
+        linha = real(operation, model)
+        if linha is not None and model == "fgac" and operation == "write":
+            linha["requires"] = ["s3:PutObject"]
+        return linha
+
+    monkeypatch.setattr(modulo, "requirement", falsa)
+
+
+def test_modo_nao_lido_recusa_quando_so_o_overwrite_cobraria_mais(monkeypatch):
+    _tabela_em_que_overwrite_cobra_mais(monkeypatch)
+    base = [
         _gatilho(), _modelo("fgac"), _glue("5.1"), _escrita_modo_nao_lido(),
         _registrada(False),
     ]
-    saida = build_missing_grant(pool)
-    assert _razoes(saida) == ["acao_iam_nao_simulada", "modo_de_escrita_nao_lido"]
-    (modo,) = [r for r in _so_recusas(saida) if r.attrs["reason"] == "modo_de_escrita_nao_lido"]
+    coberto = build_missing_grant(
+        [*base, _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*")]
+    )
+    (recusa,) = _so_recusas(coberto)
+    assert recusa.attrs["reason"] == "modo_de_escrita_nao_lido"
+    assert recusa.attrs["overwrite_only"] == ["s3:DeleteObject"]
+    assert "write esta coberto" in recusa.attrs["unblocked_by"]
+    nao_simulado = build_missing_grant(
+        [*base, _decisao("s3:GetObject", "allowed", recurso=LOCAL + "/*")]
+    )
+    assert _razoes(nao_simulado) == ["acao_iam_nao_simulada", "modo_de_escrita_nao_lido"]
+    (modo,) = [
+        r for r in _so_recusas(nao_simulado) if r.attrs["reason"] == "modo_de_escrita_nao_lido"
+    ]
     assert "write esta coberto" not in modo.attrs["unblocked_by"]
+
+
+def test_modo_nao_lido_nao_muta_o_fact_que_o_lado_devolveu(monkeypatch):
+    # A marca `mode_unresolved` sai num fact novo: o que o lado construiu fica como
+    # foi construido.
+    from sparkforge.facts import lakeformation_missing_grant as modulo
+
+    devolvido = Fact(
+        kind="lakeformation.missing_grant",
+        subject={"type": "table", "symbol": f"{TABELA}#write#lf"},
+        attrs={"resource": TABELA, "operation": "write", "side": "lf"},
+        provenance=PROV,
+    )
+    monkeypatch.setattr(modulo, "_lado_lf", lambda *args, **kwargs: [devolvido])
+    pool = [_gatilho(), _fta(), _escrita_modo_nao_lido(), _grant(["SELECT"])]
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["mode_unresolved"] is True
+    assert "mode_unresolved" not in devolvido.attrs
 
 
 def test_modo_nao_lido_ao_lado_de_write_lido_nao_duplica_a_falta():
