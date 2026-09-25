@@ -636,3 +636,14 @@ def test_alvo_e_mensagem_sem_diferenca_de_caixa():
     ]
     (falta,) = _de(build_missing_grant(mensagem), "lakeformation.missing_grant")
     assert falta.attrs["resource"] == TABELA
+
+
+def test_linha_hostil_com_prefixo_repetido_nao_trava():
+    # O texto do gatilho vem do artefato; um regex que recomeca em cada "permission(s)"
+    # fica quadratico, e 20 mil repeticoes levavam dezenas de segundos.
+    import time
+
+    pool = [_gatilho(linha="permission(s)" * 20000), *cenario_fta_append_sem_all()[1:]]
+    inicio = time.perf_counter()
+    build_missing_grant(pool)
+    assert time.perf_counter() - inicio < 2.0

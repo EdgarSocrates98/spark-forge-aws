@@ -67,7 +67,10 @@ _NAO_TABELA_RE = re.compile(
 )
 # Qualquer `on` depois de "permission(s)" conta como clausula: com ela, o atalho do
 # candidato unico acusaria a tabela do pool no lugar da que a mensagem nomeia.
-_CLAUSULA_RE = re.compile(r"permission\(s\).*?\bon\b\s*\S*", re.IGNORECASE)
+# Dois passos, e nao `permission\(s\).*?\bon\b`: esse recomeca em cada "permission(s)" do
+# texto do artefato e fica quadratico.
+_PERMISSAO_RE = re.compile(r"permission\(s\)", re.IGNORECASE)
+_ON_RE = re.compile(r"\bon\b\s*\S*", re.IGNORECASE)
 _NOME_RE = re.compile(r"[A-Za-z0-9_\-]+(?:\.[A-Za-z0-9_\-]+)*")
 _ASPAS = "'\"`"
 
@@ -252,8 +255,15 @@ def _recurso_da_mensagem(gatilho: Fact) -> str | None:
 
 
 def _clausula(gatilho: Fact) -> str | None:
-    casou = _CLAUSULA_RE.search(_texto(gatilho))
-    return casou.group(0) if casou else None
+    texto = _texto(gatilho)
+    permissao = _PERMISSAO_RE.search(texto)
+    if permissao is None:
+        return None
+    fim_da_linha = texto.find("\n", permissao.end())
+    on = _ON_RE.search(
+        texto, permissao.end(), len(texto) if fim_da_linha < 0 else fim_da_linha
+    )
+    return texto[permissao.start() : on.end()] if on else None
 
 
 def _recurso_nao_tabela(gatilho: Fact) -> str | None:
