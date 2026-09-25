@@ -31,6 +31,7 @@ from typing import Any
 
 import yaml
 
+from sparkforge.facts import lakeformation_matrix
 from sparkforge.findings.models import Fact, sort_facts
 from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
 
@@ -53,6 +54,10 @@ GATILHO = "ERR-LF-001"
 SOURCE_KINDS = frozenset({"error.signature_match"})
 
 IAM_ALLOWED_PRINCIPALS = "IAM_ALLOWED_PRINCIPALS"
+
+# O eixo de `knowledge/glue/lakeformation-matrix.yaml` que diz se a versao escreve sob
+# FGAC Spark-native (D5).
+EIXO_ESCRITA_FGAC = "fgac_spark_native_write"
 
 # O texto do gatilho e um TRECHO: `sparkforge/errors/matcher.py` grava
 # `matched_line = mensagem[:_TRECHO]` (200) e `sparkforge/facts/exception.py` grava
@@ -178,6 +183,30 @@ _DESTRAVA = {
         "a tabela citada nao declara requisito para esta operacao neste modelo; nada e "
         "afirmado sem fonte"
     ),
+    "runtime_ausente": (
+        "a escrita sob FGAC depende da versao do Glue; rode `sparkforge runtime detect` ou "
+        "`sparkforge analyze terraform` sobre o job (glue_version)"
+    ),
+    "runtime_divergente": (
+        "o case observa mais de uma versao de Glue; resolva a divergencia antes"
+    ),
+    "runtime_sem_celula_na_matriz": (
+        "knowledge/glue/lakeformation-matrix.yaml nao declara escrita sob FGAC para esta "
+        "versao; nada e afirmado sem a pagina de migracao lida"
+    ),
+    "escrita_fgac_nao_suportada_no_runtime": (
+        "a matriz de versao declara que esta versao nao escreve sob FGAC Spark-native "
+        "(eixo fgac_spark_native_write); a causa e versao, nao permissao"
+    ),
+    "conflito_declarado_fgac_escrita_registrada": (
+        "escrita em localizacao registrada sob FGAC e o conflito declarado da secao 6 de "
+        "knowledge/glue/lakeformation-fgac.md; as tres saidas que a documentacao sustenta "
+        "estao la, e nenhuma e escolhida aqui (regra 32)"
+    ),
+    "acao_iam_nao_simulada": (
+        "a acao exigida nao foi simulada para o role do job; rode "
+        "`sparkforge collect iam-access` incluindo-a"
+    ),
 }
 
 _RELATIVE = "glue/lakeformation-permissions.yaml"
@@ -229,7 +258,9 @@ def _unresolved(
 ) -> Fact:
     # `matched` (o trecho que nao foi lido) entra no rotulo: sem ele, duas recusas de
     # gatilhos com textos diferentes colapsariam num id so.
-    partes = (recurso, reason, *(str(extra.get(k) or "") for k in ("operation", "matched")))
+    # `action` tambem: overwrite sob FGAC recusa duas acoes da mesma operacao.
+    chaves = ("operation", "action", "matched")
+    partes = (recurso, reason, *(str(extra.get(k) or "") for k in chaves))
     rotulo = "#".join(p for p in partes if p)
     return Fact(
         kind="lakeformation.missing_grant.unresolved",
@@ -518,11 +549,135 @@ def _lado_lf(
     ]
 
 
+def _runtime(facts: Sequence[Fact]) -> tuple[str | None, str | None]:
+    """D5: `(versao, None)` ou `(None, razao)`. O sinal resolvido ganha do Terraform;
+    do Terraform so conta `glue_version` literal na raiz do job, a mesma guarda de
+    `adapters/_core.py` (`var.x` e chave homonima em `default_arguments` nao sao
+    versao)."""
+    sinais = [
+        f
+        for f in facts
+        if f.kind == "env.runtime_signal" and (f.attrs or {}).get("component") == "glue"
+    ]
+    if sinais:
+        valores = {str((f.attrs or {}).get("resolved") or "") for f in sinais} - {""}
+        divergente = any(
+            int((f.measures or {}).get("distinct_versions") or 0) > 1 for f in sinais
+        )
+        if divergente or len(valores) > 1:
+            return None, "runtime_divergente"
+        if len(valores) == 1:
+            return valores.pop(), None
+    declarados = {
+        str((f.attrs or {}).get("value") or "").strip()
+        for f in facts
+        if f.kind == "tf.attribute"
+        and (f.attrs or {}).get("key") == "glue_version"
+        and (f.attrs or {}).get("literal")
+        and (f.attrs or {}).get("block") == "root"
+    } - {""}
+    if len(declarados) > 1:
+        return None, "runtime_divergente"
+    if len(declarados) == 1:
+        return declarados.pop(), None
+    return None, "runtime_ausente"
+
+
 def _lado_iam(
     recurso: str, operacao: str, origem: Fact, linha: dict[str, Any], modelo: str,
     gatilho: Fact, facts: Sequence[Fact],
 ) -> list[Fact]:
-    return []
+    """Escrita sob FGAC: a versao decide se ha escrita, o registro decide se ha
+    conflito declarado, e so entao a decisao de IAM do role do job e cobrada."""
+    versao, razao = _runtime(facts)
+    if razao is not None:
+        return [_unresolved(razao, recurso, gatilho, operation=operacao)]
+    celula = lakeformation_matrix.capability(str(versao), EIXO_ESCRITA_FGAC) or {}
+    status = celula.get("status")
+    if status in {"not_supported", "not_applicable"}:
+        return [
+            _unresolved(
+                "escrita_fgac_nao_suportada_no_runtime", recurso, gatilho,
+                operation=operacao, runtime=versao,
+            )
+        ]
+    if status != "supported":
+        return [
+            _unresolved(
+                "runtime_sem_celula_na_matriz", recurso, gatilho,
+                operation=operacao, runtime=versao,
+            )
+        ]
+    registrada = any(
+        f.kind == "lakeformation.registered_location"
+        and _casa(_tabela_de(f), recurso)
+        and (f.attrs or {}).get("registered") is True
+        for f in facts
+    )
+    if registrada:
+        return [
+            _unresolved(
+                "conflito_declarado_fgac_escrita_registrada", recurso, gatilho,
+                operation=operacao, runtime=versao,
+            )
+        ]
+    # O role do job sai das decisoes de IAM, como no lado LF: a negacao de outro role
+    # nao acusa este.
+    principal, candidatas = _principal(facts, [])
+    if candidatas:
+        return [
+            _unresolved(
+                "principal_ambiguo", recurso, gatilho, operation=operacao, candidates=candidatas
+            )
+        ]
+    # So decisao com `allowed` booleano e lida: sem ele, nao se sabe se negou.
+    decisoes = [
+        f
+        for f in facts
+        if f.kind == "iam.access_decision"
+        and principal
+        and (f.attrs or {}).get("role_arn") == principal
+        and isinstance((f.attrs or {}).get("allowed"), bool)
+    ]
+    saida: list[Fact] = []
+    for acao in linha["requires"]:
+        da_acao = [d for d in decisoes if (d.attrs or {}).get("action") == acao]
+        if not da_acao:
+            saida.append(
+                _unresolved(
+                    "acao_iam_nao_simulada", recurso, gatilho, operation=operacao, action=acao
+                )
+            )
+            continue
+        for negada in (d for d in da_acao if (d.attrs or {}).get("allowed") is False):
+            attrs = negada.attrs or {}
+            saida.append(
+                Fact(
+                    kind="lakeformation.missing_grant",
+                    subject={"type": "table", "symbol": f"{recurso}#{operacao}#iam#{acao}"},
+                    measures={},
+                    attrs={
+                        "resource": recurso,
+                        "operation": operacao,
+                        "model": modelo,
+                        "side": "iam",
+                        "principal": principal,
+                        "action": acao,
+                        "decision": str(attrs.get("decision") or ""),
+                        "denied_by": str(attrs.get("denied_by") or ""),
+                        "runtime": versao,
+                        "requires": list(linha["requires"]),
+                        "missing": [acao],
+                        "source": load_table()["fontes"][linha["source"]],
+                        "quote": linha["quote"],
+                        "signature_id": GATILHO,
+                        "evidence": sorted({gatilho.id, origem.id, negada.id}),
+                        "extractor": EXTRACTOR_ID,
+                    },
+                    provenance=_prov(gatilho),
+                )
+            )
+    return saida
 
 
 def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:

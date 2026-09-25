@@ -861,3 +861,79 @@ def test_truncado_das_duas_portas_e_uma_recusa_so():
     assert len(gatilhos) == 2
     pool = [*gatilhos, *cenario_fta_append_sem_all()[1:]]
     assert _razoes(build_missing_grant(pool)) == ["trecho_truncado"]
+
+
+def test_fgac_escrita_cobra_iam_com_denied_by():
+    (falta,) = _de(
+        build_missing_grant(cenario_fgac_escrita_negada()), "lakeformation.missing_grant"
+    )
+    assert falta.attrs["side"] == "iam"
+    assert falta.attrs["model"] == "fgac"
+    assert falta.attrs["action"] == "s3:PutObject"
+    assert falta.attrs["decision"] == "implicitDeny"
+    assert falta.attrs["denied_by"] == "implicit_deny"
+    assert falta.attrs["runtime"] == "5.1"
+    assert falta.attrs["missing"] == ["s3:PutObject"]
+
+
+def test_fgac_escrita_registrada_e_conflito_declarado():
+    saida = build_missing_grant(cenario_fgac_escrita_registrada())
+    assert _de(saida, "lakeformation.missing_grant") == []
+    (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+    assert recusa.attrs["reason"] == "conflito_declarado_fgac_escrita_registrada"
+    assert "knowledge/glue/lakeformation-fgac.md" in recusa.attrs["unblocked_by"]
+    assert "missing" not in recusa.attrs
+
+
+def test_modelo_ou_runtime_desconhecido_recusa_por_nome():
+    both = [_gatilho(), _modelo("both"), _escrita(), _grant(["SELECT"])]
+    ausente = [_gatilho(), _escrita(), _grant(["SELECT"])]
+    sem_runtime = [
+        _gatilho(), _modelo("fgac"), _escrita(), _decisao("s3:PutObject", "implicitDeny")
+    ]
+    razoes = []
+    for pool in (both, ausente, sem_runtime):
+        (recusa,) = _de(build_missing_grant(pool), "lakeformation.missing_grant.unresolved")
+        assert recusa.attrs["unblocked_by"], recusa.attrs
+        razoes.append(recusa.attrs["reason"])
+    assert razoes == ["modelo_both", "modelo_ausente", "runtime_ausente"]
+
+
+def test_fgac_escrita_em_runtime_sem_suporte_nao_e_permissao():
+    pool = [
+        _gatilho(), _modelo("fgac"), _glue("5.0"), _escrita(),
+        _decisao("s3:PutObject", "implicitDeny"),
+    ]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    (recusa,) = _de(saida, "lakeformation.missing_grant.unresolved")
+    assert recusa.attrs["reason"] == "escrita_fgac_nao_suportada_no_runtime"
+    assert recusa.attrs["runtime"] == "5.0"
+
+
+def test_fgac_decisao_de_outro_role_nao_acusa_o_job():
+    base = [_gatilho(), _modelo("fgac"), _glue("5.1")]
+    # A negacao e de outro role, ao lado de um allowed do role do job: com dois roles
+    # decididos nada diz qual e o do job, e a negacao alheia nao vira acusacao.
+    so_outro = [*base, _escrita(), _decisao("s3:PutObject", "allowed", role=ROLE),
+                _decisao("s3:PutObject", "implicitDeny", role=OUTRO_ROLE)]
+    assert _razoes(build_missing_grant(so_outro)) == ["principal_ambiguo"]
+    # Registro de nome qualificado com catalogo casa pelo sufixo, como na T2.
+    registrada = Fact(
+        kind="lakeformation.registered_location",
+        subject={"type": "table", "symbol": "glue_catalog.default.dim_cliente"},
+        attrs={"registered": True},
+        provenance=PROV,
+    )
+    pool = [*base, _escrita(), registrada, _decisao("s3:PutObject", "implicitDeny")]
+    assert _razoes(build_missing_grant(pool)) == [
+        "conflito_declarado_fgac_escrita_registrada"
+    ]
+
+
+def test_fgac_overwrite_sem_simulacao_recusa_cada_acao():
+    pool = [_gatilho(), _modelo("fgac"), _glue("5.1"), _escrita(mode="overwrite")]
+    recusas = _so_recusas(build_missing_grant(pool))
+    assert sorted(r.attrs["action"] for r in recusas) == ["s3:DeleteObject", "s3:PutObject"]
+    assert {r.attrs["reason"] for r in recusas} == {"acao_iam_nao_simulada"}
+    assert all("collect iam-access" in r.attrs["unblocked_by"] for r in recusas)
