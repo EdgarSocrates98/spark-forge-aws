@@ -136,8 +136,7 @@ def detach(
         relatorio["config"] = [
             writer.revert_config(registro, disco=disco) for registro in registros
         ]
-        if not dry_run:
-            del manifesto["hosts"][nome]
+        del manifesto["hosts"][nome]
         relatorios.append(relatorio)
     if not dry_run:
         writer.drop_manifest_if_empty(disco.home, manifesto)

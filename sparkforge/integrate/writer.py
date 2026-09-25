@@ -130,12 +130,17 @@ class Disco:
 
     `appdata=None` e `home/AppData/Roaming`: com `home` injetado, o APPDATA do
     ambiente nunca e lido aqui -- quem quer o real (o CLI) o passa explicito.
+
+    No dry-run nada vai ao disco: gravar e apagar vao para uma sombra em memoria,
+    e ler consulta a sombra antes do disco. Assim o segundo host de `all` ve o que
+    o primeiro "gravou", e o relatorio do ensaio e o da execucao real.
     """
 
     def __init__(self, home: Path, appdata: Path | None = None, *, dry_run: bool = False):
         self.home = Path(home)
         self.appdata = default_appdata(self.home) if appdata is None else Path(appdata)
         self.dry_run = dry_run
+        self._sombra: dict[Path, bytes | None] = {}
 
     def _raiz(self, caminho: Path) -> tuple[Path, str]:
         caminho = Path(caminho)
@@ -158,16 +163,21 @@ class Disco:
 
     def ler(self, caminho: Path) -> bytes | None:
         caminho = Path(caminho)
+        if caminho in self._sombra:
+            return self._sombra[caminho]
         return caminho.read_bytes() if caminho.is_file() else None
 
     def gravar(self, caminho: Path, dados: bytes) -> None:
-        if not self.dry_run:
-            gravar_atomico(caminho, dados)
+        if self.dry_run:
+            self._sombra[Path(caminho)] = dados
+            return
+        gravar_atomico(caminho, dados)
 
     def apagar(self, caminho: Path) -> None:
-        if self.dry_run:
-            return
         caminho = Path(caminho)
+        if self.dry_run:
+            self._sombra[caminho] = None
+            return
         caminho.unlink()
         _podar(caminho, self._raiz(caminho)[0])
 
@@ -321,7 +331,8 @@ def remove_owned(
 ) -> dict[str, list]:
     """Tira `nome` dos donos de `relativos`. O arquivo so sai do disco quando `nome`
     era o ultimo dono, o sha256 em disco ainda e o gravado e ele nao e
-    `preexistente`. O manifesto e alterado em memoria; quem chama o salva."""
+    `preexistente`. O manifesto e alterado em memoria (no dry-run, nunca salvo);
+    quem chama o salva."""
     removidos: list[str] = []
     mantidos: list[str] = []
     preexistentes: list[str] = []
@@ -335,8 +346,7 @@ def remove_owned(
         caminho = disco.local(relativo)
         if outros:
             mantidos.append(relativo)
-            if not disco.dry_run:
-                registro["owners"] = outros
+            registro["owners"] = outros
             continue
         atual = disco.ler(caminho)
         if registro.get("preexistente"):
@@ -347,8 +357,7 @@ def remove_owned(
             removidos.append(relativo)
             if atual is not None:
                 disco.apagar(caminho)
-        if not disco.dry_run:
-            del arquivos[relativo]
+        del arquivos[relativo]
     return {
         "removed": removidos,
         "kept_shared": mantidos,
@@ -388,20 +397,17 @@ def apply_files(
             if atual == sha:
                 iguais.append(relativo)
                 vistos.add(relativo)
-                if not disco.dry_run:
-                    _adotar(manifesto, relativo, nome, sha, preexistente=registrado is None)
+                _adotar(manifesto, relativo, nome, sha, preexistente=registrado is None)
                 continue
         escritos.append(relativo)
         vistos.add(relativo)
         disco.gravar(destino, dados)
-        if not disco.dry_run:
-            _adotar(manifesto, relativo, nome, sha, preexistente=False)
+        _adotar(manifesto, relativo, nome, sha, preexistente=False)
     anteriores = [r for r in host_files(manifesto, nome) if r not in vistos]
     orfaos = remove_owned(disco, manifesto, nome, anteriores)
-    if not disco.dry_run:
-        entrada = manifesto["hosts"].setdefault(nome, {})
-        entrada["package_version"] = version
-        entrada.setdefault("config", [])
+    entrada = manifesto["hosts"].setdefault(nome, {})
+    entrada["package_version"] = version
+    entrada.setdefault("config", [])
     return {
         "host": nome,
         "dry_run": disco.dry_run,
@@ -483,8 +489,7 @@ def apply_json_config(
         }
     if status == "written":
         disco.gravar(caminho, novo_texto.encode("utf-8"))
-    if not disco.dry_run:
-        _guardar_registro(manifesto, nome, registro)
+    _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
 
 
@@ -556,8 +561,7 @@ def apply_toml_config(
     }
     if status == "written":
         disco.gravar(caminho, novo.encode("utf-8"))
-    if not disco.dry_run:
-        _guardar_registro(manifesto, nome, registro)
+    _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
 
 

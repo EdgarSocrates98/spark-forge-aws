@@ -716,3 +716,36 @@ def test_appdata_vem_do_home_e_o_manifesto_so_guarda_relativo(tmp_path, monkeypa
     assert not (fora / "devin").exists()
     assert fora.is_dir()
     assert not (casa / ".agents").exists()
+
+
+def _sem_modo(relatorio: dict) -> dict:
+    """O relatorio sem a marca de dry-run, para comparar ensaio e execucao."""
+    copia = {k: v for k, v in relatorio.items() if k != "dry_run"}
+    copia["hosts"] = [{k: v for k, v in h.items() if k != "dry_run"} for h in copia["hosts"]]
+    return copia
+
+
+def test_dry_run_de_all_simula_o_manifesto_entre_hosts(tmp_path):
+    comum = {"skills/sdd-plan/SKILL.md": _skill("sdd-plan")}
+    v1 = _raiz_falsa(tmp_path / "v1", {
+        **comum, "skills/sdd-build/SKILL.md": _skill("sdd-build"),
+    })
+    v2 = _raiz_falsa(tmp_path / "v2", {**comum, "skills/sdd-plan/ref.md": "novo\n"})
+    home = tmp_path / "home"
+    config = home / ".copilot" / "mcp-config.json"
+    config.parent.mkdir(parents=True)
+    config.write_bytes(json.dumps({"mcpServers": {"outro": {"command": "node"}}}).encode())
+
+    for raiz in (v1, v2):
+        antes = _foto(home)
+        ensaio = integrate("all", home=home, dry_run=True, windows=False, root=raiz)
+        assert _foto(home) == antes, "o dry-run escreveu"
+        real = integrate("all", home=home, windows=False, root=raiz)
+        assert _sem_modo(ensaio) == _sem_modo(real), raiz.name
+
+    antes = _foto(home)
+    ensaio = detach("all", home=home, dry_run=True)
+    assert _foto(home) == antes, "o dry-run do detach removeu"
+    real = detach("all", home=home)
+    assert _sem_modo(ensaio) == _sem_modo(real)
+    assert not (home / ".agents").exists()
