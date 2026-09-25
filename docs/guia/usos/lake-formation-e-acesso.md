@@ -150,6 +150,7 @@ O `fuse` acrescenta os kinds de Lake Formation:
     "fusion.summary": 1,
     "lakeformation.access_model": 1,
     "lakeformation.filesystem": 1,
+    "lakeformation.fta_declared": 1,
     "lakeformation.unresolved": 1,
     "tf.attribute": 12,
     ...
@@ -499,17 +500,17 @@ O `fuse` grava um `lakeformation.missing_grant` com estes campos (trecho do
  "signature_id": "ERR-LF-001"}
 ```
 
-O `judge` devolve dois findings:
+O `judge` devolve um finding:
 
 | Regra | Severidade | Título |
 |---|---|---|
 | SF-LF-011 | P1 | O job falhou por permissão do Lake Formation, e a permissão que a operação exige não está no grant medido (ou na decisão de IAM, sob FGAC) |
-| SF-LF-010 | P2 | Tabela com localização registrada, e o job não declara modelo de acesso nenhum |
 
-O texto de `SF-LF-010` **não é verdadeiro aqui**: o job declara FTA. A regra só
-pergunta se falta o fact `lakeformation.access_model`, e esse fact só nasce do
-argumento de FGAC; um job só de FTA aparece como `lakeformation.filesystem`. É
-uma lacuna conhecida da regra, anterior a `SF-LF-011`, e ainda não corrigida.
+`SF-LF-010` (localização registrada sem modelo de acesso declarado) **não** dispara: o
+job declara FTA. FTA não tem argumento de job, e por isso não produz
+`lakeformation.access_model`; o pedido de FTA é o resolver de credencial, que o `fuse`
+grava como `lakeformation.fta_declared`. A regra pergunta pela ausência dos dois. Um
+job que só troque `spark.hadoop.fs.s3.impl`, sem o resolver, continua acusado.
 
 No grafo, a perna `lf_grant` sai assim:
 
@@ -520,7 +521,7 @@ No grafo, a perna `lf_grant` sai assim:
 
 A contraprova é a fixture `fixtures/cloudwatch_logs/lf_negado_fta_grant_all`: o
 mesmo log e o mesmo código, com `ALL` no grant. Ali o `fuse` não produz
-`lakeformation.missing_grant` nem recusa, e `SF-LF-011` não dispara.
+`lakeformation.missing_grant` nem recusa, e o `judge` não devolve finding nenhum.
 
 ### O mesmo caminho na sua conta
 
