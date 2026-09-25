@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -276,5 +277,79 @@ def apply_json_config(
         if status == "written":
             caminho.parent.mkdir(parents=True, exist_ok=True)
             caminho.write_bytes(novo_texto.encode("utf-8"))
+        _guardar_registro(manifesto, nome, registro)
+    return {"path": relativo, "status": status}
+
+
+# --------------------------------------------------------------------------
+# Config de usuario em TOML (Codex): um bloco marcado (D6)
+# --------------------------------------------------------------------------
+# O Python 3.10 que o projeto suporta nao le TOML e o projeto nao tem dependencia
+# para isso; por isso o SparkForge nao reescreve o arquivo -- so poe, troca ou tira
+# o bloco entre os dois marcadores. `[mcp_servers.sparkforge]` fora do bloco foi
+# escrito por outra pessoa e sai recusa. Marcador sem par sai recusa tambem: nao
+# da para saber onde o bloco termina.
+
+INICIO_TOML = "# >>> sparkforge (gerenciado)"
+FIM_TOML = "# <<< sparkforge"
+_TABELA_SPARKFORGE = re.compile(r"^\s*\[mcp_servers\.sparkforge\]", re.MULTILINE)
+
+
+def toml_block(comando: str, args: list[str]) -> str:
+    """O bloco com `[mcp_servers.sparkforge]`. `json.dumps` produz string e array
+    validos de TOML (o escape do JSON e subconjunto do escape de string basica)."""
+    return (
+        f"{INICIO_TOML}\n"
+        "[mcp_servers.sparkforge]\n"
+        f"command = {json.dumps(comando, ensure_ascii=False)}\n"
+        f"args = {json.dumps(args, ensure_ascii=False)}\n"
+        f"{FIM_TOML}\n"
+    )
+
+
+def _limites_do_bloco(texto: str) -> tuple[int, int] | None | str:
+    """(inicio, fim) do bloco, `None` sem bloco, ou `"quebrado"`."""
+    inicio, fim = texto.find(INICIO_TOML), texto.find(FIM_TOML)
+    if inicio == -1 and fim == -1:
+        return None
+    if inicio == -1 or fim == -1 or fim < inicio:
+        return "quebrado"
+    return inicio, fim + len(FIM_TOML)
+
+
+def apply_toml_config(
+    nome: str,
+    caminho: Path,
+    bloco: str,
+    *,
+    home: Path,
+    manifesto: dict[str, Any],
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Poe (ou troca) o bloco marcado no TOML de config; o resto nao e tocado."""
+    relativo = rel(home, caminho)
+    existia = caminho.is_file()
+    texto = caminho.read_text(encoding="utf-8") if existia else ""
+    limites = _limites_do_bloco(texto)
+    if limites == "quebrado":
+        return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
+    fora = texto if limites is None else texto[: limites[0]] + texto[limites[1]:]
+    if _TABELA_SPARKFORGE.search(fora):
+        return {"path": relativo, "status": "refused", "reason": "sparkforge_ja_configurado"}
+    if limites is None:
+        base = texto.rstrip("\n")
+        novo = (base + "\n\n" if base else "") + bloco
+    else:
+        novo = texto[: limites[0]] + bloco.rstrip("\n") + texto[limites[1]:]
+    status = "unchanged" if novo == texto else "written"
+    registro = _registro_de_config(manifesto, nome, relativo) or {
+        "path": relativo,
+        "format": "toml",
+        "created": not existia,
+    }
+    if not dry_run:
+        if status == "written":
+            caminho.parent.mkdir(parents=True, exist_ok=True)
+            caminho.write_bytes(novo.encode("utf-8"))
         _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}

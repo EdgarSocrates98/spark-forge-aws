@@ -11,7 +11,7 @@ from typing import Any
 
 from sparkforge import __version__
 from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import Host, mcp_entry
+from sparkforge.integrate.hosts import Host, mcp_command, mcp_entry
 from sparkforge.integrate.hosts import host as _host
 
 # Os hosts que esta versao integra. `claude` entra com o marketplace local (D8).
@@ -30,8 +30,16 @@ def _configurar(
     h: Host, *, home: Path, manifesto: dict[str, Any], dry_run: bool, python: str | None
 ) -> list[dict[str, Any]]:
     """O servidor MCP na config de usuario do host, mesclado (D6)."""
-    if h.mcp_config is None or h.mcp_format != "json":
+    if h.mcp_config is None:
         return []
+    if h.mcp_format == "toml":
+        comando, args = mcp_command(python)
+        return [
+            writer.apply_toml_config(
+                h.name, h.mcp_config, writer.toml_block(comando, args),
+                home=home, manifesto=manifesto, dry_run=dry_run,
+            )
+        ]
     return [
         writer.apply_json_config(
             h.name, h.mcp_config, mcp_entry(h.name, python),

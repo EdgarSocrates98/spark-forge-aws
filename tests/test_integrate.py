@@ -283,3 +283,60 @@ def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
         "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
         "tools": ["*"],
     }
+
+
+CONFIG_CODEX = '''model = "gpt-5"
+
+[mcp_servers.outro]
+command = "node"
+args = ["servidor.js"]
+'''
+
+
+def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
+    from scripts import sync_skills
+
+    home = tmp_path / "home"
+    config = home / ".codex" / "config.toml"
+    config.parent.mkdir(parents=True)
+    config.write_text(CONFIG_CODEX, encoding="utf-8")
+
+    resultado = integrate("codex", home=home)
+    assert resultado["refused"] == []
+    esperado = {
+        f"{src.stem}.toml": sync_skills.render_agent(
+            src.read_text(encoding="utf-8"), "codex"
+        ).encode("utf-8")
+        for src in sources.agent_files(ROOT)
+    }
+    assert _conteudo(home / ".codex" / "agents") == esperado
+    assert _conteudo(home / ".agents" / "skills") == _skills_do_devin()
+
+    texto = config.read_text(encoding="utf-8")
+    assert texto.startswith(CONFIG_CODEX), "o que o usuario tinha foi reescrito"
+    assert texto.count("# >>> sparkforge (gerenciado)") == 1
+    assert texto.count("# <<< sparkforge") == 1
+
+    # A segunda execucao nao duplica o bloco.
+    integrate("codex", home=home)
+    assert config.read_text(encoding="utf-8") == texto
+
+    tomllib = pytest.importorskip("tomllib")
+    dados = tomllib.loads(texto)
+    assert dados["model"] == "gpt-5"
+    assert dados["mcp_servers"]["outro"] == {"command": "node", "args": ["servidor.js"]}
+    assert dados["mcp_servers"]["sparkforge"] == {
+        "command": sys.executable,
+        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+    }
+    for arquivo in (home / ".codex" / "agents").glob("*.toml"):
+        agente = tomllib.loads(arquivo.read_text(encoding="utf-8"))
+        assert set(agente) == {"name", "description", "developer_instructions"}
+
+    # `[mcp_servers.sparkforge]` escrito a mao: recusa, e o arquivo fica igual.
+    alheia = tmp_path / "alheia" / ".codex" / "config.toml"
+    alheia.parent.mkdir(parents=True)
+    alheia.write_text('[mcp_servers.sparkforge]\ncommand = "meu"\n', encoding="utf-8")
+    recusado = integrate("codex", home=tmp_path / "alheia")
+    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
+    assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge]\ncommand = "meu"\n'
