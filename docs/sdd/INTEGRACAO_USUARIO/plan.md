@@ -3,7 +3,7 @@ sdd: 1
 feature: INTEGRACAO_USUARIO
 phase: plan
 profile: dev
-status: draft
+status: ready
 upstream:
   path: docs/sdd/INTEGRACAO_USUARIO/design.md
   sha256: "40cebfd5feb8e14d1a51a00e0d679c9473facc5a23d5d7ad3aec7352c4bacb23"
