@@ -28,6 +28,13 @@ files:
   - {path: docs/guia/referencia/cli/detach.md, action: create, reason: "pagina gerada do verbo detach"}
   - {path: tests/test_capability_parity.py, action: modify, reason: "integrate e detach entram em ALLOWED_CLI_ONLY com a razao de D10 (escrever no HOME e decisao do operador)"}
   - {path: tests/test_arvore_versionada.py, action: modify, reason: "sparkforge/integrate/render.py entra nos alvos do git archive, para o gate continuar conferindo o renderizador commitado (D1)"}
+  - {path: sparkforge/adapters/_core.py, action: modify, reason: "o doctor sonda o ambiente aqui; a checagem de integracao por host entra na lista (D10)"}
+  - {path: sparkforge/adapters/tools.py, action: modify, reason: "a descricao da tool sparkforge_doctor conta as checagens"}
+  - {path: tests/test_doctor.py, action: modify, reason: "prende a lista exata de ids de checagem do doctor"}
+  - {path: tests/test_adapters_tools.py, action: modify, reason: "prende o numero de checagens do doctor"}
+  - {path: docs/guia/referencia/cli/doctor.md, action: modify, reason: "pagina gerada do doctor"}
+  - {path: docs/guia/referencia/tools/README.md, action: modify, reason: "indice gerado das tools, que resume a descricao do doctor"}
+  - {path: docs/guia/referencia/tools/sparkforge_doctor.md, action: modify, reason: "pagina gerada da tool sparkforge_doctor"}
   - {path: docs/claims.lock.json, action: modify, reason: "alegacoes de tamanho de corpus que os .py novos movem, relidas a mao"}
   - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "o numero publicado das mesmas alegacoes"}
   - {path: docs/surface.lock.json, action: modify, reason: "registro da superficie, se o crescimento mover (regra 26)"}
@@ -35,7 +42,7 @@ files:
   - {path: README.md, action: modify, reason: "o caminho curto de instalacao passa a citar integrate"}
 decisions:
   - id: D1
-    choice: "render_agent e render_skill passam de scripts/sync_skills.py para sparkforge/integrate/render.py, com as tabelas de despacho que render_skill usa (SKILL_DISPATCH_REASON, DISPATCHABLE_SKILLS, NON_DISPATCHABLE_SKILLS, agent_for_skill, coordinators_by_skill, orchestrator_profiles) e o diretorio de agents recebido por parametro; scripts/sync_skills.py vira fachada que reexporta esses nomes, poe a raiz do repo no sys.path e passa o proprio AGENTS_SRC. tests/test_arvore_versionada.py passa a incluir render.py no git archive, para o gate continuar conferindo o renderizador commitado."
+    choice: "render_agent e render_skill passam de scripts/sync_skills.py para sparkforge/integrate/render.py, com as tabelas de despacho que render_skill usa (SKILL_DISPATCH_REASON, DISPATCHABLE_SKILLS, NON_DISPATCHABLE_SKILLS, agent_for_skill, coordinators_by_skill, orchestrator_profiles) e o diretorio de agents recebido por parametro; scripts/sync_skills.py vira fachada que carrega render.py pelo caminho do arquivo (render.py so importa a biblioteca padrao), reexporta esses nomes e passa o proprio AGENTS_SRC; importar pelo pacote resolveria o render.py do disco pela instalacao editavel e, dentro da visao do git archive, o gate deixaria de conferir o renderizador commitado. tests/test_arvore_versionada.py passa a incluir render.py no git archive, para o gate continuar conferindo o renderizador commitado."
     rejected: ["copiar o renderizador para o pacote, o que deixa duas copias que divergem", "instalar a partir dos espelhos .claude/.agents/.github do repo, que o wheel nao empacota"]
     rollback: "git revert do commit que move o renderizador; tests/test_sync_render.py e tests/test_agents_parity.py confirmam que os espelhos do repo nao mudaram."
   - id: D2
@@ -135,3 +142,8 @@ correções de desenho: o destino do bundle no wheel (`sparkforge/agents` já é
 o `render_skill` depende das tabelas de despacho e do diretório de agents, e a cópia em
 dobro não pode apagar os espelhos gerados do próprio repositório fonte. O manifesto e
 D1, D3, D9 e D10 foram emendados; o define não mudou.
+
+Segunda emenda, na escrita do plano: o `doctor` é também a tool MCP `sparkforge_doctor`, e
+três testes prendem a lista de checagens; entram `sparkforge/adapters/_core.py`,
+`sparkforge/adapters/tools.py`, `tests/test_doctor.py`, `tests/test_adapters_tools.py` e
+as três páginas geradas do doctor. D1 passa a carregar o `render.py` pelo caminho.
