@@ -61,6 +61,7 @@ from sparkforge.facts import (
     # `fixtures/lakeformation/`. Ele e o extrator que fecha DOIS dos tres itens
     # que `lakeformation.unresolved` nomeia -- grant e registro de localizacao.
     lakeformation_grants,
+    lakeformation_missing_grant,
     migration,
     parquet_footer,
     pyspark_ast,
@@ -158,6 +159,10 @@ EXTRACTORS = {
     "iam_access": iam_access,
     "glue_resource_link": glue_resource_link,
     "lakeformation_grants": lakeformation_grants,
+    # `lakeformation_missing_grant` entra no commit das fixtures que trazem os dois
+    # kinds para um golden: `missing_grant` na positiva do corpus cloudwatch_logs, e
+    # `.unresolved` nas tres fixtures antigas com ERR-LF-001 e sem codigo.
+    "lakeformation_missing_grant": lakeformation_missing_grant,
     "funcval": funcval,
     "fusion": fusion,
     # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES

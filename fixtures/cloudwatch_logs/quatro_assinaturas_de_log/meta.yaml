@@ -24,4 +24,5 @@ expects_kinds:
   - cloudwatch.log_event
   - cloudwatch.logs.analyzed
   - error.signature_match
+  - lakeformation.missing_grant.unresolved
 expects_rules: []

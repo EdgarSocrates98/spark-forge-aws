@@ -1,0 +1,65 @@
+[
+  {
+    "rule_id": "SF-LF-010",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tabela com localização registrada, e o job não declara modelo de acesso nenhum",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "table",
+      "file": "lf/local_analytics_dim_cliente.json",
+      "symbol": "analytics.dim_cliente",
+      "catalog_id": ""
+    },
+    "evidence": [
+      "f_f02d61"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A localização da tabela está **registrada** no Lake Formation, e o job não declara nem controle de acesso fino nem Full Table Access.\n\n**A palavra que decide é `regardless`.** A documentação da AWS declara que, para localização registrada, *\"the data access path goes through the Lake Formation stored credentials regardless of the IAM permission for the AWS Glue job runtime role\"*. Conceder ao runtime role a permissão S3 que falta **não abre o caminho**, porque o caminho não é o dele.\n\n**É a leitura errada mais comum desta área**, e ela custa horas: o job falha com `AccessDenied` no S3, alguém alarga a policy do role, a permissão a mais fica, e o job continua falhando pelo mesmo motivo.\n\n**Severidade P2 porque a combinação não é necessariamente um defeito.** Um job que só lê tabela **não** registrada convive com isso sem problema, e o registro pode existir para outro consumidor. O que o achado afirma é que a pergunta \"o role tem permissão S3?\" **não decide** o acesso a esta tabela.",
+    "proposed_change": [
+      "Decidir qual modelo de acesso o job usa sobre esta tabela: FGAC, Full Table Access, ou nenhum -- e \"nenhum\" só é resposta se o job não a lê.",
+      "Se o job precisa dela, ler qual role está associado ao registro (`attrs.role_arn` do fact) e se ele alcança a localização: é esse role que vende a credencial, e não o do job.",
+      "Não alargar a policy S3 do runtime role para \"resolver\" um `AccessDenied` nesta tabela antes das duas leituras acima. A permissão a mais não é usada, e fica."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A regra afirma sobre a AUSÊNCIA de declaração de modelo de acesso no case. Um job que ligue FGAC ou FTA por caminho que este motor não lê -- `non_overridable_arguments`, conexão, bootstrap -- é acusado sem estar errado, e a evidência do achado é o que permite ver isso.",
+      "**O `absent:` é avaliado no nível do CONJUNTO, e não por entidade.** Num case com vários jobs, um único que declare modelo de acesso faz a regra ficar muda sobre a tabela registrada -- inclusive quando o job que a lê não declara nada. `same_subject` não resolve: o fact de registro tem subject de tabela e o de modelo de acesso tem subject de recurso Terraform, e os dois nunca cairiam no mesmo grupo. Num case de um job só, que é o normal, o limite não morde.",
+      "A regra **não** verifica que o job lê a tabela registrada. Ela correlaciona o registro coletado com a ausência de modelo declarado no case, e nada no case liga uma tabela a um job.",
+      "Registro de localização é frequentemente compartilhado. A tabela pode estar registrada para outro consumidor, e este job pode legitimamente não ter nada a ver com ela."
+    ],
+    "tradeoffs": [
+      "Declarar um modelo de acesso traz o job para dentro da governança do Lake Formation e custa o que cada modelo custa -- capacidade em papéis, no caso do FGAC; EMRFS e passo de conta, no caso do FTA."
+    ],
+    "validation": [
+      "Uma leitura de controle sobre a tabela registrada, com o runtime role **sem** permissão S3 direta no caminho: se ela passar, a credencial do Lake Formation está sendo usada; se falhar, o caminho não está ativo. É o teste que distingue os dois, e um role com permissão ampla passa nos dois casos.",
+      "Nenhum eixo de dado é exigido enquanto a mudança for de declaração de modelo. Se o modelo escolhido filtrar linha ou coluna, a contagem e o conjunto de colunas passam a ser exigidos."
+    ],
+    "rollback": [
+      "Remover o modelo de acesso declarado devolve o job ao estado anterior. É rollback de configuração, e não de dado."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.access_path",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

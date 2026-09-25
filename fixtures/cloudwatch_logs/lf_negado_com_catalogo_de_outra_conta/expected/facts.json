@@ -502,5 +502,26 @@
       "artifact_sha256": "",
       "extractor": "error_signature@0.1.0"
     }
+  },
+  {
+    "id": "f_d25103",
+    "schema_version": 1,
+    "kind": "lakeformation.missing_grant.unresolved",
+    "subject": {
+      "type": "table",
+      "symbol": "default.dim_cliente#operacao_nao_medida"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "operacao_nao_medida",
+      "resource": "default.dim_cliente",
+      "signature_id": "ERR-LF-001",
+      "unblocked_by": "nenhum fact de operacao sobre o recurso; rode `sparkforge analyze pyspark` sobre o codigo do job e junte a saida ao case",
+      "extractor": "lakeformation_missing_grant@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_missing_grant@0.1.0",
+      "artifact": "logs/etl-dim_jr_lf1_aws-glue_jobs_error.json"
+    }
   }
 ]
