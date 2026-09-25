@@ -16,11 +16,12 @@ Atue dentro de um time cooperativo. Leia e siga `AGENT_PROTOCOL.md`. Use artefat
 
 ## O modelo de acesso é fact, e a permissão não é
 
-`sparkforge/facts/lakeformation.py` deriva quatro kinds sobre a união dos facts,
+`sparkforge/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts,
 sem ler artefato: `lakeformation.access_model` (FGAC declarado ou não),
 `lakeformation.iceberg_catalog` (nome do catálogo e se é o session catalog),
-`lakeformation.filesystem` (resolver de credencial e EMRFS restaurado) e
-`lakeformation.unresolved`.
+`lakeformation.filesystem` (resolver de credencial e EMRFS restaurado),
+`lakeformation.fta_declared` (a superfície pede o resolver do Lake Formation, isto
+é, FTA declarado -- declarado, não efetivo) e `lakeformation.unresolved`.
 
 **A recusa é o que separa este agente de um que adivinha.** Grant do Lake
 Formation, policy do runtime role e registro da localização S3 **não entram em

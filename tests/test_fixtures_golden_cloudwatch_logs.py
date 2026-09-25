@@ -490,3 +490,23 @@ def test_o_corpus_cobre_todo_kind_do_extrator():
         _, facts, _, _ = run_fixture(directory)
         cobertos |= {f.kind for f in facts}
     assert set(CW_LOG_KINDS) <= cobertos, sorted(set(CW_LOG_KINDS) - cobertos)
+
+
+# O par de SF-LF-011 declara Full Table Access pelo resolver de credencial, e
+# FTA nao produz `lakeformation.access_model`. Ate a feature LF_FTA_DECLARADO o
+# golden prendia `SF-LF-010` acusando o job de nao declarar modelo nenhum; o
+# teste le o golden COMMITADO, para que a correcao nao volte calada num regen.
+FTA_DECLARADO = ("lf_negado_fta_append_sem_all", "lf_negado_fta_grant_all")
+
+
+@pytest.mark.parametrize("nome", FTA_DECLARADO)
+def test_fta_declarado_cala_sf_lf_010_nos_goldens(nome):
+    directory = FIXTURES / nome
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    expected = directory / "expected"
+    facts = json.loads((expected / "facts.json").read_text(encoding="utf-8"))
+    achados = json.loads((expected / "findings.json").read_text(encoding="utf-8"))
+    assert "lakeformation.fta_declared" in {f["kind"] for f in facts}
+    assert "SF-LF-010" not in {a["rule_id"] for a in achados}
+    assert "SF-LF-010" not in meta.get("expects_rules", [])
+    assert "Lacuna da regra" not in meta["proves"]

@@ -28,6 +28,7 @@ runtime:
   iceberg: "1.10.0"
 expects_kinds:
   - lakeformation.filesystem
+  - lakeformation.fta_declared
   - tf.attribute
   - tf.module_analyzed
   - tf.observability.spark_ui

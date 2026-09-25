@@ -751,6 +751,29 @@
     }
   },
   {
+    "id": "f_655042",
+    "schema_version": 1,
+    "kind": "lakeformation.fta_declared",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 21,
+      "symbol": "aws_glue_job.curated_fta#spark.hadoop.fs.s3.credentialsResolverClass"
+    },
+    "measures": {},
+    "attrs": {
+      "marker": "spark.hadoop.fs.s3.credentialsResolverClass",
+      "emrfs_restored": true,
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "0aedd9e0911ecae4f3b9587ba09e129361a791868ae991e1399c1dfa0c86cf14",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
     "id": "f_9a578b",
     "schema_version": 1,
     "kind": "error.signature_match",

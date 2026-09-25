@@ -3,11 +3,10 @@ proves: >
   O NEGATIVO de `SF-LF-011`: o grant cobre a escrita (`ALL`), e a falha de
   `ERR-LF-001` esta em outra parte do caminho. Nenhum
   `lakeformation.missing_grant` e emitido, e o extrator nao inventa uma perna.
-  `SF-LF-010` tambem dispara, e o texto dela nao e verdadeiro aqui: FTA nao
-  produz `lakeformation.access_model` (D9, a superficie dele e
-  `lakeformation.filesystem`), e a regra so pergunta `absent:
-  lakeformation.access_model` ao lado do registro. Lacuna da regra, anterior a
-  LF_GRANTS; o golden a prende como esta para que a correcao apareca no diff.
+  O job declara FTA, e o golden prova que `SF-LF-010` NAO o acusa: o resolver
+  do Lake Formation vira `lakeformation.fta_declared`, e a regra pergunta
+  `absent:` dele ao lado de `absent: lakeformation.access_model` (feature
+  LF_FTA_DECLARADO; ate ela a regra disparava aqui).
 runtime:
   glue: "5.0"
   spark: "3.5.4"
@@ -19,6 +18,7 @@ expects_kinds:
   - error.signature_match
   - lakeformation.data_lake_settings
   - lakeformation.filesystem
+  - lakeformation.fta_declared
   - lakeformation.grant
   - lakeformation.grants.analyzed
   - lakeformation.registered_location
@@ -31,5 +31,4 @@ expects_kinds:
   - tf.observability.spark_ui
   - tf.resource
   - tf.spark_conf
-expects_rules:
-  - SF-LF-010
+expects_rules: []

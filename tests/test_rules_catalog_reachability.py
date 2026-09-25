@@ -464,7 +464,10 @@ class TestAbsentSemSameSubjectSeJustifica:
         # artefato de permissao) e `lakeformation.access_model` tem subject
         # `tf_resource` (vem do argumento de job no Terraform): os dois nunca
         # coincidem, e com `same_subject: true` a regra nao dispararia em
-        # entrada nenhuma. Mesma natureza de SF-GRAPH-005 e SF-ENV-003.
+        # entrada nenhuma. Mesma natureza de SF-GRAPH-005 e SF-ENV-003. O
+        # segundo `absent`, `lakeformation.fta_declared` (o lado FTA, feature
+        # LF_FTA_DECLARADO), herda o subject da superficie de conf -- recurso
+        # Terraform, linha de codigo ou run -- e tambem nunca e `table`.
         #
         # A semantica de CONJUNTO e limite REAL desta regra, e ela esta escrita
         # no `risks` dela: um unico job com modelo de acesso declarado em

@@ -33,11 +33,13 @@ import pytest
 from sparkforge.facts.lakeformation import build_lakeformation
 from sparkforge.facts.lakeformation_missing_grant import build_missing_grant
 from sparkforge.facts.terraform import extract_terraform, extract_terraform_tree
+from sparkforge.findings.models import Fact
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 from sparkforge.rules.version_scope import in_scope
 from tests.test_fixtures_golden_infra_code import FIXTURES, run_fixture
 from tests.test_lakeformation_missing_grant import (
+    _registrada,
     cenario_fgac_escrita_negada,
     cenario_fgac_escrita_registrada,
     cenario_fta_append_sem_all,
@@ -404,3 +406,59 @@ def test_sf_lf_011_dispara_so_com_permissao_nomeada():
     calam = (cenario_grant_que_cobre, cenario_fgac_escrita_registrada, cenario_sem_operacao)
     for cenario in calam:
         assert not _sf_lf_011_dispara(cenario()), cenario.__name__
+
+
+# ---------------------------------------------------------------------------
+# SF-LF-010 -- localizacao registrada e nenhum modelo de acesso declarado.
+# FTA nao produz `lakeformation.access_model`; o pedido de FTA e o resolver de
+# credencial, derivado em `lakeformation.fta_declared` (feature LF_FTA_DECLARADO).
+
+_RESOLVER_KEY = "spark.hadoop.fs.s3.credentialsResolverClass"
+_IMPL_KEY = "spark.hadoop.fs.s3.impl"
+_RESOLVER_LF = "com.amazonaws.glue.accesscontrol.AWSLakeFormationCredentialResolver"
+_EMRFS = "com.amazon.ws.emr.hadoop.fs.EmrFileSystem"
+
+
+def _conf_tf(key: str, value: str) -> Fact:
+    return Fact(
+        kind="tf.spark_conf",
+        subject={
+            "type": "tf_resource",
+            "file": "main.tf",
+            "line": 9,
+            "symbol": f"aws_glue_job.etl#{key}",
+        },
+        measures={},
+        attrs={
+            "key": key,
+            "value": value,
+            "source_argument": "--conf",
+            "block": "default_arguments",
+        },
+        provenance={"extractor": "teste@0.0.0", "artifact": "memoria"},
+    )
+
+
+def _sf_lf_010_dispara(pool) -> bool:
+    facts = list(pool) + build_lakeformation(pool)
+    return "SF-LF-010" in {f.rule_id for f in judge(facts, load_catalog(), RUNTIME_GLUE_50)}
+
+
+class TestSfLf010:
+    def test_registrado_com_fta_declarado_nao_dispara(self):
+        pool = [
+            _registrada(True),
+            _conf_tf(_RESOLVER_KEY, _RESOLVER_LF),
+            _conf_tf(_IMPL_KEY, _EMRFS),
+        ]
+        assert not _sf_lf_010_dispara(pool)
+        ausentes = sorted(
+            c["absent"] for c in _rule("SF-LF-010")["when"]["all"] if "absent" in c
+        )
+        assert ausentes == ["lakeformation.access_model", "lakeformation.fta_declared"]
+
+    def test_registrado_so_com_fs_s3_impl_continua_disparando(self):
+        """Trocar o filesystem nao e declarar FTA: a regra continua acusando."""
+        assert _sf_lf_010_dispara([_registrada(True), _conf_tf(_IMPL_KEY, _EMRFS)])
+        assert _sf_lf_010_dispara([_registrada(True)])
+        assert not _sf_lf_010_dispara([_registrada(False), _conf_tf(_IMPL_KEY, _EMRFS)])
