@@ -23,12 +23,19 @@ files:
   - {path: docs/guia/02-instalacao.md, action: modify, reason: "instalar uma vez por maquina com integrate, e quando o install_skills.py ainda faz sentido"}
   - {path: docs/guia/03-cli.md, action: modify, reason: "os verbos integrate e detach"}
   - {path: docs/guia/referencia/README.md, action: modify, reason: "referencia gerada por scripts/gen_reference_docs.py quando a CLI ganha verbos"}
+  - {path: docs/guia/referencia/cli/README.md, action: modify, reason: "indice da referencia de CLI, reescrito por gen_reference_docs.py"}
+  - {path: docs/guia/referencia/cli/integrate.md, action: create, reason: "pagina gerada do verbo integrate"}
+  - {path: docs/guia/referencia/cli/detach.md, action: create, reason: "pagina gerada do verbo detach"}
+  - {path: tests/test_capability_parity.py, action: modify, reason: "integrate e detach entram em ALLOWED_CLI_ONLY com a razao de D10 (escrever no HOME e decisao do operador)"}
+  - {path: tests/test_arvore_versionada.py, action: modify, reason: "sparkforge/integrate/render.py entra nos alvos do git archive, para o gate continuar conferindo o renderizador commitado (D1)"}
+  - {path: docs/claims.lock.json, action: modify, reason: "alegacoes de tamanho de corpus que os .py novos movem, relidas a mao"}
+  - {path: docs/harness/CODEINTEL-GAP.md, action: modify, reason: "o numero publicado das mesmas alegacoes"}
   - {path: docs/surface.lock.json, action: modify, reason: "registro da superficie, se o crescimento mover (regra 26)"}
   - {path: docs/superpowers/STATUS.md, action: modify, reason: "entrada da feature e numeros que ela mover, conferidos por check_status_numbers"}
   - {path: README.md, action: modify, reason: "o caminho curto de instalacao passa a citar integrate"}
 decisions:
   - id: D1
-    choice: "render_agent e render_skill passam de scripts/sync_skills.py para sparkforge/integrate/render.py, e o sync_skills.py importa de la: um renderizador so para os espelhos do repo e para a integracao de usuario."
+    choice: "render_agent e render_skill passam de scripts/sync_skills.py para sparkforge/integrate/render.py, com as tabelas de despacho que render_skill usa (SKILL_DISPATCH_REASON, DISPATCHABLE_SKILLS, NON_DISPATCHABLE_SKILLS, agent_for_skill, coordinators_by_skill, orchestrator_profiles) e o diretorio de agents recebido por parametro; scripts/sync_skills.py vira fachada que reexporta esses nomes, poe a raiz do repo no sys.path e passa o proprio AGENTS_SRC. tests/test_arvore_versionada.py passa a incluir render.py no git archive, para o gate continuar conferindo o renderizador commitado."
     rejected: ["copiar o renderizador para o pacote, o que deixa duas copias que divergem", "instalar a partir dos espelhos .claude/.agents/.github do repo, que o wheel nao empacota"]
     rollback: "git revert do commit que move o renderizador; tests/test_sync_render.py e tests/test_agents_parity.py confirmam que os espelhos do repo nao mudaram."
   - id: D2
@@ -36,7 +43,7 @@ decisions:
     rejected: ["ler os .codex/agents/*.toml do repo, que sao mantidos a mao, envelhecem e o wheel nao empacota"]
     rollback: "git revert do commit da plataforma codex; integrate codex volta a recusar por nome."
   - id: D3
-    choice: "O wheel embute skills/ e agents/ pelo mesmo force-include que ja leva rules/catalog e knowledge; sparkforge/integrate/sources.py os acha no pacote instalado ou, em desenvolvimento, na raiz do repo."
+    choice: "O wheel embute skills/ e agents/ em sparkforge/integrate/bundle/ (nao em sparkforge/agents, que ja e pacote Python) pelo mesmo force-include que leva rules/catalog e knowledge, e o sdist os inclui; sparkforge/integrate/sources.py os acha no bundle instalado ou, em desenvolvimento, na raiz do repo, que so vence com pyproject.toml e skills/ presentes."
     rejected: ["baixar do GitHub na maquina de destino, rejeitado pelo operador no explore", "exigir o clone do repositorio"]
     rollback: "git revert do commit de empacotamento; scripts/verify_wheel.py confere o wheel de novo."
   - id: D4
@@ -60,11 +67,11 @@ decisions:
     rejected: ["editar ~/.claude/settings.json a mao, formato interno do Claude que muda sem aviso", "usar o proprio repositorio como plugin, que exige o clone"]
     rollback: "claude plugin uninstall sparkforge-aws, ou sparkforge detach claude."
   - id: D9
-    choice: "Copia vendorizada no repo atual detectada por nome e conteudo (skill ou agent em .agents/skills, .claude/skills, .github/agents com o mesmo nome de um integrado): identico quando igual ao que o wheel renderiza, customizado quando difere. SOBRESCREVER apaga os dois, MESCLAR apaga so os identicos e lista os customizados, IGNORAR nao toca; escolha por prompt, por --on-conflict, e IGNORAR sem terminal e sem a flag; toda remocao mostra a lista antes e respeita --dry-run; so o repositorio de onde o comando foi chamado."
+    choice: "Copia vendorizada no repo atual detectada por nome e conteudo (skill ou agent em .agents/skills, .claude/skills, .agents/agents, .claude/agents e .github/agents com o mesmo nome de um integrado; no proprio repositorio fonte do SparkForge, reconhecido por scripts/sync_skills.py, sai recusa repositorio_fonte e nada e tocado): identico quando igual ao que o wheel renderiza, customizado quando difere. SOBRESCREVER apaga os dois, MESCLAR apaga so os identicos e lista os customizados, IGNORAR nao toca; escolha por prompt, por --on-conflict, e IGNORAR sem terminal e sem a flag; toda remocao mostra a lista antes e respeita --dry-run; so o repositorio de onde o comando foi chamado."
     rejected: ["apagar sem perguntar, rejeitado pelo operador no define", "depender de manifesto do install_skills.py, que nao grava nenhum"]
     rollback: "git checkout dos arquivos removidos no repositorio do operador (a remocao e sempre de arquivo versionado ou listado antes)."
   - id: D10
-    choice: "Verbos de CLI `sparkforge integrate <claude|devin|codex|copilot|all> --scope user [--dry-run] [--on-conflict overwrite|merge|ignore]` e `sparkforge detach <host|all> [--dry-run]`, sem tool MCP; doctor ganha uma checagem por host que le o manifesto e aponta copia em dobro no repo atual."
+    choice: "Verbos de CLI `sparkforge integrate <claude|devin|codex|copilot|all> --scope user [--dry-run] [--on-conflict overwrite|merge|ignore]` e `sparkforge detach <host|all> [--dry-run]`, sem tool MCP, declarados em ALLOWED_CLI_ONLY de tests/test_capability_parity.py com essa razao; doctor ganha uma checagem por host que le o manifesto e aponta copia em dobro no repo atual."
     rejected: ["expor como tool MCP: escrever no HOME e decisao do operador, e um agente nao deve disparar isso sozinho"]
     rollback: "git revert dos commits de CLI e doctor."
 covers:
@@ -92,7 +99,7 @@ covers:
 | Claude | `sparkforge/integrate/claude.py` | AC2 |
 | cópia em dobro | `sparkforge/integrate/conflict.py` | AC9 |
 | CLI e doctor | `sparkforge/adapters/cli.py`, `sparkforge/doctor.py` | AC11 |
-| registros | referência gerada, surface lock, STATUS, README, guias 02 e 03 | AC12 |
+| registros | referência gerada (índice e páginas de `integrate` e `detach`), `ALLOWED_CLI_ONLY`, claims, surface lock, STATUS, README, guias 02 e 03 | AC12 |
 
 ## Conhecimento consultado
 
@@ -120,3 +127,11 @@ covers:
 
 O espelho `.codex/agents/*.toml` do repositório continua mantido à mão; passar a gerá-lo
 pela plataforma `codex` do renderizador é frente própria.
+
+## Emenda antes do plano (2026-09-25)
+
+A leitura do código para o plano achou arquivos que o manifesto não listava e três
+correções de desenho: o destino do bundle no wheel (`sparkforge/agents` já é pacote),
+o `render_skill` depende das tabelas de despacho e do diretório de agents, e a cópia em
+dobro não pode apagar os espelhos gerados do próprio repositório fonte. O manifesto e
+D1, D3, D9 e D10 foram emendados; o define não mudou.
