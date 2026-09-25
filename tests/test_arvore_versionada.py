@@ -244,8 +244,16 @@ def _visao_do_commit(repo: pathlib.Path, destino: pathlib.Path) -> None:
     O `scripts/sync_skills.py` tambem vem do commit, e nao do disco: assim o
     gate confere o espelho commitado contra o RENDERIZADOR COMMITADO. Uma
     mudanca no tradutor sem regenerar os espelhos tambem cai aqui.
+
+    Desde INTEGRACAO_USUARIO (D1) o tradutor mora em
+    `sparkforge/integrate/render.py`, e `sync_skills.py` o carrega pelo caminho a
+    partir da propria raiz -- por isso ele vem do commit junto.
     """
-    alvos = ["scripts/sync_skills.py", *_raizes_governadas()]
+    alvos = [
+        "scripts/sync_skills.py",
+        "sparkforge/integrate/render.py",
+        *_raizes_governadas(),
+    ]
     proc = subprocess.run(
         ["git", "archive", "--format=tar", "HEAD", "--", *alvos],
         cwd=repo, capture_output=True, check=False,
