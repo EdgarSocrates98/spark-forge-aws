@@ -1330,10 +1330,13 @@ rules:
     runtime_scope: {}
     explanation: >
       O log do run tem `Insufficient Lake Formation permission(s) on <recurso>`
-      (`ERR-LF-001`), e o fact `lakeformation.missing_grant` cruzou três medidas
-      com essa falha: a operação que o código faz sobre o recurso, o grant
-      coletado por `collect lakeformation` e, sob FGAC, a decisão de
-      `iam:SimulatePrincipalPolicy` coletada por `collect iam-access`.
+      (`ERR-LF-001`), e o fact `lakeformation.missing_grant` cruzou essa falha
+      com a operação que o código faz sobre o recurso. O que ele cruza depois
+      depende do lado. No lado do Lake Formation, é o grant coletado por
+      `collect lakeformation`. No lado IAM (escrita sob FGAC), o fact não lê
+      grant: lê o registro da localização (`registered` e `resource_arn`,
+      também de `collect lakeformation`), a versão do runtime pela matriz e a
+      decisão de `iam:SimulatePrincipalPolicy` coletada por `collect iam-access`.
 
 
       **O lado muda o conserto.** Com `side: lf` (Full Table Access, ou leitura
@@ -1375,7 +1378,9 @@ rules:
         governada pelo Lake Formation (`SF-LF-008`), porque grant numa tabela
         aberta a `IAM_ALLOWED_PRINCIPALS` não muda nada.
       - >-
-        Com `side: iam`: ler `attrs.denied_by` antes de editar a policy. Se for
+        Com `side: iam`: o alvo não é o grant do Lake Formation, é a policy do
+        runtime role (o `action.target` da regra nomeia só o lado LF, porque o
+        bloco aceita um alvo). Ler `attrs.denied_by` antes de editar a policy. Se for
         `implicit_deny`, falta uma statement com `attrs.action` sobre
         `attrs.iam_resource`. Se for `explicit_deny`, `permissions_boundary` ou
         `service_control_policy`, acrescentar não resolve: é preciso achar a
@@ -1413,8 +1418,10 @@ rules:
     validation:
       - >-
         Com `side: lf`, recoletar com `sparkforge collect lakeformation`; com
-        `side: iam`, recoletar com `sparkforge collect iam-access --resource-arn
-        <localização>/*` para o role do job. Rodar `sparkforge fuse` de novo: o
+        `side: iam`, recoletar com `sparkforge collect iam-access --role-arn
+        <runtime-role> --resource-arn <localização>/* --action <attrs.action>`,
+        repetindo `--action` para cada ação que a operação exige (no overwrite
+        sob FGAC, `s3:PutObject` e `s3:DeleteObject`). Rodar `sparkforge fuse` de novo: o
         `lakeformation.missing_grant` do recurso precisa sumir.
       - >-
         Reexecutar o job e confirmar que `ERR-LF-001` sai do log do run. Nenhum

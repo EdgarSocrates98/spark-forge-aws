@@ -37,7 +37,7 @@ um Glue 5.1 uma limitação que era do 5.0 é o erro que mais engana nesta área
 Runtime fora da matriz sai `unresolved` com o que destravaria — o Glue 6.0 é o
 caso, e a diferença entre "não suportado" e "não lemos a página" está preservada.
 
-## As dez perguntas que a área responde hoje
+## As onze perguntas que a área responde hoje
 
 | Regra | A pergunta |
 |---|---|
@@ -51,6 +51,7 @@ caso, e a diferença entre "não suportado" e "não lemos a página" está prese
 | `SF-LF-008` | `IAM_ALLOWED_PRINCIPALS` com `ALL` — a tabela está aberta a quem tem IAM |
 | `SF-LF-009` | escrita sob FGAC em localização REGISTRADA — o conflito declarado da §6 |
 | `SF-LF-010` | localização registrada e nenhum modelo de acesso declarado no case |
+| `SF-LF-011` | o job falhou com `ERR-LF-001` — qual permissão falta no grant do Lake Formation, ou, na escrita sob FGAC, na policy IAM do runtime role |
 
 **A área não é só `SF-LF`.** Três regras `SF-IAM` dizem qual CAMADA negou —
 permissions boundary, service control policy ou `Deny` explícito —, e elas vêm

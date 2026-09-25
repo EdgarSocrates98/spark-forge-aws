@@ -5,7 +5,7 @@ description: Use quando um job Glue lê tabela governada e falha ao escrever, ou
 
 # Diagnosticar acesso sob Lake Formation
 
-Vinte e uma regras julgam esta área — 10 em `SF-LF`, 3 em `SF-IAM`, 8 em `SF-ERR`
+Vinte e duas regras julgam esta área — 11 em `SF-LF`, 3 em `SF-IAM`, 8 em `SF-ERR`
 — e quatro coletores a alimentam. **Este documento existe porque ter as peças não
 é ter o caminho.**
 
@@ -74,6 +74,7 @@ sparkforge analyze lakeformation-grants --path .sparkforge/artifacts/lakeformati
 | `SF-LF-008` | `IAM_ALLOWED_PRINCIPALS` com `ALL` — a tabela está registrada e o Lake Formation **não a governa** |
 | `SF-LF-009` | escrita sob FGAC em localização **registrada** — a documentação da AWS **não fecha** |
 | `SF-LF-010` | registrada, e o job não declara modelo de acesso nenhum |
+| `SF-LF-011` | o job falhou com `ERR-LF-001` e a permissão que a operação exige **não está no grant** — só sai com o log do passo 4 e o código fundidos a esta coleta |
 
 **`--catalog-id` é obrigatório em cross-account.** A mesma `db.tabela` existe em
 contas diferentes, e sem ele as duas coletas se sobrescrevem no manifesto.
@@ -112,11 +113,31 @@ sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/
 
 | Assinatura | Regra |
 |---|---|
-| `Insufficient Lake Formation permission(s) on` | `SF-ERR-006` |
+| `Insufficient Lake Formation permission(s) on` | `SF-ERR-006`, e `SF-LF-011` quando código, grant ou decisão de IAM foram coletados |
 | `GetTemporaryGlueTableCredentials` | `SF-ERR-014` |
 | `lakeformation:GetDataAccess` | `SF-ERR-015` |
 | `glue:GetTable` | `SF-ERR-016` |
 | `Security validation exception` | `SF-ERR-017` |
+
+**Para `SF-LF-011` nomear a permissão que falta**, a assinatura precisa encontrar,
+na mesma fusão, a operação do código e a medida do lado dela. Colete
+`sparkforge collect lakeformation` (passo 2: grant e registro da localização) e,
+se a escrita é sob FGAC, `sparkforge collect iam-access --role-arn <runtime-role>
+--resource-arn <localizacao>/* --action s3:PutObject` (mais `--action
+s3:DeleteObject` no overwrite). Depois:
+
+```bash
+sparkforge analyze cloudwatch-logs --path .sparkforge/artifacts/cloudwatch_logs/     --out .sparkforge/facts_logs.json
+sparkforge analyze error-signatures --facts .sparkforge/facts_logs.json     --out .sparkforge/facts_err.json
+sparkforge fuse --facts .sparkforge/facts_code.json --facts .sparkforge/facts_tf.json     --facts .sparkforge/facts_lf.json --facts .sparkforge/facts_iam.json     --facts .sparkforge/facts_err.json --out .sparkforge/facts_fused.json
+sparkforge judge --facts .sparkforge/facts_fused.json --show-skipped
+```
+
+`facts_code.json` sai de `sparkforge analyze pyspark`. Sem o código, a operação
+não é lida e o fact sai `lakeformation.missing_grant.unresolved` com o motivo; sem
+o grant (ou, sob FGAC, sem a decisão de IAM), idem. O lado decide o conserto:
+`side: lf` é grant do Lake Formation; `side: iam` é a policy do runtime role, e
+`denied_by` diz se acrescentar statement resolve.
 
 **Por que este passo é o último e não o primeiro:** o log confirma *qual* plano
 recusou; os passos 1 a 3 dizem *por quê*. Começar pelo log dá o nome da falha e

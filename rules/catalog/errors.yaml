@@ -901,15 +901,17 @@ rules:
       tem um elo faltando, e que ele já custou este run.
 
 
-      **O que a regra NÃO afirma:** QUAL elo. A assinatura `ERR-LF-001` declara
-      `lakeformation.missing_grant` e `ram.unaccepted_share` em
-      `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que
-      este motor emite -- nada aqui lê Lake Formation nem AWS RAM, e o estado
-      dos dois vive em recursos de OUTRA conta, fora do alcance do `.tf` do
-      job. Por isso a ação é `investigate`: a regra localiza a cadeia a
-      conferir, e é o operador que a percorre. Desde 2026-09-21,
-      `lakeformation.missing_grant` é emitido quando o grant e a operação foram
-      coletados, e `SF-LF-011` nomeia a permissão.
+      **O que a regra NÃO afirma:** QUAL elo. Esta regra lê só a assinatura e o
+      Terraform, e o estado da cadeia vive em recursos de OUTRA conta, fora do
+      alcance do `.tf` do job. Por isso a ação é `investigate`: a regra
+      localiza a cadeia a conferir, e é o operador que a percorre. A assinatura
+      `ERR-LF-001` exige `lakeformation.missing_grant` em `evidence_required`,
+      e desde 2026-09-21 esse kind é emitido quando a operação do código foi
+      lida e o lado dela foi medido: no lado do Lake Formation, o grant
+      coletado; no lado IAM (escrita sob FGAC), o registro da localização, o
+      runtime e a decisão de IAM do role. Com ele, `SF-LF-011` nomeia a
+      permissão. `ram.unaccepted_share` saiu para `evidence_out_of_reach`:
+      nada aqui lê o AWS RAM.
 
 
       A irmã é `SF-XACC-001`, que marca a mesma dependência a partir do
