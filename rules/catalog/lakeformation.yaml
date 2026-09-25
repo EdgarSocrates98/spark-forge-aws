@@ -1303,3 +1303,127 @@ rules:
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-09}
       - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html", retrieved: 2026-09-09}
+
+  # ---------------------------------------------------------------------------
+  # SF-LF-011 -- a primeira que cruza a FALHA observada com a permissao medida.
+  #
+  # `ERR-LF-001` declarava `lakeformation.missing_grant` em `evidence_required`, e
+  # nenhum extrator o emitia: `SF-ERR-006` so podia mandar investigar a cadeia.
+  # O fact agora sai de `sparkforge/facts/lakeformation_missing_grant.py`, que ja
+  # resolveu modelo, versao e operacao -- por isso `runtime_scope: {}` e o gate
+  # real e `requires_facts` (docs/gates-por-mudanca.md, secao runtime_scope).
+  - id: SF-LF-011
+    category: lakeformation-governance
+    governance_decision_required: true
+    security_impact: widens_scope
+    security_impact_reason: >-
+      Conceder a permissão que falta amplia o que o runtime role pode fazer sobre a tabela, e o raio é o de todo job que usa o mesmo role.
+    title: >-
+      O job falhou por permissão do Lake Formation, e a permissão que a operação
+      exige não está no grant medido (ou na decisão de IAM, sob FGAC)
+    requires_facts: [lakeformation.missing_grant]
+    when:
+      all:
+        - fact: lakeformation.missing_grant
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O log do run tem `Insufficient Lake Formation permission(s) on <recurso>`
+      (`ERR-LF-001`), e o fact `lakeformation.missing_grant` cruzou três medidas
+      com essa falha: a operação que o código faz sobre o recurso, o grant
+      coletado por `collect lakeformation` e, sob FGAC, a decisão de
+      `iam:SimulatePrincipalPolicy` coletada por `collect iam-access`.
+
+
+      **O lado muda o conserto.** Com `side: lf` (Full Table Access, ou leitura
+      sob FGAC), falta permissão no grant do Lake Formation. Para job Spark do
+      Glue que escreve sob FTA, a permissão é `ALL`, e não `INSERT`: *"AWS Glue
+      Spark jobs that write/delete data in Amazon S3 require AWS Lake Formation
+      ALL permission."* Com `side: iam` (escrita sob FGAC em localização com
+      `registered: false` medido), quem autoriza a escrita é o IAM do runtime
+      role, e `denied_by` diz qual camada negou. Nesse caso, acrescentar uma
+      statement só resolve quando `denied_by` é `implicit_deny`.
+
+
+      **Qual decisão de IAM acusa.** Só a que fala pela tabela: `implicitDeny`
+      no prefixo de objetos da localização (`<localização>/*`, onde a
+      localização é o `--resource-arn` passado a `collect lakeformation`), ou
+      `explicitDeny` num recurso que contém a tabela. Negação implícita em `*`,
+      no bucket ou num objeto não acusa, porque uma policy escopada à tabela
+      também nega ali. O fact do lado IAM carrega `registration_scope: exact_arn`
+      e `caveat`: o `registered: false` veio do ARN exato da localização, e
+      registro num prefixo pai não foi conferido. Se ele existir, o caso é o
+      conflito declarado, e não falta de IAM.
+
+
+      **O modo de escrita pode não ter sido lido.** Com `mode_unresolved: true`
+      no fact, o modo vem de expressão que o parse não lê. A acusação vale
+      assim mesmo, porque o que falta para `write` falta em qualquer modo. O
+      fact não diz se o job faz append ou overwrite, e a regra também não diz.
+
+
+      **O que a regra NÃO afirma:** que o job passa depois do grant. Outras
+      partes do caminho (RAM share, key policy do KMS, bucket policy) não têm
+      coletor, e a simulação de IAM não avalia policy de recurso. Escrita em
+      localização registrada sob FGAC não chega aqui: é o conflito declarado da
+      §6 de `knowledge/glue/lakeformation-fgac.md` e sai como recusa nomeada.
+    proposed_change:
+      - >-
+        Com `side: lf`: conceder ao principal do fact, sobre o recurso do fact,
+        as permissões de `attrs.missing`. Confira antes se a tabela deve ser
+        governada pelo Lake Formation (`SF-LF-008`), porque grant numa tabela
+        aberta a `IAM_ALLOWED_PRINCIPALS` não muda nada.
+      - >-
+        Com `side: iam`: ler `attrs.denied_by` antes de editar a policy. Se for
+        `implicit_deny`, falta uma statement com `attrs.action` sobre
+        `attrs.iam_resource`. Se for `explicit_deny`, `permissions_boundary` ou
+        `service_control_policy`, acrescentar não resolve: é preciso achar a
+        negação e decidir se ela sai. Antes, leia `attrs.caveat`: se a
+        localização estiver registrada num prefixo pai, o caso é o conflito
+        declarado e a policy não é o conserto.
+    action:
+      kind: security.verify_access_chain
+      target: lakeformation.grant
+      direction: investigate
+      requires_absent: []
+      moves: []
+      depends_on: []
+    risks:
+      - >-
+        `ALL` concede também `DROP` e `ALTER` sobre a tabela. Sob FTA, a fonte
+        exige `ALL` para escrever, e o custo dessa exigência é um raio maior que o
+        da operação.
+      - >-
+        A operação vem do código analisado. Alvo em variável não é resolvido pelo
+        extrator de código, e nesse caso a operação sai recusada
+        (`operacao_com_alvo_nao_resolvido`), não acusada. Quando o código só tem
+        alvos literais e nenhum casa com o recurso da mensagem, a recusa é
+        `operacao_nao_ligada_ao_recurso`.
+      - >-
+        Sob FGAC, a localização é a que o operador passou ao coletor. Se ela for
+        mais larga que a tabela (o bucket), uma policy escopada ao prefixo da
+        tabela também nega em `<localização>/*`, e a acusação pode apontar uma
+        falta que a tabela não tem.
+    tradeoffs:
+      - >-
+        Conceder só o que falta mantém o menor privilégio. Trocar o modelo de
+        acesso (FGAC ou FTA) muda quem vende a credencial, e é decisão de
+        plataforma, não de job.
+    validation:
+      - >-
+        Com `side: lf`, recoletar com `sparkforge collect lakeformation`; com
+        `side: iam`, recoletar com `sparkforge collect iam-access --resource-arn
+        <localização>/*` para o role do job. Rodar `sparkforge fuse` de novo: o
+        `lakeformation.missing_grant` do recurso precisa sumir.
+      - >-
+        Reexecutar o job e confirmar que `ERR-LF-001` sai do log do run. Nenhum
+        eixo de dado é exigido: a mudança é de permissão, não de conteúdo.
+    rollback:
+      - >-
+        Revogar a permissão concedida (`aws lakeformation revoke-permissions`) ou
+        remover a statement acrescentada ao role. O job volta a falhar como antes.
+    sources:
+      - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html", retrieved: 2026-09-21}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html", retrieved: 2026-09-21}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-09-21}

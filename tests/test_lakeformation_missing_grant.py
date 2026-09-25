@@ -7,6 +7,9 @@ artefato de `collect lakeformation`); aqui cada ramo do extrator e medido sozinh
 """
 from __future__ import annotations
 
+import json
+import pathlib
+
 from sparkforge.facts.fusion import fuse
 from sparkforge.facts.lakeformation_missing_grant import (
     EMITTED_KINDS,
@@ -1451,3 +1454,24 @@ def test_fuse_deriva_missing_grant():
     assert EMITTED_KINDS <= DERIVED_KINDS
     sem_falha = [_tf_conf_resolver(), _escrita(), _grant(["SELECT"])]
     assert not {f.kind for f in fuse(sem_falha)} & EMITTED_KINDS
+
+
+RAIZ = pathlib.Path(__file__).resolve().parents[1]
+
+
+def test_evidence_de_err_lf_001_e_emitida():
+    assinatura = json.loads(
+        (RAIZ / "knowledge/errors/lakeformation/access_denied_cross_account.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert assinatura["id"] == "ERR-LF-001"
+    assert assinatura["evidence_required"] == ["lakeformation.missing_grant"]
+    assert "ram.unaccepted_share" in assinatura["evidence_out_of_reach"]
+    assert "lakeformation.missing_grant" in EMITTED_KINDS
+
+
+def test_fontes_da_tabela_estao_no_lock():
+    lock = json.loads((RAIZ / "knowledge/sources.lock.json").read_text(encoding="utf-8"))
+    for url in load_table()["fontes"].values():
+        assert url in lock["sources"], url

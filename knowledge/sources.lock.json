@@ -1615,7 +1615,8 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-09-09"
+        "2026-09-09",
+        "2026-09-21"
       ],
       "rules": [
         "SF-ERR-015",
@@ -1623,7 +1624,8 @@
         "SF-LF-004",
         "SF-LF-005",
         "SF-LF-007",
-        "SF-LF-009"
+        "SF-LF-009",
+        "SF-LF-011"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
@@ -1634,7 +1636,8 @@
       "retrieved": [
         "2026-08-22",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-21"
       ],
       "rules": [
         "SF-ERR-014",
@@ -1647,6 +1650,7 @@
         "SF-LF-008",
         "SF-LF-009",
         "SF-LF-010",
+        "SF-LF-011",
         "SF-XACC-002",
         "SF-XACC-003"
       ]
@@ -1760,6 +1764,16 @@
       ],
       "rules": [
         "SF-LF-007"
+      ]
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-21"
+      ],
+      "rules": [
+        "SF-LF-011"
       ]
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/register-data-lake.html": {

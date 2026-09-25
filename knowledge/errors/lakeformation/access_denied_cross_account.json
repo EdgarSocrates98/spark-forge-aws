@@ -5,7 +5,8 @@
   "versions": ["all"],
   "symptoms": ["AccessDeniedException", "Unable to describe table from consumer account"],
   "likely_causes": ["Missing Resource Link grant", "Target table grant not delegated to consumer", "RAM share not accepted"],
-  "evidence_required": ["lakeformation.missing_grant", "ram.unaccepted_share"],
+  "evidence_required": ["lakeformation.missing_grant"],
+  "evidence_out_of_reach": ["ram.unaccepted_share"],
   "diagnostic_steps": [
     "Check RAM resource share status in consumer account",
     "Verify Describe grant on Resource Link in consumer account",

@@ -75,6 +75,13 @@
           "state": "fresh"
         },
         {
+          "id": "SF-LF-011",
+          "kind": "rule",
+          "reason": "conferida_ha_4_dias",
+          "retrieved": "2026-09-21",
+          "state": "fresh"
+        },
+        {
           "id": "SF-XACC-002",
           "kind": "rule",
           "reason": "conferida_ha_4_dias",
@@ -129,6 +136,7 @@
         "SF-LF-008",
         "SF-LF-009",
         "SF-LF-010",
+        "SF-LF-011",
         "SF-XACC-002",
         "SF-XACC-003"
       ],
