@@ -87,8 +87,17 @@ _ASPAS = "'\"`"
 # e aspas.
 _CAUDA = ",;:.)}" + _ASPAS
 
-# `pyspark_ast` grava `mode` so para append/overwrite/overwritePartitions.
+# `pyspark_ast` grava `mode` do `.mode("...")` literal, do `mode=` literal do terminal,
+# de `insertInto(t, overwrite=<literal>)` e do nome de terminal V2
+# (append/overwrite/overwritePartitions).
 _MODOS_OVERWRITE = frozenset({"overwrite", "overwritepartitions"})
+# `mode_unresolved: true` no fact: o modo vem de expressao que o parse nao le. Write e
+# overwrite cobram permissoes diferentes, e presumir write calaria um DeleteObject
+# negado. Escrita V1 sem `mode` e sem a marca continua write: o default de
+# save/saveAsTable/parquet e `error` (errorifexists) e o de `insertInto` e append
+# ("Disabled by default"), pelas docstrings de `DataFrameWriter` em
+# `pyspark/sql/readwriter.py`.
+_MODO_NAO_LIDO = "modo_nao_lido"
 # `writeTo` sem `mode` termina em create/replace/createOrReplace/merge, e o fact nao
 # carrega o terminal; `ambigua` (`write` e `writeTo` na mesma cadeia) e codigo que o
 # parse nao entende. Sem `mode`, a operacao e desconhecida, nunca um `write` presumido.
@@ -138,6 +147,13 @@ _DESTRAVA = {
         "em create/replace/createOrReplace/merge, e API de escrita ambigua (write e "
         "writeTo na mesma cadeia) e codigo que o parse nao entende; o fact pyspark.write "
         "nao carrega a operacao"
+    ),
+    "modo_de_escrita_nao_lido": (
+        "o modo da escrita vem de expressao que o parse nao le (`.mode(x)`, `mode=x`, "
+        "`insertInto(..., overwrite=x)` ou argumento desempacotado); write e overwrite "
+        "cobram permissoes diferentes (overwrite sob FGAC cobra tambem s3:DeleteObject), "
+        "e o fact nao presume write; torne o modo literal no codigo e rode "
+        "`sparkforge analyze pyspark` de novo"
     ),
     "catalogo_ambiguo": (
         "grants da mesma tabela em mais de um catalogo coletado (catalog_id vazio conta "
@@ -445,12 +461,15 @@ def _operacao_de_escrita(attrs: dict[str, Any]) -> str:
     api = str(attrs.get("api") or "")
     if not modo and api in _TERMINAL_NAO_MEDIDO:
         return _TERMINAL_NAO_MEDIDO[api]
+    if not modo and attrs.get("mode_unresolved"):
+        return _MODO_NAO_LIDO
     return "write"
 
 
 def _mapeada(operacao: str) -> str:
-    """A operacao de `OPERACOES_MAPEADAS` de uma escrita de terminal nao medido."""
-    return "write" if operacao in _TERMINAL_NAO_MEDIDO.values() else operacao
+    """A operacao de `OPERACOES_MAPEADAS` de uma escrita de terminal ou modo nao medido."""
+    nao_medidas = {*_TERMINAL_NAO_MEDIDO.values(), _MODO_NAO_LIDO}
+    return "write" if operacao in nao_medidas else operacao
 
 
 def _operacoes(
@@ -860,6 +879,13 @@ def _derivar(recurso: str, gatilho: Fact, facts: Sequence[Fact]) -> list[Fact]:
     if modelo not in {"fta", "fgac"}:
         return [*saida, _unresolved(modelo, recurso, gatilho)]
     for operacao, origem in operacoes:
+        if operacao == _MODO_NAO_LIDO:
+            saida.append(
+                _unresolved(
+                    "modo_de_escrita_nao_lido", recurso, gatilho, operation=_mapeada(operacao)
+                )
+            )
+            continue
         if operacao in _TERMINAL_NAO_MEDIDO.values():
             saida.append(
                 _unresolved(

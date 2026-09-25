@@ -1297,3 +1297,58 @@ def test_ressalva_do_registro_cobre_localizacao_mais_larga_que_a_tabela():
     saida = build_missing_grant(cenario_fgac_escrita_negada())
     (falta,) = _de(saida, "lakeformation.missing_grant")
     assert "mais larga que a tabela" in falta.attrs["caveat"]
+
+
+def _escrita_modo_nao_lido(target: str | None = TABELA) -> Fact:
+    """`pyspark.write` de `.mode(m)`, `mode=m` ou `insertInto(t, overwrite=m)`."""
+    attrs: dict = {"api": "dataframe_writer_v1", "mode_unresolved": True}
+    if target is not None:
+        attrs["target"] = target
+    return Fact(
+        kind="pyspark.write",
+        subject={"type": "source_location", "file": "job.py", "line": 30},
+        attrs=attrs,
+        provenance=PROV,
+    )
+
+
+def test_fgac_modo_nao_lido_nao_presume_write_e_nao_cala_delete_object():
+    # PutObject allowed no prefixo da tabela cobriria um write presumido e a saida
+    # seria [] -- "o grant cobre". Se o modo for overwrite, DeleteObject nao foi
+    # simulado: a operacao e desconhecida e sai recusada por nome.
+    pool = [
+        _gatilho(),
+        _modelo("fgac"),
+        _glue("5.1"),
+        _escrita_modo_nao_lido(),
+        _registrada(False),
+        _decisao("s3:PutObject", "allowed", recurso=LOCAL + "/*"),
+    ]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    (recusa,) = _so_recusas(saida)
+    assert recusa.attrs["reason"] == "modo_de_escrita_nao_lido"
+    assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
+    assert "s3:DeleteObject" in recusa.attrs["unblocked_by"]
+
+
+def test_fta_modo_nao_lido_recusa_em_vez_de_acusar_write():
+    pool = [_gatilho(), _fta(), _escrita_modo_nao_lido(), _grant(["DESCRIBE", "SELECT"])]
+    saida = build_missing_grant(pool)
+    assert _de(saida, "lakeformation.missing_grant") == []
+    assert _razoes(saida) == ["modo_de_escrita_nao_lido"]
+
+
+def test_escrita_v1_sem_modo_e_sem_marca_continua_write():
+    # saveAsTable/insertInto/save sem modo: o default e errorifexists (save,
+    # saveAsTable) ou append (insertInto), e os dois sao write.
+    pool = [_gatilho(), _fta(), _escrita(mode=None), _grant(["DESCRIBE", "SELECT"])]
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["operation"] == "write"
+
+
+def test_modo_nao_lido_sem_alvo_sai_como_alvo_nao_resolvido():
+    pool = [_gatilho(), _fta(), _escrita_modo_nao_lido(target=None), _grant(["ALL"])]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "operacao_com_alvo_nao_resolvido"
+    assert recusa.attrs["operation"] in OPERACOES_MAPEADAS
