@@ -422,5 +422,28 @@
       "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
       "extractor": "terraform@0.1.0"
     }
+  },
+  {
+    "id": "f_b0b18e",
+    "schema_version": 1,
+    "kind": "lakeformation.fta_declared",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs#spark.hadoop.fs.s3.credentialsResolverClass"
+    },
+    "measures": {},
+    "attrs": {
+      "marker": "spark.hadoop.fs.s3.credentialsResolverClass",
+      "emrfs_restored": false,
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "3b684869475978cb45e3bde3d45e53bc10243cd39aca6b0d43091fa81e99436d",
+      "extractor": "terraform@0.1.0"
+    }
   }
 ]

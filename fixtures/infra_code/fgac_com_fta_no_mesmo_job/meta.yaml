@@ -23,6 +23,7 @@ runtime:
 expects_kinds:
   - lakeformation.access_model
   - lakeformation.filesystem
+  - lakeformation.fta_declared
   - lakeformation.unresolved
   - tf.attribute
   - tf.module_analyzed
