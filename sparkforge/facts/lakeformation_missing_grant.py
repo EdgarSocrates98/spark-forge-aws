@@ -211,9 +211,10 @@ _DESTRAVA = {
         "registro da localizacao (`--resource-arn`)"
     ),
     "recurso_iam_nao_ligado_a_tabela": (
-        "as decisoes de IAM desta acao cobrem mais de um recurso e o case nao da a "
-        "localizacao S3 da tabela para escolher entre eles; rode "
-        "`sparkforge collect lakeformation` com `--resource-arn` na localizacao da tabela"
+        "o case nao da a localizacao S3 da tabela (registro sem `resource_arn`, ou dois "
+        "diferentes), e sem ela so explicitDeny em `*` fala pela tabela; rode "
+        "`sparkforge collect lakeformation` com `--resource-arn` na localizacao da tabela "
+        "e `sparkforge collect iam-access` com `--resource-arn <localizacao>/*`"
     ),
     "conflito_declarado_fgac_escrita_registrada": (
         "escrita em localizacao registrada sob FGAC e o conflito declarado da secao 6 de "
@@ -221,11 +222,42 @@ _DESTRAVA = {
         "estao la, e nenhuma e escolhida aqui (regra 32)"
     ),
     "acao_iam_nao_simulada": (
-        "a acao exigida nao foi simulada para o role do job, ou foi simulada so fora da "
-        "localizacao da tabela; rode `sparkforge collect iam-access` incluindo-a, com "
-        "`--resource-arn` na localizacao da tabela"
+        "a acao exigida nao foi simulada para o role do job no prefixo de objetos da "
+        "localizacao da tabela: implicitDeny em `*`, no bucket, na localizacao sem `/*`, "
+        "num prefixo mais largo ou num objeto tambem sai de uma policy escopada a "
+        "tabela, e allowed fora do prefixo nao cobre a tabela inteira; rode "
+        "`sparkforge collect iam-access` para o role do job incluindo a acao, com "
+        "`--resource-arn <localizacao>/*`"
+    ),
+    "decisao_iam_malformada": (
+        "a decisao de IAM desta acao sobre a tabela nao tem `allowed` booleano: nao se "
+        "sabe se negou; recolete com `sparkforge collect iam-access`"
+    ),
+    "decisao_iam_desconhecida": (
+        "a decisao de IAM desta acao sobre a tabela nega com um nome fora de "
+        "implicitDeny/explicitDeny, e o fact nao le o que ela quer dizer; confira o "
+        "artefato de `sparkforge collect iam-access`"
     ),
 }
+
+# `not_applicable` e o 4.0, onde o modelo nao existia; `not_supported`, o 5.0, onde ele
+# existia e nao escrevia. Frases diferentes da matriz, razoes diferentes.
+_RAZAO_DO_STATUS = {
+    "not_applicable": "fgac_spark_native_inexistente_no_runtime",
+    "not_supported": "escrita_fgac_nao_suportada_no_runtime",
+}
+
+# DescribeResource responde pelo ARN exato: `registered False` nao confere registro
+# num prefixo pai da localizacao.
+_ESCOPO_DO_REGISTRO = "exact_arn"
+_RESSALVA_DO_REGISTRO = (
+    "registered False veio de DescribeResource no ARN exato da localizacao; registro "
+    "num prefixo pai nao foi conferido, e se existir o caso e o conflito declarado "
+    "(secao 6 de knowledge/glue/lakeformation-fgac.md), nao falta de IAM"
+)
+
+_DECISOES_NEGADAS = frozenset({"implicitDeny", "explicitDeny"})
+_S3_RE = re.compile(r"^(?:s3[an]?://|arn:aws[a-z-]*:s3:::)", re.IGNORECASE)
 
 _RELATIVE = "glue/lakeformation-permissions.yaml"
 _CAMPOS = ("operation", "model", "side", "resource_level", "requires", "source", "quote")
@@ -498,16 +530,86 @@ def _registros(recurso: str, facts: Sequence[Fact]) -> list[Fact]:
     ]
 
 
-def _pertence(recurso_iam: str, local: str) -> bool:
-    """A decisao de IAM fala da localizacao da tabela: `*`, um prefixo que a contem
-    (`bucket/*`, o ARN do bucket) ou um objeto dentro dela. Outro bucket, ou outro
-    prefixo, nao."""
-    if recurso_iam.strip() == "*":
-        return True
-    base = recurso_iam.strip()
-    base = base[:-2] if base.endswith("/*") else base.rstrip("/")
-    local = local.rstrip("/")
-    return base == local or local.startswith(base + "/") or base.startswith(local + "/")
+def _s3(recurso: str) -> str:
+    """`s3://b/k`, `arn:aws:s3:::b/k` e `b/k/` viram `b/k`; `*` fica `*`."""
+    bruto = recurso.strip()
+    casou = _S3_RE.match(bruto)
+    return (bruto[casou.end() :] if casou else bruto).rstrip("/")
+
+
+def _alcance(recurso_iam: str, local: str) -> str:
+    """`exato` quando o recurso simulado e o prefixo de objetos da tabela
+    (`<local>/*`); `contem` quando ele contem a tabela (`*`, ou prefixo com `/*` acima
+    dela); vazio no resto -- bucket nu, localizacao sem `/*`, objeto, prefixo de dentro
+    ou de fora. Sem `local`, so `*` contem."""
+    r, local = _s3(recurso_iam), _s3(local)
+    if r == "*":
+        return "contem"
+    if not local or not r.endswith("/*"):
+        return ""
+    base = r[:-2]
+    if base == local:
+        return "exato"
+    return "contem" if local.startswith(base + "/") else ""
+
+
+def _desconhecidas(decisoes: Sequence[Fact], acao: str, local: str) -> list[str]:
+    """Os nomes de negacao fora de implicitDeny/explicitDeny que falam pela tabela."""
+    return sorted(
+        {
+            str((d.attrs or {}).get("decision") or "")
+            for d in decisoes
+            if (d.attrs or {}).get("action") == acao
+            and (d.attrs or {}).get("allowed") is False
+            and (d.attrs or {}).get("decision") not in _DECISOES_NEGADAS
+            and _alcance(str((d.attrs or {}).get("resource") or ""), local)
+        }
+    )
+
+
+def _decisoes_da_tabela(
+    decisoes: Sequence[Fact], acao: str, local: str
+) -> tuple[list[Fact], str | None]:
+    """As decisoes de `acao` que falam pela tabela em `local` (`s3://` ou ARN).
+
+    Cada par (acao, recurso) da simulacao e literal: implicitDeny so e evidencia no
+    prefixo de objetos da tabela, porque uma policy escopada a ela tambem nega em `*`,
+    no bucket ou num prefixo mais largo; explicitDeny vale em qualquer recurso que
+    contem a tabela. Allowed so cobre no proprio `<local>/*`: um objeto ou um prefixo
+    de dentro nao prova a tabela inteira. explicitDeny vence allowed.
+
+    Devolve `(acusam, None)`; `([], None)` quando o allowed cobre; `([], razao)` na
+    lacuna. `acusam` sai por recurso e id: com duas decisoes do mesmo recurso (dois
+    artefatos), a primeira da o `evidence` do fact de mesmo id, e essa escolha nao
+    depende da ordem do pool. A ordem da saida vem de `sort_facts`."""
+    acusam: list[Fact] = []
+    coberta = malformada = False
+    da_acao = sorted(
+        (d for d in decisoes if (d.attrs or {}).get("action") == acao),
+        key=lambda d: (str((d.attrs or {}).get("resource") or ""), d.id),
+    )
+    for d in da_acao:
+        attrs = d.attrs or {}
+        alcance = _alcance(str(attrs.get("resource") or ""), local)
+        if not alcance:
+            continue
+        permitida = attrs.get("allowed")
+        decisao = attrs.get("decision")
+        if not isinstance(permitida, bool):
+            malformada = True
+        elif permitida:
+            coberta = coberta or alcance == "exato"
+        elif decisao == "explicitDeny" or (decisao == "implicitDeny" and alcance == "exato"):
+            acusam.append(d)
+    if acusam or coberta:
+        return acusam, None
+    if _desconhecidas(decisoes, acao, local):
+        return [], "decisao_iam_desconhecida"
+    if malformada:
+        return [], "decisao_iam_malformada"
+    if not local and da_acao:
+        return [], "recurso_iam_nao_ligado_a_tabela"
+    return [], "acao_iam_nao_simulada"
 
 
 def _lado_lf(
@@ -619,46 +721,82 @@ def _runtime(facts: Sequence[Fact]) -> tuple[str | None, str | None]:
     return None, "runtime_ausente"
 
 
+def _gate_escrita_fgac(
+    recurso: str, operacao: str, gatilho: Fact, facts: Sequence[Fact]
+) -> tuple[str, str] | Fact:
+    """`(versao, local)` quando a escrita sob FGAC tem lado IAM a cobrar, ou a recusa:
+    a versao decide se ha escrita, o registro decide se ha conflito declarado. `local`
+    e a localizacao normalizada, ou vazio quando o case nao a da."""
+    versao, razao = _runtime(facts)
+    if razao is not None or versao is None:
+        return _unresolved(razao or "runtime_ausente", recurso, gatilho, operation=operacao)
+    status = (lakeformation_matrix.capability(versao, EIXO_ESCRITA_FGAC) or {}).get("status")
+    if status != "supported":
+        razao = _RAZAO_DO_STATUS.get(str(status), "runtime_sem_celula_na_matriz")
+        return _unresolved(razao, recurso, gatilho, operation=operacao, runtime=versao)
+    registros = _registros(recurso, facts)
+    if any((f.attrs or {}).get("registered") is True for f in registros):
+        return _unresolved(
+            "conflito_declarado_fgac_escrita_registrada", recurso, gatilho,
+            operation=operacao, runtime=versao,
+        )
+    # Sem registro nao se sabe se o alvo e o conflito declarado: nao registrada nao e
+    # presumido.
+    if not registros:
+        return _unresolved(
+            "registro_nao_coletado", recurso, gatilho, operation=operacao, runtime=versao
+        )
+    # A localizacao da tabela e o `resource_arn` que o operador pediu ao coletor; duas
+    # diferentes para a mesma tabela nao dizem qual e, e contam como nenhuma.
+    locais = {_s3(str((f.attrs or {}).get("resource_arn") or "")) for f in registros} - {""}
+    return versao, (locais.pop() if len(locais) == 1 else "")
+
+
+def _falta_iam(
+    recurso: str, operacao: str, origem: Fact, linha: dict[str, Any], modelo: str,
+    gatilho: Fact, principal: str, versao: str, acao: str, negada: Fact,
+) -> Fact:
+    attrs = negada.attrs or {}
+    recurso_iam = str(attrs.get("resource") or "")
+    return Fact(
+        kind="lakeformation.missing_grant",
+        subject={"type": "table", "symbol": f"{recurso}#{operacao}#iam#{acao}@{recurso_iam}"},
+        measures={},
+        attrs={
+            "resource": recurso,
+            "operation": operacao,
+            "model": modelo,
+            "side": "iam",
+            "principal": principal,
+            "action": acao,
+            "iam_resource": recurso_iam,
+            "decision": str(attrs.get("decision") or ""),
+            "denied_by": str(attrs.get("denied_by") or ""),
+            "runtime": versao,
+            "registration_scope": _ESCOPO_DO_REGISTRO,
+            "caveat": _RESSALVA_DO_REGISTRO,
+            "requires": list(linha["requires"]),
+            "missing": [acao],
+            "source": load_table()["fontes"][linha["source"]],
+            "quote": linha["quote"],
+            "signature_id": GATILHO,
+            "evidence": sorted({gatilho.id, origem.id, negada.id}),
+            "extractor": EXTRACTOR_ID,
+        },
+        provenance=_prov(gatilho),
+    )
+
+
 def _lado_iam(
     recurso: str, operacao: str, origem: Fact, linha: dict[str, Any], modelo: str,
     gatilho: Fact, facts: Sequence[Fact],
 ) -> list[Fact]:
-    """Escrita sob FGAC: a versao decide se ha escrita, o registro decide se ha
-    conflito declarado, e so entao a decisao de IAM do role do job e cobrada."""
-    versao, razao = _runtime(facts)
-    if razao is not None:
-        return [_unresolved(razao, recurso, gatilho, operation=operacao)]
-    celula = lakeformation_matrix.capability(str(versao), EIXO_ESCRITA_FGAC) or {}
-    # `not_applicable` e o 4.0, onde o modelo nao existia; `not_supported`, o 5.0, onde
-    # ele existia e nao escrevia. Frases diferentes da matriz, razoes diferentes.
-    por_status = {
-        "not_applicable": "fgac_spark_native_inexistente_no_runtime",
-        "not_supported": "escrita_fgac_nao_suportada_no_runtime",
-    }
-    status = celula.get("status")
-    if status != "supported":
-        razao = por_status.get(str(status), "runtime_sem_celula_na_matriz")
-        return [_unresolved(razao, recurso, gatilho, operation=operacao, runtime=versao)]
-    registros = _registros(recurso, facts)
-    if any((f.attrs or {}).get("registered") is True for f in registros):
-        return [
-            _unresolved(
-                "conflito_declarado_fgac_escrita_registrada", recurso, gatilho,
-                operation=operacao, runtime=versao,
-            )
-        ]
-    # Sem registro nao se sabe se o alvo e o conflito declarado: nao registrada nao e
-    # presumido.
-    if not registros:
-        return [
-            _unresolved(
-                "registro_nao_coletado", recurso, gatilho, operation=operacao, runtime=versao
-            )
-        ]
-    # A localizacao da tabela e o `resource_arn` que o operador pediu ao coletor; duas
-    # diferentes para a mesma tabela nao dizem qual e, e contam como nenhuma.
-    locais = {str((f.attrs or {}).get("resource_arn") or "") for f in registros} - {""}
-    local = locais.pop() if len(locais) == 1 else ""
+    """Escrita sob FGAC: passada a porta de versao e registro, a decisao de IAM do
+    role do job e cobrada acao por acao."""
+    porta = _gate_escrita_fgac(recurso, operacao, gatilho, facts)
+    if isinstance(porta, Fact):
+        return [porta]
+    versao, local = porta
     # O role do job sai das decisoes de IAM, como no lado LF: a negacao de outro role
     # nao acusa este.
     principal, candidatas = _principal(facts, [])
@@ -668,76 +806,31 @@ def _lado_iam(
                 "principal_ambiguo", recurso, gatilho, operation=operacao, candidates=candidatas
             )
         ]
-    # So decisao com `allowed` booleano e lida: sem ele, nao se sabe se negou.
     decisoes = [
         f
         for f in facts
         if f.kind == "iam.access_decision"
         and principal
         and (f.attrs or {}).get("role_arn") == principal
-        and isinstance((f.attrs or {}).get("allowed"), bool)
     ]
     saida: list[Fact] = []
     for acao in linha["requires"]:
-        # Ordem por recurso e id: a saida nao depende da ordem do pool.
-        da_acao = sorted(
-            (d for d in decisoes if (d.attrs or {}).get("action") == acao),
-            key=lambda d: (str((d.attrs or {}).get("resource") or ""), d.id),
+        acusam, razao = _decisoes_da_tabela(decisoes, acao, local)
+        if razao == "decisao_iam_desconhecida":
+            nomes = ",".join(_desconhecidas(decisoes, acao, local))
+            saida.append(
+                _unresolved(
+                    razao, recurso, gatilho, operation=operacao, action=acao, decision=nomes
+                )
+            )
+        elif razao is not None:
+            saida.append(_unresolved(razao, recurso, gatilho, operation=operacao, action=acao))
+        saida.extend(
+            _falta_iam(
+                recurso, operacao, origem, linha, modelo, gatilho, principal, versao, acao, d
+            )
+            for d in acusam
         )
-        if local:
-            da_acao = [
-                d for d in da_acao if _pertence(str((d.attrs or {}).get("resource") or ""), local)
-            ]
-        elif len({str((d.attrs or {}).get("resource") or "") for d in da_acao}) > 1:
-            # Sem a localizacao da tabela, qual dos recursos simulados e ela nao se sabe.
-            # Um recurso so e a pergunta que o operador fez ao coletor, e fica.
-            saida.append(
-                _unresolved(
-                    "recurso_iam_nao_ligado_a_tabela", recurso, gatilho,
-                    operation=operacao, action=acao,
-                )
-            )
-            continue
-        if not da_acao:
-            saida.append(
-                _unresolved(
-                    "acao_iam_nao_simulada", recurso, gatilho, operation=operacao, action=acao
-                )
-            )
-            continue
-        for negada in (d for d in da_acao if (d.attrs or {}).get("allowed") is False):
-            attrs = negada.attrs or {}
-            recurso_iam = str(attrs.get("resource") or "")
-            saida.append(
-                Fact(
-                    kind="lakeformation.missing_grant",
-                    subject={
-                        "type": "table",
-                        "symbol": f"{recurso}#{operacao}#iam#{acao}@{recurso_iam}",
-                    },
-                    measures={},
-                    attrs={
-                        "resource": recurso,
-                        "operation": operacao,
-                        "model": modelo,
-                        "side": "iam",
-                        "principal": principal,
-                        "action": acao,
-                        "iam_resource": recurso_iam,
-                        "decision": str(attrs.get("decision") or ""),
-                        "denied_by": str(attrs.get("denied_by") or ""),
-                        "runtime": versao,
-                        "requires": list(linha["requires"]),
-                        "missing": [acao],
-                        "source": load_table()["fontes"][linha["source"]],
-                        "quote": linha["quote"],
-                        "signature_id": GATILHO,
-                        "evidence": sorted({gatilho.id, origem.id, negada.id}),
-                        "extractor": EXTRACTOR_ID,
-                    },
-                    provenance=_prov(gatilho),
-                )
-            )
     return saida
 
 

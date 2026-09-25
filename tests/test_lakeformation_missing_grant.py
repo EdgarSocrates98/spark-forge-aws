@@ -149,10 +149,12 @@ def _decisao(
     denied_by: str = "implicit_deny",
     role: str = ROLE,
     recurso: str = "*",
+    arquivo: str = "iam.json",
+    **attrs: object,
 ) -> Fact:
     return Fact(
         kind="iam.access_decision",
-        subject={"type": "job_run", "file": "iam.json", "symbol": f"{role}#{acao}@{recurso}"},
+        subject={"type": "job_run", "file": arquivo, "symbol": f"{role}#{acao}@{recurso}"},
         measures={"matched_statements": 0},
         attrs={
             "role_arn": role,
@@ -161,6 +163,7 @@ def _decisao(
             "decision": decisao,
             "allowed": decisao == "allowed",
             "denied_by": "" if decisao == "allowed" else denied_by,
+            **attrs,
         },
         provenance=PROV,
     )
@@ -189,7 +192,7 @@ def cenario_fgac_escrita_negada() -> list[Fact]:
         _glue("5.1"),
         _escrita(),
         _registrada(False),
-        _decisao("s3:PutObject", "implicitDeny"),
+        _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/*"),
     ]
 
 
@@ -971,10 +974,12 @@ def test_fgac_sem_registro_coletado_recusa_e_nao_cobra_o_iam():
 
 
 def test_fgac_negacoes_da_mesma_acao_em_dois_recursos_nao_colapsam():
+    # As duas falam pela tabela: explicitDeny em `*` contem a localizacao, e o
+    # implicitDeny e no prefixo de objetos dela.
     explicita = _decisao(
-        "s3:PutObject", "explicitDeny", denied_by="explicit_deny", recurso=LOCAL + "/*"
+        "s3:PutObject", "explicitDeny", denied_by="explicit_deny", recurso="*"
     )
-    implicita = _decisao("s3:PutObject", "implicitDeny", recurso="*")
+    implicita = _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/*")
     ida = build_missing_grant(_fgac_51(_registrada(False), explicita, implicita))
     volta = build_missing_grant(_fgac_51(_registrada(False), implicita, explicita))
     assert [f.to_dict() for f in ida] == [f.to_dict() for f in volta]
@@ -993,14 +998,15 @@ def test_fgac_negacao_em_outro_bucket_nao_acusa_a_tabela():
     assert build_missing_grant(pool) == []
 
 
-def test_fgac_negacao_no_caminho_da_tabela_acusa():
+def test_fgac_negacao_implicita_num_objeto_da_tabela_nao_fala_pela_tabela():
+    # Uma policy escopada ao prefixo da tabela tambem da implicitDeny num objeto
+    # qualquer que ela nao nomeia; o objeto nao e o prefixo de objetos da tabela.
     pool = _fgac_51(
         _registrada(False),
         _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/part-0.parquet"),
     )
-    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
-    assert falta.attrs["iam_resource"] == LOCAL + "/part-0.parquet"
-    assert falta.attrs["missing"] == ["s3:PutObject"]
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
 
 
 def test_fgac_so_simulada_fora_da_tabela_recusa_nao_simulada():
@@ -1023,10 +1029,26 @@ def test_fgac_sem_localizacao_e_dois_recursos_recusa():
     assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
     assert recusa.attrs["action"] == "s3:PutObject"
     assert "localizacao" in recusa.attrs["unblocked_by"]
-    # Um recurso so: e a pergunta que o operador fez ao coletor, e ela e aceita.
+    assert "/*" in recusa.attrs["unblocked_by"]
+
+
+def test_fgac_sem_localizacao_negacao_implicita_num_recurso_so_recusa():
+    # Sem a localizacao, nenhum implicitDeny fala pela tabela, nem o de `*`: uma
+    # policy escopada a ela tambem nega ali.
     um = _fgac_51(_registrada(False, arn=""), _decisao("s3:PutObject", "implicitDeny"))
-    (falta,) = _de(build_missing_grant(um), "lakeformation.missing_grant")
+    (recusa,) = _so_recusas(build_missing_grant(um))
+    assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
+
+
+def test_fgac_sem_localizacao_negacao_explicita_em_estrela_acusa():
+    # explicitDeny em `*` vale para qualquer localizacao, conhecida ou nao.
+    pool = _fgac_51(
+        _registrada(False, arn=""),
+        _decisao("s3:PutObject", "explicitDeny", denied_by="explicit_deny"),
+    )
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
     assert falta.attrs["iam_resource"] == "*"
+    assert falta.attrs["denied_by"] == "explicit_deny"
 
 
 def _glue_com(distintas: int, versao: str) -> Fact:
@@ -1054,7 +1076,7 @@ def _tf_glue(valor: str, literal: bool = True, block: str = "root") -> Fact:
 def _fgac_sem_runtime(*runtime: Fact) -> list[Fact]:
     return [
         _gatilho(), _modelo("fgac"), *runtime, _escrita(), _registrada(False),
-        _decisao("s3:PutObject", "implicitDeny"),
+        _decisao("s3:PutObject", "implicitDeny", recurso=LOCAL + "/*"),
     ]
 
 
@@ -1099,3 +1121,160 @@ def test_fta_registro_qualificado_por_catalogo_casa_no_lado_lf():
     ]
     (recusa,) = _so_recusas(build_missing_grant(pool))
     assert recusa.attrs["reason"] == "fta_escrita_em_alvo_nao_registrado"
+
+
+# SimulatePrincipalPolicy avalia cada par (acao, recurso) literalmente. Uma policy
+# escopada ao prefixo da tabela da implicitDeny em `*`, no bucket nu, na localizacao
+# sem `/*`, num prefixo mais largo e num objeto qualquer: nenhum deles e evidencia
+# sobre a tabela. explicitDeny num recurso que contem a tabela vale para ela.
+BUCKET = "arn:aws:s3:::sparkforge-demo"
+PUT = "s3:PutObject"
+
+
+def _explicito(recurso: str) -> Fact:
+    return _decisao(PUT, "explicitDeny", denied_by="explicit_deny", recurso=recurso)
+
+
+def test_implicita_em_estrela_ao_lado_de_allowed_escopado_nao_acusa():
+    # a1
+    pool = _fgac_51(
+        _registrada(False),
+        _decisao(PUT, "implicitDeny", recurso="*"),
+        _decisao(PUT, "allowed", recurso=LOCAL + "/*"),
+    )
+    assert build_missing_grant(pool) == []
+
+
+def test_so_implicita_em_estrela_recusa_nao_simulada():
+    # a3
+    pool = _fgac_51(_registrada(False), _decisao(PUT, "implicitDeny", recurso="*"))
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
+    assert "--resource-arn <localizacao>/*" in recusa.attrs["unblocked_by"]
+
+
+def test_explicita_em_estrela_vence_o_allowed_escopado():
+    # a2: explicitDeny em `*` contem a tabela, e explicitDeny vence allowed.
+    pool = _fgac_51(
+        _registrada(False), _explicito("*"), _decisao(PUT, "allowed", recurso=LOCAL + "/*")
+    )
+    (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+    assert falta.attrs["iam_resource"] == "*"
+    assert falta.attrs["decision"] == "explicitDeny"
+
+
+def test_implicita_no_bucket_nu_ou_na_localizacao_sem_barra_nao_acusa():
+    # a4 e a5
+    for recurso in (BUCKET, LOCAL, LOCAL + "/"):
+        pool = _fgac_51(
+            _registrada(False),
+            _decisao(PUT, "implicitDeny", recurso=recurso),
+            _decisao(PUT, "allowed", recurso=LOCAL + "/*"),
+        )
+        assert build_missing_grant(pool) == [], recurso
+
+
+def test_registro_no_bucket_nao_acusa_pelo_prefixo_de_outra_tabela():
+    # C1: com a localizacao no bucket, `staging/outra/*` fica dentro dela e nao e
+    # o prefixo de objetos de default.dim_cliente.
+    pool = _fgac_51(
+        _registrada(False, arn=BUCKET),
+        _decisao(PUT, "allowed", recurso=BUCKET + "/default/dim_cliente/*"),
+        _decisao(PUT, "implicitDeny", recurso=BUCKET + "/staging/outra/*"),
+    )
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
+
+
+def test_prefixo_irmao_nao_pertence_a_tabela():
+    for decisao in (
+        _decisao(PUT, "implicitDeny", recurso=LOCAL + "_hist/*"),
+        _explicito(LOCAL + "_hist/*"),
+    ):
+        pool = _fgac_51(_registrada(False), decisao)
+        (recusa,) = _so_recusas(build_missing_grant(pool))
+        assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
+
+
+def test_prefixo_do_bucket_acusa_so_com_explicit_deny():
+    (falta,) = _de(
+        build_missing_grant(_fgac_51(_registrada(False), _explicito(BUCKET + "/*"))),
+        "lakeformation.missing_grant",
+    )
+    assert falta.attrs["iam_resource"] == BUCKET + "/*"
+    implicita = _fgac_51(
+        _registrada(False), _decisao(PUT, "implicitDeny", recurso=BUCKET + "/*")
+    )
+    (recusa,) = _so_recusas(build_missing_grant(implicita))
+    assert recusa.attrs["reason"] == "acao_iam_nao_simulada"
+
+
+def test_recurso_em_s3_uri_ou_arn_e_barra_final_normalizam():
+    uri = "s3://sparkforge-demo/default/dim_cliente"
+    for local, recurso in ((uri + "/", LOCAL + "/*"), (LOCAL, uri + "/*")):
+        pool = _fgac_51(
+            _registrada(False, arn=local), _decisao(PUT, "implicitDeny", recurso=recurso)
+        )
+        (falta,) = _de(build_missing_grant(pool), "lakeformation.missing_grant")
+        assert falta.attrs["iam_resource"] == recurso, local
+
+
+def test_decisoes_da_tabela_isolada():
+    from sparkforge.facts.lakeformation_missing_grant import _decisoes_da_tabela
+
+    negada = _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*")
+    coberta = _decisao(PUT, "allowed", recurso=LOCAL + "/*")
+    estrela = _decisao(PUT, "implicitDeny", recurso="*")
+    assert _decisoes_da_tabela([negada, estrela], PUT, LOCAL) == ([negada], None)
+    assert _decisoes_da_tabela([coberta, estrela], PUT, LOCAL) == ([], None)
+    assert _decisoes_da_tabela([estrela], PUT, LOCAL) == ([], "acao_iam_nao_simulada")
+    assert _decisoes_da_tabela([negada], "s3:DeleteObject", LOCAL) == (
+        [],
+        "acao_iam_nao_simulada",
+    )
+
+
+def test_fgac_acusacao_do_lado_iam_declara_o_escopo_do_registro():
+    (falta,) = _de(
+        build_missing_grant(cenario_fgac_escrita_negada()), "lakeformation.missing_grant"
+    )
+    assert falta.attrs["registration_scope"] == "exact_arn"
+    assert "prefixo pai" in falta.attrs["caveat"]
+    assert "conflito declarado" in falta.attrs["caveat"]
+
+
+def test_decisao_sem_allowed_booleano_recusa_malformada():
+    pool = _fgac_51(
+        _registrada(False), _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*", allowed=None)
+    )
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "decisao_iam_malformada"
+    assert "allowed" in recusa.attrs["unblocked_by"]
+
+
+def test_decisao_negada_com_nome_desconhecido_recusa():
+    pool = _fgac_51(
+        _registrada(False), _decisao(PUT, "denied", recurso=LOCAL + "/*")
+    )
+    (recusa,) = _so_recusas(build_missing_grant(pool))
+    assert recusa.attrs["reason"] == "decisao_iam_desconhecida"
+    assert recusa.attrs["decision"] == "denied"
+
+
+def test_duas_localizacoes_para_a_mesma_tabela_nao_escolhem_a_primeira():
+    outra = "arn:aws:s3:::sparkforge-demo/staging/outra"
+    negada = _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*")
+    for registros in (
+        [_registrada(False), _registrada(False, arn=outra)],
+        [_registrada(False, arn=outra), _registrada(False)],
+    ):
+        (recusa,) = _so_recusas(build_missing_grant(_fgac_51(*registros, negada)))
+        assert recusa.attrs["reason"] == "recurso_iam_nao_ligado_a_tabela"
+
+
+def test_duas_decisoes_do_mesmo_recurso_dao_a_mesma_evidencia_em_qualquer_ordem():
+    a = _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*", arquivo="a.json")
+    b = _decisao(PUT, "implicitDeny", recurso=LOCAL + "/*", arquivo="b.json")
+    ida = build_missing_grant(_fgac_51(_registrada(False), a, b))
+    volta = build_missing_grant(_fgac_51(_registrada(False), b, a))
+    assert [f.to_dict() for f in ida] == [f.to_dict() for f in volta]
