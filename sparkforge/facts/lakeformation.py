@@ -364,9 +364,22 @@ def _fta_declarados(filesystems: Sequence[Fact]) -> list[Fact]:
     mesma superficie, e registra -- sem julgar -- se o EMRFS foi restaurado:
     FTA declarado sob S3A e pedido ignorado, e quem diz isso e outra regra.
 
-    A chave por catalogo (`.glue.lakeformation-enabled`) sozinha NAO conta: o
-    que ela significa sob FGAC esta como a verificar na §7 do documento de
-    conhecimento, e dar a ela o peso de declaracao seria afirmar alem da fonte.
+    A chave por catalogo (`.glue.lakeformation-enabled`) sozinha NAO conta: pela
+    §5 do documento de conhecimento, FTA exige a chave de catalogo E o resolver,
+    e so o resolver faz o filesystem pedir ao Lake Formation a credencial de S3
+    da tabela registrada. A chave sem o resolver nao muda quem vende a
+    credencial.
+
+    Incoerencia registrada, sem mudar (revisao da feature LF_FTA_DECLARADO):
+    `_marcadores_de_fta` conta a chave de catalogo SOZINHA como marcador de FTA
+    para `access_model.model == "both"`, e este predicado nao a conta. Os dois
+    leem a mesma chave com pesos diferentes.
+
+    Risco, hipotese NAO verificada: o resolver declarado por `spark.conf.set`
+    depois de a sessao existir pode nao chegar ao filesystem, que le a
+    configuracao quando e instanciado. Mesmo assim o fact sai com
+    `source: code` e cala `SF-LF-010`. Nenhuma fonte deste repositorio confirma
+    nem refuta o efeito.
     """
     saida: list[Fact] = []
     for fs in filesystems:

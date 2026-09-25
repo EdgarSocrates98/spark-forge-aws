@@ -9602,5 +9602,26 @@ perdem `SF-LF-010` e ganham o kind; `get_data_access_negado_com_resolver`,
 pergunta de ouro 34 em 63 → 32 em 61. Regras, extratores e fixtures não mudam.
 
 **Limites declarados.** A chave por catálogo `.glue.lakeformation-enabled` sozinha não
-conta como declaração de FTA. FTA declarado e sem efeito (resolver sob S3A, Glue 5.1)
-também cala `SF-LF-010`; quem acusa esse caso é `SF-LF-004`.
+conta como declaração de FTA: pela §5 de `knowledge/glue/lakeformation-fgac.md`, FTA exige
+a chave E o resolver, e só o resolver faz o Lake Formation vender a credencial de S3.
+`_marcadores_de_fta` conta a chave sozinha para `access_model.model == "both"`; a
+incoerência entre os dois predicados fica registrada, sem mudança. FTA declarado e sem
+efeito (resolver sob S3A, Glue 5.1) também cala `SF-LF-010`; quem acusa esse caso é
+`SF-LF-004`. **Sem versão do Glue detectada, nenhuma das duas acusa**: localização
+registrada, resolver declarado e EMRFS não restaurado deixam `SF-LF-010` calada pelo
+`absent:` e `SF-LF-004` (`runtime_scope: {glue: ">=5.1"}`) em `skipped`, que
+`judge --show-skipped` mostra. O mesmo silêncio vale num Glue 4.0, onde FTA Spark-native
+não existia (§0). Conferido à mão sobre a união de
+`lakeformation/grant_de_leitura_em_local_registrado` com `infra_code/fta_sem_emrfs_no_51`
+sem o `glue_version`, e com `--glue 4.0`: só `SF-LF-008` dispara, `SF-LF-004` sai pulada
+por `runtime_scope`. Não há fixture que o trave. Hipótese não verificada: resolver
+declarado por `spark.conf.set` depois de a sessão existir pode não chegar ao filesystem,
+e mesmo assim vira `lakeformation.fta_declared` com `source: code` e cala `SF-LF-010`.
+
+**Rodada de correção da revisão (2026-09-25).** O golden `fixtures/scan/misto` passou a
+contar o fact novo (`after_fuse` 69 → 70; `repo/infra/main.tf:23` declara o resolver), e
+nenhum gate do ship rodava `tests/test_fixtures_golden_scan.py`. Os demais módulos de
+golden rodaram um por um e passaram. `grant_de_leitura_em_local_registrado` mudou de novo
+só em `risks` de `SF-LF-010`. `fixtures/sarif/terraform/input/facts.json` é cópia estática
+de `infra_code/fgac_com_fta_no_mesmo_job` feita à mão no PR #50, sem gerador no
+repositório, e fica sem o fact novo (difere só nele).
