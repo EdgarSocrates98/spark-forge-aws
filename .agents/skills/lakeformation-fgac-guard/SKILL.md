@@ -97,13 +97,14 @@ Severidade, escopo de versão e o texto completo: `sparkforge rules lookup --id 
 
 ## Os facts que o motor deriva, e o que eles não afirmam
 
-`sparkforge/facts/lakeformation.py` deriva quatro kinds sobre a união dos facts, sem ler artefato:
+`sparkforge/facts/lakeformation.py` deriva cinco kinds sobre a união dos facts, sem ler artefato:
 
 | kind | o que carrega |
 |---|---|
 | `lakeformation.access_model` | `model`, `fgac_enabled`, `declared_value` — e `"false"` declarado **não** é o mesmo que ausente |
 | `lakeformation.iceberg_catalog` | `catalog_name`, `is_session_catalog`, `catalog_impl`, `lakeformation_enabled` |
 | `lakeformation.filesystem` | `lf_credentials_resolver_declared`, `emrfs_restored`, `fs_s3_impl` |
+| `lakeformation.fta_declared` | `marker`, `emrfs_restored`, `source` — um por superfície que pede o resolver do Lake Formation; declarado, não efetivo |
 | `lakeformation.unresolved` | a lacuna: grant do Lake Formation, policy do runtime role, registro da localização S3 |
 
 **`is_session_catalog: false` é observação, nunca acusação.** A restrição de session catalog é de FGAC, e a AWS publica exemplo de FTA com catálogo de nome arbitrário. Quem cruza as duas coisas é a regra.
