@@ -151,6 +151,11 @@ packages = ["sparkforge"]
 [tool.hatch.build.targets.wheel.force-include]
 "rules/catalog" = "sparkforge/rules/catalog"
 "knowledge" = "sparkforge/knowledge"
+# `skills/` e `agents/` vao para `sparkforge/integrate/bundle/`, e nao para
+# `sparkforge/agents/`, que ja e pacote Python. `sparkforge integrate` os le de la
+# quando nao ha repositorio (docs/sdd/INTEGRACAO_USUARIO/design.md, D3).
+"skills" = "sparkforge/integrate/bundle/skills"
+"agents" = "sparkforge/integrate/bundle/agents"
 
 # O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
 # realocar. `include` basta: preserva os dois onde o force-include do wheel
@@ -168,6 +173,8 @@ include = [
     "sparkforge",
     "rules/catalog",
     "knowledge",
+    "skills",
+    "agents",
     "README.md",
     "LICENSE",
     "pyproject.toml",
