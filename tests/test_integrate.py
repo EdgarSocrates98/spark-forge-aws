@@ -7,6 +7,8 @@ Spec: docs/sdd/INTEGRACAO_USUARIO/define.md.
 from __future__ import annotations
 
 import ast
+import hashlib
+import json
 import subprocess
 import sys
 import zipfile
@@ -14,7 +16,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.integrate import render, sources
+from sparkforge import __version__
+from sparkforge.integrate import integrate, render, sources
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -128,3 +131,49 @@ def test_conteudo_e_o_da_renderizacao_do_sync_skills():
     ) == exemplo.read_bytes()
     with pytest.raises(ValueError, match="description"):
         render.render_agent("---\nname: x\n---\ncorpo\n", "codex")
+
+
+def _foto(base: Path) -> dict[str, tuple[bytes, int]]:
+    """Conteudo e mtime de todo arquivo sob `base`: o que "nao mudou nada" compara."""
+    return {
+        p.relative_to(base).as_posix(): (p.read_bytes(), p.stat().st_mtime_ns)
+        for p in sorted(base.rglob("*"))
+        if p.is_file()
+    }
+
+
+def test_manifesto_dry_run_e_idempotencia(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+
+    ensaio = integrate("devin", home=home, dry_run=True, windows=False)
+    assert ensaio["dry_run"] is True
+    (devin,) = ensaio["hosts"]
+    assert ".config/devin/agents/sf-runtime-specialist.md" in devin["written"]
+    assert ".agents/skills/sdd-plan/SKILL.md" in devin["written"]
+    assert _foto(home) == {}, "dry-run escreveu no HOME"
+
+    primeira = integrate("devin", home=home, windows=False)
+    assert primeira["refused"] == []
+    manifesto = json.loads((home / ".sparkforge" / "integrations.json").read_text("utf-8"))
+    arquivos = manifesto["hosts"]["devin"]["files"]
+    assert manifesto["hosts"]["devin"]["package_version"] == __version__
+    assert set(arquivos) == set(primeira["hosts"][0]["written"])
+    for relativo, sha in arquivos.items():
+        assert hashlib.sha256((home / relativo).read_bytes()).hexdigest() == sha, relativo
+
+    antes = _foto(home)
+    segunda = integrate("devin", home=home, windows=False)
+    assert segunda["hosts"][0]["written"] == []
+    assert set(segunda["hosts"][0]["unchanged"]) == set(arquivos)
+    assert _foto(home) == antes, "a segunda execucao mudou o HOME"
+
+    # Arquivo que ja estava no HOME e nenhum host registrou e do usuario: fica.
+    outra = tmp_path / "outra_home"
+    alheio = outra / ".agents" / "skills" / "sdd-plan" / "SKILL.md"
+    alheio.parent.mkdir(parents=True)
+    alheio.write_text("minha skill\n", encoding="utf-8")
+    recusado = integrate("copilot", home=outra)
+    assert {"host": "copilot", "reason": "arquivo_do_usuario",
+            "path": ".agents/skills/sdd-plan/SKILL.md"} in recusado["refused"]
+    assert alheio.read_text(encoding="utf-8") == "minha skill\n"
