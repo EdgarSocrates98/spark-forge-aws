@@ -87,15 +87,21 @@ Os 42 extratores emitem 245 kinds distintos de fact (recontado em 2026-09-21),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
-**Quatro deles não leem artefato nenhum**, e a diferença é de natureza:
-`call_graph.py`, `bridge.py`, `exception.py` e `lakeformation.py` são derivação
-pura sobre a UNIÃO dos facts que os outros já resolveram. O par mais próximo
-disso é `lakeformation.py` e `lakeformation_grants.py`: mesmo namespace, e um
-deriva enquanto o outro lê artefato. Eles existem porque o
+**Parte deles não lê artefato nenhum**, e a diferença é de natureza:
+`call_graph.py`, `bridge.py`, `exception.py`, `lakeformation.py` e
+`lakeformation_missing_grant.py`, entre outros, são derivação pura sobre a UNIÃO
+dos facts que os outros já resolveram. O par mais próximo disso é
+`lakeformation.py` e `lakeformation_grants.py`: mesmo namespace, e um deriva
+enquanto o outro lê artefato. Eles existem porque o
 motor de regras avalia **um fact por condição** e nunca combina `attrs` de dois
 — quando a pergunta precisa cruzar duas fontes, ou quando o predicado não cabe
 nos seis comparadores de `sparkforge/rules/expr.py`, quem cruza é uma etapa
-anterior.
+anterior. `lakeformation_missing_grant.py` é o exemplo mais recente dos dois
+casos ao mesmo tempo: ele cruza a falha do log (`ERR-LF-001`), a operação do
+código, o modelo de acesso e o grant ou a decisão de IAM, e "a permissão exigida
+está fora do conjunto concedido" não se escreve com aqueles seis comparadores. O
+`fuse` o chama, e o resultado é o kind `lakeformation.missing_grant` (o passo a
+passo está em [Lake Formation e acesso](usos/lake-formation-e-acesso.md#insufficient-lake-formation-permissions-qual-permissão-falta)).
 
 | Artefato | Verbo | Lê |
 |---|---|---|

@@ -9545,3 +9545,38 @@ divergências.
 Free Edition, serverless, Spark 4.2.0, 2026-09-18). U2 — o texto de suporte parcial da
 seção de explicação não foi visto. A skill `analyze-spark-plan` e seus espelhos ainda
 rotulam `ArrowEvalPython` como UDF vetorizada e não citam `plan.photon`.
+
+## LF_GRANTS — a permissão que falta ganha nome, e o lado que a cobra — **BUILD CONCLUÍDO** em 2026-09-25 (T1–T7; ship pendente)
+
+`ERR-LF-001` (`Insufficient Lake Formation permission(s) on`) declarava
+`lakeformation.missing_grant` em `evidence_required` desde antes de o motor ler Lake
+Formation, e nenhum extrator o emitia. O ciclo SDD está em `docs/sdd/LF_GRANTS/`, e o
+registro do que ficou de verdade é o `build_report.md` de lá.
+
+**O que foi entregue.** O extrator de derivação `sparkforge/facts/lakeformation_missing_grant.py`,
+chamado pelo `fuse`, cruza a falha do log com a operação que o código faz sobre a tabela, o
+modelo de acesso declarado e o lado medido. Sob FTA, e na leitura sob FGAC, ele cobra o
+grant de `collect lakeformation`; na escrita sob FGAC, cobra a decisão de IAM de `collect
+iam-access` em `<localização>/*`, depois de conferir a versão do Glue pela matriz e o
+registro da localização. A operação vira permissão pela tabela citada
+`knowledge/glue/lakeformation-permissions.yaml`. A regra nova `SF-LF-011` nomeia a
+permissão que falta, com `side: lf` ou `side: iam`. A perna `lf_grant` de `lakeformation
+access-graph` usa o fact quando ele existe. O extrator de PySpark passou a ler o modo de
+escrita de `mode=`, de `.mode(saveMode=...)` e de `insertInto(overwrite=...)`, vale o
+último `.mode()`, e marca `mode_unresolved` quando o modo não é literal, o que muda onde
+`SF-GLUE-004` dispara. O guia do operador é
+`docs/guia/usos/lake-formation-e-acesso.md`, seção *Insufficient Lake Formation
+permission(s): qual permissão falta*.
+
+**Números que a feature moveu:** extratores 41 → 42, fact kinds distintos 243 → 245,
+regras 168 → 169 (`SF-LF` 10 → 11), fixtures golden 555 → 557
+(`fixtures/cloudwatch_logs/lf_negado_fta_append_sem_all` e
+`fixtures/cloudwatch_logs/lf_negado_fta_grant_all`).
+
+**Limites declarados.** O registro da localização é conferido só no ARN exato; a
+localização é o `--resource-arn` passado ao collect, e uma localização mais larga que a
+tabela pode acusar em falso; `s3:ListBucket` e KMS não são conferidos e saem em
+`unchecked`; `CREATE TABLE` sai recusado porque o coletor não lê grant de database.
+**Lacuna anterior, não corrigida aqui:** `SF-LF-010` dispara em job que declara FTA,
+porque a regra só pergunta pela ausência de `lakeformation.access_model`, que só o
+argumento de FGAC produz; corrigir exige um predicado derivado (regra 33).

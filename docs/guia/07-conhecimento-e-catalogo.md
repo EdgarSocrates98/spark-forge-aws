@@ -17,7 +17,12 @@ físico, matriz de runtime Glue, worker types e capacidade, argumentos de job,
 métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR
 on EC2, configuração de application EMR Serverless, matriz Databricks Runtime →
 Spark (Databricks como plataforma declarada), superfície corrente dos frameworks
-de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
+de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg, e Lake
+Formation: os dois modelos de acesso (FGAC e Full Table Access) em
+`knowledge/glue/lakeformation-fgac.md`, a matriz de capacidade por versão de Glue
+em `knowledge/glue/lakeformation-matrix.yaml` e, desde 2026-09-25, a tabela que
+diz qual permissão cada operação do job exige em cada modelo, com a frase da AWS
+por trás de cada linha, em `knowledge/glue/lakeformation-permissions.yaml`.
 
 Ler [`knowledge/cross-service-constraints.md`](../../knowledge/cross-service-constraints.md)
 antes de recomendar mudança de versão, formato de tabela ou particionamento — são
