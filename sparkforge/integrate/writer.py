@@ -29,10 +29,13 @@ O formato 1 (um mapa `files` por host) e migrado ao carregar.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
+import os
 import re
-from pathlib import Path
+import tempfile
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from sparkforge.integrate import render, sources
@@ -48,6 +51,52 @@ def sha256_bytes(data: bytes) -> str:
 
 def manifest_path(home: Path) -> Path:
     return Path(home) / MANIFEST_RELATIVE
+
+
+class ManifestoRecusado(Exception):
+    """O manifesto nao pode guiar escrita nem remocao: nada e tocado."""
+
+    def __init__(self, reason: str, path: Path, action: str, key: str | None = None):
+        super().__init__(f"{reason}: {path}")
+        self.reason = reason
+        self.path = Path(path)
+        self.action = action
+        self.key = key
+
+    def as_dict(self) -> dict[str, str]:
+        recusa = {"reason": self.reason, "path": self.path.as_posix(), "action": self.action}
+        if self.key is not None:
+            recusa["key"] = self.key
+        return recusa
+
+
+def gravar_atomico(caminho: Path, dados: bytes) -> None:
+    """Grava num temporario do MESMO diretorio e troca por `os.replace`: quem le o
+    arquivo ve o conteudo velho ou o novo, nunca a metade, mesmo se o processo
+    cair no meio. Sem `fsync`: ele protege de queda de energia, nao de processo
+    interrompido, e custa um flush de disco por arquivo em centenas de arquivos."""
+    caminho = Path(caminho)
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporario = tempfile.mkstemp(
+        dir=caminho.parent, prefix=f".{caminho.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "wb") as saida:
+            saida.write(dados)
+        os.replace(temporario, caminho)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(temporario)
+        raise
+
+
+def chave_segura(chave: str) -> bool:
+    """Relativa, POSIX, sem `..`, sem unidade e sem barra invertida: so assim
+    `home / chave` fica dentro do HOME."""
+    if not chave or "\\" in chave or ":" in chave:
+        return False
+    partes = PurePosixPath(chave)
+    return not partes.is_absolute() and ".." not in partes.parts
 
 
 def _manifesto_vazio() -> dict[str, Any]:
@@ -69,22 +118,52 @@ def _migrar_v1(dados: dict[str, Any], home: Path) -> dict[str, Any]:
     arquivos: dict[str, Any] = {}
     for relativo, candidatos in sorted(shas.items()):
         caminho = Path(home) / relativo
-        em_disco = sha256_bytes(caminho.read_bytes()) if caminho.is_file() else None
+        legivel = chave_segura(relativo) and caminho.is_file()
+        em_disco = sha256_bytes(caminho.read_bytes()) if legivel else None
         sha = em_disco if em_disco in candidatos else candidatos[0]
         arquivos[relativo] = {"sha256": sha, "owners": sorted(donos[relativo])}
     return {"schema": SCHEMA, "files": arquivos, "hosts": hosts}
 
 
+_ACAO_ILEGIVEL = (
+    "o manifesto lista o que o SparkForge gravou e nao se deixa ler; nada foi tocado. "
+    "Restaure-o (de um backup ou do conteudo que ele tinha) e rode de novo; apagar o "
+    "arquivo faz o proximo integrate tratar como do usuario o que ja esta no HOME"
+)
+_ACAO_FORA = (
+    "o manifesto aponta um caminho fora do HOME; nada foi apagado. Confira a entrada "
+    "nomeada em `key` e retire-a do manifesto antes de rodar de novo"
+)
+
+
+def _chaves(dados: dict[str, Any]) -> list[str]:
+    chaves = list(dados["files"])
+    for entrada in dados["hosts"].values():
+        chaves += [registro.get("path", "") for registro in entrada.get("config") or []]
+    return chaves
+
+
 def load_manifest(home: Path) -> dict[str, Any]:
+    """O manifesto do HOME. Ilegivel, ou com caminho que sai do HOME, levanta
+    `ManifestoRecusado` antes de qualquer escrita ou remocao."""
     caminho = manifest_path(home)
     if not caminho.is_file():
         return _manifesto_vazio()
-    dados = json.loads(caminho.read_text(encoding="utf-8"))
-    if dados.get("schema", 1) < 2:
-        dados = _migrar_v1(dados, home)
-    dados.setdefault("schema", SCHEMA)
-    dados.setdefault("files", {})
-    dados.setdefault("hosts", {})
+    try:
+        dados = json.loads(caminho.read_bytes().decode("utf-8"))
+        if not isinstance(dados, dict):
+            raise ValueError("o manifesto nao e um objeto JSON")
+        if dados.get("schema", 1) < 2:
+            dados = _migrar_v1(dados, home)
+        dados.setdefault("schema", SCHEMA)
+        dados.setdefault("files", {})
+        dados.setdefault("hosts", {})
+        chaves = _chaves(dados)
+    except (ValueError, TypeError, AttributeError) as erro:
+        raise ManifestoRecusado("manifesto_ilegivel", caminho, _ACAO_ILEGIVEL) from erro
+    for chave in chaves:
+        if not isinstance(chave, str) or not chave_segura(chave):
+            raise ManifestoRecusado("manifesto_fora_do_home", caminho, _ACAO_FORA, str(chave))
     return dados
 
 
@@ -98,8 +177,7 @@ def save_manifest(home: Path, manifesto: dict[str, Any]) -> bool:
     texto = _texto_do_manifesto(manifesto)
     if caminho.is_file() and caminho.read_text(encoding="utf-8") == texto:
         return False
-    caminho.parent.mkdir(parents=True, exist_ok=True)
-    caminho.write_bytes(texto.encode("utf-8"))
+    gravar_atomico(caminho, texto.encode("utf-8"))
     return True
 
 
@@ -254,8 +332,7 @@ def apply_files(
         escritos.append(relativo)
         vistos.add(relativo)
         if not dry_run:
-            destino.parent.mkdir(parents=True, exist_ok=True)
-            destino.write_bytes(dados)
+            gravar_atomico(destino, dados)
             _adotar(manifesto, relativo, nome, sha, preexistente=False)
     anteriores = [r for r in host_files(manifesto, nome) if r not in vistos]
     orfaos = remove_owned(home, manifesto, nome, anteriores, dry_run=dry_run)
@@ -340,8 +417,7 @@ def apply_json_config(
         }
     if not dry_run:
         if status == "written":
-            caminho.parent.mkdir(parents=True, exist_ok=True)
-            caminho.write_bytes(novo_texto.encode("utf-8"))
+            gravar_atomico(caminho, novo_texto.encode("utf-8"))
         _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
 
@@ -414,8 +490,7 @@ def apply_toml_config(
     }
     if not dry_run:
         if status == "written":
-            caminho.parent.mkdir(parents=True, exist_ok=True)
-            caminho.write_bytes(novo.encode("utf-8"))
+            gravar_atomico(caminho, novo.encode("utf-8"))
         _guardar_registro(manifesto, nome, registro)
     return {"path": relativo, "status": status}
 
@@ -430,7 +505,7 @@ def _gravar_ou_apagar(caminho: Path, texto: str, *, apagar: bool, home: Path) ->
         caminho.unlink()
         _podar(caminho, home)
     else:
-        caminho.write_bytes(texto.encode("utf-8"))
+        gravar_atomico(caminho, texto.encode("utf-8"))
 
 
 def revert_json_config(

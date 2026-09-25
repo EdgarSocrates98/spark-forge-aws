@@ -58,6 +58,16 @@ def _recusas(relatorios: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return recusas
 
 
+def _recusado(home: Path, dry_run: bool, recusa: writer.ManifestoRecusado) -> dict[str, Any]:
+    """Manifesto que nao pode guiar a escrita: nenhum host e tocado."""
+    return {
+        "dry_run": dry_run,
+        "manifest": writer.manifest_path(home).as_posix(),
+        "hosts": [],
+        "refused": [recusa.as_dict()],
+    }
+
+
 def integrate(
     alvo: str,
     *,
@@ -71,7 +81,10 @@ def integrate(
     """Grava a integracao de `alvo` (um host ou `all`) sob `home`."""
     home = Path(home)
     raiz = sources.content_root() if root is None else Path(root)
-    manifesto = writer.load_manifest(home)
+    try:
+        manifesto = writer.load_manifest(home)
+    except writer.ManifestoRecusado as recusa:
+        return _recusado(home, dry_run, recusa)
     relatorios: list[dict[str, Any]] = []
     for nome in _nomes(alvo):
         h = _host(nome, home=home, windows=windows, appdata=appdata)
@@ -102,7 +115,10 @@ def detach(alvo: str, *, home: Path, dry_run: bool = False) -> dict[str, Any]:
     usuario sai so a entrada que o integrate pos.
     """
     home = Path(home)
-    manifesto = writer.load_manifest(home)
+    try:
+        manifesto = writer.load_manifest(home)
+    except writer.ManifestoRecusado as recusa:
+        return _recusado(home, dry_run, recusa)
     relatorios: list[dict[str, Any]] = []
     for nome in _nomes(alvo):
         entrada = manifesto["hosts"].get(nome)

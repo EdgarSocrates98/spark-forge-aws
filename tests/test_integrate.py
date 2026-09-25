@@ -611,3 +611,78 @@ def test_arquivo_preexistente_identico_nunca_sai_no_detach(tmp_path):
     assert relativo in resultado["hosts"][0]["kept_preexisting"]
     assert relativo not in resultado["hosts"][0]["removed"]
     assert manifesto["files"][relativo]["preexistente"] is True
+
+
+# --------------------------------------------------------------------------
+# Escrita atomica e manifesto que nao se deixa ler (recusas nomeadas)
+# --------------------------------------------------------------------------
+
+
+def _raiz_minima(tmp_path: Path) -> Path:
+    return _raiz_falsa(tmp_path / "raiz", {"skills/sdd-plan/SKILL.md": _skill("sdd-plan")})
+
+
+def test_escrita_atomica_nao_deixa_arquivo_pela_metade(tmp_path, monkeypatch):
+    import os
+
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    config = home / ".copilot" / "mcp-config.json"
+    config.parent.mkdir(parents=True)
+    original = json.dumps({"mcpServers": {"outro": {"command": "node"}}})
+    config.write_bytes(original.encode("utf-8"))
+
+    def falha(*_args, **_kwargs):
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(os, "replace", falha)
+    with pytest.raises(OSError, match="disco cheio"):
+        integrate("copilot", home=home, root=raiz)
+    assert config.read_bytes() == original.encode("utf-8")
+    assert _relativos(home) == [".copilot/mcp-config.json"], "sobrou temporario ou meio arquivo"
+
+
+def test_manifesto_truncado_sai_recusa_nomeada(tmp_path):
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    assert integrate("copilot", home=home, root=raiz)["refused"] == []
+    manifesto = home / ".sparkforge" / "integrations.json"
+    texto = manifesto.read_bytes()
+    manifesto.write_bytes(texto[: len(texto) // 2])
+    antes = _foto(home)
+
+    for resultado in (integrate("copilot", home=home, root=raiz), detach("copilot", home=home)):
+        (recusa,) = resultado["refused"]
+        assert recusa["reason"] == "manifesto_ilegivel"
+        assert recusa["path"] == manifesto.as_posix()
+        assert recusa["action"]
+        assert resultado["hosts"] == []
+    assert _foto(home) == antes, "com o manifesto ilegivel, algo foi tocado"
+
+
+@pytest.mark.parametrize("forma", ["absoluta", "sobe", "sobe_no_meio", "barra_invertida"])
+def test_chave_fora_do_home_recusa_sem_apagar(tmp_path, forma):
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    assert integrate("copilot", home=home, root=raiz)["refused"] == []
+    fora = tmp_path / "fora.txt"
+    fora.write_bytes(b"do usuario\n")
+    chave = {
+        "absoluta": fora.as_posix(),
+        "sobe": "../fora.txt",
+        "sobe_no_meio": ".agents/../../fora.txt",
+        "barra_invertida": r"..\fora.txt",
+    }[forma]
+    caminho = home / ".sparkforge" / "integrations.json"
+    dados = json.loads(caminho.read_text(encoding="utf-8"))
+    dados["files"][chave] = {"sha256": hashlib.sha256(b"do usuario\n").hexdigest(),
+                             "owners": ["copilot"]}
+    caminho.write_text(json.dumps(dados), encoding="utf-8")
+    antes = _foto(tmp_path)
+
+    resultado = detach("copilot", home=home)
+    assert fora.is_file(), "o detach apagou arquivo fora do HOME"
+    assert _foto(tmp_path) == antes, "com chave fora do HOME, algo foi apagado"
+    (recusa,) = resultado["refused"]
+    assert recusa["reason"] == "manifesto_fora_do_home"
+    assert recusa["key"] == chave
