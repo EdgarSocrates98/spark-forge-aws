@@ -173,3 +173,111 @@ rules:
     sources:
       - url: https://docs.aws.amazon.com/glue/latest/dg/data-quality-getting-started.html
         retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-006
+    category: data-quality-ai
+    title: ADVANCED sampling controls are not observed completely
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.sampling_controls_incomplete: true}
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      The sampling path has documented workgroup, bucket and lifecycle
+      references, but the supplied metadata does not establish all three as
+      observed controls.
+    proposed_change:
+      - Declare the sampling workgroup, bucket and retention evidence in the external manifest.
+      - Keep documented defaults separate from account configuration.
+    security_impact: reduces_scope
+    security_impact_reason: Incomplete sampling control evidence prevents a complete retention decision.
+    governance_decision_required: true
+    risks: [The account configuration may differ from the documented service reference.]
+    tradeoffs: [Collecting control metadata adds a governance dependency before publication.]
+    validation: [Re-run the assessment with observed workgroup, bucket and lifecycle metadata.]
+    rollback: [Retain the recommendation in review and restore the prior metadata-only report.]
+    action:
+      kind: measurement.collect_baseline
+      target: dq.ai.sampling_controls
+      direction: investigate
+      requires_absent: []
+      moves: [security.secret_exposure]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+        retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-007
+    category: data-quality-ai
+    title: ADVANCED geographic inference boundary is not approved
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.geographic_boundary_incomplete: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A cross-Region path needs an explicit geographic-boundary decision. An
+      unresolved status is a blind spot requiring evidence, while disallowed
+      is a policy violation; neither is silently treated as approved.
+    proposed_change:
+      - Declare the source/inference geography and approved boundary status.
+      - Keep cross-Region ADVANCED recommendations in review until the boundary is verified.
+    security_impact: reduces_scope
+    security_impact_reason: Geographic residency is not established by Region equality alone.
+    governance_decision_required: true
+    risks: [A missing geography artifact prevents a residency decision; a disallowed boundary blocks adoption.]
+    tradeoffs: [Residency evidence adds an approval dependency to cross-Region recommendations.]
+    validation: [Re-run assessment with explicit same, approved or disallowed geography evidence.]
+    rollback: [Disable automated adoption and retain the recommendation for manual review.]
+    action:
+      kind: measurement.narrow_claim_scope
+      target: dq.ai.geographic_boundary
+      direction: investigate
+      requires_absent: []
+      moves: [security.secret_exposure]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+        retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-008
+    category: data-quality-ai
+    title: ADVANCED authorization chain is incomplete
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.authorization_incomplete: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      KMS aggregate status does not establish the key policy, runtime role and
+      Lake Formation evidence needed by the sampling path. Missing or
+      unresolved components keep the authorization chain incomplete.
+    proposed_change:
+      - Supply independent evidence for the KMS key policy, runtime role permissions and Lake Formation access.
+      - Keep the recommendation in review until the complete authorization chain is observed.
+    security_impact: reduces_scope
+    security_impact_reason: Incomplete authorization evidence prevents a complete protection decision.
+    governance_decision_required: true
+    risks: [A false complete status could allow sampled data to cross an unverified authorization boundary.]
+    tradeoffs: [External evidence collection adds a deployment and review dependency.]
+    validation: [Re-run the assessment with all three authorization evidence components.]
+    rollback: [Keep the recommendation unpublished and restore the prior review state if evidence is invalid.]
+    action:
+      kind: measurement.collect_baseline
+      target: dq.ai.authorization_evidence
+      direction: investigate
+      requires_absent: []
+      moves: [security.secret_exposure]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+        retrieved: 2026-09-26

@@ -48,3 +48,42 @@ def test_direct_extractor_rejects_non_mapping_payload():
         assert "objeto" in str(exc)
     else:
         raise AssertionError("payload de lista deveria ser recusado")
+
+
+def test_sampling_controls_keep_documented_defaults_unobserved():
+    facts = extract_glue_dq_advanced(
+        {
+            "table_name": "orders",
+            "recommendation_mode": "ADVANCED",
+            "source_region": "us-east-1",
+            "inference_region": "us-east-1",
+            "kms": {"status": "sufficient"},
+        },
+        "recommendation.json",
+    )
+    assessment = build_assessment_facts(facts, {"glue": "5.1"})[0]
+
+    assert assessment.attrs["sampling_controls_status"] == "unresolved"
+    assert assessment.attrs["sampling_reference_status"] == "documented_not_observed"
+    assert assessment.attrs["documented_sampling_workgroup"] == "glue-dataquality-sampling"
+    assert assessment.attrs["documented_sampling_retention_days"] == 14
+    assert "retention_days" not in assessment.attrs
+
+
+def test_geographic_boundary_is_distinct_from_cross_region():
+    facts = extract_glue_dq_advanced(
+        {
+            "table_name": "events",
+            "recommendation_mode": "ADVANCED",
+            "source_region": "us-east-1",
+            "inference_region": "eu-west-1",
+            "kms": {"status": "sufficient"},
+            "human_review_status": "declared",
+        },
+        "recommendation.json",
+    )
+    assessment = build_assessment_facts(facts, {"glue": "5.1"})[0]
+
+    assert assessment.attrs["cross_region"] is True
+    assert assessment.attrs["geographic_boundary_status"] == "unresolved"
+    assert assessment.attrs["geographic_boundary_incomplete"] is True

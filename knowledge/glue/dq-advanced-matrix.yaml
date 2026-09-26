@@ -19,6 +19,20 @@ modes:
       - NumberOfWorkers
       - Timeout
       - AdditionalRunOptions
+sampling:
+  workgroup: glue-dataquality-sampling
+  bucket_pattern: aws-glue-dataquality-sampling-<account>-<region>
+  retention_days: 14
+  status: documented_reference
+provider_data_protection_claims:
+  inputs_outputs_retained:
+    status: documented_claim
+    value: false
+    source: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+  inputs_outputs_used_for_training:
+    status: documented_claim
+    value: false
+    source: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
 runtimes:
   "4.0":
     spark: 3.3.0
