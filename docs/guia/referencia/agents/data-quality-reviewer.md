@@ -9,7 +9,7 @@ Validacao de dado em job PySpark - PyDeequ, Great Expectations ou artesanal - se
 | Papel | coordenador |
 | Arquivo de origem | `agents/data-quality-reviewer.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash, Edit, Write |
-| Áreas de regra | SF-DQ |
+| Áreas de regra | SF-DQ, SF-DQ-AI |
 
 ## Skills que ele usa
 
@@ -22,6 +22,11 @@ Validacao de dado em job PySpark - PyDeequ, Great Expectations ou artesanal - se
 ## Instruções do agent (texto integral)
 
 **Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
+
+Para governança de recomendações Glue Data Quality, use `sparkforge_analyze_dq_ai` para
+extrair somente metadados do artefato e `sparkforge_dq_ai_assess` para compor avaliação,
+findings e relatório. DQDL é entrada externa validada; nunca gere regra, envie linha de
+dados ou invoque provedor.
 
 #### Quando você entra, e quando o irmão entra
 

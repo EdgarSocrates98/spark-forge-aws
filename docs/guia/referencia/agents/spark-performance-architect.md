@@ -154,6 +154,11 @@ este processo não chama modelo nenhum. Nunca converta byte em token dividindo p
 para preencher o vazio — o relatório traz `tokens_unresolved` exatamente para isso não
 acontecer.
 
+Para selecionar contexto sem expor catálogo inteiro, use `sparkforge_context_start` com
+`intent`, `profile` e `max_bytes`; ele devolve capabilities limitadas, fatos críticos,
+reduções e refs `ctx://v1`. Só expanda uma dessas refs com `sparkforge_context_expand`.
+O Gateway é determinístico e não substitui `analyze_*`, `judge` ou `arbitrate`.
+
 #### Configuração derivada da medida, e não do costume
 
 `sparkforge_tune` deriva `spark.sql.shuffle.partitions` do shuffle **medido**

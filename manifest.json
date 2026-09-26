@@ -150,6 +150,8 @@
     "sparkforge_collect_lakeformation",
     "sparkforge_collect_parquet_footer",
     "sparkforge_collect_verify",
+    "sparkforge_context_expand",
+    "sparkforge_context_start",
     "sparkforge_controlm_describe",
     "sparkforge_debate_next",
     "sparkforge_debate_referee",

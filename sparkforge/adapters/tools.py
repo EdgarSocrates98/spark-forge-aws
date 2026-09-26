@@ -5022,7 +5022,69 @@ _ECONOMY_REPORT_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_GATEWAY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": "Envelope v1 do Context Gateway; bytes medidos no JSON UTF-8 serializado.",
+    "required": [
+        "schema_version", "status", "phase", "request_id", "profile", "capabilities",
+        "context", "refs", "budget", "reductions", "unresolved", "provider_tokens",
+    ],
+    "properties": {
+        "schema_version": {"const": 1},
+        "status": {"type": "string", "enum": ["ok", "refused", "error"]},
+        "phase": {"type": "string"},
+        "request_id": {"type": "string"},
+        "profile": {"type": "string", "enum": ["economy", "balanced", "deep"]},
+        "capabilities": {"type": "array", "items": {"type": "object"}},
+        "context": {"type": "array", "items": {"type": "object"}},
+        "refs": {"type": "array", "items": {"type": "object"}},
+        "budget": {"type": "object"},
+        "reductions": {"type": "array", "items": {"type": "string"}},
+        "unresolved": {"type": "array", "items": {"type": "object"}},
+        "provider_tokens": {"type": ["object", "null"]},
+        "error": {"type": "string"},
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
+    "sparkforge_context_start": {
+        "description": (
+            "Context Gateway deterministico: descobre capabilities relevantes, seleciona "
+            "contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. "
+            "Nao chama provider, nao le artefato arbitrario e exige max_bytes explicito."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["intent", "profile", "max_bytes"],
+            "properties": {
+                "intent": {"type": "string", "minLength": 1},
+                "profile": {"type": "string", "enum": ["economy", "balanced", "deep"]},
+                "max_bytes": {"type": "integer", "minimum": 1},
+                "case_id": {"type": "string"},
+                "items": {"type": "array", "items": {"type": "object"}},
+                "repo": {"type": "string"},
+            },
+        },
+        "outputSchema": _GATEWAY_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_context_expand": {
+        "description": (
+            "Resolve uma ref ctx://v1 no cache local, valida integridade SHA-256 e "
+            "escopo autorizado antes de devolver o payload sob max_bytes."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["ref", "max_bytes"],
+            "properties": {
+                "ref": {"type": "string", "pattern": "^ctx://v1/[a-z0-9_-]+/[0-9a-f]{64}$"},
+                "max_bytes": {"type": "integer", "minimum": 1},
+                "repo": {"type": "string"},
+            },
+        },
+        "outputSchema": _GATEWAY_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_case_open": {
         "description": (
             "Cria um case novo em .sparkforge/case.yaml, detectando o runtime "
@@ -9917,6 +9979,27 @@ def _h_knowledge_path(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_context_start(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.context_gateway_start(
+        intent=args["intent"],
+        profile=args["profile"],
+        max_bytes=int(args["max_bytes"]),
+        case_id=args.get("case_id"),
+        items=args.get("items"),
+        repo=args.get("repo", "."),
+        catalog=TOOLS,
+    )
+
+
+def _h_context_expand(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.context_gateway_expand(
+        uri=args["ref"],
+        max_bytes=int(args["max_bytes"]),
+        repo=args.get("repo", "."),
+        catalog=TOOLS,
+    )
+
+
 def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
     return _core.validate_output(args["finding"], facts_path=args.get("facts_path"))
 
@@ -10748,6 +10831,8 @@ def _h_code_sync(args: dict[str, Any]) -> dict[str, Any]:
     return _core.code_sync(args["repo"], db=args.get("db"))
 
 _HANDLERS = {
+    "sparkforge_context_start": _h_context_start,
+    "sparkforge_context_expand": _h_context_expand,
     "sparkforge_case_open": _h_case_open,
     "sparkforge_case_get": _h_case_get,
     "sparkforge_case_update": _h_case_update,
