@@ -684,6 +684,43 @@ def test_bloco_toml_editado_pelo_usuario_recusa_integrate_e_detach(tmp_path):
         assert config.read_bytes() == texto.encode("utf-8")
 
 
+def test_config_symlink_grava_no_alvo_e_o_link_continua_link(tmp_path):
+    import os
+
+    alvo = tmp_path / "dotfiles" / "mcp_config.json"
+    alvo.parent.mkdir()
+    original = json.dumps({"mcpServers": {"outro": {"command": "node"}}}).encode("utf-8")
+    alvo.write_bytes(original)
+    home = tmp_path / "home"
+    link = home / ".config" / "devin" / "mcp_config.json"
+    link.parent.mkdir(parents=True)
+    try:
+        os.symlink(alvo, link)
+    except (OSError, NotImplementedError):
+        pytest.skip("este SO nao deixa criar symlink sem privilegio")
+
+    assert integrate("devin", home=home, windows=False, root=_raiz_minima(tmp_path))[
+        "refused"
+    ] == []
+    assert link.is_symlink(), "o integrate trocou o link por um arquivo"
+    assert "sparkforge" in _ler_json(alvo)["mcpServers"]
+    assert detach("devin", home=home)["refused"] == []
+    assert link.is_symlink()
+    assert alvo.read_bytes() == original
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="modo POSIX de arquivo")
+def test_config_preserva_o_modo_do_arquivo(tmp_path):
+    import stat
+
+    home, config = _home_devin(tmp_path / "home", b'{"mcpServers": {}}')
+    config.chmod(0o640)
+    assert integrate("devin", home=home, windows=False, root=_raiz_minima(tmp_path))[
+        "refused"
+    ] == []
+    assert stat.S_IMODE(config.stat().st_mode) == 0o640
+
+
 @pytest.mark.parametrize("host", ["devin", "codex"])
 def test_detach_com_config_recusada_fica_pendente_ate_o_conserto(tmp_path, host):
     raiz = _raiz_minima(tmp_path)

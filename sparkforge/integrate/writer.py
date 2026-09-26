@@ -35,6 +35,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -78,12 +79,16 @@ def gravar_atomico(caminho: Path, dados: bytes) -> None:
     interrompido, e custa um flush de disco por arquivo em centenas de arquivos."""
     caminho = Path(caminho)
     caminho.parent.mkdir(parents=True, exist_ok=True)
+    modo = stat.S_IMODE(caminho.stat().st_mode) if caminho.is_file() else None
     fd, temporario = tempfile.mkstemp(
         dir=caminho.parent, prefix=f".{caminho.name}.", suffix=".tmp"
     )
     try:
         with os.fdopen(fd, "wb") as saida:
             saida.write(dados)
+        if modo is not None:
+            # O `mkstemp` cria com 0600: sem isto, a config do usuario mudaria de modo.
+            os.chmod(temporario, modo)
         os.replace(temporario, caminho)
     except BaseException:
         with contextlib.suppress(OSError):
@@ -172,13 +177,16 @@ class Disco:
             return self._sombra[caminho]
         return caminho.read_bytes() if caminho.is_file() else None
 
-    def gravar(self, caminho: Path, dados: bytes) -> None:
+    def gravar(self, caminho: Path, dados: bytes, *, seguir_link: bool = False) -> None:
+        """Grava `dados`. Com `seguir_link` (a config de usuario), um symlink em
+        `caminho` e seguido: grava-se no alvo resolvido e o link continua link."""
         caminho = Path(caminho)
         if self.dry_run:
             self._sombra[caminho] = dados
             return
         faltam = _faltantes(caminho.parent, self._raiz(caminho)[0])
-        gravar_atomico(caminho, dados)
+        destino = Path(os.path.realpath(caminho)) if seguir_link else caminho
+        gravar_atomico(destino, dados)
         self.criados.update(self.chave(pasta) for pasta in faltam)
 
     def apagar(self, caminho: Path) -> None:
@@ -655,7 +663,7 @@ def apply_json_config(
     novo = dict(dados)
     novo["mcpServers"] = {**(servidores or {}), "sparkforge": entrada}
     gravado = config.json(novo)
-    disco.gravar(caminho, gravado)
+    disco.gravar(caminho, gravado, seguir_link=True)
     registro["written_sha256"] = sha256_bytes(gravado)
     registro["entry_sha256"] = _sha_entrada(entrada)
     _guardar_registro(manifesto, nome, registro)
@@ -811,7 +819,7 @@ def apply_toml_config(
         registro = _novo_registro(relativo, "toml", config)
     gravado = config.codificar(novo)
     if gravado != config.bruto:
-        disco.gravar(caminho, gravado)
+        disco.gravar(caminho, gravado, seguir_link=True)
     registro["written_sha256"] = sha256_bytes(gravado)
     registro["entry_sha256"] = _sha_bloco(bloco)
     _guardar_registro(manifesto, nome, registro)
@@ -835,7 +843,7 @@ def _restaurar(registro: dict[str, Any], atual: bytes, *, disco: Disco) -> dict 
         return {"path": relativo, "status": "deleted"}
     if "original" not in registro:
         return None
-    disco.gravar(caminho, registro["original"].encode("utf-8"))
+    disco.gravar(caminho, registro["original"].encode("utf-8"), seguir_link=True)
     return {"path": relativo, "status": "reverted"}
 
 
@@ -869,7 +877,7 @@ def revert_json_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, A
     if apagar:
         disco.apagar(caminho)
     else:
-        disco.gravar(caminho, config.json(novo))
+        disco.gravar(caminho, config.json(novo), seguir_link=True)
     return {"path": relativo, "status": "deleted" if apagar else "reverted"}
 
 
@@ -905,7 +913,7 @@ def revert_toml_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, A
     if apagar:
         disco.apagar(caminho)
     else:
-        disco.gravar(caminho, config.codificar(novo))
+        disco.gravar(caminho, config.codificar(novo), seguir_link=True)
     return {"path": relativo, "status": "deleted" if apagar else "reverted"}
 
 
