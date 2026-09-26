@@ -100,6 +100,16 @@ def _normal_string(value: Any) -> str | None:
     return value.strip() if isinstance(value, str) and value.strip() else None
 
 
+def _scalar_metadata(value: Any) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        return {}
+    return {
+        str(key): child
+        for key, child in value.items()
+        if isinstance(child, (str, int, float, bool))
+    }
+
+
 def _mode(payload: Mapping[str, Any]) -> str | None:
     value = payload.get("recommendation_mode", payload.get("mode"))
     if not isinstance(value, str):
@@ -138,16 +148,66 @@ def _recommendation_facts(
 
     sampling = payload.get("sampling")
     sampling_map = sampling if isinstance(sampling, Mapping) else {}
+    geography = payload.get("geography")
+    geography_map = geography if isinstance(geography, Mapping) else {}
     kms = payload.get("kms")
     kms_map = kms if isinstance(kms, Mapping) else {}
+    authorization = payload.get("authorization")
+    authorization_map = authorization if isinstance(authorization, Mapping) else {}
+    risk_context = _scalar_metadata(payload.get("risk"))
+    iceberg_context = _scalar_metadata(payload.get("iceberg"))
+    migration_context = _scalar_metadata(payload.get("migration"))
     source_region = _normal_string(payload.get("source_region"))
     inference_region = _normal_string(payload.get("inference_region"))
     classification = _normal_string(payload.get("classification"))
     runtime_version = _normal_string(payload.get("runtime_version", payload.get("runtime")))
     retention = sampling_map.get("retention_days", payload.get("retention_days"))
-    retention_days = retention if isinstance(retention, int) and not isinstance(retention, bool) else None
+    retention_days = (
+        retention if isinstance(retention, int) and not isinstance(retention, bool) else None
+    )
     bucket = _normal_string(sampling_map.get("bucket", payload.get("sampling_bucket")))
+    workgroup = _normal_string(
+        sampling_map.get("workgroup", payload.get("sampling_workgroup"))
+    )
+    source_geography = _normal_string(
+        geography_map.get("source", payload.get("source_geography"))
+    )
+    inference_geography = _normal_string(
+        geography_map.get("inference", payload.get("inference_geography"))
+    )
+    geographic_boundary_status = _normal_string(
+        geography_map.get(
+            "boundary_status", payload.get("geographic_boundary_status")
+        )
+    )
+    if geographic_boundary_status:
+        geographic_boundary_status = geographic_boundary_status.lower()
+    if geographic_boundary_status not in {
+        "same",
+        "approved",
+        "disallowed",
+        "unresolved",
+    }:
+        geographic_boundary_status = "unresolved"
     kms_status = _normal_string(kms_map.get("status", payload.get("kms_status")))
+    key_policy_status = _normal_string(
+        authorization_map.get(
+            "key_policy_status",
+            kms_map.get("key_policy_status", payload.get("key_policy_status")),
+        )
+    )
+    runtime_role_status = _normal_string(
+        authorization_map.get(
+            "runtime_role_status",
+            kms_map.get("runtime_role_status", payload.get("runtime_role_status")),
+        )
+    )
+    lakeformation_status = _normal_string(
+        authorization_map.get(
+            "lakeformation_status",
+            kms_map.get("lakeformation_status", payload.get("lakeformation_status")),
+        )
+    )
     kms_required = kms_map.get("required", payload.get("kms_required"))
     if kms_status is None and kms_required is True:
         kms_status = "unresolved"
@@ -177,12 +237,30 @@ def _recommendation_facts(
         "classification": classification or "",
         "classification_status": "declared" if classification else "unresolved",
         "sampling_bucket": bucket or "",
+        "sampling_bucket_status": "declared" if bucket else "unresolved",
+        "sampling_workgroup": workgroup or "",
+        "sampling_workgroup_status": "declared" if workgroup else "unresolved",
+        "sampling_retention_status": "declared" if retention_days is not None else "unresolved",
+        "source_geography": source_geography or "",
+        "inference_geography": inference_geography or "",
+        "geographic_boundary_status": geographic_boundary_status,
         "kms_status": kms_status or "",
+        "key_policy_status": key_policy_status or "",
+        "runtime_role_status": runtime_role_status or "",
+        "lakeformation_status": lakeformation_status or "",
         "human_review_status": review_status or "",
         "incompatible_args": incompatible_args,
         "exposure_labels": exposure_labels,
         "payload_scope": "metadata_only",
+        "recommendation_variability": "possible" if mode == "ADVANCED" else "not_applicable",
+        "review_required": mode == "ADVANCED",
     }
+    if risk_context:
+        attrs["risk_context"] = risk_context
+    if iceberg_context:
+        attrs["iceberg_context"] = iceberg_context
+    if migration_context:
+        attrs["migration_context"] = migration_context
     if retention_days is not None:
         attrs["retention_days"] = retention_days
     kms_key_arn = _normal_string(kms_map.get("key_arn", payload.get("kms_key_arn")))

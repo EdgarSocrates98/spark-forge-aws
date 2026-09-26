@@ -40,9 +40,9 @@ em [Migração de versão](usos/migracao-de-versao.md).
 
 ## O catálogo de regras
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **174** regras de
+`rules/catalog/` é a forma **executável** desse conhecimento: **177** regras de
 diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data —
-**174 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
+**177 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
 (`executable: false`) saíram em 2026-09-19, porque nomeavam área sem julgar nada
 (feature `docs/sdd/SF_STUBS/`) —, mais **44** rotas determinísticas em `routing.yaml`. Funciona
 como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da
@@ -54,7 +54,7 @@ produz — e reprova também as frases deste manual que publicam contagem.
 
 ## As áreas
 
-As 174 executáveis se distribuem em 31 áreas (medido em 2026-09-25 com `area_of`):
+As 177 executáveis se distribuem em 31 áreas (medido em 2026-09-26 com `area_of`):
 `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12
 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6
 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura
@@ -77,7 +77,7 @@ artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## O bloco `action:`
 
-Cada uma das 174 carrega um bloco **`action:`** — `kind` (70 no vocabulário
+Cada uma das 177 carrega um bloco **`action:`** — `kind` (70 no vocabulário
 fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`),
 `requires_absent`, `moves` (23 eixos, cada um `nature: measure` ou `risk`) e
 `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem

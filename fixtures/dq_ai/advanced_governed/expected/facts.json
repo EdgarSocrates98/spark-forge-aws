@@ -1,8 +1,8 @@
 [
-  {"kind": "dq.ai.analyzed"},
-  {"kind": "dq.ai.recommendation"},
-  {"kind": "dq.ai.review"},
-  {"kind": "dq.dqdl"},
-  {"kind": "athena.query_cost"},
-  {"kind": "dq.ai.assessment"}
+  {"kind": "dq.ai.analyzed", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.recommendation", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.review", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.dqdl", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "athena.query_cost", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.assessment", "subject": {"type": "table", "symbol": "fixture"}}
 ]

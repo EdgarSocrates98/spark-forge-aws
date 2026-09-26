@@ -23,6 +23,9 @@ from pathlib import Path
 
 import pytest
 
+from sparkforge.dq_ai import assessment as dq_ai_assessment
+from sparkforge.dqdl import validator as dqdl_validator
+
 # `matcher` NAO mora em `sparkforge/facts/`, e essa e a diferenca que importa
 # aqui: as duas varreduras automaticas do repositorio -- a de
 # `tests/test_harness_untrusted.py` (`pkgutil.iter_modules(facts_pkg)`) e a de
@@ -52,13 +55,13 @@ from sparkforge.facts import (
     exception,
     funcval,
     fusion,
+    glue_dq_advanced,
     glue_job_run,
     # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
     # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     glue_resource_link,
     graph,
-    glue_dq_advanced,
     host_transcript,
     # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
     # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
@@ -96,8 +99,6 @@ from sparkforge.facts import (
     utilization,
     workload,
 )
-from sparkforge.dqdl import validator as dqdl_validator
-from sparkforge.dq_ai import assessment as dq_ai_assessment
 from sparkforge.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (

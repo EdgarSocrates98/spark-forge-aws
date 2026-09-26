@@ -4,8 +4,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from sparkforge.finops.athena_observed import build_observed_athena_cost
 from sparkforge.findings.models import Fact, Finding, RuntimeContext, sort_facts, sort_findings
+from sparkforge.finops.athena_observed import build_observed_athena_cost
 
 
 def _runtime_dict(runtime: RuntimeContext | Mapping[str, Any] | None) -> dict[str, Any]:
@@ -26,7 +26,11 @@ def render_maintainer(canonical: Mapping[str, Any]) -> dict[str, Any]:
 
 def render_operator(canonical: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "status": "review_required" if canonical["findings"] or canonical["unresolved"] else "clear_on_observed_evidence",
+        "status": (
+            "review_required"
+            if canonical["findings"] or canonical["unresolved"]
+            else "clear_on_observed_evidence"
+        ),
         "actions": [
             {
                 "rule_id": item["rule_id"],
@@ -44,6 +48,14 @@ def render_operator(canonical: Mapping[str, Any]) -> dict[str, Any]:
 
 def render_security(canonical: Mapping[str, Any]) -> dict[str, Any]:
     assessments = [fact for fact in canonical["facts"] if fact["kind"] == "dq.ai.assessment"]
+    def risk_context_for(fact: Mapping[str, Any]) -> dict[str, Any]:
+        context = dict(fact["attrs"].get("risk_context", {}))
+        if "iceberg_context" in fact["attrs"]:
+            context["iceberg"] = fact["attrs"]["iceberg_context"]
+        if "migration_context" in fact["attrs"]:
+            context["migration"] = fact["attrs"]["migration_context"]
+        return context
+
     return {
         "exposure": [
             {
@@ -53,7 +65,25 @@ def render_security(canonical: Mapping[str, Any]) -> dict[str, Any]:
                 "source_region": fact["attrs"].get("source_region", ""),
                 "inference_region": fact["attrs"].get("inference_region", ""),
                 "kms_status": fact["attrs"].get("kms_status", ""),
+                "authorization_evidence_status": fact["attrs"].get(
+                    "authorization_evidence_status", ""
+                ),
+                "sampling_controls_status": fact["attrs"].get(
+                    "sampling_controls_status", ""
+                ),
+                "geographic_boundary_status": fact["attrs"].get(
+                    "geographic_boundary_status", ""
+                ),
                 "review_status": fact["attrs"].get("review_status", ""),
+                "recommendation_variability": fact["attrs"].get(
+                    "recommendation_variability", ""
+                ),
+                "provider_data_protection_claims": fact["attrs"].get(
+                    "provider_data_protection_claims", {}
+                ),
+                "risk_context": risk_context_for(fact),
+                "iceberg_context": fact["attrs"].get("iceberg_context", {}),
+                "migration_context": fact["attrs"].get("migration_context", {}),
                 "evidence": [fact["id"]],
             }
             for fact in assessments

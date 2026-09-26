@@ -1,6 +1,6 @@
 [
-  {"kind": "dq.ai.analyzed"},
-  {"kind": "dq.ai.recommendation"},
-  {"kind": "dq.ai.review"},
-  {"kind": "dq.ai.assessment"}
+  {"kind": "dq.ai.analyzed", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.recommendation", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.review", "subject": {"type": "table", "symbol": "fixture"}},
+  {"kind": "dq.ai.assessment", "subject": {"type": "table", "symbol": "fixture"}}
 ]

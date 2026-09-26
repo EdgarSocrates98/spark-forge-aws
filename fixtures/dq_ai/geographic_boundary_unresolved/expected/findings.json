@@ -1,0 +1,4 @@
+[
+  {"rule_id": "SF-DQ-AI-002", "severity": "P1", "subject": {"type": "table"}},
+  {"rule_id": "SF-DQ-AI-007", "severity": "P1", "subject": {"type": "table"}}
+]

@@ -129,6 +129,11 @@
       "sha256": "52c7109eeb424321284d54286be59d363b3f454f2d58052573f075e6d0cbcb3d"
     },
     {
+      "path": "knowledge/glue/dq-advanced-matrix.md",
+      "title": "dq-advanced-matrix",
+      "sha256": "5349bd3dbdecc72459ea1d48abe95156546057f8585c26484f4b84e20bf98cf8"
+    },
+    {
       "path": "knowledge/glue/lakeformation-fgac.md",
       "title": "lakeformation-fgac",
       "sha256": "c9cda03cb0383b132bbcf8895cc4bcafed98eb996c5b735e4e7fc2ced332b61a",

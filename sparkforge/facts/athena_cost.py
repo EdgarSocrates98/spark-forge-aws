@@ -22,7 +22,9 @@ def _subject(entry: Mapping[str, Any]) -> dict[str, Any]:
     return {"type": "job_run", "symbol": str(query_id or "")}
 
 
-def extract_athena_cost(payload: Mapping[str, Any], path: str, artifact_sha256: str = "") -> list[Fact]:
+def extract_athena_cost(
+    payload: Mapping[str, Any], path: str, artifact_sha256: str = ""
+) -> list[Fact]:
     entries = payload.get("costs", [payload])
     if not isinstance(entries, list):
         entries = [payload]
@@ -34,7 +36,12 @@ def extract_athena_cost(payload: Mapping[str, Any], path: str, artifact_sha256: 
         subject = _subject(entry)
         cost = entry.get("cost")
         basis = entry.get("cost_basis")
-        if not isinstance(cost, int | float) or isinstance(cost, bool) or not isinstance(basis, str) or not basis.strip():
+        if (
+            not isinstance(cost, int | float)
+            or isinstance(cost, bool)
+            or not isinstance(basis, str)
+            or not basis.strip()
+        ):
             facts.append(
                 Fact(
                     kind="athena.query_cost.unresolved",
@@ -53,7 +60,15 @@ def extract_athena_cost(payload: Mapping[str, Any], path: str, artifact_sha256: 
             "cost_basis": basis.strip(),
             "observed_at": str(entry.get("observed_at") or ""),
         }
-        facts.append(Fact(kind="athena.query_cost", subject=subject, measures=measures, attrs=attrs, provenance=provenance))
+        facts.append(
+            Fact(
+                kind="athena.query_cost",
+                subject=subject,
+                measures=measures,
+                attrs=attrs,
+                provenance=provenance,
+            )
+        )
     return sort_facts(facts)
 
 
