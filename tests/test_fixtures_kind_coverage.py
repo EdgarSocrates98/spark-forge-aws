@@ -24,6 +24,7 @@ import pytest
 from sparkforge.errors import matcher
 from sparkforge.facts import (
     airflow_dag,
+    athena_cost,
     athena_workgroup,
     benchmark,
     bridge,
@@ -44,6 +45,7 @@ from sparkforge.facts import (
     # `fixtures/iam_access/`.
     glue_resource_link,
     graph,
+    glue_dq_advanced,
     # `host_transcript` entra nas DUAS listas no MESMO commit de
     # `fixtures/host_transcript/`. E o primeiro extrator cujo artefato nao e do
     # job analisado, e sim do AGENTE que o analisou: o transcript do host. Nenhuma
@@ -78,6 +80,8 @@ from sparkforge.facts import (
     utilization,
     workload,
 )
+from sparkforge.dqdl import validator as dqdl_validator
+from sparkforge.dq_ai import assessment as dq_ai_assessment
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
@@ -106,6 +110,7 @@ EXTRACTORS = {
     # golden -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser avaliado,
     # que e pior do que falhar.
     "airflow_dag": airflow_dag,
+    "athena_cost": athena_cost,
     "athena_workgroup": athena_workgroup,
     "benchmark": benchmark,
     "bridge": bridge,
@@ -173,6 +178,9 @@ EXTRACTORS = {
     # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova
     # nomeando os seis.
     "graph": graph,
+    "glue_dq_advanced": glue_dq_advanced,
+    "dqdl_validator": dqdl_validator,
+    "dq_ai_assessment": dq_ai_assessment,
     # `host_transcript`: ver o comentario do import. Os cinco kinds `host.*`
     # tem golden em `fixtures/host_transcript/`, e as nove razoes de
     # `host.transcript.unresolved` sao cobradas razao a razao por

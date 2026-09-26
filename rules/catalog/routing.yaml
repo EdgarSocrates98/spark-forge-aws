@@ -348,6 +348,18 @@ rules:
       Revisão de código responde ao custo da chamada; ela não responde se a garantia
       que a suíte aparenta dar existe.
 
+  - id: AGENT-089
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em governança de Glue DQ ADVANCED
+    when:
+      all:
+        - {findings_area: SF-DQ-AI, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      O achado trata exposição de dados, fronteira cross-Region, KMS, revisão
+      humana ou compatibilidade estrutural da recomendação ADVANCED. A análise
+      de segurança deve confirmar a cadeia de acesso e os limites declarados.
+
   # SF-GRAPH entra AQUI, e não numa rota própria antes desta, e o número que decidiu está
   # medido em `tests/test_rules_graph_boundary.py` e escrito em `agents/pyspark-code-reviewer.md`:
   # nas 25 fixtures de `fixtures/graph/`, SF-PY dispara 23 vezes em 20 e SF-GRAPH 9 vezes em

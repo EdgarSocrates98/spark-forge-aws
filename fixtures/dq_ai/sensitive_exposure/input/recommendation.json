@@ -1,0 +1,9 @@
+{
+  "table": {"database": "pii", "name": "customers"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "sensitive",
+  "source_region": "us-east-1",
+  "inference_region": "us-east-1",
+  "kms": {"status": "sufficient"},
+  "human_review_status": "declared"
+}

@@ -1,0 +1,11 @@
+{
+  "table": {"database": "quality", "name": "orders"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "source_region": "us-east-1",
+  "inference_region": "us-east-1",
+  "runtime_version": "5.1",
+  "sampling": {"bucket": "dq-samples", "retention_days": 14},
+  "kms": {"status": "sufficient", "key_arn": "arn:aws:kms:us-east-1:111122223333:key/abc"},
+  "human_review_status": "declared"
+}

@@ -34,6 +34,7 @@ import pytest
 from sparkforge.errors import matcher
 from sparkforge.facts import (
     airflow_dag,
+    athena_cost,
     athena_workgroup,
     benchmark,
     bridge,
@@ -57,6 +58,7 @@ from sparkforge.facts import (
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     glue_resource_link,
     graph,
+    glue_dq_advanced,
     host_transcript,
     # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
     # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
@@ -94,6 +96,8 @@ from sparkforge.facts import (
     utilization,
     workload,
 )
+from sparkforge.dqdl import validator as dqdl_validator
+from sparkforge.dq_ai import assessment as dq_ai_assessment
 from sparkforge.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (
@@ -102,6 +106,7 @@ EXTRACTORS = (
     # forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     airflow_dag,
     athena_workgroup,
+    athena_cost,
     # `matcher` (`sparkforge/errors/matcher.py`) e o unico desta tupla fora de
     # `sparkforge/facts/`. Ele emite `error.signature_match` e
     # `error.signature.unresolved` a partir de `spark.exception` -- fato, nao
@@ -194,6 +199,9 @@ EXTRACTORS = (
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
     # repositorio desde a Task 2 desta fase.
     graph,
+    glue_dq_advanced,
+    dqdl_validator,
+    dq_ai_assessment,
     # `host_transcript` entra nas DUAS listas no mesmo commit do eval harness.
     # Nenhuma regra consome `host.*` hoje -- o eval pontua fora do motor --, e
     # e justamente por isso que ele precisa estar aqui: a primeira regra que um

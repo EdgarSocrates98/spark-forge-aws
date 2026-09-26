@@ -1,0 +1,10 @@
+{
+  "table": {"database": "quality", "name": "shipments"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "source_region": "us-east-1",
+  "inference_region": "us-east-1",
+  "kms": {"status": "sufficient"},
+  "human_review_status": "declared",
+  "arguments": {"Timeout": 60}
+}
