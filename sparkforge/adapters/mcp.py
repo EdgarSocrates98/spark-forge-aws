@@ -54,6 +54,8 @@ TOOLS_COM_FONTE = ("sparkforge_code_read",)
 # Carregado pelo cliente junto do handshake. Curto de proposito: aponta o mapa
 # em vez de repeti-lo, porque cada byte aqui entra no contexto de TODA sessao.
 _INSTRUCOES = (
+    "Prefer context start para capability discovery e contexto seletivo; use context expand "
+    "somente sobre refs ctx://v1 devolvidas pelo Gateway. "
     "analyze_* extrai facts de artefato; judge julga; workload, capacity, finops, tune, "
     "benchmark, funcval e arbitrate compoem sobre facts ja extraidos e nao leem artefato. "
     "Antes de ler arquivo no olho, use code_search/code_symbol/code_context. "

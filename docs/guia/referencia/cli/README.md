@@ -18,11 +18,13 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge change`](change.md) | Autonomia L1-L2: gera o diff de um valor de configuracao (plan) e aplica um diff numa copia isolada para ver o que ele move nos achados (sandbox). |
 | [`sparkforge code`](code.md) | Indice local de codigo: prepara, sincroniza, busca simbolo, monta contexto e diagnostica. |
 | [`sparkforge collect`](collect.md) | Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg). |
+| [`sparkforge context`](context.md) | Descobre capabilities e empacota contexto deterministico sob limite explicito. |
 | [`sparkforge controlm`](controlm.md) | Conhecimento versionado do Control-M Automation API. |
 | [`sparkforge debate`](debate.md) | Conduz e arbitra o protocolo de debate do case. |
 | [`sparkforge decisions`](decisions.md) | Lista e explica decisões registradas. |
 | [`sparkforge detach`](detach.md) | Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado. |
 | [`sparkforge doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. |
+| [`sparkforge dq-ai`](dq-ai.md) | Avalia governanca Glue DQ ADVANCED sobre facts e artefatos observados. |
 | [`sparkforge economy`](economy.md) | O que a execucao poe na janela de contexto: byte medido, nunca token estimado. |
 | [`sparkforge finops`](finops.md) | O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- capacidade ou codigo. |
 | [`sparkforge funcval`](funcval.md) | Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. |

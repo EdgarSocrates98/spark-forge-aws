@@ -1111,3 +1111,35 @@ capabilities:
       devin_cli: [mcp, cli, files]
       codex: [cli, files]
       copilot_ci: [cli, files]
+
+  - name: discover and expand selective context under a hard byte budget
+    tools:
+      - sparkforge_context_start
+      - sparkforge_context_expand
+    cli:
+      - context start
+      - context expand
+    knowledge:
+      - knowledge/token-economy.md
+      - knowledge/model-selection-observability.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compose deterministic data-quality AI assessment
+    tools:
+      - sparkforge_analyze_dq_ai
+      - sparkforge_dq_ai_assess
+    cli:
+      - analyze dq-ai
+      - dq-ai assess
+    knowledge: [knowledge/dq/validation-frameworks.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]

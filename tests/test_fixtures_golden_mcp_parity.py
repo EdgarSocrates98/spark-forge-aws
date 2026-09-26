@@ -72,6 +72,16 @@ ENVELOPE_DA_ERA = ("_meta", "resultType", "ttlMs", "cacheScope")
 # cobre so as tools que ele conhece. Uma tool nova FORA desta lista derruba
 # `test_toda_tool_nova_esta_declarada`.
 NOVAS_DEPOIS_DO_GOLDEN = {
+    "sparkforge_analyze_dq_ai": (
+        "2026-09-20: avaliacao deterministica de qualidade para casos AI/DQ"
+    ),
+    "sparkforge_dq_ai_assess": (
+        "2026-09-20: composicao de assessment AI/DQ sobre fatos extraidos"
+    ),
+    "sparkforge_context_start": (
+        "2026-09-26: descoberta seletiva de contexto sob limite deterministico"
+    ),
+    "sparkforge_context_expand": "2026-09-26: expansao sob demanda de referencias de contexto",
     "sparkforge_report_github": "2026-09-11: projecao de findings para SARIF e resumo de PR",
     "sparkforge_telemetry_export": "2026-09-11: spans de tool e transcript do host em OTLP/JSON",
     "sparkforge_receipt_emit": "2026-09-12: recibo content-addressed da execucao do case (§14)",

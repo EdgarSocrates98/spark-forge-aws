@@ -8795,6 +8795,58 @@ def code_purge(repo: str, *, db: str | None = None) -> dict[str, Any]:
     return {"purged": True, "path": alvo.as_posix(), "removed_files": len(arquivos)}
 
 
+def context_gateway_start(
+    *,
+    intent: str,
+    profile: str,
+    max_bytes: int,
+    catalog: Any,
+    items: list[dict[str, Any]] | None = None,
+    case_id: str | None = None,
+    host_usage: dict[str, Any] | None = None,
+    repo: str = ".",
+) -> dict[str, Any]:
+    """Start Gateway flow over already extracted local inputs."""
+    from sparkforge.context.gateway import ContextGateway
+    from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
+    from sparkforge.economy.cache import ArtifactCache
+
+    try:
+        request = GatewayRequest(
+            intent=intent,
+            profile=GatewayProfile(profile),
+            max_bytes=int(max_bytes),
+            case_id=case_id,
+            items=tuple(items or ()),
+            host_usage=host_usage,
+        )
+        response = ContextGateway(
+            catalog,
+            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge" / "cache"),
+            authorized_root=Path(repo).resolve(),
+        ).start(request)
+    except (TypeError, ValueError, OSError) as exc:
+        raise AdapterError(f"context start recusado: {exc}", exit_code=2) from exc
+    return response
+
+
+def context_gateway_expand(
+    *, uri: str, max_bytes: int, catalog: Any, repo: str = "."
+) -> dict[str, Any]:
+    """Expand one Gateway ref through the repository-scoped cache."""
+    from sparkforge.context.gateway import ContextGateway, GatewayError
+    from sparkforge.economy.cache import ArtifactCache
+
+    try:
+        return ContextGateway(
+            catalog,
+            cache=ArtifactCache(Path(repo).resolve() / ".sparkforge" / "cache"),
+            authorized_root=Path(repo).resolve(),
+        ).expand(uri, max_bytes=int(max_bytes))
+    except (GatewayError, TypeError, ValueError, OSError) as exc:
+        raise AdapterError(f"context expand recusado: {exc}", exit_code=2) from exc
+
+
 # Os nomes das tools de Code Intelligence, num lugar so. `doctor` confere o
 # catalogo contra esta lista, e ela e literal de proposito: derivar por prefixo
 # faria o gate afirmar `sparkforge_code_* == sparkforge_code_*`.

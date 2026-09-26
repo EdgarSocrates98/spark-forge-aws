@@ -980,7 +980,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `_READ_ONLY`, le o arquivo .py do DAG em disco e declara `path`.
         # 100 -> 101 com `analyze_sfn_history` (2026-09-20, `docs/sdd/SFN_HISTORY/`):
         # `_READ_ONLY`, le o historico de execucao salvo em disco e declara `path`.
-        assert len(TOOLS) - len(sem_caminho) == 101
+        # 101 -> 105 com `analyze_dq_ai`, `dq_ai_assess`, `context_start` e
+        # `context_expand` (2026-09-26): todas declaram caminho local e passam
+        # pelo mesmo predicado de confinamento.
+        assert len(TOOLS) - len(sem_caminho) == 105
 
 
 class TestAImposicaoNoDespacho:

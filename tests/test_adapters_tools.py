@@ -28,6 +28,8 @@ class TestToolSurface:
         que `parity.yaml`/`test_capability_parity.py` deveriam pegar -- este
         teste falha primeiro, com um diff legivel."""
         assert set(TOOLS) == {
+            "sparkforge_context_start",
+            "sparkforge_context_expand",
             "sparkforge_case_open",
             "sparkforge_case_get",
             "sparkforge_case_update",
@@ -2140,6 +2142,37 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
     cliente MCP receberia como `structuredContent`."""
     if name == "sparkforge_case_open":
         return call_tool("sparkforge_case_open", {"repo": str(tmp_path), **_CASE_OPEN_ARGS})
+
+    if name == "sparkforge_context_start":
+        return call_tool(
+            "sparkforge_context_start",
+            {
+                "intent": "Glue 5.1 FGAC Iceberg",
+                "profile": "economy",
+                "max_bytes": 5000,
+                "repo": str(tmp_path),
+                "items": [
+                    {"fact_id": "f_gateway", "kind": "fact", "critical": True, "value": "observed"}
+                ],
+            },
+        )
+
+    if name == "sparkforge_context_expand":
+        started = call_tool(
+            "sparkforge_context_start",
+            {
+                "intent": "Iceberg knowledge",
+                "profile": "economy",
+                "max_bytes": 5000,
+                "repo": str(tmp_path),
+                "items": [{"kind": "knowledge", "content": "knowledge " * 200}],
+            },
+        )
+        assert started["refs"], "a amostra precisa render uma ref expansivel"
+        return call_tool(
+            "sparkforge_context_expand",
+            {"ref": started["refs"][0]["uri"], "max_bytes": 5000, "repo": str(tmp_path)},
+        )
 
     if name == "sparkforge_case_get":
         _open_case(tmp_path)

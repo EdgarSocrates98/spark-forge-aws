@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge.local/schemas/context-gateway-v1.json",
+  "title": "SparkForge Context Gateway v1",
+  "type": "object",
+  "required": ["schema_version", "status", "phase", "request_id", "profile", "capabilities", "context", "refs", "budget", "unresolved", "provider_tokens"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"type": "string", "enum": ["ok", "refused", "error"]},
+    "phase": {"type": "string", "enum": ["requested", "discovered", "selected", "reduced", "materialized", "expanded"]},
+    "request_id": {"type": "string", "minLength": 1},
+    "profile": {"type": "string", "enum": ["economy", "balanced", "deep"]},
+    "capabilities": {"type": "array", "items": {"$ref": "#/$defs/capability"}},
+    "context": {"type": "array", "items": {"$ref": "#/$defs/context_item"}},
+    "refs": {"type": "array", "items": {"$ref": "#/$defs/ref"}},
+    "budget": {"$ref": "#/$defs/budget"},
+    "reductions": {"type": "array", "items": {"type": "string"}},
+    "unresolved": {"type": "array", "items": {"$ref": "#/$defs/unresolved"}},
+    "provider_tokens": {"type": ["object", "null"]},
+    "error": {"type": "string"}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "required": ["name", "kind", "score", "description", "domains"],
+      "properties": {"name": {"type": "string"}, "kind": {"type": "string"}, "score": {"type": "integer"}, "description": {"type": "string"}, "domains": {"type": "array", "items": {"type": "string"}}}
+    },
+    "ref": {
+      "type": "object",
+      "required": ["uri", "kind", "sha256", "schema_version"],
+      "properties": {"uri": {"type": "string", "pattern": "^ctx://v1/[a-z0-9_-]+/[0-9a-f]{64}$"}, "kind": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "schema_version": {"const": 1}}
+    },
+    "context_item": {
+      "type": "object",
+      "required": ["id", "kind", "relevance", "critical"],
+      "properties": {"id": {"type": "string"}, "kind": {"type": "string"}, "relevance": {"type": "integer"}, "critical": {"type": "boolean"}, "payload": {"type": "object"}, "ref": {"$ref": "#/$defs/ref"}}
+    },
+    "budget": {
+      "type": "object",
+      "required": ["max_bytes", "payload_bytes", "status", "reductions", "paginated", "unit"],
+      "properties": {"max_bytes": {"type": "integer", "minimum": 1}, "payload_bytes": {"type": "integer", "minimum": 0}, "status": {"type": "string"}, "reductions": {"type": "array"}, "paginated": {"type": "boolean"}, "unit": {"const": "serialized_utf8_json_bytes"}}
+    },
+    "unresolved": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {"code": {"type": "string"}, "message": {"type": "string"}, "unlock": {"type": "string"}}
+    }
+  }
+}

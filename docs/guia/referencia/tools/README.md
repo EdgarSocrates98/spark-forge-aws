@@ -17,6 +17,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_analyze_consumers`](sparkforge_analyze_consumers.md) | só leitura | Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge/consumers.yaml`, versionado com o repositorio). |
 | [`sparkforge_analyze_controlm_jobs`](sparkforge_analyze_controlm_jobs.md) | só leitura | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC) -- o JSON de definicao de job versionado no repositorio, o mesmo que `ctm build` valida e `ctm deploy` publica. |
 | [`sparkforge_analyze_data_quality`](sparkforge_analyze_data_quality.md) | só leitura | Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do repositorio, nunca API da AWS): onde cada check roda, o que ele custa e se ele tem consequencia. |
+| [`sparkforge_analyze_dq_ai`](sparkforge_analyze_dq_ai.md) | só leitura | Extrai facts de um manifesto externo de recomendacao Glue DQ BASIC ou ADVANCED. |
 | [`sparkforge_analyze_emr_cluster`](sparkforge_analyze_emr_cluster.md) | só leitura | Extrai facts de um dump JSON de cluster EMR on EC2 (`describe-cluster` mais `list-instance-groups`/`list-instance-fleets`/`list-bootstrap-actions`/`get-managed-scaling-policy`/`... |
 | [`sparkforge_analyze_emr_eks`](sparkforge_analyze_emr_eks.md) | só leitura | Extrai facts de um dump JSON de execucao Amazon EMR on EKS (`describe-virtual-cluster` mais `describe-job-run`, as DUAS respostas no mesmo arquivo sob `virtualCluster` e `jobRun... |
 | [`sparkforge_analyze_emr_serverless`](sparkforge_analyze_emr_serverless.md) | só leitura | Extrai facts de um dump JSON de application Amazon EMR Serverless (`get-application`): release, estado, arquitetura, capacidade pre-inicializada por worker type (`emrs.initial_c... |
@@ -108,6 +109,13 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_collect_parquet_footer`](sparkforge_collect_parquet_footer.md) | acessa a AWS | Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e registra o artefa... |
 | [`sparkforge_collect_verify`](sparkforge_collect_verify.md) | só leitura | Verifica presenca e integridade (sha256 recalculado) de todos os artefatos registrados no manifesto local. |
 
+## context
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_context_expand`](sparkforge_context_expand.md) | só leitura | Resolve uma ref ctx://v1 no cache local, valida integridade SHA-256 e escopo autorizado antes de devolver o payload sob max_bytes. |
+| [`sparkforge_context_start`](sparkforge_context_start.md) | só leitura | Context Gateway deterministico: descobre capabilities relevantes, seleciona contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. |
+
 ## controlm
 
 | Tool | Efeito | O que faz |
@@ -128,6 +136,12 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_doctor`](sparkforge_doctor.md) | só leitura | Confere se o ambiente esta pronto, em treze checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codig... |
+
+## dq
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_dq_ai_assess`](sparkforge_dq_ai_assess.md) | só leitura | Compoe facts de governanca Glue DQ ADVANCED, valida DQDL externo por sintaxe, julga SF-DQ-AI e retorna tres views no relatorio. |
 
 ## economy
 

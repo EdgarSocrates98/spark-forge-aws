@@ -1123,6 +1123,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     economy_report_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
 
+    # context gateway -------------------------------------------------------
+    context_p = sub.add_parser(
+        "context",
+        help="Descobre capabilities e empacota contexto deterministico sob limite explicito.",
+    )
+    context_sub = context_p.add_subparsers(dest="context_action", required=True)
+    context_start_p = context_sub.add_parser(
+        "start", help="Inicia descoberta, selecao, reducao e materializacao de contexto."
+    )
+    context_start_p.add_argument("--intent", required=True)
+    context_start_p.add_argument(
+        "--profile", choices=["economy", "balanced", "deep"], default="balanced"
+    )
+    context_start_p.add_argument("--max-bytes", required=True, type=int)
+    context_start_p.add_argument(
+        "--items", help="JSON com lista de facts/findings/knowledge/codigo ja extraidos."
+    )
+    context_start_p.add_argument("--repo", default=".")
+    context_start_p.add_argument("--case-id")
+    context_expand_p = context_sub.add_parser(
+        "expand", help="Expande uma referencia ctx://v1 sob budget."
+    )
+    context_expand_p.add_argument("--ref", required=True)
+    context_expand_p.add_argument("--max-bytes", required=True, type=int)
+    context_expand_p.add_argument("--repo", default=".")
+
     # agentic: agents -------------------------------------------------------
     agents_p = sub.add_parser(
         "agents",
@@ -3644,6 +3670,40 @@ def _cmd_economy_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _gateway_catalog() -> dict[str, dict[str, Any]]:
+    from sparkforge.adapters.tools import TOOLS
+
+    return TOOLS
+
+
+def _cmd_context_start(args: argparse.Namespace) -> int:
+    items = _load_json_list(args.items) if args.items else []
+    _print(
+        _core.context_gateway_start(
+            intent=args.intent,
+            profile=args.profile,
+            max_bytes=args.max_bytes,
+            items=items,
+            case_id=args.case_id,
+            repo=args.repo,
+            catalog=_gateway_catalog(),
+        )
+    )
+    return 0
+
+
+def _cmd_context_expand(args: argparse.Namespace) -> int:
+    _print(
+        _core.context_gateway_expand(
+            uri=args.ref,
+            max_bytes=args.max_bytes,
+            repo=args.repo,
+            catalog=_gateway_catalog(),
+        )
+    )
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -4906,6 +4966,8 @@ _DISPATCH = {
     ("dq-ai", "assess"): _cmd_dq_ai_assess,
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
+    ("context", "start"): _cmd_context_start,
+    ("context", "expand"): _cmd_context_expand,
     ("telemetry", "export"): _cmd_telemetry_export,
     ("receipt", "emit"): _cmd_receipt_emit,
     ("receipt", "verify"): _cmd_receipt_verify,
@@ -5061,6 +5123,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "autonomy_action", None)
         or getattr(args, "journal_action", None)
         or getattr(args, "dq_ai_action", None)
+        or getattr(args, "context_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
