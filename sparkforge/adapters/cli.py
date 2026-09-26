@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -2461,13 +2462,58 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor",
         help=(
             "Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, "
-            "knowledge, indice de codigo, artefatos e credencial AWS. Sai 1 com alguma falha."
+            "knowledge, indice de codigo, artefatos, credencial AWS e a integracao de "
+            "usuario de cada host. Sai 1 com alguma falha."
         ),
     )
     doctor_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
     doctor_p.add_argument(
         "--online", action="store_true",
         help="Confirma a credencial na AWS (STS get_caller_identity). Unico modo com rede.",
+    )
+
+    # integrate / detach --------------------------------------------------------
+    # INTEGRACAO_USUARIO (D10): so CLI. Escrever no HOME e decisao do operador, e
+    # um agente nao deve dispara-la sozinho -- por isso nao ha tool MCP.
+    hosts_integraveis = ("claude", "devin", "codex", "copilot", "all")
+    integrate_p = sub.add_parser(
+        "integrate",
+        help=(
+            "Instala skills, agents e o MCP do SparkForge nos diretorios de USUARIO do host "
+            "(Claude Code por marketplace local; Devin, Codex e Copilot CLI), a partir do "
+            "pacote instalado. Nada e escrito no repositorio, exceto a remocao da copia "
+            "vendorizada que o operador escolher."
+        ),
+    )
+    integrate_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
+    integrate_p.add_argument(
+        "--scope", choices=("user",), required=True,
+        help="Escopo da integracao; so user nesta versao.",
+    )
+    integrate_p.add_argument(
+        "--dry-run", action="store_true", help="Lista o que seria escrito, sem escrever."
+    )
+    integrate_p.add_argument(
+        "--on-conflict", choices=("overwrite", "merge", "ignore"), default=None,
+        help=(
+            "Copia vendorizada em dobro no repositorio atual: overwrite apaga do repo, "
+            "merge apaga so o identico, ignore nao toca. Sem a flag e sem terminal: ignore."
+        ),
+    )
+    detach_p = sub.add_parser(
+        "detach",
+        help=(
+            "Remove a integracao de usuario do host: so o que o manifesto "
+            "~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado."
+        ),
+    )
+    detach_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
+    detach_p.add_argument(
+        "--scope", choices=("user",), default="user",
+        help="Escopo da integracao; so user nesta versao.",
+    )
+    detach_p.add_argument(
+        "--dry-run", action="store_true", help="Lista o que seria removido, sem remover."
     )
 
     # policy ------------------------------------------------------------------
@@ -4091,6 +4137,79 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
     return 0 if resultado["healthy"] else 1
 
 
+def _perguntar(texto: str) -> str:
+    """O prompt vai para o stderr: o stdout e o JSON do resultado."""
+    print(texto, end="", file=sys.stderr, flush=True)
+    return input()
+
+
+def _anunciar_remocao(arquivos: list[str]) -> None:
+    """Toda remocao no repositorio mostra a lista antes, arquivo por arquivo (D9)."""
+    print(f"Removendo do repositorio {len(arquivos)} arquivo(s):", file=sys.stderr)
+    for arquivo in arquivos:
+        print(f"  {arquivo}", file=sys.stderr)
+    sys.stderr.flush()
+
+
+def _appdata_real() -> Path | None:
+    """O `%APPDATA%` do ambiente. So o CLI o le, e passa o MESMO ao integrate e ao
+    detach; o pacote nunca le o ambiente (sem ele, deriva do HOME)."""
+    valor = os.environ.get("APPDATA")
+    return Path(valor) if valor else None
+
+
+def _codex_home_real() -> Path | None:
+    """O `CODEX_HOME` do ambiente, lido so aqui como o APPDATA."""
+    valor = os.environ.get("CODEX_HOME")
+    return Path(valor) if valor else None
+
+
+# Recusas do conflito que sao informacao, e nao mudam o exit: sem repositorio git
+# acima do cwd, o conflito simplesmente nao e avaliado.
+_CONFLITO_INFORMATIVO = frozenset({"sem_repositorio", "mantido_host_nao_integrado"})
+
+
+def _saida_da_integracao(resultado: dict[str, Any]) -> int:
+    """1 com recusa do host ou recusa do conflito (`copia_fora_do_repositorio`,
+    `repositorio_fonte`, `repositorio_e_o_home`...); `sem_repositorio` e
+    `mantido_host_nao_integrado` sao informacao e saem 0."""
+    if resultado.get("refused"):
+        return 1
+    conflito = resultado.get("conflict") or {}
+    recusas = conflito.get("refused") or []
+    return 1 if any(r.get("reason") not in _CONFLITO_INFORMATIVO for r in recusas) else 0
+
+
+def _cmd_integrate(args: argparse.Namespace) -> int:
+    from sparkforge.integrate import integrate
+
+    resultado = integrate(
+        args.host,
+        home=Path.home(),
+        appdata=_appdata_real(),
+        codex_home=_codex_home_real(),
+        repo=Path.cwd(),
+        dry_run=args.dry_run,
+        on_conflict=args.on_conflict,
+        interactive=sys.stdin.isatty() and sys.stderr.isatty(),
+        prompt=_perguntar,
+        announce=_anunciar_remocao,
+    )
+    _print(resultado)
+    return _saida_da_integracao(resultado)
+
+
+def _cmd_detach(args: argparse.Namespace) -> int:
+    from sparkforge.integrate import detach
+
+    resultado = detach(
+        args.host, home=Path.home(), appdata=_appdata_real(),
+        codex_home=_codex_home_real(), dry_run=args.dry_run,
+    )
+    _print(resultado)
+    return _saida_da_integracao(resultado)
+
+
 def _cmd_simulate(args: argparse.Namespace) -> int:
     _print(
         _core.simulate_change(
@@ -4719,6 +4838,8 @@ _DISPATCH = {
     ("gain", None): _cmd_gain,
     ("scan", None): _cmd_scan,
     ("doctor", None): _cmd_doctor,
+    ("integrate", None): _cmd_integrate,
+    ("detach", None): _cmd_detach,
     ("policy", "check"): _cmd_policy_check,
     ("policy", "explain"): _cmd_policy_explain,
     ("policy", "sync-settings"): _cmd_policy_sync_settings,

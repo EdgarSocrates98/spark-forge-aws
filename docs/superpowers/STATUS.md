@@ -9625,3 +9625,40 @@ golden rodaram um por um e passaram. `grant_de_leitura_em_local_registrado` mudo
 só em `risks` de `SF-LF-010`. `fixtures/sarif/terraform/input/facts.json` é cópia estática
 de `infra_code/fgac_com_fta_no_mesmo_job` feita à mão no PR #50, sem gerador no
 repositório, e fica sem o fact novo (difere só nele).
+
+## INTEGRACAO_USUARIO — instalar uma vez por máquina, usar em qualquer repositório — **BUILD CONCLUÍDO** em 2026-09-25 (T1–T10; ship pendente)
+
+O SparkForge chegava a um repositório por cópia (`scripts/install_skills.py`). Agora
+`sparkforge integrate <claude|devin|codex|copilot|all> --scope user` instala skills,
+agents e o MCP nos diretórios de usuário de cada host, a partir do wheel, e
+`sparkforge detach` desfaz. O ciclo SDD está em `docs/sdd/INTEGRACAO_USUARIO/`, e o
+registro do que ficou de verdade é o `build_report.md` de lá.
+
+**O que foi entregue.** O wheel embute `skills/` e `agents/` em
+`sparkforge/integrate/bundle/`. O renderizador por plataforma saiu de
+`scripts/sync_skills.py` para `sparkforge/integrate/render.py`, com a plataforma
+`codex`, e é um só para os espelhos do repositório e para a integração. Claude Code
+entra por marketplace local em `~/.sparkforge/claude/`, registrado pelo `claude plugin`
+(com limite de tempo por chamada, e o `detach` chama o CLI antes de apagar). Devin,
+Codex e Copilot CLI recebem os agents nos diretórios globais, as skills em
+`~/.agents/skills` e o MCP mesclado na config de usuário, que volta byte a byte no
+`detach`. O Codex respeita `CODEX_HOME`, e o Devin no Windows, `APPDATA`; os dois são
+lidos só pela CLI e gravados no manifesto, e rodar com outro valor é recusa nomeada.
+Tudo o que é escrito fica em `~/.sparkforge/integrations.json`, com sha256 e os hosts
+donos de cada arquivo; arquivo editado pelo usuário ou que já estava no HOME nunca é
+apagado. A cópia vendorizada em dobro no repositório é detectada e resolvida por
+escolha do operador (SOBRESCREVER, MESCLAR, IGNORAR), sem seguir link. O `doctor` ganhou
+uma checagem `integracao_<host>` por host, que acusa integração defasada. O guia do
+operador é `docs/guia/02-instalacao.md`, seção *Integrar uma vez por máquina*.
+
+**Números que a feature moveu:** nenhuma tool, regra, extrator, skill ou agent novo; os
+verbos `integrate` e `detach` são só CLI, sem tool MCP. A descrição de
+`sparkforge_doctor` cresceu, e `tools.total_bytes` em `docs/surface.lock.json` foi de
+572644 para 572840 (+196).
+
+**Limites declarados.** Copilot no VS Code e o Copilot coding agent na nuvem ficam de
+fora. O espelho `.codex/agents/*.toml` do repositório continua mantido à mão. Os
+executores não vão para o Codex, porque não têm `description`. `agents/` sob
+`CODEX_HOME` é inferência: a documentação confirma só o `config.toml`. Não foi medido se
+o Codex lê `~/.agents/skills` fora de um repositório git (U2). A validade do TOML do
+usuário não é conferida no Python 3.10: só o par de marcadores é conferido.

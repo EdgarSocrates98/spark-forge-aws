@@ -227,6 +227,32 @@ def pytest_command(python: Path, root: Path) -> list[str]:
     return [str(python), "-m", "pytest", "-q", "-o", "pythonpath=", *modules]
 
 
+# O caminho PADRAO de `sparkforge.integrate.sources` (sem `bundle=` injetado),
+# sob o Python do venv: a raiz que `content_root()` devolve tem que estar dentro
+# do site-packages e trazer ao menos uma skill e um agent. Rodado a partir do
+# repositorio, `content_root()` devolve a raiz do repo e a checagem reprova --
+# e isso que prova que ela discrimina (tests/test_verify_wheel.py).
+BUNDLE_CHECK = """
+import sys, sysconfig
+from pathlib import Path
+from sparkforge.integrate import sources
+raiz = sources.content_root().resolve()
+site = Path(sysconfig.get_paths()["purelib"]).resolve()
+if site not in raiz.parents:
+    sys.exit(f"content_root() fora do site-packages ({site}): {raiz}")
+skills = sorted((raiz / "skills").glob("*/SKILL.md"))
+agents = sorted((raiz / "agents").glob("*.md"))
+if not skills or not agents:
+    sys.exit(f"bundle sem skill ou sem agent em {raiz}: {len(skills)} e {len(agents)}")
+print(f"bundle do integrate OK: {raiz} ({len(skills)} skills, {len(agents)} agents)")
+"""
+
+
+def bundle_check_command(python: Path) -> list[str]:
+    """Comando que confere o bundle de `skills/` e `agents/` no pacote instalado."""
+    return [str(python), "-c", BUNDLE_CHECK]
+
+
 def _reproduce_line(command: list, cwd: str | None, env: dict[str, str] | None) -> str:
     """Monta uma linha copiavel que reproduz esta chamada a mao.
 
@@ -435,6 +461,11 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         if _run([str(python), "-m", "twine", "check", str(wheels[0]), str(sdists[0])]).returncode:
             print("twine check reprovou", file=sys.stderr)
+            return 1
+
+        # Depois do twine check, para os indices dos passos anteriores nao mudarem.
+        if _run(bundle_check_command(python), cwd=str(workdir), env=env).returncode:
+            print("o pacote instalado nao acha skills/ e agents/ do integrate", file=sys.stderr)
             return 1
 
         if args.outdir is not None:

@@ -2814,10 +2814,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         return result
 
     if name == "sparkforge_doctor":
-        import tempfile
-
-        result = call_tool("sparkforge_doctor", {"repo": tempfile.mkdtemp()})
-        assert len(result["checks"]) == 9 and result["online"] is False, result
+        # O doctor le o manifesto de integracao do HOME: nunca o do operador.
+        casa = tmp_path / "home_isolado"
+        casa.mkdir()
+        assert monkeypatch is not None
+        monkeypatch.setenv("HOME", str(casa))
+        monkeypatch.setenv("USERPROFILE", str(casa))
+        monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
+        monkeypatch.setenv("CODEX_HOME", str(casa / ".codex"))
+        repo = tmp_path / "repo_doctor"
+        repo.mkdir()
+        result = call_tool("sparkforge_doctor", {"repo": str(repo)})
+        assert len(result["checks"]) == 13 and result["online"] is False, result
         return result
 
     if name == "sparkforge_policy_explain":

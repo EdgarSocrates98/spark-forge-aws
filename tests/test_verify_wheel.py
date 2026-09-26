@@ -73,11 +73,13 @@ class _FakeRun:
 
     def __init__(self, fail_at: int | None = None):
         self.calls: list[list] = []
+        self.kwargs: list[dict] = []
         self.fail_at = fail_at
 
     def __call__(self, command, **kwargs):
         idx = len(self.calls)
         self.calls.append(command)
+        self.kwargs.append(kwargs)
         returncode = 1 if idx == self.fail_at else 0
         return subprocess.CompletedProcess(command, returncode)
 
@@ -149,7 +151,8 @@ class TestMainReturnCodes:
 
     Os indices de `fail_at` sao a ORDEM das chamadas a `_run` dentro de
     `main()`: 0 build, 1 rebuild, 2 venv, 3 pip install, 4 pytest, 5 pip
-    install twine, 6 twine check. Inserir um passo novo no meio desloca todos
+    install twine, 6 twine check, 7 bundle do integrate (TestBundleDoIntegrate).
+    Inserir um passo novo no meio desloca todos
     os que vem depois -- por isso cada teste nomeia o passo que exercita.
     """
 
@@ -194,6 +197,41 @@ class TestMainReturnCodes:
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun())
         assert main([]) == 0
+
+
+class TestBundleDoIntegrate:
+    """O pacote INSTALADO acha `skills/` e `agents/` pelo caminho padrao de
+    `sparkforge.integrate.sources`, sem `bundle=` injetado (AC1)."""
+
+    def test_bundle_check_failure_returns_1(self, monkeypatch, tmp_path):
+        # 7 = depois do twine check: os indices dos passos anteriores nao mudam.
+        _prep_fake_workdir(tmp_path, monkeypatch)
+        monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=7))
+        assert main([]) == 1
+
+    def test_bundle_check_runs_under_the_venv_python_outside_the_repo(
+        self, monkeypatch, tmp_path
+    ):
+        _prep_fake_workdir(tmp_path, monkeypatch)
+        fake = _FakeRun()
+        monkeypatch.setattr(verify_wheel, "_run", fake)
+        assert main([]) == 0
+        (idx,) = [i for i, c in enumerate(fake.calls) if "sparkforge.integrate" in " ".join(
+            str(x) for x in c
+        )]
+        assert fake.calls[idx][0] == str(verify_wheel.venv_python(tmp_path / "venv"))
+        assert fake.kwargs[idx]["cwd"] == str(tmp_path)
+        assert fake.kwargs[idx]["env"]["PYTHONSAFEPATH"] == "1"
+
+    def test_bundle_check_rejects_the_development_tree(self):
+        """No repositorio, `content_root()` e a raiz do repo, fora do
+        site-packages: a checagem tem que reprovar, senao nao discrimina."""
+        resultado = subprocess.run(
+            verify_wheel.bundle_check_command(Path(sys.executable)),
+            cwd=str(ROOT), capture_output=True, text=True,
+        )
+        assert resultado.returncode != 0
+        assert "site-packages" in resultado.stdout + resultado.stderr
 
 
 class TestWorkdirCleanup:

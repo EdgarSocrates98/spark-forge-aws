@@ -221,6 +221,15 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mostra perfil de nível de autonomia L0-L5 — leitura de config, "
             "sem extração de facts nem julgamento."
         ),
+        # INTEGRACAO_USUARIO (D10): escrever no HOME do usuario e decisao do
+        # operador, e um agente nao deve dispara-la sozinho.
+        "integrate": (
+            "grava skills, agents e MCP no HOME do usuario; decisao do operador, "
+            "que um agente nao deve disparar sozinho."
+        ),
+        "detach": (
+            "remove a integracao do HOME do usuario; mesma razao de 'integrate'."
+        ),
     }
 
     def _subcomandos(self, parser):

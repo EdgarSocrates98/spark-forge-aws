@@ -2,7 +2,7 @@
 
 # `sparkforge doctor`
 
-Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos e credencial AWS. Sai 1 com alguma falha.
+Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. Sai 1 com alguma falha.
 
 ```bash
 sparkforge doctor --help

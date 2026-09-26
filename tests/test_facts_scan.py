@@ -45,6 +45,14 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
         "nao repositorio de cliente"
     ),
     "case/playbook.py": "varre os agents embarcados no wheel",
+    "integrate/sources.py": "varre skills/ e agents/ embarcados no wheel (o bundle)",
+    "integrate/render.py": "varre os agents embarcados no wheel para as tabelas de despacho",
+    "integrate/conflict.py": (
+        "varre UMA pasta de skill ja nomeada dentro de `.claude`/`.agents` do repo, "
+        "depois de `inside_repo` recusar todo componente que seja link ou juncao; "
+        "a denylist de `iter_source_files` e para arvore de codigo, e aqui a lista "
+        "de arquivos precisa ser completa para o SOBRESCREVER mostrar tudo antes"
+    ),
     "registry/loader.py": "varre os agents embarcados no wheel",
     "rules/loader.py": "varre o catalogo de regras embarcado no wheel",
     "context/progressive.py": "varre as references embarcadas no wheel",

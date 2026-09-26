@@ -21,7 +21,8 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge controlm`](controlm.md) | Conhecimento versionado do Control-M Automation API. |
 | [`sparkforge debate`](debate.md) | Conduz e arbitra o protocolo de debate do case. |
 | [`sparkforge decisions`](decisions.md) | Lista e explica decisões registradas. |
-| [`sparkforge doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos e credencial AWS. |
+| [`sparkforge detach`](detach.md) | Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado. |
+| [`sparkforge doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. |
 | [`sparkforge economy`](economy.md) | O que a execucao poe na janela de contexto: byte medido, nunca token estimado. |
 | [`sparkforge finops`](finops.md) | O relatorio financeiro: custo, a troca recurso-tempo, e onde a alavanca esta -- capacidade ou codigo. |
 | [`sparkforge funcval`](funcval.md) | Validacao funcional: deriva o que medir nos dois lados de uma mudanca e compara antes contra depois. |
@@ -30,6 +31,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge glue`](glue.md) | Comandos especificos do runtime AWS Glue. |
 | [`sparkforge handoff`](handoff.md) | Escreve .sparkforge/handoff.md e imprime o payload. |
 | [`sparkforge iceberg`](iceberg.md) | Comandos especificos de Apache Iceberg. |
+| [`sparkforge integrate`](integrate.md) | Instala skills, agents e o MCP do SparkForge nos diretorios de USUARIO do host (Claude Code por marketplace local; Devin, Codex e Copilot CLI), a partir do pacote instalado. |
 | [`sparkforge journal`](journal.md) | Journal de eventos do case (.sparkforge/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash. |
 | [`sparkforge judge`](judge.md) | Aplica o catalogo de regras versionado sobre facts ja extraidos. |
 | [`sparkforge knowledge`](knowledge.md) | Localiza os arquivos de conhecimento versionado. |

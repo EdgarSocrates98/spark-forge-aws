@@ -4039,6 +4039,29 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
             )
             conta = (identidade or {}).get("Account")
     checagens.append(dr.avaliar_credencial(extras["boto3"], metodo, conta, erro, online))
+
+    def integracao() -> dict[str, Any]:
+        import os
+
+        from sparkforge.integrate import status as estado_da_integracao
+
+        # Os mesmos APPDATA e CODEX_HOME que o CLI passa ao integrate: com eles, o
+        # doctor reconhece o repositorio que e um destino da integracao.
+        appdata, codex_home = os.environ.get("APPDATA"), os.environ.get("CODEX_HOME")
+        return estado_da_integracao(
+            home=Path.home(), repo=Path(repo),
+            appdata=Path(appdata) if appdata else None,
+            codex_home=Path(codex_home) if codex_home else None,
+        )
+
+    from sparkforge import __version__ as versao_do_pacote
+
+    estado, erro = sondar(integracao)
+    # A versao que o integrate grava no manifesto e `sparkforge.__version__`.
+    checagens.extend(dr.avaliar_integracoes(
+        (estado or {}).get("manifest"), erro, (estado or {}).get("duplicated"),
+        installed=versao_do_pacote,
+    ))
     return dr.resumo(checagens, online=online)
 
 
