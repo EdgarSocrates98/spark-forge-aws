@@ -434,6 +434,89 @@ def test_integrate_codex_grava_toml_e_preserva_config(tmp_path):
     assert alheia.read_text(encoding="utf-8") == '[mcp_servers.sparkforge]\ncommand = "meu"\n'
 
 
+# `sparkforge` escrito a mao, em cada forma que o TOML aceita para a mesma chave.
+FORMAS_TOML = {
+    "tabela": '[mcp_servers.sparkforge]\ncommand = "meu"\n',
+    "aspas_duplas": '[mcp_servers."sparkforge"]\ncommand = "meu"\n',
+    "aspas_simples": "[mcp_servers.'sparkforge']\ncommand = \"meu\"\n",
+    "espacos": '[ mcp_servers . sparkforge ]\ncommand = "meu"\n',
+    "inline_sob_mcp_servers": '[mcp_servers]\nsparkforge = { command = "meu" }\n',
+    "pontuada_sob_mcp_servers": '[mcp_servers]\nsparkforge.command = "meu"\n',
+    "pontuada_na_raiz": 'mcp_servers.sparkforge.command = "meu"\n',
+    "subtabela_env": '[mcp_servers.sparkforge.env]\nX = "1"\n',
+}
+
+
+def _home_codex(base: Path, texto: str) -> tuple[Path, Path]:
+    config = base / ".codex" / "config.toml"
+    config.parent.mkdir(parents=True)
+    config.write_bytes(texto.encode("utf-8"))
+    return base, config
+
+
+@pytest.mark.parametrize("forma", sorted(FORMAS_TOML))
+def test_codex_recusa_sparkforge_a_mao_em_qualquer_forma(tmp_path, forma):
+    from sparkforge.integrate import writer
+
+    texto = FORMAS_TOML[forma]
+    home, config = _home_codex(tmp_path / "home", texto)
+    recusado = integrate("codex", home=home, root=_raiz_minima(tmp_path))
+    assert [r["reason"] for r in recusado["refused"]] == ["sparkforge_ja_configurado"]
+    assert config.read_bytes() == texto.encode("utf-8")
+    # O caminho do Python 3.10 (sem tomllib) reconhece a mesma forma pelo texto.
+    assert writer._sparkforge_por_texto(texto), forma
+
+
+@pytest.mark.parametrize("texto", [
+    '[mcp_servers.outro]\nnota = "sparkforge"\n',
+    '# [mcp_servers.sparkforge]\nmodel = "x"\n',
+    '[mcp_servers.sparkforge_x]\ncommand = "y"\n',
+    '[outra]\nsparkforge = 1\n',
+])
+def test_regex_do_310_nao_acusa_o_que_nao_e_sparkforge(texto):
+    from sparkforge.integrate import writer
+
+    assert not writer._sparkforge_por_texto(texto)
+
+
+def test_marcador_so_conta_no_inicio_da_linha(tmp_path):
+    texto = 'nota = "# >>> sparkforge (gerenciado)"\n'
+    home, config = _home_codex(tmp_path / "home", texto)
+    assert integrate("codex", home=home, root=_raiz_minima(tmp_path))["refused"] == []
+    assert config.read_text(encoding="utf-8").startswith(texto)
+    assert detach("codex", home=home)["refused"] == []
+    assert config.read_bytes() == texto.encode("utf-8")
+
+
+@pytest.mark.parametrize("caso", ["dois_blocos", "sem_fim", "fim_antes"])
+def test_bloco_toml_quebrado_recusa_sem_tocar(tmp_path, caso):
+    from sparkforge.integrate import writer
+
+    bloco = writer.toml_block("py", ["-m", "x"])
+    inicio, resto = bloco.split("\n", 1)
+    texto = {
+        "dois_blocos": bloco + "\n" + bloco,
+        "sem_fim": inicio + "\n",
+        "fim_antes": resto + inicio + "\n",
+    }[caso]
+    home, config = _home_codex(tmp_path / "home", texto)
+    recusado = integrate("codex", home=home, root=_raiz_minima(tmp_path))
+    assert [r["reason"] for r in recusado["refused"]] == ["bloco_toml_quebrado"]
+    assert config.read_bytes() == texto.encode("utf-8")
+
+
+@pytest.mark.parametrize("texto", [
+    "model = \n",
+    'mcp_servers = { outro = { command = "x" } }\n',
+])
+def test_toml_invalido_antes_ou_depois_recusa_config_invalida(tmp_path, texto):
+    pytest.importorskip("tomllib")
+    home, config = _home_codex(tmp_path / "home", texto)
+    recusado = integrate("codex", home=home, root=_raiz_minima(tmp_path))
+    assert [r["reason"] for r in recusado["refused"]] == ["config_invalida"]
+    assert config.read_bytes() == texto.encode("utf-8")
+
+
 def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     home = tmp_path / "home"
     meu = home / "notas.txt"

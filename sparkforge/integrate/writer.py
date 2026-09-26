@@ -496,15 +496,79 @@ def apply_json_config(
 # --------------------------------------------------------------------------
 # Config de usuario em TOML (Codex): um bloco marcado (D6)
 # --------------------------------------------------------------------------
-# O Python 3.10 que o projeto suporta nao le TOML e o projeto nao tem dependencia
-# para isso; por isso o SparkForge nao reescreve o arquivo -- so poe, troca ou tira
-# o bloco entre os dois marcadores. `[mcp_servers.sparkforge]` fora do bloco foi
-# escrito por outra pessoa e sai recusa. Marcador sem par sai recusa tambem: nao
-# da para saber onde o bloco termina.
+# O SparkForge nao reescreve o arquivo -- so poe, troca ou tira o bloco entre os
+# dois marcadores, que so contam no inicio da linha. `sparkforge` definido fora do
+# bloco, em qualquer forma que o TOML aceita, foi escrito por outra pessoa e sai
+# recusa `sparkforge_ja_configurado`. Marcador sem par, ou dois blocos, sai recusa
+# `bloco_toml_quebrado`: nao da para saber onde o bloco termina.
+#
+# Com `tomllib` (Python 3.11+), o texto fora do bloco e LIDO como TOML para decidir,
+# e o arquivo final e validado antes de gravar: TOML invalido, antes ou depois, sai
+# `config_invalida` e nada e gravado. No Python 3.10 nao ha leitor de TOML na
+# biblioteca padrao e o projeto nao tem essa dependencia: a decisao e por texto
+# (`_sparkforge_por_texto`), que cobre tabela (`[mcp_servers.sparkforge]`, com
+# aspas, com espacos, e as subtabelas como `.env`), chave pontuada na raiz e chave
+# (inline ou pontuada) sob `[mcp_servers]`. LACUNA declarada do 3.10: uma linha que
+# comeca com `[` dentro de string ou array multilinha e lida como cabecalho, e o
+# arquivo final nao e validado.
+
+try:
+    import tomllib as _tomllib
+except ModuleNotFoundError:  # Python 3.10
+    _tomllib = None
 
 INICIO_TOML = "# >>> sparkforge (gerenciado)"
 FIM_TOML = "# <<< sparkforge"
-_TABELA_SPARKFORGE = re.compile(r"^\s*\[mcp_servers\.sparkforge\]", re.MULTILINE)
+_INICIO_RE = re.compile(r"^# >>> sparkforge \(gerenciado\)[ \t]*\r?$", re.MULTILINE)
+_FIM_RE = re.compile(r"^# <<< sparkforge[ \t]*\r?$", re.MULTILINE)
+
+_MCP = r"""(?:mcp_servers|"mcp_servers"|'mcp_servers')"""
+_SF = r"""(?:sparkforge|"sparkforge"|'sparkforge')"""
+_CABECALHO = re.compile(r"^\s*\[\[?(?P<nome>[^\]]*)\]\]?\s*(?:#.*)?$")
+_TABELA_SF = re.compile(rf"^\s*{_MCP}\s*\.\s*{_SF}\s*(?:\.|$)")
+_TABELA_MCP = re.compile(rf"^\s*{_MCP}\s*$")
+_CHAVE_SF_NA_RAIZ = re.compile(rf"^\s*{_MCP}\s*\.\s*{_SF}\s*[.=]")
+_CHAVE_SF = re.compile(rf"^\s*{_SF}\s*[.=]")
+
+
+def _sparkforge_por_texto(texto: str) -> bool:
+    """`sparkforge` sob `mcp_servers` pelo texto, sem leitor de TOML (Python 3.10)."""
+    tabela: str | None = None
+    for linha in texto.splitlines():
+        cabecalho = _CABECALHO.match(linha)
+        if cabecalho:
+            tabela = cabecalho.group("nome")
+            if _TABELA_SF.match(tabela):
+                return True
+            continue
+        if tabela is None and _CHAVE_SF_NA_RAIZ.match(linha):
+            return True
+        if tabela is not None and _TABELA_MCP.match(tabela) and _CHAVE_SF.match(linha):
+            return True
+    return False
+
+
+def _sparkforge_em(texto: str) -> bool | None:
+    """`sparkforge` sob `mcp_servers` em `texto`; `None` se nao e TOML valido."""
+    if _tomllib is None:
+        return _sparkforge_por_texto(texto)
+    try:
+        dados = _tomllib.loads(texto)
+    except _tomllib.TOMLDecodeError:
+        return None
+    servidores = dados.get("mcp_servers")
+    return isinstance(servidores, dict) and "sparkforge" in servidores
+
+
+def _toml_valido(texto: str) -> bool:
+    """Sem `tomllib` (3.10) nao ha como validar: vale a lacuna declarada acima."""
+    if _tomllib is None:
+        return True
+    try:
+        _tomllib.loads(texto)
+    except _tomllib.TOMLDecodeError:
+        return False
+    return True
 
 
 def toml_block(comando: str, args: list[str]) -> str:
@@ -521,13 +585,17 @@ def toml_block(comando: str, args: list[str]) -> str:
 
 
 def _limites_do_bloco(texto: str) -> tuple[int, int] | None | str:
-    """(inicio, fim) do bloco, `None` sem bloco, ou `"quebrado"`."""
-    inicio, fim = texto.find(INICIO_TOML), texto.find(FIM_TOML)
-    if inicio == -1 and fim == -1:
+    """(inicio, fim) do bloco, `None` sem bloco, ou `"quebrado"`. `fim` inclui a
+    quebra de linha do marcador de fim, quando ela existe."""
+    inicios, fins = list(_INICIO_RE.finditer(texto)), list(_FIM_RE.finditer(texto))
+    if not inicios and not fins:
         return None
-    if inicio == -1 or fim == -1 or fim < inicio:
+    if len(inicios) != 1 or len(fins) != 1 or fins[0].start() < inicios[0].end():
         return "quebrado"
-    return inicio, fim + len(FIM_TOML)
+    fim = fins[0].end()
+    if texto.startswith("\n", fim):
+        fim += 1
+    return inicios[0].start(), fim
 
 
 def apply_toml_config(
@@ -546,13 +614,18 @@ def apply_toml_config(
     if limites == "quebrado":
         return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
     fora = texto if limites is None else texto[: limites[0]] + texto[limites[1]:]
-    if _TABELA_SPARKFORGE.search(fora):
+    ja_definido = _sparkforge_em(fora)
+    if ja_definido is None:
+        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
+    if ja_definido:
         return {"path": relativo, "status": "refused", "reason": "sparkforge_ja_configurado"}
     if limites is None:
         base = texto.rstrip("\n")
         novo = (base + "\n\n" if base else "") + bloco
     else:
-        novo = texto[: limites[0]] + bloco.rstrip("\n") + texto[limites[1]:]
+        novo = texto[: limites[0]] + bloco + texto[limites[1]:]
+    if not _toml_valido(novo):
+        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
     status = "unchanged" if novo == texto else "written"
     registro = _registro_de_config(manifesto, nome, relativo) or {
         "path": relativo,
