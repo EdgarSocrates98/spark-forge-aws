@@ -9,6 +9,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import zipfile
@@ -1346,6 +1347,10 @@ def _repo_com_copia(base: Path) -> Path:
 
 
 def test_conflito_com_copia_vendorizada_tres_escolhas(tmp_path):
+    """`.agents/skills` e lido por devin, codex e copilot: o HOME ja tem codex e
+    copilot integrados, e `integrate devin` fecha os tres. `.claude/agents` nao e
+    carregado pelo devin e nao entra (esse caso esta em
+    `test_conflito_so_colide_o_que_o_host_alvo_carrega`)."""
     identica = ".agents/skills/sdd-plan/SKILL.md"
     customizada = ".agents/skills/diagnose-oom/SKILL.md"
     agente = ".claude/agents/executors/sf-judge.md"
@@ -1353,13 +1358,13 @@ def test_conflito_com_copia_vendorizada_tres_escolhas(tmp_path):
     # Sem terminal e sem a flag: IGNORAR, e o repositorio nao muda.
     repo = _repo_com_copia(tmp_path / "a")
     antes = _foto(repo)
-    ignorado = integrate("devin", home=tmp_path / "h1", windows=False, repo=repo)
+    ignorado = integrate("devin", home=_home_com(tmp_path / "h1", "codex", "copilot"),
+                         windows=False, repo=repo)
     conflito = ignorado["conflict"]
     assert conflito["choice"] == "ignore"
     assert {(c["location"], c["name"], c["identical"]) for c in conflito["collisions"]} == {
         (".agents/skills", "sdd-plan", True),
         (".agents/skills", "diagnose-oom", False),
-        (".claude/agents", "sf-judge", True),
     }
     assert _foto(repo) == antes
 
@@ -1371,23 +1376,25 @@ def test_conflito_com_copia_vendorizada_tres_escolhas(tmp_path):
         return "m"
 
     repo = _repo_com_copia(tmp_path / "b")
-    mesclado = integrate("devin", home=tmp_path / "h2", windows=False, repo=repo,
-                         interactive=True, prompt=responde_m)["conflict"]
+    mesclado = integrate("devin", home=_home_com(tmp_path / "h2", "codex", "copilot"),
+                         windows=False, repo=repo, interactive=True,
+                         prompt=responde_m)["conflict"]
     assert "sdd-plan" in perguntas[0] and "diagnose-oom" in perguntas[0]
     assert mesclado["choice"] == "merge"
-    assert identica in mesclado["removed"] and agente in mesclado["removed"]
-    assert not (repo / identica).exists() and not (repo / agente).exists()
+    assert identica in mesclado["removed"] and agente not in mesclado["removed"]
+    assert not (repo / identica).exists() and (repo / agente).is_file()
     assert (repo / customizada).is_file()
     assert mesclado["still_duplicated"] == [".agents/skills/diagnose-oom"]
 
     # --on-conflict overwrite, com dry-run: lista e nao apaga; sem dry-run, apaga os dois.
     repo = _repo_com_copia(tmp_path / "c")
     antes = _foto(repo)
-    ensaio = integrate("devin", home=tmp_path / "h3", windows=False, repo=repo,
+    h3 = _home_com(tmp_path / "h3", "codex", "copilot")
+    ensaio = integrate("devin", home=h3, windows=False, repo=repo,
                        on_conflict="overwrite", dry_run=True)["conflict"]
     assert customizada in ensaio["removed"] and identica in ensaio["removed"]
     assert _foto(repo) == antes
-    sobrescrito = integrate("devin", home=tmp_path / "h3", windows=False, repo=repo,
+    sobrescrito = integrate("devin", home=h3, windows=False, repo=repo,
                             on_conflict="overwrite")["conflict"]
     assert sobrescrito["still_duplicated"] == []
     assert not (repo / identica).exists() and not (repo / customizada).exists()
@@ -1407,6 +1414,223 @@ def test_scope_user_nao_escreve_no_repo(tmp_path):
                           which=lambda _nome: None)
     assert {h["host"] for h in resultado["hosts"]} == {"claude", "devin", "codex", "copilot"}
     assert _foto(repo) == antes, "integrate --scope user escreveu dentro do repositorio"
+
+
+def _home_com(base: Path, *hosts: str) -> Path:
+    """Um HOME com `hosts` ja integrados (sem repo): `.agents/skills` so sai do
+    repositorio quando devin, codex e copilot estao todos integrados."""
+    home = base / "home_integrado"
+    for nome in hosts:
+        integrate(nome, home=home, windows=False)
+    return home
+
+
+def _copiar_arvore(origem: Path, destino: Path) -> None:
+    for arquivo in origem.rglob("*"):
+        if arquivo.is_file():
+            alvo = destino / arquivo.relative_to(origem)
+            alvo.parent.mkdir(parents=True, exist_ok=True)
+            alvo.write_bytes(arquivo.read_bytes())
+
+
+def _link_de_diretorio(link: Path, alvo: Path, tipo: str) -> None:
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if tipo == "symlink":
+        try:
+            os.symlink(alvo, link, target_is_directory=True)
+        except (OSError, NotImplementedError) as erro:
+            pytest.skip(f"symlink de diretorio indisponivel aqui: {erro}")
+        return
+    try:
+        import _winapi
+
+        _winapi.CreateJunction(str(alvo), str(link))
+    except (ImportError, AttributeError, OSError) as erro:
+        pytest.skip(f"juncao indisponivel aqui: {erro}")
+
+
+GITHUB_AGENT = "athena-query-optimizer.agent.md"
+
+
+@pytest.mark.parametrize("escolha", ["overwrite", "merge"])
+@pytest.mark.parametrize("tipo", ["symlink", "junction"])
+@pytest.mark.parametrize("onde", ["pasta_da_skill", "raiz_agents", "github_agents"])
+def test_copia_por_link_fora_do_repo_nunca_e_apagada(tmp_path, onde, tipo, escolha):
+    """C1: link ou juncao dentro de `.agents`/`.github` que aponta para fora do
+    repositorio. Nada de fora e apagado; a entrada sai `copia_fora_do_repositorio`."""
+    repo = tmp_path / "repo"
+    (repo / "src").mkdir(parents=True)
+    fora = tmp_path / "fora"
+    if onde == "pasta_da_skill":
+        _copiar_arvore(ROOT / ".agents" / "skills" / "sdd-plan", fora / "sdd-plan")
+        link = repo / ".agents" / "skills" / "sdd-plan"
+        _link_de_diretorio(link, fora / "sdd-plan", tipo)
+        host, entrada = "devin", ".agents/skills/sdd-plan"
+    elif onde == "raiz_agents":
+        _copiar_arvore(ROOT / ".agents" / "skills" / "sdd-plan", fora / "skills" / "sdd-plan")
+        link = repo / ".agents"
+        _link_de_diretorio(link, fora, tipo)
+        host, entrada = "devin", ".agents/skills/sdd-plan"
+    else:
+        fora.mkdir()
+        (fora / GITHUB_AGENT).write_bytes((ROOT / ".github" / "agents" / GITHUB_AGENT).read_bytes())
+        link = repo / ".github" / "agents"
+        _link_de_diretorio(link, fora, tipo)
+        host, entrada = "copilot", f".github/agents/{GITHUB_AGENT.removesuffix('.agent.md')}"
+    home = _home_com(tmp_path, "devin", "codex", "copilot")
+    de_fora = _foto(fora)
+    assert de_fora
+
+    conflito = integrate(host, home=home, windows=False, repo=repo,
+                         on_conflict=escolha)["conflict"]
+
+    assert _foto(fora) == de_fora, "o SparkForge apagou arquivo fora do repositorio"
+    assert os.path.lexists(link), "o link foi removido"
+    recusas = [r for r in conflito["refused"] if r["reason"] == "copia_fora_do_repositorio"]
+    assert [r["path"] for r in recusas] == [entrada]
+    assert conflito["removed"] == []
+
+
+def test_conflito_so_colide_o_que_o_host_alvo_carrega(tmp_path):
+    """I1: `integrate devin` nao ve `.claude/agents`; `.agents/skills` so sai do
+    repo com devin, codex e copilot integrados."""
+    identica = ".agents/skills/sdd-plan/SKILL.md"
+    agente = ".claude/agents/executors/sf-judge.md"
+    repo = _repo_com_copia(tmp_path / "a")
+    antes = _foto(repo)
+    so_devin = integrate("devin", home=tmp_path / "h1", windows=False, repo=repo,
+                         on_conflict="overwrite")["conflict"]
+    assert {c["location"] for c in so_devin["collisions"]} == {".agents/skills"}
+    assert so_devin["removed"] == []
+    mantidos = {k["path"]: k for k in so_devin["kept"]}
+    assert set(mantidos) == {".agents/skills/sdd-plan", ".agents/skills/diagnose-oom"}
+    assert {k["reason"] for k in mantidos.values()} == {"mantido_host_nao_integrado"}
+    assert mantidos[".agents/skills/sdd-plan"]["missing_hosts"] == ["codex", "copilot"]
+    assert _foto(repo) == antes
+
+    home = _home_com(tmp_path / "b", "codex", "copilot")
+    com_os_tres = integrate("devin", home=home, windows=False, repo=repo,
+                            on_conflict="merge")["conflict"]
+    assert identica in com_os_tres["removed"]
+    assert agente not in com_os_tres["removed"] and (repo / agente).is_file()
+
+    claude = _ClaudeFalso()
+    so_claude = integrate("claude", home=tmp_path / "h3", repo=repo, on_conflict="merge",
+                          runner=claude, which=lambda _: "/bin/claude")["conflict"]
+    assert {c["location"] for c in so_claude["collisions"]} == {".claude/agents"}
+    assert so_claude["removed"] == [agente]
+
+
+def test_recusa_do_host_nao_resolve_o_conflito(tmp_path):
+    """I2: com o host alvo recusado (aqui, `claude` sem CLI), o repo nao e tocado."""
+    repo = _repo_com_copia(tmp_path)
+    antes = _foto(repo)
+
+    def nao_pergunta(_texto: str) -> str:
+        raise AssertionError("perguntou com o host recusado")
+
+    resultado = integrate("claude", home=tmp_path / "h", repo=repo, on_conflict="overwrite",
+                          interactive=True, prompt=nao_pergunta, which=lambda _: None)
+    conflito = resultado["conflict"]
+    assert conflito["choice"] == "ignore"
+    assert conflito["removed"] == []
+    assert "conflito_nao_resolvido_por_recusa" in {r["reason"] for r in conflito["refused"]}
+    assert _foto(repo) == antes
+
+
+def _repo_com_extra(base: Path) -> Path:
+    """`.agents/skills/sdd-plan` com um arquivo a mais, que o wheel nao tem."""
+    repo = base / "repo_extra"
+    _copiar_arvore(ROOT / ".agents" / "skills" / "sdd-plan", repo / ".agents/skills/sdd-plan")
+    (repo / ".agents/skills/sdd-plan/notas.txt").write_text("do operador\n", "utf-8")
+    return repo
+
+
+def test_toda_remocao_lista_cada_arquivo_antes(tmp_path):
+    """I6: a lista COMPLETA, arquivo por arquivo (com o extra da pasta), sai em
+    `planned_removals` e chega a quem chama ANTES da remocao."""
+    esperados = [".agents/skills/sdd-plan/SKILL.md", ".agents/skills/sdd-plan/notas.txt"]
+    home = _home_com(tmp_path, "codex", "copilot")
+    repo = _repo_com_extra(tmp_path)
+    vistos: list[list[str]] = []
+
+    def avisar(lista: list[str]) -> None:
+        assert all((repo / r).is_file() for r in lista), "avisou depois de remover"
+        vistos.append(list(lista))
+
+    conflito = integrate("devin", home=home, windows=False, repo=repo,
+                         on_conflict="overwrite", announce=avisar)["conflict"]
+    assert conflito["planned_removals"] == esperados
+    assert vistos == [esperados]
+    assert conflito["removed"] == esperados
+
+    # No prompt, a lista e por arquivo.
+    perguntas: list[str] = []
+
+    def responde_i(texto: str) -> str:
+        perguntas.append(texto)
+        return "i"
+
+    repo2 = _repo_com_extra(tmp_path / "p")
+    integrate("devin", home=home, windows=False, repo=repo2, interactive=True,
+              prompt=responde_i)
+    assert all(r in perguntas[0] for r in esperados)
+
+
+def test_cli_imprime_a_lista_antes_de_remover(tmp_path, monkeypatch, capsys):
+    repo = tmp_path / "repo_cli"
+    agente = f".github/agents/{GITHUB_AGENT}"
+    (repo / ".github" / "agents").mkdir(parents=True)
+    (repo / agente).write_bytes((ROOT / agente).read_bytes())
+    monkeypatch.chdir(repo)
+    assert cli_main(["integrate", "copilot", "--scope", "user", "--on-conflict", "overwrite"]) == 0
+    capturado = capsys.readouterr()
+    assert agente in capturado.err
+    assert json.loads(capturado.out)["conflict"]["removed"] == [agente]
+    assert not (repo / agente).exists()
+
+
+def test_prompt_sem_resposta_ou_invalido_vira_ignore_com_motivo(tmp_path):
+    from sparkforge.integrate import conflict
+
+    colisoes = [{"name": "x", "kind": "skill", "location": ".agents/skills",
+                 "identical": True, "files": [".agents/skills/x/SKILL.md"]}]
+
+    def fim_de_arquivo(_texto: str) -> str:
+        raise EOFError
+
+    def interrompe(_texto: str) -> str:
+        raise KeyboardInterrupt
+
+    kw = {"on_conflict": None, "interactive": True}
+    assert conflict.choose(colisoes, prompt=fim_de_arquivo, **kw) == (
+        "ignore", "prompt_sem_resposta")
+    assert conflict.choose(colisoes, prompt=interrompe, **kw) == ("ignore", "prompt_sem_resposta")
+    respostas = iter(["talvez", "x", "m"])
+    chamadas: list[str] = []
+
+    def depois_de_duas(texto: str) -> str:
+        chamadas.append(texto)
+        return next(respostas)
+
+    assert conflict.choose(colisoes, prompt=depois_de_duas, **kw) == ("merge", None)
+    assert len(chamadas) == 3
+    chamadas.clear()
+
+    def sempre_invalida(texto: str) -> str:
+        chamadas.append(texto)
+        return "talvez"
+
+    assert conflict.choose(colisoes, prompt=sempre_invalida, **kw) == (
+        "ignore", "resposta_invalida")
+    assert len(chamadas) == 3
+
+    # Pelo integrate, com stdin fechado: EOF vira IGNORAR com o motivo, sem traceback.
+    home = _home_com(tmp_path, "codex", "copilot")
+    repo = _repo_com_extra(tmp_path / "r")
+    conflito = integrate("devin", home=home, windows=False, repo=repo, interactive=True,
+                         prompt=fim_de_arquivo)["conflict"]
+    assert (conflito["choice"], conflito["choice_reason"]) == ("ignore", "prompt_sem_resposta")
 
 
 # --------------------------------------------------------------------------

@@ -118,13 +118,15 @@ def integrate(
     on_conflict: str | None = None,
     interactive: bool = False,
     prompt: Callable[[str], str] | None = None,
+    announce: Callable[[list[str]], None] | None = None,
 ) -> dict[str, Any]:
     """Grava a integracao de `alvo` (um host ou `all`) sob `home`.
 
     `appdata=None` e `home/AppData/Roaming` e `codex_home=None` e `home/.codex`;
     o CLI passa o `%APPDATA%` e o `CODEX_HOME` reais.
     Com `repo`, confere a copia vendorizada em dobro nele e aplica a escolha do
-    operador (D9); e a unica escrita possivel dentro de um repositorio."""
+    operador (D9); e a unica escrita possivel dentro de um repositorio. `announce`
+    recebe a lista de arquivos, um por um, antes da primeira remocao no repo."""
     disco = writer.Disco(home, appdata, codex_home=codex_home, dry_run=dry_run)
     raiz = sources.content_root() if root is None else Path(root)
     try:
@@ -172,7 +174,9 @@ def integrate(
     if repo is not None:
         resultado["conflict"] = _conferir_copia(
             Path(repo), raiz, dry_run=dry_run, on_conflict=on_conflict,
-            interactive=interactive, prompt=prompt,
+            interactive=interactive, prompt=prompt, alvos=_nomes(alvo),
+            integrados=list(manifesto["hosts"]), recusado=bool(resultado["refused"]),
+            announce=announce,
         )
     return resultado
 
@@ -185,22 +189,43 @@ def _conferir_copia(
     on_conflict: str | None,
     interactive: bool,
     prompt: Callable[[str], str] | None,
+    alvos: list[str],
+    integrados: list[str],
+    recusado: bool,
+    announce: Callable[[list[str]], None] | None,
 ) -> dict[str, Any]:
+    """A copia em dobro que os hosts `alvos` carregam, e a escolha do operador.
+
+    Host alvo com recusa (CLI do Claude ausente, config recusada, arquivo do
+    usuario) nao chegou a ter a integracao completa: o repositorio nao e tocado e
+    sai `conflito_nao_resolvido_por_recusa`, sem perguntar."""
     achado = _conflict.detect(repo, root=raiz)
-    colisoes = achado["collisions"]
-    if achado["refused"]:
-        escolha = "ignore"
+    colisoes = _conflict.relevant(achado["collisions"], alvos)
+    recusas = list(achado["refused"])
+    motivo: str | None
+    if recusas:
+        escolha, motivo = "ignore", None
+    elif recusado:
+        escolha, motivo = "ignore", "conflito_nao_resolvido_por_recusa"
+        recusas.append({
+            "reason": "conflito_nao_resolvido_por_recusa",
+            "detail": "o host alvo saiu com recusa; resolva-a e rode o integrate de novo",
+        })
     else:
-        escolha = _conflict.choose(
-            colisoes, on_conflict=on_conflict, interactive=interactive, prompt=prompt
+        removiveis = [c for c in colisoes if not _conflict.missing_hosts(c, integrados)]
+        escolha, motivo = _conflict.choose(
+            removiveis, on_conflict=on_conflict, interactive=interactive, prompt=prompt
         )
-    resolucao = _conflict.resolve(repo, colisoes, escolha, dry_run=dry_run)
+    resolucao = _conflict.resolve(
+        repo, colisoes, escolha, dry_run=dry_run, integrados=integrados, announce=announce
+    )
     return {
         "collisions": [
             {k: c[k] for k in ("name", "kind", "location", "identical")} for c in colisoes
         ],
         **resolucao,
-        "refused": achado["refused"],
+        "choice_reason": motivo,
+        "refused": recusas + resolucao["refused"],
     }
 
 

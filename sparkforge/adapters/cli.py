@@ -4143,6 +4143,14 @@ def _perguntar(texto: str) -> str:
     return input()
 
 
+def _anunciar_remocao(arquivos: list[str]) -> None:
+    """Toda remocao no repositorio mostra a lista antes, arquivo por arquivo (D9)."""
+    print(f"Removendo do repositorio {len(arquivos)} arquivo(s):", file=sys.stderr)
+    for arquivo in arquivos:
+        print(f"  {arquivo}", file=sys.stderr)
+    sys.stderr.flush()
+
+
 def _appdata_real() -> Path | None:
     """O `%APPDATA%` do ambiente. So o CLI o le, e passa o MESMO ao integrate e ao
     detach; o pacote nunca le o ambiente (sem ele, deriva do HOME)."""
@@ -4169,6 +4177,7 @@ def _cmd_integrate(args: argparse.Namespace) -> int:
         on_conflict=args.on_conflict,
         interactive=sys.stdin.isatty() and sys.stderr.isatty(),
         prompt=_perguntar,
+        announce=_anunciar_remocao,
     )
     _print(resultado)
     return 1 if resultado["refused"] else 0
