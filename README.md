@@ -105,6 +105,18 @@ O pacote instalado carrega o catálogo de regras e `knowledge/` dentro do wheel:
 clonado. Extras, verificação e erros comuns em [Instalação](docs/guia/02-instalacao.md);
 a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cli.md).
 
+Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
+integre uma vez por host:
+
+```bash
+sparkforge integrate all --scope user --dry-run   # lista o que seria escrito
+sparkforge integrate all --scope user             # Claude Code, Devin, Codex e Copilot CLI
+sparkforge detach all                             # desfaz, removendo só o que foi escrito
+```
+
+Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão em
+[Instalação](docs/guia/02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate).
+
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
