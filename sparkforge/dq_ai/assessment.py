@@ -10,7 +10,17 @@ import yaml
 
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 
-MATRIX_PATH = Path(__file__).resolve().parents[2] / "knowledge" / "glue" / "dq-advanced-matrix.yaml"
+_MODULE_ROOT = Path(__file__).resolve().parents[1]
+_SOURCE_ROOT = Path(__file__).resolve().parents[2]
+_PACKAGE_MATRIX_PATH = _MODULE_ROOT / "knowledge" / "glue" / "dq-advanced-matrix.yaml"
+_SOURCE_MATRIX_PATH = _SOURCE_ROOT / "knowledge" / "glue" / "dq-advanced-matrix.yaml"
+# Em ambiente instalado, o Hatchling embarca `knowledge/` dentro do pacote
+# (`sparkforge/knowledge/`). No checkout, a fonte permanece na raiz do
+# repositorio. Resolver os dois layouts aqui evita que o caminho do checkout
+# vaze para o wheel.
+MATRIX_PATH = (
+    _PACKAGE_MATRIX_PATH if _PACKAGE_MATRIX_PATH.is_file() else _SOURCE_MATRIX_PATH
+)
 EXTRACTOR_ID = "dq_ai_assessment@0.1.0"
 EMITTED_KINDS = frozenset({"dq.ai.assessment", "dq.ai.assessment.unresolved"})
 

@@ -9582,8 +9582,8 @@
       "line": 61,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-s3-specialist.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "cmd": "git show 9c433b98:agents/sf-s3-specialist.md",
-        "commit": "9c433b98",
+        "cmd": "git show af2d7389:agents/sf-s3-specialist.md",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -9597,8 +9597,8 @@
       "line": 62,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-storage-specialist.md saiu em 2026-09-19 (feature docs/sdd/CRITERIO_DE_DOMINIO/, D2), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "cmd": "git show 405881be:agents/sf-storage-specialist.md",
-        "commit": "405881be",
+        "cmd": "git show febcdecb:agents/sf-storage-specialist.md",
+        "commit": "febcdecb",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -9660,8 +9660,8 @@
       "line": 66,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-kinesis-specialist.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "cmd": "git show 9c433b98:agents/sf-kinesis-specialist.md",
-        "commit": "9c433b98",
+        "cmd": "git show af2d7389:agents/sf-kinesis-specialist.md",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -9691,8 +9691,8 @@
       "line": 69,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-cost-reviewer.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "cmd": "git show 9c433b98:agents/sf-cost-reviewer.md",
-        "commit": "9c433b98",
+        "cmd": "git show af2d7389:agents/sf-cost-reviewer.md",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -9706,8 +9706,8 @@
       "line": 70,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio; agents/sf-evidence-verifier.md saiu em 2026-09-19 (feature docs/sdd/SF_STUBS/, D1), e o mapa e historico -- a alegacao fica ancorada no ultimo commit em que o perfil existia",
       "proof": {
-        "cmd": "git show 9c433b98:agents/sf-evidence-verifier.md",
-        "commit": "9c433b98",
+        "cmd": "git show af2d7389:agents/sf-evidence-verifier.md",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -11932,8 +11932,8 @@
       "line": 3,
       "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
       "proof": {
-        "cmd": "git ls-tree -r --name-only 9c433b98 -- rules/catalog | grep -cE '^rules/catalog/agentic-sf-.*.yaml$'",
-        "commit": "9c433b98",
+        "cmd": "git ls-tree -r --name-only af2d7389 -- rules/catalog | grep -cE '^rules/catalog/agentic-sf-.*.yaml$'",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -11947,8 +11947,8 @@
       "line": 3,
       "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
       "proof": {
-        "cmd": "git ls-tree -r --name-only 9c433b98 -- agents | grep -cE '^agents/(sf-agent-builder|sf-agent-evaluation-specialist|sf-airflow-specialist|sf-athena-specialist|sf-context-engineer|sf-cost-reviewer|sf-data-architect|sf-dynamodb-specialist|sf-evidence-verifier|sf-functional-rules-specialist|sf-iceberg-specialist|sf-kinesis-specialist|sf-lambda-serverless-specialist|sf-lineage-specialist|sf-memory-engineer|sf-parquet-specialist|sf-s3-specialist|sf-schema-registry-specialist|sf-step-functions-specialist).md$'",
-        "commit": "9c433b98",
+        "cmd": "git ls-tree -r --name-only af2d7389 -- agents | grep -cE '^agents/(sf-agent-builder|sf-agent-evaluation-specialist|sf-airflow-specialist|sf-athena-specialist|sf-context-engineer|sf-cost-reviewer|sf-data-architect|sf-dynamodb-specialist|sf-evidence-verifier|sf-functional-rules-specialist|sf-iceberg-specialist|sf-kinesis-specialist|sf-lambda-serverless-specialist|sf-lineage-specialist|sf-memory-engineer|sf-parquet-specialist|sf-s3-specialist|sf-schema-registry-specialist|sf-step-functions-specialist).md$'",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
@@ -11962,8 +11962,8 @@
       "line": 3,
       "note": "desvio da feature SF_STUBS: contagem historica dos artefatos removidos em 405881be (areas agentic-sf-*, agentes sf-* ocos e skills sem artefato), ancorada no commit anterior a remocao -- ver docs/sdd/SF_STUBS/",
       "proof": {
-        "cmd": "git ls-tree -r --name-only 9c433b98 -- skills | grep -cE '^skills/(design-agent-systems|design-airflow-pipelines|design-dynamodb-model|design-lambda-serverless|design-step-functions-orchestration|engineer-agent-context|engineer-agent-memory|optimize-athena-queries|optimize-iceberg-tables|verify-agent-evidence)/SKILL.md$'",
-        "commit": "9c433b98",
+        "cmd": "git ls-tree -r --name-only af2d7389 -- skills | grep -cE '^skills/(design-agent-systems|design-airflow-pipelines|design-dynamodb-model|design-lambda-serverless|design-step-functions-orchestration|engineer-agent-context|engineer-agent-memory|optimize-athena-queries|optimize-iceberg-tables|verify-agent-evidence)/SKILL.md$'",
+        "commit": "af2d7389",
         "kind": "historical"
       },
       "state": "PROVADA",
