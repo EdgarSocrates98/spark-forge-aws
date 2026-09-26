@@ -145,7 +145,9 @@ def integrate(
         )
         plano = writer.plan_files(h, raiz)
         if nome == "claude":
-            plano += _claude.plugin_files(disco.home, version=__version__, python=python)
+            plano += _claude.plugin_files(
+                disco.home, version=__version__, python=python, content=list(plano)
+            )
         planos.append((h, plano))
     relatorios: list[dict[str, Any]] = []
     try:
@@ -245,7 +247,9 @@ def detach(
     o editado depois fica, como recusa `editado_pelo_usuario`, e o `preexistente`
     fica sempre. Da config de usuario sai so a entrada que o integrate pos.
     `appdata` e `codex_home` sao os mesmos que o integrate recebeu. O `claude`
-    registrado sai tambem pelo CLI dele (`uninstall` e `marketplace remove`).
+    registrado sai primeiro pelo CLI dele (`uninstall` e `marketplace remove`); com
+    o CLI ausente ou falhando, nada dele sai do disco nem do manifesto, o host fica
+    `cli_pendente` e o detach seguinte conclui.
     """
     disco = writer.Disco(home, appdata, codex_home=codex_home, dry_run=dry_run)
     try:
@@ -261,6 +265,18 @@ def detach(
             continue
         registros = list(entrada.get("config") or [])
         registrado = bool(entrada.get("registered"))
+        cli: dict[str, Any] | None = None
+        if nome == "claude" and registrado:
+            # Primeiro o CLI: com ele ausente ou falhando, o plugin segue registrado
+            # no Claude, e apagar o marketplace do disco o deixaria apontando para
+            # o nada. O host fica pendente e o detach seguinte conclui.
+            cli = _claude.unregister(dry_run=dry_run, runner=runner, which=which)
+            if cli["status"] not in ("ok", "dry_run"):
+                relatorios.append({
+                    "host": nome, "status": "cli_pendente", "claude_cli": cli,
+                    "removed": [], "refused": [],
+                })
+                continue
         relatorio = writer.remove_owned(
             disco, manifesto, nome, writer.host_files(manifesto, nome)
         )
@@ -275,10 +291,8 @@ def detach(
             if revertido["status"] == "refused"
         ]
         relatorio["status"] = "config_pendente" if pendentes else "detached"
-        if nome == "claude" and registrado:
-            relatorio["claude_cli"] = _claude.unregister(
-                dry_run=dry_run, runner=runner, which=which
-            )
+        if cli is not None:
+            relatorio["claude_cli"] = cli
         if pendentes:
             manifesto["hosts"][nome] = {
                 "package_version": entrada.get("package_version"),

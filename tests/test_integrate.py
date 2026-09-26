@@ -10,6 +10,8 @@ import ast
 import hashlib
 import json
 import os
+import re
+import shlex
 import subprocess
 import sys
 import zipfile
@@ -1247,14 +1249,44 @@ def test_dry_run_de_all_simula_o_manifesto_entre_hosts(tmp_path):
 
 
 class _ClaudeFalso:
-    """O executor do `claude` que o teste injeta: grava cada argv e devolve 0."""
+    """O executor do `claude` que o teste injeta: grava cada argv e guarda o estado
+    (marketplaces e plugins) que os `list --json` devolvem. Repetir `add` de um
+    marketplace que ja existe, ou `install` de plugin ja instalado, sai 1 -- e o que
+    trava a integracao se o operador ja rodou os comandos a mao."""
 
-    def __init__(self) -> None:
+    def __init__(self, marketplaces=(), plugins=()) -> None:
         self.chamadas: list[list[str]] = []
+        self.marketplaces = set(marketplaces)
+        self.plugins = set(plugins)
 
     def __call__(self, argv: list[str]) -> tuple[int, str]:
         self.chamadas.append(argv)
+        comando = argv[1:]
+        if comando[:3] == ["plugin", "marketplace", "list"]:
+            return 0, json.dumps([{"name": m} for m in sorted(self.marketplaces)])
+        if comando[:2] == ["plugin", "list"]:
+            return 0, json.dumps([{"id": p, "scope": "user"} for p in sorted(self.plugins)])
+        if comando[:3] == ["plugin", "marketplace", "add"]:
+            if "sparkforge-local" in self.marketplaces:
+                return 1, "marketplace ja existe"
+            self.marketplaces.add("sparkforge-local")
+        elif comando[:3] == ["plugin", "marketplace", "remove"]:
+            if comando[3] not in self.marketplaces:
+                return 1, "marketplace nao existe"
+            self.marketplaces.discard(comando[3])
+        elif comando[:2] == ["plugin", "install"]:
+            if comando[2] in self.plugins:
+                return 1, "plugin ja instalado"
+            self.plugins.add(comando[2])
+        elif comando[:2] == ["plugin", "uninstall"]:
+            if comando[2] not in self.plugins:
+                return 1, "plugin nao instalado"
+            self.plugins.discard(comando[2])
         return 0, "{}"
+
+
+LISTA_MKT = ["plugin", "marketplace", "list", "--json"]
+LISTA_PLUGINS = ["plugin", "list", "--json"]
 
 
 def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
@@ -1277,7 +1309,10 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     assert catalogo["plugins"][0]["name"] == "sparkforge-aws"
     assert catalogo["plugins"][0]["source"] == "./plugins/sparkforge-aws"
     manifesto = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
-    assert (manifesto["name"], manifesto["version"]) == ("sparkforge-aws", __version__)
+    assert manifesto["name"] == "sparkforge-aws"
+    # A versao carrega o sha do conteudo: qualquer mudanca forca o `plugin update`.
+    assert re.fullmatch(rf"{re.escape(__version__)}\+[0-9a-f]{{8}}", manifesto["version"])
+    assert catalogo["plugins"][0]["version"] == manifesto["version"]
     mcp = json.loads((plugin / ".mcp.json").read_text("utf-8"))
     assert mcp == {"mcpServers": {"sparkforge": {
         "command": sys.executable,
@@ -1299,25 +1334,151 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     claude = _ClaudeFalso()
     registrado = integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert registrado["refused"] == []
+    # Cada passo confere antes pelo `list --json` (o operador pode ja ter rodado).
     assert claude.chamadas == [
+        ["/bin/claude", *LISTA_MKT],
         ["/bin/claude", "plugin", "marketplace", "add", str(marketplace), "--scope", "user"],
+        ["/bin/claude", *LISTA_PLUGINS],
         ["/bin/claude", "plugin", "install", "sparkforge-aws@sparkforge-local",
          "--scope", "user", "--json"],
     ]
     # Registrado e sem mudanca: a segunda execucao nao chama o CLI de novo.
     integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
-    assert len(claude.chamadas) == 2
+    assert len(claude.chamadas) == 4
 
     # detach desinstala pelo CLI e tira os arquivos.
     saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert saiu["refused"] == []
-    assert claude.chamadas[2:] == [
+    assert claude.chamadas[4:] == [
+        ["/bin/claude", *LISTA_PLUGINS],
         ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-local",
          "--scope", "user"],
+        ["/bin/claude", *LISTA_MKT],
         ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-local",
          "--scope", "user"],
     ]
     assert not marketplace.exists()
+
+
+def test_run_do_claude_tem_timeout_stdin_fechado_e_utf8(monkeypatch):
+    """I3: o executor de verdade nunca espera um prompt nem decodifica pelo cp1252."""
+    from sparkforge.integrate import claude as _claude
+
+    visto: dict = {}
+
+    def run_falso(argv, **kw):
+        visto.update(kw)
+        return subprocess.CompletedProcess(argv, 0, "saida", "erro")
+
+    monkeypatch.setattr(subprocess, "run", run_falso)
+    assert _claude.run(["/bin/claude", "plugin", "list"]) == (0, "saidaerro")
+    assert visto["timeout"] == _claude.TIMEOUT_S == 120
+    assert visto["stdin"] is subprocess.DEVNULL
+    assert (visto["encoding"], visto["errors"]) == ("utf-8", "replace")
+
+
+@pytest.mark.parametrize("erro, motivo, trecho", [
+    (subprocess.TimeoutExpired(["claude"], 120, output=b"parcial", stderr=b"travou"),
+     "claude_cli_timeout", "travou"),
+    (OSError("sem permissao de execucao"), "claude_cli_falhou", "sem permissao"),
+])
+def test_timeout_e_oserror_do_claude_viram_recusa_nomeada(tmp_path, erro, motivo, trecho):
+    def explode(_argv):
+        raise erro
+
+    resultado = integrate("claude", home=tmp_path / "h", runner=explode,
+                          which=lambda _: "/bin/claude")
+    (recusa,) = resultado["refused"]
+    assert recusa["reason"] == motivo
+    assert recusa["command"].startswith("claude plugin ")
+    assert trecho in recusa["output"]
+
+
+def test_detach_do_claude_sem_cli_fica_pendente_e_conclui_depois(tmp_path):
+    """I4: sem o CLI (ou com ele falhando) o registro fica, o marketplace fica no
+    disco, e o detach seguinte, com o CLI, conclui."""
+    home = tmp_path / "h"
+    marketplace = home / ".sparkforge" / "claude"
+    claude = _ClaudeFalso()
+    integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+
+    def falha(argv):
+        return 1, "erro do claude"
+
+    for runner, which, motivo in ((None, lambda _: None, "claude_cli_ausente"),
+                                  (falha, lambda _: "/bin/claude", "claude_cli_falhou")):
+        pendente = detach("claude", home=home, runner=runner, which=which)
+        (host,) = pendente["hosts"]
+        assert host["status"] == "cli_pendente"
+        assert [r["reason"] for r in pendente["refused"]] == [motivo]
+        assert (marketplace / ".claude-plugin" / "marketplace.json").is_file()
+        assert _manifesto(home)["hosts"]["claude"]["registered"] is True
+
+    concluido = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    assert concluido["refused"] == []
+    assert not marketplace.exists()
+    assert claude.plugins == set() and claude.marketplaces == set()
+
+
+def test_integrate_depois_dos_comandos_a_mao_marca_registrado(tmp_path):
+    """I4: o operador rodou os dois comandos de `claude_cli_ausente`; o integrate
+    seguinte nao repete o `add` (que sairia 1) e marca `registered`."""
+    home = tmp_path / "h"
+    ausente = integrate("claude", home=home, which=lambda _: None)
+    assert ausente["refused"][0]["reason"] == "claude_cli_ausente"
+    claude = _ClaudeFalso(marketplaces={"sparkforge-local"},
+                          plugins={"sparkforge-aws@sparkforge-local"})
+    depois = integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    assert depois["refused"] == []
+    assert [argv[1:] for argv in claude.chamadas] == [LISTA_MKT, LISTA_PLUGINS]
+    assert _manifesto(home)["hosts"]["claude"]["registered"] is True
+
+
+def test_versao_do_plugin_muda_com_o_conteudo_e_o_python(tmp_path):
+    """I5: `plugin.json.version` e `<versao>+<8 hex>` do conteudo do plugin (skills,
+    agents e .mcp.json): trocar o Python muda o .mcp.json, e a versao muda junto."""
+    from sparkforge.integrate import claude as _claude
+    from sparkforge.integrate.hosts import claude_plugin_dir
+
+    home = tmp_path / "h"
+    plugin = claude_plugin_dir(home)
+    skill = [(plugin / "skills" / "a" / "SKILL.md", b"um")]
+
+    def versao(python: str, conteudo) -> str:
+        arquivos = dict(_claude.plugin_files(home, version=__version__, python=python,
+                                             content=conteudo))
+        manifesto = json.loads(arquivos[plugin / ".claude-plugin" / "plugin.json"])
+        return manifesto["version"]
+
+    base = versao("/py/a", skill)
+    assert re.fullmatch(rf"{re.escape(__version__)}\+[0-9a-f]{{8}}", base)
+    assert versao("/py/a", skill) == base
+    assert versao("/py/b", skill) != base
+    assert versao("/py/a", [(plugin / "skills" / "a" / "SKILL.md", b"dois")]) != base
+
+    # Pelo integrate: outro Python regrava o .mcp.json e o CLI recebe o update.
+    claude = _ClaudeFalso()
+    integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude",
+              python="/py/a")
+    antes = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
+    integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude",
+              python="/py/b")
+    depois = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
+    assert antes["version"] != depois["version"]
+    assert claude.chamadas[-1][1:] == ["plugin", "update", "sparkforge-aws@sparkforge-local"]
+
+
+def test_comando_mostrado_cita_caminho_com_espaco(tmp_path):
+    home = tmp_path / "casa com espaco"
+    marketplace = str(home / ".sparkforge" / "claude")
+    recusa = integrate("claude", home=home, which=lambda _: None)["refused"][0]
+    comando = recusa["commands"][0]
+    if sys.platform == "win32":
+        assert f'"{marketplace}"' in comando
+        assert comando == subprocess.list2cmdline(
+            ["claude", "plugin", "marketplace", "add", marketplace, "--scope", "user"])
+    else:
+        assert shlex.split(comando)[4] == marketplace
 
 
 # --------------------------------------------------------------------------
