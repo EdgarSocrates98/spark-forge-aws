@@ -10,6 +10,19 @@ from sparkforge import doctor as dr
 from sparkforge.adapters import _core
 from sparkforge.adapters.cli import main
 
+
+@pytest.fixture(autouse=True)
+def home_isolado(tmp_path, monkeypatch):
+    """O doctor le o manifesto do HOME: nenhum teste deste arquivo le o do operador."""
+    casa = tmp_path / "home_isolado"
+    casa.mkdir()
+    monkeypatch.setenv("HOME", str(casa))
+    monkeypatch.setenv("USERPROFILE", str(casa))
+    monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
+    monkeypatch.setenv("CODEX_HOME", str(casa / ".codex"))
+    return casa
+
+
 INTEGRACOES = ["integracao_claude", "integracao_devin", "integracao_codex",
                "integracao_copilot"]
 IDS = [
@@ -106,15 +119,6 @@ def test_resumo_saudavel_so_sem_fail():
     assert ruim["healthy"] is False
 
 
-@pytest.fixture
-def home_isolado(tmp_path, monkeypatch):
-    """O doctor le o manifesto do HOME: o teste nunca le o do operador."""
-    casa = tmp_path / "home_isolado"
-    casa.mkdir()
-    monkeypatch.setenv("HOME", str(casa))
-    monkeypatch.setenv("USERPROFILE", str(casa))
-    monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
-    return casa
 
 
 def test_doctor_de_verdade_tem_as_treze_checagens(tmp_path, home_isolado):
