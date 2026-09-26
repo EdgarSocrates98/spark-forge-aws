@@ -14,7 +14,7 @@ from typing import Any
 from sparkforge import __version__
 from sparkforge.integrate import claude as _claude
 from sparkforge.integrate import conflict as _conflict
-from sparkforge.integrate import sources, writer
+from sparkforge.integrate import render, sources, writer
 from sparkforge.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
 from sparkforge.integrate.hosts import host as _host
 
@@ -74,6 +74,39 @@ def _recusado(home: Path, dry_run: bool, recusa: writer.ManifestoRecusado) -> di
     }
 
 
+def _planejar(
+    alvo: str, *, disco: writer.Disco, raiz: Path, windows: bool | None, python: str | None
+) -> list[tuple[Host, list[tuple[Path, bytes]]]]:
+    planos: list[tuple[Host, list[tuple[Path, bytes]]]] = []
+    for nome in _nomes(alvo):
+        h = _host(
+            nome, home=disco.home, windows=windows, appdata=disco.appdata,
+            codex_home=disco.codex_home,
+        )
+        plano = writer.plan_files(h, raiz)
+        if nome == "claude":
+            plano += _claude.plugin_files(
+                disco.home, version=__version__, python=python, content=list(plano)
+            )
+        planos.append((h, plano))
+    return planos
+
+
+def _bundle_recusado(home: Path, dry_run: bool, erro: Exception) -> dict[str, Any]:
+    """Skills e agents que nao se acham (`bundle_ausente`) ou que o renderizador
+    nao le sem errar (`escalar_yaml_nao_suportado`): nenhum host e tocado."""
+    motivo = (
+        "bundle_ausente" if isinstance(erro, sources.SourcesError)
+        else "escalar_yaml_nao_suportado"
+    )
+    return {
+        "dry_run": dry_run,
+        "manifest": writer.manifest_path(home).as_posix(),
+        "hosts": [],
+        "refused": [{"reason": motivo, "detail": str(erro)}],
+    }
+
+
 def _integrar_host(
     h: Host,
     plano: list[tuple[Path, bytes]],
@@ -128,7 +161,6 @@ def integrate(
     operador (D9); e a unica escrita possivel dentro de um repositorio. `announce`
     recebe a lista de arquivos, um por um, antes da primeira remocao no repo."""
     disco = writer.Disco(home, appdata, codex_home=codex_home, dry_run=dry_run)
-    raiz = sources.content_root() if root is None else Path(root)
     try:
         manifesto = writer.load_manifest(disco.home)
         writer.ligar_disco(disco, manifesto)
@@ -136,19 +168,12 @@ def integrate(
         return _recusado(disco.home, dry_run, recusa)
     # Todos os hosts sao planejados e renderizados ANTES da primeira escrita: um
     # render que estoura no terceiro host de `all` nao deixa os dois primeiros
-    # gravados.
-    planos: list[tuple[Host, list[tuple[Path, bytes]]]] = []
-    for nome in _nomes(alvo):
-        h = _host(
-            nome, home=disco.home, windows=windows, appdata=disco.appdata,
-            codex_home=disco.codex_home,
-        )
-        plano = writer.plan_files(h, raiz)
-        if nome == "claude":
-            plano += _claude.plugin_files(
-                disco.home, version=__version__, python=python, content=list(plano)
-            )
-        planos.append((h, plano))
+    # gravados. Bundle ausente ou que o renderizador recusa sai recusa nomeada.
+    try:
+        raiz = sources.content_root() if root is None else Path(root)
+        planos = _planejar(alvo, disco=disco, raiz=raiz, windows=windows, python=python)
+    except (sources.SourcesError, render.EscalarYamlNaoSuportado) as erro:
+        return _bundle_recusado(disco.home, dry_run, erro)
     relatorios: list[dict[str, Any]] = []
     try:
         for h, plano in planos:

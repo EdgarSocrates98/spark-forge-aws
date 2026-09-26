@@ -1108,9 +1108,28 @@ def test_all_renderiza_todos_os_hosts_antes_da_primeira_escrita(tmp_path):
     })
     home = tmp_path / "home"
     home.mkdir()
-    with pytest.raises(ValueError, match="escalar_yaml_nao_suportado"):
-        integrate("all", home=home, windows=False, root=raiz)
+    # M7: o bundle ruim sai como recusa nomeada, sem traceback.
+    resultado = integrate("all", home=home, windows=False, root=raiz)
+    (recusa,) = resultado["refused"]
+    assert recusa["reason"] == "escalar_yaml_nao_suportado"
+    assert "description" in recusa["detail"]
+    assert resultado["hosts"] == []
     assert _relativos(home) == [], "o render do codex estourou depois de o devin gravar"
+
+
+def test_bundle_ausente_sai_recusa_nomeada_pela_cli(tmp_path, monkeypatch, capsys):
+    """M7: sem `skills/` e `agents/` no repositorio nem no pacote, a CLI sai 1 com
+    a recusa nomeada no JSON, sem traceback."""
+    vazio = tmp_path / "vazio"
+    vazio.mkdir()
+    monkeypatch.setattr(sources, "REPO_ROOT", vazio)
+    monkeypatch.setattr(sources, "BUNDLE", vazio / "bundle")
+    monkeypatch.chdir(vazio)
+    assert cli_main(["integrate", "devin", "--scope", "user"]) == 1
+    saida = json.loads(capsys.readouterr().out)
+    assert [r["reason"] for r in saida["refused"]] == ["bundle_ausente"]
+    assert "reinstale" in saida["refused"][0]["detail"]
+    assert not (Path.home() / ".agents").exists()
 
 
 def test_falha_de_escrita_no_meio_deixa_o_gravado_no_manifesto(tmp_path, monkeypatch):
