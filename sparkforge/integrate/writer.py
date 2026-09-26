@@ -41,7 +41,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from sparkforge.integrate import render, sources
-from sparkforge.integrate.hosts import Host, default_appdata
+from sparkforge.integrate.hosts import Host, default_appdata, default_codex_home
 
 MANIFEST_RELATIVE = Path(".sparkforge") / "integrations.json"
 SCHEMA = 2
@@ -104,13 +104,19 @@ def gravar_atomico(caminho: Path, dados: bytes) -> None:
 # Devin no Windows grava em `%APPDATA%\devin`, que pode estar em outro disco.
 
 APPDATA_PREFIX = "%APPDATA%/"
+# O Codex guarda o estado de usuario sob CODEX_HOME (default `~/.codex`), que o
+# operador pode apontar para fora do HOME.
+CODEX_HOME_PREFIX = "%CODEX_HOME%/"
+PREFIXOS = (APPDATA_PREFIX, CODEX_HOME_PREFIX)
 
 
 def chave_segura(chave: str) -> bool:
     """Relativa, POSIX, sem `..`, sem unidade e sem barra invertida: so assim a
     chave fica dentro da raiz declarada."""
-    if chave.startswith(APPDATA_PREFIX):
-        chave = chave[len(APPDATA_PREFIX):]
+    for prefixo in PREFIXOS:
+        if chave.startswith(prefixo):
+            chave = chave[len(prefixo):]
+            break
     if not chave or "\\" in chave or ":" in chave or "%" in chave:
         return False
     partes = PurePosixPath(chave)
@@ -145,9 +151,19 @@ class Disco:
     o que ja existia antes fica, mesmo vazio.
     """
 
-    def __init__(self, home: Path, appdata: Path | None = None, *, dry_run: bool = False):
+    def __init__(
+        self,
+        home: Path,
+        appdata: Path | None = None,
+        *,
+        codex_home: Path | None = None,
+        dry_run: bool = False,
+    ):
         self.home = Path(home)
         self.appdata = default_appdata(self.home) if appdata is None else Path(appdata)
+        self.codex_home = default_codex_home(self.home) if codex_home is None else Path(
+            codex_home
+        )
         self.dry_run = dry_run
         self._sombra: dict[Path, bytes | None] = {}
         self.criados: set[str] = set()
@@ -158,6 +174,8 @@ class Disco:
             return self.home, ""
         if _dentro(caminho, self.appdata):
             return self.appdata, APPDATA_PREFIX
+        if _dentro(caminho, self.codex_home):
+            return self.codex_home, CODEX_HOME_PREFIX
         raise ValueError(f"fora do HOME e do APPDATA declarados: {caminho}")
 
     def chave(self, caminho: Path) -> str:
@@ -167,9 +185,14 @@ class Disco:
 
     def local(self, chave: str) -> Path:
         """O caminho em disco de uma chave ja conferida por `chave_segura`."""
-        if chave.startswith(APPDATA_PREFIX):
-            return self.appdata / chave[len(APPDATA_PREFIX):]
+        for prefixo, raiz in self.raizes().items():
+            if chave.startswith(prefixo):
+                return raiz / chave[len(prefixo):]
         return self.home / chave
+
+    def raizes(self) -> dict[str, Path]:
+        """As raizes declaradas fora do HOME, por prefixo de chave."""
+        return {APPDATA_PREFIX: self.appdata, CODEX_HOME_PREFIX: self.codex_home}
 
     def ler(self, caminho: Path) -> bytes | None:
         caminho = Path(caminho)
@@ -209,9 +232,9 @@ class Disco:
             self.criados.discard(chave)
             pasta = pasta.parent
 
-    def appdata_registrado(self) -> str:
-        """A raiz APPDATA como o manifesto a guarda e compara."""
-        return Path(os.path.abspath(self.appdata)).as_posix()
+    def registrada(self, prefixo: str) -> str:
+        """A raiz de `prefixo` como o manifesto a guarda e compara."""
+        return Path(os.path.abspath(self.raizes()[prefixo])).as_posix()
 
 
 # --------------------------------------------------------------------------
@@ -300,28 +323,35 @@ def _texto_do_manifesto(manifesto: dict[str, Any]) -> str:
     return json.dumps(manifesto, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
 
 
-_ACAO_APPDATA = (
-    "o manifesto foi gravado com outra raiz APPDATA ({registrado}); com esta ({atual}) "
+_ACAO_RAIZ = (
+    "o manifesto foi gravado com outra raiz {nome} ({registrado}); com esta ({atual}) "
     "os arquivos registrados apontariam para outro lugar. Nada foi tocado: rode com o "
-    "mesmo APPDATA da integracao"
+    "mesmo {nome} da integracao"
 )
+# prefixo da chave -> (campo do manifesto, nome da variavel, motivo da recusa)
+_RAIZES = {
+    APPDATA_PREFIX: ("appdata", "APPDATA", "appdata_divergente"),
+    CODEX_HOME_PREFIX: ("codex_home", "CODEX_HOME", "codex_home_divergente"),
+}
 
 
 def ligar_disco(disco: Disco, manifesto: dict[str, Any]) -> None:
-    """Confere a raiz APPDATA do manifesto contra a do `disco` e carrega os
-    diretorios criados. APPDATA diferente levanta `appdata_divergente` antes de
-    qualquer escrita ou remocao: as chaves `%APPDATA%/...` apontariam para outro
-    lugar, e o que esta la seria lido como ausente."""
-    registrado = manifesto.get("appdata")
-    atual = disco.appdata_registrado()
-    if registrado and os.path.normcase(registrado) != os.path.normcase(atual):
-        acao = _ACAO_APPDATA.format(registrado=registrado, atual=atual)
-        raise ManifestoRecusado("appdata_divergente", manifest_path(disco.home), acao)
+    """Confere as raizes APPDATA e CODEX_HOME do manifesto contra as do `disco` e
+    carrega os diretorios criados. Raiz diferente levanta `appdata_divergente` (ou
+    `codex_home_divergente`) antes de qualquer escrita ou remocao: as chaves
+    `%APPDATA%/...` apontariam para outro lugar, e o que esta la seria lido como
+    ausente."""
+    for prefixo, (campo, nome, motivo) in _RAIZES.items():
+        registrado = manifesto.get(campo)
+        atual = disco.registrada(prefixo)
+        if registrado and os.path.normcase(registrado) != os.path.normcase(atual):
+            acao = _ACAO_RAIZ.format(nome=nome, registrado=registrado, atual=atual)
+            raise ManifestoRecusado(motivo, manifest_path(disco.home), acao)
     disco.criados = set(manifesto.get("dirs") or [])
 
 
-def _usa_appdata(manifesto: dict[str, Any]) -> bool:
-    return any(chave.startswith(APPDATA_PREFIX) for chave in _chaves(manifesto))
+def _usa(manifesto: dict[str, Any], prefixo: str) -> bool:
+    return any(chave.startswith(prefixo) for chave in _chaves(manifesto))
 
 
 def sincronizar(disco: Disco, manifesto: dict[str, Any]) -> None:
@@ -331,10 +361,11 @@ def sincronizar(disco: Disco, manifesto: dict[str, Any]) -> None:
         manifesto["dirs"] = sorted(disco.criados)
     else:
         manifesto.pop("dirs", None)
-    if _usa_appdata(manifesto):
-        manifesto["appdata"] = disco.appdata_registrado()
-    else:
-        manifesto.pop("appdata", None)
+    for prefixo, (campo, _nome, _motivo) in _RAIZES.items():
+        if _usa(manifesto, prefixo):
+            manifesto[campo] = disco.registrada(prefixo)
+        else:
+            manifesto.pop(campo, None)
 
 
 def save_manifest(home: Path, manifesto: dict[str, Any]) -> bool:

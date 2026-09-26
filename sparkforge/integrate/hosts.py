@@ -58,6 +58,14 @@ def default_appdata(home: Path) -> Path:
     return Path(home) / "AppData" / "Roaming"
 
 
+def default_codex_home(home: Path) -> Path:
+    """O `CODEX_HOME` default, `~/.codex`. O Codex guarda o estado de usuario sob
+    CODEX_HOME -- `config.toml` inclusive (learn.chatgpt.com/codex/config-file/
+    config-advanced, lido em 2026-09-25). Como o APPDATA, o do ambiente nunca e
+    lido aqui: quem quer o real (o CLI) passa `codex_home` explicito."""
+    return Path(home) / ".codex"
+
+
 def devin_config_dir(home: Path, *, windows: bool, appdata: Path | None) -> Path:
     """`~/.config/devin`, ou `%APPDATA%\\devin` no Windows."""
     if not windows:
@@ -72,9 +80,11 @@ def host(
     home: Path,
     windows: bool | None = None,
     appdata: Path | None = None,
+    codex_home: Path | None = None,
 ) -> Host:
-    """O `Host` de `nome` sob `home`. `windows=None` e `os.name == "nt"`, e
-    `appdata=None` e `default_appdata(home)` -- nunca o APPDATA do ambiente."""
+    """O `Host` de `nome` sob `home`. `windows=None` e `os.name == "nt"`,
+    `appdata=None` e `default_appdata(home)` e `codex_home=None` e
+    `default_codex_home(home)` -- nunca a variavel do ambiente."""
     if nome not in HOSTS:
         raise ValueError(f"host desconhecido: {nome!r}; conhecidos: {list(HOSTS)}")
     home = Path(home)
@@ -111,15 +121,16 @@ def host(
         )
     if nome == "codex":
         # Executores ficam de fora: nao tem `description`, e o TOML do Codex exige.
+        codex = default_codex_home(home) if codex_home is None else Path(codex_home)
         return Host(
             name="codex",
-            agents_dir=home / ".codex" / "agents",
+            agents_dir=codex / "agents",
             agent_pattern="{stem}.toml",
             agent_platform="codex",
             executors=False,
             skills_dir=compartilhadas,
             skill_platform="devin",
-            mcp_config=home / ".codex" / "config.toml",
+            mcp_config=codex / "config.toml",
             mcp_format="toml",
             fonte=FONTES["codex"],
         )
@@ -160,6 +171,7 @@ __all__ = [
     "claude_marketplace_dir",
     "claude_plugin_dir",
     "default_appdata",
+    "default_codex_home",
     "devin_config_dir",
     "host",
     "mcp_command",

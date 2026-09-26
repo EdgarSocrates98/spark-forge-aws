@@ -109,6 +109,7 @@ def integrate(
     dry_run: bool = False,
     windows: bool | None = None,
     appdata: Path | None = None,
+    codex_home: Path | None = None,
     python: str | None = None,
     runner: _claude.Runner | None = None,
     which: _claude.Which | None = None,
@@ -120,10 +121,11 @@ def integrate(
 ) -> dict[str, Any]:
     """Grava a integracao de `alvo` (um host ou `all`) sob `home`.
 
-    `appdata=None` e `home/AppData/Roaming`; o CLI passa o `%APPDATA%` real.
+    `appdata=None` e `home/AppData/Roaming` e `codex_home=None` e `home/.codex`;
+    o CLI passa o `%APPDATA%` e o `CODEX_HOME` reais.
     Com `repo`, confere a copia vendorizada em dobro nele e aplica a escolha do
     operador (D9); e a unica escrita possivel dentro de um repositorio."""
-    disco = writer.Disco(home, appdata, dry_run=dry_run)
+    disco = writer.Disco(home, appdata, codex_home=codex_home, dry_run=dry_run)
     raiz = sources.content_root() if root is None else Path(root)
     try:
         manifesto = writer.load_manifest(disco.home)
@@ -135,7 +137,10 @@ def integrate(
     # gravados.
     planos: list[tuple[Host, list[tuple[Path, bytes]]]] = []
     for nome in _nomes(alvo):
-        h = _host(nome, home=disco.home, windows=windows, appdata=disco.appdata)
+        h = _host(
+            nome, home=disco.home, windows=windows, appdata=disco.appdata,
+            codex_home=disco.codex_home,
+        )
         plano = writer.plan_files(h, raiz)
         if nome == "claude":
             plano += _claude.plugin_files(disco.home, version=__version__, python=python)
@@ -205,6 +210,7 @@ def detach(
     home: Path,
     dry_run: bool = False,
     appdata: Path | None = None,
+    codex_home: Path | None = None,
     runner: _claude.Runner | None = None,
     which: _claude.Which | None = None,
 ) -> dict[str, Any]:
@@ -213,10 +219,10 @@ def detach(
     So sai arquivo que ainda tem o sha256 gravado e que nenhum outro host usa;
     o editado depois fica, como recusa `editado_pelo_usuario`, e o `preexistente`
     fica sempre. Da config de usuario sai so a entrada que o integrate pos.
-    `appdata` e o mesmo que o integrate recebeu. O `claude` registrado sai
-    tambem pelo CLI dele (`uninstall` e `marketplace remove`).
+    `appdata` e `codex_home` sao os mesmos que o integrate recebeu. O `claude`
+    registrado sai tambem pelo CLI dele (`uninstall` e `marketplace remove`).
     """
-    disco = writer.Disco(home, appdata, dry_run=dry_run)
+    disco = writer.Disco(home, appdata, codex_home=codex_home, dry_run=dry_run)
     try:
         manifesto = writer.load_manifest(disco.home)
         writer.ligar_disco(disco, manifesto)

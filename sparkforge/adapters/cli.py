@@ -4150,6 +4150,12 @@ def _appdata_real() -> Path | None:
     return Path(valor) if valor else None
 
 
+def _codex_home_real() -> Path | None:
+    """O `CODEX_HOME` do ambiente, lido so aqui como o APPDATA."""
+    valor = os.environ.get("CODEX_HOME")
+    return Path(valor) if valor else None
+
+
 def _cmd_integrate(args: argparse.Namespace) -> int:
     from sparkforge.integrate import integrate
 
@@ -4157,6 +4163,7 @@ def _cmd_integrate(args: argparse.Namespace) -> int:
         args.host,
         home=Path.home(),
         appdata=_appdata_real(),
+        codex_home=_codex_home_real(),
         repo=Path.cwd(),
         dry_run=args.dry_run,
         on_conflict=args.on_conflict,
@@ -4171,7 +4178,8 @@ def _cmd_detach(args: argparse.Namespace) -> int:
     from sparkforge.integrate import detach
 
     resultado = detach(
-        args.host, home=Path.home(), appdata=_appdata_real(), dry_run=args.dry_run
+        args.host, home=Path.home(), appdata=_appdata_real(),
+        codex_home=_codex_home_real(), dry_run=args.dry_run,
     )
     _print(resultado)
     return 1 if resultado["refused"] else 0

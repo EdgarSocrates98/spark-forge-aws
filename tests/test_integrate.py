@@ -32,6 +32,7 @@ def _home_isolado(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(casa))
     monkeypatch.setenv("USERPROFILE", str(casa))
     monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
+    monkeypatch.delenv("CODEX_HOME", raising=False)
     # Sem `which`/`runner` injetados, o `claude` e sempre "ausente": nenhum teste
     # chega ao binario de verdade, nem pelo `all`.
     from sparkforge.integrate import claude as _claude
@@ -968,6 +969,34 @@ def test_appdata_divergente_recusa_sem_tocar(tmp_path):
 
     assert detach("devin", home=home, appdata=certo)["refused"] == []
     assert not (certo / "devin").exists()
+
+
+def test_codex_home_explicito_muda_o_diretorio_do_codex(tmp_path, monkeypatch):
+    raiz = _raiz_minima(tmp_path)
+    # O pacote nunca le CODEX_HOME do ambiente: so o que o chamador passa.
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "do_ambiente"))
+    home = tmp_path / "home"
+    assert integrate("codex", home=home, root=raiz)["refused"] == []
+    assert (home / ".codex" / "config.toml").is_file()
+    assert not (tmp_path / "do_ambiente").exists()
+    assert detach("codex", home=home)["refused"] == []
+
+    codex_home = tmp_path / "codex_home"
+    assert integrate("codex", home=home, codex_home=codex_home, root=raiz)["refused"] == []
+    assert (codex_home / "config.toml").is_file()
+    assert (codex_home / "agents" / "sf-falso.toml").is_file()
+    assert not (home / ".codex").exists()
+    chaves = [*_manifesto(home)["files"],
+              *(c["path"] for c in _manifesto(home)["hosts"]["codex"]["config"])]
+    assert "%CODEX_HOME%/config.toml" in chaves
+    assert "%CODEX_HOME%/agents/sf-falso.toml" in chaves
+
+    antes = _foto(tmp_path)
+    (recusa,) = detach("codex", home=home, codex_home=tmp_path / "outro")["refused"]
+    assert recusa["reason"] == "codex_home_divergente"
+    assert _foto(tmp_path) == antes
+    assert detach("codex", home=home, codex_home=codex_home)["refused"] == []
+    assert not (codex_home / "config.toml").exists()
 
 
 def test_manifesto_de_versao_futura_recusa(tmp_path):
