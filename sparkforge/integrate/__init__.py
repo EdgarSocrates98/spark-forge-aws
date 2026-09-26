@@ -127,6 +127,7 @@ def integrate(
     raiz = sources.content_root() if root is None else Path(root)
     try:
         manifesto = writer.load_manifest(disco.home)
+        writer.ligar_disco(disco, manifesto)
     except writer.ManifestoRecusado as recusa:
         return _recusado(disco.home, dry_run, recusa)
     # Todos os hosts sao planejados e renderizados ANTES da primeira escrita: um
@@ -151,9 +152,11 @@ def integrate(
         # manifesto, para o proximo detach saber que e nosso.
         if not dry_run:
             with contextlib.suppress(OSError):
+                writer.sincronizar(disco, manifesto)
                 writer.save_manifest(disco.home, manifesto)
         raise
     if not dry_run:
+        writer.sincronizar(disco, manifesto)
         writer.save_manifest(disco.home, manifesto)
     resultado: dict[str, Any] = {
         "dry_run": dry_run,
@@ -216,6 +219,7 @@ def detach(
     disco = writer.Disco(home, appdata, dry_run=dry_run)
     try:
         manifesto = writer.load_manifest(disco.home)
+        writer.ligar_disco(disco, manifesto)
     except writer.ManifestoRecusado as recusa:
         return _recusado(disco.home, dry_run, recusa)
     relatorios: list[dict[str, Any]] = []
@@ -241,7 +245,7 @@ def detach(
         del manifesto["hosts"][nome]
         relatorios.append(relatorio)
     if not dry_run:
-        writer.drop_manifest_if_empty(disco.home, manifesto)
+        writer.drop_manifest_if_empty(disco, manifesto)
     return {
         "dry_run": dry_run,
         "manifest": writer.manifest_path(disco.home).as_posix(),

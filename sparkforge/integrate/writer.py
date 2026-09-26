@@ -116,13 +116,13 @@ def _dentro(caminho: Path, raiz: Path) -> bool:
     return caminho == raiz or raiz in caminho.parents
 
 
-def _podar(caminho: Path, raiz: Path) -> None:
-    """Apaga os diretorios que ficaram vazios, subindo ate a raiz, sem ela."""
-    pai = caminho.parent
-    raiz = Path(raiz)
-    while pai != raiz and raiz in pai.parents and pai.is_dir() and not any(pai.iterdir()):
-        pai.rmdir()
-        pai = pai.parent
+def _faltantes(pasta: Path, raiz: Path) -> list[Path]:
+    """Os diretorios de `pasta` ate a raiz (sem ela) que ainda nao existem."""
+    faltam: list[Path] = []
+    while pasta != raiz and raiz in pasta.parents and not pasta.exists():
+        faltam.append(pasta)
+        pasta = pasta.parent
+    return faltam
 
 
 class Disco:
@@ -134,6 +134,10 @@ class Disco:
     No dry-run nada vai ao disco: gravar e apagar vao para uma sombra em memoria,
     e ler consulta a sombra antes do disco. Assim o segundo host de `all` ve o que
     o primeiro "gravou", e o relatorio do ensaio e o da execucao real.
+
+    `criados` sao as chaves dos diretorios que a integracao criou (vem do manifesto
+    e volta para ele): a poda so remove diretorio vazio que esta nesse conjunto --
+    o que ja existia antes fica, mesmo vazio.
     """
 
     def __init__(self, home: Path, appdata: Path | None = None, *, dry_run: bool = False):
@@ -141,6 +145,7 @@ class Disco:
         self.appdata = default_appdata(self.home) if appdata is None else Path(appdata)
         self.dry_run = dry_run
         self._sombra: dict[Path, bytes | None] = {}
+        self.criados: set[str] = set()
 
     def _raiz(self, caminho: Path) -> tuple[Path, str]:
         caminho = Path(caminho)
@@ -168,10 +173,13 @@ class Disco:
         return caminho.read_bytes() if caminho.is_file() else None
 
     def gravar(self, caminho: Path, dados: bytes) -> None:
+        caminho = Path(caminho)
         if self.dry_run:
-            self._sombra[Path(caminho)] = dados
+            self._sombra[caminho] = dados
             return
+        faltam = _faltantes(caminho.parent, self._raiz(caminho)[0])
         gravar_atomico(caminho, dados)
+        self.criados.update(self.chave(pasta) for pasta in faltam)
 
     def apagar(self, caminho: Path) -> None:
         caminho = Path(caminho)
@@ -179,7 +187,23 @@ class Disco:
             self._sombra[caminho] = None
             return
         caminho.unlink()
-        _podar(caminho, self._raiz(caminho)[0])
+        self.podar(caminho)
+
+    def podar(self, caminho: Path) -> None:
+        """Sobe de `caminho` apagando o diretorio vazio que a integracao criou."""
+        pasta = Path(caminho).parent
+        raiz = self._raiz(pasta)[0]
+        while pasta != raiz and raiz in pasta.parents and pasta.is_dir():
+            chave = self.chave(pasta)
+            if chave not in self.criados or any(pasta.iterdir()):
+                return
+            pasta.rmdir()
+            self.criados.discard(chave)
+            pasta = pasta.parent
+
+    def appdata_registrado(self) -> str:
+        """A raiz APPDATA como o manifesto a guarda e compara."""
+        return Path(os.path.abspath(self.appdata)).as_posix()
 
 
 # --------------------------------------------------------------------------
@@ -224,8 +248,15 @@ _ACAO_FORA = (
 )
 
 
+_ACAO_FUTURA = (
+    "o manifesto foi gravado por um sparkforge mais novo, com formato que esta versao "
+    "nao conhece; nada foi tocado. Rode integrate/detach com o sparkforge que o gravou "
+    "(ou atualize este)"
+)
+
+
 def _chaves(dados: dict[str, Any]) -> list[str]:
-    chaves = list(dados["files"])
+    chaves = list(dados["files"]) + list(dados.get("dirs") or [])
     for entrada in dados["hosts"].values():
         chaves += [registro.get("path", "") for registro in entrada.get("config") or []]
     return chaves
@@ -241,6 +272,8 @@ def load_manifest(home: Path) -> dict[str, Any]:
         dados = json.loads(caminho.read_bytes().decode("utf-8"))
         if not isinstance(dados, dict):
             raise ValueError("o manifesto nao e um objeto JSON")
+        if dados.get("schema", 1) > SCHEMA:
+            raise ManifestoRecusado("manifesto_de_versao_futura", caminho, _ACAO_FUTURA)
         if dados.get("schema", 1) < 2:
             dados = _migrar_v1(dados, home)
         dados.setdefault("schema", SCHEMA)
@@ -259,9 +292,49 @@ def _texto_do_manifesto(manifesto: dict[str, Any]) -> str:
     return json.dumps(manifesto, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
 
 
+_ACAO_APPDATA = (
+    "o manifesto foi gravado com outra raiz APPDATA ({registrado}); com esta ({atual}) "
+    "os arquivos registrados apontariam para outro lugar. Nada foi tocado: rode com o "
+    "mesmo APPDATA da integracao"
+)
+
+
+def ligar_disco(disco: Disco, manifesto: dict[str, Any]) -> None:
+    """Confere a raiz APPDATA do manifesto contra a do `disco` e carrega os
+    diretorios criados. APPDATA diferente levanta `appdata_divergente` antes de
+    qualquer escrita ou remocao: as chaves `%APPDATA%/...` apontariam para outro
+    lugar, e o que esta la seria lido como ausente."""
+    registrado = manifesto.get("appdata")
+    atual = disco.appdata_registrado()
+    if registrado and os.path.normcase(registrado) != os.path.normcase(atual):
+        acao = _ACAO_APPDATA.format(registrado=registrado, atual=atual)
+        raise ManifestoRecusado("appdata_divergente", manifest_path(disco.home), acao)
+    disco.criados = set(manifesto.get("dirs") or [])
+
+
+def _usa_appdata(manifesto: dict[str, Any]) -> bool:
+    return any(chave.startswith(APPDATA_PREFIX) for chave in _chaves(manifesto))
+
+
+def sincronizar(disco: Disco, manifesto: dict[str, Any]) -> None:
+    """Leva para o manifesto a raiz APPDATA (se alguma chave a usa) e os
+    diretorios criados, antes de salvar."""
+    if disco.criados:
+        manifesto["dirs"] = sorted(disco.criados)
+    else:
+        manifesto.pop("dirs", None)
+    if _usa_appdata(manifesto):
+        manifesto["appdata"] = disco.appdata_registrado()
+    else:
+        manifesto.pop("appdata", None)
+
+
 def save_manifest(home: Path, manifesto: dict[str, Any]) -> bool:
     """Grava so se mudou: a segunda execucao identica nao toca nem o mtime."""
     caminho = manifest_path(home)
+    if not caminho.parent.exists():
+        pasta = MANIFEST_RELATIVE.parent.as_posix()
+        manifesto["dirs"] = sorted({*manifesto.get("dirs", []), pasta})
     texto = _texto_do_manifesto(manifesto)
     if caminho.is_file() and caminho.read_text(encoding="utf-8") == texto:
         return False
@@ -334,6 +407,7 @@ def remove_owned(
     `preexistente`. O manifesto e alterado em memoria (no dry-run, nunca salvo);
     quem chama o salva."""
     removidos: list[str] = []
+    ausentes: list[str] = []
     mantidos: list[str] = []
     preexistentes: list[str] = []
     recusas: list[dict[str, str]] = []
@@ -351,15 +425,17 @@ def remove_owned(
         atual = disco.ler(caminho)
         if registro.get("preexistente"):
             preexistentes.append(relativo)
-        elif atual is not None and sha256_bytes(atual) != registro["sha256"]:
+        elif atual is None:
+            ausentes.append(relativo)
+        elif sha256_bytes(atual) != registro["sha256"]:
             recusas.append({"reason": "editado_pelo_usuario", "path": relativo})
         else:
             removidos.append(relativo)
-            if atual is not None:
-                disco.apagar(caminho)
+            disco.apagar(caminho)
         del arquivos[relativo]
     return {
         "removed": removidos,
+        "absent": ausentes,
         "kept_shared": mantidos,
         "kept_preexisting": preexistentes,
         "refused": recusas,
@@ -374,15 +450,22 @@ def apply_files(
     manifesto: dict[str, Any],
     version: str,
 ) -> dict[str, Any]:
-    """Grava o plano de `nome` e atualiza o manifesto em memoria."""
+    """Grava o plano de `nome` e atualiza o manifesto em memoria.
+
+    Arquivo `preexistente` (ja estava no HOME, identico, e foi adotado) nunca e
+    regravado: se o bundle mudou, ele fica como esta e sai em `preexisting` com o
+    status `preexistente_desatualizado`. Assim a marca `preexistente` nunca fica
+    num arquivo que o SparkForge gravou."""
     escritos: list[str] = []
     iguais: list[str] = []
+    desatualizados: list[dict[str, str]] = []
     recusas: list[dict[str, str]] = []
     vistos: set[str] = set()
     for destino, dados in plano:
         relativo = disco.chave(destino)
         sha = sha256_bytes(dados)
-        registrado = recorded_sha(manifesto, relativo)
+        registro = manifesto["files"].get(relativo) or {}
+        registrado = registro.get("sha256")
         em_disco = disco.ler(destino)
         if em_disco is not None:
             atual = sha256_bytes(em_disco)
@@ -399,10 +482,18 @@ def apply_files(
                 vistos.add(relativo)
                 _adotar(manifesto, relativo, nome, sha, preexistente=registrado is None)
                 continue
+            if registro.get("preexistente"):
+                desatualizados.append(
+                    {"path": relativo, "status": "preexistente_desatualizado"}
+                )
+                vistos.add(relativo)
+                _adotar(manifesto, relativo, nome, atual, preexistente=True)
+                continue
         escritos.append(relativo)
         vistos.add(relativo)
         disco.gravar(destino, dados)
         _adotar(manifesto, relativo, nome, sha, preexistente=False)
+        manifesto["files"][relativo].pop("preexistente", None)
     anteriores = [r for r in host_files(manifesto, nome) if r not in vistos]
     orfaos = remove_owned(disco, manifesto, nome, anteriores)
     entrada = manifesto["hosts"].setdefault(nome, {})
@@ -413,7 +504,10 @@ def apply_files(
         "dry_run": disco.dry_run,
         "written": escritos,
         "unchanged": iguais,
+        "preexisting": desatualizados,
         "removed": orfaos["removed"],
+        "absent": orfaos["absent"],
+        "kept_preexisting": orfaos["kept_preexisting"],
         "refused": recusas + orfaos["refused"],
     }
 
@@ -703,12 +797,13 @@ def revert_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, Any]:
     return revert_json_config(registro, disco=disco)
 
 
-def drop_manifest_if_empty(home: Path, manifesto: dict[str, Any]) -> None:
+def drop_manifest_if_empty(disco: Disco, manifesto: dict[str, Any]) -> None:
     """Sem host integrado, o manifesto sai do HOME; senao, e regravado."""
+    sincronizar(disco, manifesto)
     if manifesto.get("hosts") or manifesto.get("files"):
-        save_manifest(home, manifesto)
+        save_manifest(disco.home, manifesto)
         return
-    caminho = manifest_path(home)
+    caminho = manifest_path(disco.home)
     if caminho.is_file():
         caminho.unlink()
-        _podar(caminho, home)
+        disco.podar(caminho)

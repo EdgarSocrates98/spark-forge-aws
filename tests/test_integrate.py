@@ -708,6 +708,114 @@ def test_arquivo_preexistente_identico_nunca_sai_no_detach(tmp_path):
     assert manifesto["files"][relativo]["preexistente"] is True
 
 
+def test_preexistente_nao_e_regravado_quando_o_bundle_muda(tmp_path):
+    def versao(n: int, ref: str) -> Path:
+        return _raiz_falsa(tmp_path / f"v{n}", {
+            "skills/sdd-plan/SKILL.md": _skill("sdd-plan"),
+            "skills/sdd-plan/ref.md": ref,
+        })
+
+    v1, v2, v3 = versao(1, "A\n"), versao(2, "B\n"), versao(3, "C\n")
+    relativo = ".agents/skills/sdd-plan/ref.md"
+    home = tmp_path / "home"
+    ref = home / relativo
+    ref.parent.mkdir(parents=True)
+    ref.write_bytes(b"A\n")
+
+    assert integrate("copilot", home=home, root=v1)["refused"] == []
+    assert _manifesto(home)["files"][relativo]["preexistente"] is True
+    for raiz in (v2, v3):
+        resultado = integrate("copilot", home=home, root=raiz)
+        assert resultado["refused"] == [], raiz.name
+        assert ref.read_bytes() == b"A\n", "o preexistente foi regravado"
+        (host,) = resultado["hosts"]
+        assert host["preexisting"] == [
+            {"path": relativo, "status": "preexistente_desatualizado"}
+        ], raiz.name
+        assert relativo not in host["written"]
+        registro = _manifesto(home)["files"][relativo]
+        assert (registro["sha256"], registro["preexistente"]) == (_sha("A\n"), True)
+
+    resultado = detach("copilot", home=home)
+    assert resultado["refused"] == []
+    assert ref.read_bytes() == b"A\n"
+
+
+def test_orfao_preexistente_aparece_no_relatorio(tmp_path):
+    comum = {"skills/sdd-plan/SKILL.md": _skill("sdd-plan")}
+    v1 = _raiz_falsa(tmp_path / "v1", {**comum, "skills/sdd-build/SKILL.md": _skill("sdd-build")})
+    v2 = _raiz_falsa(tmp_path / "v2", comum)
+    modelo = tmp_path / "modelo"
+    integrate("copilot", home=modelo, root=v1)
+    relativo = ".agents/skills/sdd-build/SKILL.md"
+    home = tmp_path / "home"
+    (home / relativo).parent.mkdir(parents=True)
+    (home / relativo).write_bytes((modelo / relativo).read_bytes())
+
+    assert integrate("copilot", home=home, root=v1)["refused"] == []
+    (host,) = integrate("copilot", home=home, root=v2)["hosts"]
+    assert host["kept_preexisting"] == [relativo]
+    assert (home / relativo).is_file()
+
+
+def test_arquivo_registrado_fora_do_disco_sai_absent(tmp_path):
+    home = tmp_path / "home"
+    assert integrate("copilot", home=home, root=_raiz_minima(tmp_path))["refused"] == []
+    relativo = ".copilot/agents/sf-falso.agent.md"
+    (home / relativo).unlink()
+    (host,) = detach("copilot", home=home)["hosts"]
+    assert relativo in host["absent"]
+    assert relativo not in host["removed"]
+
+
+def test_appdata_divergente_recusa_sem_tocar(tmp_path):
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    certo, outro = tmp_path / "appdata_a", tmp_path / "appdata_b"
+    assert integrate("devin", home=home, windows=True, appdata=certo, root=raiz)["refused"] == []
+    antes = _foto(tmp_path)
+
+    for resultado in (
+        detach("devin", home=home, appdata=outro),
+        integrate("devin", home=home, windows=True, appdata=outro, root=raiz),
+    ):
+        (recusa,) = resultado["refused"]
+        assert recusa["reason"] == "appdata_divergente"
+        assert resultado["hosts"] == []
+    assert _foto(tmp_path) == antes, "com APPDATA divergente, algo foi tocado"
+
+    assert detach("devin", home=home, appdata=certo)["refused"] == []
+    assert not (certo / "devin").exists()
+
+
+def test_manifesto_de_versao_futura_recusa(tmp_path):
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    assert integrate("copilot", home=home, root=raiz)["refused"] == []
+    caminho = home / ".sparkforge" / "integrations.json"
+    dados = json.loads(caminho.read_text(encoding="utf-8"))
+    dados["schema"] = 99
+    caminho.write_text(json.dumps(dados), encoding="utf-8")
+    antes = _foto(home)
+    for resultado in (integrate("copilot", home=home, root=raiz), detach("copilot", home=home)):
+        (recusa,) = resultado["refused"]
+        assert recusa["reason"] == "manifesto_de_versao_futura"
+        assert resultado["hosts"] == []
+    assert _foto(home) == antes
+
+
+def test_poda_nao_remove_diretorio_que_ja_existia(tmp_path):
+    home = tmp_path / "home"
+    for relativo in (".copilot/agents", ".agents", ".sparkforge"):
+        (home / relativo).mkdir(parents=True)
+    assert integrate("copilot", home=home, root=_raiz_minima(tmp_path))["refused"] == []
+    assert detach("copilot", home=home)["refused"] == []
+    for relativo in (".copilot/agents", ".agents", ".sparkforge"):
+        assert (home / relativo).is_dir(), f"a poda removeu {relativo}, que ja existia"
+    assert not (home / ".agents" / "skills").exists()
+    assert not (home / ".sparkforge" / "integrations.json").exists()
+
+
 # --------------------------------------------------------------------------
 # Escrita atomica e manifesto que nao se deixa ler (recusas nomeadas)
 # --------------------------------------------------------------------------
@@ -827,7 +935,9 @@ def test_manifesto_truncado_sai_recusa_nomeada(tmp_path):
     assert _foto(home) == antes, "com o manifesto ilegivel, algo foi tocado"
 
 
-@pytest.mark.parametrize("forma", ["absoluta", "sobe", "sobe_no_meio", "barra_invertida"])
+@pytest.mark.parametrize(
+    "forma", ["absoluta", "sobe", "sobe_no_meio", "barra_invertida", "appdata_sobe"]
+)
 def test_chave_fora_do_home_recusa_sem_apagar(tmp_path, forma):
     raiz = _raiz_minima(tmp_path)
     home = tmp_path / "home"
@@ -839,6 +949,7 @@ def test_chave_fora_do_home_recusa_sem_apagar(tmp_path, forma):
         "sobe": "../fora.txt",
         "sobe_no_meio": ".agents/../../fora.txt",
         "barra_invertida": r"..\fora.txt",
+        "appdata_sobe": "%APPDATA%/../fora.txt",
     }[forma]
     caminho = home / ".sparkforge" / "integrations.json"
     dados = json.loads(caminho.read_text(encoding="utf-8"))
