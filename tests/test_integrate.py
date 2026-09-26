@@ -737,6 +737,78 @@ def test_escrita_atomica_nao_deixa_arquivo_pela_metade(tmp_path, monkeypatch):
     assert _relativos(home) == [".copilot/mcp-config.json"], "sobrou temporario ou meio arquivo"
 
 
+def test_escrita_atomica_da_config_deixa_a_original_intacta(tmp_path, monkeypatch):
+    """Os agents e skills ja estao no HOME, identicos: a primeira escrita e a da
+    config, e e so o `replace` dela que falha."""
+    import os
+
+    raiz = _raiz_minima(tmp_path)
+    modelo = tmp_path / "modelo"
+    integrate("copilot", home=modelo, root=raiz)
+    home = tmp_path / "home"
+    for relativo in _relativos(modelo):
+        if relativo.startswith((".agents/", ".copilot/agents/")):
+            destino = home / relativo
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            destino.write_bytes((modelo / relativo).read_bytes())
+    config = home / ".copilot" / "mcp-config.json"
+    original = json.dumps({"mcpServers": {"outro": {"command": "node"}}}).encode("utf-8")
+    config.write_bytes(original)
+    antes = set(_relativos(home))
+
+    replace = os.replace
+
+    def falha_na_config(origem, destino):
+        if Path(destino).name == "mcp-config.json":
+            raise OSError("disco cheio")
+        return replace(origem, destino)
+
+    monkeypatch.setattr(os, "replace", falha_na_config)
+    with pytest.raises(OSError, match="disco cheio"):
+        integrate("copilot", home=home, root=raiz)
+    assert config.read_bytes() == original
+    sobra = set(_relativos(home)) - antes - {".sparkforge/integrations.json"}
+    assert sobra == set(), f"sobrou temporario ou meio arquivo: {sobra}"
+
+
+def test_all_renderiza_todos_os_hosts_antes_da_primeira_escrita(tmp_path):
+    # O Devin aceita o `>-`; o Codex, que vem depois dele em `all`, recusa.
+    dobrado = "---\nname: sf-dobrado\ndescription: >-\n  dobrado\n---\ncorpo\n"
+    raiz = _raiz_falsa(tmp_path / "raiz", {
+        "skills/sdd-plan/SKILL.md": _skill("sdd-plan"),
+        "agents/sf-dobrado.md": dobrado,
+    })
+    home = tmp_path / "home"
+    home.mkdir()
+    with pytest.raises(ValueError, match="escalar_yaml_nao_suportado"):
+        integrate("all", home=home, windows=False, root=raiz)
+    assert _relativos(home) == [], "o render do codex estourou depois de o devin gravar"
+
+
+def test_falha_de_escrita_no_meio_deixa_o_gravado_no_manifesto(tmp_path, monkeypatch):
+    from sparkforge.integrate import writer
+
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    original = writer.gravar_atomico
+    chamadas = {"n": 0}
+
+    def falha_na_terceira(caminho, dados):
+        if Path(caminho).name != "integrations.json":
+            chamadas["n"] += 1
+            if chamadas["n"] == 3:
+                raise PermissionError("sem permissao")
+        return original(caminho, dados)
+
+    monkeypatch.setattr(writer, "gravar_atomico", falha_na_terceira)
+    with pytest.raises(PermissionError):
+        integrate("all", home=home, windows=False, root=raiz)
+    gravados = {r for r in _relativos(home) if r != ".sparkforge/integrations.json"}
+    assert gravados, "o teste nao chegou a gravar nada antes da falha"
+    registrados = set(_manifesto(home)["files"])
+    assert gravados <= registrados, f"gravado fora do manifesto: {gravados - registrados}"
+
+
 def test_manifesto_truncado_sai_recusa_nomeada(tmp_path):
     raiz = _raiz_minima(tmp_path)
     home = tmp_path / "home"

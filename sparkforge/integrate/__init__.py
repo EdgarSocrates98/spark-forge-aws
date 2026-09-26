@@ -6,6 +6,7 @@ embute, e nunca dentro do repositorio. Desenho: docs/sdd/INTEGRACAO_USUARIO/desi
 """
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -73,6 +74,34 @@ def _recusado(home: Path, dry_run: bool, recusa: writer.ManifestoRecusado) -> di
     }
 
 
+def _integrar_host(
+    h: Host,
+    plano: list[tuple[Path, bytes]],
+    *,
+    disco: writer.Disco,
+    manifesto: dict[str, Any],
+    python: str | None,
+    runner: _claude.Runner | None,
+    which: _claude.Which | None,
+) -> dict[str, Any]:
+    nome = h.name
+    primeira = not (manifesto["hosts"].get("claude") or {}).get("registered")
+    relatorio = writer.apply_files(
+        nome, plano, disco=disco, manifesto=manifesto, version=__version__
+    )
+    relatorio["config"] = _configurar(h, disco=disco, manifesto=manifesto, python=python)
+    if nome == "claude":
+        cli = _claude.register(
+            disco.home, primeira=primeira,
+            mudou=bool(relatorio["written"] or relatorio["removed"]),
+            dry_run=disco.dry_run, runner=runner, which=which,
+        )
+        relatorio["claude_cli"] = cli
+        if cli["status"] == "ok":
+            manifesto["hosts"]["claude"]["registered"] = True
+    return relatorio
+
+
 def integrate(
     alvo: str,
     *,
@@ -100,27 +129,30 @@ def integrate(
         manifesto = writer.load_manifest(disco.home)
     except writer.ManifestoRecusado as recusa:
         return _recusado(disco.home, dry_run, recusa)
-    relatorios: list[dict[str, Any]] = []
+    # Todos os hosts sao planejados e renderizados ANTES da primeira escrita: um
+    # render que estoura no terceiro host de `all` nao deixa os dois primeiros
+    # gravados.
+    planos: list[tuple[Host, list[tuple[Path, bytes]]]] = []
     for nome in _nomes(alvo):
         h = _host(nome, home=disco.home, windows=windows, appdata=disco.appdata)
         plano = writer.plan_files(h, raiz)
         if nome == "claude":
             plano += _claude.plugin_files(disco.home, version=__version__, python=python)
-        primeira = not (manifesto["hosts"].get("claude") or {}).get("registered")
-        relatorio = writer.apply_files(
-            nome, plano, disco=disco, manifesto=manifesto, version=__version__
-        )
-        relatorio["config"] = _configurar(h, disco=disco, manifesto=manifesto, python=python)
-        if nome == "claude":
-            cli = _claude.register(
-                disco.home, primeira=primeira,
-                mudou=bool(relatorio["written"] or relatorio["removed"]),
-                dry_run=dry_run, runner=runner, which=which,
-            )
-            relatorio["claude_cli"] = cli
-            if cli["status"] == "ok":
-                manifesto["hosts"]["claude"]["registered"] = True
-        relatorios.append(relatorio)
+        planos.append((h, plano))
+    relatorios: list[dict[str, Any]] = []
+    try:
+        for h, plano in planos:
+            relatorios.append(_integrar_host(
+                h, plano, disco=disco, manifesto=manifesto, python=python,
+                runner=runner, which=which,
+            ))
+    except BaseException:
+        # Falha de escrita no meio (permissao, disco): o que ja foi gravado entra no
+        # manifesto, para o proximo detach saber que e nosso.
+        if not dry_run:
+            with contextlib.suppress(OSError):
+                writer.save_manifest(disco.home, manifesto)
+        raise
     if not dry_run:
         writer.save_manifest(disco.home, manifesto)
     resultado: dict[str, Any] = {
