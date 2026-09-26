@@ -177,7 +177,8 @@ def integrate(
         resultado["conflict"] = _conferir_copia(
             Path(repo), raiz, disco=disco, dry_run=dry_run, on_conflict=on_conflict,
             interactive=interactive, prompt=prompt, alvos=_nomes(alvo),
-            integrados=list(manifesto["hosts"]), recusado=bool(resultado["refused"]),
+            integrados=writer.integrated_hosts(manifesto),
+            recusado=bool(resultado["refused"]),
             announce=announce,
         )
     return resultado
@@ -306,6 +307,7 @@ def detach(
             manifesto["hosts"][nome] = {
                 "package_version": entrada.get("package_version"),
                 "config": pendentes,
+                "status": writer.CONFIG_PENDENTE,
             }
         else:
             del manifesto["hosts"][nome]
@@ -333,14 +335,21 @@ def status(
     como checagem. Sem repositorio git, o HOME e o repositorio fonte nao tem copia
     em dobro a acusar (`detect` os recusa)."""
     manifesto = writer.load_manifest(Path(home))
-    em_dobro: dict[str, list[str]] = {nome: [] for nome in HOSTS}
+    em_dobro: dict[str, list[dict[str, Any]]] = {nome: [] for nome in HOSTS}
     if repo is not None:
         achado = _conflict.detect(
             Path(repo), home=Path(home), appdata=appdata, codex_home=codex_home
         )
+        integrados = writer.integrated_hosts(manifesto)
         for colisao in achado["collisions"]:
+            # A copia so sai pelo `resolve` com TODOS os hosts que a leem integrados:
+            # `missing_hosts` diz quais faltam.
+            faltam = _conflict.missing_hosts(colisao, integrados)
             for nome in colisao["hosts"]:
-                em_dobro[nome].append(f"{colisao['location']}/{colisao['name']}")
+                em_dobro[nome].append({
+                    "path": f"{colisao['location']}/{colisao['name']}",
+                    "missing_hosts": [h for h in faltam if h != nome],
+                })
     return {"manifest": manifesto, "duplicated": em_dobro}
 
 

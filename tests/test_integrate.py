@@ -1973,7 +1973,11 @@ def test_doctor_informa_integracao_por_host(tmp_path, monkeypatch, capsys):
     assert devin.status == dr.WARN
     assert f"sparkforge {__version__}" in devin.detail
     assert ".agents/skills/sdd-plan" in devin.detail
-    assert devin.unlock == "sparkforge integrate devin --scope user --on-conflict merge"
+    # I1: `.agents/skills` so sai do repo com codex e copilot integrados tambem; o
+    # unlock cita os hosts que faltam, nao um merge que nao removeria nada.
+    assert devin.unlock == (
+        "sparkforge integrate codex --scope user && sparkforge integrate copilot --scope user"
+    )
     assert por_id["integracao_claude"].status == dr.SKIP
     assert por_id["integracao_claude"].unlock == "sparkforge integrate claude --scope user"
     # Codex e Copilot nao estao integrados, mas leem `.agents/skills`: o dobro so
@@ -1992,3 +1996,42 @@ def test_doctor_informa_integracao_por_host(tmp_path, monkeypatch, capsys):
     depois = dr.avaliar_integracoes(status(home=home)["manifest"], None, None)
     assert {c.status for c in depois} == {dr.SKIP}
     assert dr.avaliar_integracoes(None, "JSONDecodeError: x", None)[0].status == dr.WARN
+
+
+def test_doctor_com_os_tres_hosts_manda_o_merge(tmp_path):
+    """I1: com devin, codex e copilot integrados, a copia de `.agents/skills` sai
+    pelo `resolve`: o unlock e o merge."""
+    home = _home_com(tmp_path / "h", "devin", "codex", "copilot")
+    repo = _repo_com_copia(tmp_path / "a")
+    estado = status(home=home, repo=repo)
+    por_id = {c.id: c for c in dr.avaliar_integracoes(
+        estado["manifest"], None, estado["duplicated"]
+    )}
+    devin = por_id["integracao_devin"]
+    assert devin.status == dr.WARN and ".agents/skills/sdd-plan" in devin.detail
+    assert devin.unlock == "sparkforge integrate devin --scope user --on-conflict merge"
+
+
+def test_host_com_config_pendente_nao_conta_como_integrado(tmp_path):
+    """M5: o devin saiu com a config pendente (arquivo invalido). Ele nao conta como
+    integrado para a copia em dobro, e o doctor nao o mostra OK."""
+    home = _home_com(tmp_path / "h", "devin", "codex", "copilot")
+    config = home / ".config" / "devin" / "mcp_config.json"
+    config.write_text("{ nao e json", encoding="utf-8")
+    saiu = detach("devin", home=home)
+    assert saiu["hosts"][0]["status"] == "config_pendente"
+
+    repo = _repo_com_copia(tmp_path / "a")
+    antes = _foto(repo)
+    conflito = integrate("copilot", home=home, windows=False, repo=repo,
+                         on_conflict="overwrite")["conflict"]
+    assert conflito["removed"] == []
+    mantidos = {k["path"]: k["missing_hosts"] for k in conflito["kept"]}
+    assert mantidos[".agents/skills/sdd-plan"] == ["devin"]
+    assert _foto(repo) == antes
+
+    por_id = {c.id: c for c in dr.avaliar_integracoes(status(home=home)["manifest"], None, None)}
+    devin = por_id["integracao_devin"]
+    assert devin.status == dr.WARN
+    assert "config_pendente" in devin.detail and ".config/devin/mcp_config.json" in devin.detail
+    assert devin.unlock == "sparkforge detach devin"

@@ -389,6 +389,20 @@ def recorded_sha(manifesto: dict[str, Any], relativo: str) -> str | None:
     return (manifesto["files"].get(relativo) or {}).get("sha256")
 
 
+# O `detach` que nao conseguiu retirar a entrada da config deixa o host no
+# manifesto so com o registro dela, e com este status.
+CONFIG_PENDENTE = "config_pendente"
+
+
+def integrated_hosts(manifesto: dict[str, Any]) -> list[str]:
+    """Os hosts integrados de fato: os do manifesto, menos o que so tem config
+    pendente de um detach (esse nao tem mais arquivo nenhum no HOME)."""
+    return [
+        nome for nome, entrada in (manifesto.get("hosts") or {}).items()
+        if (entrada or {}).get("status") != CONFIG_PENDENTE
+    ]
+
+
 def host_files(manifesto: dict[str, Any], nome: str) -> list[str]:
     """Os arquivos de que `nome` e dono."""
     return sorted(
@@ -538,6 +552,9 @@ def apply_files(
     entrada = manifesto["hosts"].setdefault(nome, {})
     entrada["package_version"] = version
     entrada.setdefault("config", [])
+    # Integrar de novo um host que o detach deixou com a config pendente o volta
+    # a integrado.
+    entrada.pop("status", None)
     return {
         "host": nome,
         "dry_run": disco.dry_run,

@@ -164,15 +164,30 @@ def _arquivos_do_host(manifesto: Mapping[str, Any], host: str) -> int:
     )
 
 
+def _unlock_do_dobro(host: str, dobro: list[Mapping[str, Any]]) -> str:
+    """O comando que tira a copia em dobro. A entrada que um host ainda nao
+    integrado tambem le so sai pelo `resolve` depois de integra-lo: com alguma que
+    ja sai, o merge; sem nenhuma, os hosts que faltam."""
+    if any(not d.get("missing_hosts") for d in dobro):
+        return f"sparkforge integrate {host} --scope user --on-conflict merge"
+    faltam = sorted({h for d in dobro for h in d.get("missing_hosts") or []})
+    return " && ".join(f"sparkforge integrate {h} --scope user" for h in faltam)
+
+
 def avaliar_integracoes(
     manifesto: Mapping[str, Any] | None,
     erro: str | None,
-    em_dobro: Mapping[str, list[str]] | None,
+    em_dobro: Mapping[str, list[Mapping[str, Any]]] | None,
     *,
     installed: str | None = None,
 ) -> list[Checagem]:
     """Uma checagem por host: integrado ou nao, em que versao do pacote, e a copia
     vendorizada em dobro no repositorio atual (INTEGRACAO_USUARIO, AC11).
+
+    `em_dobro` e o `duplicated` de `sparkforge.integrate.status`: por host, cada
+    entrada com `path` e os `missing_hosts` sem os quais o `resolve` nao a remove.
+    Host que o detach deixou com `config_pendente` nao conta como integrado: sai
+    `warn` com o arquivo pendente.
 
     Manifesto ilegivel mantem uma checagem por host (a lista de ids nao muda com o
     estado do HOME). Com `installed`, a versao gravada que diverge dela sai `warn`:
@@ -193,16 +208,26 @@ def avaliar_integracoes(
                                       f"sparkforge integrate {host} --scope user"))
             continue
         versao = entrada.get("package_version") or "?"
+        if entrada.get("status") == "config_pendente":
+            pendentes = sorted(str(r.get("path")) for r in entrada.get("config") or [])
+            checagens.append(Checagem(
+                ident, WARN,
+                "desintegrado com config_pendente: a entrada sparkforge nao saiu de "
+                f"{', '.join(pendentes)}; conserte o arquivo",
+                f"sparkforge detach {host}",
+            ))
+            continue
         detalhe = (
             f"integrado pelo sparkforge {versao}, "
             f"{_arquivos_do_host(manifesto or {}, host)} arquivo(s)"
         )
-        dobro = sorted((em_dobro or {}).get(host) or [])
+        dobro = sorted((em_dobro or {}).get(host) or [], key=lambda d: str(d.get("path")))
         if dobro:
+            caminhos = ", ".join(str(d.get("path")) for d in dobro)
             checagens.append(Checagem(
                 ident, WARN,
-                f"{detalhe}; copia vendorizada em dobro no repositorio: {', '.join(dobro)}",
-                f"sparkforge integrate {host} --scope user --on-conflict merge",
+                f"{detalhe}; copia vendorizada em dobro no repositorio: {caminhos}",
+                _unlock_do_dobro(host, dobro),
             ))
             continue
         if installed is not None and versao != installed:
