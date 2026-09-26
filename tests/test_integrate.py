@@ -528,7 +528,7 @@ def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     config_devin.write_text(json.dumps(original_devin), encoding="utf-8")
     config_codex = home / ".codex" / "config.toml"
     config_codex.parent.mkdir(parents=True)
-    config_codex.write_text(CONFIG_CODEX, encoding="utf-8")
+    config_codex.write_bytes(CONFIG_CODEX.encode("utf-8"))
 
     for host in ("devin", "codex", "copilot"):
         assert integrate(host, home=home, windows=False)["refused"] == []
@@ -543,14 +543,15 @@ def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     assert _foto(home) == antes
 
     # Devin sai; a skill compartilhada fica, porque Codex e Copilot ainda a usam.
+    # A config volta byte a byte: ninguem mexeu nela depois do integrate.
     detach("devin", home=home)
     assert not (home / ".config" / "devin" / "agents").exists()
-    assert json.loads(config_devin.read_text(encoding="utf-8")) == original_devin
+    assert config_devin.read_bytes() == json.dumps(original_devin).encode("utf-8")
     assert compartilhada.is_file()
 
     # Codex sai; o config.toml volta a ser o do usuario, byte a byte.
     detach("codex", home=home)
-    assert config_codex.read_text(encoding="utf-8") == CONFIG_CODEX
+    assert config_codex.read_bytes() == CONFIG_CODEX.encode("utf-8")
     assert not (home / ".codex" / "agents").exists()
     assert compartilhada.is_file()
 
@@ -566,6 +567,150 @@ def test_detach_remove_so_o_proprio_e_recusa_o_editado(tmp_path):
     assert meu.read_text(encoding="utf-8") == "do usuario\n"
     assert not (home / ".sparkforge" / "integrations.json").exists()
     assert detach("devin", home=home)["hosts"][0]["status"] == "not_integrated"
+
+
+# --------------------------------------------------------------------------
+# Config de usuario: byte a byte, edicao do usuario e revert pendente (D6, D7)
+# --------------------------------------------------------------------------
+
+
+BOM = "\ufeff"
+
+
+def _json_estilo(dados: dict, *, indent: int = 4, nl: str = "\r\n", bom: bool = True) -> bytes:
+    texto = json.dumps(dados, indent=indent, ensure_ascii=False).replace("\n", nl) + nl
+    return ((BOM if bom else "") + texto).encode("utf-8")
+
+
+def _ler_json(caminho: Path) -> dict:
+    return json.loads(caminho.read_bytes().decode("utf-8-sig"))
+
+
+def _home_devin(base: Path, dados: bytes) -> tuple[Path, Path]:
+    config = base / ".config" / "devin" / "mcp_config.json"
+    config.parent.mkdir(parents=True)
+    config.write_bytes(dados)
+    return base, config
+
+
+def test_json_com_bom_crlf_e_4_espacos_volta_byte_a_byte(tmp_path):
+    original = _json_estilo({"mcpServers": {"outro": {"command": "node"}}, "extra": 1})
+    home, config = _home_devin(tmp_path / "home", original)
+    raiz = _raiz_minima(tmp_path)
+    assert integrate("devin", home=home, windows=False, root=raiz)["refused"] == []
+    gravado = config.read_bytes()
+    assert gravado.startswith(b"\xef\xbb\xbf"), "o BOM se perdeu"
+    assert b'\r\n    "mcpServers"' in gravado, "a indentacao ou o CRLF se perdeu"
+    assert _ler_json(config)["mcpServers"]["outro"] == {"command": "node"}
+    assert detach("devin", home=home)["refused"] == []
+    assert config.read_bytes() == original
+
+
+def test_json_mexido_em_outra_parte_tira_so_a_nossa_entrada(tmp_path):
+    original = _json_estilo({"mcpServers": {"outro": {"command": "node"}}, "extra": 1})
+    home, config = _home_devin(tmp_path / "home", original)
+    assert integrate("devin", home=home, windows=False, root=_raiz_minima(tmp_path))[
+        "refused"
+    ] == []
+    atual = _ler_json(config)
+    atual["mcpServers"]["novo"] = {"command": "uvx"}
+    atual["depois"] = True
+    config.write_bytes(_json_estilo(atual))
+
+    assert detach("devin", home=home)["refused"] == []
+    del atual["mcpServers"]["sparkforge"]
+    assert config.read_bytes() == _json_estilo(atual)
+
+
+def test_toml_crlf_volta_byte_a_byte_e_mexido_tira_so_o_bloco(tmp_path):
+    original = CONFIG_CODEX.replace("\n", "\r\n").encode("utf-8")
+    raiz = _raiz_minima(tmp_path)
+    home, config = _home_codex(tmp_path / "home", original.decode("utf-8"))
+    assert integrate("codex", home=home, root=raiz)["refused"] == []
+    assert b"\r\n# >>> sparkforge (gerenciado)\r\n" in config.read_bytes()
+    assert detach("codex", home=home)["refused"] == []
+    assert config.read_bytes() == original
+
+    assert integrate("codex", home=home, root=raiz)["refused"] == []
+    config.write_bytes(b"x = 1\r\n" + config.read_bytes())
+    assert detach("codex", home=home)["refused"] == []
+    assert config.read_bytes() == b"x = 1\r\n" + original
+
+
+@pytest.mark.parametrize("host", ["devin", "codex"])
+def test_config_vazia_preexistente_volta_vazia(tmp_path, host):
+    home = tmp_path / "home"
+    config = (home / ".config" / "devin" / "mcp_config.json" if host == "devin"
+              else home / ".codex" / "config.toml")
+    config.parent.mkdir(parents=True)
+    config.write_bytes(b"")
+    assert integrate(host, home=home, windows=False, root=_raiz_minima(tmp_path))[
+        "refused"
+    ] == []
+    assert config.read_bytes() != b""
+    assert detach(host, home=home)["refused"] == []
+    assert config.is_file() and config.read_bytes() == b""
+
+
+def test_entrada_mcp_editada_pelo_usuario_recusa_integrate_e_detach(tmp_path):
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    assert integrate("devin", home=home, windows=False, root=raiz)["refused"] == []
+    config = home / ".config" / "devin" / "mcp_config.json"
+    dados = _ler_json(config)
+    dados["mcpServers"]["sparkforge"]["env"] = {"AWS_PROFILE": "dev"}
+    config.write_bytes(json.dumps(dados, indent=2).encode("utf-8"))
+    editado = config.read_bytes()
+
+    for resultado in (
+        integrate("devin", home=home, windows=False, root=raiz),
+        detach("devin", home=home),
+    ):
+        assert [r["reason"] for r in resultado["refused"]] == ["editado_pelo_usuario"]
+        assert config.read_bytes() == editado
+
+
+def test_bloco_toml_editado_pelo_usuario_recusa_integrate_e_detach(tmp_path):
+    raiz = _raiz_minima(tmp_path)
+    home, config = _home_codex(tmp_path / "home", CONFIG_CODEX)
+    assert integrate("codex", home=home, root=raiz)["refused"] == []
+    texto = config.read_text(encoding="utf-8").replace(
+        "# <<< sparkforge", 'env = { AWS_PROFILE = "dev" }\n# <<< sparkforge'
+    )
+    config.write_bytes(texto.encode("utf-8"))
+
+    for resultado in (integrate("codex", home=home, root=raiz), detach("codex", home=home)):
+        assert [r["reason"] for r in resultado["refused"]] == ["editado_pelo_usuario"]
+        assert config.read_bytes() == texto.encode("utf-8")
+
+
+@pytest.mark.parametrize("host", ["devin", "codex"])
+def test_detach_com_config_recusada_fica_pendente_ate_o_conserto(tmp_path, host):
+    raiz = _raiz_minima(tmp_path)
+    home = tmp_path / "home"
+    assert integrate(host, home=home, windows=False, root=raiz)["refused"] == []
+    config = (home / ".config" / "devin" / "mcp_config.json" if host == "devin"
+              else home / ".codex" / "config.toml")
+    bom = config.read_bytes()
+    quebrado, motivo = (
+        (b"{ quebrado", "config_invalida") if host == "devin"
+        else (bom.replace(b"# <<< sparkforge", b""), "bloco_toml_quebrado")
+    )
+    config.write_bytes(quebrado)
+
+    resultado = detach(host, home=home)
+    assert [r["reason"] for r in resultado["refused"]] == [motivo]
+    assert config.read_bytes() == quebrado
+    pendente = _manifesto(home)["hosts"][host]["config"]
+    assert [r["path"] for r in pendente] == [
+        config.relative_to(home).as_posix()
+    ], "o registro da config pendente saiu do manifesto"
+
+    # O usuario conserta; o detach seguinte conclui.
+    config.write_bytes(bom)
+    assert detach(host, home=home)["refused"] == []
+    assert not config.exists(), "a config que o integrate criou devia sair"
+    assert not (home / ".sparkforge" / "integrations.json").exists()
 
 
 # --------------------------------------------------------------------------

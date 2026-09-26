@@ -513,8 +513,67 @@ def apply_files(
 
 
 # --------------------------------------------------------------------------
-# Config de usuario em JSON (Devin, Copilot): so `mcpServers.sparkforge` (D6)
+# Config de usuario: o que o registro guarda (D6, D7)
 # --------------------------------------------------------------------------
+# Cada registro de config guarda, alem do caminho e do formato:
+#
+# - `original`: o texto da config antes do PRIMEIRO integrate, byte a byte (com
+#   BOM e CRLF), quando ela existia e cabe em `ORIGINAL_MAX`;
+# - `written_sha256`: o sha256 do arquivo que o integrate gravou por ultimo;
+# - `entry_sha256`: o sha256 da NOSSA entrada (o valor de `mcpServers.sparkforge`
+#   no JSON, o bloco marcado no TOML).
+#
+# No detach, arquivo que ainda e exatamente o que gravamos volta ao `original`,
+# byte a byte (ou sai, se o integrate o criou). Se o usuario mexeu em outras
+# partes, sai so a nossa entrada, no estilo do arquivo (indentacao, CRLF, BOM,
+# newline final). Se mexeu na NOSSA entrada, integrate e detach recusam
+# `editado_pelo_usuario` sem tocar.
+
+ORIGINAL_MAX = 64 * 1024
+_INDENTACAO = re.compile(r'^([ \t]+)["}\]]', re.MULTILINE)
+
+
+class _Config:
+    """A config como foi lida: os bytes, o texto sem BOM e o estilo do arquivo.
+    Bytes que nao sao UTF-8 levantam `UnicodeDecodeError` (-> `config_invalida`)."""
+
+    def __init__(self, bruto: bytes | None):
+        self.bruto = bruto
+        texto = "" if bruto is None else bruto.decode("utf-8")
+        self.bom = texto.startswith("\ufeff")
+        self.texto = texto[1:] if self.bom else texto
+        self.nl = "\r\n" if "\r\n" in self.texto else "\n"
+        self.final = not self.texto.strip() or self.texto.endswith("\n")
+        achada = _INDENTACAO.search(self.texto)
+        espaco = achada.group(1) if achada else "  "
+        self.indent: int | str = "\t" if "\t" in espaco else len(espaco)
+
+    def codificar(self, texto_lf: str) -> bytes:
+        """`texto_lf` (com LF) no estilo do arquivo: quebra de linha e BOM."""
+        return (("\ufeff" if self.bom else "") + texto_lf.replace("\n", self.nl)).encode(
+            "utf-8"
+        )
+
+    def json(self, dados: dict[str, Any]) -> bytes:
+        texto = json.dumps(dados, indent=self.indent, ensure_ascii=False)
+        return self.codificar(texto + ("\n" if self.final else ""))
+
+
+def _ler_config(disco: Disco, caminho: Path) -> _Config | None:
+    """A config lida, ou `None` se nao e UTF-8."""
+    try:
+        return _Config(disco.ler(caminho))
+    except UnicodeDecodeError:
+        return None
+
+
+def _novo_registro(relativo: str, formato: str, config: _Config) -> dict[str, Any]:
+    registro: dict[str, Any] = {
+        "path": relativo, "format": formato, "created": config.bruto is None,
+    }
+    if config.bruto is not None and len(config.bruto) <= ORIGINAL_MAX:
+        registro["original"] = config.bruto.decode("utf-8")
+    return registro
 
 
 def _registro_de_config(
@@ -530,18 +589,28 @@ def _guardar_registro(
     manifesto: dict[str, Any], nome: str, registro: dict[str, Any]
 ) -> None:
     registros = manifesto["hosts"].setdefault(nome, {}).setdefault("config", [])
-    if registro not in registros:
+    if not any(r is registro for r in registros):
         registros.append(registro)
 
 
-def _texto_de(disco: Disco, caminho: Path) -> str | None:
-    dados = disco.ler(caminho)
-    return None if dados is None else dados.decode("utf-8").replace("\r\n", "\n")
+def _editado(registro: dict[str, Any] | None, sha_atual: str) -> bool:
+    """A nossa entrada mudou desde que a gravamos (registro antigo sem o sha: nao)."""
+    esperado = (registro or {}).get("entry_sha256")
+    return esperado is not None and esperado != sha_atual
 
 
-def _json_de_config(texto: str | None) -> dict[str, Any] | None:
-    """Os dados do JSON de config, `{}` sem arquivo, ou `None` se nao e JSON de objeto."""
-    if texto is None or not texto.strip():
+def _recusa(relativo: str, motivo: str) -> dict[str, Any]:
+    return {"path": relativo, "status": "refused", "reason": motivo}
+
+
+# --------------------------------------------------------------------------
+# Config de usuario em JSON (Devin, Copilot): so `mcpServers.sparkforge` (D6)
+# --------------------------------------------------------------------------
+
+
+def _json_de_config(texto: str) -> dict[str, Any] | None:
+    """Os dados do JSON de config, `{}` vazio, ou `None` se nao e JSON de objeto."""
+    if not texto.strip():
         return {}
     try:
         dados = json.loads(texto)
@@ -550,6 +619,11 @@ def _json_de_config(texto: str | None) -> dict[str, Any] | None:
     if not isinstance(dados, dict) or not isinstance(dados.get("mcpServers", {}), dict):
         return None
     return dados
+
+
+def _sha_entrada(valor: Any) -> str:
+    texto = json.dumps(valor, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return sha256_bytes(texto.encode("utf-8"))
 
 
 def apply_json_config(
@@ -563,28 +637,29 @@ def apply_json_config(
     """Poe `mcpServers.sparkforge` no JSON de config do host e nada mais."""
     relativo = disco.chave(caminho)
     registro = _registro_de_config(manifesto, nome, relativo)
-    texto = _texto_de(disco, caminho)
-    dados = _json_de_config(texto)
-    if dados is None:
-        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
+    config = _ler_config(disco, caminho)
+    dados = None if config is None else _json_de_config(config.texto)
+    if config is None or dados is None:
+        return _recusa(relativo, "config_invalida")
     servidores = dados.get("mcpServers")
-    if isinstance(servidores, dict) and "sparkforge" in servidores and registro is None:
-        return {"path": relativo, "status": "refused", "reason": "sparkforge_ja_configurado"}
+    if isinstance(servidores, dict) and "sparkforge" in servidores:
+        if registro is None:
+            return _recusa(relativo, "sparkforge_ja_configurado")
+        if _editado(registro, _sha_entrada(servidores["sparkforge"])):
+            return _recusa(relativo, "editado_pelo_usuario")
+        if servidores["sparkforge"] == entrada:
+            return {"path": relativo, "status": "unchanged"}
+    if registro is None:
+        registro = _novo_registro(relativo, "json", config)
+        registro["had_mcp_servers"] = servidores is not None
     novo = dict(dados)
     novo["mcpServers"] = {**(servidores or {}), "sparkforge": entrada}
-    novo_texto = json.dumps(novo, indent=2, ensure_ascii=False) + "\n"
-    status = "unchanged" if novo_texto == texto else "written"
-    if registro is None:
-        registro = {
-            "path": relativo,
-            "format": "json",
-            "created": texto is None,
-            "had_mcp_servers": servidores is not None,
-        }
-    if status == "written":
-        disco.gravar(caminho, novo_texto.encode("utf-8"))
+    gravado = config.json(novo)
+    disco.gravar(caminho, gravado)
+    registro["written_sha256"] = sha256_bytes(gravado)
+    registro["entry_sha256"] = _sha_entrada(entrada)
     _guardar_registro(manifesto, nome, registro)
-    return {"path": relativo, "status": status}
+    return {"path": relativo, "status": "written"}
 
 
 # --------------------------------------------------------------------------
@@ -692,6 +767,11 @@ def _limites_do_bloco(texto: str) -> tuple[int, int] | None | str:
     return inicios[0].start(), fim
 
 
+def _sha_bloco(bloco: str) -> str:
+    """O sha do bloco com LF e sem as quebras finais: CRLF e EOF nao contam."""
+    return sha256_bytes(bloco.replace("\r\n", "\n").rstrip("\n").encode("utf-8"))
+
+
 def apply_toml_config(
     nome: str,
     caminho: Path,
@@ -702,34 +782,40 @@ def apply_toml_config(
 ) -> dict[str, Any]:
     """Poe (ou troca) o bloco marcado no TOML de config; o resto nao e tocado."""
     relativo = disco.chave(caminho)
-    lido = _texto_de(disco, caminho)
-    texto = lido or ""
+    registro = _registro_de_config(manifesto, nome, relativo)
+    config = _ler_config(disco, caminho)
+    if config is None:
+        return _recusa(relativo, "config_invalida")
+    texto = config.texto.replace("\r\n", "\n")
     limites = _limites_do_bloco(texto)
     if limites == "quebrado":
-        return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
+        return _recusa(relativo, "bloco_toml_quebrado")
     fora = texto if limites is None else texto[: limites[0]] + texto[limites[1]:]
     ja_definido = _sparkforge_em(fora)
     if ja_definido is None:
-        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
+        return _recusa(relativo, "config_invalida")
     if ja_definido:
-        return {"path": relativo, "status": "refused", "reason": "sparkforge_ja_configurado"}
+        return _recusa(relativo, "sparkforge_ja_configurado")
     if limites is None:
         base = texto.rstrip("\n")
         novo = (base + "\n\n" if base else "") + bloco
     else:
+        if _editado(registro, _sha_bloco(texto[limites[0]:limites[1]])):
+            return _recusa(relativo, "editado_pelo_usuario")
         novo = texto[: limites[0]] + bloco + texto[limites[1]:]
     if not _toml_valido(novo):
-        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
-    status = "unchanged" if novo == texto else "written"
-    registro = _registro_de_config(manifesto, nome, relativo) or {
-        "path": relativo,
-        "format": "toml",
-        "created": lido is None,
-    }
-    if status == "written":
-        disco.gravar(caminho, novo.encode("utf-8"))
+        return _recusa(relativo, "config_invalida")
+    if novo == texto and registro is not None:
+        return {"path": relativo, "status": "unchanged"}
+    if registro is None:
+        registro = _novo_registro(relativo, "toml", config)
+    gravado = config.codificar(novo)
+    if gravado != config.bruto:
+        disco.gravar(caminho, gravado)
+    registro["written_sha256"] = sha256_bytes(gravado)
+    registro["entry_sha256"] = _sha_bloco(bloco)
     _guardar_registro(manifesto, nome, registro)
-    return {"path": relativo, "status": status}
+    return {"path": relativo, "status": "written" if gravado != config.bruto else "unchanged"}
 
 
 # --------------------------------------------------------------------------
@@ -737,20 +823,42 @@ def apply_toml_config(
 # --------------------------------------------------------------------------
 
 
+def _restaurar(registro: dict[str, Any], atual: bytes, *, disco: Disco) -> dict | None:
+    """O arquivo ainda e exatamente o que gravamos: volta ao original byte a byte
+    (ou sai, se o integrate o criou). `None` quando nao da para restaurar assim."""
+    relativo = registro["path"]
+    if registro.get("written_sha256") != sha256_bytes(atual):
+        return None
+    caminho = disco.local(relativo)
+    if registro.get("created"):
+        disco.apagar(caminho)
+        return {"path": relativo, "status": "deleted"}
+    if "original" not in registro:
+        return None
+    disco.gravar(caminho, registro["original"].encode("utf-8"))
+    return {"path": relativo, "status": "reverted"}
+
+
 def revert_json_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, Any]:
-    """Tira `mcpServers.sparkforge`; o resto do JSON fica. Se o integrate criou o
-    arquivo e ele ficou vazio, o arquivo sai."""
+    """Tira `mcpServers.sparkforge`; o resto do JSON fica, no estilo do arquivo.
+    Se o integrate criou o arquivo e ele ficou vazio, o arquivo sai."""
     relativo = registro["path"]
     caminho = disco.local(relativo)
-    texto = _texto_de(disco, caminho)
-    if texto is None:
+    atual = disco.ler(caminho)
+    if atual is None:
         return {"path": relativo, "status": "absent"}
-    dados = _json_de_config(texto)
-    if dados is None:
-        return {"path": relativo, "status": "refused", "reason": "config_invalida"}
+    restaurado = _restaurar(registro, atual, disco=disco)
+    if restaurado is not None:
+        return restaurado
+    config = _ler_config(disco, caminho)
+    dados = None if config is None else _json_de_config(config.texto)
+    if config is None or dados is None:
+        return _recusa(relativo, "config_invalida")
     servidores = dict(dados.get("mcpServers") or {})
     if "sparkforge" not in servidores:
         return {"path": relativo, "status": "absent"}
+    if _editado(registro, _sha_entrada(servidores["sparkforge"])):
+        return _recusa(relativo, "editado_pelo_usuario")
     del servidores["sparkforge"]
     novo = dict(dados)
     if servidores or registro.get("had_mcp_servers"):
@@ -761,33 +869,43 @@ def revert_json_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, A
     if apagar:
         disco.apagar(caminho)
     else:
-        disco.gravar(caminho, (json.dumps(novo, indent=2, ensure_ascii=False) + "\n").encode())
+        disco.gravar(caminho, config.json(novo))
     return {"path": relativo, "status": "deleted" if apagar else "reverted"}
 
 
 def revert_toml_config(registro: dict[str, Any], *, disco: Disco) -> dict[str, Any]:
-    """Tira o bloco marcado e a linha em branco que o integrate pos antes dele."""
+    """Tira o bloco marcado e a linha em branco que o integrate pos antes dele,
+    mantendo CRLF e BOM do arquivo."""
     relativo = registro["path"]
     caminho = disco.local(relativo)
-    texto = _texto_de(disco, caminho)
-    if texto is None:
+    atual = disco.ler(caminho)
+    if atual is None:
         return {"path": relativo, "status": "absent"}
+    restaurado = _restaurar(registro, atual, disco=disco)
+    if restaurado is not None:
+        return restaurado
+    config = _ler_config(disco, caminho)
+    if config is None:
+        return _recusa(relativo, "config_invalida")
+    texto = config.texto.replace("\r\n", "\n")
     limites = _limites_do_bloco(texto)
     if limites == "quebrado":
-        return {"path": relativo, "status": "refused", "reason": "bloco_toml_quebrado"}
+        return _recusa(relativo, "bloco_toml_quebrado")
     if limites is None:
         return {"path": relativo, "status": "absent"}
-    partes = [
-        parte
-        for parte in (texto[: limites[0]].rstrip("\n"), texto[limites[1]:].lstrip("\n"))
-        if parte
-    ]
-    novo = "\n\n".join(partes) + ("\n" if partes else "")
+    antes = texto[: limites[0]].rstrip("\n")
+    depois = texto[limites[1]:].lstrip("\n")
+    if _editado(registro, _sha_bloco(texto[limites[0]:limites[1]])) or _sparkforge_em(
+        antes + "\n" + depois
+    ):
+        return _recusa(relativo, "editado_pelo_usuario")
+    novo = "\n\n".join(p for p in (antes, depois) if p)
+    novo += "\n" if novo else ""
     apagar = bool(registro.get("created")) and not novo.strip()
     if apagar:
         disco.apagar(caminho)
     else:
-        disco.gravar(caminho, novo.encode("utf-8"))
+        disco.gravar(caminho, config.codificar(novo))
     return {"path": relativo, "status": "deleted" if apagar else "reverted"}
 
 

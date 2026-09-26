@@ -234,15 +234,27 @@ def detach(
             disco, manifesto, nome, writer.host_files(manifesto, nome)
         )
         relatorio["host"] = nome
-        relatorio["status"] = "detached"
-        relatorio["config"] = [
-            writer.revert_config(registro, disco=disco) for registro in registros
+        revertidos = [writer.revert_config(registro, disco=disco) for registro in registros]
+        relatorio["config"] = revertidos
+        # Config cujo revert foi recusado (JSON invalido, bloco quebrado, entrada
+        # editada) fica no manifesto: depois do conserto, o detach seguinte conclui.
+        pendentes = [
+            registro
+            for registro, revertido in zip(registros, revertidos, strict=True)
+            if revertido["status"] == "refused"
         ]
+        relatorio["status"] = "config_pendente" if pendentes else "detached"
         if nome == "claude" and registrado:
             relatorio["claude_cli"] = _claude.unregister(
                 dry_run=dry_run, runner=runner, which=which
             )
-        del manifesto["hosts"][nome]
+        if pendentes:
+            manifesto["hosts"][nome] = {
+                "package_version": entrada.get("package_version"),
+                "config": pendentes,
+            }
+        else:
+            del manifesto["hosts"][nome]
         relatorios.append(relatorio)
     if not dry_run:
         writer.drop_manifest_if_empty(disco, manifesto)
