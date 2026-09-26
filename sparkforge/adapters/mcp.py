@@ -33,6 +33,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+from sparkforge.adapters.mcp_compact import CompactRouter, compact_catalog
 from sparkforge.adapters.mcp_envelope import envelope_da_chamada
 from sparkforge.adapters.tools import TOOLS, call_tool
 
@@ -75,8 +76,13 @@ def _versao_do_pacote() -> str:
         return "0+unknown"
 
 
-def tools_do_transporte(transport: str) -> dict[str, dict[str, Any]]:
-    """O catalogo servido por `transport`. Em HTTP, sem as tools de fonte.
+def tools_do_transporte(
+    transport: str, mode: str = "full"
+) -> dict[str, dict[str, Any]]:
+    """O catalogo servido por `transport` e `mode`.
+
+    `full` preserva o catalogo existente. `compact` publica a projecao fixa de
+    seis operacoes e usa o catalogo full apenas como alvo interno do router.
 
     SPEC 71: o Code Intelligence e `stdio-first`, e sob `transport=http` com o
     perfil `offline-strict` as tools que devolvem fonte ficam DESABILITADAS. A
@@ -94,6 +100,10 @@ def tools_do_transporte(transport: str) -> dict[str, dict[str, Any]]:
     valido -- e uma manopla assim vira, no primeiro dia de pressa, o jeito de
     desligar a porta.
     """
+    if mode == "compact":
+        return compact_catalog()
+    if mode != "full":
+        raise ValueError(f"modo MCP invalido: {mode!r}; use 'full' ou 'compact'")
     if transport != "http":
         return TOOLS
     return {n: s for n, s in TOOLS.items() if n not in TOOLS_COM_FONTE}
@@ -131,10 +141,15 @@ def carregar_policy_do_servidor(raiz: Any = None) -> tuple[Any, str | None]:
 
 
 def build_server(
-    transport: str = "stdio", policy: Any = None, policy_error: str | None = None
+    transport: str = "stdio",
+    policy: Any = None,
+    policy_error: str | None = None,
+    *,
+    mode: str = "full",
 ) -> Any:
-    """Constroi um `mcp.server.Server` registrando `TOOLS`. Falha com mensagem
-    acionavel (SystemExit) se o SDK nao estiver instalado.
+    """Constroi um `mcp.server.Server` no modo full ou compact.
+
+    Falha com mensagem acionavel (SystemExit) se o SDK nao estiver instalado.
 
     `transport` NAO liga o servidor -- quem faz isso e `main()`. Ele entra aqui
     porque o CATALOGO depende dele (SPEC 71): filtrar depois, na hora de
@@ -149,16 +164,26 @@ def build_server(
     except ImportError as exc:
         raise SystemExit(_INSTALL_HINT) from exc
 
-    catalogo = tools_do_transporte(transport)
+    catalogo = tools_do_transporte(transport, mode)
     # O canal vai MEDIDO para o span: so a chamada que entrou por aqui recebe
     # `mcp.method.name` no export OTLP (`observability/otlp.py`).
     # `policy` e montada por `main()` a partir de `.sparkforge/policy.yaml`
     # (§16); sem ela, `call_tool` se comporta como sempre.
-    executar = (
+    executar_full = (
         _recusa_por_policy_invalida(policy_error)
         if policy_error
         else functools.partial(call_tool, channel="mcp", transport=transport, policy=policy)
     )
+    unavailable_message = None
+    if mode == "compact":
+        router = CompactRouter(tools_do_transporte(transport, "full"), executar_full)
+        executar = router.call
+        unavailable_message = (
+            "ferramenta indisponivel no modo 'compact': nome nao faz parte das seis "
+            "operacoes publicadas. Use search/get/execute."
+        )
+    else:
+        executar = executar_full
     ferramentas = [
         Tool(
             name=name,
@@ -179,7 +204,14 @@ def build_server(
         saida, erro de fronteira, excecao -- mora em `envelope_da_chamada`,
         onde ela e testavel sem o SDK. Este handler so troca de tipo.
         """
-        env = envelope_da_chamada(params.name, params.arguments, catalogo, transport, executar)
+        env = envelope_da_chamada(
+            params.name,
+            params.arguments,
+            catalogo,
+            transport,
+            executar,
+            unavailable_message,
+        )
         return CallToolResult(
             content=[TextContent(type="text", text=env.text)],
             structured_content=env.structured,
@@ -294,12 +326,23 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o S
             "que aponta serverUrl para http://<host>:<port>/mcp."
         ),
     )
+    parser.add_argument(
+        "--mode",
+        choices=["full", "compact"],
+        default="full",
+        help="full publica o catalogo atual; compact publica exatamente seis operacoes.",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args(argv)
 
     policy, erro = carregar_policy_do_servidor()
-    server = build_server(args.transport, policy=policy, policy_error=erro)
+    server = build_server(
+        args.transport,
+        policy=policy,
+        policy_error=erro,
+        mode=args.mode,
+    )
 
     if args.transport == "stdio":
         _run_stdio(server)

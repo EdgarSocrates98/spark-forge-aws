@@ -234,6 +234,30 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 No Desktop va em **Devin Settings > MCP**, adicione um servidor com a URL acima e
 confirme. O processo do servidor precisa ficar rodando enquanto a sessao estiver ativa.
 
+**Superfície compacta — opt-in.** O modo padrão continua `full` e publica o catálogo
+completo. Para hosts que preferem descobrir capacidades sob demanda, passe `--mode
+compact`; o servidor publica exatamente estas seis tools: `context_start`,
+`context_expand`, `execute`, `search`, `get` e `next`.
+
+```bash
+# Devin CLI, Claude Code ou outro cliente stdio
+python -m sparkforge.adapters.mcp --transport stdio --mode compact
+
+# Devin Desktop ou outro cliente HTTP
+python -m sparkforge.adapters.mcp --transport http --mode compact --host 127.0.0.1 --port 8765
+# serverUrl: http://127.0.0.1:8765/mcp
+```
+
+`execute` mantém o dispatch e os schemas das tools existentes; `search`, `get` e
+`next` fazem descoberta, leitura e paginação determinísticas. Uma tool full não
+listada é recusada no modo compacto. O catálogo full continua acessível sem `--mode`
+ou com `--mode full`, preservando o contrato anterior.
+
+Para Codex e Copilot CI, a matriz atual registra consumo por CLI/arquivos, não uma
+sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
+verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
+ao vivo que não foi observada.
+
 **E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 113 tools fazem (recontado em 2026-09-26)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
