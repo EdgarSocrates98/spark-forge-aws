@@ -10,6 +10,7 @@ from sparkforge.adapters.cli import main
 IDS = [
     "pacote", "extras", "mcp", "catalogo", "packs", "knowledge",
     "indice_de_codigo", "artefatos", "credencial_aws",
+    "integracao_claude", "integracao_devin", "integracao_codex", "integracao_copilot",
 ]
 
 

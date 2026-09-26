@@ -218,4 +218,18 @@ def detach(
     }
 
 
-__all__ = ["INTEGRAVEIS", "detach", "integrate"]
+def status(*, home: Path, repo: Path | None = None) -> dict[str, Any]:
+    """O que o `doctor` le: o manifesto e, por host, a copia em dobro no `repo`.
+
+    So le. Manifesto ilegivel levanta `ManifestoRecusado`, e o doctor o mostra
+    como checagem."""
+    manifesto = writer.load_manifest(Path(home))
+    em_dobro: dict[str, list[str]] = {nome: [] for nome in HOSTS}
+    if repo is not None:
+        for colisao in _conflict.detect(Path(repo))["collisions"]:
+            for nome in colisao["hosts"]:
+                em_dobro[nome].append(f"{colisao['location']}/{colisao['name']}")
+    return {"manifest": manifesto, "duplicated": em_dobro}
+
+
+__all__ = ["INTEGRAVEIS", "detach", "integrate", "status"]

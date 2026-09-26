@@ -13,6 +13,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from sparkforge.integrate.hosts import HOSTS
+
 OK, WARN, FAIL, SKIP = "ok", "warn", "fail", "skip"
 STATUS = (OK, WARN, FAIL, SKIP)
 PYTHON_MINIMO = (3, 10)
@@ -151,6 +153,51 @@ def avaliar_credencial(
     return Checagem("credencial_aws", OK,
                     f"credencial resolvida localmente ({metodo}); sem chamada de rede",
                     "sparkforge doctor --online")
+
+
+def _arquivos_do_host(manifesto: Mapping[str, Any], host: str) -> int:
+    """Quantos arquivos o manifesto (formato 2) registra com `host` entre os donos."""
+    arquivos = manifesto.get("files") or {}
+    return sum(
+        1 for registro in arquivos.values()
+        if isinstance(registro, Mapping) and host in (registro.get("owners") or [])
+    )
+
+
+def avaliar_integracoes(
+    manifesto: Mapping[str, Any] | None,
+    erro: str | None,
+    em_dobro: Mapping[str, list[str]] | None,
+) -> list[Checagem]:
+    """Uma checagem por host: integrado ou nao, em que versao do pacote, e a copia
+    vendorizada em dobro no repositorio atual (INTEGRACAO_USUARIO, AC11)."""
+    if erro:
+        return [Checagem("integracao", WARN, f"manifesto de integracao nao lido: {erro}",
+                         "sparkforge integrate all --scope user --dry-run")]
+    hosts = (manifesto or {}).get("hosts") or {}
+    checagens = []
+    for host in HOSTS:
+        ident = f"integracao_{host}"
+        entrada = hosts.get(host)
+        if entrada is None:
+            checagens.append(Checagem(ident, SKIP, "integracao de usuario ausente",
+                                      f"sparkforge integrate {host} --scope user"))
+            continue
+        versao = entrada.get("package_version") or "?"
+        detalhe = (
+            f"integrado pelo sparkforge {versao}, "
+            f"{_arquivos_do_host(manifesto or {}, host)} arquivo(s)"
+        )
+        dobro = sorted((em_dobro or {}).get(host) or [])
+        if dobro:
+            checagens.append(Checagem(
+                ident, WARN,
+                f"{detalhe}; copia vendorizada em dobro no repositorio: {', '.join(dobro)}",
+                f"sparkforge integrate {host} --scope user --on-conflict merge",
+            ))
+            continue
+        checagens.append(Checagem(ident, OK, detalhe))
+    return checagens
 
 
 def resumo(checagens: list[Checagem], online: bool) -> dict[str, Any]:

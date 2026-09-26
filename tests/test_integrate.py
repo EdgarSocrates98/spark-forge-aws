@@ -17,7 +17,10 @@ from pathlib import Path
 import pytest
 
 from sparkforge import __version__
-from sparkforge.integrate import detach, integrate, render, sources
+from sparkforge import doctor as dr
+from sparkforge.adapters import _core
+from sparkforge.adapters.cli import main as cli_main
+from sparkforge.integrate import detach, integrate, render, sources, status
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -927,3 +930,55 @@ def test_scope_user_nao_escreve_no_repo(tmp_path):
                           which=lambda _nome: None)
     assert {h["host"] for h in resultado["hosts"]} == {"claude", "devin", "codex", "copilot"}
     assert _foto(repo) == antes, "integrate --scope user escreveu dentro do repositorio"
+
+
+# --------------------------------------------------------------------------
+# CLI e doctor por host (AC11)
+# --------------------------------------------------------------------------
+
+
+def test_doctor_informa_integracao_por_host(tmp_path, monkeypatch, capsys):
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    monkeypatch.setenv("APPDATA", str(home / "AppData" / "Roaming"))
+    repo = _repo_com_copia(tmp_path)
+
+    # Pela CLI: integrate com o HOME e o cwd do teste, sem terminal -> IGNORAR.
+    monkeypatch.chdir(repo)
+    assert cli_main(["integrate", "devin", "--scope", "user"]) == 0
+    saida = json.loads(capsys.readouterr().out)
+    assert saida["conflict"]["choice"] == "ignore"
+    assert (Path.home() / ".agents" / "skills" / "sdd-plan" / "SKILL.md").is_file()
+
+    estado = status(home=home, repo=repo)
+    por_id = {c.id: c for c in dr.avaliar_integracoes(
+        estado["manifest"], None, estado["duplicated"]
+    )}
+    assert set(por_id) == {
+        "integracao_claude", "integracao_devin", "integracao_codex", "integracao_copilot"
+    }
+    devin = por_id["integracao_devin"]
+    assert devin.status == dr.WARN
+    assert f"sparkforge {__version__}" in devin.detail
+    assert ".agents/skills/sdd-plan" in devin.detail
+    assert devin.unlock == "sparkforge integrate devin --scope user --on-conflict merge"
+    assert por_id["integracao_claude"].status == dr.SKIP
+    assert por_id["integracao_claude"].unlock == "sparkforge integrate claude --scope user"
+    # Codex e Copilot nao estao integrados, mas leem `.agents/skills`: o dobro so
+    # aparece quando o host esta integrado.
+    assert por_id["integracao_codex"].status == dr.SKIP
+
+    # O doctor de verdade traz as quatro checagens, e so le.
+    ids = [c["id"] for c in _core.doctor(str(repo))["checks"]]
+    assert ids[-4:] == [
+        "integracao_claude", "integracao_devin", "integracao_codex", "integracao_copilot"
+    ]
+
+    # detach pela CLI tira a integracao; o doctor volta a dizer ausente.
+    assert cli_main(["detach", "devin"]) == 0
+    capsys.readouterr()
+    depois = dr.avaliar_integracoes(status(home=home)["manifest"], None, None)
+    assert {c.status for c in depois} == {dr.SKIP}
+    assert dr.avaliar_integracoes(None, "JSONDecodeError: x", None)[0].status == dr.WARN

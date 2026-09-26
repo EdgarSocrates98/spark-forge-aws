@@ -2817,7 +2817,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         import tempfile
 
         result = call_tool("sparkforge_doctor", {"repo": tempfile.mkdtemp()})
-        assert len(result["checks"]) == 9 and result["online"] is False, result
+        assert len(result["checks"]) == 13 and result["online"] is False, result
         return result
 
     if name == "sparkforge_policy_explain":

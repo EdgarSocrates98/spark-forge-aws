@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Confere se o ambiente esta pronto, em nove checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codigo, artefatos e credencial_aws. A credencial e conferida so localmente (cadeia do boto3): esta tool nunca vai a rede; a confirmacao na AWS e `sparkforge doctor --online`, so na CLI.
+Confere se o ambiente esta pronto, em treze checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codigo, artefatos, credencial_aws e uma por host da integracao de usuario (integracao_claude, integracao_devin, integracao_codex, integracao_copilot: presente, versao do pacote gravada e copia vendorizada em dobro no repositorio). A credencial e conferida so localmente (cadeia do boto3): esta tool nunca vai a rede; a confirmacao na AWS e `sparkforge doctor --online`, so na CLI.
 
 ## Parâmetros
 

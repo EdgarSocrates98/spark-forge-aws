@@ -127,7 +127,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 
 | Tool | Efeito | O que faz |
 |---|---|---|
-| [`sparkforge_doctor`](sparkforge_doctor.md) | só leitura | Confere se o ambiente esta pronto, em nove checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codigo... |
+| [`sparkforge_doctor`](sparkforge_doctor.md) | só leitura | Confere se o ambiente esta pronto, em treze checagens com status ok, warn, fail ou skip e o comando que resolve: pacote, extras, mcp, catalogo, packs, knowledge, indice_de_codig... |
 
 ## economy
 

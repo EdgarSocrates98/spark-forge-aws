@@ -4039,6 +4039,16 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
             )
             conta = (identidade or {}).get("Account")
     checagens.append(dr.avaliar_credencial(extras["boto3"], metodo, conta, erro, online))
+
+    def integracao() -> dict[str, Any]:
+        from sparkforge.integrate import status as estado_da_integracao
+
+        return estado_da_integracao(home=Path.home(), repo=Path(repo))
+
+    estado, erro = sondar(integracao)
+    checagens.extend(dr.avaliar_integracoes(
+        (estado or {}).get("manifest"), erro, (estado or {}).get("duplicated")
+    ))
     return dr.resumo(checagens, online=online)
 
 
