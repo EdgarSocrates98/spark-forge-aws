@@ -259,7 +259,10 @@ def detach(
     `appdata` e `codex_home` sao os mesmos que o integrate recebeu. O `claude`
     registrado sai primeiro pelo CLI dele (`uninstall` e `marketplace remove`); com
     o CLI ausente ou falhando, nada dele sai do disco nem do manifesto, o host fica
-    `cli_pendente` e o detach seguinte conclui.
+    `cli_pendente` e o detach seguinte conclui. O `claude` NAO registrado, com o
+    CLI presente, consulta o `plugin list --json`: desinstala quando o plugin
+    aparece ou quando a lista nao se le, e so apaga direto quando a lista se le e
+    nao o mostra.
     """
     disco = writer.Disco(home, appdata, codex_home=codex_home, dry_run=dry_run)
     try:
@@ -276,7 +279,15 @@ def detach(
         registros = list(entrada.get("config") or [])
         registrado = bool(entrada.get("registered"))
         cli: dict[str, Any] | None = None
-        if nome == "claude" and registrado:
+        desregistrar = registrado
+        if nome == "claude" and not registrado:
+            # O operador pode ter rodado a mao os comandos de `claude_cli_ausente`:
+            # com o CLI presente, a lista decide; lista ilegivel desinstala mesmo assim.
+            estado = _claude.installed_state(dry_run=dry_run, runner=runner, which=which)
+            desregistrar = estado in ("instalado", "ilegivel", "nao_consultado")
+            if not desregistrar:
+                cli = {"status": "not_registered", "plugin_list": estado}
+        if nome == "claude" and desregistrar:
             # Primeiro o CLI: com ele ausente ou falhando, o plugin segue registrado
             # no Claude, e apagar o marketplace do disco o deixaria apontando para
             # o nada. O host fica pendente e o detach seguinte conclui.

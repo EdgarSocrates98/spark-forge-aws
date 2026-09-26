@@ -1278,7 +1278,7 @@ class _ClaudeFalso:
             self.marketplaces.add("sparkforge-local")
         elif comando[:3] == ["plugin", "marketplace", "remove"]:
             if comando[3] not in self.marketplaces:
-                return 1, "marketplace nao existe"
+                return 1, f'Marketplace "{comando[3]}" not found'
             self.marketplaces.discard(comando[3])
         elif comando[:2] == ["plugin", "install"]:
             if comando[2] in self.plugins:
@@ -1286,7 +1286,7 @@ class _ClaudeFalso:
             self.plugins.add(comando[2])
         elif comando[:2] == ["plugin", "uninstall"]:
             if comando[2] not in self.plugins:
-                return 1, "plugin nao instalado"
+                return 1, f'Plugin "{comando[2]}" is not installed'
             self.plugins.discard(comando[2])
         return 0, "{}"
 
@@ -1352,14 +1352,13 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
     integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert len(claude.chamadas) == 4
 
-    # detach desinstala pelo CLI e tira os arquivos.
+    # detach desinstala pelo CLI e tira os arquivos. Sem consultar a lista: o formato
+    # real do `list --json` nao foi observado, e "nao esta na lista" nao prova nada.
     saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
     assert saiu["refused"] == []
     assert claude.chamadas[4:] == [
-        ["/bin/claude", *LISTA_PLUGINS],
         ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-local",
          "--scope", "user"],
-        ["/bin/claude", *LISTA_MKT],
         ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-local",
          "--scope", "user"],
     ]
@@ -1438,6 +1437,101 @@ def test_integrate_depois_dos_comandos_a_mao_marca_registrado(tmp_path):
     assert depois["refused"] == []
     assert [argv[1:] for argv in claude.chamadas] == [LISTA_MKT, LISTA_PLUGINS]
     assert _manifesto(home)["hosts"]["claude"]["registered"] is True
+
+
+def _lista_trocada(claude: _ClaudeFalso, saida: str):
+    """O executor que devolve `saida` para os `list --json` e delega o resto."""
+    def runner(argv: list[str]) -> tuple[int, str]:
+        if argv[1:] in (LISTA_MKT, LISTA_PLUGINS):
+            claude.chamadas.append(argv)
+            return 0, saida
+        return claude(argv)
+    return runner
+
+
+UNINSTALL = ["plugin", "uninstall", "sparkforge-aws@sparkforge-local", "--scope", "user"]
+MKT_REMOVE = ["plugin", "marketplace", "remove", "sparkforge-local", "--scope", "user"]
+
+
+def test_detach_com_lista_que_nao_se_entende_roda_o_uninstall(tmp_path):
+    """M3: `list --json` em formato que o SparkForge nao reconhece nao prova que o
+    plugin saiu: o uninstall roda antes de o marketplace sair do disco."""
+    home = tmp_path / "h"
+    marketplace = home / ".sparkforge" / "claude"
+    claude = _ClaudeFalso()
+    integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    outro_formato = json.dumps([{"plugin": "sparkforge-aws",
+                                 "source": {"marketplace": "sparkforge-local"}}])
+    saiu = detach("claude", home=home, runner=_lista_trocada(claude, outro_formato),
+                  which=lambda _: "/bin/claude")
+    assert saiu["refused"] == []
+    assert claude.plugins == set(), "o marketplace saiu com o plugin ainda instalado"
+    assert not marketplace.exists()
+
+
+def test_detach_com_lista_ilegivel_e_plugin_ja_desinstalado_conclui(tmp_path):
+    """M3: lista ilegivel e o plugin ja fora (detach interrompido antes): o uninstall
+    roda, "nao instalado" e sucesso, e o detach conclui."""
+    home = tmp_path / "h"
+    marketplace = home / ".sparkforge" / "claude"
+    claude = _ClaudeFalso()
+    integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    claude.plugins.clear()
+    antes = len(claude.chamadas)
+    saiu = detach("claude", home=home, runner=_lista_trocada(claude, "isto nao e json"),
+                  which=lambda _: "/bin/claude")
+    assert saiu["refused"] == []
+    assert [argv[1:] for argv in claude.chamadas[antes:]] == [UNINSTALL, MKT_REMOVE]
+    assert not marketplace.exists()
+
+
+def test_detach_sem_registro_desinstala_o_que_o_operador_instalou(tmp_path):
+    """M4: `integrate claude` sem CLI (nao registrado); o operador rodou os dois
+    comandos a mao. O detach com o CLI consulta a lista e desinstala antes de apagar."""
+    home = tmp_path / "h"
+    marketplace = home / ".sparkforge" / "claude"
+    integrate("claude", home=home, which=lambda _: None)
+    assert not _manifesto(home)["hosts"]["claude"].get("registered")
+    claude = _ClaudeFalso(marketplaces={"sparkforge-local"},
+                          plugins={"sparkforge-aws@sparkforge-local"})
+    saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    assert saiu["refused"] == []
+    assert [argv[1:] for argv in claude.chamadas] == [LISTA_PLUGINS, UNINSTALL, MKT_REMOVE]
+    assert claude.plugins == set() and claude.marketplaces == set()
+    assert not marketplace.exists()
+
+
+@pytest.mark.parametrize("caso", ["ilegivel", "ausente", "falha"])
+def test_detach_sem_registro_com_cli(tmp_path, caso):
+    """M4: lista ilegivel roda o uninstall mesmo assim; lista que se le e nao mostra
+    o plugin so apaga; uninstall que falha deixa tudo como `cli_pendente`."""
+    home = tmp_path / "h"
+    marketplace = home / ".sparkforge" / "claude"
+    integrate("claude", home=home, which=lambda _: None)
+    claude = _ClaudeFalso()
+    if caso == "ilegivel":
+        runner = _lista_trocada(claude, "nada")
+    elif caso == "ausente":
+        runner = claude
+    else:
+        def runner(argv):
+            if argv[1:] == LISTA_PLUGINS:
+                return 0, "no meio de um erro"
+            return 1, "erro do claude"
+    saiu = detach("claude", home=home, runner=runner, which=lambda _: "/bin/claude")
+    if caso == "falha":
+        (host,) = saiu["hosts"]
+        assert host["status"] == "cli_pendente"
+        assert [r["reason"] for r in saiu["refused"]] == ["claude_cli_falhou"]
+        assert (marketplace / ".claude-plugin" / "marketplace.json").is_file()
+        return
+    assert saiu["refused"] == []
+    feitos = [argv[1:] for argv in claude.chamadas]
+    if caso == "ilegivel":
+        assert feitos == [LISTA_PLUGINS, UNINSTALL, MKT_REMOVE]
+    else:
+        assert feitos == [LISTA_PLUGINS]
+    assert not marketplace.exists()
 
 
 def test_versao_do_plugin_muda_com_o_conteudo_e_o_python(tmp_path):

@@ -16,10 +16,22 @@ de `uninstall` so confirma o `--prune`. O plugin local nao tem comando declarado
 nenhum dos tres pede confirmacao sem TTY. O executor roda com `stdin` fechado e
 `TIMEOUT_S`: um prompt inesperado sai como recusa, nunca como espera sem fim.
 
-Cada passo confere antes pelo `list --json` (`plugin marketplace list`, `plugin
+Registrar confere antes pelo `list --json` (`plugin marketplace list`, `plugin
 list`): o operador que rodou a mao os comandos de `claude_cli_ausente` nao trava o
-integrate seguinte num `add` repetido, e um detach interrompido no meio nao tenta de
-novo o `uninstall` do que ja saiu. Lista que falha ou nao se le nao pula o passo.
+integrate seguinte num `add` repetido. Lista que falha ou nao se le nao pula o passo.
+
+Desregistrar NAO pula por lista: o `uninstall` e o `marketplace remove` rodam
+sempre, e a saida "nao instalado"/"nao encontrado" (`_JA_AUSENTE`) conta como
+sucesso -- e assim que um detach interrompido no meio conclui. O marketplace so
+sai do disco depois do `uninstall` confirmado. O `detach` de um plugin que o
+SparkForge nao registrou (o operador rodou os comandos a mao) consulta o `plugin
+list --json` e desinstala quando o plugin aparece OU quando a lista nao se le.
+
+Limite declarado: todo este fluxo foi testado contra um CLI FALSO
+(`tests/test_integrate.py::_ClaudeFalso`). O formato real de `claude plugin list
+--json` e de `claude plugin marketplace list --json`, e o texto real do erro de
+"nao instalado", nao foram observados; `_tem_plugin` procura o id em qualquer ponto
+do JSON, e ausencia na lista nunca autoriza apagar o marketplace do disco.
 
 A versao do plugin e `<versao do pacote>+<8 hex>` do conteudo (skills, agents e
 `.mcp.json`): trocar o Python ou o bundle muda a versao, e o `plugin update` do Claude
@@ -37,6 +49,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -171,6 +184,8 @@ class Passo:
     lista: list[str] | None = None
     presente: Callable[[Any], bool] | None = None
     pular_se_presente: bool = True
+    # Saida de erro que diz "ja nao esta la" conta como sucesso (uninstall, remove).
+    ausente_ok: bool = False
 
 
 def register_steps(home: Path, *, primeira: bool) -> list[Passo]:
@@ -194,11 +209,12 @@ def register_commands(home: Path, *, primeira: bool) -> list[list[str]]:
 
 
 def unregister_steps() -> list[Passo]:
+    """Sem lista: "nao aparece na lista" nao prova que saiu (o formato real do
+    `list --json` nao foi observado). O passo roda, e "ja ausente" e sucesso."""
     return [
-        Passo(["plugin", "uninstall", PLUGIN_ID, "--scope", "user"],
-              LISTA_PLUGINS, _tem_plugin, pular_se_presente=False),
+        Passo(["plugin", "uninstall", PLUGIN_ID, "--scope", "user"], ausente_ok=True),
         Passo(["plugin", "marketplace", "remove", MARKETPLACE, "--scope", "user"],
-              LISTA_MARKETPLACES, _tem_marketplace, pular_se_presente=False),
+              ausente_ok=True),
     ]
 
 
@@ -284,6 +300,14 @@ def _json_da_saida(saida: str) -> Any:
     return None
 
 
+# A saida de erro que diz que o plugin ou o marketplace ja nao esta la. Texto nao
+# observado no CLI real (limite declarado no docstring do modulo).
+_JA_AUSENTE = re.compile(
+    r"not\s+installed|not\s+found|no\s+such|does\s+not\s+exist|is\s+not\s+registered",
+    re.IGNORECASE,
+)
+
+
 def _desnecessario(executavel: str, passo: Passo, runner: Runner) -> bool | dict[str, Any]:
     """O passo ja esta feito, pela lista? Lista que falha ou nao se le: nao."""
     if passo.lista is None or passo.presente is None:
@@ -318,6 +342,7 @@ def _executar(
     executor = runner or RUNNER_PADRAO
     feitos: list[list[str]] = []
     pulados: list[list[str]] = []
+    ausentes: list[list[str]] = []
     for passo in passos:
         pular = _desnecessario(executavel, passo, executor)
         if isinstance(pular, dict):
@@ -329,6 +354,9 @@ def _executar(
         if isinstance(resultado, dict):
             return resultado
         codigo, saida = resultado
+        if codigo != 0 and passo.ausente_ok and _JA_AUSENTE.search(saida):
+            ausentes.append(passo.argv)
+            continue
         if codigo != 0:
             return {
                 "status": "refused",
@@ -337,7 +365,12 @@ def _executar(
                 "output": saida[-SAIDA_MAX:],
             }
         feitos.append(passo.argv)
-    return {"status": "ok", "commands": _mostrar(feitos), "skipped": _mostrar(pulados)}
+    relatorio: dict[str, Any] = {
+        "status": "ok", "commands": _mostrar(feitos), "skipped": _mostrar(pulados)
+    }
+    if ausentes:
+        relatorio["already_absent"] = _mostrar(ausentes)
+    return relatorio
 
 
 def register(
@@ -362,6 +395,27 @@ def unregister(
     return _executar(unregister_steps(), dry_run=dry_run, runner=runner, which=which)
 
 
+def installed_state(
+    *, dry_run: bool, runner: Runner | None = None, which: Which | None = None
+) -> str:
+    """O plugin esta instalado no Claude? Para o detach do que o SparkForge nao
+    registrou: `sem_cli`, `nao_consultado` (dry-run), `instalado`, `ausente` ou
+    `ilegivel` (a lista falhou ou nao se le)."""
+    executavel = (which or WHICH_PADRAO)("claude")
+    if executavel is None:
+        return "sem_cli"
+    if dry_run:
+        return "nao_consultado"
+    listado = _chamar(executavel, LISTA_PLUGINS, runner or RUNNER_PADRAO)
+    if isinstance(listado, dict):
+        return "ilegivel"
+    codigo, saida = listado
+    dados = _json_da_saida(saida) if codigo == 0 else None
+    if dados is None:
+        return "ilegivel"
+    return "instalado" if _tem_plugin(dados) else "ausente"
+
+
 __all__ = [
     "DESCRICAO",
     "PLUGIN_ID",
@@ -370,6 +424,7 @@ __all__ = [
     "WHICH_PADRAO",
     "Passo",
     "content_version",
+    "installed_state",
     "plugin_files",
     "register",
     "register_commands",
