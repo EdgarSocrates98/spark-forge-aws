@@ -1,0 +1,175 @@
+catalog_version: 1
+schema_version: 1
+area: SF-DQ-AI
+retrieved: 2026-09-26
+
+rules:
+  - id: SF-DQ-AI-001
+    category: data-quality-ai
+    title: ADVANCED exposes classified data to inference path
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.sensitive_exposure: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      ADVANCED recommendation processing can send metadata and sampled rows to
+      the inference path. A sensitive classification requires an explicit access
+      and data-protection review before the recommendation is accepted.
+    proposed_change:
+      - Confirm the approved data classification and the Bedrock/Athena access chain.
+      - Record the approval and limit the recommendation scope to declared evidence.
+    security_impact: widens_scope
+    security_impact_reason: Sensitive ADVANCED data can cross the inference boundary.
+    governance_decision_required: true
+    risks: [Review can delay recommendation adoption; missing classification remains unresolved.]
+    tradeoffs: [Governance adds an approval step before operational use.]
+    validation: [Re-run the assessment with classification and access-chain evidence.]
+    rollback: [Revert the governance metadata change and keep recommendation in review.]
+    action:
+      kind: measurement.narrow_claim_scope
+      target: dq.ai.assessment
+      direction: investigate
+      requires_absent: []
+      moves: [security.secret_exposure]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+        retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-002
+    category: data-quality-ai
+    title: ADVANCED cross-Region inference requires explicit review
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.cross_region: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    security_impact: widens_scope
+    security_impact_reason: Cross-Region inference changes the boundary in which sampled data is processed.
+    governance_decision_required: true
+    explanation: >
+      Source and inference Regions differ. The assessment must expose this
+      boundary so the operator can verify the approved cross-Region path.
+    proposed_change:
+      - Verify the declared source and inference Regions and their approved trust boundary.
+      - Keep the recommendation unresolved until cross-Region evidence exists.
+    risks: [A missing Region relation prevents a complete exposure decision.]
+    tradeoffs: [Additional evidence is required before automation.]
+    validation: [Re-run assessment with source and inference Region evidence.]
+    rollback: [Disable automated adoption and retain the recommendation for review.]
+    action:
+      kind: measurement.narrow_claim_scope
+      target: dq.ai.region_boundary
+      direction: investigate
+      requires_absent: []
+      moves: [security.secret_exposure]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+        retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-003
+    category: data-quality-ai
+    title: ADVANCED sampling requires sufficient KMS evidence
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.kms_insufficient: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    security_impact: reduces_scope
+    security_impact_reason: Encryption evidence protects sampled data at rest and must be explicitly verified.
+    governance_decision_required: true
+    explanation: >
+      ADVANCED sampling uses an Athena sampling path. Missing or insufficient
+      KMS status means encryption governance is not established by the artifact.
+    proposed_change:
+      - Verify the KMS key, key policy, and service-role permissions required by the sampling path.
+      - Do not treat a missing KMS artifact as encrypted by default.
+    risks: [Changing encryption configuration can interrupt sampling.]
+    tradeoffs: [Encryption verification adds a deployment dependency.]
+    validation: [Re-run assessment with observed KMS status and key reference.]
+    rollback: [Restore the previous sampling configuration and keep adoption blocked.]
+    action:
+      kind: measurement.collect_baseline
+      target: dq.ai.sampling
+      direction: investigate
+      requires_absent: []
+      moves: [security.secret_exposure]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+        retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-004
+    category: data-quality-ai
+    title: Recommendation lacks declared human review
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.review_missing: true}
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      AWS documents reviewing and editing generated recommendations. A valid
+      DQDL artifact without a declared human review remains governance-incomplete.
+    proposed_change:
+      - Record reviewer identity, decision, and reference before publishing rules.
+      - Keep generated DQDL external; this feature validates it but never creates it.
+    risks: [Unreviewed rules can encode inappropriate assumptions.]
+    tradeoffs: [Human review increases lead time but preserves accountability.]
+    validation: [Re-run assessment with a declared review artifact.]
+    rollback: [Withdraw the recommendation from publication and retain prior rules.]
+    action:
+      kind: validation.enforce_check_result
+      target: dq.ai.configuration
+      direction: investigate
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-quality-getting-started.html
+        retrieved: 2026-09-26
+
+  - id: SF-DQ-AI-005
+    category: data-quality-ai
+    title: ADVANCED contains incompatible arguments
+    requires_facts: [dq.ai.assessment]
+    when:
+      all:
+        - fact: dq.ai.assessment
+          where: {attrs.mode: ADVANCED, attrs.has_incompatible_args: true}
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      The ADVANCED recommendation path excludes several execution arguments.
+      Their presence is a structural compatibility defect in the supplied artifact.
+    proposed_change:
+      - Remove or isolate PreProcessingQuery, NumberOfWorkers, Timeout, and AdditionalRunOptions from ADVANCED configuration.
+      - Re-run validation against the external DQDL artifact.
+    risks: [Removing an argument can alter job behavior outside recommendation generation.]
+    tradeoffs: [Separate configuration paths increase explicitness.]
+    validation: [Confirm no prohibited argument remains in the ADVANCED artifact.]
+    rollback: [Restore the previous configuration while keeping the recommendation unpublished.]
+    action:
+      kind: config.remove_property
+      target: dq.ai.assessment
+      direction: remove
+      requires_absent: []
+      moves: [runtime.engine_version]
+      depends_on: []
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/data-quality-getting-started.html
+        retrieved: 2026-09-26

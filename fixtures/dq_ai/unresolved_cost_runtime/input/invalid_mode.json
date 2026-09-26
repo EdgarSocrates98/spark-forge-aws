@@ -1,0 +1,4 @@
+{
+  "table": {"database": "quality", "name": "invalid_mode"},
+  "recommendation_mode": "UNKNOWN"
+}

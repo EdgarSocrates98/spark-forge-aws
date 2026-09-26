@@ -1,0 +1,8 @@
+[
+  {"kind": "dq.ai.analyzed"},
+  {"kind": "dq.ai.recommendation"},
+  {"kind": "dq.ai.review"},
+  {"kind": "dq.dqdl"},
+  {"kind": "athena.query_cost"},
+  {"kind": "dq.ai.assessment"}
+]

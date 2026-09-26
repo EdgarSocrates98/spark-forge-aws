@@ -1,0 +1,6 @@
+{
+  "table": {"database": "quality", "name": "customers"},
+  "recommendation_mode": "BASIC",
+  "classification": "public",
+  "runtime_version": "4.0"
+}

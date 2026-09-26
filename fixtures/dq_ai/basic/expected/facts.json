@@ -1,0 +1,6 @@
+[
+  {"kind": "dq.ai.analyzed"},
+  {"kind": "dq.ai.recommendation"},
+  {"kind": "dq.ai.assessment"},
+  {"kind": "dq.ai.assessment.unresolved"}
+]

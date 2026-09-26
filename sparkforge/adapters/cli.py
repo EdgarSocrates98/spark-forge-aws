@@ -585,6 +585,17 @@ def build_parser() -> argparse.ArgumentParser:
     dq_p.add_argument("--cursor")
     _add_detail_level(dq_p)
 
+    dq_ai_p = analyze_sub.add_parser(
+        "dq-ai",
+        help="Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas.",
+    )
+    dq_ai_p.add_argument("--path", required=True, help="Manifesto JSON/YAML de recomendacao.")
+    dq_ai_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    dq_ai_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    dq_ai_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    dq_ai_p.add_argument("--cursor")
+    _add_detail_level(dq_ai_p)
+
     graph_p = analyze_sub.add_parser(
         "graph",
         help="Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: "
@@ -1044,6 +1055,29 @@ def build_parser() -> argparse.ArgumentParser:
     finops_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
     finops_p.add_argument("--job-name", required=True)
     finops_p.add_argument("--out", help="Escreve o relatorio completo (JSON) neste arquivo.")
+
+    # dq-ai -------------------------------------------------------------------
+    dq_ai_top = sub.add_parser(
+        "dq-ai",
+        help="Avalia governanca Glue DQ ADVANCED sobre facts e artefatos observados.",
+    )
+    dq_ai_sub = dq_ai_top.add_subparsers(dest="dq_ai_action", required=True)
+    dq_ai_assess_p = dq_ai_sub.add_parser(
+        "assess", help="Compõe facts, julga regras e renderiza o relatório canônico."
+    )
+    dq_ai_assess_p.add_argument("--facts", action="append", required=True)
+    dq_ai_assess_p.add_argument("--dqdl", default="", help="DQDL externo a validar por sintaxe.")
+    dq_ai_assess_p.add_argument("--review", default="", help="Manifesto externo de revisão humana.")
+    dq_ai_assess_p.add_argument(
+        "--cost-facts", default="", help="Medição observada de custo Athena em JSON."
+    )
+    dq_ai_assess_p.add_argument("--glue", default="")
+    dq_ai_assess_p.add_argument("--spark", default="")
+    dq_ai_assess_p.add_argument("--python", dest="python_version", default="")
+    dq_ai_assess_p.add_argument(
+        "--view", choices=["all", "maintainer", "operator", "security_compliance"], default="all"
+    )
+    dq_ai_assess_p.add_argument("--out", help="Escreve o relatório completo (JSON).")
 
     # tune ---------------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `capacity` e `finops`: nao extrai de
@@ -3442,6 +3476,27 @@ def _cmd_analyze_data_quality(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_dq_ai(args: argparse.Namespace) -> int:
+    full = _core.analyze_dq_ai(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
 def _cmd_analyze_graph(args: argparse.Namespace) -> int:
     full = _core.analyze_graph(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -3542,6 +3597,25 @@ def _cmd_capacity(args: argparse.Namespace) -> int:
 
 def _cmd_finops(args: argparse.Namespace) -> int:
     payload = _core.finops_report(args.facts, job_name=args.job_name)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_dq_ai_assess(args: argparse.Namespace) -> int:
+    payload = _core.dq_ai_assess(
+        args.facts,
+        dqdl_path=args.dqdl,
+        review_path=args.review,
+        cost_facts_path=args.cost_facts,
+        glue=args.glue,
+        spark=args.spark,
+        python=args.python_version,
+        view=args.view,
+    )
     if args.out:
         Path(args.out).write_text(
             json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -4810,6 +4884,7 @@ _DISPATCH = {
     ("analyze", "sfn-history"): _cmd_analyze_sfn_history,
     ("analyze", "airflow-dag"): _cmd_analyze_airflow_dag,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
+    ("analyze", "dq-ai"): _cmd_analyze_dq_ai,
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
@@ -4828,6 +4903,7 @@ _DISPATCH = {
     ("workload", None): _cmd_workload,
     ("capacity", None): _cmd_capacity,
     ("finops", None): _cmd_finops,
+    ("dq-ai", "assess"): _cmd_dq_ai_assess,
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
     ("telemetry", "export"): _cmd_telemetry_export,
@@ -4921,7 +4997,7 @@ _DISPATCH = {
     ("journal", "verify"): _cmd_journal_verify,
 }
 
-_FORA_DOS_ARGS_DO_JOURNAL = frozenset({"command", "subcommand", "analyze_target"})
+_FORA_DOS_ARGS_DO_JOURNAL = frozenset({"command", "subcommand", "analyze_target", "dq_ai_action"})
 
 
 def _tool_da_cli(comando: str, sub_action: str | None) -> str:
@@ -4984,6 +5060,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "budget_action", None)
         or getattr(args, "autonomy_action", None)
         or getattr(args, "journal_action", None)
+        or getattr(args, "dq_ai_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

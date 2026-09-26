@@ -1,0 +1,8 @@
+{
+  "table": {"database": "quality", "name": "inventory"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "source_region": "us-east-1",
+  "inference_region": "us-east-1",
+  "kms": {"status": "sufficient"}
+}

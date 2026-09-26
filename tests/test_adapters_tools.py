@@ -61,6 +61,7 @@ class TestToolSurface:
             "sparkforge_analyze_sfn_history",
             "sparkforge_analyze_airflow_dag",
             "sparkforge_analyze_data_quality",
+            "sparkforge_analyze_dq_ai",
             "sparkforge_analyze_graph",
             "sparkforge_analyze_call_graph",
             "sparkforge_analyze_s3_listing",
@@ -85,6 +86,7 @@ class TestToolSurface:
             "sparkforge_workload",
             "sparkforge_capacity",
             "sparkforge_finops",
+            "sparkforge_dq_ai_assess",
             "sparkforge_tune",
             "sparkforge_economy_report",
             "sparkforge_judge",
@@ -2543,6 +2545,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         dq_path.write_text(_DQ_SOURCE, encoding="utf-8")
         return call_tool("sparkforge_analyze_data_quality", {"path": str(dq_path)})
 
+    if name == "sparkforge_analyze_dq_ai":
+        recommendation = tmp_path / "recommendation.json"
+        recommendation.write_text(
+            '{"table_name":"orders","recommendation_mode":"BASIC"}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_dq_ai", {"path": str(recommendation)})
+
     if name == "sparkforge_analyze_graph":
         graph_path = tmp_path / "grafo.py"
         graph_path.write_text(_GRAPH_SOURCE, encoding="utf-8")
@@ -2647,6 +2657,20 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
         assert result["frontier"], "a amostra precisa render ao menos uma capacidade"
         return result
+
+    if name == "sparkforge_dq_ai_assess":
+        recommendation = tmp_path / "recommendation.json"
+        recommendation.write_text(
+            '{"table_name":"orders","recommendation_mode":"BASIC"}',
+            encoding="utf-8",
+        )
+        analyzed = call_tool("sparkforge_analyze_dq_ai", {"path": str(recommendation)})
+        facts_path = tmp_path / "dq_ai_facts.json"
+        facts_path.write_text(json.dumps(analyzed["items"]), encoding="utf-8")
+        return call_tool(
+            "sparkforge_dq_ai_assess",
+            {"facts_paths": [str(facts_path)], "glue": "4.0"},
+        )
 
     if name == "sparkforge_tune":
         facts_path = _write_tune_facts_file(tmp_path)

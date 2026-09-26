@@ -4821,6 +4821,46 @@ _FINOPS_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_DQ_AI_REPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "schema_version",
+        "feature",
+        "runtime",
+        "facts",
+        "findings",
+        "unresolved",
+        "skipped",
+        "compatibility",
+        "cost",
+        "catalog_version",
+        "metrics",
+        "views",
+    ],
+    "properties": {
+        "schema_version": {"type": "integer"},
+        "feature": {"type": "string"},
+        "runtime": {"type": "object"},
+        "facts": {"type": "array"},
+        "findings": {"type": "array"},
+        "unresolved": {"type": "array"},
+        "skipped": {"type": "array"},
+        "compatibility": {"type": "array"},
+        "cost": {"type": "object"},
+        "catalog_version": {"type": "integer"},
+        "metrics": {"type": "object"},
+        "views": {
+            "type": "object",
+            "minProperties": 1,
+            "properties": {
+                "maintainer": {"type": "object"},
+                "operator": {"type": "object"},
+                "security_compliance": {"type": "object"},
+            },
+        },
+    },
+}
+
 _TUNE_PROPERTY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["key", "current", "derived", "safety", "supported_in_runtime", "explanation"],
@@ -6304,6 +6344,33 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_dq_ai": {
+        "description": (
+            "Extrai facts de um manifesto externo de recomendacao Glue DQ BASIC ou "
+            "ADVANCED. Le somente metadata, rejeita campos que carreguem rows e nao "
+            "chama Bedrock, Glue ou Athena."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string"},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts de governanca DQ AI, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_graph": {
         "description": (
             "Extrai facts de PROCESSAMENTO DE GRAFO com GraphFrames do proprio codigo "
@@ -7117,6 +7184,35 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(
             _FINOPS_SUCCESS_SCHEMA,
             "Relatorio financeiro, ou erro se `facts_path` nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_dq_ai_assess": {
+        "description": (
+            "Compoe facts de governanca Glue DQ ADVANCED, valida DQDL externo por "
+            "sintaxe, julga SF-DQ-AI e retorna tres views no relatorio. Nao gera "
+            "regras, nao envia rows a provider e nao estima custo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_paths"],
+            "properties": {
+                "facts_paths": {"type": "array", "items": {"type": "string"}},
+                "dqdl_path": {"type": "string"},
+                "review_path": {"type": "string"},
+                "cost_facts_path": {"type": "string"},
+                "glue": {"type": "string"},
+                "spark": {"type": "string"},
+                "python": {"type": "string"},
+                "view": {
+                    "type": "string",
+                    "enum": ["all", "maintainer", "operator", "security_compliance"],
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _DQ_AI_REPORT_SCHEMA,
+            "Relatorio DQ AI canonico, ou erro quando facts/artifactos sao invalidos.",
         ),
         "annotations": _READ_ONLY,
     },
@@ -10123,6 +10219,16 @@ def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_dq_ai(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_dq_ai(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_graph(
         args["path"],
@@ -10193,6 +10299,19 @@ def _h_capacity(args: dict[str, Any]) -> dict[str, Any]:
 
 def _h_finops(args: dict[str, Any]) -> dict[str, Any]:
     return _core.finops_report(args["facts_path"], job_name=args["job_name"])
+
+
+def _h_dq_ai_assess(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.dq_ai_assess(
+        args["facts_paths"],
+        dqdl_path=args.get("dqdl_path") or "",
+        review_path=args.get("review_path") or "",
+        cost_facts_path=args.get("cost_facts_path") or "",
+        glue=args.get("glue") or None,
+        spark=args.get("spark") or None,
+        python=args.get("python") or None,
+        view=args.get("view", "all"),
+    )
 
 
 def _h_tune(args: dict[str, Any]) -> dict[str, Any]:
@@ -10662,6 +10781,7 @@ _HANDLERS = {
     "sparkforge_analyze_sfn_history": _h_analyze_sfn_history,
     "sparkforge_analyze_airflow_dag": _h_analyze_airflow_dag,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
+    "sparkforge_analyze_dq_ai": _h_analyze_dq_ai,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
@@ -10677,6 +10797,7 @@ _HANDLERS = {
     "sparkforge_workload": _h_workload,
     "sparkforge_capacity": _h_capacity,
     "sparkforge_finops": _h_finops,
+    "sparkforge_dq_ai_assess": _h_dq_ai_assess,
     "sparkforge_tune": _h_tune,
     "sparkforge_economy_report": _h_economy_report,
     "sparkforge_funcval_plan": _h_funcval_plan,

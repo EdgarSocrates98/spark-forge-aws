@@ -140,7 +140,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**109 tools, 41 with `detail_level`** (recounted 2026-09-20) (`summary`, `normal`, `full`).
+**111 tools, 42 with `detail_level`** (recounted 2026-09-20) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.

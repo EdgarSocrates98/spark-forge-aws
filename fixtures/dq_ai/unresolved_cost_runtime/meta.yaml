@@ -1,0 +1,11 @@
+name: unresolved_cost_runtime
+proves: Missing runtime, region relation, DQDL validity, review status, KMS status, and cost stay unresolved.
+runtime: {}
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.analyzed
+  - dq.dqdl.unresolved
+  - dq.ai.review.unresolved
+  - athena.query_cost.unresolved
+  - dq.ai.assessment.unresolved
+expects_rules: []

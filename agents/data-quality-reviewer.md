@@ -7,11 +7,16 @@ skills:
   - review-pyspark-pr
   - analyze-library-call-graph
   - analyze-functional-rules
-rule_areas: [SF-DQ]
+rule_areas: [SF-DQ, SF-DQ-AI]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
+
+Para governança de recomendações Glue Data Quality, use `sparkforge_analyze_dq_ai` para
+extrair somente metadados do artefato e `sparkforge_dq_ai_assess` para compor avaliação,
+findings e relatório. DQDL é entrada externa validada; nunca gere regra, envie linha de
+dados ou invoque provedor.
 
 ## Quando você entra, e quando o irmão entra
 

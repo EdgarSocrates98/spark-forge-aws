@@ -80,8 +80,8 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 169,
-    "retrieved": "2026-08-01"
+    "rule_count": 174,
+    "retrieved": "2026-09-26"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
   "tools": [
@@ -93,6 +93,7 @@
     "sparkforge_analyze_consumers",
     "sparkforge_analyze_controlm_jobs",
     "sparkforge_analyze_data_quality",
+    "sparkforge_analyze_dq_ai",
     "sparkforge_analyze_emr_cluster",
     "sparkforge_analyze_emr_eks",
     "sparkforge_analyze_emr_serverless",
@@ -157,6 +158,7 @@
     "sparkforge_doctor",
     "sparkforge_economy_report",
     "sparkforge_finops",
+    "sparkforge_dq_ai_assess",
     "sparkforge_funcval_compare",
     "sparkforge_funcval_plan",
     "sparkforge_fuse",
@@ -207,7 +209,8 @@
     "fact": "sparkforge/findings/schemas/fact.schema.json",
     "finding": "sparkforge/findings/schemas/finding.schema.json",
     "business_rule": "sparkforge/findings/schemas/business_rule.schema.json",
-    "case": ".sparkforge/case.yaml"
+    "case": ".sparkforge/case.yaml",
+    "dq_ai_report": "sparkforge/findings/schemas/dq_ai_report.schema.json"
   },
   "agent_tooling": {
     "_comment": "Ecossistema caveman, de Julius Brussee, MIT. Vendorizado para que a economia de token seja do projeto e nao da maquina: zero instalacao, zero rede, sem npm e sem npx. Creditos e procedencia em vendor/CREDITS.md.",

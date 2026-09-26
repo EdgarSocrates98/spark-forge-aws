@@ -1879,6 +1879,35 @@
       "rules": [],
       "sha256": "1777ce21b09507eb5407445dea16acf0824078d6259e5def1b782c4499473d34"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/data-quality-getting-started.html": {
+      "checked_at": "2026-09-26",
+      "docs": [
+        "knowledge/glue/dq-advanced-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-26"
+      ],
+      "rules": [
+        "SF-DQ-AI-004",
+        "SF-DQ-AI-005"
+      ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html": {
+      "checked_at": "2026-09-26",
+      "docs": [
+        "knowledge/glue/dq-advanced-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-26"
+      ],
+      "rules": [
+        "SF-DQ-AI-001",
+        "SF-DQ-AI-002",
+        "SF-DQ-AI-003"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html": {
       "checked_at": "2026-09-21",
       "docs": [

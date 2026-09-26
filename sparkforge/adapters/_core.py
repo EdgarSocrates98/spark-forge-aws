@@ -89,6 +89,14 @@ from sparkforge.facts.data_quality import (
     extract_data_quality_path,
     extract_data_quality_tree,
 )
+from sparkforge.facts.athena_cost import extract_athena_cost_path
+from sparkforge.facts.glue_dq_advanced import (
+    extract_dq_review_path,
+    extract_glue_dq_advanced_path,
+    extract_glue_dq_advanced_tree,
+)
+from sparkforge.dq_ai.assessment import build_assessment_facts
+from sparkforge.dqdl.validator import validate_dqdl_path
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
 from sparkforge.facts.emr_eks import extract_emr_eks_path, extract_emr_eks_tree
 from sparkforge.facts.emr_serverless import (
@@ -146,6 +154,8 @@ from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.finops import build_finops_report
+from sparkforge.finops.athena_observed import build_observed_athena_cost
+from sparkforge.reporting.dq_ai import build_dq_ai_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
@@ -1914,6 +1924,39 @@ def analyze_data_quality(
 
 
 # --------------------------------------------------------------------------- #
+# analyze dq-ai
+# --------------------------------------------------------------------------- #
+
+
+def _extract_dq_ai_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um manifesto de recomendacao Glue DQ ADVANCED\n"
+            f"    sparkforge analyze dq-ai --path recommendation.json "
+            f"--out .sparkforge/facts_dq_ai.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_glue_dq_advanced_tree(target)
+    return extract_glue_dq_advanced_path(target)
+
+
+def analyze_dq_ai(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_dq_ai_facts(path)
+    return _facts_page(
+        facts, "dq.ai.recommendation.unresolved", kind, limit, cursor, detail_level
+    )
+
+
+# --------------------------------------------------------------------------- #
 # analyze graph
 # --------------------------------------------------------------------------- #
 
@@ -2945,6 +2988,53 @@ def finops_report(facts_path: str, job_name: str) -> dict[str, Any]:
     runtime, julgados = _runtime_e_facts(facts=facts)
     findings, _skipped = run_judge(julgados, rules, runtime, return_skipped=True)
     return build_finops_report(facts, job_name=job_name, findings=findings)
+
+
+# --------------------------------------------------------------------------- #
+# dq-ai assess
+# --------------------------------------------------------------------------- #
+
+
+def dq_ai_assess(
+    facts_paths: list[str],
+    dqdl_path: str = "",
+    review_path: str = "",
+    cost_facts_path: str = "",
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    view: str = "all",
+) -> dict[str, Any]:
+    if not facts_paths:
+        raise AdapterError("informe ao menos um --facts", exit_code=2)
+    facts = _merge_facts_files(
+        facts_paths,
+        producer=(
+            "sparkforge analyze dq-ai --path <recommendation.json> "
+            "--out {path}"
+        ),
+    )
+    recommendations = [fact for fact in facts if fact.kind == "dq.ai.recommendation"]
+    subject = recommendations[0].subject if len(recommendations) == 1 else None
+    if dqdl_path:
+        facts.extend(validate_dqdl_path(dqdl_path, subject=subject))
+    if review_path:
+        facts.extend(extract_dq_review_path(review_path, subject=subject))
+    if cost_facts_path:
+        facts.extend(extract_athena_cost_path(cost_facts_path))
+    facts = sort_facts(facts)
+    runtime, judged_facts = _runtime_e_facts(
+        glue=glue, spark=spark, python=python, facts=facts
+    )
+    facts = sort_facts([*judged_facts, *build_assessment_facts(judged_facts, runtime)])
+    try:
+        rules = load_catalog()
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    findings, skipped = run_judge(facts, rules, runtime, return_skipped=True)
+    dq_findings = [finding for finding in findings if finding.rule_id.startswith("SF-DQ-AI-")]
+    dq_skipped = [item for item in skipped if str(item.get("rule_id", "")).startswith("SF-DQ-AI-")]
+    return build_dq_ai_report(facts, dq_findings, runtime, dq_skipped, view=view)
 
 
 # --------------------------------------------------------------------------- #

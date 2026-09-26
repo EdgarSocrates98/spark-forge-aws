@@ -1,0 +1,10 @@
+name: cross_region
+proves: Different source and inference Regions remain visible in the finding.
+runtime:
+  glue: "4.0"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.review
+  - dq.ai.analyzed
+expects_rules:
+  - SF-DQ-AI-002

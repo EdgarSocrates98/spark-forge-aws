@@ -1,0 +1,37 @@
+schema_version: 1
+feature: glue-dq-advanced-governance
+retrieved: 2026-09-26
+sources:
+  - url: https://docs.aws.amazon.com/glue/latest/dg/data-quality-getting-started.html
+    retrieved: 2026-09-26
+  - url: https://docs.aws.amazon.com/glue/latest/dg/data-protection-advanced-dq-recommendations.html
+    retrieved: 2026-09-26
+  - url: https://docs.aws.amazon.com/glue/latest/dg/release-notes.html
+    retrieved: 2026-09-26
+modes:
+  basic:
+    description: Recommendations based on data statistics without the ADVANCED row-sampling path.
+  advanced:
+    description: Recommendations use a random sample, Athena sampling, and Bedrock inference.
+    service_region_required: true
+    prohibited_arguments:
+      - PreProcessingQuery
+      - NumberOfWorkers
+      - Timeout
+      - AdditionalRunOptions
+runtimes:
+  "4.0":
+    spark: 3.3.0
+    python: "3.10"
+    basic: conditional
+    advanced: conditional
+  "5.1":
+    spark: 3.5.6
+    python: "3.11"
+    basic: conditional
+    advanced: conditional
+  "6.0":
+    spark: 4.1.1
+    python: "3.13"
+    basic: conditional
+    advanced: conditional
