@@ -837,3 +837,93 @@ def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
          "--scope", "user"],
     ]
     assert not marketplace.exists()
+
+
+# --------------------------------------------------------------------------
+# Copia vendorizada em dobro (D9) e a guarda do escopo de usuario
+# --------------------------------------------------------------------------
+
+
+def _repo_com_copia(base: Path) -> Path:
+    """Um repositorio do operador com a copia do install_skills: `.agents/skills`
+    com uma skill identica e uma customizada, e um agent do Claude identico."""
+    repo = base / "repo_do_operador"
+    (repo / "src").mkdir(parents=True)
+    (repo / "src" / "job.py").write_text("print('job')\n", encoding="utf-8")
+    for nome in ("sdd-plan", "diagnose-oom"):
+        origem = ROOT / ".agents" / "skills" / nome
+        for arquivo in origem.rglob("*"):
+            if arquivo.is_file():
+                destino = repo / ".agents" / "skills" / nome / arquivo.relative_to(origem)
+                destino.parent.mkdir(parents=True, exist_ok=True)
+                destino.write_bytes(arquivo.read_bytes())
+    customizada = repo / ".agents" / "skills" / "diagnose-oom" / "SKILL.md"
+    customizada.write_text(customizada.read_text("utf-8") + "\nregra da casa\n", "utf-8")
+    agente = repo / ".claude" / "agents" / "executors" / "sf-judge.md"
+    agente.parent.mkdir(parents=True)
+    agente.write_bytes((ROOT / ".claude" / "agents" / "executors" / "sf-judge.md").read_bytes())
+    return repo
+
+
+def test_conflito_com_copia_vendorizada_tres_escolhas(tmp_path):
+    identica = ".agents/skills/sdd-plan/SKILL.md"
+    customizada = ".agents/skills/diagnose-oom/SKILL.md"
+    agente = ".claude/agents/executors/sf-judge.md"
+
+    # Sem terminal e sem a flag: IGNORAR, e o repositorio nao muda.
+    repo = _repo_com_copia(tmp_path / "a")
+    antes = _foto(repo)
+    ignorado = integrate("devin", home=tmp_path / "h1", windows=False, repo=repo)
+    conflito = ignorado["conflict"]
+    assert conflito["choice"] == "ignore"
+    assert {(c["location"], c["name"], c["identical"]) for c in conflito["collisions"]} == {
+        (".agents/skills", "sdd-plan", True),
+        (".agents/skills", "diagnose-oom", False),
+        (".claude/agents", "sf-judge", True),
+    }
+    assert _foto(repo) == antes
+
+    # O prompt recebe os nomes; "m" e MESCLAR: sai so o identico.
+    perguntas: list[str] = []
+
+    def responde_m(texto: str) -> str:
+        perguntas.append(texto)
+        return "m"
+
+    repo = _repo_com_copia(tmp_path / "b")
+    mesclado = integrate("devin", home=tmp_path / "h2", windows=False, repo=repo,
+                         interactive=True, prompt=responde_m)["conflict"]
+    assert "sdd-plan" in perguntas[0] and "diagnose-oom" in perguntas[0]
+    assert mesclado["choice"] == "merge"
+    assert identica in mesclado["removed"] and agente in mesclado["removed"]
+    assert not (repo / identica).exists() and not (repo / agente).exists()
+    assert (repo / customizada).is_file()
+    assert mesclado["still_duplicated"] == [".agents/skills/diagnose-oom"]
+
+    # --on-conflict overwrite, com dry-run: lista e nao apaga; sem dry-run, apaga os dois.
+    repo = _repo_com_copia(tmp_path / "c")
+    antes = _foto(repo)
+    ensaio = integrate("devin", home=tmp_path / "h3", windows=False, repo=repo,
+                       on_conflict="overwrite", dry_run=True)["conflict"]
+    assert customizada in ensaio["removed"] and identica in ensaio["removed"]
+    assert _foto(repo) == antes
+    sobrescrito = integrate("devin", home=tmp_path / "h3", windows=False, repo=repo,
+                            on_conflict="overwrite")["conflict"]
+    assert sobrescrito["still_duplicated"] == []
+    assert not (repo / identica).exists() and not (repo / customizada).exists()
+    assert (repo / "src" / "job.py").is_file()
+
+    # O proprio repositorio fonte do SparkForge: recusa por nome, nada e tocado.
+    fonte = integrate("devin", home=tmp_path / "h4", windows=False, repo=ROOT,
+                      on_conflict="overwrite")["conflict"]
+    assert fonte["refused"][0]["reason"] == "repositorio_fonte"
+    assert fonte["removed"] == []
+
+
+def test_scope_user_nao_escreve_no_repo(tmp_path):
+    repo = _repo_com_copia(tmp_path)
+    antes = _foto(repo)
+    resultado = integrate("all", home=tmp_path / "home", windows=False, repo=repo,
+                          which=lambda _nome: None)
+    assert {h["host"] for h in resultado["hosts"]} == {"claude", "devin", "codex", "copilot"}
+    assert _foto(repo) == antes, "integrate --scope user escreveu dentro do repositorio"

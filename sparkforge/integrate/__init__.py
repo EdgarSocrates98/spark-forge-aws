@@ -6,11 +6,13 @@ embute, e nunca dentro do repositorio. Desenho: docs/sdd/INTEGRACAO_USUARIO/desi
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from sparkforge import __version__
 from sparkforge.integrate import claude as _claude
+from sparkforge.integrate import conflict as _conflict
 from sparkforge.integrate import sources, writer
 from sparkforge.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
 from sparkforge.integrate.hosts import host as _host
@@ -82,10 +84,16 @@ def integrate(
     runner: _claude.Runner | None = None,
     which: _claude.Which | None = None,
     root: Path | None = None,
+    repo: Path | None = None,
+    on_conflict: str | None = None,
+    interactive: bool = False,
+    prompt: Callable[[str], str] | None = None,
 ) -> dict[str, Any]:
     """Grava a integracao de `alvo` (um host ou `all`) sob `home`.
 
-    `appdata=None` e `home/AppData/Roaming`; o CLI passa o `%APPDATA%` real."""
+    `appdata=None` e `home/AppData/Roaming`; o CLI passa o `%APPDATA%` real.
+    Com `repo`, confere a copia vendorizada em dobro nele e aplica a escolha do
+    operador (D9); e a unica escrita possivel dentro de um repositorio."""
     disco = writer.Disco(home, appdata, dry_run=dry_run)
     raiz = sources.content_root() if root is None else Path(root)
     try:
@@ -115,11 +123,44 @@ def integrate(
         relatorios.append(relatorio)
     if not dry_run:
         writer.save_manifest(disco.home, manifesto)
-    return {
+    resultado: dict[str, Any] = {
         "dry_run": dry_run,
         "manifest": writer.manifest_path(disco.home).as_posix(),
         "hosts": relatorios,
         "refused": _recusas(relatorios),
+    }
+    if repo is not None:
+        resultado["conflict"] = _conferir_copia(
+            Path(repo), raiz, dry_run=dry_run, on_conflict=on_conflict,
+            interactive=interactive, prompt=prompt,
+        )
+    return resultado
+
+
+def _conferir_copia(
+    repo: Path,
+    raiz: Path,
+    *,
+    dry_run: bool,
+    on_conflict: str | None,
+    interactive: bool,
+    prompt: Callable[[str], str] | None,
+) -> dict[str, Any]:
+    achado = _conflict.detect(repo, root=raiz)
+    colisoes = achado["collisions"]
+    if achado["refused"]:
+        escolha = "ignore"
+    else:
+        escolha = _conflict.choose(
+            colisoes, on_conflict=on_conflict, interactive=interactive, prompt=prompt
+        )
+    resolucao = _conflict.resolve(repo, colisoes, escolha, dry_run=dry_run)
+    return {
+        "collisions": [
+            {k: c[k] for k in ("name", "kind", "location", "identical")} for c in colisoes
+        ],
+        **resolucao,
+        "refused": achado["refused"],
     }
 
 
