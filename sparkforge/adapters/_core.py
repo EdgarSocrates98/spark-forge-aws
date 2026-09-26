@@ -4041,9 +4041,18 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
     checagens.append(dr.avaliar_credencial(extras["boto3"], metodo, conta, erro, online))
 
     def integracao() -> dict[str, Any]:
+        import os
+
         from sparkforge.integrate import status as estado_da_integracao
 
-        return estado_da_integracao(home=Path.home(), repo=Path(repo))
+        # Os mesmos APPDATA e CODEX_HOME que o CLI passa ao integrate: com eles, o
+        # doctor reconhece o repositorio que e um destino da integracao.
+        appdata, codex_home = os.environ.get("APPDATA"), os.environ.get("CODEX_HOME")
+        return estado_da_integracao(
+            home=Path.home(), repo=Path(repo),
+            appdata=Path(appdata) if appdata else None,
+            codex_home=Path(codex_home) if codex_home else None,
+        )
 
     from sparkforge import __version__ as versao_do_pacote
 

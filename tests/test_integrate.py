@@ -1497,6 +1497,7 @@ def _repo_com_copia(base: Path) -> Path:
     com uma skill identica e uma customizada, e um agent do Claude identico."""
     repo = base / "repo_do_operador"
     (repo / "src").mkdir(parents=True)
+    (repo / ".git").mkdir()
     (repo / "src" / "job.py").write_text("print('job')\n", encoding="utf-8")
     for nome in ("sdd-plan", "diagnose-oom"):
         origem = ROOT / ".agents" / "skills" / nome
@@ -1661,6 +1662,7 @@ def test_copia_por_link_fora_do_repo_nunca_e_apagada(tmp_path, onde, tipo, escol
     repositorio. Nada de fora e apagado; a entrada sai `copia_fora_do_repositorio`."""
     repo = tmp_path / "repo"
     (repo / "src").mkdir(parents=True)
+    (repo / ".git").mkdir()
     fora = tmp_path / "fora"
     if onde == "pasta_da_skill":
         _copiar_arvore(ROOT / ".agents" / "skills" / "sdd-plan", fora / "sdd-plan")
@@ -1742,6 +1744,7 @@ def test_recusa_do_host_nao_resolve_o_conflito(tmp_path):
 def _repo_com_extra(base: Path) -> Path:
     """`.agents/skills/sdd-plan` com um arquivo a mais, que o wheel nao tem."""
     repo = base / "repo_extra"
+    (repo / ".git").mkdir(parents=True)
     _copiar_arvore(ROOT / ".agents" / "skills" / "sdd-plan", repo / ".agents/skills/sdd-plan")
     (repo / ".agents/skills/sdd-plan/notas.txt").write_text("do operador\n", "utf-8")
     return repo
@@ -1782,6 +1785,7 @@ def test_cli_imprime_a_lista_antes_de_remover(tmp_path, monkeypatch, capsys):
     repo = tmp_path / "repo_cli"
     agente = f".github/agents/{GITHUB_AGENT}"
     (repo / ".github" / "agents").mkdir(parents=True)
+    (repo / ".git").mkdir()
     (repo / agente).write_bytes((ROOT / agente).read_bytes())
     monkeypatch.chdir(repo)
     assert cli_main(["integrate", "copilot", "--scope", "user", "--on-conflict", "overwrite"]) == 0
@@ -1832,6 +1836,110 @@ def test_prompt_sem_resposta_ou_invalido_vira_ignore_com_motivo(tmp_path):
     conflito = integrate("devin", home=home, windows=False, repo=repo, interactive=True,
                          prompt=fim_de_arquivo)["conflict"]
     assert (conflito["choice"], conflito["choice_reason"]) == ("ignore", "prompt_sem_resposta")
+
+
+@pytest.mark.parametrize("escolha", ["overwrite", "merge"])
+def test_cwd_no_home_nunca_apaga_a_propria_integracao(tmp_path, escolha):
+    """C1: com o cwd no HOME versionado (dotfiles), `repo/.agents/skills` e o
+    `~/.agents/skills` da propria integracao. Nada e apagado, e a recusa tem nome."""
+    home = _home_com(tmp_path, "devin", "codex", "copilot")
+    (home / ".git").mkdir()
+    antes = _foto(home)
+    conflito = integrate("devin", home=home, windows=False, repo=home,
+                         on_conflict=escolha)["conflict"]
+    assert _foto(home) == antes, "o integrate apagou a propria integracao"
+    assert [r["reason"] for r in conflito["refused"]] == ["repositorio_e_o_home"]
+    assert conflito["removed"] == [] and conflito["collisions"] == []
+    # O doctor pula o caso: nenhuma copia em dobro e acusada no proprio HOME.
+    assert all(v == [] for v in status(home=home, repo=home)["duplicated"].values())
+
+
+def test_resolve_recusa_o_home_mesmo_com_a_colisao_na_mao(tmp_path, monkeypatch):
+    """C1: `resolve` confere de novo. A skill que o usuario editou no HOME nao sai,
+    nem com a colisao montada a mao e `overwrite`."""
+    from sparkforge.integrate import conflict
+
+    home = _home_com(tmp_path, "devin", "codex", "copilot")
+    (home / ".git").mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    editada = home / ".agents" / "skills" / "diagnose-oom" / "SKILL.md"
+    editada.write_text(editada.read_text("utf-8") + "\nminha nota\n", "utf-8")
+    colisao = {"name": "diagnose-oom", "kind": "skill", "location": ".agents/skills",
+               "hosts": ["devin", "codex", "copilot"], "identical": False,
+               "files": [".agents/skills/diagnose-oom/SKILL.md"]}
+    resultado = conflict.resolve(home, [colisao], "overwrite", dry_run=False)
+    assert [r["reason"] for r in resultado["refused"]] == ["repositorio_e_o_home"]
+    assert resultado["removed"] == []
+    assert editada.is_file()
+
+
+@pytest.mark.parametrize("onde", ["ancestral_do_home", "destino_agents", "codex_home"])
+def test_repo_ancestral_ou_destino_de_integracao_recusa(tmp_path, onde):
+    """C1: o repositorio que CONTEM o HOME, ou que mora DENTRO de um destino da
+    integracao (`~/.agents`, `$CODEX_HOME`), tambem recusa."""
+    from sparkforge.integrate import conflict
+
+    home = tmp_path / "casa" / "home"
+    codex_home = tmp_path / "codex_fora"
+    repo = {"ancestral_do_home": tmp_path / "casa", "destino_agents": home / ".agents",
+            "codex_home": codex_home}[onde]
+    (repo / ".git").mkdir(parents=True)
+    achado = conflict.detect(repo / "sub" if onde == "destino_agents" else repo,
+                             home=home, codex_home=codex_home)
+    assert [r["reason"] for r in achado["refused"]] == ["repositorio_e_o_home"]
+    assert achado["collisions"] == []
+
+
+def test_subdiretorio_do_repo_acha_a_copia_na_raiz(tmp_path):
+    """C1: o cwd num subdiretorio sobe ate a raiz git e resolve la."""
+    identica = ".agents/skills/sdd-plan/SKILL.md"
+    repo = _repo_com_copia(tmp_path / "a")
+    home = _home_com(tmp_path / "h", "codex", "copilot")
+    conflito = integrate("devin", home=home, windows=False, repo=repo / "src",
+                         on_conflict="merge")["conflict"]
+    assert identica in conflito["removed"]
+    assert not (repo / identica).exists()
+
+
+def test_sem_git_acima_o_conflito_nao_e_avaliado(tmp_path):
+    """C1 (M7): sem `.git` acima do cwd nao ha repositorio; nada e tocado."""
+    repo = _repo_com_copia(tmp_path / "a")
+    (repo / ".git").rmdir()
+    antes = _foto(repo)
+    home = _home_com(tmp_path / "h", "codex", "copilot")
+    conflito = integrate("devin", home=home, windows=False, repo=repo,
+                         on_conflict="overwrite")["conflict"]
+    assert [r["reason"] for r in conflito["refused"]] == ["sem_repositorio"]
+    assert conflito["collisions"] == [] and conflito["removed"] == []
+    assert _foto(repo) == antes
+
+
+def test_exit_da_cli_conta_a_recusa_do_conflito(tmp_path, monkeypatch, capsys):
+    """M2: recusa do conflito sai 1; `sem_repositorio` e informacao e sai 0."""
+    def roda() -> tuple[int, dict]:
+        codigo = cli_main(["integrate", "copilot", "--scope", "user", "--dry-run"])
+        return codigo, json.loads(capsys.readouterr().out)
+
+    monkeypatch.chdir(ROOT)
+    codigo, saida = roda()
+    assert saida["refused"] == []
+    assert [r["reason"] for r in saida["conflict"]["refused"]] == ["repositorio_fonte"]
+    assert codigo == 1
+
+    solto = tmp_path / "solto"
+    solto.mkdir()
+    monkeypatch.chdir(solto)
+    codigo, saida = roda()
+    assert [r["reason"] for r in saida["conflict"]["refused"]] == ["sem_repositorio"]
+    assert codigo == 0
+
+    casa = Path.home()
+    (casa / ".git").mkdir()
+    monkeypatch.chdir(casa)
+    codigo, saida = roda()
+    assert [r["reason"] for r in saida["conflict"]["refused"]] == ["repositorio_e_o_home"]
+    assert codigo == 1
 
 
 # --------------------------------------------------------------------------

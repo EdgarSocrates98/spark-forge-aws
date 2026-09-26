@@ -4164,6 +4164,22 @@ def _codex_home_real() -> Path | None:
     return Path(valor) if valor else None
 
 
+# Recusas do conflito que sao informacao, e nao mudam o exit: sem repositorio git
+# acima do cwd, o conflito simplesmente nao e avaliado.
+_CONFLITO_INFORMATIVO = frozenset({"sem_repositorio", "mantido_host_nao_integrado"})
+
+
+def _saida_da_integracao(resultado: dict[str, Any]) -> int:
+    """1 com recusa do host ou recusa do conflito (`copia_fora_do_repositorio`,
+    `repositorio_fonte`, `repositorio_e_o_home`...); `sem_repositorio` e
+    `mantido_host_nao_integrado` sao informacao e saem 0."""
+    if resultado.get("refused"):
+        return 1
+    conflito = resultado.get("conflict") or {}
+    recusas = conflito.get("refused") or []
+    return 1 if any(r.get("reason") not in _CONFLITO_INFORMATIVO for r in recusas) else 0
+
+
 def _cmd_integrate(args: argparse.Namespace) -> int:
     from sparkforge.integrate import integrate
 
@@ -4180,7 +4196,7 @@ def _cmd_integrate(args: argparse.Namespace) -> int:
         announce=_anunciar_remocao,
     )
     _print(resultado)
-    return 1 if resultado["refused"] else 0
+    return _saida_da_integracao(resultado)
 
 
 def _cmd_detach(args: argparse.Namespace) -> int:
@@ -4191,7 +4207,7 @@ def _cmd_detach(args: argparse.Namespace) -> int:
         codex_home=_codex_home_real(), dry_run=args.dry_run,
     )
     _print(resultado)
-    return 1 if resultado["refused"] else 0
+    return _saida_da_integracao(resultado)
 
 
 def _cmd_simulate(args: argparse.Namespace) -> int:

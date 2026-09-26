@@ -175,7 +175,7 @@ def integrate(
     }
     if repo is not None:
         resultado["conflict"] = _conferir_copia(
-            Path(repo), raiz, dry_run=dry_run, on_conflict=on_conflict,
+            Path(repo), raiz, disco=disco, dry_run=dry_run, on_conflict=on_conflict,
             interactive=interactive, prompt=prompt, alvos=_nomes(alvo),
             integrados=list(manifesto["hosts"]), recusado=bool(resultado["refused"]),
             announce=announce,
@@ -187,6 +187,7 @@ def _conferir_copia(
     repo: Path,
     raiz: Path,
     *,
+    disco: writer.Disco,
     dry_run: bool,
     on_conflict: str | None,
     interactive: bool,
@@ -201,13 +202,20 @@ def _conferir_copia(
     Host alvo com recusa (CLI do Claude ausente, config recusada, arquivo do
     usuario) nao chegou a ter a integracao completa: o repositorio nao e tocado e
     sai `conflito_nao_resolvido_por_recusa`, sem perguntar."""
-    achado = _conflict.detect(repo, root=raiz)
+    raizes = {"home": disco.home, "appdata": disco.appdata, "codex_home": disco.codex_home}
+    achado = _conflict.detect(repo, root=raiz, **raizes)
     colisoes = _conflict.relevant(achado["collisions"], alvos)
     recusas = list(achado["refused"])
     motivo: str | None
     if recusas:
-        escolha, motivo = "ignore", None
-    elif recusado:
+        # Sem repositorio, o HOME, o repositorio fonte: nada e avaliado nem tocado.
+        return {
+            "collisions": [], "choice": "ignore", "dry_run": dry_run,
+            "planned_removals": [], "removed": [], "still_duplicated": [], "kept": [],
+            "choice_reason": None, "refused": recusas,
+        }
+    repo = achado["repo"]
+    if recusado:
         escolha, motivo = "ignore", "conflito_nao_resolvido_por_recusa"
         recusas.append({
             "reason": "conflito_nao_resolvido_por_recusa",
@@ -219,7 +227,8 @@ def _conferir_copia(
             removiveis, on_conflict=on_conflict, interactive=interactive, prompt=prompt
         )
     resolucao = _conflict.resolve(
-        repo, colisoes, escolha, dry_run=dry_run, integrados=integrados, announce=announce
+        repo, colisoes, escolha, dry_run=dry_run, integrados=integrados, announce=announce,
+        **raizes,
     )
     return {
         "collisions": [
@@ -311,15 +320,25 @@ def detach(
     }
 
 
-def status(*, home: Path, repo: Path | None = None) -> dict[str, Any]:
+def status(
+    *,
+    home: Path,
+    repo: Path | None = None,
+    appdata: Path | None = None,
+    codex_home: Path | None = None,
+) -> dict[str, Any]:
     """O que o `doctor` le: o manifesto e, por host, a copia em dobro no `repo`.
 
     So le. Manifesto ilegivel levanta `ManifestoRecusado`, e o doctor o mostra
-    como checagem."""
+    como checagem. Sem repositorio git, o HOME e o repositorio fonte nao tem copia
+    em dobro a acusar (`detect` os recusa)."""
     manifesto = writer.load_manifest(Path(home))
     em_dobro: dict[str, list[str]] = {nome: [] for nome in HOSTS}
     if repo is not None:
-        for colisao in _conflict.detect(Path(repo))["collisions"]:
+        achado = _conflict.detect(
+            Path(repo), home=Path(home), appdata=appdata, codex_home=codex_home
+        )
+        for colisao in achado["collisions"]:
             for nome in colisao["hosts"]:
                 em_dobro[nome].append(f"{colisao['location']}/{colisao['name']}")
     return {"manifest": manifesto, "duplicated": em_dobro}

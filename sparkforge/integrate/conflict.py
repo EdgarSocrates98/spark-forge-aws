@@ -28,6 +28,15 @@ repositorio nunca leva o arquivo de la junto.
 No proprio repositorio fonte do SparkForge (tem `scripts/sync_skills.py`) os
 espelhos `.claude/`, `.agents/` e `.github/` sao gerados e versionados: sai a
 recusa `repositorio_fonte` e nada e tocado.
+
+O repositorio e a RAIZ GIT acima do diretorio de onde o comando foi chamado (o
+primeiro com `.git`, pasta ou arquivo); sem `.git` acima sai `sem_repositorio` e o
+conflito nao e avaliado. Com o cwd no HOME, `repo/.agents/skills` E o
+`~/.agents/skills` da propria integracao: a raiz que e o HOME, o APPDATA ou o
+CODEX_HOME, que contem algum deles, ou que mora dentro de um destino da integracao
+(`~/.agents`, `~/.claude`, `~/.codex`, `~/.copilot`, `~/.config/devin`,
+`%APPDATA%/devin`, `$CODEX_HOME`, `~/.sparkforge`) sai `repositorio_e_o_home`, e
+`detect` e `resolve` nao tocam em nada.
 """
 from __future__ import annotations
 
@@ -38,6 +47,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from sparkforge.integrate import render, sources
+from sparkforge.integrate.hosts import default_appdata, default_codex_home
 
 ESCOLHAS = ("overwrite", "merge", "ignore")
 
@@ -59,6 +69,58 @@ _RESPOSTAS = {
 
 def is_source_repo(repo: Path) -> bool:
     return (Path(repo) / "scripts" / "sync_skills.py").is_file()
+
+
+def git_root(inicio: Path) -> Path | None:
+    """O primeiro diretorio com `.git` (pasta, ou arquivo de worktree), subindo
+    de `inicio`; `None` quando nao ha."""
+    atual = Path(os.path.abspath(inicio))
+    for pasta in (atual, *atual.parents):
+        if os.path.lexists(pasta / ".git"):
+            return pasta
+    return None
+
+
+def _real(caminho: Path) -> str:
+    return os.path.normcase(os.path.realpath(caminho))
+
+
+def _contem(pai: str, filho: str) -> bool:
+    """`filho` e `pai` ou mora dentro dele (caminhos ja normalizados)."""
+    return filho == pai or filho.startswith(pai.rstrip(os.sep) + os.sep)
+
+
+def home_guard(
+    repo: Path,
+    *,
+    home: Path | None = None,
+    appdata: Path | None = None,
+    codex_home: Path | None = None,
+) -> dict[str, Any] | None:
+    """A recusa `repositorio_e_o_home`, ou `None` quando `repo` pode ser tocado.
+
+    `home=None` e o HOME do processo: a trava vale mesmo para quem chama sem
+    dizer o HOME."""
+    casa = Path.home() if home is None else Path(home)
+    dados = default_appdata(casa) if appdata is None else Path(appdata)
+    codex = default_codex_home(casa) if codex_home is None else Path(codex_home)
+    alvo = _real(repo)
+    raizes = [casa, dados, codex]
+    destinos = [casa / ".agents", casa / ".claude", casa / ".codex", casa / ".copilot",
+                casa / ".config" / "devin", dados / "devin", codex, casa / ".sparkforge"]
+    if any(_contem(alvo, _real(r)) for r in raizes) or any(
+        _contem(_real(d), alvo) for d in destinos
+    ):
+        return {
+            "reason": "repositorio_e_o_home",
+            "path": Path(os.path.abspath(repo)).as_posix(),
+            "detail": (
+                "o repositorio e o HOME (ou o contem, ou mora num destino da "
+                "integracao): a copia dele e a propria integracao de usuario, e "
+                "nada e tocado"
+            ),
+        }
+    return None
 
 
 def _arquivos(base: Path) -> dict[str, bytes]:
@@ -120,11 +182,31 @@ def _colisoes_de_agent(
     return achadas
 
 
-def detect(repo: Path, *, root: Path | None = None) -> dict[str, Any]:
-    """As colisoes entre a copia do repositorio e o que o wheel integra."""
-    repo = Path(repo)
+def detect(
+    repo: Path,
+    *,
+    root: Path | None = None,
+    home: Path | None = None,
+    appdata: Path | None = None,
+    codex_home: Path | None = None,
+) -> dict[str, Any]:
+    """As colisoes entre a copia do repositorio e o que o wheel integra.
+
+    `repo` e de onde o comando foi chamado; `repo` do resultado e a raiz git
+    acima dele, a que `resolve` recebe (`None` quando nao ha)."""
+    raiz_git = git_root(Path(repo))
+    if raiz_git is None:
+        return {"repo": None, "collisions": [], "refused": [{
+            "reason": "sem_repositorio",
+            "path": Path(os.path.abspath(repo)).as_posix(),
+            "detail": "nenhum .git acima do diretorio atual: o conflito nao e avaliado",
+        }]}
+    repo = raiz_git
+    guarda = home_guard(repo, home=home, appdata=appdata, codex_home=codex_home)
+    if guarda is not None:
+        return {"repo": repo, "collisions": [], "refused": [guarda]}
     if is_source_repo(repo):
-        return {"collisions": [], "refused": [{
+        return {"repo": repo, "collisions": [], "refused": [{
             "reason": "repositorio_fonte",
             "detail": "os espelhos deste repositorio sao gerados por scripts/sync_skills.py",
         }]}
@@ -135,7 +217,7 @@ def detect(repo: Path, *, root: Path | None = None) -> dict[str, Any]:
             continue
         busca = _colisoes_de_skill if tipo == "skill" else _colisoes_de_agent
         colisoes.extend(busca(repo, local, plataforma, hosts, raiz))
-    return {"collisions": colisoes, "refused": []}
+    return {"repo": repo, "collisions": colisoes, "refused": []}
 
 
 def relevant(colisoes: list[dict[str, Any]], alvos: Iterable[str]) -> list[dict[str, Any]]:
@@ -268,13 +350,29 @@ def resolve(
     dry_run: bool,
     integrados: Iterable[str] | None = None,
     announce: Callable[[list[str]], None] | None = None,
+    home: Path | None = None,
+    appdata: Path | None = None,
+    codex_home: Path | None = None,
 ) -> dict[str, Any]:
     """Aplica a escolha. A lista do que sai, arquivo por arquivo, vem no relatorio
     (`planned_removals`) e chega a `announce` ANTES da primeira remocao.
 
     `integrados=None` trata todo host como integrado; com a lista, a entrada que
-    um host ainda nao integrado le fica, como `mantido_host_nao_integrado`."""
+    um host ainda nao integrado le fica, como `mantido_host_nao_integrado`.
+    `repo` que e o HOME (ou o contem, ou mora num destino) sai
+    `repositorio_e_o_home`, sem remocao nenhuma, qualquer que seja a escolha."""
     repo = Path(repo)
+    guarda = home_guard(repo, home=home, appdata=appdata, codex_home=codex_home)
+    if guarda is not None:
+        return {
+            "choice": escolha,
+            "dry_run": dry_run,
+            "planned_removals": [],
+            "removed": [],
+            "still_duplicated": sorted(_chave(c) for c in colisoes),
+            "kept": [],
+            "refused": [guarda],
+        }
     mantidos = []
     if integrados is not None:
         integrados = list(integrados)
@@ -327,6 +425,8 @@ __all__ = [
     "VENDOR_LOCATIONS",
     "choose",
     "detect",
+    "git_root",
+    "home_guard",
     "inside_repo",
     "is_source_repo",
     "missing_hosts",
