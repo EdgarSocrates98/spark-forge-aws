@@ -168,12 +168,21 @@ def avaliar_integracoes(
     manifesto: Mapping[str, Any] | None,
     erro: str | None,
     em_dobro: Mapping[str, list[str]] | None,
+    *,
+    installed: str | None = None,
 ) -> list[Checagem]:
     """Uma checagem por host: integrado ou nao, em que versao do pacote, e a copia
-    vendorizada em dobro no repositorio atual (INTEGRACAO_USUARIO, AC11)."""
+    vendorizada em dobro no repositorio atual (INTEGRACAO_USUARIO, AC11).
+
+    Manifesto ilegivel mantem uma checagem por host (a lista de ids nao muda com o
+    estado do HOME). Com `installed`, a versao gravada que diverge dela sai `warn`:
+    o que esta no HOME nao e o que o pacote instalado grava."""
     if erro:
-        return [Checagem("integracao", WARN, f"manifesto de integracao nao lido: {erro}",
-                         "sparkforge integrate all --scope user --dry-run")]
+        return [
+            Checagem(f"integracao_{host}", WARN, f"manifesto de integracao nao lido: {erro}",
+                     "sparkforge integrate all --scope user --dry-run")
+            for host in HOSTS
+        ]
     hosts = (manifesto or {}).get("hosts") or {}
     checagens = []
     for host in HOSTS:
@@ -194,6 +203,13 @@ def avaliar_integracoes(
                 ident, WARN,
                 f"{detalhe}; copia vendorizada em dobro no repositorio: {', '.join(dobro)}",
                 f"sparkforge integrate {host} --scope user --on-conflict merge",
+            ))
+            continue
+        if installed is not None and versao != installed:
+            checagens.append(Checagem(
+                ident, WARN,
+                f"{detalhe}; o pacote instalado e o {installed}: a integracao esta defasada",
+                f"sparkforge integrate {host} --scope user",
             ))
             continue
         checagens.append(Checagem(ident, OK, detalhe))

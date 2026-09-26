@@ -3,10 +3,15 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
+from sparkforge import __version__
 from sparkforge import doctor as dr
 from sparkforge.adapters import _core
 from sparkforge.adapters.cli import main
 
+INTEGRACOES = ["integracao_claude", "integracao_devin", "integracao_codex",
+               "integracao_copilot"]
 IDS = [
     "pacote", "extras", "mcp", "catalogo", "packs", "knowledge",
     "indice_de_codigo", "artefatos", "credencial_aws",
@@ -101,11 +106,25 @@ def test_resumo_saudavel_so_sem_fail():
     assert ruim["healthy"] is False
 
 
-def test_doctor_de_verdade_tem_as_nove_checagens(tmp_path):
-    saida = _core.doctor(str(tmp_path))
+@pytest.fixture
+def home_isolado(tmp_path, monkeypatch):
+    """O doctor le o manifesto do HOME: o teste nunca le o do operador."""
+    casa = tmp_path / "home_isolado"
+    casa.mkdir()
+    monkeypatch.setenv("HOME", str(casa))
+    monkeypatch.setenv("USERPROFILE", str(casa))
+    monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
+    return casa
+
+
+def test_doctor_de_verdade_tem_as_treze_checagens(tmp_path, home_isolado):
+    assert len(IDS) == 13
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    saida = _core.doctor(str(repo))
     assert [c["id"] for c in saida["checks"]] == IDS
     assert saida["online"] is False
-    assert list(tmp_path.iterdir()) == [], "doctor nao grava nada no repositorio"
+    assert list(repo.iterdir()) == [], "doctor nao grava nada no repositorio"
 
 
 def test_cli_sai_1_com_catalogo_invalido(tmp_path, monkeypatch, capsys):
@@ -119,7 +138,7 @@ def test_cli_sai_1_com_catalogo_invalido(tmp_path, monkeypatch, capsys):
     assert catalogo["status"] == "fail" and catalogo["unlock"]
 
 
-def test_cli_sai_0_sem_fail(tmp_path, capsys):
+def test_cli_sai_0_sem_fail(tmp_path, home_isolado, capsys):
     assert main(["doctor", "--repo", str(tmp_path)]) == 0
     assert json.loads(capsys.readouterr().out)["healthy"] is True
 
@@ -135,3 +154,31 @@ def test_tool_nunca_recebe_online():
 
 def test_repo_inexistente_sai_2(tmp_path):
     assert main(["doctor", "--repo", str(tmp_path / "nao_existe")]) == 2
+
+
+def test_manifesto_ilegivel_mantem_uma_checagem_por_host(tmp_path, home_isolado):
+    checagens = dr.avaliar_integracoes(None, "ManifestoRecusado: manifesto_ilegivel", None)
+    assert [c.id for c in checagens] == INTEGRACOES
+    assert {c.status for c in checagens} == {dr.WARN}
+    assert all("manifesto_ilegivel" in c.detail for c in checagens)
+    # O doctor de verdade, com o manifesto do HOME truncado, mantem os mesmos ids.
+    manifesto = home_isolado / ".sparkforge" / "integrations.json"
+    manifesto.parent.mkdir()
+    manifesto.write_text('{"schema": 2, "files": {', encoding="utf-8")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    assert [c["id"] for c in _core.doctor(str(repo))["checks"]] == IDS
+
+
+def test_versao_gravada_diferente_da_instalada_sai_warn():
+    manifesto = {"hosts": {"devin": {"package_version": "0.0.1"}}, "files": {}}
+    por_id = {c.id: c for c in dr.avaliar_integracoes(
+        manifesto, None, None, installed="0.5.0")}
+    devin = por_id["integracao_devin"]
+    assert devin.status == dr.WARN
+    assert "0.0.1" in devin.detail and "0.5.0" in devin.detail
+    assert devin.unlock == "sparkforge integrate devin --scope user"
+    igual = dr.avaliar_integracoes(manifesto, None, None, installed="0.0.1")
+    assert {c.id: c.status for c in igual}["integracao_devin"] == dr.OK
+    # O doctor de verdade compara com a versao do pacote que roda.
+    assert __version__

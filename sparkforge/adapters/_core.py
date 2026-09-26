@@ -4045,9 +4045,13 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
 
         return estado_da_integracao(home=Path.home(), repo=Path(repo))
 
+    from sparkforge import __version__ as versao_do_pacote
+
     estado, erro = sondar(integracao)
+    # A versao que o integrate grava no manifesto e `sparkforge.__version__`.
     checagens.extend(dr.avaliar_integracoes(
-        (estado or {}).get("manifest"), erro, (estado or {}).get("duplicated")
+        (estado or {}).get("manifest"), erro, (estado or {}).get("duplicated"),
+        installed=versao_do_pacote,
     ))
     return dr.resumo(checagens, online=online)
 

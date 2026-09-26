@@ -12,6 +12,7 @@ import json
 import os
 import re
 import shlex
+import site
 import subprocess
 import sys
 import zipfile
@@ -226,11 +227,16 @@ def test_o_gravado_por_integrate_e_o_espelho_do_repo(tmp_path):
 
 
 def _foto(base: Path) -> dict[str, tuple[bytes, int]]:
-    """Conteudo e mtime de todo arquivo sob `base`: o que "nao mudou nada" compara."""
+    """Conteudo e mtime de todo arquivo e de todo diretorio sob `base` (o diretorio
+    com a chave terminada em `/`): o que "nao mudou nada" compara. O diretorio entra
+    porque criar e apagar um arquivo dentro dele, ou deixar uma pasta vazia, nao
+    muda arquivo nenhum -- e muda o mtime dele."""
     return {
-        p.relative_to(base).as_posix(): (p.read_bytes(), p.stat().st_mtime_ns)
+        (p.relative_to(base).as_posix() + ("/" if p.is_dir() else "")): (
+            b"" if p.is_dir() else p.read_bytes(), p.stat().st_mtime_ns
+        )
         for p in sorted(base.rglob("*"))
-        if p.is_file()
+        if p.is_file() or p.is_dir()
     }
 
 
@@ -1575,6 +1581,40 @@ def test_scope_user_nao_escreve_no_repo(tmp_path):
                           which=lambda _nome: None)
     assert {h["host"] for h in resultado["hosts"]} == {"claude", "devin", "codex", "copilot"}
     assert _foto(repo) == antes, "integrate --scope user escreveu dentro do repositorio"
+
+
+def test_foto_ve_diretorio_vazio(tmp_path):
+    """O instrumento da guarda AC10 tem vermelho proprio: uma pasta vazia criada no
+    repositorio, sem arquivo nenhum, muda a foto."""
+    antes = _foto(tmp_path)
+    (tmp_path / ".agents").mkdir()
+    assert _foto(tmp_path) != antes
+
+
+def test_scope_user_nao_escreve_no_repo_pela_cli(tmp_path):
+    """AC10 pelo entrypoint de verdade: `python -m sparkforge.adapters.cli` com o cwd
+    no repositorio e HOME/USERPROFILE/APPDATA apontados para o tmp."""
+    repo = _repo_com_copia(tmp_path)
+    casa = tmp_path / "casa"
+    casa.mkdir()
+    ambiente = {**os.environ, "HOME": str(casa), "USERPROFILE": str(casa),
+                "APPDATA": str(casa / "AppData" / "Roaming"),
+                "PYTHONPATH": str(ROOT), "PYTHONDONTWRITEBYTECODE": "1",
+                # No Windows o site do usuario deriva do APPDATA: sem isto, o Python
+                # filho perde os pacotes instalados com --user.
+                "PYTHONUSERBASE": site.getuserbase()}
+    ambiente.pop("CODEX_HOME", None)
+    antes = _foto(repo)
+    proc = subprocess.run(
+        [sys.executable, "-m", "sparkforge.adapters.cli", "integrate", "devin",
+         "--scope", "user"],
+        cwd=repo, env=ambiente, capture_output=True, stdin=subprocess.DEVNULL,
+        encoding="utf-8", errors="replace", timeout=300, check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout)["conflict"]["choice"] == "ignore"
+    assert (casa / ".agents" / "skills" / "sdd-plan" / "SKILL.md").is_file()
+    assert _foto(repo) == antes, "a CLI escreveu dentro do repositorio"
 
 
 def _home_com(base: Path, *hosts: str) -> Path:
