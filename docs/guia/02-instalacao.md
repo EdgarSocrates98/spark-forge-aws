@@ -322,7 +322,11 @@ sparkforge detach all                              # remove só o que o SparkFor
 
 O host é `claude`, `devin`, `codex`, `copilot` ou `all`. `--scope user` é obrigatório
 no `integrate` e é o único escopo desta versão. A saída é JSON no stdout, com o que foi
-escrito, o que já estava igual e as recusas; o código de saída é 1 quando há recusa.
+escrito, o que já estava igual e as recusas. O código de saída é 1 quando há recusa de
+host (`refused` no topo do JSON) ou recusa da cópia em dobro (`conflict.refused`:
+`copia_fora_do_repositorio`, `repositorio_fonte`, `repositorio_e_o_home`,
+`conflito_nao_resolvido_por_recusa`). `sem_repositorio` e `mantido_host_nao_integrado`
+são informação e não mudam o código: sem nenhuma recusa, ele é 0.
 
 ### O que cada host recebe, e onde
 
@@ -357,7 +361,13 @@ O `integrate` roda esses dois comandos por você (e, nas vezes seguintes, `claud
 marketplace update sparkforge-local` e `claude plugin update sparkforge-aws@sparkforge-local`
 quando o conteúdo mudou). Cada chamada ao CLI tem limite de 120 segundos. O `detach`
 chama primeiro `claude plugin uninstall` e `claude plugin marketplace remove`, e só
-depois apaga os arquivos.
+depois apaga os arquivos. Os dois rodam sempre, sem consultar a lista antes: um erro
+que diz que o plugin (ou o marketplace) já não está lá (`not installed`, `not found`)
+conta como sucesso, e qualquer outro erro deixa tudo no lugar como `cli_pendente`. O
+marketplace nunca sai do disco sem o `uninstall` confirmado. Se o `integrate` não
+chegou a registrar o plugin (saiu `claude_cli_ausente`) e você rodou os dois comandos
+à mão, o `detach` com o CLI presente consulta `claude plugin list --json` e desinstala
+antes de apagar quando o plugin aparece ou quando a lista não se lê.
 
 ### O manifesto: `~/.sparkforge/integrations.json`
 
@@ -374,16 +384,27 @@ manifesto também sai.
 
 `sparkforge doctor` lê o manifesto e mostra uma checagem `integracao_<host>` por host:
 ausente, integrado e em que versão do pacote, defasado quando o pacote instalado é
-outro, e a cópia em dobro no repositório atual, quando houver.
+outro, e a cópia em dobro no repositório atual, quando houver. O comando sugerido para
+a cópia em dobro é o `--on-conflict merge` quando alguma entrada de fato sairia; quando
+ela só sai com outro host integrado (`.agents/skills` pede Devin, Codex e Copilot), a
+sugestão é integrar o host que falta. Host que o `detach` deixou com `config_pendente`
+não conta como integrado: a checagem sai `warn` com o arquivo pendente.
 
 ### `APPDATA` e `CODEX_HOME`
 
 A CLI lê `%APPDATA%` e `CODEX_HOME` do ambiente e passa os mesmos valores ao
-`integrate` e ao `detach`; sem `CODEX_HOME`, o Codex fica em `~/.codex`. O manifesto
-guarda a raiz usada. Se você rodar depois com outro `APPDATA` ou outro `CODEX_HOME`,
-os caminhos registrados apontariam para outro lugar: o comando recusa com
-`appdata_divergente` (ou `codex_home_divergente`) e não toca em nada. Rode com o mesmo
-valor da integração.
+`integrate` e ao `detach`; sem `CODEX_HOME`, o Codex fica em `~/.codex`. A raiz só é
+gravada no manifesto, e comparada, quando fica **fora** do HOME. Nesse caso, rodar
+depois com outro `APPDATA` ou outro `CODEX_HOME` recusa com `appdata_divergente` (ou
+`codex_home_divergente`) e não toca em nada: rode com o mesmo valor da integração.
+
+Sob o HOME (o `%APPDATA%` padrão, `~\AppData\Roaming`, e o `~/.codex`), o arquivo é
+registrado pelo caminho relativo ao HOME e não há raiz a comparar. Trocar a raiz grava
+no lugar novo, e os arquivos gravados sob a antiga saem como órfãos no mesmo
+`integrate` (listados em `removed`); o que você editou lá fica, como recusa
+`editado_pelo_usuario`. A entrada `sparkforge` da config antiga (o `mcp_config.json` do
+Devin, o `config.toml` do Codex) continua registrada no manifesto e sai no `detach`,
+junto com a da raiz nova.
 
 ### Cópia em dobro no repositório
 
@@ -412,6 +433,16 @@ apagado. Se o host alvo saiu com recusa, o repositório não é tocado
 No próprio repositório do SparkForge os espelhos `.claude/`, `.agents/` e `.github/`
 são gerados e versionados: sai a recusa `repositorio_fonte` e nada é tocado.
 
+O repositório é a raiz git acima do diretório de onde você chama o comando (o primeiro
+com `.git`, pasta ou arquivo): de um subdiretório, a cópia na raiz é achada. Sem `.git`
+acima, sai `sem_repositorio` e a cópia em dobro não é avaliada. Com o diretório atual no
+HOME (um HOME versionado, por exemplo), `.agents/skills` do "repositório" é o
+`~/.agents/skills` da própria integração: a raiz que é o HOME, o `APPDATA` ou o
+`CODEX_HOME`, que contém algum deles, ou que mora dentro de um destino da integração
+(`~/.agents`, `~/.claude`, `~/.codex`, `~/.copilot`, `~/.config/devin`,
+`%APPDATA%\devin`, `$CODEX_HOME`, `~/.sparkforge`) sai `repositorio_e_o_home`, e nada é
+tocado, com qualquer `--on-conflict`. O `doctor` pula os mesmos casos.
+
 ### Recusas e o que fazer
 
 | Recusa | O que aconteceu | O que fazer |
@@ -423,7 +454,10 @@ são gerados e versionados: sai a recusa `repositorio_fonte` e nada é tocado.
 | `editado_pelo_usuario` | O arquivo (ou a entrada de config) mudou depois do `integrate`. | Nada: ele fica. Para trocar pela versão do pacote, apague-o e rode o `integrate`. |
 | `arquivo_do_usuario` | Já existe no destino um arquivo diferente que o SparkForge nunca gravou. | Renomeie ou apague o seu, se quiser o do pacote. |
 | `manifesto_ilegivel` | O `integrations.json` não se lê. Nada é tocado. | Restaure o manifesto de um backup. Apagá-lo faz o próximo `integrate` tratar como seu o que já está no HOME. |
-| `appdata_divergente` / `codex_home_divergente` | `APPDATA` ou `CODEX_HOME` diferente do que o manifesto registrou. | Rode com o mesmo valor da integração. |
+| `appdata_divergente` / `codex_home_divergente` | `APPDATA` ou `CODEX_HOME` fora do HOME e diferente do que o manifesto registrou. | Rode com o mesmo valor da integração. |
+| `bundle_ausente` | `skills/` e `agents/` não estão nem no pacote instalado nem no repositório de desenvolvimento. Nada é tocado. | Reinstale o pacote (`pip install --force-reinstall sparkforge-aws`). |
+| `escalar_yaml_nao_suportado` | Um frontmatter do bundle tem escalar que o renderizador não lê sem errar (bloco `>-`/`\|`, continuação, aspas com escape). Nada é tocado. | Escreva o valor numa linha só; no bundle do pacote, é defeito a relatar. |
+| `repositorio_e_o_home` (em `conflict`) | O repositório de onde você chamou é o HOME, o contém ou mora num destino da integração. Nada é tocado. | Chame o `integrate` de dentro do repositório que tem a cópia. |
 
 Três estados não são recusa do `integrate`, mas pedem atenção:
 
@@ -446,6 +480,11 @@ Três estados não são recusa do `integrate`, mas pedem atenção:
 - Não foi medido se o Codex lê `~/.agents/skills` quando roda fora de um repositório git.
 - No Python 3.10 a validade do `config.toml` do usuário não é conferida; só o par de
   marcadores do bloco.
+- O fluxo do Claude Code (registrar, atualizar, desregistrar) foi testado contra um CLI
+  falso. O formato real da saída de `claude plugin list --json` e de `claude plugin
+  marketplace list --json`, e o texto real do erro de "não instalado", não foram
+  observados: por isso o `detach` nunca pula o `uninstall` por causa da lista, e só
+  apaga o marketplace do disco depois do `uninstall` confirmado.
 
 ## Instalar as skills e os agents em outro repositório
 

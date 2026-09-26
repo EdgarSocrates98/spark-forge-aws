@@ -302,7 +302,9 @@ comando.
 | `integrate` | Instala skills, agents e o MCP nos diretórios de usuário do host (`claude`, `devin`, `codex`, `copilot` ou `all`), a partir do pacote instalado; `--scope user` (obrigatório), `--dry-run`, `--on-conflict overwrite\|merge\|ignore` para a cópia em dobro no repositório atual. | [integrate](referencia/cli/integrate.md) |
 | `detach` | Remove a integração de usuário: só o que `~/.sparkforge/integrations.json` registrou e ainda tem o sha256 gravado; `--dry-run` lista sem remover. | [detach](referencia/cli/detach.md) |
 
-Os dois saem 1 quando há recusa. Não há tool MCP de propósito: escrever no HOME é
+Os dois saem 1 quando há recusa, do host ou da cópia em dobro (`conflict.refused`);
+`sem_repositorio` e `mantido_host_nao_integrado` são informação e não mudam o código.
+Não há tool MCP de propósito: escrever no HOME é
 decisão do operador, e um agente não deve dispará-la sozinho. O detalhe (caminhos por
 host, manifesto, cópia em dobro e cada recusa) está em
 [Instalação](02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate).

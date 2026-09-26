@@ -18,7 +18,7 @@ sparkforge scan . --format sarif --fail-on P0
 
 ## Para que serve
 
-- **`doctor`** diz se a instalação está pronta, antes de você perder tempo com um erro no meio do caminho. São nove checagens, e cada uma diz o que fazer quando não está `ok`.
+- **`doctor`** diz se a instalação está pronta, antes de você perder tempo com um erro no meio do caminho. São treze checagens, e cada uma diz o que fazer quando não está `ok`.
 - **`scan`** poupa você de saber qual `analyze` roda em cada arquivo. Ele olha o repositório, escolhe o extrator certo para cada arquivo, junta os facts, roda `fuse` e `judge`, e resume o resultado.
 
 Nenhum dos dois acessa a AWS. O `scan` só analisa o que já está no disco; para trazer artefatos da conta, veja [Coleta na AWS](coleta-na-aws.md).
@@ -67,7 +67,7 @@ Como ler:
 | `fail` | Quebrado: o comando sai com código 1 | Rode o `unlock` antes de continuar |
 | `skip` | Não se aplica (ex.: você não usa packs) | Nada, a menos que queira a capacidade |
 
-As nove checagens: `pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`, `indice_de_codigo`, `artefatos` e `credencial_aws`.
+As treze checagens: `pacote`, `extras`, `mcp`, `catalogo`, `packs`, `knowledge`, `indice_de_codigo`, `artefatos`, `credencial_aws` e uma por host da integração de usuário (`integracao_claude`, `integracao_devin`, `integracao_codex` e `integracao_copilot`), que dizem se o host está integrado, em que versão do pacote, e se há cópia vendorizada em dobro no repositório atual (veja [Integrar uma vez por máquina](../02-instalacao.md#integrar-uma-vez-por-máquina-sparkforge-integrate)).
 
 - **`indice_de_codigo`**: o doctor só confere se o índice existe. Conferir se ele está atualizado grava no índice, e o doctor só lê. Para isso, use `sparkforge code status --root .`.
 - **`credencial_aws`**: por padrão, o doctor só vê se a cadeia do boto3 acha uma credencial, sem chamar a AWS. `sparkforge doctor --online` confirma na AWS (STS) e mostra a conta. Essa é a única forma do doctor que usa rede, e ela existe só na CLI.
