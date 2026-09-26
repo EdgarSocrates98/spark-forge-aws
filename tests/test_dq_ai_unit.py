@@ -2,7 +2,6 @@ import json
 
 from sparkforge.dq_ai.assessment import build_assessment_facts
 from sparkforge.facts.glue_dq_advanced import (
-    RowPayloadRejected,
     extract_glue_dq_advanced,
     extract_glue_dq_advanced_path,
 )

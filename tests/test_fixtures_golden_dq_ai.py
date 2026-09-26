@@ -4,12 +4,12 @@ from pathlib import Path
 import yaml
 
 from sparkforge.adapters import _core
+from sparkforge.dqdl.validator import validate_dqdl_path
 from sparkforge.facts.athena_cost import extract_athena_cost_path
 from sparkforge.facts.glue_dq_advanced import (
     extract_dq_review_path,
     extract_glue_dq_advanced_tree,
 )
-from sparkforge.dqdl.validator import validate_dqdl_path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "dq_ai"

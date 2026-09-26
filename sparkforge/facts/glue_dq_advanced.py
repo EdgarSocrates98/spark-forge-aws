@@ -162,7 +162,9 @@ def _recommendation_facts(
     classification = _normal_string(payload.get("classification"))
     runtime_version = _normal_string(payload.get("runtime_version", payload.get("runtime")))
     retention = sampling_map.get("retention_days", payload.get("retention_days"))
-    retention_days = retention if isinstance(retention, int) and not isinstance(retention, bool) else None
+    retention_days = (
+        retention if isinstance(retention, int) and not isinstance(retention, bool) else None
+    )
     bucket = _normal_string(sampling_map.get("bucket", payload.get("sampling_bucket")))
     workgroup = _normal_string(
         sampling_map.get("workgroup", payload.get("sampling_workgroup"))

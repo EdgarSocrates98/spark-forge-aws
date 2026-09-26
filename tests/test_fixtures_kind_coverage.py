@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+from sparkforge.dq_ai import assessment as dq_ai_assessment
+from sparkforge.dqdl import validator as dqdl_validator
 from sparkforge.errors import matcher
 from sparkforge.facts import (
     airflow_dag,
@@ -41,11 +43,11 @@ from sparkforge.facts import (
     exception,
     funcval,
     fusion,
+    glue_dq_advanced,
     # `iam_access` entra nas DUAS listas no MESMO commit da fixture
     # `fixtures/iam_access/`.
     glue_resource_link,
     graph,
-    glue_dq_advanced,
     # `host_transcript` entra nas DUAS listas no MESMO commit de
     # `fixtures/host_transcript/`. E o primeiro extrator cujo artefato nao e do
     # job analisado, e sim do AGENTE que o analisou: o transcript do host. Nenhuma
@@ -80,8 +82,6 @@ from sparkforge.facts import (
     utilization,
     workload,
 )
-from sparkforge.dqdl import validator as dqdl_validator
-from sparkforge.dq_ai import assessment as dq_ai_assessment
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"

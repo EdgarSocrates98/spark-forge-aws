@@ -4,8 +4,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from sparkforge.finops.athena_observed import build_observed_athena_cost
 from sparkforge.findings.models import Fact, Finding, RuntimeContext, sort_facts, sort_findings
+from sparkforge.finops.athena_observed import build_observed_athena_cost
 
 
 def _runtime_dict(runtime: RuntimeContext | Mapping[str, Any] | None) -> dict[str, Any]:
@@ -26,7 +26,11 @@ def render_maintainer(canonical: Mapping[str, Any]) -> dict[str, Any]:
 
 def render_operator(canonical: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "status": "review_required" if canonical["findings"] or canonical["unresolved"] else "clear_on_observed_evidence",
+        "status": (
+            "review_required"
+            if canonical["findings"] or canonical["unresolved"]
+            else "clear_on_observed_evidence"
+        ),
         "actions": [
             {
                 "rule_id": item["rule_id"],

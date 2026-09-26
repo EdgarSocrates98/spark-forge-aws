@@ -58,6 +58,8 @@ from sparkforge.controlm.matrix import (
     covers as controlm_covered_range,
 )
 from sparkforge.diagnosis import rank_root_causes
+from sparkforge.dq_ai.assessment import build_assessment_facts
+from sparkforge.dqdl.validator import validate_dqdl_path
 from sparkforge.economy.report import build_context_report
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts import lakeformation_matrix as _lf_matrix
@@ -65,6 +67,7 @@ from sparkforge.facts.airflow_dag import (
     extract_airflow_dag_path,
     extract_airflow_dag_tree,
 )
+from sparkforge.facts.athena_cost import extract_athena_cost_path
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
     extract_athena_workgroup_tree,
@@ -89,14 +92,6 @@ from sparkforge.facts.data_quality import (
     extract_data_quality_path,
     extract_data_quality_tree,
 )
-from sparkforge.facts.athena_cost import extract_athena_cost_path
-from sparkforge.facts.glue_dq_advanced import (
-    extract_dq_review_path,
-    extract_glue_dq_advanced_path,
-    extract_glue_dq_advanced_tree,
-)
-from sparkforge.dq_ai.assessment import build_assessment_facts
-from sparkforge.dqdl.validator import validate_dqdl_path
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
 from sparkforge.facts.emr_eks import extract_emr_eks_path, extract_emr_eks_tree
 from sparkforge.facts.emr_serverless import (
@@ -106,6 +101,11 @@ from sparkforge.facts.emr_serverless import (
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
+from sparkforge.facts.glue_dq_advanced import (
+    extract_dq_review_path,
+    extract_glue_dq_advanced_path,
+    extract_glue_dq_advanced_tree,
+)
 from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
 from sparkforge.facts.glue_resource_link import (
     extract_glue_resource_link_path,
@@ -154,8 +154,6 @@ from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.finops import build_finops_report
-from sparkforge.finops.athena_observed import build_observed_athena_cost
-from sparkforge.reporting.dq_ai import build_dq_ai_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
@@ -181,6 +179,7 @@ from sparkforge.migration.version_path import (
     DEFAULT_PLATFORM as MIGRATION_DEFAULT_PLATFORM,
 )
 from sparkforge.observability.context_ledger import shared_ledger
+from sparkforge.reporting.dq_ai import build_dq_ai_report
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade

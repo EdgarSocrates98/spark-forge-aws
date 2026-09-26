@@ -47,7 +47,10 @@ def test_report_exposes_documented_claims_and_risk_context():
     report = build_dq_ai_report(facts, [], {"glue": "5.1"})
     exposure = report["views"]["security_compliance"]["exposure"][0]
 
-    assert exposure["provider_data_protection_claims"]["inputs_outputs_retained"]["status"] == "documented_claim"
+    assert (
+        exposure["provider_data_protection_claims"]["inputs_outputs_retained"]["status"]
+        == "documented_claim"
+    )
     assert exposure["risk_context"]["residency_required"] is True
     assert exposure["risk_context"]["iceberg"]["format_version"] == "2"
     assert exposure["risk_context"]["migration"]["risk"] == "medium"

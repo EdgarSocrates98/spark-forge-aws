@@ -132,7 +132,8 @@ def build_assessment_facts(
             "lakeformation_status": lakeformation_status,
             "authorization_evidence_status": authorization_evidence_status,
             "dqdl_status": dqdl_status,
-            "review_status": review_status or ("missing" if dqdl_status == "valid" else "unresolved"),
+            "review_status": review_status
+            or ("missing" if dqdl_status == "valid" else "unresolved"),
             "incompatible_args": incompatible_args,
             "exposure_labels": list(attrs.get("exposure_labels") or []),
             "source_region": str(attrs.get("source_region") or ""),
@@ -192,21 +193,30 @@ def build_assessment_facts(
         assessment_attrs["sampling_controls_incomplete"] = (
             mode == "ADVANCED" and sampling_controls_status != "complete"
         )
-        assessment_attrs["kms_insufficient"] = mode == "ADVANCED" and kms_status in {"missing", "insufficient"}
+        assessment_attrs["kms_insufficient"] = (
+            mode == "ADVANCED" and kms_status in {"missing", "insufficient"}
+        )
         assessment_attrs["authorization_incomplete"] = (
             mode == "ADVANCED" and authorization_evidence_status != "complete"
         )
-        assessment_attrs["review_missing"] = mode == "ADVANCED" and dqdl_status == "valid" and review_status != "declared"
+        assessment_attrs["review_missing"] = (
+            mode == "ADVANCED" and dqdl_status == "valid" and review_status != "declared"
+        )
         assessment_attrs["has_incompatible_args"] = mode == "ADVANCED" and bool(incompatible_args)
         derived_ids = [recommendation.id, *[fact.id for fact in reviews + dqdl + dqdl_invalid]]
         provenance = dict(recommendation.provenance)
-        provenance.update({"extractor": "dq_ai_assessment@0.1.0", "derived_from": sorted(set(derived_ids))})
+        provenance.update(
+            {"extractor": "dq_ai_assessment@0.1.0", "derived_from": sorted(set(derived_ids))}
+        )
         assessment = Fact(
             kind="dq.ai.assessment",
             subject=recommendation.subject,
-            measures={"unresolved_count": sum(
-                value == "unresolved" for value in (matrix_status, cross_region, kms_status, dqdl_status)
-            )},
+            measures={
+                "unresolved_count": sum(
+                    value == "unresolved"
+                    for value in (matrix_status, cross_region, kms_status, dqdl_status)
+                )
+            },
             attrs=assessment_attrs,
             provenance=provenance,
         )
