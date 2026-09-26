@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge import __version__
+from sparkforge.integrate import claude as _claude
 from sparkforge.integrate import sources, writer
-from sparkforge.integrate.hosts import Host, mcp_command, mcp_entry
+from sparkforge.integrate.hosts import HOSTS, Host, mcp_command, mcp_entry
 from sparkforge.integrate.hosts import host as _host
 
-# Os hosts que esta versao integra. `claude` entra com o marketplace local (D8).
-INTEGRAVEIS = ("devin", "codex", "copilot")
+INTEGRAVEIS = HOSTS
 
 
 def _nomes(alvo: str) -> list[str]:
@@ -55,6 +55,9 @@ def _recusas(relatorios: list[dict[str, Any]]) -> list[dict[str, Any]]:
             if config["status"] == "refused":
                 recusas.append({"host": r["host"], "reason": config["reason"],
                                 "path": config["path"]})
+        cli = r.get("claude_cli") or {}
+        if cli.get("status") == "refused":
+            recusas.append({"host": r["host"], **{k: v for k, v in cli.items() if k != "status"}})
     return recusas
 
 
@@ -76,6 +79,8 @@ def integrate(
     windows: bool | None = None,
     appdata: Path | None = None,
     python: str | None = None,
+    runner: _claude.Runner | None = None,
+    which: _claude.Which | None = None,
     root: Path | None = None,
 ) -> dict[str, Any]:
     """Grava a integracao de `alvo` (um host ou `all`) sob `home`.
@@ -91,10 +96,22 @@ def integrate(
     for nome in _nomes(alvo):
         h = _host(nome, home=disco.home, windows=windows, appdata=disco.appdata)
         plano = writer.plan_files(h, raiz)
+        if nome == "claude":
+            plano += _claude.plugin_files(disco.home, version=__version__, python=python)
+        primeira = not (manifesto["hosts"].get("claude") or {}).get("registered")
         relatorio = writer.apply_files(
             nome, plano, disco=disco, manifesto=manifesto, version=__version__
         )
         relatorio["config"] = _configurar(h, disco=disco, manifesto=manifesto, python=python)
+        if nome == "claude":
+            cli = _claude.register(
+                disco.home, primeira=primeira,
+                mudou=bool(relatorio["written"] or relatorio["removed"]),
+                dry_run=dry_run, runner=runner, which=which,
+            )
+            relatorio["claude_cli"] = cli
+            if cli["status"] == "ok":
+                manifesto["hosts"]["claude"]["registered"] = True
         relatorios.append(relatorio)
     if not dry_run:
         writer.save_manifest(disco.home, manifesto)
@@ -107,14 +124,21 @@ def integrate(
 
 
 def detach(
-    alvo: str, *, home: Path, dry_run: bool = False, appdata: Path | None = None
+    alvo: str,
+    *,
+    home: Path,
+    dry_run: bool = False,
+    appdata: Path | None = None,
+    runner: _claude.Runner | None = None,
+    which: _claude.Which | None = None,
 ) -> dict[str, Any]:
     """Remove o que o manifesto registrou para `alvo` (D7).
 
     So sai arquivo que ainda tem o sha256 gravado e que nenhum outro host usa;
     o editado depois fica, como recusa `editado_pelo_usuario`, e o `preexistente`
     fica sempre. Da config de usuario sai so a entrada que o integrate pos.
-    `appdata` e o mesmo que o integrate recebeu.
+    `appdata` e o mesmo que o integrate recebeu. O `claude` registrado sai
+    tambem pelo CLI dele (`uninstall` e `marketplace remove`).
     """
     disco = writer.Disco(home, appdata, dry_run=dry_run)
     try:
@@ -128,6 +152,7 @@ def detach(
             relatorios.append({"host": nome, "status": "not_integrated", "refused": []})
             continue
         registros = list(entrada.get("config") or [])
+        registrado = bool(entrada.get("registered"))
         relatorio = writer.remove_owned(
             disco, manifesto, nome, writer.host_files(manifesto, nome)
         )
@@ -136,6 +161,10 @@ def detach(
         relatorio["config"] = [
             writer.revert_config(registro, disco=disco) for registro in registros
         ]
+        if nome == "claude" and registrado:
+            relatorio["claude_cli"] = _claude.unregister(
+                dry_run=dry_run, runner=runner, which=which
+            )
         del manifesto["hosts"][nome]
         relatorios.append(relatorio)
     if not dry_run:

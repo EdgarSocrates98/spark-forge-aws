@@ -29,6 +29,15 @@ def _home_isolado(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(casa))
     monkeypatch.setenv("USERPROFILE", str(casa))
     monkeypatch.setenv("APPDATA", str(casa / "AppData" / "Roaming"))
+    # Sem `which`/`runner` injetados, o `claude` e sempre "ausente": nenhum teste
+    # chega ao binario de verdade, nem pelo `all`.
+    from sparkforge.integrate import claude as _claude
+
+    def _nunca(argv):
+        raise AssertionError(f"teste chamou o binario claude: {argv}")
+
+    monkeypatch.setattr(_claude, "WHICH_PADRAO", lambda _nome: None)
+    monkeypatch.setattr(_claude, "RUNNER_PADRAO", _nunca)
 
 
 def _relativos(base: Path) -> list[str]:
@@ -749,3 +758,82 @@ def test_dry_run_de_all_simula_o_manifesto_entre_hosts(tmp_path):
     real = detach("all", home=home)
     assert _sem_modo(ensaio) == _sem_modo(real)
     assert not (home / ".agents").exists()
+
+
+# --------------------------------------------------------------------------
+# Claude Code: marketplace local e o `claude plugin` (D8)
+# --------------------------------------------------------------------------
+
+
+class _ClaudeFalso:
+    """O executor do `claude` que o teste injeta: grava cada argv e devolve 0."""
+
+    def __init__(self) -> None:
+        self.chamadas: list[list[str]] = []
+
+    def __call__(self, argv: list[str]) -> tuple[int, str]:
+        self.chamadas.append(argv)
+        return 0, "{}"
+
+
+def test_integrate_claude_monta_plugin_e_recusa_sem_cli(tmp_path):
+    from scripts import sync_skills
+
+    home = tmp_path / "home"
+    marketplace = home / ".sparkforge" / "claude"
+    plugin = marketplace / "plugins" / "sparkforge-aws"
+
+    # Sem `claude` no PATH: o plugin fica montado e a recusa traz os dois comandos.
+    sem_cli = integrate("claude", home=home, which=lambda _nome: None)
+    (recusa,) = sem_cli["refused"]
+    assert recusa["reason"] == "claude_cli_ausente"
+    assert recusa["commands"] == [
+        f"claude plugin marketplace add {marketplace} --scope user",
+        "claude plugin install sparkforge-aws@sparkforge-local --scope user --json",
+    ]
+    catalogo = json.loads((marketplace / ".claude-plugin" / "marketplace.json").read_text("utf-8"))
+    assert catalogo["name"] == "sparkforge-local"
+    assert catalogo["plugins"][0]["name"] == "sparkforge-aws"
+    assert catalogo["plugins"][0]["source"] == "./plugins/sparkforge-aws"
+    manifesto = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text("utf-8"))
+    assert (manifesto["name"], manifesto["version"]) == ("sparkforge-aws", __version__)
+    mcp = json.loads((plugin / ".mcp.json").read_text("utf-8"))
+    assert mcp == {"mcpServers": {"sparkforge": {
+        "command": sys.executable,
+        "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+    }}}
+    assert "PYTHONPATH" not in (plugin / ".mcp.json").read_text("utf-8")
+    assert _conteudo(plugin / "agents") == _agents_renderizados(
+        "claude", "{stem}.md", executores=True
+    )
+    esperado_skills = {
+        src.relative_to(ROOT / "skills").as_posix(): sync_skills.rendered_skill_bytes(
+            src, ROOT / ".claude" / "skills" / src.relative_to(ROOT / "skills")
+        )
+        for src in sources.skill_files(ROOT)
+    }
+    assert _conteudo(plugin / "skills") == esperado_skills
+
+    # Com o CLI: marketplace add e install, com o executavel que `which` achou.
+    claude = _ClaudeFalso()
+    registrado = integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    assert registrado["refused"] == []
+    assert claude.chamadas == [
+        ["/bin/claude", "plugin", "marketplace", "add", str(marketplace), "--scope", "user"],
+        ["/bin/claude", "plugin", "install", "sparkforge-aws@sparkforge-local",
+         "--scope", "user", "--json"],
+    ]
+    # Registrado e sem mudanca: a segunda execucao nao chama o CLI de novo.
+    integrate("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    assert len(claude.chamadas) == 2
+
+    # detach desinstala pelo CLI e tira os arquivos.
+    saiu = detach("claude", home=home, runner=claude, which=lambda _: "/bin/claude")
+    assert saiu["refused"] == []
+    assert claude.chamadas[2:] == [
+        ["/bin/claude", "plugin", "uninstall", "sparkforge-aws@sparkforge-local",
+         "--scope", "user"],
+        ["/bin/claude", "plugin", "marketplace", "remove", "sparkforge-local",
+         "--scope", "user"],
+    ]
+    assert not marketplace.exists()
