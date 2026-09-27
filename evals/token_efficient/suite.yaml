@@ -1,0 +1,16 @@
+schema_version: 1
+id: token-efficient-smoke
+baseline_id: local-deterministic-v1
+cases:
+  - id: glue-routing
+    intent: Glue FGAC Iceberg
+    max_bytes: 6000
+    expected_status: ok
+  - id: critical-budget
+    intent: diagnose Glue
+    max_bytes: 5
+    items:
+      - fact_id: f-critical
+        kind: fact
+        evidence: critical evidence
+    expected_status: refused

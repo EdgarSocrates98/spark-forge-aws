@@ -163,3 +163,60 @@ def compare(
         "questions": perguntas,
         "cost": {"baseline": _custo(baseline), "candidate": _custo(candidate)},
     }
+
+
+def compare_profile_benchmarks(
+    baseline: Sequence[dict[str, Any]], candidate: Sequence[dict[str, Any]]
+) -> dict[str, Any]:
+    """List profile/case transitions without declaring a gain."""
+    if not baseline or not candidate:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "refused": {"reason": "empty_side"},
+            "rows": [],
+        }
+    base_keys = {(str(row.get("case_id")), str(row.get("profile"))) for row in baseline}
+    candidate_keys = {
+        (str(row.get("case_id")), str(row.get("profile"))) for row in candidate
+    }
+    if base_keys != candidate_keys:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "refused": {
+                "reason": "benchmark_case_profile_mismatch",
+                "baseline_only": sorted(base_keys - candidate_keys),
+                "candidate_only": sorted(candidate_keys - base_keys),
+            },
+            "rows": [],
+        }
+    base = {(str(row["case_id"]), str(row["profile"])): row for row in baseline}
+    cand = {(str(row["case_id"]), str(row["profile"])): row for row in candidate}
+    rows = []
+    for key in sorted(base):
+        before, after = base[key], cand[key]
+        rows.append(
+            {
+                "case_id": key[0],
+                "profile": key[1],
+                "status": {"baseline": before.get("status"), "candidate": after.get("status")},
+                "payload_bytes": {
+                    "baseline": before.get("payload_bytes"),
+                    "candidate": after.get("payload_bytes"),
+                },
+                "provider_tokens": {
+                    "baseline": before.get("provider_tokens"),
+                    "candidate": after.get("provider_tokens"),
+                },
+                "tokens_unresolved": {
+                    "baseline": before.get("tokens_unresolved"),
+                    "candidate": after.get("tokens_unresolved"),
+                },
+                "changed": before != after,
+            }
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "refused": None,
+        "unit_separation": True,
+        "rows": rows,
+    }

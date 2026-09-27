@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from sparkforge.context.gateway import ContextGateway
+from sparkforge.context.gateway_models import GatewayProfile, GatewayRequest
 from sparkforge.economy.router import CapabilityModelRouter
 from sparkforge.registry.models import ExecutionProfile, RiskLevel
 
@@ -20,9 +22,86 @@ class EvalResult:
     failures: list[dict[str, Any]] = field(default_factory=list)
 
 
+@dataclass
+class ProfileBenchmarkResult:
+    schema_version: int
+    case_id: str
+    profile: str
+    status: str
+    payload_bytes: int | None
+    provider_tokens: dict[str, int] | None
+    tokens_unresolved: bool
+    execution_plan: dict[str, Any] | None
+    passed: bool
+    baseline_id: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "case_id": self.case_id,
+            "profile": self.profile,
+            "status": self.status,
+            "payload_bytes": self.payload_bytes,
+            "provider_tokens": self.provider_tokens,
+            "tokens_unresolved": self.tokens_unresolved,
+            "execution_plan": self.execution_plan,
+            "passed": self.passed,
+            "baseline_id": self.baseline_id,
+        }
+
+
 class EvaluationRunner:
     def __init__(self, router: CapabilityModelRouter | None = None) -> None:
         self.router = router or CapabilityModelRouter()
+
+    def run_context_benchmark(
+        self,
+        gateway: ContextGateway,
+        cases: list[dict[str, Any]],
+        *,
+        baseline_id: str | None = None,
+        profiles: tuple[GatewayProfile, ...] = (
+            GatewayProfile.ECONOMY,
+            GatewayProfile.BALANCED,
+            GatewayProfile.DEEP,
+        ),
+    ) -> list[dict[str, Any]]:
+        """Run identical deterministic cases across Gateway profiles."""
+        results: list[dict[str, Any]] = []
+        for case in cases:
+            case_id = str(case.get("id", "unknown"))
+            for profile in profiles:
+                request = GatewayRequest(
+                    intent=str(case.get("intent", "")),
+                    profile=profile,
+                    max_bytes=int(case.get("max_bytes", 0)),
+                    case_id=case_id,
+                    items=tuple(item for item in case.get("items", []) if isinstance(item, dict)),
+                    host_usage=case.get("host_usage"),
+                )
+                response = gateway.start(
+                    request,
+                    skills=[item for item in case.get("skills", []) if isinstance(item, dict)],
+                    knowledge=[
+                        item for item in case.get("knowledge", []) if isinstance(item, dict)
+                    ],
+                )
+                expected = case.get("expected_status", "ok")
+                state = response.get("token_state", {})
+                result = ProfileBenchmarkResult(
+                    schema_version=1,
+                    case_id=case_id,
+                    profile=profile.value,
+                    status=str(response.get("status", "unknown")),
+                    payload_bytes=(response.get("budget") or {}).get("payload_bytes"),
+                    provider_tokens=state.get("provider_tokens"),
+                    tokens_unresolved=bool(state.get("tokens_unresolved", True)),
+                    execution_plan=response.get("execution_plan"),
+                    passed=response.get("status") == expected,
+                    baseline_id=baseline_id,
+                )
+                results.append(result.to_dict())
+        return results
 
     def run_router_eval(self, dataset_path: Path) -> EvalResult:
         data = json.loads(dataset_path.read_text(encoding="utf-8"))

@@ -13,7 +13,9 @@ from sparkforge.codeintel.db import BANCO_PADRAO
 from sparkforge.codeintel.extract import No, extrair_nos
 from sparkforge.codeintel.graph import NoDoGrafo, chamadores, chamados, impacto
 from sparkforge.codeintel.ids import node_id, normalizar_assinatura
+from sparkforge.codeintel.incremental import IncrementalRefresh, refresh
 from sparkforge.codeintel.index import Resultado, indexar
+from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
 from sparkforge.codeintel.refs import Referencia, extrair_referencias
 from sparkforge.codeintel.search import Achado, buscar, resumo
 
@@ -30,8 +32,12 @@ __all__ = [
     "extrair_nos",
     "extrair_referencias",
     "impacto",
+    "IncrementalRefresh",
     "indexar",
     "node_id",
     "normalizar_assinatura",
+    "QueryExpansion",
+    "refresh",
     "resumo",
+    "expand_query",
 ]

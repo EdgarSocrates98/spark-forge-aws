@@ -155,6 +155,40 @@ surgical `grep` by definition it costs more — dated figures in §10 of
 smaller than the pack's fixed envelope. **Bytes and tokens never add up**
 (`CLAUDE.md` rules 22 and 24).
 
+## Token-efficient agentic architecture vNext
+
+The Context Gateway now exposes three explicit execution profiles:
+
+| Profile | Capability cap | Skill cap | Knowledge cap | Default bytes |
+|---|---:|---:|---:|---:|
+| `economy` | 8 | 3 | 8 | 6,000 |
+| `balanced` | 16 | 6 | 16 | 16,000 |
+| `deep` | 32 | 12 | 32 | 30,000 |
+
+Selection applies per kind before the global cap, with deterministic tie-breaking.
+The Gateway preserves critical evidence, `fact_id`, `rule_id`, risks and
+`unresolved`; if critical content cannot fit, it returns a named refusal instead
+of truncating silently. Context results expose `context_tree`, `execution_plan`
+and expandable refs where available.
+
+MCP remains full by default with **113 tools**. Compact MCP is explicit opt-in
+and publishes exactly **6 tools**. Full/compact adapters use the same envelope;
+surface changes require `docs/surface.lock.json` and
+`python scripts/check_surface_lock.py`.
+
+Provider tokens are never inferred from bytes. `payload_bytes` is measured by
+SparkForge; `provider_tokens` is resolved only from a host transcript and is
+otherwise `tokens_unresolved`. The core remains offline and provider-independent.
+Use `evals/token_efficient/suite.yaml` and
+`python scripts/check_token_efficient_bench.py` for the reproducible profile
+matrix; do not claim savings without a same-case baseline.
+
+Code Intelligence refresh is incremental and fingerprinted. Workspace and
+semantic graph relationships are declared, missing evidence is `unresolved`,
+and query expansion/knowledge compilation are deterministic and lazy. The
+implementation report and archived SDD artifacts live under
+`.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
+
 ## Deterministic evidence
 
 Evidence comes from deterministic extraction, not from an LLM sampling the codebase. A

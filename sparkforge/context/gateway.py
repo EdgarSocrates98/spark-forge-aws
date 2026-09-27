@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from sparkforge.context.context_tree import build_context_tree
 from sparkforge.context.gateway_budget import BudgetRefusal, pack_payload, serialized_bytes
 from sparkforge.context.gateway_capabilities import discover_capabilities, load_profiles
 from sparkforge.context.gateway_models import (
@@ -19,6 +20,8 @@ from sparkforge.context.gateway_models import (
     Unresolved,
 )
 from sparkforge.context.gateway_refs import ContextRefError, ContextRefStore
+from sparkforge.context.host_usage import HostTokenState
+from sparkforge.context.planner import plan_execution
 from sparkforge.economy.cache import ArtifactCache
 
 
@@ -145,6 +148,17 @@ class ContextGateway:
             "unresolved": [item.to_dict() for item in unresolved],
             "provider_tokens": dict(request.host_usage) if request.host_usage is not None else None,
         }
+        token_state = HostTokenState.from_transcript(
+            request.host_usage,
+            "gateway_request.host_usage" if request.host_usage is not None else None,
+        )
+        base["tokens_unresolved"] = token_state.status != "resolved"
+        base["token_state"] = token_state.to_dict()
+        base["execution_plan"] = plan_execution(
+            has_deterministic_answer=bool(capabilities),
+            allow_agentic_escalation=policy.allow_agentic_escalation,
+        ).to_dict()
+        base["context_tree"] = build_context_tree(base, host_tokens=token_state)
         try:
             packed = pack_payload(base, request.max_bytes)
         except BudgetRefusal as exc:
@@ -177,6 +191,20 @@ class ContextGateway:
             "paginated": packed.paginated,
             "unit": "serialized_utf8_json_bytes",
         }
+        packed.payload["context_tree"] = build_context_tree(packed.payload, host_tokens=token_state)
+        if serialized_bytes(packed.payload) > request.max_bytes:
+            packed = pack_payload(packed.payload, request.max_bytes)
+            packed.payload["budget"] = {
+                "max_bytes": request.max_bytes,
+                "payload_bytes": packed.payload_bytes,
+                "status": "ok",
+                "reductions": list(packed.reductions),
+                "paginated": packed.paginated,
+                "unit": "serialized_utf8_json_bytes",
+            }
+            packed.payload["context_tree"] = build_context_tree(
+                packed.payload, host_tokens=token_state
+            )
         return packed.payload
 
     def expand(self, uri: str, *, max_bytes: int) -> dict[str, Any]:
@@ -215,6 +243,13 @@ class ContextGateway:
             "unresolved": [],
             "provider_tokens": None,
         }
+        expand_tokens = HostTokenState.unresolved("transcript_unavailable")
+        result["tokens_unresolved"] = True
+        result["token_state"] = expand_tokens.to_dict()
+        result["execution_plan"] = plan_execution(
+            has_deterministic_answer=False,
+            allow_agentic_escalation=False,
+        ).to_dict()
         try:
             packed = pack_payload(result, max_bytes)
         except BudgetRefusal as exc:
@@ -229,5 +264,9 @@ class ContextGateway:
             "paginated": packed.paginated,
             "unit": "serialized_utf8_json_bytes",
         }
+        packed.payload["context_tree"] = build_context_tree(
+            packed.payload,
+            host_tokens=expand_tokens,
+        )
         packed.payload["reductions"] = list(packed.reductions)
         return packed.payload

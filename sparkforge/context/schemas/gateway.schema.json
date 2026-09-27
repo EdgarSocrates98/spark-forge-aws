@@ -17,6 +17,10 @@
     "reductions": {"type": "array", "items": {"type": "string"}},
     "unresolved": {"type": "array", "items": {"$ref": "#/$defs/unresolved"}},
     "provider_tokens": {"type": ["object", "null"]},
+    "tokens_unresolved": {"type": "boolean"},
+    "token_state": {"type": "object"},
+    "execution_plan": {"type": "object"},
+    "context_tree": {"type": "object"},
     "error": {"type": "string"}
   },
   "additionalProperties": true,
