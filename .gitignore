@@ -86,3 +86,5 @@ prompt_analise_sf.md
 # historico dele mora em docs/sdd/archive/agentspec/; o que o hook recriar aqui
 # numa maquina com o plugin ligado no usuario nao entra no git.
 .claude/sdd/
+
+test-runs/
