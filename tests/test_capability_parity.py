@@ -230,6 +230,19 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         "detach": (
             "remove a integracao do HOME do usuario; mesma razao de 'integrate'."
         ),
+        # A feature TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH expõe estes
+        # dois comandos como CLI reproduzível. A decisão do SDD não adiciona
+        # superfície MCP por inferência: provider-cost lê arquivos locais
+        # fornecidos pelo operador, e workspace-graph faz coleta AWS com
+        # manifesto/credenciais do processo CLI e grava artefato local.
+        "economy provider-cost": (
+            "comando CLI para cruzar transcript e pricing locais declarados; "
+            "sem tool MCP nesta feature."
+        ),
+        "collect workspace-graph": (
+            "coletor CLI com credenciais AWS e manifesto local; grava artefato "
+            "local e não adiciona superfície MCP nesta feature."
+        ),
     }
 
     def _subcomandos(self, parser):

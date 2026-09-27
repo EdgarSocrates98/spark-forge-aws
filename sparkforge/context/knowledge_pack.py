@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
+
 if TYPE_CHECKING:
     from sparkforge.context.gateway_models import ProfilePolicy
 
@@ -105,10 +107,12 @@ class KnowledgePackLoader:
         *,
         policy: ProfilePolicy | None = None,
         limit: int | None = None,
+        expansion: QueryExpansion | None = None,
     ) -> list[KnowledgePack]:
         """Load only relevant packs, bounded by the effective profile quota."""
         candidates = []
-        terms = {term.casefold() for term in query.split() if term.strip()}
+        expanded = expansion or expand_query(query)
+        terms = {term.casefold() for term in expanded.terms if term.strip()}
         for directory in sorted(item for item in self.root_dir.iterdir() if item.is_dir()):
             metadata = directory / "metadata.json"
             title = directory.name.casefold()

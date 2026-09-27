@@ -12,6 +12,7 @@ def test_profile_compare_lists_transitions_without_claiming_improvement() -> Non
     assert result["refused"] is None
     assert result["unit_separation"] is True
     assert result["rows"][0]["changed"] is True
+    assert "quality" in result["rows"][0]
     assert "improved" not in result
 
 

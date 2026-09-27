@@ -13,6 +13,7 @@ sparkforge integrate --help
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
 | `host` (posicional) | sim | `claude`, `devin`, `codex`, `copilot`, `all` |  |  | Host, ou all. |
+| `--profile` | não | `economy`, `balanced`, `deep` |  |  | Profile Gateway; economy/balanced integram MCP Compact. |
 | `--scope` | sim | `user` |  |  | Escopo da integracao; so user nesta versao. |
 | `--dry-run` | não | liga/desliga |  |  | Lista o que seria escrito, sem escrever. |
 | `--on-conflict` | não | `overwrite`, `merge`, `ignore` |  |  | Copia vendorizada em dobro no repositorio atual: overwrite apaga do repo, merge apaga so o identico, ignore nao toca. Sem a flag e sem terminal: ignore. |

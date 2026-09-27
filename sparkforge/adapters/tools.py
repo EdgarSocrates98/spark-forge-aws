@@ -5044,6 +5044,9 @@ _GATEWAY_SCHEMA: dict[str, Any] = {
         "provider_tokens": {"type": ["object", "null"]},
         "tokens_unresolved": {"type": "boolean"},
         "token_state": {"type": "object"},
+        "answer_state": {"type": "object"},
+        "query_expansion": {"type": "object"},
+        "discovery": {"type": "object"},
         "execution_plan": {"type": "object"},
         "context_tree": {"type": "object"},
         "error": {"type": "string"},
@@ -5055,17 +5058,24 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Context Gateway deterministico: descobre capabilities relevantes, seleciona "
             "contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. "
-            "Nao chama provider, nao le artefato arbitrario e exige max_bytes explicito."
+            "Nao chama provider nem le artefato arbitrario; max_bytes usa default do perfil "
+            "quando omitido."
         ),
         "inputSchema": {
             "type": "object",
-            "required": ["intent", "profile", "max_bytes"],
+            "required": ["intent", "profile"],
             "properties": {
                 "intent": {"type": "string", "minLength": 1},
                 "profile": {"type": "string", "enum": ["economy", "balanced", "deep"]},
                 "max_bytes": {"type": "integer", "minimum": 1},
                 "case_id": {"type": "string"},
                 "items": {"type": "array", "items": {"type": "object"}},
+                "answer_status": {
+                    "type": "string",
+                    "enum": ["resolved", "partial", "unavailable"],
+                },
+                "answer_reasons": {"type": "array", "items": {"type": "string"}},
+                "triggers": {"type": "array", "items": {"type": "string"}},
                 "repo": {"type": "string"},
             },
         },
@@ -5079,7 +5089,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "inputSchema": {
             "type": "object",
-            "required": ["ref", "max_bytes"],
+            "required": ["ref"],
             "properties": {
                 "ref": {"type": "string", "pattern": "^ctx://v1/[a-z0-9_-]+/[0-9a-f]{64}$"},
                 "max_bytes": {"type": "integer", "minimum": 1},
@@ -9987,9 +9997,12 @@ def _h_context_start(args: dict[str, Any]) -> dict[str, Any]:
     return _core.context_gateway_start(
         intent=args["intent"],
         profile=args["profile"],
-        max_bytes=int(args["max_bytes"]),
+        max_bytes=(int(args["max_bytes"]) if args.get("max_bytes") is not None else None),
         case_id=args.get("case_id"),
         items=args.get("items"),
+        answer_status=args.get("answer_status"),
+        answer_reasons=args.get("answer_reasons"),
+        triggers=args.get("triggers"),
         repo=args.get("repo", "."),
         catalog=TOOLS,
     )
@@ -9998,7 +10011,7 @@ def _h_context_start(args: dict[str, Any]) -> dict[str, Any]:
 def _h_context_expand(args: dict[str, Any]) -> dict[str, Any]:
     return _core.context_gateway_expand(
         uri=args["ref"],
-        max_bytes=int(args["max_bytes"]),
+        max_bytes=(int(args["max_bytes"]) if args.get("max_bytes") is not None else None),
         repo=args.get("repo", "."),
         catalog=TOOLS,
     )

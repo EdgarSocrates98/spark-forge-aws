@@ -60,6 +60,9 @@ _CAMPOS = (
     ("tools", "tool_count"),
     ("tools", "total_bytes"),
     ("tools", "by_name_sha256"),
+    ("compact", "tool_count"),
+    ("compact", "total_bytes"),
+    ("compact", "by_name_sha256"),
     ("skills", "document_count"),
     ("skills", "total_bytes"),
     ("skills", "by_name_sha256"),
@@ -87,6 +90,11 @@ def _payload() -> dict:
             "tool_count": medida["tools"]["tool_count"],
             "total_bytes": medida["tools"]["total_bytes"],
             "by_name_sha256": _by_name_sha256(medida["tools"]["by_name"]),
+        },
+        "compact": {
+            "tool_count": medida["compact"]["tool_count"],
+            "total_bytes": medida["compact"]["total_bytes"],
+            "by_name_sha256": _by_name_sha256(medida["compact"]["by_name"]),
         },
         "skills": {
             "document_count": medida["skills"]["document_count"],

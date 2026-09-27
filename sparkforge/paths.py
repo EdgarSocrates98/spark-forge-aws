@@ -29,7 +29,113 @@ e esta declarada; a fusao seria regressao de desempenho, nao limpeza.
 """
 from __future__ import annotations
 
+import os
+from dataclasses import dataclass
 from pathlib import Path
+
+DEFAULT_MAX_FILE_BYTES = 2 * 1024 * 1024
+DEFAULT_DENY_NAMES = frozenset(
+    {
+        ".git",
+        ".sparkforge",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".venv",
+        "__pycache__",
+        "node_modules",
+        "dist",
+        "build",
+    }
+)
+DEFAULT_DENY_SUFFIXES = frozenset({".pem", ".key", ".p12", ".pfx", ".crt"})
+DEFAULT_DENY_FILES = frozenset({".env", ".env.local", "credentials", "id_rsa"})
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspaceScanPolicy:
+    version: str = "workspace-scan-v1"
+    max_file_bytes: int = DEFAULT_MAX_FILE_BYTES
+    deny_names: frozenset[str] = DEFAULT_DENY_NAMES
+    deny_suffixes: frozenset[str] = DEFAULT_DENY_SUFFIXES
+    deny_files: frozenset[str] = DEFAULT_DENY_FILES
+
+    def __post_init__(self) -> None:
+        if self.max_file_bytes <= 0:
+            raise ValueError("max_file_bytes must be positive")
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspaceScanReport:
+    root: Path
+    files: tuple[Path, ...]
+    skipped: tuple[dict[str, str], ...]
+    policy_version: str
+
+
+def scan_repository(
+    root: Path | str,
+    policy: WorkspaceScanPolicy | None = None,
+) -> WorkspaceScanReport:
+    """Enumerate regular, bounded, non-symlink files under an authorized root."""
+    active = policy or WorkspaceScanPolicy()
+    base = Path(root).expanduser().resolve()
+    if not base.is_dir():
+        return WorkspaceScanReport(base, (), (), active.version)
+    files: list[Path] = []
+    skipped: list[dict[str, str]] = []
+    pending = [base]
+    while pending:
+        current = pending.pop()
+        try:
+            entries = sorted(os.scandir(current), key=lambda item: item.name)
+        except OSError:
+            skipped.append(
+                {
+                    "path": current.relative_to(base).as_posix(),
+                    "reason": "unreadable_directory",
+                }
+            )
+            continue
+        for entry in entries:
+            relative = Path(entry.path).relative_to(base).as_posix()
+            candidate = Path(entry.path)
+            if entry.is_symlink():
+                skipped.append({"path": relative, "reason": "symlink"})
+                continue
+            if entry.name in active.deny_names:
+                skipped.append({"path": relative, "reason": "denylisted_name"})
+                continue
+            if resolve_within(base, candidate) is None:
+                skipped.append({"path": relative, "reason": "outside_root"})
+                continue
+            if entry.is_dir(follow_symlinks=False):
+                pending.append(candidate)
+                continue
+            if not entry.is_file(follow_symlinks=False):
+                skipped.append({"path": relative, "reason": "unsupported_type"})
+                continue
+            lower_name = entry.name.casefold()
+            if lower_name in {name.casefold() for name in active.deny_files} or any(
+                lower_name.endswith(suffix.casefold()) for suffix in active.deny_suffixes
+            ):
+                skipped.append({"path": relative, "reason": "denylisted_file"})
+                continue
+            try:
+                size = entry.stat(follow_symlinks=False).st_size
+            except OSError:
+                skipped.append({"path": relative, "reason": "unreadable_metadata"})
+                continue
+            if size > active.max_file_bytes:
+                skipped.append({"path": relative, "reason": "file_too_large"})
+                continue
+            files.append(candidate)
+    return WorkspaceScanReport(
+        base,
+        tuple(sorted(files)),
+        tuple(sorted(skipped, key=lambda item: (item["path"], item["reason"]))),
+        active.version,
+    )
 
 
 def resolve_within(base: Path | str, target: Path | str) -> Path | None:

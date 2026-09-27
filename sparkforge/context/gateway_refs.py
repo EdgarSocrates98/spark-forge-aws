@@ -73,6 +73,9 @@ class ContextRefStore:
             raise ContextRefError("context ref integrity check failed")
         source = payload.get("source_path")
         if source is not None and self.authorized_root is not None:
-            if resolve_within(self.authorized_root, str(source)) is None:
+            candidate = self.authorized_root / str(source)
+            if candidate.is_symlink():
+                raise ContextRefError("context ref source symlink is not allowed")
+            if resolve_within(self.authorized_root, candidate) is None:
                 raise ContextRefError("context ref source outside authorized scope")
         return dict(value)

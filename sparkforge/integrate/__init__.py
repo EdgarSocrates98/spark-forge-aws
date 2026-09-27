@@ -30,13 +30,18 @@ def _nomes(alvo: str) -> list[str]:
 
 
 def _configurar(
-    h: Host, *, disco: writer.Disco, manifesto: dict[str, Any], python: str | None
+    h: Host,
+    *,
+    disco: writer.Disco,
+    manifesto: dict[str, Any],
+    python: str | None,
+    profile: str | None,
 ) -> list[dict[str, Any]]:
     """O servidor MCP na config de usuario do host, mesclado (D6)."""
     if h.mcp_config is None:
         return []
     if h.mcp_format == "toml":
-        comando, args = mcp_command(python)
+        comando, args = mcp_command(python, profile=profile)
         return [
             writer.apply_toml_config(
                 h.name, h.mcp_config, writer.toml_block(comando, args),
@@ -45,7 +50,7 @@ def _configurar(
         ]
     return [
         writer.apply_json_config(
-            h.name, h.mcp_config, mcp_entry(h.name, python),
+            h.name, h.mcp_config, mcp_entry(h.name, python, profile=profile),
             disco=disco, manifesto=manifesto,
         )
     ]
@@ -75,7 +80,13 @@ def _recusado(home: Path, dry_run: bool, recusa: writer.ManifestoRecusado) -> di
 
 
 def _planejar(
-    alvo: str, *, disco: writer.Disco, raiz: Path, windows: bool | None, python: str | None
+    alvo: str,
+    *,
+    disco: writer.Disco,
+    raiz: Path,
+    windows: bool | None,
+    python: str | None,
+    profile: str | None,
 ) -> list[tuple[Host, list[tuple[Path, bytes]]]]:
     planos: list[tuple[Host, list[tuple[Path, bytes]]]] = []
     for nome in _nomes(alvo):
@@ -86,7 +97,11 @@ def _planejar(
         plano = writer.plan_files(h, raiz)
         if nome == "claude":
             plano += _claude.plugin_files(
-                disco.home, version=__version__, python=python, content=list(plano)
+                disco.home,
+                version=__version__,
+                python=python,
+                profile=profile,
+                content=list(plano),
             )
         planos.append((h, plano))
     return planos
@@ -114,6 +129,7 @@ def _integrar_host(
     disco: writer.Disco,
     manifesto: dict[str, Any],
     python: str | None,
+    profile: str | None,
     runner: _claude.Runner | None,
     which: _claude.Which | None,
 ) -> dict[str, Any]:
@@ -122,7 +138,9 @@ def _integrar_host(
     relatorio = writer.apply_files(
         nome, plano, disco=disco, manifesto=manifesto, version=__version__
     )
-    relatorio["config"] = _configurar(h, disco=disco, manifesto=manifesto, python=python)
+    relatorio["config"] = _configurar(
+        h, disco=disco, manifesto=manifesto, python=python, profile=profile
+    )
     if nome == "claude":
         cli = _claude.register(
             disco.home, primeira=primeira,
@@ -144,6 +162,7 @@ def integrate(
     appdata: Path | None = None,
     codex_home: Path | None = None,
     python: str | None = None,
+    profile: str | None = None,
     runner: _claude.Runner | None = None,
     which: _claude.Which | None = None,
     root: Path | None = None,
@@ -171,7 +190,14 @@ def integrate(
     # gravados. Bundle ausente ou que o renderizador recusa sai recusa nomeada.
     try:
         raiz = sources.content_root() if root is None else Path(root)
-        planos = _planejar(alvo, disco=disco, raiz=raiz, windows=windows, python=python)
+        planos = _planejar(
+            alvo,
+            disco=disco,
+            raiz=raiz,
+            windows=windows,
+            python=python,
+            profile=profile,
+        )
     except (sources.SourcesError, render.EscalarYamlNaoSuportado) as erro:
         return _bundle_recusado(disco.home, dry_run, erro)
     relatorios: list[dict[str, Any]] = []
@@ -179,6 +205,7 @@ def integrate(
         for h, plano in planos:
             relatorios.append(_integrar_host(
                 h, plano, disco=disco, manifesto=manifesto, python=python,
+                profile=profile,
                 runner=runner, which=which,
             ))
     except BaseException:

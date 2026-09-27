@@ -7,10 +7,16 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from sparkforge.codeintel.query_expansion import expand_query
 from sparkforge.context.context_tree import build_context_tree
-from sparkforge.context.gateway_budget import BudgetRefusal, pack_payload, serialized_bytes
+from sparkforge.context.gateway_budget import (
+    BudgetRefusal,
+    materialize_bounded,
+    serialized_bytes,
+)
 from sparkforge.context.gateway_capabilities import discover_capabilities, load_profiles
 from sparkforge.context.gateway_models import (
+    AnswerState,
     BudgetReport,
     ContextItem,
     GatewayPhase,
@@ -21,7 +27,7 @@ from sparkforge.context.gateway_models import (
 )
 from sparkforge.context.gateway_refs import ContextRefError, ContextRefStore
 from sparkforge.context.host_usage import HostTokenState
-from sparkforge.context.planner import plan_execution
+from sparkforge.context.planner import derive_triggers, normalize_triggers, plan_execution
 from sparkforge.economy.cache import ArtifactCache
 
 
@@ -85,6 +91,19 @@ class ContextGateway:
     ) -> dict[str, Any]:
         request_id = _request_id(request)
         unresolved: list[Unresolved] = []
+        policy = self.policies[request.profile]
+        expansion = expand_query(request.intent, max_terms=policy.max_query_terms)
+        active_triggers = normalize_triggers(
+            (*request.triggers, *derive_triggers(request.items))
+        )
+        answer_status = request.answer_status or (
+            "partial" if request.items else "unavailable"
+        )
+        answer_state = AnswerState(
+            answer_status,
+            request.answer_reasons or ("answer_state_not_declared",),
+            active_triggers,
+        )
         try:
             capabilities, policy = discover_capabilities(
                 request.intent,
@@ -93,6 +112,7 @@ class ContextGateway:
                 self.policies,
                 skills=skills,
                 knowledge=knowledge,
+                expansion=expansion,
             )
         except (KeyError, ValueError) as exc:
             raise GatewayError(f"capability discovery failed: {exc}") from exc
@@ -147,6 +167,16 @@ class ContextGateway:
             "reductions": [],
             "unresolved": [item.to_dict() for item in unresolved],
             "provider_tokens": dict(request.host_usage) if request.host_usage is not None else None,
+            "answer_state": answer_state.to_dict(),
+            "query_expansion": expansion.to_dict(),
+            "discovery": {
+                "candidate_count": len(capabilities),
+                "limits": {
+                    "capabilities": policy.max_capabilities,
+                    "skills": policy.max_skills,
+                    "knowledge": policy.max_knowledge_chunks,
+                },
+            },
         }
         token_state = HostTokenState.from_transcript(
             request.host_usage,
@@ -155,12 +185,33 @@ class ContextGateway:
         base["tokens_unresolved"] = token_state.status != "resolved"
         base["token_state"] = token_state.to_dict()
         base["execution_plan"] = plan_execution(
-            has_deterministic_answer=bool(capabilities),
+            has_deterministic_answer=answer_state.status == "resolved",
+            answer_status=answer_state.status,
+            triggers=answer_state.triggers,
             allow_agentic_escalation=policy.allow_agentic_escalation,
         ).to_dict()
-        base["context_tree"] = build_context_tree(base, host_tokens=token_state)
+
+        def rebuild_derived(payload: dict[str, Any]) -> None:
+            for _ in range(3):
+                budget = dict(payload.get("budget", {}))
+                budget.update(
+                    {
+                        "max_bytes": request.max_bytes,
+                        "payload_bytes": serialized_bytes(payload),
+                        "status": "ok",
+                        "reductions": list(payload.get("reductions", [])),
+                        "paginated": "pagination" in payload,
+                        "unit": "serialized_utf8_json_bytes",
+                    }
+                )
+                payload["budget"] = budget
+                payload["context_tree"] = build_context_tree(
+                    payload,
+                    host_tokens=token_state,
+                )
+
         try:
-            packed = pack_payload(base, request.max_bytes)
+            materialized = materialize_bounded(base, request.max_bytes, rebuild_derived)
         except BudgetRefusal as exc:
             refusal = GatewayResponse(
                 status="refused",
@@ -180,34 +231,15 @@ class ContextGateway:
                 unresolved=(Unresolved("budget_unresolved", str(exc), "increase max_bytes"),),
                 host_usage=request.host_usage,
                 error="critical gateway content exceeds max_bytes",
+                answer_state=answer_state,
+                query_expansion=expansion.to_dict(),
             )
             return refusal.to_dict()
-        packed.payload["reductions"] = list(packed.reductions)
-        packed.payload["budget"] = {
-            "max_bytes": request.max_bytes,
-            "payload_bytes": packed.payload_bytes,
-            "status": "ok",
-            "reductions": list(packed.reductions),
-            "paginated": packed.paginated,
-            "unit": "serialized_utf8_json_bytes",
-        }
-        packed.payload["context_tree"] = build_context_tree(packed.payload, host_tokens=token_state)
-        if serialized_bytes(packed.payload) > request.max_bytes:
-            packed = pack_payload(packed.payload, request.max_bytes)
-            packed.payload["budget"] = {
-                "max_bytes": request.max_bytes,
-                "payload_bytes": packed.payload_bytes,
-                "status": "ok",
-                "reductions": list(packed.reductions),
-                "paginated": packed.paginated,
-                "unit": "serialized_utf8_json_bytes",
-            }
-            packed.payload["context_tree"] = build_context_tree(
-                packed.payload, host_tokens=token_state
-            )
-        return packed.payload
+        return materialized
 
-    def expand(self, uri: str, *, max_bytes: int) -> dict[str, Any]:
+    def expand(self, uri: str, *, max_bytes: int | None = None) -> dict[str, Any]:
+        if max_bytes is None:
+            max_bytes = self.policies[GatewayProfile.ECONOMY].default_max_bytes
         if max_bytes <= 0:
             raise GatewayError("max_bytes must be positive")
         try:
@@ -242,31 +274,44 @@ class ContextGateway:
             "reductions": [],
             "unresolved": [],
             "provider_tokens": None,
+            "answer_state": AnswerState(
+                "unavailable",
+                ("reference_expansion_is_context_only",),
+                (),
+            ).to_dict(),
+            "query_expansion": expand_query("").to_dict(),
         }
         expand_tokens = HostTokenState.unresolved("transcript_unavailable")
         result["tokens_unresolved"] = True
         result["token_state"] = expand_tokens.to_dict()
         result["execution_plan"] = plan_execution(
             has_deterministic_answer=False,
+            answer_status="unavailable",
             allow_agentic_escalation=False,
         ).to_dict()
+
+        def rebuild_derived(payload: dict[str, Any]) -> None:
+            for _ in range(3):
+                budget = dict(payload.get("budget", {}))
+                budget.update(
+                    {
+                        "max_bytes": max_bytes,
+                        "payload_bytes": serialized_bytes(payload),
+                        "status": "ok",
+                        "reductions": list(payload.get("reductions", [])),
+                        "paginated": "pagination" in payload,
+                        "unit": "serialized_utf8_json_bytes",
+                    }
+                )
+                payload["budget"] = budget
+                payload["context_tree"] = build_context_tree(
+                    payload,
+                    host_tokens=expand_tokens,
+                )
         try:
-            packed = pack_payload(result, max_bytes)
+            materialized = materialize_bounded(result, max_bytes, rebuild_derived)
         except BudgetRefusal as exc:
             raise GatewayError(
                 f"expanded content exceeds max_bytes ({exc.required_bytes})"
             ) from exc
-        packed.payload["budget"] = {
-            "max_bytes": max_bytes,
-            "payload_bytes": packed.payload_bytes,
-            "status": "ok",
-            "reductions": list(packed.reductions),
-            "paginated": packed.paginated,
-            "unit": "serialized_utf8_json_bytes",
-        }
-        packed.payload["context_tree"] = build_context_tree(
-            packed.payload,
-            host_tokens=expand_tokens,
-        )
-        packed.payload["reductions"] = list(packed.reductions)
-        return packed.payload
+        return materialized

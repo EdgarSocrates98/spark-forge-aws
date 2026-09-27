@@ -140,6 +140,80 @@ As lacunas nomeadas são qualidade, e não falha:
 O relatório mostra os dois lados de `detail_level` e **não conclui por você**
 (regra 28 do `CLAUDE.md`).
 
+## Benchmark amplo, tokens observados e custo declarado
+
+O smoke determinístico continua disponível, mas a matriz reproduzível agora usa
+15 casos, três perfis (`economy`, `balanced`, `deep`) e eixos separados de
+qualidade, bytes e tokens:
+
+```bash
+python scripts/check_token_efficient_bench.py
+python scripts/run_token_efficient_bench.py --out .sparkforge/token-matrix.json
+```
+
+O resultado não cria score composto nem soma bytes com tokens. Uma comparação
+de duas matrizes deve ler cada eixo separadamente.
+
+Tokens de provider só entram quando o transcript do host os declara. Para
+converter tokens observados em custo, forneça uma base de preço explícita:
+
+```json
+{
+  "schema_version": 1,
+  "currency": "USD",
+  "cost_basis": "provider-price-sheet:2026-09-27",
+  "source": "operator",
+  "rates": {
+    "input_tokens": {"per_million": 1.0},
+    "output_tokens": {"per_million": 5.0},
+    "cache_read_tokens": {"per_million": 0.1},
+    "cache_creation_tokens": {"per_million": 1.25}
+  }
+}
+```
+
+```bash
+sparkforge economy provider-cost \
+  --host-transcript transcript.jsonl \
+  --pricing pricing.json
+```
+
+Sem `cost_basis`, preço ou uso medido, o comando preserva tokens observados e
+retorna `cost_total: null` com `unresolved` nomeado. Não infere tokens de bytes.
+
+## Grafo live declarado
+
+O grafo live não descobre a conta inteira. Declare `cloud_resources` no
+`workspace.yaml`; cada entrada aceita serviços `glue`, `lakeformation` e `s3`,
+com tabela, bucket e prefixo explícitos:
+
+```yaml
+cloud_resources:
+  - id: events
+    kind: dataset
+    services: [glue, lakeformation, s3]
+    account_id: '111111111111'
+    catalog_id: '111111111111'
+    region: us-east-1
+    database: raw
+    table: events
+    bucket: customer-data
+    prefix: raw/events/
+```
+
+```bash
+sparkforge collect workspace-graph \
+  --repo . \
+  --manifest .sparkforge/workspace.yaml \
+  --max-objects 100 \
+  --now 2026-09-27T00:00:00Z
+```
+
+O artefato fica em `.sparkforge/artifacts/workspace_graph/`. Listagem S3 é
+limitada e marca truncamento. Recurso em outra conta exige `role_arn`; falha de
+credencial, `AccessDenied` e recurso não declarado como alvo ficam em
+`unresolved`, nunca viram ausência silenciosa.
+
 ## Byte, token e dólar não se misturam
 
 As regras 22 a 25 do [`CLAUDE.md`](../../../CLAUDE.md), em linguagem simples:

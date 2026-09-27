@@ -51,3 +51,28 @@ def test_gateway_returns_named_refusal_when_critical_payload_cannot_fit() -> Non
     assert result["status"] == "refused"
     assert result["error"]
     assert result["unresolved"][0]["code"] == "budget_unresolved"
+
+
+def test_gateway_derives_planner_triggers_from_context_evidence() -> None:
+    request = GatewayRequest(
+        "review production change",
+        GatewayProfile.DEEP,
+        6000,
+        items=(
+            {
+                "finding_id": "finding-1",
+                "kind": "finding",
+                "authority_conflict": True,
+                "risk_level": "high",
+            },
+        ),
+        answer_status="partial",
+    )
+
+    result = ContextGateway(TOOLS).start(request)
+
+    assert result["answer_state"]["triggers"] == [
+        "authority_conflict",
+        "high_risk_change",
+    ]
+    assert result["execution_plan"]["kind"] == "debate"

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from sparkforge.paths import resolve_within, scan_repository
 
 
 class WorkspaceManifestError(ValueError):
@@ -31,12 +32,31 @@ class Relationship:
 
 
 @dataclass(frozen=True, slots=True)
+class CloudResource:
+    """A cloud dataset explicitly allowed for live graph collection."""
+
+    id: str
+    kind: str
+    services: tuple[str, ...]
+    account_id: str = ""
+    catalog_id: str = ""
+    region: str = ""
+    database: str = ""
+    table: str = ""
+    resource_arn: str = ""
+    bucket: str = ""
+    prefix: str = ""
+    role_arn: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class WorkspaceManifest:
     name: str
     root: Path
     repositories: tuple[Repository, ...]
     relationships: tuple[Relationship, ...]
     schema_version: int = 1
+    cloud_resources: tuple[CloudResource, ...] = ()
 
     def repository(self, name: str) -> Repository | None:
         return next((item for item in self.repositories if item.name == name), None)
@@ -70,8 +90,11 @@ def load_manifest(path: str | Path) -> WorkspaceManifest:
             raise WorkspaceManifestError(f"duplicate or invalid repository: {repo_name!r}")
         if not isinstance(repo_path, str) or not repo_path:
             raise WorkspaceManifestError(f"repository path missing: {repo_name}")
-        resolved = (root / repo_path).resolve()
-        if not _inside(resolved, root):
+        candidate = root / repo_path
+        if candidate.is_symlink():
+            raise WorkspaceManifestError(f"repository path symlink not allowed: {repo_name}")
+        resolved = resolve_within(root, candidate)
+        if resolved is None:
             raise WorkspaceManifestError(f"repository escapes workspace root: {repo_name}")
         exists = resolved.is_dir()
         repositories.append(
@@ -80,7 +103,10 @@ def load_manifest(path: str | Path) -> WorkspaceManifest:
         seen.add(repo_name)
 
     relationships = _relationships(raw.get("relationships", {}), seen)
-    return WorkspaceManifest(name.strip(), root, tuple(repositories), relationships)
+    cloud_resources = _cloud_resources(raw.get("cloud_resources", []))
+    return WorkspaceManifest(
+        name.strip(), root, tuple(repositories), relationships, 1, cloud_resources
+    )
 
 
 def _relationships(raw: Any, names: set[str]) -> tuple[Relationship, ...]:
@@ -104,14 +130,74 @@ def _relationships(raw: Any, names: set[str]) -> tuple[Relationship, ...]:
     return tuple(sorted(result, key=lambda item: (item.source, item.relation, item.target)))
 
 
+def _cloud_resources(raw: Any) -> tuple[CloudResource, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise WorkspaceManifestError("cloud_resources must be a list")
+    result: list[CloudResource] = []
+    seen: set[str] = set()
+    allowed_services = {"glue", "lakeformation", "s3"}
+    string_fields = (
+        "account_id",
+        "catalog_id",
+        "region",
+        "database",
+        "table",
+        "resource_arn",
+        "bucket",
+        "prefix",
+        "role_arn",
+    )
+    for entry in raw:
+        if not isinstance(entry, dict):
+            raise WorkspaceManifestError("cloud resource entry must be an object")
+        resource_id = entry.get("id", entry.get("name"))
+        resource_key = resource_id.strip() if isinstance(resource_id, str) else ""
+        if not resource_key or resource_key in seen:
+            raise WorkspaceManifestError(f"duplicate or invalid cloud resource: {resource_id!r}")
+        if entry.get("kind") != "dataset":
+            raise WorkspaceManifestError(f"cloud resource kind must be dataset: {resource_id}")
+        services = entry.get("services")
+        if (
+            not isinstance(services, list)
+            or not services
+            or not all(
+                isinstance(service, str) and service in allowed_services for service in services
+            )
+            or len(set(services)) != len(services)
+        ):
+            raise WorkspaceManifestError(f"cloud resource services invalid: {resource_id}")
+        values: dict[str, str] = {}
+        for field in string_fields:
+            value = entry.get(field, "")
+            if not isinstance(value, str):
+                raise WorkspaceManifestError(
+                    f"cloud resource {field} must be a string: {resource_id}"
+                )
+            values[field] = value.strip()
+        if ".." in resource_key or any(".." in value for value in values.values()):
+            raise WorkspaceManifestError(
+                f"cloud resource contains path traversal marker: {resource_key}"
+            )
+        result.append(CloudResource(resource_key, "dataset", tuple(services), **values))
+        seen.add(resource_key)
+    return tuple(sorted(result, key=lambda item: item.id))
+
+
 def fingerprint(path: Path) -> str:
     """Hash declared source contents and relative names; no code is executed."""
 
+    base = Path(path).expanduser().resolve()
     digest = hashlib.sha256()
-    if not path.is_dir():
+    if not base.is_dir():
         return ""
-    for item in _repository_files(path):
-        relative = item.relative_to(path).as_posix()
+    report = scan_repository(base)
+    digest.update(f"policy:{report.policy_version}\n".encode())
+    for skipped in report.skipped:
+        digest.update(f"skip:{skipped['path']}:{skipped['reason']}\n".encode())
+    for item in report.files:
+        relative = item.relative_to(base).as_posix()
         digest.update(relative.encode("utf-8"))
         try:
             digest.update(item.read_bytes())
@@ -121,22 +207,11 @@ def fingerprint(path: Path) -> str:
 
 
 def _repository_files(root: Path) -> tuple[Path, ...]:
-    files: list[Path] = []
-    for current, directories, names in os.walk(root, topdown=True, followlinks=False):
-        directories[:] = sorted(name for name in directories if name != ".git")
-        files.extend(Path(current) / name for name in sorted(names))
-    return tuple(files)
-
-
-def _inside(candidate: Path, root: Path) -> bool:
-    try:
-        candidate.relative_to(root)
-    except ValueError:
-        return False
-    return True
+    return scan_repository(root).files
 
 
 __all__ = [
+    "CloudResource",
     "Repository",
     "Relationship",
     "WorkspaceManifest",

@@ -98,6 +98,7 @@ def plugin_files(
     *,
     version: str,
     python: str | None,
+    profile: str | None = None,
     content: Iterable[tuple[Path, bytes]] = (),
 ) -> list[tuple[Path, bytes]]:
     """Os tres arquivos do marketplace e do plugin que nao sao skill nem agent.
@@ -106,7 +107,7 @@ def plugin_files(
     sha que vai na versao."""
     marketplace = claude_marketplace_dir(home)
     plugin = claude_plugin_dir(home)
-    comando, args = mcp_command(python)
+    comando, args = mcp_command(python, profile=profile)
     # O Python que TEM o sparkforge instalado, sem PYTHONPATH para repositorio nenhum.
     mcp = _json({"mcpServers": {"sparkforge": {"command": comando, "args": args}}})
     versao = content_version(version, [*content, (plugin / ".mcp.json", mcp)], plugin)

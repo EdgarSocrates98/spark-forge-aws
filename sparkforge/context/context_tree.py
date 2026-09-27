@@ -41,11 +41,24 @@ def build_context_tree(
         if name in payload
     ]
     state = host_tokens or HostTokenState.unresolved("transcript_unavailable")
+    critical_items = sum(
+        1
+        for item in payload.get("context", [])
+        if isinstance(item, Mapping)
+        and (
+            item.get("critical")
+            or item.get("kind") in {"fact", "finding", "rule", "risk"}
+        )
+    )
     return {
         "schema_version": 1,
         "unit": "serialized_utf8_json_bytes",
         "payload_bytes": serialized_bytes(payload),
         "components": [item.to_dict() for item in components],
+        "critical_items": critical_items,
+        "unresolved_count": len(payload.get("unresolved", []))
+        if isinstance(payload.get("unresolved", []), list)
+        else 0,
         "tokens": state.to_dict(),
     }
 

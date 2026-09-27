@@ -7,6 +7,7 @@ import json
 import re
 from collections.abc import Callable, Mapping
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 from sparkforge.adapters.mcp_envelope import validar_entrada
@@ -126,6 +127,11 @@ def compact_catalog() -> dict[str, dict[str, Any]]:
     context_start = TOOLS["sparkforge_context_start"]
     context_expand = TOOLS["sparkforge_context_expand"]
     read_only = deepcopy(context_start.get("annotations", {}))
+    execute_annotations = {
+        "readOnlyHint": False,
+        "openWorldHint": True,
+        "destructiveHint": True,
+    }
     get_input_schema = _object_schema(
         {
             "id": {"type": "string", "minLength": 1},
@@ -163,7 +169,7 @@ def compact_catalog() -> dict[str, dict[str, Any]]:
                 ("capability", "arguments"),
             ),
             _EXECUTE_OUTPUT_SCHEMA,
-            read_only,
+            execute_annotations,
         ),
         "search": _compact_spec(
             "search",
@@ -215,12 +221,14 @@ class CompactRouter:
         execute_full: Callable[[str, dict[str, Any]], Any],
         *,
         cache: ArtifactCache | None = None,
+        authorized_root: Path | None = None,
     ) -> None:
         self.catalog = catalog
         self.execute_full = execute_full
         self.cache = cache or ArtifactCache()
         self.profiles = load_profiles()
-        self.refs = ContextRefStore(cache=self.cache)
+        self.authorized_root = authorized_root
+        self.refs = ContextRefStore(cache=self.cache, authorized_root=authorized_root)
 
     def call(self, name: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         handlers: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {

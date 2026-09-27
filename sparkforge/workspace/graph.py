@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -29,6 +31,7 @@ class WorkspaceGraph:
     nodes: tuple[WorkspaceNode, ...]
     edges: tuple[WorkspaceEdge, ...]
     unresolved: tuple[dict[str, str], ...]
+    manifest_fingerprint: str = ""
 
     def neighbors(self, node_id: str, max_depth: int = 2) -> tuple[str, ...]:
         if max_depth < 0:
@@ -68,6 +71,8 @@ class WorkspaceGraph:
                 for edge in self.edges
             ],
             "unresolved": list(self.unresolved),
+            "manifest_fingerprint": self.manifest_fingerprint,
+            "freshness": "fresh",
         }
 
 
@@ -98,7 +103,20 @@ def build_graph(manifest: WorkspaceManifest) -> WorkspaceGraph:
                     "target": relationship.target,
                 }
             )
-    return WorkspaceGraph(nodes, tuple(edges), tuple(unresolved))
+    fingerprint = hashlib.sha256(
+        json.dumps(
+            {
+                "nodes": [(node.id, node.fingerprint, node.exists) for node in nodes],
+                "edges": [
+                    (edge.source, edge.relation, edge.target, edge.resolved)
+                    for edge in edges
+                ],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return WorkspaceGraph(nodes, tuple(edges), tuple(unresolved), fingerprint)
 
 
 __all__ = ["WorkspaceEdge", "WorkspaceGraph", "WorkspaceNode", "build_graph"]

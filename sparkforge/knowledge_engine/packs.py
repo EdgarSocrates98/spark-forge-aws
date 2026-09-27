@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
 from sparkforge.knowledge_engine.compiler import KnowledgeIndex, compile_knowledge
 
 
@@ -22,8 +23,14 @@ class PackDescriptor:
 class PackRegistry:
     """Discover pack metadata without loading pack bodies into the caller."""
 
-    def __init__(self, root: str | Path) -> None:
+    def __init__(self, root: str | Path, cache_dir: str | Path | None = None) -> None:
         self.root = Path(root).expanduser().resolve()
+        self.cache_dir = (
+            Path(cache_dir).expanduser().resolve()
+            if cache_dir is not None
+            else self.root.parent / ".sparkforge-knowledge-cache"
+        )
+        self._indexes: dict[tuple[str, str], KnowledgeIndex] = {}
 
     def descriptors(self) -> tuple[PackDescriptor, ...]:
         if not self.root.is_dir():
@@ -44,11 +51,25 @@ class PackRegistry:
         descriptor = next((item for item in self.descriptors() if item.domain == domain), None)
         if descriptor is None:
             raise KeyError(f"knowledge pack not found: {domain}")
-        return compile_knowledge(descriptor.path)
+        key = (descriptor.domain, descriptor.source_hash)
+        cached = self._indexes.get(key)
+        if cached is not None:
+            return cached
+        target = self.cache_dir / f"{descriptor.domain}-{descriptor.source_hash}.json"
+        index = compile_knowledge(descriptor.path, output=target)
+        self._indexes[key] = index
+        return index
 
-    def select(self, query: str, *, limit: int = 8) -> tuple[dict[str, Any], ...]:
+    def select(
+        self,
+        query: str,
+        *,
+        limit: int = 8,
+        expansion: QueryExpansion | None = None,
+    ) -> tuple[dict[str, Any], ...]:
         """Load only candidate packs, then return bounded matching claims."""
-        terms = tuple(query.casefold().split())
+        expanded = expansion or expand_query(query)
+        terms = tuple(term.casefold() for term in expanded.terms)
         candidates = [
             item
             for item in self.descriptors()

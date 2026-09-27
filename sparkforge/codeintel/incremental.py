@@ -25,6 +25,7 @@ class IncrementalRefresh:
     unresolved_references: int
     duration_s: float
     tree_fingerprint: str
+    freshness: str = "fresh"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -40,6 +41,7 @@ class IncrementalRefresh:
             "unresolved_references": self.unresolved_references,
             "duration_s": self.duration_s,
             "tree_fingerprint": self.tree_fingerprint,
+            "freshness": self.freshness,
         }
 
 
@@ -82,6 +84,7 @@ def refresh(
         unresolved_references=result.nao_resolvidas,
         duration_s=result.duracao_s,
         tree_fingerprint=result.estado.fingerprint,
+        freshness="fresh",
     )
 
 

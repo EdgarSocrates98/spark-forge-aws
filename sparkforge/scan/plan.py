@@ -41,9 +41,17 @@ KIND_PARA_ANALYZE: dict[str, str | None] = {
     "iam_access": "iam-access",
     "lakeformation": "lakeformation-grants",
     "glue_resource_link": "glue-resource-link",
+    # O grafo live é um artefato composto para auditoria. Ainda não há
+    # `analyze workspace-graph`; manter `None` produz recusa nomeada em vez
+    # de encaminhar o JSON a um extrator incompatível.
+    "workspace_graph": None,
     "terraform": None,
 }
 SEM_EXTRATOR = {
+    "workspace_graph": (
+        "artefato composto de collect workspace-graph; ainda nao existe "
+        "analyze workspace-graph"
+    ),
     "terraform": (
         "definicao implantada do job (collect glue-job) em JSON; o analyze terraform "
         "le HCL e nenhum extrator le este artefato"

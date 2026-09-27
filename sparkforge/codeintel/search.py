@@ -59,6 +59,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.codeintel.db import abrir
+from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
 
 # Ver a docstring do modulo: e o alfabeto que torna a citacao suficiente.
 _TOKEN = re.compile(r"\w+", re.UNICODE)
@@ -154,6 +155,27 @@ def buscar(
     ]
 
 
+def buscar_expandido(
+    banco: str | os.PathLike[str],
+    query: str,
+    limite: int = _LIMITE_PADRAO,
+    *,
+    expansion: QueryExpansion | None = None,
+) -> list[Achado]:
+    """Search the deterministic expansion terms and merge results stably."""
+    if limite <= 0:
+        return []
+    expanded = expansion or expand_query(query)
+    found: dict[str, Achado] = {}
+    for term in expanded.terms:
+        for item in buscar(banco, term, limite):
+            found.setdefault(item.node_id, item)
+    return sorted(
+        found.values(),
+        key=lambda item: (item.path, item.start_line, item.node_id),
+    )[:limite]
+
+
 def resumo(banco: str | os.PathLike[str]) -> dict[str, Any]:
     """O que o indice tem e quando ele foi feito.
 
@@ -193,4 +215,11 @@ def existe(banco: str | os.PathLike[str]) -> bool:
     return Path(banco).is_file()
 
 
-__all__ = ["Achado", "buscar", "construir_consulta", "existe", "resumo"]
+__all__ = [
+    "Achado",
+    "buscar",
+    "buscar_expandido",
+    "construir_consulta",
+    "existe",
+    "resumo",
+]

@@ -24,7 +24,7 @@ sparkforge context expand --help
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
 | `--ref` | sim | texto |  |  |  |
-| `--max-bytes` | sim | texto |  |  |  |
+| `--max-bytes` | não | texto |  |  | Teto de bytes serializados; omitido usa default economy. |
 | `--repo` | não | texto |  | `.` |  |
 
 ### Tool MCP equivalente
@@ -45,7 +45,7 @@ sparkforge context start --help
 |---|---|---|---|---|---|
 | `--intent` | sim | texto |  |  |  |
 | `--profile` | não | `economy`, `balanced`, `deep` |  | `balanced` |  |
-| `--max-bytes` | sim | texto |  |  |  |
+| `--max-bytes` | não | texto |  |  | Teto de bytes serializados; omitido usa default do profile. |
 | `--items` | não | texto |  |  | JSON com lista de facts/findings/knowledge/codigo ja extraidos. |
 | `--repo` | não | texto |  | `.` |  |
 | `--case-id` | não | texto |  |  |  |

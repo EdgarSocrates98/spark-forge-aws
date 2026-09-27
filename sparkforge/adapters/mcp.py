@@ -31,6 +31,7 @@ import functools
 import os
 import sys
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from typing import Any
 
 from sparkforge.adapters.mcp_compact import CompactRouter, compact_catalog
@@ -176,7 +177,17 @@ def build_server(
     )
     unavailable_message = None
     if mode == "compact":
-        router = CompactRouter(tools_do_transporte(transport, "full"), executar_full)
+        authorized_root = Path.cwd().resolve()
+        if policy is not None and getattr(policy, "root", ()):
+            authorized_root = Path(policy.root[0]).resolve()
+        from sparkforge.economy.cache import ArtifactCache
+
+        router = CompactRouter(
+            tools_do_transporte(transport, "full"),
+            executar_full,
+            cache=ArtifactCache(authorized_root / ".sparkforge" / "cache"),
+            authorized_root=authorized_root,
+        )
         executar = router.call
         unavailable_message = (
             "ferramenta indisponivel no modo 'compact': nome nao faz parte das seis "

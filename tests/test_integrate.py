@@ -364,6 +364,24 @@ def test_integrate_devin_grava_global_e_preserva_mcp_existente(tmp_path):
     assert quebrado.read_text(encoding="utf-8") == "{ nao e json"
 
 
+def test_integrate_economy_selects_compact_mcp_surface(tmp_path):
+    home = tmp_path / "home"
+
+    resultado = integrate("devin", home=home, windows=False, profile="economy")
+
+    assert resultado["refused"] == []
+    config = home / ".config" / "devin" / "mcp_config.json"
+    dados = json.loads(config.read_text(encoding="utf-8"))
+    assert dados["mcpServers"]["sparkforge"]["args"] == [
+        "-m",
+        "sparkforge.adapters.mcp",
+        "--transport",
+        "stdio",
+        "--mode",
+        "compact",
+    ]
+
+
 def test_integrate_copilot_grava_global_e_preserva_mcp_existente(tmp_path):
     home = tmp_path / "home"
     config = home / ".copilot" / "mcp-config.json"

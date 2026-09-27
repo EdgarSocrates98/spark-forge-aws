@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -145,11 +145,42 @@ def pack_payload(payload: Mapping[str, Any], max_bytes: int) -> PackedPayload:
         if key in CRITICAL_KEYS
         or key in {"schema_version", "status", "phase", "request_id", "profile", "budget"}
     }
+    for collection_name in ("capabilities", "context", "refs"):
+        collection = candidate.get(collection_name)
+        if isinstance(collection, list):
+            retained = [item for item in collection if _critical(item)]
+            if retained:
+                critical_only[collection_name] = retained
     current = serialized_bytes(critical_only)
     if current <= max_bytes:
         return PackedPayload(critical_only, current, tuple(applied), True)
     raise BudgetRefusal(
         "critical gateway content exceeds max_bytes; increase budget or request expansion",
         required_bytes=current,
+        max_bytes=max_bytes,
+    )
+
+
+def materialize_bounded(
+    payload: Mapping[str, Any],
+    max_bytes: int,
+    rebuild_derived: Callable[[dict[str, Any]], None],
+    *,
+    attempts: int = 3,
+) -> dict[str, Any]:
+    """Pack and rebuild derived metadata until the complete payload fits."""
+    if attempts <= 0:
+        raise ValueError("attempts must be positive")
+    candidate = dict(payload)
+    for _ in range(attempts):
+        packed = pack_payload(candidate, max_bytes)
+        candidate = packed.payload
+        candidate["reductions"] = list(packed.reductions)
+        rebuild_derived(candidate)
+        if serialized_bytes(candidate) <= max_bytes:
+            return candidate
+    raise BudgetRefusal(
+        "final materialized payload exceeds max_bytes",
+        required_bytes=serialized_bytes(candidate),
         max_bytes=max_bytes,
     )

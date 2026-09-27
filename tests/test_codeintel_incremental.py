@@ -25,3 +25,4 @@ def test_refresh_reports_complete_then_changed_and_reused_files(tmp_path: Path) 
     assert "lib.py" in second.changed_files
     assert second.reused_files >= 0
     assert second.tree_fingerprint
+    assert second.freshness == "fresh"

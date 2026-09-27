@@ -3,7 +3,7 @@
   "$id": "https://sparkforge.local/schemas/context-gateway-v1.json",
   "title": "SparkForge Context Gateway v1",
   "type": "object",
-  "required": ["schema_version", "status", "phase", "request_id", "profile", "capabilities", "context", "refs", "budget", "unresolved", "provider_tokens"],
+    "required": ["schema_version", "status", "phase", "request_id", "profile", "capabilities", "context", "refs", "budget", "unresolved", "provider_tokens", "answer_state", "query_expansion"],
   "properties": {
     "schema_version": {"const": 1},
     "status": {"type": "string", "enum": ["ok", "refused", "error"]},
@@ -19,6 +19,9 @@
     "provider_tokens": {"type": ["object", "null"]},
     "tokens_unresolved": {"type": "boolean"},
     "token_state": {"type": "object"},
+    "answer_state": {"$ref": "#/$defs/answer_state"},
+    "query_expansion": {"$ref": "#/$defs/query_expansion"},
+    "discovery": {"type": "object"},
     "execution_plan": {"type": "object"},
     "context_tree": {"type": "object"},
     "error": {"type": "string"}
@@ -49,6 +52,26 @@
       "type": "object",
       "required": ["code", "message"],
       "properties": {"code": {"type": "string"}, "message": {"type": "string"}, "unlock": {"type": "string"}}
+    },
+    "answer_state": {
+      "type": "object",
+      "required": ["status", "reasons", "triggers"],
+      "properties": {
+        "status": {"type": "string", "enum": ["resolved", "partial", "unavailable"]},
+        "reasons": {"type": "array", "items": {"type": "string"}},
+        "triggers": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "query_expansion": {
+      "type": "object",
+      "required": ["schema_version", "query", "terms", "clusters", "vocabulary_version"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "query": {"type": "string"},
+        "terms": {"type": "array", "items": {"type": "string"}},
+        "clusters": {"type": "array", "items": {"type": "string"}},
+        "vocabulary_version": {"type": "string"}
+      }
     }
   }
 }

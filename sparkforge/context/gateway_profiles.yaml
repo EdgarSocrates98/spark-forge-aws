@@ -6,15 +6,18 @@ profiles:
     max_knowledge_chunks: 8
     default_max_bytes: 6000
     allow_agentic_escalation: false
+    max_query_terms: 32
   balanced:
     max_capabilities: 16
     max_skills: 6
     max_knowledge_chunks: 16
     default_max_bytes: 16000
     allow_agentic_escalation: false
+    max_query_terms: 48
   deep:
     max_capabilities: 32
     max_skills: 12
     max_knowledge_chunks: 32
     default_max_bytes: 30000
     allow_agentic_escalation: true
+    max_query_terms: 64

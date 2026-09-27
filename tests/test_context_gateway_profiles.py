@@ -38,3 +38,11 @@ def test_profile_selection_is_stable_for_equal_scores() -> None:
     )
 
     assert [item.name for item in first] == [item.name for item in second]
+
+
+def test_profile_default_budget_is_declared_in_yaml() -> None:
+    policies = load_profiles()
+
+    assert policies[GatewayProfile.ECONOMY].default_max_bytes == 6000
+    assert policies[GatewayProfile.BALANCED].default_max_bytes == 16000
+    assert policies[GatewayProfile.DEEP].default_max_bytes == 30000

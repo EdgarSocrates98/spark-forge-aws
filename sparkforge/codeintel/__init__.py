@@ -17,7 +17,7 @@ from sparkforge.codeintel.incremental import IncrementalRefresh, refresh
 from sparkforge.codeintel.index import Resultado, indexar
 from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
 from sparkforge.codeintel.refs import Referencia, extrair_referencias
-from sparkforge.codeintel.search import Achado, buscar, resumo
+from sparkforge.codeintel.search import Achado, buscar, buscar_expandido, resumo
 
 __all__ = [
     "BANCO_PADRAO",
@@ -27,6 +27,7 @@ __all__ = [
     "Referencia",
     "Resultado",
     "buscar",
+    "buscar_expandido",
     "chamadores",
     "chamados",
     "extrair_nos",

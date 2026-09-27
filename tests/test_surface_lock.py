@@ -43,6 +43,13 @@ class TestOLockBateComAMedida:
         assert medida["tools"]["tool_count"] == lock["tools"]["tool_count"]
         assert medida["tools"]["total_bytes"] == lock["tools"]["total_bytes"]
 
+    def test_the_compact_catalogue_matches(self):
+        lock = _lock()
+        medida = measure_surface()
+
+        assert medida["compact"]["tool_count"] == lock["compact"]["tool_count"]
+        assert medida["compact"]["total_bytes"] == lock["compact"]["total_bytes"]
+
     def test_the_skills_match(self):
         lock = _lock()
         medida = measure_surface()

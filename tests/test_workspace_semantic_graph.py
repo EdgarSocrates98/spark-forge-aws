@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.workspace import build_graph, load_manifest
+from sparkforge.codeintel.index import indexar
+from sparkforge.workspace import build_graph, build_semantic_graph, load_manifest
 from sparkforge.workspace.manifest import WorkspaceManifestError
 
 
@@ -40,4 +41,90 @@ def test_workspace_manifest_rejects_path_escape(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     with pytest.raises(WorkspaceManifestError, match="escapes"):
+        load_manifest(manifest_path)
+
+
+def test_semantic_graph_composes_symbols_and_data_flow(tmp_path: Path) -> None:
+    pipelines = tmp_path / "pipelines"
+    pipelines.mkdir()
+    (pipelines / "job.py").write_text(
+        'def run(spark):\n'
+        '    df = spark.table("raw.events")\n'
+        '    df.writeTo("gold.events").append()\n',
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "workspace.yaml"
+    manifest_path.write_text(
+        """workspace: customer-data
+repositories:
+  - name: pipelines
+    path: pipelines
+relationships: {}
+""",
+        encoding="utf-8",
+    )
+    database = pipelines / "pipeline.sqlite3"
+    indexar(pipelines, database)
+
+    graph = build_semantic_graph(
+        load_manifest(manifest_path), databases={"pipelines": database}
+    )
+
+    kinds = {node.kind for node in graph.nodes}
+    relations = {edge.relation for edge in graph.edges}
+    assert {"repository", "file", "symbol", "dataset"} <= kinds
+    assert {"READ", "WRITE"} <= relations
+    assert graph.impact("repo:pipelines", direction="outbound")
+
+
+def test_manifest_carrega_recursos_cloud_declarados(tmp_path: Path) -> None:
+    (tmp_path / "pipelines").mkdir()
+    manifest_path = tmp_path / "workspace.yaml"
+    manifest_path.write_text(
+        """workspace: customer-data
+repositories:
+  - name: pipelines
+    path: pipelines
+relationships: {}
+cloud_resources:
+  - id: events
+    kind: dataset
+    services: [glue, lakeformation, s3]
+    account_id: '111111111111'
+    catalog_id: '111111111111'
+    region: us-east-1
+    database: raw
+    table: events
+    bucket: customer-data
+    prefix: raw/events/
+""",
+        encoding="utf-8",
+    )
+
+    manifest = load_manifest(manifest_path)
+
+    assert [item.id for item in manifest.cloud_resources] == ["events"]
+    assert manifest.cloud_resources[0].services == ("glue", "lakeformation", "s3")
+
+
+def test_manifest_rejeita_traversal_em_recurso_cloud(tmp_path: Path) -> None:
+    (tmp_path / "repo").mkdir()
+    manifest_path = tmp_path / "workspace.yaml"
+    manifest_path.write_text(
+        """workspace: unsafe
+repositories:
+  - name: repo
+    path: repo
+relationships: {}
+cloud_resources:
+  - id: events
+    kind: dataset
+    services: [s3]
+    bucket: customer-data
+    prefix: raw/../other/
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(WorkspaceManifestError, match="traversal"):
         load_manifest(manifest_path)

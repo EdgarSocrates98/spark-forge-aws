@@ -1122,6 +1122,13 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     economy_report_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
+    economy_cost_p = economy_sub.add_parser(
+        "provider-cost",
+        help="Calcula custo observado do transcript com pricing e cost_basis declarados.",
+    )
+    economy_cost_p.add_argument("--host-transcript", required=True)
+    economy_cost_p.add_argument("--pricing", required=True)
+    economy_cost_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
 
     # context gateway -------------------------------------------------------
     context_p = sub.add_parser(
@@ -1136,7 +1143,11 @@ def build_parser() -> argparse.ArgumentParser:
     context_start_p.add_argument(
         "--profile", choices=["economy", "balanced", "deep"], default="balanced"
     )
-    context_start_p.add_argument("--max-bytes", required=True, type=int)
+    context_start_p.add_argument(
+        "--max-bytes",
+        type=int,
+        help="Teto de bytes serializados; omitido usa default do profile.",
+    )
     context_start_p.add_argument(
         "--items", help="JSON com lista de facts/findings/knowledge/codigo ja extraidos."
     )
@@ -1146,7 +1157,11 @@ def build_parser() -> argparse.ArgumentParser:
         "expand", help="Expande uma referencia ctx://v1 sob budget."
     )
     context_expand_p.add_argument("--ref", required=True)
-    context_expand_p.add_argument("--max-bytes", required=True, type=int)
+    context_expand_p.add_argument(
+        "--max-bytes",
+        type=int,
+        help="Teto de bytes serializados; omitido usa default economy.",
+    )
     context_expand_p.add_argument("--repo", default=".")
 
     # agentic: agents -------------------------------------------------------
@@ -2547,6 +2562,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     integrate_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
     integrate_p.add_argument(
+        "--profile",
+        choices=("economy", "balanced", "deep"),
+        help="Profile Gateway; economy/balanced integram MCP Compact.",
+    )
+    integrate_p.add_argument(
         "--scope", choices=("user",), required=True,
         help="Escopo da integracao; so user nesta versao.",
     )
@@ -2923,6 +2943,22 @@ def build_parser() -> argparse.ArgumentParser:
         "exige `virtualClusterId` junto do `id`.",
     )
     emrc_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    workspace_graph_p = collect_sub.add_parser(
+        "workspace-graph",
+        help=(
+            "Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."
+        ),
+    )
+    workspace_graph_p.add_argument("--repo", required=True)
+    workspace_graph_p.add_argument("--manifest", required=True)
+    workspace_graph_p.add_argument(
+        "--max-objects",
+        type=int,
+        default=100,
+        help="Teto de objetos S3 por recurso declarado; truncamento fica nomeado no artefato.",
+    )
+    workspace_graph_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
@@ -3670,6 +3706,16 @@ def _cmd_economy_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_economy_provider_cost(args: argparse.Namespace) -> int:
+    payload = _core.economy_provider_cost(args.host_transcript, args.pricing)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _gateway_catalog() -> dict[str, dict[str, Any]]:
     from sparkforge.adapters.tools import TOOLS
 
@@ -4323,6 +4369,7 @@ def _cmd_integrate(args: argparse.Namespace) -> int:
         appdata=_appdata_real(),
         codex_home=_codex_home_real(),
         repo=Path.cwd(),
+        profile=args.profile,
         dry_run=args.dry_run,
         on_conflict=args.on_conflict,
         interactive=sys.stdin.isatty() and sys.stderr.isatty(),
@@ -4526,6 +4573,17 @@ def _cmd_collect_emr_eks(args: argparse.Namespace) -> int:
         args.repo,
         virtual_cluster_id=args.virtual_cluster_id,
         job_run_id=args.job_run_id,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_workspace_graph(args: argparse.Namespace) -> int:
+    payload = _core.collect_workspace_graph(
+        args.repo,
+        manifest=args.manifest,
+        max_objects=args.max_objects,
         now=args.now,
     )
     _print(payload)
@@ -4966,6 +5024,7 @@ _DISPATCH = {
     ("dq-ai", "assess"): _cmd_dq_ai_assess,
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
+    ("economy", "provider-cost"): _cmd_economy_provider_cost,
     ("context", "start"): _cmd_context_start,
     ("context", "expand"): _cmd_context_expand,
     ("telemetry", "export"): _cmd_telemetry_export,
@@ -5046,6 +5105,7 @@ _DISPATCH = {
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
+    ("collect", "workspace-graph"): _cmd_collect_workspace_graph,
     ("collect", "verify"): _cmd_collect_verify,
     # agentic
     ("agents", "list"): _cmd_agents_list,

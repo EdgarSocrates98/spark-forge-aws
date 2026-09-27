@@ -227,6 +227,23 @@ Na prática, as tools caem em três grupos:
 | Grava em disco local | `readOnlyHint: false`, `openWorldHint: false` | `case_open`, `case_update`, `arbitrate`, `debate_start`, `debate_submit`, `code_*` |
 | Acessa a AWS | `readOnlyHint: false`, `openWorldHint: true` | `collect_*`, menos `collect_verify` |
 
+## Compact e segurança de dispatch
+
+Modo `compact` publica exatamente seis operações: `context_start`, `context_expand`,
+`execute`, `search`, `get` e `next`. `execute` e meta-dispatch conservador: declara
+`readOnlyHint: false`, `openWorldHint: true` e `destructiveHint: true`, porque o alvo
+real e escolhido em runtime. A validação de schema, policy e dispatcher full continua
+sendo a fonte única de execução.
+
+Integrações podem selecionar Compact por profile:
+`sparkforge integrate claude --scope user --profile economy` ou `--profile balanced`.
+`deep` mantém full; sem profile, integração mantém compatibilidade full.
+
+Refs `ctx://v1` são content-addressed. `get` e `context_expand` recusam ref inválida,
+expirada, adulterada ou com `source_path` fora da raiz autorizada. Symlink, denylist e
+arquivo acima do limite também são recusados pelo scanner de workspace; cada skip tem
+código nomeado.
+
 As tools `code_*` estão no grupo de gravação porque podem atualizar o índice local
 de código antes de responder. Os coletores `collect_*` leem da AWS e gravam o
 artefato baixado no seu disco.
