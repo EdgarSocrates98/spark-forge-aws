@@ -6,18 +6,21 @@
 
 ## O que faz
 
-Context Gateway deterministico: descobre capabilities relevantes, seleciona contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. Nao chama provider, nao le artefato arbitrario e exige max_bytes explicito.
+Context Gateway deterministico: descobre capabilities relevantes, seleciona contexto local, reduz por ordem fixa e devolve refs ctx://v1 expansíveis. Nao chama provider nem le artefato arbitrario; max_bytes usa default do perfil quando omitido.
 
 ## Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `intent` | string | sim |  |
-| `max_bytes` | integer | sim |  |
 | `profile` | string: `economy`, `balanced`, `deep` | sim |  |
+| `answer_reasons` | array de string | não |  |
+| `answer_status` | string: `resolved`, `partial`, `unavailable` | não |  |
 | `case_id` | string | não |  |
 | `items` | array de object | não |  |
+| `max_bytes` | integer | não |  |
 | `repo` | string | não |  |
+| `triggers` | array de string | não |  |
 
 ## Na CLI
 

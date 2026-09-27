@@ -22,3 +22,13 @@ def test_gateway_mcp_output_schema_matches_shared_contract() -> None:
     )
 
     jsonschema.validate(result, TOOLS["sparkforge_context_start"]["outputSchema"])
+
+
+def test_gateway_uses_profile_default_when_max_bytes_is_omitted() -> None:
+    result = call_tool(
+        "sparkforge_context_start",
+        {"intent": "Iceberg", "profile": "economy"},
+    )
+
+    assert result["budget"]["max_bytes"] == 6000
+    assert result["answer_state"]["status"] == "unavailable"

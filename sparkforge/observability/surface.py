@@ -77,6 +77,20 @@ def measure_tool_catalogue() -> dict[str, Any]:
     }
 
 
+def measure_compact_catalogue() -> dict[str, Any]:
+    """Measure the explicit six-operation projection separately from full MCP."""
+    from sparkforge.adapters.mcp_compact import compact_catalog
+
+    entries = compact_catalog()
+    by_name = {name: _bytes_of(declaration) for name, declaration in entries.items()}
+    return {
+        "by_name": by_name,
+        "total_bytes": sum(by_name.values()),
+        "tool_count": len(by_name),
+        "basis": SERIALIZATION_BASIS,
+    }
+
+
 def measure_skills(root: Path) -> dict[str, Any]:
     """Bytes de cada `SKILL.md`, indexados pelo nome do DIRETORIO.
 
@@ -107,6 +121,7 @@ def measure_surface(root: Path | None = None) -> dict[str, Any]:
     raiz = root or ROOT
     return {
         "tools": measure_tool_catalogue(),
+        "compact": measure_compact_catalogue(),
         "skills": measure_skills(raiz / "skills"),
         "knowledge": measure_directory(raiz / "knowledge", "*.md"),
     }

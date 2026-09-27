@@ -618,3 +618,13 @@ funções, mesma saída). Se nem Python estiver disponível, leia
 `rules/catalog/*.yaml` diretamente — é YAML legível por humano, com o mesmo
 `rule_id`, o mesmo limiar, a mesma guarda de versão (`runtime_scope`) e a
 mesma fonte datada que o motor usaria. A automação cai; o conhecimento não.
+# Context Gateway profiles and Compact rollout
+
+`context_start` aceita `profile: economy|balanced|deep`. `max_bytes` é opcional e usa
+default determinístico do perfil: 6.000, 16.000 ou 30.000 bytes. O Gateway aplica
+limites por kind antes do limite global, preserva evidência crítica e recusa quando a
+materialização completa não cabe.
+
+MCP continua `full` por padrão. `--mode compact` é opt-in e publica seis operações;
+`docs/surface.lock.json` trava nomes, quantidade, bytes e digest das duas superfícies.
+Use `python scripts/check_token_efficient_bench.py` para validar matriz de benchmark.

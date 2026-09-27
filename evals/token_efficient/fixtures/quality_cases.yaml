@@ -1,0 +1,22 @@
+schema_version: 1
+cases:
+  - id: glue-routing
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: critical-budget
+    expected_status: refused
+    expected_evidence: [f-critical]
+    expected_unresolved: [budget_unresolved]
+  - id: planner-partial
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: workspace-unresolved
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: quality-evidence
+    expected_status: ok
+    expected_evidence: [f-quality]
+    expected_unresolved: []

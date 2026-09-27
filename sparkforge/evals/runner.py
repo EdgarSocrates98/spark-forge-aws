@@ -34,6 +34,12 @@ class ProfileBenchmarkResult:
     execution_plan: dict[str, Any] | None
     passed: bool
     baseline_id: str | None = None
+    suite_id: str | None = None
+    quality: dict[str, Any] = field(default_factory=dict)
+    evidence_recall: float | None = None
+    false_positive_rate: float | None = None
+    refusal_reason: str | None = None
+    unresolved: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -47,6 +53,12 @@ class ProfileBenchmarkResult:
             "execution_plan": self.execution_plan,
             "passed": self.passed,
             "baseline_id": self.baseline_id,
+            "suite_id": self.suite_id,
+            "quality": self.quality,
+            "evidence_recall": self.evidence_recall,
+            "false_positive_rate": self.false_positive_rate,
+            "refusal_reason": self.refusal_reason,
+            "unresolved": list(self.unresolved),
         }
 
 
@@ -87,6 +99,47 @@ class EvaluationRunner:
                     ],
                 )
                 expected = case.get("expected_status", "ok")
+                unresolved = tuple(
+                    str(item.get("code"))
+                    for item in response.get("unresolved", [])
+                    if isinstance(item, dict) and item.get("code")
+                )
+                expected_evidence = {
+                    str(item) for item in case.get("expected_evidence", []) if str(item)
+                }
+                actual_evidence = _evidence_ids(response)
+                evidence_recall = (
+                    len(expected_evidence & actual_evidence) / len(expected_evidence)
+                    if expected_evidence
+                    else None
+                )
+                expected_unresolved = {
+                    str(item) for item in case.get("expected_unresolved", []) if str(item)
+                }
+                expected_findings = {
+                    str(item) for item in case.get("expected_findings", []) if str(item)
+                }
+                actual_findings = _finding_ids(response)
+                false_positive_rate = (
+                    len(actual_findings - expected_findings) / len(actual_findings)
+                    if actual_findings
+                    else 0.0
+                )
+                quality = {
+                    "expected_evidence": sorted(expected_evidence),
+                    "observed_evidence": sorted(actual_evidence),
+                    "expected_unresolved": sorted(expected_unresolved),
+                    "observed_unresolved": list(unresolved),
+                    "expected_findings": sorted(expected_findings),
+                    "observed_findings": sorted(actual_findings),
+                }
+                quality_passed = (
+                    expected_evidence <= actual_evidence
+                    and expected_unresolved <= set(unresolved)
+                )
+                refusal_reason = None
+                if response.get("status") == "refused":
+                    refusal_reason = next(iter(unresolved), response.get("error"))
                 state = response.get("token_state", {})
                 result = ProfileBenchmarkResult(
                     schema_version=1,
@@ -97,8 +150,14 @@ class EvaluationRunner:
                     provider_tokens=state.get("provider_tokens"),
                     tokens_unresolved=bool(state.get("tokens_unresolved", True)),
                     execution_plan=response.get("execution_plan"),
-                    passed=response.get("status") == expected,
+                    passed=response.get("status") == expected and quality_passed,
                     baseline_id=baseline_id,
+                    suite_id=case.get("suite_id"),
+                    quality=quality,
+                    evidence_recall=evidence_recall,
+                    false_positive_rate=false_positive_rate,
+                    refusal_reason=refusal_reason,
+                    unresolved=unresolved,
                 )
                 results.append(result.to_dict())
         return results
@@ -160,3 +219,35 @@ class EvaluationRunner:
             pass_rate=round(rate, 4),
             failures=failures,
         )
+
+
+def _evidence_ids(response: dict[str, Any]) -> set[str]:
+    values: set[str] = set()
+    for item in response.get("context", []):
+        if not isinstance(item, dict):
+            continue
+        for key in ("fact_id", "finding_id", "rule_id"):
+            value = item.get(key)
+            if value:
+                values.add(str(value))
+        payload = item.get("payload")
+        if isinstance(payload, dict):
+            for key in ("fact_id", "finding_id", "rule_id"):
+                value = payload.get(key)
+                if value:
+                    values.add(str(value))
+    return values
+
+
+def _finding_ids(response: dict[str, Any]) -> set[str]:
+    values: set[str] = set()
+    for item in response.get("context", []):
+        if not isinstance(item, dict) or item.get("kind") != "finding":
+            continue
+        value = item.get("finding_id") or item.get("id")
+        if value:
+            values.add(str(value))
+        payload = item.get("payload")
+        if isinstance(payload, dict) and payload.get("finding_id"):
+            values.add(str(payload["finding_id"]))
+    return values

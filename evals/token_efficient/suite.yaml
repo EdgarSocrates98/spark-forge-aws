@@ -1,11 +1,15 @@
 schema_version: 1
 id: token-efficient-smoke
 baseline_id: local-deterministic-v1
+profiles: [economy, balanced, deep]
+quality_fixture: fixtures/quality_cases.yaml
 cases:
   - id: glue-routing
     intent: Glue FGAC Iceberg
     max_bytes: 6000
     expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
   - id: critical-budget
     intent: diagnose Glue
     max_bytes: 5
@@ -14,3 +18,35 @@ cases:
         kind: fact
         evidence: critical evidence
     expected_status: refused
+    expected_evidence: [f-critical]
+    expected_unresolved: [budget_unresolved]
+  - id: planner-partial
+    intent: diagnose Spark skew
+    max_bytes: 6000
+    answer_status: partial
+    triggers: [high_risk_change]
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: workspace-unresolved
+    intent: workspace dependency graph
+    max_bytes: 6000
+    items:
+      - id: workspace-edge
+        kind: unresolved
+        code: workspace_repository_unresolved
+        message: declared target is unavailable
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: quality-evidence
+    intent: Iceberg data quality
+    max_bytes: 6000
+    items:
+      - fact_id: f-quality
+        kind: fact
+        relevance: 100
+        value: observed
+    expected_status: ok
+    expected_evidence: [f-quality]
+    expected_unresolved: []

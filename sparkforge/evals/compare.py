@@ -211,6 +211,26 @@ def compare_profile_benchmarks(
                     "baseline": before.get("tokens_unresolved"),
                     "candidate": after.get("tokens_unresolved"),
                 },
+                "quality": {
+                    "baseline": before.get("quality"),
+                    "candidate": after.get("quality"),
+                },
+                "evidence_recall": {
+                    "baseline": before.get("evidence_recall"),
+                    "candidate": after.get("evidence_recall"),
+                },
+                "false_positive_rate": {
+                    "baseline": before.get("false_positive_rate"),
+                    "candidate": after.get("false_positive_rate"),
+                },
+                "refusal_reason": {
+                    "baseline": before.get("refusal_reason"),
+                    "candidate": after.get("refusal_reason"),
+                },
+                "unresolved": {
+                    "baseline": before.get("unresolved", []),
+                    "candidate": after.get("unresolved", []),
+                },
                 "changed": before != after,
             }
         )

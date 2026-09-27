@@ -30,3 +30,14 @@ def test_planner_routes_conflicts_to_debate_when_enabled() -> None:
 
     assert plan.kind == "debate"
     assert plan.reason == "escalation_triggered"
+
+
+def test_planner_requires_explicit_resolved_state_for_deterministic_plan() -> None:
+    plan = plan_execution(
+        has_deterministic_answer=True,
+        answer_status="partial",
+        allow_agentic_escalation=False,
+    )
+
+    assert plan.kind == "unresolved"
+    assert plan.reason == "partial_answer_escalation_disabled"

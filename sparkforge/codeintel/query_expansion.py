@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -21,13 +23,17 @@ class QueryExpansion:
     vocabulary_version: str
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "schema_version": 1,
             "query": self.query,
             "terms": list(self.terms),
             "clusters": list(self.clusters),
             "vocabulary_version": self.vocabulary_version,
         }
+        result["expansion_digest"] = hashlib.sha256(
+            json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        return result
 
 
 def expand_query(

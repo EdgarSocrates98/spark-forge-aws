@@ -7,6 +7,25 @@ from dataclasses import dataclass
 from typing import Literal
 
 PlanKind = Literal["deterministic", "specialist", "reviewer", "debate", "unresolved"]
+AnswerStatus = Literal["resolved", "partial", "unavailable"]
+
+_TRIGGER_ALIASES = {
+    "conflict": "conflicting_rules",
+    "conflicting rule": "conflicting_rules",
+    "authority conflict": "authority_conflict",
+    "high risk": "high_risk_change",
+    "confidence gap": "confidence_gap",
+    "missing evidence": "missing_evidence",
+    "unresolved reference": "unresolved_reference",
+}
+
+
+def normalize_triggers(triggers: Iterable[str]) -> tuple[str, ...]:
+    normalized: set[str] = set()
+    for trigger in triggers:
+        value = "_".join(str(trigger).casefold().strip().replace("-", " ").split())
+        normalized.add(_TRIGGER_ALIASES.get(value, value))
+    return tuple(sorted(item for item in normalized if item))
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,15 +55,32 @@ def plan_execution(
     has_deterministic_answer: bool,
     triggers: Iterable[str] = (),
     allow_agentic_escalation: bool = False,
+    answer_status: AnswerStatus | None = None,
 ) -> ExecutionPlan:
     """Choose the smallest valid plan; never invokes a provider."""
-    active = tuple(sorted(set(str(trigger) for trigger in triggers if str(trigger))))
-    if has_deterministic_answer and not active:
+    if answer_status is not None and answer_status not in {
+        "resolved",
+        "partial",
+        "unavailable",
+    }:
+        raise ValueError(f"invalid answer status: {answer_status}")
+    resolved = (
+        answer_status == "resolved"
+        if answer_status is not None
+        else has_deterministic_answer
+    )
+    active = normalize_triggers(triggers)
+    if resolved and not active:
         return ExecutionPlan("deterministic", "deterministic_first", complexity="low")
     if not allow_agentic_escalation:
-        if has_deterministic_answer:
+        if resolved:
             return ExecutionPlan("deterministic", "escalation_disabled", active, "low")
-        return ExecutionPlan("unresolved", "agentic_escalation_disabled", active)
+        reason = "agentic_escalation_disabled"
+        if answer_status == "partial":
+            reason = "partial_answer_escalation_disabled"
+        elif answer_status == "unavailable":
+            reason = "answer_unavailable"
+        return ExecutionPlan("unresolved", reason, active)
     if {"conflicting_rules", "authority_conflict"} & set(active):
         return ExecutionPlan(
             "debate",
@@ -70,7 +106,8 @@ def plan_execution(
             "medium",
             reasoning_required=True,
         )
-    return ExecutionPlan("unresolved", "no_deterministic_basis")
+    reason = "no_deterministic_basis" if answer_status != "unavailable" else "answer_unavailable"
+    return ExecutionPlan("unresolved", reason, active)
 
 
-__all__ = ["ExecutionPlan", "PlanKind", "plan_execution"]
+__all__ = ["ExecutionPlan", "PlanKind", "normalize_triggers", "plan_execution"]

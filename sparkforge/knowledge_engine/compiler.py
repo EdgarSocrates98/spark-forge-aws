@@ -39,13 +39,45 @@ class KnowledgeIndex:
     schema_version: int
     root: str
     claims: tuple[CompiledClaim, ...]
+    source_manifest: tuple[tuple[str, str], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
             "root": self.root,
             "claims": [claim.to_dict() for claim in self.claims],
+            "source_manifest": [
+                {"source": source, "source_hash": source_hash}
+                for source, source_hash in self.source_manifest
+            ],
         }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> KnowledgeIndex:
+        claims = tuple(
+            CompiledClaim(
+                claim_id=str(item["claim_id"]),
+                domain=str(item["domain"]),
+                source=str(item["source"]),
+                source_hash=str(item["source_hash"]),
+                authority=str(item["authority"]),
+                version=str(item["version"]),
+                text=str(item["text"]),
+            )
+            for item in raw.get("claims", [])
+            if isinstance(item, dict)
+        )
+        source_manifest = tuple(
+            (str(item["source"]), str(item["source_hash"]))
+            for item in raw.get("source_manifest", [])
+            if isinstance(item, dict) and "source" in item and "source_hash" in item
+        )
+        return cls(
+            int(raw.get("schema_version", 1)),
+            str(raw.get("root", "")),
+            claims,
+            source_manifest,
+        )
 
     def search(self, terms: tuple[str, ...], limit: int = 8) -> tuple[CompiledClaim, ...]:
         normalized = tuple(term.casefold() for term in terms if term)
@@ -73,12 +105,25 @@ def compile_knowledge(
         raise ValueError(f"knowledge root is not a directory: {base}")
     claims: list[CompiledClaim] = []
     supported = {".md", ".yaml", ".yml", ".json"}
+    target = Path(output).expanduser().resolve() if output is not None else None
+    source_contents: dict[str, tuple[Path, str, str]] = {}
     for source in _source_files(base, supported):
+        if target is not None and source.resolve() == target:
+            continue
         if any(part.startswith(".") for part in source.relative_to(base).parts):
             continue
         content = source.read_text(encoding="utf-8", errors="strict")
         source_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
         relative = source.relative_to(base).as_posix()
+        source_contents[relative] = (source, content, source_hash)
+    source_manifest = tuple(
+        (relative, values[2]) for relative, values in sorted(source_contents.items())
+    )
+    if target is not None:
+        cached = _load_cached(target, base, source_manifest)
+        if cached is not None:
+            return cached
+    for relative, (source, content, source_hash) in source_contents.items():
         domain = relative.split("/", 1)[0].rsplit(".", 1)[0]
         for ordinal, text in enumerate(_claims(content, source.suffix.lower()), start=1):
             claim_id = hashlib.sha256(
@@ -95,15 +140,31 @@ def compile_knowledge(
                     text=text,
                 )
             )
-    index = KnowledgeIndex(1, base.as_posix(), tuple(claims))
-    if output is not None:
-        target = Path(output).expanduser().resolve()
+    index = KnowledgeIndex(1, base.as_posix(), tuple(claims), source_manifest)
+    if target is not None:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(index.to_dict(), ensure_ascii=False, sort_keys=True, indent=2) + "\n",
             encoding="utf-8",
         )
     return index
+
+
+def _load_cached(
+    target: Path,
+    root: Path,
+    source_manifest: tuple[tuple[str, str], ...],
+) -> KnowledgeIndex | None:
+    try:
+        raw = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    cached = KnowledgeIndex.from_dict(raw)
+    if cached.root != root.as_posix() or cached.source_manifest != source_manifest:
+        return None
+    return cached
 
 
 def _source_files(root: Path, supported: set[str]) -> tuple[Path, ...]:

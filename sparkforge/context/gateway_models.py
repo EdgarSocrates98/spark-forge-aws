@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
+
+AnswerStatus = Literal["resolved", "partial", "unavailable"]
 
 
 class GatewayProfile(str, Enum):
@@ -24,24 +26,53 @@ class GatewayPhase(str, Enum):
 
 
 @dataclass(frozen=True, slots=True)
+class AnswerState:
+    status: AnswerStatus
+    reasons: tuple[str, ...] = ()
+    triggers: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "reasons": list(self.reasons),
+            "triggers": list(self.triggers),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class GatewayRequest:
     """Validated request entering the deterministic Gateway."""
 
     intent: str
     profile: GatewayProfile
-    max_bytes: int
+    max_bytes: int | None = None
     case_id: str | None = None
     items: tuple[Mapping[str, Any], ...] = field(default_factory=tuple)
     host_usage: Mapping[str, Any] | None = None
+    answer_status: AnswerStatus | None = None
+    answer_reasons: tuple[str, ...] = ()
+    triggers: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.intent.strip():
             raise ValueError("intent must not be empty")
-        if self.max_bytes <= 0:
-            raise ValueError("max_bytes must be positive")
         if not isinstance(self.profile, GatewayProfile):
             object.__setattr__(self, "profile", GatewayProfile(str(self.profile)))
+        if self.max_bytes is None:
+            from sparkforge.context.gateway_capabilities import load_profiles
+
+            object.__setattr__(self, "max_bytes", load_profiles()[self.profile].default_max_bytes)
+        if self.max_bytes <= 0:
+            raise ValueError("max_bytes must be positive")
+        if self.answer_status is not None and self.answer_status not in {
+            "resolved",
+            "partial",
+            "unavailable",
+        }:
+            raise ValueError(f"invalid answer_status: {self.answer_status}")
         object.__setattr__(self, "items", tuple(dict(item) for item in self.items))
+        object.__setattr__(self, "answer_reasons", tuple(str(item) for item in self.answer_reasons))
+        object.__setattr__(self, "triggers", tuple(str(item) for item in self.triggers))
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> GatewayRequest:
@@ -51,10 +82,13 @@ class GatewayRequest:
         return cls(
             intent=str(raw.get("intent", "")),
             profile=GatewayProfile(str(raw.get("profile", GatewayProfile.BALANCED.value))),
-            max_bytes=int(raw.get("max_bytes", 0)),
+            max_bytes=(int(raw["max_bytes"]) if raw.get("max_bytes") is not None else None),
             case_id=raw.get("case_id"),
             items=tuple(item for item in items if isinstance(item, Mapping)),
             host_usage=raw.get("host_usage"),
+            answer_status=raw.get("answer_status"),
+            answer_reasons=tuple(raw.get("answer_reasons", ())),
+            triggers=tuple(raw.get("triggers", ())),
         )
 
 
@@ -161,6 +195,8 @@ class GatewayResponse:
     reductions: tuple[str, ...] = ()
     host_usage: Mapping[str, Any] | None = None
     error: str | None = None
+    answer_state: AnswerState | None = None
+    query_expansion: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -177,6 +213,10 @@ class GatewayResponse:
             "unresolved": [item.to_dict() for item in self.unresolved],
             "provider_tokens": self.host_usage,
         }
+        if self.answer_state is not None:
+            result["answer_state"] = self.answer_state.to_dict()
+        if self.query_expansion is not None:
+            result["query_expansion"] = dict(self.query_expansion)
         if self.error is not None:
             result["error"] = self.error
         return result

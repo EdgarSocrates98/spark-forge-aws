@@ -41,6 +41,7 @@ from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect import parquet_footer as collect_parquet
 from sparkforge.collect.base import CollectorUnavailable, verify_all
+from sparkforge.context.gateway_models import AnswerStatus
 from sparkforge.controlm import migration as _ctm_migration
 from sparkforge.controlm.descriptor import (
     UnknownVersion as UnknownControlMVersion,
@@ -8799,11 +8800,14 @@ def context_gateway_start(
     *,
     intent: str,
     profile: str,
-    max_bytes: int,
+    max_bytes: int | None,
     catalog: Any,
     items: list[dict[str, Any]] | None = None,
     case_id: str | None = None,
     host_usage: dict[str, Any] | None = None,
+    answer_status: AnswerStatus | None = None,
+    answer_reasons: list[str] | None = None,
+    triggers: list[str] | None = None,
     repo: str = ".",
 ) -> dict[str, Any]:
     """Start Gateway flow over already extracted local inputs."""
@@ -8815,10 +8819,13 @@ def context_gateway_start(
         request = GatewayRequest(
             intent=intent,
             profile=GatewayProfile(profile),
-            max_bytes=int(max_bytes),
+            max_bytes=(int(max_bytes) if max_bytes is not None else None),
             case_id=case_id,
             items=tuple(items or ()),
             host_usage=host_usage,
+            answer_status=answer_status,
+            answer_reasons=tuple(answer_reasons or ()),
+            triggers=tuple(triggers or ()),
         )
         response = ContextGateway(
             catalog,
@@ -8831,7 +8838,7 @@ def context_gateway_start(
 
 
 def context_gateway_expand(
-    *, uri: str, max_bytes: int, catalog: Any, repo: str = "."
+    *, uri: str, max_bytes: int | None, catalog: Any, repo: str = "."
 ) -> dict[str, Any]:
     """Expand one Gateway ref through the repository-scoped cache."""
     from sparkforge.context.gateway import ContextGateway, GatewayError
@@ -8842,7 +8849,10 @@ def context_gateway_expand(
             catalog,
             cache=ArtifactCache(Path(repo).resolve() / ".sparkforge" / "cache"),
             authorized_root=Path(repo).resolve(),
-        ).expand(uri, max_bytes=int(max_bytes))
+        ).expand(
+            uri,
+            max_bytes=(int(max_bytes) if max_bytes is not None else None),
+        )
     except (GatewayError, TypeError, ValueError, OSError) as exc:
         raise AdapterError(f"context expand recusado: {exc}", exit_code=2) from exc
 

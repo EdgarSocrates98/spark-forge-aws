@@ -17,6 +17,8 @@ def test_profile_benchmark_records_separate_token_state() -> None:
     assert all(item["tokens_unresolved"] is True for item in results)
     assert all(item["provider_tokens"] is None for item in results)
     assert all(item["baseline_id"] == "test-baseline" for item in results)
+    assert all(item["suite_id"] is None for item in results)
+    assert all("quality" in item and "evidence_recall" in item for item in results)
 
 
 def test_profile_benchmark_resolves_tokens_only_from_case_transcript_usage() -> None:

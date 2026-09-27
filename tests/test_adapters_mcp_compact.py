@@ -42,6 +42,16 @@ def test_compact_catalog_has_exactly_six_stable_operations():
     assert all(spec["outputSchema"] for spec in catalog.values())
 
 
+def test_compact_execute_declares_conservative_dispatch_risk():
+    annotations = compact_catalog()["execute"]["annotations"]
+
+    assert annotations == {
+        "readOnlyHint": False,
+        "openWorldHint": True,
+        "destructiveHint": True,
+    }
+
+
 def test_compact_catalog_matches_its_golden_fixture():
     golden = json.loads(
         (ROOT / "fixtures" / "mcp_parity" / "compact_tools_list.json").read_text(
@@ -96,6 +106,20 @@ def test_get_resolves_authorized_context_ref(tmp_path):
 
     assert result["status"] == "ok"
     assert result["item"]["payload"]["value"] == "observed"
+
+
+def test_compact_router_rejects_ref_source_outside_authorized_root(tmp_path):
+    router = CompactRouter(
+        TOOLS,
+        lambda name, arguments: {},
+        cache=ArtifactCache(tmp_path / "cache"),
+        authorized_root=tmp_path,
+    )
+    ref = router.refs.put("artifact", {"source_path": "../secret.txt"})
+
+    result = router.call("get", {"ref": ref.uri})
+
+    assert result["error_code"] == "CONTEXT_REF_INVALID"
 
 
 def test_compact_router_refuses_unknown_capability_and_cursor():

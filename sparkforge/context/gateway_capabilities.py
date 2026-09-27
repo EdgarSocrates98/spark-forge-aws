@@ -10,6 +10,7 @@ from typing import Any
 
 import yaml
 
+from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
 from sparkforge.context.gateway_models import Capability, GatewayProfile
 
 
@@ -20,6 +21,7 @@ class ProfilePolicy:
     max_knowledge_chunks: int
     default_max_bytes: int
     allow_agentic_escalation: bool
+    max_query_terms: int = 32
 
 
 def load_profiles(path: Path | None = None) -> dict[GatewayProfile, ProfilePolicy]:
@@ -34,6 +36,7 @@ def load_profiles(path: Path | None = None) -> dict[GatewayProfile, ProfilePolic
             max_knowledge_chunks=int(values["max_knowledge_chunks"]),
             default_max_bytes=int(values.get("default_max_bytes", 0)),
             allow_agentic_escalation=bool(values.get("allow_agentic_escalation", False)),
+            max_query_terms=int(values.get("max_query_terms", 32)),
         )
     return result
 
@@ -70,9 +73,11 @@ def discover_capabilities(
     policies: Mapping[GatewayProfile, ProfilePolicy],
     skills: list[Mapping[str, Any]] | None = None,
     knowledge: list[Mapping[str, Any]] | None = None,
+    expansion: QueryExpansion | None = None,
 ) -> tuple[tuple[Capability, ...], ProfilePolicy]:
     policy = policies[profile]
-    query_terms = set(_terms(intent))
+    query = expansion or expand_query(intent)
+    query_terms = set(query.terms or _terms(intent))
     candidates: list[Capability] = []
     for name, spec in catalog.items():
         description = str(spec.get("description", ""))
@@ -80,7 +85,13 @@ def discover_capabilities(
         score = sum(3 if term in name.lower() else 1 for term in query_terms if term in haystack)
         if score:
             candidates.append(
-                Capability(name=name, kind="tool", score=score, description=description)
+                Capability(
+                    name=name,
+                    kind="tool",
+                    score=score,
+                    description=description,
+                    domains=query.clusters,
+                )
             )
     for item in skills or []:
         name = str(item.get("name", item.get("id", "")))
@@ -95,6 +106,7 @@ def discover_capabilities(
                     kind="skill",
                     score=score,
                     description=str(item.get("description", "")),
+                    domains=tuple(str(value) for value in item.get("domains", query.clusters)),
                 )
             )
     for item in knowledge or []:
@@ -110,6 +122,7 @@ def discover_capabilities(
                     kind="knowledge",
                     score=score,
                     description=str(item.get("description", "")),
+                    domains=tuple(str(value) for value in item.get("domains", query.clusters)),
                 )
             )
     return select_capabilities(candidates, policy=policy), policy

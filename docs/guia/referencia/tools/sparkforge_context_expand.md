@@ -12,8 +12,8 @@ Resolve uma ref ctx://v1 no cache local, valida integridade SHA-256 e escopo aut
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `max_bytes` | integer | sim |  |
 | `ref` | string | sim |  |
+| `max_bytes` | integer | não |  |
 | `repo` | string | não |  |
 
 ## Na CLI

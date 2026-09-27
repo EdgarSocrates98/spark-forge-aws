@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from sparkforge.paths import resolve_within, scan_repository
 
 
 class WorkspaceManifestError(ValueError):
@@ -70,8 +71,11 @@ def load_manifest(path: str | Path) -> WorkspaceManifest:
             raise WorkspaceManifestError(f"duplicate or invalid repository: {repo_name!r}")
         if not isinstance(repo_path, str) or not repo_path:
             raise WorkspaceManifestError(f"repository path missing: {repo_name}")
-        resolved = (root / repo_path).resolve()
-        if not _inside(resolved, root):
+        candidate = root / repo_path
+        if candidate.is_symlink():
+            raise WorkspaceManifestError(f"repository path symlink not allowed: {repo_name}")
+        resolved = resolve_within(root, candidate)
+        if resolved is None:
             raise WorkspaceManifestError(f"repository escapes workspace root: {repo_name}")
         exists = resolved.is_dir()
         repositories.append(
@@ -107,11 +111,16 @@ def _relationships(raw: Any, names: set[str]) -> tuple[Relationship, ...]:
 def fingerprint(path: Path) -> str:
     """Hash declared source contents and relative names; no code is executed."""
 
+    base = Path(path).expanduser().resolve()
     digest = hashlib.sha256()
-    if not path.is_dir():
+    if not base.is_dir():
         return ""
-    for item in _repository_files(path):
-        relative = item.relative_to(path).as_posix()
+    report = scan_repository(base)
+    digest.update(f"policy:{report.policy_version}\n".encode())
+    for skipped in report.skipped:
+        digest.update(f"skip:{skipped['path']}:{skipped['reason']}\n".encode())
+    for item in report.files:
+        relative = item.relative_to(base).as_posix()
         digest.update(relative.encode("utf-8"))
         try:
             digest.update(item.read_bytes())
@@ -121,19 +130,7 @@ def fingerprint(path: Path) -> str:
 
 
 def _repository_files(root: Path) -> tuple[Path, ...]:
-    files: list[Path] = []
-    for current, directories, names in os.walk(root, topdown=True, followlinks=False):
-        directories[:] = sorted(name for name in directories if name != ".git")
-        files.extend(Path(current) / name for name in sorted(names))
-    return tuple(files)
-
-
-def _inside(candidate: Path, root: Path) -> bool:
-    try:
-        candidate.relative_to(root)
-    except ValueError:
-        return False
-    return True
+    return scan_repository(root).files
 
 
 __all__ = [
