@@ -23,6 +23,25 @@ def run(args, capsys):
     return code, capsys.readouterr().out
 
 
+def test_context_start_cli_uses_profile_default_budget(repo, capsys):
+    code, output = run(
+        [
+            "context",
+            "start",
+            "--intent",
+            "Glue FGAC",
+            "--profile",
+            "economy",
+            "--repo",
+            str(repo),
+        ],
+        capsys,
+    )
+
+    assert code == 0
+    assert json.loads(output)["budget"]["max_bytes"] == 6000
+
+
 class TestAnalyze:
     def test_writes_facts_json(self, repo, capsys):
         out = repo / "facts.json"

@@ -27,3 +27,16 @@ def test_knowledge_compiler_emits_source_hashes_and_lazy_pack_metadata(tmp_path:
     registry = PackRegistry(tmp_path)
     assert registry.descriptors()[0].domain == "glue"
     assert registry.select("glue", limit=1)[0]["source"] == "runtime.md"
+
+
+def test_knowledge_pack_selection_uses_expanded_terms(tmp_path: Path) -> None:
+    pack = tmp_path / "spark"
+    pack.mkdir()
+    (pack / "routing.md").write_text(
+        "# Routing\nAdaptive Query Execution (AQE) is available.\n",
+        encoding="utf-8",
+    )
+
+    matches = PackRegistry(tmp_path).select("skew no join", limit=1)
+
+    assert matches[0]["source"] == "routing.md"

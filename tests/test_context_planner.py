@@ -1,6 +1,29 @@
 from __future__ import annotations
 
-from sparkforge.context.planner import plan_execution
+from sparkforge.context.planner import derive_triggers, plan_execution
+
+
+def test_planner_derives_triggers_from_structured_evidence() -> None:
+    triggers = derive_triggers(
+        [
+            {
+                "kind": "finding",
+                "attrs": {
+                    "conflicting_rules": True,
+                    "risk_level": "high",
+                    "confidence": 0.2,
+                },
+            },
+            {"kind": "unresolved", "code": "workspace_repository_unresolved"},
+        ]
+    )
+
+    assert triggers == (
+        "confidence_gap",
+        "conflicting_rules",
+        "high_risk_change",
+        "unresolved_reference",
+    )
 
 
 def test_planner_prefers_deterministic_path_without_triggers() -> None:

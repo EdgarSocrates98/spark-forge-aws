@@ -1136,7 +1136,11 @@ def build_parser() -> argparse.ArgumentParser:
     context_start_p.add_argument(
         "--profile", choices=["economy", "balanced", "deep"], default="balanced"
     )
-    context_start_p.add_argument("--max-bytes", required=True, type=int)
+    context_start_p.add_argument(
+        "--max-bytes",
+        type=int,
+        help="Teto de bytes serializados; omitido usa default do profile.",
+    )
     context_start_p.add_argument(
         "--items", help="JSON com lista de facts/findings/knowledge/codigo ja extraidos."
     )
@@ -1146,7 +1150,11 @@ def build_parser() -> argparse.ArgumentParser:
         "expand", help="Expande uma referencia ctx://v1 sob budget."
     )
     context_expand_p.add_argument("--ref", required=True)
-    context_expand_p.add_argument("--max-bytes", required=True, type=int)
+    context_expand_p.add_argument(
+        "--max-bytes",
+        type=int,
+        help="Teto de bytes serializados; omitido usa default economy.",
+    )
     context_expand_p.add_argument("--repo", default=".")
 
     # agentic: agents -------------------------------------------------------
@@ -2546,6 +2554,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     integrate_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
+    integrate_p.add_argument(
+        "--profile",
+        choices=("economy", "balanced", "deep"),
+        help="Profile Gateway; economy/balanced integram MCP Compact.",
+    )
     integrate_p.add_argument(
         "--scope", choices=("user",), required=True,
         help="Escopo da integracao; so user nesta versao.",
@@ -4323,6 +4336,7 @@ def _cmd_integrate(args: argparse.Namespace) -> int:
         appdata=_appdata_real(),
         codex_home=_codex_home_real(),
         repo=Path.cwd(),
+        profile=args.profile,
         dry_run=args.dry_run,
         on_conflict=args.on_conflict,
         interactive=sys.stdin.isatty() and sys.stderr.isatty(),

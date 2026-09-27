@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.workspace import build_graph, load_manifest
+from sparkforge.codeintel.index import indexar
+from sparkforge.workspace import build_graph, build_semantic_graph, load_manifest
 from sparkforge.workspace.manifest import WorkspaceManifestError
 
 
@@ -41,3 +42,36 @@ def test_workspace_manifest_rejects_path_escape(tmp_path: Path) -> None:
     )
     with pytest.raises(WorkspaceManifestError, match="escapes"):
         load_manifest(manifest_path)
+
+
+def test_semantic_graph_composes_symbols_and_data_flow(tmp_path: Path) -> None:
+    pipelines = tmp_path / "pipelines"
+    pipelines.mkdir()
+    (pipelines / "job.py").write_text(
+        'def run(spark):\n'
+        '    df = spark.table("raw.events")\n'
+        '    df.writeTo("gold.events").append()\n',
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "workspace.yaml"
+    manifest_path.write_text(
+        """workspace: customer-data
+repositories:
+  - name: pipelines
+    path: pipelines
+relationships: {}
+""",
+        encoding="utf-8",
+    )
+    database = pipelines / "pipeline.sqlite3"
+    indexar(pipelines, database)
+
+    graph = build_semantic_graph(
+        load_manifest(manifest_path), databases={"pipelines": database}
+    )
+
+    kinds = {node.kind for node in graph.nodes}
+    relations = {edge.relation for edge in graph.edges}
+    assert {"repository", "file", "symbol", "dataset"} <= kinds
+    assert {"READ", "WRITE"} <= relations
+    assert graph.impact("repo:pipelines", direction="outbound")

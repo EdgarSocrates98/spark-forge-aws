@@ -148,14 +148,28 @@ def host(
     )
 
 
-def mcp_command(python: str | None = None) -> tuple[str, list[str]]:
-    """O servidor MCP pelo Python que TEM o sparkforge instalado, sem PYTHONPATH."""
-    return (python or sys.executable, ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"])
+def mcp_command(
+    python: str | None = None,
+    *,
+    profile: str | None = None,
+) -> tuple[str, list[str]]:
+    """Return host MCP argv, selecting Compact for economy/balanced profiles."""
+    if profile not in {None, "economy", "balanced", "deep"}:
+        raise ValueError(f"unknown Gateway profile: {profile!r}")
+    args = ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+    if profile in {"economy", "balanced"}:
+        args.extend(["--mode", "compact"])
+    return (python or sys.executable, args)
 
 
-def mcp_entry(nome: str, python: str | None = None) -> dict:
+def mcp_entry(
+    nome: str,
+    python: str | None = None,
+    *,
+    profile: str | None = None,
+) -> dict:
     """A entrada `mcpServers.sparkforge` de um host de config JSON."""
-    comando, args = mcp_command(python)
+    comando, args = mcp_command(python, profile=profile)
     entrada: dict = {"command": comando, "args": args}
     if nome == "copilot":
         entrada = {"type": "local", **entrada, "tools": ["*"]}

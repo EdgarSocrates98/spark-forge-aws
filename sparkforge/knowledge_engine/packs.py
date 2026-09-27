@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from sparkforge.codeintel.query_expansion import QueryExpansion, expand_query
 from sparkforge.knowledge_engine.compiler import KnowledgeIndex, compile_knowledge
 
 
@@ -59,9 +60,16 @@ class PackRegistry:
         self._indexes[key] = index
         return index
 
-    def select(self, query: str, *, limit: int = 8) -> tuple[dict[str, Any], ...]:
+    def select(
+        self,
+        query: str,
+        *,
+        limit: int = 8,
+        expansion: QueryExpansion | None = None,
+    ) -> tuple[dict[str, Any], ...]:
         """Load only candidate packs, then return bounded matching claims."""
-        terms = tuple(query.casefold().split())
+        expanded = expansion or expand_query(query)
+        terms = tuple(term.casefold() for term in expanded.terms)
         candidates = [
             item
             for item in self.descriptors()

@@ -27,7 +27,7 @@ from sparkforge.context.gateway_models import (
 )
 from sparkforge.context.gateway_refs import ContextRefError, ContextRefStore
 from sparkforge.context.host_usage import HostTokenState
-from sparkforge.context.planner import normalize_triggers, plan_execution
+from sparkforge.context.planner import derive_triggers, normalize_triggers, plan_execution
 from sparkforge.economy.cache import ArtifactCache
 
 
@@ -93,7 +93,9 @@ class ContextGateway:
         unresolved: list[Unresolved] = []
         policy = self.policies[request.profile]
         expansion = expand_query(request.intent, max_terms=policy.max_query_terms)
-        active_triggers = normalize_triggers(request.triggers)
+        active_triggers = normalize_triggers(
+            (*request.triggers, *derive_triggers(request.items))
+        )
         answer_status = request.answer_status or (
             "partial" if request.items else "unavailable"
         )

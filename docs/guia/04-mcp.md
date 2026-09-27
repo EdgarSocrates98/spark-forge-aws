@@ -235,6 +235,10 @@ Modo `compact` publica exatamente seis operações: `context_start`, `context_ex
 real e escolhido em runtime. A validação de schema, policy e dispatcher full continua
 sendo a fonte única de execução.
 
+Integrações podem selecionar Compact por profile:
+`sparkforge integrate claude --scope user --profile economy` ou `--profile balanced`.
+`deep` mantém full; sem profile, integração mantém compatibilidade full.
+
 Refs `ctx://v1` são content-addressed. `get` e `context_expand` recusam ref inválida,
 expirada, adulterada ou com `source_path` fora da raiz autorizada. Symlink, denylist e
 arquivo acima do limite também são recusados pelo scanner de workspace; cada skip tem

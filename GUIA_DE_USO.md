@@ -253,6 +253,13 @@ python -m sparkforge.adapters.mcp --transport http --mode compact --host 127.0.0
 listada é recusada no modo compacto. O catálogo full continua acessível sem `--mode`
 ou com `--mode full`, preservando o contrato anterior.
 
+Para instalar essa escolha no host, use o profile de integração. `economy` e
+`balanced` gravam `--mode compact`; `deep` mantém o catálogo full:
+
+```bash
+sparkforge integrate claude --scope user --profile economy
+```
+
 ### 3.4 Economia de contexto e execução determinística
 
 O Gateway usa três profiles, sempre com bytes serializados separados de tokens do
@@ -267,15 +274,16 @@ provider:
 Exemplo local:
 
 ```bash
-sparkforge context start --intent "Glue FGAC Iceberg" --profile economy --max-bytes 6000
+sparkforge context start --intent "Glue FGAC Iceberg" --profile economy
 python scripts/check_token_efficient_bench.py
 ```
 
 `payload_bytes` mede o envelope JSON em UTF-8. `provider_tokens` só aparece quando o
 host fornece transcript; sem transcript, `tokens_unresolved` permanece verdadeiro. O
 Gateway expõe `context_tree`, refs `ctx://v1` e `execution_plan`. O planner tenta a
-resposta determinística primeiro; reviewer, specialist ou debate são apenas hints
-quando um trigger explícito existe. O core não chama modelo.
+resposta determinística primeiro; reviewer, specialist ou debate surgem por triggers
+explícitos ou derivados de evidência estruturada (`risk`, `confidence`, conflitos e
+unresolved). O core não chama modelo.
 
 Para repositórios relacionados, declare `.sparkforge/workspace.yaml` e use a API de
 workspace. Paths fora da raiz, repositórios não declarados e relações ausentes não são
