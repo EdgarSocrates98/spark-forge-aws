@@ -179,6 +179,27 @@ arquivo `.py` novo. Citar só a primeira seria escolher o resultado.
 - **a razao de economia sai `unresolved`** quando o corpus e menor que o envelope
   fixo do pacote. `estimated_tokens` e estimativa declarada e nunca entra numa razao.
 
+## Arquitetura token-efficient vNext
+
+O Gateway aplica quotas por kind antes do cap global: `economy` (8/3/8, 6.000
+bytes), `balanced` (16/6/16, 16.000) e `deep` (32/12/32, 30.000). Seleção e
+redução são determinísticas; evidência crítica, refs, riscos e `unresolved`
+geram recusa nomeada quando não cabem.
+
+MCP é **full por padrão (113 tools)**; `compact` é opt-in (6 tools). Ambos usam
+o mesmo envelope. Crescimento exige `docs/surface.lock.json` e
+`python scripts/check_surface_lock.py`.
+
+`payload_bytes` é medido localmente. `provider_tokens` só vem de transcript;
+sem fonte, `tokens_unresolved`. Nunca converter bytes em tokens nem alegar
+economia sem baseline. O benchmark é `evals/token_efficient/suite.yaml`,
+validado por `python scripts/check_token_efficient_bench.py`.
+
+O caminho padrão é determinístico/offline: planner, Code Intelligence incremental,
+workspace graph, query expansion e compiler. Specialist/reviewer/debate exigem
+triggers; relações e claims ausentes ficam `unresolved`. Archive:
+`.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
+
 ## Desenvolver: o SDD próprio
 
 Mudança não trivial neste repositório passa pelas skills `sdd-explore`, `sdd-define`,

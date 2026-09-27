@@ -18,6 +18,7 @@ class ProfilePolicy:
     max_capabilities: int
     max_skills: int
     max_knowledge_chunks: int
+    default_max_bytes: int
     allow_agentic_escalation: bool
 
 
@@ -31,6 +32,7 @@ def load_profiles(path: Path | None = None) -> dict[GatewayProfile, ProfilePolic
             max_capabilities=int(values["max_capabilities"]),
             max_skills=int(values["max_skills"]),
             max_knowledge_chunks=int(values["max_knowledge_chunks"]),
+            default_max_bytes=int(values.get("default_max_bytes", 0)),
             allow_agentic_escalation=bool(values.get("allow_agentic_escalation", False)),
         )
     return result
@@ -38,6 +40,27 @@ def load_profiles(path: Path | None = None) -> dict[GatewayProfile, ProfilePolic
 
 def _terms(intent: str) -> tuple[str, ...]:
     return tuple(sorted(set(re.findall(r"[a-z0-9][a-z0-9_.-]{2,}", intent.lower()))))
+
+
+def select_capabilities(
+    candidates: list[Capability],
+    *,
+    policy: ProfilePolicy,
+) -> tuple[Capability, ...]:
+    """Apply per-kind limits before the aggregate capability limit."""
+    limits = {
+        "tool": policy.max_capabilities,
+        "skill": policy.max_skills,
+        "knowledge": policy.max_knowledge_chunks,
+    }
+    buckets: dict[str, list[Capability]] = {}
+    for candidate in sorted(candidates, key=lambda item: (-item.score, item.kind, item.name)):
+        bucket = buckets.setdefault(candidate.kind, [])
+        if len(bucket) < limits.get(candidate.kind, policy.max_capabilities):
+            bucket.append(candidate)
+    retained = [item for bucket in buckets.values() for item in bucket]
+    retained.sort(key=lambda item: (-item.score, item.kind, item.name))
+    return tuple(retained[: policy.max_capabilities])
 
 
 def discover_capabilities(
@@ -89,5 +112,4 @@ def discover_capabilities(
                     description=str(item.get("description", "")),
                 )
             )
-    candidates.sort(key=lambda item: (-item.score, item.kind, item.name))
-    return tuple(candidates[: policy.max_capabilities]), policy
+    return select_capabilities(candidates, policy=policy), policy

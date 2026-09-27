@@ -1,17 +1,20 @@
-version: 1
+version: 2
 profiles:
   economy:
     max_capabilities: 8
     max_skills: 3
     max_knowledge_chunks: 8
+    default_max_bytes: 6000
     allow_agentic_escalation: false
   balanced:
     max_capabilities: 16
     max_skills: 6
     max_knowledge_chunks: 16
+    default_max_bytes: 16000
     allow_agentic_escalation: false
   deep:
     max_capabilities: 32
     max_skills: 12
     max_knowledge_chunks: 32
-    allow_agentic_escalation: false
+    default_max_bytes: 30000
+    allow_agentic_escalation: true

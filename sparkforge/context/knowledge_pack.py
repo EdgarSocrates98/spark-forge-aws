@@ -6,6 +6,10 @@ import datetime
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sparkforge.context.gateway_models import ProfilePolicy
 
 
 @dataclass
@@ -94,3 +98,31 @@ class KnowledgePackLoader:
             is_stale=is_stale,
             stale_reason=stale_reason,
         )
+
+    def select_packs(
+        self,
+        query: str,
+        *,
+        policy: ProfilePolicy | None = None,
+        limit: int | None = None,
+    ) -> list[KnowledgePack]:
+        """Load only relevant packs, bounded by the effective profile quota."""
+        candidates = []
+        terms = {term.casefold() for term in query.split() if term.strip()}
+        for directory in sorted(item for item in self.root_dir.iterdir() if item.is_dir()):
+            metadata = directory / "metadata.json"
+            title = directory.name.casefold()
+            if terms and not any(term in title for term in terms):
+                if metadata.is_file():
+                    title = metadata.read_text(encoding="utf-8", errors="ignore").casefold()
+                if not any(term in title for term in terms):
+                    continue
+            pack = self.load_pack(directory)
+            score = sum(term in f"{pack.domain} {pack.title}".casefold() for term in terms)
+            candidates.append((score, pack.domain, pack))
+        candidates.sort(key=lambda item: (-item[0], item[1]))
+        quota = limit
+        if quota is None and policy is not None:
+            quota = policy.max_knowledge_chunks
+        bound = max(0, quota if quota is not None else len(candidates))
+        return [item[2] for item in candidates[:bound]]

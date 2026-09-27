@@ -5042,6 +5042,10 @@ _GATEWAY_SCHEMA: dict[str, Any] = {
         "reductions": {"type": "array", "items": {"type": "string"}},
         "unresolved": {"type": "array", "items": {"type": "object"}},
         "provider_tokens": {"type": ["object", "null"]},
+        "tokens_unresolved": {"type": "boolean"},
+        "token_state": {"type": "object"},
+        "execution_plan": {"type": "object"},
+        "context_tree": {"type": "object"},
         "error": {"type": "string"},
     },
 }
