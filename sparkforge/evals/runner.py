@@ -32,6 +32,7 @@ class ProfileBenchmarkResult:
     provider_tokens: dict[str, int] | None
     tokens_unresolved: bool
     execution_plan: dict[str, Any] | None
+    answer_state: dict[str, Any] | None
     passed: bool
     baseline_id: str | None = None
     suite_id: str | None = None
@@ -51,6 +52,7 @@ class ProfileBenchmarkResult:
             "provider_tokens": self.provider_tokens,
             "tokens_unresolved": self.tokens_unresolved,
             "execution_plan": self.execution_plan,
+            "answer_state": self.answer_state,
             "passed": self.passed,
             "baseline_id": self.baseline_id,
             "suite_id": self.suite_id,
@@ -94,6 +96,13 @@ class EvaluationRunner:
                     case_id=case_id,
                     items=tuple(item for item in case.get("items", []) if isinstance(item, dict)),
                     host_usage=case.get("host_usage"),
+                    answer_status=case.get("answer_status"),
+                    answer_reasons=tuple(
+                        str(item) for item in case.get("answer_reasons", ()) if str(item)
+                    ),
+                    triggers=tuple(
+                        str(item) for item in case.get("triggers", ()) if str(item)
+                    ),
                 )
                 response = gateway.start(
                     request,
@@ -137,9 +146,57 @@ class EvaluationRunner:
                     "expected_findings": sorted(expected_findings),
                     "observed_findings": sorted(actual_findings),
                 }
+                answer_state = response.get("answer_state") or {}
+                expected_answer_status = case.get("answer_status")
+                expected_answer_reasons = {
+                    str(item) for item in case.get("answer_reasons", ()) if str(item)
+                }
+                expected_triggers = {
+                    str(item) for item in case.get("triggers", ()) if str(item)
+                }
+                observed_answer_reasons = {
+                    str(item)
+                    for item in answer_state.get("reasons", ())
+                    if str(item)
+                }
+                observed_triggers = {
+                    str(item)
+                    for item in answer_state.get("triggers", ())
+                    if str(item)
+                }
+                expected_plans = case.get("expected_execution_plan") or {}
+                expected_plan = (
+                    expected_plans.get(profile.value)
+                    if isinstance(expected_plans, dict)
+                    else None
+                )
+                observed_plan = (response.get("execution_plan") or {}).get("kind")
+                answer_status_passed = (
+                    expected_answer_status is None
+                    or answer_state.get("status") == expected_answer_status
+                )
+                answer_reasons_passed = expected_answer_reasons <= observed_answer_reasons
+                triggers_passed = expected_triggers <= observed_triggers
+                plan_passed = expected_plan is None or observed_plan == expected_plan
+                quality.update(
+                    {
+                        "expected_answer_status": expected_answer_status,
+                        "observed_answer_status": answer_state.get("status"),
+                        "expected_answer_reasons": sorted(expected_answer_reasons),
+                        "observed_answer_reasons": sorted(observed_answer_reasons),
+                        "expected_triggers": sorted(expected_triggers),
+                        "observed_triggers": sorted(observed_triggers),
+                        "expected_execution_plan": expected_plan,
+                        "observed_execution_plan": observed_plan,
+                    }
+                )
                 quality_passed = (
                     expected_evidence <= actual_evidence
                     and expected_unresolved <= set(unresolved)
+                    and answer_status_passed
+                    and answer_reasons_passed
+                    and triggers_passed
+                    and plan_passed
                 )
                 refusal_reason = None
                 if response.get("status") == "refused":
@@ -154,6 +211,7 @@ class EvaluationRunner:
                     provider_tokens=state.get("provider_tokens"),
                     tokens_unresolved=bool(state.get("tokens_unresolved", True)),
                     execution_plan=response.get("execution_plan"),
+                    answer_state=answer_state or None,
                     passed=response.get("status") == expected and quality_passed,
                     baseline_id=baseline_id,
                     suite_id=case.get("suite_id"),

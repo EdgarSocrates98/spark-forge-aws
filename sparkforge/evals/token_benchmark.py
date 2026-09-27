@@ -12,6 +12,7 @@ import yaml
 
 from sparkforge.adapters.tools import TOOLS
 from sparkforge.context.gateway import ContextGateway
+from sparkforge.context.gateway_models import GatewayProfile
 from sparkforge.evals.runner import EvaluationRunner
 
 SCHEMA_VERSION = 1
@@ -66,10 +67,12 @@ def run_benchmark_matrix(
     """Run identical cases over all declared profiles and keep raw axes."""
     runner = EvaluationRunner()
     gateway_to_use = gateway or ContextGateway(TOOLS)
+    profiles = tuple(GatewayProfile(profile) for profile in suite["profiles"])
     results = runner.run_context_benchmark(
         gateway_to_use,
         list(suite["cases"]),
         baseline_id=str(suite["baseline_id"]),
+        profiles=profiles,
     )
     return {
         "schema_version": SCHEMA_VERSION,

@@ -8,6 +8,7 @@ cases:
   - id: glue-routing
     intent: Glue FGAC Iceberg
     max_bytes: 6000
+    answer_status: resolved
     expected_status: ok
     expected_evidence: []
     expected_unresolved: []

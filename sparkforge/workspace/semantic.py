@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from sparkforge.codeintel.db import BANCO_PADRAO
 from sparkforge.paths import resolve_within
+from sparkforge.workspace.freshness import FreshnessAssessment
 from sparkforge.workspace.manifest import WorkspaceManifest
 
 
@@ -42,6 +43,7 @@ class SemanticGraph:
     edges: tuple[SemanticEdge, ...]
     unresolved: tuple[dict[str, str], ...]
     manifest_fingerprint: str
+    freshness: FreshnessAssessment = field(default_factory=FreshnessAssessment.unknown)
 
     def impact(
         self,
@@ -100,7 +102,8 @@ class SemanticGraph:
             ],
             "unresolved": list(self.unresolved),
             "manifest_fingerprint": self.manifest_fingerprint,
-            "freshness": "fresh",
+            "freshness": self.freshness.status,
+            "freshness_detail": self.freshness.to_dict(),
         }
 
 
@@ -109,6 +112,7 @@ def build_semantic_graph(
     *,
     databases: Mapping[str, str | Path] | None = None,
     max_nodes: int = 10_000,
+    freshness: FreshnessAssessment | None = None,
 ) -> SemanticGraph:
     """Compose declared workspace and indexed code/data-flow relationships."""
     if max_nodes <= 0:
@@ -192,6 +196,7 @@ def build_semantic_graph(
         ),
         tuple(sorted(unresolved, key=lambda item: (item.get("repository", ""), item["code"]))),
         _manifest_fingerprint(manifest),
+        freshness or FreshnessAssessment.unknown("codeintel_freshness_not_assessed"),
     )
 
 

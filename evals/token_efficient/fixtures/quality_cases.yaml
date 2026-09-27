@@ -1,42 +1,55 @@
 schema_version: 1
 cases:
   - id: glue-routing
+    answer_status: resolved
     expected_status: ok
     expected_evidence: []
     expected_unresolved: []
+    expected_execution_plan: {economy: deterministic, balanced: deterministic, deep: deterministic}
   - id: critical-budget
     expected_status: refused
     expected_evidence: [f-critical]
     expected_unresolved: [budget_unresolved]
   - id: planner-partial
+    answer_status: partial
+    triggers: [high_risk_change]
     expected_status: ok
     expected_evidence: []
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: reviewer}
   - id: workspace-unresolved
     expected_status: ok
     expected_evidence: []
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: specialist}
   - id: quality-evidence
     expected_status: ok
     expected_evidence: [f-quality]
     expected_unresolved: []
   - id: authority-conflict
+    triggers: [authority_conflict]
     expected_status: ok
     expected_evidence: [f-authority]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: debate}
   - id: risk-and-confidence
+    triggers: [high_risk_change, confidence_gap]
     expected_status: ok
     expected_evidence: [f-risk, finding-risk]
     expected_findings: [finding-risk]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: reviewer}
   - id: unresolved-reference
     expected_status: ok
     expected_evidence: []
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: specialist}
   - id: confidence-gap
+    triggers: [confidence_gap]
     expected_status: ok
     expected_evidence: [f-low-confidence]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: reviewer}
   - id: critical-knowledge
     expected_status: refused
     expected_evidence: [f-critical-knowledge]
@@ -45,19 +58,30 @@ cases:
     expected_status: ok
     expected_evidence: [code-1, knowledge-1]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: unresolved}
   - id: planner-debate
+    answer_status: partial
+    answer_reasons: [answer_state_not_declared]
+    triggers: [conflicting_rules, authority_conflict]
     expected_status: ok
     expected_evidence: [f-conflict]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: debate}
   - id: explicit-unavailable
+    answer_status: unavailable
+    answer_reasons: [catalog evidence unavailable]
     expected_status: ok
     expected_evidence: []
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: unresolved}
   - id: bounded-payload
     expected_status: ok
     expected_evidence: [large-knowledge]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: unresolved}
   - id: missing-evidence
+    triggers: [missing_evidence]
     expected_status: ok
     expected_evidence: [f-missing]
     expected_unresolved: []
+    expected_execution_plan: {economy: unresolved, balanced: unresolved, deep: specialist}
