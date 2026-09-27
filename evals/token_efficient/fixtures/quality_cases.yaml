@@ -20,3 +20,44 @@ cases:
     expected_status: ok
     expected_evidence: [f-quality]
     expected_unresolved: []
+  - id: authority-conflict
+    expected_status: ok
+    expected_evidence: [f-authority]
+    expected_unresolved: []
+  - id: risk-and-confidence
+    expected_status: ok
+    expected_evidence: [f-risk, finding-risk]
+    expected_findings: [finding-risk]
+    expected_unresolved: []
+  - id: unresolved-reference
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: confidence-gap
+    expected_status: ok
+    expected_evidence: [f-low-confidence]
+    expected_unresolved: []
+  - id: critical-knowledge
+    expected_status: refused
+    expected_evidence: [f-critical-knowledge]
+    expected_unresolved: [budget_unresolved]
+  - id: code-and-knowledge
+    expected_status: ok
+    expected_evidence: [code-1, knowledge-1]
+    expected_unresolved: []
+  - id: planner-debate
+    expected_status: ok
+    expected_evidence: [f-conflict]
+    expected_unresolved: []
+  - id: explicit-unavailable
+    expected_status: ok
+    expected_evidence: []
+    expected_unresolved: []
+  - id: bounded-payload
+    expected_status: ok
+    expected_evidence: [large-knowledge]
+    expected_unresolved: []
+  - id: missing-evidence
+    expected_status: ok
+    expected_evidence: [f-missing]
+    expected_unresolved: []

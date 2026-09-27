@@ -3013,8 +3013,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 196,
-      "text": "859",
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **859** nesta árvore.",
+      "text": "866",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **866** nesta árvore.",
       "type": "number",
       "id": "VNX-640",
       "state": "PROVADA",
@@ -3024,7 +3024,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 859
+          "value": 866
         },
         "kind": "command",
         "tier": "fast"
@@ -3273,8 +3273,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 215,
-      "text": "373539",
-      "context": "| `project_items` | 1 | 193 | 373539 | 2202 | 52 |",
+      "text": "374713",
+      "context": "| `project_items` | 1 | 193 | 374713 | 2202 | 52 |",
       "type": "number",
       "id": "VNX-653",
       "state": "PROVADA",
@@ -3284,7 +3284,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 373539
+          "value": 374713
         },
         "kind": "command",
         "tier": "fast"
@@ -3373,8 +3373,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 216,
-      "text": "398237",
-      "context": "| `tool_class` | 1 | 187 | 398237 | 3529 | 73 |",
+      "text": "399411",
+      "context": "| `tool_class` | 1 | 187 | 399411 | 3529 | 73 |",
       "type": "number",
       "id": "VNX-658",
       "state": "PROVADA",
@@ -3384,7 +3384,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 398237
+          "value": 399411
         },
         "kind": "command",
         "tier": "fast"
@@ -3553,8 +3553,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 219,
-      "text": "2282270",
-      "context": "Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2282270**;",
+      "text": "2284618",
+      "context": "Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2284618**;",
       "type": "number",
       "id": "VNX-666",
       "state": "PROVADA",
@@ -3564,7 +3564,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 2282270
+          "value": 2284618
         },
         "kind": "command",
         "tier": "fast"
@@ -3613,8 +3613,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 229,
-      "text": "1352.1",
-      "context": "**Contra o denominador do plano, o índice economiza 1352.1 vezes.** Contra a saída de um `grep`",
+      "text": "1353.4",
+      "context": "**Contra o denominador do plano, o índice economiza 1353.4 vezes.** Contra a saída de um `grep`",
       "type": "number",
       "id": "VNX-741",
       "state": "PROVADA",
@@ -3623,7 +3623,7 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(round(total / com, 1))'",
         "expect": {
           "kind": "contains",
-          "value": "1352.1"
+          "value": "1353.4"
         },
         "kind": "command",
         "tier": "fast"
@@ -3710,8 +3710,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 248,
-      "text": "270215",
-      "context": "no mesmo corpus, tem **270215** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "text": "282901",
+      "context": "no mesmo corpus, tem **282901** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "type": "number",
       "id": "VNX-674",
       "state": "PROVADA",
@@ -3721,7 +3721,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 270215
+          "value": 282901
         },
         "kind": "command",
         "tier": "fast"
@@ -3730,8 +3730,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 249,
-      "text": "12260",
-      "context": "(**12260** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "text": "12415",
+      "context": "(**12415** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "type": "number",
       "id": "VNX-675",
       "state": "PROVADA",
@@ -3741,7 +3741,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12260
+          "value": 12415
         },
         "kind": "command",
         "tier": "fast"
@@ -4550,8 +4550,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "364,8",
-      "context": "Confirmado por tamanho: `tools.py` (466,6 KB) e `_core.py` (364,8 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "365,9",
+      "context": "Confirmado por tamanho: `tools.py` (466,6 KB) e `_core.py` (365,9 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
       "state": "PROVADA",
@@ -4560,7 +4560,7 @@
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "364,8"
+          "value": "365,9"
         },
         "kind": "command",
         "tier": "fast"

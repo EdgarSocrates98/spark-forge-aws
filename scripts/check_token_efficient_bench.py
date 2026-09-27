@@ -48,7 +48,8 @@ def main() -> int:
         if not isinstance(case, dict):
             print("benchmark cases must be objects")
             return 1
-        if not isinstance(case.get("max_bytes"), int) or case["max_bytes"] <= 0:
+        max_bytes = case.get("max_bytes")
+        if max_bytes is not None and (not isinstance(max_bytes, int) or max_bytes <= 0):
             print(f"invalid max_bytes: {case.get('id')}")
             return 1
         for field in ("expected_evidence", "expected_unresolved"):

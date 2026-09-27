@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from sparkforge.adapters.cli import main
+from sparkforge.adapters.cli import build_parser, main
 from sparkforge.adapters.tools import call_tool
 from sparkforge.collect import aws as collect_aws
 
@@ -40,6 +40,27 @@ def test_context_start_cli_uses_profile_default_budget(repo, capsys):
 
     assert code == 0
     assert json.loads(output)["budget"]["max_bytes"] == 6000
+
+
+def test_cli_exposes_observed_economy_and_live_graph_commands():
+    economy = build_parser().parse_args(
+        ["economy", "provider-cost", "--host-transcript", "host.jsonl", "--pricing", "price.json"]
+    )
+    graph = build_parser().parse_args(
+        [
+            "collect",
+            "workspace-graph",
+            "--repo",
+            ".",
+            "--manifest",
+            "workspace.yaml",
+            "--now",
+            "2026-09-27T00:00:00Z",
+        ]
+    )
+
+    assert (economy.command, economy.subcommand) == ("economy", "provider-cost")
+    assert (graph.command, graph.collect_action) == ("collect", "workspace-graph")
 
 
 class TestAnalyze:

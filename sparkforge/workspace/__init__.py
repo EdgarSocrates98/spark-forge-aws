@@ -2,6 +2,7 @@
 
 from sparkforge.workspace.graph import WorkspaceGraph, build_graph
 from sparkforge.workspace.manifest import (
+    CloudResource,
     Relationship,
     Repository,
     WorkspaceManifest,
@@ -17,6 +18,7 @@ from sparkforge.workspace.semantic import (
 )
 
 __all__ = [
+    "CloudResource",
     "Repository",
     "Relationship",
     "WorkspaceGraph",

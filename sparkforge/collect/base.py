@@ -68,6 +68,7 @@ ARTIFACT_KINDS = (
     # e um link intacto sobre uma tabela sem grant e um estado real -- que um
     # artefato so nao saberia representar.
     "glue_resource_link",
+    "workspace_graph",
     "source",
 )
 

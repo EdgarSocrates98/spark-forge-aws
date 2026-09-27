@@ -32,12 +32,31 @@ class Relationship:
 
 
 @dataclass(frozen=True, slots=True)
+class CloudResource:
+    """A cloud dataset explicitly allowed for live graph collection."""
+
+    id: str
+    kind: str
+    services: tuple[str, ...]
+    account_id: str = ""
+    catalog_id: str = ""
+    region: str = ""
+    database: str = ""
+    table: str = ""
+    resource_arn: str = ""
+    bucket: str = ""
+    prefix: str = ""
+    role_arn: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class WorkspaceManifest:
     name: str
     root: Path
     repositories: tuple[Repository, ...]
     relationships: tuple[Relationship, ...]
     schema_version: int = 1
+    cloud_resources: tuple[CloudResource, ...] = ()
 
     def repository(self, name: str) -> Repository | None:
         return next((item for item in self.repositories if item.name == name), None)
@@ -84,7 +103,10 @@ def load_manifest(path: str | Path) -> WorkspaceManifest:
         seen.add(repo_name)
 
     relationships = _relationships(raw.get("relationships", {}), seen)
-    return WorkspaceManifest(name.strip(), root, tuple(repositories), relationships)
+    cloud_resources = _cloud_resources(raw.get("cloud_resources", []))
+    return WorkspaceManifest(
+        name.strip(), root, tuple(repositories), relationships, 1, cloud_resources
+    )
 
 
 def _relationships(raw: Any, names: set[str]) -> tuple[Relationship, ...]:
@@ -106,6 +128,61 @@ def _relationships(raw: Any, names: set[str]) -> tuple[Relationship, ...]:
                 else:
                     result.append(Relationship(source, str(relation), target))
     return tuple(sorted(result, key=lambda item: (item.source, item.relation, item.target)))
+
+
+def _cloud_resources(raw: Any) -> tuple[CloudResource, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise WorkspaceManifestError("cloud_resources must be a list")
+    result: list[CloudResource] = []
+    seen: set[str] = set()
+    allowed_services = {"glue", "lakeformation", "s3"}
+    string_fields = (
+        "account_id",
+        "catalog_id",
+        "region",
+        "database",
+        "table",
+        "resource_arn",
+        "bucket",
+        "prefix",
+        "role_arn",
+    )
+    for entry in raw:
+        if not isinstance(entry, dict):
+            raise WorkspaceManifestError("cloud resource entry must be an object")
+        resource_id = entry.get("id", entry.get("name"))
+        resource_key = resource_id.strip() if isinstance(resource_id, str) else ""
+        if not resource_key or resource_key in seen:
+            raise WorkspaceManifestError(f"duplicate or invalid cloud resource: {resource_id!r}")
+        if entry.get("kind") != "dataset":
+            raise WorkspaceManifestError(f"cloud resource kind must be dataset: {resource_id}")
+        services = entry.get("services")
+        if (
+            not isinstance(services, list)
+            or not services
+            or not all(
+                isinstance(service, str) and service in allowed_services for service in services
+            )
+            or len(set(services)) != len(services)
+        ):
+            raise WorkspaceManifestError(f"cloud resource services invalid: {resource_id}")
+        values: dict[str, str] = {}
+        for field in string_fields:
+            value = entry.get(field, "")
+            if not isinstance(value, str):
+                raise WorkspaceManifestError(
+                    f"cloud resource {field} must be a string: {resource_id}"
+                )
+            values[field] = value.strip()
+        if ".." in resource_key or any(".." in value for value in values.values()):
+            raise WorkspaceManifestError(
+                f"cloud resource contains path traversal marker: {resource_key}"
+            )
+        result.append(CloudResource(resource_key, "dataset", tuple(services), **values))
+        seen.add(resource_key)
+    return tuple(sorted(result, key=lambda item: item.id))
 
 
 def fingerprint(path: Path) -> str:
@@ -134,6 +211,7 @@ def _repository_files(root: Path) -> tuple[Path, ...]:
 
 
 __all__ = [
+    "CloudResource",
     "Repository",
     "Relationship",
     "WorkspaceManifest",

@@ -86,7 +86,11 @@ class EvaluationRunner:
                 request = GatewayRequest(
                     intent=str(case.get("intent", "")),
                     profile=profile,
-                    max_bytes=int(case.get("max_bytes", 0)),
+                    max_bytes=(
+                        int(case["max_bytes"])
+                        if case.get("max_bytes") is not None
+                        else None
+                    ),
                     case_id=case_id,
                     items=tuple(item for item in case.get("items", []) if isinstance(item, dict)),
                     host_usage=case.get("host_usage"),

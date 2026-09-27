@@ -1122,6 +1122,13 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     economy_report_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
+    economy_cost_p = economy_sub.add_parser(
+        "provider-cost",
+        help="Calcula custo observado do transcript com pricing e cost_basis declarados.",
+    )
+    economy_cost_p.add_argument("--host-transcript", required=True)
+    economy_cost_p.add_argument("--pricing", required=True)
+    economy_cost_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
 
     # context gateway -------------------------------------------------------
     context_p = sub.add_parser(
@@ -2937,6 +2944,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     emrc_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    workspace_graph_p = collect_sub.add_parser(
+        "workspace-graph",
+        help=(
+            "Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."
+        ),
+    )
+    workspace_graph_p.add_argument("--repo", required=True)
+    workspace_graph_p.add_argument("--manifest", required=True)
+    workspace_graph_p.add_argument(
+        "--max-objects",
+        type=int,
+        default=100,
+        help="Teto de objetos S3 por recurso declarado; truncamento fica nomeado no artefato.",
+    )
+    workspace_graph_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
     )
@@ -3675,6 +3698,16 @@ def _cmd_tune(args: argparse.Namespace) -> int:
 
 def _cmd_economy_report(args: argparse.Namespace) -> int:
     payload = _core.economy_report(args.run_id, host_transcript=args.host_transcript)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_economy_provider_cost(args: argparse.Namespace) -> int:
+    payload = _core.economy_provider_cost(args.host_transcript, args.pricing)
     if args.out:
         Path(args.out).write_text(
             json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -4546,6 +4579,17 @@ def _cmd_collect_emr_eks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_workspace_graph(args: argparse.Namespace) -> int:
+    payload = _core.collect_workspace_graph(
+        args.repo,
+        manifest=args.manifest,
+        max_objects=args.max_objects,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -4980,6 +5024,7 @@ _DISPATCH = {
     ("dq-ai", "assess"): _cmd_dq_ai_assess,
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
+    ("economy", "provider-cost"): _cmd_economy_provider_cost,
     ("context", "start"): _cmd_context_start,
     ("context", "expand"): _cmd_context_expand,
     ("telemetry", "export"): _cmd_telemetry_export,
@@ -5060,6 +5105,7 @@ _DISPATCH = {
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
+    ("collect", "workspace-graph"): _cmd_collect_workspace_graph,
     ("collect", "verify"): _cmd_collect_verify,
     # agentic
     ("agents", "list"): _cmd_agents_list,

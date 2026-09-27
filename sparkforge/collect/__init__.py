@@ -25,6 +25,7 @@ from sparkforge.collect.base import (
     verify_all,
     verify_artifact,
 )
+from sparkforge.collect.live_graph import collect_workspace_graph, workspace_graph_path
 
 __all__ = [
     "ARTIFACT_KINDS",
@@ -37,4 +38,6 @@ __all__ = [
     "require_boto3",
     "verify_all",
     "verify_artifact",
+    "collect_workspace_graph",
+    "workspace_graph_path",
 ]

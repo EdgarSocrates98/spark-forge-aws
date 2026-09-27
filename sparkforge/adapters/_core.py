@@ -39,6 +39,7 @@ from sparkforge.collect import cloudwatch_logs as collect_cw_logs
 from sparkforge.collect import glue_resource_link as collect_rlink
 from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
+from sparkforge.collect import live_graph as collect_live_graph
 from sparkforge.collect import parquet_footer as collect_parquet
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
@@ -61,6 +62,7 @@ from sparkforge.controlm.matrix import (
 from sparkforge.diagnosis import rank_root_causes
 from sparkforge.dq_ai.assessment import build_assessment_facts
 from sparkforge.dqdl.validator import validate_dqdl_path
+from sparkforge.economy.provider_cost import provider_cost as build_provider_cost
 from sparkforge.economy.report import build_context_report
 from sparkforge.errors.matcher import build_signature_matches
 from sparkforge.facts import lakeformation_matrix as _lf_matrix
@@ -186,6 +188,7 @@ from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
 from sparkforge.tuning import build_conf_advice
 from sparkforge.workload import build_fingerprint
+from sparkforge.workspace.manifest import WorkspaceManifestError, load_manifest
 
 DEFAULT_LIMIT = 50
 
@@ -3096,6 +3099,11 @@ def economy_report(run_id: str, host_transcript: str = "") -> dict[str, Any]:
         run_id=run_id,
         host_transcript=host_transcript or None,
     )
+
+
+def economy_provider_cost(host_transcript: str, pricing: str) -> dict[str, Any]:
+    """Compose observed host usage with operator-declared pricing."""
+    return build_provider_cost(host_transcript, pricing)
 
 
 # --------------------------------------------------------------------------- #
@@ -7284,6 +7292,27 @@ def collect_glue_resource_link(
             verify_target=verify_target,
         )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_workspace_graph(
+    repo: str,
+    *,
+    manifest: str,
+    now: str,
+    max_objects: int = 100,
+) -> dict[str, Any]:
+    """Collect the bounded live graph declared by a workspace manifest."""
+    try:
+        rel_path = collect_live_graph.workspace_graph_path(load_manifest(manifest).name)
+    except WorkspaceManifestError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    try:
+        entry = collect_live_graph.collect_workspace_graph(
+            manifest, Path(repo), now=now, max_objects=max_objects
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed, ValueError) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
 
