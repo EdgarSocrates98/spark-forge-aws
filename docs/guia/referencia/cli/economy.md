@@ -8,7 +8,28 @@ O que a execucao poe na janela de contexto: byte medido, nunca token estimado.
 
 | Subcomando | O que faz |
 |---|---|
+| [`sparkforge economy provider-cost`](#sparkforge-economy-provider-cost) | Calcula custo observado do transcript com pricing e cost_basis declarados. |
 | [`sparkforge economy report`](#sparkforge-economy-report) | Agrupa os spans de um run e poe a superficie ao lado. |
+
+## `sparkforge economy provider-cost`
+
+Calcula custo observado do transcript com pricing e cost_basis declarados.
+
+```bash
+sparkforge economy provider-cost --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--host-transcript` | sim | texto |  |  |  |
+| `--pricing` | sim | texto |  |  |  |
+| `--out` | não | texto |  |  | Escreve o relatorio (JSON) neste arquivo. |
+
+### Tool MCP equivalente
+
+Nenhuma: este verbo existe só na CLI.
 
 ## `sparkforge economy report`
 
