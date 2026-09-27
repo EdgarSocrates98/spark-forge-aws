@@ -49,6 +49,9 @@ class TestWheelCarriesTheKnowledgeLayer:
     def test_knowledge_is_inside_the_package(self, wheel):
         assert _names(wheel, "sparkforge/knowledge/")
 
+    def test_dq_ai_matrix_is_inside_the_package(self, wheel):
+        assert "sparkforge/knowledge/glue/dq-advanced-matrix.yaml" in wheel.namelist()
+
     def test_schemas_survived_the_backend_swap(self, wheel):
         """`package-data` do setuptools embarcava os JSON Schemas. Se a troca de
         backend os perder, `validate_output` quebra no pacote instalado -- e a

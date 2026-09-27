@@ -42,6 +42,11 @@ def server():
     return build_server()
 
 
+@pytest.fixture
+def compact_server():
+    return build_server(mode="compact")
+
+
 def _call(server, name: str, arguments: dict):
     """Chama o tool ATRAVES do SDK, por um cliente, nao de `tools.call_tool`.
 
@@ -110,6 +115,10 @@ class TestBuildServer:
     def test_lists_every_tool_of_the_surface(self, server):
         assert {tool.name for tool in _list(server).tools} == set(TOOLS)
 
+    def test_explicit_full_mode_preserves_the_default_catalog(self, server):
+        explicit_full = build_server(mode="full")
+        assert {tool.name for tool in _list(explicit_full).tools} == set(TOOLS)
+
     def test_every_listed_tool_carries_both_schemas(self, server):
         """Schema de entrada E de saida. Tool sem outputSchema obriga o cliente
         a adivinhar a forma do resultado, que e o oposto do contrato do pacote."""
@@ -156,6 +165,8 @@ class TestCallTool:
         """O SDK 2.x nao valida `arguments`; o envelope valida, com o texto do 1.x."""
         result = _call(server, "sparkforge_release_describe", {"release": "5.0"})
         assert result.is_error is True
+
+
         assert result.content[0].text == (
             "Input validation error: 'platform' is a required property"
         )
@@ -178,6 +189,38 @@ class TestCallTool:
     def test_unknown_tool_is_an_error_not_a_crash(self, server):
         result = _call(server, "sparkforge_nao_existe", {})
         assert result.is_error is True
+
+
+class TestCompactSurface:
+    def test_lists_exactly_the_six_compact_operations(self, compact_server):
+        assert [tool.name for tool in _list(compact_server).tools] == [
+            "context_start",
+            "context_expand",
+            "execute",
+            "search",
+            "get",
+            "next",
+        ]
+
+    def test_routes_execute_through_the_existing_tool_dispatcher(self, compact_server):
+        result = _call(
+            compact_server,
+            "execute",
+            {
+                "capability": "sparkforge_runtime_detect",
+                "arguments": {"glue": "5.0"},
+            },
+        )
+        assert result.is_error is not True
+        assert result.structured_content["result"]["spark"]
+
+    def test_full_tool_names_are_not_published_or_callable(self, compact_server):
+        listed = {tool.name for tool in _list(compact_server).tools}
+        assert "sparkforge_runtime_detect" not in listed
+
+        result = _call(compact_server, "sparkforge_runtime_detect", {"glue": "5.0"})
+        assert result.is_error is True
+        assert "modo 'compact'" in result.content[0].text
 
 
 class TestBuildHttpApp:
@@ -208,6 +251,10 @@ class TestBuildHttpApp:
 
     def test_json_response_mode_also_serves(self, server):
         app = build_http_app(server, json_response=True)
+        assert _status(app, "/mcp") != 404
+
+    def test_compact_server_also_builds_the_http_app(self, compact_server):
+        app = build_http_app(compact_server)
         assert _status(app, "/mcp") != 404
 
 

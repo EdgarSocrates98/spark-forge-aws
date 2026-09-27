@@ -95,6 +95,7 @@ def envelope_da_chamada(
     catalogo: Mapping[str, Mapping[str, Any]],
     transport: str,
     executar: Callable[[str, dict[str, Any]], Any],
+    unavailable_message: str | None = None,
 ) -> Envelope:
     """Decide o que o cliente recebe, na ordem em que o 1.x decidia.
 
@@ -108,12 +109,13 @@ def envelope_da_chamada(
     resultado que quiser.
     """
     if name not in catalogo:
+        mensagem = unavailable_message or (
+            f"ferramenta indisponivel no transporte {transport!r}: {name}. "
+            "Use --transport stdio."
+        )
         return _erro_compacto(
             {
-                "error": (
-                    f"ferramenta indisponivel no transporte {transport!r}: {name}. "
-                    "Use --transport stdio."
-                ),
+                "error": mensagem,
                 "exit_code": 2,
             }
         )
