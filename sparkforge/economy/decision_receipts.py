@@ -48,6 +48,11 @@ class DecisionReceiptStore:
         *,
         now: str | None = None,
         trace_ref: str | None = None,
+        mode: str = "shadow",
+        promoted: bool = False,
+        fallback_route: str | None = None,
+        rollback_reason: str | None = None,
+        fallback_reason: str | None = None,
     ) -> DecisionReceipt:
         body = {
             "receipt_version": RECEIPT_VERSION,
@@ -66,6 +71,14 @@ class DecisionReceiptStore:
                 "evidence": list(result.evidence),
             },
             "comparison": comparison.to_dict(),
+            "control": {
+                "mode": mode,
+                "promoted": promoted,
+                "route": result.selected[0] if result.selected else None,
+                "fallback_route": fallback_route,
+                "rollback_reason": rollback_reason,
+                "fallback_reason": fallback_reason,
+            },
             "token_state": request.provider_usage.to_dict(),
             "trace_ref": trace_ref,
         }

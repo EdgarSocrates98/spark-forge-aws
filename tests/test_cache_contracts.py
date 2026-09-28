@@ -45,3 +45,12 @@ def test_cross_namespace_key_is_rejected() -> None:
     key = decision_cache_key("contract", "state")
     with pytest.raises(ValueError, match="namespace mismatch"):
         cache.get(key)
+
+
+def test_owned_lookup_requires_owner_and_freshness() -> None:
+    cache = FactCache()
+    key = fact_cache_key("artifact", "extractor-v1", "rules-v1")
+    cache.put(key, {"facts": []}, owner="extractor", freshness="fresh")
+
+    assert cache.get_owned(key, owner="other") is None
+    assert cache.stats()["last_invalidation_reason"] == "owner_or_freshness_mismatch"

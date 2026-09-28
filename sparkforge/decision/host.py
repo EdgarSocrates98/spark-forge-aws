@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from sparkforge.decision.contracts import ContractLoader, ContractValidationError
 from sparkforge.decision.fingerprint import digest
@@ -13,6 +13,8 @@ from sparkforge.decision.runtime import BoundedDecisionKernel
 
 HOST_SCHEMA_VERSION = 1
 HOST_PROTOCOL_VERSION = "bounded-host-v1"
+MAX_HOST_TURNS = 128
+MAX_TURN_CONTENT = 65536
 _ROLES = frozenset({"system", "user", "assistant", "tool"})
 
 
@@ -54,6 +56,8 @@ class HostEnvelope:
         turns_raw = raw.get("turns")
         if not isinstance(turns_raw, list) or not turns_raw:
             raise HostProtocolError("host_envelope_invalid:turns")
+        if len(turns_raw) > MAX_HOST_TURNS:
+            raise HostProtocolError("host_envelope_invalid:turns_bounded")
         turns: list[dict[str, Any]] = []
         for index, turn in enumerate(turns_raw):
             if not isinstance(turn, Mapping):
@@ -64,6 +68,8 @@ class HostEnvelope:
                 raise HostProtocolError(f"host_envelope_invalid:turns[{index}].role")
             if not isinstance(content, str):
                 raise HostProtocolError(f"host_envelope_invalid:turns[{index}].content")
+            if len(content) > MAX_TURN_CONTENT:
+                raise HostProtocolError(f"host_envelope_invalid:turns[{index}].content_bounded")
             turns.append({"role": str(role), "content": content})
         usage = raw.get("usage")
         cost_basis = raw.get("cost_basis")
@@ -132,6 +138,7 @@ class HostReplayResult:
         }
 
 
+@runtime_checkable
 class BoundedHostProvider(Protocol):
     """Host boundary implemented by replay-only adapters in the core."""
 
@@ -158,25 +165,7 @@ class ReplayHostAdapter:
         self.kernel = kernel or BoundedDecisionKernel()
 
     def replay_mapping(self, raw: Mapping[str, Any]) -> HostReplayResult:
-        try:
-            envelope = HostEnvelope.from_mapping(raw)
-        except HostProtocolError as exc:
-            return HostReplayResult(
-                case_id=(
-                    str(raw.get("case_id", "unknown"))
-                    if isinstance(raw, Mapping)
-                    else "unknown"
-                ),
-                status=DecisionStatus.REFUSED.value,
-                semantic_result=None,
-                receipt_identity=None,
-                provider_tokens=None,
-                tokens_unresolved=True,
-                cost_basis=None,
-                unresolved=(str(exc),),
-                refusal_reason=str(exc),
-            )
-        return self.replay(envelope)
+        return replay_host_mapping(raw, self)
 
     def replay(self, envelope: HostEnvelope) -> HostReplayResult:
         usage_state = _usage_state(envelope.usage)
@@ -224,7 +213,33 @@ __all__ = [
     "HostProtocolError",
     "HostReplayResult",
     "ReplayHostAdapter",
+    "replay_host_mapping",
 ]
+
+
+def replay_host_mapping(
+    raw: Mapping[str, Any], adapter: BoundedHostProvider
+) -> HostReplayResult:
+    """Validate a host mapping before passing it to a bounded adapter."""
+    try:
+        envelope = HostEnvelope.from_mapping(raw)
+    except HostProtocolError as exc:
+        return HostReplayResult(
+            case_id=(
+                str(raw.get("case_id", "unknown"))
+                if isinstance(raw, Mapping)
+                else "unknown"
+            ),
+            status=DecisionStatus.REFUSED.value,
+            semantic_result=None,
+            receipt_identity=None,
+            provider_tokens=None,
+            tokens_unresolved=True,
+            cost_basis=None,
+            unresolved=(str(exc),),
+            refusal_reason=str(exc),
+        )
+    return adapter.replay(envelope)
 
 
 def _usage_state(raw: Mapping[str, Any] | None) -> dict[str, Any]:

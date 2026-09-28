@@ -73,3 +73,15 @@ def test_compare_refuses_mismatched_suite() -> None:
     changed["suite"] = {**report["suite"], "sha256": "different"}
     comparison = compare_replay_benchmark(report, changed)
     assert comparison["refused"]["reason"] == "suite_mismatch"
+
+
+def test_replay_rows_keep_provider_tokens_separate_from_payload_bytes() -> None:
+    suite = load_replay_suite(
+        ROOT / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml"
+    )
+    report = run_replay_benchmark(suite, old_runner=_observation, new_runner=_observation)
+    row = next(row for row in report["rows"] if row["case_id"] == "routing-03")
+
+    assert row["payload_bytes"] >= 100
+    assert row["provider_tokens"] is None
+    assert row["cost"]["status"] == "unresolved"

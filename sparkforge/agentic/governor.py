@@ -246,8 +246,10 @@ def _remaining_budget(budget: Mapping[str, Any] | Any | None) -> GovernorLimits:
         return GovernorLimits(64, 64, 64, 10**9)
     def value(name: str, default: int) -> int:
         if isinstance(budget, Mapping):
-            return int(budget.get(name, default))
-        return int(getattr(budget, name, default))
+            raw = budget.get(name, default)
+        else:
+            raw = getattr(budget, name, default)
+        return default if raw is None else int(raw)
     max_tokens = value("max_total_tokens", 10**9)
     tokens_used = value("tokens_used", 0)
     max_agents = value("max_agents", 64)

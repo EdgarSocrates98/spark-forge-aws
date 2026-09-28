@@ -44,6 +44,7 @@ def test_shadow_returns_complete_result_and_receipt(tmp_path: Path) -> None:
     }
     assert evaluation.receipt.path.is_file()
     assert evaluation.receipt.document["kernel"]["fingerprint"] == result["fingerprint"]
+    assert evaluation.receipt.document["control"]["mode"] == "shadow"
 
 
 def test_runtime_and_cli_projection_match(tmp_path: Path) -> None:

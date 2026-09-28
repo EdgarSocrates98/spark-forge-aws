@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from sparkforge.agentic.control import AgenticDecisionController
+from sparkforge.economy.decision_activation import ActivationEvidence
+from sparkforge.economy.decision_contracts import DecisionContract
 from sparkforge.economy.decision_models import (
+    ActiveRouteOutcome,
     BudgetSnapshot,
     DecisionInput,
     ProviderUsage,
@@ -21,6 +25,29 @@ from sparkforge.registry.models import ExecutionProfile, RiskLevel
 class ShadowRouteObservation:
     current: RoutingDecision
     evaluation: ShadowEvaluation
+
+
+def route_with_mode(
+    request: DecisionInput,
+    legacy_route: Any,
+    *,
+    contract: DecisionContract,
+    repo: Path | str = ".",
+    service: DecisionPlaneService | None = None,
+    evidence: ActivationEvidence | None = None,
+    now: str | None = None,
+    trace_ref: str | None = None,
+) -> ActiveRouteOutcome:
+    """Dispatch an explicit contract mode through bounded control policy."""
+    plane = service or DecisionPlaneService(repo)
+    return AgenticDecisionController.from_config(repo, service=plane).route(
+        request,
+        legacy_route,
+        contract=contract,
+        evidence=evidence,
+        now=now,
+        trace_ref=trace_ref,
+    )
 
 
 def observe_route(
@@ -79,4 +106,4 @@ def _provider_usage(host_usage: dict[str, Any] | None) -> ProviderUsage:
         return ProviderUsage.unresolved("provider_tokens_invalid")
 
 
-__all__ = ["ShadowRouteObservation", "observe_route"]
+__all__ = ["ShadowRouteObservation", "observe_route", "route_with_mode"]

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from sparkforge.decision import DecisionStatus, ReplayHostAdapter
+from sparkforge.decision import DecisionStatus, ReplayHostAdapter, replay_host_mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,3 +52,11 @@ def test_decision_core_has_no_provider_or_mcp_sdk_imports() -> None:
     ).lower()
     for forbidden in ("anthropic", "openai", "bedrock", "litellm", "mcp"):
         assert forbidden not in source
+
+
+def test_replay_host_mapping_keeps_validation_at_adapter_boundary() -> None:
+    raw = _cases()["cases"][1]
+    result = replay_host_mapping(raw, ReplayHostAdapter(ROOT))
+
+    assert result.status == DecisionStatus.REFUSED.value
+    assert result.refusal_reason == "host_envelope_invalid:request.state"
