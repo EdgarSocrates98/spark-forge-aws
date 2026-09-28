@@ -4,6 +4,8 @@ baseline_id: local-deterministic-v1
 profiles: [economy, balanced, deep]
 quality_axes: [status, evidence_recall, false_positive_rate, unresolved, execution_plan]
 quality_fixture: fixtures/quality_cases.yaml
+federated_graph_fixture: fixtures/federated_graph_cases.yaml
+provider_transcript_fixture: fixtures/provider_transcripts.yaml
 cases:
   - id: glue-routing
     intent: Glue FGAC Iceberg

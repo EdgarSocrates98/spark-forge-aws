@@ -1,5 +1,11 @@
 """Declared multi-repository workspace and deterministic semantic graph."""
 
+from sparkforge.workspace.adapters import (
+    FragmentAdapter,
+    artifact_graph_fragment,
+    semantic_graph_fragment,
+    transcript_evidence_fragment,
+)
 from sparkforge.workspace.federated import (
     FederatedGraph,
     GraphAdapter,
@@ -21,6 +27,7 @@ from sparkforge.workspace.freshness import (
     read_index_metadata,
 )
 from sparkforge.workspace.graph import WorkspaceGraph, build_graph
+from sparkforge.workspace.impact import ImpactProjection, project_impact
 from sparkforge.workspace.manifest import (
     CloudResource,
     Relationship,
@@ -39,11 +46,13 @@ from sparkforge.workspace.semantic import (
 
 __all__ = [
     "CloudResource",
+    "FragmentAdapter",
     "FederatedGraph",
     "FreshnessAssessment",
     "FreshnessStatus",
     "GraphAdapter",
     "GraphFragment",
+    "ImpactProjection",
     "Repository",
     "Relationship",
     "WorkspaceGraph",
@@ -61,6 +70,10 @@ __all__ = [
     "fingerprint",
     "fragment_from_graph",
     "load_manifest",
+    "artifact_graph_fragment",
+    "project_impact",
+    "semantic_graph_fragment",
+    "transcript_evidence_fragment",
     "assess",
     "assess_codeintel_freshness",
     "assess_freshness",

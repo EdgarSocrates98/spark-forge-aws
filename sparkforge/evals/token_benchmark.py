@@ -27,13 +27,20 @@ DEFAULT_AXES = (
 
 def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
     """Load suite and fixture gabarito from one versioned directory."""
-    root = Path(directory)
+    root = Path(directory).expanduser().resolve()
     suite_path = root / "suite.yaml"
-    fixture_path = root / "fixtures" / "quality_cases.yaml"
-    raw = yaml.safe_load(suite_path.read_text(encoding="utf-8"))
-    fixture = yaml.safe_load(fixture_path.read_text(encoding="utf-8"))
+    raw = _load_mapping(suite_path, "benchmark suite")
+    declared_fixture = raw.get("quality_fixture", "fixtures/quality_cases.yaml")
+    if not isinstance(declared_fixture, str) or not declared_fixture.strip():
+        raise ValueError("quality_fixture must be a non-empty relative path")
+    fixture_path = _fixture_path(root, declared_fixture, "quality_fixture")
+    fixture = _load_mapping(fixture_path, "quality fixture")
     if not isinstance(raw, dict) or not isinstance(fixture, dict):
         raise ValueError("benchmark suite and fixture must be mappings")
+    if int(raw.get("schema_version", 0)) != SCHEMA_VERSION:
+        raise ValueError("unsupported benchmark suite schema_version")
+    if int(fixture.get("schema_version", 0)) != SCHEMA_VERSION:
+        raise ValueError("unsupported quality fixture schema_version")
     cases = raw.get("cases")
     expected = fixture.get("cases")
     axes = tuple(str(axis) for axis in raw.get("quality_axes", ()))
@@ -47,9 +54,22 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
         if not isinstance(case, dict) or str(case.get("id")) not in by_id:
             raise ValueError("benchmark case is invalid")
         merged.append({**case, **by_id[str(case["id"])], "suite_id": str(raw["id"])})
-    digest = hashlib.sha256(
-        suite_path.read_bytes() + b"\n" + fixture_path.read_bytes()
-    ).hexdigest()
+    fixture_paths = [fixture_path]
+    for key in ("federated_graph_fixture", "provider_transcript_fixture"):
+        declared = raw.get(key)
+        if declared is None:
+            continue
+        if not isinstance(declared, str) or not declared.strip():
+            raise ValueError(f"{key} must be a non-empty relative path")
+        additional_path = _fixture_path(root, declared, key)
+        additional = _load_mapping(additional_path, key)
+        if int(additional.get("schema_version", 0)) != SCHEMA_VERSION:
+            raise ValueError(f"unsupported {key} schema_version")
+        fixture_paths.append(additional_path)
+    digest_input = suite_path.read_bytes()
+    for path in fixture_paths:
+        digest_input += b"\n" + path.read_bytes()
+    digest = hashlib.sha256(digest_input).hexdigest()
     return {
         "schema_version": int(raw.get("schema_version", 0)),
         "id": str(raw["id"]),
@@ -57,6 +77,7 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
         "profiles": tuple(str(profile) for profile in raw.get("profiles", ())),
         "quality_axes": axes,
         "cases": merged,
+        "fixture_paths": tuple(path.relative_to(root).as_posix() for path in fixture_paths),
         "sha256": digest,
     }
 
@@ -83,6 +104,7 @@ def run_benchmark_matrix(
         },
         "profiles": list(suite["profiles"]),
         "quality_axes": list(suite["quality_axes"]),
+        "fixture_paths": list(suite.get("fixture_paths", ())),
         "results": results,
         "summary": _summary(results, suite["profiles"]),
     }
@@ -180,6 +202,8 @@ def _summary(results: list[dict[str, Any]], profiles: tuple[str, ...]) -> dict[s
         current = [item for item in results if item.get("profile") == profile]
         output[profile] = {
             "cases": len(current),
+            "passed": sum(1 for item in current if item.get("passed") is True),
+            "failed": sum(1 for item in current if item.get("passed") is False),
             "status": _counts(current, "status"),
             "execution_plan": _counts(
                 [
@@ -226,6 +250,23 @@ def _spread(values: list[int | float]) -> dict[str, int | float] | None:
     if not values:
         return None
     return {"median_low": statistics.median_low(values), "max": max(values)}
+
+
+def _load_mapping(path: Path, label: str) -> dict[str, Any]:
+    try:
+        value = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValueError(f"{label} unreadable: {path}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} must be a mapping")
+    return value
+
+
+def _fixture_path(root: Path, declared: str, key: str) -> Path:
+    path = (root / declared).resolve()
+    if root not in path.parents:
+        raise ValueError(f"{key} must stay within benchmark directory")
+    return path
 
 
 __all__ = [

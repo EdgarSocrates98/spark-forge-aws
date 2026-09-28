@@ -62,7 +62,28 @@ def test_federated_graph_bounds_nodes_and_keeps_unresolved_state() -> None:
 
     assert len(graph.nodes) == 2
     assert graph.truncated is True
+    assert all("id" in node for node in graph.nodes)
     assert {item["code"] for item in graph.unresolved} >= {"source_blind_spot"}
+    assert {item["code"] for item in graph.unresolved} >= {"graph_nodes_truncated"}
+
+
+def test_federated_graph_bounds_each_collection_and_names_truncation() -> None:
+    fragment = GraphFragment(
+        source="bounded",
+        nodes=({"id": "node:0"}, {"id": "node:1"}),
+        edges=({"source": "node:0", "relation": "links", "target": "node:1"},),
+        provenance=({"artifact": "a"}, {"artifact": "b"}),
+        unresolved=({"code": "source_blind_spot"},),
+    )
+
+    graph = compose_federated_graph(
+        [fragment], max_edges=1, max_provenance=1, max_unresolved=1
+    )
+
+    assert len(graph.edges) == 1
+    assert len(graph.provenance) == 1
+    assert len(graph.unresolved) == 1
+    assert graph.truncated is True
 
 
 def test_graph_adapter_is_explicit_and_missing_freshness_stays_unknown() -> None:

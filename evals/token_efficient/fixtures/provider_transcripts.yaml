@@ -1,0 +1,30 @@
+schema_version: 1
+cases:
+  - case_id: transcript-synthetic
+    class: transcript_present
+    source_id: "transcript:synthetic"
+    source_kind: provider_transcript
+    transcript_hash: "sha256:synthetic-transcript-v1"
+    transcript:
+      format: synthetic
+      turns:
+        - {role: user, content: "diagnose orders"}
+        - {role: assistant, content: "unresolved"}
+      usage: {input_tokens: 23, output_tokens: 11}
+    provider_tokens: {input_tokens: 23, output_tokens: 11}
+    tokens_unresolved: false
+    provenance:
+      - {source_id: "transcript:synthetic", artifact: "synthetic-inline"}
+
+  - case_id: transcript-absent
+    class: transcript_absent
+    source_id: "transcript:absent"
+    source_kind: provider_transcript
+    transcript_hash: null
+    transcript: null
+    provider_tokens: null
+    tokens_unresolved: true
+    unresolved:
+      - {code: tokens_unresolved, reason: transcript_absent}
+    provenance:
+      - {source_id: "transcript:absent", artifact: null}

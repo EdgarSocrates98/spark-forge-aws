@@ -227,7 +227,10 @@ def compose_federated_graph(
                     "candidates": len(candidates),
                 }
             )
-    nodes, nodes_truncated = _bounded(nodes, max_nodes, "graph_nodes_truncated")
+    node_count = len(nodes)
+    nodes, nodes_truncated = _bounded(nodes, max_nodes)
+    if nodes_truncated:
+        unresolved.append({"code": "graph_nodes_truncated", "omitted": node_count - len(nodes)})
     node_ids = {_node_value(item, "id") for item in nodes}
 
     edges: list[GraphRecord] = []
@@ -256,11 +259,18 @@ def compose_federated_graph(
                     "candidates": len(candidates),
                 }
             )
-    edges, edges_truncated = _bounded(edges, max_edges, "graph_edges_truncated")
-    provenance, provenance_truncated = _bounded(
-        _unique_records(provenance), max_provenance, "graph_provenance_truncated"
-    )
-    unresolved, unresolved_truncated = _bounded(
+    edge_count = len(edges)
+    edges, edges_truncated = _bounded(edges, max_edges)
+    if edges_truncated:
+        unresolved.append({"code": "graph_edges_truncated", "omitted": edge_count - len(edges)})
+    provenance = _unique_records(provenance)
+    provenance_count = len(provenance)
+    provenance, provenance_truncated = _bounded(provenance, max_provenance)
+    if provenance_truncated:
+        unresolved.append(
+            {"code": "graph_provenance_truncated", "omitted": provenance_count - len(provenance)}
+        )
+    unresolved, unresolved_truncated = _bounded_with_summary(
         _unique_records(unresolved), max_unresolved, "graph_unresolved_truncated"
     )
 
@@ -484,18 +494,23 @@ def _unique_records(values: Sequence[GraphRecord]) -> list[GraphRecord]:
     return list(unique.values())
 
 
-def _bounded(
+def _bounded(values: Sequence[GraphRecord], limit: int) -> tuple[list[GraphRecord], bool]:
+    ordered = sorted(values, key=_record_key)
+    if len(ordered) <= limit:
+        return ordered, False
+    return ordered[:limit], True
+
+
+def _bounded_with_summary(
     values: Sequence[GraphRecord], limit: int, code: str
 ) -> tuple[list[GraphRecord], bool]:
     ordered = sorted(values, key=_record_key)
     if len(ordered) <= limit:
         return ordered, False
-    retained = ordered[:limit]
-    # The caller still gets a bounded, explicit indication that evidence was
-    # omitted.  This summary is attached by the unresolved path only when the
-    # bounded unresolved collection itself has room for it.
-    retained.append({"code": code, "omitted": len(ordered) - limit})
-    return retained[:limit], True
+    summary = {"code": code, "omitted": len(ordered) - limit}
+    if limit == 1:
+        return [summary], True
+    return [*ordered[: limit - 1], summary], True
 
 
 def _require_positive(name: str, value: int) -> None:
