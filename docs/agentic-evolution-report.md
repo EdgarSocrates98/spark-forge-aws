@@ -165,6 +165,16 @@ Prova: tests/test_decision_authority.py cobre assisted com veto, guard de modo e
 rollback; regressões de activation/plane/models/runtime passam (18 passed). Nenhuma mudança
 ativa ocorre por YAML isolado no modo produtivo.
 
+## Atualização corrente — 2026-09-28 — Completion Gate 5: adapters host
+
+O quinto gate adiciona ClaudeHostAdapter, CodexHostAdapter e DevinHostAdapter como tradutores
+de mappings gravados para HostEnvelope. Eles normalizam turns, request, usage, transcript hash
+e cost basis; depois delegam ao ReplayHostAdapter local. Não há SDK, import de provider, rede ou
+inferência de tokens. Ausência de usage mantém tokens_unresolved.
+
+Prova: tests/test_host_adapters.py e regressões de host/kernel/JEV passam (13 passed). Adapters
+são opt-in e não alteram a autoridade do router.
+
 ## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
 
 O primeiro gate da conclusão do control plane está implementado em commit isolado.

@@ -52,6 +52,12 @@ com rollback. Receipts mantêm compatibilidade no bloco control e adicionam auth
 legacy_vetoed como campos semânticos. A promoção active continua exigindo activation evidence;
 assisted nunca recebe autoridade de execução.
 
+## Gate 5 evidence
+
+tests/test_host_adapters.py cobre os três adapters sobre mappings gravados, com usage observado
+e ausência de usage unresolved. O import graph de sparkforge/decision continua sem SDK/provider,
+MCP ou chamada de rede.
+
 ## Gate 3 evidence
 
 `tests/test_recovery_governance.py` prova consumo de `CaseBudget`, re-resolução por

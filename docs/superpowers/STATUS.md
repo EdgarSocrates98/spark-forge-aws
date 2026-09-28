@@ -95,6 +95,12 @@ veto/fallback legado; active registra activation evidence e rollback. Prova foca
 tests/test_decision_authority.py e regressões do plane passam (18 passed). O kernel genérico
 continua fail-closed.
 
+## Atualização corrente — Decision Control Plane completion, Gate 5 (2026-09-28)
+
+Gate 5 está fechado: adapters Claude/Codex/Devin traduzem somente transcripts/envelopes
+gravados e bounded. Core continua offline, sem SDK/provider/rede; ausência de transcript mantém
+tokens unresolved. Prova focada: 13 passed. Benchmark real ainda é Gate 6.
+
 ## Atualização corrente — Decision Control Plane completion, Gate 3 (2026-09-28)
 
 Gate 3 está fechado: `RecoveryGovernor` conecta policy, governor, budget e receipt; retry/replan

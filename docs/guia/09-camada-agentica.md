@@ -79,6 +79,10 @@ vetar e continua sendo fallback; active exige activation evidence, governor e ro
 Receipts carregam authority e legacy_vetoed quando aplicável. O kernel genérico continua sem
 autoridade ativa por default.
 
+O Gate 5 adiciona adapters host finos para Claude, Codex e Devin. Eles só traduzem envelopes
+gravados para o protocolo bounded e delegam replay local; não importam SDK, não chamam rede e
+não inferem tokens de bytes. Transcript ausente deixa provider_tokens unresolved.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta
