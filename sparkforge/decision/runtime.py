@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from time import perf_counter_ns
 from typing import Any
 
-from sparkforge.decision.cache import DecisionCache
+from sparkforge.decision.cache import DecisionCache, decision_cache_key
 from sparkforge.decision.contracts import DecisionContract
 from sparkforge.decision.fingerprint import decision_fingerprint, state_fingerprint
 from sparkforge.decision.measurement import payload_bytes
@@ -41,9 +41,17 @@ class BoundedDecisionKernel:
         started = perf_counter_ns()
         compiled = self.compiler.compile(contract, raw_state)
         fingerprint = decision_fingerprint(contract, compiled)
+        state_identity = state_fingerprint(compiled)
         cache = self.cache
+        cache_key = decision_cache_key(
+            contract.sha256,
+            state_identity,
+            contract.policy_version,
+            contract.calibration_version,
+        )
         if cache is not None:
-            cached = cache.get(fingerprint)
+            cache.limit_to(contract.cache_max_entries)
+            cached = cache.get_key(cache_key)
             if cached is not None:
                 result = cached.with_cache_hit(True)
                 measurement = _measurement(started, raw_state)
@@ -51,23 +59,25 @@ class BoundedDecisionKernel:
                     result,
                     build_receipt(
                         result,
-                        state_fingerprint=state_fingerprint(compiled),
+                        state_fingerprint=state_identity,
                         measurement=measurement,
                         emitted_at=now,
+                        cache_key=cache_key.canonical(),
                     ),
                     measurement,
                 )
         result = self._evaluate_uncached(contract, compiled, fingerprint)
         if cache is not None:
-            cache.put(fingerprint, result)
+            cache.put_key(cache_key, result)
         measurement = _measurement(started, raw_state)
         return KernelEvaluation(
             result,
             build_receipt(
                 result,
-                state_fingerprint=state_fingerprint(compiled),
+                state_fingerprint=state_identity,
                 measurement=measurement,
                 emitted_at=now,
+                cache_key=cache_key.canonical(),
             ),
             measurement,
         )

@@ -131,6 +131,17 @@ qualidade, `payload_bytes`, `provider_tokens`/`tokens_unresolved` e `cost_basis`
 dimensões separadas. Isso prova cobertura e determinismo do harness; não é uma alegação
 de economia financeira, ganho de qualidade ou redução de tokens de provider.
 
+## Atualização corrente — 2026-09-28 — Completion Gate 2: identidade e caches
+
+O segundo gate usa `CacheKey` versionada para decisões: `contract_sha256`, state fingerprint,
+`policy_version` e `calibration_version` formam identidade única. O runtime aplica o
+`cache_max_entries` do contrato por eviction bounded e receipts expõem a chave efetiva.
+
+`sparkforge.decision.cache.ArtifactCache` agora é a implementação única. A API antiga de
+`sparkforge.economy.cache` virou facade compatível para memória/disco, TTL, owner e namespace;
+não há segundo LRU/freshness implementation. Prova: `tests/test_decision_cache_versions.py`
+mais regressões de cache/economy/context (`19 passed`).
+
 ## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
 
 O primeiro gate da conclusão do control plane está implementado em commit isolado.

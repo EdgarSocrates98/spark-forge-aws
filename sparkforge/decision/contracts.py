@@ -25,6 +25,8 @@ _TOP_LEVEL = frozenset(
         "schema_version",
         "contract_id",
         "contract_version",
+        "policy_version",
+        "calibration_version",
         "mode",
         "primitive",
         "state",
@@ -74,6 +76,8 @@ class DecisionContract:
     measurement_enabled: bool = True
     required_state_fields: tuple[str, ...] = ()
     additional_properties: bool = False
+    policy_version: str = "kernel-v1"
+    calibration_version: str = "none"
 
     def referenced_fields(self) -> tuple[str, ...]:
         fields = [field.name for field in self.state_fields]
@@ -134,6 +138,12 @@ class ContractLoader:
             raise ContractValidationError(
                 f"contract_version_mismatch: expected {version}, got {contract_version}"
             )
+        policy_version = _required_text_value(
+            raw.get("policy_version", "kernel-v1"), "policy_version"
+        )
+        calibration_version = _required_text_value(
+            raw.get("calibration_version", "none"), "calibration_version"
+        )
         mode = _required_text(raw, "mode")
         if mode not in ALLOWED_MODES:
             raise ContractValidationError(f"unsupported contract mode: {mode}")
@@ -191,11 +201,19 @@ class ContractLoader:
             bool(measurement.get("enabled", True)),
             required_state_fields,
             additional_properties,
+            policy_version,
+            calibration_version,
         )
 
 
 def _required_text(raw: Mapping[str, Any], key: str) -> str:
     value = raw.get(key)
+    if not isinstance(value, (str, int)) or not str(value).strip():
+        raise ContractValidationError(f"contract field required: {key}")
+    return str(value).strip()
+
+
+def _required_text_value(value: Any, key: str) -> str:
     if not isinstance(value, (str, int)) or not str(value).strip():
         raise ContractValidationError(f"contract field required: {key}")
     return str(value).strip()

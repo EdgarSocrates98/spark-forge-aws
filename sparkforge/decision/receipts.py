@@ -29,6 +29,7 @@ def build_receipt(
     fallback_route: str | None = None,
     rollback_reason: str | None = None,
     fallback_reason: str | None = None,
+    cache_key: str | None = None,
 ) -> dict[str, Any]:
     refusal = None
     if result.status.value != "accepted":
@@ -47,7 +48,7 @@ def build_receipt(
         "confidence": result.confidence,
         "evidence": list(result.evidence),
         "refusal": refusal,
-        "cache": {"hit": result.cache_hit},
+        "cache": {"hit": result.cache_hit, "key": cache_key},
         "control": {
             "mode": mode,
             "promoted": promoted,
@@ -115,6 +116,7 @@ class KernelReceiptStore:
         fallback_route: str | None = None,
         rollback_reason: str | None = None,
         fallback_reason: str | None = None,
+        cache_key: str | None = None,
     ) -> dict[str, Any]:
         document = build_receipt(
             result,
@@ -126,6 +128,7 @@ class KernelReceiptStore:
             fallback_route=fallback_route,
             rollback_reason=rollback_reason,
             fallback_reason=fallback_reason,
+            cache_key=cache_key,
         )
         self.root.mkdir(parents=True, exist_ok=True)
         path = self.root / f"{document['receipt_id']}.kernel.json"

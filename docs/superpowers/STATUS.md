@@ -81,6 +81,13 @@ limitadas a `[0,1]` durante o load. A prova focada passou `18` testes; cache, re
 authority, adapters e benchmark permanecem nos seis gates seguintes. Nenhuma autoridade ativa
 foi concedida e nenhum claim econômico foi feito.
 
+## Atualização corrente — Decision Control Plane completion, Gate 2 (2026-09-28)
+
+Gate 2 está fechado em commit próprio: cache de decisão inclui contrato, estado, policy e
+calibration; `cache_max_entries` é enforced; e `ArtifactCache` tem uma implementação autoritativa
+com facade de compatibilidade na camada economy. Prova focada: `19 passed`. Recovery, authority,
+adapters e benchmark permanecem abertos.
+
 ---
 
 ## Números correntes

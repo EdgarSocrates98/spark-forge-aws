@@ -38,3 +38,9 @@ autoridade. Cada gate pode ser revertido sem desfazer os anteriores.
 `tests/test_decision_contract_hardening.py` cobre extras, opcionais, referências, conditions e
 confidence; regressões do kernel passam no mesmo lote. Schema aberto exige
 `state.additional_properties: true`; por default, extras geram `undeclared_state.*`.
+
+## Gate 2 evidence
+
+`tests/test_decision_cache_versions.py` prova mudança de policy/calibration como identidade nova,
+enforcement de limite de entradas e compatibilidade da facade economy. A chave efetiva aparece no
+receipt como `decision|2|...`; um cache sem esses componentes não pode produzir hit semântico.
