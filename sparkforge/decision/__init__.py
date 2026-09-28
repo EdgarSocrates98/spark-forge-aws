@@ -29,6 +29,7 @@ from sparkforge.decision.host import (
     HostProtocolError,
     HostReplayResult,
     ReplayHostAdapter,
+    replay_host_mapping,
 )
 from sparkforge.decision.models import (
     CompiledState,
@@ -78,6 +79,7 @@ __all__ = [
     "StateCompilationError",
     "StateCompiler",
     "ReplayHostAdapter",
+    "replay_host_mapping",
     "artifact_cache_key",
     "build_receipt",
     "decision_cache_key",

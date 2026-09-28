@@ -20,7 +20,7 @@ def build_kernel_contract(contract: EconomyContract):
         "schema_version": 1,
         "contract_id": contract.contract_id,
         "contract_version": contract.contract_version,
-        "mode": contract.mode,
+        "mode": "shadow",
         "primitive": "route",
         "state": {
             "required": [

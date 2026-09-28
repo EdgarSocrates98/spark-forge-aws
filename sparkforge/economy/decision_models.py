@@ -341,6 +341,7 @@ class ShadowEvaluation:
     result: DecisionResult
     comparison: DecisionComparison
     receipt: Any
+    request: DecisionInput | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -350,8 +351,55 @@ class ShadowEvaluation:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class ActiveRouteOutcome:
+    """Bounded promotion result with an explicit legacy rollback target."""
+
+    promoted: bool
+    route: str | None
+    fallback_route: str | None
+    reason: str | None
+    receipt_id: str
+    mode: str = "active"
+    status: str = DecisionStatus.REFUSED.value
+    confidence: float | None = None
+    evidence: tuple[str, ...] = ()
+    rollback_reason: str | None = None
+    unresolved: tuple[str, ...] = ()
+    recovery_action: str | None = None
+    recovery_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.receipt_id.strip():
+            raise ValueError("active route outcome requires receipt_id")
+        if self.promoted and not self.route:
+            raise ValueError("promoted outcome requires route")
+        if not self.promoted and self.route is not None:
+            raise ValueError("non-promoted outcome cannot select route")
+        if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
+            raise ValueError("confidence must be between 0 and 1")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "promoted": self.promoted,
+            "route": self.route,
+            "fallback_route": self.fallback_route,
+            "reason": self.reason,
+            "receipt_id": self.receipt_id,
+            "mode": self.mode,
+            "status": self.status,
+            "confidence": self.confidence,
+            "evidence": list(self.evidence),
+            "rollback_reason": self.rollback_reason,
+            "unresolved": list(self.unresolved),
+            "recovery_action": self.recovery_action,
+            "recovery_reason": self.recovery_reason,
+        }
+
+
 __all__ = [
     "BudgetSnapshot",
+    "ActiveRouteOutcome",
     "ComparisonState",
     "DecisionComparison",
     "DecisionInput",

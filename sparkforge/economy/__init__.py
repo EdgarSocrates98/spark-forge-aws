@@ -4,6 +4,7 @@ from __future__ import annotations
 from sparkforge.economy.cache import ArtifactCache
 from sparkforge.economy.decision_activation import ActivationDecision, ActivationEvidence
 from sparkforge.economy.decision_models import (
+    ActiveRouteOutcome,
     BudgetSnapshot,
     ComparisonState,
     DecisionComparison,
@@ -20,6 +21,7 @@ from sparkforge.registry.models import ExecutionProfile, ModelPolicy, ModelTier,
 
 __all__ = [
     "ArtifactCache",
+    "ActiveRouteOutcome",
     "ActivationDecision",
     "ActivationEvidence",
     "BudgetSnapshot",

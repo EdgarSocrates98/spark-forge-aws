@@ -33,6 +33,8 @@ def test_transcript_tokens_keep_provenance(tmp_path: Path) -> None:
     assert document["input"]["payload_bytes"] == 900
     assert document["token_state"]["transcript_sha256"] == "transcript-sha"
     assert document["kernel"]["fingerprint"]
+    assert document["control"]["mode"] == "shadow"
+    assert document["control"]["promoted"] is False
     assert DecisionReceiptStore(tmp_path).verify(evaluation.receipt.path)["valid"] is True
 
 

@@ -131,6 +131,28 @@ qualidade, `payload_bytes`, `provider_tokens`/`tokens_unresolved` e `cost_basis`
 dimensões separadas. Isso prova cobertura e determinismo do harness; não é uma alegação
 de economia financeira, ganho de qualidade ou redução de tokens de provider.
 
+## Atualização corrente — 2026-09-28 — JEV-independent evolution path
+
+O caminho Forge-native agora suporta promoção `active` explicitamente configurada,
+sem depender de um runtime JEV. `shadow` continua sendo o modo padrão do contrato de
+roteamento. A promoção exige corpus rotulado, gates de qualidade/economia e limites
+de profile/risco; falha, budget excedido ou decisão não promotável retorna ao router
+legado e grava recibo content-addressed com modo, fallback e razão de rollback.
+
+| Entrega | Caminho | Estado | Prova |
+|---|---|---|---|
+| Host bounded provider | `sparkforge/decision/host.py` | IMPLEMENTED, replay offline e transcript-only | `tests/test_host_provider.py`, `tests/test_jev_independent_path.py` |
+| Três caches formais | `sparkforge/decision/cache.py` | IMPLEMENTED, namespace/owner/freshness/invalidation | `tests/test_cache_contracts.py` |
+| Promoção e fallback | `sparkforge/economy/decision_plane.py` | IMPLEMENTED, active opt-in; shadow preservado | `tests/test_decision_plane.py`, `tests/test_jev_independent_path.py` |
+| Control plane agêntico | `sparkforge/agentic/control.py` | IMPLEMENTED, Governor + RecoveryPolicy bounded | `tests/test_decision_runtime_integration.py`, `tests/test_jev_independent_path.py` |
+| Receipts de controle | `sparkforge/economy/decision_receipts.py` | IMPLEMENTED, identidade preservada e `now` determinístico | `tests/test_decision_receipts.py` |
+
+O caminho não chama provider, AWS, MCP ou rede; não infere tokens de provider a partir
+de `payload_bytes` e não publica saving financeiro. A configuração produtiva permanece
+em `mode: shadow`; testes de `active` usam cópia isolada do contrato. A suíte
+monolítica completa e a reconciliação de claims continuam gates separados e não são
+declaradas verdes por estes testes focados.
+
 No build, passaram 24 testes novos/focados e 28 testes de compatibilidade do kernel,
 runtime, receipts, bridge e adapters. A suíte monolítica completa não foi declarada
 verde sem execução integral; warnings de ambiente do pytest sobre cache/temp não alteram

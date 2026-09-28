@@ -61,6 +61,8 @@ class _NamespacedCache(Generic[T]):
         self.hits = 0
         self.misses = 0
         self.evictions = 0
+        self.invalidations = 0
+        self.last_invalidation_reason: str | None = None
 
     def get(self, key: CacheKey) -> CacheRecord | None:
         self._validate_key(key)
@@ -70,6 +72,24 @@ class _NamespacedCache(Generic[T]):
             return None
         self.hits += 1
         self._items.move_to_end(key.canonical())
+        return record
+
+    def get_owned(
+        self,
+        key: CacheKey,
+        *,
+        owner: str,
+        freshness: str = "fresh",
+    ) -> CacheRecord | None:
+        """Return a record only when namespace, owner and freshness agree."""
+        if not owner.strip():
+            raise ValueError("cache owner is required")
+        record = self.get(key)
+        if record is None:
+            return None
+        if record.owner != owner or record.freshness != freshness:
+            self.invalidate(key, reason="owner_or_freshness_mismatch")
+            return None
         return record
 
     def put(
@@ -92,6 +112,10 @@ class _NamespacedCache(Generic[T]):
         return record
 
     def invalidate(self, key: CacheKey | None = None, *, reason: str = "explicit") -> None:
+        if not reason.strip():
+            raise ValueError("cache invalidation reason is required")
+        self.invalidations += 1
+        self.last_invalidation_reason = reason
         if key is None:
             self._items.clear()
             return
@@ -106,6 +130,8 @@ class _NamespacedCache(Generic[T]):
             "hits": self.hits,
             "misses": self.misses,
             "evictions": self.evictions,
+            "invalidations": self.invalidations,
+            "last_invalidation_reason": self.last_invalidation_reason,
         }
 
     def _validate_key(self, key: CacheKey) -> None:
@@ -154,9 +180,12 @@ class DecisionCache:
             raise ValueError("max_entries must be positive")
         self.max_entries = max_entries
         self._items: OrderedDict[str, DecisionResult] = OrderedDict()
+        self._metadata: dict[str, CacheRecord] = {}
         self.hits = 0
         self.misses = 0
         self.evictions = 0
+        self.invalidations = 0
+        self.last_invalidation_reason: str | None = None
 
     def get(self, fingerprint: str) -> DecisionResult | None:
         value = self._items.get(fingerprint)
@@ -167,18 +196,54 @@ class DecisionCache:
         self._items.move_to_end(fingerprint)
         return value
 
-    def put(self, fingerprint: str, result: DecisionResult) -> None:
+    def get_owned(
+        self,
+        fingerprint: str,
+        *,
+        owner: str = "decision-kernel",
+        freshness: str = "fresh",
+    ) -> DecisionResult | None:
+        if not owner.strip():
+            raise ValueError("cache owner is required")
+        result = self.get(fingerprint)
+        if result is None:
+            return None
+        metadata = self._metadata.get(fingerprint)
+        if metadata is None or metadata.owner != owner or metadata.freshness != freshness:
+            self.invalidate(fingerprint, reason="owner_or_freshness_mismatch")
+            return None
+        return result
+
+    def put(
+        self,
+        fingerprint: str,
+        result: DecisionResult,
+        *,
+        owner: str = "decision-kernel",
+        freshness: str = "fresh",
+    ) -> None:
+        if not owner.strip():
+            raise ValueError("cache owner is required")
         self._items[fingerprint] = result.with_cache_hit(False)
+        key = CacheKey(CacheKind.DECISION, 1, (fingerprint,))
+        self._metadata[fingerprint] = CacheRecord(key, result, owner, freshness)
         self._items.move_to_end(fingerprint)
         while len(self._items) > self.max_entries:
-            self._items.popitem(last=False)
+            evicted, _ = self._items.popitem(last=False)
+            self._metadata.pop(evicted, None)
             self.evictions += 1
 
-    def invalidate(self, fingerprint: str | None = None) -> None:
+    def invalidate(self, fingerprint: str | None = None, *, reason: str = "explicit") -> None:
+        if not reason.strip():
+            raise ValueError("cache invalidation reason is required")
+        self.invalidations += 1
+        self.last_invalidation_reason = reason
         if fingerprint is None:
             self._items.clear()
+            self._metadata.clear()
         else:
             self._items.pop(fingerprint, None)
+            self._metadata.pop(fingerprint, None)
 
     def clear(self) -> None:
         self.invalidate()
@@ -194,6 +259,8 @@ class DecisionCache:
             "hits": self.hits,
             "misses": self.misses,
             "evictions": self.evictions,
+            "invalidations": self.invalidations,
+            "last_invalidation_reason": self.last_invalidation_reason,
         }
 
     def get_key(self, key: CacheKey) -> DecisionResult | None:
@@ -201,10 +268,28 @@ class DecisionCache:
             raise ValueError("cache namespace mismatch: expected decision")
         return self.get(key.canonical())
 
-    def put_key(self, key: CacheKey, result: DecisionResult) -> None:
+    def put_key(
+        self,
+        key: CacheKey,
+        result: DecisionResult,
+        *,
+        owner: str = "decision-kernel",
+        freshness: str = "fresh",
+    ) -> None:
         if key.kind is not CacheKind.DECISION:
             raise ValueError("cache namespace mismatch: expected decision")
-        self.put(key.canonical(), result)
+        self.put(key.canonical(), result, owner=owner, freshness=freshness)
+
+    def get_key_owned(
+        self,
+        key: CacheKey,
+        *,
+        owner: str = "decision-kernel",
+        freshness: str = "fresh",
+    ) -> DecisionResult | None:
+        if key.kind is not CacheKind.DECISION:
+            raise ValueError("cache namespace mismatch: expected decision")
+        return self.get_owned(key.canonical(), owner=owner, freshness=freshness)
 
 
 __all__ = [

@@ -25,3 +25,10 @@ def test_unknown_mode_is_refused() -> None:
 
     assert decision.allowed is False
     assert decision.unresolved == ("unsupported_activation_mode",)
+
+
+def test_active_mode_is_allowed_only_with_complete_evidence() -> None:
+    decision = guard_activation("active", ActivationEvidence(50, True, True))
+
+    assert decision.allowed is True
+    assert decision.unresolved == ()

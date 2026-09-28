@@ -24,6 +24,11 @@ def build_receipt(
     state_fingerprint: str,
     measurement: LocalMeasurement,
     emitted_at: str | None = None,
+    mode: str = "shadow",
+    promoted: bool = False,
+    fallback_route: str | None = None,
+    rollback_reason: str | None = None,
+    fallback_reason: str | None = None,
 ) -> dict[str, Any]:
     refusal = None
     if result.status.value != "accepted":
@@ -43,6 +48,14 @@ def build_receipt(
         "evidence": list(result.evidence),
         "refusal": refusal,
         "cache": {"hit": result.cache_hit},
+        "control": {
+            "mode": mode,
+            "promoted": promoted,
+            "route": result.selected[0] if result.selected else None,
+            "fallback_route": fallback_route,
+            "rollback_reason": rollback_reason,
+            "fallback_reason": fallback_reason,
+        },
         "measurement": measurement.to_dict(),
     }
     receipt_id = RECEIPT_PREFIX + digest(body)
@@ -97,12 +110,22 @@ class KernelReceiptStore:
         state_fingerprint: str,
         measurement: LocalMeasurement,
         now: str | None = None,
+        mode: str = "shadow",
+        promoted: bool = False,
+        fallback_route: str | None = None,
+        rollback_reason: str | None = None,
+        fallback_reason: str | None = None,
     ) -> dict[str, Any]:
         document = build_receipt(
             result,
             state_fingerprint=state_fingerprint,
             measurement=measurement,
             emitted_at=now,
+            mode=mode,
+            promoted=promoted,
+            fallback_route=fallback_route,
+            rollback_reason=rollback_reason,
+            fallback_reason=fallback_reason,
         )
         self.root.mkdir(parents=True, exist_ok=True)
         path = self.root / f"{document['receipt_id']}.kernel.json"
