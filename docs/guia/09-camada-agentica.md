@@ -74,6 +74,11 @@ O Gate 3 fecha recovery como transição governada. `RecoveryGovernor` reavalia 
 consome retry/replan do `CaseBudget` e grava receipt de recovery com referência ao receipt-base.
 Fingerprint de estratégia repetida termina em `stop` terminal; retry não pode virar loop implícito.
 
+O Gate 4 separa autoridade de status. Shadow só observa; assisted pode propor, mas legacy pode
+vetar e continua sendo fallback; active exige activation evidence, governor e rollback registrado.
+Receipts carregam authority e legacy_vetoed quando aplicável. O kernel genérico continua sem
+autoridade ativa por default.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

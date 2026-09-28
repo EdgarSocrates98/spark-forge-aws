@@ -165,6 +165,14 @@ class AgenticDecisionController:
                 now=now,
                 trace_ref=trace_ref,
             )
+        elif contract.mode == "assisted":
+            outcome = self.service.assisted(
+                request,
+                legacy_route,
+                contract=contract,
+                now=now,
+                trace_ref=trace_ref,
+            )
         else:
             evaluation = self.service.shadow(
                 request,

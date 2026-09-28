@@ -45,6 +45,13 @@ confidence; regressões do kernel passam no mesmo lote. Schema aberto exige
 enforcement de limite de entradas e compatibilidade da facade economy. A chave efetiva aparece no
 receipt como `decision|2|...`; um cache sem esses componentes não pode produzir hit semântico.
 
+## Gate 4 evidence
+
+tests/test_decision_authority.py prova authority explícita, assisted com veto legado e active
+com rollback. Receipts mantêm compatibilidade no bloco control e adicionam authority e
+legacy_vetoed como campos semânticos. A promoção active continua exigindo activation evidence;
+assisted nunca recebe autoridade de execução.
+
 ## Gate 3 evidence
 
 `tests/test_recovery_governance.py` prova consumo de `CaseBudget`, re-resolução por

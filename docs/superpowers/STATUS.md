@@ -88,6 +88,13 @@ calibration; `cache_max_entries` é enforced; e `ArtifactCache` tem uma implemen
 com facade de compatibilidade na camada economy. Prova focada: `19 passed`. Recovery, authority,
 adapters e benchmark permanecem abertos.
 
+## Atualização corrente — Decision Control Plane completion, Gate 4 (2026-09-28)
+
+Gate 4 está fechado: authority explícita diferencia shadow, assisted e active; assisted preserva
+veto/fallback legado; active registra activation evidence e rollback. Prova focada:
+tests/test_decision_authority.py e regressões do plane passam (18 passed). O kernel genérico
+continua fail-closed.
+
 ## Atualização corrente — Decision Control Plane completion, Gate 3 (2026-09-28)
 
 Gate 3 está fechado: `RecoveryGovernor` conecta policy, governor, budget e receipt; retry/replan

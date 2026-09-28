@@ -16,6 +16,12 @@ class DecisionStatus(str, Enum):
     REFUSED = "refused"
 
 
+class AuthorityMode(str, Enum):
+    SHADOW = "shadow"
+    ASSISTED = "assisted"
+    ACTIVE = "active"
+
+
 class ComparisonState(str, Enum):
     AGREEMENT = "agreement"
     DISAGREEMENT = "disagreement"
@@ -241,8 +247,17 @@ class DecisionResult:
     fingerprint: str | None = None
     cache_hit: bool = False
     evidence: tuple[str, ...] = ()
+    authority: str = AuthorityMode.SHADOW.value
 
     def __post_init__(self) -> None:
+        authority = (
+            self.authority.value
+            if isinstance(self.authority, AuthorityMode)
+            else str(self.authority)
+        )
+        if authority not in {item.value for item in AuthorityMode}:
+            raise ValueError("authority must be shadow, assisted or active")
+        object.__setattr__(self, "authority", authority)
         if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be between 0 and 1")
         if self.status in {DecisionStatus.UNRESOLVED, DecisionStatus.REFUSED} and self.selected:
@@ -285,6 +300,10 @@ class DecisionResult:
     def with_receipt(self, receipt_id: str) -> DecisionResult:
         return replace(self, receipt_id=receipt_id)
 
+    def with_authority(self, authority: str | AuthorityMode) -> DecisionResult:
+        value = authority.value if isinstance(authority, AuthorityMode) else str(authority)
+        return replace(self, authority=value)
+
     def with_kernel(
         self,
         *,
@@ -314,6 +333,7 @@ class DecisionResult:
             "fingerprint": self.fingerprint,
             "cache_hit": self.cache_hit,
             "evidence": list(self.evidence),
+            "authority": self.authority,
         }
         if include_receipt:
             result["receipt_id"] = self.receipt_id
@@ -400,6 +420,7 @@ class ActiveRouteOutcome:
 __all__ = [
     "BudgetSnapshot",
     "ActiveRouteOutcome",
+    "AuthorityMode",
     "ComparisonState",
     "DecisionComparison",
     "DecisionInput",

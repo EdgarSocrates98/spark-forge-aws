@@ -154,6 +154,17 @@ Uma strategy fingerprint repetida após replan agora termina em `stop` com
 de recovery que referencia o receipt-base e carrega decisão, governor e consumo. Prova: 94 testes
 focados de recovery/control/receipts/infra passam; a regra não concede autoridade ativa.
 
+## Atualização corrente — 2026-09-28 — Completion Gate 4: autoridade explícita
+
+O quarto gate separa status de autoridade. DecisionResult e receipts carregam authority
+(shadow, assisted, active). Assisted avalia e propõe, mas mantém legacy como autoridade:
+divergência produz legacy_vetoed: true, fallback e rollback explícitos. Active continua
+dependente de activation evidence e governor; o kernel genérico permanece fail-closed.
+
+Prova: tests/test_decision_authority.py cobre assisted com veto, guard de modo e active com
+rollback; regressões de activation/plane/models/runtime passam (18 passed). Nenhuma mudança
+ativa ocorre por YAML isolado no modo produtivo.
+
 ## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
 
 O primeiro gate da conclusão do control plane está implementado em commit isolado.

@@ -53,6 +53,9 @@ class DecisionReceiptStore:
         fallback_route: str | None = None,
         rollback_reason: str | None = None,
         fallback_reason: str | None = None,
+        authority: str | None = None,
+        vetoed: bool | None = None,
+        activation_evidence: dict[str, Any] | None = None,
     ) -> DecisionReceipt:
         body = {
             "receipt_version": RECEIPT_VERSION,
@@ -82,6 +85,12 @@ class DecisionReceiptStore:
             "token_state": request.provider_usage.to_dict(),
             "trace_ref": trace_ref,
         }
+        if authority is not None:
+            body["authority"] = authority
+        if vetoed is not None:
+            body["legacy_vetoed"] = vetoed
+        if activation_evidence is not None:
+            body["activation_evidence"] = dict(activation_evidence)
         receipt_id = RECEIPT_PREFIX + digest_of(body)
         document = dict(body)
         document["receipt_id"] = receipt_id
