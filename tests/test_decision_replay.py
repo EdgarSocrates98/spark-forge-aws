@@ -27,7 +27,7 @@ def _observation(case: dict, profile: str) -> dict:
     }
 
 
-def test_benchmark_has_30_cases_six_domains_three_profiles_and_two_runners() -> None:
+def test_benchmark_has_50_labeled_cases_six_domains_three_profiles_and_two_runners() -> None:
     suite = load_replay_suite(
         ROOT / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml"
     )
@@ -36,9 +36,10 @@ def test_benchmark_has_30_cases_six_domains_three_profiles_and_two_runners() -> 
         old_runner=_observation,
         new_runner=_observation,
     )
-    assert len(suite["cases"]) == 30
-    assert len({case["domain"] for case in suite["cases"]}) == 6
-    assert len(report["rows"]) == 30 * len(PROFILES) * 2
+    assert len(suite["cases"]) == 50
+    assert suite["labeled_tasks"] == 50
+    assert len({case["domain"] for case in suite["cases"]}) == 10
+    assert len(report["rows"]) == 50 * len(PROFILES) * 2
     assert set(report["summary"]) == {
         f"{runner}:{profile}"
         for runner in ("old", "new")

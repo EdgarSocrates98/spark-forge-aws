@@ -83,6 +83,13 @@ O Gate 5 adiciona adapters host finos para Claude, Codex e Devin. Eles só tradu
 gravados para o protocolo bounded e delegam replay local; não importam SDK, não chamam rede e
 não inferem tokens de bytes. Transcript ausente deixa provider_tokens unresolved.
 
+O Gate 6 fecha o benchmark same-case com 50 tarefas rotuladas em 10 domínios, train/holdout,
+três profiles e runners old/new. Cada linha mantém qualidade, `payload_bytes`,
+`provider_tokens` e custo separados. O comparador exige `case_id`/label/`input_manifest`
+iguais e recusa volume de entrada acima de 10%; tokens sem usage e custo sem `cost_basis`
+ficam unresolved com razão nomeada. O comando continua replay offline: não mede provider real
+nem promove autoridade, mas impede claims com denominador incompatível.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

@@ -99,13 +99,23 @@ continua fail-closed.
 
 Gate 5 está fechado: adapters Claude/Codex/Devin traduzem somente transcripts/envelopes
 gravados e bounded. Core continua offline, sem SDK/provider/rede; ausência de transcript mantém
-tokens unresolved. Prova focada: 13 passed. Benchmark real ainda é Gate 6.
+tokens unresolved. Prova focada: 13 passed. Benchmark same-case é Gate 6; promoção ativa segue
+Gate 7.
 
 ## Atualização corrente — Decision Control Plane completion, Gate 3 (2026-09-28)
 
 Gate 3 está fechado: `RecoveryGovernor` conecta policy, governor, budget e receipt; retry/replan
 consomem limites explícitos; e strategy repetida termina em `stop` terminal. Prova focada: `94
-passed`. Authority, adapters e benchmark seguem gated.
+passed`. Authority e adapters seguem gated; benchmark agora está fechado no Gate 6.
+
+## Atualização corrente — Decision Control Plane completion, Gate 6 (2026-09-28)
+
+Gate 6 está fechado em commit próprio: o replay tem 50 tarefas rotuladas em 10 domínios,
+train/holdout, três profiles e runners old/new. Cada row separa qualidade, `payload_bytes`,
+`provider_tokens` e custo; usage ausente e `cost_basis` ausente permanecem unresolved com
+razão explícita. Comparações exigem mesmo caso/manifesto e recusam volume acima de 10%.
+Prova focada: 12 passed; isto é harness offline e não afirma CI monolítico verde, economia
+financeira real ou promoção de autoridade.
 
 ---
 

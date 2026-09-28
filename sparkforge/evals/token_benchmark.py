@@ -16,6 +16,7 @@ from sparkforge.context.gateway_models import GatewayProfile
 from sparkforge.evals.runner import EvaluationRunner
 
 SCHEMA_VERSION = 1
+MINIMUM_LABELED_TASKS = 50
 DEFAULT_AXES = (
     "status",
     "evidence_recall",
@@ -55,6 +56,7 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
             raise ValueError("benchmark case is invalid")
         merged.append({**case, **by_id[str(case["id"])], "suite_id": str(raw["id"])})
     fixture_paths = [fixture_path]
+    decision_replay_contract = None
     for key in (
         "federated_graph_fixture",
         "provider_transcript_fixture",
@@ -71,6 +73,27 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
         additional = _load_mapping(additional_path, key)
         if int(additional.get("schema_version", 0)) != SCHEMA_VERSION:
             raise ValueError(f"unsupported {key} schema_version")
+        if key == "decision_control_plane_fixture":
+            decision_cases = additional.get("cases")
+            if not isinstance(decision_cases, list):
+                raise ValueError("decision_control_plane_fixture requires cases")
+            labeled_tasks = sum(
+                1
+                for item in decision_cases
+                if isinstance(item, dict) and str(item.get("label", "")).strip()
+            )
+            if labeled_tasks < MINIMUM_LABELED_TASKS:
+                raise ValueError(
+                    "decision_control_plane_fixture requires "
+                    f"at least {MINIMUM_LABELED_TASKS} labeled tasks"
+                )
+            decision_replay_contract = {
+                "labeled_tasks": labeled_tasks,
+                "minimum_labeled_tasks": MINIMUM_LABELED_TASKS,
+                "same_case_required": True,
+                "same_input_manifest_required": True,
+                "cost_requires_basis": True,
+            }
         fixture_paths.append(additional_path)
     decision_fixture_path = None
     declared_decision = raw.get("decision_fixture")
@@ -100,6 +123,7 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
             if decision_fixture_path is not None
             else None
         ),
+        "decision_replay_contract": decision_replay_contract,
         "sha256": digest,
     }
 
@@ -128,6 +152,7 @@ def run_benchmark_matrix(
         "quality_axes": list(suite["quality_axes"]),
         "fixture_paths": list(suite.get("fixture_paths", ())),
         "decision_fixture_path": suite.get("decision_fixture_path"),
+        "decision_replay_contract": suite.get("decision_replay_contract"),
         "results": results,
         "summary": _summary(results, suite["profiles"]),
     }

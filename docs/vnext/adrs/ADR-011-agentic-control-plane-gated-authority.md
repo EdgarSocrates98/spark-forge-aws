@@ -64,3 +64,12 @@ MCP ou chamada de rede.
 profile/risco e encerramento de budget exaurido. `tests/test_recovery_policy.py` prova que
 fingerprint repetida não retorna `replan` não-terminal. O controller gera receipt `kind: recovery`
 com referência ao receipt-base.
+
+## Gate 6 evidence
+
+`tests/test_benchmark_quality_tokens_cost.py` e `tests/test_decision_replay.py` provam corpus
+de 50 tarefas rotuladas, 10 domínios, train/holdout e três profiles com runners old/new.
+Cada row separa qualidade, `payload_bytes`, `provider_tokens` e custo. O comparador recusa
+`input_manifest` divergente e volume acima de 10%; tokens sem transcript e custo sem
+`cost_basis` permanecem unresolved com razão explícita. O fixture é replay offline e não
+autoriza claim de economia de provider.
