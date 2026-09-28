@@ -6,6 +6,7 @@ quality_axes: [status, evidence_recall, false_positive_rate, unresolved, executi
 quality_fixture: fixtures/quality_cases.yaml
 federated_graph_fixture: fixtures/federated_graph_cases.yaml
 provider_transcript_fixture: fixtures/provider_transcripts.yaml
+decision_fixture: fixtures/decision_plane_cases.yaml
 cases:
   - id: glue-routing
     intent: Glue FGAC Iceberg

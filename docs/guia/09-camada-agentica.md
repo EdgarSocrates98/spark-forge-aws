@@ -6,7 +6,7 @@ em [Arbitragem e debate](usos/arbitragem-e-debate.md).
 
 ## As entidades
 
-`sparkforge/agentic/` (14 módulos fora o `__init__.py`, contados em 2026-09-18) traz
+`sparkforge/agentic/` (15 módulos fora o `__init__.py`, contados em 2026-09-28) traz
 entidades de primeira classe e engines para trabalho agêntico auditável: `Claim`,
 `Evidence` (com tiers de autoridade T1-T6), `Hypothesis`, `Experiment`, `Decision`,
 `Unknown`, `Contradiction`, `Objection`, `Rebuttal`; mais blackboard JSONL, protocolo
@@ -31,6 +31,27 @@ fechamento é sempre do `referee`. O argumento é escrito pelo host, pela skill
 `run-debate` ou por `scripts/run_debate.py` (`claude -p`), nunca dentro do pacote. O
 placar da suíte `evals/agentic/debate/` sai de
 `python -m sparkforge.evals debate --run <nome>`.
+
+## Decision Plane: observação sem troca de dispatch
+
+O Decision Plane é uma camada declarativa separada da decisão ADR em
+`sparkforge/agentic/decision.py`. O contrato atual é
+`config/decisions/routing.data_domain.yaml`; ele avalia `DecisionInput`, registra a
+comparação com a rota vigente e escreve receipt verificável, mas permanece em
+`mode: shadow`. Nenhum provider é chamado e nenhum resultado shadow altera a rota.
+
+```bash
+sparkforge decision validate --repo .
+sparkforge decision benchmark --repo .
+sparkforge decision shadow --input decision.json --repo . --out shadow.json
+sparkforge decision compare --shadow shadow.json --current-route tier_3_cheap_local
+sparkforge decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
+```
+
+A seed offline tem 23 casos e passou 23/23 na validação atual. Isso prova o contrato
+e a mecânica da avaliação, não prontidão para ativação, qualidade geral, economia
+financeira ou tokens do provider. A ativação continua fail-closed até existir corpus
+rotulado mínimo e os gates de qualidade e economia.
 
 ## O que ela NÃO é, e isso governa o resto
 

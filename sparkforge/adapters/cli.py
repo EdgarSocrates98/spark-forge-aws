@@ -79,6 +79,19 @@ def _load_json_list(path: str) -> list[dict[str, Any]]:
     return data
 
 
+def _load_json_object(path: str) -> dict[str, Any]:
+    file_path = Path(path)
+    if not file_path.is_file():
+        raise _core.AdapterError(f"Arquivo nao encontrado: {path}", exit_code=2)
+    try:
+        data = json.loads(file_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise _core.AdapterError(f"{path}: JSON invalido: {exc}", exit_code=2) from exc
+    if not isinstance(data, dict):
+        raise _core.AdapterError(f"{path}: esperado um objeto.", exit_code=2)
+    return data
+
+
 _DETAIL_LEVEL_HELP = (
     "Verbosidade da saida. `full` (default) devolve o fato inteiro, com a "
     "procedencia dentro de cada item -- e o modo de reauditoria. `normal` "
@@ -1129,6 +1142,47 @@ def build_parser() -> argparse.ArgumentParser:
     economy_cost_p.add_argument("--host-transcript", required=True)
     economy_cost_p.add_argument("--pricing", required=True)
     economy_cost_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
+
+    # decision plane ----------------------------------------------------------
+    decision_p = sub.add_parser(
+        "decision",
+        help="Valida e observa decisões declarativas sem alterar o dispatch atual.",
+    )
+    decision_sub = decision_p.add_subparsers(dest="decision_action", required=True)
+    decision_validate_p = decision_sub.add_parser(
+        "validate", help="Valida um contrato Decision Plane versionado."
+    )
+    decision_validate_p.add_argument("--contract", default="routing.data_domain")
+    decision_validate_p.add_argument("--version")
+    decision_validate_p.add_argument("--repo", default=".")
+    decision_shadow_p = decision_sub.add_parser(
+        "shadow", help="Avalia estado normalizado e compara com a rota atual."
+    )
+    decision_shadow_p.add_argument("--contract", default="routing.data_domain")
+    decision_shadow_p.add_argument("--input", required=True, help="JSON de DecisionInput.")
+    decision_shadow_p.add_argument("--repo", default=".")
+    decision_shadow_p.add_argument("--now")
+    decision_shadow_p.add_argument("--out", help="Escreve o resultado completo neste arquivo.")
+    decision_compare_p = decision_sub.add_parser(
+        "compare", help="Compara uma decisão shadow persistida com uma rota atual."
+    )
+    decision_compare_p.add_argument("--shadow", required=True, help="JSON de resultado shadow.")
+    decision_compare_p.add_argument("--current-route", required=True)
+    decision_compare_p.add_argument("--out", help="Escreve a comparação neste arquivo.")
+    decision_benchmark_p = decision_sub.add_parser(
+        "benchmark", help="Executa a suíte seed offline do Decision Plane."
+    )
+    decision_benchmark_p.add_argument(
+        "--fixture",
+        default="evals/token_efficient/fixtures/decision_plane_cases.yaml",
+    )
+    decision_benchmark_p.add_argument("--repo", default=".")
+    decision_benchmark_p.add_argument("--out", help="Escreve o relatório neste arquivo.")
+    decision_receipt_p = decision_sub.add_parser(
+        "receipt", help="Verifica receipt content-addressed de decisão shadow."
+    )
+    decision_receipt_p.add_argument("--path", required=True)
+    decision_receipt_p.add_argument("--repo", default=".")
 
     # context gateway -------------------------------------------------------
     context_p = sub.add_parser(
@@ -3716,6 +3770,118 @@ def _cmd_economy_provider_cost(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_decision_validate(args: argparse.Namespace) -> int:
+    from sparkforge.economy.decision_contracts import ContractError
+    from sparkforge.economy.decision_plane import DecisionPlaneService
+
+    try:
+        contract = DecisionPlaneService(args.repo).validate(args.contract, args.version)
+    except (ContractError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(
+        {
+            "schema_version": contract.schema_version,
+            "contract_id": contract.contract_id,
+            "contract_version": contract.contract_version,
+            "mode": contract.mode,
+            "contract_sha256": contract.sha256,
+            "candidates": [
+                {
+                    "name": candidate.name,
+                    "route": candidate.route,
+                    "priority": candidate.priority,
+                }
+                for candidate in contract.candidates
+            ],
+            "budget": contract.budget.to_dict(),
+        }
+    )
+    return 0
+
+
+def _cmd_decision_shadow(args: argparse.Namespace) -> int:
+    from sparkforge.economy.decision_contracts import ContractError
+    from sparkforge.economy.decision_models import DecisionInput
+    from sparkforge.economy.decision_plane import DecisionPlaneService
+    from sparkforge.economy.decision_receipts import DecisionReceiptError
+
+    raw = _load_json_object(args.input)
+    try:
+        request = DecisionInput.from_mapping(raw)
+        service = DecisionPlaneService(args.repo)
+        contract = service.validate(args.contract)
+        payload = service.shadow(
+            request,
+            raw.get("current_route"),
+            contract=contract,
+            now=args.now,
+        ).to_dict()
+    except (ContractError, DecisionReceiptError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _write_decision_payload(payload, args.out)
+    return 0
+
+
+def _cmd_decision_compare(args: argparse.Namespace) -> int:
+    from sparkforge.economy.decision_compare import compare_decisions
+    from sparkforge.economy.decision_models import BudgetSnapshot, DecisionResult, DecisionStatus
+
+    payload = _load_json_object(args.shadow)
+    raw = payload.get("result") if isinstance(payload.get("result"), dict) else payload
+    try:
+        result = DecisionResult(
+            contract_id=str(raw["contract_id"]),
+            contract_version=str(raw["contract_version"]),
+            contract_sha256=str(raw["contract_sha256"]),
+            status=DecisionStatus(str(raw["status"])),
+            selected=tuple(str(item) for item in raw.get("selected", [])),
+            confidence=(float(raw["confidence"]) if raw.get("confidence") is not None else None),
+            confidence_source=str(raw.get("confidence_source", "unresolved")),
+            method=str(raw.get("method", "persisted_shadow")),
+            unresolved=tuple(str(item) for item in raw.get("unresolved", [])),
+            budget=BudgetSnapshot(),
+            receipt_id=(str(raw["receipt_id"]) if raw.get("receipt_id") else None),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise _core.AdapterError(f"shadow result invalid: {exc}", exit_code=2) from exc
+    comparison = compare_decisions(args.current_route, result).to_dict()
+    _write_decision_payload(comparison, args.out)
+    return 0
+
+
+def _cmd_decision_benchmark(args: argparse.Namespace) -> int:
+    from sparkforge.economy.decision_evaluation import DecisionEvaluationRunner
+
+    try:
+        payload = DecisionEvaluationRunner(args.repo).run(args.fixture)
+    except (OSError, ValueError) as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _write_decision_payload(payload, args.out)
+    return 0 if payload["seed_passed"] else 1
+
+
+def _cmd_decision_receipt(args: argparse.Namespace) -> int:
+    from sparkforge.economy.decision_receipts import DecisionReceiptError, DecisionReceiptStore
+
+    path = Path(args.path)
+    if not path.is_absolute():
+        path = Path(args.repo) / path
+    try:
+        payload = DecisionReceiptStore(args.repo).verify(path)
+    except DecisionReceiptError as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return 0 if payload["valid"] else 1
+
+
+def _write_decision_payload(payload: dict[str, Any], output: str | None) -> None:
+    if output:
+        Path(output).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    _print(payload)
+
+
 def _gateway_catalog() -> dict[str, dict[str, Any]]:
     from sparkforge.adapters.tools import TOOLS
 
@@ -5025,6 +5191,11 @@ _DISPATCH = {
     ("tune", None): _cmd_tune,
     ("economy", "report"): _cmd_economy_report,
     ("economy", "provider-cost"): _cmd_economy_provider_cost,
+    ("decision", "validate"): _cmd_decision_validate,
+    ("decision", "shadow"): _cmd_decision_shadow,
+    ("decision", "compare"): _cmd_decision_compare,
+    ("decision", "benchmark"): _cmd_decision_benchmark,
+    ("decision", "receipt"): _cmd_decision_receipt,
     ("context", "start"): _cmd_context_start,
     ("context", "expand"): _cmd_context_expand,
     ("telemetry", "export"): _cmd_telemetry_export,
@@ -5184,6 +5355,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "journal_action", None)
         or getattr(args, "dq_ai_action", None)
         or getattr(args, "context_action", None)
+        or getattr(args, "decision_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

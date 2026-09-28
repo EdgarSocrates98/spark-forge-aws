@@ -1,0 +1,46 @@
+schema_version: 1
+contract_id: routing.data_domain
+contract_version: 1
+mode: shadow
+budget:
+  max_total_tokens: 8000
+  max_tool_calls: 10
+thresholds:
+  default: 0.70
+  by_candidate:
+    deterministic: 1.0
+    cached: 0.98
+    specialist: 0.80
+    reviewer: 0.75
+    default: 0.60
+candidates:
+  - name: deterministic
+    route: tier_0_deterministic
+    priority: 0
+    predicates:
+      - name: deterministic_available
+        value: true
+  - name: cached
+    route: tier_1_cached
+    priority: 1
+    predicates:
+      - name: cached
+        value: true
+  - name: specialist
+    route: tier_4_specialist
+    priority: 10
+    predicates:
+      - name: evidence_kind
+        value: specialist
+  - name: reviewer
+    route: tier_5_premium
+    priority: 20
+    predicates:
+      - name: risk_is
+        value: sensitive
+  - name: default
+    route: tier_3_cheap_local
+    priority: 100
+    predicates:
+      - name: always
+        value: true

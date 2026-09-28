@@ -189,6 +189,21 @@ and query expansion/knowledge compilation are deterministic and lazy. The
 implementation report and archived SDD artifacts live under
 `.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
 
+### Decision Plane shadow mode
+
+The declarative Decision Plane is versioned at
+`config/decisions/routing.data_domain.yaml` and observes the current route without
+replacing it. `sparkforge decision validate|shadow|compare|benchmark|receipt` are
+CLI-only verbs; they add no MCP tool and do not change `CapabilityModelRouter`
+dispatch. Content-addressed receipts live under `.sparkforge/decision-receipts/`
+and preserve status, route, comparison, budget, `unresolved`, and
+`provider_tokens` only when a host transcript supplies them.
+
+The offline seed has **23 cases** (15 quality, 6 federated graph, 2 transcript):
+23/23 pass in the current run, while `activation_ready` remains `false`. Activation
+requires a minimum labeled corpus plus quality and economy gates. No financial saving
+or bytes-to-provider-tokens claim is made.
+
 ## Deterministic evidence
 
 Evidence comes from deterministic extraction, not from an LLM sampling the codebase. A

@@ -66,9 +66,20 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
         if int(additional.get("schema_version", 0)) != SCHEMA_VERSION:
             raise ValueError(f"unsupported {key} schema_version")
         fixture_paths.append(additional_path)
+    decision_fixture_path = None
+    declared_decision = raw.get("decision_fixture")
+    if declared_decision is not None:
+        if not isinstance(declared_decision, str) or not declared_decision.strip():
+            raise ValueError("decision_fixture must be a non-empty relative path")
+        decision_fixture_path = _fixture_path(root, declared_decision, "decision_fixture")
+        decision_fixture = _load_mapping(decision_fixture_path, "decision_fixture")
+        if int(decision_fixture.get("schema_version", 0)) != SCHEMA_VERSION:
+            raise ValueError("unsupported decision_fixture schema_version")
     digest_input = suite_path.read_bytes()
     for path in fixture_paths:
         digest_input += b"\n" + path.read_bytes()
+    if decision_fixture_path is not None:
+        digest_input += b"\n" + decision_fixture_path.read_bytes()
     digest = hashlib.sha256(digest_input).hexdigest()
     return {
         "schema_version": int(raw.get("schema_version", 0)),
@@ -78,6 +89,11 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
         "quality_axes": axes,
         "cases": merged,
         "fixture_paths": tuple(path.relative_to(root).as_posix() for path in fixture_paths),
+        "decision_fixture_path": (
+            decision_fixture_path.relative_to(root).as_posix()
+            if decision_fixture_path is not None
+            else None
+        ),
         "sha256": digest,
     }
 
@@ -105,6 +121,7 @@ def run_benchmark_matrix(
         "profiles": list(suite["profiles"]),
         "quality_axes": list(suite["quality_axes"]),
         "fixture_paths": list(suite.get("fixture_paths", ())),
+        "decision_fixture_path": suite.get("decision_fixture_path"),
         "results": results,
         "summary": _summary(results, suite["profiles"]),
     }

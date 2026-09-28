@@ -200,6 +200,13 @@ workspace graph, query expansion e compiler. Specialist/reviewer/debate exigem
 triggers; relações e claims ausentes ficam `unresolved`. Archive:
 `.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
 
+### Plane
+
+Contrato: `config/decisions/routing.data_domain.yaml`; CLI shadow-only, sem MCP/provider.
+Seed: **23 casos**, 23/23, `activation_ready: false`. Receipts:
+`.sparkforge/decision-receipts/`; tokens exigem transcript. Ativação exige corpus/gates;
+sem claim financeiro/bytes→tokens.
+
 ## Desenvolver: o SDD próprio
 
 Mudança não trivial neste repositório passa pelas skills `sdd-explore`, `sdd-define`,

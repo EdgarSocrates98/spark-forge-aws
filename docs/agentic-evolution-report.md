@@ -66,6 +66,28 @@ outra.
 A camada determinística existente (Fact, Finding, Rule, Case, Gates) **não foi
 substituída** — foi acrescentada ao lado.
 
+## Atualização corrente — 2026-09-28 — Decision Plane em shadow mode
+
+O repositório agora contém uma vertical declarativa de decisão, separada da
+decisão ADR/arbitragem de `sparkforge/agentic/decision.py`:
+
+| Entrega | Caminho | Estado | Prova |
+|---|---|---|---|
+| Contrato de roteamento | `config/decisions/routing.data_domain.yaml` | IMPLEMENTED, `mode: shadow` | `tests/test_decision_contracts.py` |
+| Motor e comparação | `sparkforge/economy/decision_*.py` | IMPLEMENTED, determinístico e offline | `tests/test_decision_engine.py`, `tests/test_decision_compare.py` |
+| Observação no runtime | `sparkforge/agentic/shadow.py` | IMPLEMENTED, sem alterar dispatch | `tests/test_decision_runtime_integration.py` |
+| Receipts | `.sparkforge/decision-receipts/` via `decision_receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_receipts.py` |
+| Avaliação seed | `sparkforge/evals/decision_plane.py` + fixture | IMPLEMENTED, 23/23 no run de 2026-09-28 | `tests/test_decision_evaluation.py` |
+| Ativação | `decision_activation.py` | FAIL-CLOSED; não pronta | `tests/test_decision_activation.py` |
+
+Os cinco verbos `sparkforge decision validate|shadow|compare|benchmark|receipt`
+existem somente na CLI: nenhum tool MCP, provider ou chamada AWS foi adicionado.
+O seed cobre 15 casos de qualidade, 6 de grafo federado e 2 de transcript. `23/23`
+é uma prova de contrato e de mecânica determinística, não uma medida de qualidade
+ampla, tokens do provider, custo financeiro ou prontidão para ativação. O router
+vigente continua sendo autoridade; a ativação requer corpus rotulado mínimo e gates
+de qualidade e economia.
+
 ## Status por componente — medido, não declarado
 
 Taxonomia da FASE 0 do prompt de origem: `IMPLEMENTED` (existe e é exercitado
