@@ -202,16 +202,10 @@ triggers; relações e claims ausentes ficam `unresolved`. Archive:
 
 ### Plane
 
-Contrato legado: `config/decisions/routing.data_domain.yaml`; `decision shadow` continua
-shadow-only e o router atual continua autoridade. O kernel genérico fica em
-`sparkforge/decision/`, com seis primitivas fechadas, cache bounded, fingerprint e
-receipt local. Entrada canônica: `decision evaluate` e tool MCP read-only
-`sparkforge_decision_evaluate`; ambos delegam ao mesmo runtime offline e provider-independent.
-Seed legado: **23 casos**, 23/23, `activation_ready: false`. Receipts:
-`.sparkforge/decision-receipts/`; tokens exigem transcript. Ativação exige corpus/gates;
-sem claim financeiro/bytes→tokens. Baseline sintético: `scripts/benchmark_decision_kernel.py`;
-mede latência/bytes localmente e mantém `provider_tokens`, `tokens_unresolved` e `cost_basis`
-separados.
+Contrato legado: `config/decisions/routing.data_domain.yaml`; `decision shadow` é
+shadow-only e router é autoridade. Kernel em `sparkforge/decision/`: seis primitivas,
+cache/fingerprint/receipt. Tokens: transcript; custo: `cost_basis`. v1:
+`docs/agentic-evolution-report.md`.
 
 ## Desenvolver: o SDD próprio
 

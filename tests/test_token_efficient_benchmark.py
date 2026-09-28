@@ -30,6 +30,9 @@ def test_suite_ampla_tem_eixos_e_casos_unicos() -> None:
         "unresolved",
         "execution_plan",
     }
+    assert "fixtures/decision_control_plane_cases.yaml" in suite["fixture_paths"]
+    assert "fixtures/calibration_history.yaml" in suite["fixture_paths"]
+    assert "fixtures/host_replay.yaml" in suite["fixture_paths"]
 
 
 def test_matriz_preserva_eixos_e_bytes_separados() -> None:

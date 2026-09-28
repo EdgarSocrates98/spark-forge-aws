@@ -153,6 +153,7 @@
     "sparkforge_context_expand",
     "sparkforge_context_start",
     "sparkforge_controlm_describe",
+    "sparkforge_decision_evaluate",
     "sparkforge_debate_next",
     "sparkforge_debate_referee",
     "sparkforge_debate_start",

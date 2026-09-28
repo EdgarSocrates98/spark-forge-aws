@@ -109,6 +109,33 @@ O baseline mede somente `latency_ns` e `payload_bytes` localmente. Sem transcrip
 Isto não é benchmark amplo de qualidade, custo ou tokens de provider. Contratos em `active`
 continuam recusados por nome e o router legado não recebe mutação por shadow.
 
+## Atualização corrente — 2026-09-28 — Agentic Decision Control Plane
+
+O build do control plane fecha os seis itens da frente: host bounded provider, calibração
+histórica, Governor dependente de risco/profile, RecoveryPolicy, separação formal dos três
+caches e replay benchmark amplo. A implementação permanece no núcleo offline: não importa
+SDK de provider, não chama rede e não transforma `payload_bytes` em `provider_tokens`.
+
+| Entrega | Caminho | Estado | Prova |
+|---|---|---|---|
+| Host protocol + replay | `sparkforge/decision/host.py` | IMPLEMENTED, transcript-only | `tests/test_host_provider.py` |
+| Confidence calibration | `sparkforge/decision/calibration.py` | IMPLEMENTED, PAVA train/holdout; online update refused | `tests/test_confidence_calibration.py` |
+| Risk/profile Governor | `sparkforge/agentic/governor.py` | IMPLEMENTED, 27 células bounded | `tests/test_agent_governor.py` |
+| Bounded recovery | `sparkforge/agentic/recovery.py` | IMPLEMENTED, 8 classes e retry finito | `tests/test_recovery_policy.py` |
+| Cache ownership | `sparkforge/decision/cache.py` | IMPLEMENTED, `fact`/`decision`/`artifact` | `tests/test_cache_contracts.py` |
+| Replay economics | `sparkforge/evals/decision_replay.py` | IMPLEMENTED, 30 casos × 3 profiles × old/new | `tests/test_decision_replay.py`, `scripts/benchmark_decision_control_plane.py` |
+
+Fixtures vivem em `evals/token_efficient/fixtures/` e são registrados no
+`evals/token_efficient/suite.yaml`. O relatório local produz 180 células, mantendo
+qualidade, `payload_bytes`, `provider_tokens`/`tokens_unresolved` e `cost_basis` como
+dimensões separadas. Isso prova cobertura e determinismo do harness; não é uma alegação
+de economia financeira, ganho de qualidade ou redução de tokens de provider.
+
+No build, passaram 24 testes novos/focados e 28 testes de compatibilidade do kernel,
+runtime, receipts, bridge e adapters. A suíte monolítica completa não foi declarada
+verde sem execução integral; warnings de ambiente do pytest sobre cache/temp não alteram
+os resultados dos testes.
+
 ## Status por componente — medido, não declarado
 
 Taxonomia da FASE 0 do prompt de origem: `IMPLEMENTED` (existe e é exercitado

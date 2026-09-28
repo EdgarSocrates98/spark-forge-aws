@@ -55,7 +55,13 @@ def load_benchmark_suite(directory: Path | str) -> dict[str, Any]:
             raise ValueError("benchmark case is invalid")
         merged.append({**case, **by_id[str(case["id"])], "suite_id": str(raw["id"])})
     fixture_paths = [fixture_path]
-    for key in ("federated_graph_fixture", "provider_transcript_fixture"):
+    for key in (
+        "federated_graph_fixture",
+        "provider_transcript_fixture",
+        "decision_control_plane_fixture",
+        "calibration_fixture",
+        "host_replay_fixture",
+    ):
         declared = raw.get(key)
         if declared is None:
             continue

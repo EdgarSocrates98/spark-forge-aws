@@ -1,10 +1,34 @@
 """Provider-independent bounded decision kernel."""
 
-from sparkforge.decision.cache import DecisionCache
+from sparkforge.decision.cache import (
+    ArtifactCache,
+    CacheKey,
+    CacheKind,
+    CacheRecord,
+    DecisionCache,
+    FactCache,
+    artifact_cache_key,
+    decision_cache_key,
+    fact_cache_key,
+)
+from sparkforge.decision.calibration import (
+    CalibrationArtifact,
+    CalibrationCase,
+    CalibrationError,
+    CalibrationEvaluation,
+    HistoricalCalibrator,
+)
 from sparkforge.decision.contracts import (
     ContractLoader,
     ContractValidationError,
     DecisionContract,
+)
+from sparkforge.decision.host import (
+    BoundedHostProvider,
+    HostEnvelope,
+    HostProtocolError,
+    HostReplayResult,
+    ReplayHostAdapter,
 )
 from sparkforge.decision.models import (
     CompiledState,
@@ -25,6 +49,15 @@ from sparkforge.decision.state import StateCompilationError, StateCompiler
 
 __all__ = [
     "BoundedDecisionKernel",
+    "BoundedHostProvider",
+    "ArtifactCache",
+    "CacheKey",
+    "CacheKind",
+    "CacheRecord",
+    "CalibrationArtifact",
+    "CalibrationCase",
+    "CalibrationError",
+    "CalibrationEvaluation",
     "CompiledState",
     "ContractLoader",
     "ContractValidationError",
@@ -34,11 +67,20 @@ __all__ = [
     "DecisionStatus",
     "KernelEvaluation",
     "KernelReceiptStore",
+    "FactCache",
+    "HistoricalCalibrator",
+    "HostEnvelope",
+    "HostProtocolError",
+    "HostReplayResult",
     "LocalMeasurement",
     "PrimitiveKind",
     "ReceiptValidationError",
     "StateCompilationError",
     "StateCompiler",
+    "ReplayHostAdapter",
+    "artifact_cache_key",
     "build_receipt",
+    "decision_cache_key",
+    "fact_cache_key",
     "verify_receipt",
 ]

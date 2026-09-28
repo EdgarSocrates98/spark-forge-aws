@@ -1,0 +1,29 @@
+schema_version: 1
+cases:
+  - case_id: host-valid
+    schema_version: 1
+    contract_id: kernel.synthetic
+    contract_version: "1"
+    request: {state: {signal: safe}}
+    transcript_hash: sha256:host-valid
+    turns:
+      - {role: user, content: diagnose orders}
+      - {role: assistant, content: local}
+    usage:
+      provider_tokens: {input_tokens: 23, output_tokens: 11}
+      transcript_sha256: sha256:host-valid
+    cost_basis: {unit: usd, source: fixture}
+  - case_id: host-invalid
+    schema_version: 1
+    contract_id: kernel.synthetic
+    contract_version: "1"
+    request: {}
+    transcript_hash: sha256:host-invalid
+    turns: [{role: user, content: diagnose orders}]
+  - case_id: host-no-usage
+    schema_version: 1
+    contract_id: kernel.synthetic
+    contract_version: "1"
+    request: {state: {signal: review}}
+    transcript_hash: sha256:host-no-usage
+    turns: [{role: user, content: diagnose orders}]

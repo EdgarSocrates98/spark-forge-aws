@@ -1,0 +1,34 @@
+schema_version: 1
+suite_id: decision-control-plane-v1
+profiles: [economy, balanced, deep]
+cases:
+  - {id: routing-01, domain: routing, partition: train, expected_status: accepted, expected_evidence: [route-01], expected_findings: [], transcript_hash: sha256:routing-01, signal: safe, cost: 0.01, cost_basis: {unit: usd, source: fixture}}
+  - {id: routing-02, domain: routing, partition: train, expected_status: accepted, expected_evidence: [route-02], expected_findings: [], transcript_hash: sha256:routing-02, signal: review, provider_tokens: {input_tokens: 20, output_tokens: 8}, cost: 0.02, cost_basis: {unit: usd, source: fixture}}
+  - {id: routing-03, domain: routing, partition: train, expected_status: unresolved, expected_evidence: [], expected_findings: [], transcript_hash: sha256:routing-03, signal: unknown}
+  - {id: routing-04, domain: routing, partition: train, expected_status: accepted, expected_evidence: [route-04], expected_findings: [], transcript_hash: sha256:routing-04, signal: safe, provider_tokens: {input_tokens: 24, output_tokens: 10}}
+  - {id: routing-05, domain: routing, partition: holdout, expected_status: accepted, expected_evidence: [route-05], expected_findings: [], transcript_hash: sha256:routing-05, signal: review, cost: 0.03, cost_basis: {unit: usd, source: fixture}}
+  - {id: evidence-01, domain: evidence, partition: train, expected_status: accepted, expected_evidence: [evidence-01], expected_findings: [], transcript_hash: sha256:evidence-01, signal: safe, cost: 0.01, cost_basis: {unit: usd, source: fixture}}
+  - {id: evidence-02, domain: evidence, partition: train, expected_status: accepted, expected_evidence: [evidence-02], expected_findings: [finding-02], transcript_hash: sha256:evidence-02, signal: review, provider_tokens: {input_tokens: 30, output_tokens: 12}}
+  - {id: evidence-03, domain: evidence, partition: train, expected_status: unresolved, expected_evidence: [], expected_findings: [], transcript_hash: sha256:evidence-03, signal: unknown}
+  - {id: evidence-04, domain: evidence, partition: train, expected_status: accepted, expected_evidence: [evidence-04], expected_findings: [], transcript_hash: sha256:evidence-04, signal: safe, cost: 0.02, cost_basis: {unit: usd, source: fixture}}
+  - {id: evidence-05, domain: evidence, partition: holdout, expected_status: accepted, expected_evidence: [evidence-05], expected_findings: [], transcript_hash: sha256:evidence-05, signal: review, provider_tokens: {input_tokens: 31, output_tokens: 11}}
+  - {id: graph-01, domain: graph, partition: train, expected_status: accepted, expected_evidence: [graph-01], expected_findings: [], transcript_hash: sha256:graph-01, signal: safe, cost: 0.01, cost_basis: {unit: usd, source: fixture}}
+  - {id: graph-02, domain: graph, partition: train, expected_status: accepted, expected_evidence: [graph-02], expected_findings: [finding-graph-02], transcript_hash: sha256:graph-02, signal: review}
+  - {id: graph-03, domain: graph, partition: train, expected_status: unresolved, expected_evidence: [], expected_findings: [], transcript_hash: sha256:graph-03, signal: unknown, provider_tokens: {input_tokens: 28, output_tokens: 9}}
+  - {id: graph-04, domain: graph, partition: train, expected_status: accepted, expected_evidence: [graph-04], expected_findings: [], transcript_hash: sha256:graph-04, signal: safe}
+  - {id: graph-05, domain: graph, partition: holdout, expected_status: accepted, expected_evidence: [graph-05], expected_findings: [], transcript_hash: sha256:graph-05, signal: review, cost: 0.04, cost_basis: {unit: usd, source: fixture}}
+  - {id: cache-01, domain: cache, partition: train, expected_status: accepted, expected_evidence: [cache-01], expected_findings: [], transcript_hash: sha256:cache-01, signal: safe, provider_tokens: {input_tokens: 22, output_tokens: 7}}
+  - {id: cache-02, domain: cache, partition: train, expected_status: accepted, expected_evidence: [cache-02], expected_findings: [], transcript_hash: sha256:cache-02, signal: review, cost: 0.01, cost_basis: {unit: usd, source: fixture}}
+  - {id: cache-03, domain: cache, partition: train, expected_status: unresolved, expected_evidence: [], expected_findings: [], transcript_hash: sha256:cache-03, signal: unknown}
+  - {id: cache-04, domain: cache, partition: train, expected_status: accepted, expected_evidence: [cache-04], expected_findings: [finding-cache-04], transcript_hash: sha256:cache-04, signal: safe}
+  - {id: cache-05, domain: cache, partition: holdout, expected_status: accepted, expected_evidence: [cache-05], expected_findings: [], transcript_hash: sha256:cache-05, signal: review, provider_tokens: {input_tokens: 26, output_tokens: 8}}
+  - {id: recovery-01, domain: recovery, partition: train, expected_status: accepted, expected_evidence: [recovery-01], expected_findings: [], transcript_hash: sha256:recovery-01, signal: safe, cost: 0.02, cost_basis: {unit: usd, source: fixture}}
+  - {id: recovery-02, domain: recovery, partition: train, expected_status: accepted, expected_evidence: [recovery-02], expected_findings: [], transcript_hash: sha256:recovery-02, signal: review}
+  - {id: recovery-03, domain: recovery, partition: train, expected_status: unresolved, expected_evidence: [], expected_findings: [], transcript_hash: sha256:recovery-03, signal: unknown, provider_tokens: {input_tokens: 29, output_tokens: 10}}
+  - {id: recovery-04, domain: recovery, partition: train, expected_status: accepted, expected_evidence: [recovery-04], expected_findings: [finding-recovery-04], transcript_hash: sha256:recovery-04, signal: safe}
+  - {id: recovery-05, domain: recovery, partition: holdout, expected_status: accepted, expected_evidence: [recovery-05], expected_findings: [], transcript_hash: sha256:recovery-05, signal: review, cost: 0.05, cost_basis: {unit: usd, source: fixture}}
+  - {id: cost-01, domain: cost, partition: train, expected_status: accepted, expected_evidence: [cost-01], expected_findings: [], transcript_hash: sha256:cost-01, signal: safe, cost: 0.01, cost_basis: {unit: usd, source: fixture}}
+  - {id: cost-02, domain: cost, partition: train, expected_status: accepted, expected_evidence: [cost-02], expected_findings: [], transcript_hash: sha256:cost-02, signal: review, provider_tokens: {input_tokens: 21, output_tokens: 8}}
+  - {id: cost-03, domain: cost, partition: train, expected_status: unresolved, expected_evidence: [], expected_findings: [], transcript_hash: sha256:cost-03, signal: unknown}
+  - {id: cost-04, domain: cost, partition: train, expected_status: accepted, expected_evidence: [cost-04], expected_findings: [finding-cost-04], transcript_hash: sha256:cost-04, signal: safe, cost: 0.03, cost_basis: {unit: usd, source: fixture}}
+  - {id: cost-05, domain: cost, partition: holdout, expected_status: accepted, expected_evidence: [cost-05], expected_findings: [], transcript_hash: sha256:cost-05, signal: review, provider_tokens: {input_tokens: 35, output_tokens: 12}}

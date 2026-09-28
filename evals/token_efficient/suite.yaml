@@ -7,6 +7,9 @@ quality_fixture: fixtures/quality_cases.yaml
 federated_graph_fixture: fixtures/federated_graph_cases.yaml
 provider_transcript_fixture: fixtures/provider_transcripts.yaml
 decision_fixture: fixtures/decision_plane_cases.yaml
+decision_control_plane_fixture: fixtures/decision_control_plane_cases.yaml
+calibration_fixture: fixtures/calibration_history.yaml
+host_replay_fixture: fixtures/host_replay.yaml
 cases:
   - id: glue-routing
     intent: Glue FGAC Iceberg
