@@ -13,7 +13,9 @@ from sparkforge.workspace.manifest import CloudResource, load_manifest
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
 _CREDENTIAL_ERRORS = {
+    "CredentialRetrievalError",
     "ExpiredTokenException",
+    "ExpiredToken",
     "InvalidClientTokenId",
     "NoCredentialsError",
     "PartialCredentialsError",
@@ -125,12 +127,19 @@ def collect_workspace_graph(
 
         statuses: list[dict[str, Any]] = []
         for service in resource.services:
+            try:
+                client = client_for(boto3, clients, service, resource)
+            except Exception as exc:  # noqa: BLE001 - named AWS outcome
+                code = _error_code(exc)
+                add_unresolved(_error_reason(exc), resource, service=service, error_code=code)
+                statuses.append({"service": service, "status": "unresolved", "error_code": code})
+                continue
             if service == "glue":
                 statuses.append(
                     _collect_glue(
                         resource,
                         resource_node,
-                        client_for(boto3, clients, "glue", resource),
+                        client,
                         add_node,
                         add_edge,
                         add_unresolved,
@@ -141,7 +150,7 @@ def collect_workspace_graph(
                     _collect_lakeformation(
                         resource,
                         resource_node,
-                        client_for(boto3, clients, "lakeformation", resource),
+                        client,
                         add_node,
                         add_edge,
                         add_unresolved,
@@ -152,7 +161,7 @@ def collect_workspace_graph(
                     _collect_s3(
                         resource,
                         resource_node,
-                        client_for(boto3, clients, "s3", resource),
+                        client,
                         max_objects,
                         add_node,
                         add_edge,

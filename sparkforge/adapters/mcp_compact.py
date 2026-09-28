@@ -20,7 +20,8 @@ from sparkforge.economy.cache import ArtifactCache
 COMPACT_TOOL_NAMES = (
     "context_start",
     "context_expand",
-    "execute",
+    "execute_read",
+    "execute_mutation",
     "search",
     "get",
     "next",
@@ -123,11 +124,16 @@ def _compact_spec(
 
 
 def compact_catalog() -> dict[str, dict[str, Any]]:
-    """Return the six published compact operation definitions in stable order."""
+    """Return the seven published compact operation definitions in stable order."""
     context_start = TOOLS["sparkforge_context_start"]
     context_expand = TOOLS["sparkforge_context_expand"]
     read_only = deepcopy(context_start.get("annotations", {}))
-    execute_annotations = {
+    execute_read_annotations = {
+        "readOnlyHint": True,
+        "openWorldHint": True,
+        "destructiveHint": False,
+    }
+    execute_mutation_annotations = {
         "readOnlyHint": False,
         "openWorldHint": True,
         "destructiveHint": True,
@@ -157,9 +163,9 @@ def compact_catalog() -> dict[str, dict[str, Any]]:
             context_expand["outputSchema"],
             deepcopy(context_expand.get("annotations", read_only)),
         ),
-        "execute": _compact_spec(
-            "execute",
-            "Execute one discovered executable capability through the existing "
+        "execute_read": _compact_spec(
+            "execute_read",
+            "Execute one read-only discovered capability through the existing "
             "deterministic tool dispatcher.",
             _object_schema(
                 {
@@ -169,7 +175,21 @@ def compact_catalog() -> dict[str, dict[str, Any]]:
                 ("capability", "arguments"),
             ),
             _EXECUTE_OUTPUT_SCHEMA,
-            execute_annotations,
+            execute_read_annotations,
+        ),
+        "execute_mutation": _compact_spec(
+            "execute_mutation",
+            "Execute one state-changing discovered capability through the existing "
+            "deterministic tool dispatcher.",
+            _object_schema(
+                {
+                    "capability": {"type": "string", "minLength": 1},
+                    "arguments": {"type": "object"},
+                },
+                ("capability", "arguments"),
+            ),
+            _EXECUTE_OUTPUT_SCHEMA,
+            execute_mutation_annotations,
         ),
         "search": _compact_spec(
             "search",
@@ -234,7 +254,8 @@ class CompactRouter:
         handlers: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
             "context_start": self._context_start,
             "context_expand": self._context_expand,
-            "execute": self._execute,
+            "execute_read": self._execute_read,
+            "execute_mutation": self._execute_mutation,
             "search": self._search,
             "get": self._get,
             "next": self._next,
@@ -261,11 +282,31 @@ class CompactRouter:
             raise CompactRoutingError(f"existing tool returned a non-object result: {name}")
         return result
 
-    def _execute(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    def _execute_read(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        return self._execute(arguments, read_only=True)
+
+    def _execute_mutation(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        return self._execute(arguments, read_only=False)
+
+    def _execute(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        read_only: bool,
+    ) -> dict[str, Any]:
         capability = str(arguments["capability"])
         target = self.catalog.get(capability)
         if target is None:
             raise CompactRoutingError("capability is not available in the selected transport")
+        annotations = target.get("annotations")
+        target_is_read_only = (
+            isinstance(annotations, Mapping) and annotations.get("readOnlyHint") is True
+        )
+        if target_is_read_only != read_only:
+            mode = "read-only" if read_only else "mutation"
+            raise CompactRoutingError(
+                f"capability annotation does not permit {mode} execution: {capability}"
+            )
         target_arguments = dict(arguments["arguments"])
         validation_error = validar_entrada(
             target_arguments,

@@ -229,11 +229,11 @@ Na prática, as tools caem em três grupos:
 
 ## Compact e segurança de dispatch
 
-Modo `compact` publica exatamente seis operações: `context_start`, `context_expand`,
-`execute`, `search`, `get` e `next`. `execute` e meta-dispatch conservador: declara
-`readOnlyHint: false`, `openWorldHint: true` e `destructiveHint: true`, porque o alvo
-real e escolhido em runtime. A validação de schema, policy e dispatcher full continua
-sendo a fonte única de execução.
+Modo `compact` publica exatamente sete operações: `context_start`, `context_expand`,
+`execute_read`, `execute_mutation`, `search`, `get` e `next`. `execute_read` só aceita
+capability com `readOnlyHint: true`; `execute_mutation` só aceita capability com
+`readOnlyHint: false` e declara `openWorldHint: true` e `destructiveHint: true`.
+A validação de schema, policy e dispatcher full continua sendo a fonte única de execução.
 
 Integrações podem selecionar Compact por profile:
 `sparkforge integrate claude --scope user --profile economy` ou `--profile balanced`.

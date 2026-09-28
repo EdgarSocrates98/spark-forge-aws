@@ -25,15 +25,16 @@ def _router(tmp_path):
     )
 
 
-def test_compact_catalog_has_exactly_six_stable_operations():
+def test_compact_catalog_has_exactly_seven_stable_operations():
     catalog = compact_catalog()
 
     assert tuple(catalog) == COMPACT_TOOL_NAMES
-    assert len(catalog) == 6
+    assert len(catalog) == 7
     assert set(catalog) == {
         "context_start",
         "context_expand",
-        "execute",
+        "execute_read",
+        "execute_mutation",
         "search",
         "get",
         "next",
@@ -42,14 +43,46 @@ def test_compact_catalog_has_exactly_six_stable_operations():
     assert all(spec["outputSchema"] for spec in catalog.values())
 
 
-def test_compact_execute_declares_conservative_dispatch_risk():
-    annotations = compact_catalog()["execute"]["annotations"]
+def test_compact_catalog_splits_read_and_mutation_execution():
+    read_annotations = compact_catalog()["execute_read"]["annotations"]
+    mutation_annotations = compact_catalog()["execute_mutation"]["annotations"]
 
-    assert annotations == {
+    assert read_annotations == {
+        "readOnlyHint": True,
+        "openWorldHint": True,
+        "destructiveHint": False,
+    }
+    assert mutation_annotations == {
         "readOnlyHint": False,
         "openWorldHint": True,
         "destructiveHint": True,
     }
+
+
+def test_compact_router_enforces_execution_mode_from_target_annotation(tmp_path):
+    calls = []
+
+    def execute_full(name, arguments):
+        calls.append((name, arguments))
+        return {}
+
+    router = CompactRouter(
+        TOOLS,
+        execute_full,
+        cache=ArtifactCache(tmp_path / "cache"),
+    )
+    arguments = {
+        "capability": "sparkforge_case_open",
+        "arguments": {"repo": ".", "case_id": "case-1", "now": "2026-09-27T00:00:00Z"},
+    }
+
+    refused = router.call("execute_read", arguments)
+    accepted = router.call("execute_mutation", arguments)
+
+    assert refused["error_code"] == "COMPACT_REFUSED"
+    assert "read-only" in refused["error"]
+    assert accepted["status"] == "ok"
+    assert calls == [("sparkforge_case_open", arguments["arguments"])]
 
 
 def test_compact_catalog_matches_its_golden_fixture():
@@ -66,8 +99,8 @@ def test_compact_catalog_matches_its_golden_fixture():
 def test_full_catalog_remains_113_and_http_compact_has_no_source_tool():
     assert len(tools_do_transporte("stdio", "full")) == 113
     assert len(tools_do_transporte("http", "full")) == 112
-    assert len(tools_do_transporte("stdio", "compact")) == 6
-    assert len(tools_do_transporte("http", "compact")) == 6
+    assert len(tools_do_transporte("stdio", "compact")) == 7
+    assert len(tools_do_transporte("http", "compact")) == 7
     assert "sparkforge_code_read" not in tools_do_transporte("http", "compact")
 
 
@@ -90,7 +123,7 @@ def test_search_get_execute_and_next_are_deterministic(tmp_path):
     assert capability["item"]["inputSchema"] == TOOLS["sparkforge_runtime_detect"]["inputSchema"]
 
     executed = router.call(
-        "execute",
+        "execute_read",
         {"capability": "sparkforge_runtime_detect", "arguments": {"glue": "5.0"}},
     )
     assert executed["status"] == "ok"
@@ -126,7 +159,7 @@ def test_compact_router_refuses_unknown_capability_and_cursor():
     router = CompactRouter(TOOLS, lambda name, arguments: {})
 
     unknown = router.call(
-        "execute", {"capability": "sparkforge_not_real", "arguments": {}}
+        "execute_read", {"capability": "sparkforge_not_real", "arguments": {}}
     )
     cursor = router.call("next", {"cursor": "cursor://v1/not-a-digest"})
 
@@ -148,7 +181,7 @@ def test_execute_validates_selected_capability_schema_before_dispatch(tmp_path):
     )
 
     result = router.call(
-        "execute",
+        "execute_read",
         {
             "capability": "sparkforge_release_describe",
             "arguments": {"release": "5.0"},

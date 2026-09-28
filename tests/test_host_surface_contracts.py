@@ -6,8 +6,8 @@ from sparkforge.adapters.tools import TOOLS, call_tool
 
 def test_full_and_compact_surfaces_have_declared_sizes() -> None:
     assert len(tools_do_transporte("stdio", "full")) == 113
-    assert len(tools_do_transporte("stdio", "compact")) == 6
-    assert len(tools_do_transporte("http", "compact")) == 6
+    assert len(tools_do_transporte("stdio", "compact")) == 7
+    assert len(tools_do_transporte("http", "compact")) == 7
 
 
 def test_gateway_envelope_is_shared_and_provider_tokens_remain_separate() -> None:

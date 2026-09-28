@@ -3013,8 +3013,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 196,
-      "text": "851",
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **851** nesta árvore.",
+      "text": "862",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **862** nesta árvore.",
       "type": "number",
       "id": "VNX-640",
       "state": "PROVADA",
@@ -3024,7 +3024,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 851
+          "value": 862
         },
         "kind": "command",
         "tier": "fast"
@@ -3690,8 +3690,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 247,
-      "text": "12218",
-      "context": "`buscar(banco, \"source\")` devolve **50** símbolos em **12218** bytes; a saída do `grep` pelo nome,",
+      "text": "12009",
+      "context": "`buscar(banco, \"source\")` devolve **50** símbolos em **12009** bytes; a saída do `grep` pelo nome,",
       "type": "number",
       "id": "VNX-673",
       "state": "PROVADA",
@@ -3701,7 +3701,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12218
+          "value": 12009
         },
         "kind": "command",
         "tier": "fast"
@@ -3710,8 +3710,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 248,
-      "text": "282901",
-      "context": "no mesmo corpus, tem **282901** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "text": "296410",
+      "context": "no mesmo corpus, tem **296410** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "type": "number",
       "id": "VNX-674",
       "state": "PROVADA",
@@ -3721,7 +3721,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 282901
+          "value": 296410
         },
         "kind": "command",
         "tier": "fast"
@@ -3730,8 +3730,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 249,
-      "text": "12415",
-      "context": "(**12415** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "text": "12665",
+      "context": "(**12665** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "type": "number",
       "id": "VNX-675",
       "state": "PROVADA",
@@ -3741,7 +3741,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12415
+          "value": 12665
         },
         "kind": "command",
         "tier": "fast"

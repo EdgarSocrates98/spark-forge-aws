@@ -83,7 +83,7 @@ def tools_do_transporte(
     """O catalogo servido por `transport` e `mode`.
 
     `full` preserva o catalogo existente. `compact` publica a projecao fixa de
-    seis operacoes e usa o catalogo full apenas como alvo interno do router.
+    sete operacoes e usa o catalogo full apenas como alvo interno do router.
 
     SPEC 71: o Code Intelligence e `stdio-first`, e sob `transport=http` com o
     perfil `offline-strict` as tools que devolvem fonte ficam DESABILITADAS. A
@@ -190,8 +190,8 @@ def build_server(
         )
         executar = router.call
         unavailable_message = (
-            "ferramenta indisponivel no modo 'compact': nome nao faz parte das seis "
-            "operacoes publicadas. Use search/get/execute."
+            "ferramenta indisponivel no modo 'compact': nome nao faz parte das sete "
+            "operacoes publicadas. Use search/get/execute_read/execute_mutation."
         )
     else:
         executar = executar_full
@@ -341,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o S
         "--mode",
         choices=["full", "compact"],
         default="full",
-        help="full publica o catalogo atual; compact publica exatamente seis operacoes.",
+        help="full publica o catalogo atual; compact publica exatamente sete operacoes.",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)

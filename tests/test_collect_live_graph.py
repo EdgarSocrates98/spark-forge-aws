@@ -50,12 +50,13 @@ class _FakeS3:
 
 
 class _FakeBoto3:
-    def __init__(self, s3=None):
+    def __init__(self, s3=None, sts=None):
         self._s3 = s3 or _FakeS3()
+        self._sts = sts or _FakeSts()
 
     def client(self, service, **kwargs):
         return {
-            "sts": _FakeSts(),
+            "sts": self._sts,
             "glue": _FakeGlue(),
             "lakeformation": _FakeLakeFormation(),
             "s3": self._s3,
@@ -64,6 +65,12 @@ class _FakeBoto3:
 
 class _AwsError(Exception):
     response = {"Error": {"Code": "AccessDenied"}}
+
+
+class _DeniedAssumeRoleSts(_FakeSts):
+    def assume_role(self, **kwargs):
+        assert kwargs["RoleArn"] == "arn:aws:iam::222222222222:role/reader"
+        raise _AwsError("denied")
 
 
 class _DeniedS3:
@@ -102,6 +109,38 @@ cloud_resources:
     return path
 
 
+def _cross_account_manifest_with_local_resource(tmp_path: Path) -> Path:
+    (tmp_path / "repo").mkdir()
+    path = tmp_path / "workspace.yaml"
+    path.write_text(
+        """workspace: customer-data
+repositories:
+  - name: repo
+    path: repo
+relationships: {}
+cloud_resources:
+  - id: denied-events
+    kind: dataset
+    services: [glue, lakeformation]
+    account_id: '222222222222'
+    catalog_id: '222222222222'
+    region: us-east-1
+    database: raw
+    table: events
+    role_arn: arn:aws:iam::222222222222:role/reader
+  - id: local-events
+    kind: dataset
+    services: [s3]
+    account_id: '111111111111'
+    region: us-east-1
+    bucket: customer-data
+    prefix: raw/events/
+""",
+        encoding="utf-8",
+    )
+    return path
+
+
 def test_collect_live_graph_compose_glue_lakeformation_s3(tmp_path, monkeypatch):
     manifest = _manifest(tmp_path)
     monkeypatch.setattr(live_graph, "require_boto3", lambda: _FakeBoto3())
@@ -130,6 +169,40 @@ def test_cross_account_requires_explicit_role(tmp_path, monkeypatch):
 
     assert any(item["reason"] == "cross_account_role_required" for item in payload["unresolved"])
     assert payload["resources"][0]["services"] == []
+
+
+def test_assume_role_failure_is_unresolved_per_service_and_collection_continues(
+    tmp_path, monkeypatch
+):
+    manifest = _cross_account_manifest_with_local_resource(tmp_path)
+    monkeypatch.setattr(
+        live_graph,
+        "require_boto3",
+        lambda: _FakeBoto3(sts=_DeniedAssumeRoleSts()),
+    )
+
+    entry = live_graph.collect_workspace_graph(
+        manifest, tmp_path, now="2026-09-27T00:00:00Z", max_objects=10
+    )
+    payload = json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+
+    assume_role_unresolved = [
+        item
+        for item in payload["unresolved"]
+        if item.get("resource_id") == "denied-events"
+    ]
+    assert {
+        (item["service"], item["reason"], item["error_code"])
+        for item in assume_role_unresolved
+    } == {
+        ("glue", "access_denied", "AccessDenied"),
+        ("lakeformation", "access_denied", "AccessDenied"),
+    }
+    assert payload["resources"][0]["status"] == "unresolved"
+    assert payload["resources"][1]["status"] == "ok"
+    assert any(
+        node["id"] == "s3_prefix:local-events" for node in payload["graph"]["nodes"]
+    )
 
 
 def test_live_graph_preserves_unresolved_states(tmp_path, monkeypatch):

@@ -32,6 +32,15 @@ class Relationship:
 
 
 @dataclass(frozen=True, slots=True)
+class GraphLink:
+    """Explicit bridge between graph fragments from different authorities."""
+
+    source: str
+    relation: str
+    target: str
+
+
+@dataclass(frozen=True, slots=True)
 class CloudResource:
     """A cloud dataset explicitly allowed for live graph collection."""
 
@@ -57,6 +66,7 @@ class WorkspaceManifest:
     relationships: tuple[Relationship, ...]
     schema_version: int = 1
     cloud_resources: tuple[CloudResource, ...] = ()
+    federated_links: tuple[GraphLink, ...] = ()
 
     def repository(self, name: str) -> Repository | None:
         return next((item for item in self.repositories if item.name == name), None)
@@ -104,8 +114,15 @@ def load_manifest(path: str | Path) -> WorkspaceManifest:
 
     relationships = _relationships(raw.get("relationships", {}), seen)
     cloud_resources = _cloud_resources(raw.get("cloud_resources", []))
+    federated_links = _federated_links(raw.get("federated_links", []))
     return WorkspaceManifest(
-        name.strip(), root, tuple(repositories), relationships, 1, cloud_resources
+        name.strip(),
+        root,
+        tuple(repositories),
+        relationships,
+        1,
+        cloud_resources,
+        federated_links,
     )
 
 
@@ -185,6 +202,30 @@ def _cloud_resources(raw: Any) -> tuple[CloudResource, ...]:
     return tuple(sorted(result, key=lambda item: item.id))
 
 
+def _federated_links(raw: Any) -> tuple[GraphLink, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise WorkspaceManifestError("federated_links must be a list")
+    result: list[GraphLink] = []
+    seen: set[tuple[str, str, str]] = set()
+    for entry in raw:
+        if not isinstance(entry, dict):
+            raise WorkspaceManifestError("federated link entry must be an object")
+        values = tuple(entry.get(field, "") for field in ("source", "relation", "target"))
+        if not all(isinstance(value, str) and value.strip() for value in values):
+            raise WorkspaceManifestError("federated link source, relation and target are required")
+        source, relation, target = (value.strip() for value in values)
+        link = (source, relation, target)
+        if link in seen:
+            raise WorkspaceManifestError(f"duplicate federated link: {link!r}")
+        if any(".." in value for value in link):
+            raise WorkspaceManifestError("federated link contains path traversal marker")
+        result.append(GraphLink(*link))
+        seen.add(link)
+    return tuple(sorted(result, key=lambda item: (item.source, item.relation, item.target)))
+
+
 def fingerprint(path: Path) -> str:
     """Hash declared source contents and relative names; no code is executed."""
 
@@ -212,6 +253,7 @@ def _repository_files(root: Path) -> tuple[Path, ...]:
 
 __all__ = [
     "CloudResource",
+    "GraphLink",
     "Repository",
     "Relationship",
     "WorkspaceManifest",

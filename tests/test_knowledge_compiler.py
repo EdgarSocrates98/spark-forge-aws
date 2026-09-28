@@ -40,3 +40,25 @@ def test_knowledge_pack_selection_uses_expanded_terms(tmp_path: Path) -> None:
     matches = PackRegistry(tmp_path).select("skew no join", limit=1)
 
     assert matches[0]["source"] == "routing.md"
+
+
+def test_descriptors_reuse_unchanged_manifest_without_reading_pack_bodies(
+    tmp_path: Path, monkeypatch
+) -> None:
+    pack = tmp_path / "glue"
+    pack.mkdir()
+    source = pack / "runtime.md"
+    source.write_text("# Runtime\nGlue 5.1.\n", encoding="utf-8")
+
+    registry = PackRegistry(tmp_path)
+    first = registry.descriptors()
+
+    def fail_read_bytes(_path: Path) -> bytes:
+        raise AssertionError("unchanged descriptor lookup read pack body")
+
+    monkeypatch.setattr(Path, "read_bytes", fail_read_bytes)
+    assert registry.descriptors() == first
+
+    monkeypatch.undo()
+    source.write_text("# Runtime\nGlue 6.0.\n", encoding="utf-8")
+    assert registry.descriptors()[0].source_hash != first[0].source_hash

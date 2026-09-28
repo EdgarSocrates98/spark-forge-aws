@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from sparkforge.workspace.freshness import FreshnessAssessment
 from sparkforge.workspace.manifest import WorkspaceManifest
 
 
@@ -32,6 +33,7 @@ class WorkspaceGraph:
     edges: tuple[WorkspaceEdge, ...]
     unresolved: tuple[dict[str, str], ...]
     manifest_fingerprint: str = ""
+    freshness: FreshnessAssessment = field(default_factory=FreshnessAssessment.unknown)
 
     def neighbors(self, node_id: str, max_depth: int = 2) -> tuple[str, ...]:
         if max_depth < 0:
@@ -72,11 +74,16 @@ class WorkspaceGraph:
             ],
             "unresolved": list(self.unresolved),
             "manifest_fingerprint": self.manifest_fingerprint,
-            "freshness": "fresh",
+            "freshness": self.freshness.status,
+            "freshness_detail": self.freshness.to_dict(),
         }
 
 
-def build_graph(manifest: WorkspaceManifest) -> WorkspaceGraph:
+def build_graph(
+    manifest: WorkspaceManifest,
+    *,
+    freshness: FreshnessAssessment | None = None,
+) -> WorkspaceGraph:
     nodes = tuple(
         WorkspaceNode(repo.name, "repository", repo.fingerprint, repo.exists)
         for repo in manifest.repositories
@@ -116,7 +123,13 @@ def build_graph(manifest: WorkspaceManifest) -> WorkspaceGraph:
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
-    return WorkspaceGraph(nodes, tuple(edges), tuple(unresolved), fingerprint)
+    return WorkspaceGraph(
+        nodes,
+        tuple(edges),
+        tuple(unresolved),
+        fingerprint,
+        freshness or FreshnessAssessment.unknown("codeintel_freshness_not_assessed"),
+    )
 
 
 __all__ = ["WorkspaceEdge", "WorkspaceGraph", "WorkspaceNode", "build_graph"]

@@ -192,20 +192,21 @@ class TestCallTool:
 
 
 class TestCompactSurface:
-    def test_lists_exactly_the_six_compact_operations(self, compact_server):
+    def test_lists_exactly_the_seven_compact_operations(self, compact_server):
         assert [tool.name for tool in _list(compact_server).tools] == [
             "context_start",
             "context_expand",
-            "execute",
+            "execute_read",
+            "execute_mutation",
             "search",
             "get",
             "next",
         ]
 
-    def test_routes_execute_through_the_existing_tool_dispatcher(self, compact_server):
+    def test_routes_execute_read_through_the_existing_tool_dispatcher(self, compact_server):
         result = _call(
             compact_server,
-            "execute",
+            "execute_read",
             {
                 "capability": "sparkforge_runtime_detect",
                 "arguments": {"glue": "5.0"},

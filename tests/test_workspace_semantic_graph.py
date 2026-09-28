@@ -5,7 +5,12 @@ from pathlib import Path
 import pytest
 
 from sparkforge.codeintel.index import indexar
-from sparkforge.workspace import build_graph, build_semantic_graph, load_manifest
+from sparkforge.workspace import (
+    FreshnessAssessment,
+    build_graph,
+    build_semantic_graph,
+    load_manifest,
+)
 from sparkforge.workspace.manifest import WorkspaceManifestError
 
 
@@ -75,6 +80,35 @@ relationships: {}
     assert {"repository", "file", "symbol", "dataset"} <= kinds
     assert {"READ", "WRITE"} <= relations
     assert graph.impact("repo:pipelines", direction="outbound")
+
+
+def test_semantic_graph_serializes_explicit_freshness_states(tmp_path: Path) -> None:
+    (tmp_path / "repo").mkdir()
+    manifest_path = tmp_path / "workspace.yaml"
+    manifest_path.write_text(
+        """workspace: customer-data
+repositories:
+  - name: repo
+    path: repo
+relationships: {}
+""",
+        encoding="utf-8",
+    )
+    manifest = load_manifest(manifest_path)
+
+    unknown = build_semantic_graph(manifest).to_dict()
+    fresh = build_semantic_graph(
+        manifest,
+        freshness=FreshnessAssessment("fresh", "same", "same", "fingerprint_match"),
+    ).to_dict()
+    stale = build_semantic_graph(
+        manifest,
+        freshness=FreshnessAssessment("stale", "current", "indexed", "fingerprint_mismatch"),
+    ).to_dict()
+
+    assert unknown["freshness"] == "unknown"
+    assert fresh["freshness"] == "fresh"
+    assert stale["freshness"] == "stale"
 
 
 def test_manifest_carrega_recursos_cloud_declarados(tmp_path: Path) -> None:

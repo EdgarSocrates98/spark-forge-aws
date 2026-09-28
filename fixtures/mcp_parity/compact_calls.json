@@ -20,7 +20,7 @@
   },
   {
     "id": "execute_runtime_capability",
-    "operation": "execute",
+    "operation": "execute_read",
     "arguments": {
       "capability": "sparkforge_runtime_detect",
       "arguments": {
@@ -32,7 +32,7 @@
   },
   {
     "id": "refuse_unknown_capability",
-    "operation": "execute",
+    "operation": "execute_read",
     "arguments": {
       "capability": "sparkforge_not_real",
       "arguments": {}
