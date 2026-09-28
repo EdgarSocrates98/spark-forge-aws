@@ -6,12 +6,13 @@ em [Arbitragem e debate](usos/arbitragem-e-debate.md).
 
 ## As entidades
 
-`sparkforge/agentic/` (15 módulos fora o `__init__.py`, contados em 2026-09-28) traz
+`sparkforge/agentic/` (17 módulos fora o `__init__.py`, contados em 2026-09-28) traz
 entidades de primeira classe e engines para trabalho agêntico auditável: `Claim`,
 `Evidence` (com tiers de autoridade T1-T6), `Hypothesis`, `Experiment`, `Decision`,
 `Unknown`, `Contradiction`, `Objection`, `Rebuttal`; mais blackboard JSONL, protocolo
 de debate, arbitragem com detecção de falso consenso, ADR automático, memória
-institucional, budget e níveis de autonomia L0-L5.
+institucional, budget, Governor por profile/risco, RecoveryPolicy bounded e níveis de
+autonomia L0-L5.
 
 ## O executor determinístico
 
