@@ -51,11 +51,12 @@ from sparkforge.decision.receipts import (
     build_receipt,
     verify_receipt,
 )
-from sparkforge.decision.runtime import BoundedDecisionKernel
+from sparkforge.decision.runtime import ActivePromotion, BoundedDecisionKernel
 from sparkforge.decision.state import StateCompilationError, StateCompiler
 
 __all__ = [
     "BoundedDecisionKernel",
+    "ActivePromotion",
     "BoundedHostProvider",
     "ClaudeHostAdapter",
     "CodexHostAdapter",

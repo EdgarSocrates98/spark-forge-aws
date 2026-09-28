@@ -30,6 +30,7 @@ def build_receipt(
     rollback_reason: str | None = None,
     fallback_reason: str | None = None,
     cache_key: str | None = None,
+    promotion: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     refusal = None
     if result.status.value != "accepted":
@@ -57,6 +58,7 @@ def build_receipt(
             "rollback_reason": rollback_reason,
             "fallback_reason": fallback_reason,
         },
+        "promotion": promotion,
         "measurement": measurement.to_dict(),
     }
     receipt_id = RECEIPT_PREFIX + digest(body)
@@ -117,6 +119,7 @@ class KernelReceiptStore:
         rollback_reason: str | None = None,
         fallback_reason: str | None = None,
         cache_key: str | None = None,
+        promotion: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         document = build_receipt(
             result,
@@ -129,6 +132,7 @@ class KernelReceiptStore:
             rollback_reason=rollback_reason,
             fallback_reason=fallback_reason,
             cache_key=cache_key,
+            promotion=promotion,
         )
         self.root.mkdir(parents=True, exist_ok=True)
         path = self.root / f"{document['receipt_id']}.kernel.json"

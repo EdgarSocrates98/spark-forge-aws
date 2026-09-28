@@ -191,6 +191,21 @@ offline e não substitui benchmark de provider real: o comando demonstra cobertu
 reprodutibilidade e limites de evidência. Prova: `tests/test_benchmark_quality_tokens_cost.py`
 e regressões de `tests/test_decision_replay.py` (`12 passed` no lote focused).
 
+## Atualização corrente — 2026-09-28 — Completion Gate 7: promoção active explícita
+
+O sétimo gate fecha a fronteira de autoridade do kernel genérico. Contrato `mode: active`
+continua recusado sem `ActivePromotion` explícito; o registro precisa casar contrato/versão,
+ter pelo menos 50 tarefas rotuladas, quality gate, economy gate, CI verificado e rollback
+nomeado. A validação acontece antes do cache, portanto uma decisão active previamente cacheada
+não contorna a promoção.
+
+`config/decisions/agentic_control_plane.yaml` mantém `shadow` como default e active disabled.
+O bridge economy expõe caminho active somente quando recebe o mesmo registro explícito. Receipts
+do kernel preservam o registro de promoção; ausência ou evidência incompleta retorna fallback
+fail-closed. Prova: `tests/test_kernel_authority.py`, baseline do kernel e regressões de
+receipts/adapters (`92 passed` no lote decision/agentic). Nenhuma autoridade ativa foi habilitada
+na configuração produtiva.
+
 ## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
 
 O primeiro gate da conclusão do control plane está implementado em commit isolado.

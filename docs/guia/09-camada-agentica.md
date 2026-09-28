@@ -90,6 +90,13 @@ iguais e recusa volume de entrada acima de 10%; tokens sem usage e custo sem `co
 ficam unresolved com razão nomeada. O comando continua replay offline: não mede provider real
 nem promove autoridade, mas impede claims com denominador incompatível.
 
+O Gate 7 fecha a promoção active no kernel genérico. `mode: active` exige `ActivePromotion`
+explícito, contrato/versão compatíveis, corpus mínimo de 50 labels, quality/economy gates,
+CI verificado e rollback nomeado. A checagem acontece antes do cache; decisão cacheada não
+substitui autorização. `config/decisions/agentic_control_plane.yaml` permanece shadow por
+default e active disabled. O bridge economy só usa o kernel active quando recebe esse registro;
+sem ele, a decisão recusa e conserva fallback.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

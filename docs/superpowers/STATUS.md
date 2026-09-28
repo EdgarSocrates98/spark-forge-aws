@@ -117,6 +117,15 @@ razão explícita. Comparações exigem mesmo caso/manifesto e recusam volume ac
 Prova focada: 12 passed; isto é harness offline e não afirma CI monolítico verde, economia
 financeira real ou promoção de autoridade.
 
+## Atualização corrente — Decision Control Plane completion, Gate 7 (2026-09-28)
+
+Gate 7 está fechado em commit próprio: o kernel genérico exige `ActivePromotion` explícito
+para contrato `mode: active`, com contrato/versão compatíveis, 50 labels, quality/economy gates,
+CI verificado e rollback. A autorização ocorre antes do cache; cache não concede autoridade.
+`config/decisions/agentic_control_plane.yaml` mantém shadow default e active disabled; o bridge
+economy só usa active com registro explícito. Prova focada: 92 passed no lote decision/agentic.
+Isto não afirma CI monolítico verde nem ativa autoridade produtiva.
+
 ---
 
 ## Números correntes

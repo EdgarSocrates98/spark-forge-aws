@@ -1,5 +1,15 @@
 schema_version: 1
 policy_version: agentic-control-v1
+authority:
+  default_mode: shadow
+  active:
+    enabled: false
+    minimum_labeled_tasks: 50
+    require_quality_gate: true
+    require_economy_gate: true
+    require_ci_gate: true
+    require_rollback: true
+    promotion_record: null
 profiles:
   economy: {max_agents: 1, max_debates: 0, max_retries: 1, max_tokens: 8000}
   balanced: {max_agents: 3, max_debates: 1, max_retries: 2, max_tokens: 16000}

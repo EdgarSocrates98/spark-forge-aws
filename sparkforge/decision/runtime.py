@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from time import perf_counter_ns
 from typing import Any
 
@@ -22,6 +23,58 @@ from sparkforge.decision.receipts import build_receipt
 from sparkforge.decision.state import StateCompiler
 
 
+@dataclass(frozen=True, slots=True)
+class ActivePromotion:
+    """Explicit evidence required before the generic kernel may execute active."""
+
+    promotion_id: str
+    contract_id: str
+    contract_version: str
+    labeled_tasks: int
+    quality_gate: bool
+    economy_gate: bool
+    ci_verified: bool
+    rollback: str
+    contract_sha256: str | None = None
+
+    def missing_for(
+        self, contract: DecisionContract, *, minimum_labeled_tasks: int = 50
+    ) -> tuple[str, ...]:
+        missing: list[str] = []
+        if not self.promotion_id.strip():
+            missing.append("promotion_id_missing")
+        if self.contract_id != contract.contract_id:
+            missing.append("promotion_contract_id_mismatch")
+        if self.contract_version != contract.contract_version:
+            missing.append("promotion_contract_version_mismatch")
+        if self.contract_sha256 is not None and self.contract_sha256 != contract.sha256:
+            missing.append("promotion_contract_sha256_mismatch")
+        if self.labeled_tasks < minimum_labeled_tasks:
+            missing.append(f"promotion_corpus_below_{minimum_labeled_tasks}_labeled_tasks")
+        if not self.quality_gate:
+            missing.append("promotion_quality_gate_missing")
+        if not self.economy_gate:
+            missing.append("promotion_economy_gate_missing")
+        if not self.ci_verified:
+            missing.append("promotion_ci_gate_missing")
+        if not self.rollback.strip():
+            missing.append("promotion_rollback_missing")
+        return tuple(missing)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "promotion_id": self.promotion_id,
+            "contract_id": self.contract_id,
+            "contract_version": self.contract_version,
+            "contract_sha256": self.contract_sha256,
+            "labeled_tasks": self.labeled_tasks,
+            "quality_gate": self.quality_gate,
+            "economy_gate": self.economy_gate,
+            "ci_verified": self.ci_verified,
+            "rollback": self.rollback,
+        }
+
+
 class BoundedDecisionKernel:
     """Evaluate one declared contract with explicit bounded outcomes."""
 
@@ -37,11 +90,36 @@ class BoundedDecisionKernel:
         raw_state: Mapping[str, Any],
         *,
         now: str | None = None,
+        promotion: ActivePromotion | None = None,
     ) -> KernelEvaluation:
         started = perf_counter_ns()
         compiled = self.compiler.compile(contract, raw_state)
         fingerprint = decision_fingerprint(contract, compiled)
-        state_identity = state_fingerprint(compiled)
+        compiled_identity = state_fingerprint(compiled)
+        promotion_missing = _promotion_missing(contract, promotion)
+        if promotion_missing:
+            result = _result(
+                contract,
+                fingerprint,
+                DecisionStatus.REFUSED,
+                ";".join(promotion_missing),
+                "activation",
+            )
+            measurement = _measurement(started, raw_state)
+            return KernelEvaluation(
+                result,
+                build_receipt(
+                    result,
+                    state_fingerprint=compiled_identity,
+                    measurement=measurement,
+                    emitted_at=now,
+                    mode=contract.mode,
+                    promoted=False,
+                    rollback_reason="active_promotion_required",
+                ),
+                measurement,
+            )
+        state_identity = compiled_identity
         cache = self.cache
         cache_key = decision_cache_key(
             contract.sha256,
@@ -62,11 +140,15 @@ class BoundedDecisionKernel:
                         state_fingerprint=state_identity,
                         measurement=measurement,
                         emitted_at=now,
+                        mode=contract.mode,
+                        promoted=contract.mode == "active",
+                        rollback_reason=(promotion.rollback if promotion else None),
+                        promotion=(promotion.to_dict() if promotion else None),
                         cache_key=cache_key.canonical(),
                     ),
                     measurement,
                 )
-        result = self._evaluate_uncached(contract, compiled, fingerprint)
+        result = self._evaluate_uncached(contract, compiled, fingerprint, promotion)
         if cache is not None:
             cache.put_key(cache_key, result)
         measurement = _measurement(started, raw_state)
@@ -77,6 +159,10 @@ class BoundedDecisionKernel:
                 state_fingerprint=state_identity,
                 measurement=measurement,
                 emitted_at=now,
+                mode=contract.mode,
+                promoted=contract.mode == "active",
+                rollback_reason=(promotion.rollback if promotion else None),
+                promotion=(promotion.to_dict() if promotion else None),
                 cache_key=cache_key.canonical(),
             ),
             measurement,
@@ -87,8 +173,17 @@ class BoundedDecisionKernel:
         contract: DecisionContract,
         state: CompiledState,
         fingerprint: str,
+        promotion: ActivePromotion | None,
     ) -> DecisionResult:
-        if contract.mode != "shadow":
+        if contract.mode == "active" and _promotion_missing(contract, promotion):
+            return _result(
+                contract,
+                fingerprint,
+                DecisionStatus.REFUSED,
+                ";".join(_promotion_missing(contract, promotion)),
+                "activation",
+            )
+        if contract.mode != "shadow" and contract.mode != "active":
             return _result(
                 contract,
                 fingerprint,
@@ -150,4 +245,14 @@ def _measurement(started: int, raw_state: Mapping[str, Any]) -> LocalMeasurement
     )
 
 
-__all__ = ["BoundedDecisionKernel"]
+def _promotion_missing(
+    contract: DecisionContract, promotion: ActivePromotion | None
+) -> tuple[str, ...]:
+    if contract.mode == "shadow":
+        return ()
+    if promotion is None:
+        return ("active_promotion_required",)
+    return promotion.missing_for(contract)
+
+
+__all__ = ["ActivePromotion", "BoundedDecisionKernel"]

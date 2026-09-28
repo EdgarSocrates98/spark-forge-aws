@@ -73,3 +73,12 @@ Cada row separa qualidade, `payload_bytes`, `provider_tokens` e custo. O compara
 `input_manifest` divergente e volume acima de 10%; tokens sem transcript e custo sem
 `cost_basis` permanecem unresolved com razão explícita. O fixture é replay offline e não
 autoriza claim de economia de provider.
+
+## Gate 7 evidence
+
+`tests/test_kernel_authority.py` prova que contrato genérico `mode: active` recusa sem
+`ActivePromotion`, recusa evidência incompleta e aceita somente registro que casa contrato,
+versão, corpus mínimo, quality/economy gates, CI e rollback. A validação ocorre antes do
+cache, impedindo bypass por decisão active cacheada. `agentic_control_plane.yaml` declara
+`shadow` como default e active disabled; o bridge economy recebe promoção explicitamente sem
+alterar o caminho legacy. Receipts preservam o registro de promoção.
