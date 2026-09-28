@@ -142,6 +142,18 @@ O segundo gate usa `CacheKey` versionada para decisões: `contract_sha256`, stat
 não há segundo LRU/freshness implementation. Prova: `tests/test_decision_cache_versions.py`
 mais regressões de cache/economy/context (`19 passed`).
 
+## Atualização corrente — 2026-09-28 — Completion Gate 3: recovery governado
+
+O terceiro gate fecha `RecoveryPolicy → AgentGovernor → CaseBudget → receipt`. `RecoveryGovernor`
+resolve a ação usando profile/risco, pede limites bounded e consome `max_retries` ou
+`max_replans` do `CaseBudget` quando há budget mutável. Falha de consumo vira `stop` terminal;
+nenhuma recuperação abre uma segunda trilha de retry.
+
+Uma strategy fingerprint repetida após replan agora termina em `stop` com
+`strategy_fingerprint_repeated`, impedindo loop infinito. O controller emite um receipt separado
+de recovery que referencia o receipt-base e carrega decisão, governor e consumo. Prova: 94 testes
+focados de recovery/control/receipts/infra passam; a regra não concede autoridade ativa.
+
 ## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
 
 O primeiro gate da conclusão do control plane está implementado em commit isolado.

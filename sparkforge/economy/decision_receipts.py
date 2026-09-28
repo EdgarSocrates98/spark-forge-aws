@@ -127,6 +127,36 @@ class DecisionReceiptStore:
             "status": "valid" if actual == expected else "integrity_failed",
         }
 
+    def emit_recovery(
+        self,
+        request: DecisionInput,
+        *,
+        base_receipt_id: str,
+        recovery: dict[str, Any],
+        now: str | None = None,
+    ) -> DecisionReceipt:
+        body = {
+            "receipt_version": RECEIPT_VERSION,
+            "kind": "recovery",
+            "base_receipt_id": base_receipt_id,
+            "input_sha256": digest_of(request.canonical()),
+            "recovery": recovery,
+        }
+        receipt_id = RECEIPT_PREFIX + digest_of(body)
+        document = dict(body)
+        document["receipt_id"] = receipt_id
+        document["emitted_at"] = now or datetime.now(timezone.utc).isoformat()
+        self.root.mkdir(parents=True, exist_ok=True)
+        path = self.root / f"{receipt_id}.recovery.json"
+        if path.exists():
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            return DecisionReceipt(receipt_id, path, existing)
+        path.write_text(
+            json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return DecisionReceipt(receipt_id, path, document)
+
 
 def _semantic_body(document: dict[str, Any]) -> dict[str, Any]:
     body = {

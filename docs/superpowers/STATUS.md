@@ -88,6 +88,12 @@ calibration; `cache_max_entries` é enforced; e `ArtifactCache` tem uma implemen
 com facade de compatibilidade na camada economy. Prova focada: `19 passed`. Recovery, authority,
 adapters e benchmark permanecem abertos.
 
+## Atualização corrente — Decision Control Plane completion, Gate 3 (2026-09-28)
+
+Gate 3 está fechado: `RecoveryGovernor` conecta policy, governor, budget e receipt; retry/replan
+consomem limites explícitos; e strategy repetida termina em `stop` terminal. Prova focada: `94
+passed`. Authority, adapters e benchmark seguem gated.
+
 ---
 
 ## Números correntes

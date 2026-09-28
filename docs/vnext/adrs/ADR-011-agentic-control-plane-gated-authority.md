@@ -44,3 +44,10 @@ confidence; regressões do kernel passam no mesmo lote. Schema aberto exige
 `tests/test_decision_cache_versions.py` prova mudança de policy/calibration como identidade nova,
 enforcement de limite de entradas e compatibilidade da facade economy. A chave efetiva aparece no
 receipt como `decision|2|...`; um cache sem esses componentes não pode produzir hit semântico.
+
+## Gate 3 evidence
+
+`tests/test_recovery_governance.py` prova consumo de `CaseBudget`, re-resolução por
+profile/risco e encerramento de budget exaurido. `tests/test_recovery_policy.py` prova que
+fingerprint repetida não retorna `replan` não-terminal. O controller gera receipt `kind: recovery`
+com referência ao receipt-base.

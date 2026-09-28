@@ -37,6 +37,7 @@ class RecoveryDecision:
     reason: str
     strategy_fingerprint: str
     terminal: bool
+    budget_consumed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +47,7 @@ class RecoveryDecision:
             "reason": self.reason,
             "strategy_fingerprint": self.strategy_fingerprint,
             "terminal": self.terminal,
+            "budget_consumed": self.budget_consumed,
         }
 
 
@@ -95,9 +97,9 @@ class RecoveryPolicy:
         configured = str(self.actions[failure_value])
         repeated = strategy_fingerprint in set(history)
         if repeated and configured in {RecoveryAction.RETRY.value, RecoveryAction.REPLAN.value}:
-            action = RecoveryAction.REPLAN.value
+            action = RecoveryAction.STOP.value
             reason = "strategy_fingerprint_repeated"
-            terminal = False
+            terminal = True
         elif configured == RecoveryAction.RETRY.value and attempt >= self.max_attempts:
             action = RecoveryAction.STOP.value
             reason = "retry_limit_exceeded"

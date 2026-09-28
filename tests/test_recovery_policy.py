@@ -36,5 +36,6 @@ def test_repeated_strategy_never_retries_unchanged() -> None:
         strategy_fingerprint="same",
         history=("same",),
     )
-    assert decision.action == "replan"
+    assert decision.action == "stop"
     assert decision.reason == "strategy_fingerprint_repeated"
+    assert decision.terminal is True

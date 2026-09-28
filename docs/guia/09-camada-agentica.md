@@ -70,6 +70,10 @@ version diferente produz miss mesmo com contrato e estado iguais. `cache_max_ent
 no runtime. Fact, decision e artifact continuam namespaces distintos; a API histórica de
 `sparkforge.economy.cache` encaminha para `sparkforge.decision.cache.ArtifactCache`.
 
+O Gate 3 fecha recovery como transição governada. `RecoveryGovernor` reavalia profile/risco,
+consome retry/replan do `CaseBudget` e grava receipt de recovery com referência ao receipt-base.
+Fingerprint de estratégia repetida termina em `stop` terminal; retry não pode virar loop implícito.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta
