@@ -131,6 +131,20 @@ qualidade, `payload_bytes`, `provider_tokens`/`tokens_unresolved` e `cost_basis`
 dimensões separadas. Isso prova cobertura e determinismo do harness; não é uma alegação
 de economia financeira, ganho de qualidade ou redução de tokens de provider.
 
+## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
+
+O primeiro gate da conclusão do control plane está implementado em commit isolado.
+`StateCompiler` rejeita campos extras por padrão (`undeclared_state.*`), aceita `optional`
+somente quando declarado e permite abertura apenas com `state.additional_properties: true`.
+O loader compara todas as referências das primitivas com o conjunto declarado e recusa
+`referenced_fields_undeclared` antes do evaluator.
+
+`sparkforge/decision/conditions.py` é a única validação estrutural para condições de Route e
+Gate. Ela exige campo, exatamente um operador (`equals`, `in`, `contains` ou `truthy`) e tipos
+compatíveis. Confidences declaradas e thresholds de aceitação são validados no load dentro de
+`[0,1]`. Prova: `tests/test_decision_contract_hardening.py` e regressões do kernel (`18 passed`).
+Este gate não altera cache, recovery, autoridade ou adapters.
+
 ## Atualização corrente — 2026-09-28 — JEV-independent evolution path
 
 O caminho Forge-native agora suporta promoção `active` explicitamente configurada,

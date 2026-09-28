@@ -73,6 +73,14 @@ Provas focadas: `tests/test_jev_independent_path.py` e as regressões de host, c
 activation, plane, runtime, receipt e replay. A suíte monolítica completa ainda é um
 gate independente; este fechamento não afirma CI totalmente verde.
 
+## Atualização corrente — Decision Control Plane completion, Gate 1 (2026-09-28)
+
+Gate 1 está fechado em commit próprio: `StateCompiler` é fechado por padrão, contratos
+validam `referenced_fields`, Route/Gate compartilham `ConditionSchema` e confidences são
+limitadas a `[0,1]` durante o load. A prova focada passou `18` testes; cache, recovery,
+authority, adapters e benchmark permanecem nos seis gates seguintes. Nenhuma autoridade ativa
+foi concedida e nenhum claim econômico foi feito.
+
 ---
 
 ## Números correntes

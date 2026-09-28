@@ -54,6 +54,17 @@ e a mecânica da avaliação, não prontidão para ativação, qualidade geral, 
 financeira ou tokens do provider. A ativação continua fail-closed até existir corpus
 rotulado mínimo e os gates de qualidade e economia.
 
+### Completion do control plane por gates
+
+A conclusão do kernel segue sete gates independentes e um commit por gate. O Gate 1 fecha o
+contrato antes da avaliação: estado extra é recusado por padrão, opcionais precisam ser
+declarados, referências fora do schema recusam o contrato e Route/Gate usam a mesma validação
+estrutural de condição. Confidences ficam limitadas a `[0,1]` no load.
+
+O estado aberto é exceção explícita (`additional_properties: true`) e mantém fingerprint
+determinística. O resultado unresolved nomeia o campo extra; o sistema não descarta erro de
+input silenciosamente. Gates seguintes tratam cache, recovery, autoridade, adapters e benchmark.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

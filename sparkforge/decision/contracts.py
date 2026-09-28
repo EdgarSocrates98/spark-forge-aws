@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,10 @@ from typing import Any
 
 import yaml
 
+from sparkforge.decision.conditions import (
+    ConditionValidationError,
+    validate_condition,
+)
 from sparkforge.decision.models import PrimitiveKind
 
 SCHEMA_VERSION = 1
@@ -40,7 +45,6 @@ _SPEC_FIELDS = {
     "route": frozenset({"rules", "default", "default_confidence"}),
     "threshold": frozenset({"field", "operator", "value", "on_pass", "on_fail", "confidence"}),
 }
-_CONDITION_FIELDS = frozenset({"field", "equals", "in", "contains", "truthy"})
 
 
 class ContractValidationError(ValueError):
@@ -68,26 +72,19 @@ class DecisionContract:
     sha256: str
     activation_enabled: bool = False
     measurement_enabled: bool = True
+    required_state_fields: tuple[str, ...] = ()
+    additional_properties: bool = False
 
     def referenced_fields(self) -> tuple[str, ...]:
         fields = [field.name for field in self.state_fields]
-        candidate = self.spec.get("field")
-        if isinstance(candidate, str) and candidate not in fields:
-            fields.append(candidate)
-        candidate = self.spec.get("select_field")
-        if isinstance(candidate, str) and candidate not in fields:
-            fields.append(candidate)
-        for rule in self.spec.get("rules", []):
-            if isinstance(rule, Mapping):
-                for condition in rule.get("when", []):
-                    if isinstance(condition, Mapping) and isinstance(condition.get("field"), str):
-                        if condition["field"] not in fields:
-                            fields.append(condition["field"])
-        for item in self.spec.get("requirements", []):
-            if isinstance(item, Mapping) and isinstance(item.get("field"), str):
-                if item["field"] not in fields:
-                    fields.append(item["field"])
+        for candidate in _referenced_spec_fields(self.spec, self.primitive):
+            if candidate not in fields:
+                fields.append(candidate)
         return tuple(fields)
+
+    @property
+    def declared_fields(self) -> frozenset[str]:
+        return frozenset(field.name for field in self.state_fields)
 
 
 class ContractLoader:
@@ -144,7 +141,9 @@ class ContractLoader:
             primitive = PrimitiveKind(_required_text(raw, "primitive"))
         except ValueError as exc:
             raise ContractValidationError(f"unknown primitive: {raw.get('primitive')}") from exc
-        state_fields = _parse_state_fields(raw.get("state", {}))
+        state_fields, required_state_fields, additional_properties = _parse_state_fields(
+            raw.get("state", {})
+        )
         budget = raw.get("budget", {})
         if not isinstance(budget, Mapping):
             raise ContractValidationError("contract budget must be a mapping")
@@ -159,6 +158,12 @@ class ContractLoader:
         if not isinstance(spec, Mapping):
             raise ContractValidationError("contract spec is required")
         normalized_spec = _validate_spec(primitive, dict(spec))
+        referenced = _referenced_spec_fields(normalized_spec, primitive)
+        undeclared = sorted(referenced - {field.name for field in state_fields})
+        if undeclared and not additional_properties:
+            raise ContractValidationError(
+                "referenced_fields_undeclared: " + ", ".join(undeclared)
+            )
         activation = raw.get("activation", {})
         measurement = raw.get("measurement", {})
         if not isinstance(activation, Mapping) or not isinstance(measurement, Mapping):
@@ -184,6 +189,8 @@ class ContractLoader:
             digest,
             bool(activation.get("enabled", False)),
             bool(measurement.get("enabled", True)),
+            required_state_fields,
+            additional_properties,
         )
 
 
@@ -206,19 +213,31 @@ def _positive_int(value: Any, key: str) -> int:
     return number
 
 
-def _parse_state_fields(raw: Any) -> tuple[FieldSpec, ...]:
+def _parse_state_fields(raw: Any) -> tuple[tuple[FieldSpec, ...], tuple[str, ...], bool]:
     if not isinstance(raw, Mapping):
         raise ContractValidationError("contract state must be a mapping")
-    _reject_unknown(raw, {"required"}, "state")
+    _reject_unknown(raw, {"required", "optional", "additional_properties"}, "state")
     required = raw.get("required", [])
-    if not isinstance(required, list):
-        raise ContractValidationError("state.required must be a list")
+    optional = raw.get("optional", [])
+    fields = _parse_field_list(required, "required") + _parse_field_list(optional, "optional")
+    if len({field.name for field in fields}) != len(fields):
+        raise ContractValidationError("state field names must be unique")
+    additional_properties = raw.get("additional_properties", False)
+    if not isinstance(additional_properties, bool):
+        raise ContractValidationError("state.additional_properties must be boolean")
+    required_fields = tuple(field.name for field in _parse_field_list(required, "required"))
+    return tuple(fields), required_fields, additional_properties
+
+
+def _parse_field_list(raw: Any, label: str) -> tuple[FieldSpec, ...]:
+    if not isinstance(raw, list):
+        raise ContractValidationError(f"state.{label} must be a list")
     fields: list[FieldSpec] = []
-    for item in required:
+    for item in raw:
         if isinstance(item, str):
             item = {"name": item}
         if not isinstance(item, Mapping):
-            raise ContractValidationError("state.required entries must be mappings")
+            raise ContractValidationError(f"state.{label} entries must be mappings")
         _reject_unknown(item, {"name", "type", "order_insensitive"}, "state field")
         name = str(item.get("name", "")).strip()
         value_type = str(item.get("type", "any"))
@@ -227,8 +246,6 @@ def _parse_state_fields(raw: Any) -> tuple[FieldSpec, ...]:
         if value_type not in _FIELD_TYPES:
             raise ContractValidationError(f"unsupported state field type: {value_type}")
         fields.append(FieldSpec(name, value_type, bool(item.get("order_insensitive", False))))
-    if len({field.name for field in fields}) != len(fields):
-        raise ContractValidationError("state field names must be unique")
     return tuple(fields)
 
 
@@ -245,6 +262,14 @@ def _validate_spec(kind: PrimitiveKind, spec: dict[str, Any]) -> dict[str, Any]:
         if len({str(item) for item in options}) != len(options):
             raise ContractValidationError("choice.options must be unique")
         _threshold(spec.get("threshold", 0.0), "choice.threshold")
+        _confidence(spec.get("confidence", 1.0), "choice.confidence")
+        confidence_by_option = spec.get("confidence_by_option", {})
+        if not isinstance(confidence_by_option, Mapping):
+            raise ContractValidationError("choice.confidence_by_option must be a mapping")
+        for option, confidence in confidence_by_option.items():
+            if str(option) not in {str(item) for item in options}:
+                raise ContractValidationError("choice confidence option is not declared")
+            _confidence(confidence, f"choice.confidence_by_option.{option}")
     elif kind is PrimitiveKind.BOOLEAN:
         _required_spec_text(spec, "field")
     elif kind is PrimitiveKind.GATE:
@@ -252,11 +277,10 @@ def _validate_spec(kind: PrimitiveKind, spec: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(requirements, list) or not requirements:
             raise ContractValidationError("gate.requirements must be a non-empty list")
         for requirement in requirements:
-            if (
-                not isinstance(requirement, Mapping)
-                or not str(requirement.get("field", "")).strip()
-            ):
-                raise ContractValidationError("gate requirements need a field")
+            try:
+                validate_condition(requirement, label="gate requirement")
+            except ConditionValidationError as exc:
+                raise ContractValidationError(str(exc)) from exc
     elif kind is PrimitiveKind.SCORE:
         weights = spec.get("weights")
         if not isinstance(weights, Mapping) or not weights:
@@ -291,9 +315,17 @@ def _validate_spec(kind: PrimitiveKind, spec: dict[str, Any]) -> dict[str, Any]:
                 "route rule",
             )
             for condition in conditions:
-                if not isinstance(condition, Mapping):
-                    raise ContractValidationError("route conditions must be mappings")
-                _reject_unknown(condition, _CONDITION_FIELDS, "route condition")
+                try:
+                    validate_condition(condition, label="route condition")
+                except ConditionValidationError as exc:
+                    raise ContractValidationError(str(exc)) from exc
+            if "priority" in rule and (
+                isinstance(rule["priority"], bool) or not isinstance(rule["priority"], int)
+            ):
+                raise ContractValidationError("route rule priority must be an integer")
+            _confidence(rule.get("confidence", 1.0), "route rule confidence")
+            _threshold(rule.get("threshold", 0.0), "route rule threshold")
+        _confidence(spec.get("default_confidence", 1.0), "route.default_confidence")
     elif kind is PrimitiveKind.THRESHOLD:
         _required_spec_text(spec, "field")
         operator = str(spec.get("operator", ""))
@@ -303,7 +335,32 @@ def _validate_spec(kind: PrimitiveKind, spec: dict[str, Any]) -> dict[str, Any]:
             raise ContractValidationError("threshold.value is required")
         if not str(spec.get("on_pass", "")).strip():
             raise ContractValidationError("threshold.on_pass is required")
+        _confidence(spec.get("confidence", 1.0), "threshold.confidence")
     return spec
+
+
+def _referenced_spec_fields(spec: Mapping[str, Any], kind: PrimitiveKind) -> set[str]:
+    fields: set[str] = set()
+    for key in ("field", "select_field"):
+        value = spec.get(key)
+        if isinstance(value, str) and value.strip():
+            fields.add(value.strip())
+    weights = spec.get("weights")
+    if isinstance(weights, Mapping):
+        fields.update(str(key) for key in weights)
+    if kind is PrimitiveKind.GATE:
+        requirements = spec.get("requirements", [])
+        fields.update(
+            str(item["field"])
+            for item in requirements
+            if isinstance(item, Mapping) and isinstance(item.get("field"), str)
+        )
+    for rule in spec.get("rules", []):
+        if isinstance(rule, Mapping):
+            for condition in rule.get("when", []):
+                if isinstance(condition, Mapping) and isinstance(condition.get("field"), str):
+                    fields.add(str(condition["field"]))
+    return fields
 
 
 def _required_spec_text(spec: Mapping[str, Any], key: str) -> str:
@@ -323,6 +380,16 @@ def _threshold(value: Any, key: str) -> None:
     if (
         isinstance(value, bool)
         or not isinstance(value, (int, float))
+        or not 0.0 <= float(value) <= 1.0
+    ):
+        raise ContractValidationError(f"{key} must be between 0 and 1")
+
+
+def _confidence(value: Any, key: str) -> None:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
         or not 0.0 <= float(value) <= 1.0
     ):
         raise ContractValidationError(f"{key} must be between 0 and 1")
