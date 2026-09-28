@@ -80,6 +80,9 @@ def test_benchmark_suite_uses_declared_fixture_and_reports_profile_contract() ->
         "fixtures/quality_cases.yaml",
         "fixtures/federated_graph_cases.yaml",
         "fixtures/provider_transcripts.yaml",
+        "fixtures/decision_control_plane_cases.yaml",
+        "fixtures/calibration_history.yaml",
+        "fixtures/host_replay.yaml",
     )
     assert suite["quality_axes"] == (
         "status",
