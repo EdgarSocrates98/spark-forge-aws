@@ -588,6 +588,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: evaluate a bounded deterministic decision offline
+    tools: [sparkforge_decision_evaluate]
+    cli: [decision evaluate]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: derive what to measure on both sides of a change
     tools: [sparkforge_funcval_plan]
     cli: [funcval plan]

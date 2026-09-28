@@ -10,6 +10,7 @@ divirjam -- os dois chamam exatamente as mesmas funcoes deste modulo.
 `{"error": ...}`. Erros de baixo nivel (`CaseError`, `CatalogError`,
 `ValidationFailed`) sao capturados aqui e reembalados, nunca vazam crus.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -17,6 +18,7 @@ import json
 import os
 import re
 import shutil
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -795,9 +797,7 @@ def build_runtime(
     # `emr` continua sendo lido da flag nos dois caminhos: o release label e o
     # mesmo namespace nas duas plataformas, e apaga-lo trocaria invencao por
     # perda de informacao. Ver `knowledge/emr-serverless/runtime-matrix.md`.
-    chave_do_release = (
-        "emr_serverless_release" if _e_so_de_serverless(facts) else "emr_release"
-    )
+    chave_do_release = "emr_serverless_release" if _e_so_de_serverless(facts) else "emr_release"
     raw = {
         "glue_version": glue,
         # `emr_release` e a primeira chave de `_PLATFORM_KEYS["emr"]`, e
@@ -876,8 +876,15 @@ def _runtime_e_facts(
     kinds da deteccao que vieram no arquivo saem, e entram os de agora.
     """
     context, ambiente = build_runtime(
-        glue, spark, python, iceberg, athena, facts=facts, emr=emr,
-        databricks=databricks, photon=photon,
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=facts,
+        emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
     unidos = [fact for fact in facts or [] if fact.kind not in RUNTIME_DETECT_KINDS]
     vistos = {fact.id for fact in unidos}
@@ -1233,9 +1240,7 @@ def analyze_cloudwatch_logs(
     `cloudwatch.logs.unresolved` com a razao -- nunca lista vazia silenciosa.
     """
     facts = _extract_cloudwatch_logs_facts(path)
-    return _facts_page(
-        facts, "cloudwatch.logs.unresolved", kind, limit, cursor, detail_level
-    )
+    return _facts_page(facts, "cloudwatch.logs.unresolved", kind, limit, cursor, detail_level)
 
 
 def _extract_lakeformation_grants_facts(path: str) -> list[Fact]:
@@ -1393,19 +1398,19 @@ def analyze_lakeformation_grants(
     operacao e do modelo de acesso, e isso e juizo -- mora nas regras `SF-LF`.
     """
     facts = _extract_lakeformation_grants_facts(path)
-    return _facts_page(
-        facts, "lakeformation.grants.unresolved", kind, limit, cursor, detail_level
-    )
+    return _facts_page(facts, "lakeformation.grants.unresolved", kind, limit, cursor, detail_level)
 
 
 def _extract_glue_resource_link_facts(path: str) -> list[Fact]:
     target = Path(path)
     if not target.exists():
         raise AdapterError(
-            f"Caminho nao encontrado para analise: {path}" + chr(10) +
-            "  Aponte para um artefato gravado por `sparkforge collect "
-            "glue-resource-link`, ou para o DIRETORIO deles:" + chr(10) +
-            "    sparkforge analyze glue-resource-link --path "
+            f"Caminho nao encontrado para analise: {path}"
+            + chr(10)
+            + "  Aponte para um artefato gravado por `sparkforge collect "
+            "glue-resource-link`, ou para o DIRETORIO deles:"
+            + chr(10)
+            + "    sparkforge analyze glue-resource-link --path "
             ".sparkforge/artifacts/glue_resource_link/",
             exit_code=2,
         )
@@ -1443,10 +1448,12 @@ def _extract_iam_access_facts(path: str) -> list[Fact]:
     target = Path(path)
     if not target.exists():
         raise AdapterError(
-            f"Caminho nao encontrado para analise: {path}" + chr(10) +
-            "  Aponte para um artefato gravado por `sparkforge collect iam-access`, "
-            "ou para o DIRETORIO deles:" + chr(10) +
-            "    sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/",
+            f"Caminho nao encontrado para analise: {path}"
+            + chr(10)
+            + "  Aponte para um artefato gravado por `sparkforge collect iam-access`, "
+            "ou para o DIRETORIO deles:"
+            + chr(10)
+            + "    sparkforge analyze iam-access --path .sparkforge/artifacts/iam_access/",
             exit_code=2,
         )
     if target.is_dir():
@@ -1509,9 +1516,7 @@ def analyze_error_signatures(
         facts_path, producer=_FACTS_FROM_EXCEPTION_OR_LOG, label="assinaturas de erro"
     )
     derived = build_signature_matches(fact_list)
-    return _facts_page(
-        derived, "error.signature.unresolved", kind, limit, cursor, detail_level
-    )
+    return _facts_page(derived, "error.signature.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1597,7 +1602,7 @@ def _extract_plan_facts(path: str) -> list[Fact]:
         raise AdapterError(
             f"Caminho nao encontrado para analise: {path}\n"
             f"  Aponte para um arquivo de texto com a saida de "
-            f"`df.explain(\"formatted\")` (um plano por arquivo):\n"
+            f'`df.explain("formatted")` (um plano por arquivo):\n'
             f"    sparkforge analyze plan --path <arquivo> "
             f"--out .sparkforge/facts_plan.json",
             exit_code=2,
@@ -1954,9 +1959,7 @@ def analyze_dq_ai(
     detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_dq_ai_facts(path)
-    return _facts_page(
-        facts, "dq.ai.recommendation.unresolved", kind, limit, cursor, detail_level
-    )
+    return _facts_page(facts, "dq.ai.recommendation.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -2176,9 +2179,7 @@ def _migration_assess_controlm(alvo: Path, source: str, target: str) -> dict[str
     depende da versao declarada. O cruzamento por versao acontece degrau a
     degrau, em `_ctm_migration.avaliar`.
     """
-    arquivos = (
-        [alvo] if alvo.is_file() else sorted(p for p in alvo.rglob("*.json") if p.is_file())
-    )
+    arquivos = [alvo] if alvo.is_file() else sorted(p for p in alvo.rglob("*.json") if p.is_file())
     if not arquivos:
         raise AdapterError(
             f"nenhum arquivo .json de Jobs-as-Code em {alvo}\n"
@@ -2306,9 +2307,7 @@ def migration_assess(
     facts = collect_migration(target_path)
 
     try:
-        return assess_migration(
-            facts, source=source, target=target, platform=platform
-        ).to_dict()
+        return assess_migration(facts, source=source, target=target, platform=platform).to_dict()
     except ValueError as exc:
         # `version_path.steps` ja nomeia o defeito ("alvo anterior a origem",
         # "versao fora da matriz de <plataforma>; conhecidas: ...", "rotulo
@@ -2655,8 +2654,7 @@ def controlm_describe(version: str, detail_level: str = "full") -> dict[str, Any
     """
     if detail_level not in NIVEIS_DE_DETALHE_CONTROLM:
         raise AdapterError(
-            f"detail_level invalido: {detail_level!r}; use um de "
-            f"{NIVEIS_DE_DETALHE_CONTROLM}",
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE_CONTROLM}",
             exit_code=2,
         )
     try:
@@ -2705,9 +2703,7 @@ def _extract_controlm_jobs_facts(path: str, version: str | None) -> list[Fact]:
         )
     if target.is_dir():
         return extract_controlm_jobs_tree(target, repo_root=target, declared_version=version)
-    return extract_controlm_jobs_path(
-        target, repo_root=target.parent, declared_version=version
-    )
+    return extract_controlm_jobs_path(target, repo_root=target.parent, declared_version=version)
 
 
 def analyze_controlm_jobs(
@@ -2888,9 +2884,7 @@ def benchmark_runs(
 # workload
 # --------------------------------------------------------------------------- #
 
-_FACTS_FROM_SQL_METRICS = (
-    "sparkforge analyze sql-metrics --path <event-log.jsonl> --out {path}"
-)
+_FACTS_FROM_SQL_METRICS = "sparkforge analyze sql-metrics --path <event-log.jsonl> --out {path}"
 _FACTS_FROM_GLUE_JOB_RUNS = (
     "sparkforge analyze glue-job-runs --path <dir> --job-name <job> --out {path}"
 )
@@ -2954,9 +2948,7 @@ def capacity_plan(
     historico: list[list[Fact]] = []
     if history_path:
         historico = _load_facts_dir(history_path, _FACTS_FROM_RUN_AND_SCAN, "--history")
-    plano = build_capacity_plan(
-        facts, job_name=job_name, job_run_id=job_run_id, history=historico
-    )
+    plano = build_capacity_plan(facts, job_name=job_name, job_run_id=job_run_id, history=historico)
     return plano.to_dict()
 
 
@@ -3012,10 +3004,7 @@ def dq_ai_assess(
         raise AdapterError("informe ao menos um --facts", exit_code=2)
     facts = _merge_facts_files(
         facts_paths,
-        producer=(
-            "sparkforge analyze dq-ai --path <recommendation.json> "
-            "--out {path}"
-        ),
+        producer=("sparkforge analyze dq-ai --path <recommendation.json> --out {path}"),
     )
     recommendations = [fact for fact in facts if fact.kind == "dq.ai.recommendation"]
     subject = recommendations[0].subject if len(recommendations) == 1 else None
@@ -3026,9 +3015,7 @@ def dq_ai_assess(
     if cost_facts_path:
         facts.extend(extract_athena_cost_path(cost_facts_path))
     facts = sort_facts(facts)
-    runtime, judged_facts = _runtime_e_facts(
-        glue=glue, spark=spark, python=python, facts=facts
-    )
+    runtime, judged_facts = _runtime_e_facts(glue=glue, spark=spark, python=python, facts=facts)
     facts = sort_facts([*judged_facts, *build_assessment_facts(judged_facts, runtime)])
     try:
         rules = load_catalog()
@@ -3106,14 +3093,46 @@ def economy_provider_cost(host_transcript: str, pricing: str) -> dict[str, Any]:
     return build_provider_cost(host_transcript, pricing)
 
 
+def decision_evaluate(
+    repo: str = ".",
+    contract: str = "kernel.synthetic",
+    state: Mapping[str, Any] | None = None,
+    now: str | None = None,
+) -> dict[str, Any]:
+    """Evaluate one bounded decision through the provider-independent kernel.
+
+    This adapter owns no decision semantics. It validates the repository-scoped
+    contract, invokes the same in-memory runtime used by tests and returns the
+    canonical result, receipt and local measurement in one envelope.
+    """
+    from sparkforge.decision import BoundedDecisionKernel, ContractLoader, DecisionCache
+    from sparkforge.decision.contracts import ContractValidationError
+    from sparkforge.decision.state import StateCompilationError
+
+    if not isinstance(state, Mapping):
+        raise AdapterError("decision state must be an object", exit_code=2)
+    try:
+        loaded = ContractLoader(Path(repo)).load(contract)
+        evaluation = BoundedDecisionKernel(
+            cache=DecisionCache(max_entries=loaded.cache_max_entries)
+        ).evaluate(loaded, state, now=now)
+    except (ContractValidationError, StateCompilationError, TypeError, ValueError) as exc:
+        raise AdapterError(f"decision evaluate refused: {exc}", exit_code=2) from exc
+    return {
+        "schema_version": 1,
+        "status": evaluation.result.status.value,
+        "result": evaluation.result.to_dict(),
+        "receipt": evaluation.receipt,
+        "measurement": evaluation.measurement.to_dict(),
+    }
+
+
 # --------------------------------------------------------------------------- #
 # funcval
 # --------------------------------------------------------------------------- #
 
 
-def _write_facts_artifact(
-    out_path: str, facts: list[Fact], label: str, example: str
-) -> None:
+def _write_facts_artifact(out_path: str, facts: list[Fact], label: str, example: str) -> None:
     """Grava a lista COMPLETA de facts (nunca a pagina) no caminho pedido.
 
     A escrita mora aqui, e nao na CLI como nos verbos de `analyze`, porque
@@ -3189,9 +3208,7 @@ def funcval_plan(
             exit_code=2,
         )
     facts = _merge_facts_files(list(facts_paths), _FACTS_FROM_PYSPARK_OR_CATALOG)
-    derived = build_plan(
-        facts, keys=tuple(keys or ()), path_hint="+".join(facts_paths)
-    )
+    derived = build_plan(facts, keys=tuple(keys or ()), path_hint="+".join(facts_paths))
     _write_facts_artifact(
         out_path,
         derived,
@@ -3365,9 +3382,7 @@ def funcval_compare(
     chosen = _pick_plan(plans, before, after, plan_path)
     _reject_foreign_plan_ref(chosen, before, after, plan_path)
 
-    facts = build_comparison(
-        chosen.attrs, before, after, path_hint=f"{before_path}..{after_path}"
-    )
+    facts = build_comparison(chosen.attrs, before, after, path_hint=f"{before_path}..{after_path}")
     if out_path:
         _write_facts_artifact(
             out_path,
@@ -3542,9 +3557,7 @@ def _load_facts_dir(
     ]
 
 
-def _merge_facts_files(
-    facts_paths: list[str], producer: str = _FACTS_FROM_PYSPARK
-) -> list[Fact]:
+def _merge_facts_files(facts_paths: list[str], producer: str = _FACTS_FROM_PYSPARK) -> list[Fact]:
     """Une varios arquivos de facts numa lista unica, sem duplicata e ordenada.
 
     `producer` existe pelo mesmo motivo que em `_load_facts_file`: quem une os
@@ -3668,9 +3681,7 @@ def _raiz_do_repo_sdd(repo: str, verbo: str) -> Path:
     return raiz
 
 
-def sdd_check(
-    repo: str, root_path: str = "docs/sdd", feature: str | None = None
-) -> dict[str, Any]:
+def sdd_check(repo: str, root_path: str = "docs/sdd", feature: str | None = None) -> dict[str, Any]:
     """Os gates do SDD sobre `repo/root_path`. So le.
 
     Feature pedida e nao descoberta e erro de chamada, salvo quando uma lacuna ja
@@ -3773,14 +3784,19 @@ def root_cause(
     # deteccao entram no julgamento e na evidencia, nao na contagem da entrada.
     recebidos = len(fact_list)
     runtime, fact_list = _runtime_e_facts(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
-        databricks=databricks, photon=photon,
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=fact_list,
+        emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
 
-    saida = rank_root_causes(
-        fact_list, findings, skipped, runtime, all_missing=all_missing
-    )
+    saida = rank_root_causes(fact_list, findings, skipped, runtime, all_missing=all_missing)
     saida["runtime"] = runtime
     saida["fact_count"] = recebidos
     if detail_level == "summary":
@@ -3853,9 +3869,16 @@ def proof_change(
     except (PolicyError, CatalogError) as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
-    versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
-               "athena": athena, "emr": emr, "databricks": databricks,
-               "photon": photon}
+    versoes = {
+        "glue": glue,
+        "spark": spark,
+        "python": python,
+        "iceberg": iceberg,
+        "athena": athena,
+        "emr": emr,
+        "databricks": databricks,
+        "photon": photon,
+    }
     # A contagem e do que o operador entregou, como em `root_cause`; os facts de
     # ambiente da deteccao entram nos dois julgamentos e na evidencia.
     recebidos = {"union": len(uniao), "after": len(depois)}
@@ -4012,11 +4035,13 @@ def scan(
             itens = _scan_extrair(entrada, raiz)
         except Exception as exc:  # noqa: BLE001 -- um arquivo ruim nao derruba os outros
             primeira = (str(exc).splitlines() or [""])[0][:200]
-            falhas.append({
-                "path": entrada.path,
-                "reason": "analyze_falhou",
-                "detail": f"{entrada.analyze}: {type(exc).__name__}: {primeira}",
-            })
+            falhas.append(
+                {
+                    "path": entrada.path,
+                    "reason": "analyze_falhou",
+                    "detail": f"{entrada.analyze}: {type(exc).__name__}: {primeira}",
+                }
+            )
             continue
         brutos.setdefault(entrada.analyze, []).extend(itens)
         contagem = por_analyze.setdefault(entrada.analyze, {"files": 0, "facts": 0})
@@ -4037,8 +4062,14 @@ def scan(
         # pronta e nao duplica por id -- os facts de ambiente nao sao leitura
         # de versao, entao o contexto sai o mesmo.
         versoes = {
-            "glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
-            "athena": athena, "emr": emr, "databricks": databricks, "photon": photon,
+            "glue": glue,
+            "spark": spark,
+            "python": python,
+            "iceberg": iceberg,
+            "athena": athena,
+            "emr": emr,
+            "databricks": databricks,
+            "photon": photon,
         }
         _, com_ambiente = _runtime_e_facts(**versoes, facts=_facts_from_dicts(fundidos))
         julgados = [f.to_dict() for f in com_ambiente]
@@ -4120,9 +4151,16 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
     checagens.append(dr.avaliar_knowledge(contagem, erro))
     # So a EXISTENCIA do indice: `code_status` passa por `garantir_frescor`, que
     # grava a conferencia no banco, e o doctor e READ_ONLY.
-    checagens.append(dr.avaliar_indice(*sondar(
-        lambda: {"initialized": _code_banco(_code_raiz(repo), None).is_file(), "fresh": None}
-    )))
+    checagens.append(
+        dr.avaliar_indice(
+            *sondar(
+                lambda: {
+                    "initialized": _code_banco(_code_raiz(repo), None).is_file(),
+                    "fresh": None,
+                }
+            )
+        )
+    )
     checagens.append(dr.avaliar_artefatos(*sondar(lambda: collect_verify(repo))))
 
     metodo = conta = erro = None
@@ -4147,7 +4185,8 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
         # doctor reconhece o repositorio que e um destino da integracao.
         appdata, codex_home = os.environ.get("APPDATA"), os.environ.get("CODEX_HOME")
         return estado_da_integracao(
-            home=Path.home(), repo=Path(repo),
+            home=Path.home(),
+            repo=Path(repo),
             appdata=Path(appdata) if appdata else None,
             codex_home=Path(codex_home) if codex_home else None,
         )
@@ -4156,10 +4195,14 @@ def doctor(repo: str = ".", online: bool = False) -> dict[str, Any]:
 
     estado, erro = sondar(integracao)
     # A versao que o integrate grava no manifesto e `sparkforge.__version__`.
-    checagens.extend(dr.avaliar_integracoes(
-        (estado or {}).get("manifest"), erro, (estado or {}).get("duplicated"),
-        installed=versao_do_pacote,
-    ))
+    checagens.extend(
+        dr.avaliar_integracoes(
+            (estado or {}).get("manifest"),
+            erro,
+            (estado or {}).get("duplicated"),
+            installed=versao_do_pacote,
+        )
+    )
     return dr.resumo(checagens, online=online)
 
 
@@ -4235,9 +4278,15 @@ def policy_explain(
     tipo = informados[0]
     raiz, politica = _policy_carregada(repo)
     if politica is None:
-        return {"active": False, "subject_kind": tipo, "decision": "allow",
-                "rule": None, "reason": "sem .sparkforge/policy.yaml", "subject": None,
-                "enforced_by": None}
+        return {
+            "active": False,
+            "subject_kind": tipo,
+            "decision": "allow",
+            "rule": None,
+            "reason": "sem .sparkforge/policy.yaml",
+            "subject": None,
+            "enforced_by": None,
+        }
     if tipo == "bash":
         decisao = decidir_bash(str(command), politica.bash)
     elif tipo == "path":
@@ -4547,7 +4596,7 @@ def change_propose(
         ) from exc
 
 
-_SIMULATE_HINT ="sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
+_SIMULATE_HINT = "sparkforge simulate --facts <facts.json> --set tf:max_concurrent_runs=1"
 
 
 def _simulate_lado(
@@ -4605,9 +4654,16 @@ def simulate_change(
     except (PolicyError, CatalogError) as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
-    versoes = {"glue": glue, "spark": spark, "python": python, "iceberg": iceberg,
-               "athena": athena, "emr": emr, "databricks": databricks,
-               "photon": photon}
+    versoes = {
+        "glue": glue,
+        "spark": spark,
+        "python": python,
+        "iceberg": iceberg,
+        "athena": athena,
+        "emr": emr,
+        "databricks": databricks,
+        "photon": photon,
+    }
     achados_antes, pulados_antes, runtime_antes = _simulate_lado(fatos, regras, versoes)
     achados_depois, pulados_depois, runtime_depois = _simulate_lado(fatos_depois, regras, versoes)
     comparacao = diff(
@@ -4704,7 +4760,7 @@ def pack_check(pack_dir: str) -> dict[str, Any]:
     return saida
 
 
-_AS_OF_EXEMPLO ="sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
+_AS_OF_EXEMPLO = "sparkforge rules lookup --id SF-ENV-001 --source-freshness --as-of 2026-09-11"
 
 
 def _as_of(valor: str | None) -> Any:
@@ -4844,8 +4900,15 @@ def judge_findings(
     # abaixo: um achado SF-ENV-00x sem o fact que ele cita seria evidencia
     # pendurada.
     runtime, fact_list = _runtime_e_facts(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
-        databricks=databricks, photon=photon,
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=fact_list,
+        emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
 
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
@@ -4867,9 +4930,7 @@ def judge_findings(
     # agentico so e carregado por quem o chama, e este modulo ja custa 243 KB.
     from sparkforge.agentic.executor.digest import plan_digest
 
-    plano, lastro = plan_digest(
-        finding_dicts, [f.to_dict() for f in fact_list], runtime
-    )
+    plano, lastro = plan_digest(finding_dicts, [f.to_dict() for f in fact_list], runtime)
     for item in finding_dicts:
         standing = lastro.get(item.get("rule_id"))
         if standing is not None:
@@ -5095,14 +5156,19 @@ def arbitrate_findings(
     que decide se a fonte de uma regra esta VIGENTE no escopo do case, e uma T1
     fora da versao alvo tem autoridade e nao sustenta a claim.
     """
-    finding_list, fact_list = _findings_e_uniao_de_facts(
-        findings, findings_path, facts, facts_path
-    )
+    finding_list, fact_list = _findings_e_uniao_de_facts(findings, findings_path, facts, facts_path)
     # A uniao que `judge` julgou inclui os facts de ambiente da deteccao; sem
     # eles aqui, a claim de um achado SF-ENV-00x sairia desancorada.
     runtime, fact_list = _runtime_e_facts(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
-        databricks=databricks, photon=photon,
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=fact_list,
+        emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
 
     # Import local, e nao no topo: `sparkforge.agentic.executor` arrasta
@@ -5161,16 +5227,19 @@ def debate_start(
     planos pelo mesmo caminho, sem gravar a saida do `arbitrate`. `rules` e
     `"A,B"` ou uma lista de duas regras; o lado A defende a primeira.
     """
-    finding_list, fact_list = _findings_e_uniao_de_facts(
-        findings, findings_path, facts, facts_path
-    )
+    finding_list, fact_list = _findings_e_uniao_de_facts(findings, findings_path, facts, facts_path)
     runtime, fact_list = _runtime_e_facts(
-        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr,
-        databricks=databricks, photon=photon,
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=fact_list,
+        emr=emr,
+        databricks=databricks,
+        photon=photon,
     )
-    par = (
-        [r.strip() for r in rules.split(",")] if isinstance(rules, str) else list(rules or [])
-    )
+    par = [r.strip() for r in rules.split(",")] if isinstance(rules, str) else list(rules or [])
 
     from sparkforge.agentic.executor import debate_run
 
@@ -5594,9 +5663,7 @@ def knowledge_path(
     if not root.is_dir():
         raise _knowledge_root_missing(f"diretorio de knowledge nao encontrado em {root}.")
 
-    available = sorted(
-        p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()
-    )
+    available = sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
 
     # Knowledge de pack mora numa chave PROPRIA, nunca em `available`: o teto de
     # paginacao acima e da lista curada do core. Sem pack ativo, a chave nao
@@ -5694,9 +5761,7 @@ def _freshness_de_knowledge(root: Path, resolved: str | None, dia: Any) -> dict[
 # --------------------------------------------------------------------------- #
 
 
-def validate_output(
-    finding: dict[str, Any], facts_path: str | None = None
-) -> dict[str, Any]:
+def validate_output(finding: dict[str, Any], facts_path: str | None = None) -> dict[str, Any]:
     """Valida um finding. Com `facts_path`, valida tambem a PERTINENCIA do
     `benchmark_ref`.
 
@@ -5731,9 +5796,7 @@ _SIGNATURE_OPEN = "<!-- sparkforge:signature -->"
 _SIGNATURE_CLOSE = "<!-- /sparkforge:signature -->"
 
 _FINDINGS_FROM_JUDGE = "sparkforge judge --facts <facts.json> --out {path}"
-_REPORT_SIGN_HINT = (
-    "sparkforge report sign --report {report} --findings <findings.json>"
-)
+_REPORT_SIGN_HINT = "sparkforge report sign --report {report} --findings <findings.json>"
 
 # As linhas legiveis por maquina do bloco usam chave ASCII de proposito -- a
 # prosa em volta e acentuada, mas o que o `verify` faz parsing precisa casar
@@ -5902,24 +5965,34 @@ def _split_report(text: str) -> tuple[str, str | None, str | None]:
     if opens == 0 and closes == 0:
         return text, None, None
     if opens != 1 or closes != 1:
-        return text, None, (
-            f"bloco malformado: {opens} delimitador(es) de abertura e {closes} de "
-            "fechamento; o esperado e exatamente um de cada"
+        return (
+            text,
+            None,
+            (
+                f"bloco malformado: {opens} delimitador(es) de abertura e {closes} de "
+                "fechamento; o esperado e exatamente um de cada"
+            ),
         )
     start = text.index(_SIGNATURE_OPEN)
     end = text.index(_SIGNATURE_CLOSE)
     if end < start:
-        return text, None, (
-            "bloco malformado: o delimitador de fechamento aparece antes do de abertura"
+        return (
+            text,
+            None,
+            ("bloco malformado: o delimitador de fechamento aparece antes do de abertura"),
         )
     body = text[:start]
     block = text[start : end + len(_SIGNATURE_CLOSE)]
     tail = text[end + len(_SIGNATURE_CLOSE) :]
     if tail.strip():
-        return body, block, (
-            "ha conteudo depois do bloco de assinatura; o corpo assinado e tudo que "
-            "vem ANTES do delimitador de abertura, entao esse trecho ficaria de fora "
-            "da assinatura sem que nada dissesse isso ao leitor"
+        return (
+            body,
+            block,
+            (
+                "ha conteudo depois do bloco de assinatura; o corpo assinado e tudo que "
+                "vem ANTES do delimitador de abertura, entao esse trecho ficaria de fora "
+                "da assinatura sem que nada dissesse isso ao leitor"
+            ),
         )
     return body, block, None
 
@@ -6186,9 +6259,7 @@ def telemetry_payload(
                 exit_code=2,
             )
         host = [fact.to_dict() for fact in extract_host_transcript_path(host_transcript)]
-    projecao = projetar(
-        spans, host, run_id=run_id, provider=provider, versao=_versao_sparkforge()
-    )
+    projecao = projetar(spans, host, run_id=run_id, provider=provider, versao=_versao_sparkforge())
     return {
         "run_id": run_id,
         "traces": projecao.traces,
@@ -6551,17 +6622,13 @@ def _parse_signature_block(block: str) -> tuple[dict[str, Any] | None, str | Non
         return None, "bloco sem a linha `- assinatura: sig_...`"
     signature = signature_match.group(1)
     if not SIGNATURE_RE.match(signature):
-        return None, (
-            f"assinatura `{signature}` fora da forma esperada (`sig_` + 64 hex)"
-        )
+        return None, (f"assinatura `{signature}` fora da forma esperada (`sig_` + 64 hex)")
 
     version_match = _BLOCK_SIGNATURE_VERSION.search(block)
     fields: dict[str, Any] = {
         "signature": signature,
         "signature_version": (
-            int(version_match.group(1))
-            if version_match
-            else _SIGNATURE_VERSION_IMPLICITA
+            int(version_match.group(1)) if version_match else _SIGNATURE_VERSION_IMPLICITA
         ),
     }
     for key, pattern in (
@@ -6571,9 +6638,7 @@ def _parse_signature_block(block: str) -> tuple[dict[str, Any] | None, str | Non
         match = pattern.search(block)
         if match is None:
             return None, f"bloco sem a linha `- {key}:`"
-        fields[key] = sorted(
-            {item.strip() for item in match.group(1).split(",") if item.strip()}
-        )
+        fields[key] = sorted({item.strip() for item in match.group(1).split(",") if item.strip()})
     for key, pattern in (
         ("catalog_version", _BLOCK_CATALOG_VERSION),
         ("schema_version", _BLOCK_SCHEMA_VERSION),
@@ -6682,8 +6747,7 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
     version_ok = declared_version == corrente
 
     evidence_ok = (
-        declared["fact_ids"] == parts["fact_ids"]
-        and declared["rule_ids"] == parts["rule_ids"]
+        declared["fact_ids"] == parts["fact_ids"] and declared["rule_ids"] == parts["rule_ids"]
     )
     catalog_ok = (
         declared["catalog_version"] == parts["catalog_version"]
@@ -6716,8 +6780,7 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
         "evidence": {
             "ok": evidence_ok,
             "detail": (
-                "os fact_ids e rule_ids declarados no bloco sao os do arquivo de "
-                "findings informado"
+                "os fact_ids e rule_ids declarados no bloco sao os do arquivo de findings informado"
                 if evidence_ok
                 else (
                     "o bloco declara "
@@ -6843,9 +6906,7 @@ def _case_open_recusa(path: Path, existing: dict[str, Any]) -> str:
         gates = ", ".join(sorted({str(o.get("gate")) for o in overrides}))
         perdas.append(f"{len(overrides)} override(s) de gate ({gates})")
     return (
-        f"ja existe um case em {path}, e abrir por cima dele apagaria: "
-        + "; ".join(perdas)
-        + ".\n"
+        f"ja existe um case em {path}, e abrir por cima dele apagaria: " + "; ".join(perdas) + ".\n"
         "  Para continuar a investigacao: `sparkforge case get --repo <raiz>` "
         "e `sparkforge case update ...`.\n"
         "  Para recomecar do zero mesmo assim: acrescente `--reopen` "
@@ -6914,9 +6975,7 @@ def case_open(
         databricks=databricks,
         photon=photon,
     )
-    case = store.new_case(
-        case_id, now, context.to_dict(), repo=repo, strict_gates=strict_gates
-    )
+    case = store.new_case(case_id, now, context.to_dict(), repo=repo, strict_gates=strict_gates)
     store.save_case(case, root=repo)
     return case
 
@@ -6970,7 +7029,7 @@ def case_update(
         raise AdapterError(
             "`--reason` so faz sentido com `--override-gate`: sem o gate, o "
             "motivo nao tem sujeito e nao seria gravado em lugar nenhum. Rode "
-            "`sparkforge case update --override-gate <gate> --reason \"<motivo>\"`.",
+            '`sparkforge case update --override-gate <gate> --reason "<motivo>"`.',
             exit_code=2,
         )
     partes = [hypothesis, prediction, experiment]
@@ -7004,9 +7063,7 @@ def case_update(
         # `--override-gate X --phase Y` falhar sempre, e o operador teria que
         # descobrir sozinho que precisava de duas chamadas.
         if override_gate is not None:
-            case = store.override_gate(
-                case, override_gate, reason or "", at=now or ""
-            )
+            case = store.override_gate(case, override_gate, reason or "", at=now or "")
         if phase is not None:
             case = store.set_phase(case, phase, fact_kinds=fact_kinds)
         if gate is not None:
@@ -7014,9 +7071,7 @@ def case_update(
         if skill is not None:
             case = store.record_skill_use(case, skill, now or "", outcome or "")
         if hypothesis is not None:
-            case = store.add_hypothesis(
-                case, hypothesis, prediction or "", experiment or ""
-            )
+            case = store.add_hypothesis(case, hypothesis, prediction or "", experiment or "")
         if close_hypothesis is not None:
             case = store.close_hypothesis(
                 case,
@@ -7345,13 +7400,9 @@ def collect_iam_access(
     return _collect_payload(entry, now)
 
 
-def collect_glue_job_runs(
-    repo: str, *, job_name: str, max_runs: int, now: str
-) -> dict[str, Any]:
+def collect_glue_job_runs(repo: str, *, job_name: str, max_runs: int, now: str) -> dict[str, Any]:
     try:
-        return collect_aws.collect_glue_job_runs(
-            job_name, Path(repo), max_runs=max_runs, now=now
-        )
+        return collect_aws.collect_glue_job_runs(job_name, Path(repo), max_runs=max_runs, now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(
             exc, repo, collect_aws.glue_job_run_path(job_name, "<run-id>")
@@ -7429,9 +7480,7 @@ def collect_emr_eks(
     # `virtualClusterId` junto do `id` -- ver o docstring do coletor.
     rel_path = collect_aws.emr_eks_path(virtual_cluster_id, job_run_id)
     try:
-        entry = collect_aws.collect_emr_eks(
-            virtual_cluster_id, job_run_id, Path(repo), now=now
-        )
+        entry = collect_aws.collect_emr_eks(virtual_cluster_id, job_run_id, Path(repo), now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
@@ -7668,9 +7717,7 @@ def _code_contagens(banco: Path) -> dict[str, int]:
     conexao = _codeintel_db.abrir(banco)
     try:
         (arestas,) = conexao.execute("SELECT COUNT(*) FROM edges").fetchone()
-        (nao_resolvidas,) = conexao.execute(
-            "SELECT COUNT(*) FROM unresolved_refs"
-        ).fetchone()
+        (nao_resolvidas,) = conexao.execute("SELECT COUNT(*) FROM unresolved_refs").fetchone()
     finally:
         conexao.close()
     return {"edges": int(arestas), "unresolved": int(nao_resolvidas)}
@@ -7782,9 +7829,7 @@ def _code_arquivo_confinado(raiz: Path, relativo: str) -> Path:
     try:
         alvo.relative_to(raiz)
     except ValueError as exc:
-        raise AdapterError(
-            f"caminho fora da raiz indexada: {relativo!r}.", exit_code=2
-        ) from exc
+        raise AdapterError(f"caminho fora da raiz indexada: {relativo!r}.", exit_code=2) from exc
     if not alvo.is_file():
         raise AdapterError(f"arquivo inexistente sob a raiz: {relativo!r}.", exit_code=2)
     if alvo.is_symlink() or (raiz / candidato).is_symlink():
@@ -7984,8 +8029,7 @@ def code_init(repo: str, *, db: str | None = None) -> dict[str, Any]:
     integridade = _code_integridade(banco)
     if integridade != "ok":
         raise AdapterError(
-            f"indice construido mas integrity_check devolveu {integridade!r}: "
-            f"{banco.as_posix()}",
+            f"indice construido mas integrity_check devolveu {integridade!r}: {banco.as_posix()}",
             exit_code=1,
         )
     return {
@@ -8090,9 +8134,7 @@ def _code_e_teste(caminho: str) -> bool:
     return nome.startswith("test_") or nome.endswith("_test.py") or "/tests/" in caminho
 
 
-def code_status(
-    repo: str, *, db: str | None = None, detail_level: str = "full"
-) -> dict[str, Any]:
+def code_status(repo: str, *, db: str | None = None, detail_level: str = "full") -> dict[str, Any]:
     """SPEC 64 + 67 + 63. O estado do indice, e nenhum fonte.
 
     Esta e a UNICA consulta que NAO recusa quando o indice esta velho ou
@@ -8142,9 +8184,7 @@ def code_status(
         # uma RESPOSTA; neste verbo a varredura E a resposta. Honra-lo faria
         # `code status` dizer "fresco" por 30 s depois de um `git checkout` --
         # exatamente a pergunta que alguem faz o `status` para responder.
-        _codeintel_staleness.garantir_frescor(
-            raiz, banco, auto_sync=False, cooldown_s=0
-        )
+        _codeintel_staleness.garantir_frescor(raiz, banco, auto_sync=False, cooldown_s=0)
     except _codeintel_staleness.NegadoPorFrescor as exc:
         fresco = False
         motivo = exc.codigo
@@ -8286,16 +8326,11 @@ def code_symbol(
         ),
     }
     if detail_level in ("normal", "full"):
-        corpo["callers"] = [
-            _code_vizinho(n) for n in _codeintel_graph.chamadores(banco, node_id)
-        ]
-        corpo["callees"] = [
-            _code_vizinho(n) for n in _codeintel_graph.chamados(banco, node_id)
-        ]
+        corpo["callers"] = [_code_vizinho(n) for n in _codeintel_graph.chamadores(banco, node_id)]
+        corpo["callees"] = [_code_vizinho(n) for n in _codeintel_graph.chamados(banco, node_id)]
     if detail_level == "full":
         corpo["impact"] = [
-            _code_vizinho(n)
-            for n in _codeintel_graph.impacto(banco, node_id, profundidade)
+            _code_vizinho(n) for n in _codeintel_graph.impacto(banco, node_id, profundidade)
         ]
         corpo["tests"] = [item for item in corpo["impact"] if _code_e_teste(item["path"])]
     return corpo
@@ -8624,8 +8659,7 @@ def code_read(
     else:
         if start_line is None or end_line is None:
             raise AdapterError(
-                "`file` exige `start_line` e `end_line`; faixa aberta seria o "
-                "arquivo inteiro.",
+                "`file` exige `start_line` e `end_line`; faixa aberta seria o arquivo inteiro.",
                 exit_code=2,
             )
         inicio, fim = int(start_line), int(end_line)
@@ -8680,8 +8714,7 @@ def code_context(
     for secao in pedidas:
         if secao in CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO:
             raise AdapterError(
-                f"include {secao!r} recusado: "
-                f"{CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO[secao]}.",
+                f"include {secao!r} recusado: {CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO[secao]}.",
                 exit_code=2,
             )
         if secao not in CODE_CONTEXT_INCLUDE:
@@ -8695,15 +8728,11 @@ def code_context(
 
     orcamento = None if max_tokens is None else int(max_tokens) * _codeintel_budget.BYTES_POR_TOKEN
     expansao = _codeintel_ranking.expandir(task)
-    regras = (
-        tuple(_code_regras_relevantes(expansao.clusters)) if "rules" in pedidas else ()
-    )
+    regras = tuple(_code_regras_relevantes(expansao.clusters)) if "rules" in pedidas else ()
     try:
         pacote = _codeintel_context.montar(banco, task, max_bytes=orcamento, regras=regras)
     except _codeintel_budget.OrcamentoImpossivel as exc:
-        raise AdapterError(
-            f"orcamento impossivel para esta consulta: {exc}", exit_code=2
-        ) from exc
+        raise AdapterError(f"orcamento impossivel para esta consulta: {exc}", exit_code=2) from exc
 
     corpo = pacote.para_dicionario()
     # O bloco `index` do pacote nasce com `fresh: None` porque `montar` nao

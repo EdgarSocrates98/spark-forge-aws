@@ -140,7 +140,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**113 tools, 42 with `detail_level`** (recounted 2026-09-26) (`summary`, `normal`, `full`).
+**114 tools, 42 with `detail_level`** (recounted 2026-09-28) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.
@@ -171,8 +171,8 @@ The Gateway preserves critical evidence, `fact_id`, `rule_id`, risks and
 of truncating silently. Context results expose `context_tree`, `execution_plan`
 and expandable refs where available.
 
-MCP remains full by default with **113 tools**. Compact MCP is explicit opt-in
-and publishes exactly **6 tools**. Full/compact adapters use the same envelope;
+MCP remains full by default with **114 tools**. Compact MCP is explicit opt-in
+and publishes exactly **7 operations**. Full/compact adapters use the same envelope;
 surface changes require `docs/surface.lock.json` and
 `python scripts/check_surface_lock.py`.
 
@@ -188,6 +188,21 @@ semantic graph relationships are declared, missing evidence is `unresolved`,
 and query expansion/knowledge compilation are deterministic and lazy. The
 implementation report and archived SDD artifacts live under
 `.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
+
+### Decision Plane shadow mode
+
+The declarative Decision Plane is versioned at
+`config/decisions/routing.data_domain.yaml` and observes the current route without
+replacing it. `sparkforge decision validate|shadow|compare|benchmark|receipt` are
+CLI-only verbs; they add no MCP tool and do not change `CapabilityModelRouter`
+dispatch. Content-addressed receipts live under `.sparkforge/decision-receipts/`
+and preserve status, route, comparison, budget, `unresolved`, and
+`provider_tokens` only when a host transcript supplies them.
+
+The offline seed has **23 cases** (15 quality, 6 federated graph, 2 transcript):
+23/23 pass in the current run, while `activation_ready` remains `false`. Activation
+requires a minimum labeled corpus plus quality and economy gates. No financial saving
+or bytes-to-provider-tokens claim is made.
 
 ## Deterministic evidence
 

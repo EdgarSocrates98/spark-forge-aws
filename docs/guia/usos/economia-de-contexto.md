@@ -181,6 +181,29 @@ sparkforge economy provider-cost \
 Sem `cost_basis`, preço ou uso medido, o comando preserva tokens observados e
 retorna `cost_total: null` com `unresolved` nomeado. Não infere tokens de bytes.
 
+## Decision Plane em shadow mode
+
+O Decision Plane observa decisões de roteamento sem substituir o router vigente. O
+contrato versionado fica em `config/decisions/routing.data_domain.yaml` e pode ser
+validado, executado sobre entradas normalizadas, comparado com a rota atual e
+auditado por receipt:
+
+```bash
+sparkforge decision validate --repo .
+sparkforge decision benchmark --repo .
+sparkforge decision shadow --input decision.json --repo . --out shadow.json
+sparkforge decision compare --shadow shadow.json --current-route tier_3_cheap_local
+sparkforge decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
+```
+
+`benchmark` roda 23 casos seed offline: 15 de qualidade, 6 de grafo federado e 2 de
+transcript. O resultado atual é 23/23, com `activation_ready: false`. O seed é uma
+prova determinística do contrato e dos limites; não é benchmark amplo de qualidade,
+não mede tokens reais do provider e não autoriza claim de economia financeira.
+Receipts preservam `status`, rota selecionada, comparação, budget e
+`unresolved`; `provider_tokens` só aparece quando o transcript do host fornece a
+medição. O modo ativo exige corpus rotulado mínimo e gates de qualidade e economia.
+
 ## Grafo live declarado
 
 O grafo live não descobre a conta inteira. Declare `cloud_resources` no

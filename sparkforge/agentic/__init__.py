@@ -33,6 +33,15 @@ Módulos:
 
 from __future__ import annotations
 
+from sparkforge.agentic.governor import (
+    AgentGovernor,
+    GovernorDecision,
+    GovernorLimits,
+    GovernorPolicy,
+    GovernorProfile,
+    GovernorRisk,
+    GovernorStatus,
+)
 from sparkforge.agentic.models import (
     Claim,
     ClaimType,
@@ -49,20 +58,37 @@ from sparkforge.agentic.models import (
     Unknown,
     UnknownStatus,
 )
+from sparkforge.agentic.recovery import (
+    FailureClass,
+    RecoveryAction,
+    RecoveryDecision,
+    RecoveryPolicy,
+)
 
 __all__ = [
     "Claim",
     "ClaimType",
+    "AgentGovernor",
     "Contradiction",
     "Decision",
+    "FailureClass",
     "Evidence",
     "EvidenceAuthority",
     "Experiment",
     "ExperimentStatus",
+    "GovernorDecision",
+    "GovernorLimits",
+    "GovernorPolicy",
+    "GovernorProfile",
+    "GovernorRisk",
+    "GovernorStatus",
     "Hypothesis",
     "HypothesisStatus",
     "Objection",
     "Rebuttal",
+    "RecoveryAction",
+    "RecoveryDecision",
+    "RecoveryPolicy",
     "Unknown",
     "UnknownStatus",
 ]

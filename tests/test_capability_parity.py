@@ -243,6 +243,14 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "coletor CLI com credenciais AWS e manifesto local; grava artefato "
             "local e não adiciona superfície MCP nesta feature."
         ),
+        # Decision Plane is deliberately CLI-only in shadow mode: it observes
+        # the current route and writes local receipts, without provider calls
+        # or a new MCP surface.
+        "decision benchmark": "offline seed evaluation; no MCP surface.",
+        "decision compare": "local shadow/current-route comparison; no MCP surface.",
+        "decision receipt": "local receipt verification; no MCP surface.",
+        "decision shadow": "local shadow evaluation; no MCP surface.",
+        "decision validate": "local contract validation; no MCP surface.",
     }
 
     def _subcomandos(self, parser):

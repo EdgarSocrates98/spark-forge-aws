@@ -91,6 +91,7 @@ class TestToolSurface:
             "sparkforge_dq_ai_assess",
             "sparkforge_tune",
             "sparkforge_economy_report",
+            "sparkforge_decision_evaluate",
             "sparkforge_judge",
             "sparkforge_arbitrate",
             "sparkforge_lakeformation_access_graph",
@@ -2963,6 +2964,17 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
         assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
         return result
+
+    if name == "sparkforge_decision_evaluate":
+        return call_tool(
+            "sparkforge_decision_evaluate",
+            {
+                "repo": str(__import__("pathlib").Path(__file__).resolve().parents[1]),
+                "contract": "kernel.synthetic",
+                "state": {"signal": "safe"},
+                "now": "2026-09-28T00:00:00Z",
+            },
+        )
 
     if name == "sparkforge_glue_dependency_audit":
         # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a

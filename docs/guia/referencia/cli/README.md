@@ -21,6 +21,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge context`](context.md) | Descobre capabilities e empacota contexto deterministico sob limite explicito. |
 | [`sparkforge controlm`](controlm.md) | Conhecimento versionado do Control-M Automation API. |
 | [`sparkforge debate`](debate.md) | Conduz e arbitra o protocolo de debate do case. |
+| [`sparkforge decision`](decision.md) | Valida e observa decisões declarativas sem alterar o dispatch atual. |
 | [`sparkforge decisions`](decisions.md) | Lista e explica decisões registradas. |
 | [`sparkforge detach`](detach.md) | Remove a integracao de usuario do host: so o que o manifesto ~/.sparkforge/integrations.json registrou e ainda tem o sha256 gravado. |
 | [`sparkforge doctor`](doctor.md) | Confere se o ambiente esta pronto: pacote, extras, MCP, catalogo, packs, knowledge, indice de codigo, artefatos, credencial AWS e a integracao de usuario de cada host. |

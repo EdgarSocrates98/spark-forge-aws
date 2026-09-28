@@ -982,8 +982,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # `_READ_ONLY`, le o historico de execucao salvo em disco e declara `path`.
         # 101 -> 105 com `analyze_dq_ai`, `dq_ai_assess`, `context_start` e
         # `context_expand` (2026-09-26): todas declaram caminho local e passam
-        # pelo mesmo predicado de confinamento.
-        assert len(TOOLS) - len(sem_caminho) == 105
+        # pelo mesmo predicado de confinamento. A tool de decisao bounded
+        # (2026-09-28) nao declara caminho e leva o total de tools para 114,
+        # sem mover `SEM_CAMINHO`.
+        assert len(TOOLS) - len(sem_caminho) == 106
 
 
 class TestAImposicaoNoDespacho:

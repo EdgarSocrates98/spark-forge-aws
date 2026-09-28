@@ -131,6 +131,12 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_debate_start`](sparkforge_debate_start.md) | grava local | Abre o debate que `sparkforge_arbitrate` deixou em `debate.unresolved`: recalcula os planos pelo MESMO caminho do `arbitrate`, sobre os MESMOS insumos (findings, a UNIAO dos fac... |
 | [`sparkforge_debate_submit`](sparkforge_debate_submit.md) | muda estado local | Submete o turno do lado da vez, INLINE em `submission`, no schema que o brief publica. |
 
+## decision
+
+| Tool | Efeito | O que faz |
+|---|---|---|
+| [`sparkforge_decision_evaluate`](sparkforge_decision_evaluate.md) | só leitura | Avalia contrato de decisão bounded, versionado e local através do kernel determinístico. |
+
 ## doctor
 
 | Tool | Efeito | O que faz |

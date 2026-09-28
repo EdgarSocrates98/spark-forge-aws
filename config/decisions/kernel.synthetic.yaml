@@ -1,0 +1,32 @@
+schema_version: 1
+contract_id: kernel.synthetic
+contract_version: "1"
+mode: shadow
+primitive: route
+state:
+  required:
+    - name: signal
+      type: string
+budget:
+  max_input_bytes: 6000
+  cache_max_entries: 128
+spec:
+  rules:
+    - when:
+        - field: signal
+          equals: safe
+      route: local
+      confidence: 1.0
+      priority: 0
+    - when:
+        - field: signal
+          equals: review
+      route: review
+      confidence: 0.7
+      priority: 1
+  default: abstain
+  default_confidence: 0.4
+activation:
+  enabled: false
+measurement:
+  enabled: true

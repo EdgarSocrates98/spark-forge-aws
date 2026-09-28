@@ -141,7 +141,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**113 tools, 42 com `detail_level`** (recontado em 2026-09-26). Os niveis sao `summary`,
+**114 tools, 42 com `detail_level`** (recontado em 2026-09-28). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
@@ -186,7 +186,7 @@ bytes), `balanced` (16/6/16, 16.000) e `deep` (32/12/32, 30.000). Seleção e
 redução são determinísticas; evidência crítica, refs, riscos e `unresolved`
 geram recusa nomeada quando não cabem.
 
-MCP é **full por padrão (113 tools)**; `compact` é opt-in (6 tools). Ambos usam
+MCP é **full por padrão (114 tools)**; `compact` é opt-in (7 operações publicadas). Ambos usam
 o mesmo envelope. Crescimento exige `docs/surface.lock.json` e
 `python scripts/check_surface_lock.py`.
 
@@ -199,6 +199,13 @@ O caminho padrão é determinístico/offline: planner, Code Intelligence increme
 workspace graph, query expansion e compiler. Specialist/reviewer/debate exigem
 triggers; relações e claims ausentes ficam `unresolved`. Archive:
 `.claude/sdd/archive/SPARKFORGE_TOKEN_EFFICIENT_AGENTIC_ARCHITECTURE_VNEXT/`.
+
+### Plane
+
+Contrato legado: `config/decisions/routing.data_domain.yaml`; `decision shadow` é
+shadow-only e router é autoridade. Kernel em `sparkforge/decision/`: seis primitivas,
+cache/fingerprint/receipt. Tokens: transcript; custo: `cost_basis`. v1:
+`docs/agentic-evolution-report.md`.
 
 ## Desenvolver: o SDD próprio
 
