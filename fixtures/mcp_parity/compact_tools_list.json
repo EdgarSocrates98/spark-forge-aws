@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
   "mode": "compact",
-  "tool_count": 6,
+  "tool_count": 7,
   "tool_names": [
     "context_start",
     "context_expand",
-    "execute",
+    "execute_read",
+    "execute_mutation",
     "search",
     "get",
     "next"

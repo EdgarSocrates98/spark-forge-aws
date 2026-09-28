@@ -37,7 +37,7 @@ def test_execute_payload_matches_full_dispatch_semantics(tmp_path):
     arguments = {"glue": "5.0"}
 
     compact = router.call(
-        "execute",
+        "execute_read",
         {"capability": "sparkforge_runtime_detect", "arguments": arguments},
     )
     direct = call_tool(
@@ -55,7 +55,7 @@ def test_execute_refusal_preserves_structured_error_semantics(tmp_path):
     router = _router(tmp_path)
 
     compact = router.call(
-        "execute",
+        "execute_read",
         {"capability": "sparkforge_not_real", "arguments": {}},
     )
 

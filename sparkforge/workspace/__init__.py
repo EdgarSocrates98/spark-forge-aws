@@ -16,6 +16,7 @@ from sparkforge.workspace.federated import (
     compositor,
     fragment_from_graph,
 )
+from sparkforge.workspace.federation import compose_manifest_graph, compose_workspace_graph
 from sparkforge.workspace.freshness import (
     FreshnessAssessment,
     FreshnessStatus,
@@ -30,6 +31,7 @@ from sparkforge.workspace.graph import WorkspaceGraph, build_graph
 from sparkforge.workspace.impact import ImpactProjection, project_impact
 from sparkforge.workspace.manifest import (
     CloudResource,
+    GraphLink,
     Relationship,
     Repository,
     WorkspaceManifest,
@@ -46,6 +48,7 @@ from sparkforge.workspace.semantic import (
 
 __all__ = [
     "CloudResource",
+    "GraphLink",
     "FragmentAdapter",
     "FederatedGraph",
     "FreshnessAssessment",
@@ -64,8 +67,10 @@ __all__ = [
     "build_semantic_graph",
     "build_graph",
     "compose",
+    "compose_manifest_graph",
     "compose_federated_graph",
     "compose_graph",
+    "compose_workspace_graph",
     "compositor",
     "fingerprint",
     "fragment_from_graph",

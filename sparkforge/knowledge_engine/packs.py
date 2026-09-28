@@ -31,12 +31,26 @@ class PackRegistry:
             else self.root.parent / ".sparkforge-knowledge-cache"
         )
         self._indexes: dict[tuple[str, str], KnowledgeIndex] = {}
+        self._descriptor_signature_cache: tuple[tuple[str, str, int, int], ...] | None = None
+        self._descriptor_cache: tuple[PackDescriptor, ...] | None = None
 
     def descriptors(self) -> tuple[PackDescriptor, ...]:
-        if not self.root.is_dir():
-            return ()
+        signature = _pack_signature(self.root)
+        if (
+            self._descriptor_cache is not None
+            and self._descriptor_signature_cache == signature
+        ):
+            return self._descriptor_cache
         result = []
-        for directory in sorted(item for item in self.root.iterdir() if item.is_dir()):
+        directories = (
+            sorted(
+                (item for item in self.root.iterdir() if item.is_dir()),
+                key=lambda item: item.name,
+            )
+            if self.root.is_dir()
+            else ()
+        )
+        for directory in directories:
             files = _pack_files(directory)
             digest = hashlib.sha256()
             for item in files:
@@ -45,7 +59,9 @@ class PackRegistry:
             result.append(
                 PackDescriptor(directory.name, directory.as_posix(), digest.hexdigest(), len(files))
             )
-        return tuple(result)
+        self._descriptor_signature_cache = signature
+        self._descriptor_cache = tuple(result)
+        return self._descriptor_cache
 
     def load(self, domain: str) -> KnowledgeIndex:
         descriptor = next((item for item in self.descriptors() if item.domain == domain), None)
@@ -94,6 +110,28 @@ def _pack_files(root: Path) -> tuple[Path, ...]:
         directories[:] = sorted(name for name in directories if name != ".git")
         files.extend(Path(current) / name for name in sorted(names))
     return tuple(files)
+
+
+def _pack_signature(root: Path) -> tuple[tuple[str, str, int, int], ...]:
+    """Return cheap metadata used to avoid hashing unchanged pack bodies."""
+
+    if not root.is_dir():
+        return ()
+    signature: list[tuple[str, str, int, int]] = []
+    for directory in sorted(
+        (item for item in root.iterdir() if item.is_dir()), key=lambda item: item.name
+    ):
+        for item in _pack_files(directory):
+            stat = item.stat()
+            signature.append(
+                (
+                    directory.name,
+                    item.relative_to(directory).as_posix(),
+                    stat.st_size,
+                    stat.st_mtime_ns,
+                )
+            )
+    return tuple(signature)
 
 
 __all__ = ["PackDescriptor", "PackRegistry"]
