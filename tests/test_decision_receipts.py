@@ -32,6 +32,7 @@ def test_transcript_tokens_keep_provenance(tmp_path: Path) -> None:
     assert document["token_state"]["transcript_sha256"] == "transcript-sha"
     assert document["input"]["payload_bytes"] == 900
     assert document["token_state"]["transcript_sha256"] == "transcript-sha"
+    assert document["kernel"]["fingerprint"]
     assert DecisionReceiptStore(tmp_path).verify(evaluation.receipt.path)["valid"] is True
 
 
@@ -46,6 +47,7 @@ def test_missing_transcript_is_tokens_unresolved(tmp_path: Path) -> None:
 
     assert evaluation.receipt.document["token_state"]["tokens_unresolved"] is True
     assert evaluation.receipt.document["input"]["payload_bytes"] == 900
+    assert evaluation.receipt.document["kernel"]["cache_hit"] is False
 
 
 def test_receipt_path_escape_and_tampering_fail_closed(tmp_path: Path) -> None:

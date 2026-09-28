@@ -283,7 +283,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extrai a topologia do catalogo ja coletada: link, alvo e nome.",
     )
     rlink_analyze_p.add_argument(
-        "--path", required=True,
+        "--path",
+        required=True,
         help="Artefato JSON de `collect glue-resource-link`, ou o DIRETORIO deles.",
     )
     rlink_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
@@ -297,7 +298,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extrai a DECISAO de IAM ja simulada, com a camada que decidiu.",
     )
     iam_analyze_p.add_argument(
-        "--path", required=True,
+        "--path",
+        required=True,
         help="Artefato JSON de `collect iam-access`, ou o DIRETORIO deles.",
     )
     iam_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
@@ -1107,7 +1109,9 @@ def build_parser() -> argparse.ArgumentParser:
     tune_p.add_argument("--facts", required=True, help="Arquivo de facts (--out de analyze).")
     tune_p.add_argument("--out", help="Escreve o relatorio completo (JSON) neste arquivo.")
     tune_p.add_argument(
-        "--headroom", type=float, default=None,
+        "--headroom",
+        type=float,
+        default=None,
         help=(
             "Folga declarada sobre o piso de memoryOverhead e de broadcastTimeout "
             "(0.2 = +20%%). Sem ela, o piso."
@@ -1163,6 +1167,14 @@ def build_parser() -> argparse.ArgumentParser:
     decision_shadow_p.add_argument("--repo", default=".")
     decision_shadow_p.add_argument("--now")
     decision_shadow_p.add_argument("--out", help="Escreve o resultado completo neste arquivo.")
+    decision_evaluate_p = decision_sub.add_parser(
+        "evaluate", help="Avalia contrato bounded genérico em modo offline."
+    )
+    decision_evaluate_p.add_argument("--contract", default="kernel.synthetic")
+    decision_evaluate_p.add_argument("--input", required=True, help="JSON de estado declarado.")
+    decision_evaluate_p.add_argument("--repo", default=".")
+    decision_evaluate_p.add_argument("--now")
+    decision_evaluate_p.add_argument("--out", help="Escreve o resultado completo neste arquivo.")
     decision_compare_p = decision_sub.add_parser(
         "compare", help="Compara uma decisão shadow persistida com uma rota atual."
     )
@@ -1475,9 +1487,7 @@ def build_parser() -> argparse.ArgumentParser:
             "calculado sobre knowledge/sources.lock.json. Depende do lock e do dia."
         ),
     )
-    judge_p.add_argument(
-        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
-    )
+    judge_p.add_argument("--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD).")
 
     # arbitrate --------------------------------------------------------
     # Verbo de TOPO, e nao um `agentic arbitrate`: ele nao extrai de artefato
@@ -2076,10 +2086,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     deb_submit = ref_sub.add_parser(
         "submit",
-        help=(
-            "Valida e grava a submissao do lado da vez. Recusa por nome e deixa o "
-            "estado igual."
-        ),
+        help=("Valida e grava a submissao do lado da vez. Recusa por nome e deixa o estado igual."),
     )
     deb_submit.add_argument("--repo", default=".", help="Raiz do case.")
     deb_submit.add_argument("--debate", required=True, help="O `debate_id` que `start` devolveu.")
@@ -2244,9 +2251,7 @@ def build_parser() -> argparse.ArgumentParser:
             "calculado sobre knowledge/sources.lock.json. Depende do lock e do dia."
         ),
     )
-    lookup_p.add_argument(
-        "--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD)."
-    )
+    lookup_p.add_argument("--as-of", help="Dia de referencia do estado das fontes (AAAA-MM-DD).")
 
     # validate --------------------------------------------------------
     validate_p = sub.add_parser(
@@ -2499,13 +2504,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="RULE_ID ou RULE_ID:simbolo de cada recomendacao aplicada. Repetivel.",
     )
     for flag in (
-        "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
+        "--glue",
+        "--spark",
+        "--python",
+        "--iceberg",
+        "--athena",
+        "--emr",
         "--databricks",
     ):
         proof_p.add_argument(flag, default=None)
-    proof_p.add_argument(
-        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
-    )
+    proof_p.add_argument("--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP)
 
     # simulate ----------------------------------------------------------------
     # Verbo de TOPO: altera facts de configuracao ja extraidos e julga os dois
@@ -2529,13 +2537,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="camada:chave=valor, camada em tf, code, effective, emr. Repetivel.",
     )
     for flag in (
-        "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
+        "--glue",
+        "--spark",
+        "--python",
+        "--iceberg",
+        "--athena",
+        "--emr",
         "--databricks",
     ):
         simulate_p.add_argument(flag, default=None)
-    simulate_p.add_argument(
-        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
-    )
+    simulate_p.add_argument("--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP)
 
     # gain --------------------------------------------------------------------
     # Verbo de TOPO: compara runs ja medidos; nao le artefato de job.
@@ -2570,21 +2581,28 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true", help="So mostra o plano; nao roda nem grava nada."
     )
     scan_p.add_argument(
-        "--format", choices=["json", "sarif"], default="json",
+        "--format",
+        choices=["json", "sarif"],
+        default="json",
         help="sarif grava tambem o SARIF e o resumo de PR, como `report github`.",
     )
     scan_p.add_argument(
-        "--fail-on", choices=["P0", "P1"], default=None,
+        "--fail-on",
+        choices=["P0", "P1"],
+        default=None,
         help="Sai 1 se houver finding nesta severidade (P1 inclui P0).",
     )
     for flag in (
-        "--glue", "--spark", "--python", "--iceberg", "--athena", "--emr",
+        "--glue",
+        "--spark",
+        "--python",
+        "--iceberg",
+        "--athena",
+        "--emr",
         "--databricks",
     ):
         scan_p.add_argument(flag, default=None)
-    scan_p.add_argument(
-        "--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP
-    )
+    scan_p.add_argument("--photon", default=None, choices=("on", "off"), help=_PHOTON_FLAG_HELP)
 
     # doctor ------------------------------------------------------------------
     doctor_p = sub.add_parser(
@@ -2597,7 +2615,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     doctor_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
     doctor_p.add_argument(
-        "--online", action="store_true",
+        "--online",
+        action="store_true",
         help="Confirma a credencial na AWS (STS get_caller_identity). Unico modo com rede.",
     )
 
@@ -2621,14 +2640,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Profile Gateway; economy/balanced integram MCP Compact.",
     )
     integrate_p.add_argument(
-        "--scope", choices=("user",), required=True,
+        "--scope",
+        choices=("user",),
+        required=True,
         help="Escopo da integracao; so user nesta versao.",
     )
     integrate_p.add_argument(
         "--dry-run", action="store_true", help="Lista o que seria escrito, sem escrever."
     )
     integrate_p.add_argument(
-        "--on-conflict", choices=("overwrite", "merge", "ignore"), default=None,
+        "--on-conflict",
+        choices=("overwrite", "merge", "ignore"),
+        default=None,
         help=(
             "Copia vendorizada em dobro no repositorio atual: overwrite apaga do repo, "
             "merge apaga so o identico, ignore nao toca. Sem a flag e sem terminal: ignore."
@@ -2643,7 +2666,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     detach_p.add_argument("host", choices=hosts_integraveis, help="Host, ou all.")
     detach_p.add_argument(
-        "--scope", choices=("user",), default="user",
+        "--scope",
+        choices=("user",),
+        default="user",
         help="Escopo da integracao; so user nesta versao.",
     )
     detach_p.add_argument(
@@ -2704,7 +2729,9 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     change_plan_p.add_argument(
-        "--facts", action="append", required=True,
+        "--facts",
+        action="append",
+        required=True,
         help="Facts do case (repetivel): a uniao que o judge recebeu.",
     )
     change_plan_p.add_argument(
@@ -2714,7 +2741,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--from-tune", action="store_true", help="Usa o valor que o tune deriva da medida."
     )
     change_plan_p.add_argument(
-        "--set", dest="sets", action="append", default=None, metavar="CHAVE=VALOR",
+        "--set",
+        dest="sets",
+        action="append",
+        default=None,
+        metavar="CHAVE=VALOR",
         help="Valor a propor (repetivel), por exemplo spark.sql.shuffle.partitions=320.",
     )
     change_plan_p.add_argument(
@@ -2727,11 +2758,10 @@ def build_parser() -> argparse.ArgumentParser:
             "depois e compara os achados. A arvore principal nao muda."
         ),
     )
+    change_sandbox_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
     change_sandbox_p.add_argument(
-        "--repo", default=".", help="Raiz do repositorio (padrao: .)."
-    )
-    change_sandbox_p.add_argument(
-        "--diff", default=None,
+        "--diff",
+        default=None,
         help="Arquivo de diff unificado (de change plan --out ou de git diff).",
     )
     change_sandbox_p.add_argument(
@@ -2745,18 +2775,19 @@ def build_parser() -> argparse.ArgumentParser:
             "roda. Nao executa git nem gh."
         ),
     )
-    change_propose_p.add_argument(
-        "--repo", default=".", help="Raiz do repositorio (padrao: .)."
-    )
+    change_propose_p.add_argument("--repo", default=".", help="Raiz do repositorio (padrao: .).")
     change_propose_p.add_argument(
         "--sandbox", required=True, help="O id que `sparkforge change sandbox` devolveu."
     )
     change_propose_p.add_argument(
-        "--benchmark", action="append", default=None,
+        "--benchmark",
+        action="append",
+        default=None,
         help="Facts com `bench.*` de dois runs medidos (repetivel). Sem ele, fica PENDENTE.",
     )
     change_propose_p.add_argument(
-        "--funcval", default=None,
+        "--funcval",
+        default=None,
         help="Facts com `funcval.*` do funcval compare. Sem ele, fica PENDENTE.",
     )
     change_propose_p.add_argument(
@@ -2802,11 +2833,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     iam_p.add_argument("--repo", required=True)
     iam_p.add_argument(
-        "--role-arn", required=True,
+        "--role-arn",
+        required=True,
         help="ARN do role a simular -- tipicamente o runtime role do job.",
     )
     iam_p.add_argument(
-        "--action", action="append", dest="actions",
+        "--action",
+        action="append",
+        dest="actions",
         help=(
             "Acao a simular. Repetivel. Sem ela, a lista default de Lake Formation e "
             "Glue -- e passar a lista inteira quando a pergunta e sobre UMA escrita "
@@ -2814,7 +2848,9 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     iam_p.add_argument(
-        "--resource-arn", action="append", dest="resource_arns",
+        "--resource-arn",
+        action="append",
+        dest="resource_arns",
         help="Recurso contra o qual simular. Repetivel. Sem ele a resposta e sobre `*`.",
     )
     iam_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
@@ -2942,7 +2978,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--prefix", required=True, help="Diretorio local com .parquet, ou s3://bucket/prefixo/."
     )
     parquet_collect_p.add_argument(
-        "--max-files", type=int, default=None,
+        "--max-files",
+        type=int,
+        default=None,
         help="Quantos arquivos ler, os primeiros pelo nome (padrao do coletor: 20; teto 500).",
     )
     parquet_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
@@ -3000,9 +3038,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     workspace_graph_p = collect_sub.add_parser(
         "workspace-graph",
-        help=(
-            "Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."
-        ),
+        help=("Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."),
     )
     workspace_graph_p.add_argument("--repo", required=True)
     workspace_graph_p.add_argument("--manifest", required=True)
@@ -3822,6 +3858,18 @@ def _cmd_decision_shadow(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_decision_evaluate(args: argparse.Namespace) -> int:
+    state = _load_json_object(args.input)
+    payload = _core.decision_evaluate(
+        repo=args.repo,
+        contract=args.contract,
+        state=state,
+        now=args.now,
+    )
+    _write_decision_payload(payload, args.out)
+    return 0
+
+
 def _cmd_decision_compare(args: argparse.Namespace) -> int:
     from sparkforge.economy.decision_compare import compare_decisions
     from sparkforge.economy.decision_models import BudgetSnapshot, DecisionResult, DecisionStatus
@@ -4367,8 +4415,10 @@ def _cmd_report_github(args: argparse.Namespace) -> int:
     for linha in payload["annotations"]:
         sys.stdout.write(linha + "\n")
     counts, gate = payload["counts"], payload["gate"]
-    estado = "off" if gate["fail_on"] is None else f"{gate['fail_on']}: " + (
-        "disparou" if gate["tripped"] else "ok"
+    estado = (
+        "off"
+        if gate["fail_on"] is None
+        else f"{gate['fail_on']}: " + ("disparou" if gate["tripped"] else "ok")
     )
     print(
         f"sparkforge report github: {counts['located']} no SARIF, {counts['refused']} sem "
@@ -4426,10 +4476,18 @@ def _cmd_gain(args: argparse.Namespace) -> int:
 
 def _cmd_scan(args: argparse.Namespace) -> int:
     resultado = _core.scan(
-        args.raiz, dry_run=args.dry_run, output_format=args.format, fail_on=args.fail_on,
-        glue=args.glue, spark=args.spark, python=args.python, iceberg=args.iceberg,
-        athena=args.athena, emr=args.emr,
-        databricks=args.databricks, photon=args.photon,
+        args.raiz,
+        dry_run=args.dry_run,
+        output_format=args.format,
+        fail_on=args.fail_on,
+        glue=args.glue,
+        spark=args.spark,
+        python=args.python,
+        iceberg=args.iceberg,
+        athena=args.athena,
+        emr=args.emr,
+        databricks=args.databricks,
+        photon=args.photon,
     )
     _print(resultado)
     return 1 if (resultado.get("gate") or {}).get("tripped") else 0
@@ -4550,8 +4608,11 @@ def _cmd_detach(args: argparse.Namespace) -> int:
     from sparkforge.integrate import detach
 
     resultado = detach(
-        args.host, home=Path.home(), appdata=_appdata_real(),
-        codex_home=_codex_home_real(), dry_run=args.dry_run,
+        args.host,
+        home=Path.home(),
+        appdata=_appdata_real(),
+        codex_home=_codex_home_real(),
+        dry_run=args.dry_run,
     )
     _print(resultado)
     return _saida_da_integracao(resultado)
@@ -5193,6 +5254,7 @@ _DISPATCH = {
     ("economy", "provider-cost"): _cmd_economy_provider_cost,
     ("decision", "validate"): _cmd_decision_validate,
     ("decision", "shadow"): _cmd_decision_shadow,
+    ("decision", "evaluate"): _cmd_decision_evaluate,
     ("decision", "compare"): _cmd_decision_compare,
     ("decision", "benchmark"): _cmd_decision_benchmark,
     ("decision", "receipt"): _cmd_decision_receipt,

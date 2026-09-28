@@ -38,8 +38,12 @@ def test_shadow_returns_complete_result_and_receipt(tmp_path: Path) -> None:
         "unresolved",
         "budget",
         "receipt_id",
+        "fingerprint",
+        "cache_hit",
+        "evidence",
     }
     assert evaluation.receipt.path.is_file()
+    assert evaluation.receipt.document["kernel"]["fingerprint"] == result["fingerprint"]
 
 
 def test_runtime_and_cli_projection_match(tmp_path: Path) -> None:
@@ -55,20 +59,23 @@ def test_runtime_and_cli_projection_match(tmp_path: Path) -> None:
     input_path = repo / "input.json"
     input_path.write_text(json.dumps(request.canonical()), encoding="utf-8")
     output_path = repo / "shadow.json"
-    assert main(
-        [
-            "decision",
-            "shadow",
-            "--repo",
-            str(repo),
-            "--input",
-            str(input_path),
-            "--now",
-            "fixed",
-            "--out",
-            str(output_path),
-        ]
-    ) == 0
+    assert (
+        main(
+            [
+                "decision",
+                "shadow",
+                "--repo",
+                str(repo),
+                "--input",
+                str(input_path),
+                "--now",
+                "fixed",
+                "--out",
+                str(output_path),
+            ]
+        )
+        == 0
+    )
     cli_projection = json.loads(output_path.read_text(encoding="utf-8"))
 
     assert cli_projection["result"] == runtime["result"]

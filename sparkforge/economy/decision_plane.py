@@ -1,4 +1,9 @@
-"""Shared runtime and CLI facade for the shadow Decision Plane."""
+"""Shared runtime and CLI facade for the shadow Decision Plane.
+
+The economy API remains the compatibility boundary; ``DeterministicDecisionEngine``
+delegates evaluation to ``sparkforge.decision`` while this service keeps shadow
+comparison, receipt persistence and activation authority unchanged.
+"""
 
 from __future__ import annotations
 

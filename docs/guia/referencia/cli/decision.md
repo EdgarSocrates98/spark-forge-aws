@@ -10,6 +10,7 @@ Valida e observa decisões declarativas sem alterar o dispatch atual.
 |---|---|
 | [`sparkforge decision benchmark`](#sparkforge-decision-benchmark) | Executa a suíte seed offline do Decision Plane. |
 | [`sparkforge decision compare`](#sparkforge-decision-compare) | Compara uma decisão shadow persistida com uma rota atual. |
+| [`sparkforge decision evaluate`](#sparkforge-decision-evaluate) | Avalia contrato bounded genérico em modo offline. |
 | [`sparkforge decision receipt`](#sparkforge-decision-receipt) | Verifica receipt content-addressed de decisão shadow. |
 | [`sparkforge decision shadow`](#sparkforge-decision-shadow) | Avalia estado normalizado e compara com a rota atual. |
 | [`sparkforge decision validate`](#sparkforge-decision-validate) | Valida um contrato Decision Plane versionado. |
@@ -53,6 +54,28 @@ sparkforge decision compare --help
 ### Tool MCP equivalente
 
 Nenhuma: este verbo existe só na CLI.
+
+## `sparkforge decision evaluate`
+
+Avalia contrato bounded genérico em modo offline.
+
+```bash
+sparkforge decision evaluate --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--contract` | não | texto |  | `kernel.synthetic` |  |
+| `--input` | sim | texto |  |  | JSON de estado declarado. |
+| `--repo` | não | texto |  | `.` |  |
+| `--now` | não | texto |  |  |  |
+| `--out` | não | texto |  |  | Escreve o resultado completo neste arquivo. |
+
+### Tool MCP equivalente
+
+[`sparkforge_decision_evaluate`](../tools/sparkforge_decision_evaluate.md)
 
 ## `sparkforge decision receipt`
 

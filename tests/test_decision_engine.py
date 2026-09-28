@@ -14,10 +14,14 @@ def test_engine_selects_first_matching_declared_candidate() -> None:
     contract = ContractRegistry(ROOT).load("routing.data_domain")
     state = DecisionInput("task", "diagnose", deterministic_available=True)
 
-    result = DeterministicDecisionEngine().evaluate(contract, state)
+    engine = DeterministicDecisionEngine()
+    result = engine.evaluate(contract, state)
+    cached = engine.evaluate(contract, state)
 
     assert result.status is DecisionStatus.ACCEPTED
     assert result.selected == ("tier_0_deterministic",)
+    assert result.fingerprint
+    assert cached.cache_hit is True
     assert candidate_routes(contract.candidates)[0] == "tier_0_deterministic"
 
 

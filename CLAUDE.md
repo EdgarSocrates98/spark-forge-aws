@@ -141,7 +141,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**113 tools, 42 com `detail_level`** (recontado em 2026-09-26). Os niveis sao `summary`,
+**114 tools, 42 com `detail_level`** (recontado em 2026-09-28). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
@@ -186,7 +186,7 @@ bytes), `balanced` (16/6/16, 16.000) e `deep` (32/12/32, 30.000). Seleção e
 redução são determinísticas; evidência crítica, refs, riscos e `unresolved`
 geram recusa nomeada quando não cabem.
 
-MCP é **full por padrão (113 tools)**; `compact` é opt-in (6 tools). Ambos usam
+MCP é **full por padrão (114 tools)**; `compact` é opt-in (7 operações publicadas). Ambos usam
 o mesmo envelope. Crescimento exige `docs/surface.lock.json` e
 `python scripts/check_surface_lock.py`.
 
@@ -202,10 +202,16 @@ triggers; relações e claims ausentes ficam `unresolved`. Archive:
 
 ### Plane
 
-Contrato: `config/decisions/routing.data_domain.yaml`; CLI shadow-only, sem MCP/provider.
-Seed: **23 casos**, 23/23, `activation_ready: false`. Receipts:
+Contrato legado: `config/decisions/routing.data_domain.yaml`; `decision shadow` continua
+shadow-only e o router atual continua autoridade. O kernel genérico fica em
+`sparkforge/decision/`, com seis primitivas fechadas, cache bounded, fingerprint e
+receipt local. Entrada canônica: `decision evaluate` e tool MCP read-only
+`sparkforge_decision_evaluate`; ambos delegam ao mesmo runtime offline e provider-independent.
+Seed legado: **23 casos**, 23/23, `activation_ready: false`. Receipts:
 `.sparkforge/decision-receipts/`; tokens exigem transcript. Ativação exige corpus/gates;
-sem claim financeiro/bytes→tokens.
+sem claim financeiro/bytes→tokens. Baseline sintético: `scripts/benchmark_decision_kernel.py`;
+mede latência/bytes localmente e mantém `provider_tokens`, `tokens_unresolved` e `cost_basis`
+separados.
 
 ## Desenvolver: o SDD próprio
 

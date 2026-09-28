@@ -60,6 +60,11 @@ class DecisionReceiptStore:
             "input_sha256": digest_of(request.canonical()),
             "current": _current_dict(current),
             "shadow": result.to_dict(include_receipt=False),
+            "kernel": {
+                "fingerprint": result.fingerprint,
+                "cache_hit": result.cache_hit,
+                "evidence": list(result.evidence),
+            },
             "comparison": comparison.to_dict(),
             "token_state": request.provider_usage.to_dict(),
             "trace_ref": trace_ref,
@@ -112,9 +117,7 @@ class DecisionReceiptStore:
 
 def _semantic_body(document: dict[str, Any]) -> dict[str, Any]:
     body = {
-        key: value
-        for key, value in document.items()
-        if key not in {"receipt_id", "emitted_at"}
+        key: value for key, value in document.items() if key not in {"receipt_id", "emitted_at"}
     }
     shadow = body.get("shadow")
     if isinstance(shadow, dict):

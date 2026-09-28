@@ -88,6 +88,27 @@ ampla, tokens do provider, custo financeiro ou prontidão para ativação. O rou
 vigente continua sendo autoridade; a ativação requer corpus rotulado mínimo e gates
 de qualidade e economia.
 
+## Atualização corrente — 2026-09-28 — Forge Bounded Decision Kernel
+
+O Decision Plane legado agora é uma fachada de compatibilidade sobre um kernel genérico
+offline em `sparkforge/decision/`. O contrato v1 aceita somente seis primitivas fechadas
+(`choice`, `boolean`, `gate`, `score`, `route`, `threshold`), compila estado declarado,
+gera fingerprint de contrato/estado e retorna `accepted`, `abstain`, `unresolved` ou
+`refused` sem inferência.
+
+| Entrega | Caminho | Estado | Prova |
+|---|---|---|---|
+| Runtime e cache bounded | `sparkforge/decision/{runtime,cache,state,fingerprint}.py` | IMPLEMENTED, offline | `tests/test_decision_kernel_runtime.py`, `tests/test_decision_kernel_cache.py` |
+| Receipts compactos | `sparkforge/decision/receipts.py` | IMPLEMENTED, content-addressed e verificável | `tests/test_decision_kernel_receipts.py` |
+| Compatibilidade legado | `sparkforge/economy/decision_kernel_bridge.py` | IMPLEMENTED, seed preservado | `tests/test_decision_engine.py`, `tests/test_decision_evaluation.py` |
+| CLI/MCP parity | `decision evaluate`, `sparkforge_decision_evaluate` | IMPLEMENTED, read-only | `tests/test_decision_kernel_adapters.py` |
+| Baseline sintético | `evals/token_efficient/fixtures/decision_kernel_cases.yaml` | IMPLEMENTED, 10/10 casos | `scripts/benchmark_decision_kernel.py`, `tests/test_decision_kernel_baseline.py` |
+
+O baseline mede somente `latency_ns` e `payload_bytes` localmente. Sem transcript do host,
+`provider_tokens` permanece `null`/`tokens_unresolved: true`; `cost_basis` permanece `null`.
+Isto não é benchmark amplo de qualidade, custo ou tokens de provider. Contratos em `active`
+continuam recusados por nome e o router legado não recebe mutação por shadow.
+
 ## Status por componente — medido, não declarado
 
 Taxonomia da FASE 0 do prompt de origem: `IMPLEMENTED` (existe e é exercitado

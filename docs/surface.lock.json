@@ -2,9 +2,9 @@
   "schema_version": 1,
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
-    "tool_count": 113,
-    "total_bytes": 585545,
-    "by_name_sha256": "fbe5817507439b3fc6d82152d2642a3873c25aec5e2d2680dfa39894d22cd10d"
+    "tool_count": 114,
+    "total_bytes": 587038,
+    "by_name_sha256": "196ef70a16836b99b00e5ce94d82565b75f9e0a684e16baf8c591a1840e4f306"
   },
   "compact": {
     "tool_count": 7,

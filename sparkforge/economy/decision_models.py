@@ -149,9 +149,7 @@ class DecisionInput:
             self,
             "evidence_kinds",
             tuple(
-                sorted(
-                    {str(value).strip() for value in self.evidence_kinds if str(value).strip()}
-                )
+                sorted({str(value).strip() for value in self.evidence_kinds if str(value).strip()})
             ),
         )
         object.__setattr__(
@@ -240,6 +238,9 @@ class DecisionResult:
     unresolved: tuple[str, ...] = ()
     budget: BudgetSnapshot = field(default_factory=BudgetSnapshot)
     receipt_id: str | None = None
+    fingerprint: str | None = None
+    cache_hit: bool = False
+    evidence: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
@@ -267,9 +268,7 @@ class DecisionResult:
         )
 
     @classmethod
-    def refused_result(
-        cls, contract: Any, budget: BudgetSnapshot, reason: str
-    ) -> DecisionResult:
+    def refused_result(cls, contract: Any, budget: BudgetSnapshot, reason: str) -> DecisionResult:
         return cls(
             contract_id=contract.contract_id,
             contract_version=contract.contract_version,
@@ -286,6 +285,20 @@ class DecisionResult:
     def with_receipt(self, receipt_id: str) -> DecisionResult:
         return replace(self, receipt_id=receipt_id)
 
+    def with_kernel(
+        self,
+        *,
+        fingerprint: str | None,
+        cache_hit: bool,
+        evidence: tuple[str, ...] = (),
+    ) -> DecisionResult:
+        return replace(
+            self,
+            fingerprint=fingerprint,
+            cache_hit=cache_hit,
+            evidence=evidence,
+        )
+
     def to_dict(self, *, include_receipt: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {
             "contract_id": self.contract_id,
@@ -298,6 +311,9 @@ class DecisionResult:
             "method": self.method,
             "unresolved": list(self.unresolved),
             "budget": self.budget.to_dict(),
+            "fingerprint": self.fingerprint,
+            "cache_hit": self.cache_hit,
+            "evidence": list(self.evidence),
         }
         if include_receipt:
             result["receipt_id"] = self.receipt_id

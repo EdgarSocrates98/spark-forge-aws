@@ -145,6 +145,9 @@ custo do run que não aconteceu.
 `by_tool` para saber qual verbo pesa, e `detail_level_effect` antes de afirmar que
 `summary` reduz — essa frase está publicada há muito tempo e só agora tem número.
 
+Para avaliar uma decisão bounded de forma offline, use `sparkforge_decision_evaluate`;
+ele aplica o kernel determinístico, devolve receipt/cache/fingerprint e não chama provider.
+
 `host_usage` vem `null` quando não há transcript do host: token de provider é do host, e
 este processo não chama modelo nenhum. Nunca converta byte em token dividindo por quatro
 para preencher o vazio — o relatório traz `tokens_unresolved` exatamente para isso não

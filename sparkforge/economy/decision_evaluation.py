@@ -2,6 +2,8 @@
 
 This runner belongs to the runtime-facing economy package so the CLI does not
 depend on ``sparkforge.evals``. The evaluation package re-exports it for hosts.
+Its legacy seed remains the compatibility regression for the generic bounded
+kernel route facade.
 """
 
 from __future__ import annotations
