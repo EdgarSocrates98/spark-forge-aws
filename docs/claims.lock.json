@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "9e4634b13b9f2435340274ad6f25a75a8978c441",
+  "extracted_from": "be35a4adae72e447b23cd80bc7e5d0f46563c7f0",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -555,7 +555,7 @@
       "text": "89,0",
       "context": "O motivo dominante é o que diz onde está o limite. **89,0** das não resolvidas são",
       "type": "number",
-     "id": "VNX-797",
+      "id": "VNX-797",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -918,7 +918,7 @@
       "text": "114",
       "context": "114 tools:",
       "type": "number",
-     "id": "VNX-798",
+      "id": "VNX-798",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -928,7 +928,7 @@
       "text": "77",
       "context": "| `READ_ONLY` | 77 |",
       "type": "number",
-     "id": "VNX-799",
+      "id": "VNX-799",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -1018,7 +1018,7 @@
       "text": "69",
       "context": "| `READ_ONLY` | 69 | 8 |",
       "type": "number",
-     "id": "VNX-800",
+      "id": "VNX-800",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -1128,7 +1128,7 @@
       "text": "67",
       "context": "Medido: **67** das tools `READ_ONLY` declaram algum argumento de caminho",
       "type": "number",
-     "id": "VNX-801",
+      "id": "VNX-801",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -1138,7 +1138,7 @@
       "text": "106",
       "context": "**106** de 114 — as vinte e três `LOCAL_MUTATION` e as quatorze `CLOUD_MUTATION` declaram",
       "type": "number",
-     "id": "VNX-802",
+      "id": "VNX-802",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -1148,7 +1148,7 @@
       "text": "114",
       "context": "**106** de 114 — as vinte e três `LOCAL_MUTATION` e as quatorze `CLOUD_MUTATION` declaram",
       "type": "number",
-     "id": "VNX-803",
+      "id": "VNX-803",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -1158,7 +1158,7 @@
       "text": "114",
       "context": "> `CallPolicy.decide`, e o despacho é único para as 114 tools, então fechar ali",
       "type": "number",
-     "id": "VNX-804",
+      "id": "VNX-804",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -1166,7 +1166,7 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "line": 331,
       "text": "114",
-      "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 113",
+      "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 114",
       "type": "number",
       "id": "VNX-482",
       "state": "PROVADA",
@@ -2933,16 +2933,6 @@
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 196,
-      "text": "904",
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **904** nesta árvore (remedido em 2026-09-28 a",
-      "type": "number",
-     "id": "VNX-805",
-      "state": "REMOVIDA",
-      "note": "classificacao pendente"
-    },
-    {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 213,
       "text": "2",
       "context": "| `iter_source_files` | 2 | 466 | 809226 | 12141 | 102 |",
@@ -3187,7 +3177,7 @@
       "text": "376312",
       "context": "| `project_items` | 1 | 193 | 376312 | 2203 | 52 |",
       "type": "number",
-     "id": "VNX-806",
+      "id": "VNX-806",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3197,7 +3187,7 @@
       "text": "2203",
       "context": "| `project_items` | 1 | 193 | 376312 | 2203 | 52 |",
       "type": "number",
-     "id": "VNX-807",
+      "id": "VNX-807",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3267,7 +3257,7 @@
       "text": "401010",
       "context": "| `tool_class` | 1 | 187 | 401010 | 3529 | 73 |",
       "type": "number",
-     "id": "VNX-808",
+      "id": "VNX-808",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3357,7 +3347,7 @@
       "text": "505233",
       "context": "| `authorize` | 2 | 376 | 505233 | 4426 | 49 |",
       "type": "number",
-     "id": "VNX-809",
+      "id": "VNX-809",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3427,7 +3417,7 @@
       "text": "2290512",
       "context": "Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2290512**;",
       "type": "number",
-     "id": "VNX-810",
+      "id": "VNX-810",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3437,7 +3427,7 @@
       "text": "25021",
       "context": "a saída do `grep` pelo nome, **25021**; a saída do `grep` pela definição, **361**.",
       "type": "number",
-     "id": "VNX-811",
+      "id": "VNX-811",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3467,7 +3457,7 @@
       "text": "1356.9",
       "context": "**Contra o denominador do plano, o índice economiza 1356.9 vezes.** Contra a saída de um `grep`",
       "type": "number",
-     "id": "VNX-812",
+      "id": "VNX-812",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3551,21 +3541,11 @@
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 248,
-      "text": "298117",
-      "context": "no mesmo corpus, tem **298117** bytes (remedido em 2026-09-28). O `grep` pela definição contendo o fragmento continua me",
-      "type": "number",
-     "id": "VNX-813",
-      "state": "REMOVIDA",
-      "note": "classificacao pendente"
-    },
-    {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 249,
       "text": "12670",
       "context": "(**12670** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "type": "number",
-     "id": "VNX-814",
+      "id": "VNX-814",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -3688,7 +3668,7 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 305,
       "text": "44",
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **113** tools do catálogo:",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **114** tools do catálogo:",
       "type": "number",
       "id": "VNX-557",
       "state": "PROVADA",
@@ -3708,7 +3688,7 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 305,
       "text": "114",
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **113** tools do catálogo:",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **114** tools do catálogo:",
       "type": "number",
       "id": "VNX-558",
       "state": "PROVADA",
@@ -4002,7 +3982,7 @@
       "text": "106",
       "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "type": "number",
-     "id": "VNX-815",
+      "id": "VNX-815",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -4012,7 +3992,7 @@
       "text": "114",
       "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "type": "number",
-     "id": "VNX-816",
+      "id": "VNX-816",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -4336,7 +4316,7 @@
       "text": "469,3",
       "context": "Confirmado por tamanho: `tools.py` (469,3 KB) e `_core.py` (367,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
-     "id": "VNX-817",
+      "id": "VNX-817",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -4346,7 +4326,7 @@
       "text": "367,5",
       "context": "Confirmado por tamanho: `tools.py` (469,3 KB) e `_core.py` (367,5 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
-     "id": "VNX-818",
+      "id": "VNX-818",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -4436,7 +4416,7 @@
       "text": "114",
       "context": "o que cobre as 114 tools num ponto só. O que nunca passava por `call_tool` —",
       "type": "number",
-     "id": "VNX-819",
+      "id": "VNX-819",
       "state": "REMOVIDA",
       "note": "classificacao pendente"
     },
@@ -7620,7 +7600,7 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 305,
       "text": "Controle de verbosidade na resposta",
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **113** tools do catálogo:",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **44** das **114** tools do catálogo:",
       "type": "capability",
       "id": "VNX-629",
       "state": "PROVADA",
@@ -10468,8 +10448,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 196,
-      "text": "918",
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **918** nesta árvore (remedido em 2026-09-28 a",
+      "text": "973",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **973** nesta árvore (remedido em 2026-09-28 a",
       "type": "number",
       "id": "VNX-640",
       "state": "PROVADA",
@@ -10479,7 +10459,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 918
+          "value": 973
         },
         "kind": "command",
         "tier": "fast"
@@ -10627,8 +10607,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 248,
-      "text": "299455",
-      "context": "no mesmo corpus, tem **299455** bytes (remedido em 2026-09-28). O `grep` pela definição contendo o fragmento continua me",
+      "text": "299542",
+      "context": "no mesmo corpus, tem **299542** bytes (remedido em 2026-09-28). O `grep` pela definição contendo o fragmento continua me",
       "type": "number",
       "id": "VNX-674",
       "state": "PROVADA",
@@ -10638,7 +10618,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 299455
+          "value": 299542
         },
         "kind": "command",
         "tier": "fast"
@@ -10771,6 +10751,26 @@
         "kind": "command",
         "tier": "fast"
       }
+    },
+    {
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "line": 196,
+      "text": "904",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **904** nesta árvore (remedido em 2026-09-28 a",
+      "type": "number",
+      "id": "VNX-805",
+      "state": "REMOVIDA",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "line": 248,
+      "text": "298117",
+      "context": "no mesmo corpus, tem **298117** bytes (remedido em 2026-09-28). O `grep` pela definição contendo o fragmento continua me",
+      "type": "number",
+      "id": "VNX-813",
+      "state": "REMOVIDA",
+      "note": "classificacao pendente"
     },
     {
       "context": "| **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens",
