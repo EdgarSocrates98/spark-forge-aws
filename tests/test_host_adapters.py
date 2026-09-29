@@ -48,3 +48,13 @@ def test_adapter_keeps_tokens_unresolved_without_recorded_usage():
     assert result.status == "accepted"
     assert result.provider_tokens is None
     assert result.tokens_unresolved is True
+
+
+def test_adapter_does_not_trust_a_mismatched_declared_transcript_hash():
+    raw = _raw("claude")
+    raw["transcript_hash"] = "declared-but-not-canonical"
+    result = ClaudeHostAdapter(ROOT).replay_provider_mapping(raw)
+    assert result.status == "accepted"
+    assert result.provider_tokens is None
+    assert result.tokens_unresolved is True
+    assert "transcript_hash_mismatch" in result.unresolved

@@ -24,6 +24,7 @@ def _observation(case: dict, profile: str) -> dict:
         "payload_bytes": 100 + len(profile),
         "provider_tokens": case.get("provider_tokens"),
         "tokens_unresolved": case.get("provider_tokens") is None,
+        "transcript_hash": case.get("transcript_hash"),
         "cost": case.get("cost"),
         "cost_basis": case.get("cost_basis"),
     }
@@ -73,3 +74,24 @@ def test_compare_refuses_input_volume_delta_above_ten_percent() -> None:
     assert comparison["refused"]["reason"] == "input_volume_mismatch"
     assert comparison["refused"]["max_delta"] == MAX_INPUT_VOLUME_DELTA
     assert comparison["cells"] == []
+
+
+def test_route_accuracy_is_independent_and_missing_ground_truth_is_unresolved() -> None:
+    suite = load_replay_suite(SUITE_PATH)
+    case = dict(suite["cases"][0])
+    case["expected_route"] = "local"
+    case["input_manifest"] = dict(case["input_manifest"])
+    case["input_manifest"]["bytes"] = 1000
+    observation = _observation(case, "economy") | {"actual_route": "remote"}
+    report = run_replay_benchmark(
+        {**suite, "cases": (case,), "sha256": "route-test"},
+        old_runner=lambda _case, _profile: observation,
+        new_runner=lambda _case, _profile: observation,
+    )
+    row = report["rows"][0]
+    assert row["route"] == {
+        "expected": "local",
+        "actual": "remote",
+        "match": False,
+        "reason": None,
+    }

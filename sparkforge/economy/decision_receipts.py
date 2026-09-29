@@ -56,6 +56,7 @@ class DecisionReceiptStore:
         authority: str | None = None,
         vetoed: bool | None = None,
         activation_evidence: dict[str, Any] | None = None,
+        authority_decision: dict[str, Any] | None = None,
     ) -> DecisionReceipt:
         body = {
             "receipt_version": RECEIPT_VERSION,
@@ -91,6 +92,10 @@ class DecisionReceiptStore:
             body["legacy_vetoed"] = vetoed
         if activation_evidence is not None:
             body["activation_evidence"] = dict(activation_evidence)
+        if authority_decision is not None:
+            body["authority_decision"] = dict(authority_decision)
+            body["policy_version"] = authority_decision.get("policy_version")
+            body["calibration_version"] = authority_decision.get("calibration_version")
         receipt_id = RECEIPT_PREFIX + digest_of(body)
         document = dict(body)
         document["receipt_id"] = receipt_id

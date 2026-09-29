@@ -21,6 +21,7 @@ QUALITY_AXES = (
     "unresolved",
     "execution_plan",
 )
+ROUTE_AXES = ("expected", "actual", "match")
 Runner = Callable[[Mapping[str, Any], str], Mapping[str, Any]]
 
 
@@ -66,6 +67,8 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
             raise ReplayBenchmarkError(
                 f"replay_case_invalid:input_manifest:{case['id']}"
             )
+        if str(case.get("partition")) not in {"train", "holdout"}:
+            raise ReplayBenchmarkError(f"replay_case_invalid:partition:{case['id']}")
         normalized.append(dict(case))
     ids = [str(case["id"]) for case in normalized]
     domains = {str(case["domain"]) for case in normalized}
@@ -77,6 +80,12 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
     train = [case for case in normalized if case["partition"] == "train"]
     if not holdout or not train:
         raise ReplayBenchmarkError("replay_suite_requires_train_and_holdout")
+    for domain in sorted(domains):
+        if not any(
+            str(case["domain"]) == domain and case["partition"] == "holdout"
+            for case in normalized
+        ):
+            raise ReplayBenchmarkError(f"replay_suite_requires_domain_holdout:{domain}")
     labeled_tasks = sum(1 for case in normalized if str(case.get("label", "")).strip())
     if labeled_tasks < MINIMUM_LABELED_TASKS:
         raise ReplayBenchmarkError(
@@ -97,6 +106,8 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
         "same_input_manifest_required": True,
         "max_input_volume_delta": MAX_INPUT_VOLUME_DELTA,
         "cost_requires_basis": True,
+        "minimum_domains": 6,
+        "require_domain_holdout": True,
         "sha256": digest,
         "path": target.as_posix(),
     }
@@ -229,6 +240,11 @@ def compare_replay_benchmark(before: Mapping[str, Any], after: Mapping[str, Any]
                     axis: {"before": old["quality"].get(axis), "after": new["quality"].get(axis)}
                     for axis in QUALITY_AXES
                 },
+                "route": {
+                    "expected": new.get("route", {}).get("expected"),
+                    "actual": new.get("route", {}).get("actual"),
+                    "match": new.get("route", {}).get("match"),
+                },
                 "payload_bytes": _delta(old.get("payload_bytes"), new.get("payload_bytes")),
                 "provider_tokens": {
                     "before": old.get("provider_tokens"),
@@ -274,11 +290,25 @@ def _row(
         "unresolved": list(unresolved),
         "execution_plan": observation.get("execution_plan"),
     }
+    expected_route = case.get("expected_route")
+    actual_route = observation.get("actual_route")
+    route_match = None
+    route_reason = None
+    if expected_route is None:
+        route_reason = "expected_route_absent"
+    elif actual_route is None:
+        route_reason = "actual_route_absent"
+    else:
+        route_match = str(expected_route) == str(actual_route)
     cost_basis = observation.get("cost_basis")
     cost_value = observation.get("cost") if isinstance(cost_basis, Mapping) else None
     cost_status = "measured" if cost_value is not None and cost_basis else "unresolved"
     provider_tokens = observation.get("provider_tokens")
-    tokens_unresolved = bool(observation.get("tokens_unresolved", provider_tokens is None))
+    transcript_hash = observation.get("transcript_hash") or case.get("transcript_hash")
+    tokens_unresolved = bool(
+        observation.get("tokens_unresolved", provider_tokens is None)
+        or (provider_tokens is not None and not transcript_hash)
+    )
     if provider_tokens is not None and tokens_unresolved:
         raise ReplayBenchmarkError(
             f"replay_observation_invalid:tokens_unresolved_with_value:{case['id']}"
@@ -296,6 +326,12 @@ def _row(
         "profile": profile,
         "runner": runner,
         "quality": quality,
+        "route": {
+            "expected": expected_route,
+            "actual": actual_route,
+            "match": route_match,
+            "reason": route_reason,
+        },
         "status": observation.get("status"),
         "payload_bytes": observation.get("payload_bytes"),
         "provider_tokens": provider_tokens,
@@ -321,7 +357,7 @@ def _row(
         "unresolved": list(unresolved),
         "provenance": {
             "case_partition": str(case["partition"]),
-            "transcript_hash": case.get("transcript_hash"),
+            "transcript_hash": transcript_hash,
             "suite_case_hash": hashlib.sha256(
                 json.dumps(dict(case), sort_keys=True, separators=(",", ":")).encode("utf-8")
             ).hexdigest(),
@@ -346,6 +382,7 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "false_positive_rate": _mean(
                     [row["quality"]["false_positive_rate"] for row in selected]
                 ),
+                "route": _route_summary(selected),
                 "payload_bytes": _mean([row.get("payload_bytes") for row in selected]),
                 "provider_tokens_resolved": sum(
                     1 for row in selected if not row["tokens_unresolved"]
@@ -368,6 +405,17 @@ def _counts(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
         value = str(row.get(key))
         counts[value] = counts.get(value, 0) + 1
     return dict(sorted(counts.items()))
+
+
+def _route_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    known = [row["route"]["match"] for row in rows if row["route"]["match"] is not None]
+    return {
+        "matched": sum(1 for value in known if value),
+        "mismatched": sum(1 for value in known if not value),
+        "unresolved": len(rows) - len(known),
+        "denominator": len(known),
+        "accuracy": sum(1 for value in known if value) / len(known) if known else None,
+    }
 
 
 def _mean(values: list[Any]) -> float | None:
@@ -402,6 +450,7 @@ __all__ = [
     "MINIMUM_LABELED_TASKS",
     "MAX_INPUT_VOLUME_DELTA",
     "QUALITY_AXES",
+    "ROUTE_AXES",
     "ReplayBenchmarkError",
     "compare_replay_benchmark",
     "load_replay_suite",

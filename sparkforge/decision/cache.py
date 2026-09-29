@@ -269,11 +269,20 @@ def decision_cache_key(
     state_fingerprint: str,
     policy_version: str = "kernel-v1",
     calibration_version: str = "none",
+    risk_profile: str = "none",
+    risk_level: str = "none",
 ) -> CacheKey:
     return CacheKey(
         CacheKind.DECISION,
         2,
-        (contract_sha256, state_fingerprint, policy_version, calibration_version),
+        (
+            contract_sha256,
+            state_fingerprint,
+            policy_version,
+            calibration_version,
+            risk_profile,
+            risk_level,
+        ),
     )
 
 
@@ -330,6 +339,7 @@ class DecisionCache:
         *,
         owner: str = "decision-kernel",
         freshness: str = "fresh",
+        capacity: int | None = None,
     ) -> None:
         if not owner.strip():
             raise ValueError("cache owner is required")
@@ -337,8 +347,15 @@ class DecisionCache:
         key = CacheKey(CacheKind.DECISION, 1, (fingerprint,))
         self._metadata[fingerprint] = CacheRecord(key, result, owner, freshness)
         self._items.move_to_end(fingerprint)
-        while len(self._items) > self.max_entries:
-            evicted, _ = self._items.popitem(last=False)
+        limit = self.max_entries if capacity is None else _positive_capacity(capacity)
+        while _scope_size(self._metadata, owner, freshness) > limit:
+            evicted = next(
+                key
+                for key in self._items
+                if self._metadata[key].owner == owner
+                and self._metadata[key].freshness == freshness
+            )
+            self._items.pop(evicted, None)
             self._metadata.pop(evicted, None)
             self.evictions += 1
 
@@ -384,20 +401,18 @@ class DecisionCache:
         *,
         owner: str = "decision-kernel",
         freshness: str = "fresh",
+        capacity: int | None = None,
     ) -> None:
         if key.kind is not CacheKind.DECISION:
             raise ValueError("cache namespace mismatch: expected decision")
-        self.put(key.canonical(), result, owner=owner, freshness=freshness)
+        self.put(
+            key.canonical(),
+            result,
+            owner=owner,
+            freshness=freshness,
+            capacity=capacity,
+        )
         self._metadata[key.canonical()] = CacheRecord(key, result, owner, freshness)
-
-    def limit_to(self, max_entries: int) -> None:
-        if isinstance(max_entries, bool) or max_entries < 1:
-            raise ValueError("max_entries must be positive")
-        self.max_entries = min(self.max_entries, max_entries)
-        while len(self._items) > self.max_entries:
-            evicted, _ = self._items.popitem(last=False)
-            self._metadata.pop(evicted, None)
-            self.evictions += 1
 
     def get_key_owned(
         self,
@@ -410,12 +425,87 @@ class DecisionCache:
             raise ValueError("cache namespace mismatch: expected decision")
         return self.get_owned(key.canonical(), owner=owner, freshness=freshness)
 
+    def scope(
+        self,
+        *,
+        owner: str = "decision-kernel",
+        freshness: str = "fresh",
+        max_entries: int | None = None,
+    ) -> CacheScope:
+        """Build an owned view without mutating shared cache capacity."""
+        return CacheScope(self, owner=owner, freshness=freshness, max_entries=max_entries)
+
+
+@dataclass(frozen=True, slots=True)
+class CacheScope:
+    """Owned, bounded access to one decision-cache scope."""
+
+    cache: DecisionCache
+    owner: str = "decision-kernel"
+    freshness: str = "fresh"
+    max_entries: int | None = None
+
+    def __post_init__(self) -> None:
+        if not self.owner.strip():
+            raise ValueError("cache owner is required")
+        if self.max_entries is not None:
+            _positive_capacity(self.max_entries)
+
+    def get(self, key: CacheKey) -> DecisionResult | None:
+        return self.cache.get_key_owned(key, owner=self.owner, freshness=self.freshness)
+
+    def put(self, key: CacheKey, result: DecisionResult) -> None:
+        self.cache.put_key(
+            key,
+            result,
+            owner=self.owner,
+            freshness=self.freshness,
+            capacity=self.max_entries,
+        )
+
+
+class CacheRegistry:
+    """Separate policy, execution and evidence cache ownership scopes."""
+
+    def __init__(
+        self,
+        *,
+        policy_max_entries: int = 128,
+        execution_max_entries: int = 128,
+        evidence_max_entries: int = 128,
+    ) -> None:
+        self.policy = DecisionCache(policy_max_entries).scope(
+            owner="policy", max_entries=policy_max_entries
+        )
+        self.execution = DecisionCache(execution_max_entries).scope(
+            owner="execution", max_entries=execution_max_entries
+        )
+        self.evidence = DecisionCache(evidence_max_entries).scope(
+            owner="evidence", max_entries=evidence_max_entries
+        )
+
+
+def _positive_capacity(value: int) -> int:
+    if isinstance(value, bool) or value < 1:
+        raise ValueError("max_entries must be positive")
+    return int(value)
+
+
+def _scope_size(metadata: dict[str, CacheRecord], owner: str, freshness: str) -> int:
+    return sum(
+        1
+        for record in metadata.values()
+        if record.owner == owner and record.freshness == freshness
+    )
+
 
 __all__ = [
     "ArtifactCache",
+    "CacheRegistry",
     "CacheKey",
     "CacheKind",
     "CacheRecord",
+    "CacheScope",
     "DecisionCache",
     "FactCache",
     "artifact_cache_key",

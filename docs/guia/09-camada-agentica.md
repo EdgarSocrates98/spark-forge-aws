@@ -138,3 +138,26 @@ Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que fa
 - [Arbitragem e debate](usos/arbitragem-e-debate.md): o fluxo rodado, com saída real.
 - [Economia de contexto](usos/economia-de-contexto.md): o que medir antes de afirmar que economizou.
 - [Agents e skills](05-agents-e-skills.md): coordenadores, executores e o `playbook`.
+
+### Controle de decisão: autoridade, recovery e evidência
+
+Para testar o caminho local, use `shadow` por padrão. O modo `assisted` requer `caller_authorized`
+e continua não autoritativo; `active` requer também promoção com corpus rotulado, gates, CI,
+rollback e política habilitada. `AuthorityPolicy` é a única fonte dessa decisão.
+
+```python
+from sparkforge.decision import AuthorityPolicy, PromotionEvidence
+
+policy = AuthorityPolicy.from_repo(".")
+decision = policy.authorize_promotion(
+    mode="active",
+    contract=contract,
+    evidence=PromotionEvidence(...),
+    caller_authorized=True,
+)
+```
+
+Não atribua tokens a partir de `payload_bytes`. Adapters Claude/Codex/Devin aceitam recordings;
+hash divergente deixa usage unresolved. O replay amplo está em
+`evals/token_efficient/fixtures/decision_control_plane_cases.yaml` e deve ser lido como
+evidência por caso/profile, não como autorização ou economia financeira.

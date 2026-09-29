@@ -38,11 +38,18 @@ class GovernorLimits:
     max_tokens: int
     action: str = "allow"
     reason: str | None = None
+    max_replans: int = 64
 
     def __post_init__(self) -> None:
         if any(
             value < 0
-            for value in (self.max_agents, self.max_debates, self.max_retries, self.max_tokens)
+            for value in (
+                self.max_agents,
+                self.max_debates,
+                self.max_retries,
+                self.max_tokens,
+                self.max_replans,
+            )
         ):
             raise ValueError("governor limits must be non-negative")
 
@@ -54,6 +61,7 @@ class GovernorLimits:
             max_tokens=min(self.max_tokens, other.max_tokens),
             action=self.action if self.action != "allow" else other.action,
             reason=self.reason or other.reason,
+            max_replans=min(self.max_replans, other.max_replans),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -62,6 +70,7 @@ class GovernorLimits:
             "max_debates": self.max_debates,
             "max_retries": self.max_retries,
             "max_tokens": self.max_tokens,
+            "max_replans": self.max_replans,
             "action": self.action,
             "reason": self.reason,
         }
@@ -121,19 +130,19 @@ class GovernorPolicy:
         return cls(
             "agentic-control-v1",
             {
-                "economy": GovernorLimits(1, 0, 1, 8000),
-                "balanced": GovernorLimits(3, 1, 2, 16000),
-                "deep": GovernorLimits(5, 2, 2, 32000),
+                "economy": GovernorLimits(1, 0, 1, 8000, max_replans=1),
+                "balanced": GovernorLimits(3, 1, 2, 16000, max_replans=2),
+                "deep": GovernorLimits(5, 2, 2, 32000, max_replans=2),
             },
             {
-                "low": GovernorLimits(5, 2, 2, 32000),
-                "medium": GovernorLimits(3, 1, 1, 16000),
-                "high": GovernorLimits(1, 0, 0, 8000),
+                "low": GovernorLimits(5, 2, 2, 32000, max_replans=2),
+                "medium": GovernorLimits(3, 1, 1, 16000, max_replans=1),
+                "high": GovernorLimits(1, 0, 0, 8000, max_replans=0),
             },
             {
                 "accepted": GovernorLimits(64, 64, 64, 10**9),
                 "unresolved": GovernorLimits(
-                    1, 0, 0, 8000, "bounded_fallback", "decision_unresolved"
+                    1, 0, 0, 8000, "bounded_fallback", "decision_unresolved", 1
                 ),
                 "refused": GovernorLimits(0, 0, 0, 0, "refuse", "decision_status_refused"),
             },
@@ -217,6 +226,7 @@ def _limits_map(raw: Any, expected: set[str], label: str) -> dict[str, GovernorL
             int(value.get("max_tokens", 0)),
             str(value.get("action", "allow")),
             str(value["reason"]) if value.get("reason") is not None else None,
+            int(value.get("max_replans", value.get("max_retries", 0))),
         )
     return result
 
@@ -258,11 +268,14 @@ def _remaining_budget(budget: Mapping[str, Any] | Any | None) -> GovernorLimits:
     debates_used = value("debates_held", 0)
     max_retries = value("max_retries", 64)
     retries_used = value("retries_used", 0)
+    max_replans = value("max_replans", 64)
+    replans_used = value("replans_used", 0)
     return GovernorLimits(
         max(0, max_agents - agents_used),
         max(0, max_debates - debates_used),
         max(0, max_retries - retries_used),
         max(0, max_tokens - tokens_used),
+        max(0, max_replans - replans_used),
     )
 
 

@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 from sparkforge.agentic.control import AgenticDecisionController
-from sparkforge.decision import FactCache, fact_cache_key
+from sparkforge.decision import FactCache, PromotionEvidence, fact_cache_key
 from sparkforge.economy.decision_activation import ActivationEvidence
 from sparkforge.economy.decision_contracts import ContractRegistry
 from sparkforge.economy.decision_models import BudgetSnapshot, DecisionInput
@@ -24,7 +24,26 @@ def _active_repo(tmp_path: Path) -> Path:
         contract.read_text(encoding="utf-8").replace("mode: shadow", "mode: active"),
         encoding="utf-8",
     )
+    policy = repo / "config" / "decisions" / "agentic_control_plane.yaml"
+    policy.write_text(
+        policy.read_text(encoding="utf-8").replace("enabled: false", "enabled: true"),
+        encoding="utf-8",
+    )
     return repo
+
+
+def _promotion(contract: object) -> PromotionEvidence:
+    return PromotionEvidence(
+        promotion_id="jev-promotion",
+        contract_id=contract.contract_id,
+        contract_version=contract.contract_version,
+        contract_sha256=contract.sha256,
+        labeled_tasks=50,
+        quality_gate=True,
+        economy_gate=True,
+        ci_verified=True,
+        rollback="restore-shadow",
+    )
 
 
 def test_active_path_promotes_and_receipt_records_rollback(tmp_path: Path) -> None:
@@ -40,6 +59,8 @@ def test_active_path_promotes_and_receipt_records_rollback(tmp_path: Path) -> No
         "tier_3_cheap_local",
         contract=contract,
         evidence=ActivationEvidence(50, True, True),
+        promotion=_promotion(contract),
+        caller_authorized=True,
         now="fixed",
     )
 
@@ -71,6 +92,8 @@ def test_active_path_falls_back_without_widening_budget(tmp_path: Path) -> None:
         "tier_3_cheap_local",
         contract=contract,
         evidence=ActivationEvidence(50, True, True),
+        promotion=_promotion(contract),
+        caller_authorized=True,
         now="fixed",
     )
 

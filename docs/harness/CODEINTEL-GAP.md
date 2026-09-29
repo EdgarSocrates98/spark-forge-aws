@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **973** nesta árvore (remedido em 2026-09-28 após a correção do control plane).
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **929** nesta árvore (remedido em 2026-09-28 após a correção do control plane).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -214,10 +214,10 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **97
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 376312 | 2203 | 52 |
 | `tool_class` | 1 | 187 | 401010 | 3529 | 73 |
-| `authorize` | 2 | 376 | 505233 | 4426 | 49 |
+| `authorize` | 3 | 599 | 505233 | 4426 | 115 |
 
-Somadas as cinco perguntas: o índice devolve **1688** bytes; ler os arquivos custaria **2290512**;
-a saída do `grep` pelo nome, **25021**; a saída do `grep` pela definição, **361**.
+Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2290512**;
+a saída do `grep` pelo nome, **25021**; a saída do `grep` pela definição, **427**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
 `scripts/check_vnext_claims.py` não auditava: quatro dígitos entre 1900 e 2099 estão na lista de
@@ -226,9 +226,9 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1356.9 vezes.** Contra a saída de um `grep`
-pelo nome, **14.8** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
-resposta do índice custa **4.7** vezes o que aquele `grep` custaria.
+**Contra o denominador do plano, o índice economiza 1198.6 vezes.** Contra a saída de um `grep`
+pelo nome, **13.1** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
+resposta do índice custa **4.5** vezes o que aquele `grep` custaria.
 
 **Esse último número é o resultado honesto desta medição, e ele não agrada.** Medido em bytes de
 uma resposta, um `grep -n "def <nome>"` bem escrito é mais barato que consultar o índice. A causa

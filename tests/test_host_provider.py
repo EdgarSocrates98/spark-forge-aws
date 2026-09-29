@@ -45,6 +45,17 @@ def test_missing_usage_remains_unresolved_without_invalidating_result() -> None:
     assert result.tokens_unresolved is True
 
 
+def test_usage_transcript_hash_mismatch_never_attributes_provider_tokens() -> None:
+    raw = dict(_cases()["cases"][0])
+    raw["usage"] = dict(raw["usage"])
+    raw["usage"]["transcript_sha256"] = "mismatched-transcript"
+    result = ReplayHostAdapter(ROOT).replay_mapping(raw)
+    assert result.status == DecisionStatus.ACCEPTED.value
+    assert result.provider_tokens is None
+    assert result.tokens_unresolved is True
+    assert "usage_transcript_hash_mismatch" in result.unresolved
+
+
 def test_decision_core_has_no_provider_or_mcp_sdk_imports() -> None:
     source = "\n".join(
         path.read_text(encoding="utf-8")

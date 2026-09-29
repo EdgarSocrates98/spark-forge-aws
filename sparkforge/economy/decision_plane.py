@@ -7,10 +7,12 @@ comparison, receipt persistence and activation authority unchanged.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 from sparkforge.agentic.governor import AgentGovernor, GovernorLimits
+from sparkforge.decision.authority import AuthorityDecision, AuthorityPolicy, PromotionEvidence
 from sparkforge.economy.decision_activation import (
     ActivationDecision,
     ActivationEvidence,
@@ -42,11 +44,13 @@ class DecisionPlaneService:
         registry: ContractRegistry | None = None,
         engine: DeterministicDecisionEngine | None = None,
         receipts: DecisionReceiptStore | None = None,
+        authority_policy: AuthorityPolicy | None = None,
     ) -> None:
         self.repo = Path(repo).expanduser().resolve()
         self.registry = registry or ContractRegistry(self.repo)
         self.engine = engine or DeterministicDecisionEngine()
         self.receipts = receipts or DecisionReceiptStore(self.repo)
+        self.authority_policy = authority_policy or AuthorityPolicy.from_repo(self.repo)
 
     def validate(self, contract_id: str, version: str | None = None) -> DecisionContract:
         return self.registry.load(contract_id, version)
@@ -61,6 +65,10 @@ class DecisionPlaneService:
         trace_ref: str | None = None,
     ) -> ShadowEvaluation:
         result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.SHADOW)
+        authority = self.authority_policy.authorize_promotion(
+            mode=AuthorityMode.SHADOW.value,
+            contract=contract,
+        )
         current_for_compare = current if current is not None else request.current_route
         comparison = compare_decisions(current_for_compare, result)
         receipt = self.receipts.emit(
@@ -71,6 +79,7 @@ class DecisionPlaneService:
             now=now,
             trace_ref=trace_ref,
             authority=AuthorityMode.SHADOW.value,
+            authority_decision=authority.to_dict(),
         )
         return ShadowEvaluation(
             result.with_receipt(receipt.receipt_id), comparison, receipt, request
@@ -82,10 +91,30 @@ class DecisionPlaneService:
         legacy_route: Any,
         *,
         contract: DecisionContract,
+        caller_authorized: bool = False,
         now: str | None = None,
         trace_ref: str | None = None,
     ) -> ActiveRouteOutcome:
-        """Offer a bounded proposal while legacy remains authoritative."""
+        """Offer a bounded proposal only after explicit caller authority."""
+        authority = self.authority_policy.authorize_promotion(
+            mode=AuthorityMode.ASSISTED.value,
+            contract=contract,
+            caller_authorized=caller_authorized,
+        )
+        if not authority.allowed:
+            result = DecisionResult.refused_result(
+                contract, request.budget, authority.reason or "assisted_authority_refused"
+            )
+            return self._fallback_outcome(
+                request,
+                legacy_route,
+                contract,
+                result,
+                (authority.reason or "assisted_authority_refused",),
+                now=now,
+                trace_ref=trace_ref,
+                authority=authority,
+            )
         result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.ASSISTED)
         comparison = compare_decisions(legacy_route, result)
         vetoed = comparison.state is not ComparisonState.AGREEMENT
@@ -104,6 +133,7 @@ class DecisionPlaneService:
             fallback_reason=reason,
             authority=AuthorityMode.ASSISTED.value,
             vetoed=vetoed,
+            authority_decision=authority.to_dict(),
         )
         return ActiveRouteOutcome(
             promoted=False,
@@ -130,6 +160,8 @@ class DecisionPlaneService:
         labeled_tasks: int = 0,
         quality_gate: bool = False,
         economy_gate: bool = False,
+        promotion: PromotionEvidence | Mapping[str, Any] | Any | None = None,
+        caller_authorized: bool = False,
         governor: AgentGovernor | None = None,
         now: str | None = None,
         trace_ref: str | None = None,
@@ -153,24 +185,35 @@ class DecisionPlaneService:
                 now=now,
                 trace_ref=trace_ref,
             )
-        gate = self.activation(
-            contract.mode,
-            labeled_tasks=selected_evidence.labeled_tasks,
-            quality_gate=selected_evidence.quality_gate,
-            economy_gate=selected_evidence.economy_gate,
+        selected_promotion = PromotionEvidence.from_value(promotion)
+        if promotion is None:
+            selected_promotion = PromotionEvidence(
+                contract_id=contract.contract_id,
+                contract_version=contract.contract_version,
+                contract_sha256=contract.sha256,
+                labeled_tasks=selected_evidence.labeled_tasks,
+                quality_gate=selected_evidence.quality_gate,
+                economy_gate=selected_evidence.economy_gate,
+            )
+        authority = self.authority_policy.authorize_promotion(
+            mode=contract.mode,
+            contract=contract,
+            evidence=selected_promotion,
+            caller_authorized=caller_authorized,
         )
-        if not gate.allowed:
+        if not authority.allowed:
             result = DecisionResult.refused_result(
-                contract, request.budget, ";".join(gate.unresolved)
+                contract, request.budget, authority.reason or "active_authority_refused"
             )
             return self._fallback_outcome(
                 request,
                 legacy_route,
                 contract,
                 result,
-                tuple(gate.unresolved),
+                (authority.reason or "active_authority_refused",) + authority.unresolved,
                 now=now,
                 trace_ref=trace_ref,
+                authority=authority,
             )
         result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.ACTIVE)
         try:
@@ -202,6 +245,7 @@ class DecisionPlaneService:
                 ("governor_profile_or_risk_invalid",),
                 now=now,
                 trace_ref=trace_ref,
+                authority=authority,
             )
         if result.status is not DecisionStatus.ACCEPTED:
             return self._fallback_outcome(
@@ -212,6 +256,7 @@ class DecisionPlaneService:
                 result.unresolved or ("decision_not_promotable",),
                 now=now,
                 trace_ref=trace_ref,
+                authority=authority,
             )
         if governor_decision.refused:
             refused = DecisionResult.refused_result(
@@ -229,6 +274,7 @@ class DecisionPlaneService:
                 (governor_decision.limits.reason or "governor_refused",),
                 now=now,
                 trace_ref=trace_ref,
+                authority=authority,
             )
         comparison = compare_decisions(legacy_route, result)
         receipt = self.receipts.emit(
@@ -248,6 +294,7 @@ class DecisionPlaneService:
                 "quality_gate": selected_evidence.quality_gate,
                 "economy_gate": selected_evidence.economy_gate,
             },
+            authority_decision=authority.to_dict(),
         )
         promoted = result.with_authority(AuthorityMode.ACTIVE).with_receipt(receipt.receipt_id)
         return ActiveRouteOutcome(
@@ -267,6 +314,8 @@ class DecisionPlaneService:
         evaluation: ShadowEvaluation,
         *,
         legacy_route: Any,
+        promotion: PromotionEvidence | Mapping[str, Any] | Any | None = None,
+        caller_authorized: bool = False,
         now: str | None = None,
         trace_ref: str | None = None,
     ) -> ActiveRouteOutcome:
@@ -283,6 +332,25 @@ class DecisionPlaneService:
                 now=now,
                 trace_ref=trace_ref,
             )
+        authority = self.authority_policy.authorize_promotion(
+            mode=AuthorityMode.ACTIVE.value,
+            contract=self.validate(
+                evaluation.result.contract_id, evaluation.result.contract_version
+            ),
+            evidence=promotion,
+            caller_authorized=caller_authorized,
+        )
+        if not authority.allowed:
+            return self._fallback_outcome(
+                evaluation.request,
+                legacy_route,
+                self.validate(evaluation.result.contract_id, evaluation.result.contract_version),
+                evaluation.result,
+                (authority.reason or "active_authority_refused",) + authority.unresolved,
+                now=now,
+                trace_ref=trace_ref,
+                authority=authority,
+            )
         receipt = self.receipts.emit(
             evaluation.request,
             legacy_route,
@@ -295,6 +363,7 @@ class DecisionPlaneService:
             fallback_route=_route_value(legacy_route),
             rollback_reason="legacy_router_available",
             authority=AuthorityMode.ACTIVE.value,
+            authority_decision=authority.to_dict(),
         )
         result = evaluation.result.with_authority(AuthorityMode.ACTIVE).with_receipt(
             receipt.receipt_id
@@ -344,6 +413,7 @@ class DecisionPlaneService:
         *,
         now: str | None,
         trace_ref: str | None,
+        authority: AuthorityDecision | None = None,
     ) -> ActiveRouteOutcome:
         current_route = _route_value(legacy_route)
         comparison = DecisionComparison(
@@ -364,6 +434,7 @@ class DecisionPlaneService:
             fallback_route=current_route,
             rollback_reason="legacy_router_authoritative",
             fallback_reason=";".join(reasons),
+            authority_decision=authority.to_dict() if authority else None,
         )
         return ActiveRouteOutcome(
             promoted=False,
@@ -371,6 +442,7 @@ class DecisionPlaneService:
             fallback_route=current_route,
             reason=";".join(reasons),
             receipt_id=receipt.receipt_id,
+            mode=contract.mode,
             status=result.status.value,
             confidence=result.confidence,
             evidence=result.evidence,
