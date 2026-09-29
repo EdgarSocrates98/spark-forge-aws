@@ -53,6 +53,9 @@ class DecisionReceiptStore:
         fallback_route: str | None = None,
         rollback_reason: str | None = None,
         fallback_reason: str | None = None,
+        authority: str | None = None,
+        vetoed: bool | None = None,
+        activation_evidence: dict[str, Any] | None = None,
     ) -> DecisionReceipt:
         body = {
             "receipt_version": RECEIPT_VERSION,
@@ -82,6 +85,12 @@ class DecisionReceiptStore:
             "token_state": request.provider_usage.to_dict(),
             "trace_ref": trace_ref,
         }
+        if authority is not None:
+            body["authority"] = authority
+        if vetoed is not None:
+            body["legacy_vetoed"] = vetoed
+        if activation_evidence is not None:
+            body["activation_evidence"] = dict(activation_evidence)
         receipt_id = RECEIPT_PREFIX + digest_of(body)
         document = dict(body)
         document["receipt_id"] = receipt_id
@@ -126,6 +135,36 @@ class DecisionReceiptStore:
             "expected_receipt_id": expected,
             "status": "valid" if actual == expected else "integrity_failed",
         }
+
+    def emit_recovery(
+        self,
+        request: DecisionInput,
+        *,
+        base_receipt_id: str,
+        recovery: dict[str, Any],
+        now: str | None = None,
+    ) -> DecisionReceipt:
+        body = {
+            "receipt_version": RECEIPT_VERSION,
+            "kind": "recovery",
+            "base_receipt_id": base_receipt_id,
+            "input_sha256": digest_of(request.canonical()),
+            "recovery": recovery,
+        }
+        receipt_id = RECEIPT_PREFIX + digest_of(body)
+        document = dict(body)
+        document["receipt_id"] = receipt_id
+        document["emitted_at"] = now or datetime.now(timezone.utc).isoformat()
+        self.root.mkdir(parents=True, exist_ok=True)
+        path = self.root / f"{receipt_id}.recovery.json"
+        if path.exists():
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            return DecisionReceipt(receipt_id, path, existing)
+        path.write_text(
+            json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return DecisionReceipt(receipt_id, path, document)
 
 
 def _semantic_body(document: dict[str, Any]) -> dict[str, Any]:

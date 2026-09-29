@@ -138,6 +138,8 @@ class CaseBudget:
     max_agents: int = 5
     max_debates: int = 2
     max_experiments: int = 3
+    max_retries: int = 2
+    max_replans: int = 1
     max_cost_usd: float = 1.0
 
     # Tracking
@@ -147,6 +149,8 @@ class CaseBudget:
     agents_spawned: int = 0
     debates_held: int = 0
     experiments_run: int = 0
+    retries_used: int = 0
+    replans_used: int = 0
     cost_incurred_usd: float = 0.0
 
     @property
@@ -161,6 +165,10 @@ class CaseBudget:
         if self.agents_spawned >= self.max_agents:
             return BudgetStatus.EXHAUSTED
         if self.cost_incurred_usd >= self.max_cost_usd:
+            return BudgetStatus.EXHAUSTED
+        if self.retries_used >= self.max_retries:
+            return BudgetStatus.EXHAUSTED
+        if self.replans_used >= self.max_replans:
             return BudgetStatus.EXHAUSTED
         if self.tool_calls_used >= self.max_total_tool_calls:
             return BudgetStatus.EXHAUSTED
@@ -177,6 +185,8 @@ class CaseBudget:
             self.time_elapsed_seconds / self.max_total_time_seconds
             if self.max_total_time_seconds > 0
             else 0.0,
+            self.retries_used / self.max_retries if self.max_retries > 0 else 0.0,
+            self.replans_used / self.max_replans if self.max_replans > 0 else 0.0,
         ]
         if max(ratios) >= 0.8:
             return BudgetStatus.WARNING
@@ -214,6 +224,22 @@ class CaseBudget:
             raise BudgetExceededError(f"CaseBudget: max_experiments {self.max_experiments} reached")
         self.experiments_run += 1
         self.cost_incurred_usd += cost_usd
+
+    def consume_retry(self) -> None:
+        if self.is_exhausted or self.retries_used >= self.max_retries:
+            raise BudgetExceededError(f"CaseBudget: max_retries {self.max_retries} reached")
+        self.retries_used += 1
+
+    def consume_replan(self) -> None:
+        if self.is_exhausted or self.replans_used >= self.max_replans:
+            raise BudgetExceededError(f"CaseBudget: max_replans {self.max_replans} reached")
+        self.replans_used += 1
+
+    def consume_recovery(self, action: str) -> None:
+        if action == "retry":
+            self.consume_retry()
+        elif action == "replan":
+            self.consume_replan()
 
     def consume_tokens(self, n: int) -> None:
         self.tokens_used += n
@@ -256,6 +282,10 @@ class CaseBudget:
             "agents_spawned": self.agents_spawned,
             "debates_held": self.debates_held,
             "experiments_run": self.experiments_run,
+            "max_retries": self.max_retries,
+            "max_replans": self.max_replans,
+            "retries_used": self.retries_used,
+            "replans_used": self.replans_used,
             "cost_incurred_usd": self.cost_incurred_usd,
             "status": self.status.value,
         }
@@ -279,6 +309,8 @@ _CASE_BUDGET_INT_FIELDS = (
     "max_agents",
     "max_debates",
     "max_experiments",
+    "max_retries",
+    "max_replans",
 )
 
 

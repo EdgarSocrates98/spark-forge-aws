@@ -23,9 +23,11 @@ class StateCompiler:
         unresolved: list[str] = []
         field_by_name = {field.name: field for field in contract.state_fields}
         values: dict[str, Any] = {}
+        required_fields = set(contract.required_state_fields)
         for field in contract.state_fields:
             if field.name not in raw_state or raw_state[field.name] is None:
-                unresolved.append(f"missing_state.{field.name}")
+                if field.name in required_fields:
+                    unresolved.append(f"missing_state.{field.name}")
                 continue
             value = raw_state[field.name]
             if not _matches_type(value, field.value_type):
@@ -35,6 +37,9 @@ class StateCompiler:
         for key, value in raw_state.items():
             name = str(key)
             if name in values or name in field_by_name:
+                continue
+            if not contract.additional_properties:
+                unresolved.append(f"undeclared_state.{name}")
                 continue
             values[name] = _normalize(value, FieldSpec(name))
         ordered = tuple(sorted(values.items(), key=lambda item: item[0]))

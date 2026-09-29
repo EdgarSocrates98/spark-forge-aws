@@ -36,9 +36,11 @@ def guard_activation(
     *,
     minimum_labeled_tasks: int = 50,
 ) -> ActivationDecision:
-    """Allow shadow mode and refuse every incomplete activation request."""
+    """Allow observation/assistance and refuse incomplete active promotion."""
     normalized_mode = mode.strip().lower()
     if normalized_mode == "shadow":
+        return ActivationDecision(True, normalized_mode)
+    if normalized_mode == "assisted":
         return ActivationDecision(True, normalized_mode)
     if normalized_mode != "active":
         return ActivationDecision(False, normalized_mode, ("unsupported_activation_mode",))

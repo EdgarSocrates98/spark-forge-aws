@@ -131,7 +131,7 @@ cases:
       budget: {max_input_bytes: 6000, cache_max_entries: 8}
     state: {enabled: true}
     expected_status: refused
-    expected_reason: activation_not_authorized
+    expected_reason: active_promotion_required
   - id: route-cache-hit
     repeat: 2
     contract:

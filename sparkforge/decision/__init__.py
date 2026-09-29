@@ -31,6 +31,12 @@ from sparkforge.decision.host import (
     ReplayHostAdapter,
     replay_host_mapping,
 )
+from sparkforge.decision.host_adapters import (
+    ClaudeHostAdapter,
+    CodexHostAdapter,
+    DevinHostAdapter,
+    RecordedHostAdapter,
+)
 from sparkforge.decision.models import (
     CompiledState,
     DecisionResult,
@@ -45,12 +51,16 @@ from sparkforge.decision.receipts import (
     build_receipt,
     verify_receipt,
 )
-from sparkforge.decision.runtime import BoundedDecisionKernel
+from sparkforge.decision.runtime import ActivePromotion, BoundedDecisionKernel
 from sparkforge.decision.state import StateCompilationError, StateCompiler
 
 __all__ = [
     "BoundedDecisionKernel",
+    "ActivePromotion",
     "BoundedHostProvider",
+    "ClaudeHostAdapter",
+    "CodexHostAdapter",
+    "DevinHostAdapter",
     "ArtifactCache",
     "CacheKey",
     "CacheKind",
@@ -79,6 +89,7 @@ __all__ = [
     "StateCompilationError",
     "StateCompiler",
     "ReplayHostAdapter",
+    "RecordedHostAdapter",
     "replay_host_mapping",
     "artifact_cache_key",
     "build_receipt",

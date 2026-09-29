@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Protocol
 
+from sparkforge.decision.conditions import condition_matches
 from sparkforge.decision.contracts import ContractValidationError, DecisionContract
 from sparkforge.decision.models import DecisionStatus, EvaluationOutcome, PrimitiveKind
 
@@ -59,9 +60,7 @@ class GateEvaluator:
             field = str(requirement["field"])
             if field not in state:
                 return _unresolved(f"missing_state.{field}", self.kind.value)
-            if "equals" in requirement and state[field] != requirement["equals"]:
-                return _abstain("gate_closed", self.kind.value, (field,))
-            if requirement.get("truthy", False) and not bool(state[field]):
+            if not condition_matches(requirement, state):
                 return _abstain("gate_closed", self.kind.value, (field,))
         return _accepted(str(contract.spec.get("on_pass", "open")), self.kind.value, 1.0)
 
@@ -97,7 +96,7 @@ class RouteEvaluator:
     def evaluate(self, contract: DecisionContract, state: Mapping[str, Any]) -> EvaluationOutcome:
         for rule in sorted(contract.spec["rules"], key=lambda item: int(item.get("priority", 100))):
             conditions = rule.get("when", [])
-            if all(_condition_matches(condition, state) for condition in conditions):
+            if all(condition_matches(condition, state) for condition in conditions):
                 route = str(rule.get("route", rule.get("target")))
                 confidence = float(rule.get("confidence", 1.0))
                 threshold = float(rule.get("threshold", 0.0))
@@ -151,23 +150,6 @@ def evaluator_for(kind: PrimitiveKind) -> PrimitiveEvaluator:
         return PRIMITIVES[kind]
     except KeyError as exc:
         raise ContractValidationError(f"unknown primitive: {kind.value}") from exc
-
-
-def _condition_matches(condition: Mapping[str, Any], state: Mapping[str, Any]) -> bool:
-    field = str(condition.get("field", ""))
-    if field not in state:
-        return False
-    if "equals" in condition and state[field] != condition["equals"]:
-        return False
-    if "in" in condition and state[field] not in condition["in"]:
-        return False
-    if "contains" in condition:
-        candidate = condition["contains"]
-        if not isinstance(state[field], (list, tuple, str)) or candidate not in state[field]:
-            return False
-    if condition.get("truthy") is True and not bool(state[field]):
-        return False
-    return True
 
 
 def _compare(actual: Any, expected: Any, operator: str) -> bool:

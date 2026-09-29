@@ -73,6 +73,59 @@ Provas focadas: `tests/test_jev_independent_path.py` e as regressões de host, c
 activation, plane, runtime, receipt e replay. A suíte monolítica completa ainda é um
 gate independente; este fechamento não afirma CI totalmente verde.
 
+## Atualização corrente — Decision Control Plane completion, Gate 1 (2026-09-28)
+
+Gate 1 está fechado em commit próprio: `StateCompiler` é fechado por padrão, contratos
+validam `referenced_fields`, Route/Gate compartilham `ConditionSchema` e confidences são
+limitadas a `[0,1]` durante o load. A prova focada passou `18` testes; cache, recovery,
+authority, adapters e benchmark permanecem nos seis gates seguintes. Nenhuma autoridade ativa
+foi concedida e nenhum claim econômico foi feito.
+
+## Atualização corrente — Decision Control Plane completion, Gate 2 (2026-09-28)
+
+Gate 2 está fechado em commit próprio: cache de decisão inclui contrato, estado, policy e
+calibration; `cache_max_entries` é enforced; e `ArtifactCache` tem uma implementação autoritativa
+com facade de compatibilidade na camada economy. Prova focada: `19 passed`. Recovery, authority,
+adapters e benchmark permanecem abertos.
+
+## Atualização corrente — Decision Control Plane completion, Gate 4 (2026-09-28)
+
+Gate 4 está fechado: authority explícita diferencia shadow, assisted e active; assisted preserva
+veto/fallback legado; active registra activation evidence e rollback. Prova focada:
+tests/test_decision_authority.py e regressões do plane passam (18 passed). O kernel genérico
+continua fail-closed.
+
+## Atualização corrente — Decision Control Plane completion, Gate 5 (2026-09-28)
+
+Gate 5 está fechado: adapters Claude/Codex/Devin traduzem somente transcripts/envelopes
+gravados e bounded. Core continua offline, sem SDK/provider/rede; ausência de transcript mantém
+tokens unresolved. Prova focada: 13 passed. Benchmark same-case é Gate 6; promoção ativa segue
+Gate 7.
+
+## Atualização corrente — Decision Control Plane completion, Gate 3 (2026-09-28)
+
+Gate 3 está fechado: `RecoveryGovernor` conecta policy, governor, budget e receipt; retry/replan
+consomem limites explícitos; e strategy repetida termina em `stop` terminal. Prova focada: `94
+passed`. Authority e adapters seguem gated; benchmark agora está fechado no Gate 6.
+
+## Atualização corrente — Decision Control Plane completion, Gate 6 (2026-09-28)
+
+Gate 6 está fechado em commit próprio: o replay tem 50 tarefas rotuladas em 10 domínios,
+train/holdout, três profiles e runners old/new. Cada row separa qualidade, `payload_bytes`,
+`provider_tokens` e custo; usage ausente e `cost_basis` ausente permanecem unresolved com
+razão explícita. Comparações exigem mesmo caso/manifesto e recusam volume acima de 10%.
+Prova focada: 12 passed; isto é harness offline e não afirma CI monolítico verde, economia
+financeira real ou promoção de autoridade.
+
+## Atualização corrente — Decision Control Plane completion, Gate 7 (2026-09-28)
+
+Gate 7 está fechado em commit próprio: o kernel genérico exige `ActivePromotion` explícito
+para contrato `mode: active`, com contrato/versão compatíveis, 50 labels, quality/economy gates,
+CI verificado e rollback. A autorização ocorre antes do cache; cache não concede autoridade.
+`config/decisions/agentic_control_plane.yaml` mantém shadow default e active disabled; o bridge
+economy só usa active com registro explícito. Prova focada: 92 passed no lote decision/agentic.
+Isto não afirma CI monolítico verde nem ativa autoridade produtiva.
+
 ---
 
 ## Números correntes

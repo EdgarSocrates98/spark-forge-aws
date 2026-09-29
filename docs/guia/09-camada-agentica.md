@@ -54,6 +54,49 @@ e a mecânica da avaliação, não prontidão para ativação, qualidade geral, 
 financeira ou tokens do provider. A ativação continua fail-closed até existir corpus
 rotulado mínimo e os gates de qualidade e economia.
 
+### Completion do control plane por gates
+
+A conclusão do kernel segue sete gates independentes e um commit por gate. O Gate 1 fecha o
+contrato antes da avaliação: estado extra é recusado por padrão, opcionais precisam ser
+declarados, referências fora do schema recusam o contrato e Route/Gate usam a mesma validação
+estrutural de condição. Confidences ficam limitadas a `[0,1]` no load.
+
+O estado aberto é exceção explícita (`additional_properties: true`) e mantém fingerprint
+determinística. O resultado unresolved nomeia o campo extra; o sistema não descarta erro de
+input silenciosamente. Gates seguintes tratam cache, recovery, autoridade, adapters e benchmark.
+
+O Gate 2 torna cache parte da identidade, não detalhe de implementação: policy ou calibration
+version diferente produz miss mesmo com contrato e estado iguais. `cache_max_entries` é aplicado
+no runtime. Fact, decision e artifact continuam namespaces distintos; a API histórica de
+`sparkforge.economy.cache` encaminha para `sparkforge.decision.cache.ArtifactCache`.
+
+O Gate 3 fecha recovery como transição governada. `RecoveryGovernor` reavalia profile/risco,
+consome retry/replan do `CaseBudget` e grava receipt de recovery com referência ao receipt-base.
+Fingerprint de estratégia repetida termina em `stop` terminal; retry não pode virar loop implícito.
+
+O Gate 4 separa autoridade de status. Shadow só observa; assisted pode propor, mas legacy pode
+vetar e continua sendo fallback; active exige activation evidence, governor e rollback registrado.
+Receipts carregam authority e legacy_vetoed quando aplicável. O kernel genérico continua sem
+autoridade ativa por default.
+
+O Gate 5 adiciona adapters host finos para Claude, Codex e Devin. Eles só traduzem envelopes
+gravados para o protocolo bounded e delegam replay local; não importam SDK, não chamam rede e
+não inferem tokens de bytes. Transcript ausente deixa provider_tokens unresolved.
+
+O Gate 6 fecha o benchmark same-case com 50 tarefas rotuladas em 10 domínios, train/holdout,
+três profiles e runners old/new. Cada linha mantém qualidade, `payload_bytes`,
+`provider_tokens` e custo separados. O comparador exige `case_id`/label/`input_manifest`
+iguais e recusa volume de entrada acima de 10%; tokens sem usage e custo sem `cost_basis`
+ficam unresolved com razão nomeada. O comando continua replay offline: não mede provider real
+nem promove autoridade, mas impede claims com denominador incompatível.
+
+O Gate 7 fecha a promoção active no kernel genérico. `mode: active` exige `ActivePromotion`
+explícito, contrato/versão compatíveis, corpus mínimo de 50 labels, quality/economy gates,
+CI verificado e rollback nomeado. A checagem acontece antes do cache; decisão cacheada não
+substitui autorização. `config/decisions/agentic_control_plane.yaml` permanece shadow por
+default e active disabled. O bridge economy só usa o kernel active quando recebe esse registro;
+sem ele, a decisão recusa e conserva fallback.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

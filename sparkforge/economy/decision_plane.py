@@ -21,6 +21,7 @@ from sparkforge.economy.decision_contracts import ContractRegistry, DecisionCont
 from sparkforge.economy.decision_engine import DeterministicDecisionEngine
 from sparkforge.economy.decision_models import (
     ActiveRouteOutcome,
+    AuthorityMode,
     ComparisonState,
     DecisionComparison,
     DecisionInput,
@@ -59,7 +60,7 @@ class DecisionPlaneService:
         now: str | None = None,
         trace_ref: str | None = None,
     ) -> ShadowEvaluation:
-        result = self.engine.evaluate(contract, request)
+        result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.SHADOW)
         current_for_compare = current if current is not None else request.current_route
         comparison = compare_decisions(current_for_compare, result)
         receipt = self.receipts.emit(
@@ -69,9 +70,53 @@ class DecisionPlaneService:
             comparison,
             now=now,
             trace_ref=trace_ref,
+            authority=AuthorityMode.SHADOW.value,
         )
         return ShadowEvaluation(
             result.with_receipt(receipt.receipt_id), comparison, receipt, request
+        )
+
+    def assisted(
+        self,
+        request: DecisionInput,
+        legacy_route: Any,
+        *,
+        contract: DecisionContract,
+        now: str | None = None,
+        trace_ref: str | None = None,
+    ) -> ActiveRouteOutcome:
+        """Offer a bounded proposal while legacy remains authoritative."""
+        result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.ASSISTED)
+        comparison = compare_decisions(legacy_route, result)
+        vetoed = comparison.state is not ComparisonState.AGREEMENT
+        reason = "legacy_veto" if vetoed else "assisted_non_authoritative"
+        receipt = self.receipts.emit(
+            request,
+            legacy_route,
+            result,
+            comparison,
+            now=now,
+            trace_ref=trace_ref,
+            mode=AuthorityMode.ASSISTED.value,
+            promoted=False,
+            fallback_route=_route_value(legacy_route),
+            rollback_reason="legacy_router_authoritative",
+            fallback_reason=reason,
+            authority=AuthorityMode.ASSISTED.value,
+            vetoed=vetoed,
+        )
+        return ActiveRouteOutcome(
+            promoted=False,
+            route=None,
+            fallback_route=_route_value(legacy_route),
+            reason=reason,
+            receipt_id=receipt.receipt_id,
+            mode=AuthorityMode.ASSISTED.value,
+            status=result.status.value,
+            confidence=result.confidence,
+            evidence=result.evidence,
+            rollback_reason="legacy_router_authoritative",
+            unresolved=(reason,),
         )
 
     def active(
@@ -127,7 +172,7 @@ class DecisionPlaneService:
                 now=now,
                 trace_ref=trace_ref,
             )
-        result = self.engine.evaluate(contract, request)
+        result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.ACTIVE)
         try:
             governor_decision = (governor or AgentGovernor()).resolve(
                 request.profile,
@@ -197,8 +242,14 @@ class DecisionPlaneService:
             promoted=True,
             fallback_route=_route_value(legacy_route),
             rollback_reason="legacy_router_available",
+            authority=AuthorityMode.ACTIVE.value,
+            activation_evidence={
+                "labeled_tasks": selected_evidence.labeled_tasks,
+                "quality_gate": selected_evidence.quality_gate,
+                "economy_gate": selected_evidence.economy_gate,
+            },
         )
-        promoted = result.with_receipt(receipt.receipt_id)
+        promoted = result.with_authority(AuthorityMode.ACTIVE).with_receipt(receipt.receipt_id)
         return ActiveRouteOutcome(
             promoted=True,
             route=promoted.selected[0],
@@ -243,8 +294,11 @@ class DecisionPlaneService:
             promoted=True,
             fallback_route=_route_value(legacy_route),
             rollback_reason="legacy_router_available",
+            authority=AuthorityMode.ACTIVE.value,
         )
-        result = evaluation.result.with_receipt(receipt.receipt_id)
+        result = evaluation.result.with_authority(AuthorityMode.ACTIVE).with_receipt(
+            receipt.receipt_id
+        )
         return ActiveRouteOutcome(
             True,
             result.selected[0],

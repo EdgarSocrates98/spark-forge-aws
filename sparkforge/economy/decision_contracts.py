@@ -14,7 +14,7 @@ from sparkforge.economy.decision_models import BudgetSnapshot
 from sparkforge.receipt._hash import digest_of
 
 SCHEMA_VERSION = 1
-ALLOWED_MODES = frozenset({"shadow", "active"})
+ALLOWED_MODES = frozenset({"shadow", "assisted", "active"})
 ALLOWED_PREDICATES = frozenset(
     {
         "always",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sparkforge.decision import BoundedDecisionKernel, DecisionCache
+from sparkforge.decision import ActivePromotion, BoundedDecisionKernel, DecisionCache
 from sparkforge.decision.contracts import ContractLoader
 from sparkforge.decision.models import DecisionStatus as KernelStatus
 from sparkforge.economy.decision_contracts import DecisionContract as EconomyContract
@@ -15,12 +15,12 @@ from sparkforge.economy.decision_models import (
 )
 
 
-def build_kernel_contract(contract: EconomyContract):
+def build_kernel_contract(contract: EconomyContract, *, mode: str = "shadow"):
     raw = {
         "schema_version": 1,
         "contract_id": contract.contract_id,
         "contract_version": contract.contract_version,
-        "mode": "shadow",
+        "mode": mode,
         "primitive": "route",
         "state": {
             "required": [
@@ -34,7 +34,7 @@ def build_kernel_contract(contract: EconomyContract):
         },
         "budget": {"max_input_bytes": 6000, "cache_max_entries": 128},
         "spec": {"rules": _rules(contract)},
-        "activation": {"enabled": False},
+        "activation": {"enabled": mode == "active"},
         "measurement": {"enabled": False},
     }
     return ContractLoader().parse(raw)
@@ -85,6 +85,61 @@ def evaluate_legacy(
     )
 
 
+def evaluate_active(
+    contract: EconomyContract,
+    state: DecisionInput,
+    *,
+    promotion: ActivePromotion,
+    cache: DecisionCache | None = None,
+) -> DecisionResult:
+    """Evaluate the economy contract only with explicit generic-kernel promotion."""
+    budget_reason = _budget_reason(contract, state)
+    if budget_reason is not None:
+        return DecisionResult.refused_result(contract, state.budget, budget_reason).with_authority(
+            "active"
+        )
+    kernel_contract = build_kernel_contract(contract, mode="active")
+    raw_state = {
+        "task_description": state.task_description,
+        "evidence_kinds": list(state.evidence_kinds),
+        "profile": state.profile,
+        "risk_level": state.risk_level,
+        "deterministic_available": state.deterministic_available,
+        "cached": state.cached,
+    }
+    evaluation = BoundedDecisionKernel(cache=cache).evaluate(
+        kernel_contract, raw_state, promotion=promotion
+    )
+    generic = evaluation.result
+    if generic.status is KernelStatus.ACCEPTED:
+        return DecisionResult(
+            contract_id=contract.contract_id,
+            contract_version=contract.contract_version,
+            contract_sha256=contract.sha256,
+            status=DecisionStatus.ACCEPTED,
+            selected=generic.selected,
+            confidence=generic.confidence,
+            confidence_source="rule",
+            method="declared_predicates",
+            budget=state.budget,
+            fingerprint=generic.fingerprint,
+            cache_hit=generic.cache_hit,
+            evidence=generic.evidence,
+            authority="active",
+        )
+    reason = generic.reason or "active_promotion_refused"
+    result = (
+        DecisionResult.refused_result(contract, state.budget, reason)
+        if generic.status is KernelStatus.REFUSED
+        else DecisionResult.unresolved_result(contract, state.budget, reason)
+    )
+    return result.with_kernel(
+        fingerprint=generic.fingerprint,
+        cache_hit=generic.cache_hit,
+        evidence=generic.evidence,
+    ).with_authority("active")
+
+
 def _rules(contract: EconomyContract) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
     for candidate in contract.candidates:
@@ -129,4 +184,4 @@ def _budget_reason(contract: EconomyContract, state: DecisionInput) -> str | Non
     return None
 
 
-__all__ = ["build_kernel_contract", "evaluate_legacy"]
+__all__ = ["build_kernel_contract", "evaluate_active", "evaluate_legacy"]

@@ -123,13 +123,102 @@ SDK de provider, não chama rede e não transforma `payload_bytes` em `provider_
 | Risk/profile Governor | `sparkforge/agentic/governor.py` | IMPLEMENTED, 27 células bounded | `tests/test_agent_governor.py` |
 | Bounded recovery | `sparkforge/agentic/recovery.py` | IMPLEMENTED, 8 classes e retry finito | `tests/test_recovery_policy.py` |
 | Cache ownership | `sparkforge/decision/cache.py` | IMPLEMENTED, `fact`/`decision`/`artifact` | `tests/test_cache_contracts.py` |
-| Replay economics | `sparkforge/evals/decision_replay.py` | IMPLEMENTED, 30 casos × 3 profiles × old/new | `tests/test_decision_replay.py`, `scripts/benchmark_decision_control_plane.py` |
+| Replay economics | `sparkforge/evals/decision_replay.py` | IMPLEMENTED, 50 casos rotulados × 10 domínios × 3 profiles × old/new | `tests/test_decision_replay.py`, `tests/test_benchmark_quality_tokens_cost.py`, `scripts/benchmark_decision_control_plane.py` |
 
 Fixtures vivem em `evals/token_efficient/fixtures/` e são registrados no
-`evals/token_efficient/suite.yaml`. O relatório local produz 180 células, mantendo
+`evals/token_efficient/suite.yaml`. O relatório local produz 300 células, mantendo
 qualidade, `payload_bytes`, `provider_tokens`/`tokens_unresolved` e `cost_basis` como
-dimensões separadas. Isso prova cobertura e determinismo do harness; não é uma alegação
-de economia financeira, ganho de qualidade ou redução de tokens de provider.
+dimensões separadas. Cada caso carrega label e `input_manifest`; comparações recusam
+manifesto divergente ou volume acima de 10%. Isto prova cobertura e determinismo do
+harness, não uma alegação de economia financeira, ganho de qualidade ou redução de
+tokens de provider.
+
+## Atualização corrente — 2026-09-28 — Completion Gate 2: identidade e caches
+
+O segundo gate usa `CacheKey` versionada para decisões: `contract_sha256`, state fingerprint,
+`policy_version` e `calibration_version` formam identidade única. O runtime aplica o
+`cache_max_entries` do contrato por eviction bounded e receipts expõem a chave efetiva.
+
+`sparkforge.decision.cache.ArtifactCache` agora é a implementação única. A API antiga de
+`sparkforge.economy.cache` virou facade compatível para memória/disco, TTL, owner e namespace;
+não há segundo LRU/freshness implementation. Prova: `tests/test_decision_cache_versions.py`
+mais regressões de cache/economy/context (`19 passed`).
+
+## Atualização corrente — 2026-09-28 — Completion Gate 3: recovery governado
+
+O terceiro gate fecha `RecoveryPolicy → AgentGovernor → CaseBudget → receipt`. `RecoveryGovernor`
+resolve a ação usando profile/risco, pede limites bounded e consome `max_retries` ou
+`max_replans` do `CaseBudget` quando há budget mutável. Falha de consumo vira `stop` terminal;
+nenhuma recuperação abre uma segunda trilha de retry.
+
+Uma strategy fingerprint repetida após replan agora termina em `stop` com
+`strategy_fingerprint_repeated`, impedindo loop infinito. O controller emite um receipt separado
+de recovery que referencia o receipt-base e carrega decisão, governor e consumo. Prova: 94 testes
+focados de recovery/control/receipts/infra passam; a regra não concede autoridade ativa.
+
+## Atualização corrente — 2026-09-28 — Completion Gate 4: autoridade explícita
+
+O quarto gate separa status de autoridade. DecisionResult e receipts carregam authority
+(shadow, assisted, active). Assisted avalia e propõe, mas mantém legacy como autoridade:
+divergência produz legacy_vetoed: true, fallback e rollback explícitos. Active continua
+dependente de activation evidence e governor; o kernel genérico permanece fail-closed.
+
+Prova: tests/test_decision_authority.py cobre assisted com veto, guard de modo e active com
+rollback; regressões de activation/plane/models/runtime passam (18 passed). Nenhuma mudança
+ativa ocorre por YAML isolado no modo produtivo.
+
+## Atualização corrente — 2026-09-28 — Completion Gate 5: adapters host
+
+O quinto gate adiciona ClaudeHostAdapter, CodexHostAdapter e DevinHostAdapter como tradutores
+de mappings gravados para HostEnvelope. Eles normalizam turns, request, usage, transcript hash
+e cost basis; depois delegam ao ReplayHostAdapter local. Não há SDK, import de provider, rede ou
+inferência de tokens. Ausência de usage mantém tokens_unresolved.
+
+Prova: tests/test_host_adapters.py e regressões de host/kernel/JEV passam (13 passed). Adapters
+são opt-in e não alteram a autoridade do router.
+
+## Atualização corrente — 2026-09-28 — Completion Gate 6: benchmark same-case
+
+O sexto gate amplia o corpus do control plane para 50 tarefas rotuladas em 10 domínios,
+com partições train/holdout, três profiles e runners old/new. O relatório separa qualidade,
+`payload_bytes`, `provider_tokens` e custo em campos independentes. Tokens só são resolvidos
+quando a observação fornece usage; sem isso, `tokens_unresolved_reason` nomeia a ausência.
+Dólares só são medidos com `cost_basis`; sem base, o custo permanece unresolved.
+
+O comparador exige o mesmo `case_id`, label e `input_manifest` e recusa variação de volume
+de entrada superior a 10%, em vez de produzir delta econômico inválido. O fixture é replay
+offline e não substitui benchmark de provider real: o comando demonstra cobertura,
+reprodutibilidade e limites de evidência. Prova: `tests/test_benchmark_quality_tokens_cost.py`
+e regressões de `tests/test_decision_replay.py` (`12 passed` no lote focused).
+
+## Atualização corrente — 2026-09-28 — Completion Gate 7: promoção active explícita
+
+O sétimo gate fecha a fronteira de autoridade do kernel genérico. Contrato `mode: active`
+continua recusado sem `ActivePromotion` explícito; o registro precisa casar contrato/versão,
+ter pelo menos 50 tarefas rotuladas, quality gate, economy gate, CI verificado e rollback
+nomeado. A validação acontece antes do cache, portanto uma decisão active previamente cacheada
+não contorna a promoção.
+
+`config/decisions/agentic_control_plane.yaml` mantém `shadow` como default e active disabled.
+O bridge economy expõe caminho active somente quando recebe o mesmo registro explícito. Receipts
+do kernel preservam o registro de promoção; ausência ou evidência incompleta retorna fallback
+fail-closed. Prova: `tests/test_kernel_authority.py`, baseline do kernel e regressões de
+receipts/adapters (`92 passed` no lote decision/agentic). Nenhuma autoridade ativa foi habilitada
+na configuração produtiva.
+
+## Atualização corrente — 2026-09-28 — Completion Gate 1: contratos fechados
+
+O primeiro gate da conclusão do control plane está implementado em commit isolado.
+`StateCompiler` rejeita campos extras por padrão (`undeclared_state.*`), aceita `optional`
+somente quando declarado e permite abertura apenas com `state.additional_properties: true`.
+O loader compara todas as referências das primitivas com o conjunto declarado e recusa
+`referenced_fields_undeclared` antes do evaluator.
+
+`sparkforge/decision/conditions.py` é a única validação estrutural para condições de Route e
+Gate. Ela exige campo, exatamente um operador (`equals`, `in`, `contains` ou `truthy`) e tipos
+compatíveis. Confidences declaradas e thresholds de aceitação são validados no load dentro de
+`[0,1]`. Prova: `tests/test_decision_contract_hardening.py` e regressões do kernel (`18 passed`).
+Este gate não altera cache, recovery, autoridade ou adapters.
 
 ## Atualização corrente — 2026-09-28 — JEV-independent evolution path
 

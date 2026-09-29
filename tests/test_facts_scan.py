@@ -56,7 +56,7 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
     "registry/loader.py": "varre os agents embarcados no wheel",
     "rules/loader.py": "varre o catalogo de regras embarcado no wheel",
     "context/progressive.py": "varre as references embarcadas no wheel",
-    "economy/cache.py": "varre o cache que o proprio motor escreveu",
+    "decision/cache.py": "varre o cache de decisoes que o proprio motor escreveu",
     "economy/goldset.py": (
         "varre `fixtures/*/*/` do PROPRIO repositorio, corpus curado e "
         "versionado, nunca arvore de cliente. Passar por `iter_source_files` "

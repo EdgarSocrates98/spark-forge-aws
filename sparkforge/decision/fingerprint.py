@@ -27,6 +27,8 @@ def decision_fingerprint(contract: DecisionContract, state: CompiledState) -> st
             "contract_id": contract.contract_id,
             "contract_version": contract.contract_version,
             "contract_sha256": contract.sha256,
+            "policy_version": contract.policy_version,
+            "calibration_version": contract.calibration_version,
             "primitive": contract.primitive.value,
             "spec": contract.spec,
             "state": dict(state.values),
