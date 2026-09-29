@@ -22,6 +22,7 @@ def _observation(case: dict, profile: str) -> dict:
         "payload_bytes": 100 + len(profile),
         "provider_tokens": case.get("provider_tokens"),
         "tokens_unresolved": case.get("provider_tokens") is None,
+        "transcript_hash": case.get("transcript_hash"),
         "cost": case.get("cost"),
         "cost_basis": case.get("cost_basis"),
     }

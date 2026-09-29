@@ -152,3 +152,23 @@ sparkforge/
 1. **Retrocompatibilidade de CLI**: O comando `sparkforge` continuará aceitando todos os subcomandos existentes (`analyze`, `judge`, `case`, `report`, `benchmark`, `funcval`, `runtime`, `fuse`). Novos comandos (`export`, `doctor`, `inspect`, `optimize`, `workflow`, `eval`) serão introduzidos de forma aditiva.
 2. **Retrocompatibilidade de MCP**: As ferramentas MCP expostas continuam com as mesmas assinaturas e retornos JSON estruturados.
 3. **Preservação de Catálogos de Regras**: Os catálogos de regras YAML existentes em `rules/catalog/` continuam sendo a fonte canônica para julgamentos.
+
+## 5. Decision Control Plane — completion build (2026-09-28)
+
+O plano de decisão bounded agora converge em uma única `AuthorityPolicy`, carregada de
+`config/decisions/agentic_control_plane.yaml`. `shadow` observa, `assisted` exige autoridade
+explícita para propor e `active` exige autoridade explícita, evidência de promoção, rollback e
+`active.enabled`; o default permanece fail-closed. Serviço, controller, bridge e kernel usam a
+mesma decisão estruturada, sem promoção automática por benchmark.
+
+`DecisionCache` lê somente registros do owner/freshness do escopo e aplica `cache_max_entries`
+por escopo, sem reduzir a capacidade de outro consumidor. A chave inclui contrato, estado,
+policy, calibration, profile e risco. `RecoveryGovernor` consome retry e replan em categorias
+independentes e recusa fingerprint de ciclo repetida antes de consumir budget; receipts registram
+autoridade, cache, budget e recovery.
+
+Hosts Claude/Codex/Devin continuam adapters de recordings, sem SDK ou rede no core. O hash do
+transcript é calculado sobre conteúdo canônico sem o hash declarado, e provider tokens só entram
+quando usage e transcript coincidem; caso contrário, ficam `tokens_unresolved`. O replay benchmark
+mantém qualidade, rota, bytes, tokens e custo como eixos independentes. Custo requer `cost_basis`;
+bytes nunca são convertidos em tokens.

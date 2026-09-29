@@ -31,6 +31,10 @@ def build_receipt(
     fallback_reason: str | None = None,
     cache_key: str | None = None,
     promotion: dict[str, Any] | None = None,
+    authority: dict[str, Any] | None = None,
+    cache_owner: str = "decision-kernel",
+    cache_freshness: str = "fresh",
+    cache_capacity: int | None = None,
 ) -> dict[str, Any]:
     refusal = None
     if result.status.value != "accepted":
@@ -49,7 +53,13 @@ def build_receipt(
         "confidence": result.confidence,
         "evidence": list(result.evidence),
         "refusal": refusal,
-        "cache": {"hit": result.cache_hit, "key": cache_key},
+        "cache": {
+            "hit": result.cache_hit,
+            "key": cache_key,
+            "owner": cache_owner,
+            "freshness": cache_freshness,
+            "capacity": cache_capacity,
+        },
         "control": {
             "mode": mode,
             "promoted": promoted,
@@ -59,6 +69,15 @@ def build_receipt(
             "fallback_reason": fallback_reason,
         },
         "promotion": promotion,
+        "authority": authority
+        or {
+            "allowed": promoted,
+            "mode": mode,
+            "policy_version": "unknown",
+            "calibration_version": "none",
+            "evidence_refs": [],
+            "unresolved": [],
+        },
         "measurement": measurement.to_dict(),
     }
     receipt_id = RECEIPT_PREFIX + digest(body)
@@ -120,6 +139,10 @@ class KernelReceiptStore:
         fallback_reason: str | None = None,
         cache_key: str | None = None,
         promotion: dict[str, Any] | None = None,
+        authority: dict[str, Any] | None = None,
+        cache_owner: str = "decision-kernel",
+        cache_freshness: str = "fresh",
+        cache_capacity: int | None = None,
     ) -> dict[str, Any]:
         document = build_receipt(
             result,
@@ -133,6 +156,10 @@ class KernelReceiptStore:
             fallback_reason=fallback_reason,
             cache_key=cache_key,
             promotion=promotion,
+            authority=authority,
+            cache_owner=cache_owner,
+            cache_freshness=cache_freshness,
+            cache_capacity=cache_capacity,
         )
         self.root.mkdir(parents=True, exist_ok=True)
         path = self.root / f"{document['receipt_id']}.kernel.json"

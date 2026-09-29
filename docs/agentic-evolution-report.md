@@ -546,6 +546,19 @@ o alvo parecer entregue.
   quem despacha subagente, e um teste amarra as duas fontes.
 - Correctness, safety, evidence, auditability > token savings.
 
+## 2026-09-28 — completion do Decision Control Plane
+
+O completion build fechou a cadeia `AuthorityPolicy → kernel/service → Governor → CaseBudget →
+Receipt` sem mudar o default shadow. `active` permanece disabled em configuração; qualquer
+promoção exige caller authority e evidência versionada. `assisted` é explícito e não substitui a
+rota legacy.
+
+Também foram fechados cache ownership/capacidade por escopo, retry/replan independentes, proteção
+contra ciclos repetidos, hash canônico de transcripts e replay same-case com rota como eixo
+independente. Claude/Codex/Devin são translators de recordings; não há SDK ou rede em
+`sparkforge/decision`. A suíte de 50 casos mede evidência offline, não custo financeiro real nem
+token de provider inferido de bytes.
+
 ## Compatibilidade
 
 - `case.yaml` continua válido; o bloco `budget:` é **opcional** e a ausência

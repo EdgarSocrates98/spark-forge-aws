@@ -10,6 +10,14 @@ decision_fixture: fixtures/decision_plane_cases.yaml
 decision_control_plane_fixture: fixtures/decision_control_plane_cases.yaml
 calibration_fixture: fixtures/calibration_history.yaml
 host_replay_fixture: fixtures/host_replay.yaml
+calibration_version: control-plane-calibration-v1
+replay_contract:
+  minimum_labeled_tasks: 50
+  minimum_domains: 6
+  require_holdout_per_domain: true
+  route_metric: independent
+  transcript_integrity: canonical_transcript_v1
+  cost_requires_basis: true
 cases:
   - id: glue-routing
     intent: Glue FGAC Iceberg

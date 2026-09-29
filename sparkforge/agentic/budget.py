@@ -226,20 +226,23 @@ class CaseBudget:
         self.cost_incurred_usd += cost_usd
 
     def consume_retry(self) -> None:
-        if self.is_exhausted or self.retries_used >= self.max_retries:
-            raise BudgetExceededError(f"CaseBudget: max_retries {self.max_retries} reached")
-        self.retries_used += 1
+        self.consume_recovery("retry")
 
     def consume_replan(self) -> None:
-        if self.is_exhausted or self.replans_used >= self.max_replans:
-            raise BudgetExceededError(f"CaseBudget: max_replans {self.max_replans} reached")
-        self.replans_used += 1
+        self.consume_recovery("replan")
 
     def consume_recovery(self, action: str) -> None:
         if action == "retry":
-            self.consume_retry()
-        elif action == "replan":
-            self.consume_replan()
+            if self.retries_used >= self.max_retries:
+                raise BudgetExceededError("retry_budget_exhausted")
+            self.retries_used += 1
+            return
+        if action == "replan":
+            if self.replans_used >= self.max_replans:
+                raise BudgetExceededError("replan_budget_exhausted")
+            self.replans_used += 1
+            return
+        raise ValueError(f"unsupported_recovery_action:{action}")
 
     def consume_tokens(self, n: int) -> None:
         self.tokens_used += n

@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from sparkforge.decision import PromotionEvidence
 from sparkforge.economy.decision_activation import ActivationEvidence, guard_activation
 from sparkforge.economy.decision_contracts import ContractRegistry
 from sparkforge.economy.decision_models import AuthorityMode, DecisionInput
@@ -39,13 +40,12 @@ def test_assisted_proposes_but_legacy_remains_authority(tmp_path: Path):
     )
     assert outcome.promoted is False
     assert outcome.mode == AuthorityMode.ASSISTED.value
-    assert outcome.reason == "legacy_veto"
+    assert outcome.reason == "explicit_authority_required"
     receipt = service.receipts.root / f"{outcome.receipt_id}.json"
     document = service.receipts.verify(receipt)
     assert document["valid"] is True
     payload = receipt.read_text(encoding="utf-8")
-    assert '\"authority\": \"assisted\"' in payload
-    assert '\"legacy_vetoed\": true' in payload
+    assert '\"authority_decision\"' in payload
 
 
 def test_assisted_activation_is_supported_without_active_authority():
@@ -60,12 +60,30 @@ def test_active_evidence_keeps_explicit_rollback(tmp_path: Path):
     shutil.copytree(ROOT / "config", repo / "config")
     path = repo / "config" / "decisions" / "routing.data_domain.yaml"
     path.write_text(path.read_text(encoding="utf-8").replace("mode: shadow", "mode: active"))
+    config = repo / "config" / "decisions" / "agentic_control_plane.yaml"
+    config.write_text(
+        config.read_text(encoding="utf-8").replace("enabled: false", "enabled: true"),
+        encoding="utf-8",
+    )
     service = DecisionPlaneService(repo)
+    contract = service.validate("routing.data_domain")
     outcome = service.active(
         DecisionInput("active-authority", "diagnose", deterministic_available=True),
         "tier_3_cheap_local",
-        contract=service.validate("routing.data_domain"),
+        contract=contract,
         evidence=ActivationEvidence(50, True, True),
+        promotion=PromotionEvidence(
+            promotion_id="promotion-authority",
+            contract_id=contract.contract_id,
+            contract_version=contract.contract_version,
+            contract_sha256=contract.sha256,
+            labeled_tasks=50,
+            quality_gate=True,
+            economy_gate=True,
+            ci_verified=True,
+            rollback="restore-shadow",
+        ),
+        caller_authorized=True,
         now="fixed",
     )
     assert outcome.promoted is True

@@ -485,3 +485,18 @@ das instruções é resposta disponível, não capacidade demonstrada.
 `tests/test_evals_holdout.py` **prova** a propriedade a cada execução da suíte —
 sem ele, "holdout" seria só um nome de pasta. Ver `evals/holdout/README.md` para
 o que cada cenário retém e como mexer sem estragar.
+
+## Replay do Decision Control Plane
+
+`evals/token_efficient/fixtures/decision_control_plane_cases.yaml` é uma suíte offline de 50
+casos rotulados em 10 domínios, com train e holdout por domínio. Cada profile (`economy`,
+`balanced`, `deep`) roda old/new no mesmo `case_id` e `input_manifest`.
+
+```bash
+python scripts/benchmark_decision_control_plane.py
+```
+
+O relatório mantém qualidade, correção de rota, `payload_bytes`, provider tokens e custo em
+denominadores separados. `provider_tokens` exige transcript íntegro; ausência ou divergência é
+`tokens_unresolved`. Custo só é medido quando há `cost_basis`. O replay não chama provider, não
+converte bytes em tokens e não habilita `active`.

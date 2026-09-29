@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from time import perf_counter_ns
 from typing import Any
 
+from sparkforge.decision.authority import AuthorityDecision, AuthorityPolicy, PromotionEvidence
 from sparkforge.decision.cache import DecisionCache, decision_cache_key
 from sparkforge.decision.contracts import DecisionContract
 from sparkforge.decision.fingerprint import decision_fingerprint, state_fingerprint
@@ -36,6 +37,21 @@ class ActivePromotion:
     ci_verified: bool
     rollback: str
     contract_sha256: str | None = None
+    evidence_refs: tuple[str, ...] = ()
+
+    def as_evidence(self) -> PromotionEvidence:
+        return PromotionEvidence(
+            promotion_id=self.promotion_id,
+            contract_id=self.contract_id,
+            contract_version=self.contract_version,
+            contract_sha256=self.contract_sha256,
+            labeled_tasks=self.labeled_tasks,
+            quality_gate=self.quality_gate,
+            economy_gate=self.economy_gate,
+            ci_verified=self.ci_verified,
+            rollback=self.rollback,
+            evidence_refs=self.evidence_refs,
+        )
 
     def missing_for(
         self, contract: DecisionContract, *, minimum_labeled_tasks: int = 50
@@ -72,6 +88,7 @@ class ActivePromotion:
             "economy_gate": self.economy_gate,
             "ci_verified": self.ci_verified,
             "rollback": self.rollback,
+            "evidence_refs": list(self.evidence_refs),
         }
 
 
@@ -79,10 +96,15 @@ class BoundedDecisionKernel:
     """Evaluate one declared contract with explicit bounded outcomes."""
 
     def __init__(
-        self, *, cache: DecisionCache | None = None, compiler: StateCompiler | None = None
+        self,
+        *,
+        cache: DecisionCache | None = None,
+        compiler: StateCompiler | None = None,
+        authority_policy: AuthorityPolicy | None = None,
     ) -> None:
         self.compiler = compiler or StateCompiler()
         self.cache = cache
+        self.authority_policy = authority_policy or AuthorityPolicy()
 
     def evaluate(
         self,
@@ -91,12 +113,52 @@ class BoundedDecisionKernel:
         *,
         now: str | None = None,
         promotion: ActivePromotion | None = None,
+        authority: AuthorityDecision | None = None,
+        caller_authorized: bool = False,
+        cache_owner: str = "decision-kernel",
+        cache_freshness: str = "fresh",
+        risk_profile: str = "none",
+        risk_level: str = "none",
     ) -> KernelEvaluation:
         started = perf_counter_ns()
         compiled = self.compiler.compile(contract, raw_state)
         fingerprint = decision_fingerprint(contract, compiled)
         compiled_identity = state_fingerprint(compiled)
         promotion_missing = _promotion_missing(contract, promotion)
+        authority_decision = authority or self.authority_policy.authorize_promotion(
+            mode=contract.mode,
+            contract=contract,
+            evidence=promotion.as_evidence() if promotion is not None else None,
+            caller_authorized=caller_authorized,
+        )
+        if contract.mode != "shadow" and not authority_decision.allowed:
+            reason = authority_decision.reason or "activation_not_authorized"
+            unresolved = authority_decision.unresolved
+            if promotion_missing and reason == "promotion_evidence_incomplete":
+                reason = ";".join(promotion_missing)
+            result = _result(
+                contract,
+                fingerprint,
+                DecisionStatus.REFUSED,
+                reason,
+                "authority",
+                unresolved,
+            )
+            measurement = _measurement(started, raw_state)
+            return KernelEvaluation(
+                result,
+                build_receipt(
+                    result,
+                    state_fingerprint=compiled_identity,
+                    measurement=measurement,
+                    emitted_at=now,
+                    mode=contract.mode,
+                    promoted=False,
+                    rollback_reason="authority_policy_refused",
+                    authority=authority_decision.to_dict(),
+                ),
+                measurement,
+            )
         if promotion_missing:
             result = _result(
                 contract,
@@ -126,10 +188,15 @@ class BoundedDecisionKernel:
             state_identity,
             contract.policy_version,
             contract.calibration_version,
+            risk_profile,
+            risk_level,
         )
         if cache is not None:
-            cache.limit_to(contract.cache_max_entries)
-            cached = cache.get_key(cache_key)
+            cached = cache.get_key_owned(
+                cache_key,
+                owner=cache_owner,
+                freshness=cache_freshness,
+            )
             if cached is not None:
                 result = cached.with_cache_hit(True)
                 measurement = _measurement(started, raw_state)
@@ -145,12 +212,22 @@ class BoundedDecisionKernel:
                         rollback_reason=(promotion.rollback if promotion else None),
                         promotion=(promotion.to_dict() if promotion else None),
                         cache_key=cache_key.canonical(),
+                        authority=authority_decision.to_dict(),
+                        cache_owner=cache_owner,
+                        cache_freshness=cache_freshness,
+                        cache_capacity=contract.cache_max_entries,
                     ),
                     measurement,
                 )
         result = self._evaluate_uncached(contract, compiled, fingerprint, promotion)
         if cache is not None:
-            cache.put_key(cache_key, result)
+            cache.put_key(
+                cache_key,
+                result,
+                owner=cache_owner,
+                freshness=cache_freshness,
+                capacity=contract.cache_max_entries,
+            )
         measurement = _measurement(started, raw_state)
         return KernelEvaluation(
             result,
@@ -164,6 +241,10 @@ class BoundedDecisionKernel:
                 rollback_reason=(promotion.rollback if promotion else None),
                 promotion=(promotion.to_dict() if promotion else None),
                 cache_key=cache_key.canonical(),
+                authority=authority_decision.to_dict(),
+                cache_owner=cache_owner,
+                cache_freshness=cache_freshness,
+                cache_capacity=contract.cache_max_entries,
             ),
             measurement,
         )
@@ -183,7 +264,7 @@ class BoundedDecisionKernel:
                 ";".join(_promotion_missing(contract, promotion)),
                 "activation",
             )
-        if contract.mode != "shadow" and contract.mode != "active":
+        if contract.mode not in {"shadow", "assisted", "active"}:
             return _result(
                 contract,
                 fingerprint,
@@ -248,7 +329,7 @@ def _measurement(started: int, raw_state: Mapping[str, Any]) -> LocalMeasurement
 def _promotion_missing(
     contract: DecisionContract, promotion: ActivePromotion | None
 ) -> tuple[str, ...]:
-    if contract.mode == "shadow":
+    if contract.mode in {"shadow", "assisted"}:
         return ()
     if promotion is None:
         return ("active_promotion_required",)

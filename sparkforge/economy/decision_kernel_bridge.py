@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from sparkforge.decision import ActivePromotion, BoundedDecisionKernel, DecisionCache
+from sparkforge.decision import (
+    ActivePromotion,
+    AuthorityPolicy,
+    BoundedDecisionKernel,
+    DecisionCache,
+)
 from sparkforge.decision.contracts import ContractLoader
 from sparkforge.decision.models import DecisionStatus as KernelStatus
 from sparkforge.economy.decision_contracts import DecisionContract as EconomyContract
@@ -91,6 +96,8 @@ def evaluate_active(
     *,
     promotion: ActivePromotion,
     cache: DecisionCache | None = None,
+    authority_policy: AuthorityPolicy | None = None,
+    caller_authorized: bool = False,
 ) -> DecisionResult:
     """Evaluate the economy contract only with explicit generic-kernel promotion."""
     budget_reason = _budget_reason(contract, state)
@@ -107,8 +114,14 @@ def evaluate_active(
         "deterministic_available": state.deterministic_available,
         "cached": state.cached,
     }
-    evaluation = BoundedDecisionKernel(cache=cache).evaluate(
-        kernel_contract, raw_state, promotion=promotion
+    policy = authority_policy or AuthorityPolicy.from_repo()
+    evaluation = BoundedDecisionKernel(cache=cache, authority_policy=policy).evaluate(
+        kernel_contract,
+        raw_state,
+        promotion=promotion,
+        caller_authorized=caller_authorized,
+        risk_profile=state.profile,
+        risk_level=state.risk_level,
     )
     generic = evaluation.result
     if generic.status is KernelStatus.ACCEPTED:

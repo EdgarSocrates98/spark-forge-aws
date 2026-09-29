@@ -21,18 +21,27 @@ class RecordedHostAdapter(ReplayHostAdapter):
     def normalize_mapping(self, raw: Mapping[str, Any]) -> dict[str, Any]:
         turns = _first_value(raw, self.message_keys)
         normalized_turns = _turns(turns)
-        transcript_hash = str(raw.get("transcript_hash", "")).strip()
-        if not transcript_hash:
-            transcript_hash = digest(normalized_turns)
         request = raw.get("request")
         if not isinstance(request, Mapping):
             request = _request(raw)
+        case_id = str(raw.get("case_id", f"{self.provider_name}-recorded"))
+        contract_id = str(raw.get("contract_id", ""))
+        contract_version = str(raw.get("contract_version", ""))
+        canonical = {
+            "schema_version": 1,
+            "case_id": case_id,
+            "contract_id": contract_id,
+            "contract_version": contract_version,
+            "request": dict(request),
+            "turns": normalized_turns,
+        }
+        transcript_hash = str(raw.get("transcript_hash", "")).strip() or digest(canonical)
         usage = _usage(raw.get("usage"), raw, transcript_hash)
         return {
             "schema_version": 1,
-            "case_id": str(raw.get("case_id", f"{self.provider_name}-recorded")),
-            "contract_id": str(raw.get("contract_id", "")),
-            "contract_version": str(raw.get("contract_version", "")),
+            "case_id": case_id,
+            "contract_id": contract_id,
+            "contract_version": contract_version,
             "request": dict(request),
             "transcript_hash": transcript_hash,
             "turns": normalized_turns,

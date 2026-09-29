@@ -6,6 +6,7 @@ import yaml
 
 from sparkforge.decision import (
     ActivePromotion,
+    AuthorityPolicy,
     BoundedDecisionKernel,
     ContractLoader,
     DecisionCache,
@@ -48,29 +49,47 @@ def test_generic_kernel_refuses_active_without_explicit_promotion() -> None:
     result = BoundedDecisionKernel().evaluate(contract, {"signal": "safe"})
 
     assert result.result.status is DecisionStatus.REFUSED
-    assert result.result.reason == "active_promotion_required"
+    assert result.result.reason == "active_disabled_by_policy"
     assert result.receipt["control"]["promoted"] is False
 
 
 def test_generic_kernel_requires_all_promotion_evidence() -> None:
     contract = _active_kernel_contract()
-    result = BoundedDecisionKernel().evaluate(
+    result = BoundedDecisionKernel(
+        authority_policy=AuthorityPolicy(
+            {
+                "policy_version": "test-policy",
+                "authority": {"active": {"enabled": True, "minimum_labeled_tasks": 50}},
+            }
+        )
+    ).evaluate(
         contract,
         {"signal": "safe"},
         promotion=_promotion(contract, ci_verified=False, rollback=""),
+        caller_authorized=True,
     )
 
     assert result.result.status is DecisionStatus.REFUSED
-    assert "promotion_ci_gate_missing" in (result.result.reason or "")
-    assert "promotion_rollback_missing" in (result.result.reason or "")
+    assert "promotion_ci_gate_missing" in result.result.evidence
+    assert "promotion_rollback_missing" in result.result.evidence
 
 
 def test_valid_promotion_is_explicit_and_cache_cannot_bypass_it() -> None:
     contract = _active_kernel_contract()
-    kernel = BoundedDecisionKernel(cache=DecisionCache(2))
+    kernel = BoundedDecisionKernel(
+        cache=DecisionCache(2),
+        authority_policy=AuthorityPolicy(
+            {
+                "policy_version": "test-policy",
+                "authority": {"active": {"enabled": True, "minimum_labeled_tasks": 50}},
+            }
+        ),
+    )
     promotion = _promotion(contract)
 
-    active = kernel.evaluate(contract, {"signal": "safe"}, promotion=promotion)
+    active = kernel.evaluate(
+        contract, {"signal": "safe"}, promotion=promotion, caller_authorized=True
+    )
     refused = kernel.evaluate(contract, {"signal": "safe"})
 
     assert active.result.status is DecisionStatus.ACCEPTED
@@ -78,7 +97,7 @@ def test_valid_promotion_is_explicit_and_cache_cannot_bypass_it() -> None:
     assert active.receipt["control"]["promoted"] is True
     assert active.receipt["promotion"]["promotion_id"] == promotion.promotion_id
     assert refused.result.status is DecisionStatus.REFUSED
-    assert refused.result.reason == "active_promotion_required"
+    assert refused.result.reason == "explicit_authority_required"
 
 
 def test_economy_bridge_active_path_requires_explicit_promotion() -> None:
@@ -96,7 +115,18 @@ def test_economy_bridge_active_path_requires_explicit_promotion() -> None:
         rollback="restore-legacy-router",
     )
 
-    result = evaluate_active(contract, state, promotion=promotion)
+    result = evaluate_active(
+        contract,
+        state,
+        promotion=promotion,
+        authority_policy=AuthorityPolicy(
+            {
+                "policy_version": "test-policy",
+                "authority": {"active": {"enabled": True, "minimum_labeled_tasks": 50}},
+            }
+        ),
+        caller_authorized=True,
+    )
 
     assert result.status.value == "accepted"
     assert result.authority == "active"

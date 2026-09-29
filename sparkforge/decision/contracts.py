@@ -19,7 +19,7 @@ from sparkforge.decision.conditions import (
 from sparkforge.decision.models import PrimitiveKind
 
 SCHEMA_VERSION = 1
-ALLOWED_MODES = frozenset({"shadow", "active"})
+ALLOWED_MODES = frozenset({"shadow", "assisted", "active"})
 _TOP_LEVEL = frozenset(
     {
         "schema_version",

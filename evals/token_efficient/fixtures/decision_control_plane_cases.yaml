@@ -1,4 +1,7 @@
 schema_version: 1
+benchmark_contract: canonical_replay_v1
+route_ground_truth: optional_per_case
+provider_tokens_require_transcript: true
 suite_id: decision-control-plane-v1
 profiles: [economy, balanced, deep]
 cases:

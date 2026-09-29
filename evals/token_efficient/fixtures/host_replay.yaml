@@ -5,25 +5,25 @@ cases:
     contract_id: kernel.synthetic
     contract_version: "1"
     request: {state: {signal: safe}}
-    transcript_hash: sha256:host-valid
+    transcript_hash: 3a651d7bd325aa348a848832ff20e17eae9e83322be9e8269395ed48088109bc
     turns:
       - {role: user, content: diagnose orders}
       - {role: assistant, content: local}
     usage:
       provider_tokens: {input_tokens: 23, output_tokens: 11}
-      transcript_sha256: sha256:host-valid
+      transcript_sha256: 3a651d7bd325aa348a848832ff20e17eae9e83322be9e8269395ed48088109bc
     cost_basis: {unit: usd, source: fixture}
   - case_id: host-invalid
     schema_version: 1
     contract_id: kernel.synthetic
     contract_version: "1"
     request: {}
-    transcript_hash: sha256:host-invalid
+    transcript_hash: 23994d9fea4c3c4d263000f33639e0c1887367462df3147b93a48769656583d3
     turns: [{role: user, content: diagnose orders}]
   - case_id: host-no-usage
     schema_version: 1
     contract_id: kernel.synthetic
     contract_version: "1"
     request: {state: {signal: review}}
-    transcript_hash: sha256:host-no-usage
+    transcript_hash: aeb88ddc7fb3b6a82d3c1aa6735ff9ddf1a69426c71a8b6c5b3c553a188e8d54
     turns: [{role: user, content: diagnose orders}]

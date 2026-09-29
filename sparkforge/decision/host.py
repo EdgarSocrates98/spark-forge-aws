@@ -106,6 +106,30 @@ class HostEnvelope:
     def envelope_hash(self) -> str:
         return digest(self.canonical())
 
+    def transcript_payload(self) -> dict[str, Any]:
+        """Canonical content used to bind usage to one recorded transcript."""
+        return {
+            "schema_version": self.schema_version,
+            "case_id": self.case_id,
+            "contract_id": self.contract_id,
+            "contract_version": self.contract_version,
+            "request": self.request,
+            "turns": list(self.turns),
+        }
+
+    @property
+    def transcript_sha256(self) -> str:
+        return digest(self.transcript_payload())
+
+    def transcript_integrity(self) -> tuple[str, ...]:
+        expected = self.transcript_sha256
+        unresolved: list[str] = []
+        if self.transcript_hash != expected:
+            unresolved.append("transcript_hash_mismatch")
+        if self.usage is not None and self.usage.get("transcript_sha256") != expected:
+            unresolved.append("usage_transcript_hash_mismatch")
+        return tuple(unresolved)
+
     def usage_state(self) -> dict[str, Any]:
         return _usage_state(self.usage)
 
@@ -119,6 +143,7 @@ class HostReplayResult:
     provider_tokens: dict[str, int] | None
     tokens_unresolved: bool
     cost_basis: dict[str, Any] | None
+    transcript_sha256: str | None = None
     unresolved: tuple[str, ...] = ()
     refusal_reason: str | None = None
 
@@ -133,6 +158,7 @@ class HostReplayResult:
             "provider_tokens": self.provider_tokens,
             "tokens_unresolved": self.tokens_unresolved,
             "cost_basis": self.cost_basis,
+            "transcript_sha256": self.transcript_sha256,
             "unresolved": list(self.unresolved),
             "refusal_reason": self.refusal_reason,
         }
@@ -168,7 +194,8 @@ class ReplayHostAdapter:
         return replay_host_mapping(raw, self)
 
     def replay(self, envelope: HostEnvelope) -> HostReplayResult:
-        usage_state = _usage_state(envelope.usage)
+        integrity = envelope.transcript_integrity()
+        usage_state = _usage_state(envelope.usage, expected_hash=envelope.transcript_sha256)
         try:
             contract = self.loader.load(envelope.contract_id, envelope.contract_version)
             state = envelope.request["state"]
@@ -183,6 +210,7 @@ class ReplayHostAdapter:
                 provider_tokens=usage_state.get("provider_tokens"),
                 tokens_unresolved=bool(usage_state.get("tokens_unresolved", True)),
                 cost_basis=envelope.cost_basis,
+                transcript_sha256=envelope.transcript_sha256,
                 unresolved=(reason,),
                 refusal_reason=reason,
             )
@@ -201,7 +229,10 @@ class ReplayHostAdapter:
             provider_tokens=usage_state.get("provider_tokens"),
             tokens_unresolved=bool(usage_state.get("tokens_unresolved", True)),
             cost_basis=envelope.cost_basis,
-            unresolved=(),
+            transcript_sha256=envelope.transcript_sha256,
+            unresolved=tuple(
+                dict.fromkeys(tuple(integrity) + tuple(usage_state.get("unresolved", ())))
+            ),
         )
 
 
@@ -236,13 +267,16 @@ def replay_host_mapping(
             provider_tokens=None,
             tokens_unresolved=True,
             cost_basis=None,
+            transcript_sha256=None,
             unresolved=(str(exc),),
             refusal_reason=str(exc),
         )
     return adapter.replay(envelope)
 
 
-def _usage_state(raw: Mapping[str, Any] | None) -> dict[str, Any]:
+def _usage_state(
+    raw: Mapping[str, Any] | None, *, expected_hash: str | None = None
+) -> dict[str, Any]:
     if not isinstance(raw, Mapping) or raw.get("provider_tokens") is None:
         return {
             "provider_tokens": None,
@@ -276,6 +310,13 @@ def _usage_state(raw: Mapping[str, Any] | None) -> dict[str, Any]:
             "tokens_unresolved": True,
             "unresolved_reason": "provider_tokens_invalid",
         }
+    if expected_hash is not None and transcript_hash.strip() != expected_hash:
+        return {
+            "provider_tokens": None,
+            "tokens_unresolved": True,
+            "unresolved_reason": "usage_transcript_hash_mismatch",
+            "unresolved": ("usage_transcript_hash_mismatch",),
+        }
     return {
         "provider_tokens": {
             "input_tokens": input_tokens,
@@ -285,4 +326,5 @@ def _usage_state(raw: Mapping[str, Any] | None) -> dict[str, Any]:
         "tokens_unresolved": False,
         "source": "host_transcript",
         "transcript_sha256": transcript_hash.strip(),
+        "unresolved": (),
     }

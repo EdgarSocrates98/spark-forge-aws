@@ -5,6 +5,7 @@ cases:
     source_id: "transcript:synthetic"
     source_kind: provider_transcript
     transcript_hash: "sha256:synthetic-transcript-v1"
+    transcript_integrity: canonical_transcript_v1
     transcript:
       format: synthetic
       turns:
@@ -21,6 +22,7 @@ cases:
     source_id: "transcript:absent"
     source_kind: provider_transcript
     transcript_hash: null
+    transcript_integrity: unresolved
     transcript: null
     provider_tokens: null
     tokens_unresolved: true

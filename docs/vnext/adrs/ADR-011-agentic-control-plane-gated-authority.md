@@ -83,3 +83,19 @@ versão, corpus mínimo, quality/economy gates, CI e rollback. A validação oco
 cache, impedindo bypass por decisão active cacheada. `agentic_control_plane.yaml` declara
 `shadow` como default e active disabled; o bridge economy recebe promoção explicitamente sem
 alterar o caminho legacy. Receipts preservam o registro de promoção.
+
+## Completion update — 2026-09-28
+
+O build substituiu guards locais por `sparkforge.decision.authority.AuthorityPolicy`. O motivo
+`active_disabled_by_policy` vence qualquer tentativa quando a flag está desligada; ausência de
+caller authority e evidência incompleta têm códigos próprios. `assisted` não é autoridade de
+execução. O kernel genérico continua sem autoridade ativa por default.
+
+O cache deixou de usar mutação global de limite: `get_key_owned()` valida owner/freshness e a
+capacidade é aplicada apenas ao owner que escreve. `CacheRegistry` expõe escopos distintos para
+policy, execution e evidence. Recovery e governor passam `max_retries` e `max_replans` separados,
+com receipt contendo fingerprint de ciclo e snapshots antes/depois.
+
+O protocolo de host separa `envelope_hash` da impressão canônica do transcript. Atribuição de
+usage requer igualdade entre hash canônico, hash declarado e hash de usage. O benchmark de replay
+adiciona `route` e valida holdout por domínio, sem score composto ou claim financeiro.
