@@ -89,3 +89,11 @@ def test_replay_rows_keep_provider_tokens_separate_from_payload_bytes() -> None:
     assert row["payload_bytes"] >= 100
     assert row["provider_tokens"] is None
     assert row["cost"]["status"] == "unresolved"
+
+
+def test_policy_can_supply_corpus_minimum_without_changing_fixture_schema() -> None:
+    suite = load_replay_suite(
+        ROOT / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml",
+        minimum_labeled_tasks=49,
+    )
+    assert suite["minimum_labeled_tasks"] == 49

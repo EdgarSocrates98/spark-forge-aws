@@ -3,6 +3,8 @@ registry_id: prompt-agent-evolution-v1
 candidate_root: .
 benchmark_suite: evals/token_efficient/fixtures/decision_control_plane_cases.yaml
 require_domain_holdout: true
+policy_version: prompt-agent-evolution-policy-v2
+external_commands: []
 authority:
   require_content_digest: true
   require_parent_digest_for_mutation: true
@@ -24,10 +26,32 @@ evaluation_policy:
     max_cost_regression: 0.0
     require_tokens: false
     require_cost: false
+policies:
+  - policy_id: prompt.prompt.routing.data_domain.1
+    family: prompt
+    kind: prompt
+    contract_id: routing.data_domain
+    contract_version: "1"
+    minimum_labeled_tasks: 50
+    quality:
+      min_status_accuracy: 1.0
+      min_evidence_recall: 1.0
+      max_false_positive_rate: 0.0
+      max_quality_regression: 0.0
+      min_route_accuracy: null
+      max_route_regression: 0.0
+      require_route_metric: false
+    economy:
+      max_payload_regression: 0.05
+      max_token_regression: 0.0
+      max_cost_regression: 0.0
+      require_tokens: false
+      require_cost: false
 candidates:
   - id: routing-baseline
     version: "1.0.0"
     kind: prompt
+    family: prompt
     content: "deterministic routing baseline"
     contract_id: routing.data_domain
     contract_version: "1"
@@ -40,6 +64,7 @@ candidates:
   - id: routing-variant
     version: "1.1.0"
     kind: prompt
+    family: prompt
     content: "deterministic routing variant with explicit evidence ordering"
     contract_id: routing.data_domain
     contract_version: "1"

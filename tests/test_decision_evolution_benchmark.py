@@ -6,6 +6,7 @@ from sparkforge.evals.decision_replay import (
     compare_replay_benchmark,
     load_replay_suite,
     run_replay_benchmark,
+    split_replay_benchmark,
 )
 from sparkforge.evals.evolution import EvolutionService
 
@@ -55,3 +56,32 @@ def test_service_evaluate_uses_repository_fixture_without_provider(tmp_path: Pat
     )
     assert evaluation.labeled_tasks == 50
     assert evaluation.comparison["cells"]
+
+
+def test_paired_report_splits_into_distinct_baseline_and_candidate_reports() -> None:
+    suite = load_replay_suite(
+        ROOT / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml"
+    )
+    calls = {"old": 0, "new": 0}
+
+    def old_runner(case: dict, profile: str) -> dict:
+        calls["old"] += 1
+        return _runner(case, profile)
+
+    def new_runner(case: dict, profile: str) -> dict:
+        calls["new"] += 1
+        return _runner(case, profile)
+
+    paired = run_replay_benchmark(
+        suite,
+        old_runner=old_runner,
+        new_runner=new_runner,
+        baseline_identity={"candidate_digest": "baseline"},
+        candidate_identity={"candidate_digest": "candidate"},
+    )
+    baseline, candidate = split_replay_benchmark(paired)
+    assert calls == {"old": 50 * 3, "new": 50 * 3}
+    assert baseline["candidates"]["candidate"]["candidate_digest"] == "baseline"
+    assert candidate["candidates"]["candidate"]["candidate_digest"] == "candidate"
+    comparison = compare_replay_benchmark(baseline, candidate)
+    assert comparison["cells"]

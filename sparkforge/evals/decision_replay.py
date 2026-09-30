@@ -29,7 +29,11 @@ class ReplayBenchmarkError(ValueError):
     """Named benchmark validation or denominator error."""
 
 
-def load_replay_suite(path: Path | str) -> dict[str, Any]:
+def load_replay_suite(
+    path: Path | str,
+    *,
+    minimum_labeled_tasks: int | None = None,
+) -> dict[str, Any]:
     target = Path(path).expanduser().resolve()
     try:
         raw = yaml.safe_load(target.read_text(encoding="utf-8"))
@@ -42,9 +46,20 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
     cases = raw.get("cases")
     if not suite_id or profiles != PROFILES or not isinstance(cases, list):
         raise ReplayBenchmarkError("replay_suite_invalid:identity_or_profiles")
-    if len(cases) < MINIMUM_LABELED_TASKS:
+    required_labels = (
+        minimum_labeled_tasks
+        if minimum_labeled_tasks is not None
+        else raw.get("minimum_labeled_tasks", MINIMUM_LABELED_TASKS)
+    )
+    if (
+        not isinstance(required_labels, int)
+        or isinstance(required_labels, bool)
+        or required_labels < 1
+    ):
+        raise ReplayBenchmarkError("replay_suite_invalid:minimum_labeled_tasks")
+    if len(cases) < required_labels:
         raise ReplayBenchmarkError(
-            f"replay_suite_incomplete:minimum_{MINIMUM_LABELED_TASKS}_cases"
+            f"replay_suite_incomplete:minimum_{required_labels}_cases"
         )
     normalized: list[dict[str, Any]] = []
     for case in cases:
@@ -87,9 +102,9 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
         ):
             raise ReplayBenchmarkError(f"replay_suite_requires_domain_holdout:{domain}")
     labeled_tasks = sum(1 for case in normalized if str(case.get("label", "")).strip())
-    if labeled_tasks < MINIMUM_LABELED_TASKS:
+    if labeled_tasks < required_labels:
         raise ReplayBenchmarkError(
-            f"replay_suite_incomplete:minimum_{MINIMUM_LABELED_TASKS}_labels"
+            f"replay_suite_incomplete:minimum_{required_labels}_labels"
         )
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     return {
@@ -101,7 +116,7 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
         "train_case_ids": tuple(str(case["id"]) for case in train),
         "holdout_case_ids": tuple(str(case["id"]) for case in holdout),
         "labeled_tasks": labeled_tasks,
-        "minimum_labeled_tasks": MINIMUM_LABELED_TASKS,
+        "minimum_labeled_tasks": required_labels,
         "same_case_required": True,
         "same_input_manifest_required": True,
         "max_input_volume_delta": MAX_INPUT_VOLUME_DELTA,
@@ -281,6 +296,60 @@ def compare_replay_benchmark(before: Mapping[str, Any], after: Mapping[str, Any]
         },
         "cells": cells,
     }
+
+
+def split_replay_benchmark(
+    report: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Split one paired report into baseline and candidate comparison reports.
+
+    ``run_replay_benchmark`` calls both runners during one traversal. The
+    comparator historically receives two reports whose cells have matching
+    runner keys, so each side is duplicated into ``old`` and ``new`` labels
+    while retaining distinct candidate identities.
+    """
+    rows = report.get("rows")
+    if not isinstance(rows, list):
+        raise ReplayBenchmarkError("replay_report_invalid:rows")
+    cells: dict[tuple[str, str], dict[str, Mapping[str, Any]]] = {}
+    for row in rows:
+        if not isinstance(row, Mapping):
+            raise ReplayBenchmarkError("replay_report_invalid:row")
+        key = (str(row.get("case_id")), str(row.get("profile")))
+        runner = str(row.get("runner"))
+        if runner not in {"old", "new"}:
+            raise ReplayBenchmarkError("replay_report_invalid:runner")
+        if runner in cells.setdefault(key, {}):
+            raise ReplayBenchmarkError(f"replay_report_duplicate_cell:{key[0]}:{key[1]}:{runner}")
+        cells[key][runner] = row
+    if not cells or any(set(value) != {"old", "new"} for value in cells.values()):
+        raise ReplayBenchmarkError("replay_report_incomplete_pair")
+
+    def make_side(runner: str) -> dict[str, Any]:
+        source_rows = [cells[key][runner] for key in sorted(cells)]
+        identity = dict(source_rows[0].get("candidate", {}))
+        side_rows: list[dict[str, Any]] = []
+        for source in source_rows:
+            for label in ("old", "new"):
+                copied = dict(source)
+                copied["runner"] = label
+                copied["candidate"] = dict(identity)
+                side_rows.append(copied)
+        return {
+            "schema_version": int(report.get("schema_version", SCHEMA_VERSION)),
+            "suite": dict(report.get("suite", {})),
+            "quality_axes": list(report.get("quality_axes", QUALITY_AXES)),
+            "candidates": {
+                "baseline": dict(identity),
+                "candidate": dict(identity),
+            },
+            "benchmark_contract": dict(report.get("benchmark_contract", {})),
+            "rows": side_rows,
+            "summary": _summary(side_rows),
+            "metrics": _metrics(side_rows),
+        }
+
+    return make_side("old"), make_side("new")
 
 
 def _row(
@@ -539,4 +608,5 @@ __all__ = [
     "compare_replay_benchmark",
     "load_replay_suite",
     "run_replay_benchmark",
+    "split_replay_benchmark",
 ]

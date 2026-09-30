@@ -65,6 +65,28 @@ def test_decision_core_has_no_provider_or_mcp_sdk_imports() -> None:
         assert forbidden not in source
 
 
+def test_evaluation_core_has_no_provider_or_mcp_sdk_imports() -> None:
+    import ast
+
+    modules = []
+    for path in (ROOT / "sparkforge/evals").glob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        modules.extend(
+            node.module or node.names[0].name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom) and node.names
+        )
+        modules.extend(
+            alias.name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Import)
+            for alias in node.names
+        )
+    source = "\n".join(modules).lower()
+    for forbidden in ("anthropic", "openai", "bedrock", "litellm", "mcp"):
+        assert forbidden not in source
+
+
 def test_replay_host_mapping_keeps_validation_at_adapter_boundary() -> None:
     raw = _cases()["cases"][1]
     result = replay_host_mapping(raw, ReplayHostAdapter(ROOT))

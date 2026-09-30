@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 from sparkforge.decision.fingerprint import digest
+from sparkforge.evals.decision_replay import load_replay_suite
+from sparkforge.evals.evidence import EvaluationEvidenceBundle
 from sparkforge.evals.evolution import (
     CandidateEvaluation,
     CandidateRegistry,
@@ -268,3 +270,75 @@ def test_registry_policies_control_receipt_and_rollback_requirements(tmp_path: P
     shutil.rmtree(service.root)
     with pytest.raises(EvolutionError, match="active_disabled_by_policy"):
         service.promote(candidate, evaluation, caller_authorized=True)
+
+
+def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    shutil.copytree(ROOT / "config", repo / "config")
+    shutil.copytree(ROOT / "evals", repo / "evals")
+    service = EvolutionService(repo)
+    candidate = service.registry.get("routing-variant")
+    policy = service.registry.policy_for(candidate)
+    suite = load_replay_suite(
+        repo / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml",
+        minimum_labeled_tasks=policy.minimum_labeled_tasks,
+    )
+    first = service.evaluate(candidate, ci_verified=True, evidence_refs=("benchmark:fixture",))
+    input_manifest_sha256 = digest(
+        [dict(case["input_manifest"]) for case in suite["cases"]]
+    )
+    raw = {
+        "schema_version": 1,
+        "candidate": {
+            **candidate.to_dict(),
+            "id": candidate.candidate_id,
+            "version": candidate.version,
+            "family": candidate.family,
+            "candidate_digest": candidate.candidate_digest,
+            "parent_digest": candidate.parent_digest,
+            "contract_id": candidate.contract_id,
+            "contract_version": candidate.contract_version,
+            "contract_sha256": candidate.contract_sha256,
+        },
+        "suite": {
+            "suite_id": suite["suite_id"],
+            "suite_sha256": suite["sha256"],
+            "input_manifest_sha256": input_manifest_sha256,
+            "labeled_tasks": suite["labeled_tasks"],
+        },
+        "execution": {"mode": "recorded_host", "adapter": "bundle_file", "sequence": 1},
+        "transcripts": {"baseline": None, "candidate": None},
+        "reports": {"baseline": {}, "candidate": {}},
+        "metrics": {"comparison": first.comparison, "quality": {}, "economy": {}},
+        "policy": {
+            "policy_id": policy.policy_id,
+            "policy_version": policy.policy_version,
+            "policy_sha256": policy.policy_sha256,
+        },
+        "evidence_refs": [
+            {"kind": kind, "ref": f"{kind}:fixture", "sha256": "0" * 64}
+            for kind in ("ci", "benchmark", "review")
+        ],
+        "rollback_target": candidate.parent_digest,
+        "unresolved": ["provider_transcript_absent"],
+    }
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    second = service.evaluate(bundle=bundle, candidate=candidate, ci_verified=True)
+    assert second.bundle_id == bundle.bundle_id
+    assert second.policy_sha256 == policy.policy_sha256
+    assert set(second.evidence_ref_kinds) == {"ci", "benchmark", "review"}
+    authority_path = repo / "config" / "decisions" / "agentic_control_plane.yaml"
+    authority_path.write_text(
+        authority_path.read_text(encoding="utf-8").replace(
+            "    enabled: false", "    enabled: true", 1
+        ),
+        encoding="utf-8",
+    )
+    accepted = service.promote(candidate, second, caller_authorized=True)
+    assert accepted.status is CandidateStatus.ACCEPTED
+    receipts = [path for path in service.root.glob("*.json")]
+    assert len(receipts) == 3
+    documents = [json.loads(path.read_text(encoding="utf-8")) for path in receipts]
+    assert sorted(document["event_sequence"] for document in documents) == [1, 2, 3]
+    assert all(document["policy_sha256"] for document in documents)
