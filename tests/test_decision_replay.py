@@ -53,6 +53,8 @@ def test_benchmark_has_50_labeled_cases_six_domains_three_profiles_and_two_runne
         "unresolved",
         "execution_plan",
     }
+    assert report["candidates"]["baseline"]["candidate_id"] == "baseline"
+    assert report["candidates"]["candidate"]["candidate_id"] == "candidate"
 
 
 def test_benchmark_cost_without_basis_is_unresolved_not_zero() -> None:

@@ -38,6 +38,8 @@ class ActivePromotion:
     rollback: str
     contract_sha256: str | None = None
     evidence_refs: tuple[str, ...] = ()
+    calibration_version: str = "none"
+    candidate_identity: dict[str, Any] | None = None
 
     def as_evidence(self) -> PromotionEvidence:
         return PromotionEvidence(
@@ -51,6 +53,7 @@ class ActivePromotion:
             ci_verified=self.ci_verified,
             rollback=self.rollback,
             evidence_refs=self.evidence_refs,
+            calibration_version=self.calibration_version,
         )
 
     def missing_for(
@@ -89,6 +92,8 @@ class ActivePromotion:
             "ci_verified": self.ci_verified,
             "rollback": self.rollback,
             "evidence_refs": list(self.evidence_refs),
+            "calibration_version": self.calibration_version,
+            "candidate": self.candidate_identity,
         }
 
 
@@ -156,6 +161,7 @@ class BoundedDecisionKernel:
                     promoted=False,
                     rollback_reason="authority_policy_refused",
                     authority=authority_decision.to_dict(),
+                    candidate=promotion.candidate_identity if promotion else None,
                 ),
                 measurement,
             )
@@ -178,6 +184,7 @@ class BoundedDecisionKernel:
                     mode=contract.mode,
                     promoted=False,
                     rollback_reason="active_promotion_required",
+                    candidate=promotion.candidate_identity if promotion else None,
                 ),
                 measurement,
             )
@@ -216,6 +223,7 @@ class BoundedDecisionKernel:
                         cache_owner=cache_owner,
                         cache_freshness=cache_freshness,
                         cache_capacity=contract.cache_max_entries,
+                        candidate=promotion.candidate_identity if promotion else None,
                     ),
                     measurement,
                 )
@@ -245,6 +253,7 @@ class BoundedDecisionKernel:
                 cache_owner=cache_owner,
                 cache_freshness=cache_freshness,
                 cache_capacity=contract.cache_max_entries,
+                candidate=promotion.candidate_identity if promotion else None,
             ),
             measurement,
         )

@@ -34,10 +34,12 @@ class PromotionEvidence:
     def __post_init__(self) -> None:
         if self.labeled_tasks < 0:
             raise ValueError("labeled_tasks must be non-negative")
+        if any(not isinstance(ref, str) for ref in self.evidence_refs):
+            raise ValueError("evidence_refs must contain strings")
         object.__setattr__(
             self,
             "evidence_refs",
-            tuple(sorted({str(ref).strip() for ref in self.evidence_refs if str(ref).strip()})),
+            tuple(sorted({ref.strip() for ref in self.evidence_refs if ref.strip()})),
         )
 
     @classmethod
@@ -57,9 +59,9 @@ class PromotionEvidence:
                     else None
                 ),
                 labeled_tasks=int(value.get("labeled_tasks", 0)),
-                quality_gate=bool(value.get("quality_gate", False)),
-                economy_gate=bool(value.get("economy_gate", False)),
-                ci_verified=bool(value.get("ci_verified", False)),
+                quality_gate=_strict_bool(value.get("quality_gate", False), "quality_gate"),
+                economy_gate=_strict_bool(value.get("economy_gate", False), "economy_gate"),
+                ci_verified=_strict_bool(value.get("ci_verified", False), "ci_verified"),
                 rollback=str(value.get("rollback", "")),
                 evidence_refs=tuple(str(item) for item in value.get("evidence_refs", ())),
                 calibration_version=str(value.get("calibration_version", "none")),
@@ -70,9 +72,9 @@ class PromotionEvidence:
             contract_version=str(getattr(value, "contract_version", "")),
             contract_sha256=getattr(value, "contract_sha256", None),
             labeled_tasks=int(getattr(value, "labeled_tasks", 0)),
-            quality_gate=bool(getattr(value, "quality_gate", False)),
-            economy_gate=bool(getattr(value, "economy_gate", False)),
-            ci_verified=bool(getattr(value, "ci_verified", False)),
+            quality_gate=_strict_bool(getattr(value, "quality_gate", False), "quality_gate"),
+            economy_gate=_strict_bool(getattr(value, "economy_gate", False), "economy_gate"),
+            ci_verified=_strict_bool(getattr(value, "ci_verified", False), "ci_verified"),
             rollback=str(getattr(value, "rollback", "")),
             evidence_refs=tuple(getattr(value, "evidence_refs", ())),
             calibration_version=str(getattr(value, "calibration_version", "none")),
@@ -131,12 +133,32 @@ class AuthorityPolicy:
         if not self.policy_version:
             raise ValueError("policy_version is required")
         self.default_mode = str(authority.get("default_mode", "shadow")).strip().lower()
-        self.active_enabled = bool(active.get("enabled", False))
+        self.active_enabled = _strict_bool(active.get("enabled", False), "authority.active.enabled")
         self.minimum_labeled_tasks = int(active.get("minimum_labeled_tasks", 50))
-        self.require_quality_gate = bool(active.get("require_quality_gate", True))
-        self.require_economy_gate = bool(active.get("require_economy_gate", True))
-        self.require_ci_gate = bool(active.get("require_ci_gate", True))
-        self.require_rollback = bool(active.get("require_rollback", True))
+        self.require_quality_gate = _strict_bool(
+            active.get("require_quality_gate", True), "authority.active.require_quality_gate"
+        )
+        self.require_economy_gate = _strict_bool(
+            active.get("require_economy_gate", True), "authority.active.require_economy_gate"
+        )
+        self.require_ci_gate = _strict_bool(
+            active.get("require_ci_gate", True), "authority.active.require_ci_gate"
+        )
+        self.require_rollback = _strict_bool(
+            active.get("require_rollback", True), "authority.active.require_rollback"
+        )
+        self.require_contract_sha256 = _strict_bool(
+            active.get("require_contract_sha256", True),
+            "authority.active.require_contract_sha256",
+        )
+        self.require_calibration_match = _strict_bool(
+            active.get("require_calibration_match", True),
+            "authority.active.require_calibration_match",
+        )
+        self.require_evidence_refs = _strict_bool(
+            active.get("require_evidence_refs", True),
+            "authority.active.require_evidence_refs",
+        )
         if self.minimum_labeled_tasks < 1:
             raise ValueError("minimum_labeled_tasks must be positive")
 
@@ -205,10 +227,20 @@ class AuthorityPolicy:
                 missing.append("promotion_contract_id_mismatch")
             if evidence.contract_version != str(getattr(contract, "contract_version", "")):
                 missing.append("promotion_contract_version_mismatch")
-            if evidence.contract_sha256 is not None and evidence.contract_sha256 != getattr(
-                contract, "sha256", None
+            contract_sha256 = evidence.contract_sha256
+            if self.require_contract_sha256 and not contract_sha256:
+                missing.append("promotion_contract_sha256_missing")
+            elif (
+                contract_sha256 is not None
+                and contract_sha256 != getattr(contract, "sha256", None)
             ):
                 missing.append("promotion_contract_sha256_mismatch")
+            expected_calibration = str(getattr(contract, "calibration_version", "none"))
+            if (
+                self.require_calibration_match
+                and evidence.calibration_version != expected_calibration
+            ):
+                missing.append("promotion_calibration_version_mismatch")
         if evidence.labeled_tasks < self.minimum_labeled_tasks:
             missing.append(f"promotion_corpus_below_{self.minimum_labeled_tasks}_labeled_tasks")
         if self.require_quality_gate and not evidence.quality_gate:
@@ -219,6 +251,8 @@ class AuthorityPolicy:
             missing.append("promotion_ci_gate_missing")
         if self.require_rollback and not evidence.rollback.strip():
             missing.append("promotion_rollback_missing")
+        if self.require_evidence_refs and not evidence.evidence_refs:
+            missing.append("promotion_evidence_refs_missing")
         return tuple(missing)
 
     def _refused(
@@ -241,3 +275,9 @@ class AuthorityPolicy:
 
 
 __all__ = ["AuthorityDecision", "AuthorityPolicy", "PromotionEvidence"]
+
+
+def _strict_bool(value: Any, field: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{field} must be boolean")
+    return value

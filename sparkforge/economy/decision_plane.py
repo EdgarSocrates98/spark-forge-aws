@@ -13,6 +13,7 @@ from typing import Any
 
 from sparkforge.agentic.governor import AgentGovernor, GovernorLimits
 from sparkforge.decision.authority import AuthorityDecision, AuthorityPolicy, PromotionEvidence
+from sparkforge.decision.runtime import ActivePromotion
 from sparkforge.economy.decision_activation import (
     ActivationDecision,
     ActivationEvidence,
@@ -21,6 +22,7 @@ from sparkforge.economy.decision_activation import (
 from sparkforge.economy.decision_compare import compare_decisions
 from sparkforge.economy.decision_contracts import ContractRegistry, DecisionContract
 from sparkforge.economy.decision_engine import DeterministicDecisionEngine
+from sparkforge.economy.decision_kernel_bridge import build_kernel_contract, evaluate_active
 from sparkforge.economy.decision_models import (
     ActiveRouteOutcome,
     AuthorityMode,
@@ -215,7 +217,15 @@ class DecisionPlaneService:
                 trace_ref=trace_ref,
                 authority=authority,
             )
-        result = self.engine.evaluate(contract, request).with_authority(AuthorityMode.ACTIVE)
+        kernel_contract = build_kernel_contract(contract, mode="active")
+        kernel_promotion = _kernel_promotion(kernel_contract, selected_promotion)
+        result = evaluate_active(
+            contract,
+            request,
+            promotion=kernel_promotion,
+            authority_policy=self.authority_policy,
+            caller_authorized=True,
+        )
         try:
             governor_decision = (governor or AgentGovernor()).resolve(
                 request.profile,
@@ -332,11 +342,10 @@ class DecisionPlaneService:
                 now=now,
                 trace_ref=trace_ref,
             )
+        contract = self.validate(evaluation.result.contract_id, evaluation.result.contract_version)
         authority = self.authority_policy.authorize_promotion(
             mode=AuthorityMode.ACTIVE.value,
-            contract=self.validate(
-                evaluation.result.contract_id, evaluation.result.contract_version
-            ),
+            contract=contract,
             evidence=promotion,
             caller_authorized=caller_authorized,
         )
@@ -344,18 +353,41 @@ class DecisionPlaneService:
             return self._fallback_outcome(
                 evaluation.request,
                 legacy_route,
-                self.validate(evaluation.result.contract_id, evaluation.result.contract_version),
+                contract,
                 evaluation.result,
                 (authority.reason or "active_authority_refused",) + authority.unresolved,
                 now=now,
                 trace_ref=trace_ref,
                 authority=authority,
             )
+        kernel_contract = build_kernel_contract(contract, mode="active")
+        kernel_promotion = _kernel_promotion(
+            kernel_contract, PromotionEvidence.from_value(promotion)
+        )
+        result = evaluate_active(
+            contract,
+            evaluation.request,
+            promotion=kernel_promotion,
+            authority_policy=self.authority_policy,
+            caller_authorized=True,
+        )
+        if result.status is not DecisionStatus.ACCEPTED:
+            return self._fallback_outcome(
+                evaluation.request,
+                legacy_route,
+                contract,
+                result,
+                result.unresolved or ("decision_not_promotable",),
+                now=now,
+                trace_ref=trace_ref,
+                authority=authority,
+            )
+        comparison = compare_decisions(legacy_route, result)
         receipt = self.receipts.emit(
             evaluation.request,
             legacy_route,
-            evaluation.result,
-            evaluation.comparison,
+            result,
+            comparison,
             now=now,
             trace_ref=trace_ref,
             mode="active",
@@ -365,7 +397,7 @@ class DecisionPlaneService:
             authority=AuthorityMode.ACTIVE.value,
             authority_decision=authority.to_dict(),
         )
-        result = evaluation.result.with_authority(AuthorityMode.ACTIVE).with_receipt(
+        result = result.with_authority(AuthorityMode.ACTIVE).with_receipt(
             receipt.receipt_id
         )
         return ActiveRouteOutcome(
@@ -489,3 +521,19 @@ def _route_value(value: Any) -> str | None:
     if tier is not None:
         return str(getattr(tier, "value", tier)).strip() or None
     return None
+
+
+def _kernel_promotion(contract: Any, evidence: PromotionEvidence) -> ActivePromotion:
+    return ActivePromotion(
+        promotion_id=evidence.promotion_id,
+        contract_id=contract.contract_id,
+        contract_version=contract.contract_version,
+        labeled_tasks=evidence.labeled_tasks,
+        quality_gate=evidence.quality_gate,
+        economy_gate=evidence.economy_gate,
+        ci_verified=evidence.ci_verified,
+        rollback=evidence.rollback,
+        contract_sha256=contract.sha256,
+        evidence_refs=evidence.evidence_refs,
+        calibration_version=contract.calibration_version,
+    )

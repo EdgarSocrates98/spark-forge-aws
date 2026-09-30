@@ -43,6 +43,7 @@ def _promotion(contract: object) -> PromotionEvidence:
         economy_gate=True,
         ci_verified=True,
         rollback="restore-shadow",
+        evidence_refs=("fixture:jev-promotion",),
     )
 
 
@@ -120,7 +121,7 @@ def test_controller_keeps_shadow_non_authoritative_and_recovery_bounded(tmp_path
     assert outcome.promoted is False
     assert outcome.reason == "shadow_mode"
     assert outcome.fallback_route == "tier_3_cheap_local"
-    assert outcome.recovery_action == "abstain"
+    assert outcome.recovery_action is None
 
 
 def test_cache_owned_lookup_refuses_stale_record() -> None:

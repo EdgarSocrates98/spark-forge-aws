@@ -68,6 +68,19 @@ def test_replan_budget_is_independent_from_zero_retry_budget():
     assert result.budget_after["replans_used"] == 1
 
 
+def test_zero_recovery_quota_does_not_exhaust_main_case_budget():
+    budget = CaseBudget(max_retries=0, max_replans=1)
+    assert budget.status.value == "within"
+    budget.consume_agent()
+    assert budget.agents_spawned == 1
+    try:
+        budget.consume_retry()
+    except Exception as exc:
+        assert str(exc) == "retry_budget_exhausted"
+    else:
+        raise AssertionError("retry must remain independently refused")
+
+
 def test_repeated_cycle_is_rejected_before_second_budget_charge():
     budget = CaseBudget(max_retries=2, max_replans=2)
     governor = RecoveryGovernor()

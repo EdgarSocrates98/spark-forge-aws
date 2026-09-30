@@ -37,6 +37,7 @@ from typing import Any
 
 from sparkforge.evals.compare import compare
 from sparkforge.evals.debate_grade import GRADE_FILE, DebateGradeError, grade_debate_run
+from sparkforge.evals.evolution import EvolutionError, EvolutionService
 from sparkforge.evals.grade import grade
 from sparkforge.evals.suite import SuiteError, load_suite
 from sparkforge.facts.host_transcript import extract_host_transcript_path
@@ -169,6 +170,25 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     debate_p.add_argument("--run", required=True, help=f"Nome da execucao em {DEBATE_RUNS_ROOT}.")
+    candidate_p = sub.add_parser(
+        "candidate", help="Valida, avalia, promove ou reverte candidato versionado."
+    )
+    candidate_sub = candidate_p.add_subparsers(dest="candidate_action", required=True)
+    validate_p = candidate_sub.add_parser("validate")
+    validate_p.add_argument("--repo", default=".")
+    validate_p.add_argument("--candidate-id")
+    evaluate_p = candidate_sub.add_parser("evaluate")
+    evaluate_p.add_argument("--repo", default=".")
+    evaluate_p.add_argument("--candidate", required=True)
+    evaluate_p.add_argument("--suite")
+    promote_p = candidate_sub.add_parser("promote")
+    promote_p.add_argument("--repo", default=".")
+    promote_p.add_argument("--candidate", required=True)
+    promote_p.add_argument("--allow-active", action="store_true")
+    rollback_p = candidate_sub.add_parser("rollback")
+    rollback_p.add_argument("--repo", default=".")
+    rollback_p.add_argument("--candidate", required=True)
+    rollback_p.add_argument("--previous", required=True)
     return parser
 
 
@@ -189,12 +209,32 @@ def main(argv: list[str] | None = None) -> int:
             (execucao / GRADE_FILE).write_text(
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
+        elif args.action == "candidate":
+            service = EvolutionService(args.repo)
+            if args.candidate_action == "validate":
+                payload = service.validate(args.candidate_id)
+            elif args.candidate_action == "evaluate":
+                candidate = service.registry.get(args.candidate)
+                payload = service.evaluate(candidate, suite_path=args.suite).to_dict()
+            elif args.candidate_action == "promote":
+                candidate = service.registry.get(args.candidate)
+                evaluation = service.latest_evaluation(candidate)
+                payload = service.promote(
+                    candidate, evaluation, caller_authorized=args.allow_active
+                ).to_dict()
+            else:
+                candidate = service.registry.get(args.candidate)
+                previous = service.registry.get(args.previous)
+                payload = {
+                    "candidate": service.rollback(candidate, previous).to_dict(),
+                    "restored": previous.to_dict(),
+                }
         else:
             payload = eval_compare(
                 _conjunto(args.suite, args.baseline, "--baseline"),
                 _conjunto(args.suite, args.candidate, "--candidate"),
             )
-    except (EvalError, DebateGradeError) as exc:
+    except (EvalError, DebateGradeError, EvolutionError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
     if hasattr(sys.stdout, "reconfigure"):

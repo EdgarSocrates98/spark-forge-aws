@@ -9,6 +9,9 @@ authority:
     require_economy_gate: true
     require_ci_gate: true
     require_rollback: true
+    require_contract_sha256: true
+    require_calibration_match: true
+    require_evidence_refs: true
     promotion_record: null
 profiles:
   economy: {max_agents: 1, max_debates: 0, max_retries: 1, max_replans: 1, max_tokens: 8000}

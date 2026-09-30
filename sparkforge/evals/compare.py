@@ -166,7 +166,11 @@ def compare(
 
 
 def compare_profile_benchmarks(
-    baseline: Sequence[dict[str, Any]], candidate: Sequence[dict[str, Any]]
+    baseline: Sequence[dict[str, Any]],
+    candidate: Sequence[dict[str, Any]],
+    *,
+    baseline_identity: dict[str, Any] | None = None,
+    candidate_identity: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """List profile/case transitions without declaring a gain."""
     if not baseline or not candidate:
@@ -238,5 +242,9 @@ def compare_profile_benchmarks(
         "schema_version": SCHEMA_VERSION,
         "refused": None,
         "unit_separation": True,
+        "candidates": {
+            "baseline": dict(baseline_identity or {}),
+            "candidate": dict(candidate_identity or {}),
+        },
         "rows": rows,
     }

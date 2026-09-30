@@ -238,6 +238,11 @@ class AgenticDecisionController:
             )
         if outcome.promoted:
             return outcome
+        if contract.mode == "shadow" or (
+            contract.mode == "assisted"
+            and outcome.reason in {"legacy_veto", "assisted_non_authoritative"}
+        ):
+            return outcome
         governed = self.recovery_governor.resolve(
             _failure_class(outcome.reason),
             attempt=attempt,

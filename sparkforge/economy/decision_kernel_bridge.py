@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from sparkforge.decision import (
@@ -97,6 +98,7 @@ def evaluate_active(
     promotion: ActivePromotion,
     cache: DecisionCache | None = None,
     authority_policy: AuthorityPolicy | None = None,
+    repo: Path | str | None = None,
     caller_authorized: bool = False,
 ) -> DecisionResult:
     """Evaluate the economy contract only with explicit generic-kernel promotion."""
@@ -114,7 +116,13 @@ def evaluate_active(
         "deterministic_available": state.deterministic_available,
         "cached": state.cached,
     }
-    policy = authority_policy or AuthorityPolicy.from_repo()
+    if authority_policy is None and repo is None:
+        raise ValueError("authority_policy_or_repo_required")
+    if authority_policy is None:
+        assert repo is not None
+        policy = AuthorityPolicy.from_repo(repo)
+    else:
+        policy = authority_policy
     evaluation = BoundedDecisionKernel(cache=cache, authority_policy=policy).evaluate(
         kernel_contract,
         raw_state,

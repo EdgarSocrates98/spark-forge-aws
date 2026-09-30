@@ -41,4 +41,32 @@ A execu‡Æo termina por decisÆo terminal, or‡amento de itera‡äes, or‡a
 
 ## Opera‡Æo
 
+## Prompt e agent evolution
+
+`config/evolution/prompt_agents.yaml` registra candidatos versionados offline.
+Cada candidato recebe digest SHA-256 da identidade declarada, incluindo versão,
+contrato, calibração e pai. Mutação precisa apontar para o digest do pai; conteúdo
+externo ao repositório é recusado.
+
+Estados permitidos: `candidate -> evaluated -> accepted -> rolled_back` e
+`evaluated -> rejected`. A transição não concede autoridade. Promoção ativa usa a
+mesma `AuthorityPolicy`, exige contrato, calibração, gates, referências de
+evidência e rollback, e segue desabilitada na política padrão.
+
+`EvolutionService` faz replay local contra a suíte imutável de 50 casos, mantendo
+caso, domínio, partição e perfil. Qualidade, rota, bytes, tokens de transcript e
+custo com `cost_basis` ficam separados; ausência vira `unresolved`.
+
+Recibos content-addressed em `.sparkforge/evolution/` vinculam candidato, pai,
+suíte, gates, autoridade e rollback. Núcleo não chama modelo, AWS ou provedor.
+
+Operação local:
+
+```bash
+python -m sparkforge.evals candidate validate --repo .
+python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant
+python -m sparkforge.evals candidate promote --repo . --candidate routing-variant --allow-active
+python -m sparkforge.evals candidate rollback --repo . --candidate routing-variant --previous routing-baseline
+```
+
 Ap¢s alterar skills ou agents, execute `python scripts/sync_skills.py`. Antes de publicar uma mudan‡a, execute os testes focados, a su¡te completa e as avalia‡äes existentes. Mudan‡as de infraestrutura, escrita ou publica‡Æo exigem aprova‡Æo humana, plano de rollback e evidˆncia do impacto.

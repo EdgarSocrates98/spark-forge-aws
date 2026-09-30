@@ -57,6 +57,7 @@ class DecisionReceiptStore:
         vetoed: bool | None = None,
         activation_evidence: dict[str, Any] | None = None,
         authority_decision: dict[str, Any] | None = None,
+        candidate: dict[str, Any] | None = None,
     ) -> DecisionReceipt:
         body = {
             "receipt_version": RECEIPT_VERSION,
@@ -85,6 +86,7 @@ class DecisionReceiptStore:
             },
             "token_state": request.provider_usage.to_dict(),
             "trace_ref": trace_ref,
+            "candidate": dict(candidate) if candidate is not None else None,
         }
         if authority is not None:
             body["authority"] = authority

@@ -114,7 +114,12 @@ def load_replay_suite(path: Path | str) -> dict[str, Any]:
 
 
 def run_replay_benchmark(
-    suite: Mapping[str, Any], *, old_runner: Runner, new_runner: Runner
+    suite: Mapping[str, Any],
+    *,
+    old_runner: Runner,
+    new_runner: Runner,
+    baseline_identity: Mapping[str, Any] | None = None,
+    candidate_identity: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     cases = suite.get("cases")
     profiles = tuple(str(item) for item in suite.get("profiles", ()))
@@ -127,8 +132,8 @@ def run_replay_benchmark(
         for profile in profiles:
             old = old_runner(case, profile)
             new = new_runner(case, profile)
-            rows.append(_row(case, profile, "old", old))
-            rows.append(_row(case, profile, "new", new))
+            rows.append(_row(case, profile, "old", old, baseline_identity))
+            rows.append(_row(case, profile, "new", new, candidate_identity))
     return {
         "schema_version": SCHEMA_VERSION,
         "suite": {
@@ -137,6 +142,10 @@ def run_replay_benchmark(
             "profiles": list(profiles),
         },
         "quality_axes": list(QUALITY_AXES),
+        "candidates": {
+            "baseline": dict(baseline_identity or {"candidate_id": "baseline"}),
+            "candidate": dict(candidate_identity or {"candidate_id": "candidate"}),
+        },
         "benchmark_contract": {
             "labeled_tasks": int(suite.get("labeled_tasks", len(cases))),
             "minimum_labeled_tasks": int(
@@ -261,12 +270,20 @@ def compare_replay_benchmark(before: Mapping[str, Any], after: Mapping[str, Any]
         "schema_version": SCHEMA_VERSION,
         "suite": dict(left_suite),
         "quality_axes": list(QUALITY_AXES),
+        "candidates": {
+            "baseline": dict(before.get("candidates", {}).get("baseline", {})),
+            "candidate": dict(before.get("candidates", {}).get("candidate", {})),
+        },
         "cells": cells,
     }
 
 
 def _row(
-    case: Mapping[str, Any], profile: str, runner: str, observation: Mapping[str, Any]
+    case: Mapping[str, Any],
+    profile: str,
+    runner: str,
+    observation: Mapping[str, Any],
+    candidate_identity: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     expected_evidence = {str(item) for item in case.get("expected_evidence", ())}
     observed_evidence = {str(item) for item in observation.get("observed_evidence", ())}
@@ -325,6 +342,7 @@ def _row(
         "label": str(case["label"]),
         "profile": profile,
         "runner": runner,
+        "candidate": dict(candidate_identity or {}),
         "quality": quality,
         "route": {
             "expected": expected_route,

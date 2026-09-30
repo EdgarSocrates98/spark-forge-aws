@@ -197,8 +197,8 @@ class ContractLoader:
             max_input_bytes,
             cache_max_entries,
             digest,
-            bool(activation.get("enabled", False)),
-            bool(measurement.get("enabled", True)),
+            _strict_bool(activation.get("enabled", False), "activation.enabled"),
+            _strict_bool(measurement.get("enabled", True), "measurement.enabled"),
             required_state_fields,
             additional_properties,
             policy_version,
@@ -211,6 +211,12 @@ def _required_text(raw: Mapping[str, Any], key: str) -> str:
     if not isinstance(value, (str, int)) or not str(value).strip():
         raise ContractValidationError(f"contract field required: {key}")
     return str(value).strip()
+
+
+def _strict_bool(value: Any, key: str) -> bool:
+    if not isinstance(value, bool):
+        raise ContractValidationError(f"{key} must be boolean")
+    return value
 
 
 def _required_text_value(value: Any, key: str) -> str:
