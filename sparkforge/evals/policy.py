@@ -34,6 +34,10 @@ class EvaluationPolicy:
     max_cost_regression: float = 0.0
     require_tokens: bool = False
     require_cost: bool = False
+    unresolved_deny: tuple[str, ...] = ()
+    unresolved_allow: tuple[str, ...] = ()
+    required_verified_evidence_kinds: tuple[str, ...] = ()
+    evidence_roots: tuple[str, ...] = ()
     policy_sha256: str = ""
 
     @property
@@ -65,6 +69,14 @@ class EvaluationPolicy:
                 "require_tokens": self.require_tokens,
                 "require_cost": self.require_cost,
             },
+            "unresolved": {
+                "deny": list(self.unresolved_deny),
+                "allow": list(self.unresolved_allow),
+            },
+            "evidence": {
+                "required_verified_kinds": list(self.required_verified_evidence_kinds),
+                "roots": list(self.evidence_roots),
+            },
         }
         if include_digest:
             value["policy_sha256"] = self.policy_sha256
@@ -95,7 +107,14 @@ class EvaluationPolicy:
             raise EvaluationPolicyError("evaluation_policy_invalid:minimum_labeled_tasks")
         quality = value.get("quality", {})
         economy = value.get("economy", {})
-        if not isinstance(quality, Mapping) or not isinstance(economy, Mapping):
+        unresolved = value.get("unresolved", {})
+        evidence = value.get("evidence", {})
+        if (
+            not isinstance(quality, Mapping)
+            or not isinstance(economy, Mapping)
+            or not isinstance(unresolved, Mapping)
+            or not isinstance(evidence, Mapping)
+        ):
             raise EvaluationPolicyError("evaluation_policy_invalid:quality_economy")
         known_quality = {
             "min_status_accuracy",
@@ -113,9 +132,24 @@ class EvaluationPolicy:
             "require_tokens",
             "require_cost",
         }
-        unknown = sorted((set(quality) - known_quality) | (set(economy) - known_economy))
+        known_unresolved = {"deny", "allow"}
+        known_evidence = {"required_verified_kinds", "roots"}
+        unknown = sorted(
+            (set(quality) - known_quality)
+            | (set(economy) - known_economy)
+            | {f"unresolved.{key}" for key in set(unresolved) - known_unresolved}
+            | {f"evidence.{key}" for key in set(evidence) - known_evidence}
+        )
         if unknown:
             raise EvaluationPolicyError(f"evaluation_policy_unknown_fields:{','.join(unknown)}")
+
+        def strings(section: Mapping[str, Any], name: str) -> tuple[str, ...]:
+            raw = section.get(name, ())
+            if isinstance(raw, (str, bytes)) or not isinstance(raw, Sequence):
+                raise EvaluationPolicyError(f"evaluation_policy_invalid:{name}")
+            if any(not isinstance(item, str) or not item.strip() for item in raw):
+                raise EvaluationPolicyError(f"evaluation_policy_invalid:{name}")
+            return tuple(sorted({item.strip() for item in raw}))
 
         def number(
             section: Mapping[str, Any],
@@ -160,6 +194,12 @@ class EvaluationPolicy:
             max_cost_regression=float(number(economy, "max_cost_regression", 0.0)),
             require_tokens=boolean(economy, "require_tokens", False),
             require_cost=boolean(economy, "require_cost", False),
+            unresolved_deny=strings(unresolved, "deny"),
+            unresolved_allow=strings(unresolved, "allow"),
+            required_verified_evidence_kinds=strings(
+                evidence, "required_verified_kinds"
+            ),
+            evidence_roots=strings(evidence, "roots"),
             policy_sha256="",
         )
         expected = digest(normalized.to_dict(include_digest=False))

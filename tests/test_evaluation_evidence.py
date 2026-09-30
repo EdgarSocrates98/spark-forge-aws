@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from sparkforge.evals.evidence import EvaluationEvidenceBundle, EvidenceBundleError
 from sparkforge.evals.evidence_adapters import BundleFileAdapter
+from sparkforge.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
 from sparkforge.evals.policy import EvaluationPolicyError, PolicyResolver
 
 HASH = "0" * 64
@@ -122,3 +124,88 @@ def test_policy_resolver_requires_exact_key_and_no_default() -> None:
                 },
             )()
         )
+
+
+def test_recorded_host_requires_two_resolvable_transcripts(tmp_path: Path) -> None:
+    raw = _raw_bundle()
+    raw["execution"] = {"mode": "recorded_host", "adapter": "bundle_file"}
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    policy = SimpleNamespace(
+        unresolved_allow=(),
+        unresolved_deny=(),
+        required_verified_evidence_kinds=(),
+        evidence_roots=(),
+    )
+
+    with pytest.raises(EvidenceResolutionError, match="recorded_host_transcript_required"):
+        EvidenceResolver(tmp_path).resolve(bundle, policy)
+
+
+def test_metrics_are_compared_with_report_derived_values(tmp_path: Path) -> None:
+    comparison = {
+        "cells": [],
+        "metrics": {
+            "baseline": {"route_accuracy": 1.0},
+            "candidate": {"route_accuracy": 1.0},
+        },
+    }
+    raw = _raw_bundle()
+    raw["reports"] = {
+        "baseline": {"metrics": comparison["metrics"]["baseline"]},
+        "candidate": {"metrics": comparison["metrics"]["candidate"]},
+        "comparison": comparison,
+    }
+    raw["metrics"] = {"comparison": comparison, "quality": {}, "economy": {}}
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    policy = SimpleNamespace(
+        unresolved_allow=(),
+        unresolved_deny=(),
+        required_verified_evidence_kinds=(),
+        evidence_roots=(),
+    )
+    assert EvidenceResolver(tmp_path).resolve(bundle, policy).state == "verified"
+
+    tampered = bundle.to_dict()
+    tampered["metrics"] = {
+        "comparison": {
+            **comparison,
+            "metrics": {
+                **comparison["metrics"],
+                "candidate": {"route_accuracy": 0.0},
+            },
+        },
+        "quality": {},
+        "economy": {},
+    }
+    tampered.pop("bundle_id")
+    changed = EvaluationEvidenceBundle.from_mapping(tampered)
+    with pytest.raises(EvidenceResolutionError, match="metrics_mismatch:comparison"):
+        EvidenceResolver(tmp_path).resolve(changed, policy)
+
+
+def test_unreported_metrics_are_not_authoritative(tmp_path: Path) -> None:
+    raw = _raw_bundle()
+    raw["reports"] = {
+        "baseline": {"metrics": {"route_accuracy": 1.0}},
+        "candidate": {"metrics": {"route_accuracy": 1.0}},
+    }
+    raw["metrics"] = {
+        "comparison": {
+            "metrics": {
+                "baseline": {"route_accuracy": 1.0},
+                "candidate": {"route_accuracy": 1.0},
+            },
+            "cells": [],
+        },
+        "quality": {"quality_score": 1.0},
+        "economy": {},
+    }
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    policy = SimpleNamespace(
+        unresolved_allow=(),
+        unresolved_deny=(),
+        required_verified_evidence_kinds=(),
+        evidence_roots=(),
+    )
+    with pytest.raises(EvidenceResolutionError, match="metrics_mismatch:quality"):
+        EvidenceResolver(tmp_path).resolve(bundle, policy)

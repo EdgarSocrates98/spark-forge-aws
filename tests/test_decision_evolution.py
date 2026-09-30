@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -307,22 +308,33 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
             "input_manifest_sha256": input_manifest_sha256,
             "labeled_tasks": suite["labeled_tasks"],
         },
-        "execution": {"mode": "recorded_host", "adapter": "bundle_file", "sequence": 1},
+        "execution": {"mode": "surrogate", "adapter": "fixture", "sequence": 1},
         "transcripts": {"baseline": None, "candidate": None},
-        "reports": {"baseline": {}, "candidate": {}},
+        "reports": {
+            "baseline": {"metrics": first.comparison["metrics"]["baseline"]},
+            "candidate": {"metrics": first.comparison["metrics"]["candidate"]},
+            "comparison": first.comparison,
+        },
         "metrics": {"comparison": first.comparison, "quality": {}, "economy": {}},
         "policy": {
             "policy_id": policy.policy_id,
             "policy_version": policy.policy_version,
             "policy_sha256": policy.policy_sha256,
         },
-        "evidence_refs": [
-            {"kind": kind, "ref": f"{kind}:fixture", "sha256": "0" * 64}
-            for kind in ("ci", "benchmark", "review")
-        ],
+        "evidence_refs": [],
         "rollback_target": candidate.parent_digest,
-        "unresolved": ["provider_transcript_absent"],
+        "unresolved": [],
     }
+    for kind in ("ci", "benchmark", "review"):
+        artifact = repo / "evals" / "token_efficient" / "fixtures" / f"{kind}-evidence.json"
+        artifact.write_text(kind, encoding="utf-8")
+        raw["evidence_refs"].append(
+            {
+                "kind": kind,
+                "ref": f"file:evals/token_efficient/fixtures/{kind}-evidence.json",
+                "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+            }
+        )
     bundle = EvaluationEvidenceBundle.from_mapping(raw)
     second = service.evaluate(bundle=bundle, candidate=candidate, ci_verified=True)
     assert second.bundle_id == bundle.bundle_id

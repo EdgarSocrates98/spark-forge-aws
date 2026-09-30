@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -36,7 +37,12 @@ def _bundle() -> dict[str, object]:
             "input_manifest_sha256": HASH,
             "labeled_tasks": 50,
         },
-        "execution": {"mode": "live_external", "adapter": "authorized_command"},
+        "execution": {
+            "mode": "live_external",
+            "adapter": "authorized_command",
+            "command_id": "fixture",
+            "producer_identity": "fixture-producer-v1",
+        },
         "transcripts": {"baseline": None, "candidate": None},
         "reports": {"baseline": {}, "candidate": {}},
         "metrics": {"comparison": {}, "quality": {}, "economy": {}},
@@ -54,8 +60,18 @@ def test_authorized_command_returns_same_canonical_bundle(tmp_path: Path) -> Non
         "print(json.dumps(" + repr(_bundle()).replace("'", '"') + "))\n",
         encoding="utf-8",
     )
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    artifact_sha256 = hashlib.sha256(script.read_bytes()).hexdigest()
     adapter = AuthorizedCommandAdapter(
-        {"fixture": {"executable": sys.executable, "args": [str(script)]}},
+        {
+            "fixture": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "artifact": str(script),
+                "artifact_sha256": artifact_sha256,
+                "args": [str(script)],
+            }
+        },
         repo=tmp_path,
     )
     result = adapter.run("fixture")
@@ -73,12 +89,71 @@ def test_authorized_command_refuses_unknown_and_failed_commands(tmp_path: Path) 
 
     script = tmp_path / "fail.py"
     script.write_text("raise SystemExit(3)\n", encoding="utf-8")
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    artifact_sha256 = hashlib.sha256(script.read_bytes()).hexdigest()
     adapter = AuthorizedCommandAdapter(
-        {"fail": {"executable": sys.executable, "args": [str(script)]}},
+        {
+            "fail": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "artifact": str(script),
+                "artifact_sha256": artifact_sha256,
+                "args": [str(script)],
+            }
+        },
         repo=tmp_path,
     )
     with pytest.raises(EvidenceAdapterError, match="exit_3"):
         adapter.run("fail")
+
+
+def test_authorized_command_bounds_output_before_json_load(tmp_path: Path) -> None:
+    script = tmp_path / "large.py"
+    script.write_text("print('x' * 100)\n", encoding="utf-8")
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    artifact_sha256 = hashlib.sha256(script.read_bytes()).hexdigest()
+    adapter = AuthorizedCommandAdapter(
+        {
+            "large": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "artifact": str(script),
+                "artifact_sha256": artifact_sha256,
+                "args": [str(script)],
+                "max_output_bytes": 32,
+            }
+        },
+        repo=tmp_path,
+    )
+
+    with pytest.raises(EvidenceAdapterError, match="output_too_large"):
+        adapter.run("large")
+
+
+def test_authorized_command_pins_artifact_and_rejects_runtime_args(tmp_path: Path) -> None:
+    script = tmp_path / "identity.py"
+    script.write_text("print('{}')\n", encoding="utf-8")
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    adapter = AuthorizedCommandAdapter(
+        {
+            "identity": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "artifact": str(script),
+                "artifact_sha256": "0" * 64,
+                "args": [str(script)],
+            }
+        },
+        repo=tmp_path,
+    )
+
+    with pytest.raises(EvidenceAdapterError, match="artifact_digest_mismatch"):
+        adapter.run("identity")
+
+    valid_artifact_sha256 = hashlib.sha256(script.read_bytes()).hexdigest()
+    adapter.commands["identity"]["artifact_sha256"] = valid_artifact_sha256
+    with pytest.raises(EvidenceAdapterError, match="identity_mismatch:runtime_args"):
+        adapter.run("identity", argv=("mutable",))
 
 
 def test_imported_adapter_has_no_provider_sdk_dependency() -> None:

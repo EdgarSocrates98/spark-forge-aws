@@ -37,6 +37,11 @@ from typing import Any
 
 from sparkforge.evals.compare import compare
 from sparkforge.evals.debate_grade import GRADE_FILE, DebateGradeError, grade_debate_run
+from sparkforge.evals.evidence_adapters import (
+    AuthorizedCommandAdapter,
+    BundleFileAdapter,
+    EvidenceAdapterError,
+)
 from sparkforge.evals.evolution import EvolutionError, EvolutionService
 from sparkforge.evals.grade import grade
 from sparkforge.evals.suite import SuiteError, load_suite
@@ -181,6 +186,8 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate_p.add_argument("--repo", default=".")
     evaluate_p.add_argument("--candidate", required=True)
     evaluate_p.add_argument("--suite")
+    evaluate_p.add_argument("--bundle", "--evidence", dest="bundle")
+    evaluate_p.add_argument("--external-command")
     promote_p = candidate_sub.add_parser("promote")
     promote_p.add_argument("--repo", default=".")
     promote_p.add_argument("--candidate", required=True)
@@ -215,7 +222,22 @@ def main(argv: list[str] | None = None) -> int:
                 payload = service.validate(args.candidate_id)
             elif args.candidate_action == "evaluate":
                 candidate = service.registry.get(args.candidate)
-                payload = service.evaluate(candidate, suite_path=args.suite).to_dict()
+                if args.bundle and args.external_command:
+                    raise EvalError("--bundle e --external-command sao mutuamente exclusivos")
+                bundle = None
+                if args.bundle:
+                    bundle = BundleFileAdapter(args.repo).load(args.bundle)
+                if args.external_command:
+                    service.registry.load()
+                    bundle = AuthorizedCommandAdapter(
+                        service.registry.external_commands,
+                        repo=args.repo,
+                    ).run(args.external_command)
+                payload = service.evaluate(
+                    candidate,
+                    bundle=bundle,
+                    suite_path=args.suite,
+                ).to_dict()
             elif args.candidate_action == "promote":
                 candidate = service.registry.get(args.candidate)
                 evaluation = service.latest_evaluation(candidate)
@@ -234,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
                 _conjunto(args.suite, args.baseline, "--baseline"),
                 _conjunto(args.suite, args.candidate, "--candidate"),
             )
-    except (EvalError, DebateGradeError, EvolutionError) as exc:
+    except (EvalError, DebateGradeError, EvolutionError, EvidenceAdapterError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
     if hasattr(sys.stdout, "reconfigure"):

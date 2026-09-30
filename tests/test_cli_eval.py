@@ -117,3 +117,34 @@ def test_compare_recusa_gabaritos_misturados_no_mesmo_lado(geografia, capsys):
     shutil.copy(estranho, suite_dir / "baselines" / "base" / "zz-outro.json")
     assert cli.main(["compare", "--suite", SUITE, "--baseline", "base", "--candidate", "cand"]) == 0
     assert _json(capsys)["refused"]["reason"] == "suite_mismatch_within_side"
+
+
+def test_candidate_evaluate_exposes_bundle_and_external_command_sources():
+    parser = cli.build_parser()
+    args = parser.parse_args(
+        [
+            "candidate",
+            "evaluate",
+            "--candidate",
+            "routing-variant",
+            "--bundle",
+            "bundle.json",
+        ]
+    )
+    assert args.bundle == "bundle.json"
+    assert args.external_command is None
+
+    args = parser.parse_args(
+        [
+            "candidate",
+            "evaluate",
+            "--candidate",
+            "routing-variant",
+            "--evidence",
+            "bundle.yaml",
+            "--external-command",
+            "benchmark_bundle",
+        ]
+    )
+    assert args.bundle == "bundle.yaml"
+    assert args.external_command == "benchmark_bundle"

@@ -87,6 +87,12 @@ def test_evaluation_core_has_no_provider_or_mcp_sdk_imports() -> None:
         assert forbidden not in source
 
 
+def test_evaluation_adapters_keep_external_execution_explicit() -> None:
+    source = (ROOT / "sparkforge/evals/evidence_adapters.py").read_text(encoding="utf-8")
+    assert "shell=False" in source
+    assert "capture_output=True" not in source
+
+
 def test_replay_host_mapping_keeps_validation_at_adapter_boundary() -> None:
     raw = _cases()["cases"][1]
     result = replay_host_mapping(raw, ReplayHostAdapter(ROOT))

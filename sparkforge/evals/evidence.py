@@ -127,6 +127,11 @@ class EvaluationEvidenceBundle:
             raise EvidenceBundleError(f"evidence_bundle_invalid:execution.adapter:{adapter}")
         if mode == "live_external" and adapter != "authorized_command":
             raise EvidenceBundleError("evidence_bundle_invalid:execution.adapter_for_live_external")
+        if mode == "live_external":
+            _text(execution.get("command_id"), "execution.command_id")
+            producer_identity = execution.get("producer_identity")
+            if not isinstance(producer_identity, (str, Mapping)) or not producer_identity:
+                raise EvidenceBundleError("evidence_bundle_invalid:execution.producer_identity")
         sequence = execution.get("sequence", 1)
         if not isinstance(sequence, int) or isinstance(sequence, bool) or sequence < 1:
             raise EvidenceBundleError("evidence_bundle_invalid:execution.sequence")

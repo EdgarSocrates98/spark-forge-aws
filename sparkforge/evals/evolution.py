@@ -29,6 +29,12 @@ from sparkforge.evals.decision_replay import (
     split_replay_benchmark,
 )
 from sparkforge.evals.evidence import EvaluationEvidenceBundle, EvidenceBundleError
+from sparkforge.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
+from sparkforge.evals.lifecycle import (
+    EffectiveCandidate,
+    LifecycleProjectionError,
+    LifecycleProjector,
+)
 from sparkforge.evals.policy import EvaluationPolicy, EvaluationPolicyError, PolicyResolver
 
 SCHEMA_VERSION = 1
@@ -246,6 +252,10 @@ class CandidateEvaluation:
     execution_mode: str = "surrogate"
     input_manifest_sha256: str = ""
     evidence_ref_kinds: tuple[str, ...] = ()
+    verified_evidence_refs: tuple[str, ...] = ()
+    verified_evidence_kinds: tuple[str, ...] = ()
+    unresolved: tuple[str, ...] = ()
+    evidence_verified: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.candidate_digest, str) or not self.candidate_digest.strip():
@@ -304,6 +314,41 @@ class CandidateEvaluation:
                 )
             ),
         )
+        object.__setattr__(
+            self,
+            "verified_evidence_refs",
+            tuple(
+                sorted(
+                    set(
+                        _strict_refs(
+                            self.verified_evidence_refs,
+                            "evaluation.verified_evidence_refs",
+                        )
+                    )
+                )
+            ),
+        )
+        object.__setattr__(
+            self,
+            "verified_evidence_kinds",
+            tuple(
+                sorted(
+                    set(
+                        _strict_refs(
+                            self.verified_evidence_kinds,
+                            "evaluation.verified_evidence_kinds",
+                        )
+                    )
+                )
+            ),
+        )
+        object.__setattr__(
+            self,
+            "unresolved",
+            tuple(sorted(set(_strict_refs(self.unresolved, "evaluation.unresolved")))),
+        )
+        if not isinstance(self.evidence_verified, bool):
+            raise EvolutionError("evaluation_evidence_verified_must_be_boolean")
 
     @property
     def candidate_sha256(self) -> str:
@@ -349,6 +394,10 @@ class CandidateEvaluation:
             "execution_mode": self.execution_mode,
             "input_manifest_sha256": self.input_manifest_sha256,
             "evidence_ref_kinds": list(self.evidence_ref_kinds),
+            "verified_evidence_refs": list(self.verified_evidence_refs),
+            "verified_evidence_kinds": list(self.verified_evidence_kinds),
+            "unresolved": list(self.unresolved),
+            "evidence_verified": self.evidence_verified,
             "status": self.status.value,
         }
 
@@ -388,6 +437,7 @@ class CandidateRegistry:
         self._authority_policy = EvolutionAuthorityPolicy()
         self._evaluation_policy = EvaluationGatePolicy()
         self._policy_resolver = PolicyResolver((), policy_version="legacy")
+        self._external_commands: dict[str, Any] = {}
 
     @property
     def authority_policy(self) -> EvolutionAuthorityPolicy:
@@ -400,6 +450,10 @@ class CandidateRegistry:
     @property
     def policy_resolver(self) -> PolicyResolver:
         return self._policy_resolver
+
+    @property
+    def external_commands(self) -> dict[str, Any]:
+        return dict(self._external_commands)
 
     def load(self) -> tuple[CandidateSpec, ...]:
         try:
@@ -416,6 +470,12 @@ class CandidateRegistry:
         _strict_bool(raw.get("require_domain_holdout", True), "require_domain_holdout")
         self._authority_policy = _parse_authority_policy(raw.get("authority"))
         self._evaluation_policy = _parse_evaluation_policy(raw.get("evaluation_policy"))
+        external_commands = raw.get("external_commands", {})
+        if isinstance(external_commands, list) and not external_commands:
+            external_commands = {}
+        if not isinstance(external_commands, Mapping):
+            raise EvolutionError("candidate_registry_invalid:external_commands")
+        self._external_commands = dict(external_commands)
         try:
             self._policy_resolver = PolicyResolver.from_mapping(raw)
         except EvaluationPolicyError as exc:
@@ -589,6 +649,22 @@ class EvolutionService:
         self.repo = Path(repo).expanduser().resolve()
         self.registry = CandidateRegistry(self.repo)
         self.root = self.repo / ".sparkforge" / "evolution"
+        self.evidence_resolver = EvidenceResolver(self.repo)
+        self.lifecycle = LifecycleProjector(
+            self.root,
+            receipt_reader=self._read_verified_receipt,
+            transitions=ALLOWED_TRANSITIONS,
+            status_parser=_status,
+        )
+
+    def effective_candidate(
+        self, candidate: CandidateSpec | str, version: str | None = None
+    ) -> EffectiveCandidate:
+        value = self.registry.get(candidate, version) if isinstance(candidate, str) else candidate
+        try:
+            return self.lifecycle.project(value.candidate_id, value.status)
+        except LifecycleProjectionError as exc:
+            raise EvolutionError(str(exc)) from exc
 
     def validate(self, candidate_id: str | None = None) -> dict[str, Any]:
         candidates = self.registry.load()
@@ -632,13 +708,25 @@ class EvolutionService:
         bundle_id = ""
         input_manifest_sha256 = ""
         bundle_evidence_kinds: tuple[str, ...] = ()
+        verified_evidence_refs: tuple[str, ...] = ()
+        verified_evidence_kinds: tuple[str, ...] = ()
+        unresolved: tuple[str, ...] = ()
+        evidence_verified = True
         if bundle is not None:
             self._validate_bundle_for_candidate(bundle, candidate, policy)
+            try:
+                resolved = self.evidence_resolver.resolve(bundle, policy)
+            except EvidenceResolutionError as exc:
+                raise EvolutionError(str(exc)) from exc
             execution_mode = bundle.execution_mode
             bundle_id = bundle.bundle_id
             input_manifest_sha256 = str(bundle.suite["input_manifest_sha256"])
             bundle_evidence_kinds = bundle.evidence_kinds
-            comparison = bundle.metrics["comparison"]
+            verified_evidence_refs = resolved.verified_refs
+            verified_evidence_kinds = resolved.verified_ref_kinds
+            unresolved = resolved.unresolved
+            evidence_verified = True
+            comparison = resolved.derived_metrics["comparison"]
             labeled_tasks = _strict_int(
                 bundle.suite.get("labeled_tasks", policy.minimum_labeled_tasks),
                 "bundle.suite.labeled_tasks",
@@ -652,7 +740,7 @@ class EvolutionService:
             ) = _derive_gates(comparison, policy)
             evidence_refs = tuple(ref.ref for ref in bundle.evidence_refs)
             rollback_target = rollback_target or bundle.rollback_target
-            ci_verified = ci_verified or "ci" in bundle_evidence_kinds
+            ci_verified = ci_verified or "ci" in verified_evidence_kinds
         else:
             if suite is None:
                 suite = load_replay_suite(
@@ -722,6 +810,10 @@ class EvolutionService:
             execution_mode=execution_mode,
             input_manifest_sha256=input_manifest_sha256,
             evidence_ref_kinds=bundle_evidence_kinds,
+            verified_evidence_refs=verified_evidence_refs,
+            verified_evidence_kinds=verified_evidence_kinds,
+            unresolved=unresolved,
+            evidence_verified=evidence_verified,
         )
         self._write(
             "evaluation",
@@ -749,9 +841,15 @@ class EvolutionService:
             candidate, evaluation
         ):
             raise EvolutionError("candidate_evaluation_receipt_missing_or_mismatched")
-        if candidate.status is CandidateStatus.CANDIDATE:
-            candidate = replace(candidate, status=CandidateStatus.EVALUATED)
-        if candidate.status is not CandidateStatus.EVALUATED:
+        effective = self.effective_candidate(candidate)
+        if (
+            effective.effective_status is CandidateStatus.CANDIDATE
+            and not self.registry.authority_policy.require_evaluation_receipt
+        ):
+            effective_status = CandidateStatus.EVALUATED
+        else:
+            effective_status = effective.effective_status
+        if effective_status is not CandidateStatus.EVALUATED:
             raise EvolutionError("candidate_promotion_requires_evaluated")
         if evaluation.candidate_digest != candidate.candidate_digest:
             raise EvolutionError("candidate_evaluation_digest_mismatch")
@@ -761,8 +859,10 @@ class EvolutionService:
         if evaluation.policy_sha256 and evaluation.policy_sha256 != policy.policy_sha256:
             raise EvolutionError("candidate_promotion_policy_digest_mismatch")
         if evaluation.bundle_id:
-            required_kinds = {"ci", "benchmark", "review"}
-            missing = sorted(required_kinds - set(evaluation.evidence_ref_kinds))
+            if not evaluation.evidence_verified:
+                raise EvolutionError("candidate_promotion_evidence_unverified")
+            required_kinds = set(policy.required_verified_evidence_kinds)
+            missing = sorted(required_kinds - set(evaluation.verified_evidence_kinds))
             if missing:
                 raise EvolutionError(
                     f"candidate_promotion_evidence_missing:{','.join(missing)}"
@@ -787,14 +887,20 @@ class EvolutionService:
                 economy_gate=evaluation.economy_gate,
                 ci_verified=evaluation.ci_verified,
                 rollback=evaluation.rollback_target,
-                evidence_refs=evaluation.evidence_refs,
+                evidence_refs=(
+                    evaluation.verified_evidence_refs
+                    or evaluation.evidence_refs
+                ),
                 calibration_version=candidate.calibration_version,
             ),
             caller_authorized=caller_authorized,
         )
         if not authority.allowed:
             raise EvolutionError(f"candidate_promotion_refused:{authority.reason}")
-        accepted = transition(candidate, CandidateStatus.ACCEPTED)
+        self._validate_rollback_target(candidate, evaluation.rollback_target)
+        accepted = transition(
+            replace(candidate, status=CandidateStatus.EVALUATED), CandidateStatus.ACCEPTED
+        )
         self._write(
             "promotion",
             {
@@ -852,11 +958,17 @@ class EvolutionService:
         raise EvolutionError("candidate_evaluation_missing")
 
     def rollback(self, candidate: CandidateSpec, previous: CandidateSpec) -> CandidateSpec:
-        if candidate.status is not CandidateStatus.ACCEPTED:
+        effective = self.effective_candidate(candidate)
+        previous_effective = self.effective_candidate(previous)
+        if effective.effective_status is not CandidateStatus.ACCEPTED:
             raise EvolutionError("candidate_rollback_requires_accepted")
-        if previous.status is not CandidateStatus.ACCEPTED:
+        if previous_effective.effective_status is not CandidateStatus.ACCEPTED:
             raise EvolutionError("rollback_target_must_be_accepted")
-        rolled_back = transition(candidate, CandidateStatus.ROLLED_BACK)
+        if candidate.parent_digest != previous.candidate_digest:
+            raise EvolutionError("rollback_target_incompatible")
+        rolled_back = transition(
+            replace(candidate, status=CandidateStatus.ACCEPTED), CandidateStatus.ROLLED_BACK
+        )
         self._write(
             "rollback",
             {
@@ -867,6 +979,30 @@ class EvolutionService:
         )
         return rolled_back
 
+    def _validate_rollback_target(self, candidate: CandidateSpec, target: str) -> None:
+        if not target:
+            raise EvolutionError("rollback_target_unresolved")
+        if candidate.parent_digest != target:
+            raise EvolutionError("rollback_target_incompatible")
+        try:
+            parent = next(
+                item
+                for item in self.registry.load()
+                if item.candidate_digest == target
+            )
+        except StopIteration as exc:
+            raise EvolutionError("rollback_target_unresolved") from exc
+        effective = self.effective_candidate(parent)
+        if effective.effective_status is not CandidateStatus.ACCEPTED:
+            raise EvolutionError("rollback_target_must_be_accepted")
+        if (
+            parent.family != candidate.family
+            or parent.kind != candidate.kind
+            or parent.contract_id != candidate.contract_id
+            or parent.contract_version != candidate.contract_version
+        ):
+            raise EvolutionError("rollback_target_incompatible")
+
     def _write(self, action: str, value: Mapping[str, Any]) -> Path:
         self.root.mkdir(parents=True, exist_ok=True)
         lock = self.root / ".receipt.lock"
@@ -876,13 +1012,17 @@ class EvolutionService:
             raise EvolutionError("evolution_receipt_lock_busy") from exc
         try:
             previous_id, sequence = self._next_receipt_link()
+            payload = dict(value)
+            candidate = payload.get("candidate")
+            if isinstance(candidate, Mapping) and candidate.get("candidate_id"):
+                payload.setdefault("candidate_id", candidate["candidate_id"])
             body = {
                 "schema_version": SCHEMA_VERSION,
                 "receipt_schema_version": 2,
                 "event_sequence": sequence,
                 "previous_receipt_id": previous_id,
                 "action": action,
-                **dict(value),
+                **payload,
             }
             receipt_id = digest(body)
             path = self.root / f"{receipt_id}.json"
@@ -968,7 +1108,7 @@ class EvolutionService:
         if len(matches) != 1:
             raise EvolutionError("candidate_baseline_digest_missing")
         baseline = matches[0]
-        if baseline.status is not CandidateStatus.ACCEPTED:
+        if self.effective_candidate(baseline).effective_status is not CandidateStatus.ACCEPTED:
             raise EvolutionError("candidate_baseline_must_be_accepted")
         return baseline
 
@@ -1423,6 +1563,24 @@ def _evaluation_from_dict(value: Mapping[str, Any]) -> CandidateEvaluation:
             ),
             evidence_ref_kinds=tuple(
                 _strict_refs(value.get("evidence_ref_kinds", ()), "evaluation.evidence_ref_kinds")
+            ),
+            verified_evidence_refs=tuple(
+                _strict_refs(
+                    value.get("verified_evidence_refs", ()),
+                    "evaluation.verified_evidence_refs",
+                )
+            ),
+            verified_evidence_kinds=tuple(
+                _strict_refs(
+                    value.get("verified_evidence_kinds", ()),
+                    "evaluation.verified_evidence_kinds",
+                )
+            ),
+            unresolved=tuple(
+                _strict_refs(value.get("unresolved", ()), "evaluation.unresolved")
+            ),
+            evidence_verified=_strict_bool(
+                value.get("evidence_verified", False), "evaluation.evidence_verified"
             ),
         )
     except (KeyError, TypeError, ValueError, EvolutionError) as exc:

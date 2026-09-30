@@ -56,6 +56,7 @@ def test_service_evaluate_uses_repository_fixture_without_provider(tmp_path: Pat
     )
     assert evaluation.labeled_tasks == 50
     assert evaluation.comparison["cells"]
+    assert evaluation.quality_metrics["route_accuracy"] == 1.0
 
 
 def test_paired_report_splits_into_distinct_baseline_and_candidate_reports() -> None:

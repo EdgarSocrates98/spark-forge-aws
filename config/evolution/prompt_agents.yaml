@@ -3,7 +3,7 @@ registry_id: prompt-agent-evolution-v1
 candidate_root: .
 benchmark_suite: evals/token_efficient/fixtures/decision_control_plane_cases.yaml
 require_domain_holdout: true
-policy_version: prompt-agent-evolution-policy-v2
+policy_version: prompt-agent-evolution-policy-v3
 external_commands: []
 authority:
   require_content_digest: true
@@ -17,9 +17,9 @@ evaluation_policy:
     min_evidence_recall: 1.0
     max_false_positive_rate: 0.0
     max_quality_regression: 0.0
-    min_route_accuracy: null
+    min_route_accuracy: 1.0
     max_route_regression: 0.0
-    require_route_metric: false
+    require_route_metric: true
   economy:
     max_payload_regression: 0.05
     max_token_regression: 0.0
@@ -38,15 +38,34 @@ policies:
       min_evidence_recall: 1.0
       max_false_positive_rate: 0.0
       max_quality_regression: 0.0
-      min_route_accuracy: null
+      min_route_accuracy: 1.0
       max_route_regression: 0.0
-      require_route_metric: false
+      require_route_metric: true
     economy:
       max_payload_regression: 0.05
       max_token_regression: 0.0
       max_cost_regression: 0.0
       require_tokens: false
       require_cost: false
+    unresolved:
+      deny:
+        - transcript_missing
+        - transcript_source_unresolved
+        - evidence_integrity_unknown
+        - metrics_unresolved
+        - evidence_ref_unresolved:ci
+        - evidence_ref_unresolved:benchmark
+        - evidence_ref_unresolved:review
+        - evidence_ref_missing:ci
+        - evidence_ref_missing:benchmark
+        - evidence_ref_missing:review
+      allow:
+        - cost_unresolved
+    evidence:
+      required_verified_kinds: [ci, benchmark, review]
+      roots:
+        - .sparkforge/evidence
+        - evals/token_efficient/fixtures
 candidates:
   - id: routing-baseline
     version: "1.0.0"

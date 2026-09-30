@@ -1,5 +1,6 @@
 schema_version: 1
-fixture_id: evolution-evidence-bundles-v1
+# Surrogate fixture is structural; active promotion uses resolver-backed bundles.
+fixture_id: evolution-evidence-bundles-v2
 bundles:
   - id: valid-surrogate-shape
     bundle:

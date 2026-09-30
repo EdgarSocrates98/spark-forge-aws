@@ -2924,8 +2924,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 196,
-      "text": "937",
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **937** nesta árvore (remedido em 2026-09-30 a",
+      "text": "940",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **940** nesta árvore (remedido em 2026-09-30 a",
       "type": "number",
       "id": "VNX-640",
       "state": "PROVADA",
@@ -2935,7 +2935,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 937
+          "value": 940
         },
         "kind": "command",
         "tier": "fast"
@@ -3522,7 +3522,7 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 247,
       "text": "50",
-      "context": "`buscar(banco, \"source\")` devolve **50** símbolos em **12009** bytes; a saída do `grep` pelo nome,",
+      "context": "`buscar(banco, \"source\")` devolve **50** símbolos em **11945** bytes; a saída do `grep` pelo nome,",
       "type": "number",
       "id": "VNX-672",
       "state": "PROVADA",
@@ -3541,7 +3541,7 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 247,
-      "text": "12009",
+      "text": "11945",
       "context": "`buscar(banco, \"source\")` devolve **50** símbolos em **12009** bytes; a saída do `grep` pelo nome,",
       "type": "number",
       "id": "VNX-673",
@@ -3552,7 +3552,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12009
+          "value": 11945
         },
         "kind": "command",
         "tier": "fast"
@@ -3561,8 +3561,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 248,
-      "text": "300646",
-      "context": "no mesmo corpus, tem **300646** bytes (remedido em 2026-09-30 após a adição dos módulos de evidência da evolução de prompts). O `grep` pela definição contendo o fragmento continua me",
+      "text": "301838",
+      "context": "no mesmo corpus, tem **301838** bytes (remedido em 2026-09-30 após o hardening da evolução ativa de prompts). O `grep` pela definição contendo o fragmento continua me",
       "type": "number",
       "id": "VNX-674",
       "state": "PROVADA",
@@ -3572,7 +3572,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 300646
+          "value": 301838
         },
         "kind": "command",
         "tier": "fast"
@@ -10598,8 +10598,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 249,
-      "text": "12670",
-      "context": "(**12665** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "text": "12874",
+      "context": "(**12874** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "type": "number",
       "id": "VNX-675",
       "state": "PROVADA",
@@ -10609,7 +10609,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 12670
+          "value": 12874
         },
         "kind": "command",
         "tier": "fast"

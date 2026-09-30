@@ -6,6 +6,7 @@ import hashlib
 import json
 import subprocess
 import tempfile
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -84,45 +85,79 @@ class AuthorizedCommandAdapter:
         if command_id not in self.commands:
             raise EvidenceAdapterError(f"external_command_not_authorized:{command_id}")
         spec = self.commands[command_id]
-        executable, configured_args, declared_sha256, timeout, output_limit = self._spec(spec)
-        command = (executable, *configured_args, *tuple(str(item) for item in argv))
+        (
+            executable,
+            configured_args,
+            declared_sha256,
+            artifact,
+            artifact_sha256,
+            timeout,
+            output_limit,
+        ) = self._spec(spec)
+        if argv:
+            raise EvidenceAdapterError("external_command_identity_mismatch:runtime_args")
+        command = (executable, *configured_args)
         executable_path = Path(executable).expanduser().resolve()
         if not executable_path.is_file():
             raise EvidenceAdapterError(f"external_command_not_found:{executable_path}")
-        if declared_sha256:
-            actual = hashlib.sha256(executable_path.read_bytes()).hexdigest()
-            if actual != declared_sha256.removeprefix("sha256:"):
-                raise EvidenceAdapterError("external_command_executable_digest_mismatch")
+        if not declared_sha256:
+            raise EvidenceAdapterError("external_command_identity_missing:executable")
+        actual = hashlib.sha256(executable_path.read_bytes()).hexdigest()
+        if actual != declared_sha256.removeprefix("sha256:"):
+            raise EvidenceAdapterError("external_command_executable_digest_mismatch")
+        if artifact is not None:
+            artifact_path = _confined_path(self.repo, artifact)
+            if not artifact_path.is_file():
+                raise EvidenceAdapterError("external_command_artifact_not_found")
+            if not artifact_sha256:
+                raise EvidenceAdapterError("external_command_identity_missing:artifact")
+            actual_artifact = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+            if actual_artifact != artifact_sha256.removeprefix("sha256:"):
+                raise EvidenceAdapterError("external_command_artifact_digest_mismatch")
         temp_dir = self.repo / ".sparkforge" / "evidence-input"
         temp_dir.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", suffix=".json", dir=temp_dir, delete=False
-        ) as handle:
-            json.dump(dict(input_mapping or {}), handle, ensure_ascii=False, sort_keys=True)
-            input_path = Path(handle.name)
-        try:
-            completed = subprocess.run(  # noqa: S603
-                (*command, "--input", str(input_path)),
-                cwd=self.repo,
-                env={"PATH": str(executable_path.parent), "PYTHONIOENCODING": "utf-8"},
-                capture_output=True,
-                timeout=timeout,
-                check=False,
-                shell=False,
+        with tempfile.TemporaryDirectory(dir=temp_dir) as run_dir:
+            input_path = Path(run_dir) / "input.json"
+            stdout_path = Path(run_dir) / "stdout.bin"
+            stderr_path = Path(run_dir) / "stderr.bin"
+            input_path.write_text(
+                json.dumps(dict(input_mapping or {}), ensure_ascii=False, sort_keys=True),
+                encoding="utf-8",
             )
-        except subprocess.TimeoutExpired as exc:
-            raise EvidenceAdapterError("external_command_timeout") from exc
-        finally:
-            try:
-                input_path.unlink()
-            except OSError:
-                pass
-        if len(completed.stdout) > output_limit or len(completed.stderr) > output_limit:
-            raise EvidenceAdapterError("external_command_output_too_large")
-        if completed.returncode != 0:
-            raise EvidenceAdapterError(f"external_command_failed:exit_{completed.returncode}")
+            with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+                process = subprocess.Popen(  # noqa: S603
+                    (*command, "--input", str(input_path)),
+                    cwd=self.repo,
+                    env={"PATH": str(executable_path.parent), "PYTHONIOENCODING": "utf-8"},
+                    stdout=stdout,
+                    stderr=stderr,
+                    shell=False,
+                )
+                deadline = time.monotonic() + timeout
+                while process.poll() is None:
+                    if (
+                        stdout_path.stat().st_size > output_limit
+                        or stderr_path.stat().st_size > output_limit
+                    ):
+                        process.kill()
+                        process.wait()
+                        raise EvidenceAdapterError("external_command_output_too_large")
+                    if time.monotonic() >= deadline:
+                        process.kill()
+                        process.wait()
+                        raise EvidenceAdapterError("external_command_timeout")
+                    time.sleep(0.01)
+                returncode = process.returncode
+            if (
+                stdout_path.stat().st_size > output_limit
+                or stderr_path.stat().st_size > output_limit
+            ):
+                raise EvidenceAdapterError("external_command_output_too_large")
+            stdout_bytes = stdout_path.read_bytes()
+            if returncode != 0:
+                raise EvidenceAdapterError(f"external_command_failed:exit_{returncode}")
         try:
-            raw = json.loads(completed.stdout.decode("utf-8"))
+            raw = json.loads(stdout_bytes.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise EvidenceAdapterError("external_command_invalid_output:json") from exc
         if not isinstance(raw, Mapping):
@@ -131,21 +166,18 @@ class AuthorizedCommandAdapter:
 
     execute = run
 
-    def _spec(self, value: Any) -> tuple[str, tuple[str, ...], str | None, float, int]:
-        if isinstance(value, Mapping):
-            executable = value.get("executable")
-            args = value.get("args", ())
-            sha256 = value.get("sha256") or value.get("executable_sha256")
-            timeout = value.get("timeout_seconds", self.timeout_seconds)
-            output_limit = value.get("max_output_bytes", self.max_output_bytes)
-        elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
-            executable, *args = value
-            sha256 = None
-            timeout = self.timeout_seconds
-            output_limit = self.max_output_bytes
-        else:
-            executable, args, sha256 = value, (), None
-            timeout, output_limit = self.timeout_seconds, self.max_output_bytes
+    def _spec(
+        self, value: Any
+    ) -> tuple[str, tuple[str, ...], str | None, str | None, str | None, float, int]:
+        if not isinstance(value, Mapping):
+            raise EvidenceAdapterError("external_command_identity_missing:spec")
+        executable = value.get("executable")
+        args = value.get("args", ())
+        sha256 = value.get("sha256") or value.get("executable_sha256")
+        artifact = value.get("artifact") or value.get("script")
+        artifact_sha256 = value.get("artifact_sha256") or value.get("script_sha256")
+        timeout = value.get("timeout_seconds", self.timeout_seconds)
+        output_limit = value.get("max_output_bytes", self.max_output_bytes)
         if not isinstance(executable, str) or not executable.strip():
             raise EvidenceAdapterError("external_command_invalid:executable")
         if isinstance(args, (str, bytes)) or not isinstance(args, Sequence):
@@ -154,7 +186,19 @@ class AuthorizedCommandAdapter:
             raise EvidenceAdapterError("external_command_invalid:timeout")
         if not isinstance(output_limit, int) or output_limit < 1:
             raise EvidenceAdapterError("external_command_invalid:max_output_bytes")
-        return executable, tuple(str(item) for item in args), sha256, float(timeout), output_limit
+        if artifact is not None and not isinstance(artifact, str):
+            raise EvidenceAdapterError("external_command_invalid:artifact")
+        if artifact_sha256 is not None and not isinstance(artifact_sha256, str):
+            raise EvidenceAdapterError("external_command_invalid:artifact_sha256")
+        return (
+            executable,
+            tuple(str(item) for item in args),
+            str(sha256) if sha256 is not None else None,
+            artifact,
+            artifact_sha256,
+            float(timeout),
+            output_limit,
+        )
 
 
 __all__ = ["AuthorizedCommandAdapter", "BundleFileAdapter", "EvidenceAdapterError"]
