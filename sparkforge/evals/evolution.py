@@ -7,10 +7,12 @@ it never calls a model or an external service.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
 from typing import Any, overload
@@ -61,6 +63,8 @@ _CANDIDATE_FIELDS = frozenset(
         "content",
         "content_path",
         "content_sha256",
+        "candidate_digest",
+        "candidate_type",
         "contract_id",
         "contract_version",
         "contract_sha256",
@@ -77,9 +81,44 @@ _REGISTRY_FIELDS = frozenset(
         "benchmark_suite",
         "require_domain_holdout",
         "authority",
+        "evaluation_policy",
         "candidates",
     }
 )
+_AUTHORITY_FIELDS = frozenset(
+    {
+        "require_content_digest",
+        "require_parent_digest_for_mutation",
+        "require_evaluation_receipt",
+        "require_rollback_target",
+        "require_contract_sha256",
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class EvolutionAuthorityPolicy:
+    require_content_digest: bool = True
+    require_parent_digest_for_mutation: bool = True
+    require_evaluation_receipt: bool = True
+    require_rollback_target: bool = True
+    require_contract_sha256: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class EvaluationGatePolicy:
+    min_status_accuracy: float = 1.0
+    min_evidence_recall: float = 1.0
+    max_false_positive_rate: float = 0.0
+    max_quality_regression: float = 0.0
+    min_route_accuracy: float | None = None
+    max_route_regression: float = 0.0
+    require_route_metric: bool = False
+    max_payload_regression: float = 0.0
+    max_token_regression: float = 0.0
+    max_cost_regression: float = 0.0
+    require_tokens: bool = False
+    require_cost: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +133,7 @@ class CandidateSpec:
     parent_digest: str | None = None
     status: CandidateStatus = CandidateStatus.CANDIDATE
     contract_sha256: str | None = None
+    candidate_type: str = "root"
 
     def __post_init__(self) -> None:
         for field_name in (
@@ -109,11 +149,29 @@ class CandidateSpec:
                 raise EvolutionError(f"candidate_{field_name}_required")
         if not isinstance(self.content, str):
             raise EvolutionError("candidate_content_must_be_text")
+        if self.parent_digest is not None and not isinstance(self.parent_digest, str):
+            raise EvolutionError("candidate_parent_digest_must_be_text")
+        if self.contract_sha256 is not None and (
+            not isinstance(self.contract_sha256, str) or not self.contract_sha256.strip()
+        ):
+            raise EvolutionError("candidate_contract_sha256_invalid")
+        if not isinstance(self.candidate_type, str):
+            raise EvolutionError("candidate_type_must_be_text")
+        if self.candidate_type not in {"root", "mutation"}:
+            raise EvolutionError("candidate_type_invalid")
+        if self.candidate_type == "mutation" and self.parent_digest is None:
+            raise EvolutionError("candidate_parent_digest_required_for_mutation")
+        if self.candidate_type == "root" and self.parent_digest is not None:
+            raise EvolutionError("root_candidate_cannot_have_parent")
         if self.parent_digest is not None and not self.parent_digest.strip():
             raise EvolutionError("candidate_parent_digest_empty")
 
     @property
     def content_sha256(self) -> str:
+        return hashlib.sha256(self.content.encode("utf-8")).hexdigest()
+
+    @property
+    def candidate_digest(self) -> str:
         return digest(self.identity_dict())
 
     def identity_dict(self) -> dict[str, Any]:
@@ -124,8 +182,10 @@ class CandidateSpec:
             "content": self.content,
             "contract_id": self.contract_id,
             "contract_version": self.contract_version,
+            "contract_sha256": self.contract_sha256,
             "calibration_version": self.calibration_version,
             "parent_digest": self.parent_digest,
+            "candidate_type": self.candidate_type,
         }
 
     def to_dict(self, *, include_content: bool = False) -> dict[str, Any]:
@@ -133,12 +193,14 @@ class CandidateSpec:
             "candidate_id": self.candidate_id,
             "version": self.version,
             "kind": self.kind,
+            "candidate_digest": self.candidate_digest,
             "content_sha256": self.content_sha256,
             "contract_id": self.contract_id,
             "contract_version": self.contract_version,
             "contract_sha256": self.contract_sha256,
             "calibration_version": self.calibration_version,
             "parent_digest": self.parent_digest,
+            "candidate_type": self.candidate_type,
             "status": self.status.value,
         }
         if include_content:
@@ -148,7 +210,7 @@ class CandidateSpec:
 
 @dataclass(frozen=True, slots=True)
 class CandidateEvaluation:
-    candidate_sha256: str
+    candidate_digest: str
     suite_sha256: str
     labeled_tasks: int
     quality_gate: bool
@@ -159,35 +221,77 @@ class CandidateEvaluation:
     comparison: dict[str, Any]
     status: CandidateStatus = CandidateStatus.EVALUATED
     parent_digest: str | None = None
+    quality_metrics: dict[str, Any] = field(default_factory=dict)
+    economy_metrics: dict[str, Any] = field(default_factory=dict)
+    gate_reasons: tuple[str, ...] = ()
+    rollback_required: bool = True
+    metrics_derived: bool = False
 
     def __post_init__(self) -> None:
+        if not isinstance(self.candidate_digest, str) or not self.candidate_digest.strip():
+            raise EvolutionError("evaluation_candidate_digest_required")
+        if not isinstance(self.suite_sha256, str) or not self.suite_sha256.strip():
+            raise EvolutionError("evaluation_suite_sha256_required")
+        if self.parent_digest is not None and not isinstance(self.parent_digest, str):
+            raise EvolutionError("evaluation_parent_digest_must_be_text")
+        if not isinstance(self.labeled_tasks, int) or isinstance(self.labeled_tasks, bool):
+            raise EvolutionError("evaluation_labeled_tasks_must_be_integer")
         if self.labeled_tasks < 0:
             raise EvolutionError("evaluation_labeled_tasks_negative")
-        if not self.rollback_target.strip():
+        if not isinstance(self.quality_gate, bool):
+            raise EvolutionError("evaluation_quality_gate_must_be_boolean")
+        if not isinstance(self.economy_gate, bool):
+            raise EvolutionError("evaluation_economy_gate_must_be_boolean")
+        if not isinstance(self.ci_verified, bool):
+            raise EvolutionError("evaluation_ci_verified_must_be_boolean")
+        if not isinstance(self.rollback_required, bool):
+            raise EvolutionError("evaluation_rollback_required_must_be_boolean")
+        if not isinstance(self.metrics_derived, bool):
+            raise EvolutionError("evaluation_metrics_derived_must_be_boolean")
+        if not isinstance(self.comparison, Mapping):
+            raise EvolutionError("evaluation_comparison_must_be_mapping")
+        if not isinstance(self.rollback_target, str):
+            raise EvolutionError("evaluation_rollback_target_must_be_text")
+        if self.rollback_required and not self.rollback_target.strip():
             raise EvolutionError("evaluation_rollback_target_required")
-        if any(not isinstance(ref, str) for ref in self.evidence_refs):
-            raise EvolutionError("evaluation_evidence_refs_must_be_text")
+        evidence_refs = _strict_refs(self.evidence_refs, "evaluation.evidence_refs")
         object.__setattr__(
             self,
             "evidence_refs",
-            tuple(sorted({ref.strip() for ref in self.evidence_refs if ref.strip()})),
+            tuple(sorted({ref.strip() for ref in evidence_refs if ref.strip()})),
         )
+        if not isinstance(self.quality_metrics, Mapping):
+            raise EvolutionError("evaluation_quality_metrics_must_be_mapping")
+        if not isinstance(self.economy_metrics, Mapping):
+            raise EvolutionError("evaluation_economy_metrics_must_be_mapping")
+        object.__setattr__(
+            self,
+            "gate_reasons",
+            _strict_refs(self.gate_reasons, "evaluation.gate_reasons"),
+        )
+
+    @property
+    def candidate_sha256(self) -> str:
+        """Backward-compatible alias for the candidate identity digest."""
+        return self.candidate_digest
 
     @property
     def gates_pass(self) -> bool:
         return (
             self.labeled_tasks >= 50
+            and self.metrics_derived
             and self.quality_gate
             and self.economy_gate
             and self.ci_verified
             and bool(self.evidence_refs)
-            and bool(self.rollback_target.strip())
+            and (not self.rollback_required or bool(self.rollback_target.strip()))
             and self.comparison.get("refused") is None
+            and not self.gate_reasons
         )
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "candidate_sha256": self.candidate_sha256,
+            "candidate_digest": self.candidate_digest,
             "parent_digest": self.parent_digest,
             "suite_sha256": self.suite_sha256,
             "labeled_tasks": self.labeled_tasks,
@@ -196,8 +300,13 @@ class CandidateEvaluation:
             "ci_verified": self.ci_verified,
             "evidence_refs": list(self.evidence_refs),
             "rollback_target": self.rollback_target,
+            "rollback_required": self.rollback_required,
             "gates_pass": self.gates_pass,
             "comparison": self.comparison,
+            "quality_metrics": dict(self.quality_metrics),
+            "economy_metrics": dict(self.economy_metrics),
+            "gate_reasons": list(self.gate_reasons),
+            "metrics_derived": self.metrics_derived,
             "status": self.status.value,
         }
 
@@ -234,6 +343,16 @@ class CandidateRegistry:
         self.path = (self.repo / (path or REGISTRY_PATH)).resolve()
         if self.repo not in self.path.parents:
             raise EvolutionError("registry_path_escape")
+        self._authority_policy = EvolutionAuthorityPolicy()
+        self._evaluation_policy = EvaluationGatePolicy()
+
+    @property
+    def authority_policy(self) -> EvolutionAuthorityPolicy:
+        return self._authority_policy
+
+    @property
+    def evaluation_policy(self) -> EvaluationGatePolicy:
+        return self._evaluation_policy
 
     def load(self) -> tuple[CandidateSpec, ...]:
         try:
@@ -248,30 +367,22 @@ class CandidateRegistry:
         _text(raw.get("registry_id"), "registry_id")
         _text(raw.get("benchmark_suite"), "benchmark_suite")
         _strict_bool(raw.get("require_domain_holdout", True), "require_domain_holdout")
+        self._authority_policy = _parse_authority_policy(raw.get("authority"))
+        self._evaluation_policy = _parse_evaluation_policy(raw.get("evaluation_policy"))
         candidates = raw.get("candidates")
         if not isinstance(candidates, list):
             raise EvolutionError("candidate_registry_invalid:candidates")
         candidate_root = raw.get("candidate_root", ".")
         if not isinstance(candidate_root, str):
             raise EvolutionError("candidate_root_must_be_text")
-        authority = raw.get("authority")
-        if not isinstance(authority, Mapping):
-            raise EvolutionError("candidate_registry_invalid:authority")
-        require_content_digest = _strict_bool(
-            authority.get("require_content_digest", True), "authority.require_content_digest"
-        )
-        require_parent = _strict_bool(
-            authority.get("require_parent_digest_for_mutation", True),
-            "authority.require_parent_digest_for_mutation",
-        )
         loaded = tuple(
-            self._candidate(item, require_parent, require_content_digest, candidate_root)
+            self._candidate(item, candidate_root)
             for item in candidates
         )
         ids = [(candidate.candidate_id, candidate.version) for candidate in loaded]
         if len(set(ids)) != len(ids):
             raise EvolutionError("candidate_registry_duplicate_identity")
-        digests = {candidate.content_sha256 for candidate in loaded}
+        digests = {candidate.candidate_digest for candidate in loaded}
         if any(
             candidate.parent_digest is not None and candidate.parent_digest not in digests
             for candidate in loaded
@@ -290,8 +401,6 @@ class CandidateRegistry:
     def _candidate(
         self,
         value: Any,
-        require_parent: bool,
-        require_content_digest: bool,
         candidate_root: str,
     ) -> CandidateSpec:
         if not isinstance(value, Mapping):
@@ -306,24 +415,27 @@ class CandidateRegistry:
         if content is None and content_path is None:
             raise EvolutionError("candidate_content_required")
         if content_path is not None:
-            content = self._read_content(str(content_path), candidate_root)
+            if not isinstance(content_path, str):
+                raise EvolutionError("candidate_content_path_must_be_text")
+            content = self._read_content(content_path, candidate_root)
         if not isinstance(content, str):
             raise EvolutionError("candidate_content_must_be_text")
         status = _status(value.get("status", CandidateStatus.CANDIDATE.value))
+        candidate_type = _text(value.get("candidate_type", "root"), "candidate.candidate_type")
         parent = value.get("parent_digest")
         if parent is not None and not isinstance(parent, str):
             raise EvolutionError("candidate_parent_digest_must_be_text")
         if (
-            require_parent
-            and status
-            in {
-                CandidateStatus.EVALUATED,
-                CandidateStatus.REJECTED,
-                CandidateStatus.ROLLED_BACK,
-            }
+            self.authority_policy.require_parent_digest_for_mutation
+            and candidate_type == "mutation"
             and parent is None
         ):
             raise EvolutionError("candidate_parent_digest_required_for_mutation")
+        if candidate_type == "root" and parent is not None:
+            raise EvolutionError("root_candidate_cannot_have_parent")
+        contract_sha256 = value.get("contract_sha256")
+        if self.authority_policy.require_contract_sha256 and contract_sha256 is None:
+            raise EvolutionError("candidate_contract_digest_required")
         candidate = CandidateSpec(
             candidate_id=_text(value.get("id"), "candidate.id"),
             version=_text(value.get("version"), "candidate.version"),
@@ -337,17 +449,48 @@ class CandidateRegistry:
             parent_digest=parent,
             status=status,
             contract_sha256=(
-                _text(value.get("contract_sha256"), "candidate.contract_sha256")
-                if value.get("contract_sha256") is not None
+                _text(contract_sha256, "candidate.contract_sha256")
+                if contract_sha256 is not None
                 else None
             ),
+            candidate_type=candidate_type,
         )
-        declared_digest = value.get("content_sha256")
-        if require_content_digest and declared_digest is None:
-            raise EvolutionError("candidate_content_digest_required")
-        if declared_digest is not None and declared_digest != candidate.content_sha256:
-            raise EvolutionError("candidate_content_digest_mismatch")
+        if self.authority_policy.require_contract_sha256:
+            self._validate_contract_sha256(candidate)
+        declared_digest = value.get("candidate_digest")
+        if declared_digest is None and value.get("content_sha256") is not None:
+            declared_digest = value.get("content_sha256")
+        if self.authority_policy.require_content_digest and declared_digest is None:
+            raise EvolutionError("candidate_digest_required")
+        if declared_digest is not None and not isinstance(declared_digest, str):
+            raise EvolutionError("candidate_digest_must_be_text")
+        if declared_digest is not None and declared_digest != candidate.candidate_digest:
+            raise EvolutionError("candidate_digest_mismatch")
+        if (
+            value.get("content_sha256") is not None
+            and not isinstance(value["content_sha256"], str)
+        ):
+            raise EvolutionError("candidate_content_sha256_must_be_text")
+        if (
+            value.get("content_sha256") is not None
+            and value["content_sha256"] != candidate.content_sha256
+        ):
+            raise EvolutionError("candidate_content_sha256_mismatch")
         return candidate
+
+    def _validate_contract_sha256(self, candidate: CandidateSpec) -> None:
+        try:
+            from sparkforge.economy.decision_contracts import ContractRegistry
+
+            contract = ContractRegistry(self.repo).load(
+                candidate.contract_id, candidate.contract_version
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            raise EvolutionError(
+                f"candidate_contract_unreadable:{candidate.contract_id}:{candidate.contract_version}"
+            ) from exc
+        if candidate.contract_sha256 != contract.sha256:
+            raise EvolutionError("candidate_contract_sha256_mismatch")
 
     def _read_content(self, value: str, candidate_root: Any) -> str:
         if not value or Path(value).is_absolute():
@@ -407,49 +550,75 @@ class EvolutionService:
         suite_path: Path | str | None = None,
         old_runner: Runner | None = None,
         new_runner: Runner | None = None,
-        quality_gate: bool = False,
-        economy_gate: bool = False,
         ci_verified: bool = False,
         evidence_refs: tuple[str, ...] = (),
         rollback_target: str | None = None,
     ) -> CandidateEvaluation:
+        if not isinstance(ci_verified, bool):
+            raise EvolutionError("ci_verified_must_be_boolean")
+        if (old_runner is None) != (new_runner is None):
+            raise EvolutionError("baseline_and_candidate_runners_required_together")
         if suite is None:
             suite = load_replay_suite(
                 self.repo / (suite_path or DEFAULT_SUITE_PATH)
             )
+        baseline: CandidateSpec | None = None
         if old_runner is None or new_runner is None:
-            old_runner, new_runner = _default_runners()
+            baseline = self._baseline_for(candidate)
+            old_runner = _candidate_runner(baseline)
+            new_runner = _candidate_runner(candidate)
         baseline_identity = {
-            "candidate_id": "baseline",
-            "candidate_sha256": candidate.parent_digest,
+            "candidate_id": baseline.candidate_id if baseline is not None else "baseline",
+            "version": baseline.version if baseline is not None else None,
+            "candidate_digest": (
+                baseline.candidate_digest if baseline is not None else candidate.parent_digest
+            ),
         }
         candidate_identity = {
             "candidate_id": candidate.candidate_id,
             "version": candidate.version,
-            "candidate_sha256": candidate.content_sha256,
+            "candidate_digest": candidate.candidate_digest,
             "parent_digest": candidate.parent_digest,
         }
-        benchmark = run_replay_benchmark(
+        baseline_report = run_replay_benchmark(
             suite,
             old_runner=old_runner,
-            new_runner=new_runner,
+            new_runner=old_runner,
             baseline_identity=baseline_identity,
+            candidate_identity=baseline_identity,
+        )
+        candidate_report = run_replay_benchmark(
+            suite,
+            old_runner=new_runner,
+            new_runner=new_runner,
+            baseline_identity=candidate_identity,
             candidate_identity=candidate_identity,
         )
-        comparison = compare_replay_benchmark(benchmark, benchmark)
+        comparison = compare_replay_benchmark(baseline_report, candidate_report)
+        quality_gate, economy_gate, quality_metrics, economy_metrics, gate_reasons = (
+            _derive_gates(comparison, self.registry.evaluation_policy)
+        )
         evaluation = CandidateEvaluation(
-            candidate_sha256=candidate.content_sha256,
+            candidate_digest=candidate.candidate_digest,
             parent_digest=candidate.parent_digest,
             suite_sha256=str(suite["sha256"]),
-            labeled_tasks=int(suite.get("labeled_tasks", 0)),
+            labeled_tasks=_strict_int(suite.get("labeled_tasks", 0), "suite.labeled_tasks"),
             quality_gate=quality_gate,
             economy_gate=economy_gate,
             ci_verified=ci_verified,
             evidence_refs=evidence_refs,
             rollback_target=(
-                rollback_target or candidate.parent_digest or "restore-previous-accepted"
+                rollback_target
+                or (candidate.parent_digest or "restore-previous-accepted")
+                if self.registry.authority_policy.require_rollback_target
+                else (rollback_target or "")
             ),
             comparison=comparison,
+            quality_metrics=quality_metrics,
+            economy_metrics=economy_metrics,
+            gate_reasons=gate_reasons,
+            rollback_required=self.registry.authority_policy.require_rollback_target,
+            metrics_derived=True,
         )
         self._write(
             "evaluation", {"candidate": candidate.to_dict(), "evaluation": evaluation.to_dict()}
@@ -464,13 +633,15 @@ class EvolutionService:
         caller_authorized: bool,
         contract_sha256: str | None = None,
     ) -> CandidateSpec:
-        if not self._has_evaluation(candidate, evaluation):
+        if self.registry.authority_policy.require_evaluation_receipt and not self._has_evaluation(
+            candidate, evaluation
+        ):
             raise EvolutionError("candidate_evaluation_receipt_missing_or_mismatched")
         if candidate.status is CandidateStatus.CANDIDATE:
             candidate = replace(candidate, status=CandidateStatus.EVALUATED)
         if candidate.status is not CandidateStatus.EVALUATED:
             raise EvolutionError("candidate_promotion_requires_evaluated")
-        if evaluation.candidate_sha256 != candidate.content_sha256:
+        if evaluation.candidate_digest != candidate.candidate_digest:
             raise EvolutionError("candidate_evaluation_digest_mismatch")
         if not evaluation.gates_pass:
             raise EvolutionError("candidate_promotion_gates_incomplete")
@@ -514,7 +685,7 @@ class EvolutionService:
         return accepted
 
     def latest_evaluation(self, candidate: CandidateSpec) -> CandidateEvaluation:
-        target = candidate.content_sha256
+        target = candidate.candidate_digest
         if not self.root.is_dir():
             raise EvolutionError("candidate_evaluation_missing")
         matches: list[CandidateEvaluation] = []
@@ -525,14 +696,11 @@ class EvolutionService:
                 if entry.is_file() and entry.name.endswith(".json")
             )
         for path in paths:
-            try:
-                document = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
-                continue
+            document = self._read_verified_receipt(path)
             if document.get("action") != "evaluation":
                 continue
             value = document.get("evaluation")
-            if isinstance(value, Mapping) and value.get("candidate_sha256") == target:
+            if isinstance(value, Mapping) and value.get("candidate_digest") == target:
                 matches.append(_evaluation_from_dict(value))
         if not matches:
             raise EvolutionError("candidate_evaluation_missing")
@@ -549,7 +717,7 @@ class EvolutionService:
             {
                 "candidate": rolled_back.to_dict(),
                 "restored": previous.to_dict(),
-                "rollback_target": previous.content_sha256,
+                "rollback_target": previous.candidate_digest,
             },
         )
         return rolled_back
@@ -577,17 +745,46 @@ class EvolutionService:
     def _has_evaluation(
         self, candidate: CandidateSpec, evaluation: CandidateEvaluation
     ) -> bool:
-        if not evaluation.candidate_sha256 or not evaluation.suite_sha256:
+        if not evaluation.candidate_digest or not evaluation.suite_sha256:
             return False
         if evaluation.status is not CandidateStatus.EVALUATED:
             return False
-        if evaluation.candidate_sha256 != candidate.content_sha256:
+        if evaluation.candidate_digest != candidate.candidate_digest:
             return False
         try:
             persisted = self.latest_evaluation(candidate)
         except EvolutionError:
             return False
         return persisted.to_dict() == evaluation.to_dict()
+
+    def _baseline_for(self, candidate: CandidateSpec) -> CandidateSpec:
+        if candidate.parent_digest is None:
+            raise EvolutionError("candidate_baseline_required")
+        candidates = self.registry.load()
+        matches = [item for item in candidates if item.candidate_digest == candidate.parent_digest]
+        if len(matches) != 1:
+            raise EvolutionError("candidate_baseline_digest_missing")
+        baseline = matches[0]
+        if baseline.status is not CandidateStatus.ACCEPTED:
+            raise EvolutionError("candidate_baseline_must_be_accepted")
+        return baseline
+
+    def _read_verified_receipt(self, path: Path) -> Mapping[str, Any]:
+        if not re.fullmatch(r"[0-9a-f]{64}", path.stem):
+            raise EvolutionError(f"evolution_receipt_id_invalid:{path}")
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise EvolutionError(f"evolution_receipt_unreadable:{path}") from exc
+        if not isinstance(document, Mapping):
+            raise EvolutionError(f"evolution_receipt_invalid:{path}")
+        receipt_id = document.get("receipt_id")
+        if receipt_id != path.stem:
+            raise EvolutionError(f"evolution_receipt_id_mismatch:{path}")
+        body = {key: value for key, value in document.items() if key != "receipt_id"}
+        if digest(body) != receipt_id:
+            raise EvolutionError(f"evolution_receipt_digest_mismatch:{path}")
+        return document
 
 
 @dataclass(frozen=True, slots=True)
@@ -599,8 +796,10 @@ class _ContractIdentity:
 
 
 def _status(value: Any) -> CandidateStatus:
+    if not isinstance(value, str):
+        raise EvolutionError("candidate_status_must_be_text")
     try:
-        return CandidateStatus(str(value))
+        return CandidateStatus(value)
     except ValueError as exc:
         raise EvolutionError(f"candidate_status_invalid:{value}") from exc
 
@@ -611,46 +810,374 @@ def _text(value: Any, field: str) -> str:
     return value.strip()
 
 
+def _strict_text(value: Any, field: str, *, allow_empty: bool = False) -> str:
+    if not isinstance(value, str):
+        raise EvolutionError(f"{field}_must_be_text")
+    if not allow_empty and not value.strip():
+        raise EvolutionError(f"{field}_required")
+    return value.strip()
+
+
 def _strict_bool(value: Any, field: str) -> bool:
     if not isinstance(value, bool):
         raise EvolutionError(f"{field}_must_be_boolean")
     return value
 
 
-def _default_runners() -> tuple[Runner, Runner]:
+def _strict_int(value: Any, field: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise EvolutionError(f"{field}_must_be_integer")
+    return value
+
+
+def _strict_refs(value: Any, field: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str) or not isinstance(value, (list, tuple, set, frozenset)):
+        raise EvolutionError(f"{field}_must_be_sequence_of_strings")
+    if any(not isinstance(item, str) for item in value):
+        raise EvolutionError(f"{field}_must_be_sequence_of_strings")
+    return tuple(value)
+
+
+def _strict_number(value: Any, field: str, *, allow_none: bool = False) -> float | None:
+    if value is None and allow_none:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise EvolutionError(f"{field}_must_be_number")
+    number = float(value)
+    if number < 0.0 or number > 1.0:
+        raise EvolutionError(f"{field}_must_be_between_zero_and_one")
+    return number
+
+
+def _parse_authority_policy(value: Any) -> EvolutionAuthorityPolicy:
+    if not isinstance(value, Mapping):
+        raise EvolutionError("candidate_registry_invalid:authority")
+    unknown = sorted(set(value) - _AUTHORITY_FIELDS)
+    if unknown:
+        raise EvolutionError(f"candidate_authority_unknown_fields:{','.join(unknown)}")
+    return EvolutionAuthorityPolicy(
+        require_content_digest=_strict_bool(
+            value.get("require_content_digest", True), "authority.require_content_digest"
+        ),
+        require_parent_digest_for_mutation=_strict_bool(
+            value.get("require_parent_digest_for_mutation", True),
+            "authority.require_parent_digest_for_mutation",
+        ),
+        require_evaluation_receipt=_strict_bool(
+            value.get("require_evaluation_receipt", True),
+            "authority.require_evaluation_receipt",
+        ),
+        require_rollback_target=_strict_bool(
+            value.get("require_rollback_target", True),
+            "authority.require_rollback_target",
+        ),
+        require_contract_sha256=_strict_bool(
+            value.get("require_contract_sha256", True),
+            "authority.require_contract_sha256",
+        ),
+    )
+
+
+def _parse_evaluation_policy(value: Any) -> EvaluationGatePolicy:
+    if value is None:
+        return EvaluationGatePolicy()
+    if not isinstance(value, Mapping):
+        raise EvolutionError("candidate_registry_invalid:evaluation_policy")
+    quality = value.get("quality", {})
+    economy = value.get("economy", {})
+    if not isinstance(quality, Mapping) or not isinstance(economy, Mapping):
+        raise EvolutionError("evaluation_policy_quality_and_economy_must_be_mappings")
+    known_quality = {
+        "min_status_accuracy",
+        "min_evidence_recall",
+        "max_false_positive_rate",
+        "max_quality_regression",
+        "min_route_accuracy",
+        "max_route_regression",
+        "require_route_metric",
+    }
+    known_economy = {
+        "max_payload_regression",
+        "max_token_regression",
+        "max_cost_regression",
+        "require_tokens",
+        "require_cost",
+    }
+    unknown_quality = sorted(set(quality) - known_quality)
+    unknown_economy = sorted(set(economy) - known_economy)
+    if unknown_quality or unknown_economy:
+        fields = [f"quality.{item}" for item in unknown_quality]
+        fields.extend(f"economy.{item}" for item in unknown_economy)
+        raise EvolutionError(f"evaluation_policy_unknown_fields:{','.join(fields)}")
+    return EvaluationGatePolicy(
+        min_status_accuracy=_strict_number(
+            quality.get("min_status_accuracy", 1.0), "quality.min_status_accuracy"
+        ),
+        min_evidence_recall=_strict_number(
+            quality.get("min_evidence_recall", 1.0), "quality.min_evidence_recall"
+        ),
+        max_false_positive_rate=_strict_number(
+            quality.get("max_false_positive_rate", 0.0), "quality.max_false_positive_rate"
+        ),
+        max_quality_regression=_strict_number(
+            quality.get("max_quality_regression", 0.0), "quality.max_quality_regression"
+        ),
+        min_route_accuracy=_strict_number(
+            quality.get("min_route_accuracy"), "quality.min_route_accuracy", allow_none=True
+        ),
+        max_route_regression=_strict_number(
+            quality.get("max_route_regression", 0.0), "quality.max_route_regression"
+        ),
+        require_route_metric=_strict_bool(
+            quality.get("require_route_metric", False), "quality.require_route_metric"
+        ),
+        max_payload_regression=_strict_number(
+            economy.get("max_payload_regression", 0.0), "economy.max_payload_regression"
+        ),
+        max_token_regression=_strict_number(
+            economy.get("max_token_regression", 0.0), "economy.max_token_regression"
+        ),
+        max_cost_regression=_strict_number(
+            economy.get("max_cost_regression", 0.0), "economy.max_cost_regression"
+        ),
+        require_tokens=_strict_bool(
+            economy.get("require_tokens", False), "economy.require_tokens"
+        ),
+        require_cost=_strict_bool(economy.get("require_cost", False), "economy.require_cost"),
+    )
+
+
+def _derive_gates(
+    comparison: Mapping[str, Any], policy: EvaluationGatePolicy
+) -> tuple[bool, bool, dict[str, Any], dict[str, Any], tuple[str, ...]]:
+    if comparison.get("refused") is not None:
+        return False, False, {}, {}, ("comparison_refused",)
+    metrics = comparison.get("metrics")
+    if not isinstance(metrics, Mapping):
+        return False, False, {}, {}, ("comparison_metrics_missing",)
+    baseline = metrics.get("baseline")
+    candidate = metrics.get("candidate")
+    if not isinstance(baseline, Mapping) or not isinstance(candidate, Mapping):
+        return False, False, {}, {}, ("comparison_metrics_invalid",)
+    reasons: list[str] = []
+    quality = {
+        "status_accuracy": candidate.get("status_accuracy"),
+        "baseline_status_accuracy": baseline.get("status_accuracy"),
+        "evidence_recall": candidate.get("evidence_recall"),
+        "baseline_evidence_recall": baseline.get("evidence_recall"),
+        "false_positive_rate": candidate.get("false_positive_rate"),
+        "route_accuracy": candidate.get("route_accuracy"),
+        "baseline_route_accuracy": baseline.get("route_accuracy"),
+    }
+    _require_minimum(
+        quality["status_accuracy"], policy.min_status_accuracy, "status_accuracy", reasons
+    )
+    _require_minimum(
+        quality["evidence_recall"], policy.min_evidence_recall, "evidence_recall", reasons
+    )
+    _require_maximum(
+        quality["false_positive_rate"],
+        policy.max_false_positive_rate,
+        "false_positive_rate",
+        reasons,
+    )
+    _require_regression(
+        quality["baseline_status_accuracy"],
+        quality["status_accuracy"],
+        policy.max_quality_regression,
+        "status_accuracy", reasons
+    )
+    _require_regression(
+        quality["baseline_evidence_recall"],
+        quality["evidence_recall"],
+        policy.max_quality_regression,
+        "evidence_recall", reasons
+    )
+    if policy.require_route_metric or policy.min_route_accuracy is not None:
+        _require_minimum(
+            quality["route_accuracy"], policy.min_route_accuracy or 0.0, "route_accuracy", reasons
+        )
+        _require_regression(
+            quality["baseline_route_accuracy"],
+            quality["route_accuracy"],
+            policy.max_route_regression,
+            "route_accuracy", reasons
+        )
+    economy = {
+        "payload_bytes_mean": candidate.get("payload_bytes_mean"),
+        "baseline_payload_bytes_mean": baseline.get("payload_bytes_mean"),
+        "provider_tokens_mean": candidate.get("provider_tokens_mean"),
+        "baseline_provider_tokens_mean": baseline.get("provider_tokens_mean"),
+        "cost_mean": candidate.get("cost_mean"),
+        "baseline_cost_mean": baseline.get("cost_mean"),
+    }
+    _require_regression(
+        economy["baseline_payload_bytes_mean"], economy["payload_bytes_mean"],
+        policy.max_payload_regression, "payload_bytes", reasons
+    )
+    if policy.require_tokens:
+        if economy["provider_tokens_mean"] is None:
+            reasons.append("provider_tokens_unresolved")
+        else:
+            _require_regression(
+                economy["baseline_provider_tokens_mean"], economy["provider_tokens_mean"],
+                policy.max_token_regression, "provider_tokens", reasons
+            )
+    if policy.require_cost:
+        if economy["cost_mean"] is None:
+            reasons.append("cost_unresolved")
+        else:
+            _require_regression(
+                economy["baseline_cost_mean"], economy["cost_mean"],
+                policy.max_cost_regression, "cost", reasons
+            )
+    quality_failed = any(
+        reason.startswith(
+            ("status_accuracy", "evidence_recall", "false_positive_rate", "route_accuracy")
+        )
+        for reason in reasons
+    )
+    economy_failed = any(
+        reason.startswith(("payload_bytes", "provider_tokens", "cost")) for reason in reasons
+    )
+    return not quality_failed, not economy_failed, quality, economy, tuple(sorted(set(reasons)))
+
+
+def _require_minimum(value: Any, minimum: float, name: str, reasons: list[str]) -> None:
+    if not isinstance(value, (int, float)) or float(value) < minimum:
+        reasons.append(f"{name}_below_threshold")
+
+
+def _require_maximum(value: Any, maximum: float, name: str, reasons: list[str]) -> None:
+    if not isinstance(value, (int, float)) or float(value) > maximum:
+        reasons.append(f"{name}_above_threshold")
+
+
+def _require_regression(
+    baseline: Any, candidate: Any, maximum: float, name: str, reasons: list[str]
+) -> None:
+    if baseline is None or candidate is None:
+        reasons.append(f"{name}_regression_unresolved")
+        return
+    denominator = max(abs(float(baseline)), 1.0)
+    regression = (float(candidate) - float(baseline)) / denominator
+    if regression > maximum:
+        reasons.append(f"{name}_regression_above_threshold")
+
+
+def _candidate_runner(candidate: CandidateSpec) -> Runner:
+    """Build a deterministic local runner whose behavior depends on content.
+
+    The fixture is intentionally provider-free. Candidate text may contain
+    simple directives such as ``unknown_status=accepted`` or
+    ``evidence=none``; ordinary prompt text uses safe defaults. This makes a
+    content mutation observable without pretending that a provider was called.
+    """
+    directives = _content_directives(candidate.content)
+    content_bytes = len(candidate.content.encode("utf-8"))
+
     def runner(case: Mapping[str, Any], profile: str) -> Mapping[str, Any]:
+        signal = str(case.get("signal", ""))
+        if signal == "unknown":
+            status = directives.get("unknown_status", "unresolved")
+        else:
+            status = directives.get("known_status", "accepted")
+        evidence = (
+            tuple(case.get("expected_evidence", ()))
+            if directives.get("evidence", "expected") == "expected"
+            else ()
+        )
+        findings = (
+            tuple(case.get("expected_findings", ()))
+            if directives.get("findings", "expected") == "expected"
+            else ()
+        )
+        input_manifest = case.get("input_manifest", {})
+        input_bytes = input_manifest.get("bytes") if isinstance(input_manifest, Mapping) else None
+        payload_bytes = (
+            input_bytes + content_bytes if isinstance(input_bytes, (int, float)) else None
+        )
         return {
-            "status": case.get("expected_status"),
-            "actual_route": case.get("expected_route"),
-            "observed_evidence": case.get("expected_evidence", ()),
-            "observed_findings": case.get("expected_findings", ()),
-            "unresolved": (),
-            "payload_bytes": case.get("input_manifest", {}).get("bytes"),
+            "status": status,
+            "actual_route": directives.get("route") or case.get("expected_route"),
+            "observed_evidence": evidence,
+            "observed_findings": findings,
+            "unresolved": ("candidate_prompt_unknown_status",)
+            if status == "unresolved" and signal == "unknown"
+            else (),
+            "payload_bytes": payload_bytes,
             "tokens_unresolved": True,
+            "tokens_unresolved_reason": "provider_transcript_absent",
             "profile": profile,
+            "candidate_digest": candidate.candidate_digest,
         }
 
-    return runner, runner
+    return runner
+
+
+def _content_directives(content: str) -> dict[str, str]:
+    directives: dict[str, str] = {}
+    for line in content.splitlines():
+        if "=" not in line:
+            continue
+        key, value = (part.strip().lower() for part in line.split("=", 1))
+        if key in {"unknown_status", "known_status", "evidence", "findings", "route"}:
+            directives[key] = value
+    return directives
 
 
 def _evaluation_from_dict(value: Mapping[str, Any]) -> CandidateEvaluation:
     try:
+        candidate_digest = value.get("candidate_digest", value.get("candidate_sha256"))
+        candidate_digest = _strict_text(candidate_digest, "evaluation.candidate_digest")
+        evidence_refs = _strict_refs(value.get("evidence_refs", ()), "evaluation.evidence_refs")
+        comparison = value.get("comparison", {})
+        quality_metrics = value.get("quality_metrics", {})
+        economy_metrics = value.get("economy_metrics", {})
+        if not isinstance(comparison, Mapping):
+            raise EvolutionError("evaluation_comparison_must_be_mapping")
+        if not isinstance(quality_metrics, Mapping):
+            raise EvolutionError("evaluation_quality_metrics_must_be_mapping")
+        if not isinstance(economy_metrics, Mapping):
+            raise EvolutionError("evaluation_economy_metrics_must_be_mapping")
         return CandidateEvaluation(
-            candidate_sha256=str(value["candidate_sha256"]),
+            candidate_digest=candidate_digest,
             parent_digest=(
-                str(value["parent_digest"]) if value.get("parent_digest") is not None else None
+                _strict_text(value["parent_digest"], "evaluation.parent_digest")
+                if value.get("parent_digest") is not None
+                else None
             ),
-            suite_sha256=str(value["suite_sha256"]),
-            labeled_tasks=int(value["labeled_tasks"]),
-            quality_gate=bool(value["quality_gate"]),
-            economy_gate=bool(value["economy_gate"]),
-            ci_verified=bool(value["ci_verified"]),
-            evidence_refs=tuple(str(item) for item in value.get("evidence_refs", ())),
-            rollback_target=str(value["rollback_target"]),
-            comparison=dict(value.get("comparison") or {}),
-            status=_status(value.get("status", CandidateStatus.EVALUATED.value)),
+            suite_sha256=_strict_text(value["suite_sha256"], "evaluation.suite_sha256"),
+            labeled_tasks=_strict_int(value["labeled_tasks"], "evaluation.labeled_tasks"),
+            quality_gate=_strict_bool(value["quality_gate"], "evaluation.quality_gate"),
+            economy_gate=_strict_bool(value["economy_gate"], "evaluation.economy_gate"),
+            ci_verified=_strict_bool(value["ci_verified"], "evaluation.ci_verified"),
+            evidence_refs=evidence_refs,
+            rollback_target=_strict_text(
+                value["rollback_target"], "evaluation.rollback_target", allow_empty=True
+            ),
+            comparison=dict(comparison),
+            status=_status(
+                _strict_text(
+                    value.get("status", CandidateStatus.EVALUATED.value),
+                    "evaluation.status",
+                )
+            ),
+            quality_metrics=dict(quality_metrics),
+            economy_metrics=dict(economy_metrics),
+            gate_reasons=tuple(
+                _strict_refs(value.get("gate_reasons", ()), "evaluation.gate_reasons")
+            ),
+            rollback_required=_strict_bool(
+                value.get("rollback_required", True), "evaluation.rollback_required"
+            ),
+            metrics_derived=_strict_bool(
+                value.get("metrics_derived", False), "evaluation.metrics_derived"
+            ),
         )
-    except (KeyError, TypeError, ValueError) as exc:
+    except (KeyError, TypeError, ValueError, EvolutionError) as exc:
         raise EvolutionError("candidate_evaluation_invalid") from exc
 
 
@@ -660,6 +1187,8 @@ __all__ = [
     "CandidateRegistry",
     "CandidateSpec",
     "CandidateStatus",
+    "EvaluationGatePolicy",
+    "EvolutionAuthorityPolicy",
     "EvolutionError",
     "EvolutionRegistry",
     "EvolutionService",

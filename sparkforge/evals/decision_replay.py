@@ -162,6 +162,7 @@ def run_replay_benchmark(
         },
         "rows": rows,
         "summary": _summary(rows),
+        "metrics": _metrics(rows),
     }
 
 
@@ -272,7 +273,11 @@ def compare_replay_benchmark(before: Mapping[str, Any], after: Mapping[str, Any]
         "quality_axes": list(QUALITY_AXES),
         "candidates": {
             "baseline": dict(before.get("candidates", {}).get("baseline", {})),
-            "candidate": dict(before.get("candidates", {}).get("candidate", {})),
+            "candidate": dict(after.get("candidates", {}).get("candidate", {})),
+        },
+        "metrics": {
+            "baseline": dict(before.get("metrics", {})),
+            "candidate": dict(after.get("metrics", {})),
         },
         "cells": cells,
     }
@@ -340,6 +345,7 @@ def _row(
         "domain": str(case["domain"]),
         "partition": str(case["partition"]),
         "label": str(case["label"]),
+        "expected_status": case.get("expected_status"),
         "profile": profile,
         "runner": runner,
         "candidate": dict(candidate_identity or {}),
@@ -415,6 +421,66 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 },
             }
     return result
+
+
+def _metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate measured quality and economy metrics for gate derivation."""
+    selected = [row for row in rows if row["runner"] == "new"]
+    status_known = [
+        row["quality"]["status"] == row.get("expected_status")
+        for row in selected
+        if row["quality"].get("status") is not None
+        and row.get("expected_status") is not None
+    ]
+    evidence_recall = [
+        row["quality"]["evidence_recall"]
+        for row in selected
+        if row["quality"].get("evidence_recall") is not None
+    ]
+    false_positive_rate = [
+        row["quality"]["false_positive_rate"]
+        for row in selected
+        if row["quality"].get("false_positive_rate") is not None
+    ]
+    route_matches = [
+        row["route"]["match"]
+        for row in selected
+        if row["route"].get("match") is not None
+    ]
+    payload_bytes = [
+        float(row["payload_bytes"])
+        for row in selected
+        if isinstance(row.get("payload_bytes"), (int, float))
+    ]
+    token_values = [
+        float(row["provider_tokens"]["input_tokens"])
+        + float(row["provider_tokens"]["output_tokens"])
+        for row in selected
+        if not row["tokens_unresolved"]
+        and isinstance(row.get("provider_tokens"), Mapping)
+        and isinstance(row["provider_tokens"].get("input_tokens"), (int, float))
+        and isinstance(row["provider_tokens"].get("output_tokens"), (int, float))
+    ]
+    cost_values = [
+        float(row["cost"]["value"])
+        for row in selected
+        if row["cost"].get("status") == "measured"
+        and isinstance(row["cost"].get("value"), (int, float))
+    ]
+    return {
+        "cases": len(selected),
+        "status_accuracy": _mean([1.0 if value else 0.0 for value in status_known]),
+        "status_denominator": len(status_known),
+        "evidence_recall": _mean(evidence_recall),
+        "false_positive_rate": _mean(false_positive_rate),
+        "route_accuracy": _mean([1.0 if value else 0.0 for value in route_matches]),
+        "route_denominator": len(route_matches),
+        "payload_bytes_mean": _mean(payload_bytes),
+        "provider_tokens_mean": _mean(token_values),
+        "provider_tokens_resolved": len(token_values),
+        "cost_mean": _mean(cost_values),
+        "cost_measured": len(cost_values),
+    }
 
 
 def _counts(rows: list[dict[str, Any]], key: str) -> dict[str, int]:

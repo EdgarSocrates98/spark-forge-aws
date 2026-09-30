@@ -8,6 +8,22 @@ authority:
   require_parent_digest_for_mutation: true
   require_evaluation_receipt: true
   require_rollback_target: true
+  require_contract_sha256: true
+evaluation_policy:
+  quality:
+    min_status_accuracy: 1.0
+    min_evidence_recall: 1.0
+    max_false_positive_rate: 0.0
+    max_quality_regression: 0.0
+    min_route_accuracy: null
+    max_route_regression: 0.0
+    require_route_metric: false
+  economy:
+    max_payload_regression: 0.05
+    max_token_regression: 0.0
+    max_cost_regression: 0.0
+    require_tokens: false
+    require_cost: false
 candidates:
   - id: routing-baseline
     version: "1.0.0"
@@ -15,8 +31,11 @@ candidates:
     content: "deterministic routing baseline"
     contract_id: routing.data_domain
     contract_version: "1"
+    contract_sha256: 6ab2bdd8f175302549a6f9aa34807ab8c6829145618bcd7e57f319b28434139c
     calibration_version: control-plane-calibration-v1
-    content_sha256: b84e17f977392ee9191b98b2ca5cc5e872b0037b0169f61aa07cc02d1009a855
+    candidate_type: root
+    candidate_digest: 55dfe5e44c323473bc012f767035bcb1797fe64247d211b794b0a69437830e09
+    content_sha256: 36402618756106595ae736701b7fe2207601ed2b076fe7720265fa1fca64c37f
     status: accepted
   - id: routing-variant
     version: "1.1.0"
@@ -24,7 +43,10 @@ candidates:
     content: "deterministic routing variant with explicit evidence ordering"
     contract_id: routing.data_domain
     contract_version: "1"
+    contract_sha256: 6ab2bdd8f175302549a6f9aa34807ab8c6829145618bcd7e57f319b28434139c
     calibration_version: control-plane-calibration-v1
-    parent_digest: b84e17f977392ee9191b98b2ca5cc5e872b0037b0169f61aa07cc02d1009a855
-    content_sha256: f68cd92ee372c330f2be99ed2d9847afdee73654a458754e3ddcc22c254f6884
+    candidate_type: mutation
+    parent_digest: 55dfe5e44c323473bc012f767035bcb1797fe64247d211b794b0a69437830e09
+    candidate_digest: 4d7b80248b56d48300359facc9b6a5e997ea89878819a73ed311ba46405b2b7f
+    content_sha256: cd423421ce828aa522294e499895dc898d4bc2390b610deaf584aa23e2b98489
     status: candidate

@@ -124,3 +124,21 @@ def test_active_requires_contract_calibration_and_evidence_identity() -> None:
     assert "promotion_contract_sha256_missing" in decision.unresolved
     assert "promotion_calibration_version_mismatch" in decision.unresolved
     assert "promotion_evidence_refs_missing" in decision.unresolved
+
+
+def test_authority_rejects_numeric_coercion_and_string_refs() -> None:
+    raw = _raw()
+    raw["authority"]["active"]["minimum_labeled_tasks"] = "2"
+    try:
+        AuthorityPolicy(raw)
+    except ValueError as exc:
+        assert "must be integer" in str(exc)
+    else:
+        raise AssertionError("string integer must fail closed")
+
+    try:
+        PromotionEvidence(evidence_refs="benchmark:holdout")
+    except ValueError as exc:
+        assert "sequence of strings" in str(exc)
+    else:
+        raise AssertionError("string refs must fail closed")

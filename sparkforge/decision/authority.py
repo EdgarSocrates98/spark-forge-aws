@@ -32,14 +32,15 @@ class PromotionEvidence:
     calibration_version: str = "none"
 
     def __post_init__(self) -> None:
+        if not isinstance(self.labeled_tasks, int) or isinstance(self.labeled_tasks, bool):
+            raise ValueError("labeled_tasks must be an integer")
         if self.labeled_tasks < 0:
             raise ValueError("labeled_tasks must be non-negative")
-        if any(not isinstance(ref, str) for ref in self.evidence_refs):
-            raise ValueError("evidence_refs must contain strings")
+        refs = _strict_refs(self.evidence_refs, "evidence_refs")
         object.__setattr__(
             self,
             "evidence_refs",
-            tuple(sorted({ref.strip() for ref in self.evidence_refs if ref.strip()})),
+            tuple(sorted({ref.strip() for ref in refs if ref.strip()})),
         )
 
     @classmethod
@@ -58,12 +59,12 @@ class PromotionEvidence:
                     if value.get("contract_sha256") is not None
                     else None
                 ),
-                labeled_tasks=int(value.get("labeled_tasks", 0)),
+                labeled_tasks=_strict_int(value.get("labeled_tasks", 0), "labeled_tasks"),
                 quality_gate=_strict_bool(value.get("quality_gate", False), "quality_gate"),
                 economy_gate=_strict_bool(value.get("economy_gate", False), "economy_gate"),
                 ci_verified=_strict_bool(value.get("ci_verified", False), "ci_verified"),
                 rollback=str(value.get("rollback", "")),
-                evidence_refs=tuple(str(item) for item in value.get("evidence_refs", ())),
+                evidence_refs=_strict_refs(value.get("evidence_refs", ()), "evidence_refs"),
                 calibration_version=str(value.get("calibration_version", "none")),
             )
         return cls(
@@ -71,12 +72,12 @@ class PromotionEvidence:
             contract_id=str(getattr(value, "contract_id", "")),
             contract_version=str(getattr(value, "contract_version", "")),
             contract_sha256=getattr(value, "contract_sha256", None),
-            labeled_tasks=int(getattr(value, "labeled_tasks", 0)),
+            labeled_tasks=_strict_int(getattr(value, "labeled_tasks", 0), "labeled_tasks"),
             quality_gate=_strict_bool(getattr(value, "quality_gate", False), "quality_gate"),
             economy_gate=_strict_bool(getattr(value, "economy_gate", False), "economy_gate"),
             ci_verified=_strict_bool(getattr(value, "ci_verified", False), "ci_verified"),
             rollback=str(getattr(value, "rollback", "")),
-            evidence_refs=tuple(getattr(value, "evidence_refs", ())),
+            evidence_refs=_strict_refs(getattr(value, "evidence_refs", ()), "evidence_refs"),
             calibration_version=str(getattr(value, "calibration_version", "none")),
         )
 
@@ -134,7 +135,9 @@ class AuthorityPolicy:
             raise ValueError("policy_version is required")
         self.default_mode = str(authority.get("default_mode", "shadow")).strip().lower()
         self.active_enabled = _strict_bool(active.get("enabled", False), "authority.active.enabled")
-        self.minimum_labeled_tasks = int(active.get("minimum_labeled_tasks", 50))
+        self.minimum_labeled_tasks = _strict_int(
+            active.get("minimum_labeled_tasks", 50), "authority.active.minimum_labeled_tasks"
+        )
         self.require_quality_gate = _strict_bool(
             active.get("require_quality_gate", True), "authority.active.require_quality_gate"
         )
@@ -281,3 +284,19 @@ def _strict_bool(value: Any, field: str) -> bool:
     if not isinstance(value, bool):
         raise ValueError(f"{field} must be boolean")
     return value
+
+
+def _strict_int(value: Any, field: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{field} must be integer")
+    return value
+
+
+def _strict_refs(value: Any, field: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str) or not isinstance(value, (list, tuple, set, frozenset)):
+        raise ValueError(f"{field} must be a sequence of strings")
+    if any(not isinstance(item, str) for item in value):
+        raise ValueError(f"{field} must be a sequence of strings")
+    return tuple(value)

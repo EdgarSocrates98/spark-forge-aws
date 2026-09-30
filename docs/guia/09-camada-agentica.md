@@ -103,6 +103,12 @@ registra candidatos com digest de conteúdo, pai, contrato e calibração. O cic
 replay same-case e não concede autoridade. Comandos e recibos estão documentados em
 [`docs/agentic-evolution.md`](../agentic-evolution.md).
 
+O manifesto usa `candidate_digest` para a identidade completa da especificacao e
+`content_sha256` para os bytes do conteudo. `root` nao aceita pai; `mutation` exige
+`parent_digest` e `contract_sha256` deve coincidir com o contrato carregado. A avaliacao
+executa baseline e candidato separadamente, deriva `quality_gate` e `economy_gate` dos
+metrics e verifica o digest do receipt antes de reusar uma avaliacao.
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

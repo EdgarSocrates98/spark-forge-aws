@@ -60,6 +60,25 @@ custo com `cost_basis` ficam separados; ausência vira `unresolved`.
 Recibos content-addressed em `.sparkforge/evolution/` vinculam candidato, pai,
 suíte, gates, autoridade e rollback. Núcleo não chama modelo, AWS ou provedor.
 
+O manifesto separa duas provas: `candidate_digest` identifica a especificacao
+completa (id, versao, conteudo, contrato, calibracao, tipo e pai), enquanto
+`content_sha256` e o SHA-256 real dos bytes UTF-8 do conteudo. Candidatos `root`
+nao tem pai; candidatos `mutation` exigem `parent_digest`. Cada candidato tambem
+fixa `contract_sha256`, que precisa coincidir com o contrato carregado do
+repositorio.
+
+`EvolutionService.evaluate` executa o baseline aceito e o candidato em
+replay same-case separado. O runner offline e deterministico e o conteudo da
+mutacao altera a observacao; ele nao simula tokens de provider. Os campos
+`quality_gate` e `economy_gate` sao derivados dos `metrics` contra
+`evaluation_policy` do manifesto. `ci_verified` e referencias de evidencia
+continuam sendo evidencia externa explicita.
+
+Na leitura, todo receipt verifica nome, `receipt_id` e o digest do corpo antes
+de ser usado. Campos booleanos, inteiros, textos e referencias sao lidos sem
+coercao. `require_evaluation_receipt` e `require_rollback_target` controlam
+efetivamente promocao e avaliacao conforme a politica declarada.
+
 Operação local:
 
 ```bash
