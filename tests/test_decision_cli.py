@@ -104,3 +104,11 @@ def test_decision_benchmark_cli_passes_seed() -> None:
         )
         == 0
     )
+
+
+def test_candidate_validate_cli_uses_explicit_repository(capsys) -> None:
+    from sparkforge.evals.cli import main as eval_main
+
+    assert eval_main(["candidate", "validate", "--repo", str(ROOT)]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["candidates"][0]["content_sha256"]

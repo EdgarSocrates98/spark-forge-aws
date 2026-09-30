@@ -31,6 +31,7 @@ def build_receipt(
     fallback_reason: str | None = None,
     cache_key: str | None = None,
     promotion: dict[str, Any] | None = None,
+    candidate: dict[str, Any] | None = None,
     authority: dict[str, Any] | None = None,
     cache_owner: str = "decision-kernel",
     cache_freshness: str = "fresh",
@@ -69,6 +70,7 @@ def build_receipt(
             "fallback_reason": fallback_reason,
         },
         "promotion": promotion,
+        "candidate": candidate,
         "authority": authority
         or {
             "allowed": promoted,
@@ -139,6 +141,7 @@ class KernelReceiptStore:
         fallback_reason: str | None = None,
         cache_key: str | None = None,
         promotion: dict[str, Any] | None = None,
+        candidate: dict[str, Any] | None = None,
         authority: dict[str, Any] | None = None,
         cache_owner: str = "decision-kernel",
         cache_freshness: str = "fresh",
@@ -156,6 +159,7 @@ class KernelReceiptStore:
             fallback_reason=fallback_reason,
             cache_key=cache_key,
             promotion=promotion,
+            candidate=candidate,
             authority=authority,
             cache_owner=cache_owner,
             cache_freshness=cache_freshness,

@@ -16,6 +16,9 @@ def _raw(*, active_enabled: bool = False) -> dict:
                 "require_economy_gate": True,
                 "require_ci_gate": True,
                 "require_rollback": True,
+                "require_contract_sha256": True,
+                "require_calibration_match": True,
+                "require_evidence_refs": True,
             },
         },
     }
@@ -26,6 +29,7 @@ class _Contract:
     contract_version = "1"
     sha256 = "contract-sha"
     activation_enabled = True
+    calibration_version = "none"
 
 
 def _evidence() -> PromotionEvidence:
@@ -77,3 +81,46 @@ def test_active_requires_complete_evidence_when_explicitly_enabled() -> None:
     )
     assert decision.allowed is True
     assert decision.evidence_refs == ("benchmark:holdout",)
+
+
+def test_authority_rejects_truthy_string_booleans() -> None:
+    raw = _raw()
+    raw["authority"]["active"]["enabled"] = "false"
+    try:
+        AuthorityPolicy(raw)
+    except ValueError as exc:
+        assert "must be boolean" in str(exc)
+    else:
+        raise AssertionError("string boolean must fail closed")
+
+
+def test_active_requires_contract_calibration_and_evidence_identity() -> None:
+    raw = _raw(active_enabled=True)
+    raw["authority"]["active"].update(
+        {
+            "require_contract_sha256": True,
+            "require_calibration_match": True,
+            "require_evidence_refs": True,
+        }
+    )
+    contract = _Contract()
+    contract.calibration_version = "calibration-v2"
+    evidence = _evidence()
+    evidence = PromotionEvidence(
+        promotion_id=evidence.promotion_id,
+        contract_id=evidence.contract_id,
+        contract_version=evidence.contract_version,
+        labeled_tasks=evidence.labeled_tasks,
+        quality_gate=evidence.quality_gate,
+        economy_gate=evidence.economy_gate,
+        ci_verified=evidence.ci_verified,
+        rollback=evidence.rollback,
+        calibration_version="calibration-v1",
+    )
+    decision = AuthorityPolicy(raw).authorize_promotion(
+        mode="active", contract=contract, evidence=evidence, caller_authorized=True
+    )
+    assert decision.allowed is False
+    assert "promotion_contract_sha256_missing" in decision.unresolved
+    assert "promotion_calibration_version_mismatch" in decision.unresolved
+    assert "promotion_evidence_refs_missing" in decision.unresolved

@@ -97,6 +97,12 @@ substitui autorização. `config/decisions/agentic_control_plane.yaml` permanece
 default e active disabled. O bridge economy só usa o kernel active quando recebe esse registro;
 sem ele, a decisão recusa e conserva fallback.
 
+O Gate 8 governa evolução de prompts e agents offline. `config/evolution/prompt_agents.yaml`
+registra candidatos com digest de conteúdo, pai, contrato e calibração. O ciclo permitido é
+`candidate -> evaluated -> accepted -> rolled_back` ou `evaluated -> rejected`; avaliação usa
+replay same-case e não concede autoridade. Comandos e recibos estão documentados em
+[`docs/agentic-evolution.md`](../agentic-evolution.md).
+
 ## O que ela NÃO é, e isso governa o resto
 
 Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta

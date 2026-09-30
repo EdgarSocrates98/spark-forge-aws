@@ -82,6 +82,7 @@ def test_active_evidence_keeps_explicit_rollback(tmp_path: Path):
             economy_gate=True,
             ci_verified=True,
             rollback="restore-shadow",
+            evidence_refs=("fixture:active-promotion",),
         ),
         caller_authorized=True,
         now="fixed",

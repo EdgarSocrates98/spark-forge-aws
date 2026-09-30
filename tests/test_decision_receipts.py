@@ -69,3 +69,26 @@ def test_receipt_path_escape_and_tampering_fail_closed(tmp_path: Path) -> None:
     receipt.path.write_text(json.dumps(payload), encoding="utf-8")
 
     assert store.verify(receipt.path)["valid"] is False
+
+
+def test_receipt_binds_candidate_identity(tmp_path: Path) -> None:
+    service = DecisionPlaneService(
+        ROOT, registry=ContractRegistry(ROOT), receipts=DecisionReceiptStore(tmp_path)
+    )
+    contract = service.validate("routing.data_domain")
+    evaluation = service.shadow(
+        DecisionInput("candidate-receipt", "diagnose"),
+        "tier_3_cheap_local",
+        contract=contract,
+        now="fixed",
+    )
+    receipt = service.receipts.emit(
+        evaluation.request,
+        "tier_3_cheap_local",
+        evaluation.result,
+        evaluation.comparison,
+        now="fixed",
+        candidate={"candidate_id": "routing-variant", "candidate_sha256": "candidate-sha"},
+    )
+    assert receipt.document["candidate"]["candidate_sha256"] == "candidate-sha"
+    assert service.receipts.verify(receipt.path)["valid"] is True

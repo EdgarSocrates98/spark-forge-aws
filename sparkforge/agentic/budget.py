@@ -166,10 +166,6 @@ class CaseBudget:
             return BudgetStatus.EXHAUSTED
         if self.cost_incurred_usd >= self.max_cost_usd:
             return BudgetStatus.EXHAUSTED
-        if self.retries_used >= self.max_retries:
-            return BudgetStatus.EXHAUSTED
-        if self.replans_used >= self.max_replans:
-            return BudgetStatus.EXHAUSTED
         if self.tool_calls_used >= self.max_total_tool_calls:
             return BudgetStatus.EXHAUSTED
         if (
@@ -185,8 +181,6 @@ class CaseBudget:
             self.time_elapsed_seconds / self.max_total_time_seconds
             if self.max_total_time_seconds > 0
             else 0.0,
-            self.retries_used / self.max_retries if self.max_retries > 0 else 0.0,
-            self.replans_used / self.max_replans if self.max_replans > 0 else 0.0,
         ]
         if max(ratios) >= 0.8:
             return BudgetStatus.WARNING

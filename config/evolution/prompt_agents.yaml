@@ -1,0 +1,30 @@
+schema_version: 1
+registry_id: prompt-agent-evolution-v1
+candidate_root: .
+benchmark_suite: evals/token_efficient/fixtures/decision_control_plane_cases.yaml
+require_domain_holdout: true
+authority:
+  require_content_digest: true
+  require_parent_digest_for_mutation: true
+  require_evaluation_receipt: true
+  require_rollback_target: true
+candidates:
+  - id: routing-baseline
+    version: "1.0.0"
+    kind: prompt
+    content: "deterministic routing baseline"
+    contract_id: routing.data_domain
+    contract_version: "1"
+    calibration_version: control-plane-calibration-v1
+    content_sha256: b84e17f977392ee9191b98b2ca5cc5e872b0037b0169f61aa07cc02d1009a855
+    status: accepted
+  - id: routing-variant
+    version: "1.1.0"
+    kind: prompt
+    content: "deterministic routing variant with explicit evidence ordering"
+    contract_id: routing.data_domain
+    contract_version: "1"
+    calibration_version: control-plane-calibration-v1
+    parent_digest: b84e17f977392ee9191b98b2ca5cc5e872b0037b0169f61aa07cc02d1009a855
+    content_sha256: f68cd92ee372c330f2be99ed2d9847afdee73654a458754e3ddcc22c254f6884
+    status: candidate

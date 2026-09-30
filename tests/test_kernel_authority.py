@@ -39,6 +39,8 @@ def _promotion(contract, **overrides):
         "economy_gate": True,
         "ci_verified": True,
         "rollback": "restore-shadow-and-legacy-router",
+        "evidence_refs": ("fixture:kernel-promotion",),
+        "calibration_version": "none",
     }
     values.update(overrides)
     return ActivePromotion(**values)
@@ -59,7 +61,15 @@ def test_generic_kernel_requires_all_promotion_evidence() -> None:
         authority_policy=AuthorityPolicy(
             {
                 "policy_version": "test-policy",
-                "authority": {"active": {"enabled": True, "minimum_labeled_tasks": 50}},
+                    "authority": {
+                        "active": {
+                            "enabled": True,
+                            "minimum_labeled_tasks": 50,
+                            "require_contract_sha256": True,
+                            "require_calibration_match": True,
+                            "require_evidence_refs": True,
+                        }
+                    },
             }
         )
     ).evaluate(
@@ -81,7 +91,15 @@ def test_valid_promotion_is_explicit_and_cache_cannot_bypass_it() -> None:
         authority_policy=AuthorityPolicy(
             {
                 "policy_version": "test-policy",
-                "authority": {"active": {"enabled": True, "minimum_labeled_tasks": 50}},
+                "authority": {
+                    "active": {
+                        "enabled": True,
+                        "minimum_labeled_tasks": 50,
+                        "require_contract_sha256": True,
+                        "require_calibration_match": True,
+                        "require_evidence_refs": True,
+                    }
+                },
             }
         ),
     )
@@ -108,11 +126,14 @@ def test_economy_bridge_active_path_requires_explicit_promotion() -> None:
         promotion_id="promote-routing-v1",
         contract_id=contract.contract_id,
         contract_version=contract.contract_version,
+        contract_sha256=generic_contract.sha256,
         labeled_tasks=50,
         quality_gate=True,
         economy_gate=True,
         ci_verified=True,
         rollback="restore-legacy-router",
+        evidence_refs=("fixture:bridge-promotion",),
+        calibration_version="none",
     )
 
     result = evaluate_active(
@@ -122,7 +143,15 @@ def test_economy_bridge_active_path_requires_explicit_promotion() -> None:
         authority_policy=AuthorityPolicy(
             {
                 "policy_version": "test-policy",
-                "authority": {"active": {"enabled": True, "minimum_labeled_tasks": 50}},
+                "authority": {
+                    "active": {
+                        "enabled": True,
+                        "minimum_labeled_tasks": 50,
+                        "require_contract_sha256": True,
+                        "require_calibration_match": True,
+                        "require_evidence_refs": True,
+                    }
+                },
             }
         ),
         caller_authorized=True,
