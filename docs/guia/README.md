@@ -1,5 +1,9 @@
 # Guia do SparkForge AWS
 
+<p align="center">
+  <img src="../assets/spark-forge-logo.jpg" alt="Logo do SparkForge" width="300">
+</p>
+
 Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 **receita rápida** (poucos comandos para copiar e colar) e depois explica o resto.
 

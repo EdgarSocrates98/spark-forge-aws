@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from sparkforge.evals.evidence import EvaluationEvidenceBundle
 from sparkforge.evals.evidence_adapters import (
     AuthorizedCommandAdapter,
-    BundleFileAdapter,
     EvidenceAdapterError,
 )
+from sparkforge.evals.evidence_resolver import EvidenceResolutionError, EvidenceResolver
 
 HASH = "0" * 64
 
@@ -53,7 +53,7 @@ def _bundle() -> dict[str, object]:
     }
 
 
-def test_authorized_command_returns_same_canonical_bundle(tmp_path: Path) -> None:
+def test_authorized_command_attaches_canonical_producer_identity(tmp_path: Path) -> None:
     script = tmp_path / "emit_bundle.py"
     script.write_text(
         "import json\n"
@@ -77,9 +77,26 @@ def test_authorized_command_returns_same_canonical_bundle(tmp_path: Path) -> Non
     result = adapter.run("fixture")
     assert isinstance(result, EvaluationEvidenceBundle)
     assert result.execution_mode == "live_external"
-    bundle_path = tmp_path / "bundle.json"
-    bundle_path.write_text(json.dumps(_bundle()), encoding="utf-8")
-    assert result.to_dict() == BundleFileAdapter(tmp_path).load(bundle_path).to_dict()
+    identity = result.execution["producer_identity"]
+    assert isinstance(identity, dict)
+    assert identity["command_id"] == "fixture"
+    assert identity["command_identity_sha256"] == result.execution["command_identity_sha256"]
+    assert len(result.bundle_id) == 64
+    policy = SimpleNamespace(
+        unresolved_allow=("metrics_unresolved",),
+        unresolved_deny=(),
+        required_verified_evidence_kinds=(),
+        evidence_roots=(),
+    )
+    resolved = EvidenceResolver(tmp_path).resolve(
+        result, policy, authorized_commands=adapter.commands
+    )
+    assert resolved.producer_identity_sha256 == identity["command_identity_sha256"]
+    adapter.commands["fixture"]["args"] = [str(script), "changed"]
+    with pytest.raises(EvidenceResolutionError, match="producer_identity_mismatch"):
+        EvidenceResolver(tmp_path).resolve(
+            result, policy, authorized_commands=adapter.commands
+        )
 
 
 def test_authorized_command_refuses_unknown_and_failed_commands(tmp_path: Path) -> None:

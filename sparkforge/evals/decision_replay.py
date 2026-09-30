@@ -136,6 +136,7 @@ def run_replay_benchmark(
     baseline_identity: Mapping[str, Any] | None = None,
     candidate_identity: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Run paired cases once and retain primitive rows for metric compilation."""
     cases = suite.get("cases")
     profiles = tuple(str(item) for item in suite.get("profiles", ()))
     if not isinstance(cases, (list, tuple)) or profiles != PROFILES:

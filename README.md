@@ -1,5 +1,9 @@
 # SparkForge AWS
 
+<p align="center">
+  <img src="docs/assets/spark-forge-logo.jpg" alt="Logo do SparkForge" width="420">
+</p>
+
 O SparkForge julga jobs Spark por artefato. Ele lê o que o job deixou — código PySpark,
 plano físico, event log, rodapé Parquet, metadata Iceberg, definição do job ou do
 cluster, log do CloudWatch, permissão do Lake Formation — e devolve **facts** medidos,

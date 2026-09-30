@@ -38,6 +38,7 @@ class EvaluationPolicy:
     unresolved_allow: tuple[str, ...] = ()
     required_verified_evidence_kinds: tuple[str, ...] = ()
     evidence_roots: tuple[str, ...] = ()
+    evidence_kind_roots: tuple[tuple[str, tuple[str, ...]], ...] = ()
     policy_sha256: str = ""
 
     @property
@@ -78,6 +79,11 @@ class EvaluationPolicy:
                 "roots": list(self.evidence_roots),
             },
         }
+        if self.evidence_kind_roots:
+            value["evidence"]["kinds"] = {
+                kind: {"roots": list(roots)}
+                for kind, roots in self.evidence_kind_roots
+            }
         if include_digest:
             value["policy_sha256"] = self.policy_sha256
         return value
@@ -133,7 +139,7 @@ class EvaluationPolicy:
             "require_cost",
         }
         known_unresolved = {"deny", "allow"}
-        known_evidence = {"required_verified_kinds", "roots"}
+        known_evidence = {"required_verified_kinds", "roots", "kinds"}
         unknown = sorted(
             (set(quality) - known_quality)
             | (set(economy) - known_economy)
@@ -174,6 +180,27 @@ class EvaluationPolicy:
                 raise EvaluationPolicyError(f"evaluation_policy_invalid:{name}")
             return raw
 
+        kind_roots_raw = evidence.get("kinds")
+        kind_roots: tuple[tuple[str, tuple[str, ...]], ...] = ()
+        if kind_roots_raw is not None:
+            if not isinstance(kind_roots_raw, Mapping):
+                raise EvaluationPolicyError("evaluation_policy_invalid:kinds")
+            normalized_kinds: list[tuple[str, tuple[str, ...]]] = []
+            for kind, entry in kind_roots_raw.items():
+                if not isinstance(kind, str) or not kind.strip():
+                    raise EvaluationPolicyError("evaluation_policy_invalid:kinds.kind")
+                if not isinstance(entry, Mapping):
+                    raise EvaluationPolicyError(
+                        f"evaluation_policy_invalid:kinds.{kind}"
+                    )
+                roots = strings(entry, "roots")
+                if not roots:
+                    raise EvaluationPolicyError(
+                        f"evaluation_policy_invalid:kinds.{kind}.roots"
+                    )
+                normalized_kinds.append((kind.strip(), roots))
+            kind_roots = tuple(sorted(normalized_kinds))
+
         normalized = cls(
             policy_id=str(value["policy_id"]).strip(),
             policy_version=str(policy_version).strip(),
@@ -200,6 +227,7 @@ class EvaluationPolicy:
                 evidence, "required_verified_kinds"
             ),
             evidence_roots=strings(evidence, "roots"),
+            evidence_kind_roots=kind_roots,
             policy_sha256="",
         )
         expected = digest(normalized.to_dict(include_digest=False))
@@ -207,6 +235,21 @@ class EvaluationPolicy:
         if declared is not None and str(declared).removeprefix("sha256:") != expected:
             raise EvaluationPolicyError(f"evaluation_policy_digest_mismatch:{normalized.policy_id}")
         return replace(normalized, policy_sha256=expected)
+
+    def roots_for(self, kind: str) -> tuple[str, ...]:
+        """Return roots authorized for one evidence kind.
+
+        A configured per-kind map is authoritative. Legacy roots are used only
+        when the map is absent, never as an additive search path.
+        """
+        if self.evidence_kind_roots:
+            configured = dict(self.evidence_kind_roots)
+            if kind not in configured:
+                raise EvaluationPolicyError(
+                    f"evaluation_policy_evidence_kind_unconfigured:{kind}"
+                )
+            return configured[kind]
+        return self.evidence_roots
 
 
 class PolicyResolver:

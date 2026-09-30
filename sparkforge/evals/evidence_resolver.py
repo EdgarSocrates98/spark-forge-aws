@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from sparkforge.evals.evidence import EvaluationEvidenceBundle, EvidenceRef, canonical_digest
+from sparkforge.evals.evidence_adapters import AuthorizedCommandAdapter
+from sparkforge.evals.metric_compiler import MetricCompilationError, compile_reports
 
 
 class EvidenceResolutionError(ValueError):
@@ -24,7 +26,9 @@ class ResolvedEvidence:
     verified_refs: tuple[str, ...]
     verified_ref_kinds: tuple[str, ...]
     unresolved: tuple[str, ...]
+    blocking_unresolved: tuple[str, ...]
     derived_metrics: dict[str, Any]
+    producer_identity_sha256: str | None = None
 
 
 class EvidenceResolver:
@@ -33,64 +37,113 @@ class EvidenceResolver:
     def __init__(self, repo: Path | str = ".") -> None:
         self.repo = Path(repo).expanduser().resolve()
 
-    def resolve(self, bundle: EvaluationEvidenceBundle, policy: Any) -> ResolvedEvidence:
-        self._validate_execution(bundle)
+    def resolve(
+        self,
+        bundle: EvaluationEvidenceBundle,
+        policy: Any,
+        *,
+        authorized_commands: Mapping[str, Any] | None = None,
+    ) -> ResolvedEvidence:
+        producer_identity = self._validate_execution(
+            bundle, policy, authorized_commands=authorized_commands
+        )
         verified_refs, verified_kinds, ref_unresolved = self._resolve_refs(
             bundle.evidence_refs, policy
         )
-        derived = self._compile_metrics(bundle.reports)
-        self._compare_metrics(bundle, derived)
-        unresolved = tuple(sorted(set(bundle.unresolved) | set(ref_unresolved)))
+        require_raw_metrics = bundle.execution_mode in {"recorded_host", "live_external"}
+        try:
+            derived = compile_reports(bundle.reports, require_raw=require_raw_metrics)
+        except MetricCompilationError:
+            derived = {"comparison": {}, "quality": {}, "economy": {}}
+            metric_unresolved = ("metrics_unresolved",)
+        else:
+            metric_unresolved = ()
+            self._compare_metrics(bundle, derived)
+        unresolved = tuple(
+            sorted(set(bundle.unresolved) | set(ref_unresolved) | set(metric_unresolved))
+        )
         allowed = set(getattr(policy, "unresolved_allow", ()))
+        denied_codes = set(getattr(policy, "unresolved_deny", ()))
         denied = sorted(
             code
             for code in unresolved
-            if code not in allowed or code in set(getattr(policy, "unresolved_deny", ()))
+            if code not in allowed or code in denied_codes
         )
-        if denied:
-            raise EvidenceResolutionError(
-                f"unresolved_not_allowed:{','.join(denied)}"
-            )
         required = set(getattr(policy, "required_verified_evidence_kinds", ()))
         missing = sorted(required - set(verified_kinds))
-        if missing:
-            raise EvidenceResolutionError(
-                f"evidence_ref_unverified:{','.join(missing)}"
+        blocking = tuple(
+            sorted(
+                {
+                    *denied,
+                    *(f"evidence_ref_unverified:{kind}" for kind in missing),
+                }
             )
-        state: ResolutionState = "unresolved" if unresolved else "verified"
+        )
+        state: ResolutionState = (
+            "invalid" if blocking else ("unresolved" if unresolved else "verified")
+        )
         return ResolvedEvidence(
             state=state,
             verified_refs=tuple(sorted(verified_refs)),
             verified_ref_kinds=tuple(sorted(verified_kinds)),
             unresolved=unresolved,
+            blocking_unresolved=blocking,
             derived_metrics=derived,
+            producer_identity_sha256=producer_identity,
         )
 
-    def _validate_execution(self, bundle: EvaluationEvidenceBundle) -> None:
+    def _validate_execution(
+        self,
+        bundle: EvaluationEvidenceBundle,
+        policy: Any,
+        *,
+        authorized_commands: Mapping[str, Any] | None,
+    ) -> str | None:
         if bundle.execution_mode == "recorded_host":
             for side in ("baseline", "candidate"):
                 transcript = bundle.transcripts.get(side)
                 if not isinstance(transcript, Mapping):
                     raise EvidenceResolutionError("recorded_host_transcript_required")
-                self._verify_transcript(transcript, side)
+                self._verify_transcript(transcript, side, policy)
         elif bundle.execution_mode == "live_external":
-            identity = bundle.execution.get("producer_identity")
             command_id = bundle.execution.get("command_id")
-            if not isinstance(identity, (str, Mapping)) or not identity:
-                raise EvidenceResolutionError("live_external_identity_required")
             if not isinstance(command_id, str) or not command_id.strip():
                 raise EvidenceResolutionError("live_external_command_id_required")
+            if not authorized_commands or command_id not in authorized_commands:
+                raise EvidenceResolutionError("live_external_command_not_authorized")
+            try:
+                expected = AuthorizedCommandAdapter(
+                    authorized_commands, repo=self.repo
+                ).identity(command_id)
+            except Exception as exc:
+                raise EvidenceResolutionError(
+                    "live_external_producer_identity_unresolved"
+                ) from exc
+            declared = bundle.execution.get("command_identity_sha256")
+            producer = bundle.execution.get("producer_identity")
+            if isinstance(producer, Mapping):
+                declared = producer.get("command_identity_sha256", declared)
+            if not isinstance(declared, str) or not declared.strip():
+                raise EvidenceResolutionError("live_external_producer_identity_unresolved")
+            if declared.removeprefix("sha256:") != expected.sha256:
+                raise EvidenceResolutionError("live_external_producer_identity_mismatch")
         for side in ("baseline", "candidate"):
             transcript = bundle.transcripts.get(side)
             if isinstance(transcript, Mapping):
-                self._verify_transcript(transcript, side)
+                self._verify_transcript(transcript, side, policy)
+        producer = bundle.execution.get("producer_identity")
+        if isinstance(producer, Mapping):
+            identity = producer.get("command_identity_sha256")
+            return str(identity).removeprefix("sha256:") if identity else None
+        identity = bundle.execution.get("command_identity_sha256")
+        return str(identity).removeprefix("sha256:") if identity else None
 
-    def _verify_transcript(self, transcript: Mapping[str, Any], side: str) -> None:
+    def _verify_transcript(self, transcript: Mapping[str, Any], side: str, policy: Any) -> None:
         source_ref = transcript.get("source_ref")
         declared = str(transcript.get("sha256", "")).removeprefix("sha256:")
         if not isinstance(source_ref, str) or not source_ref.strip():
             raise EvidenceResolutionError(f"transcript_source_required:{side}")
-        path = self._source_path(source_ref)
+        path = self._source_path(source_ref, policy)
         if path is None:
             raise EvidenceResolutionError(f"transcript_source_unresolved:{side}")
         if not path.is_file():
@@ -105,8 +158,16 @@ class EvidenceResolver:
         verified: list[str] = []
         kinds: list[str] = []
         unresolved: list[str] = []
+        aliases: dict[tuple[str, str], str] = {}
         for ref in refs:
-            path = self._reference_path(ref.ref, policy)
+            if ref.kind not in {"ci", "benchmark", "review"}:
+                raise EvidenceResolutionError(f"evidence_kind_unknown:{ref.kind}")
+            alias_key = (ref.ref, ref.sha256)
+            previous_kind = aliases.get(alias_key)
+            if previous_kind is not None and previous_kind != ref.kind:
+                raise EvidenceResolutionError("evidence_kind_aliasing_detected")
+            aliases[alias_key] = ref.kind
+            path = self._reference_path(ref.ref, ref.kind, policy)
             if path is None:
                 unresolved.append(f"evidence_ref_unresolved:{ref.kind}")
                 continue
@@ -120,7 +181,7 @@ class EvidenceResolver:
             kinds.append(ref.kind)
         return verified, kinds, unresolved
 
-    def _reference_path(self, reference: str, policy: Any) -> Path | None:
+    def _reference_path(self, reference: str, kind: str, policy: Any) -> Path | None:
         value = reference
         if value.startswith("file:"):
             value = value[5:]
@@ -128,19 +189,20 @@ class EvidenceResolver:
             value = value[5:]
         elif ":" in value:
             return None
-        roots = tuple(getattr(policy, "evidence_roots", ()))
-        search_roots = [self.repo]
-        search_roots.extend(self.repo / Path(root) for root in roots)
         candidate = Path(value)
-        for root in search_roots:
+        if candidate.is_absolute() or ".." in candidate.parts:
+            raise EvidenceResolutionError("evidence_ref_path_escape")
+        roots = self._roots_for(policy, kind)
+        for root_value in roots:
+            root = self._authorized_root(root_value)
             target = (root / candidate).resolve()
-            if target == self.repo or self.repo not in target.parents:
-                continue
+            if root != target and root not in target.parents:
+                raise EvidenceResolutionError("evidence_ref_outside_authorized_root")
             if target.is_file():
                 return target
         return None
 
-    def _source_path(self, source_ref: str) -> Path | None:
+    def _source_path(self, source_ref: str, policy: Any) -> Path | None:
         value = source_ref
         if value.startswith("file:"):
             value = value[5:]
@@ -149,47 +211,55 @@ class EvidenceResolver:
         elif ":" in value:
             return None
         target = Path(value)
-        if not target.is_absolute():
-            target = self.repo / target
-        target = target.resolve()
-        if target != self.repo and self.repo not in target.parents:
-            return None
-        return target
+        roots = self._all_roots(policy)
+        if target.is_absolute():
+            resolved = target.resolve()
+            if not any(root == resolved or root in resolved.parents for root in roots):
+                raise EvidenceResolutionError("transcript_source_outside_authorized_root")
+            return resolved
+        if ".." in target.parts:
+            raise EvidenceResolutionError("transcript_source_outside_authorized_root")
+        for root in roots:
+            resolved = (root / target).resolve()
+            if root != resolved and root not in resolved.parents:
+                raise EvidenceResolutionError("transcript_source_outside_authorized_root")
+            if resolved.is_file():
+                return resolved
+        return None
 
     @staticmethod
-    def _compile_metrics(reports: Mapping[str, Any]) -> dict[str, Any]:
-        derived = reports.get("derived_metrics")
-        if isinstance(derived, Mapping):
-            return {
-                "comparison": dict(derived.get("comparison", {})),
-                "quality": dict(derived.get("quality", {})),
-                "economy": dict(derived.get("economy", {})),
-            }
-        comparison = reports.get("comparison")
-        if isinstance(comparison, Mapping):
-            return {
-                "comparison": dict(comparison),
-                "quality": dict(reports.get("quality", {})),
-                "economy": dict(reports.get("economy", {})),
-            }
-        baseline = reports.get("baseline")
-        candidate = reports.get("candidate")
-        if isinstance(baseline, Mapping) and isinstance(candidate, Mapping):
-            baseline_metrics = baseline.get("metrics")
-            candidate_metrics = candidate.get("metrics")
-            if isinstance(baseline_metrics, Mapping) and isinstance(candidate_metrics, Mapping):
-                return {
-                    "comparison": {
-                        "metrics": {
-                            "baseline": dict(baseline_metrics),
-                            "candidate": dict(candidate_metrics),
-                        },
-                        "cells": list(reports.get("cells", [])),
-                    },
-                    "quality": dict(reports.get("quality", {})),
-                    "economy": dict(reports.get("economy", {})),
-                }
-        raise EvidenceResolutionError("metrics_unresolved")
+    def _roots_for(policy: Any, kind: str) -> tuple[str, ...]:
+        try:
+            roots = policy.roots_for(kind)
+        except AttributeError:
+            configured = dict(getattr(policy, "evidence_kind_roots", ()))
+            if configured:
+                if kind not in configured:
+                    raise EvidenceResolutionError(
+                        f"evidence_kind_unconfigured:{kind}"
+                    ) from None
+                roots = configured[kind]
+            else:
+                roots = getattr(policy, "evidence_roots", ())
+        except Exception as exc:
+            raise EvidenceResolutionError(str(exc)) from exc
+        return tuple(str(root) for root in roots)
+
+    def _all_roots(self, policy: Any) -> tuple[Path, ...]:
+        raw: list[str] = []
+        configured = dict(getattr(policy, "evidence_kind_roots", ()))
+        if configured:
+            for roots in configured.values():
+                raw.extend(str(root) for root in roots)
+        else:
+            raw.extend(str(root) for root in getattr(policy, "evidence_roots", ()))
+        return tuple(dict.fromkeys(self._authorized_root(root) for root in raw))
+
+    def _authorized_root(self, value: str) -> Path:
+        root = (self.repo / Path(value)).resolve()
+        if root != self.repo and self.repo not in root.parents:
+            raise EvidenceResolutionError("evidence_root_outside_repository")
+        return root
 
     @staticmethod
     def _compare_metrics(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -209,3 +210,74 @@ def test_unreported_metrics_are_not_authoritative(tmp_path: Path) -> None:
     )
     with pytest.raises(EvidenceResolutionError, match="metrics_mismatch:quality"):
         EvidenceResolver(tmp_path).resolve(bundle, policy)
+
+
+def test_evidence_refs_are_confined_to_kind_roots(tmp_path: Path) -> None:
+    root = tmp_path / "evidence" / "ci"
+    root.mkdir(parents=True)
+    artifact = root / "ci.json"
+    artifact.write_text("ci", encoding="utf-8")
+    outside = tmp_path / "outside.json"
+    outside.write_text("outside", encoding="utf-8")
+    raw = _raw_bundle()
+    raw["evidence_refs"] = [
+        {
+            "kind": "ci",
+            "ref": "file:ci.json",
+            "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+        }
+    ]
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    policy = SimpleNamespace(
+        unresolved_allow=(),
+        unresolved_deny=(),
+        required_verified_evidence_kinds=(),
+        evidence_kind_roots=(("ci", ("evidence/ci",)),),
+    )
+    resolved = EvidenceResolver(tmp_path).resolve(bundle, policy)
+    assert resolved.verified_refs == ("file:ci.json",)
+
+    escaped = bundle.to_dict()
+    escaped["evidence_refs"][0]["ref"] = "file:../../outside.json"
+    escaped.pop("bundle_id")
+    with pytest.raises(EvidenceResolutionError, match="path_escape"):
+        EvidenceResolver(tmp_path).resolve(
+            EvaluationEvidenceBundle.from_mapping(escaped), policy
+        )
+
+
+def test_evidence_kind_aliasing_is_rejected(tmp_path: Path) -> None:
+    root = tmp_path / "evidence"
+    root.mkdir()
+    artifact = root / "shared.json"
+    artifact.write_text("shared", encoding="utf-8")
+    raw = _raw_bundle()
+    sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    raw["evidence_refs"] = [
+        {"kind": "ci", "ref": "file:shared.json", "sha256": sha256},
+        {"kind": "review", "ref": "file:shared.json", "sha256": sha256},
+    ]
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    policy = SimpleNamespace(
+        unresolved_allow=(),
+        unresolved_deny=(),
+        required_verified_evidence_kinds=(),
+        evidence_kind_roots=(("ci", ("evidence",)), ("review", ("evidence",))),
+    )
+    with pytest.raises(EvidenceResolutionError, match="kind_aliasing"):
+        EvidenceResolver(tmp_path).resolve(bundle, policy)
+
+
+def test_unresolved_state_is_exposed_and_denied_by_policy(tmp_path: Path) -> None:
+    raw = _raw_bundle()
+    raw["unresolved"] = ["transcript_missing"]
+    bundle = EvaluationEvidenceBundle.from_mapping(raw)
+    policy = SimpleNamespace(
+        unresolved_allow=(),
+        unresolved_deny=("transcript_missing",),
+        required_verified_evidence_kinds=(),
+        evidence_roots=(),
+    )
+    resolved = EvidenceResolver(tmp_path).resolve(bundle, policy)
+    assert resolved.state == "invalid"
+    assert "transcript_missing" in resolved.blocking_unresolved

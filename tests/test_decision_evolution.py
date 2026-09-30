@@ -133,9 +133,10 @@ def test_evaluation_receipt_and_rollback_are_local(tmp_path: Path) -> None:
         economy_gate=True,
         ci_verified=True,
         evidence_refs=("benchmark:holdout",),
-        rollback_target="restore-baseline",
+        rollback_target=candidate.parent_digest or "",
         comparison={"cells": [], "metrics": {}},
         metrics_derived=True,
+        evidence_verified=True,
     )
     path = service._write(
         "evaluation", {"candidate": candidate.to_dict(), "evaluation": evaluation.to_dict()}
@@ -326,12 +327,18 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
         "unresolved": [],
     }
     for kind in ("ci", "benchmark", "review"):
-        artifact = repo / "evals" / "token_efficient" / "fixtures" / f"{kind}-evidence.json"
+        root = (
+            repo / ".sparkforge" / "evidence" / ("reviews" if kind == "review" else kind)
+            if kind != "benchmark"
+            else repo / "evals" / "token_efficient" / "fixtures"
+        )
+        root.mkdir(parents=True, exist_ok=True)
+        artifact = root / f"{kind}-evidence.json"
         artifact.write_text(kind, encoding="utf-8")
         raw["evidence_refs"].append(
             {
                 "kind": kind,
-                "ref": f"file:evals/token_efficient/fixtures/{kind}-evidence.json",
+                "ref": f"file:{kind}-evidence.json",
                 "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
             }
         )
@@ -354,3 +361,6 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
     documents = [json.loads(path.read_text(encoding="utf-8")) for path in receipts]
     assert sorted(document["event_sequence"] for document in documents) == [1, 2, 3]
     assert all(document["policy_sha256"] for document in documents)
+    promotion = next(document for document in documents if document["action"] == "promotion")
+    assert promotion["provenance"]["policy_id"] == policy.policy_id
+    assert promotion["provenance"]["evaluation_receipt_id"]

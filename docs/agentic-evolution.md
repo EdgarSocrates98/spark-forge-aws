@@ -88,4 +88,39 @@ python -m sparkforge.evals candidate promote --repo . --candidate routing-varian
 python -m sparkforge.evals candidate rollback --repo . --candidate routing-variant --previous routing-baseline
 ```
 
+### Hardening de evidence e lifecycle
+
+Bundles sao estruturalmente validos antes de serem evidence verificadas. O
+`EvidenceResolver` usa roots exclusivos por kind (`ci`, `benchmark` e `review`),
+resolve symlinks dentro do repositorio e compara o SHA real do arquivo. A forma
+legada `evidence.roots` continua disponivel somente quando `evidence.kinds` nao
+existe; nao ha root implicito do repositorio.
+
+`recorded_host` exige transcripts baseline e candidate com `source_ref` e SHA
+verificaveis. `live_external` exige comando presente no registry e uma
+`ExternalCommandIdentity` derivada de command id, hashes do executavel e artefato,
+args fixos, timeout e limite de saida. O adapter usa `shell=False`, arquivo de
+saida bounded e anexa a identidade ao bundle.
+
+Para bundles recorded/live, metrics declaradas sao claims. O compiler local
+recalcula comparison, quality e economy a partir de rows primitivas e recusa
+mismatch. `unresolved` entra em `CandidateEvaluation`; somente valores permitidos
+pela policy permanecem nao bloqueantes. `gates_pass` inclui evidence verificada,
+kinds requeridos e reasons de gate antes de chamar `AuthorityPolicy`.
+
+O estado efetivo do candidate vem da cadeia de receipts v2 verificada. Receipts
+v1 permanecem legiveis para auditoria, mas nao autorizam lifecycle ou promotion.
+O lock local grava PID, host, timestamp e fingerprint de processo; recovery so
+ocorre apos threshold e prova de PID ausente. Lock ocupado ou nao verificavel
+falha fechado. Promotion receipts guardam provenance compacta: evaluation receipt,
+bundle, producer identity, refs/kinds verificadas, metrics, mode e rollback.
+
+O caminho surrogate continua offline e nao executa comandos externos. Os modos
+bundle e external sao opt-in pela CLI:
+
+```bash
+python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant --bundle path/to/bundle.json
+python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant --external-command command-id
+```
+
 Ap¢s alterar skills ou agents, execute `python scripts/sync_skills.py`. Antes de publicar uma mudan‡a, execute os testes focados, a su¡te completa e as avalia‡äes existentes. Mudan‡as de infraestrutura, escrita ou publica‡Æo exigem aprova‡Æo humana, plano de rollback e evidˆncia do impacto.

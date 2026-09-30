@@ -11,6 +11,8 @@ import hashlib
 import json
 import os
 import re
+import socket
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
@@ -95,6 +97,7 @@ _REGISTRY_FIELDS = frozenset(
         "policy_version",
         "policies",
         "external_commands",
+        "receipt_lock",
         "candidates",
     }
 )
@@ -246,6 +249,7 @@ class CandidateEvaluation:
     rollback_required: bool = True
     metrics_derived: bool = False
     corpus_gate: bool = True
+    policy_id: str = "legacy"
     policy_version: str = "legacy"
     policy_sha256: str = ""
     bundle_id: str = ""
@@ -256,6 +260,7 @@ class CandidateEvaluation:
     verified_evidence_kinds: tuple[str, ...] = ()
     unresolved: tuple[str, ...] = ()
     evidence_verified: bool = False
+    producer_identity_sha256: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.candidate_digest, str) or not self.candidate_digest.strip():
@@ -349,6 +354,13 @@ class CandidateEvaluation:
         )
         if not isinstance(self.evidence_verified, bool):
             raise EvolutionError("evaluation_evidence_verified_must_be_boolean")
+        if not isinstance(self.policy_id, str) or not self.policy_id.strip():
+            raise EvolutionError("evaluation_policy_id_invalid")
+        if self.producer_identity_sha256 is not None and (
+            not isinstance(self.producer_identity_sha256, str)
+            or not self.producer_identity_sha256.strip()
+        ):
+            raise EvolutionError("evaluation_producer_identity_invalid")
 
     @property
     def candidate_sha256(self) -> str:
@@ -364,6 +376,7 @@ class CandidateEvaluation:
             and self.economy_gate
             and self.ci_verified
             and bool(self.evidence_refs)
+            and self.evidence_verified
             and (not self.rollback_required or bool(self.rollback_target.strip()))
             and self.comparison.get("refused") is None
             and not self.gate_reasons
@@ -388,6 +401,7 @@ class CandidateEvaluation:
             "gate_reasons": list(self.gate_reasons),
             "metrics_derived": self.metrics_derived,
             "corpus_gate": self.corpus_gate,
+            "policy_id": self.policy_id,
             "policy_version": self.policy_version,
             "policy_sha256": self.policy_sha256,
             "bundle_id": self.bundle_id,
@@ -398,6 +412,7 @@ class CandidateEvaluation:
             "verified_evidence_kinds": list(self.verified_evidence_kinds),
             "unresolved": list(self.unresolved),
             "evidence_verified": self.evidence_verified,
+            "producer_identity_sha256": self.producer_identity_sha256,
             "status": self.status.value,
         }
 
@@ -438,6 +453,10 @@ class CandidateRegistry:
         self._evaluation_policy = EvaluationGatePolicy()
         self._policy_resolver = PolicyResolver((), policy_version="legacy")
         self._external_commands: dict[str, Any] = {}
+        self._receipt_lock: dict[str, Any] = {
+            "stale_after_seconds": 300,
+            "recovery": "pid_absent_after_threshold",
+        }
 
     @property
     def authority_policy(self) -> EvolutionAuthorityPolicy:
@@ -454,6 +473,10 @@ class CandidateRegistry:
     @property
     def external_commands(self) -> dict[str, Any]:
         return dict(self._external_commands)
+
+    @property
+    def receipt_lock(self) -> dict[str, Any]:
+        return dict(self._receipt_lock)
 
     def load(self) -> tuple[CandidateSpec, ...]:
         try:
@@ -476,6 +499,23 @@ class CandidateRegistry:
         if not isinstance(external_commands, Mapping):
             raise EvolutionError("candidate_registry_invalid:external_commands")
         self._external_commands = dict(external_commands)
+        receipt_lock = raw.get("receipt_lock", {})
+        if not isinstance(receipt_lock, Mapping):
+            raise EvolutionError("candidate_registry_invalid:receipt_lock")
+        stale_after = receipt_lock.get("stale_after_seconds", 300)
+        if (
+            isinstance(stale_after, bool)
+            or not isinstance(stale_after, (int, float))
+            or stale_after <= 0
+        ):
+            raise EvolutionError("candidate_registry_invalid:receipt_lock.stale_after_seconds")
+        recovery = receipt_lock.get("recovery", "pid_absent_after_threshold")
+        if recovery != "pid_absent_after_threshold":
+            raise EvolutionError("candidate_registry_invalid:receipt_lock.recovery")
+        self._receipt_lock = {
+            "stale_after_seconds": float(stale_after),
+            "recovery": recovery,
+        }
         try:
             self._policy_resolver = PolicyResolver.from_mapping(raw)
         except EvaluationPolicyError as exc:
@@ -650,6 +690,7 @@ class EvolutionService:
         self.registry = CandidateRegistry(self.repo)
         self.root = self.repo / ".sparkforge" / "evolution"
         self.evidence_resolver = EvidenceResolver(self.repo)
+        self._last_receipt_lock_state = "uninitialized"
         self.lifecycle = LifecycleProjector(
             self.root,
             receipt_reader=self._read_verified_receipt,
@@ -712,10 +753,15 @@ class EvolutionService:
         verified_evidence_kinds: tuple[str, ...] = ()
         unresolved: tuple[str, ...] = ()
         evidence_verified = True
+        producer_identity_sha256: str | None = None
         if bundle is not None:
             self._validate_bundle_for_candidate(bundle, candidate, policy)
             try:
-                resolved = self.evidence_resolver.resolve(bundle, policy)
+                resolved = self.evidence_resolver.resolve(
+                    bundle,
+                    policy,
+                    authorized_commands=self.registry.external_commands,
+                )
             except EvidenceResolutionError as exc:
                 raise EvolutionError(str(exc)) from exc
             execution_mode = bundle.execution_mode
@@ -725,7 +771,8 @@ class EvolutionService:
             verified_evidence_refs = resolved.verified_refs
             verified_evidence_kinds = resolved.verified_ref_kinds
             unresolved = resolved.unresolved
-            evidence_verified = True
+            evidence_verified = not resolved.blocking_unresolved
+            producer_identity_sha256 = resolved.producer_identity_sha256
             comparison = resolved.derived_metrics["comparison"]
             labeled_tasks = _strict_int(
                 bundle.suite.get("labeled_tasks", policy.minimum_labeled_tasks),
@@ -738,6 +785,9 @@ class EvolutionService:
                 economy_metrics,
                 gate_reasons,
             ) = _derive_gates(comparison, policy)
+            gate_reasons = tuple(
+                sorted({*gate_reasons, *resolved.blocking_unresolved})
+            )
             evidence_refs = tuple(ref.ref for ref in bundle.evidence_refs)
             rollback_target = rollback_target or bundle.rollback_target
             ci_verified = ci_verified or "ci" in verified_evidence_kinds
@@ -804,6 +854,7 @@ class EvolutionService:
             rollback_required=self.registry.authority_policy.require_rollback_target,
             metrics_derived=True,
             corpus_gate=labeled_tasks >= policy.minimum_labeled_tasks,
+            policy_id=policy.policy_id,
             policy_version=policy.policy_version,
             policy_sha256=policy.policy_sha256,
             bundle_id=bundle_id,
@@ -814,6 +865,7 @@ class EvolutionService:
             verified_evidence_kinds=verified_evidence_kinds,
             unresolved=unresolved,
             evidence_verified=evidence_verified,
+            producer_identity_sha256=producer_identity_sha256,
         )
         self._write(
             "evaluation",
@@ -867,6 +919,8 @@ class EvolutionService:
                 raise EvolutionError(
                     f"candidate_promotion_evidence_missing:{','.join(missing)}"
                 )
+        if self.registry.authority_policy.require_rollback_target:
+            self._validate_rollback_target(candidate, evaluation.rollback_target)
         policy = AuthorityPolicy.from_repo(self.repo)
         contract = _ContractIdentity(
             candidate.contract_id,
@@ -897,7 +951,6 @@ class EvolutionService:
         )
         if not authority.allowed:
             raise EvolutionError(f"candidate_promotion_refused:{authority.reason}")
-        self._validate_rollback_target(candidate, evaluation.rollback_target)
         accepted = transition(
             replace(candidate, status=CandidateStatus.EVALUATED), CandidateStatus.ACCEPTED
         )
@@ -912,6 +965,27 @@ class EvolutionService:
                 "policy_version": evaluation.policy_version,
                 "policy_sha256": evaluation.policy_sha256,
                 "bundle_id": evaluation.bundle_id,
+                "provenance": {
+                    "candidate_digest": candidate.candidate_digest,
+                    "parent_digest": candidate.parent_digest,
+                    "contract_id": candidate.contract_id,
+                    "contract_version": candidate.contract_version,
+                    "contract_sha256": candidate.contract_sha256,
+                    "calibration_version": candidate.calibration_version,
+                    "policy_id": evaluation.policy_id,
+                    "policy_version": evaluation.policy_version,
+                    "policy_sha256": evaluation.policy_sha256,
+                    "evaluation_receipt_id": self._evaluation_receipt_id(
+                        candidate, evaluation
+                    ),
+                    "producer_identity_sha256": evaluation.producer_identity_sha256,
+                    "verified_evidence_refs": list(evaluation.verified_evidence_refs),
+                    "verified_evidence_kinds": list(evaluation.verified_evidence_kinds),
+                    "quality_metrics": dict(evaluation.quality_metrics),
+                    "economy_metrics": dict(evaluation.economy_metrics),
+                    "execution_mode": evaluation.execution_mode,
+                    "rollback_target": evaluation.rollback_target,
+                },
             },
         )
         return accepted
@@ -952,7 +1026,7 @@ class EvolutionService:
                 raise EvolutionError("evolution_receipt_sequence_invalid:duplicate")
             return max(matches, key=lambda item: item[0])[1]
         if legacy_matches:
-            return legacy_matches[-1]
+            raise EvolutionError("candidate_evaluation_legacy_not_authoritative")
         if not matches and not legacy_matches:
             raise EvolutionError("candidate_evaluation_missing")
         raise EvolutionError("candidate_evaluation_missing")
@@ -1003,13 +1077,30 @@ class EvolutionService:
         ):
             raise EvolutionError("rollback_target_incompatible")
 
+    def _evaluation_receipt_id(
+        self, candidate: CandidateSpec, evaluation: CandidateEvaluation
+    ) -> str | None:
+        target = candidate.candidate_digest
+        matches: list[Mapping[str, Any]] = []
+        for path in self._receipt_paths():
+            document = self._read_verified_receipt(path)
+            if document.get("receipt_schema_version") != 2:
+                continue
+            if document.get("action") != "evaluation":
+                continue
+            value = document.get("evaluation")
+            if not isinstance(value, Mapping) or value.get("candidate_digest") != target:
+                continue
+            if _evaluation_from_dict(value).to_dict() == evaluation.to_dict():
+                matches.append(document)
+        if not matches:
+            return None
+        return str(max(matches, key=lambda item: int(item["event_sequence"]))["receipt_id"])
+
     def _write(self, action: str, value: Mapping[str, Any]) -> Path:
         self.root.mkdir(parents=True, exist_ok=True)
         lock = self.root / ".receipt.lock"
-        try:
-            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except OSError as exc:
-            raise EvolutionError("evolution_receipt_lock_busy") from exc
+        descriptor = self._acquire_receipt_lock(lock)
         try:
             previous_id, sequence = self._next_receipt_link()
             payload = dict(value)
@@ -1050,6 +1141,75 @@ class EvolutionService:
                     lock.unlink()
                 except OSError:
                     pass
+
+    def _acquire_receipt_lock(self, lock: Path) -> int:
+        recovered = False
+        for attempt in range(2):
+            try:
+                descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            except FileExistsError as exc:
+                state = self._inspect_receipt_lock(lock)
+                if state == "stale_detected" and attempt == 0:
+                    recovered = True
+                    continue
+                self._last_receipt_lock_state = state
+                raise EvolutionError(f"evolution_receipt_lock_{state}") from exc
+            except OSError as exc:
+                self._last_receipt_lock_state = "unverifiable"
+                raise EvolutionError("evolution_receipt_lock_unverifiable") from exc
+            metadata = {
+                "pid": os.getpid(),
+                "created_at": time.time(),
+                "hostname": socket.gethostname(),
+                "process_start_fingerprint": _process_start_fingerprint(os.getpid()),
+            }
+            try:
+                os.write(
+                    descriptor,
+                    json.dumps(metadata, sort_keys=True).encode("utf-8"),
+                )
+            except OSError:
+                try:
+                    lock.unlink()
+                except OSError:
+                    pass
+                raise
+            self._last_receipt_lock_state = "lock_recovered" if recovered else "acquired"
+            return descriptor
+        self._last_receipt_lock_state = "busy"
+        raise EvolutionError("evolution_receipt_lock_busy")
+
+    def _inspect_receipt_lock(self, lock: Path) -> str:
+        try:
+            metadata = json.loads(lock.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return "unverifiable"
+        if not isinstance(metadata, Mapping):
+            return "unverifiable"
+        created_at = metadata.get("created_at")
+        pid = metadata.get("pid")
+        hostname = metadata.get("hostname")
+        if (
+            isinstance(created_at, bool)
+            or not isinstance(created_at, (int, float))
+            or not isinstance(pid, int)
+            or isinstance(pid, bool)
+            or not isinstance(hostname, str)
+            or hostname != socket.gethostname()
+        ):
+            return "unverifiable"
+        if time.time() - float(created_at) < float(
+            self.registry.receipt_lock.get("stale_after_seconds", 300)
+        ):
+            return "busy"
+        process_state = _process_state(pid, metadata.get("process_start_fingerprint"))
+        if process_state is not False:
+            return "unverifiable" if process_state is None else "busy"
+        try:
+            lock.unlink()
+        except OSError:
+            return "unverifiable"
+        return "stale_detected"
 
     def _next_receipt_link(self) -> tuple[str | None, int]:
         documents: list[Mapping[str, Any]] = []
@@ -1547,6 +1707,9 @@ def _evaluation_from_dict(value: Mapping[str, Any]) -> CandidateEvaluation:
             policy_version=_strict_text(
                 value.get("policy_version", "legacy"), "evaluation.policy_version"
             ),
+            policy_id=_strict_text(
+                value.get("policy_id", "legacy"), "evaluation.policy_id"
+            ),
             policy_sha256=_strict_text(
                 value.get("policy_sha256", ""), "evaluation.policy_sha256", allow_empty=True
             ),
@@ -1582,9 +1745,44 @@ def _evaluation_from_dict(value: Mapping[str, Any]) -> CandidateEvaluation:
             evidence_verified=_strict_bool(
                 value.get("evidence_verified", False), "evaluation.evidence_verified"
             ),
+            producer_identity_sha256=(
+                _strict_text(
+                    value["producer_identity_sha256"],
+                    "evaluation.producer_identity_sha256",
+                )
+                if value.get("producer_identity_sha256") is not None
+                else None
+            ),
         )
     except (KeyError, TypeError, ValueError, EvolutionError) as exc:
         raise EvolutionError("candidate_evaluation_invalid") from exc
+
+
+def _process_start_fingerprint(pid: int) -> str | None:
+    stat_path = Path(f"/proc/{pid}/stat")
+    try:
+        return hashlib.sha256(stat_path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _process_state(pid: int, fingerprint: Any) -> bool | None:
+    if pid <= 0:
+        return None
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return None
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 87:
+            return False
+        return None
+    current = _process_start_fingerprint(pid)
+    if fingerprint and current is not None and str(fingerprint) != current:
+        return False
+    return True
 
 
 __all__ = [

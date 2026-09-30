@@ -5,6 +5,9 @@ benchmark_suite: evals/token_efficient/fixtures/decision_control_plane_cases.yam
 require_domain_holdout: true
 policy_version: prompt-agent-evolution-policy-v3
 external_commands: []
+receipt_lock:
+  stale_after_seconds: 300
+  recovery: pid_absent_after_threshold
 authority:
   require_content_digest: true
   require_parent_digest_for_mutation: true
@@ -63,6 +66,17 @@ policies:
         - cost_unresolved
     evidence:
       required_verified_kinds: [ci, benchmark, review]
+      kinds:
+        ci:
+          roots:
+            - .sparkforge/evidence/ci
+        benchmark:
+          roots:
+            - .sparkforge/evidence/benchmarks
+            - evals/token_efficient/fixtures
+        review:
+          roots:
+            - .sparkforge/evidence/reviews
       roots:
         - .sparkforge/evidence
         - evals/token_efficient/fixtures

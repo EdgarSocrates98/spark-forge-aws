@@ -7,7 +7,9 @@ from sparkforge.evals.decision_replay import (
     compare_replay_benchmark,
     load_replay_suite,
     run_replay_benchmark,
+    split_replay_benchmark,
 )
+from sparkforge.evals.metric_compiler import compile_reports
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -97,3 +99,17 @@ def test_policy_can_supply_corpus_minimum_without_changing_fixture_schema() -> N
         minimum_labeled_tasks=49,
     )
     assert suite["minimum_labeled_tasks"] == 49
+
+
+def test_metric_compiler_uses_primitive_paired_rows() -> None:
+    suite = load_replay_suite(
+        ROOT / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml"
+    )
+    report = run_replay_benchmark(suite, old_runner=_observation, new_runner=_observation)
+    baseline, candidate = split_replay_benchmark(report)
+    compiled = compile_reports(
+        {"baseline": baseline, "candidate": candidate}, require_raw=True
+    )
+    assert compiled["comparison"]["metrics"]["baseline"] == baseline["metrics"]
+    assert compiled["comparison"]["metrics"]["candidate"] == candidate["metrics"]
+    assert compiled["quality"]["route_accuracy"] == candidate["metrics"]["route_accuracy"]

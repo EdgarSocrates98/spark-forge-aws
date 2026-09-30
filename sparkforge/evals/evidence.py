@@ -132,6 +132,16 @@ class EvaluationEvidenceBundle:
             producer_identity = execution.get("producer_identity")
             if not isinstance(producer_identity, (str, Mapping)) or not producer_identity:
                 raise EvidenceBundleError("evidence_bundle_invalid:execution.producer_identity")
+            command_identity = execution.get("command_identity_sha256")
+            if command_identity is not None:
+                _hash(command_identity, "execution.command_identity_sha256")
+            if isinstance(producer_identity, Mapping):
+                producer_command_identity = producer_identity.get("command_identity_sha256")
+                if producer_command_identity is not None:
+                    _hash(
+                        producer_command_identity,
+                        "execution.producer_identity.command_identity_sha256",
+                    )
         sequence = execution.get("sequence", 1)
         if not isinstance(sequence, int) or isinstance(sequence, bool) or sequence < 1:
             raise EvidenceBundleError("evidence_bundle_invalid:execution.sequence")

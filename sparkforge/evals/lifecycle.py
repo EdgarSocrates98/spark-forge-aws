@@ -99,6 +99,29 @@ class LifecycleProjector:
     def verified_documents(self) -> tuple[Mapping[str, Any], ...]:
         return tuple(self._verified_documents())
 
+    def receipt_status(self) -> dict[str, tuple[str, ...]]:
+        """Report authoritative v2 receipts and readable legacy receipts."""
+        if not self.root.is_dir():
+            return {"authoritative": (), "legacy": ()}
+        paths = tuple(
+            sorted(
+                path
+                for path in self.root.iterdir()
+                if path.is_file() and path.suffix == ".json"
+            )
+        )
+        documents = tuple(self._receipt_reader(path) for path in paths)
+        authoritative = tuple(
+            str(document["receipt_id"])
+            for document in self._verified_documents()
+        )
+        legacy = tuple(
+            str(document["receipt_id"])
+            for document in documents
+            if document.get("receipt_schema_version") != 2
+        )
+        return {"authoritative": authoritative, "legacy": legacy}
+
     def _verified_documents(self) -> list[Mapping[str, Any]]:
         if not self.root.is_dir():
             return []
