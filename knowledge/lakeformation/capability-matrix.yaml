@@ -1,0 +1,31 @@
+schema_version: 1
+engines: [glue, emr_ec2, emr_serverless]
+statuses: [supported, limited, read_only, version_dependent, not_supported, unknown]
+sources:
+  glue_models: https://docs.aws.amazon.com/glue/latest/dg/lake-formation-access-control-models.html
+  glue_fta: https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html
+  emr_fgac: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-lf-enable.html
+  emr_fta: https://docs.aws.amazon.com/emr/latest/ManagementGuide/lake-formation-unfiltered-ec2-access.html
+  emr_serverless: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/lake-formation-section.html
+last_verified: "2026-09-30"
+capabilities:
+  - {engine: glue, runtime: "4.0", access_model: fgac, format: parquet, operation: read, api: dynamicframe, status: supported, source: glue_models, last_verified: "2026-09-30", limitations: "Legacy GlueContext/DynamicFrame path; not the Glue 5.x Spark-native FGAC model."}
+  - {engine: glue, runtime: "5.0", access_model: fgac, format: parquet, operation: read, api: dataframe, status: supported, source: glue_models, last_verified: "2026-09-30", limitations: "Spark-native read; data writes are not supported by the verified Glue 5.0 source."}
+  - {engine: glue, runtime: "5.0", access_model: fgac, format: iceberg, operation: write, api: dataframe, status: not_supported, source: glue_models, last_verified: "2026-09-30", limitations: "Use FTA or a separately verified migration path; do not replace governed catalog access with direct S3."}
+  - {engine: glue, runtime: "5.1", access_model: fgac, format: iceberg, operation: read, api: dataframe, status: supported, source: glue_models, last_verified: "2026-09-30", limitations: "Spark-native path; row/column/cell restrictions remain the reason to choose FGAC."}
+  - {engine: glue, runtime: "5.1", access_model: fgac, format: iceberg, operation: merge, api: spark_sql, status: version_dependent, source: glue_models, last_verified: "2026-09-30", limitations: "Release documentation and Lake Formation enforcement must both be verified; this cell is not a blanket MERGE authorization."}
+  - {engine: glue, runtime: "5.0", access_model: fta, format: hive, operation: write, api: dataframe, status: supported, source: glue_fta, last_verified: "2026-09-30", limitations: "Requires full table permission, GetDataAccess and FTA application integration."}
+  - {engine: glue, runtime: "5.0", access_model: fta, format: iceberg, operation: merge, api: spark_sql, status: supported, source: glue_fta, last_verified: "2026-09-30", limitations: "Table-level access only; FGAC and FTA cannot coexist in one job."}
+  - {engine: glue, runtime: "5.1", access_model: fta, format: iceberg, operation: write, api: dataframe, status: supported, source: glue_fta, last_verified: "2026-09-30", limitations: "Native Spark path is preferred; filesystem and credential-vending prerequisites remain required."}
+  - {engine: glue, runtime: "5.1", access_model: fta, format: delta, operation: read, api: dataframe, status: supported, source: glue_fta, last_verified: "2026-09-30", limitations: "Support is format/runtime specific; validate the exact operation before use."}
+  - {engine: emr_ec2, runtime: "6.15", access_model: fgac, format: iceberg, operation: read, api: spark_sql, status: supported, source: emr_fgac, last_verified: "2026-09-30", limitations: "FGAC available from EMR 6.15.0 for Glue Catalog tables; writes require separate capability evidence."}
+  - {engine: emr_ec2, runtime: "6.15", access_model: fgac, format: iceberg, operation: write, api: spark_sql, status: not_supported, source: emr_fgac, last_verified: "2026-09-30", limitations: "The verified EMR FGAC path is read-oriented; do not infer write from read support."}
+  - {engine: emr_ec2, runtime: "7.8", access_model: fta, format: iceberg, operation: read, api: spark_sql, status: supported, source: emr_fta, last_verified: "2026-09-30", limitations: "FTA starts at EMR 7.8.0; cross-account requires producer and consumer enablement."}
+  - {engine: emr_ec2, runtime: "7.8", access_model: fta, format: iceberg, operation: write, api: dataframe, status: limited, source: emr_fta, last_verified: "2026-09-30", limitations: "DataFrame writes to Hive/Iceberg tables are APPEND-only in the verified FTA path."}
+  - {engine: emr_ec2, runtime: "7.10", access_model: fta, format: iceberg, operation: read, api: s3a, status: supported, source: emr_fta, last_verified: "2026-09-30", limitations: "S3A FTA support starts at EMR 7.10.0; EMRFS and S3A are not interchangeable at earlier releases."}
+  - {engine: emr_ec2, runtime: "7.12", access_model: fta, format: hudi, operation: write, api: dataframe, status: supported, source: emr_fta, last_verified: "2026-09-30", limitations: "Hudi FTA write support starts at EMR 7.12 and has default-configuration limitations."}
+  - {engine: emr_serverless, runtime: "7.2", access_model: fgac, format: iceberg, operation: read, api: spark_sql, status: supported, source: emr_serverless, last_verified: "2026-09-30", limitations: "Read operations for Hive/Iceberg are available from EMR Serverless 7.2+."}
+  - {engine: emr_serverless, runtime: "7.6", access_model: fgac, format: delta, operation: read, api: spark_sql, status: supported, source: emr_serverless, last_verified: "2026-09-30", limitations: "Delta/Hudi read support is release dependent; do not apply to write."}
+  - {engine: emr_serverless, runtime: "7.9", access_model: fta, format: iceberg, operation: read, api: spark_sql, status: supported, source: emr_serverless, last_verified: "2026-09-30", limitations: "FTA for Hive/Iceberg is available from EMR Serverless 7.9+."}
+  - {engine: emr_serverless, runtime: "7.12", access_model: fta, format: iceberg, operation: merge, api: spark_sql, status: supported, source: emr_serverless, last_verified: "2026-09-30", limitations: "DDL/DML support begins at 7.12; permissions and credential vending remain separate checks."}
+  - {engine: emr_serverless, runtime: "7.12", access_model: fta, format: hudi, operation: write, api: spark_sql, status: supported, source: emr_serverless, last_verified: "2026-09-30", limitations: "Hudi FTA is release dependent and must not be generalized to earlier releases."}
