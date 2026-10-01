@@ -2,7 +2,7 @@
 
 # Skill `lakeformation-architecture`
 
-Use para avaliar uma arquitetura AWS Lake Formation antes de recomendar FGAC, Full Table Access, migração Glue 4/5, EMR EC2/Serverless ou acesso cross-account. Exige separar engine/runtime, formato, operação, ownership de catálogo, RAM/resource link, credential vending e permissões; falha fechado quando a capability ou a evidência não está declarada.
+Use quando avaliar arquitetura AWS Lake Formation antes de recomendar FGAC, Full Table Access, migração Glue 4/5, EMR EC2/Serverless ou acesso cross-account. Exige separar engine/runtime, formato, operação, ownership de catálogo, RAM/resource link, credential vending e permissões; falha fechado quando capability ou evidência não está declarada.
 
 | Campo | Valor |
 |---|---|
@@ -70,3 +70,29 @@ operador validar.
 - `knowledge/lakeformation/architecture.md`
 - `skills/lakeformation-fgac-guard/SKILL.md`
 - `skills/diagnose-lakeformation-access/SKILL.md`
+
+### Protocolo
+
+Siga `AGENT_PROTOCOL.md`, reporte `unresolved` e mantenha evidência ancorada.
+Manutenção destrutiva você não executa; a decisão sobe ao agente pai ou ao
+operador responsável pela governança. O verbo é offline e não concede acesso.
+
+### Quando NÃO usar
+
+- Para conceder, revogar ou simular permissões em AWS.
+- Para escolher workers, custo ou performance sem baseline e medição.
+- Para extrapolar capability de release, engine ou formato não declarado.
+
+### Referência rápida
+
+- Matriz: `knowledge/lakeformation/capability-matrix.yaml`.
+- Contrato: `knowledge/lakeformation/architecture.md`.
+- CLI: `sparkforge lakeformation architect --input architecture.json`.
+- MCP: `sparkforge_lakeformation_architect` com `payload` declarativo.
+
+### Red flags
+
+- `glue.id` tratado como alias de `glue.account-id`.
+- FGAC e FTA habilitados simultaneamente.
+- Direct S3 usado como correção para tabela governada.
+- Ausência de evidência convertida em `False`, `Allow *` ou suporte presumido.

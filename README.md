@@ -124,7 +124,7 @@ Os caminhos de cada host, o manifesto e a cópia em dobro no repositório estão
 ## Canais
 
 O mesmo motor chega por cinco caminhos. A tool MCP e o comando da CLI são o mesmo código
-(`sparkforge/adapters/_core.py`), e o servidor publica **114 tools MCP**.
+(`sparkforge/adapters/_core.py`), e o servidor publica **115 tools MCP**.
 
 | Canal | Como chega | Onde está o detalhe |
 |---|---|---|
@@ -140,7 +140,7 @@ em `agents/executors/`) faz uma função só — inventário, extração, julgam
 síntese — com `## Não faz` declarado. Qual coordenador usar é dado: `next-step` consulta
 as rotas de `rules/catalog/routing.yaml`. Onde o despacho de subagente não existe ou está
 desligado, `sparkforge playbook <coordenador>` devolve os mesmos passos em ordem. O repositório
-traz **51 skills**; as de diagnóstico e as onze de procedimento AWS estão em
+traz **52 skills**; as de diagnóstico e as onze de procedimento AWS estão em
 [Agents e skills](docs/guia/05-agents-e-skills.md).
 
 ## SDD próprio

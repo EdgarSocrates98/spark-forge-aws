@@ -892,6 +892,10 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             # repositorio -- conhecimento versionado, como a matriz de Lake
             # Formation. Nenhum caminho e escolhido pelo chamador.
             "sparkforge_knowledge_drift",
+            # `lakeformation_architect` (2026-10-01) recebe contrato JSON
+            # declarativo e lê apenas matriz versionada; nenhum caminho do
+            # chamador é aceito.
+            "sparkforge_lakeformation_architect",
         }
     )
 
