@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/plan.md
-  sha256: "7743bf37207287a7398e814250d18a2d41bcb932cbfdddc92ecd6358a04218f4"
+  sha256: "8fe3bfbbccd7424472c7fe53193f3a1af987ea02cfbf33c619b431b78f0bdf64"
 tasks:
   - id: T1
     status: done
@@ -61,6 +61,9 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
   `unknown`/`unresolved`, conforme define e design.
 - As provas VNX divergentes foram re-medidas pelo verificador e atualizadas nos
   valores de `docs/claims.lock.json`; entradas `REMOVIDA` foram preservadas.
+- A primeira suíte completa encontrou expectativas históricas de 114 tools em
+  `tests/test_adapters_mcp_compact.py` e `tests/test_host_surface_contracts.py`;
+  ambas foram atualizadas para o contador declarado de 115 (114 no HTTP full).
 
 ## Gates e revisões
 
@@ -78,6 +81,9 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
   passed.
 - `python -m pytest tests/test_reference_docs.py -q` — exit 0; 5 passed.
 - `ruff check` nos módulos e testes tocados — exit 0.
+- `python -m pytest -p no:cacheprovider --basetemp E:\\pytest-lf-surface-fix-20261001
+  tests/test_adapters_mcp_compact.py tests/test_host_surface_contracts.py -q` —
+  exit 0; 14 passed.
 
 ## Revisão final
 

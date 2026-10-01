@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/design.md
-  sha256: "22fcd01504f519833b677f487b41ad5cfaff3a3ea2051edec7a90b67d4ba4b07"
+  sha256: "4d19b76a059a2a92b459ee424ba855d2e5056569c01ab569b2085f1081939552"
 tasks:
   - id: T1
     files: [knowledge/lakeformation/capability-matrix.yaml, sparkforge/lakeformation/capabilities.py, tests/test_lakeformation_architecture.py]
@@ -17,7 +17,7 @@ tasks:
     covers: [AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9, AC10]
     test: {path: tests/test_lakeformation_architecture.py, name: test_routing_preserves_account_ownership_dimensions}
   - id: T3
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_lakeformation_architecture.py]
+    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_lakeformation_architecture.py, tests/test_adapters_mcp_compact.py, tests/test_host_surface_contracts.py]
     covers: [AC11]
     test: {path: tests/test_lakeformation_architecture.py, name: test_cli_and_mcp_architecture_parity}
   - id: T4

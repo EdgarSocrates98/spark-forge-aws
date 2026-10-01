@@ -22,6 +22,8 @@ files:
   - {path: skills/lakeformation-architecture/SKILL.md, action: create, reason: "Procedimento progressive-disclosure para routing, decision e preflight; fonte para espelhos gerados."}
   - {path: sparkforge/integrate/render.py, action: modify, reason: "Registrar a decisão de despacho da nova skill no renderizador canônico."}
   - {path: tests/test_sync_render.py, action: modify, reason: "Fixar relação medida entre nova skill e coordenadores."}
+  - {path: tests/test_adapters_mcp_compact.py, action: modify, reason: "Atualizar contadores de superfície full após declarar a nova tool."}
+  - {path: tests/test_host_surface_contracts.py, action: modify, reason: "Atualizar contrato de tamanho da superfície MCP após declarar a nova tool."}
   - {path: manifest.json, action: modify, reason: "Publicar skill e tool novas no manifesto instalado."}
   - {path: docs/surface.lock.json, action: modify, reason: "Declarar crescimento mensurado da superfície MCP e skills."}
   - {path: docs/guia/usos/lake-formation-e-acesso.md, action: modify, reason: "Documentar o contrato novo, CLI e exemplos version-aware."}
