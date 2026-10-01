@@ -428,6 +428,41 @@ def _authorization(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[st
 
 
 def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
+    section_names = (
+        "runtime_changes",
+        "spark_changes",
+        "python_changes",
+        "iceberg_changes",
+        "lakeformation_changes",
+        "dynamicframe_implications",
+        "fgac_migration",
+        "fta_opportunity",
+        "cross_account_changes",
+        "catalog_routing",
+        "ram",
+        "catalog_ids",
+        "code_changes",
+        "terraform_changes",
+        "iam_lf_changes",
+        "testing_plan",
+        "rollback_plan",
+    )
+
+    def section(
+        items: list[str],
+        *,
+        status: str | None = None,
+        required: list[str] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "status": status or ("required" if items else "not_requested"),
+            "items": items,
+            "required_verification": sorted(set(required or [])),
+        }
+
+    def empty_sections() -> dict[str, dict[str, Any]]:
+        return {name: section([]) for name in section_names}
+
     migration = payload.get("migration")
     if not isinstance(migration, dict):
         return {
@@ -442,6 +477,7 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
             "cost_changes": [],
             "testing_plan": [],
             "rollback_plan": ["No migration change is applied by this analyzer."],
+            "sections": empty_sections(),
         }
     source_engine = str(migration.get("from_engine") or payload.get("engine") or "")
     target_engine = str(migration.get("to_engine") or payload.get("engine") or "")
@@ -538,6 +574,112 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
         family = "runtime_transition"
         semantic.append("use the capability matrix for the declared source and target releases")
         cost.append("collect a measured baseline before any capacity or cost claim")
+    formats = {
+        str(payload.get("source_format") or "").lower(),
+        str(payload.get("target_format") or "").lower(),
+    }
+    source_api = str(payload.get("source_api") or payload.get("api") or "").lower()
+    target_api = str(payload.get("target_api") or payload.get("api") or "").lower()
+    runtime_items = (
+        [f"revalidate {source_engine} {source} → {target_engine} {target}"]
+        if source and target
+        else []
+    )
+    spark_items = list(semantic) or [
+        "revalidate Spark API and execution semantics for the declared transition"
+    ]
+    python_items = [
+        "verify Python/runtime dependency compatibility on the target engine and release"
+    ]
+    iceberg_items = (
+        [
+            "revalidate Iceberg catalog, format version and operation semantics on the target"
+        ]
+        if "iceberg" in formats or "iceberg" in family
+        else []
+    )
+    lakeformation_items = list(security) or [
+        "revalidate Lake Formation access model, grants and credential path"
+    ]
+    dynamicframe_items = (
+        [
+            "review DynamicFrame/GlueContext semantics and migrate to the target API "
+            "only after bookmarks, pushdown and schema checks"
+        ]
+        if "dynamicframe" in {source_api, target_api}
+        or (source_engine == "glue" and source == "4.0")
+        else []
+    )
+    fgac_items = (
+        ["revalidate Spark-native FGAC capability and operation-specific grants"]
+        if source_model == "fgac" or target_model == "fgac" or family == "glue_4_to_5"
+        else []
+    )
+    fta_items = (
+        [
+            "assess FTA only when full-table permission, GetDataAccess and "
+            "application integration are verified"
+        ]
+        if source_model == "fta" or target_model == "fta"
+        else []
+    )
+    cross_account_items = (
+        ["revalidate producer/consumer accounts, route and credential path"]
+        if payload.get("cross_account")
+        else []
+    )
+    ram_items = (
+        ["revalidate RAM share, association, invitation/acceptance and ownership"]
+        if payload.get("cross_account")
+        else []
+    )
+    terraform_items = (
+        ["review Terraform defaults, Spark configuration and IAM/Lake Formation arguments"]
+        if payload.get("terraform")
+        or any(
+            isinstance(fact, dict) and str(fact.get("kind", "")).startswith("tf.")
+            for fact in payload.get("facts", [])
+        )
+        else []
+    )
+    sections = {
+        "runtime_changes": section(runtime_items),
+        "spark_changes": section(spark_items),
+        "python_changes": section(python_items),
+        "iceberg_changes": section(iceberg_items),
+        "lakeformation_changes": section(lakeformation_items),
+        "dynamicframe_implications": section(dynamicframe_items),
+        "fgac_migration": section(fgac_items),
+        "fta_opportunity": section(fta_items),
+        "cross_account_changes": section(cross_account_items),
+        "catalog_routing": section(
+            ["revalidate source/target catalog owner, CatalogId and route"]
+        ),
+        "ram": section(ram_items),
+        "catalog_ids": section(
+            ["compare glue.id and glue.account-id independently for source and target"]
+        ),
+        "code_changes": section(
+            ["review source/target API, operation and configuration changes against facts"]
+        ),
+        "terraform_changes": section(terraform_items),
+        "iam_lf_changes": section(
+            ["revalidate IAM GetDataAccess, Lake Formation grants, registered location and KMS"]
+        ),
+        "testing_plan": section(
+            [
+                "run positive read/write tests for each declared format and operation",
+                "run negative tests for catalog routing, credential vending and permissions",
+                "compare data correctness before and after; benchmark only with measured runs",
+            ]
+        ),
+        "rollback_plan": section(
+            [
+                "retain the previous runtime/configuration and catalog route",
+                "revert the deployment change after the verification gate fails",
+            ]
+        ),
+    }
     return {
         "status": "required" if breaking else "version_dependent",
         "from": source,
@@ -559,6 +701,7 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
             "retain the previous runtime/configuration and catalog route",
             "revert the deployment change after the verification gate fails",
         ],
+        "sections": sections,
     }
 
 
@@ -795,6 +938,10 @@ def _progressive_disclosure(payload: dict[str, Any]) -> dict[str, Any]:
         refs.append("knowledge/glue/lakeformation-fgac.md")
     if payload.get("cross_account") and payload.get("engine") == "glue":
         refs.append("knowledge/glue/lakeformation-fgac.md")
+    if payload.get("engine") == "emr_ec2":
+        refs.append("knowledge/emr/runtime-matrix.md")
+    if payload.get("engine") == "emr_serverless":
+        refs.append("knowledge/emr-serverless/runtime-matrix.md")
     runbooks = [
         "docs/guia/usos/lake-formation-operacional.md#credential-vending",
         "docs/guia/usos/lake-formation-operacional.md#cross-account",

@@ -208,6 +208,9 @@ def test_decision_graph_is_bounded_and_version_aware():
         "glue/lakeformation-fgac" in ref
         for ref in emr["review"]["progressive_disclosure"]["knowledge_refs"]
     )
+    assert "knowledge/emr/runtime-matrix.md" in emr["review"]["progressive_disclosure"][
+        "knowledge_refs"
+    ]
 
 
 def test_prompt_scenario_matrix_has_positive_and_negative_cases():
@@ -359,6 +362,7 @@ def test_prompt_scenario_matrix_has_positive_and_negative_cases():
                 "engine": "emr_ec2",
                 "runtime": "7.8",
                 "access_model": "fta",
+                "cross_account": True,
                 "cross_account_resolution": {"mode": "resource_link", "service": "emr"},
             },
             "unresolved",
@@ -383,6 +387,243 @@ def test_prompt_scenario_matrix_has_positive_and_negative_cases():
         assert result["status"] == expected, name
 
 
+def test_prompt_final_knowledge_matrix_is_executable():
+    cases = [
+        (
+            "glue51_fta_parquet",
+            {
+                "access_model": "fta",
+                "source_format": "parquet",
+                "target_format": "parquet",
+                "source_operation": "read",
+                "target_operation": "read",
+                "operation": "read",
+                "api": "dataframe",
+            },
+            "unresolved",
+        ),
+        (
+            "glue4_dynamicframe_current",
+            {
+                "runtime": "4.0",
+                "access_model": "fgac",
+                "source_format": "parquet",
+                "target_format": "parquet",
+                "source_operation": "read",
+                "target_operation": "read",
+                "operation": "read",
+                "api": "dynamicframe",
+                "cross_account": False,
+                "evidence": {"capability_verification": "accepted"},
+            },
+            "unresolved",
+        ),
+        (
+            "emr_serverless_cross_resource_link",
+            {
+                "engine": "emr_serverless",
+                "runtime": "7.9",
+                "access_model": "fta",
+                "source_format": "iceberg",
+                "target_format": "iceberg",
+                "source_operation": "read",
+                "target_operation": "read",
+                "operation": "read",
+                "api": "spark_sql",
+                "cross_account": True,
+                "cross_account_resolution": {
+                    "mode": "resource_link",
+                    "service": "emr_serverless",
+                },
+            },
+            "consistent",
+        ),
+        (
+            "emr_fta_cross_account",
+            {
+                "engine": "emr_ec2",
+                "runtime": "7.8",
+                "access_model": "fta",
+                "source_format": "iceberg",
+                "target_format": "iceberg",
+                "source_operation": "read",
+                "target_operation": "read",
+                "operation": "read",
+                "api": "spark_sql",
+                "cross_account": True,
+                "cross_account_resolution": {"mode": "resource_link", "service": "emr"},
+            },
+            "consistent",
+        ),
+        (
+            "hybrid_cross_account",
+            {
+                "access_governance_mode": "hybrid",
+                "evidence": {
+                    **_payload()["evidence"],
+                    "iam_allowed_principals": True,
+                    "hybrid_access_enabled": True,
+                    "hybrid_principal_opt_in": True,
+                    "cross_account_version": 4,
+                },
+            },
+            "consistent",
+        ),
+        (
+            "lf_tbac_ram",
+            {
+                "access_governance_mode": "lakeformation",
+                "evidence": {**_payload()["evidence"], "lf_tbac": "enabled"},
+            },
+            "consistent",
+        ),
+        (
+            "cross_account_v5",
+            {"evidence": {**_payload()["evidence"], "cross_account_version": 5}},
+            "consistent",
+        ),
+        (
+            "emr712_fgac_dml",
+            {
+                "engine": "emr_ec2",
+                "runtime": "7.12",
+                "access_model": "fgac",
+                "source_format": "iceberg",
+                "target_format": "iceberg",
+                "source_operation": "read",
+                "target_operation": "merge",
+                "operation": "merge",
+                "api": "spark_sql",
+                "cross_account": False,
+            },
+            "unresolved",
+        ),
+    ]
+    for name, overrides, expected in cases:
+        result = analyze_architecture(_payload(**overrides))
+        assert result["status"] == expected, name
+
+
+def test_prompt_critical_gap_regressions():
+    unsupported = analyze_architecture(
+        _payload(
+            engine="emr_ec2",
+            runtime="6.15",
+            access_model="fgac",
+            source_format="iceberg",
+            target_format="iceberg",
+            source_operation="read",
+            target_operation="write",
+            operation="write",
+            cross_account=False,
+            source_api="spark_sql",
+            target_api="spark_sql",
+            evidence={"lakeformation_permission": "all", "capability_verification": "accepted"},
+        )
+    )
+    assert unsupported["status"] == "blocked"
+    assert unsupported["decision"]["target_decision"]["capability"] == "not_supported"
+
+    independent = analyze_architecture(
+        _payload(
+            source_format="iceberg",
+            target_format="parquet",
+            source_operation="merge",
+            target_operation="read",
+            operation="read",
+            source_api="spark_sql",
+            target_api="dataframe",
+        )
+    )
+    assert independent["decision"]["source_decision"]["operation"] == "merge"
+    assert independent["decision"]["target_decision"]["operation"] == "read"
+
+    explicit_catalog = analyze_architecture(
+        _payload(
+            cross_account_resolution={
+                "mode": "explicit_catalog_id",
+                "catalog_id": "111111111111",
+                "service": "glue_etl",
+            },
+            evidence={**_payload()["evidence"], "resource_link": "absent"},
+        )
+    )
+    assert explicit_catalog["status"] == "consistent"
+    assert "resource_link" not in explicit_catalog["decision"]["required_verification"]
+
+    hybrid = analyze_architecture(
+        _payload(
+            access_governance_mode="hybrid",
+            evidence={
+                **_payload()["evidence"],
+                "iam_allowed_principals": True,
+                "hybrid_access_enabled": True,
+                "hybrid_principal_opt_in": True,
+                "cross_account_version": 4,
+            },
+        )
+    )
+    assert hybrid["status"] == "consistent"
+    assert not any(check["code"] == "LF-IAMALLOWEDPRINCIPALS" for check in hybrid["checks"])
+
+    glue4 = analyze_architecture(
+        _payload(
+            runtime="4.0",
+            access_model="fgac",
+            source_format="parquet",
+            target_format="parquet",
+            source_operation="read",
+            target_operation="read",
+            operation="read",
+            api="dynamicframe",
+            cross_account=False,
+            evidence={"capability_verification": "accepted"},
+        )
+    )
+    assert glue4["status"] == "unresolved"
+    assert glue4["decision"]["access_model"] == "FGAC"
+    assert not any(check["code"] == "GLUE-LF-MIGRATION" for check in glue4["checks"])
+
+
+def test_migration_report_has_prompt_sections():
+    result = analyze_architecture(
+        _payload(
+            migration={
+                "from_engine": "glue",
+                "from_runtime": "4.0",
+                "to_engine": "glue",
+                "to_runtime": "5.1",
+                "from_access_model": "fgac",
+                "to_access_model": "fta",
+            }
+        )
+    )
+    sections = result["review"]["migration"]["sections"]
+    assert {
+        "runtime_changes",
+        "spark_changes",
+        "python_changes",
+        "iceberg_changes",
+        "lakeformation_changes",
+        "dynamicframe_implications",
+        "fgac_migration",
+        "fta_opportunity",
+        "cross_account_changes",
+        "catalog_routing",
+        "ram",
+        "catalog_ids",
+        "code_changes",
+        "terraform_changes",
+        "iam_lf_changes",
+        "testing_plan",
+        "rollback_plan",
+    } == set(sections)
+    assert sections["runtime_changes"]["items"]
+    assert sections["dynamicframe_implications"]["items"]
+    assert sections["fgac_migration"]["items"]
+    assert sections["fta_opportunity"]["items"]
+
+
 def test_prompt_acceptance_audit_is_complete():
     root = Path(__file__).resolve().parents[1]
     audit = (
@@ -399,3 +640,14 @@ def test_prompt_acceptance_audit_is_complete():
     ):
         text = (root / path).read_text(encoding="utf-8").lower()
         assert "decision graph" in text or "acceptance" in text or "cloudtrail" in text
+    gap_audit = (
+        root / "docs/sdd/LAKE_FORMATION_PROMPT_GAP_AUDIT/prompt-acceptance-audit.md"
+    ).read_text(encoding="utf-8").lower()
+    for phrase in (
+        "emr serverless",
+        "hybrid cross-account",
+        "cross-account v5",
+        "migration report",
+        "consistent",
+    ):
+        assert phrase in gap_audit
