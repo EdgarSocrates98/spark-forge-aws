@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/design.md
-  sha256: "bf616196aebef2455440bcfe7335cf5a5967e1faf264d59a093bd042d5fceda8"
+  sha256: "4bbf6c49d9647a664519a4fb2ed7f57107528ed48e6ef55ac346cd5d5c8bc133"
 tasks:
   - id: T1
     files: [knowledge/lakeformation/capability-matrix.yaml, sparkforge/lakeformation/capabilities.py, tests/test_lakeformation_architecture.py]

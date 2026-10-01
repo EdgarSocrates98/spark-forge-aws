@@ -69,7 +69,7 @@ unknowns:
     blocks: []
     unlock: "Documentação oficial específica para cada célula ainda desconhecida da matriz deve ser adicionada antes de mudar seu estado de unresolved."
 case_id: null
-change_kinds: [knowledge_doc, tool_or_verb, agent_or_skill, fixture_corpus, claims]
+change_kinds: [knowledge_doc, tool_or_verb, agent_or_skill, claims]
 ---
 
 # LAKE_FORMATION_FGAC_FTA_EVOLUTION — requisitos

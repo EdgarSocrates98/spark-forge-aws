@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/define.md
-  sha256: "9f2d588696ee3500405ca576e67927da174503bacb3a4eefcc610eb71d0a4b06"
+  sha256: "668ab254232f705655e49def53a701793726f0bc8c5eab78862100155e561e18"
 files:
   - {path: tests/test_lakeformation_architecture.py, action: create, reason: "Testes red/green do contrato, routing, decision engine, preflight, golden/negative scenarios, CLI/MCP parity e docs."}
   - {path: sparkforge/lakeformation/capabilities.py, action: create, reason: "Loader validado da matriz arquitetural cross-engine; reusa knowledge_ref e estados fechados."}
