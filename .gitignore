@@ -88,3 +88,6 @@ prompt_analise_sf.md
 .claude/sdd/
 
 test-runs/
+
+.spark-forge/
+.sparkforge/
