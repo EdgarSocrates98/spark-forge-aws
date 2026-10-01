@@ -50,6 +50,22 @@ FTA e limitações de FGAC, Iceberg v3 e VARIANT; ela não autoriza copiar toda 
 matriz 5.1. Divergência entre página geral de FTA e página de migração fica
 `version_dependent` até resolver a fonte.
 
+## Decision graph e observabilidade
+
+`review.decision_graph` mantém somente dimensões declaradas — engine, runtime,
+modelo de acesso, formato, operação e cross-account — e lista cada dimensão
+ausente em `unresolved`; ele não converte bytes em tokens nem substitui facts.
+`review.access_explain.paths` separa metadata de data access e explicita o
+caminho Iceberg `Spark → Iceberg → GlueCatalog → Lake Formation → credential
+vending → S3FileIO`.
+
+Em cross-account, `review.observability.cloudtrail` exige pernas independentes
+de consumidor e produtor. Complemente com Glue logs, Spark logs, Lake Formation
+audit e estado RAM; ausência vira `required_verification`, não evidência de
+ausência. O acceptance audit em
+`docs/sdd/LAKE_FORMATION_PROMPT_ACCEPTANCE_COMPLETION/` mantém os 26 critérios
+do prompt ligados a testes e limites honestos.
+
 ## Performance, FinOps e economia
 
 FGAC pode envolver system/user context e FTA é caminho de tabela completa; a

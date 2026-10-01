@@ -15,6 +15,10 @@ O mesmo payload pode ser enviado a `sparkforge_lakeformation_architect`.
 - `review.root_cause`: erro, hipóteses, evidence, prova requerida e rollback.
 - `review.migration`: mudanças para Glue 4→5.1 ou outra transição declarada.
 - `review.performance_finops`: medidas necessárias; sem ganho inventado.
+- `review.observability`: fontes de log e pernas CloudTrail de consumidor e
+  produtor em cross-account.
+- `review.decision_graph`: dimensões bounded, referências progressivas e
+  `unresolved` explícito para contexto ausente.
 
 ## Credential vending
 
@@ -45,3 +49,11 @@ Reverta a alteração de código/configuração que motivou a análise. Não con
 `SUPER`, `Action: "*"` ou `Resource: "*"` sem prova e aprovação do dono. O
 verbo é read-only e não substitui `collect lakeformation`, `collect iam-access`,
 CloudTrail, logs Glue/Spark ou benchmark.
+
+## Decision graph e evidência de execução
+
+Use `decision_graph` para auditar somente as dimensões que o payload declarou;
+não trate `unresolved` como suporte nem como falha comprovada. Em cross-account,
+colecione CloudTrail nos dois lados — consumidor e produtor — e correlacione com
+Glue/Spark logs, Lake Formation audit e RAM. Para Iceberg, confirme separadamente
+metadados no GlueCatalog e data access via S3FileIO/credential vending.

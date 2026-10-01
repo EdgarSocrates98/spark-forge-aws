@@ -78,6 +78,11 @@ mentira que um finding sem evidência. `sparkforge/observability/`.
 um gate que reprova quando os espelhos divergem da fonte. `sparkforge/adapters/`,
 `parity.yaml`, `scripts/sync_skills.py`.
 
+Lake Formation acceptance and observability are version-aware: the decision
+graph selects only declared dimensions, while CloudTrail consumer/producer legs,
+Glue/Spark logs, Lake Formation audit and RAM state remain independent evidence
+sources. See `docs/sdd/LAKE_FORMATION_PROMPT_ACCEPTANCE_COMPLETION/`.
+
 ## Vocabulário de prova
 
 **Golden case.** Entrada fixa, saída esperada versionada, comparação byte a byte.

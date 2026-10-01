@@ -3,7 +3,7 @@ sdd: 1
 feature: LAKE_FORMATION_OPERATIONAL_CLOSURE
 phase: ship
 profile: dev
-status: draft
+status: done
 upstream:
   path: docs/sdd/LAKE_FORMATION_OPERATIONAL_CLOSURE/build_report.md
   sha256: "bd520aae1b94d1148f61fde6cfa93f4f324497503582bd1b48e3a95f49ac0552"

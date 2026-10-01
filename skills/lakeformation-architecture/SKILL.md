@@ -87,6 +87,10 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
   fact correspondente.
 - Use explain-access e root-cause para separar metadata de data access; não
   trate `GetDataAccess`, RAM ou KMS como detalhe implícito.
+- `review.decision_graph` é bounded e version-aware: engine, runtime, modelo,
+  formato, operação e rota cross-account entram como dimensões; ausência fica
+  `unresolved`. `review.observability` exige CloudTrail separado para
+  consumidor/produtor, além de Glue/Spark logs, Lake Formation audit e RAM.
 
 ## Não faz
 

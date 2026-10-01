@@ -35,3 +35,10 @@ específica. A composição usa `source_decision` e `target_decision`, portanto 
 formato e a operação da origem não são substituídos pelo destino. A rota
 cross-account pode ser resource link ou CatalogId explícito na integração Glue
 ETL; o payload deve declarar qual caminho foi provado.
+
+## Acceptance and observability closure
+
+The Lake Formation acceptance matrix is audited by
+`tests/test_lakeformation_prompt_acceptance.py`. The operational review exposes
+a bounded decision graph and requires separate CloudTrail evidence for consumer
+and producer in cross-account cases; missing evidence remains `unresolved`.
