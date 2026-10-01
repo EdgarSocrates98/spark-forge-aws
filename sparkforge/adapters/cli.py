@@ -2212,6 +2212,18 @@ def build_parser() -> argparse.ArgumentParser:
         default="full",
         help="`summary` omite fonte, frase e nota. Ver a regra 28 do CLAUDE.md.",
     )
+    lf_arch = lf_matrix_sub.add_parser(
+        "architect",
+        help=(
+            "Avalia arquitetura declarada de FGAC/FTA, ownership de catalogos, "
+            "cross-account e capability por release. Nao toca AWS."
+        ),
+    )
+    lf_arch.add_argument(
+        "--input",
+        required=True,
+        help="Arquivo JSON com engine, runtime, catalogos, modelo de acesso e evidencias.",
+    )
 
     rules_p = sub.add_parser("rules", help="Consulta o catalogo de regras versionado.")
     rules_sub = rules_p.add_subparsers(dest="rules_action", required=True)
@@ -4349,6 +4361,11 @@ def _cmd_lakeformation_matrix(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_lakeformation_architect(args: argparse.Namespace) -> int:
+    _print(_core.lakeformation_architect(_load_json_object(args.input)))
+    return 0
+
+
 def _cmd_rules_lookup(args: argparse.Namespace) -> int:
     payload = _core.rules_lookup(
         id=args.id,
@@ -5318,6 +5335,7 @@ _DISPATCH = {
     ("debate", "submit"): _cmd_debate_submit,
     ("root-cause", None): _cmd_root_cause,
     ("lakeformation", "matrix"): _cmd_lakeformation_matrix,
+    ("lakeformation", "architect"): _cmd_lakeformation_architect,
     ("lakeformation", "access-graph"): _cmd_lakeformation_access_graph,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,

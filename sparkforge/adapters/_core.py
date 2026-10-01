@@ -160,6 +160,7 @@ from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
+from sparkforge.lakeformation.architecture import analyze_architecture as _analyze_lf_architecture
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
 from sparkforge.migration.release_descriptor import (
@@ -1372,6 +1373,13 @@ def lakeformation_matrix(
     if detail_level != "summary":
         saida["sources"] = dict(documento.get("fontes") or {})
     return saida
+
+
+def lakeformation_architect(payload: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate a declared Lake Formation architecture without AWS side effects."""
+    if not isinstance(payload, dict):
+        raise AdapterError("arquitetura Lake Formation deve ser um objeto JSON.", exit_code=2)
+    return _analyze_lf_architecture(payload)
 
 
 def analyze_lakeformation_grants(

@@ -749,6 +749,19 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: evaluate a version-aware Lake Formation architecture without AWS mutation
+    tools: [sparkforge_lakeformation_architect]
+    cli: [lakeformation architect]
+    knowledge:
+      - knowledge/lakeformation/capability-matrix.yaml
+      - knowledge/lakeformation/architecture.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: look up a rule with threshold, version guard and source
     tools: [sparkforge_rules_lookup]
     cli: [rules lookup]

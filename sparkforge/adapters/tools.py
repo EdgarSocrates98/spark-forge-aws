@@ -2928,6 +2928,37 @@ _LF_MATRIX_SCHEMA: dict[str, Any] = {
     },
 }
 
+_LF_ARCHITECTURE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["status", "routing", "checks", "decision"],
+    "properties": {
+        "status": {"type": "string", "enum": ["consistent", "unresolved", "blocked"]},
+        "routing": {"type": "object"},
+        "checks": {"type": "array", "items": {"type": "object"}},
+        "decision": {
+            "type": "object",
+            "required": [
+                "access_model",
+                "capability",
+                "observed",
+                "inferred",
+                "required_verification",
+                "risks",
+                "rollback",
+            ],
+            "properties": {
+                "access_model": {"type": "string"},
+                "capability": {"type": "string"},
+                "observed": {"type": "array", "items": {"type": "string"}},
+                "inferred": {"type": "array", "items": {"type": "string"}},
+                "required_verification": {"type": "array", "items": {"type": "string"}},
+                "risks": {"type": "array", "items": {"type": "string"}},
+                "rollback": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+    },
+}
+
 _RULES_LOOKUP_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -8233,6 +8264,30 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _LF_MATRIX_SCHEMA,
         "annotations": _READ_ONLY,
     },
+    "sparkforge_lakeformation_architect": {
+        "description": (
+            "Avalia uma arquitetura declarada de Lake Formation de forma offline e "
+            "determinística. Separa engine/runtime, FGAC/FTA, formato, operação, "
+            "ownership de catálogo, cross-account e credential vending; devolve "
+            "consistent, unresolved ou blocked. Não chama AWS, não sugere bypass por "
+            "S3 e não estima custo ou ganho."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["payload"],
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "description": (
+                        "Declaração JSON da arquitetura; inclua engine, runtime, "
+                        "source_catalog, target_catalog e evidence quando disponíveis."
+                    ),
+                }
+            },
+        },
+        "outputSchema": _LF_ARCHITECTURE_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_rules_lookup": {
         "description": (
             "Consulta o catalogo de regras determinístico por id ou categoria, devolvendo "
@@ -10094,6 +10149,10 @@ def _h_lakeformation_matrix(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_lakeformation_architect(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.lakeformation_architect(args.get("payload", {}))
+
+
 def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
     return _core.rules_lookup(
         id=args.get("id"),
@@ -11051,6 +11110,7 @@ _HANDLERS = {
     "sparkforge_root_cause": _h_root_cause,
     "sparkforge_lakeformation_access_graph": _h_lakeformation_access_graph,
     "sparkforge_lakeformation_matrix": _h_lakeformation_matrix,
+    "sparkforge_lakeformation_architect": _h_lakeformation_architect,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
     "sparkforge_proof": _h_proof,

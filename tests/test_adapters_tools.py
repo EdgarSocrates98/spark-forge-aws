@@ -95,6 +95,7 @@ class TestToolSurface:
             "sparkforge_judge",
             "sparkforge_arbitrate",
             "sparkforge_lakeformation_access_graph",
+            "sparkforge_lakeformation_architect",
             "sparkforge_debate_referee",
             "sparkforge_debate_start",
             "sparkforge_debate_next",
@@ -2348,6 +2349,9 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_lakeformation_matrix",
             {"runtime": "5.1", "axis": "fgac_spark_native_write"},
         )
+
+    if name == "sparkforge_lakeformation_architect":
+        return call_tool("sparkforge_lakeformation_architect", {"payload": {}})
 
     if name == "sparkforge_rules_lookup":
         return call_tool("sparkforge_rules_lookup", {"id": ["SF-PY-007"]})

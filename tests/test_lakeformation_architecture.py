@@ -1,3 +1,7 @@
+import json
+
+from sparkforge.adapters.cli import main
+from sparkforge.adapters.tools import call_tool
 from sparkforge.lakeformation.architecture import analyze_architecture
 from sparkforge.lakeformation.capabilities import capability, load_matrix
 from sparkforge.lakeformation.catalog_routing import route_catalogs
@@ -224,3 +228,15 @@ def test_capability_matrix_is_source_backed():
         "version_dependent",
     }
     assert capability("emr_ec2", "7.8.0", "fta", "iceberg", "read")["status"] == "supported"
+
+
+def test_cli_and_mcp_architecture_parity(tmp_path, capsys):
+    payload = _golden_input()
+    input_path = tmp_path / "architecture.json"
+    input_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert main(["lakeformation", "architect", "--input", str(input_path)]) == 0
+    cli_result = json.loads(capsys.readouterr().out)
+    mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+
+    assert cli_result == mcp_result
