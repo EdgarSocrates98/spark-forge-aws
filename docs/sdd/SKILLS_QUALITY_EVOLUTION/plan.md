@@ -18,7 +18,7 @@ tasks:
     test: {path: tests/test_skill_quality.py, name: test_offline_eval_runner_is_complete_and_has_no_provider_side_effect}
   - id: T3
     files: [skills]
-    covers: [AC1, AC2]
+    covers: [AC1]
     test: {path: tests/test_skill_quality.py, name: test_all_source_skills_have_skill_creator_evals}
   - id: T4
     files: [.claude/skills, .agents/skills, docs/guia/referencia/skills]
