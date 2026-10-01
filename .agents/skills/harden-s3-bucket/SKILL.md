@@ -1,6 +1,20 @@
 ---
 name: harden-s3-bucket
 description: Use quando for proteger um bucket S3 — criar bucket novo já hardenado, auditar bucket existente contra controles de segurança, remediar finding de security hub/guardduty, configurar encriptação (SSE-S3 com Bucket Keys, SSE-KMS com chave gerenciada pelo cliente), ou habilitar logging/monitoramento (server access logging, CloudTrail data events, GuardDuty, Config rules). Use também quando a pergunta for "esse bucket está seguro", "por que o finding de bucket público", "qual a diferença entre SSE-S3 e SSE-KMS aqui" ou "como bloqueio SSE-C", mesmo sem citar "harden". NÃO use para operações de dado S3 (upload/download/list), setup de S3 Tables (use `provision-s3-tables-table`), descoberta de assets existentes, ou hardening de serviços que não S3. Se você está prestes a rodar `put-bucket-policy` sem back up da policy atual, pare — `put-bucket-policy` substitui a policy inteira e descarta statements existentes em silêncio.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/cross-service-constraints.md
+  - ../../knowledge/offline-policy.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge collect iam-access
 ---
 
 # Hardening de bucket S3
@@ -167,3 +181,16 @@ runtime e a região; nenhum número sem `fact_id` (aqui, fact vem do artefato de
 manutenção destrutiva você **não executa** — recomende, e a confirmação de
 escopo e retenção **sobe a quem pode ser perguntado**: o operador na sessão,
 ou o agente pai que despachou.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **hardening de bucket S3 e policy segura**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge collect iam-access`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/cross-service-constraints.md`, `../../knowledge/offline-policy.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

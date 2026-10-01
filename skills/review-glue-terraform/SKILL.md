@@ -1,6 +1,22 @@
 ---
 name: review-glue-terraform
 description: Use quando revisar o Terraform/IaC de jobs Glue (worker type, max_capacity junto com worker_type/number_of_workers, execution class, timeout, max_concurrent_runs com bookmarks, max_retries com escrita não idempotente, default arguments, Spark UI/event logs, segredo em argumento) em busca de configuração contraditória, observabilidade ausente ou incompatível com o runtime. Use também quando a pergunta for "esse .tf tá certo", "por que a config que eu mudei no Terraform não fez efeito" ou "tem credencial exposta nesse job", mesmo que ninguém fale em regra. Se você está prestes a ler o .tf linha por linha comparando contra a doc do Glue, rode `sparkforge analyze terraform` e `sparkforge judge` em vez disso — o extrator lê os blocos aws_glue_job deterministicamente e o catálogo aplica as regras SF-GLUE por recurso.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/terraform-data-platform.md
+  - ../../knowledge/domain-tool-matrix.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge analyze terraform
+  - sparkforge judge
+  - sparkforge analyze pyspark
 ---
 
 # Review Glue Terraform
@@ -144,3 +160,16 @@ Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), 
 confirmação aqui não é difícil: é impossível — por isso a regra 9 de
 `AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
 perguntado.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **revisão de Terraform para jobs Glue**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge analyze terraform`, `sparkforge judge`, `sparkforge analyze pyspark`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/terraform-data-platform.md`, `../../knowledge/domain-tool-matrix.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

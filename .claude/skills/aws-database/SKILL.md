@@ -1,6 +1,20 @@
 ---
 name: aws-database
 description: Use quando precisar escolher, comparar, recomendar, iniciar ou operar um banco de dados AWS — roteia para o servico correto entre Aurora, DSQL, RDS, DynamoDB, ElastiCache, MemoryDB, DocumentDB, Keyspaces, Timestream, Neptune. Aplica quando alguem descreve uma aplicacao que vai armazenar, recuperar ou gerenciar dados na AWS, mesmo sem mencionar "banco de dados" explicitamente. Cobre relacional (Aurora, DSQL, RDS PostgreSQL/MySQL/MariaDB/Oracle/SQL Server/Db2), key-value (DynamoDB), wide-column (Keyspaces), documento (DocumentDB), grafo (Neptune), serie temporal (Timestream) e em-memory/cache (ElastiCache, MemoryDB). NAO use para armazenamento de objeto/arquivo (S3, EFS, FSx — use aws-storage) nem para analytics query engines (Athena, Redshift).
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/cross-service-constraints.md
+  - ../../knowledge/offline-policy.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge rules lookup
 ---
 
 # AWS Database
@@ -160,3 +174,16 @@ regiao; nenhum numero sem verificacao contra documentacao corrente ou referencia
 manutencao destrutiva voce **nao executa** — recomende, e a confirmacao de escopo e
 retencao **sobe a quem pode ser perguntado**: o operador na sessao, ou o agente pai que
 despachou.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **seleção e operação segura de serviços AWS de banco**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge rules lookup`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/cross-service-constraints.md`, `../../knowledge/offline-policy.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

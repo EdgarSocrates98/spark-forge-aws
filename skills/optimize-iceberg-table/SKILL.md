@@ -1,6 +1,22 @@
 ---
 name: optimize-iceberg-table
 description: Use quando tabelas Apache Iceberg no Glue Data Catalog degradam por excesso de data files pequenos, delete files acumulados, snapshots ou manifests crescendo sem parar, partition spec inadequado ou write.distribution-mode incoerente com particionamento — e for preciso decidir entre compaction, rewrite manifests e expire snapshots com evidência, não por rotina. Use também quando a pergunta for "essa tabela Iceberg tá lenta para consultar", "o Athena demora para planejar essa tabela" ou "quantos snapshots essa tabela já acumulou", mesmo que ninguém fale em metadata table. Se você está prestes a rodar `SELECT * FROM db.tabela.files` no olho para contar arquivo pequeno, rode `sparkforge collect iceberg-metadata` e `sparkforge analyze iceberg` em vez disso — o extrator resume files, delete files, snapshots, manifests e partições deterministicamente, e o catálogo aplica os limiares versionados.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/storage/iceberg-performance.md
+  - ../../knowledge/storage/iceberg-catalog.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge collect iceberg-metadata
+  - sparkforge analyze iceberg
+  - sparkforge judge
 ---
 
 # Optimize Iceberg Table
@@ -135,3 +151,16 @@ versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o
 manutenção destrutiva só com confirmação explícita. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
 recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
 nomeia o produtor de propósito: exigência sem verbo é prosa.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **metadados, manifests, data files e manutenção Iceberg**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge collect iceberg-metadata`, `sparkforge analyze iceberg`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/storage/iceberg-performance.md`, `../../knowledge/storage/iceberg-catalog.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

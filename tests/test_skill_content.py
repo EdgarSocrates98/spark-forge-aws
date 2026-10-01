@@ -21,7 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ROOT / "skills"
 MIRRORS = (ROOT / ".claude" / "skills", ROOT / ".agents" / "skills")
 
-SKILL_DIRS = sorted(p for p in CANONICAL.iterdir() if p.is_dir())
+SKILL_DIRS = sorted(
+    p for p in CANONICAL.iterdir() if p.is_dir() and (p / "SKILL.md").is_file()
+)
 SKILL_IDS = [p.name for p in SKILL_DIRS]
 
 # Diretórios de suporte referenciáveis por caminho relativo à raiz do repo.

@@ -7,6 +7,7 @@ Use quando o job Glue chama uma biblioteca Python com múltiplos módulos, facto
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-library-call-graph/SKILL.md` |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/graph/graphframes-api.md', '../../knowledge/graph/availability.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze pyspark', 'sparkforge analyze call-graph']} |
 
 ## Procedimento (texto integral)
 
@@ -120,3 +121,16 @@ Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), 
 confirmação aqui não é difícil: é impossível — por isso a regra 9 de
 `AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
 perguntado.
+
+
+### Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **grafo de chamadas e trabalho Spark alcançável**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge analyze pyspark`, `sparkforge analyze call-graph`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/graph/graphframes-api.md`, `../../knowledge/graph/availability.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

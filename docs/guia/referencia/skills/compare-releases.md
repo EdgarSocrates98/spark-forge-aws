@@ -7,6 +7,7 @@ Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/compare-releases/SKILL.md` |
+| `metadata` |  |
 
 ## Procedimento (texto integral)
 
@@ -198,3 +199,16 @@ perguntado: o agente pai que despachou, ou o operador na sessão.
 Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
 `ask_user_question` é **sempre negado** a um subagente. Devolva os números com a fonte, o eixo
 declarado e a lista de recusas; a decisão de migrar é de quem pode ser perguntado.
+
+
+### Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **compatibilidade e diferenças entre releases e runtimes**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge release describe`, `sparkforge release diff`, `sparkforge migrate glue`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

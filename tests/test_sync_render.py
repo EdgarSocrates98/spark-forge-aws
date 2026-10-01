@@ -209,7 +209,9 @@ class TestBordas:
 # (string, default nenhum). Spec: D-5 e D-6.
 
 SKILLS = ROOT / "skills"
-SKILL_DIRS = tuple(sorted(p for p in SKILLS.iterdir() if p.is_dir()))
+SKILL_DIRS = tuple(
+    sorted(p for p in SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
+)
 
 # A saida literal do Step 1, medida sobre `agents/*.md` antes de qualquer
 # decisao. Esta constante NAO e a fonte -- a fonte e o `skills:` de cada perfil,

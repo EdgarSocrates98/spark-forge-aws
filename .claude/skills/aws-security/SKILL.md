@@ -1,6 +1,20 @@
 ---
 name: aws-security
 description: Use quando a pergunta envolver serviços AWS de segurança — Security Hub V2 (OCSF) findings, conectores, agregadores, automation rules e resumo de postura; Security Hub CSPM (V1/ASFF) controles e padrões de compliance; GuardDuty threat findings; Inspector vulnerability findings; Macie sensitive data findings; Detective investigation; e Security Lake. Use para postura de segurança, Exposure findings, controles CSPM falhados, threat findings, vulnerability findings, sensitive data findings, automation rules ou configuração cross-service de segurança em ambientes AWS. Procedimentos usam sintaxe AWS CLI padrão e funcionam com ou sem o AWS MCP server.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/cross-service-constraints.md
+  - ../../knowledge/offline-policy.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge collect iam-access
 ---
 
 # AWS Security
@@ -216,3 +230,16 @@ região e a conta; nenhum número sem `fact_id` (aqui, fact vem do artefato de A
 de leitura, não de inspeção); `validate_output` antes de apresentar; manutenção
 destrutiva você **não executa** — recomende, e a confirmação de escopo **sobe a
 quem pode ser perguntado**: o operador na sessão, ou o agente pai que despachou.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **segurança AWS, threat model e controles verificáveis**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge collect iam-access`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/cross-service-constraints.md`, `../../knowledge/offline-policy.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

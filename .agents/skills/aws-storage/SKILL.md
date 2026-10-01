@@ -1,6 +1,20 @@
 ---
 name: aws-storage
 description: Use quando precisar escolher, comparar ou operar servicos de armazenamento AWS — S3 (General Purpose, Express One Zone, Tables, Vectors, Files), EFS, FSx (Lustre, ONTAP, OpenZFS, Windows), EBS, DataSync, Transfer Family, Storage Gateway, AWS Backup. Cobre selecao de servico por workload, custo, performance, configuracao, seguranca, troubleshooting e migracao de dados. Aplica quando alguem pergunta onde armazenar ou arquivar dados, qual servico de storage escolher, como comparar dois, como migrar de on-premises ou entre servicos AWS, como proteger/replicar/recuperar dados, como otimizar custo de storage, onde deployar NFS/SMB/POSIX compartilhado, onde guardar vector embeddings ou dados tabulares, ou como um servico de storage AWS funciona. NAO use para motores de consulta SQL (Athena, Spark, Redshift, EMR), ETL (Glue), streaming (Kafka, MSK, Kinesis) ou bancos gerenciados (RDS, Aurora, DynamoDB).
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/cross-service-constraints.md
+  - ../../knowledge/offline-policy.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge rules lookup
 ---
 
 # AWS Storage
@@ -270,3 +284,16 @@ servico; nenhum numero sem verificacao contra documentacao corrente ou arquivo d
 referencia; manutencao destrutiva voce **nao executa** — recomende, e a confirmacao de
 escopo e retencao **sobe a quem pode ser perguntado**: o operador na sessao, ou o agente
 pai que despachou.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **armazenamento AWS, durabilidade, custo e governança**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge rules lookup`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/cross-service-constraints.md`, `../../knowledge/offline-policy.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

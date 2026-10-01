@@ -1,6 +1,20 @@
 ---
 name: compare-releases
 description: Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — "vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter", "o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?", "que versão de Python o Glue 5.1 publica" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge release describe` e `sparkforge release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge migrate glue` e `sparkforge migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge release describe
+  - sparkforge release diff
+  - sparkforge migrate glue
 ---
 
 # Comparar releases de runtime
@@ -191,3 +205,16 @@ perguntado: o agente pai que despachou, ou o operador na sessão.
 Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
 `ask_user_question` é **sempre negado** a um subagente. Devolva os números com a fonte, o eixo
 declarado e a lista de recusas; a decisão de migrar é de quem pode ser perguntado.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **compatibilidade e diferenças entre releases e runtimes**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge release describe`, `sparkforge release diff`, `sparkforge migrate glue`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

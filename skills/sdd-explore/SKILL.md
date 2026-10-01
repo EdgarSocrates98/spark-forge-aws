@@ -1,6 +1,22 @@
 ---
 name: sdd-explore
 description: Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job Glue/PySpark do operador — "quero fazer X", "uso A ou B?", "como você atacaria isso?" — e ainda não há define, design nem código. Requisito já claro vai direto para sdd-define.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../docs/sdd/README.md
+  - ../../docs/sdd/CONTRATO.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge sdd check
+  - sparkforge sdd status
+  - sparkforge code search
 ---
 
 # SDD Explore
@@ -110,3 +126,16 @@ Visão geral do ciclo: `docs/sdd/README.md`.
 - Nota de clareza ou de confiança escrita no artefato.
 - Versão de Glue ou Spark suposta em vez de lida.
 - "Fica mais rápido" sem medida que o sustente.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **exploração de alternativas e escolha explícita**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge sdd check`, `sparkforge sdd status`, `sparkforge code search`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../docs/sdd/README.md`, `../../docs/sdd/CONTRATO.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

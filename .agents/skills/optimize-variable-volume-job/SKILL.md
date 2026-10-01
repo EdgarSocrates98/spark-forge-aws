@@ -1,6 +1,22 @@
 ---
 name: optimize-variable-volume-job
 description: Use quando o mesmo job Glue roda de dezenas de registros a centenas de milhões e um único perfil configurado para o pior caso fica caro em microcarga e ainda inadequado no full. Use também quando a pergunta for "por que a carga vazia demora 5 minutos", "o job de teste custa quase igual ao de produção" ou "ficou mais lento essa semana" num job cujo volume varia muito entre execuções. Se você está prestes a comparar runs de volumes diferentes só de cabeça, rode `sparkforge analyze event-log` em cada run e `sparkforge analyze pyspark` no código em vez disso — subparalelismo (SF-UI-006) que é esperado numa carga micro é sintoma real numa carga full, e o catálogo não distingue os dois perfis sozinho; quem separa é você.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/spark/execution-model.md
+  - ../../knowledge/performance-principles.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge analyze event-log
+  - sparkforge analyze pyspark
+  - sparkforge collect event-log
 ---
 
 # Optimize Variable Volume Job
@@ -78,3 +94,16 @@ versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o
 manutenção destrutiva só com confirmação explícita. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
 recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
 nomeia o produtor de propósito: exigência sem verbo é prosa.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **capacidade e comportamento de jobs com volume variável**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge analyze event-log`, `sparkforge analyze pyspark`, `sparkforge collect event-log`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/spark/execution-model.md`, `../../knowledge/performance-principles.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

@@ -1,6 +1,22 @@
 ---
 name: sdd-define
 description: Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../docs/sdd/README.md
+  - ../../docs/sdd/CONTRATO.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge sdd check
+  - sparkforge sdd status
+  - sparkforge funcval compare
 ---
 
 # SDD Define
@@ -141,3 +157,16 @@ Recusas desta fase: `schema_invalid`, `success_without_source`, `case_missing`,
 - `change_kinds` inventado, ou vazio numa mudança que mexe em skill ou tool.
 - `case_id` copiado de outro case.
 - Afirmação sobre Glue ou Spark sem versão e sem fonte citada.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **critérios de aceite, hipótese e métricas do SDD**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge sdd check`, `sparkforge sdd status`, `sparkforge funcval compare`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../docs/sdd/README.md`, `../../docs/sdd/CONTRATO.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

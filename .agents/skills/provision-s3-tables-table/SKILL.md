@@ -1,6 +1,20 @@
 ---
 name: provision-s3-tables-table
 description: Use quando for criar uma tabela Iceberg gerenciada por Amazon S3 Tables (o produto `s3tables`, não o Glue Data Catalog tradicional) — table bucket, namespace, tabela, schema, particionamento, integração com o catálogo `s3tablescatalog` e IAM no namespace `s3tables:*`. Use também quando a pergunta for "como crio uma tabela Iceberg sem gerenciar compaction", "S3 Tables vale vs Glue Data Catalog" ou "por que `s3:*` não funciona no S3 Tables", mesmo sem citar o produto pelo nome. NÃO use para criar tabela no Glue Data Catalog tradicional (esse caminho não está aqui — use `design-s3-data-lake` para o design e `optimize-iceberg-table` para a manutenção), nem para ingerir dado (procedimento de carga é outro), nem para consultar tabela existente (agent `athena-query-optimizer`). Se você está prestes a rodar `aws s3tables create-table-bucket` sem checar tabelas existentes, pare — o passo 1 exige o inventário, e criar sobre nome existente é silencioso.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/cross-service-constraints.md
+  - ../../knowledge/offline-policy.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge rules lookup
 ---
 
 # Provisionar tabela no Amazon S3 Tables
@@ -215,3 +229,16 @@ runtime e a região; nenhum número sem `fact_id` (aqui, fact vem do artefato de
 manutenção destrutiva você **não executa** — recomende, e a confirmação de
 escopo e retenção **sobe a quem pode ser perguntado**: o operador na sessão,
 ou o agente pai que despachou.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **provisionamento de S3 Tables com escopo e rollback**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge rules lookup`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/cross-service-constraints.md`, `../../knowledge/offline-policy.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

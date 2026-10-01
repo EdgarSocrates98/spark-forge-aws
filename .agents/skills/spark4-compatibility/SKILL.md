@@ -1,6 +1,22 @@
 ---
 name: spark4-compatibility
 description: Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e alguém pergunta "o que quebra no Spark 4?", "essa config mudou de nome?", "ANSI mode vai estourar meu cast?" ou "meu JAR de Scala 2.12 funciona?". Use também quando o job falha com `NoSuchMethodError`, `ClassNotFoundException` ou uma exceção de overflow que antes devolvia NULL. Se você está prestes a comparar o código com o guia de migração do Apache no olho, rode `sparkforge migrate glue <dir> --from 5.1 --to 6.0` e `sparkforge glue dependency-audit <dir> --glue 6.0` — a área `SF-SPARK4` guarda cada regra pela versão de **Spark**, não de Glue, e por isso vale igual num EMR.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/spark/execution-model.md
+  - ../../knowledge/performance-principles.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge migrate glue
+  - sparkforge glue dependency-audit
+  - sparkforge judge
 subagent: true
 agent: sf-runtime-specialist
 ---
@@ -70,3 +86,16 @@ nunca um ajuste que a skill aplica para fazer o job passar.
 - **"O JAR é nosso, foi compilado aqui."** Compilado contra qual Scala? `scala_minor` é o que decide, não a origem do artefato.
 - **"Desliguei o ANSI e passou."** Passou a rodar; não passou a estar correto. O cast que estouraria continua produzindo o valor que o ANSI recusava.
 - **"A regra não disparou, logo não há risco."** Guarda por versão: fora da faixa, a regra é **pulada**, e `sparkforge judge --show-skipped` mostra a razão. Silêncio da ferramenta nunca é atestado de ausência de risco.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **compatibilidade Spark 4, Glue e dependências**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge migrate glue`, `sparkforge glue dependency-audit`, `sparkforge judge`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/spark/execution-model.md`, `../../knowledge/performance-principles.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

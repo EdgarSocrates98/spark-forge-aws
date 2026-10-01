@@ -7,6 +7,7 @@ Use quando um job Glue declara `--enable-lakeformation-fine-grained-access` ou c
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/lakeformation-fgac-guard/SKILL.md` |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/lakeformation/architecture.md', '../../knowledge/glue/lakeformation-fgac.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge migrate glue', 'sparkforge rules lookup', 'sparkforge collect lakeformation']} |
 
 ## Procedimento (texto integral)
 
@@ -217,3 +218,16 @@ dependência e perder o FGAC é decidir postura de segurança sem dono.
 - **"Eu já dei SELECT no Lake Formation."** São dois planos de autorização. A AWS declara que ter `SELECT` não salva uma operação que não tem a permissão de IAM sobre a API do Glue — é o que `SF-ERR-016` separa.
 - **"Vou trocar para Full Table Access."** Num Glue 5.1 isso quebra calado se o EMRFS não for restaurado, e exige `ALL` no Lake Formation para escrever (não `SELECT`), mais `lakeformation:GetDataAccess` no IAM, mais o passo de conta de *application integration*. FGAC e FTA não coexistem no mesmo job — se a leitura precisa de FGAC e a escrita precisa de credencial do Lake Formation, um job só não resolve.
 - **"O alvo está registrado no Lake Formation e a escrita falha sob FGAC."** Isso cai num **conflito declarado** da documentação da AWS (§6 do documento de conhecimento): o caminho do role não é usado para localização registrada, e o grant do Lake Formation não autoriza escrita. Não escolha um lado — apresente as três saídas que a documentação sustenta.
+
+
+### Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **guarda de migração FGAC/FTA e evidência de acesso**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge migrate glue`, `sparkforge rules lookup`, `sparkforge collect lakeformation`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/lakeformation/architecture.md`, `../../knowledge/glue/lakeformation-fgac.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

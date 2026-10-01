@@ -1,6 +1,22 @@
 ---
 name: diagnose-lakeformation-access
 description: Use quando um job Glue lê tabela governada e falha ao escrever, ou quando alguém pergunta "por que a leitura passa e a escrita não?", "tomo AccessDenied e já dei SELECT", "troquei writeTo/insertInto/INSERT INTO e continua igual", "migrei de Glue 4.0 e nada funciona", ou quando é preciso descobrir QUAL permissão falta em vez de em qual plano a operação parou. É o procedimento que ORDENA os quatro coletores de governança de acesso; para a pergunta "esta configuração é suportada?" isolada, use `lakeformation-fgac-guard`.
+metadata:
+  sparkforge_contract: v1
+  evals: evals/evals.json
+  references:
+  - references/README.md
+  - ../_shared/references/evidence-first.md
+  - ../_shared/references/evaluation-contract.md
+  - ../_shared/references/operational-safety.md
+  - ../../knowledge/lakeformation/architecture.md
+  - ../../knowledge/glue/lakeformation-fgac.md
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
+  - sparkforge analyze terraform
+  - sparkforge judge
+  - sparkforge root-cause
 ---
 
 # Diagnosticar acesso sob Lake Formation
@@ -228,3 +244,16 @@ a errada produz um achado verdadeiro sobre o runtime errado.
   workers, e isso é `tune-glue-job`.
 - A pergunta é sobre **qual coluna mascarar**: isto aqui é sobre acesso negado,
   não sobre modelar a política.
+
+
+## Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **diagnóstico de autorização Lake Formation/IAM**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge analyze terraform`, `sparkforge judge`, `sparkforge root-cause`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/lakeformation/architecture.md`, `../../knowledge/glue/lakeformation-fgac.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.
