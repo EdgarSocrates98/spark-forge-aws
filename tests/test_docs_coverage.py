@@ -242,7 +242,10 @@ class TestManifest:
         wheel, um nivel acima.
         """
         manifest = json.loads(_read("manifest.json"))
-        on_disk = {p.name for p in (ROOT / "skills").iterdir() if p.is_dir()}
+        on_disk = {
+            p.name for p in (ROOT / "skills").iterdir()
+            if p.is_dir() and (p / "SKILL.md").is_file()
+        }
         assert set(manifest["skills"]) == on_disk
 
     def test_rule_count_equals_the_real_catalog(self):

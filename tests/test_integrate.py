@@ -1884,7 +1884,15 @@ def _repo_com_extra(base: Path) -> Path:
 def test_toda_remocao_lista_cada_arquivo_antes(tmp_path):
     """I6: a lista COMPLETA, arquivo por arquivo (com o extra da pasta), sai em
     `planned_removals` e chega a quem chama ANTES da remocao."""
-    esperados = [".agents/skills/sdd-plan/SKILL.md", ".agents/skills/sdd-plan/notas.txt"]
+    skill_root = ROOT / ".agents" / "skills" / "sdd-plan"
+    esperados = sorted(
+        [
+            ".agents/skills/sdd-plan/" + path.relative_to(skill_root).as_posix()
+            for path in skill_root.rglob("*")
+            if path.is_file()
+        ]
+        + [".agents/skills/sdd-plan/notas.txt"]
+    )
     home = _home_com(tmp_path, "codex", "copilot")
     repo = _repo_com_extra(tmp_path)
     vistos: list[list[str]] = []

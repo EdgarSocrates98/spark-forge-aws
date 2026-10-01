@@ -25,7 +25,10 @@ class TestAMedidaEstatica:
         from pathlib import Path
 
         raiz = Path(__file__).resolve().parents[1] / "skills"
-        no_disco = {p.name for p in raiz.iterdir() if p.is_dir()}
+        no_disco = {
+            p.name for p in raiz.iterdir()
+            if p.is_dir() and (p / "SKILL.md").is_file()
+        }
         medida = measure_surface()
 
         assert set(medida["skills"]["by_name"]) == no_disco

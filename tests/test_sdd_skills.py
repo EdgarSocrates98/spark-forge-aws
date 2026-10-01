@@ -11,6 +11,8 @@ import argparse
 import re
 from pathlib import Path
 
+import yaml
+
 from sparkforge.adapters.cli import build_parser
 from sparkforge.sdd import PHASES
 from sparkforge.sdd.checks import check
@@ -139,7 +141,10 @@ def test_o_detector_recusa_flag_inventada():
 
 
 def _descricao(nome: str) -> str:
-    return re.search(r"^description: (.*)$", _texto_da_skill(nome), re.M).group(1)
+    texto = _texto_da_skill(nome)
+    end = texto.index("\n---", 3)
+    front = yaml.safe_load(texto[3:end])
+    return front["description"]
 
 
 def test_descricoes_so_com_gatilho():

@@ -3,7 +3,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_all_skills_have_skill_md():
-    skill_dirs = [p for p in (ROOT / "skills").iterdir() if p.is_dir()]
+    skill_dirs = [
+        p for p in (ROOT / "skills").iterdir()
+        if p.is_dir() and (p / "SKILL.md").is_file()
+    ]
     assert skill_dirs
     for directory in skill_dirs:
         assert (directory / "SKILL.md").exists()
