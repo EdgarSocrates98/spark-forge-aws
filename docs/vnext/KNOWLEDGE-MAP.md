@@ -52,6 +52,11 @@ vending. A matriz versionada está em
 `sparkforge/lakeformation/catalog_routing.py`. A saída distingue `consistent`,
 `unresolved` e `blocked`, preservando `required_verification`.
 
+O fechamento operacional está em `knowledge/lakeformation/operational-closure.md`
+e no guia `docs/guia/usos/lake-formation-operacional.md`: explain-access,
+autorização em camadas, root-cause, migration report e runbooks são carregados
+por progressive disclosure a partir das dimensões declaradas.
+
 ## Vocabulário de contexto e custo
 
 **Funil de contexto.** Reduzir o repositório inteiro ao mínimo que sustenta a resposta,

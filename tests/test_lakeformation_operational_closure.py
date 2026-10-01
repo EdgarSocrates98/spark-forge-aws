@@ -1,3 +1,8 @@
+import json
+from pathlib import Path
+
+from sparkforge.adapters.cli import main
+from sparkforge.adapters.tools import call_tool
 from sparkforge.lakeformation.architecture import analyze_architecture
 from sparkforge.lakeformation.capabilities import capability, load_matrix
 
@@ -185,7 +190,11 @@ def test_review_preflight_is_least_privilege_and_cross_reviewed():
     assert preflight["RESOURCE-LINK"]["status"] == "fail"
     assert preflight["IAMALLOWEDPRINCIPALS"]["status"] == "pass"
     profiles = {item["profile"] for item in review["cross_review"]}
-    assert {"sf-lake-formation-specialist", "sf-security-reviewer", "glue-infra-reviewer"} <= profiles
+    assert {
+        "sf-lake-formation-specialist",
+        "sf-security-reviewer",
+        "glue-infra-reviewer",
+    } <= profiles
     assert "sf-terraform-specialist" in profiles
     assert "pyspark-code-reviewer" in profiles
     serialized = str(review)
@@ -206,3 +215,44 @@ def test_review_preserves_evidence_and_progressive_disclosure():
     )
     assert "knowledge/storage/iceberg-catalog.md" in disclosure["knowledge_refs"]
     assert not any("emr" in ref for ref in disclosure["knowledge_refs"])
+
+
+def test_cli_and_mcp_operational_review_parity(tmp_path, capsys):
+    payload_path = tmp_path / "architecture.json"
+    payload = _payload(
+        errors=[
+            {
+                "message": "GetTemporaryCredentialsForTableV2 AccessDeniedException",
+                "source": {"file": "driver.log", "line": 7},
+            }
+        ]
+    )
+    payload_path.write_text(json.dumps(payload), encoding="utf-8")
+    assert main(["lakeformation", "architect", "--input", str(payload_path)]) == 0
+    cli_result = json.loads(capsys.readouterr().out)
+    mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
+    assert cli_result == mcp_result
+    assert "review" in cli_result
+
+
+def test_operational_closure_docs_and_vnx_are_anchored():
+    root = Path(__file__).resolve().parents[1]
+    knowledge = (root / "knowledge/lakeformation/operational-closure.md").read_text(
+        encoding="utf-8"
+    )
+    assert "GetTemporaryCredentialsForTableV2" in knowledge
+    assert "progressive disclosure" in knowledge
+    guide = (root / "docs/guia/usos/lake-formation-operacional.md").read_text(encoding="utf-8")
+    assert "MERGE" in guide and "rollback" in guide
+    skill = (root / "skills/lakeformation-architecture/SKILL.md").read_text(encoding="utf-8")
+    assert "operational review" in skill
+    assert "progressive disclosure" in skill
+    for path in (
+        "agents/sf-lake-formation-specialist.md",
+        "agents/sf-terraform-specialist.md",
+        "docs/vnext/ARCHITECTURE.md",
+        "docs/vnext/CAPABILITY-MATRIX.md",
+        "docs/vnext/KNOWLEDGE-MAP.md",
+    ):
+        text = (root / path).read_text(encoding="utf-8")
+        assert "operational" in text.lower() or "runbook" in text.lower()

@@ -61,6 +61,12 @@ operação, credential vending e cross-account em `consistent`, `unresolved` ou
 `blocked`. A superfície é `sparkforge lakeformation architect` e
 `sparkforge_lakeformation_architect`, ambos offline e sem mutação AWS.
 
+A mesma lane expõe `review`: operational review que compõe facts de PySpark/Terraform, detecta
+configuração tardia, explica caminhos metadata/data, classifica credential
+vending/RAM/S3/KMS, gera preflight/root-cause/migration e seleciona referências
+por progressive disclosure. Números de performance/FinOps só entram com
+benchmark ou DPUSeconds observado.
+
 ### Layer 1: Canonical Factory Registry (Single Source of Truth)
 - Substitui a dispersão de definições manuais por um registro canônico tipado via Pydantic e validado contra JSON Schema.
 - Entidades canônicas:
