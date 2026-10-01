@@ -20,6 +20,10 @@ files:
   - {path: agents/sf-lake-formation-specialist.md, action: modify, reason: "Fazer o coordenador usar o skill de arquitetura e declarar o novo procedimento."}
   - {path: agents/sf-runtime-specialist.md, action: modify, reason: "Adicionar o skill ao eixo de compatibilidade Glue/EMR sem criar agente paralelo."}
   - {path: skills/lakeformation-architecture/SKILL.md, action: create, reason: "Procedimento progressive-disclosure para routing, decision e preflight; fonte para espelhos gerados."}
+  - {path: sparkforge/integrate/render.py, action: modify, reason: "Registrar a decisão de despacho da nova skill no renderizador canônico."}
+  - {path: tests/test_sync_render.py, action: modify, reason: "Fixar relação medida entre nova skill e coordenadores."}
+  - {path: manifest.json, action: modify, reason: "Publicar skill e tool novas no manifesto instalado."}
+  - {path: docs/surface.lock.json, action: modify, reason: "Declarar crescimento mensurado da superfície MCP e skills."}
   - {path: docs/guia/usos/lake-formation-e-acesso.md, action: modify, reason: "Documentar o contrato novo, CLI e exemplos version-aware."}
   - {path: docs/vnext/ARCHITECTURE.md, action: modify, reason: "Registrar a camada architecture/decision plane como evolução do vNext."}
   - {path: docs/vnext/CAPABILITY-MATRIX.md, action: modify, reason: "Registrar matriz cross-engine e estados unknown/unresolved sem claim de suporte ausente."}

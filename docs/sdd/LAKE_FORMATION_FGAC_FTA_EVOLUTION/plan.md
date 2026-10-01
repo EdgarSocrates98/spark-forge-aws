@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/design.md
-  sha256: "4bbf6c49d9647a664519a4fb2ed7f57107528ed48e6ef55ac346cd5d5c8bc133"
+  sha256: "22fcd01504f519833b677f487b41ad5cfaff3a3ea2051edec7a90b67d4ba4b07"
 tasks:
   - id: T1
     files: [knowledge/lakeformation/capability-matrix.yaml, sparkforge/lakeformation/capabilities.py, tests/test_lakeformation_architecture.py]
@@ -21,7 +21,7 @@ tasks:
     covers: [AC11]
     test: {path: tests/test_lakeformation_architecture.py, name: test_cli_and_mcp_architecture_parity}
   - id: T4
-    files: [knowledge/lakeformation/architecture.md, skills/lakeformation-architecture/SKILL.md, agents/sf-lake-formation-specialist.md, agents/sf-runtime-specialist.md, docs/guia/usos/lake-formation-e-acesso.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CAPABILITY-MATRIX.md, docs/vnext/KNOWLEDGE-MAP.md, docs/claims.lock.json, tests/test_lakeformation_architecture.py]
+    files: [knowledge/lakeformation/architecture.md, skills/lakeformation-architecture/SKILL.md, sparkforge/integrate/render.py, agents/sf-lake-formation-specialist.md, agents/sf-runtime-specialist.md, docs/guia/usos/lake-formation-e-acesso.md, docs/vnext/ARCHITECTURE.md, docs/vnext/CAPABILITY-MATRIX.md, docs/vnext/KNOWLEDGE-MAP.md, docs/claims.lock.json, docs/surface.lock.json, manifest.json, tests/test_sync_render.py, tests/test_lakeformation_architecture.py]
     covers: [AC12]
     test: {path: tests/test_lakeformation_architecture.py, name: test_architecture_docs_and_vnext_are_anchored}
 ---
@@ -133,4 +133,3 @@ Rodar o teste até exit 0. Gates vizinhos: \`python scripts/sync_skills.py --che
 - Cada arquivo do manifesto aparece em uma tarefa.
 - Nenhuma tarefa depende de valor inventado; a matriz expõe \`unknown\`.
 - Cada tarefa tem teste nomeado e commit próprio.
-

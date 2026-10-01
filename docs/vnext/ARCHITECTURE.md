@@ -50,6 +50,17 @@ O **SparkForge AWS vNext** é projetado como uma **Data & AWS Agent Factory indu
 - **Rastreabilidade e Integridade**: Findings estruturados que exigem lista não-vazia de `fact_id`s ancorados e assinatura digital imutável SHA-256.
 - **Gates Invioláveis**: Bloqueio de fases do caso sem evidência correspondente, auditado por overrides rastreáveis.
 
+#### Lane de arquitetura Lake Formation
+
+O núcleo determinístico mantém uma lane específica para arquitetura version-aware
+de Lake Formation. `sparkforge/lakeformation/capabilities.py` lê
+`knowledge/lakeformation/capability-matrix.yaml`; `catalog_routing.py` mantém
+ownership de job, conta local, catálogo de origem e catálogo de destino sem
+colar `glue.id` a `glue.account-id`; `architecture.py` compõe capability,
+operação, credential vending e cross-account em `consistent`, `unresolved` ou
+`blocked`. A superfície é `sparkforge lakeformation architect` e
+`sparkforge_lakeformation_architect`, ambos offline e sem mutação AWS.
+
 ### Layer 1: Canonical Factory Registry (Single Source of Truth)
 - Substitui a dispersão de definições manuais por um registro canônico tipado via Pydantic e validado contra JSON Schema.
 - Entidades canônicas:

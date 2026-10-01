@@ -681,6 +681,28 @@ carrega:
 
 Um resource link que resolve **não** prova que o convite do RAM foi aceito.
 
+## Arquitetura version-aware antes do diagnóstico
+
+Quando a pergunta cruza runtime, modelo de acesso, formato, operação ou contas,
+comece pelo contrato offline de arquitetura. Prepare um `architecture.json` com
+os catálogos de origem e destino, seus owners, `glue_id` e `glue_account_id`, e
+as evidências já observadas:
+
+```bash
+sparkforge lakeformation architect --input architecture.json
+```
+
+O resultado separa `consistent`, `unresolved` e `blocked`. Ele não presume que
+`glue.id` seja `glue.account-id`, não confunde `SELECT` com autorização de
+escrita e não troca uma capability ausente por acesso direto ao S3. Em
+cross-account, RAM, resource link e `lakeformation:GetDataAccess` são evidências
+independentes; `required_verification` lista o que ainda precisa ser medido.
+
+O mesmo contrato está disponível em
+[`sparkforge_lakeformation_architect`](../referencia/tools/sparkforge_lakeformation_architect.md).
+Depois do preflight, siga os quatro coletores abaixo para fechar as lacunas do
+case e rode `fuse`/`judge` normalmente.
+
 ## Erros comuns
 
 - **`judge` sobre o Terraform devolve zero findings de Lake Formation.** Faltou o
@@ -727,7 +749,8 @@ Um resource link que resolve **não** prova que o convite do RAM foi aceito.
   [`sparkforge_analyze_iam_access`](../referencia/tools/sparkforge_analyze_iam_access.md),
   [`sparkforge_analyze_glue_resource_link`](../referencia/tools/sparkforge_analyze_glue_resource_link.md),
   [`sparkforge_lakeformation_access_graph`](../referencia/tools/sparkforge_lakeformation_access_graph.md),
-  [`sparkforge_lakeformation_matrix`](../referencia/tools/sparkforge_lakeformation_matrix.md).
+  [`sparkforge_lakeformation_matrix`](../referencia/tools/sparkforge_lakeformation_matrix.md),
+  [`sparkforge_lakeformation_architect`](../referencia/tools/sparkforge_lakeformation_architect.md).
 
 ## Próximos passos
 

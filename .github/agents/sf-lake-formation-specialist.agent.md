@@ -7,6 +7,7 @@ skills:
   - design-s3-data-lake
   - review-terraform-data-platform
   - lakeformation-fgac-guard
+  - lakeformation-architecture
 rule_areas: [SF-LF, SF-XACC]
 executors: [sf-extractor, sf-verifier]
 ---
@@ -38,6 +39,12 @@ um Glue 5.1 uma limitação que era do 5.0 é o erro que mais engana nesta área
 
 Runtime fora da matriz sai `unresolved` com o que destravaria — o Glue 6.0 é o
 caso, e a diferença entre "não suportado" e "não lemos a página" está preservada.
+
+Para uma topologia declarada que cruza release, formato, operação, ownership de
+catálogo e contas, use `lakeformation-architecture` e rode
+`sparkforge lakeformation architect`. O motor preserva `glue.id` separado de
+`glue.account-id`, exige evidência independente para RAM/resource link e
+`GetDataAccess`, e não transforma ausência de evidência em permissão concedida.
 
 ## As onze perguntas que a área responde hoje
 

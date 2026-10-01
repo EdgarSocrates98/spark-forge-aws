@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from sparkforge.adapters.cli import main
 from sparkforge.adapters.tools import call_tool
@@ -240,3 +241,38 @@ def test_cli_and_mcp_architecture_parity(tmp_path, capsys):
     mcp_result = call_tool("sparkforge_lakeformation_architect", {"payload": payload})
 
     assert cli_result == mcp_result
+
+
+def test_architecture_docs_and_vnext_are_anchored():
+    root = Path(__file__).resolve().parents[1]
+    knowledge = (root / "knowledge/lakeformation/architecture.md").read_text(encoding="utf-8")
+    assert "security-access-control-fta.html" in knowledge
+    assert "emr-lf-enable.html" in knowledge
+    assert "cross-data-sharing-lf.html" in knowledge
+    assert "required_verification" in knowledge
+
+    skill = (root / "skills/lakeformation-architecture/SKILL.md").read_text(encoding="utf-8")
+    assert "sparkforge lakeformation architect" in skill
+    assert "Não faz" in skill
+
+    for path in (
+        "agents/sf-lake-formation-specialist.md",
+        "agents/sf-runtime-specialist.md",
+    ):
+        assert "lakeformation-architecture" in (root / path).read_text(encoding="utf-8")
+
+    guide = (root / "docs/guia/usos/lake-formation-e-acesso.md").read_text(encoding="utf-8")
+    assert "lakeformation architect" in guide
+    assert "sparkforge_lakeformation_architect" in guide
+
+    for path in (
+        "docs/vnext/ARCHITECTURE.md",
+        "docs/vnext/CAPABILITY-MATRIX.md",
+        "docs/vnext/KNOWLEDGE-MAP.md",
+    ):
+        assert "knowledge/lakeformation/capability-matrix.yaml" in (
+            root / path
+        ).read_text(encoding="utf-8")
+
+    claims = (root / "docs/claims.lock.json").read_text(encoding="utf-8")
+    assert "lakeformation" in claims.lower()

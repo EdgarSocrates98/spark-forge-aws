@@ -13,7 +13,7 @@ Lake Formation e governanca.
 
 ## Skills que ele usa
 
-[`design-data-architecture`](../skills/design-data-architecture.md), [`design-s3-data-lake`](../skills/design-s3-data-lake.md), [`review-terraform-data-platform`](../skills/review-terraform-data-platform.md), [`lakeformation-fgac-guard`](../skills/lakeformation-fgac-guard.md)
+[`design-data-architecture`](../skills/design-data-architecture.md), [`design-s3-data-lake`](../skills/design-s3-data-lake.md), [`review-terraform-data-platform`](../skills/review-terraform-data-platform.md), [`lakeformation-fgac-guard`](../skills/lakeformation-fgac-guard.md), [`lakeformation-architecture`](../skills/lakeformation-architecture.md)
 
 ## Executores que ele despacha
 
@@ -49,6 +49,12 @@ um Glue 5.1 uma limitação que era do 5.0 é o erro que mais engana nesta área
 
 Runtime fora da matriz sai `unresolved` com o que destravaria — o Glue 6.0 é o
 caso, e a diferença entre "não suportado" e "não lemos a página" está preservada.
+
+Para uma topologia declarada que cruza release, formato, operação, ownership de
+catálogo e contas, use `lakeformation-architecture` e rode
+`sparkforge lakeformation architect`. O motor preserva `glue.id` separado de
+`glue.account-id`, exige evidência independente para RAM/resource link e
+`GetDataAccess`, e não transforma ausência de evidência em permissão concedida.
 
 #### As onze perguntas que a área responde hoje
 

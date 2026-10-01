@@ -225,6 +225,10 @@ RELACAO_MEDIDA = {
     "compare-releases": ("sf-runtime-specialist",),
     "iceberg-v3-readiness": ("iceberg-performance-engineer",),
     "lakeformation-fgac-guard": ("sf-lake-formation-specialist",),
+    "lakeformation-architecture": (
+        "sf-lake-formation-specialist",
+        "sf-runtime-specialist",
+    ),
     "migrate-glue-6": ("sf-runtime-specialist",),
     "spark4-compatibility": ("sf-runtime-specialist",),
     "analyze-batch-loop": (

@@ -708,6 +708,14 @@
       ],
       "sha256": "64224eb2a1f8504b3cd9d73d996b9a2e3b58086f69c26fa92d45d2348d6ee33e"
     },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/lake-formation-section.html": {
+      "docs": [
+        "knowledge/lakeformation/architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -1409,6 +1417,14 @@
       ],
       "sha256": "29c803110203a6675b24fd9187d204e078a2358a2f09d0c0f8d31d2326926fe6"
     },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-lf-enable.html": {
+      "docs": [
+        "knowledge/lakeformation/architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -1493,6 +1509,14 @@
         "SF-EMR-009"
       ],
       "sha256": "a30a0f6c7dd5a10f394ae566532e5ac7e285423bb9b4796bac794a732c52e099"
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/lake-formation-unfiltered-ec2-access.html": {
+      "docs": [
+        "knowledge/lakeformation/architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html": {
       "checked_at": "2026-09-21",
@@ -1804,6 +1828,14 @@
         "SF-LF-011"
       ]
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/lake-formation-access-control-models.html": {
+      "docs": [
+        "knowledge/lakeformation/architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -1916,7 +1948,8 @@
     "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html": {
       "checked_at": "2026-09-21",
       "docs": [
-        "knowledge/glue/lakeformation-fgac.md"
+        "knowledge/glue/lakeformation-fgac.md",
+        "knowledge/lakeformation/architecture.md"
       ],
       "pinned": false,
       "retrieved": [
@@ -1936,7 +1969,8 @@
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
       "checked_at": "2026-09-21",
       "docs": [
-        "knowledge/glue/lakeformation-fgac.md"
+        "knowledge/glue/lakeformation-fgac.md",
+        "knowledge/lakeformation/architecture.md"
       ],
       "pinned": false,
       "retrieved": [
@@ -2079,6 +2113,14 @@
         "SF-ERR-006"
       ],
       "sha256": "f6823a6fde529ff8d3146ae1e034eeb762d2caa4f1ecdaa89cf644aa339162d2"
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-data-sharing-lf.html": {
+      "docs": [
+        "knowledge/lakeformation/architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/full-table-credential-vending.html": {
       "checked_at": "2026-09-21",

@@ -44,6 +44,14 @@ mutação exige aprovação. Hoje isso é política declarada mais função pura
 gate que de fato barra a execução ainda não existe, e o mapa de lacuna diz isso com
 todas as letras. `sparkforge/registry/models.py`, `sparkforge/agents/autonomy.py`.
 
+**Arquitetura Lake Formation.** Contrato determinístico que separa engine/runtime,
+FGAC/FTA, formato, operação, ownership dos catálogos, cross-account e credential
+vending. A matriz versionada está em
+`knowledge/lakeformation/capability-matrix.yaml`; o motor está em
+`sparkforge/lakeformation/architecture.py` e a rota de contas em
+`sparkforge/lakeformation/catalog_routing.py`. A saída distingue `consistent`,
+`unresolved` e `blocked`, preservando `required_verification`.
+
 ## Vocabulário de contexto e custo
 
 **Funil de contexto.** Reduzir o repositório inteiro ao mínimo que sustenta a resposta,

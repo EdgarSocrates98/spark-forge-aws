@@ -7,6 +7,7 @@ skills:
   - compare-releases
   - migrate-glue-6
   - spark4-compatibility
+  - lakeformation-architecture
 rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4, SF-CTM, SF-ERR]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
@@ -24,6 +25,12 @@ Quando o caso é migrar um job de uma versão de Glue para outra, use
 coisa. Ele julga o caminho degrau a degrau com `SF-MIG`, `SF-SPARK4` e `SF-LF`, e o
 diretório é o que importa: um pin de `requirements.txt` e um `.jar` de Scala 2.12
 sobrevivem à troca de runtime e não aparecem no diff da migração.
+
+Quando a migração envolve Lake Formation, rode também a skill
+`lakeformation-architecture`: Glue, EMR EC2 e EMR Serverless têm capabilities
+por release, modelo de acesso, formato e operação. Não carregue uma limitação
+de Glue 5.0 para 5.1, nem converta uma lacuna de capability em recomendação de
+S3 direto.
 
 Os quatro eixos que exigem execução real — dados, performance, custo e canary —
 voltam `BLOCKED` com o motivo. Isso é o resultado, não uma lacuna a preencher com

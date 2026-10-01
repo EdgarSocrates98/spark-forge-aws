@@ -9,6 +9,7 @@ Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, nao versao de c
 | Subcomando | O que faz |
 |---|---|
 | [`sparkforge lakeformation access-graph`](#sparkforge-lakeformation-access-graph) | O caminho de acesso como GRAFO, a partir de facts. `is_accessible` e TERNARIO -- `null` e 'o que olhei nao impede', nao 'funciona'. |
+| [`sparkforge lakeformation architect`](#sparkforge-lakeformation-architect) | Avalia arquitetura declarada de FGAC/FTA, ownership de catalogos, cross-account e capability por release. Nao toca AWS. |
 | [`sparkforge lakeformation matrix`](#sparkforge-lakeformation-matrix) | Imprime o eixo: filesystem S3 default, FGAC por caminho, DDL/DML e FTA, com a frase da fonte quando ela existe. |
 
 ## `sparkforge lakeformation access-graph`
@@ -30,6 +31,24 @@ sparkforge lakeformation access-graph --help
 ### Tool MCP equivalente
 
 [`sparkforge_lakeformation_access_graph`](../tools/sparkforge_lakeformation_access_graph.md)
+
+## `sparkforge lakeformation architect`
+
+Avalia arquitetura declarada de FGAC/FTA, ownership de catalogos, cross-account e capability por release. Nao toca AWS.
+
+```bash
+sparkforge lakeformation architect --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--input` | sim | texto |  |  | Arquivo JSON com engine, runtime, catalogos, modelo de acesso e evidencias. |
+
+### Tool MCP equivalente
+
+[`sparkforge_lakeformation_architect`](../tools/sparkforge_lakeformation_architect.md)
 
 ## `sparkforge lakeformation matrix`
 

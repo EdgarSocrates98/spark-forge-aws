@@ -210,6 +210,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | Tool | Efeito | O que faz |
 |---|---|---|
 | [`sparkforge_lakeformation_access_graph`](sparkforge_lakeformation_access_graph.md) | só leitura | O caminho de acesso a uma tabela governada como GRAFO, derivado de facts -- concessao do Lake Formation, decisao SIMULADA do IAM (com a camada que negou) e registro da localizac... |
+| [`sparkforge_lakeformation_architect`](sparkforge_lakeformation_architect.md) | só leitura | Avalia uma arquitetura declarada de Lake Formation de forma offline e determinística. |
 | [`sparkforge_lakeformation_matrix`](sparkforge_lakeformation_matrix.md) | só leitura | Eixo de VERSAO de Lake Formation por runtime Glue: filesystem S3 default, FGAC por caminho (GlueContext contra Spark-native, leitura contra escrita), DDL/DML e Full Table Access... |
 
 ## migration

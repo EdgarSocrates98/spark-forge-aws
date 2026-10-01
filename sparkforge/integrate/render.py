@@ -206,6 +206,10 @@ DISPATCHABLE_SKILLS = {
     "migrate-glue-6": "extrai a arvore do job e julga degrau a degrau; leitura fechada",
     "spark4-compatibility": "julga o codigo e os pins contra a fronteira do Spark 4",
     "lakeformation-fgac-guard": "correlaciona FGAC e classpath no .tf que ja esta em disco",
+    "lakeformation-architecture": (
+        "avalia declaracao offline de release, modelo, formato, operacao e ownership; "
+        "nao chama AWS nem altera governanca"
+    ),
     # Le as quatro matrizes de `knowledge/` e devolve numero com fonte. Nao ha
     # artefato do operador para faltar, nao ha decisao de terceiro no caminho, e
     # nenhum Finding nasce dela -- a leitura e fechada por construcao.
