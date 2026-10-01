@@ -45,6 +45,12 @@ catálogo e contas, use `lakeformation-architecture` e rode
 `glue.account-id`, exige evidência independente para RAM/resource link e
 `GetDataAccess`, e não transforma ausência de evidência em permissão concedida.
 
+Na operational review, leia `review.code_and_iac`, `review.access_explain`,
+`review.authorization`, `review.preflight` e `review.root_cause`. Coordene
+cross-review com o especialista de Terraform para IaC, o de Iceberg para
+semântica de tabela e o de segurança para IAM/RAM/KMS. Isso é roteamento de
+revisão; não cria agentes novos nem executa mutação AWS.
+
 ## As onze perguntas que a área responde hoje
 
 | Regra | A pergunta |

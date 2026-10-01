@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **941** nesta árvore (remedido em 2026-09-30 após o hardening da evolução ativa de prompts).
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **946** nesta árvore (remedido em 2026-10-01 após o fechamento operacional de Lake Formation).
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -214,9 +214,9 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **94
 | `looks_like_secret` | 2 | 466 | 198731 | 2722 | 85 |
 | `project_items` | 1 | 193 | 376312 | 2203 | 52 |
 | `tool_class` | 1 | 187 | 401010 | 3529 | 73 |
-| `authorize` | 3 | 599 | 505233 | 4426 | 115 |
+| `authorize` | 3 | 599 | 507883 | 4426 | 115 |
 
-Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2290512**;
+Somadas as cinco perguntas: o índice devolve **1,911** bytes; ler os arquivos custaria **2294032**;
 a saída do `grep` pelo nome, **25021**; a saída do `grep` pela definição, **427**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
@@ -226,7 +226,7 @@ a ter entrada própria no manifesto — o ponto cego era do intervalo, não do n
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 1198.6 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 1200.4 vezes.** Contra a saída de um `grep`
 pelo nome, **13.1** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.5** vezes o que aquele `grep` custaria.
 
@@ -244,9 +244,9 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-  `buscar(banco, "source")` devolve **50** símbolos em **11945** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **302260** bytes (remedido em 2026-09-30 após o hardening da evolução ativa de prompts). O `grep` pela definição contendo o fragmento continua menor
-  (**12887** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+`buscar(banco, "source")` devolve **50** símbolos em **11924** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **309328** bytes (remedido em 2026-10-01 após o fechamento operacional de Lake Formation). O `grep` pela definição contendo o fragmento continua menor
+(**13093** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.

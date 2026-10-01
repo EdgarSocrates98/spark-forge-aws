@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Avalia uma arquitetura declarada de Lake Formation de forma offline e determinística. Separa engine/runtime, FGAC/FTA, formato, operação, ownership de catálogo, cross-account e credential vending; devolve consistent, unresolved ou blocked. Não chama AWS, não sugere bypass por S3 e não estima custo ou ganho.
+Avalia uma arquitetura declarada de Lake Formation de forma offline e determinística. Separa engine/runtime, FGAC/FTA, formato, operação, ownership de catálogo, cross-account e credential vending; devolve consistent, unresolved ou blocked. A seção review compõe revisão de PySpark/Terraform, configuração tardia, explain-access, autorização, root-cause, preflight, migração, cross-review e progressive disclosure. Não chama AWS, não sugere bypass por S3 e não estima custo ou ganho.
 
 ## Parâmetros
 

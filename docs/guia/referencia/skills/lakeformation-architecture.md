@@ -42,6 +42,10 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
    análise. Use `collect iam-access` para simular autorização, não parseie a
    policy do role; mantenha bucket policy, KMS e Glue resource policy como
    avaliações separadas.
+7. Leia a seção `review` para operational review: `code_and_iac`,
+   `access_explain`, `authorization`, `root_cause`, `preflight`, `migration`,
+   `performance_finops` e progressive disclosure (`progressive_disclosure`). Facts ausentes ficam
+   `required_verification`.
 
 ### Regras de interpretação
 
@@ -56,6 +60,8 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
   credential vending; ownership de origem e destino permanece explícito.
 - Não alegue custo, ganho de performance ou autorização efetiva sem medição e
   fact correspondente.
+- Use explain-access e root-cause para separar metadata de data access; não
+  trate `GetDataAccess`, RAM ou KMS como detalhe implícito.
 
 ### Não faz
 
@@ -70,6 +76,7 @@ operador validar.
 - `knowledge/lakeformation/architecture.md`
 - `skills/lakeformation-fgac-guard/SKILL.md`
 - `skills/diagnose-lakeformation-access/SKILL.md`
+- `knowledge/lakeformation/operational-closure.md`
 
 ### Protocolo
 

@@ -26,6 +26,6 @@ decisão estruturada antes de qualquer coleta ou recomendação.
 
 A matriz operacional inclui Hive/Parquet/Iceberg/Hudi/Delta e operações read,
 com operational review e runbook para validar uso real antes de declarar suporte,
-write, DDL/DML por release. Glue 6.0 tem células próprias; divergência entre
+write, DDL/DML por release. Cada release tem células próprias; divergência entre
 fontes oficiais permanece `version_dependent`/`unknown`, nunca suporte por
 analogia.
