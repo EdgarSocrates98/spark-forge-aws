@@ -1,0 +1,12 @@
+name: shuffle_heavy_small_scan
+job_name: etl_pedidos_diario
+job_run_id: jr_006
+proves: >
+  O eixo `shuffle_intensity` separando dois workloads que `scan_intensity`
+  sozinho NAO separa. O run atual varre 9.5 MB, abaixo da mediana do proprio
+  historico de scan (10 MB) -- `scan_intensity` sai `low`, o mesmo valor que
+  um job puramente ocioso teria. O shuffle do mesmo run, porem, e cinco MB
+  contra um historico que nunca passou de 1.5 MB -- muito acima do p99 --
+  entao `shuffle_intensity` sai `extreme`. Sem o eixo de shuffle, este job
+  ficaria indistinguivel de um scan tranquilo; com ele, o join caro que gera
+  o shuffle fica visivel mesmo com scan baixo.

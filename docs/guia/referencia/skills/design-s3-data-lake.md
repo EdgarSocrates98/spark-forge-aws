@@ -1,0 +1,52 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# Skill `design-s3-data-lake`
+
+Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lake.
+
+| Campo | Valor |
+|---|---|
+| Arquivo de origem | `skills/design-s3-data-lake/SKILL.md` |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/data-platform-architecture.md', '../../knowledge/cross-service-constraints.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge next-step']} |
+
+## Procedimento (texto integral)
+
+## S3 Data Lake
+
+Defina zonas, prefixos, ownership, formatos, encryption, KMS, policies, versioning, lifecycle, replication, inventario, eventos e custos.
+
+### Quando NAO usar
+
+Nao use quando o problema estiver fora do escopo.
+
+### Referencia rapida
+
+Entrada: objetivo, workload, evidencias e restricoes. Saida: decisao, riscos, validacao e rollback.
+
+### Red flags
+
+Loop sem parada, evidencia ausente, risco nao autorizado, custo nao medido e rollback inexistente.
+
+### Protocolo
+
+Entregue fatos, decisoes, riscos, validacao, rollback e proxima acao em handoff compacto.
+### Quando NÃO usar
+
+Nao use fora do escopo desta especializacao ou quando faltarem fatos e evidencias verificaveis.
+
+### Referência rápida
+
+Comece pelo diagnostico, consulte as fontes e regras aplicaveis, produza uma saida estruturada e valide o resultado antes do handoff.
+
+
+### Contrato de qualidade SparkForge (v1)
+
+Esta skill trata **layout de data lake S3, camadas e governança**. Contrato comum, sem substituir o procedimento específico acima:
+
+- **Entrada mínima:** artefato, runtime/contexto declarado e pergunta operacional; se faltar, registre o `*.unresolved` correspondente.
+- **Evidência:** produza fatos ancorados com `fact_id`, caminho/linha ou origem de medição; aplique regra por `rule_id` e versão, nunca por memória.
+- **Verbos primários:** `sparkforge next-step`. Use-os na ordem indicada pela skill e conserve saída estruturada.
+- **Saída:** fatos, findings, hipóteses e recomendações separados. Recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`, `proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e `rollback`.
+- **Validação:** rode o teste/verbos listados, valide dados depois da mudança e diga o que ainda não foi medido. Ausência de finding significa apenas que nenhum proxy disparou.
+- **Rollback e segurança:** não execute escrita destrutiva por inferência; peça escopo explícito e entregue rollback reversível. AWS operacional mantém `denied_by`, conta, recurso e camada de policy.
+- **Referências e eval:** `../_shared/references/evidence-first.md`, `../_shared/references/evaluation-contract.md`, `../_shared/references/operational-safety.md`, `../../knowledge/data-platform-architecture.md`, `../../knowledge/cross-service-constraints.md`; casos realistas em `evals/evals.json`; o script `scripts/validate_evidence.py` verifica o envelope antes do handoff.

@@ -1,0 +1,23 @@
+{
+  "changes": [
+    {
+      "basis": null,
+      "evidence": [
+        "f_2212bd"
+      ],
+      "file": "job.py",
+      "from": "800",
+      "key": "spark.sql.shuffle.partitions",
+      "line": 4,
+      "provenance": "code",
+      "to": "320"
+    }
+  ],
+  "diff": "--- a/job.py\n+++ b/job.py\n@@ -3,6 +3,6 @@\n spark = (\n     SparkSession.builder\n     .appName(\"etl-sintetico\")\n-    .config(\"spark.sql.shuffle.partitions\", 800)\n+    .config(\"spark.sql.shuffle.partitions\", 320)\n     .getOrCreate()\n )\n",
+  "files": [
+    "job.py"
+  ],
+  "refused": [],
+  "rollback_diff": "--- a/job.py\n+++ b/job.py\n@@ -3,6 +3,6 @@\n spark = (\n     SparkSession.builder\n     .appName(\"etl-sintetico\")\n-    .config(\"spark.sql.shuffle.partitions\", 320)\n+    .config(\"spark.sql.shuffle.partitions\", 800)\n     .getOrCreate()\n )\n",
+  "tune_refused": []
+}

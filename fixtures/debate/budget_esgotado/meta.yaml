@@ -1,0 +1,16 @@
+name: budget_esgotado
+proves: 'max_rounds 1: a rodada 1 termina com objecao sem replica e ninguem concede. Fecha
+  por budget, e a Decision e unresolved com a violacao do referee citada.'
+rules:
+- SF-GRAPH-005
+- SF-LF-001
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+union:
+- graph/import_sem_jar_no_iac
+- infra_code/fgac_com_jar_extra
+budget:
+  max_debates: 1
+  max_rounds: 1
+expects_outcome: unresolved

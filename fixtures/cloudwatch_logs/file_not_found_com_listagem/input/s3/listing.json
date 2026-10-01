@@ -1,0 +1,15 @@
+{
+  "Name": "sparkforge-demo",
+  "Prefix": "curated/fato_venda/",
+  "IsTruncated": false,
+  "Contents": [
+    {
+      "Key": "curated/fato_venda/dt=2026-09-09/part-0.snappy.parquet",
+      "Size": 4194304
+    },
+    {
+      "Key": "curated/fato_venda/dt=2026-09-09/part-1.snappy.parquet",
+      "Size": 4194304
+    }
+  ]
+}

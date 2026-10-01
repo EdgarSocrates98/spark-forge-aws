@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge.dev/schemas/fact.schema.json",
+  "title": "Fact",
+  "type": "object",
+  "required": ["id", "schema_version", "kind", "subject"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^f_[0-9a-f]{6}$"},
+    "schema_version": {"type": "integer", "const": 1},
+    "kind": {"type": "string", "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$"},
+    "subject": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "source_location",
+            "stage",
+            "task",
+            "tf_resource",
+            "table",
+            "job_run",
+            "plan_node"
+          ]
+        },
+        "node_id": {"type": "integer", "minimum": 0},
+        "operator": {"type": "string"},
+        "relation": {"type": "string"},
+        "stage_id": {"type": "integer", "minimum": 0},
+        "file": {"type": "string"},
+        "line": {"type": "integer", "minimum": 0},
+        "col": {"type": "integer", "minimum": 0},
+        "end_line": {"type": "integer", "minimum": 0},
+        "symbol": {"type": "string"},
+        "snippet": {"type": "string"}
+      }
+    },
+    "measures": {
+      "type": "object",
+      "description": "Somente numerico. Unidade no nome da chave.",
+      "additionalProperties": {"type": "number"}
+    },
+    "attrs": {"type": "object"},
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "artifact": {"type": "string"},
+        "artifact_sha256": {"type": "string", "pattern": "^([0-9a-f]{64})?$"},
+        "extractor": {"type": "string", "pattern": "^[a-z0-9_]+@[0-9]+\\.[0-9]+\\.[0-9]+$"}
+      }
+    }
+  }
+}

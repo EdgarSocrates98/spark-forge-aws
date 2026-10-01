@@ -1,0 +1,5 @@
+--- a/prod.tfvars
++++ b/prod.tfvars
+@@ -1,1 +1,1 @@
+-particoes = "800"
++particoes = "320"

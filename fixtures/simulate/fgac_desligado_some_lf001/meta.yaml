@@ -1,0 +1,8 @@
+description: >-
+  Job FGAC com jar extra. Desligar o FGAC no argumento do job muda o modelo de
+  acesso que lakeformation.py rederiva nos dois lados, e SF-LF-001 some.
+facts: [fixtures/infra_code/fgac_com_jar_extra/expected/facts.json]
+sets: ["tf:--enable-lakeformation-fine-grained-access=false"]
+expect:
+  disappeared: [SF-LF-001]
+  appeared: []

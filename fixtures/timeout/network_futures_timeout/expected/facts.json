@@ -1,0 +1,46 @@
+[
+  {
+    "id": "f_b2ed57",
+    "schema_version": 1,
+    "kind": "spark.timeout.diagnosis",
+    "subject": {
+      "type": "stage",
+      "symbol": "shuffle read at Aggregate.scala:88",
+      "stage_id": 7
+    },
+    "measures": {
+      "executor_lost_count": 0.0
+    },
+    "attrs": {
+      "category": "network",
+      "basis": "stage_failure_reason",
+      "evidence_text": "org.apache.spark.SparkException: Job aborted due to stage failure: java.util.concurrent.TimeoutException: Futures timed out after [120 seconds]",
+      "also_seen": []
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_fb519c",
+    "schema_version": 1,
+    "kind": "spark.timeout.relation",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {
+      "heartbeat_s": 10.0,
+      "network_timeout_s": 120.0
+    },
+    "attrs": {
+      "heartbeat_raw": "10s",
+      "network_timeout_raw": "120s"
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

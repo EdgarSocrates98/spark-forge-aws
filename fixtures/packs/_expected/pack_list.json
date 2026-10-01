@@ -1,0 +1,68 @@
+{
+  "env": "SPARKFORGE_PACKS",
+  "installed_core": "<core>",
+  "active": [
+    {
+      "id": "acme-platform",
+      "version": "1.0.0",
+      "prefix": "ACME",
+      "core": ">=0.5,<1.0",
+      "description": "Padroes de plataforma de dados da ACME (sintetico)",
+      "dir": "fixtures/packs/acme-platform",
+      "rules": [
+        "ACME-GOV-001",
+        "ACME-GOV-002"
+      ],
+      "knowledge": [
+        "padroes-de-plataforma.md"
+      ]
+    }
+  ],
+  "refused": [
+    {
+      "dir": "fixtures/packs/recusa_core_incompativel",
+      "id": "do-futuro",
+      "reason": "core_incompativel",
+      "detail": "`core: >=9.0` nao aceita a versao instalada <core>"
+    },
+    {
+      "dir": "fixtures/packs/recusa_id_duplicado",
+      "id": "dup-platform",
+      "reason": "id_duplicado",
+      "detail": "DUP-GOV-001 em rules/a.yaml e rules/b.yaml"
+    },
+    {
+      "dir": "fixtures/packs/recusa_id_fora_do_prefixo",
+      "id": "beta-platform",
+      "reason": "id_fora_do_prefixo",
+      "detail": "GAMA-GOV-001 em rules/regras.yaml nao casa BETA-<AREA>-NNN"
+    },
+    {
+      "dir": "fixtures/packs/recusa_manifesto_invalido",
+      "id": "sem-prefixo",
+      "reason": "manifesto_invalido",
+      "detail": "campos ausentes em `pack`: prefix"
+    },
+    {
+      "dir": "fixtures/packs/recusa_prefixo_duplicado",
+      "id": "acme-copia",
+      "reason": "pack_duplicado",
+      "detail": "prefixo ACME ja e de outro pack ativo: o prefixo diz a origem do finding"
+    },
+    {
+      "dir": "fixtures/packs/recusa_prefixo_reservado",
+      "id": "finge-core",
+      "reason": "prefixo_reservado",
+      "detail": "o prefixo SF e do core"
+    },
+    {
+      "dir": "fixtures/packs/recusa_regra_invalida",
+      "id": "sem-fonte",
+      "reason": "regra_invalida",
+      "detail": "rules/regras.yaml: SEMF-GOV-001: campos obrigatorios ausentes: sources"
+    }
+  ],
+  "prefixes": {
+    "ACME": "acme-platform"
+  }
+}

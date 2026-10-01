@@ -1,0 +1,6 @@
+name: cost_from_derived_dpu
+job_name: etl_pedidos_diario
+proves: 'Tres runs de G.1X x10, 360s cada -- dpu_seconds = 10 * 1 * 360 = 3600, o
+  valor DERIVADO pela formula do coletor, nao medido pela API. O custo sai sobre esse
+  DPU derivado (1 hora * 0,44 USD/DPU-hora = 0,44) e `dpu_source: derived` viaja ate
+  o fact de custo em expected/facts.json.'

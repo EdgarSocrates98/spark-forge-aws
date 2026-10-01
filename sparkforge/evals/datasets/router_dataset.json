@@ -1,0 +1,31 @@
+[
+  {
+    "id": "TC-001",
+    "task": "Extract AST facts from Glue PySpark job",
+    "is_deterministic_available": true,
+    "expected_tier": "tier_0_deterministic",
+    "expected_profile": "eco"
+  },
+  {
+    "id": "TC-002",
+    "task": "Tune PySpark memory skew and optimize skewed partition joins",
+    "is_deterministic_available": false,
+    "expected_tier": "tier_4_specialist",
+    "expected_skills": ["optimize-pyspark-code", "diagnose-data-skew"]
+  },
+  {
+    "id": "TC-003",
+    "task": "Compaction and snapshot expiration on Apache Iceberg table",
+    "is_deterministic_available": false,
+    "expected_tier": "tier_4_specialist",
+    "expected_skills": ["optimize-iceberg-table"]
+  },
+  {
+    "id": "TC-004",
+    "task": "Investigate security breach and unauthorized data mutation in production S3 bucket",
+    "profile": "strict",
+    "risk_level": "destructive",
+    "is_deterministic_available": false,
+    "expected_tier": "tier_5_premium"
+  }
+]

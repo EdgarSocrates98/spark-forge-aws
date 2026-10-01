@@ -1,0 +1,628 @@
+"""Carrega a matriz de runtime do AWS Glue como dado, nao como constante.
+
+Versao de Glue e fato EXTERNO -- muda por decisao da AWS, nao deste
+repositorio. Antes desta entrega o valor vivia compilado em
+`sparkforge/facts/runtime_detect.py` (GLUE_MATRIX) sem fonte nem data de
+consulta; agora mora em `knowledge/glue/runtime-matrix.yaml`, ao lado dos
+demais fatos externos vigiados por `knowledge/sources.lock.json`. Cache com
+`lru_cache` porque o arquivo nao muda durante a vida do processo e varias
+regras consultam a matriz por execucao.
+
+RESOLUCAO DE CAMINHO: por que este modulo usa `sparkforge.knowledge_ref`, e
+nao a sua propria conta de `parents[N]`.
+
+A primeira versao deste arquivo (Fase SF-MIG, Task 1) computava
+`ROOT = Path(__file__).resolve().parents[2]` e lia
+`ROOT / "knowledge" / "glue" / "runtime-matrix.yaml"`. Isso funciona no
+checkout de desenvolvimento -- `sparkforge/facts/runtime_matrix.py` fica dois
+niveis abaixo da raiz do repositorio, onde `knowledge/` mora de verdade. Mas
+`pyproject.toml` empacota `knowledge/` DENTRO do pacote instalado
+(`[tool.hatch.build.targets.wheel.force-include]`: `"knowledge" =
+"sparkforge/knowledge"`), entao no wheel instalado o arquivo esta em
+`<site-packages>/sparkforge/knowledge/glue/runtime-matrix.yaml` -- um nivel
+a mais de profundidade do que a conta original alcancava. `parents[2]` a
+partir de `<site-packages>/sparkforge/facts/runtime_matrix.py` cai em
+`<site-packages>`, nao em `<site-packages>/sparkforge`, e a leitura procurava
+`knowledge/` no lugar errado.
+
+Isso ficou latente na Task 1: nada chamava `load()` na importacao do modulo,
+entao o bug so apareceria se algum consumidor chamasse a funcao rodando de
+um pacote instalado. A Task 2 (`runtime_detect.py`) passou a montar
+`GLUE_MATRIX` no NIVEL DE MODULO, chamando `load()` na propria importacao --
+e isso transformou um bug latente em `import sparkforge.facts.runtime_detect`
+quebrando incondicionalmente num wheel instalado. Reproduzido e confirmado:
+build do wheel, instalacao num venv limpo, `import
+sparkforge.facts.runtime_detect` -> `FileNotFoundError` em
+`<site-packages>/knowledge/glue/runtime-matrix.yaml`.
+
+`sparkforge/knowledge_ref.py` ja resolve exatamente este problema, para
+exatamente este diretorio, desde a Fase 3a -- "knowledge/ passou a ser
+embarcado no artefato e nenhum codigo sabia encontra-lo". A ordem de
+precedencia (env var `SPARKFORGE_KNOWLEDGE` -> raiz do repo -> `parent` do
+proprio modulo dentro do pacote) e a MESMA que `sparkforge/rules/loader.py`
+usa para `rules/catalog`, e tem teste dedicado para o caso de pacote
+instalado (`tests/test_knowledge_ref.py::
+test_falls_back_to_the_package_dir_when_no_repo_root_exists`). Reimplementar
+essa resolucao aqui -- como a Task 1 fez -- e reproduzir o bug que o modulo
+já existe para fechar. Este modulo usa `knowledge_dir()`/`safe_knowledge_file()`
+em vez disso.
+"""
+from __future__ import annotations
+
+import json
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
+
+
+class RuntimeMatrixError(ValueError):
+    """Matriz de runtime ausente, vazia ou com evidencia mal declarada.
+
+    Uma matriz vazia carregaria em silencio e derrubaria toda regra com
+    escopo de versao sem aviso -- o mesmo modo de falha que este motor
+    recusa em qualquer outro extrator. Melhor estourar aqui do que deixar
+    regra sumir por ausencia de dado que parecia presente.
+    """
+
+
+# Qualidade da fonte, do mais autoritativo ao menos. Vocabulario FECHADO: um
+# `source_type` livre viraria etiqueta decorativa em duas semanas, e o ponto
+# de classificar fonte e poder dizer POR QUE uma discordancia entre duas
+# delas nao se resolve sozinha. Documentacao tecnica e spec descrevem o que o
+# produto FAZ; anuncio descreve o que ele foi LANCADO fazendo, e os dois
+# divergem quando um deles e corrigido depois da publicacao e o outro nao.
+SOURCE_TYPES = frozenset(
+    {
+        "OFFICIAL_TECHNICAL_DOC",
+        "OFFICIAL_RELEASE_DOC",
+        "OFFICIAL_BLOG",
+        "UPSTREAM_SPEC",
+        "UPSTREAM_RELEASE",
+        "PROVIDER_DOC",
+        "COMMUNITY",
+    }
+)
+
+# Estados que este carregador sabe ENFORCAR hoje. `STALE` e `UNVERIFIED`
+# ficam de fora de proposito: os dois sao afirmacoes sobre FRESCOR, e frescor
+# depende de um TTL por dominio que este repositorio ainda nao tem como dado
+# (a lacuna esta registrada em `docs/harness/GLUE6-GAP.md`, secao 1). Aceitar
+# aqui um estado que nenhum mecanismo produz seria declarar vocabulario sem
+# consumidor -- a mesma classe de defeito que o `blocked_on` do catalogo de
+# regras existe para tornar visivel em vez de fingir cobertura.
+CLAIM_STATUS = frozenset({"VERIFIED", "CONFLICTING", "UNRESOLVED"})
+
+# Estados em que o componente NAO recebe valor resolvido. Fail-closed: sem a
+# chave no runtime, `sparkforge/rules/version_scope.py::in_scope` reprova a
+# regra guardada por ela e o motor a reporta como pulada, com motivo. O
+# oposto -- escolher uma das versoes em disputa para nao deixar a regra muda
+# -- e exatamente o que a secao 2 de `prompt_glue_harness.md` proibe: julgar
+# com um numero que duas fontes oficiais nao confirmam junto.
+_SEM_VALOR_RESOLVIDO = frozenset({"CONFLICTING", "UNRESOLVED"})
+
+
+def _matrix_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), "glue/runtime-matrix.yaml")
+
+
+# A matriz do EMR Serverless mora ao lado, no mesmo formato de dado externo, e
+# NAO substitui a `EMR_MATRIX` de EMR on EC2: sao plataformas diferentes com
+# fontes diferentes, e a pagina `knowledge/emr-serverless/runtime-matrix.md`
+# mede que tres das quatro colunas da matriz de EC2 nao tem fonte nenhuma do
+# lado do Serverless. Ver o cabecalho do proprio YAML.
+_EMR_SERVERLESS_RELATIVE = "emr-serverless/runtime-matrix.yaml"
+
+
+def _emr_serverless_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _EMR_SERVERLESS_RELATIVE)
+
+
+_DATABRICKS_RELATIVE = "databricks/runtime-matrix.yaml"
+
+
+def _databricks_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _DATABRICKS_RELATIVE)
+
+
+def _sources_lock_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), "sources.lock.json")
+
+
+def _documento(caminho: Path) -> dict[str, Any]:
+    """Le um YAML de matriz cru. Nao e cacheada de proposito: as funcoes
+    publicas tem cache proprio, e cada uma limpa o seu -- um cache intermediario
+    aqui sobreviveria ao `cache_clear()` delas e devolveria a matriz do
+    repositorio real dentro de um teste que apontou o `knowledge_dir` para outro
+    lugar."""
+    with caminho.open("r", encoding="utf-8") as arquivo:
+        return yaml.safe_load(arquivo) or {}
+
+
+def _versoes(caminho: Path) -> dict[str, dict[str, Any]]:
+    versoes = _documento(caminho).get("versions")
+    if not versoes:
+        raise RuntimeMatrixError(
+            f"{caminho}: bloco 'versions' ausente ou vazio -- "
+            "toda regra com escopo de versao ficaria muda em silencio"
+        )
+    return versoes
+
+
+def _read() -> dict[str, dict[str, Any]]:
+    """As versoes do Glue, cruas. Ver `_documento` sobre por que nao ha cache."""
+    return _versoes(_matrix_path())
+
+
+def _validar_evidencia(versao: str, componente: str, registro: dict[str, Any]) -> set[str]:
+    """Valida um componente na forma longa e devolve os valores distintos que
+    as fontes afirmam.
+
+    As duas invariantes que dao sentido ao mecanismo, e que existem em CODIGO
+    porque disciplina de quem edita YAML nao sobrevive a um ano:
+
+    1. `VERIFIED` com duas fontes afirmando valores diferentes e proibido. E a
+       regra da secao 1 do prompt -- "nunca transformar CONFLICTING em
+       VERIFIED" -- e sem gate ela e so uma frase: a forma pratica de violar
+       nao e mentir, e editar o valor de uma linha e esquecer a outra.
+    2. `CONFLICTING` com todas as fontes concordando tambem e proibido.
+       Conflito inventado gasta a atencao de quem le exatamente como conflito
+       escondido a desperdica -- e, pior, deixa o componente sem valor
+       resolvido, apagando em silencio toda regra guardada por ele.
+    """
+    status = registro.get("status")
+    if status not in CLAIM_STATUS:
+        raise RuntimeMatrixError(
+            f"{versao}.{componente}: status {status!r} fora de {sorted(CLAIM_STATUS)} "
+            "-- STALE e UNVERIFIED ainda nao tem mecanismo que os produza"
+        )
+
+    claims = registro.get("claims")
+    if not claims:
+        raise RuntimeMatrixError(
+            f"{versao}.{componente}: forma longa sem `claims` -- um status sem "
+            "evidencia por tras e opiniao com nome de fato"
+        )
+
+    valores: set[str] = set()
+    for claim in claims:
+        for campo in ("value", "source", "source_type", "retrieved"):
+            if not claim.get(campo):
+                raise RuntimeMatrixError(f"{versao}.{componente}: claim sem `{campo}`")
+        if claim["source_type"] not in SOURCE_TYPES:
+            raise RuntimeMatrixError(
+                f"{versao}.{componente}: source_type {claim['source_type']!r} fora de "
+                f"{sorted(SOURCE_TYPES)}"
+            )
+        valores.add(str(claim["value"]))
+
+    if status == "VERIFIED" and len(valores) > 1:
+        raise RuntimeMatrixError(
+            f"{versao}.{componente}: status VERIFIED com fontes afirmando "
+            f"{sorted(valores)} -- discordancia entre fontes e CONFLICTING, e "
+            "CONFLICTING nunca vira VERIFIED por edicao de status"
+        )
+    if status == "CONFLICTING" and len(valores) == 1:
+        raise RuntimeMatrixError(
+            f"{versao}.{componente}: status CONFLICTING com todas as fontes "
+            f"afirmando {sorted(valores)[0]!r} -- conflito inventado apaga em "
+            "silencio toda regra guardada por este componente"
+        )
+    return valores
+
+
+@lru_cache(maxsize=1)
+def load() -> dict[str, dict[str, Any]]:
+    """Matriz de versoes do Glue RESOLVIDA, indexada pela versao (ex.: "5.1").
+
+    Componente declarado na forma curta (`spark: "4.1.1"`) passa direto.
+    Componente na forma longa (um registro com `status` e `claims`) vira o
+    valor unico que as fontes confirmam quando o status e `VERIFIED`, e
+    simplesmente NAO APARECE quando o status retem o valor -- ver
+    `_SEM_VALOR_RESOLVIDO`. Quem precisa da evidencia por tras chama
+    `evidence()`.
+
+    ## `sources` e `retrieved` NAO sao componente, e ate 2026-09-01 saiam como se
+    ## fossem
+
+    As tres matrizes de EMR passam por `_carrega_matriz_fechada`, que filtra
+    `_RESERVADAS`; este caminho -- que existe por causa da forma longa com
+    `claims` -- nao filtrava. Medido: `load()["5.0"]` devolvia SETE chaves
+    (`iceberg, java, python, retrieved, scala, sources, spark`) contra as CINCO
+    de `load_emr()["7.7.0"]`.
+
+    Nenhuma garantia se perde ao filtrar: procedencia por release ja tem acessor
+    proprio, `release_provenance()`, que existe exatamente para essa pergunta e
+    resolve a heranca do nivel de documento para o nivel de release -- coisa que
+    ler a chave crua da linha nao fazia. O guard de "toda versao declara fonte e
+    data" mudou de acessor em `tests/test_runtime_matrix.py`, nao sumiu.
+
+    A auditoria de 2026-09-01 classificou isto como DIVIDA e nao como limite
+    declarado, e a razao vale registro: o adiamento anterior citava "mudanca de
+    contrato com consumidores em golden" como motivo. Isso e CUSTO, nao
+    categoria -- e medido, o custo era um teste trocando de acessor.
+    """
+    resolvida: dict[str, dict[str, Any]] = {}
+    for versao, linha in _read().items():
+        resolvida[versao] = {}
+        for componente, valor in linha.items():
+            if componente in _RESERVADAS:
+                continue
+            if not isinstance(valor, dict) or "claims" not in valor:
+                resolvida[versao][componente] = valor
+                continue
+            valores = _validar_evidencia(versao, componente, valor)
+            if valor["status"] in _SEM_VALOR_RESOLVIDO:
+                continue
+            resolvida[versao][componente] = valores.pop()
+    return resolvida
+
+
+@lru_cache(maxsize=1)
+def evidence() -> dict[str, dict[str, dict[str, Any]]]:
+    """Componentes declarados na forma longa, por versao, com claims e status.
+
+    Existe separada de `load()` porque as duas respondem perguntas diferentes:
+    `load()` responde "com que versao eu julgo", e precisa reter o valor em
+    disputa; esta responde "o que as fontes dizem, e por que isso nao virou
+    um valor", e precisa mostrar a disputa inteira. Componente na forma curta
+    nao aparece aqui -- ele nao tem disputa a relatar.
+    """
+    detalhe: dict[str, dict[str, dict[str, Any]]] = {}
+    for versao, linha in _read().items():
+        for componente, valor in linha.items():
+            if not isinstance(valor, dict) or "claims" not in valor:
+                continue
+            _validar_evidencia(versao, componente, valor)
+            detalhe.setdefault(versao, {})[componente] = valor
+    return detalhe
+
+
+def conflicting() -> list[tuple[str, str]]:
+    """Pares `(versao, componente)` cujo valor esta retido por disputa.
+
+    A lista que um relatorio de migracao precisa para dizer "este eixo nao foi
+    julgado, e por que" em vez de omiti-lo.
+    """
+    return sorted(
+        (versao, componente)
+        for versao, componentes in evidence().items()
+        for componente, registro in componentes.items()
+        if registro["status"] in _SEM_VALOR_RESOLVIDO
+    )
+
+
+@lru_cache(maxsize=1)
+def watched_sources() -> frozenset[str]:
+    """Retorna as URLs vigiadas em `knowledge/sources.lock.json`.
+
+    Usado para validar que toda fonte citada na matriz e uma fonte que o
+    mecanismo de procedencia do repositorio efetivamente rastreia -- uma
+    URL solta na matriz, sem entrada no lock, nao teria hash nem data
+    revalidados por `scripts/refresh_knowledge.py`.
+    """
+    with _sources_lock_path().open("r", encoding="utf-8") as arquivo:
+        lock = json.load(arquivo)
+    return frozenset(lock.get("sources", {}).keys())
+
+
+def known_versions() -> list[str]:
+    """Versoes de Glue conhecidas pela matriz, em ordem crescente."""
+    return sorted(load().keys(), key=lambda v: tuple(int(p) for p in v.split(".")))
+
+
+# O que a FONTE do Glue publica, como as tres matrizes de EMR ja declaram o
+# seu (`EMR_COMPONENTS`, `EMR_EKS_COMPONENTS`, `EMR_SERVERLESS_COMPONENTS`).
+# Existe porque `ReleaseDescriptor` precisa distinguir duas recusas que sao
+# diferentes: componente que a fonte daquela plataforma NAO PUBLICA em release
+# nenhuma (`hadoop` no Glue) e componente que ela publica mas cuja CELULA
+# daquela release nao foi lida (`java` em Glue 5.1, 4 de 5 releases o tem).
+#
+# DIFERENCA DELIBERADA EM RELACAO AS TRES DE EMR: este conjunto NAO e enforcado
+# em `load()`. As tres matrizes de EMR passam por `_carrega_matriz_fechada`, que
+# estoura numa chave fora do vocabulario; a do Glue tem a forma longa com
+# `claims`, um caminho de carga proprio, e enforcar aqui exigiria refazer
+# aquele caminho sem consumidor que peca. O que trava o drift e
+# `tests/test_release_descriptor.py::TestVocabularioBateComOsDados`, que compara
+# este conjunto com a uniao das chaves do YAML.
+GLUE_COMPONENTS = frozenset({"spark", "python", "scala", "java", "iceberg"})
+
+
+def _procedencia_por_release(caminho: Path) -> dict[str, dict[str, Any]]:
+    """`{release: {"sources": (...), "retrieved": "YYYY-MM-DD" | None}}`.
+
+    As duas escalas de procedencia SOMAM, e isso e o que o cabecalho do YAML de
+    EMR on EC2 declara em prosa: a pagina-tabela do documento cobre a linha
+    inteira, e a release com fonte propria -- `python` de `7.13.0`, que vem da
+    release note daquela release -- acrescenta a sua sem descartar a do
+    documento. `retrieved`, ao contrario, NAO soma: a data da leitura mais
+    especifica vence, porque duas datas para a mesma celula nao sao duas
+    leituras, sao uma leitura e um valor herdado.
+
+    As quatro matrizes usam formas diferentes deste mesmo mecanismo, e as
+    quatro sao reais: Glue declara so por release (5 de 5), EMR on EKS tambem
+    (34 de 34, porque a secao 7 do .md mede que as paginas por familia sao a
+    parte de maior drift), EMR Serverless so por documento (0 de 26, porque as
+    24 paginas por release ficaram fora da watchlist de proposito) e EMR on EC2
+    e misto (1 de 30).
+    """
+    documento = _documento(caminho)
+    doc_sources = tuple(str(u) for u in (documento.get("sources") or []))
+    doc_retrieved = documento.get("retrieved")
+    saida: dict[str, dict[str, Any]] = {}
+    for release, linha in (documento.get("versions") or {}).items():
+        proprias: tuple[str, ...] = ()
+        retrieved = None
+        if isinstance(linha, dict):
+            proprias = tuple(str(u) for u in (linha.get("sources") or []))
+            retrieved = linha.get("retrieved")
+        vistas: dict[str, None] = {}
+        for url in doc_sources + proprias:
+            vistas.setdefault(url, None)
+        saida[str(release)] = {
+            "sources": tuple(vistas),
+            "retrieved": str(retrieved or doc_retrieved) if (retrieved or doc_retrieved) else None,
+        }
+    return saida
+
+
+@lru_cache(maxsize=1)
+def release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do Glue."""
+    return _procedencia_por_release(_matrix_path())
+
+
+# --------------------------------------------------------------------------- #
+# As tres matrizes de EMR: on EC2, Serverless e on EKS
+# --------------------------------------------------------------------------- #
+#
+# AS TRES SAO A MESMA MECANICA E TRES VOCABULARIOS DIFERENTES, e essa e a coisa
+# toda. Nenhuma das tres deriva das outras -- a de EKS diverge da de EC2 em
+# celulas REAIS (4 de 26 releases comparaveis em Spark, 6 de 26 em Iceberg), e a
+# do Serverless nao publica tres das cinco colunas de EC2. O que elas
+# compartilham e o formato e as garantias de carga; o que as separa e o conjunto
+# de componentes que a respectiva fonte publica, e por isso o conjunto e um
+# parametro e nao um `if`.
+#
+# Chaves RESERVADAS numa linha de release: `sources` e `retrieved` declaram
+# procedencia daquela release especifica, quando ela difere da do documento --
+# `python` de `emr-7.13.0` no EC2 vem da release note daquela release, e as 34
+# linhas de EKS declaram cada uma a sua propria pagina. Elas nao sao componentes
+# e nao entram na matriz resolvida.
+_RESERVADAS = frozenset({"sources", "retrieved"})
+
+
+def _carrega_matriz_fechada(
+    caminho: Path,
+    componentes: frozenset[str],
+    plataforma: str,
+    listas: frozenset[str] = frozenset(),
+) -> dict[str, dict[str, Any]]:
+    """Carrega uma matriz de release com vocabulario FECHADO de componente.
+
+    Vocabulario fechado pelo mesmo motivo de `SOURCE_TYPES`: a unica forma
+    pratica de uma destas matrizes voltar a inventar eixo e alguem acrescentar
+    uma chave `python:` numa linha porque "o EC2 tem". Chave fora do conjunto
+    estoura na carga, com o nome do componente, da release e da plataforma.
+
+    So a forma curta (`spark: "3.5.2"`), com uma excecao declarada: os
+    componentes em `listas` chegam como sequencia e saem como `tuple`, porque a
+    fonte os publica como CONJUNTO e nao como valor -- e o unico caso hoje e
+    `python_installed` de EMR on EC2, a coluna de interpretadores instalados.
+    Achatar um conjunto num valor escolheria por conta propria qual deles o
+    PySpark usa.
+
+    A forma longa com `claims` existe so na matriz do Glue, onde houve disputa
+    entre fontes oficiais a registrar. Aqui nao ha celula em disputa -- ha
+    celula AUSENTE, que e outra coisa e ja tem semantica propria neste motor
+    (chave que nao existe faz `in_scope` reprovar o eixo, e a regra e pulada por
+    ausencia). Um registro em forma longa seria vocabulario sem consumidor,
+    entao ele estoura em vez de carregar meio entendido.
+    """
+    resolvida: dict[str, dict[str, Any]] = {}
+    for release, linha in _versoes(caminho).items():
+        if not isinstance(linha, dict):
+            raise RuntimeMatrixError(
+                f"{caminho}: release {release!r} nao e um mapa de componentes"
+            )
+        fora = sorted(set(linha) - componentes - _RESERVADAS)
+        if fora:
+            raise RuntimeMatrixError(
+                f"{caminho}: release {release!r} declara {fora} -- a fonte do "
+                f"{plataforma} publica apenas {sorted(componentes)}, e componente "
+                f"sem fonte e eixo inventado (ver o cabecalho do YAML)"
+            )
+        celulas: dict[str, Any] = {}
+        for componente, valor in linha.items():
+            if componente in _RESERVADAS:
+                continue
+            if componente in listas:
+                if not isinstance(valor, (list, tuple)) or not valor:
+                    raise RuntimeMatrixError(
+                        f"{caminho}: {release}.{componente} = {valor!r} -- este "
+                        f"componente e um CONJUNTO na fonte e precisa de lista nao "
+                        f"vazia; um escalar aqui achataria a coluna"
+                    )
+                celulas[componente] = tuple(str(v) for v in valor)
+                continue
+            if not isinstance(valor, str) or not valor.strip():
+                raise RuntimeMatrixError(
+                    f"{caminho}: {release}.{componente} = {valor!r} -- valor vazio "
+                    f"afirmaria leitura que nao aconteceu; omita a chave"
+                )
+            celulas[componente] = str(valor)
+        resolvida[str(release)] = celulas
+    return resolvida
+
+
+def _fontes_declaradas(caminho: Path) -> tuple[str, ...]:
+    """Toda URL que a matriz declara como fonte -- no documento e por release.
+
+    As duas escalas contam: a de documento cobre as celulas que uma pagina-tabela
+    sustenta inteiras, e a de release existe para a celula com procedencia
+    propria. Uma URL solta em qualquer das duas, sem entrada em
+    `knowledge/sources.lock.json`, nao teria hash nem data revalidados por
+    `scripts/refresh_knowledge.py`.
+    """
+    documento = _documento(caminho)
+    urls: list[str] = [str(u) for u in (documento.get("sources") or [])]
+    for linha in (documento.get("versions") or {}).values():
+        if isinstance(linha, dict):
+            urls.extend(str(u) for u in (linha.get("sources") or []))
+    vistas: dict[str, None] = {}
+    for url in urls:
+        vistas.setdefault(url, None)
+    return tuple(vistas)
+
+
+# --------------------------------------------------------------------------- #
+# EMR on EC2
+# --------------------------------------------------------------------------- #
+
+# `hadoop` E GUARDADO E NAO DERIVA: nenhuma regra do catalogo o tem em
+# `runtime_scope`. Fica na matriz porque e fato conferido e porque o guard de
+# drift compara a matriz contra a pagina de knowledge, que tem a coluna.
+# `python_installed` e a coluna de interpretadores INSTALADOS, que e conjunto;
+# `python` e o default do PySpark, que a AWS so documenta na serie 7.x.
+EMR_COMPONENTS = frozenset({"spark", "hadoop", "iceberg", "python_installed", "python"})
+_EMR_LISTAS = frozenset({"python_installed"})
+
+_EMR_RELATIVE = "emr/runtime-matrix.yaml"
+
+
+def _emr_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _EMR_RELATIVE)
+
+
+@lru_cache(maxsize=1)
+def load_emr() -> dict[str, dict[str, Any]]:
+    """Matriz do EMR on EC2, indexada pelo release label SEM o prefixo `emr-`.
+
+    Ate a entrega de `ReleaseDescriptor` este dado morava como LITERAL em
+    `sparkforge/facts/runtime_detect.py::EMR_MATRIX` -- 30 releases escritas a
+    mao, sem fonte e sem data de consulta. Medido celula a celula antes de
+    mover: o literal e as tabelas das secoes 2 e 3 de
+    `knowledge/emr/runtime-matrix.md` coincidiam nas 30 releases e nas cinco
+    colunas, sem uma divergencia. Mover deu procedencia ao dado; nao mudou
+    valor nenhum.
+    """
+    return _carrega_matriz_fechada(
+        _emr_path(), EMR_COMPONENTS, "EMR on EC2", _EMR_LISTAS
+    )
+
+
+@lru_cache(maxsize=1)
+def emr_sources() -> tuple[str, ...]:
+    return _fontes_declaradas(_emr_path())
+
+
+@lru_cache(maxsize=1)
+def emr_release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do EMR on EC2. Ver `_procedencia_por_release`."""
+    return _procedencia_por_release(_emr_path())
+
+
+# --------------------------------------------------------------------------- #
+# EMR on EKS
+# --------------------------------------------------------------------------- #
+
+# Quatro componentes, e as duas ausencias sao o achado da area: a fonte do EKS
+# NAO publica `hadoop` (0 de 34 paginas -- `hadoop-client` na linha *Supported
+# components* e um nome, nao uma versao) e NAO publica `python` por release (2
+# de 34, e as duas em prosa, anunciando uma virada). Aceitar qualquer das duas
+# aqui seria copiar numero da matriz de EC2, que e a plataforma de onde ele
+# NAO pode vir -- as duas divergem em celulas reais.
+EMR_EKS_COMPONENTS = frozenset({"spark", "iceberg", "hudi", "delta"})
+
+_EMR_EKS_RELATIVE = "emr-eks/runtime-matrix.yaml"
+
+
+def _emr_eks_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _EMR_EKS_RELATIVE)
+
+
+@lru_cache(maxsize=1)
+def load_emr_eks() -> dict[str, dict[str, Any]]:
+    """Matriz do EMR on EKS, indexada pela FAMILIA de release sem o prefixo
+    `emr-` (`"7.13.0"`, `"spark-8.0.0"`).
+
+    FAMILIA, nao variante de release label, e a limitacao e medida: a linha
+    *Supported applications* da fonte e publicada por familia, e a propria
+    `emr-7.7.0` declara que `emr-7.7.0-java8-latest` NAO tem Iceberg enquanto
+    `emr-7.7.0` tem. Derivar `iceberg` de um label com variante de Java erra
+    essa celula, e a secao 6 de `knowledge/emr-eks/runtime-matrix.md` registra
+    a recomendacao conservadora que decorre disso.
+    """
+    return _carrega_matriz_fechada(_emr_eks_path(), EMR_EKS_COMPONENTS, "EMR on EKS")
+
+
+@lru_cache(maxsize=1)
+def emr_eks_sources() -> tuple[str, ...]:
+    return _fontes_declaradas(_emr_eks_path())
+
+
+@lru_cache(maxsize=1)
+def emr_eks_release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do EMR on EKS. Ver `_procedencia_por_release`."""
+    return _procedencia_por_release(_emr_eks_path())
+
+
+# --------------------------------------------------------------------------- #
+# EMR Serverless
+# --------------------------------------------------------------------------- #
+
+EMR_SERVERLESS_COMPONENTS = frozenset({"spark", "iceberg"})
+
+
+@lru_cache(maxsize=1)
+def load_emr_serverless() -> dict[str, dict[str, str]]:
+    """Matriz do EMR Serverless, indexada pelo release label SEM o prefixo
+    `emr-` (`"7.5.0"`, `"spark-8.0.0"`) -- a mesma normalizacao de
+    `sparkforge.facts.runtime_detect._emr_key`.
+    """
+    return _carrega_matriz_fechada(
+        _emr_serverless_path(), EMR_SERVERLESS_COMPONENTS, "EMR Serverless"
+    )
+
+
+@lru_cache(maxsize=1)
+def emr_serverless_sources() -> tuple[str, ...]:
+    """As URLs que a matriz do Serverless declara como fonte.
+
+    Existe para que `tests/test_emr_serverless_runtime_boundary.py` possa exigir
+    que todas estejam em `knowledge/sources.lock.json` -- URL solta na matriz,
+    sem entrada no lock, nao teria hash nem data revalidados por
+    `scripts/refresh_knowledge.py`.
+    """
+    return _fontes_declaradas(_emr_serverless_path())
+
+
+@lru_cache(maxsize=1)
+def emr_serverless_release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do EMR Serverless. Ver `_procedencia_por_release`."""
+    return _procedencia_por_release(_emr_serverless_path())
+
+
+# --------------------------------------------------------------------------- #
+# Databricks Runtime
+# --------------------------------------------------------------------------- #
+
+# Um componente so: a pagina de versoes suportadas publica Apache Spark por
+# versao do Databricks Runtime, e nenhum outro eixo que alguma regra consuma.
+DATABRICKS_COMPONENTS = frozenset({"spark"})
+
+
+@lru_cache(maxsize=1)
+def load_databricks() -> dict[str, dict[str, str]]:
+    """Matriz do Databricks Runtime, indexada pelo numero como a pagina o
+    escreve (`"15.4"`, `"18"`). A normalizacao do rotulo da API
+    (`15.4.x-scala2.12`) mora em `runtime_detect._databricks_key`."""
+    return _carrega_matriz_fechada(_databricks_path(), DATABRICKS_COMPONENTS, "Databricks")
+
+
+@lru_cache(maxsize=1)
+def databricks_sources() -> tuple[str, ...]:
+    return _fontes_declaradas(_databricks_path())

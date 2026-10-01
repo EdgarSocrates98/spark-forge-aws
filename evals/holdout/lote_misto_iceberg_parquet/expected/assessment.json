@@ -1,0 +1,826 @@
+{
+  "platform": "glue",
+  "source_runtime": "4.0",
+  "target_runtime": "5.1",
+  "steps": [
+    [
+      "4.0",
+      "5.0"
+    ],
+    [
+      "5.0",
+      "5.1"
+    ]
+  ],
+  "findings": [
+    {
+      "rule_id": "SF-MIG-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "pipeline/leitura.py",
+        "line": 2,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_30ac09"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+      "proposed_change": [
+        "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+        "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+      ],
+      "tradeoffs": [
+        "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+      ],
+      "validation": [
+        "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+        "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+      ],
+      "rollback": [
+        "Reverter o import e o cliente para SDK v1",
+        "e manter o job no Glue 4.0 até a reescrita estar pronta."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        },
+        {
+          "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+          "retrieved": "2026-07-29"
+        }
+      ],
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
+    },
+    {
+      "rule_id": "SF-MIG-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "pipeline/leitura.py",
+        "line": 2,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_30ac09"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+      "proposed_change": [
+        "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+        "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+      ],
+      "tradeoffs": [
+        "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+      ],
+      "validation": [
+        "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+        "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+      ],
+      "rollback": [
+        "Reverter o import e o cliente para SDK v1",
+        "e manter o job no Glue 4.0 até a reescrita estar pronta."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        },
+        {
+          "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+          "retrieved": "2026-07-29"
+        }
+      ],
+      "action": {
+        "kind": "dependency.migrate_to_successor_api",
+        "target": "job.source.sdk_import",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
+    },
+    {
+      "rule_id": "SF-MIG-002",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "pipeline/leitura.py",
+        "line": 7,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_d189c7",
+        "f_bf7bc8"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+      "proposed_change": [
+        "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+        "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+      ],
+      "tradeoffs": [
+        "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+      ],
+      "validation": [
+        "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+        "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+      ],
+      "rollback": [
+        "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        }
+      ],
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
+    },
+    {
+      "rule_id": "SF-MIG-002",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "pipeline/leitura.py",
+        "line": 7,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_d189c7",
+        "f_bf7bc8"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+      "proposed_change": [
+        "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+        "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+      ],
+      "tradeoffs": [
+        "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+      ],
+      "validation": [
+        "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+        "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+      ],
+      "rollback": [
+        "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        }
+      ],
+      "action": {
+        "kind": "config.replace_property_key",
+        "target": "job.configuration.emrfs_key",
+        "direction": "replace",
+        "requires_absent": [],
+        "moves": [],
+        "depends_on": []
+      }
+    }
+  ],
+  "by_step": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "pipeline/leitura.py",
+          "line": 2,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_30ac09"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
+      },
+      "step": [
+        "4.0",
+        "5.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "pipeline/leitura.py",
+          "line": 7,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_d189c7",
+          "f_bf7bc8"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
+      },
+      "step": [
+        "4.0",
+        "5.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "pipeline/leitura.py",
+          "line": 2,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_30ac09"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
+      },
+      "step": [
+        "5.0",
+        "5.1"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "pipeline/leitura.py",
+          "line": 7,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_d189c7",
+          "f_bf7bc8"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
+      },
+      "step": [
+        "5.0",
+        "5.1"
+      ]
+    }
+  ],
+  "report": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "pipeline/leitura.py",
+          "line": 2,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_30ac09"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ],
+        "action": {
+          "kind": "dependency.migrate_to_successor_api",
+          "target": "job.source.sdk_import",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
+      },
+      "steps": [
+        [
+          "4.0",
+          "5.0"
+        ],
+        [
+          "5.0",
+          "5.1"
+        ]
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "pipeline/leitura.py",
+          "line": 7,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_d189c7",
+          "f_bf7bc8"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ],
+        "action": {
+          "kind": "config.replace_property_key",
+          "target": "job.configuration.emrfs_key",
+          "direction": "replace",
+          "requires_absent": [],
+          "moves": [],
+          "depends_on": []
+        }
+      },
+      "steps": [
+        [
+          "4.0",
+          "5.0"
+        ],
+        [
+          "5.0",
+          "5.1"
+        ]
+      ]
+    }
+  ],
+  "gates": {
+    "compatibilidade": "FAIL",
+    "lakeformation": "BLOCKED",
+    "consumidor": "BLOCKED",
+    "iam_kms": "BLOCKED",
+    "rede": "BLOCKED",
+    "cross_account": "BLOCKED",
+    "dados": "BLOCKED",
+    "performance": "BLOCKED",
+    "custo": "BLOCKED",
+    "canary": "BLOCKED"
+  },
+  "missing_evidence": {
+    "lakeformation": "nenhum `tf.attribute` nos facts -- a topologia de controle de acesso fino e declarada nos `default_arguments` do job no Terraform, entao aponte a analise para o diretorio que contem os `.tf` do job",
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge/facts/consumers.py`)",
+    "iam_kms": "nenhum `tf.attribute` nos facts -- security configuration, papel de execucao e a rota ate o KMS sao declarados no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "rede": "nenhum `tf.attribute` nos facts -- a conexao que coloca o job dentro da VPC e declarada no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",
+    "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
+    "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
+    "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
+    "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
+  },
+  "recommendation": "NO_GO",
+  "coverage": {
+    "platform": "glue",
+    "platform_axis": "glue",
+    "source_runtime": "4.0",
+    "target_runtime": "5.1",
+    "steps": 2,
+    "catalog_rules": 177,
+    "version_guarded_rules": 26,
+    "unguarded_rules": 151,
+    "reachable_rules": 169,
+    "axes": [
+      {
+        "axis": "glue",
+        "catalog_rules": 21,
+        "reachable_rules": 18,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "iceberg",
+        "catalog_rules": 1,
+        "reachable_rules": 1,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "spark",
+        "catalog_rules": 5,
+        "reachable_rules": 0,
+        "runtime_key_present": true
+      }
+    ],
+    "activated_axes": [
+      "glue",
+      "iceberg"
+    ],
+    "statement": "COBERTURA DECLARADA. Plataforma: AWS Glue. Caminho: 4.0 -> 5.1, 2 degrau(s). Catalogo: 177 regras, das quais 26 guardadas por versao (27 contagens por eixo -- uma regra com dois eixos conta nos dois) e 151 sem guarda, alcancaveis em qualquer runtime. Por eixo de `runtime_scope` -- `glue`: 21 no catalogo, 18 alcancadas por este caminho, chave de runtime presente; `iceberg`: 1 no catalogo, 1 alcancadas por este caminho, chave de runtime presente; `spark`: 5 no catalogo, 0 alcancadas por este caminho, chave de runtime presente. O eixo `glue` tem 21 regras neste catalogo, e este caminho alcancou 18 delas. Portanto: assessment sem achado significa `nenhuma das regras alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao cobre esta nomeado -- aqui, em `missing_evidence` e em `component_diff_unresolved` --, porque listar a recusa e a diferenca entre nao saber e nao ter perguntado."
+  },
+  "component_diff": [
+    {
+      "step": [
+        "4.0",
+        "5.0"
+      ],
+      "changed": [
+        {
+          "component": "iceberg",
+          "from": "1.0.0",
+          "to": "1.7.1"
+        },
+        {
+          "component": "java",
+          "from": "8",
+          "to": "17"
+        },
+        {
+          "component": "python",
+          "from": "3.10",
+          "to": "3.11"
+        },
+        {
+          "component": "scala",
+          "from": "2.12",
+          "to": "2.12.18"
+        },
+        {
+          "component": "spark",
+          "from": "3.3.0",
+          "to": "3.5.4"
+        }
+      ],
+      "added": [],
+      "removed": [],
+      "unchanged": [],
+      "unresolved": {}
+    },
+    {
+      "step": [
+        "5.0",
+        "5.1"
+      ],
+      "changed": [
+        {
+          "component": "iceberg",
+          "from": "1.7.1",
+          "to": "1.10.0"
+        },
+        {
+          "component": "spark",
+          "from": "3.5.4",
+          "to": "3.5.6"
+        }
+      ],
+      "added": [],
+      "removed": [
+        "java"
+      ],
+      "unchanged": [
+        "python",
+        "scala"
+      ],
+      "unresolved": {}
+    }
+  ],
+  "component_diff_unresolved": {
+    "compatibility_changes": "exige uma tabela de compatibilidade por release, com o par (componente, versao) e a consequencia declarada; hoje o que existe estruturado sobre compatibilidade e o CATALOGO DE REGRAS (rules/catalog/glue-migration.yaml, SF-MIG-*, com runtime_scope real), e consumi-lo aqui transformaria este verbo de leitor em juiz -- a D-6 da spec proibe regra neste sub-projeto. Em knowledge/ ha prosa (secao 2 de knowledge/glue/runtime-matrix.md, knowledge/runtime-compatibility.md), so para o Glue e nao por release",
+    "component.delta": "a fonte do AWS Glue nao publica `delta` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `delta` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hadoop": "a fonte do AWS Glue nao publica `hadoop` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hadoop` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hudi": "a fonte do AWS Glue nao publica `hudi` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hudi` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.python_installed": "a fonte do AWS Glue nao publica `python_installed` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `python_installed` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "default_changes": "exige as viradas de default declaradas por release e com fonte; hoje knowledge/glue/runtime-matrix.md as discute em PROSA e chaveadas por versao de Spark ('AQE e default desde Spark 3.2', 'ANSI mode e default no Spark 4.1'), e knowledge/emr/, knowledge/emr-eks/ e knowledge/emr-serverless/ nao tem nem a prosa. Destrava com knowledge/<plataforma>/default-changes.yaml, chaveado por release, com propriedade, valor antes, valor depois e fonte",
+    "deprecated": "exige release notes estruturadas por release; hoje knowledge/emr/, knowledge/emr-eks/, knowledge/emr-serverless/ e knowledge/glue/ tem prosa e tabela de COMPONENTES, nao changelog. Destrava com knowledge/<plataforma>/release-notes.yaml carregando, por release, entradas `deprecated: [{api, desde, substituto, source, retrieved}]`. Sem isso este verbo nao distingue 'a plataforma parou de embarcar' de 'a fonte parou de publicar', que e a mesma ausencia de celula vista de dois lados",
+    "performance_changes": "exige baseline medido dos dois lados, nao documento: mudanca de desempenho entre releases e diferenca de tempo e de recurso no MESMO workload, e nenhuma matriz de knowledge/ carrega medida de execucao. Destrava com dois conjuntos de facts de event log e o verbo `benchmark`, que ja existe neste motor para exatamente essa pergunta -- nao com uma coluna nova de knowledge/",
+    "security_changes": "exige boletim de seguranca por release, com CVE e componente afetado; hoje nenhuma das quatro paginas de knowledge/<plataforma>/runtime-matrix.md cita CVE, e as matrizes carregam versao de componente e nada mais. Destrava com knowledge/<plataforma>/security-bulletins.yaml chaveado por release, com CVE, componente, severidade e fonte oficial em knowledge/sources.lock.json"
+  }
+}

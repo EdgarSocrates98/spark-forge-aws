@@ -1,0 +1,24 @@
+{
+  "id": "ERR-GLUE-001",
+  "signature": "Container killed by YARN for exceeding memory limits",
+  "service": "glue",
+  "versions": ["4.0", "5.0", "5.1"],
+  "symptoms": ["Executor OOM", "Lost executor on YARN", "Task failure during shuffle"],
+  "likely_causes": ["Memory skew in join", "Insufficient executor memory overhead", "Broadcast join of oversized table"],
+  "evidence_required": ["pyspark.skew_join", "eventlog.executor_oom", "spark.plan.cartesian_product"],
+  "diagnostic_steps": [
+    "Run `sparkforge analyze event-log` on executor event log",
+    "Inspect physical plan for broadcast vs sort-merge join",
+    "Check partition byte size distribution"
+  ],
+  "fixes": [
+    "Increase worker type from G.1X to G.2X or adjust spark.executor.memoryOverhead",
+    "Apply salting to skewed join key",
+    "Use broadcast join hint only on verified small tables (<10MB)"
+  ],
+  "unsafe_fixes": ["Setting spark.sql.shuffle.partitions to an arbitrary high number without checking memory"],
+  "verification": "Re-run job with functional validation plan and measure peak memory in event log",
+  "rollback": "Revert spark conf overrides",
+  "sources": ["https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html"],
+  "last_verified": "2026-08-15"
+}

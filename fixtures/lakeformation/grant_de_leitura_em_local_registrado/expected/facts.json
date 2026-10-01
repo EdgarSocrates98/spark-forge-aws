@@ -1,0 +1,135 @@
+[
+  {
+    "id": "f_646e1f",
+    "schema_version": 1,
+    "kind": "lakeformation.grant",
+    "subject": {
+      "type": "table",
+      "file": "222222222222_curated_fato_venda.json",
+      "symbol": "curated.fato_venda#IAM_ALLOWED_PRINCIPALS",
+      "catalog_id": "222222222222"
+    },
+    "measures": {
+      "permission_count": 1
+    },
+    "attrs": {
+      "principal": "IAM_ALLOWED_PRINCIPALS",
+      "is_iam_allowed_principals": true,
+      "permissions": [
+        "ALL"
+      ],
+      "permissions_with_grant_option": [],
+      "has_select": false,
+      "has_all": true,
+      "has_describe": false,
+      "resource_database": "curated",
+      "resource_table": "fato_venda",
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "222222222222_curated_fato_venda.json"
+    }
+  },
+  {
+    "id": "f_0d6fbc",
+    "schema_version": 1,
+    "kind": "lakeformation.grant",
+    "subject": {
+      "type": "table",
+      "file": "222222222222_curated_fato_venda.json",
+      "symbol": "curated.fato_venda#arn:aws:iam::111111111111:role/glue-curated",
+      "catalog_id": "222222222222"
+    },
+    "measures": {
+      "permission_count": 2
+    },
+    "attrs": {
+      "principal": "arn:aws:iam::111111111111:role/glue-curated",
+      "is_iam_allowed_principals": false,
+      "permissions": [
+        "DESCRIBE",
+        "SELECT"
+      ],
+      "permissions_with_grant_option": [],
+      "has_select": true,
+      "has_all": false,
+      "has_describe": true,
+      "resource_database": "curated",
+      "resource_table": "fato_venda",
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "222222222222_curated_fato_venda.json"
+    }
+  },
+  {
+    "id": "f_2bda1b",
+    "schema_version": 1,
+    "kind": "lakeformation.grants.analyzed",
+    "subject": {
+      "type": "table",
+      "file": "222222222222_curated_fato_venda.json",
+      "symbol": "curated.fato_venda",
+      "catalog_id": "222222222222"
+    },
+    "measures": {
+      "facts_emitted": 4
+    },
+    "attrs": {
+      "status": "ok",
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "222222222222_curated_fato_venda.json"
+    }
+  },
+  {
+    "id": "f_c46275",
+    "schema_version": 1,
+    "kind": "lakeformation.grants.unresolved",
+    "subject": {
+      "type": "table",
+      "file": "222222222222_curated_fato_venda.json",
+      "symbol": "curated.fato_venda",
+      "catalog_id": "222222222222"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sem_permissao",
+      "block": "data_lake_settings",
+      "unblocked_by": "conceder `lakeformation:GetDataLakeSettings` ao principal que coleta -- e ele que revela o passo de CONTA que precede qualquer grant sob Full Table Access",
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "222222222222_curated_fato_venda.json"
+    }
+  },
+  {
+    "id": "f_123095",
+    "schema_version": 1,
+    "kind": "lakeformation.registered_location",
+    "subject": {
+      "type": "table",
+      "file": "222222222222_curated_fato_venda.json",
+      "symbol": "curated.fato_venda",
+      "catalog_id": "222222222222"
+    },
+    "measures": {},
+    "attrs": {
+      "registered": true,
+      "resource_arn": "arn:aws:s3:::sparkforge-demo/curated/fato_venda",
+      "role_arn": "arn:aws:iam::222222222222:role/lf-registration",
+      "hybrid_access_enabled": false,
+      "with_federation": false,
+      "extractor": "lakeformation_grants@0.1.0"
+    },
+    "provenance": {
+      "extractor": "lakeformation_grants@0.1.0",
+      "artifact": "222222222222_curated_fato_venda.json"
+    }
+  }
+]

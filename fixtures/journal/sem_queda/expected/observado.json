@@ -1,0 +1,31 @@
+{
+  "estado": {
+    "broken_at": null,
+    "chain": "intact",
+    "last_seq": 4,
+    "open_calls": [],
+    "torn_tail": false
+  },
+  "handoff_em_voo": [
+    "(nenhum)"
+  ],
+  "resume": {
+    "in_flight": "",
+    "in_flight_source": "none",
+    "journal": {
+      "broken_at": null,
+      "chain": "intact",
+      "last_seq": 4,
+      "open_calls": [],
+      "torn_tail": false
+    }
+  },
+  "verify": {
+    "broken_at": null,
+    "events": 4,
+    "last_seq": 4,
+    "path": ".sparkforge/journal.jsonl",
+    "status": "intact",
+    "torn_tail": false
+  }
+}

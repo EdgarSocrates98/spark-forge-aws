@@ -1,0 +1,44 @@
+{
+  "counts": {
+    "findings": 6,
+    "located": 1,
+    "refused": 5
+  },
+  "refused": [
+    {
+      "rule_id": "SF-BENCH-001",
+      "severity": "P0",
+      "reason": "evidencia_ausente",
+      "subject_type": "job_run"
+    },
+    {
+      "rule_id": "SF-PLAN-003",
+      "severity": "P0",
+      "reason": "arquivo_fora_do_repo",
+      "subject_type": "plan_node"
+    },
+    {
+      "rule_id": "SF-PLAN-003",
+      "severity": "P0",
+      "reason": "arquivo_fora_do_repo",
+      "subject_type": "plan_node"
+    },
+    {
+      "rule_id": "SF-PY-004",
+      "severity": "P0",
+      "reason": "caminho_ambiguo",
+      "subject_type": "source_location"
+    },
+    {
+      "rule_id": "SF-CTM-001",
+      "severity": "P1",
+      "reason": "sem_linha",
+      "subject_type": "source_location"
+    }
+  ],
+  "gate": {
+    "fail_on": "P0",
+    "tripped": true
+  },
+  "exit_code": 1
+}

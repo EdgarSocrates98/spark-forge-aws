@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-LF-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Resolver de credencial do Lake Formation declarado sem restaurar o EMRFS no Glue 5.1",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_fta_sem_emrfs#spark.hadoop.fs.s3.credentialsResolverClass"
+    },
+    "evidence": [
+      "f_56a3c0"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.1"
+    },
+    "explanation": "`spark.hadoop.fs.s3.credentialsResolverClass` é a chave com que o Full Table Access manda o filesystem pedir credencial ao Lake Formation para tabela registrada. Ela é chave **do EMRFS**. A documentação de Full Table Access declara: *\"Full Table Access works exclusively with EMR Filesystem (EMRFS). S3A filesystem is not compatible.\"*\n\nA página de migração para o Glue 5.1 declara, entre as breaking changes: *\"S3A filesystem has replaced EMRFS as the default S3 connector.\"*\n\nAs duas juntas dizem que, num Glue 5.1 de configuração default, esta chave **não tem efeito**. E o modo de falha é o pior que existe: ela não produz erro de configuração desconhecida, não aparece em log, e o job continua rodando. A credencial do Lake Formation nunca é pedida, o acesso ao S3 cai no runtime role, e o `AccessDenied` que sai disso parece problema de Lake Formation quando é de filesystem. Ver `knowledge/glue/lakeformation-fgac.md` §5.",
+    "proposed_change": [
+      "Restaurar o EMRFS declarando as três chaves juntas, que é a forma que a AWS publica: `spark.hadoop.fs.s3.impl` e `spark.hadoop.fs.s3n.impl` com `com.amazon.ws.emr.hadoop.fs.EmrFileSystem`, e `spark.hadoop.fs.AbstractFileSystem.s3.impl` com `org.apache.hadoop.fs.s3.EMRFSDelegate`.",
+      "Ou remover o resolver, se o job **não** usa Full Table Access. A chave sozinha não liga nada, e mantê-la declarada faz o próximo leitor acreditar que o caminho de credencial do Lake Formation está ativo.",
+      "Se o job permanecer em S3A, declarar `spark.hadoop.fs.s3a.endpoint.region`. A mesma página de migração registra que, sem ele e sem `spark.hadoop.fs.s3a.endpoint`, o S3A assume `us-east-2` -- e isso já produziu timeout de upload em job de VPC."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Voltar para o EMRFS reverte um default de plataforma, e o que mais mudou junto com ele no Glue 5.1 não está inventariado por esta regra. Um job que já tenha configuração específica de S3A passa a não usá-la.",
+      "A regra lê a configuração DECLARADA. Um job que restaure o EMRFS por outro caminho -- conexão, script de bootstrap, argumento fora do Terraform -- é acusado sem estar errado, e a evidência do achado é o que permite ver isso.",
+      "A regra não afirma que o job usa Full Table Access. Ela afirma que uma chave de FTA foi declarada e a pré-condição de filesystem dela não. Se o job não usa FTA, a saída correta é remover a chave, não restaurar o EMRFS."
+    ],
+    "tradeoffs": [
+      "Full Table Access exige EMRFS, e o Glue 5.1 caminha para S3A. Manter FTA significa manter uma configuração contra o default da plataforma, e essa distância tende a crescer a cada versão."
+    ],
+    "validation": [
+      "Uma escrita de controle em tabela REGISTRADA no Lake Formation, com o runtime role SEM permissão S3 direta no destino: sob o caminho correto ela funciona pela credencial do Lake Formation, e sob o caminho quebrado ela falha. É o único teste que distingue os dois, porque um role com permissão S3 ampla passa nos dois casos.",
+      "Contagem de linhas no destino antes e depois, sobre o mesmo recorte de entrada.",
+      "A configuração efetiva do run, lida do event log, e não a declarada."
+    ],
+    "rollback": [
+      "Remover as três chaves de EMRFS e reaplicar. É rollback de configuração, não de dado.",
+      "Se alguma escrita aconteceu sob o caminho novo, o destino precisa ser comparado antes de a configuração anterior ser restaurada."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "config.satisfy_property_precondition",
+      "target": "job.configuration.s3_filesystem",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

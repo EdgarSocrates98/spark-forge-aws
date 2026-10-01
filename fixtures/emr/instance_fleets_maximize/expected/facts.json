@@ -1,0 +1,195 @@
+[
+  {
+    "id": "f_ad9031",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 2,
+      "configuration_count": 2,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_281fbd",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-2FLEETSCLUSTER/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.5.2-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a159ef",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-2FLEETSCLUSTER"
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "cluster_id": "j-2FLEETSCLUSTER",
+      "name": "etl-eventos",
+      "release_label": "emr-7.5.0",
+      "release": "7.5.0",
+      "instance_collection_type": "INSTANCE_FLEET",
+      "log_uri": null,
+      "log_uri_present": false,
+      "scale_down_behavior": "TERMINATE_AT_TASK_COMPLETION",
+      "auto_terminate": true,
+      "unhealthy_node_replacement": null,
+      "state": "WAITING",
+      "state_change_reason_code": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_502131",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-2FLEETSCLUSTER/configuration/spark/maximizeResourceAllocation"
+    },
+    "measures": {
+      "overriding_group_count": 0
+    },
+    "attrs": {
+      "level": "cluster",
+      "scope": "",
+      "classification": "spark",
+      "key": "maximizeResourceAllocation",
+      "value": "true",
+      "overridden_in": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a13ce",
+    "schema_version": 1,
+    "kind": "emr.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-2FLEETSCLUSTER/if-CORE/configuration/spark-defaults/spark.executor.memory"
+    },
+    "measures": {},
+    "attrs": {
+      "level": "instance_fleet",
+      "scope": "if-CORE",
+      "classification": "spark-defaults",
+      "key": "spark.executor.memory",
+      "value": "20g",
+      "overrides_cluster": false,
+      "cluster_value": null,
+      "instance_type": "r5.2xlarge"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_a806a1",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-2FLEETSCLUSTER/if-CORE"
+    },
+    "measures": {
+      "target_spot_capacity": 0,
+      "target_on_demand_capacity": 8
+    },
+    "attrs": {
+      "id": "if-CORE",
+      "cluster_id": "j-2FLEETSCLUSTER",
+      "role": "CORE",
+      "collection_type": "INSTANCE_FLEET",
+      "market": null,
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "r5.2xlarge",
+        "r5.4xlarge"
+      ],
+      "has_auto_scaling_policy": null,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_95f4a5",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-2FLEETSCLUSTER/if-MASTER"
+    },
+    "measures": {
+      "target_spot_capacity": 1,
+      "target_on_demand_capacity": 0
+    },
+    "attrs": {
+      "id": "if-MASTER",
+      "cluster_id": "j-2FLEETSCLUSTER",
+      "role": "MASTER",
+      "collection_type": "INSTANCE_FLEET",
+      "market": null,
+      "has_spot_capacity": true,
+      "has_on_demand_capacity": false,
+      "instance_types": [
+        "m5.xlarge"
+      ],
+      "has_auto_scaling_policy": null,
+      "allocation_strategy": "capacity-optimized"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "cf77497d204797bdeb6741442a9aa41af36ce67adf606ba14170df3c8e7bde6e",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

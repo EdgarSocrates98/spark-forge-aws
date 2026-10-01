@@ -1,0 +1,43 @@
+{
+  "catalog_id": "",
+  "data_lake_settings": {
+    "allow_external_data_filtering": true,
+    "allow_full_table_external_data_access": true,
+    "external_data_filtering_allow_list": [],
+    "status": "ok"
+  },
+  "database": "analytics",
+  "permissions": {
+    "grants_collected": 1,
+    "principals": [
+      {
+        "Permissions": [
+          "DESCRIBE",
+          "SELECT"
+        ],
+        "PermissionsWithGrantOption": [],
+        "Principal": {
+          "DataLakePrincipalIdentifier": "arn:aws:iam::111111111111:role/glue-fta"
+        },
+        "Resource": {
+          "Table": {
+            "DatabaseName": "analytics",
+            "Name": "dim_cliente"
+          }
+        }
+      }
+    ],
+    "status": "ok",
+    "truncated": false
+  },
+  "registered_location": {
+    "hybrid_access_enabled": null,
+    "registered": true,
+    "resource_arn": "arn:aws:s3:::sparkforge-demo/analytics/dim_cliente",
+    "role_arn": "arn:aws:iam::111111111111:role/lf-registration",
+    "status": "ok",
+    "with_federation": false
+  },
+  "status": "ok",
+  "table": "dim_cliente"
+}

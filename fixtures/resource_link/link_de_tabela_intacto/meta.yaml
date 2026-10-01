@@ -1,0 +1,21 @@
+name: link_de_tabela_intacto
+proves: >
+  O par POSITIVO de `link_de_tabela_com_nome_divergente`, e ele existe para que
+  o corpus prove que a regra distingue -- e nao que ela sempre dispara.
+
+  Nome identico ao do recurso de origem, e a origem respondeu. `expects_rules`
+  sai VAZIO, e e este o unico artefato deste corpus em que a perna
+  `resource_link` do grafo de acesso sai `granted` em vez de `unresolved` ou
+  `blocking`.
+
+  Fixture SINTETICA: nenhuma conta, banco ou tabela real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - glue.resource_link
+  - glue.resource_link.analyzed
+  - glue.resource_link.target
+expects_rules: []

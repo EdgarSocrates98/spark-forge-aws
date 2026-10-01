@@ -1,0 +1,93 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+*.whl
+# Ancorados na raiz de proposito: `dist/` solto tambem casava com
+# `vendor/caveman/dist/`, que E codigo vendorizado e precisa ser commitado.
+/build/
+/dist/
+tmp_skills/
+
+# Por maquina, nunca commitado: guarda o allowlist de permissoes de quem
+# trabalha ali -- caminhos e comandos que aquele operador autorizou a rodar sem
+# confirmacao. Estava protegido so pelo gitignore GLOBAL de uma maquina ate
+# 2026-08-07. Ver tests/test_execution_surface.py.
+.claude/settings.local.json
+
+# Nao ha package.json neste repositorio, de proposito: nenhum caminho padrao
+# depende de `npm`/`npx` (ver vendor/CREDITS.md). A linha fica como rede de
+# seguranca para quem instalar algo Node localmente sem querer versiona-lo.
+node_modules/
+
+# SparkForge — estado de investigação.
+# case.yaml, facts.json, findings.json, handoff.md e artifacts/manifest.json SÃO
+# commitados: são o barramento de handoff entre Devin e Claude Code, e são pequenos
+# e derivados. Artefato bruto NÃO é commitado: pode ter dado de negócio e centenas
+# de MB. O manifest registra sha256, origem e comando de recoleta.
+# Ver docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md §8.1
+.sparkforge/artifacts/*
+!.sparkforge/artifacts/manifest.json
+
+# Estado local de execucao: NUNCA commitado, e a regra e allowlist, nao denylist.
+# A politica default de .sparkforge/ e "derivado pequeno pode ser commitado" -- o
+# que e certo para case.yaml e facts.json, e errado para tudo que ACUMULA. Estes
+# tres acumulam: traces.db guarda spans com metadata que pode carregar conteudo de
+# artefato de cliente (observability/store.py grava em cwd/.sparkforge/traces.db
+# por default); cache/ guarda saida de tool endereçada por hash
+# (economy/cache.py, cwd/.sparkforge/cache); e local/ e onde o indice de codigo
+# vai morar. Um banco desses num repositorio com remote publico e vazamento, nao
+# desordem.
+.sparkforge/traces.db
+.sparkforge/cache/
+.sparkforge/local/
+# Copias do `change sandbox` (§15): `before/` e `after/` sao a arvore inteira do
+# repositorio, recriada a cada execucao -- nunca vao para o git.
+.sparkforge/sandbox/
+# Pacotes do `change propose` (§15 L3): patch, corpo e recibo de um PR que o
+# host ainda vai abrir. Derivados do sandbox, e recriados a cada execucao.
+.sparkforge/proposal/
+# Quarentena da cauda cortada por uma queda (`sparkforge.durable.append_line`):
+# evidencia local do que a queda interrompeu, nunca estado do case.
+**/.sparkforge/**/*.torn
+# Journal da raiz: num repositorio de operador ele e a trilha do case; aqui ele so
+# registra os verbos rodados durante o desenvolvimento (carimbos, checks), e nao
+# e artefato do projeto.
+.sparkforge/journal.jsonl
+.tokensave
+
+# Material de referencia sigiloso -- nunca versionar neste repositorio publico.
+*.zip
+
+# Saida de trabalho do gate de lastro (`scripts/check_vnext_claims.py --report`
+# redirecionado para arquivo). E despejo de diagnostico, nao artefato: o estado
+# auditado mora em `docs/claims.lock.json`, que E versionado.
+cm_claims_out.txt
+
+# Relatorio do `pip-audit`, gerado pelo job `audit` e lido por
+# `scripts/audit_policy.py`. E um retrato da base de vulnerabilidade NO INSTANTE
+# da consulta: commitar isso publicaria um "nao ha nada" com data de validade e
+# sem aviso de vencimento. O que e versionado sao os locks, que dizem o que se
+# audita, e a politica, que diz o que fazer com o achado.
+audit.json
+
+# Prompts de origem: insumo de sessao, nao artefato do repositorio.
+#
+# `prompt_especialization_*` entrou em 2026-09-10: o arquivo esteve RASTREADO,
+# foi deletado em `main`, e ao ser recuperado localmente voltou como untracked --
+# um `git add -A` o traria de volta. O padrao fecha isso.
+prompt_evo_*.md
+prompt_especialization_*.md
+prompt_new_evo.md
+prompt_analise_sf.md
+# Espaco do plugin AgentSpec. O projeto o desliga (.claude/settings.json) e o
+# historico dele mora em docs/sdd/archive/agentspec/; o que o hook recriar aqui
+# numa maquina com o plugin ligado no usuario nao entra no git.
+.claude/sdd/
+
+test-runs/
+
+.spark-forge/
+.sparkforge/

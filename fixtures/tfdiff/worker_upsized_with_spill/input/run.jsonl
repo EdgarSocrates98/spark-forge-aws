@@ -1,0 +1,10 @@
+{"Event": "SparkListenerApplicationStart", "App ID": "app-etl-pedidos"}
+{"Event": "SparkListenerExecutorAdded", "Executor ID": "1", "Executor Info": {"Total Cores": 8}}
+{"Event": "SparkListenerExecutorAdded", "Executor ID": "2", "Executor Info": {"Total Cores": 8}}
+{"Event": "SparkListenerStageExecutorMetrics", "Executor ID": "1", "Stage ID": 0, "Executor Metrics": {"JVMHeapMemory": 2100000000, "JVMOffHeapMemory": 180000000, "OnHeapExecutionMemory": 900000000, "ProcessTreePythonRSSMemory": 410000000}}
+{"Event": "SparkListenerStageExecutorMetrics", "Executor ID": "2", "Stage ID": 0, "Executor Metrics": {"JVMHeapMemory": 1950000000, "ProcessTreePythonRSSMemory": 395000000}}
+{"Event": "SparkListenerTaskEnd", "Stage ID": 0, "Task Info": {"Task ID": 0, "Launch Time": 0, "Finish Time": 60000}, "Task Metrics": {"Memory Bytes Spilled": 120000000, "Disk Bytes Spilled": 120000000, "JVM GC Time": 2000, "Executor Run Time": 58000, "Input Metrics": {"Bytes Read": 2000000000}}}
+{"Event": "SparkListenerTaskEnd", "Stage ID": 0, "Task Info": {"Task ID": 1, "Launch Time": 0, "Finish Time": 60000}, "Task Metrics": {"Memory Bytes Spilled": 120000000, "Disk Bytes Spilled": 120000000, "JVM GC Time": 2000, "Executor Run Time": 58000, "Input Metrics": {"Bytes Read": 2000000000}}}
+{"Event": "SparkListenerTaskEnd", "Stage ID": 0, "Task Info": {"Task ID": 2, "Launch Time": 0, "Finish Time": 60000}, "Task Metrics": {"Memory Bytes Spilled": 120000000, "Disk Bytes Spilled": 120000000, "JVM GC Time": 2000, "Executor Run Time": 58000, "Input Metrics": {"Bytes Read": 2000000000}}}
+{"Event": "SparkListenerTaskEnd", "Stage ID": 0, "Task Info": {"Task ID": 3, "Launch Time": 0, "Finish Time": 60000}, "Task Metrics": {"Memory Bytes Spilled": 120000000, "Disk Bytes Spilled": 120000000, "JVM GC Time": 2000, "Executor Run Time": 58000, "Input Metrics": {"Bytes Read": 2000000000}}}
+{"Event": "SparkListenerStageCompleted", "Stage Info": {"Stage ID": 0, "Stage Name": "join pedidos x itens", "Number of Tasks": 4}}

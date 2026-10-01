@@ -1,0 +1,2 @@
+{"Event": "SparkListenerStageSubmitted", "Stage Info": {"Stage ID": 1, "Stage Name": "collect at Job.scala:1"}}
+{"Event": "SparkListenerTaskEnd", "Stage ID": 1, "Task Info": {"Accumulables": []}}

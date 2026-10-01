@@ -1,0 +1,57 @@
+name: instance_groups_spot_task
+proves: >
+  O caminho de instance GROUPS inteiro, num cluster 6.x realista: MASTER e CORE
+  On-Demand, TASK em Spot, e a resposta "ha capacidade Spot neste papel?" vindo
+  de `Market == "SPOT"` normalizada em `attrs.has_spot_capacity` -- a mesma
+  forma que o fixture de fleets produz a partir de `TargetSpotCapacity`, que e
+  a razao de os dois modelos virarem um kind so. Prova tambem os DOIS niveis de
+  `Configurations`: `spark.dynamicAllocation.enabled` esta `false` no cluster e
+  `true` no grupo TASK, e o par
+  `attrs.overrides_cluster`/`measures.overriding_group_count` registra a
+  sobreposicao nos dois sentidos -- sem isso uma regra afirmaria sobre o
+  cluster inteiro o que so vale onde ninguem redefiniu. E prova a redacao de
+  segredo nas duas superficies que as APIs Describe/List devolvem em texto
+  claro: uma access key numa propriedade de `emrfs-site` e uma senha nos `Args`
+  de bootstrap action, as duas viram `<redigido>` com
+  `attrs.secret_pattern_match`. O grupo TASK tem
+  `LastSuccessfullyAppliedConfigurations` IGUAL a `Configurations`: nenhum
+  `emr.configuration.unapplied` sai daqui, que e o sentido negativo do guard.
+  Com a area SF-EMR escrita (Task 4), as duas redacoes de segredo viram um unico
+  achado P0 de SF-EMR-002 -- a regra pergunta pelas duas superficies num grupo
+  `any`, porque um cluster sem bootstrap action nenhuma nao pode ficar sem a
+  metade de `Configurations`. E `spark.sql.sources.partitionOverwriteMode:
+  dynamic` no `spark-defaults` do CLUSTER dispara SF-EMR-005: a propriedade
+  muda a semantica de `mode("overwrite")` para todo job que rodar aqui,
+  inclusive os escritos supondo o default `static`.
+  E dispara SF-EMR-008 (Task 4b): release 6.15.0, Spot no grupo TASK, e nenhuma
+  propriedade de node label em `yarn-site` -- nem no cluster, nem em grupo
+  nenhum. Em `deploy-mode cluster` o ApplicationMaster e o driver, e sem o par
+  `yarn.node-labels.enabled`/`am.default-node-label-expression` ele e elegivel
+  ao no Spot que o EC2 pode reclamar. Este e o cenario mais comum do corpus, e
+  por isso a regra so pode existir com o guarda: `all_spot_groups_maximize` tem
+  os mesmos dois primeiros ingredientes e nao pode ser acusado.
+  O que este dump prova NEGATIVAMENTE e o discriminante de SF-EMR-003. A
+  propriedade `spark.dynamicAllocation.enabled` esta `false` no nivel cluster e
+  ha politica de managed scaling -- os dois ingredientes da regra --, mas o
+  grupo TASK a redefine para `true`, `measures.overriding_group_count` vale 1, e
+  a regra NAO dispara. "O cluster esta com alocacao dinamica desligada" deixa de
+  ser verdade assim que um grupo discorda, e sem essa measure no `when` a regra
+  afirmaria sobre o cluster inteiro o que so vale onde ninguem redefiniu. O
+  golden positivo dela e `managed_scaling_static_executors`, o mesmo cenario sem
+  o override.
+runtime:
+  emr: "6.15.0"
+  spark: "3.4.1-amzn-2"
+  iceberg: "1.4.0-amzn-0"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.bootstrap_action
+  - emr.cluster
+  - emr.configuration
+  - emr.instance_capacity
+  - emr.managed_scaling
+expects_rules:
+  - SF-EMR-002
+  - SF-EMR-005
+  - SF-EMR-008

@@ -1,0 +1,184 @@
+[
+  {
+    "id": "f_11ea5e",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 43,
+      "node_count": 7,
+      "file_scan_count": 2,
+      "exchange_count": 0,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": true,
+      "aqe_final_plan": true,
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_f4888e",
+    "schema_version": 1,
+    "kind": "plan.aqe",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 41,
+      "symbol": "(7) AdaptiveSparkPlan",
+      "node_id": 7,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "is_final_plan": true
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_bb853f",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 11,
+      "symbol": "(1) Scan parquet curated.pedidos",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "curated.pedidos"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 3,
+      "referenced_columns": 2,
+      "partition_filter_count": 2,
+      "pushed_filter_count": 1
+    },
+    "attrs": {
+      "relation": "curated.pedidos",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": true,
+      "partitioned_evidence": "partition_filters",
+      "partition_filters_present": true,
+      "partition_filters_empty": false,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5b400",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 23,
+      "symbol": "(3) Scan parquet curated.faixas_frete",
+      "node_id": 3,
+      "operator": "Scan parquet",
+      "relation": "curated.faixas_frete"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 3,
+      "referenced_columns": 3
+    },
+    "attrs": {
+      "relation": "curated.faixas_frete",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": false,
+      "partition_filters_empty": "unknown",
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c794f",
+    "schema_version": 1,
+    "kind": "plan.join",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 29,
+      "symbol": "(4) BroadcastNestedLoopJoin",
+      "node_id": 4,
+      "operator": "BroadcastNestedLoopJoin",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "strategy": "BroadcastNestedLoopJoin",
+      "join_type": "Inner",
+      "build_side": "",
+      "has_condition": true,
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_cad6c5",
+    "schema_version": 1,
+    "kind": "plan.join",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 33,
+      "symbol": "(5) CartesianProduct",
+      "node_id": 5,
+      "operator": "CartesianProduct",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "strategy": "CartesianProduct",
+      "join_type": "Inner",
+      "build_side": "",
+      "has_condition": false,
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "c5385960bb7eade7b741d46704226ac375f1b33cd63d297f155e529c4878a4f8",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

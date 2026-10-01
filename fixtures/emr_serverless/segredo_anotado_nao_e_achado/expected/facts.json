@@ -1,0 +1,125 @@
+[
+  {
+    "id": "f_c8e89b",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 0,
+      "configuration_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4f78a02747e0f0775e69f019868819fd58dc35ae1bdf20c38030baf0cd844303",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_b783b5",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fanotado0000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fanotado0000000001",
+      "name": "metastore-com-secrets-manager",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "auto_start_declared": false,
+      "auto_stop_declared": true,
+      "auto_stop_enabled": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4f78a02747e0f0775e69f019868819fd58dc35ae1bdf20c38030baf0cd844303",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_009d8a",
+    "schema_version": 1,
+    "kind": "emrs.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fanotado0000000001/configuration/spark-hive-site/javax.jdo.option.ConnectionPassword"
+    },
+    "measures": {},
+    "attrs": {
+      "classification": "spark-hive-site",
+      "key": "javax.jdo.option.ConnectionPassword",
+      "value": "EMR.secret@{{SenhaDoMetastore}}",
+      "secret_reference": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4f78a02747e0f0775e69f019868819fd58dc35ae1bdf20c38030baf0cd844303",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_60fa39",
+    "schema_version": 1,
+    "kind": "emrs.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fanotado0000000001/configuration/spark-hive-site/spark.hadoop.fs.s3a.access.key"
+    },
+    "measures": {},
+    "attrs": {
+      "classification": "spark-hive-site",
+      "key": "spark.hadoop.fs.s3a.access.key",
+      "value": "EMR.secret@{{AKIAXXXXXXXXXXXXXXXX}}",
+      "secret_reference": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4f78a02747e0f0775e69f019868819fd58dc35ae1bdf20c38030baf0cd844303",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_4b4c1b",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fanotado0000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "4f78a02747e0f0775e69f019868819fd58dc35ae1bdf20c38030baf0cd844303",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

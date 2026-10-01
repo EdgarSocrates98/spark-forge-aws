@@ -1,0 +1,58 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "currency": "USD",
+  "region": "UNQUALIFIED",
+  "runtime_version": "UNQUALIFIED",
+  "frontier": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs": 6,
+      "runtime_p50_s": 300.0,
+      "runtime_p95_s": 300.0,
+      "cost_per_run_p95": 0.7333333333333334,
+      "cost_relative": 1.0
+    }
+  ],
+  "per_sla_outcome": [],
+  "symptoms": {},
+  "levers": {
+    "code": {
+      "findings": [
+        {
+          "rule_id": "SF-PY-004",
+          "title": "achado SF-PY-004",
+          "severity": "P1",
+          "subject": {
+            "type": "source_location",
+            "file": "etl_pedidos.py",
+            "line": 88
+          }
+        },
+        {
+          "rule_id": "SF-PQ-002",
+          "title": "achado SF-PQ-002",
+          "severity": "P1",
+          "subject": {
+            "type": "source_location",
+            "file": "etl_pedidos.py",
+            "line": 120
+          }
+        }
+      ],
+      "detail": "Nenhum destes muda trocando worker. Um job que varre dez vezes o que precisa e caro em qualquer capacidade."
+    },
+    "capacity": {
+      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, que compara as capacidades observadas contra o SLA declarado."
+    },
+    "none_found": false
+  },
+  "refused": [
+    {
+      "reason": "sla_not_declared",
+      "detail": "Sem `sla_minutes` e `reliability_target` em workload.yaml nao ha desfecho util a contar, e custo por desfecho vira divisao por uma definicao que ninguem deu."
+    }
+  ]
+}

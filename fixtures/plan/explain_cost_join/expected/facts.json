@@ -1,0 +1,310 @@
+[
+  {
+    "id": "f_e399e2",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 19,
+      "node_count": 11,
+      "file_scan_count": 2,
+      "exchange_count": 2,
+      "skipped_logical_lines": 5,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {
+      "mode": "extended",
+      "aqe_present": false,
+      "aqe_final_plan": "unknown",
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_e5215b",
+    "schema_version": 1,
+    "kind": "plan.exchange",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 11,
+      "symbol": "Exchange",
+      "node_id": 0,
+      "operator": "Exchange",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "Exchange",
+      "partitioning": "hashpartitioning",
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_a41f9c",
+    "schema_version": 1,
+    "kind": "plan.exchange",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 16,
+      "symbol": "Exchange",
+      "node_id": 0,
+      "operator": "Exchange",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "Exchange",
+      "partitioning": "hashpartitioning",
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_8b7aa4",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 14,
+      "symbol": "FileScan parquet db.pedidos",
+      "node_id": 0,
+      "operator": "FileScan parquet",
+      "relation": "db.pedidos"
+    },
+    "measures": {
+      "read_schema_columns": 2,
+      "output_columns": 2,
+      "referenced_columns": 1,
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1,
+      "data_filter_count": 1
+    },
+    "attrs": {
+      "relation": "db.pedidos",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": true,
+      "partition_filters_empty": true,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_bd9e03",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 19,
+      "symbol": "FileScan parquet db.clientes",
+      "node_id": 0,
+      "operator": "FileScan parquet",
+      "relation": "db.clientes"
+    },
+    "measures": {
+      "read_schema_columns": 2,
+      "output_columns": 2,
+      "referenced_columns": 1,
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1,
+      "data_filter_count": 1
+    },
+    "attrs": {
+      "relation": "db.clientes",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": true,
+      "partition_filters_empty": true,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_dc82b9",
+    "schema_version": 1,
+    "kind": "plan.join",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 9,
+      "symbol": "SortMergeJoin",
+      "node_id": 0,
+      "operator": "SortMergeJoin",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "strategy": "SortMergeJoin",
+      "join_type": "Inner",
+      "build_side": "",
+      "has_condition": true,
+      "is_broadcast": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_aed21c",
+    "schema_version": 1,
+    "kind": "plan.join_side_stats",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 2,
+      "symbol": "Join Inner",
+      "node_id": 0,
+      "operator": "Join",
+      "relation": ""
+    },
+    "measures": {
+      "left_bytes": 1181116006.4,
+      "right_bytes": 25165824.0
+    },
+    "attrs": {
+      "join_type": "Inner",
+      "left_has_stats": true,
+      "right_has_stats": true,
+      "left_node": "Filter",
+      "right_node": "Filter"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_2282ac",
+    "schema_version": 1,
+    "kind": "plan.operator",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 10,
+      "symbol": "Sort",
+      "node_id": 0,
+      "operator": "Sort",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "Sort"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_c401fd",
+    "schema_version": 1,
+    "kind": "plan.operator",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 15,
+      "symbol": "Sort",
+      "node_id": 0,
+      "operator": "Sort",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "Sort"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_4177f9",
+    "schema_version": 1,
+    "kind": "plan.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 14,
+      "col": 0,
+      "symbol": "",
+      "snippet": "FileScan parquet db.pedidos[cliente_id#1,valor#2] Batched: true, DataFilters: [isnotnull(cliente_id#1)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3://bucket-sintetico/pedidos], Partition"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "partition_status_unknown",
+      "detail": "db.pedidos: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge analyze catalog-schema`."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_5447ff",
+    "schema_version": 1,
+    "kind": "plan.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 19,
+      "col": 0,
+      "symbol": "",
+      "snippet": "FileScan parquet db.clientes[id#5,nome#6] Batched: true, DataFilters: [isnotnull(id#5)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3://bucket-sintetico/clientes], PartitionFilters: [], Pu"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "partition_status_unknown",
+      "detail": "db.clientes: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge analyze catalog-schema`."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "bad6023972ec8999c2cf45c22664618c37370e5ab3e8c1e724b3b963732efde5",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

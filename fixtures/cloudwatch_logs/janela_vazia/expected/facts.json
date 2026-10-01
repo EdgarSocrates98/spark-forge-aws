@@ -1,0 +1,53 @@
+[
+  {
+    "id": "f_16388a",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_v4w5x6",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_v4w5x6"
+    },
+    "measures": {
+      "events": 0.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "vazio",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_v4w5x6"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_v4w5x6_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_bab678",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.unresolved",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_v4w5x6",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_v4w5x6"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "vazio",
+      "detail": "O grupo existe e a chamada teve permissao, e a janela consultada nao tem evento nenhum para este `logStreamNamePrefix`. Causas distintas e nao decididas aqui: janela fora do run, prefixo de stream errado, ou `filter_pattern` que nao casa linha nenhuma.",
+      "filter_pattern": "",
+      "start": "2026-09-09T10:00:00Z",
+      "end": "2026-09-09T11:00:00Z"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_v4w5x6_aws-glue_jobs_error.json"
+    }
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "Parent": {
+    "Type": "Folder",
+    "ControlmServer": "LocalControlM",
+    "Application": "DataLake",
+    "JobImpl": {
+      "Type": "SubFolder",
+      "ReferencePath": "JobTemplate",
+      "RunAs": "ctmagent"
+    },
+    "JobTemplate": {
+      "Type": "Job:Command",
+      "Command": "echo %%arg",
+      "RunAs": "ctmagent"
+    }
+  }
+}

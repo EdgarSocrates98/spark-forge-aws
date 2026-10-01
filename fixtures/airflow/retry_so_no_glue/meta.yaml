@@ -1,0 +1,20 @@
+name: retry_so_no_glue
+proves: >
+  Uma fronteira de SF-AIRFLOW-004: o vinculo existe, o job declara `max_retries = 2` e
+  o `retries` do Airflow e 0. Uma camada so, e a regra calada. E o golden que muda se
+  alguem trocar `measures.airflow_retries_effective > 0` por `>= 0`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - af.analyzed
+  - af.dag
+  - af.glue_job_link
+  - af.task
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

@@ -1,0 +1,36 @@
+name: missing_instance_model
+proves: >
+  Secao AUSENTE, e a distincao que ela obriga: um dump so com
+  `describe-cluster`, sem `list-instance-groups` nem `list-instance-fleets`,
+  descreve um cluster cuja capacidade NAO FOI COLETADA -- nunca um cluster sem
+  instancias, que nao existe. Vira `emr.unresolved` com
+  `reason: missing_instance_model`, e as regras que perguntam por papel e por
+  Spot ficam sem fact para avaliar (skip por `requires_facts`), em vez de
+  avaliar sobre uma lista vazia e concluir "nao ha Spot aqui" -- o falso
+  negativo silencioso que o catalogo trata como o pior defeito de regra. O que
+  o dump DE FATO traz continua saindo inteiro: cluster, aplicacao e a
+  `Status.StateChangeReason.Code = BOOTSTRAP_FAILURE`, que e a unica evidencia
+  de bootstrap com problema que a API devolve (`ListBootstrapActions` nao traz
+  status, nem exit code, nem timestamp) e por isso so sustenta regra
+  post-mortem, sobre cluster ja terminado.
+  Essa regra foi escrita na Task 4 -- SF-EMR-007 --, e este e o golden positivo
+  dela. A propria documentacao de bootstrap actions manda usar esse codigo
+  ("Use the cluster `lastStateChangeReason` error code to identify failures
+  caused by a bootstrap action"), o que fecha o veto ao candidato "bootstrap que
+  falha em silencio" sem perder o conhecimento junto: o que morreu foi a leitura
+  de `ListBootstrapActions`, que nao traz status nenhum. O lado negativo esta em
+  `all_spot_groups_maximize`, tambem TERMINATED, com
+  `ALL_STEPS_COMPLETED`: terminar nao e falhar, e a regra le o CODIGO, nao o
+  estado.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.unresolved
+expects_rules:
+  - SF-EMR-007

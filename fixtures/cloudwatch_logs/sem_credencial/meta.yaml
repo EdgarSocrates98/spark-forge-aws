@@ -1,0 +1,14 @@
+name: sem_credencial
+proves: >
+  Recusa nomeada 4 de 4, e a unica em que a requisicao nunca saiu. Nao ha o que
+  dizer sobre o log porque a coleta nao aconteceu -- e um `status: vazio` aqui
+  seria afirmar que o log estava vazio sem nunca te-lo consultado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - cloudwatch.logs.analyzed
+  - cloudwatch.logs.unresolved
+expects_rules: []

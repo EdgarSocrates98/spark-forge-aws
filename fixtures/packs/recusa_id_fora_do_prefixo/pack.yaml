@@ -1,0 +1,6 @@
+# Recusa `id_fora_do_prefixo`: o pack declara BETA e escreve regra GAMA.
+pack:
+  id: beta-platform
+  version: 1.0.0
+  prefix: BETA
+  core: ">=0.5"

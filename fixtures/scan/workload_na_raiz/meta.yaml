@@ -1,0 +1,3 @@
+description: >-
+  Repositorio com workload.yaml na RAIZ (o SLA declarado entra pelo nome, origem `nome`) e um job.py; um workload.yaml em subpasta nao e lido pelo scan.
+args: []

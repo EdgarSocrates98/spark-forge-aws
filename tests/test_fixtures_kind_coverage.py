@@ -1,0 +1,565 @@
+"""Todo kind que algum extrator emite precisa aparecer em algum golden.
+
+Esta e a guarda que faltava. `test_rules_catalog_reachability.py` fecha a
+ponta oposta -- regra que exige kind que ninguem emite -- mas nada verificava o
+inverso: kind emitido que NENHUMA fixture exercita. Era o caso de 17 kinds,
+entre eles os quatro de `callgraph.*`, os tres de `athena.*`, o
+`env.runtime_signal` que alimenta SF-ENV-001 (P0) e SF-ENV-004 (P1), e quatro
+dos `*.unresolved` -- justamente a maquinaria de ponto cego, que quando para
+de contar nao levanta erro nenhum: ela simplesmente devolve zero, e zero e
+indistinguivel de "esta tudo resolvido".
+
+Um kind sem golden e um contrato que pode sumir numa refatoracao sem nenhum
+teste reclamar. A regra do repo (`rules/catalog/README.md`, item 6) ja exigia
+fixture por REGRA; este modulo estende a mesma exigencia aos facts que nao
+alimentam regra nenhuma -- que sao os mais faceis de perder, porque ninguem
+sente falta deles ate um agente precisar.
+"""
+import json
+import re
+from pathlib import Path
+
+import pytest
+
+from sparkforge.dq_ai import assessment as dq_ai_assessment
+from sparkforge.dqdl import validator as dqdl_validator
+from sparkforge.errors import matcher
+from sparkforge.facts import (
+    airflow_dag,
+    athena_cost,
+    athena_workgroup,
+    benchmark,
+    bridge,
+    call_graph,
+    catalog_schema,
+    cloudwatch_logs,
+    consumers,
+    controlm_jobs,
+    data_quality,
+    emr_cluster,
+    emr_eks,
+    emr_serverless,
+    event_log,
+    exception,
+    funcval,
+    fusion,
+    glue_dq_advanced,
+    # `iam_access` entra nas DUAS listas no MESMO commit da fixture
+    # `fixtures/iam_access/`.
+    glue_resource_link,
+    graph,
+    # `host_transcript` entra nas DUAS listas no MESMO commit de
+    # `fixtures/host_transcript/`. E o primeiro extrator cujo artefato nao e do
+    # job analisado, e sim do AGENTE que o analisou: o transcript do host. Nenhuma
+    # regra consome `host.*` (o eval pontua fora do motor), entao a unica guarda
+    # dos cinco kinds e esta.
+    host_transcript,
+    # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
+    # `unresolved` desde que o grafo passou a ler fact, e da medida a uma
+    # afirmacao que so existia em prosa: a §1 do documento de conhecimento
+    # declara que o link precisa ter o MESMO nome do recurso de origem.
+    iam_access,
+    iceberg_metadata,
+    lakeformation,
+    # `lakeformation_grants` entra nas DUAS listas no MESMO commit da fixture
+    # `fixtures/lakeformation/`. Ele e o extrator que fecha DOIS dos tres itens
+    # que `lakeformation.unresolved` nomeia -- grant e registro de localizacao.
+    lakeformation_grants,
+    lakeformation_missing_grant,
+    migration,
+    parquet_footer,
+    pyspark_ast,
+    run_cost,
+    runtime_detect,
+    s3_listing,
+    sfn_history,
+    spark_plan,
+    sql_literal,
+    sql_metrics,
+    stepfunctions,
+    terraform,
+    timeout_diagnosis,
+    utilization,
+    workload,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURES = ROOT / "fixtures"
+
+# `matcher` (`sparkforge/errors/matcher.py`) e `exception`
+# (`sparkforge/facts/exception.py`) entram nesta lista no MESMO commit de
+# `fixtures/exception/`, e a divida que os mantinha fora esta paga aqui.
+#
+# A lacuna era declarada e datada: os dois modulos ja estavam na outra lista
+# manual (`tests/test_rules_catalog_reachability.py`), onde o criterio e "o kind
+# tem extrator"; aqui o criterio e "o kind aparece em algum golden", e medido em
+# 2026-09-08 o corpus tinha UM `spark.stage.failure` e ZERO `spark.exception*`.
+# Registra-los antes da fixture teria pintado
+# `test_every_kind_of_every_extractor_appears_in_some_golden` e
+# `test_every_unresolved_kind_is_exercised` de vermelho sem medir nada sobre
+# extrator nenhum.
+#
+# Os dois sao o PRIMEIRO caso desta lista em que o extrator nao le artefato:
+# `build_exceptions` deriva de `spark.stage.failure` e `build_signature_matches`
+# deriva de `spark.exception`. O criterio nao muda por isso -- kind emitido e
+# kind que precisa de golden, venha ele de arquivo ou de outro fact --, e
+# `tests/test_fixtures_golden_exception.py` e quem monta a cadeia inteira.
+EXTRACTORS = {
+    # `airflow_dag` entra nas DUAS listas no MESMO commit de `fixtures/airflow/`: sem
+    # ele aqui, os seis kinds `af.*` nao sao verificados por ninguem e o criterio de
+    # golden -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser avaliado,
+    # que e pior do que falhar.
+    "airflow_dag": airflow_dag,
+    "athena_cost": athena_cost,
+    "athena_workgroup": athena_workgroup,
+    "benchmark": benchmark,
+    "bridge": bridge,
+    "call_graph": call_graph,
+    "catalog_schema": catalog_schema,
+    # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
+    # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
+    # `cloudwatch` -- `filter_log_events` contra `get_metric_data` --, e por isso
+    # modulo separado com `EXTRACTOR_ID` proprio; o nome parecido nao os torna o
+    # mesmo extrator. Sem ele aqui, os tres kinds `cloudwatch.log*` nao sao verificados
+    # por ninguem e o criterio de golden -- todo kind de `EMITTED_KINDS` em algum
+    # golden -- passa sem ser avaliado, que e pior do que falhar.
+    "cloudwatch_logs": cloudwatch_logs,
+    "consumers": consumers,
+    # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
+    # SF-CTM -- a outra e `tests/test_rules_catalog_reachability.py` --, e
+    # esquecer uma delas NAO quebra nada: e o modo de falha silencioso que os
+    # dois arquivos documentam. Sem ele aqui, os doze kinds `ctm.*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar. Medido pelo contrafactual: tirando esta linha,
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova nomeando
+    # os doze.
+    "controlm_jobs": controlm_jobs,
+    "data_quality": data_quality,
+    "emr_cluster": emr_cluster,
+    # `emr_eks` entra nas DUAS listas no mesmo commit desta Task, ANTES de a area
+    # SF-EMRK existir. Sem ele aqui, os oito kinds `emrc.*` nao sao verificados
+    # por ninguem e o criterio de golden -- todo kind de `EMITTED_KINDS` em algum
+    # golden -- passa sem ser avaliado, que e pior do que falhar. Medido pelo
+    # contrafactual: tirando esta linha,
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova nomeando
+    # os oito.
+    "emr_eks": emr_eks,
+    # `emr_serverless` entra nas DUAS listas no mesmo commit da Task 4 da Fase
+    # 5d, ANTES de a area SF-EMRS existir. Sem ele aqui, os seis kinds `emrs.*`
+    # nao sao verificados por ninguem e o criterio 3 do spec -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar.
+    "emr_serverless": emr_serverless,
+    "event_log": event_log,
+    "exception": exception,
+    # `lakeformation` entra nas DUAS listas manuais no MESMO commit de
+    # `fixtures/infra_code/fgac_com_catalogo_nomeado/`, que e a fixture que
+    # traz os quatro kinds `lakeformation.*` para algum golden. Ele e o
+    # SEGUNDO extrator desta lista que nao le artefato: deriva de
+    # `tf.attribute`, `tf.spark_conf`, `pyspark.conf_set` e
+    # `spark.conf_effective`, e existe porque o DSL de regra compara
+    # igualdade e o nome do catalogo Iceberg mora DENTRO da chave de conf.
+    "lakeformation": lakeformation,
+    "iam_access": iam_access,
+    "glue_resource_link": glue_resource_link,
+    "lakeformation_grants": lakeformation_grants,
+    # `lakeformation_missing_grant` entra no commit das fixtures que trazem os dois
+    # kinds para um golden: `missing_grant` na positiva do corpus cloudwatch_logs, e
+    # `.unresolved` nas tres fixtures antigas com ERR-LF-001 e sem codigo.
+    "lakeformation_missing_grant": lakeformation_missing_grant,
+    "funcval": funcval,
+    "fusion": fusion,
+    # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES
+    # de a area SF-GRAPH existir. Sem ele aqui, os seis kinds `graph.*` nao sao
+    # verificados por ninguem e o criterio 4 do spec -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar. Medido pelo contrafactual: tirando esta linha,
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova
+    # nomeando os seis.
+    "graph": graph,
+    "glue_dq_advanced": glue_dq_advanced,
+    "dqdl_validator": dqdl_validator,
+    "dq_ai_assessment": dq_ai_assessment,
+    # `host_transcript`: ver o comentario do import. Os cinco kinds `host.*`
+    # tem golden em `fixtures/host_transcript/`, e as nove razoes de
+    # `host.transcript.unresolved` sao cobradas razao a razao por
+    # `tests/test_fixtures_golden_host_transcript.py`.
+    "host_transcript": host_transcript,
+    "iceberg_metadata": iceberg_metadata,
+    # `matcher` e o unico modulo desta lista que NAO mora em `sparkforge/facts/`
+    # -- ele e `sparkforge/errors/matcher.py`, e o import dele vem separado la
+    # em cima por isso. A lista e manual e duplicada em
+    # `tests/test_rules_catalog_reachability.py`: extrator novo entra nas DUAS,
+    # e esquecer uma nao quebra nada aqui.
+    "matcher": matcher,
+    # `migration` entra nas DUAS listas no mesmo commit da Task 7 da Fase 6b,
+    # junto com `rules/catalog/glue-migration.yaml`: sem ele aqui os oito kinds
+    # `mig.*` nao sao verificados por ninguem. Este modulo VAI cobrar golden
+    # para os oito assim que ele entra -- inclusive os cinco que nenhuma regra
+    # desta Task usa (`mig.legacy_conf`, `mig.deprecated_api`, `mig.table_format`,
+    # `mig.jar_binary`, `mig.python_dep`) -- porque o teste conta por EXTRATOR,
+    # nao por regra. Essas fixtures sao trabalho da Task 9; ate la,
+    # `test_every_kind_of_every_extractor_appears_in_some_golden[migration]` fica
+    # vermelho de proposito, nao em silencio.
+    #
+    # SF-MIG-003 (`mig.ansi_risk`) era `blocked_on` ate a Task 11, entao nenhuma
+    # fixture podia faze-la disparar -- `test_every_rule_has_a_fixture_that_fires_it`
+    # e `test_every_severity_branch_has_a_golden_that_produces_it` ficavam
+    # vermelhos so para ela, pelo mesmo motivo estrutural. A Task 11 confirmou a
+    # fronteira (Glue 6.0) e acrescentou `cast_sem_guarda_ansi_default` como o
+    # golden positivo em P1; `cast_sem_guarda` continua provando o negativo,
+    # agora por `runtime_scope` (Glue 5.0, abaixo da fronteira) em vez de
+    # `blocked_on`.
+    "migration": migration,
+    # `parquet_footer` entra nas DUAS listas manuais no MESMO commit do
+    # extrator, e a segunda e ESTE dicionario: sem ele, os cinco kinds
+    # `parquet.*` aparecem nos goldens e nao constam de `EMITTABLE`, e
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` os acusa de
+    # orfaos -- que e exatamente o aviso certo pela razao errada.
+    "parquet_footer": parquet_footer,
+    "pyspark_ast": pyspark_ast,
+    # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar.
+    "run_cost": run_cost,
+    "runtime_detect": runtime_detect,
+    "s3_listing": s3_listing,
+    "spark_plan": spark_plan,
+    "sql_literal": sql_literal,
+    # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
+    # sql_metrics/`), depois de o extrator e o mapa canonico ja existirem
+    # (Tasks 1-7). Sem ele aqui os quatro kinds `spark.sql.*` caem no lado
+    # errado de `test_no_golden_carries_a_kind_that_no_extractor_declares`:
+    # golden com kind que nenhum extrator declara, em vez de kind coberto.
+    "sql_metrics": sql_metrics,
+    # `sfn_history` entra nas DUAS listas no MESMO commit de `fixtures/sfn_history/`:
+    # sem ele aqui, os kinds `sfn.execution`, `sfn.attempt`, `sfn.job_run` e
+    # `sfn.retry_observado` nao sao verificados por ninguem. `sfn.unresolved` e
+    # `sfn.analyzed` ele COMPARTILHA com `stepfunctions` de proposito (D1 de
+    # `docs/sdd/SFN_HISTORY/design.md`): o prefixo e o mesmo porque o dominio e o
+    # mesmo, e o kind e que diz a natureza -- `sfn.task` e declaracao, `sfn.attempt`
+    # e medida.
+    "sfn_history": sfn_history,
+    # `stepfunctions` entra nas DUAS listas no MESMO commit de `fixtures/stepfunctions/`:
+    # sem ele aqui, os cinco kinds `sfn.*` nao sao verificados por ninguem.
+    "stepfunctions": stepfunctions,
+    "terraform": terraform,
+    # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 5 do
+    # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds
+    # `spark.timeout.*` nao sao verificados por ninguem e o criterio de golden
+    # -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser
+    # avaliado, que e pior do que falhar.
+    "timeout_diagnosis": timeout_diagnosis,
+    # `utilization` entra nas DUAS listas no mesmo commit do subprojeto H:
+    # sem ele aqui, os dois kinds `glue.utilization.*` nao sao verificados por
+    # ninguem e o criterio de golden passa sem ser avaliado.
+    "utilization": utilization,
+    # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado.
+    "workload": workload,
+}
+
+EMITTABLE: frozenset[str] = frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS.values()))
+
+
+def _golden_files():
+    return sorted(FIXTURES.glob("*/*/expected/facts.json"))
+
+
+def _kinds_in_goldens() -> set[str]:
+    kinds: set[str] = set()
+    for path in _golden_files():
+        for fact in json.loads(path.read_text(encoding="utf-8")):
+            kinds.add(fact["kind"])
+    return kinds
+
+
+def test_the_corpus_is_not_empty():
+    """Guarda contra o modulo inteiro passar por nao ter lido golden nenhum."""
+    assert len(_golden_files()) >= 30
+    assert len(EMITTABLE) >= 70
+
+
+@pytest.mark.parametrize("name", sorted(EXTRACTORS))
+def test_every_kind_of_every_extractor_appears_in_some_golden(name):
+    covered = _kinds_in_goldens()
+    missing = sorted(set(EXTRACTORS[name].EMITTED_KINDS) - covered)
+    assert not missing, (
+        f"{name}: kinds sem nenhuma fixture que os produza: {missing}. "
+        "Crie uma fixture que exercite o kind, ou remova o kind de EMITTED_KINDS "
+        "se ele nao e mais emitido."
+    )
+
+
+def test_no_golden_carries_a_kind_that_no_extractor_declares():
+    """A direcao oposta: golden com kind fora de todo `EMITTED_KINDS` significa
+    ou um extrator que emite fora do vocabulario declarado, ou um golden
+    obsoleto que sobreviveu a remocao do kind."""
+    unknown = sorted(_kinds_in_goldens() - EMITTABLE)
+    assert not unknown, unknown
+
+
+def test_every_unresolved_kind_is_exercised():
+    """Recorte explicito sobre a maquinaria de ponto cego. Ela e a que mais
+    silenciosamente apodrece: quando para de contar, devolve zero, e zero e
+    exatamente o que uma extracao limpa devolve."""
+    covered = _kinds_in_goldens()
+    unresolved = {k for k in EMITTABLE if k.endswith(".unresolved")}
+    assert unresolved, "nenhum kind de ponto cego encontrado -- o filtro quebrou"
+    assert unresolved <= covered, sorted(unresolved - covered)
+
+
+def _rules():
+    from sparkforge.rules.loader import catalog_dir, load_catalog
+
+    return [r for r in load_catalog(catalog_dir()) if r["id"].startswith("SF-")]
+
+def _executable_rules():
+    """As regras que julgam. Filtra por `executable`, nunca por `status`.
+
+    Filtrar por `status != "structural"` -- como esta funcao fazia quando
+    nasceu -- tirava do gate as 26 regras que sao `structural` DE VERDADE
+    (`SF-ATH-001`, `SF-DQ-001`, `SF-CG-001` e as outras: `requires_facts` real,
+    `when` real, golden que dispara). O gate ficava mais fraco do que era antes
+    da expansao agentica, e nada impedia uma regra de deteccao real de escapar
+    dele so declarando `structural`. Ver `_validate_executability` no loader.
+    """
+    return [r for r in _rules() if r.get("executable", True)]
+
+
+def _judgeable_rules():
+    """`_executable_rules()` menos as bloqueadas por `blocked_on`.
+
+    `blocked_on` faz `judge()` pular a regra INCONDICIONALMENTE, antes mesmo
+    de olhar `runtime_scope` ou `when` (`sparkforge/rules/engine.py`). Uma
+    regra bloqueada NUNCA aparece em `findings.json` -- nao porque falte
+    fixture, mas porque o motor nunca a avalia. Exigir golden positivo ou
+    ramo de severidade dela e exigir cobertura de um julgamento que nao
+    acontece, que nao e uma coisa que existe: a regra bloqueada declara O QUE
+    ela nao pode julgar, isso e o contrato, e nenhuma fixture muda isso
+    enquanto o bloqueio existir.
+    """
+    return [r for r in _executable_rules() if not r.get("blocked_on")]
+
+
+def _rules_fired_in_goldens() -> set[str]:
+    fired: set[str] = set()
+    for path in FIXTURES.glob("*/*/expected/findings.json"):
+        for finding in json.loads(path.read_text(encoding="utf-8")):
+            fired.add(finding["rule_id"])
+    return fired
+
+
+def test_every_rule_has_a_fixture_that_fires_it():
+    """A contraparte do teste de kinds, no nivel da REGRA.
+
+    `rules/catalog/README.md` item 6 ja exigia fixture por regra, mas nada
+    verificava. Uma regra sem golden que a faca disparar nunca foi provada:
+    ela pode ter limiar invertido, `where` que nao casa com nenhum fact real,
+    ou `requires_facts` contraditorio -- foi exatamente o caso de SF-GLUE-005,
+    que exigia `spark.stage.spill` presente E ausente ao mesmo tempo e por isso
+    nao podia disparar nunca. O defeito sobreviveu porque estava atras de um
+    `blocked_on`, e nenhum teste olhava.
+
+    Regra que passe a nao disparar em nenhuma fixture quebra aqui, e a correcao
+    e uma das duas: criar a fixture que a exercita, ou remover a regra.
+
+    Exceto regra `blocked_on`: `judge()` a pula incondicionalmente
+    (`sparkforge/rules/engine.py`), entao nenhuma fixture pode fazer uma
+    regra bloqueada disparar -- ver `_judgeable_rules()`. Isso nao e uma
+    lacuna de corpus, e o contrato do bloqueio; a decisao consciente de
+    manter cada `blocked_on` no catalogo mora em
+    `tests/test_rules_engine.py::TestBlockedOnIsDistinctFromMissingData.BLOQUEIO_CONSCIENTE`.
+    """
+    missing = sorted({r["id"] for r in _judgeable_rules()} - _rules_fired_in_goldens())
+    assert not missing, (
+        f"regras sem nenhuma fixture que as faca disparar: {missing}. "
+        "Uma regra sem golden positivo nunca foi provada -- crie a fixture, "
+        "ou remova a regra do catalogo."
+    )
+
+
+def test_no_golden_fires_a_rule_that_left_the_catalog():
+    """A direcao oposta: golden que dispara regra inexistente e golden
+    obsoleto, sobrevivente de uma remocao que ninguem regenerou."""
+    unknown = sorted(_rules_fired_in_goldens() - {r["id"] for r in _rules()})
+    assert not unknown, unknown
+
+
+def _severidades_por_regra_nos_goldens() -> dict[str, set[str]]:
+    vistas: dict[str, set[str]] = {}
+    for path in FIXTURES.glob("*/*/expected/findings.json"):
+        for finding in json.loads(path.read_text(encoding="utf-8")):
+            vistas.setdefault(finding["rule_id"], set()).add(finding["severity"])
+    return vistas
+
+
+def _ramos_de_severidade(rule) -> list[str]:
+    """As severidades que a regra pode produzir, na ordem em que o motor tenta.
+
+    `severity_default` so entra quando ele e ALCANCAVEL: numa regra cujo ultimo
+    ramo repete a condicao do `when` (SF-ICE-001, SF-PQ-001, SF-UI-001,
+    SF-UI-004), nenhum fact que dispare a regra pode escapar de todos os ramos,
+    e exigir golden para o default seria exigir fixture de um estado que nao
+    existe. A heuristica e conservadora de proposito: so trata como inalcancavel
+    o caso em que `severity_default` esta AUSENTE do YAML -- ali o
+    `rule.get("severity_default", "P3")` do motor e uma rede que ninguem
+    escreveu, nao um ramo declarado.
+    """
+    ramos = [b["severity"] for b in rule.get("severity_by") or []]
+    if "severity_default" in rule:
+        ramos.append(rule["severity_default"])
+    return ramos
+
+
+def test_every_severity_branch_has_a_golden_that_produces_it():
+    """Ramo de `severity_by` sem golden pode virar qualquer severidade.
+
+    Nada neste repositorio compara severidade de regra contra fixture fora do
+    golden de `findings`: onde nao ha golden nao ha comparacao, e a severidade
+    do ramo descoberto pode ser trocada com a suite inteira verde. Severidade e
+    o que decide se um achado interrompe alguem as duas da manha -- e o mesmo
+    defeito que este motor acusa no codigo do usuario.
+
+    A revisao final da Fase 5d mediu **15** ramos em 7 regras e **9** cobertos.
+    As 6 lacunas foram fechadas com uma fixture cada; este teste e o que impede
+    a proxima de nascer em silencio. Ele nao substitui os testes adversariais
+    por area (aqueles provam O QUE separa os ramos); ele so garante que nenhum
+    ramo fique sem nenhum golden.
+
+    Mesma excecao de `test_every_rule_has_a_fixture_that_fires_it`: regra
+    `blocked_on` nunca produz finding nenhum, entao nenhum ramo dela pode ter
+    golden -- ver `_judgeable_rules()`.
+    """
+    vistas = _severidades_por_regra_nos_goldens()
+    faltando: dict[str, list[str]] = {}
+    total = 0
+    for rule in _judgeable_rules():
+        ramos = _ramos_de_severidade(rule)
+        if not ramos:
+            continue
+        total += len(ramos)
+        ausentes = [s for s in dict.fromkeys(ramos) if s not in vistas.get(rule["id"], set())]
+        if ausentes:
+            faltando[rule["id"]] = ausentes
+
+    assert total >= 15, (
+        f"so {total} ramos de severidade encontrados no catalogo; a varredura "
+        "provavelmente parou de enxergar `severity_by` e passou a nao testar nada"
+    )
+    assert not faltando, (
+        f"ramos de severidade sem nenhum golden que os produza: {faltando}. "
+        "Escreva a fixture que cai no ramo -- enquanto ela nao existir, a "
+        "severidade dele pode virar qualquer valor com a suite inteira verde."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Todo dominio de fixture precisa de um modulo golden que o exercite
+# --------------------------------------------------------------------------- #
+#
+# `scripts/verify_wheel.py` monta o gate de paridade assim:
+#
+#     GOLDEN_MODULES = sorted(p.name for p in (ROOT / "tests").glob("test_fixtures_*.py"))
+#
+# Derivado do disco, entao um modulo novo entra sozinho -- foi o que aconteceu
+# com `test_fixtures_golden_emr.py` na Fase 5b. Mas a ponta oposta nao tinha
+# guarda: um DIRETORIO de fixture sem modulo que o rode nao quebra nada. Ele
+# fica no repositorio parecendo cobertura, o gate de wheel nunca o executa
+# contra o pacote instalado, e a suite segue verde.
+#
+# E risco vivo, nao hipotetico: `docs/superpowers/STATUS.md` registra EMR
+# Serverless e EMR on EKS como divida aberta, e as duas nascem como
+# `fixtures/<dominio>/` novo. Esquecer o modulo golden e o erro natural.
+#
+# A mesma familia de defeito que este arquivo inteiro existe para impedir:
+# ausencia que se parece com cobertura.
+
+_FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures"
+_TESTS_ROOT = Path(__file__).resolve().parent
+
+# Aceita as duas grafias que o corpus usa hoje, e a segunda so por acidente
+# historico: `pyspark` mora em `test_fixtures_golden.py`, sem sufixo.
+_DOMINIO_SEM_SUFIXO = {"pyspark": "test_fixtures_golden.py"}
+
+
+def _dominios_de_fixture() -> set[str]:
+    return {p.name for p in _FIXTURES_ROOT.iterdir() if p.is_dir()}
+
+
+def _dominios_reivindicados() -> dict[str, str]:
+    """Dominio -> modulo que o exercita, lido do `FIXTURES = ROOT / "fixtures" / "<x>"`.
+
+    Derivado do fonte, nunca de lista escrita a mao: lista a mao e mais um lugar
+    para esquecer de atualizar, e o esquecimento seria invisivel.
+    """
+    padrao = re.compile(r'FIXTURES\s*=\s*ROOT\s*/\s*"fixtures"\s*/\s*"([a-z0-9_]+)"')
+    reivindicados: dict[str, str] = {}
+    # `test_fixtures_*.py`, e nao `test_fixtures_golden*.py`: o corpus de
+    # cenario (`fixtures/scenarios/`, Fase G6) e exercitado por
+    # `tests/test_fixtures_scenarios.py`, que nao tem "golden" no nome porque o
+    # golden dele nao e `facts`+`findings` -- e o `to_dict()` de um
+    # `MigrationAssessment`. O padrao mais largo casa os dois, e
+    # `scripts/verify_wheel.py::GOLDEN_MODULES` foi alargado no MESMO commit,
+    # para que a promessa deste invariante ("o gate de wheel executa este
+    # dominio contra o pacote instalado") continue verdadeira. Os modulos sem
+    # dominio -- este aqui, que declara `FIXTURES = ROOT / "fixtures"` sem
+    # sufixo -- nao casam o regex e continuam de fora, sem precisar de excecao
+    # escrita a mao.
+    for modulo in sorted(_TESTS_ROOT.glob("test_fixtures_*.py")):
+        for dominio in padrao.findall(modulo.read_text(encoding="utf-8")):
+            reivindicados[dominio] = modulo.name
+    return reivindicados
+
+
+def test_every_fixture_domain_has_a_golden_module():
+    """Diretorio de fixture sem modulo golden e cobertura aparente.
+
+    O gate de `verify_wheel.py` roda os modulos, nao os diretorios: um dominio
+    que nenhum modulo carrega nunca e verificado contra o pacote instalado, e
+    ninguem reclama.
+    """
+    reivindicados = _dominios_reivindicados()
+    orfaos = sorted(_dominios_de_fixture() - set(reivindicados))
+    assert not orfaos, (
+        f"dominios de fixture sem modulo golden: {orfaos}. Crie "
+        f"tests/test_fixtures_golden_<dominio>.py com "
+        f'`FIXTURES = ROOT / "fixtures" / "<dominio>"` -- sem isso o corpus existe, '
+        f"parece cobertura, e o gate de wheel nunca o executa."
+    )
+
+
+def test_no_golden_module_points_at_a_domain_that_does_not_exist():
+    """A ponta oposta: modulo apontando para diretorio que sumiu."""
+    reivindicados = _dominios_reivindicados()
+    fantasmas = sorted(set(reivindicados) - _dominios_de_fixture())
+    assert not fantasmas, (
+        f"modulos golden apontam para dominios inexistentes: "
+        f"{ {d: reivindicados[d] for d in fantasmas} }. O modulo passa sem verificar "
+        f"nada, que e pior que falhar."
+    )
+
+
+def test_the_domain_map_is_not_vacuous():
+    """Guarda do proprio invariante.
+
+    Se o padrao de leitura parar de casar -- alguem troca aspas duplas por
+    simples, ou usa uma variavel -- os dois testes acima passariam sobre
+    conjuntos vazios e aprovariam qualquer coisa.
+    """
+    reivindicados = _dominios_reivindicados()
+    assert len(reivindicados) >= 15, (
+        f"so {len(reivindicados)} dominios reivindicados; o corpus tem "
+        f"{len(_dominios_de_fixture())}. O padrao de leitura provavelmente parou de "
+        f"casar, e os invariantes de dominio viraram assercao sobre conjunto vazio."
+    )
+    for dominio, modulo in _DOMINIO_SEM_SUFIXO.items():
+        assert reivindicados.get(dominio) == modulo, (
+            f"`{dominio}` deveria ser exercitado por {modulo}; a excecao historica "
+            f"mudou e este mapa nao acompanhou."
+        )

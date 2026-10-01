@@ -1,0 +1,31 @@
+{
+  "estado": {
+    "broken_at": 3,
+    "chain": "broken",
+    "last_seq": 2,
+    "open_calls": [],
+    "torn_tail": false
+  },
+  "handoff_em_voo": [
+    "- journal: cadeia quebrada no seq 3 — confira com `sparkforge journal verify`"
+  ],
+  "resume": {
+    "in_flight": "",
+    "in_flight_source": "none",
+    "journal": {
+      "broken_at": 3,
+      "chain": "broken",
+      "last_seq": 2,
+      "open_calls": [],
+      "torn_tail": false
+    }
+  },
+  "verify": {
+    "broken_at": 3,
+    "events": 2,
+    "last_seq": 2,
+    "path": ".sparkforge/journal.jsonl",
+    "status": "broken",
+    "torn_tail": false
+  }
+}

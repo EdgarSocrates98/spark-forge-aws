@@ -1,0 +1,2 @@
+description: >-
+  Stdin que nao e JSON: sem entrada nao ha decisao, e o hook bloqueia.

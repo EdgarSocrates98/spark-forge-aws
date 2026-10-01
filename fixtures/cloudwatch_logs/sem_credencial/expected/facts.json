@@ -1,0 +1,53 @@
+[
+  {
+    "id": "f_d5883f",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_y7z8a9",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_y7z8a9"
+    },
+    "measures": {
+      "events": 0.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "sem_credencial",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_y7z8a9"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_y7z8a9_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_c1e0c0",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.unresolved",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_y7z8a9",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_y7z8a9"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sem_credencial",
+      "detail": "botocore nao encontrou credencial (ou regiao) utilizavel, e a requisicao nunca saiu. Nao ha o que dizer sobre o log: a coleta nao aconteceu.",
+      "filter_pattern": "",
+      "start": "2026-09-09T10:00:00Z",
+      "end": "2026-09-09T11:00:00Z"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_y7z8a9_aws-glue_jobs_error.json"
+    }
+  }
+]

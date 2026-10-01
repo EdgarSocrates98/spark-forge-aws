@@ -1,0 +1,111 @@
+# Matriz de runtime do AWS Glue. Dado, nunca constante em Python.
+#
+# POR QUE ESTE ARQUIVO EXISTE: o fato de versao morava em dois lugares --
+# `GLUE_MATRIX` compilado em `sparkforge/facts/runtime_detect.py` e a prosa de
+# `knowledge/glue/runtime-matrix.md` -- sem nada que forcasse os dois a
+# concordarem. Versao e fato EXTERNO: muda por decisao da AWS, nao deste
+# repositorio, entao precisa carregar fonte e data como qualquer outro fato
+# externo daqui.
+#
+# Os quatro runtimes abaixo vieram de `GLUE_MATRIX` (movidos, nao
+# re-derivados) e foram confirmados em 2026-08-21 contra a tabela do Apendice
+# A de migrating-version-50.html (3.0, 4.0, 5.0) e contra o blog/whats-new de
+# 5.1 -- ambos ja vigiados em sources.lock.json antes desta entrega. `scala` e
+# `java` foram acrescentados so onde a fonte lida os declara explicitamente;
+# omitidos onde nao ha essa confirmacao (nao adivinhados).
+#
+# GLUE 6.0 (Task 11 desta fase): confirmado em 2026-08-21 contra
+# migrating-version-60.html e release-notes.html, as duas oficiais. E A
+# FRONTEIRA que `rules/catalog/glue-migration.yaml` (SF-MIG-003) esperava --
+# migrating-version-60.html afirma, textualmente: "ANSI mode is enabled by
+# default in Spark 4.1. Operations that previously returned NULL on overflow
+# (for example, integer arithmetic, cast operations) now throw exceptions."
+# Glue 5.1 roda Spark 3.5.6, onde ANSI e default OFF -- a fronteira e Glue
+# 6.0, nao antes.
+# FORMA LONGA DE COMPONENTE (evidencia por fonte). Um componente pode ser
+# escrito como escalar -- `spark: "4.1.1"`, uma afirmacao sem disputa -- ou
+# como registro com `status` e `claims`, uma afirmacao COM a evidencia que a
+# sustenta, fonte a fonte. `sparkforge/facts/runtime_matrix.py` resolve a
+# forma longa para o valor unico quando `status: VERIFIED`, e RETEM o valor
+# quando o status e CONFLICTING ou UNRESOLVED -- sem valor, `in_scope` reprova
+# a regra guardada por aquele componente e o motor a reporta como pulada, com
+# motivo, em vez de julgar com um numero que duas fontes oficiais nao
+# confirmam junto.
+#
+# POR QUE `python` do Glue 6.0 e o primeiro na forma longa: e o campo em que
+# a divergencia foi PROCURADA. `prompt_glue_harness.md` secao 2 afirma que
+# uma fonte oficial de lancamento diz Python 3.12 e outra diz 3.13, e manda
+# nao escolher. Medido em 2026-08-22 contra as tres fontes oficiais, lidas
+# direto: o Developer Guide ("Python upgrade from 3.11 to 3.13", e a tabela
+# do Apendice A com "Python | 3.13"), o AWS News Blog ("AWS Glue 6.0 is built
+# on a fully modernized runtime, Apache Spark 4.1, Python 3.13, and Scala
+# 2.13") e o What's New ("AWS Glue 6.0 also upgrades runtime to Apache Spark
+# 4.1, Python 3.13, and Scala 2.13"). AS TRES DIZEM 3.13 -- a divergencia NAO
+# se reproduz. O unico lugar em que "3.12" aparece e um resumo de resultado
+# de busca sobre o blog, que nao e fonte oficial e nao foi possivel conferir
+# contra a pagina; ou o blog foi corrigido apos a publicacao, ou o resumo
+# errou, e nada aqui distingue os dois casos. Entao o status e VERIFIED, com
+# as tres fontes registradas -- e nao CONFLICTING inventado para exercitar o
+# mecanismo, que o proprio carregador recusa.
+schema_version: 1
+versions:
+  "6.0":
+    spark: "4.1.1"
+    python:
+      status: VERIFIED
+      claims:
+        - value: "3.13"
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+        - value: "3.13"
+          source: "https://aws.amazon.com/about-aws/whats-new/2026/08/aws-glue-6-0-price-reduction-iceberg-v3/"
+          source_type: OFFICIAL_RELEASE_DOC
+          retrieved: "2026-08-22"
+        - value: "3.13"
+          source: "https://aws.amazon.com/blogs/aws/aws-glue-6-0-now-available-with-30-lower-price-and-full-apache-iceberg-v3-support/"
+          source_type: OFFICIAL_BLOG
+          retrieved: "2026-08-22"
+    scala: "2.13.17"
+    java: "17"
+    iceberg: "1.11.0"
+    sources:
+      - "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+      - "https://docs.aws.amazon.com/glue/latest/dg/release-notes.html"
+    retrieved: "2026-08-21"
+  "5.1":
+    spark: "3.5.6"
+    python: "3.11"
+    scala: "2.12.18"
+    iceberg: "1.10.0"
+    sources:
+      - "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark"
+      - "https://aws.amazon.com/about-aws/whats-new/2025/11/aws-glue-5-1"
+    retrieved: "2026-08-21"
+  "5.0":
+    spark: "3.5.4"
+    python: "3.11"
+    scala: "2.12.18"
+    java: "17"
+    iceberg: "1.7.1"
+    sources:
+      - "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+    retrieved: "2026-08-21"
+  "4.0":
+    spark: "3.3.0"
+    python: "3.10"
+    scala: "2.12"
+    java: "8"
+    iceberg: "1.0.0"
+    sources:
+      - "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+    retrieved: "2026-08-21"
+  "3.0":
+    spark: "3.1.1"
+    python: "3.7"
+    scala: "2.12"
+    java: "8"
+    iceberg: "0.13.1"
+    sources:
+      - "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+    retrieved: "2026-08-21"

@@ -1,0 +1,15 @@
+name: python_dep
+proves: >
+  Dependencia Python pinada com `==` em `requirements.txt`
+  (`_python_dep_facts`): so a forma pinada emite fact, `boto3` sem `==` e o
+  comentario abaixo ficam de fora de proposito -- nenhum dos dois fixa
+  versao. Sem regra no catalogo hoje. Runtime Glue 5.0 por consistencia com o
+  resto do corpus.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.python_dep
+expects_rules: []

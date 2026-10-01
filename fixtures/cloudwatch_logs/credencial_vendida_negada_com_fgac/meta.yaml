@@ -1,0 +1,36 @@
+name: credencial_vendida_negada_com_fgac
+proves: >
+  O POSITIVO de `SF-ERR-014`. A linha de log nomeia
+  `lakeformation:GetTemporaryGlueTableCredentials`, e o `main.tf` declara
+  `--enable-lakeformation-fine-grained-access = "true"` -- a assinatura casa por
+  `log_line` e o companheiro `lakeformation.access_model` vem do extrator de
+  Lake Formation, nao de `tf.attribute` cru.
+
+  E a primeira fixture do repositorio em que o `evidence_required` da assinatura
+  e o `requires_facts` da regra dizem A MESMA COISA. `ERR-LF-001`, a mais antiga
+  da familia, declara `lakeformation.missing_grant` e `ram.unaccepted_share`, que
+  o motor nao emite -- e `SF-ERR-006` teve de usar `tf.spark_conf` como
+  substituto medido.
+
+  PROCEDENCIA DO TEXTO, declarada e nao escondida: a AWS publica o NOME da API
+  (referencia de API do Lake Formation) e a permissao de IAM que a autoriza. Ela
+  NAO publica o texto exato da mensagem de negacao. A linha desta fixture e
+  SINTETICA no formato de uma negacao de IAM, e a assinatura casa pelo nome da
+  API, que e a parte publicada.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - lakeformation.access_model
+  - lakeformation.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-014

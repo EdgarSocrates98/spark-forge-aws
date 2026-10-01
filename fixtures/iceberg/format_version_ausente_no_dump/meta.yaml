@@ -1,0 +1,21 @@
+name: format_version_ausente_no_dump
+proves: 'O coletor nao trouxe `format_version`. A resposta e recusa NOMEADA, nunca inferencia
+  da propriedade.
+
+  A propriedade `format-version` esta presente e diz "2". Inferir dela transformaria "o coletor
+  nao me deu" em "a tabela e v2" -- e as duas frases mandam o operador a lugares diferentes:
+  uma pede um campo no dump, a outra da um veredito.
+
+  `attrs.unblocked_by` diz exatamente o que destrava: incluir o campo, que e uma linha do
+  `metadata.json`.
+
+  '
+runtime: {}
+expects_kinds:
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+expects_rules: []

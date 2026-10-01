@@ -1,0 +1,48 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "currency": "USD",
+  "region": "UNQUALIFIED",
+  "runtime_version": "UNQUALIFIED",
+  "frontier": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 20,
+      "autoscaling": false,
+      "runs": 6,
+      "runtime_p50_s": 200.0,
+      "runtime_p95_s": 200.0,
+      "cost_per_run_p95": 0.9777777777777779,
+      "cost_relative": 1.0
+    },
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs": 6,
+      "runtime_p50_s": 500.0,
+      "runtime_p95_s": 500.0,
+      "cost_per_run_p95": 1.222222222222222,
+      "cost_relative": 1.2499999999999998
+    }
+  ],
+  "per_sla_outcome": [],
+  "symptoms": {},
+  "levers": {
+    "code": {
+      "findings": [],
+      "detail": ""
+    },
+    "capacity": {
+      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, que compara as capacidades observadas contra o SLA declarado."
+    },
+    "none_found": true
+  },
+  "refused": [
+    {
+      "reason": "sla_not_declared",
+      "detail": "Sem `sla_minutes` e `reliability_target` em workload.yaml nao ha desfecho util a contar, e custo por desfecho vira divisao por uma definicao que ninguem deu."
+    }
+  ]
+}

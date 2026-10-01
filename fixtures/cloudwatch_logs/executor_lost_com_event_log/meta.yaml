@@ -1,0 +1,37 @@
+name: executor_lost_com_event_log
+proves: >
+  O POSITIVO de `SF-ERR-020`. `ExecutorLostFailure`, com o event log que registra a RAZAO da perda.
+
+  A mensagem e a mesma para tres historias: container morto por memoria fora do
+  heap, processo que saiu com codigo proprio, e no reclamado pelo provedor. So
+  o event log separa as tres, e a terceira NAO e defeito.
+
+  O `Removed Reason` desta fixture e `Container killed by YARN`, que aponta
+  para memoria fora do heap -- um orcamento diferente do heap, e subir heap nao
+  o move.
+
+  `SF-UI-005` dispara junto, e a fixture NAO o esconde: ele le o MESMO evento
+  de remocao pelo lado do event log, e diz que o executor saiu sem OOM
+  registrado. Ver os dois no mesmo relatorio nao e duplicata -- um afirma que
+  a excecao aconteceu, o outro que a razao registrada nao fecha com a
+  explicacao mais comum. Silenciar um dos dois para a fixture ficar 'limpa'
+  esconderia justamente a correlacao que o corpus existe para provar.
+
+  Fixture SINTETICA: nenhuma conta, tabela ou bucket real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - spark.cluster.cores
+  - spark.executor.lost
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+expects_rules:
+  - SF-ERR-020
+  - SF-UI-005

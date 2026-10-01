@@ -1,0 +1,50 @@
+[
+  {
+    "span_id": "span_host00",
+    "run_id": "run_otel_host",
+    "parent_span_id": null,
+    "name": "sparkforge_analyze_pyspark",
+    "component_type": "tool",
+    "start_time": 1757592000.0,
+    "end_time": 1757592000.042,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0,
+    "estimated_cost_usd": 0.0,
+    "status": "ok",
+    "metadata": {
+      "channel": "mcp",
+      "transport": "stdio"
+    },
+    "payload_bytes": 2217,
+    "payload_basis": "len(json.dumps(resultado, ensure_ascii=False).encode(\"utf-8\"))",
+    "detail_level": "",
+    "item_count": 4,
+    "outcome": "ok",
+    "cost_basis": ""
+  },
+  {
+    "span_id": "span_host01",
+    "run_id": "run_otel_host",
+    "parent_span_id": null,
+    "name": "sparkforge_rules_lookup",
+    "component_type": "tool",
+    "start_time": 1757592002.0,
+    "end_time": 1757592002.318,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0,
+    "estimated_cost_usd": 0.0,
+    "status": "ok",
+    "metadata": {
+      "channel": "mcp",
+      "transport": "stdio"
+    },
+    "payload_bytes": 2260,
+    "payload_basis": "len(json.dumps(resultado, ensure_ascii=False).encode(\"utf-8\"))",
+    "detail_level": "",
+    "item_count": 1,
+    "outcome": "ok",
+    "cost_basis": ""
+  }
+]

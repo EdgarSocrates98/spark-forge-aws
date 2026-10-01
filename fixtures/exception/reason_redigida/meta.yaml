@@ -1,0 +1,42 @@
+name: reason_redigida
+proves: >
+  A redacao vem ANTES do parse, e o parse nao a desfaz.
+
+  O `Failure Reason` deste event log carrega uma URL de JDBC com senha dentro
+  (`jdbc:postgresql://etl_user:...@warehouse.internal:5432/analytics`).
+  `sparkforge/facts/secrets.py::redact` a reconhece por `_URL_PASSWORD_RE`,
+  `event_log.py` grava `attrs.reason = "<redigido>"` e marca
+  `attrs.redacted: true` -- e `build_exceptions` LE essa marca antes de qualquer
+  regex, emitindo `spark.exception.unresolved` com `reason: reason_redigida`.
+
+  A ordem importa e e o que esta fixture prende. Sem a guarda de `redacted`, o
+  parser rodaria sobre `<redigido>` -- que nao casa `_CABECA`, entao o resultado
+  final seria o MESMO kind com o reason ERRADO (`sem_forma_de_stacktrace`), e a
+  diferenca entre "nao havia forma de stacktrace" e "havia, e foi apagada por
+  seguranca" sumiria do handoff. As duas recusas tem nomes diferentes porque
+  destravam coisas diferentes: uma pede outro artefato, a outra pede o log nao
+  redigido de uma fonte que o operador controla.
+
+  `facts.json` e commitado como barramento; e por isso que a redacao existe, e por
+  isso que ela nao pode ser desfeita aqui.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception.unresolved
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+expects_rules: []

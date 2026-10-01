@@ -1,0 +1,36 @@
+{
+  "application": {
+    "applicationId": "00fsegredo0000000001",
+    "name": "metastore-externo",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "runtimeConfiguration": [
+      {
+        "classification": "spark-defaults",
+        "properties": {
+          "spark.executor.cores": "4",
+          "spark.hadoop.fs.s3a.access.key": "AKIAXXXXXXXXXXXXXXXX"
+        },
+        "configurations": [
+          {
+            "classification": "spark-hive-site",
+            "properties": {
+              "javax.jdo.option.ConnectionURL": "jdbc://usuario:trocar123@metastore.exemplo/db",
+              "javax.jdo.option.ConnectionPassword": "Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5"
+            }
+          }
+        ]
+      }
+    ],
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "table": {"database": "quality", "name": "payments"},
+  "recommendation_mode": "ADVANCED",
+  "classification": "internal",
+  "source_region": "us-east-1",
+  "inference_region": "us-east-1",
+  "kms": {"status": "missing"},
+  "human_review_status": "declared"
+}

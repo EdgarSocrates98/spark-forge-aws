@@ -1,0 +1,9 @@
+name: small_batch_extreme_scan
+job_name: etl_pedidos_diario
+job_run_id: jr_001
+proves: >
+  O caso que motivou o documento de origem: um scan de 80 MB e pequeno em
+  termos absolutos, mas para ESTE job -- cujo historico nunca passou de
+  70 MB -- e o maior run que ja existiu. `scan_intensity` sai `extreme`
+  porque a escala vem do historico do proprio job, nunca de um limiar
+  universal que trataria 80 MB como irrelevante.

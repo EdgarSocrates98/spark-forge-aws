@@ -1,0 +1,43 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "currency": "USD",
+  "region": "UNQUALIFIED",
+  "runtime_version": "UNQUALIFIED",
+  "frontier": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs": 8,
+      "runtime_p50_s": 300.0,
+      "runtime_p95_s": 300.0,
+      "cost_per_run_p95": 0.7333333333333334,
+      "cost_relative": 1.0
+    }
+  ],
+  "per_sla_outcome": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs": 8,
+      "runs_within_sla": 8,
+      "reliability": 1.0,
+      "cost_per_sla_success": 0.7333333333333334
+    }
+  ],
+  "symptoms": {},
+  "levers": {
+    "code": {
+      "findings": [],
+      "detail": ""
+    },
+    "capacity": {
+      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, que compara as capacidades observadas contra o SLA declarado."
+    },
+    "none_found": true
+  },
+  "refused": []
+}

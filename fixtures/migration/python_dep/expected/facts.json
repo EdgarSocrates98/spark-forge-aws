@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_9034f2",
+    "schema_version": 1,
+    "kind": "mig.python_dep",
+    "subject": {
+      "type": "source_location",
+      "file": "requirements.txt",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "package": "pandas",
+      "version": "2.0.3",
+      "major": 2
+    },
+    "provenance": {
+      "artifact": "requirements.txt",
+      "artifact_sha256": "419318a1586a88e5ab7728bc282462fe7fd800a7552dc3a606ce6787b9327f9d",
+      "extractor": "migration@0.1.0"
+    }
+  },
+  {
+    "id": "f_e543f3",
+    "schema_version": 1,
+    "kind": "mig.python_dep",
+    "subject": {
+      "type": "source_location",
+      "file": "requirements.txt",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "package": "pyarrow",
+      "version": "14.0.1",
+      "major": 14
+    },
+    "provenance": {
+      "artifact": "requirements.txt",
+      "artifact_sha256": "419318a1586a88e5ab7728bc282462fe7fd800a7552dc3a606ce6787b9327f9d",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

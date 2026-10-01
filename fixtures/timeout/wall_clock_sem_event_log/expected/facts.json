@@ -1,0 +1,46 @@
+[
+  {
+    "id": "f_93680c",
+    "schema_version": 1,
+    "kind": "spark.timeout.diagnosis",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_0001",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0001"
+    },
+    "measures": {
+      "executor_lost_count": 0.0
+    },
+    "attrs": {
+      "category": "wall_clock",
+      "basis": "glue_job_run_state",
+      "evidence_text": "glue.job_run.state = TIMEOUT (timeout_min=60)",
+      "also_seen": []
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_56a4c8",
+    "schema_version": 1,
+    "kind": "spark.timeout.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_0001",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0001"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "state_without_log",
+      "detail": "O run esta em TIMEOUT e nao ha event log: o relogio de parede e a unica categoria observavel. sparkforge collect event-log seguido de sparkforge analyze event-log traz as frases que separam broadcast, rede e heartbeat do relogio de parede."
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

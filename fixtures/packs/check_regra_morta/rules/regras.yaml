@@ -1,0 +1,15 @@
+rules:
+  - id: MORTA-GOV-001
+    category: morta
+    title: Worker G.8X (nenhum fixture tem)
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: worker_type, attrs.value: G.8X}
+    status: structural
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    sources:
+      - {origin: sintetico}

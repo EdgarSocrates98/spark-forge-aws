@@ -1,0 +1,80 @@
+[
+  {
+    "rule_id": "SF-PQ-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Estatística ausente ou parcial — pruning por row group é impossível",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/sem_estatistica/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "cat"
+    },
+    "evidence": [
+      "f_f43fc4",
+      "f_a39e51"
+    ],
+    "measured": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 351.0,
+      "stats_coverage": 0.0,
+      "min_max_coverage": 0.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 3.8461538461538463,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0
+    },
+    "threshold": {
+      "cobertura_minima": 1.0
+    },
+    "runtime_scope": {},
+    "explanation": "Sem `min`/`max` no footer, o motor de leitura não tem como decidir que um row group não contém a linha procurada — ele lê todos. A estatística é o que torna o pruming possível; sem ela, nenhum predicado poda nada, por mais seletivo que seja.\n\nCobertura PARCIAL já é defeito, e é por isso que o limiar é estritamente 1.0: um row group sem estatística é um row group que sempre será lido, e o buraco tem o tamanho dos que faltam.\n\nA causa mais comum é `parquet.enable.dictionary`/`write.statistics` desligados na escrita, ou um writer antigo. A segunda mais comum é coluna de tipo que o writer não estatística — e essa não tem conserto de configuração.",
+    "proposed_change": [
+      "Confirmar que a escrita não desliga estatística (`parquet.enable.summary-metadata`, `write.statistics` conforme o writer), e reescrever os arquivos afetados.",
+      "Conferir o `created_by` do arquivo em `parquet.file` — writer antigo pode não gravar estatística para tipos que os atuais gravam.",
+      "Se a coluna não é filtrada por ninguém, a ausência não custa nada, e o achado pode ser aceito com a razão registrada. Estatística existe para pruning; coluna que ninguém filtra não precisa dela."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Gravar estatística aumenta o footer, e footer maior custa mais para planejar em tabela com muitos arquivos.",
+      "Reescrever para adicionar estatística é reprocessamento, com o mesmo custo e o mesmo risco de qualquer reescrita."
+    ],
+    "tradeoffs": [
+      "Estatística por coluna custa bytes de footer e ganha pruning. Em coluna que ninguém filtra, o custo existe e o ganho não."
+    ],
+    "validation": [
+      "`parquet.column_profile.min_max_coverage` igual a 1.0 no censo seguinte.",
+      "Bytes lidos por uma query de referência que filtre a coluna, antes e depois — é o eixo que a mudança move, e sem ele o achado não fecha.",
+      "Contagem total de linhas idêntica, se houve reescrita."
+    ],
+    "rollback": [
+      "Manter os arquivos antigos até validar os novos. Reverter a propriedade de escrita não desfaz o que já foi reescrito."
+    ],
+    "sources": [
+      {
+        "url": "https://parquet.apache.org/docs/file-format/metadata/",
+        "retrieved": "2026-09-09",
+        "note": "O formato define `Statistics` (min, max, null_count, distinct_count) por column chunk, e a presença é opcional — é por isso que a medida é cobertura e não booleano.\n"
+      }
+    ],
+    "action": {
+      "kind": "storage.set_write_layout_property",
+      "target": "parquet.column_statistics",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read"
+      ],
+      "depends_on": []
+    }
+  }
+]

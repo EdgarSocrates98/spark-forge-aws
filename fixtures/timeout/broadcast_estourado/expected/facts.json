@@ -1,0 +1,46 @@
+[
+  {
+    "id": "f_8286f9",
+    "schema_version": 1,
+    "kind": "spark.timeout.diagnosis",
+    "subject": {
+      "type": "stage",
+      "symbol": "broadcast exchange at Join.scala:120",
+      "stage_id": 4
+    },
+    "measures": {
+      "executor_lost_count": 0.0
+    },
+    "attrs": {
+      "category": "broadcast",
+      "basis": "stage_failure_reason",
+      "evidence_text": "org.apache.spark.SparkException: Could not execute broadcast in 300 secs. You can increase the timeout further by setting a larger value in spark.sql.broadcastTimeout",
+      "also_seen": []
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_fb519c",
+    "schema_version": 1,
+    "kind": "spark.timeout.relation",
+    "subject": {
+      "type": "job_run",
+      "symbol": ""
+    },
+    "measures": {
+      "heartbeat_s": 10.0,
+      "network_timeout_s": 120.0
+    },
+    "attrs": {
+      "heartbeat_raw": "10s",
+      "network_timeout_raw": "120s"
+    },
+    "provenance": {
+      "extractor": "timeout_diagnosis@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

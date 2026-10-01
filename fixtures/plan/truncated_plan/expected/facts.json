@@ -1,0 +1,115 @@
+[
+  {
+    "id": "f_2b3d9f",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 15,
+      "node_count": 2,
+      "file_scan_count": 1,
+      "exchange_count": 0,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": false,
+      "aqe_final_plan": "unknown",
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "fa259fbee0f4728064f914642f8847e2d47dbaa75eda72f80ac8624451b60b22",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_dfbdd0",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 6,
+      "symbol": "(1) Scan parquet analytics.evento_bruto",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.evento_bruto"
+    },
+    "measures": {
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1
+    },
+    "attrs": {
+      "relation": "analytics.evento_bruto",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": false,
+      "partition_filters_empty": true,
+      "output_truncated": true,
+      "read_schema_truncated": true
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "fa259fbee0f4728064f914642f8847e2d47dbaa75eda72f80ac8624451b60b22",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_2c07d0",
+    "schema_version": 1,
+    "kind": "plan.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": "Scan parquet analytics.evento_bruto"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "truncated_field_list",
+      "detail": "lista de campos truncada pelo Spark no no 1; a razao de SF-PQ-004 nao pode ser calculada sobre contagem parcial."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "fa259fbee0f4728064f914642f8847e2d47dbaa75eda72f80ac8624451b60b22",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_2c07d0",
+    "schema_version": 1,
+    "kind": "plan.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": "Scan parquet analytics.evento_bruto"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "partition_status_unknown",
+      "detail": "analytics.evento_bruto: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge analyze catalog-schema`."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "fa259fbee0f4728064f914642f8847e2d47dbaa75eda72f80ac8624451b60b22",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

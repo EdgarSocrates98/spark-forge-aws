@@ -1,0 +1,6 @@
+{
+  "exit_code": 2,
+  "stderr_contains": [
+    "rules/catalog/**"
+  ]
+}

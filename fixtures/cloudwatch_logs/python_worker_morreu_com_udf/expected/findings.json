@@ -1,0 +1,137 @@
+[
+  {
+    "rule_id": "SF-ERR-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Python worker morreu num stage que roda UDF -- a memória que acabou está fora do heap da JVM",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-scores",
+      "job_run_id": "jr_py1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_py1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-002"
+    },
+    "evidence": [
+      "f_6e9482",
+      "f_0d2d14"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job FALHOU com `Python worker exited unexpectedly`, e o código do case declara ao menos uma UDF Python. As duas evidências juntas apontam para o lado do processo que a mensagem não nomeia: o worker Python roda FORA da JVM, e a memória que acabou não é a do heap.\n\nÉ o OOM que mais resiste ao conserto óbvio. `spark.executor.memory` faz o heap crescer DENTRO do mesmo container, e tira espaço justamente de quem ficou sem — por isso a assinatura de que o diagnóstico está errado é *\"aumentei a memória e continuou\"*.\n\n**O que esta regra NÃO afirma:** que a UDF é a causa. Ela afirma que há UDF no caminho e que o worker morreu; um `pandas_udf` que materializa um batch grande, um container morto por fora e um worker que estourou o próprio limite produzem a mesma mensagem, e o `proposed_change` separa os três.",
+    "proposed_change": [
+      "Trocar a UDF Python por expressão nativa de Spark SQL quando houver equivalente — isso tira o worker Python do caminho, em vez de dar mais memória a ele.",
+      "Aumentar a memória FORA do heap do executor (o overhead do container), e não `spark.executor.memory`.",
+      "Reduzir o tamanho de batch do `pandas_udf`, depois de confirmar que a função é linha a linha.",
+      "Ler o valor efetivo de `spark.python.worker.memory` — o default do Apache é `512m`, e ele governa o spill de agregação, não o worker inteiro; tratá-lo como o limite do processo leva ao ajuste errado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar `spark.executor.memory` piora o problema: o heap cresce dentro do mesmo container e tira espaço do worker Python.",
+      "Eliminar a UDF Python MUDA O RESULTADO. Nulo, precisão, fuso e borda passam a seguir a semântica da função nativa, e nada no plano físico acusa isso.",
+      "Reduzir o batch do `pandas_udf` muda o resultado de toda UDF vetorizada que NÃO seja linha a linha — normalização, ranking e preenchimento por vizinho devolvem outro valor com outro tamanho de batch. O nó continua sendo `ArrowEvalPython` nos dois casos.",
+      "Aumentar o overhead reduz a memória disponível para o heap dentro do mesmo container."
+    ],
+    "tradeoffs": [
+      "Expressão nativa elimina o worker Python e o custo de serialização, ao preço de reescrever a lógica e de validar a equivalência valor a valor.",
+      "Em algum ponto, worker maior é mais simples do que rebalancear heap e overhead."
+    ],
+    "validation": [
+      "Ausência de `Python worker exited unexpectedly` no run seguinte, com o mesmo volume de entrada.",
+      "Se a ação foi eliminar a UDF Python: resultado comparado linha a linha numa amostra que inclua nulos e valores de borda, mais contagem total e contagem de nulos da coluna resultado idênticas — a mesma validação que `SF-PY-001`, `SF-PLAN-001` e `SF-UI-005` exigem para a mesma troca.",
+      "Se a ação foi reduzir o batch do `pandas_udf`: a coluna produzida comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui.",
+      "Se a ação foi só memória fora do heap: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das três que não mexe em semântica."
+    ],
+    "rollback": [
+      "Reverter o valor de overhead, ou restaurar a UDF Python. Se a UDF foi substituída, a saída precisa ser comparada antes de o código antigo ser descartado."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-09-09",
+        "note": "Fonte declarada por `knowledge/errors/spark/python_worker_exited.json` (`ERR-SPARK-002`). Ela registra `spark.python.worker.memory` com default `512m` e a descricao que esta regra cita: o valor governa o spill durante agregacao, nao o processo inteiro.\n"
+      }
+    ],
+    "action": {
+      "kind": "capacity.increase_memory_overhead",
+      "target": "spark.executor.memoryOverhead",
+      "direction": "increase",
+      "requires_absent": [],
+      "moves": [
+        "capacity.executor_footprint",
+        "availability.executor_loss"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-PY-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Python UDF em transformação expressável nativamente",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 1,
+      "end_line": 5,
+      "symbol": "normaliza",
+      "snippet": "@udf(returnType=StringType())"
+    },
+    "evidence": [
+      "f_0d2d14"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Python UDF custa, por linha: serialização JVM->pickle, cópia para o processo Python worker, execução sem vetorização, e o caminho de volta. Além disso perde whole-stage codegen no segmento do plano e torna o operador opaco ao otimizador, eliminando pushdown de predicado e reordenação. Aparece no plano como BatchEvalPython. Ver knowledge/spark/execution-model.md secao 4.",
+    "proposed_change": [
+      "Reescrever com funções Spark SQL nativas.",
+      "Se envolve array/map, usar higher-order functions (transform, filter, aggregate).",
+      "Se realmente inevitável, medir pandas_udf (Arrow, vetorizado por batch) antes de manter Python UDF."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reescrita pode alterar tratamento de null ou de tipo em borda.",
+      "Precisão de ponto flutuante pode diferir entre implementação Python e nativa."
+    ],
+    "tradeoffs": [
+      "Expressão nativa equivalente pode ficar mais verbosa e menos legível."
+    ],
+    "validation": [
+      "Comparar resultado linha a linha entre versão antiga e nova numa amostra representativa que inclua nulls e valores de borda.",
+      "Contagem total idêntica.",
+      "Contagem de nulls na coluna resultado idêntica.",
+      "Confirmar desaparecimento do nó BatchEvalPython no plano."
+    ],
+    "rollback": [
+      "Reverter o commit; a UDF original não depende de mudança de infraestrutura."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ],
+    "action": {
+      "kind": "code.replace_udf_with_native",
+      "target": "pyspark.udf",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

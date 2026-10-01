@@ -1,0 +1,9 @@
+name: folga_medida_sem_skew
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'As quatro medidas apontam na mesma direcao: worker ocioso 69% do tempo, memoria em
+  22%, disco em 9%, e razao de skew 1.3 -- abaixo do limiar 3.0 que o resto do catalogo usa.
+  `SF-WASTE-001` dispara, e aponta para `sparkforge capacity` em vez de dizer quanto se economizaria.'

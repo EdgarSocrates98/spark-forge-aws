@@ -1,0 +1,10 @@
+[
+  {
+    "collect_command": "sintetico: montado por fixture",
+    "collected_at": "2026-09-13T00:00:00Z",
+    "kind": "glue_job_run",
+    "path": ".sparkforge/artifacts/glue_job_run/synthetic-job_jr_0001.json",
+    "sha256": "d035eea3bb9b86b1e7a7d36c79ce97d91dffd12c7131a1e437dfbbf841ef8825",
+    "source": "glue:get_job:synthetic-job"
+  }
+]

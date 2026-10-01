@@ -1,0 +1,26 @@
+name: lentidao_espalhada
+proves: >
+  O par de `no_lento_em_dois_stages`, com UMA diferenca: a task lenta do stage 0 roda
+  no executor 1, e a do stage 1 no executor 2. Os dois stages emitem
+  `spark.stage.slow_tasks`, mas nenhum executor se repete, entao nao ha
+  `spark.executor.slow_node` e SF-UI-007 cala.
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+expects_kinds:
+- spark.cluster.cores
+- spark.conf_effective
+- spark.conf_excluded
+- spark.job.spill_summary
+- spark.log_analyzed
+- spark.runtime_version
+- spark.stage.callsite
+- spark.stage.gc
+- spark.stage.slow_tasks
+- spark.stage.spill
+- spark.stage.task_count
+- spark.stage.task_duration
+- spark.stage.task_input
+expects_rules: []

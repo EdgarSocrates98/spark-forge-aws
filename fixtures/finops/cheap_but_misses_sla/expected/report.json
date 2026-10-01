@@ -1,0 +1,64 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "currency": "USD",
+  "region": "UNQUALIFIED",
+  "runtime_version": "UNQUALIFIED",
+  "frontier": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs": 10,
+      "runtime_p50_s": 300.0,
+      "runtime_p95_s": 900.0,
+      "cost_per_run_p95": 1.87,
+      "cost_relative": 1.0
+    },
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 20,
+      "autoscaling": false,
+      "runs": 10,
+      "runtime_p50_s": 400.0,
+      "runtime_p95_s": 400.0,
+      "cost_per_run_p95": 1.9555555555555557,
+      "cost_relative": 1.0457516339869282
+    }
+  ],
+  "per_sla_outcome": [
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 20,
+      "autoscaling": false,
+      "runs": 10,
+      "runs_within_sla": 10,
+      "reliability": 1.0,
+      "cost_per_sla_success": 1.9555555555555557
+    },
+    {
+      "glue_version": "5.0",
+      "worker_type": "G.2X",
+      "number_of_workers": 10,
+      "autoscaling": false,
+      "runs": 10,
+      "runs_within_sla": 6,
+      "reliability": 0.6,
+      "cost_per_sla_success": 1.9800000000000002
+    }
+  ],
+  "symptoms": {},
+  "levers": {
+    "code": {
+      "findings": [],
+      "detail": ""
+    },
+    "capacity": {
+      "detail": "A pergunta de capacidade tem resposta com evidencia em `sparkforge capacity`, que compara as capacidades observadas contra o SLA declarado."
+    },
+    "none_found": true
+  },
+  "refused": []
+}

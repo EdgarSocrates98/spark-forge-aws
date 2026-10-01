@@ -1,0 +1,569 @@
+{
+  "erro_fronteira": {
+    "arguments": {
+      "path": "nao/existe.py"
+    },
+    "motivo": "AdapterError vira {error, exit_code}: envelope compacto",
+    "name": "sparkforge_analyze_pyspark",
+    "result": {
+      "content": [
+        {
+          "text": "{\"error\":\"Caminho nao encontrado para analise: nao/existe.py\\n  Aponte para o diretorio da biblioteca ou para um arquivo .py:\\n    sparkforge analyze pyspark --path <dir-ou-arquivo> --out .sparkforge/facts.json\",\"exit_code\":2}",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "transport": "stdio"
+  },
+  "fora_do_catalogo_http": {
+    "arguments": {},
+    "motivo": "SPEC 71: tool de fonte escondida e recusada no transporte http",
+    "name": "sparkforge_code_read",
+    "result": {
+      "content": [
+        {
+          "text": "{\"error\":\"ferramenta indisponivel no transporte 'http': sparkforge_code_read. Use --transport stdio.\",\"exit_code\":2}",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "transport": "http"
+  },
+  "input_obrigatorio_ausente": {
+    "arguments": {
+      "release": "5.0"
+    },
+    "motivo": "campo obrigatorio ausente: Input validation error do 1.x",
+    "name": "sparkforge_release_describe",
+    "result": {
+      "content": [
+        {
+          "text": "Input validation error: 'platform' is a required property",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "transport": "stdio"
+  },
+  "input_tipo_invalido": {
+    "arguments": {
+      "id": "SF-TIMEOUT-002"
+    },
+    "motivo": "string onde o inputSchema pede array: Input validation error do 1.x",
+    "name": "sparkforge_rules_lookup",
+    "result": {
+      "content": [
+        {
+          "text": "Input validation error: 'SF-TIMEOUT-002' is not of type 'array'",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "transport": "stdio"
+  },
+  "nome_desconhecido": {
+    "arguments": {},
+    "motivo": "nome fora de qualquer catalogo: mesma porta do transporte",
+    "name": "sparkforge_nao_existe",
+    "result": {
+      "content": [
+        {
+          "text": "{\"error\":\"ferramenta indisponivel no transporte 'stdio': sparkforge_nao_existe. Use --transport stdio.\",\"exit_code\":2}",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "transport": "stdio"
+  },
+  "sucesso_analyze": {
+    "arguments": {
+      "path": "action_in_loop/input"
+    },
+    "motivo": "extrator puro sobre fixture versionada; caminhos relativos na saida",
+    "name": "sparkforge_analyze_pyspark",
+    "result": {
+      "content": [
+        {
+          "text": "{\n  \"total_count\": 5,\n  \"returned_count\": 5,\n  \"next_cursor\": null,\n  \"filters_applied\": {\n    \"kind\": null,\n    \"limit\": 50,\n    \"cursor\": null\n  },\n  \"by_kind\": {\n    \"pyspark.chain\": 1,\n    \"pyspark.function_def\": 1,\n    \"pyspark.loop\": 1,\n    \"pyspark.module_analyzed\": 1,\n    \"pyspark.write\": 1\n  },\n  \"unresolved\": 0,\n  \"unresolved_at\": [],\n  \"items\": [\n    {\n      \"id\": \"f_1dfc61\",\n      \"schema_version\": 1,\n      \"kind\": \"pyspark.chain\",\n      \"subject\": {\n        \"type\": \"source_location\",\n        \"file\": \"lib/job.py\",\n        \"line\": 3,\n        \"col\": 8,\n        \"end_line\": 3,\n        \"symbol\": \"processar\",\n        \"snippet\": \"lote.write.parquet(destino)\"\n      },\n      \"measures\": {\n        \"length\": 2\n      },\n      \"attrs\": {\n        \"methods\": [\n          \"write\",\n          \"parquet\"\n        ]\n      },\n      \"provenance\": {\n        \"artifact\": \"lib/job.py\",\n        \"artifact_sha256\": \"3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7\",\n        \"extractor\": \"pyspark_ast@0.1.0\"\n      }\n    },\n    {\n      \"id\": \"f_0564ad\",\n      \"schema_version\": 1,\n      \"kind\": \"pyspark.function_def\",\n      \"subject\": {\n        \"type\": \"source_location\",\n        \"file\": \"lib/job.py\",\n        \"line\": 1,\n        \"col\": 0,\n        \"end_line\": 3,\n        \"symbol\": \"processar\",\n        \"snippet\": \"def processar(lotes, destino):\"\n      },\n      \"measures\": {\n        \"name_reference_count\": 0\n      },\n      \"attrs\": {\n        \"def_kind\": \"module\",\n        \"enclosing\": \"\",\n        \"decorators\": [],\n        \"is_async\": false,\n        \"exported\": false\n      },\n      \"provenance\": {\n        \"artifact\": \"lib/job.py\",\n        \"artifact_sha256\": \"3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7\",\n        \"extractor\": \"pyspark_ast@0.1.0\"\n      }\n    },\n    {\n      \"id\": \"f_85aa2c\",\n      \"schema_version\": 1,\n      \"kind\": \"pyspark.loop\",\n      \"subject\": {\n        \"type\": \"source_location\",\n        \"file\": \"lib/job.py\",\n        \"line\": 2,\n        \"col\": 4,\n        \"end_line\": 3,\n        \"symbol\": \"processar\",\n        \"snippet\": \"for lote in lotes:\"\n      },\n      \"measures\": {\n        \"loop_depth\": 1\n      },\n      \"attrs\": {\n        \"contains_action\": false,\n        \"contains_write\": true\n      },\n      \"provenance\": {\n        \"artifact\": \"lib/job.py\",\n        \"artifact_sha256\": \"3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7\",\n        \"extractor\": \"pyspark_ast@0.1.0\"\n      }\n    },\n    {\n      \"id\": \"f_07e474\",\n      \"schema_version\": 1,\n      \"kind\": \"pyspark.module_analyzed\",\n      \"subject\": {\n        \"type\": \"source_location\",\n        \"file\": \"lib/job.py\",\n        \"line\": 0,\n        \"col\": 0,\n        \"symbol\": \"\",\n        \"snippet\": \"\"\n      },\n      \"measures\": {\n        \"resolved_calls\": 1,\n        \"unresolved_count\": 0\n      },\n      \"attrs\": {\n        \"parsed\": true,\n        \"referenced_names\": [\n          \"destino\",\n          \"lote\",\n          \"lotes\",\n          \"parquet\",\n          \"write\"\n        ]\n      },\n      \"provenance\": {\n        \"artifact\": \"lib/job.py\",\n        \"artifact_sha256\": \"3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7\",\n        \"extractor\": \"pyspark_ast@0.1.0\"\n      }\n    },\n    {\n      \"id\": \"f_4c865a\",\n      \"schema_version\": 1,\n      \"kind\": \"pyspark.write\",\n      \"subject\": {\n        \"type\": \"source_location\",\n        \"file\": \"lib/job.py\",\n        \"line\": 3,\n        \"col\": 8,\n        \"end_line\": 3,\n        \"symbol\": \"processar\",\n        \"snippet\": \"lote.write.parquet(destino)\"\n      },\n      \"measures\": {},\n      \"attrs\": {\n        \"api\": \"dataframe_writer_v1\"\n      },\n      \"provenance\": {\n        \"artifact\": \"lib/job.py\",\n        \"artifact_sha256\": \"3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7\",\n        \"extractor\": \"pyspark_ast@0.1.0\"\n      }\n    }\n  ]\n}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "by_kind": {
+          "pyspark.chain": 1,
+          "pyspark.function_def": 1,
+          "pyspark.loop": 1,
+          "pyspark.module_analyzed": 1,
+          "pyspark.write": 1
+        },
+        "filters_applied": {
+          "cursor": null,
+          "kind": null,
+          "limit": 50
+        },
+        "items": [
+          {
+            "attrs": {
+              "methods": [
+                "write",
+                "parquet"
+              ]
+            },
+            "id": "f_1dfc61",
+            "kind": "pyspark.chain",
+            "measures": {
+              "length": 2
+            },
+            "provenance": {
+              "artifact": "lib/job.py",
+              "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+              "extractor": "pyspark_ast@0.1.0"
+            },
+            "schema_version": 1,
+            "subject": {
+              "col": 8,
+              "end_line": 3,
+              "file": "lib/job.py",
+              "line": 3,
+              "snippet": "lote.write.parquet(destino)",
+              "symbol": "processar",
+              "type": "source_location"
+            }
+          },
+          {
+            "attrs": {
+              "decorators": [],
+              "def_kind": "module",
+              "enclosing": "",
+              "exported": false,
+              "is_async": false
+            },
+            "id": "f_0564ad",
+            "kind": "pyspark.function_def",
+            "measures": {
+              "name_reference_count": 0
+            },
+            "provenance": {
+              "artifact": "lib/job.py",
+              "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+              "extractor": "pyspark_ast@0.1.0"
+            },
+            "schema_version": 1,
+            "subject": {
+              "col": 0,
+              "end_line": 3,
+              "file": "lib/job.py",
+              "line": 1,
+              "snippet": "def processar(lotes, destino):",
+              "symbol": "processar",
+              "type": "source_location"
+            }
+          },
+          {
+            "attrs": {
+              "contains_action": false,
+              "contains_write": true
+            },
+            "id": "f_85aa2c",
+            "kind": "pyspark.loop",
+            "measures": {
+              "loop_depth": 1
+            },
+            "provenance": {
+              "artifact": "lib/job.py",
+              "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+              "extractor": "pyspark_ast@0.1.0"
+            },
+            "schema_version": 1,
+            "subject": {
+              "col": 4,
+              "end_line": 3,
+              "file": "lib/job.py",
+              "line": 2,
+              "snippet": "for lote in lotes:",
+              "symbol": "processar",
+              "type": "source_location"
+            }
+          },
+          {
+            "attrs": {
+              "parsed": true,
+              "referenced_names": [
+                "destino",
+                "lote",
+                "lotes",
+                "parquet",
+                "write"
+              ]
+            },
+            "id": "f_07e474",
+            "kind": "pyspark.module_analyzed",
+            "measures": {
+              "resolved_calls": 1,
+              "unresolved_count": 0
+            },
+            "provenance": {
+              "artifact": "lib/job.py",
+              "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+              "extractor": "pyspark_ast@0.1.0"
+            },
+            "schema_version": 1,
+            "subject": {
+              "col": 0,
+              "file": "lib/job.py",
+              "line": 0,
+              "snippet": "",
+              "symbol": "",
+              "type": "source_location"
+            }
+          },
+          {
+            "attrs": {
+              "api": "dataframe_writer_v1"
+            },
+            "id": "f_4c865a",
+            "kind": "pyspark.write",
+            "measures": {},
+            "provenance": {
+              "artifact": "lib/job.py",
+              "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+              "extractor": "pyspark_ast@0.1.0"
+            },
+            "schema_version": 1,
+            "subject": {
+              "col": 8,
+              "end_line": 3,
+              "file": "lib/job.py",
+              "line": 3,
+              "snippet": "lote.write.parquet(destino)",
+              "symbol": "processar",
+              "type": "source_location"
+            }
+          }
+        ],
+        "next_cursor": null,
+        "returned_count": 5,
+        "total_count": 5,
+        "unresolved": 0,
+        "unresolved_at": []
+      }
+    },
+    "transport": "stdio"
+  },
+  "sucesso_collect_offline": {
+    "arguments": {
+      "repo": "."
+    },
+    "motivo": "unico collect com caminho offline deterministico: confere o manifesto local",
+    "name": "sparkforge_collect_verify",
+    "result": {
+      "content": [
+        {
+          "text": "{\n  \"total_count\": 0,\n  \"ok_count\": 0,\n  \"missing_count\": 0,\n  \"mismatched_count\": 0,\n  \"artifacts\": []\n}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "artifacts": [],
+        "mismatched_count": 0,
+        "missing_count": 0,
+        "ok_count": 0,
+        "total_count": 0
+      }
+    },
+    "transport": "stdio"
+  },
+  "sucesso_debate": {
+    "arguments": {
+      "repo": "consenso_com_vencedor/input"
+    },
+    "motivo": "familia debate, so leitura sobre caso de fixtures/debate/",
+    "name": "sparkforge_debate_referee",
+    "result": {
+      "content": [
+        {
+          "text": "{\n  \"upheld\": true,\n  \"violations\": [],\n  \"violation_count\": 0,\n  \"protocol\": [\n    {\n      \"stage\": \"OBSERVE\",\n      \"observed_in\": \"external\",\n      \"modeled\": true\n    },\n    {\n      \"stage\": \"HYPOTHESIZE\",\n      \"observed_in\": \"DebateRound.claims\",\n      \"modeled\": true\n    },\n    {\n      \"stage\": \"CHALLENGE\",\n      \"observed_in\": \"DebateRound.objections\",\n      \"modeled\": true\n    },\n    {\n      \"stage\": \"EVIDENCE\",\n      \"observed_in\": \"Claim.evidence_refs / Objection.evidence_refs\",\n      \"modeled\": true\n    },\n    {\n      \"stage\": \"REBUTTAL\",\n      \"observed_in\": \"DebateRound.rebuttals\",\n      \"modeled\": true\n    },\n    {\n      \"stage\": \"CONSENSUS\",\n      \"observed_in\": \"Debate.status\",\n      \"modeled\": true\n    },\n    {\n      \"stage\": \"VERIFICATION\",\n      \"observed_in\": \"not_modeled\",\n      \"modeled\": false\n    }\n  ],\n  \"counts\": {\n    \"rounds\": null,\n    \"claims\": 0,\n    \"claims_surviving\": 0,\n    \"claims_superseded\": 0,\n    \"objections\": 0,\n    \"objections_answered\": 0,\n    \"rebuttals\": 0,\n    \"rounds_note\": \"o blackboard nao modela rodada; use `Debate` para isso\"\n  },\n  \"refused\": [\n    {\n      \"what\": \"generate_debate\",\n      \"why\": \"Gerar claim, objecao e replica exige provider, e nada em `sparkforge/` chama provider (regra 23 do CLAUDE.md). Este modulo ARBITRA o que o host preencheu.\",\n      \"unblocked_by\": \"um `AgentRuntime` concreto, que mora fora deste pacote\"\n    },\n    {\n      \"what\": \"verification_stage\",\n      \"why\": \"O setimo estagio do \\u00a727 nao tem campo no modelo: `Debate.verdict` e texto livre, e nada nele diz que o veredito foi verificado contra execucao. Consenso e acordo, nao verificacao.\",\n      \"unblocked_by\": \"um campo que ligue o veredito a um run posterior -- no molde do `benchmark_ref` que `validate_output` ja cobra para ganho\"\n    },\n    {\n      \"what\": \"confidence_score\",\n      \"why\": \"Nenhum experimento calibrou peso nenhum neste repositorio. `upheld` e binario e vem de contagem de violacao, nunca de nota.\",\n      \"unblocked_by\": \"\"\n    }\n  ],\n  \"source\": \"blackboard\",\n  \"closed\": false,\n  \"decision_count\": 0\n}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "closed": false,
+        "counts": {
+          "claims": 0,
+          "claims_superseded": 0,
+          "claims_surviving": 0,
+          "objections": 0,
+          "objections_answered": 0,
+          "rebuttals": 0,
+          "rounds": null,
+          "rounds_note": "o blackboard nao modela rodada; use `Debate` para isso"
+        },
+        "decision_count": 0,
+        "protocol": [
+          {
+            "modeled": true,
+            "observed_in": "external",
+            "stage": "OBSERVE"
+          },
+          {
+            "modeled": true,
+            "observed_in": "DebateRound.claims",
+            "stage": "HYPOTHESIZE"
+          },
+          {
+            "modeled": true,
+            "observed_in": "DebateRound.objections",
+            "stage": "CHALLENGE"
+          },
+          {
+            "modeled": true,
+            "observed_in": "Claim.evidence_refs / Objection.evidence_refs",
+            "stage": "EVIDENCE"
+          },
+          {
+            "modeled": true,
+            "observed_in": "DebateRound.rebuttals",
+            "stage": "REBUTTAL"
+          },
+          {
+            "modeled": true,
+            "observed_in": "Debate.status",
+            "stage": "CONSENSUS"
+          },
+          {
+            "modeled": false,
+            "observed_in": "not_modeled",
+            "stage": "VERIFICATION"
+          }
+        ],
+        "refused": [
+          {
+            "unblocked_by": "um `AgentRuntime` concreto, que mora fora deste pacote",
+            "what": "generate_debate",
+            "why": "Gerar claim, objecao e replica exige provider, e nada em `sparkforge/` chama provider (regra 23 do CLAUDE.md). Este modulo ARBITRA o que o host preencheu."
+          },
+          {
+            "unblocked_by": "um campo que ligue o veredito a um run posterior -- no molde do `benchmark_ref` que `validate_output` ja cobra para ganho",
+            "what": "verification_stage",
+            "why": "O setimo estagio do §27 nao tem campo no modelo: `Debate.verdict` e texto livre, e nada nele diz que o veredito foi verificado contra execucao. Consenso e acordo, nao verificacao."
+          },
+          {
+            "unblocked_by": "",
+            "what": "confidence_score",
+            "why": "Nenhum experimento calibrou peso nenhum neste repositorio. `upheld` e binario e vem de contagem de violacao, nunca de nota."
+          }
+        ],
+        "source": "blackboard",
+        "upheld": true,
+        "violation_count": 0,
+        "violations": []
+      }
+    },
+    "transport": "stdio"
+  },
+  "sucesso_verbo_lookup": {
+    "arguments": {
+      "id": [
+        "SF-TIMEOUT-002"
+      ]
+    },
+    "motivo": "le o catalogo de regras, sem I/O de AWS",
+    "name": "sparkforge_rules_lookup",
+    "result": {
+      "content": [
+        {
+          "text": "{\n  \"total_count\": 1,\n  \"returned_count\": 1,\n  \"next_cursor\": null,\n  \"filters_applied\": {\n    \"id\": [\n      \"SF-TIMEOUT-002\"\n    ],\n    \"category\": null,\n    \"limit\": 50,\n    \"cursor\": null\n  },\n  \"by_category\": {\n    \"timeout\": 1\n  },\n  \"rules\": [\n    {\n      \"id\": \"SF-TIMEOUT-002\",\n      \"category\": \"timeout\",\n      \"title\": \"heartbeatInterval maior ou igual a network.timeout quebra a detec\\u00e7\\u00e3o de executor morto\",\n      \"requires_facts\": [\n        \"spark.timeout.relation\"\n      ],\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"spark.timeout.relation\",\n            \"expr\": \"measures.heartbeat_s >= measures.network_timeout_s\"\n          }\n        ]\n      },\n      \"status\": \"confirmed\",\n      \"severity_default\": \"P1\",\n      \"runtime_scope\": {},\n      \"explanation\": \"O Spark documenta que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`: o heartbeat \\u00e9 o pulso que o executor manda, e o network timeout \\u00e9 quanto o driver espera antes de consider\\u00e1-lo morto. Com o intervalo maior ou igual \\u00e0 espera, o driver desiste antes do pr\\u00f3ximo pulso chegar, e passa a declarar morto executor vivo.\\n\\nA regra confere a RELA\\u00c7\\u00c3O, e n\\u00e3o o valor: `spark.network.timeout = 120s` n\\u00e3o \\u00e9 certo nem errado sozinho. Ela s\\u00f3 existe quando as duas chaves foram observadas em `spark.conf_effective` do mesmo run \\u2014 sem as duas, o fact `spark.timeout.relation` n\\u00e3o \\u00e9 emitido, e sai `spark.timeout.unresolved.conf_not_observed` no lugar.\\n\",\n      \"proposed_change\": [\n        \"Restaurar a folga entre as duas \\u2014 o heartbeat precisa caber v\\u00e1rias vezes dentro da espera do driver.\",\n        \"Se a inten\\u00e7\\u00e3o era tolerar rede lenta, mexer em `spark.network.timeout`, e n\\u00e3o no intervalo de heartbeat.\",\n        \"Conferir se alguma das duas veio de configura\\u00e7\\u00e3o de cluster ou de `--conf` sem quem a explique \\u2014 as duas s\\u00e3o propriedades que raramente precisam sair do default.\"\n      ],\n      \"action\": {\n        \"kind\": \"timeout.restore_interval_relation\",\n        \"target\": \"spark.executor.heartbeatInterval\",\n        \"direction\": \"decrease\",\n        \"requires_absent\": [],\n        \"moves\": [\n          \"availability.executor_loss\"\n        ],\n        \"depends_on\": []\n      },\n      \"risks\": [\n        \"Executor vivo declarado morto faz o Spark recomputar trabalho j\\u00e1 feito, e o run fica mais lento e mais caro sem erro vis\\u00edvel.\",\n        \"Aumentar `network.timeout` sem olhar a causa mascara press\\u00e3o de mem\\u00f3ria e GC, que \\u00e9 o que a `SF-TIMEOUT-001` recusa.\"\n      ],\n      \"tradeoffs\": [\n        \"Heartbeat mais frequente custa um pouco de tr\\u00e1fego de controle; detec\\u00e7\\u00e3o tardia de executor morto custa recomputa\\u00e7\\u00e3o.\"\n      ],\n      \"validation\": [\n        \"Os dois valores efetivos no run seguinte, lidos de `spark.conf_effective`.\",\n        \"Contagem de `spark.executor.lost` com raz\\u00e3o de heartbeat, antes e depois.\",\n        \"Dura\\u00e7\\u00e3o p50 e p95 do run, contra o hist\\u00f3rico.\"\n      ],\n      \"rollback\": [\n        \"Reverter a configura\\u00e7\\u00e3o. Nenhuma escrita de dado \\u00e9 envolvida.\"\n      ],\n      \"sources\": [\n        {\n          \"url\": \"https://spark.apache.org/docs/latest/configuration.html\",\n          \"retrieved\": \"2026-08-29\",\n          \"note\": \"A documenta\\u00e7\\u00e3o do Spark declara que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`, e documenta os defaults das duas.\\n\"\n        }\n      ],\n      \"catalog_version\": 1,\n      \"knowledge_refs\": []\n    }\n  ]\n}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "by_category": {
+          "timeout": 1
+        },
+        "filters_applied": {
+          "category": null,
+          "cursor": null,
+          "id": [
+            "SF-TIMEOUT-002"
+          ],
+          "limit": 50
+        },
+        "next_cursor": null,
+        "returned_count": 1,
+        "rules": [
+          {
+            "action": {
+              "depends_on": [],
+              "direction": "decrease",
+              "kind": "timeout.restore_interval_relation",
+              "moves": [
+                "availability.executor_loss"
+              ],
+              "requires_absent": [],
+              "target": "spark.executor.heartbeatInterval"
+            },
+            "catalog_version": 1,
+            "category": "timeout",
+            "explanation": "O Spark documenta que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`: o heartbeat é o pulso que o executor manda, e o network timeout é quanto o driver espera antes de considerá-lo morto. Com o intervalo maior ou igual à espera, o driver desiste antes do próximo pulso chegar, e passa a declarar morto executor vivo.\n\nA regra confere a RELAÇÃO, e não o valor: `spark.network.timeout = 120s` não é certo nem errado sozinho. Ela só existe quando as duas chaves foram observadas em `spark.conf_effective` do mesmo run — sem as duas, o fact `spark.timeout.relation` não é emitido, e sai `spark.timeout.unresolved.conf_not_observed` no lugar.\n",
+            "id": "SF-TIMEOUT-002",
+            "knowledge_refs": [],
+            "proposed_change": [
+              "Restaurar a folga entre as duas — o heartbeat precisa caber várias vezes dentro da espera do driver.",
+              "Se a intenção era tolerar rede lenta, mexer em `spark.network.timeout`, e não no intervalo de heartbeat.",
+              "Conferir se alguma das duas veio de configuração de cluster ou de `--conf` sem quem a explique — as duas são propriedades que raramente precisam sair do default."
+            ],
+            "requires_facts": [
+              "spark.timeout.relation"
+            ],
+            "risks": [
+              "Executor vivo declarado morto faz o Spark recomputar trabalho já feito, e o run fica mais lento e mais caro sem erro visível.",
+              "Aumentar `network.timeout` sem olhar a causa mascara pressão de memória e GC, que é o que a `SF-TIMEOUT-001` recusa."
+            ],
+            "rollback": [
+              "Reverter a configuração. Nenhuma escrita de dado é envolvida."
+            ],
+            "runtime_scope": {},
+            "severity_default": "P1",
+            "sources": [
+              {
+                "note": "A documentação do Spark declara que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`, e documenta os defaults das duas.\n",
+                "retrieved": "2026-08-29",
+                "url": "https://spark.apache.org/docs/latest/configuration.html"
+              }
+            ],
+            "status": "confirmed",
+            "title": "heartbeatInterval maior ou igual a network.timeout quebra a detecção de executor morto",
+            "tradeoffs": [
+              "Heartbeat mais frequente custa um pouco de tráfego de controle; detecção tardia de executor morto custa recomputação."
+            ],
+            "validation": [
+              "Os dois valores efetivos no run seguinte, lidos de `spark.conf_effective`.",
+              "Contagem de `spark.executor.lost` com razão de heartbeat, antes e depois.",
+              "Duração p50 e p95 do run, contra o histórico."
+            ],
+            "when": {
+              "all": [
+                {
+                  "expr": "measures.heartbeat_s >= measures.network_timeout_s",
+                  "fact": "spark.timeout.relation"
+                }
+              ]
+            }
+          }
+        ],
+        "total_count": 1
+      }
+    },
+    "transport": "stdio"
+  },
+  "sucesso_verbo_release": {
+    "arguments": {
+      "platform": "glue",
+      "release": "5.0"
+    },
+    "motivo": "le a matriz de releases, sem I/O de AWS",
+    "name": "sparkforge_release_describe",
+    "result": {
+      "content": [
+        {
+          "text": "{\n  \"platform\": \"glue\",\n  \"release\": \"5.0\",\n  \"components\": {\n    \"iceberg\": {\n      \"name\": \"iceberg\",\n      \"version\": \"1.7.1\",\n      \"is_set\": false,\n      \"sources\": [\n        \"https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html\"\n      ],\n      \"retrieved\": \"2026-08-21\"\n    },\n    \"java\": {\n      \"name\": \"java\",\n      \"version\": \"17\",\n      \"is_set\": false,\n      \"sources\": [\n        \"https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html\"\n      ],\n      \"retrieved\": \"2026-08-21\"\n    },\n    \"python\": {\n      \"name\": \"python\",\n      \"version\": \"3.11\",\n      \"is_set\": false,\n      \"sources\": [\n        \"https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html\"\n      ],\n      \"retrieved\": \"2026-08-21\"\n    },\n    \"scala\": {\n      \"name\": \"scala\",\n      \"version\": \"2.12.18\",\n      \"is_set\": false,\n      \"sources\": [\n        \"https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html\"\n      ],\n      \"retrieved\": \"2026-08-21\"\n    },\n    \"spark\": {\n      \"name\": \"spark\",\n      \"version\": \"3.5.4\",\n      \"is_set\": false,\n      \"sources\": [\n        \"https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html\"\n      ],\n      \"retrieved\": \"2026-08-21\"\n    }\n  },\n  \"unresolved\": [\n    \"delta\",\n    \"hadoop\",\n    \"hudi\",\n    \"python_installed\"\n  ],\n  \"unresolved_detail\": {\n    \"delta\": {\n      \"component\": \"delta\",\n      \"kind\": \"platform_source_does_not_publish\",\n      \"reason\": \"a fonte do AWS Glue nao publica `delta` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `delta` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir\"\n    },\n    \"hadoop\": {\n      \"component\": \"hadoop\",\n      \"kind\": \"platform_source_does_not_publish\",\n      \"reason\": \"a fonte do AWS Glue nao publica `hadoop` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hadoop` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir\"\n    },\n    \"hudi\": {\n      \"component\": \"hudi\",\n      \"kind\": \"platform_source_does_not_publish\",\n      \"reason\": \"a fonte do AWS Glue nao publica `hudi` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hudi` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir\"\n    },\n    \"python_installed\": {\n      \"component\": \"python_installed\",\n      \"kind\": \"platform_source_does_not_publish\",\n      \"reason\": \"a fonte do AWS Glue nao publica `python_installed` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `python_installed` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir\"\n    }\n  },\n  \"sources\": [\n    \"https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html\"\n  ],\n  \"retrieved\": \"2026-08-21\"\n}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "components": {
+          "iceberg": {
+            "is_set": false,
+            "name": "iceberg",
+            "retrieved": "2026-08-21",
+            "sources": [
+              "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+            ],
+            "version": "1.7.1"
+          },
+          "java": {
+            "is_set": false,
+            "name": "java",
+            "retrieved": "2026-08-21",
+            "sources": [
+              "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+            ],
+            "version": "17"
+          },
+          "python": {
+            "is_set": false,
+            "name": "python",
+            "retrieved": "2026-08-21",
+            "sources": [
+              "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+            ],
+            "version": "3.11"
+          },
+          "scala": {
+            "is_set": false,
+            "name": "scala",
+            "retrieved": "2026-08-21",
+            "sources": [
+              "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+            ],
+            "version": "2.12.18"
+          },
+          "spark": {
+            "is_set": false,
+            "name": "spark",
+            "retrieved": "2026-08-21",
+            "sources": [
+              "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+            ],
+            "version": "3.5.4"
+          }
+        },
+        "platform": "glue",
+        "release": "5.0",
+        "retrieved": "2026-08-21",
+        "sources": [
+          "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html"
+        ],
+        "unresolved": [
+          "delta",
+          "hadoop",
+          "hudi",
+          "python_installed"
+        ],
+        "unresolved_detail": {
+          "delta": {
+            "component": "delta",
+            "kind": "platform_source_does_not_publish",
+            "reason": "a fonte do AWS Glue nao publica `delta` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `delta` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir"
+          },
+          "hadoop": {
+            "component": "hadoop",
+            "kind": "platform_source_does_not_publish",
+            "reason": "a fonte do AWS Glue nao publica `hadoop` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hadoop` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir"
+          },
+          "hudi": {
+            "component": "hudi",
+            "kind": "platform_source_does_not_publish",
+            "reason": "a fonte do AWS Glue nao publica `hudi` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hudi` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir"
+          },
+          "python_installed": {
+            "component": "python_installed",
+            "kind": "platform_source_does_not_publish",
+            "reason": "a fonte do AWS Glue nao publica `python_installed` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `python_installed` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir"
+          }
+        }
+      }
+    },
+    "transport": "stdio"
+  }
+}

@@ -1,0 +1,24 @@
+name: validated_correctly
+proves: >
+  A metade negativa do corpus, e a mais importante: o mesmo tipo de job, feito
+  do jeito certo. Um unico check (checks_on_target == 1), sobre um DataFrame em
+  `cache()` (target_persisted == true), ANTES do write
+  (position_vs_write == before_write), e com consequencia
+  (`dq.enforcement`, form: raise).
+  NENHUMA das quatro regras SF-DQ pode disparar aqui -- por isso
+  `expects_rules` continua vazio depois das Tasks 7 e 8, e nao so nesta task.
+  Sem esta fixture, uma regra que disparasse sobre qualquer `dq.check`
+  passaria em todo o resto do corpus: as sete outras tem defeito.
+  attrs.action_after_check e `true` (o write reusa o alvo) e isso e CORRETO --
+  e a prova de que SF-DQ-003 exige os dois atributos, e nao so este: com
+  `cache()` no meio, o reuso nao recomputa.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules: []

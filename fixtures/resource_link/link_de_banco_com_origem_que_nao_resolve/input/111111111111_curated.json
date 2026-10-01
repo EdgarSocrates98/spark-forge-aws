@@ -1,0 +1,31 @@
+{
+  "catalog_id": "111111111111",
+  "database": "curated",
+  "link": {
+    "aws_error_code": "",
+    "is_resource_link": true,
+    "link_catalog_id": "111111111111",
+    "link_database": "curated",
+    "link_name": "curated",
+    "requested_catalog_id": "111111111111",
+    "requested_database": "curated",
+    "requested_table": "",
+    "status": "ok",
+    "target_catalog_id": "999999999999",
+    "target_database": "curated",
+    "target_name": "",
+    "target_region": "us-east-1",
+    "target_type": "database"
+  },
+  "status": "nao_encontrado",
+  "table": "",
+  "target": {
+    "aws_error_code": "EntityNotFoundException",
+    "catalog_id": "999999999999",
+    "database": "curated",
+    "name": "",
+    "resolved_name": "",
+    "status": "nao_encontrado"
+  },
+  "target_type": "database"
+}

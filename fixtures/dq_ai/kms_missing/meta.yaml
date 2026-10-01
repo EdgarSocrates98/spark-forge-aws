@@ -1,0 +1,10 @@
+name: kms_missing
+proves: Missing KMS evidence is a structural security finding, not an encryption claim.
+runtime:
+  glue: "5.1"
+expects_kinds:
+  - dq.ai.recommendation
+  - dq.ai.review
+  - dq.ai.analyzed
+expects_rules:
+  - SF-DQ-AI-003

@@ -1,0 +1,19 @@
+{
+  "Comment": "Fixture sintetica: Glue disparado sem .sync e seguido de um estado que depende dele.",
+  "QueryLanguage": "JSONata",
+  "StartAt": "IniciarCarga",
+  "States": {
+    "IniciarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun",
+      "Arguments": {"JobName": "carga-diaria"},
+      "Next": "PublicarResultado"
+    },
+    "PublicarResultado": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {"FunctionName": "publicar-resultado"},
+      "End": true
+    }
+  }
+}

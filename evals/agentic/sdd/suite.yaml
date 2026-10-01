@@ -1,0 +1,71 @@
+# Gabarito do nivel de agente sobre specs do SDD proprio (feature SDD_EVAL).
+#
+# Cada pergunta aponta um repositorio sintetico de `fixtures/sdd/<caso>/`, que o
+# runner copia para o workspace de prova, e pede um valor que so o gate
+# (`sdd_check` ou `sdd_status`) da com certeza. A resposta NAO e escrita a mao:
+# `tests/test_sdd_eval_suite.py::test_gabarito_recomputado_pelo_gate` roda o
+# gate sobre a fixture citada e reprova se o valor divergir.
+#
+# `required_tools` segue o vocabulario de `evals/agentic/fase0/suite.yaml`: o
+# nome da tool MCP sem o prefixo `sparkforge_`, ou o verbo da CLI com espaco
+# virando `_` (`sparkforge sdd check` -> `sdd_check`).
+schema_version: 1
+id: sdd
+answer_protocol: >-
+  Responda usando as tools ou a CLI do SparkForge sobre o repositorio citado na
+  pergunta. Termine com uma unica linha no formato exato `ANSWER: <valor>`, com
+  o valor puro no formato que a pergunta pede, sem crases, aspas ou texto
+  extra. Se os artefatos nao sustentam um valor, termine com
+  `ANSWER: unresolved`.
+questions:
+  - id: sdd-01
+    question: >-
+      O repositorio `fixtures/sdd/cascata` tem specs do SDD proprio em
+      `docs/sdd/`. Confira essas specs com o gate do SDD, usando
+      `fixtures/sdd/cascata` como `repo`. Qual e o codigo da unica recusa que o
+      gate devolve? Responda so o codigo, em minusculas com sublinhado.
+    answer: upstream_stale
+    required_tools: [sdd_check]
+  - id: sdd-02
+    question: >-
+      O repositorio `fixtures/sdd/cascata` tem specs do SDD proprio em
+      `docs/sdd/`. Confira essas specs com o gate do SDD, usando
+      `fixtures/sdd/cascata` como `repo`. Qual artefato o gate recusa? Responda o
+      caminho relativo a esse repositorio, com barras normais, como o gate o
+      informa (por exemplo `docs/sdd/<FEATURE>/<fase>.md`).
+    answer: docs/sdd/IMPORTACAO/design.md
+    required_tools: [sdd_check]
+  - id: sdd-03
+    question: >-
+      O repositorio `fixtures/sdd/cobertura` tem specs do SDD proprio em
+      `docs/sdd/`. Confira essas specs com o gate do SDD, usando
+      `fixtures/sdd/cobertura` como `repo`. Qual criterio de aceite do define
+      nao esta coberto pelo design? Responda so o id do criterio (por exemplo
+      `AC7`).
+    answer: AC2
+    required_tools: [sdd_check]
+  - id: sdd-04
+    question: >-
+      O repositorio `fixtures/sdd/tdd` tem specs do SDD proprio em `docs/sdd/`.
+      Confira essas specs com o gate do SDD, usando `fixtures/sdd/tdd` como
+      `repo`. Qual e o codigo da unica recusa que o gate devolve? Responda so o
+      codigo, em minusculas com sublinhado.
+    answer: red_not_declared
+    required_tools: [sdd_check]
+  - id: sdd-05
+    question: >-
+      O repositorio `fixtures/sdd/limpo` tem uma feature especificada com o SDD
+      proprio em `docs/sdd/`. Consulte o estado das features com o SDD, usando
+      `fixtures/sdd/limpo` como `repo`. Em que fase essa feature esta? Responda
+      so o nome da fase, em minusculas, como o SDD o informa.
+    answer: ship
+    required_tools: [sdd_status]
+  - id: sdd-06
+    question: >-
+      O repositorio `fixtures/sdd/operador` tem specs do SDD proprio, perfil
+      operator, em `docs/sdd/`. Confira essas specs com o gate do SDD, usando
+      `fixtures/sdd/operador` como `repo` e a raiz padrao. Qual e o codigo da
+      unica recusa que o gate devolve? Responda so o codigo, em minusculas com
+      sublinhado.
+    answer: change_missing
+    required_tools: [sdd_check]

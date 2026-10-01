@@ -1,0 +1,53 @@
+[
+  {
+    "id": "f_f2642e",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_p7q8r9",
+      "log_group": "/aws-glue/jobs/logs-v2",
+      "type": "job_run",
+      "symbol": "jr_p7q8r9"
+    },
+    "measures": {
+      "events": 0.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "log_group_inexistente",
+      "filter_pattern": "",
+      "log_stream_prefix": "jr_p7q8r9"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_p7q8r9_aws-glue_jobs_logs-v2.json"
+    }
+  },
+  {
+    "id": "f_5b935b",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.unresolved",
+    "subject": {
+      "job_name": "etl-vendas",
+      "job_run_id": "jr_p7q8r9",
+      "log_group": "/aws-glue/jobs/logs-v2",
+      "type": "job_run",
+      "symbol": "jr_p7q8r9"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "log_group_inexistente",
+      "detail": "`logs.filter_log_events` devolveu ResourceNotFoundException: o log group nao existe nesta conta/regiao. Glue grava em `/aws-glue/jobs/error`, `/aws-glue/jobs/output` e, a partir do Glue 4.0, `/aws-glue/jobs/logs-v2` -- confira qual deles o job usa antes de concluir que nao ha log.",
+      "filter_pattern": "",
+      "start": "2026-09-09T10:00:00Z",
+      "end": "2026-09-09T11:00:00Z"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "etl-vendas_jr_p7q8r9_aws-glue_jobs_logs-v2.json"
+    }
+  }
+]

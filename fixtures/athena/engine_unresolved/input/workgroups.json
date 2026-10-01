@@ -1,0 +1,24 @@
+{
+  "workgroups": [
+    {
+      "name": "preview-engine",
+      "engine_version": {
+        "effective_engine_version": "Athena engine version PREVIEW",
+        "selected_engine_version": "AUTO"
+      },
+      "state": "ENABLED"
+    },
+    {
+      "name": "sem-bloco-de-engine",
+      "state": "ENABLED",
+      "output_location": "s3://lake-athena-results/sem-bloco/"
+    },
+    {
+      "state": "ENABLED",
+      "engine_version": {
+        "effective_engine_version": "Athena engine version 3"
+      }
+    },
+    "isto-nao-e-um-objeto"
+  ]
+}

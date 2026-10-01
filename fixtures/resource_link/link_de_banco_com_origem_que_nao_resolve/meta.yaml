@@ -1,0 +1,28 @@
+name: link_de_banco_com_origem_que_nao_resolve
+proves: >
+  Duas coisas ao mesmo tempo, e as duas sao de contrato.
+
+  A primeira: link de BANCO compara o nome contra `TargetDatabase.DatabaseName`,
+  porque `TargetDatabase` NAO tem campo `Name`. Aqui os nomes batem (`curated` e
+  `curated`) e `name_matches_source` sai `true` -- num extrator que comparasse
+  contra `target_name` ele sairia `false`, e todo link de banco correto viraria
+  achado.
+
+  A segunda: o recurso de origem respondeu `EntityNotFoundException`, e sob Lake
+  Formation esse codigo e a MESMA resposta para recurso inexistente e para
+  recurso nao autorizado. `SF-XACC-003` nao diz que o link esta pendurado -- diz
+  que as duas leituras seguem abertas, e elas exigem consertos em contas
+  diferentes.
+
+  Fixture SINTETICA: nenhuma conta, banco ou tabela real.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - glue.resource_link
+  - glue.resource_link.analyzed
+  - glue.resource_link.target
+expects_rules:
+  - SF-XACC-003

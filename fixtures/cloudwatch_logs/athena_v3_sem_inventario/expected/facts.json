@@ -1,0 +1,214 @@
+[
+  {
+    "id": "f_6743ab",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-pedidos",
+      "job_run_id": "jr_ath1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ath1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:08:01,442 ERROR [main] athena.Reader: HIVE_UNSUPPORTED_FORMAT: Cannot read unsupported version 3 of the Iceberg table metadata",
+      "log_stream": "jr_ath1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-pedidos_jr_ath1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_9c2aa2",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-pedidos",
+      "job_run_id": "jr_ath1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ath1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_ath1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-pedidos_jr_ath1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_c20cde",
+    "schema_version": 1,
+    "kind": "iceberg.delete_files_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "delete_file_count": 0,
+      "data_file_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_7a00a9",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "data_file_count": 1,
+      "total_bytes": 402653184,
+      "avg_file_bytes": 402653184.0,
+      "p50_file_bytes": 402653184,
+      "p95_file_bytes": 402653184,
+      "min_file_bytes": 402653184,
+      "max_file_bytes": 402653184,
+      "total_records": 1000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_31f118",
+    "schema_version": 1,
+    "kind": "iceberg.format_version",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "version": 3
+    },
+    "attrs": {
+      "resolved": true,
+      "declared": "3"
+    },
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_059d3b",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "snapshot_count": 1,
+      "span_hours": 0.0
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-07-30T03:00:00+00:00",
+      "newest": "2026-07-30T03:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_f375e7",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {
+      "section_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_bf25b4",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "iceberg/dump.json",
+      "symbol": "glue_catalog.curated.pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "iceberg/dump.json",
+      "artifact_sha256": "279f175bf658afca6d42653693e30b25fff5bbab3c6b72cc358c3416da28d5da",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_4fd097",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-pedidos",
+      "job_run_id": "jr_ath1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ath1",
+      "event": 0,
+      "signature_id": "ERR-ATH-001"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-ATH-001",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:08:01,442 ERROR [main] athena.Reader: HIVE_UNSUPPORTED_FORMAT: Cannot read unsupported version 3 of the Iceberg table metadata"
+    },
+    "provenance": {
+      "artifact": "logs/etl-pedidos_jr_ath1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

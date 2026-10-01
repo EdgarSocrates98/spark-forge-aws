@@ -1,0 +1,37 @@
+== Physical Plan ==
+AdaptiveSparkPlan (6)
++- == Final Plan ==
+   * Project (5)
+   +- ArrowEvalPython (4)
+      +- BatchEvalPython (3)
+         +- * Filter (2)
+            +- Scan parquet analytics.pedidos (1)
+
+
+(1) Scan parquet analytics.pedidos
+Output [4]: [pedido_id#1, cliente_id#2, valor#3, dt#9]
+Batched: true
+Location: InMemoryFileIndex [s3://lake/analytics/pedidos]
+PartitionFilters: [isnotnull(dt#9), (dt#9 = 2026-07-30)]
+PushedFilters: [IsNotNull(pedido_id)]
+ReadSchema: struct<pedido_id:bigint,cliente_id:bigint,valor:double>
+
+(2) Filter [codegen id : 1]
+Input [4]: [pedido_id#1, cliente_id#2, valor#3, dt#9]
+Condition : isnotnull(pedido_id#1)
+
+(3) BatchEvalPython
+Input [3]: [pedido_id#1, cliente_id#2, valor#3]
+Arguments: [normaliza_documento(cliente_id#2)#20], [pythonUDF0#21]
+
+(4) ArrowEvalPython
+Input [4]: [pedido_id#1, cliente_id#2, valor#3, pythonUDF0#21]
+Arguments: [converte_moeda(valor#3)#22], [pythonUDF1#23], 200
+
+(5) Project [codegen id : 2]
+Output [3]: [pedido_id#1, pythonUDF0#21 AS documento#24, pythonUDF1#23 AS valor_brl#25]
+Input [4]: [pedido_id#1, cliente_id#2, valor#3, pythonUDF0#21]
+
+(6) AdaptiveSparkPlan
+Output [3]: [pedido_id#1, documento#24, valor_brl#25]
+Arguments: isFinalPlan=true

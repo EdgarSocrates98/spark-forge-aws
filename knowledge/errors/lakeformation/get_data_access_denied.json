@@ -1,0 +1,36 @@
+{
+  "id": "ERR-LF-003",
+  "signature": "lakeformation:GetDataAccess",
+  "service": "lakeformation",
+  "versions": ["all"],
+  "symptoms": [
+    "An authorization error names the Lake Formation action by its IAM name",
+    "The job was configured for Full Table Access and the Lake Formation grants on the table are in place",
+    "Reads of tables NOT registered with Lake Formation keep working in the same job"
+  ],
+  "likely_causes": [
+    "The job runtime role policy does not grant lakeformation:GetDataAccess",
+    "The policy grants it on a resource that does not cover the request; the AWS example grants it on all resources",
+    "A permission boundary or a service control policy denies the action above the role policy"
+  ],
+  "evidence_required": ["lakeformation.filesystem"],
+  "diagnostic_steps": [
+    "Read the filesystem configuration the job declares: under Full Table Access the Lake Formation credential reads and writes S3 for registered tables while the runtime role credential reads and writes everything else, which is why the two halves of the same job fail differently",
+    "Read the IAM policy of the runtime role for lakeformation:GetDataAccess and for the resource it is granted on",
+    "Read whether the account allows third-party query engines to access data without IAM session tag validation, which the Full Table Access setup requires before any grant matters"
+  ],
+  "fixes": [
+    "Grant lakeformation:GetDataAccess to the job runtime role, in the shape the AWS Full Table Access documentation publishes",
+    "Complete the account-level application integration for full table access, which is step one of the AWS procedure and is not a job setting"
+  ],
+  "unsafe_fixes": [
+    "Attaching a broad administrative policy to the runtime role to make the error go away, which grants far more than the credential-vending action the job needs"
+  ],
+  "verification": "Re-run the job over a table that IS registered with Lake Formation and confirm it reads; a table that is not registered proves nothing here, because it never used the vended credential",
+  "rollback": "Remove the IAM statement that was added. The account-level integration setting is shared by every engine in the account and is not rolled back per job",
+  "sources": [
+    "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html",
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/full-table-credential-vending.html"
+  ],
+  "last_verified": "2026-09-09"
+}

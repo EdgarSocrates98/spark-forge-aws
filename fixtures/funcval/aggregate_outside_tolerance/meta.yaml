@@ -1,0 +1,24 @@
+name: aggregate_outside_tolerance
+proves: >
+  O agregado de ponto flutuante, longe demais: a soma de `valor` passa de
+  1.000.000,0 para 1.050.000,0 -- `relative_delta` 0,0476, quase cinco por
+  cento -- enquanto contagem, schema e a soma inteira de `cliente_id`
+  ficam identicas. Nenhuma reassociacao de ponto flutuante produz isso, e
+  e por isso que a fixture existe. O que o golden tem de mostrar, e a
+  parte que se perde de vista: `diverged_check_count` e ZERO. O modulo NAO
+  chama isso de divergencia -- o numero que separa reassociacao de
+  divergencia real e heuristica de campo, e heuristica de campo mora no
+  catalogo (D-4c-10). Quem le esse zero precisa ler junto o
+  `relative_delta_check_count: 1`, que diz "houve um delta e o veredito
+  nao e deste modulo" em vez de "nada divergiu". A SF-FVAL-004 e que
+  compara `relative_delta` contra `threshold.relative_tolerance`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules:
+  - SF-FVAL-004

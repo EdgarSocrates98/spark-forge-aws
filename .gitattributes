@@ -1,0 +1,20 @@
+# Artefatos de `fixtures/scan/` sao evidencia presa por sha256 no manifesto
+# (`.sparkforge/artifacts/manifest.json`), e o scan confere o hash dos BYTES
+# crus, como `collect verify`. Um checkout com `core.autocrlf=true` (o padrao
+# dos runners Windows do GitHub Actions) trocava LF por CRLF e o golden inteiro
+# saia `sha256_divergente` -- medido no CI do PR #63, 2026-09-13. `-text` diz ao
+# git para nunca converter esses arquivos.
+fixtures/scan/** -text
+# `fixtures/change/` pelo mesmo motivo: o golden prende o diff byte a byte, o
+# `id` do sandbox e o sha256 do diff mais o dos arquivos copiados, e o
+# aplicador confere linha de contexto contra os bytes do repositorio sintetico.
+fixtures/change/** -text
+# `fixtures/journal/`: a cadeia do journal e sha256 dos BYTES de cada linha
+# (`prev`), e um CRLF introduzido pelo checkout quebraria a cadeia inteira.
+fixtures/journal/** -text
+# `fixtures/sdd/`: cada artefato de spec prende o `text_sha256` do upstream
+# (`sparkforge sdd stamp`), que normaliza CRLF para LF -- o CRLF do checkout
+# nao poe a cascata em `upstream_stale`. `-text` fica para os bytes da fixture
+# serem os mesmos em toda plataforma: o gerador gravou bytes, e o golden e a
+# suite agentica leem a copia do checkout.
+fixtures/sdd/** -text

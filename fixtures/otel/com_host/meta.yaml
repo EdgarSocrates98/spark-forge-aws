@@ -1,0 +1,7 @@
+description: >-
+  Duas chamadas pelo MCP mais o transcript de fixtures/host_transcript/correct_mcp com --provider anthropic: invoke_agent com os quatro gen_ai.usage, tool calls do host como filhos, e a metrica gen_ai.client.token.usage.
+run_id: run_otel_host
+provider: anthropic
+host_transcript: input/transcript.jsonl
+origem:
+  - fixtures/host_transcript/correct_mcp/input/q-mcp.jsonl (transcript, byte a byte)

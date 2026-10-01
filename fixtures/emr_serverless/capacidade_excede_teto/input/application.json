@@ -1,0 +1,45 @@
+{
+  "application": {
+    "applicationId": "00fexcede00000000001",
+    "name": "capacidade-contraditoria",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "CREATED",
+    "architecture": "X86_64",
+    "autoStartConfiguration": {
+      "enabled": true
+    },
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "initialCapacity": {
+      "DRIVER": {
+        "workerCount": 1,
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "30GB",
+          "disk": "20GB"
+        }
+      },
+      "EXECUTOR": {
+        "workerCount": 10,
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "30GB",
+          "disk": "20GB"
+        }
+      }
+    },
+    "maximumCapacity": {
+      "cpu": "100vCPU",
+      "memory": "200GB",
+      "disk": "1000GB"
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

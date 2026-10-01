@@ -1,0 +1,16 @@
+name: job_run_saudavel
+proves: >
+  O negativo de toda a area: uma execucao que declara destino de log, nao esconde
+  segredo, nao pede pod template e nao contradiz a si mesma. Se qualquer regra
+  SF-EMRK disparar aqui, ela acusa configuracao correta -- que e o pior tipo de
+  defeito de regra segundo rules/catalog/README.md.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules: []

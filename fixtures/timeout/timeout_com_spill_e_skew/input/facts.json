@@ -1,0 +1,81 @@
+[
+  {
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0001",
+      "symbol": "jr_0001"
+    },
+    "measures": {
+      "execution_time_s": 3600,
+      "number_of_workers": 10,
+      "timeout_min": 60,
+      "dpu_seconds": 36000.0
+    },
+    "attrs": {
+      "state": "TIMEOUT",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "derived"
+    }
+  },
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.heartbeatInterval"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.heartbeatInterval",
+      "value": "10s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.network.timeout"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.network.timeout",
+      "value": "120s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-4",
+      "stage_id": 4
+    },
+    "measures": {
+      "p50_ms": 100.0,
+      "p95_ms": 1140.0,
+      "max_ms": 1140.0,
+      "task_count": 20.0
+    },
+    "attrs": {}
+  },
+  {
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-4",
+      "stage_id": 4
+    },
+    "measures": {
+      "memory_spill_bytes": 300.0,
+      "disk_spill_bytes": 100.0,
+      "input_bytes": 1000.0
+    },
+    "attrs": {}
+  }
+]

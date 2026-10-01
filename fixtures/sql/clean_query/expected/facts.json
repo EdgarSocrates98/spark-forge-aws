@@ -1,0 +1,81 @@
+[
+  {
+    "id": "f_018a21",
+    "schema_version": 1,
+    "kind": "sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "projection_count": 1,
+      "predicate_count": 1,
+      "unresolved_count": 0,
+      "statement_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "9d46663bc4fbd3e9f3e79825f44390d9916c69e0f503c58b190a99f187657aa8",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_08ce9e",
+    "schema_version": 1,
+    "kind": "sql.predicate",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "column": "order_date",
+      "operator": "=",
+      "value": "'2026-01-01'",
+      "table": "sales.orders",
+      "on_partition_column": null,
+      "type_mismatch": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "9d46663bc4fbd3e9f3e79825f44390d9916c69e0f503c58b190a99f187657aa8",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_353ecb",
+    "schema_version": 1,
+    "kind": "sql.projection",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "column_count": 3
+    },
+    "attrs": {
+      "star": false,
+      "has_limit": false,
+      "table": "sales.orders",
+      "table_format_columnar": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "9d46663bc4fbd3e9f3e79825f44390d9916c69e0f503c58b190a99f187657aa8",
+      "extractor": "sql_literal@0.1.0"
+    }
+  }
+]

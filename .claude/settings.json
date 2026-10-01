@@ -1,0 +1,76 @@
+{
+  "extraKnownMarketplaces": {
+    "sparkforge-caveman": {
+      "source": {
+        "source": "directory",
+        "path": "./vendor"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "caveman@sparkforge-caveman": true,
+    "ck@sparkforge-caveman": true,
+    "caveman@caveman": false,
+    "ck@cavekit": false,
+    "agentspec@agentspec": false
+  },
+  "enabledMcpjsonServers": [
+    "sparkforge"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m sparkforge.policy.hook",
+            "timeout": 10,
+            "statusMessage": "sparkforge: conferindo a policy..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 || { echo 'CAVEMAN MODE ACTIVE - level: full (fallback sem Node)'; cat \"$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md\"; }",
+            "timeout": 5,
+            "statusMessage": "caveman: fallback sem Node..."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "ask": [
+      "Bash(terraform destroy *)",
+      "Bash(terraform apply *)",
+      "Bash(aws s3 rm *)",
+      "Bash(aws lakeformation revoke-permissions *)",
+      "Bash(*expire_snapshots*)",
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Edit(rules/catalog/**)",
+      "Write(rules/catalog/**)",
+      "Edit(**/*.tf)",
+      "Write(**/*.tf)",
+      "mcp__sparkforge__sparkforge_collect_athena_workgroup",
+      "mcp__sparkforge__sparkforge_collect_cloudwatch",
+      "mcp__sparkforge__sparkforge_collect_cloudwatch_logs",
+      "mcp__sparkforge__sparkforge_collect_emr_cluster",
+      "mcp__sparkforge__sparkforge_collect_emr_eks",
+      "mcp__sparkforge__sparkforge_collect_emr_serverless",
+      "mcp__sparkforge__sparkforge_collect_event_log",
+      "mcp__sparkforge__sparkforge_collect_glue_job",
+      "mcp__sparkforge__sparkforge_collect_glue_job_runs",
+      "mcp__sparkforge__sparkforge_collect_glue_resource_link",
+      "mcp__sparkforge__sparkforge_collect_iam_access",
+      "mcp__sparkforge__sparkforge_collect_iceberg_metadata",
+      "mcp__sparkforge__sparkforge_collect_lakeformation",
+      "mcp__sparkforge__sparkforge_collect_parquet_footer"
+    ]
+  }
+}

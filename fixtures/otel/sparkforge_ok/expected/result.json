@@ -1,0 +1,11 @@
+{
+  "counts": {
+    "sparkforge_spans": 3,
+    "host_agent": 0,
+    "host_tool_calls": 0,
+    "exported": 3,
+    "refused": 0
+  },
+  "refused": [],
+  "unresolved": []
+}

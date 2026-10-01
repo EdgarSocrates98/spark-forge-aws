@@ -1,0 +1,213 @@
+[
+  {
+    "id": "f_8def6c",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_ue1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ue1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:09:15,332 ERROR [main] sql.Executor: org.apache.spark.SparkUpgradeException: You may get a different result due to the upgrading to Spark >= 3.0",
+      "log_stream": "jr_ue1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_ue1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_e827cd",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_ue1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ue1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_ue1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_ue1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_798d7d",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 0,
+      "end_line": 5,
+      "symbol": "",
+      "snippet": "spark.conf.set(\"spark.sql.legacy.timeParserPolicy\", \"LEGACY\")"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "conf",
+        "set"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "ad88fd3133ad5ce2b4f701d0838d2eb3a246ae3e56b8e58b7049e066e8b2820d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_234c6c",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 3,
+      "col": 8,
+      "end_line": 3,
+      "symbol": "",
+      "snippet": "spark = SparkSession.builder.getOrCreate()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "builder",
+        "getOrCreate"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "ad88fd3133ad5ce2b4f701d0838d2eb3a246ae3e56b8e58b7049e066e8b2820d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_299fb5",
+    "schema_version": 1,
+    "kind": "pyspark.conf_set",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 0,
+      "end_line": 5,
+      "symbol": "",
+      "snippet": "spark.conf.set(\"spark.sql.legacy.timeParserPolicy\", \"LEGACY\")"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.legacy.timeParserPolicy",
+      "value": "LEGACY"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "ad88fd3133ad5ce2b4f701d0838d2eb3a246ae3e56b8e58b7049e066e8b2820d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4780b2",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true,
+      "referenced_names": [
+        "SparkSession",
+        "builder",
+        "conf",
+        "getOrCreate",
+        "set",
+        "spark"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "ad88fd3133ad5ce2b4f701d0838d2eb3a246ae3e56b8e58b7049e066e8b2820d",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_853020",
+    "schema_version": 1,
+    "kind": "mig.legacy_conf",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.legacy.timeParserPolicy"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "ad88fd3133ad5ce2b4f701d0838d2eb3a246ae3e56b8e58b7049e066e8b2820d",
+      "extractor": "migration@0.1.0"
+    }
+  },
+  {
+    "id": "f_047e79",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_ue1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_ue1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-012"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-012",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:09:15,332 ERROR [main] sql.Executor: org.apache.spark.SparkUpgradeException: You may get a different result due to the upgrading to Spark >= 3.0"
+    },
+    "provenance": {
+      "artifact": "logs/etl-curated_jr_ue1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

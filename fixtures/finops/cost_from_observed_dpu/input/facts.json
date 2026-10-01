@@ -1,0 +1,83 @@
+[
+  {
+    "id": "f_990813",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_observado_0",
+      "symbol": "jr_observado_0"
+    },
+    "measures": {
+      "execution_time_s": 600,
+      "number_of_workers": 5,
+      "dpu_seconds": 7200.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "observed"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_f7784c",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_observado_1",
+      "symbol": "jr_observado_1"
+    },
+    "measures": {
+      "execution_time_s": 600,
+      "number_of_workers": 5,
+      "dpu_seconds": 7200.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "observed"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  },
+  {
+    "id": "f_1280f7",
+    "schema_version": 1,
+    "kind": "glue.job_run",
+    "subject": {
+      "type": "job_run",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_observado_2",
+      "symbol": "jr_observado_2"
+    },
+    "measures": {
+      "execution_time_s": 600,
+      "number_of_workers": 5,
+      "dpu_seconds": 7200.0
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "autoscaling": false,
+      "dpu_source": "observed"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run/"
+    }
+  }
+]

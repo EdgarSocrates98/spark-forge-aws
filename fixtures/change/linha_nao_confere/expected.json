@@ -1,0 +1,15 @@
+{
+  "changes": [],
+  "diff": "",
+  "files": [],
+  "refused": [
+    {
+      "detail": "0 ocorrencia(s) de spark.sql.shuffle.partitions=800 na linha 13; esperava 1",
+      "key": "spark.sql.shuffle.partitions",
+      "reason": "linha_nao_confere",
+      "unlock": "extraia os facts de novo sobre a arvore atual (`sparkforge analyze terraform|pyspark --out`) e passe `--repo` na mesma raiz usada na extracao"
+    }
+  ],
+  "rollback_diff": "",
+  "tune_refused": []
+}

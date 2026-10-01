@@ -1,0 +1,58 @@
+{
+  "Comment": "Fixture sintetica: .sync em paralelo, retry so de erro nomeado, Catch e um Map com Lambda.",
+  "StartAt": "CargasParalelas",
+  "States": {
+    "CargasParalelas": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "CargaClientes",
+          "States": {
+            "CargaClientes": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {"JobName": "carga-clientes"},
+              "Retry": [{"ErrorEquals": ["Glue.ConcurrentRunsExceededException"], "IntervalSeconds": 30, "MaxAttempts": 2, "BackoffRate": 2.0}],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CargaPedidos",
+          "States": {
+            "CargaPedidos": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {"JobName": "carga-pedidos"},
+              "Retry": [
+                {"ErrorEquals": ["Glue.ConcurrentRunsExceededException"], "IntervalSeconds": 30, "MaxAttempts": 2, "BackoffRate": 2.0},
+                {"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 0}
+              ],
+              "End": true
+            }
+          }
+        }
+      ],
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "NotificarFalha"}],
+      "Next": "ValidarLotes"
+    },
+    "ValidarLotes": {
+      "Type": "Map",
+      "ItemsPath": "$.lotes",
+      "ItemProcessor": {
+        "ProcessorConfig": {"Mode": "INLINE"},
+        "StartAt": "ValidarLote",
+        "States": {
+          "ValidarLote": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {"FunctionName": "validar-lote", "Payload.$": "$"},
+            "End": true
+          }
+        }
+      },
+      "End": true
+    },
+    "NotificarFalha": {"Type": "Fail", "Error": "CargaFalhou", "Cause": "Uma das cargas Glue falhou."}
+  }
+}

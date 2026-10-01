@@ -1,0 +1,29 @@
+{
+  "end": "2026-09-09T11:00:00Z",
+  "events": [
+    {
+      "eventId": "e0",
+      "ingestionTime": 1788948000500,
+      "logStreamName": "jr_m4n5o6",
+      "message": "2026-09-09 10:05:00,100 ERROR [main] executor.Executor: Container killed by YARN for exceeding memory limits. 8.1 GB of 8 GB physical memory used",
+      "timestamp": 1788948000000
+    },
+    {
+      "eventId": "e1",
+      "ingestionTime": 1788948000501,
+      "logStreamName": "jr_m4n5o6_g-abc",
+      "message": "2026-09-09 10:05:00,200 ERROR [main] executor.Executor: Container killed by YARN for exceeding memory limits. 8.1 GB of 8 GB physical memory used",
+      "timestamp": 1788948000137
+    }
+  ],
+  "events_collected": 2,
+  "filter_pattern": "",
+  "job_name": "etl-vendas",
+  "job_run_id": "jr_m4n5o6",
+  "log_group": "/aws-glue/jobs/error",
+  "log_stream_prefix": "jr_m4n5o6",
+  "max_events": 2,
+  "start": "2026-09-09T10:00:00Z",
+  "status": "ok",
+  "truncated": true
+}

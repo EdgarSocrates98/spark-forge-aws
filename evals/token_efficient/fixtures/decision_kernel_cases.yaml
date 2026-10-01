@@ -1,0 +1,149 @@
+schema_version: 1
+suite_id: decision-kernel-synthetic-v1
+cases:
+  - id: choice-accepted
+    contract:
+      schema_version: 1
+      contract_id: kernel.choice.accepted
+      contract_version: "1"
+      mode: shadow
+      primitive: choice
+      state:
+        required:
+          - {name: choice, type: string}
+      spec:
+        select_field: choice
+        options: [fast, safe]
+        threshold: 0.7
+        confidence_by_option: {fast: 0.9, safe: 0.8}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {choice: fast}
+    expected_status: accepted
+    expected_selected: [fast]
+  - id: choice-abstain
+    contract:
+      schema_version: 1
+      contract_id: kernel.choice.abstain
+      contract_version: "1"
+      mode: shadow
+      primitive: choice
+      state: {required: [{name: choice, type: string}]}
+      spec:
+        select_field: choice
+        options: [fast, safe]
+        threshold: 0.7
+        confidence_by_option: {fast: 0.4, safe: 0.8}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {choice: fast}
+    expected_status: abstain
+    expected_reason: below_acceptance_threshold
+  - id: boolean-accepted
+    contract:
+      schema_version: 1
+      contract_id: kernel.boolean.accepted
+      contract_version: "1"
+      mode: shadow
+      primitive: boolean
+      state: {required: [{name: enabled, type: boolean}]}
+      spec: {field: enabled}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {enabled: true}
+    expected_status: accepted
+    expected_selected: ["true"]
+  - id: gate-closed
+    contract:
+      schema_version: 1
+      contract_id: kernel.gate.closed
+      contract_version: "1"
+      mode: shadow
+      primitive: gate
+      state: {required: [{name: ready, type: boolean}]}
+      spec:
+        requirements: [{field: ready, equals: true}]
+        on_pass: open
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {ready: false}
+    expected_status: abstain
+    expected_reason: gate_closed
+  - id: score-accepted
+    contract:
+      schema_version: 1
+      contract_id: kernel.score.accepted
+      contract_version: "1"
+      mode: shadow
+      primitive: score
+      state: {required: [{name: quality, type: number}]}
+      spec: {weights: {quality: 1.0}, threshold: 0.75, on_pass: good}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {quality: 0.8}
+    expected_status: accepted
+    expected_selected: [good]
+  - id: route-default-abstain
+    contract:
+      schema_version: 1
+      contract_id: kernel.route.abstain
+      contract_version: "1"
+      mode: shadow
+      primitive: route
+      state: {required: [{name: signal, type: string}]}
+      spec:
+        rules: [{when: [{field: signal, equals: safe}], route: local, priority: 0}]
+        default: abstain
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {signal: unknown}
+    expected_status: abstain
+    expected_reason: no_route_matched
+  - id: threshold-accepted
+    contract:
+      schema_version: 1
+      contract_id: kernel.threshold.accepted
+      contract_version: "1"
+      mode: shadow
+      primitive: threshold
+      state: {required: [{name: score, type: number}]}
+      spec: {field: score, operator: gte, value: 80, on_pass: pass, on_fail: retry}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {score: 80}
+    expected_status: accepted
+    expected_selected: [pass]
+  - id: unresolved-missing-state
+    contract:
+      schema_version: 1
+      contract_id: kernel.unresolved.missing
+      contract_version: "1"
+      mode: shadow
+      primitive: threshold
+      state: {required: [{name: score, type: number}]}
+      spec: {field: score, operator: gte, value: 80, on_pass: pass}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {}
+    expected_status: unresolved
+    expected_reason: missing_state.score
+  - id: refused-active-contract
+    contract:
+      schema_version: 1
+      contract_id: kernel.refused.active
+      contract_version: "1"
+      mode: active
+      primitive: boolean
+      state: {required: [{name: enabled, type: boolean}]}
+      spec: {field: enabled}
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {enabled: true}
+    expected_status: refused
+    expected_reason: active_disabled_by_policy
+  - id: route-cache-hit
+    repeat: 2
+    contract:
+      schema_version: 1
+      contract_id: kernel.cache.route
+      contract_version: "1"
+      mode: shadow
+      primitive: route
+      state: {required: [{name: signal, type: string}]}
+      spec:
+        rules: [{when: [{field: signal, equals: safe}], route: local, priority: 0}]
+      budget: {max_input_bytes: 6000, cache_max_entries: 8}
+    state: {signal: safe}
+    expected_status: accepted
+    expected_selected: [local]

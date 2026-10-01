@@ -1,0 +1,13 @@
+{
+  "Comment": "Fixture sintetica: o Step Functions nao reexecuta a falha do job.",
+  "StartAt": "RodarCarga",
+  "States": {
+    "RodarCarga": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 0}],
+      "End": true
+    }
+  }
+}

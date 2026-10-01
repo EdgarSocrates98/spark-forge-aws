@@ -1,0 +1,6 @@
+# Recusa `core_incompativel`: pede um core que ainda nao existe.
+pack:
+  id: do-futuro
+  version: 1.0.0
+  prefix: FUT
+  core: ">=9.0"

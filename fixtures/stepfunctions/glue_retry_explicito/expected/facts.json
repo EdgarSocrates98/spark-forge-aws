@@ -1,0 +1,109 @@
+[
+  {
+    "id": "f_838bdf",
+    "schema_version": 1,
+    "kind": "sfn.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_machine_count": 1,
+      "task_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "1b7edfe853705e877898df5f4023f7a98a89abbb56187f0b61760debdf0b74ec",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_b1c323",
+    "schema_version": 1,
+    "kind": "sfn.state_machine",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "state_count": 2,
+      "task_count": 1
+    },
+    "attrs": {
+      "type": "undeclared",
+      "type_declared": false,
+      "query_language": "JSONPath",
+      "source": "asl"
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "1b7edfe853705e877898df5f4023f7a98a89abbb56187f0b61760debdf0b74ec",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  },
+  {
+    "id": "f_676495",
+    "schema_version": 1,
+    "kind": "sfn.task",
+    "subject": {
+      "type": "source_location",
+      "file": "carga.asl.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "States/RodarCarga",
+      "snippet": ""
+    },
+    "measures": {
+      "retrier_count": 1,
+      "failure_retry_max_attempts": 1,
+      "timeout_seconds": 99999999
+    },
+    "attrs": {
+      "state_name": "RodarCarga",
+      "resource": "arn:aws:states:::glue:startJobRun.sync",
+      "service": "glue",
+      "api": "startJobRun",
+      "pattern": "sync",
+      "integration": "optimized",
+      "job_name": "carga-diaria",
+      "job_name_dynamic": false,
+      "job_name_source": "literal",
+      "retriers": [
+        {
+          "error_equals": [
+            "States.TaskFailed"
+          ],
+          "max_attempts": 1,
+          "max_attempts_defaulted": false
+        }
+      ],
+      "failure_retry_matched": true,
+      "failure_retry_defaulted": false,
+      "has_catch": true,
+      "has_next": false,
+      "end": true,
+      "enclosing_has_next": false,
+      "effective_has_next": false,
+      "timeout_declared": false,
+      "timeout_dynamic": false,
+      "state_machine_type": "undeclared",
+      "query_language": "JSONPath",
+      "polled_by_get_job_run": false
+    },
+    "provenance": {
+      "artifact": "carga.asl.json",
+      "artifact_sha256": "1b7edfe853705e877898df5f4023f7a98a89abbb56187f0b61760debdf0b74ec",
+      "extractor": "stepfunctions@0.1.0"
+    }
+  }
+]

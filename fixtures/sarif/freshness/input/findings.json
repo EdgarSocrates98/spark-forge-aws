@@ -1,0 +1,430 @@
+[
+  {
+    "rule_id": "SF-ERR-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Permissão do Lake Formation negada em runtime, num job que lê o Data Catalog de outra conta",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "job_name": "etl-dim",
+      "job_run_id": "jr_lf1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_lf1",
+      "event": 0,
+      "signature_id": "ERR-LF-001"
+    },
+    "evidence": [
+      "f_7dc110",
+      "f_205f31"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O job FALHOU com `Insufficient Lake Formation permission(s) on`, e o Terraform declara `spark.hadoop.hive.metastore.glue.catalogid` apontando para outra conta. As duas evidências juntas dizem que a cadeia de concessão entre contas -- convite do AWS RAM aceito, resource link no catálogo da conta consumidora, `SELECT` concedido na conta produtora -- tem um elo faltando, e que ele já custou este run.\n\n**O que a regra NÃO afirma:** QUAL elo. A assinatura `ERR-LF-001` declara `lakeformation.missing_grant` e `ram.unaccepted_share` em `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que este motor emite -- nada aqui lê Lake Formation nem AWS RAM, e o estado dos dois vive em recursos de OUTRA conta, fora do alcance do `.tf` do job. Por isso a ação é `investigate`: a regra localiza a cadeia a conferir, e é o operador que a percorre.\n\nA irmã é `SF-XACC-001`, que marca a mesma dependência a partir do Terraform parado e diz explicitamente que NÃO afirma que ela está quebrada. Esta afirma -- porque o log do run diz.",
+    "proposed_change": [
+      "Confirmar o estado do compartilhamento no AWS RAM da conta consumidora: convite aceito, não pendente.",
+      "Confirmar o `DESCRIBE` no resource link da conta consumidora e o `SELECT` na tabela alvo da conta produtora -- os dois lados, porque um sozinho produz exatamente esta mensagem.",
+      "Ler o nome do recurso na própria linha de log: a mensagem nomeia a tabela ou o banco negado, e é por ele que a conferência começa.",
+      "Se os dados estão encriptados com chave gerenciada pelo cliente, confirmar que a política da chave autoriza o papel da conta consumidora -- a falha de KMS chega com outra mensagem, mas a cadeia é a mesma."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Conceder `Super` no catálogo a `IAMAllowedPrincipals` faz a mensagem sumir e abre o catálogo inteiro -- é o conserto que troca um job quebrado por um controle de acesso que deixou de existir.",
+      "A falha é assimétrica e por isso confunde: o job Spark pode enxergar a tabela e um consumidor de BI da mesma conta não enxergar, porque o resource link é exigido por Athena e Redshift Spectrum e não pelo job. Conferir só o lado que falhou deixa o outro quebrado.",
+      "Conceder a permissão que falta resolve o run e não registra por que ela faltava. Compartilhamento entre contas que muda sem rastro é o que produz a próxima falha igual."
+    ],
+    "tradeoffs": [
+      "Copiar os dados para a conta consumidora elimina a cadeia inteira, ao custo de duplicar armazenamento e de criar uma segunda verdade que precisa ser sincronizada."
+    ],
+    "validation": [
+      "Re-executar o job e confirmar que a leitura passa -- exercitando a MESMA tabela nomeada na linha de log, não uma equivalente.",
+      "Estado do convite no AWS RAM da conta consumidora, e as duas concessões (`DESCRIBE` no resource link, `SELECT` na tabela alvo) lidas depois da mudança.",
+      "Nenhum eixo de dado é exigido, e declarar isso é parte da validação: conceder permissão não muda o conteúdo lido, muda quem consegue lê-lo. Se a leitura passou a devolver linhas onde antes falhava, a contagem contra o esperado do lote é a conferência, não o eixo da mudança."
+    ],
+    "rollback": [
+      "Revogar as concessões acrescentadas devolve o estado anterior. Não é rollback de dado, e o run que falhou continua tendo falhado."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html",
+        "retrieved": "2026-08-15",
+        "note": "Fonte declarada por `knowledge/errors/lakeformation/access_denied_cross_account.json` (`ERR-LF-001`), com `last_verified: 2026-08-15`.\n"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.cross_account_grant",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-PLAN-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Join sem equi-condição — nested loop ou produto cartesiano",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 29,
+      "symbol": "(4) BroadcastNestedLoopJoin",
+      "node_id": 4,
+      "operator": "BroadcastNestedLoopJoin",
+      "relation": ""
+    },
+    "evidence": [
+      "f_6c794f"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela. Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default: é a única regra desta área em que o custo cresce de forma não-linear com o dado, e o dado cresce.",
+    "proposed_change": [
+      "Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.",
+      "Se a comparação for por faixa (BETWEEN, >=/<=), derivar uma chave de bucket discreta dos dois lados, fazer equi-join por ela e aplicar a comparação de faixa como filtro depois.",
+      "Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Introduzir chave de bucket muda a cardinalidade intermediária e pode duplicar linhas se o bucket não for determinístico.",
+      "Promover um filtro a condição de join altera a semântica quando há outer join envolvido."
+    ],
+    "tradeoffs": [
+      "A reescrita por bucket adiciona uma coluna derivada e uma etapa de shuffle que não existiam."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Reextrair o plano e confirmar que a estratégia virou BroadcastHashJoin, ShuffledHashJoin ou SortMergeJoin."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html",
+        "retrieved": "2026-07-31",
+        "note": "SHUFFLE_REPLICATE_NL é o hint de shuffle-and-replicate nested loop join."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."
+      }
+    ],
+    "action": {
+      "kind": "join.restore_equi_condition",
+      "target": "pyspark.join.condition",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-PLAN-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Join sem equi-condição — nested loop ou produto cartesiano",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 33,
+      "symbol": "(5) CartesianProduct",
+      "node_id": 5,
+      "operator": "CartesianProduct",
+      "relation": ""
+    },
+    "evidence": [
+      "f_cad6c5"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela. Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default: é a única regra desta área em que o custo cresce de forma não-linear com o dado, e o dado cresce.",
+    "proposed_change": [
+      "Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.",
+      "Se a comparação for por faixa (BETWEEN, >=/<=), derivar uma chave de bucket discreta dos dois lados, fazer equi-join por ela e aplicar a comparação de faixa como filtro depois.",
+      "Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Introduzir chave de bucket muda a cardinalidade intermediária e pode duplicar linhas se o bucket não for determinístico.",
+      "Promover um filtro a condição de join altera a semântica quando há outer join envolvido."
+    ],
+    "tradeoffs": [
+      "A reescrita por bucket adiciona uma coluna derivada e uma etapa de shuffle que não existiam."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Reextrair o plano e confirmar que a estratégia virou BroadcastHashJoin, ShuffledHashJoin ou SortMergeJoin."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html",
+        "retrieved": "2026-07-31",
+        "note": "SHUFFLE_REPLICATE_NL é o hint de shuffle-and-replicate nested loop join."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."
+      }
+    ],
+    "action": {
+      "kind": "join.restore_equi_condition",
+      "target": "pyspark.join.condition",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-CTM-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Job usa capacidade que a versão declarada do Control-M Automation API não tem",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "PagamentosDiarios/ExtraiExtrato",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_7df929"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A definição usa uma capacidade cuja fronteira de versão a fonte da BMC declara literalmente, e a versão que o operador declarou está do lado errado dessa fronteira. O achado carrega, no próprio fact de evidência, qual capacidade (attrs.capability), qual fronteira (attrs.boundary — uma de introduced_in, changed_in, deprecated_from, discontinued_in), em qual versão ela foi lida (attrs.boundary_version) e qual versão foi declarada (attrs.declared_version). DE ONDE VEM O NÚMERO, e por que ele não está nesta regra. A fronteira mora em knowledge/controlm/automation-api-matrix.yaml, lida da página What's New do Automation API, e o cruzamento acontece no extrator porque o motor de regras avalia expressão sobre um fact de cada vez e esta pergunta cruza duas fontes. Repetir o número aqui faria a segunda cópia do mesmo fato, e duas cópias divergem na primeira atualização. O QUE A VERSÃO É, E O QUE ELA NÃO É. Ela é DECLARAÇÃO do operador, não leitura do artefato: o JSON de Jobs-as-Code não carrega a versão do Control-M que vai executá-lo, e nenhum dos blocos de Job Properties a nomeia. Se a declaração estiver errada, o achado está errado junto — e é por isso que ctm.version_declared marca source operator_declaration e read_from_artifact false. Sem declaração, esta regra não é avaliada: ela sai em skipped com reason requires_facts, e o extrator emite ctm.capability_unresolved com reason version_not_declared. O LIMITE, e ele é grande. Esta é a única incompatibilidade que a fonte sustenta afirmar hoje. Das 31 versões da faixa, 9 não carregam afirmação própria, e 175 linhas de Corrected Problems não couberam em eixo nenhum. A matriz nomeia UM job type na faixa, e a página Job Types publica 71 — os outros 70 são anteriores à faixa e não são sondados, porque acusá-los seria dizer que uma versão não suporta Job:Command. Ausência de achado desta área NUNCA significa compatível: significa que nada do que a matriz sustenta afirmar foi contrariado. O que ficou sem resposta sai em ctm.capability_unresolved e é contado em capability_unresolved_count na sentinela ctm.analyzed. O CUSTO é de DEPLOY, não de execução degradada. Um job type que o Control-M/Server alvo não conhece é rejeitado por ctm deploy, ou aceito e falha na primeira ordenação — e a descoberta acontece no ambiente alvo, depois de o código ter passado por revisão e merge. Ver knowledge/controlm/automation-api-matrix.md.",
+    "proposed_change": [
+      "Confirmar a versão real do Automation API do ambiente alvo antes de qualquer edição: `ctm --version` no cliente, ou a versão que o endpoint publica. A versão deste achado foi DECLARADA, não medida, e um achado sobre uma declaração errada é ruído caro.",
+      "Se a versão declarada está certa, trocar a capacidade pela alternativa que a versão alvo tem. Para `Job:DetachedEmbeddedScript` abaixo da fronteira, a alternativa é `Job:EmbeddedScript` (que a página Job Types publica e a matriz não datava dentro da faixa) mais o desacoplamento explícito no próprio script — o comportamento em background passa a ser do script, não do job type.",
+      "Se a alternativa não existe, atualizar o Control-M do ambiente alvo até a versão que a fronteira nomeia — e tratar isso como mudança de plataforma, com janela e plano próprios, nunca como parte do merge do job.",
+      "Consultar `sparkforge controlm describe --version <alvo>` para ver o que a versão alvo sustenta nos DOIS eixos antes de escolher: capacidade com fronteira, e exigência de componente (Java, Python, pip). Trocar o job type e esbarrar na exigência de Java seria descobrir a segunda barreira depois de já ter pago a primeira.",
+      "Se o achado for falso — a capacidade existe no ambiente e a matriz não sabe —, a correção é a MATRIZ: leia a página What's New da versão e acrescente ou corrija a entrada em knowledge/controlm/automation-api-matrix.yaml. Não silencie a regra."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A versão é declarada pelo operador. Uma declaração desatualizada — o ambiente foi atualizado e ninguém trocou o parâmetro — produz achado sobre uma barreira que já não existe.",
+      "Trocar o job type muda o modelo de execução, não só o nome: `Job:EmbeddedScript` roda em primeiro plano e o Control-M espera o fim; `Job:DetachedEmbeddedScript` desacopla. Trocar sem tratar isso muda o tempo de ocupação do Agent e a semântica de conclusão do job.",
+      "Atualizar o Control-M para cruzar a fronteira arrasta as exigências de componente da mesma faixa — Java 17 a partir de 9.0.21.325, Python 3.8.4 e pip 20.1.1 a partir de 9.0.22.010 — e essas são do Agent e do ambiente, não do JSON.",
+      "A matriz cobre 9.0.21.200 a 9.0.22.100 e é passado FECHADO. Ambiente acima do teto sai em ctm.capability_unresolved e não gera este achado: corrigir com base na fronteira mais próxima seria extrapolar."
+    ],
+    "tradeoffs": [
+      "Manter a capacidade e adiar a atualização é escolha legítima quando o job ainda não foi publicado no ambiente alvo — o custo é o deploy que falha depois, não agora.",
+      "Não há tradeoff de performance: a fronteira é de disponibilidade da capacidade, não de eficiência. A capacidade existe ou não existe naquela versão."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON corrigido, executado contra o endpoint da versão declarada, retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a definição é aceita naquela versão.",
+      "EIXO DE RESULTADO — o workflow produz o mesmo conjunto de jobs. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Trocar o job type não pode acrescentar, remover nem renomear job.",
+      "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e a lista de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item. É o que prova que a troca foi de mecanismo de execução e não de topologia do fluxo.",
+      "EIXO DE RESULTADO — o efeito do job é o mesmo. Uma ordenação (`run order`) no ambiente alvo termina em OK e o artefato que o job produz — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job type novo que roda sem erro e escreve outra coisa é a falha que este eixo existe para pegar.",
+      "`sparkforge analyze controlm-jobs --path <arquivo> --version <a mesma>` não produz mais SF-CTM-001, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar a versão anterior com `ctm deploy`. O rollback é barato porque a definição é código versionado, e não estado — mas ele NÃO desfaz uma ordenação já submetida no ambiente alvo: o job que já entrou no Active continua com a definição com que entrou, e cancelá-lo é operação de runtime, com confirmação de escopo.\n"
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm",
+        "retrieved": "2026-09-01"
+      },
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm",
+        "retrieved": "2026-09-01"
+      },
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-01"
+      },
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm",
+        "retrieved": "2026-09-01"
+      }
+    ],
+    "action": {
+      "kind": "orchestration.replace_unsupported_capability",
+      "target": "controlm.job.capability",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-PY-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Action ou write dentro de loop",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "for lote in lotes:"
+    },
+    "evidence": [
+      "f_85aa2c"
+    ],
+    "measured": {
+      "loop_depth": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Cada iteração reexecuta o DAG a montante desde o início, salvo materialização explícita. Um loop de 50 lotes sobre um DataFrame caro paga 50 vezes a leitura, os joins e os shuffles, e o filtro de lote descarta a maior parte do resultado a cada volta. O batching reduziu o tamanho da escrita, não o trabalho. É também a causa mais comum de OOM que aparece depois de horas, por acúmulo no driver. Ver knowledge/spark/execution-model.md secao 6.",
+    "proposed_change": [
+      "Escrever tudo numa única action, usando partitionBy pela coluna de lote quando o objetivo é separar a saída.",
+      "Se o loop é inevitável, materializar o DataFrame caro uma vez antes dele (tabela intermediária ou checkpoint).",
+      "Reduzir na origem, com filtro que chegue ao pushdown, em vez de filtrar um DAG caro já construído."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Escrita única muda o perfil de commit; em Iceberg reduz o número de snapshots, o que é desejável, mas altera a granularidade de recuperação parcial.",
+      "Materialização intermediária consome armazenamento e adiciona uma etapa a gerenciar."
+    ],
+    "tradeoffs": [
+      "Perde-se a capacidade de retomar de um lote específico após falha, salvo desenho explícito para isso."
+    ],
+    "validation": [
+      "Contagem total de linhas escritas idêntica.",
+      "Contagem por valor da coluna de lote idêntica.",
+      "Agregados de controle idênticos.",
+      "Ausência de duplicação, por distinct da chave primária do resultado."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita em Iceberg",
+      "usar time travel para o snapshot anterior."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Consequência do modelo lazy; medível por N jobs quase idênticos no Spark UI com o mesmo primeiro stage."
+      }
+    ],
+    "action": {
+      "kind": "code.restructure_loop",
+      "target": "pyspark.loop",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-BENCH-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Comparação entre execuções com volumes de entrada diferentes",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "different_input_volume"
+    },
+    "evidence": [
+      "f_78d412"
+    ],
+    "measured": {
+      "total_task_ms_before": 22000.0,
+      "total_task_ms_after": 37600.0,
+      "total_task_ms_delta_pct": 70.9,
+      "total_input_bytes_before": 140000000,
+      "total_input_bytes_after": 280000000,
+      "total_input_bytes_delta_pct": 100.0,
+      "total_spill_bytes_before": 0,
+      "total_spill_bytes_after": 0,
+      "total_gc_ms_before": 1100,
+      "total_gc_ms_after": 1500,
+      "total_gc_ms_delta_pct": 36.4,
+      "total_task_count_before": 10,
+      "total_task_count_after": 10,
+      "total_task_count_delta_pct": 0.0
+    },
+    "threshold": {
+      "input_divergence_pct": 10
+    },
+    "runtime_scope": {},
+    "explanation": "As duas execuções não leram a mesma quantidade de dado, então a diferença de tempo, de spill e de memória entre elas não é atribuível à mudança de código — é atribuível ao volume. É a forma mais comum de benchmark mentiroso, e ela não se corrige lendo o resultado com cuidado: se corrige refazendo a medição sobre o mesmo recorte. As causas típicas não parecem erro de método na hora em que acontecem — a partição do dia seguinte é maior, o bookmark avançou entre as duas coletas, o filtro de data ficou relativo a \"hoje\", o cache do lado depois já estava quente. Esta regra NÃO cala as outras três. Elas afirmam sobre o que foi medido; este achado diz que o que foi medido não sustenta conclusão sobre a mudança. Ler as duas coisas juntas é o que dá o quadro certo, e suprimir uma delas daria um quadro falso — ver o cabeçalho deste arquivo. Limite declarado do gatilho: quando o lado ANTES leu zero byte, o comparador omite `total_input_bytes_delta_pct` (dividir por zero não produz \"infinito por cento\", produz afirmação sem sentido) e esta regra se cala. Os dois totais continuam no fact, e a divergência ali é gritante o bastante para não precisar de percentual — mas quem a vê é o operador, não a regra.",
+    "proposed_change": [
+      "Refazer as duas execuções sobre o mesmo recorte de dado: mesma partição, mesmo intervalo, mesmo filtro, mesma origem.",
+      "Conferir se o lado depois não avançou de bookmark, de watermark ou de janela relativa a `now()` entre as duas coletas — é a causa mais comum, e ela não aparece no código que mudou.",
+      "Se o volume não puder ser fixado, comparar medidas normalizadas por byte lido em vez de totais, e dizer isso no relatório: comparação normalizada é uma afirmação mais fraca, e apresentá-la como se fosse a mesma coisa é o defeito que esta regra acusa."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fixar o recorte pode esconder o efeito da mudança sobre volume variável, que às vezes é justamente o efeito procurado.",
+      "Repetir a execução sobre o recorte original custa tempo de cluster, e em ambiente compartilhado pode não ser reprodutível: outra carga concorrente muda o resultado sem mudar o volume."
+    ],
+    "tradeoffs": [
+      "Recorte fixo mede a mudança com precisão e não mede como ela se comporta com o dado crescendo. As duas perguntas existem; o que não existe é respondê-las com a mesma medição.",
+      "Normalizar por byte lido salva a comparação e enfraquece a conclusão: custo por byte não é linear em Spark, porque shuffle, spill e small files não escalam com o volume lido."
+    ],
+    "validation": [
+      "Comparar `total_input_bytes_before` e `total_input_bytes_after` do próprio fact citado: a diferença precisa cair abaixo do limiar depois de refazer a medição.",
+      "Contagem de linhas lidas de cada fonte nas duas execuções, e não só bytes — compressão diferente muda bytes sem mudar o dado.",
+      "Conferir na sentinela `bench.analyzed` que os artefatos dos dois lados são os dois event logs que se pretendia comparar, e não o mesmo log duas vezes ou os lados trocados."
+    ],
+    "rollback": [
+      "Nenhum — este achado é sobre a medição, não sobre o código. Nada foi mudado no sistema analisado para ser desfeito."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "10% é decisão de campo. Não há fonte oficial que diga a partir de quanto uma divergência de volume invalida a comparação; o número está aqui para ser ajustado com evidência, não para ser citado como autoridade. A ordem de grandeza vem de duas observações: variação de compressão entre execuções da mesma partição fica tipicamente abaixo disso, e uma partição a mais num intervalo diário fica bem acima. A severidade P0 não vem do tamanho da divergência — vem de o achado invalidar a leitura de todos os outros achados desta área."
+      }
+    ],
+    "action": {
+      "kind": "measurement.recollect_comparable_artifacts",
+      "target": "bench.comparison",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

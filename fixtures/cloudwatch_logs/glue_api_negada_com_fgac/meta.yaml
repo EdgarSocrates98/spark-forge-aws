@@ -1,0 +1,31 @@
+name: glue_api_negada_com_fgac
+proves: >
+  O POSITIVO de `SF-ERR-016`, e o achado que a documentacao da AWS resume numa
+  frase: ter `SELECT` no Lake Formation nao salva uma operacao que nao tem a
+  permissao de IAM sobre a API do Glue.
+
+  A linha nomeia `glue:GetTable` -- acao da API, nao concessao de dado --, e o
+  job declara modelo de acesso do Lake Formation. Sao dois planos de
+  autorizacao, e a fixture existe para que o achado diga em qual deles a
+  operacao parou.
+
+  A regra desta fixture NAO filtra por `fgac_enabled`, ao contrario das outras
+  tres: a negacao de API do Glue acontece igual num job de Full Table Access, e
+  exigir a flag ligada esconderia metade dos casos.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - cloudwatch.log_event
+  - cloudwatch.logs.analyzed
+  - error.signature_match
+  - lakeformation.access_model
+  - lakeformation.unresolved
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-016

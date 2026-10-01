@@ -1,0 +1,12 @@
+name: python_invalido
+proves: >
+  Arquivo que nao parseia vira `af.unresolved` com `invalid_python`, com a linha e a
+  coluna que o `SyntaxError` deu, e a sentinela sai do mesmo jeito -- prova de que o
+  arquivo foi visto. Nenhum achado, e nenhuma excecao vazando.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [af.analyzed, af.unresolved]
+expects_rules: []

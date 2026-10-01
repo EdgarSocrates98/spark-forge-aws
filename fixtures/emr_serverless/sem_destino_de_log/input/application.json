@@ -1,0 +1,22 @@
+{
+  "application": {
+    "applicationId": "00fsemlog00000000001",
+    "name": "sem-destino-de-log",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "architecture": "X86_64",
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "monitoringConfiguration": {
+      "managedPersistenceMonitoringConfiguration": {
+        "enabled": false
+      },
+      "cloudWatchLoggingConfiguration": {
+        "enabled": false
+      }
+    }
+  }
+}

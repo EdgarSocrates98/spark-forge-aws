@@ -1,0 +1,487 @@
+[
+  {
+    "id": "f_fd9e38",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "curated-fato",
+      "job_run_id": "jr_cv1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_cv1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:14:02,331 ERROR [main] lakeformation.CredentialProvider: AccessDeniedException: User is not authorized to perform: lakeformation:GetTemporaryGlueTableCredentials on resource: table curated/fato_venda",
+      "log_stream": "jr_cv1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/curated-fato_jr_cv1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_d76c1a",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "curated-fato",
+      "job_run_id": "jr_cv1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_cv1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_cv1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/curated-fato_jr_cv1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_6f83ea",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 10,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {
+      "value": 10
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "10",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_f1fd5d",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {
+      "value": 0
+    },
+    "attrs": {
+      "key": "max_retries",
+      "value": "0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_89d3aa",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 14,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a0a801",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://sparkforge-demo/scripts/fato.py",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_6156d1",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_27e317",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-lakeformation-fine-grained-access",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_caf557",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 21,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ce6966",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 22,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://sparkforge-demo/spark-logs/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_61fd69",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "curated-fato",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_505970",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 7,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "arn:aws:iam::111111111111:role/glue-curated",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_f8a154",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 8,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.1",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_2ee0e7",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 9,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.2X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d9da16",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 12,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_7cd2a7",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ba390e",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {
+      "attribute_count": 12
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "curated_fato"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_9daedd",
+    "schema_version": 1,
+    "kind": "lakeformation.access_model",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "model": "fgac",
+      "fgac_enabled": true,
+      "declared_value": "true",
+      "fta_markers": [],
+      "source": "terraform",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_2450a4",
+    "schema_version": 1,
+    "kind": "lakeformation.unresolved",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.curated_fato"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "permissoes_nao_coletadas",
+      "missing": [
+        "lake_formation_grants",
+        "iam_role_policy",
+        "s3_registered_location"
+      ],
+      "unblocked_by": "coletar os grants do Lake Formation sobre a tabela alvo, a policy do runtime role e o registro da localizacao S3 -- nenhum dos tres entra em artefato que este motor colete hoje",
+      "extractor": "lakeformation@0.1.0"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "505197d3e3821c70e06840bf6786751c6a09017ef58d70ee471b28f031def8f1",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_8a26c1",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "curated-fato",
+      "job_run_id": "jr_cv1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_cv1",
+      "event": 0,
+      "signature_id": "ERR-LF-002"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-LF-002",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:14:02,331 ERROR [main] lakeformation.CredentialProvider: AccessDeniedException: User is not authorized to perform: lakeformation:GetTemporaryGlueTableCredentials on resource: table curat"
+    },
+    "provenance": {
+      "artifact": "logs/curated-fato_jr_cv1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

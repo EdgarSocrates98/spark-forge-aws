@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge.dev/schemas/dq_ai_report.schema.json",
+  "title": "Glue DQ AI governance report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "feature",
+    "runtime",
+    "facts",
+    "findings",
+    "unresolved",
+    "skipped",
+    "compatibility",
+    "cost",
+    "catalog_version",
+    "metrics",
+    "views"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "feature": {"const": "GLUE_DQ_ADVANCED_GOVERNANCE"},
+    "runtime": {"type": "object"},
+    "facts": {"type": "array", "items": {"type": "object"}},
+    "findings": {"type": "array", "items": {"type": "object"}},
+    "unresolved": {"type": "array", "items": {"type": "object"}},
+    "skipped": {"type": "array", "items": {"type": "object"}},
+    "compatibility": {"type": "array", "items": {"type": "object"}},
+    "cost": {"type": "object"},
+    "catalog_version": {"type": "integer", "const": 1},
+    "metrics": {"type": "object"},
+    "views": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "object"}
+    }
+  },
+  "additionalProperties": false
+}

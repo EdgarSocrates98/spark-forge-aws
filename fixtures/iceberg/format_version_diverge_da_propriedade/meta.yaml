@@ -1,0 +1,21 @@
+name: format_version_diverge_da_propriedade
+proves: 'O caso que motivou separar os dois campos: `format_version` do topo diz **3** e `properties[''format-version'']`
+  diz **2**.
+
+  As duas nao sao a mesma coisa. O topo vem do `metadata.json` e e AUTORITATIVO; a propriedade
+  e um par chave/valor que pode ficar para tras de um upgrade, ou nao ter sido propagado pelo
+  coletor. Uma regra ancorada na propriedade julgaria a declaracao, nao a tabela.
+
+  `attrs.diverges` sai **true**, e este e o UNICO golden do corpus em que ele e verdadeiro.
+  Se alguem colapsar os dois campos num so, este golden quebra -- que e exatamente o ponto.
+
+  '
+runtime: {}
+expects_kinds:
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+expects_rules: []

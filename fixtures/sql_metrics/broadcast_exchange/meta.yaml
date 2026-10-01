@@ -1,0 +1,21 @@
+name: broadcast_exchange
+proves: >
+  BroadcastHashJoin com o lado direito (db.clientes) passando por um
+  BroadcastExchange. As metricas do exchange -- "data size", "time to collect",
+  "time to build", "time to broadcast" -- chegam por
+  `SparkListenerDriverAccumUpdates` e saem num `spark.sql.broadcast_exchange`
+  por no, com o tamanho MEDIDO do que foi para o broadcast (24 MiB). Antes elas
+  eram descartadas como acumulador sem no conhecido.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.analyzed
+  - spark.sql.broadcast_exchange
+  - spark.sql.execution
+  - spark.sql.join
+  - spark.sql.join_input
+  - spark.sql.scan
+expects_rules: []

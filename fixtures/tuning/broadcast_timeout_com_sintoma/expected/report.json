@@ -1,0 +1,50 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [],
+  "refused": [
+    {
+      "reason": "no_shuffle_measured",
+      "property": "spark.sql.shuffle.partitions",
+      "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge analyze event-log` produz a medida."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memoryOverhead",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memory",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_footer",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Nenhum `parquet.row_group` com tamanho comprimido. `sparkforge collect parquet-footer --prefix <fonte>` e `sparkforge analyze parquet-footer` o produzem."
+    },
+    {
+      "reason": "sem_explain_cost",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Nenhuma estimativa de join. Gere o plano com `df.explain(\"cost\")` (ou `EXPLAIN COST`) e extraia com `sparkforge analyze plan`."
+    },
+    {
+      "reason": "criterio_de_especulacao_desconhecido",
+      "property": "spark.speculation",
+      "detail": "O log nao declara a versao do Spark (`SparkListenerLogStart`) nem os tres parametros de speculation, e o criterio de task lenta muda no Spark 4.0 (multiplier 1.5 e quantile 0.75 antes, 3 e 0.9 depois)."
+    },
+    {
+      "reason": "relacao_ok",
+      "property": "spark.network.timeout",
+      "detail": "Heartbeat de 10s cabe na espera de 120s: a relacao que a `SF-TIMEOUT-002` confere esta de pe, e o valor isolado nao e certo nem errado (regra 16)."
+    },
+    {
+      "reason": "sintoma_ao_lado",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Sintoma medido ao lado do timeout: skew_p95_over_p50=5 (limiar 3). Subir o limite troca uma falha rapida por uma cara (`SF-TIMEOUT-001`, regra 15)."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+name: volume_filter_changes_the_answer
+job_name: etl_pedidos_diario
+job_run_id: jr_hoje_004
+proves: 'O run de hoje varre 1 GB (dia GRANDE). Capacidade A (G.2X x10) tem 20 runs no historico
+  e custa metade de B por run (1000 vs 2000 dpu-seconds) -- olhando `runs_total`, pareceria
+  a escolha obvia: 15 dos 20 rodaram rapido e dentro do SLA. Mas so 5 desses 20 runs tem volume
+  comparavel ao de hoje (dentro de 25% de 1 GB), e NENHUM deles cumpriu o SLA de 10 minutos
+  -- os 5 runs de dia grande de A levam 900s cada. `runs_comparable` de A e 5, nao 20, e a
+  reliability correta e 0%, nao 75%. Capacidade B (G.4X x10, mais cara por run) tem so 5 runs,
+  todos de dia grande, todos dentro do SLA (300s): e a UNICA que cumpre o SLA quando a comparacao
+  e feita direito, mesmo custando o dobro por run. O filtro de volume muda a resposta: A perderia
+  comparando so o comparavel; B ganha.'

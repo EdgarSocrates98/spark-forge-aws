@@ -1,0 +1,50 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [],
+  "refused": [
+    {
+      "reason": "no_shuffle_measured",
+      "property": "spark.sql.shuffle.partitions",
+      "detail": "Nenhum `spark.stage.shuffle` com `write_bytes` acima de zero. Zero particoes nao e configuracao, e um job sem shuffle nao tem o que paralelizar aqui. `sparkforge analyze event-log` produz a medida."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memoryOverhead",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_memoria_por_executor",
+      "property": "spark.executor.memory",
+      "detail": "Nenhum `spark.executor.memory_usage` nos facts. `sparkforge analyze event-log` o produz a partir de `SparkListenerStageExecutorMetrics`, um fact por executor."
+    },
+    {
+      "reason": "sem_footer",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Nenhum `parquet.row_group` com tamanho comprimido. `sparkforge collect parquet-footer --prefix <fonte>` e `sparkforge analyze parquet-footer` o produzem."
+    },
+    {
+      "reason": "estimativa_sem_estatistica",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Nenhum lado de join tem estatistica: a estimativa e o default do Spark (8.0 EiB). Rode `ANALYZE TABLE <tabela> COMPUTE STATISTICS` na tabela menor e gere o EXPLAIN COST de novo."
+    },
+    {
+      "reason": "sem_tasks_por_executor",
+      "property": "spark.speculation",
+      "detail": "Nenhuma duracao de task nos facts. `sparkforge analyze event-log` a extrai de `SparkListenerTaskEnd`, com o executor de cada task."
+    },
+    {
+      "reason": "sem_relacao_observada",
+      "property": "spark.network.timeout",
+      "detail": "Sem `spark.timeout.relation`: o run nao reportou `spark.executor.heartbeatInterval` e `spark.network.timeout` juntos em `spark.conf_effective`. `sparkforge analyze event-log` seguido de `sparkforge fuse` a produz."
+    },
+    {
+      "reason": "sem_diagnostico_de_broadcast",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Nenhum `spark.timeout.diagnosis` com categoria `broadcast`. Sem o broadcast estourando o limite nao tem o que sustentar; `wall_clock` e `heartbeat` nunca tem valor proposto (regra 15)."
+    }
+  ]
+}

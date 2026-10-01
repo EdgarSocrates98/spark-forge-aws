@@ -1,0 +1,133 @@
+[
+  {
+    "id": "f_32c048",
+    "schema_version": 1,
+    "kind": "cloudwatch.log_event",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_nst1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_nst1",
+      "event": 0
+    },
+    "measures": {
+      "timestamp_ms": 1788948000000.0
+    },
+    "attrs": {
+      "message": "2026-09-09 10:03:22,551 ERROR [main] catalog.SessionCatalog: org.apache.spark.sql.catalyst.analysis.NoSuchTableException: Table or view 'fato_vendas' not found",
+      "log_stream": "jr_nst1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_nst1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_b2bb82",
+    "schema_version": 1,
+    "kind": "cloudwatch.logs.analyzed",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_nst1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_nst1"
+    },
+    "measures": {
+      "events": 1.0,
+      "events_redacted": 0.0,
+      "truncated": 0.0,
+      "max_events": 500.0
+    },
+    "attrs": {
+      "status": "ok",
+      "filter_pattern": "?ERROR ?Exception",
+      "log_stream_prefix": "jr_nst1"
+    },
+    "provenance": {
+      "extractor": "cloudwatch_logs@0.1.0",
+      "artifact": "logs/etl-curated_jr_nst1_aws-glue_jobs_error.json"
+    }
+  },
+  {
+    "id": "f_ddf1c8",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "catalog/tables.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "catalog/tables.json",
+      "artifact_sha256": "303a92726a55c0e77c23a077a64f0c3aa1a337187427bea6fa148b535b67a3d9",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_eec47d",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "catalog/tables.json",
+      "symbol": "curated.fato_venda"
+    },
+    "measures": {
+      "column_count": 3,
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "curated.fato_venda",
+      "storage_format": "parquet",
+      "columnar": true,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "id": "bigint",
+        "valor": "double",
+        "dt": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "catalog/tables.json",
+      "artifact_sha256": "303a92726a55c0e77c23a077a64f0c3aa1a337187427bea6fa148b535b67a3d9",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_be8ea9",
+    "schema_version": 1,
+    "kind": "error.signature_match",
+    "subject": {
+      "job_name": "etl-curated",
+      "job_run_id": "jr_nst1",
+      "log_group": "/aws-glue/jobs/error",
+      "type": "job_run",
+      "symbol": "jr_nst1",
+      "event": 0,
+      "signature_id": "ERR-SPARK-009"
+    },
+    "measures": {},
+    "attrs": {
+      "signature_id": "ERR-SPARK-009",
+      "matched_on": "log_line",
+      "matched_line": "2026-09-09 10:03:22,551 ERROR [main] catalog.SessionCatalog: org.apache.spark.sql.catalyst.analysis.NoSuchTableException: Table or view 'fato_vendas' not found"
+    },
+    "provenance": {
+      "artifact": "logs/etl-curated_jr_nst1_aws-glue_jobs_error.json",
+      "artifact_sha256": "",
+      "extractor": "error_signature@0.1.0"
+    }
+  }
+]

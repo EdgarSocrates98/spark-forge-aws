@@ -1,0 +1,49 @@
+[
+  {
+    "id": "f_3a4141",
+    "schema_version": 1,
+    "kind": "spark.sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "executions": 0,
+      "scan_nodes": 0,
+      "unattributed_accumulators": 0,
+      "malformed_lines": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_83ec86",
+    "schema_version": 1,
+    "kind": "spark.sql.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "no_sql_events",
+      "detail": "Nenhum evento do namespace org.apache.spark.sql.execution.ui neste log. Job que usa so RDD nao publica metrica de plano SQL -- e outra coisa, nao um defeito."
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

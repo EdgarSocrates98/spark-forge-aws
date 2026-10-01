@@ -1,0 +1,28 @@
+name: config_por_caminho_indireto
+source: "5.1"
+target: "6.0"
+proves: >
+  Configuracao que chega ao Spark por caminho INDIRETO: nenhuma chave aparece
+  numa linha `spark.conf.set("fs.s3.consistent", ...)` deste repositorio. O
+  mapa `CONF_PADRAO` vive em `conf/spark_defaults.py` e quem chama
+  `spark.conf.set` e um laco em `conf/sessao.py`, sobre um modulo que nao
+  conhece chave nenhuma. O extrator observa o TEXTO -- a chave esta escrita
+  num literal, e e isso que ele afirma -- entao o achado sobrevive a
+  indirecao. Um extrator que dependesse do formato da chamada ficaria mudo
+  aqui, e o silencio pareceria um job limpo.
+  E o unico cenario deste repositorio cujo desfecho NAO e NO_GO: as duas
+  regras que disparam sao P2 (SF-MIG-002, chave morta do EMRFS; SF-SPARK4-001,
+  config renomeada no Spark 4.0), nenhuma P0 nem P1, entao o gate de
+  compatibilidade fecha em PASS_WITH_RISK e a recomendacao e CONDITIONAL_GO --
+  nunca GO, porque os quatro gates de execucao real seguem BLOCKED. A DECISAO
+  2 de `sparkforge/migration/assessment.py` -- gate por SEVERIDADE, nao por
+  presenca -- so pode ser medida por um cenario que tenha achado sem ter
+  achado grave, e nenhum dos tres de `fixtures/scenarios/` e assim.
+  SF-SPARK4-001 tambem nao aparece em nenhum daqueles tres: um sistema
+  ajustado para eles nao ganharia nada aqui.
+  O `.tf` do mesmo job entra na mesma extracao e nao acusa nada: ele declara
+  observabilidade completa e `--extra-py-files` (o zip do pacote `conf`), que
+  e justamente o mecanismo que torna a indirecao possivel em producao.
+expects_rules:
+  - SF-MIG-002
+  - SF-SPARK4-001

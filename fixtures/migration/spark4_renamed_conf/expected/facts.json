@@ -1,0 +1,70 @@
+[
+  {
+    "id": "f_6a3f6e",
+    "schema_version": 1,
+    "kind": "mig.legacy_conf",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.legacy.parquet.int96RebaseModeInWrite"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "4ba22443b1c5f84d2dcffd8f05c72e0f8553a82668fe64efec304858aad642ab",
+      "extractor": "migration@0.1.0"
+    }
+  },
+  {
+    "id": "f_c4e695",
+    "schema_version": 1,
+    "kind": "mig.renamed_conf",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.legacy.parquet.int96RebaseModeInWrite",
+      "renamed_to": "spark.sql.parquet.int96RebaseModeInWrite"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "4ba22443b1c5f84d2dcffd8f05c72e0f8553a82668fe64efec304858aad642ab",
+      "extractor": "migration@0.1.0"
+    }
+  },
+  {
+    "id": "f_04d3ff",
+    "schema_version": 1,
+    "kind": "mig.renamed_conf",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "lz4raw",
+      "renamed_to": "lz4_raw"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "4ba22443b1c5f84d2dcffd8f05c72e0f8553a82668fe64efec304858aad642ab",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

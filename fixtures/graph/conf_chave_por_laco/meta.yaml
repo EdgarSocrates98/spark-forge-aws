@@ -1,0 +1,20 @@
+name: conf_chave_por_laco
+proves: >
+  A segunda forma de chave ilegivel, e a que a analise estatica nunca vai ler:
+  a chave e a variavel de um laco sobre um dicionario. Difere de
+  `conf_chave_por_constante` no que um constant folding hipotetico resolveria a
+  outra e nao resolve esta -- por isso as duas tem fixture propria, e nao uma so.
+  O `graph.algorithm` sai sem `checkpoint_required` e o ponto cego sai contado em
+  `graph.unresolved` com reason `unreadable_conf_key`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.unresolved
+  - graph.module_analyzed
+expects_rules: []

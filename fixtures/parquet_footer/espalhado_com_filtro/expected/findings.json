@@ -1,0 +1,87 @@
+[
+  {
+    "rule_id": "SF-PQ-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Estatística presente e inútil — row groups cobrem quase todo o domínio da coluna filtrada",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "s3://lake/curated/espalhado_com_filtro/part-00000.parquet",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": "",
+      "column": "id"
+    },
+    "evidence": [
+      "f_2a2760",
+      "f_08ce9e"
+    ],
+    "measured": {
+      "num_row_groups": 3.0,
+      "total_byte_size": 16103.0,
+      "stats_coverage": 1.0,
+      "min_max_coverage": 1.0,
+      "dictionary_coverage": 1.0,
+      "page_index_coverage": 0.0,
+      "bloom_coverage": 0.0,
+      "compression_ratio": 1.740607340247159,
+      "null_fraction": 0.0,
+      "distinct_codecs": 1.0,
+      "avg_range_coverage": 0.9993331110370124,
+      "expected_row_groups_scanned": 2.997999333111037
+    },
+    "threshold": {
+      "cobertura_maxima": 0.5
+    },
+    "runtime_scope": {},
+    "explanation": "A estatística existe e não serve. `knowledge/storage/parquet-layout.md` §2 declara por quê: min/max só é útil se os valores estiverem AGRUPADOS. Dado espalhado faz cada row group cobrir quase todo o domínio, nenhum pode ser descartado, e o pruning é inútil apesar de a estatística estar lá.\n\nÉ o falso negativo que motivou esta área. Um job com arquivos de 512 MB passa por `SF-PQ-001`, tem `PartitionFilters` no plano e passa por `SF-PQ-002`, e lê a tabela inteira — porque `SF-PQ-002` lê o filtro que o plano DECLAROU, e esta mede se aquele filtro CONSEGUE podar.\n\n**O que esta regra NÃO afirma:** que o job vai ler muito. `avg_range_coverage` assume o predicado uniformemente distribuído sobre o domínio observado, e é propriedade do LAYOUT — um filtro que sempre pede o último dia de uma tabela ordenada por data lê pouco mesmo com cobertura alta. Ela nomeia layout que NÃO PODE podar.\n\n**E ela não recomenda a chave de ordenação.** Qual coluna ordenar depende dos outros consumidores da tabela, e essa é decisão do operador — a regra aponta a coluna filtrada cuja estatística não poda.",
+    "proposed_change": [
+      "Ordenar a escrita pela coluna filtrada (`sortWithinPartitions` no Spark, `write.sort-order` em Iceberg) e reescrever — é a mudança que agrupa os valores e faz o min/max separar row groups.",
+      "Antes de escolher a coluna, levantar os OUTROS consumidores da tabela: ordenar por uma coluna melhora o pruning dela e não muda o das demais, e a tabela tem uma ordem só.",
+      "Medir de novo depois — `avg_range_coverage` da mesma coluna no censo seguinte é o número que fecha o achado.",
+      "Se a coluna filtrada é de altíssima cardinalidade e o predicado é de igualdade, avaliar bloom filter como alternativa à ordenação; ele poda sem exigir ordem, ao custo de bytes de footer."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A tabela tem UMA ordem. Ordenar pela coluna de um consumidor pode piorar o pruning de outro, e o segundo só descobre em produção.",
+      "Ordenar na escrita acrescenta um shuffle ao job que escreve: o custo vai para quem escreve, e o ganho para quem lê. Quando são times diferentes, essa transferência precisa ser combinada, não imposta.",
+      "A medida vem da AMOSTRA lida. Com `partial: true`, a cobertura observada pode não representar o prefixo inteiro.",
+      "Reescrever a tabela para reordenar é reprocessamento completo."
+    ],
+    "tradeoffs": [
+      "Ordenação custa shuffle na escrita e ganha pruning na leitura. Vale quando a tabela é lida muito mais vezes do que escrita, e não vale no inverso.",
+      "Bloom filter poda igualdade de alta cardinalidade sem exigir ordem, ao custo de bytes de footer e de nenhum ganho para predicado de faixa."
+    ],
+    "validation": [
+      "`parquet.column_profile.avg_range_coverage` da MESMA coluna, no censo seguinte — é a medida que a mudança move, e publicá-la antes e depois é o que separa \"reordenei\" de \"melhorou\".",
+      "Bytes lidos por uma query de referência que filtre a coluna, antes e depois.",
+      "Contagem total de linhas, contagem de nulos por coluna e agregados de controle idênticos: reordenar é reescrever, e a ordem das linhas mudar é esperado — o CONTEÚDO mudar não é."
+    ],
+    "rollback": [
+      "Manter a tabela anterior até validar a nova, ou time travel em Iceberg. Reordenar não tem rollback barato."
+    ],
+    "sources": [
+      {
+        "url": "https://parquet.apache.org/docs/file-format/metadata/",
+        "retrieved": "2026-09-09",
+        "note": "O formato define a estatística por column chunk; que ela só poda com dado agrupado é consequência aritmética, e está em `knowledge/storage/parquet-layout.md` §2. O limiar de 0.5 é heurística de campo — a MEDIDA não é.\n"
+      }
+    ],
+    "action": {
+      "kind": "storage.set_write_layout_property",
+      "target": "parquet.sort_order",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "scan.bytes_read",
+        "storage.file_layout"
+      ],
+      "depends_on": []
+    }
+  }
+]

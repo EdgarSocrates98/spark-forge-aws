@@ -1,0 +1,68 @@
+{
+  "table": "analytics.pedidos_particionado",
+  "format_version": 2,
+  "properties": {
+    "write.distribution-mode": "hash",
+    "format-version": "2",
+    "write.target-file-size-bytes": "536870912"
+  },
+  "files": [
+    {
+      "file_path": "s3://lake/analytics/pedidos/data/dt=2026-07-29/f00.parquet",
+      "file_size_in_bytes": 402653184,
+      "record_count": 1200000
+    },
+    {
+      "file_path": "s3://lake/analytics/pedidos/data/dt=2026-07-30/f01.parquet",
+      "file_size_in_bytes": 419430400,
+      "record_count": 1250000
+    }
+  ],
+  "delete_files": [],
+  "snapshots": [
+    {
+      "snapshot_id": 7112233445566778899,
+      "committed_at": "2026-07-29T03:00:00Z",
+      "operation": "append"
+    },
+    {
+      "snapshot_id": 7112233445566778900,
+      "committed_at": "2026-07-30T03:00:00Z",
+      "operation": "append"
+    }
+  ],
+  "manifests": [
+    {
+      "path": "s3://lake/analytics/pedidos/metadata/m00.avro",
+      "length": 8192,
+      "added_data_files_count": 1,
+      "existing_data_files_count": 0,
+      "deleted_data_files_count": 0
+    },
+    {
+      "path": "s3://lake/analytics/pedidos/metadata/m01.avro",
+      "length": 9216,
+      "added_data_files_count": 1,
+      "existing_data_files_count": 1,
+      "deleted_data_files_count": 0
+    }
+  ],
+  "partitions": [
+    {
+      "partition": {"dt": "2026-07-29"},
+      "file_count": 1,
+      "record_count": 1200000
+    },
+    {
+      "partition": {"dt": "2026-07-30"},
+      "file_count": 1,
+      "record_count": 1250000
+    }
+  ],
+  "partition_spec": [
+    {"name": "dt", "transform": "identity", "source_column": "dt"}
+  ],
+  "sort_order": [
+    {"column": "pedido_id", "direction": "asc", "null_order": "nulls-first"}
+  ]
+}

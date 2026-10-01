@@ -1,0 +1,24 @@
+# Suite minima das fixtures de `host_transcript`. Nao e gabarito de agente: e o
+# que os goldens de `tests/test_fixtures_golden_host_transcript.py` pontuam. As
+# tres perguntas cobrem os tres formatos que `sparkforge.evals.suite` aceita --
+# inline com resposta, abstencao com ancora, e required_tools com alternativa.
+# O diretorio comeca com `_` para o golden nao o ler como caso.
+schema_version: 1
+id: host_transcript_fixtures
+answer_protocol: >-
+  Termine com uma unica linha `ANSWER: <valor>`, ou `ANSWER: unresolved`.
+questions:
+  - id: q-mcp
+    question: Na fixture coalesce_one, qual rule_id dispara e em qual linha?
+    answer: SF-PY-005:2
+    required_tools: [analyze_pyspark, judge]
+    order: [[analyze_pyspark, judge]]
+  - id: q-abst
+    question: Quantos DPU-segundos consumiu o run?
+    expects_abstention: true
+    anchor: {fixture: finops/no_dpu_no_cost, kind: glue.run_cost.unresolved}
+    required_tools: [finops]
+  - id: q-alt
+    question: Quais as versoes de Spark e Iceberg para Glue 5.0?
+    answer: 3.5.4:1.7.1
+    required_tools: [[runtime_detect, release_describe]]

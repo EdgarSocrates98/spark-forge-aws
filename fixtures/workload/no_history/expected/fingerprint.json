@@ -1,0 +1,79 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_002",
+  "source_count": 1,
+  "axes": {
+    "scan_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "history_absent",
+      "collect_command": "sparkforge collect glue-job-runs --job-name <job>; depois, para cada run anterior: sparkforge analyze sql-metrics --path <event-log-do-run>.jsonl --out <dir-de-historico>/<run>.json"
+    },
+    "file_pressure": {
+      "value": "high",
+      "confidence": "measured",
+      "basis": "files_per_mib",
+      "evidence": [
+        "f_f7283d"
+      ]
+    },
+    "shuffle_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.shuffle",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "skew_risk": {
+      "value": "high",
+      "confidence": "measured",
+      "basis": "task_p95_over_p50",
+      "evidence": [
+        "f_bd836c"
+      ]
+    },
+    "memory_pressure": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.spill",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "join_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "plan.join",
+      "collect_command": "sparkforge analyze plan --path <explain.txt> --out <facts.json>"
+    },
+    "sla_class": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "workload.declared:sla_minutes",
+      "collect_command": "declare o job em workload.yaml com `sla_minutes`"
+    },
+    "primary_input_class": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "workload.declared:primary_source",
+      "collect_command": "declare o job em workload.yaml com `primary_source`"
+    }
+  },
+  "unknown_axes": [
+    "join_intensity",
+    "memory_pressure",
+    "primary_input_class",
+    "scan_intensity",
+    "shuffle_intensity",
+    "sla_class"
+  ]
+}

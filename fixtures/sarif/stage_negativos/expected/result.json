@@ -1,0 +1,44 @@
+{
+  "counts": {
+    "findings": 5,
+    "located": 0,
+    "refused": 5
+  },
+  "refused": [
+    {
+      "rule_id": "SF-UI-001",
+      "severity": "P0",
+      "reason": "callsite_ambiguo",
+      "subject_type": "stage"
+    },
+    {
+      "rule_id": "SF-UI-001",
+      "severity": "P0",
+      "reason": "callsite_ausente",
+      "subject_type": "stage"
+    },
+    {
+      "rule_id": "SF-UI-001",
+      "severity": "P0",
+      "reason": "callsite_nao_python",
+      "subject_type": "stage"
+    },
+    {
+      "rule_id": "SF-UI-001",
+      "severity": "P0",
+      "reason": "callsite_sem_forma",
+      "subject_type": "stage"
+    },
+    {
+      "rule_id": "SF-UI-001",
+      "severity": "P0",
+      "reason": "caminho_ambiguo",
+      "subject_type": "stage"
+    }
+  ],
+  "gate": {
+    "fail_on": "P1",
+    "tripped": true
+  },
+  "exit_code": 1
+}

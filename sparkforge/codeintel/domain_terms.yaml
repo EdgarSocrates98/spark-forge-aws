@@ -1,0 +1,145 @@
+# Dicionario de dominio da expansao de consulta do Code Intelligence.
+#
+# POR QUE ELE E ARQUIVO, E NAO DICT EM PYTHON
+# -------------------------------------------
+# A secao 48 da SPEC exige que a expansao seja DETERMINISTICA e VERSIONADA, e
+# versionada quer dizer que a resposta consegue dizer com QUAL vocabulario ela
+# foi produzida. Um dict embutido no modulo tem a versao do pacote, que muda por
+# mil motivos que nao sao este; um arquivo com `version` proprio muda quando o
+# vocabulario muda, e so ai. `Expansao.versao` carrega este campo justamente
+# para que uma expansao gravada num case possa ser reproduzida depois.
+#
+# POR QUE ELE E CONHECIMENTO DO SPARKFORGE, NUNCA DO REPO ANALISADO
+# ------------------------------------------------------------------
+# A mesma secao 48 e explicita: este arquivo e codigo do SparkForge. Nada aqui
+# pode ser gerado a partir da arvore que esta sendo indexada -- termo vindo do
+# repositorio do cliente entrando no vocabulario seria conteudo nao confiavel
+# influenciando a recuperacao, que e exatamente a superficie que a defesa contra
+# prompt injection da SPEC existe para fechar.
+#
+# COMO LER `clusters`
+# -------------------
+# `gatilhos` sao as palavras que a pergunta pode conter. `termos` sao as
+# palavras que a busca passa a procurar quando um gatilho aparece. Os dois lados
+# sao normalizados (minuscula, acento removido) antes da comparacao, entao
+# escrever "juncao" ou "junção" da no mesmo -- e por isso a forma com acento
+# aparece nos gatilhos onde ela e a forma que alguem digitaria.
+#
+# `termos` inclui o proprio gatilho de proposito: a expansao e um CONJUNTO de
+# busca, nao um substituto da palavra original, e um cluster que jogasse fora o
+# termo que o disparou faria a consulta perder o que o usuario escreveu.
+
+schema_version: 1
+version: "2026-08-24"
+
+# Palavra funcional nao vira termo de busca. Sem esta lista, "problema de skew
+# no join" procuraria por "problema", "de" e "no" no indice -- e "no" casa em
+# meio nome de simbolo Python que exista, o que enche o topo do ranking de
+# ruido que nenhum peso consegue empurrar para baixo depois.
+#
+# TODAS AS ENTRADAS SAO CITADAS, E ISSO NAO E ESTILO. PyYAML resolve YAML 1.1,
+# onde `no`, `on`, `y`, `n`, `yes` e `off` SEM ASPAS viram booleano. Uma lista
+# escrita sem aspas chega ao Python como `[..., False, ..., True, ...]`, e o
+# `casefold()` do carregador levantaria `AttributeError` -- ou pior, um filtro
+# tolerante deixaria "no" passar como termo de busca calado. Ver
+# `test_stopword_booleana_do_yaml_11_chega_como_texto`.
+stopwords:
+  - "a"
+  - "an"
+  - "and"
+  - "ao"
+  - "as"
+  - "com"
+  - "da"
+  - "das"
+  - "de"
+  - "do"
+  - "dos"
+  - "e"
+  - "em"
+  - "for"
+  - "in"
+  - "is"
+  - "na"
+  - "nas"
+  - "no"
+  - "nos"
+  - "o"
+  - "of"
+  - "on"
+  - "os"
+  - "ou"
+  - "para"
+  - "por"
+  - "problema"
+  - "que"
+  - "the"
+  - "to"
+  - "um"
+  - "uma"
+  - "with"
+
+clusters:
+  - id: skew
+    gatilhos: [skew, skewed, assimetria, desbalanceamento, hotkey, hotspot]
+    termos: [skew, salt, salting, broadcast, aqe, adaptive, partition, repartition]
+
+  - id: join
+    gatilhos: [join, juncao, merge, lookup]
+    termos: [join, broadcast, broadcasthashjoin, sortmergejoin, shuffle, aqe]
+
+  - id: shuffle
+    gatilhos: [shuffle, embaralhamento, exchange]
+    termos: [shuffle, exchange, partition, repartition, coalesce, aqe]
+
+  - id: particionamento
+    gatilhos: [particao, particionamento, partition, partitioning, bucket]
+    termos: [partition, repartition, coalesce, partitionby, bucketby, pruning]
+
+  - id: memoria
+    gatilhos: [oom, memoria, memory, heap, spill, gc]
+    termos: [memory, spill, broadcast, collect, topandas, cache, persist]
+
+  - id: cache
+    gatilhos: [cache, persist, checkpoint, materializacao]
+    termos: [cache, persist, unpersist, checkpoint, storagelevel]
+
+  - id: iceberg
+    gatilhos: [iceberg, snapshot, manifest, compaction, compactacao]
+    termos: [iceberg, snapshot, manifest, rewrite, expire, compaction, delete]
+
+  - id: parquet
+    gatilhos: [parquet, columnar, rowgroup]
+    termos: [parquet, rowgroup, compression, schema, pruning, statistics]
+
+  - id: small_files
+    gatilhos: [smallfiles, arquivos, files, listing]
+    termos: [files, listing, coalesce, compaction, target, size]
+
+  - id: glue
+    gatilhos: [glue, worker, dpu, autoscaling, bookmark]
+    termos: [glue, worker, dpu, bookmark, autoscaling, job, argument]
+
+  - id: catalogo
+    gatilhos: [catalog, catalogo, metastore, tabela, table]
+    termos: [catalog, table, database, schema, metadata, partition]
+
+  - id: athena
+    gatilhos: [athena, workgroup, scan, consulta, query]
+    termos: [athena, workgroup, query, scan, bytes, pruning, projection]
+
+  - id: udf
+    gatilhos: [udf, pandasudf, python]
+    termos: [udf, pandas, arrow, serialization, native, expression]
+
+  - id: plano
+    gatilhos: [plano, plan, catalyst, explain, otimizacao, tuning]
+    termos: [plan, explain, catalyst, physical, logical, optimize]
+
+  - id: lineage
+    gatilhos: [lineage, linhagem, dependencia, impacto, impact]
+    termos: [lineage, source, target, read, write, transform, dependency]
+
+  - id: teste
+    gatilhos: [teste, test, cobertura, coverage]
+    termos: [test, fixture, assert, coverage, golden]

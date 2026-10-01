@@ -1,0 +1,602 @@
+[
+  {
+    "id": "f_723efb",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_0"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_3ea7ca",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_1"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_a47b33",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_2"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_f1655b",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_estourou_3",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_estourou_3"
+    },
+    "measures": {
+      "dpu_seconds": 15300.0,
+      "dpu_hours": 4.25,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.87
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_36f45d",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_0"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_a0f844",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_1"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_8f74b8",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_2"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_4d19fe",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_3",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_3"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_f6311e",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_4",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_4"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_86587a",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x10_ok_5",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x10_ok_5"
+    },
+    "measures": {
+      "dpu_seconds": 6000.0,
+      "dpu_hours": 1.6666666666666667,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.7333333333333334
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_2b5243",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_0"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_977324",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_1"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_0fd78c",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_2"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_935ad2",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_3",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_3"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_4cb4a4",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_4",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_4"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_24cf39",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_5",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_5"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_cd8449",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_6",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_6"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_994f34",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_7",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_7"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_33dc51",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_8",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_8"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_455df9",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_x20_9",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_x20_9"
+    },
+    "measures": {
+      "dpu_seconds": 16000.0,
+      "dpu_hours": 4.444444444444445,
+      "price_per_dpu_hour": 0.44,
+      "cost": 1.9555555555555557
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  }
+]

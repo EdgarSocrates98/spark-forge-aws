@@ -1,0 +1,164 @@
+[
+  {
+    "id": "f_33cdd1",
+    "schema_version": 1,
+    "kind": "emr.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "cluster.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "cluster_count": 1,
+      "instance_capacity_count": 2,
+      "configuration_count": 0,
+      "bootstrap_action_count": 0,
+      "unapplied_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "b51f86e3f1d71b4cc3a3d0e039b164dd94b17ab5e5ffa55d2a29d0dc1477e507",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_8589c7",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7QUASELIMIAR/application/Hadoop"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Hadoop",
+      "version": "3.4.0-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "b51f86e3f1d71b4cc3a3d0e039b164dd94b17ab5e5ffa55d2a29d0dc1477e507",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_2ac63a",
+    "schema_version": 1,
+    "kind": "emr.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7QUASELIMIAR/application/Spark"
+    },
+    "measures": {},
+    "attrs": {
+      "name": "Spark",
+      "version": "3.5.2-amzn-1"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "b51f86e3f1d71b4cc3a3d0e039b164dd94b17ab5e5ffa55d2a29d0dc1477e507",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_e0f772",
+    "schema_version": 1,
+    "kind": "emr.cluster",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7QUASELIMIAR"
+    },
+    "measures": {
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_seconds": 82800
+    },
+    "attrs": {
+      "cluster_id": "j-7QUASELIMIAR",
+      "name": "agregacao-noturna",
+      "release_label": "emr-7.5.0",
+      "release": "7.5.0",
+      "instance_collection_type": "INSTANCE_GROUP",
+      "log_uri": "s3://lake-emr-logs/elasticmapreduce/",
+      "log_uri_present": true,
+      "scale_down_behavior": "TERMINATE_AT_TASK_COMPLETION",
+      "auto_terminate": false,
+      "unhealthy_node_replacement": true,
+      "state": "WAITING",
+      "state_change_reason_code": "ALL_STEPS_COMPLETED"
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "b51f86e3f1d71b4cc3a3d0e039b164dd94b17ab5e5ffa55d2a29d0dc1477e507",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_07a630",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7QUASELIMIAR/ig-CORE"
+    },
+    "measures": {
+      "requested_instance_count": 4,
+      "running_instance_count": 4
+    },
+    "attrs": {
+      "id": "ig-CORE",
+      "cluster_id": "j-7QUASELIMIAR",
+      "role": "CORE",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "r5.2xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "b51f86e3f1d71b4cc3a3d0e039b164dd94b17ab5e5ffa55d2a29d0dc1477e507",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  },
+  {
+    "id": "f_83f0e9",
+    "schema_version": 1,
+    "kind": "emr.instance_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7QUASELIMIAR/ig-MASTER"
+    },
+    "measures": {
+      "requested_instance_count": 1,
+      "running_instance_count": 1
+    },
+    "attrs": {
+      "id": "ig-MASTER",
+      "cluster_id": "j-7QUASELIMIAR",
+      "role": "MASTER",
+      "collection_type": "INSTANCE_GROUP",
+      "market": "ON_DEMAND",
+      "has_spot_capacity": false,
+      "has_on_demand_capacity": true,
+      "instance_types": [
+        "m5.xlarge"
+      ],
+      "has_auto_scaling_policy": false,
+      "allocation_strategy": null
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "b51f86e3f1d71b4cc3a3d0e039b164dd94b17ab5e5ffa55d2a29d0dc1477e507",
+      "extractor": "emr_cluster@0.1.0"
+    }
+  }
+]

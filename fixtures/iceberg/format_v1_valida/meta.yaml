@@ -1,0 +1,23 @@
+name: format_v1_valida
+proves: 'Uma tabela **v1**, e ela NAO e defeito. O corpus inteiro era v2 -- 9 de 9 --, entao
+  o eixo de spec nunca fora exercitado: um kind que so ve um valor em todo o corpus nao esta
+  sendo testado, esta sendo assistido.
+
+  Aqui `format_version` e 1 e a propriedade `format-version` esta AUSENTE, que e o caso comum
+  em tabela antiga: ninguem a escreveu porque ela nao existia como propriedade. `attrs.diverges`
+  nao sai -- sem os dois lados, `false` se leria como "conferido e concorda", que e afirmacao
+  sobre um lado que nao existe.
+
+  Nenhuma regra dispara. Julgar v1 como defeito exigiria a matriz de engine E um motivo para
+  subir, e os dois sao do incremento seguinte.
+
+  '
+runtime: {}
+expects_kinds:
+- iceberg.delete_files_summary
+- iceberg.files_summary
+- iceberg.format_version
+- iceberg.snapshots_summary
+- iceberg.table_analyzed
+- iceberg.table_property
+expects_rules: []

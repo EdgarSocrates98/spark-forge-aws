@@ -1,0 +1,13 @@
+{
+  "counts": {
+    "findings": 3,
+    "located": 3,
+    "refused": 0
+  },
+  "refused": [],
+  "gate": {
+    "fail_on": "P0",
+    "tripped": true
+  },
+  "exit_code": 1
+}

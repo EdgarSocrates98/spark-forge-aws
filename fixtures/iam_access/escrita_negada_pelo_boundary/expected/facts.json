@@ -1,0 +1,184 @@
+[
+  {
+    "id": "f_dc51b2",
+    "schema_version": 1,
+    "kind": "iam.access.analyzed",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated"
+    },
+    "measures": {
+      "decisions": 5
+    },
+    "attrs": {
+      "status": "ok",
+      "scoped_to_resource": true,
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_72df42",
+    "schema_version": 1,
+    "kind": "iam.access.unresolved",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "policy_de_recurso_nao_avaliada",
+      "unblocked_by": "bucket policy do S3, key policy do KMS e Glue resource policy sao avaliacao SEPARADA, e nenhum artefato deste motor as coleta hoje",
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_38666f",
+    "schema_version": 1,
+    "kind": "iam.access_decision",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#glue:GetTable@arn:aws:glue:us-east-1:111111111111:table/curated/fato_venda"
+    },
+    "measures": {
+      "matched_statements": 1
+    },
+    "attrs": {
+      "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+      "action": "glue:GetTable",
+      "resource": "arn:aws:glue:us-east-1:111111111111:table/curated/fato_venda",
+      "decision": "allowed",
+      "allowed": true,
+      "denied_by": "",
+      "scoped_to_resource": true,
+      "missing_context_values": [],
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_727266",
+    "schema_version": 1,
+    "kind": "iam.access_decision",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#kms:GenerateDataKey@arn:aws:kms:us-east-1:111111111111:key/abc"
+    },
+    "measures": {
+      "matched_statements": 1
+    },
+    "attrs": {
+      "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+      "action": "kms:GenerateDataKey",
+      "resource": "arn:aws:kms:us-east-1:111111111111:key/abc",
+      "decision": "explicitDeny",
+      "allowed": false,
+      "denied_by": "service_control_policy",
+      "scoped_to_resource": true,
+      "missing_context_values": [],
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_77948b",
+    "schema_version": 1,
+    "kind": "iam.access_decision",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#lakeformation:GetDataAccess@*"
+    },
+    "measures": {
+      "matched_statements": 1
+    },
+    "attrs": {
+      "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+      "action": "lakeformation:GetDataAccess",
+      "resource": "*",
+      "decision": "allowed",
+      "allowed": true,
+      "denied_by": "",
+      "scoped_to_resource": true,
+      "missing_context_values": [],
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_207888",
+    "schema_version": 1,
+    "kind": "iam.access_decision",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:DeleteObject@arn:aws:s3:::sparkforge-demo/curated/*"
+    },
+    "measures": {
+      "matched_statements": 1
+    },
+    "attrs": {
+      "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+      "action": "s3:DeleteObject",
+      "resource": "arn:aws:s3:::sparkforge-demo/curated/*",
+      "decision": "explicitDeny",
+      "allowed": false,
+      "denied_by": "explicit_deny",
+      "scoped_to_resource": true,
+      "missing_context_values": [],
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  },
+  {
+    "id": "f_b148aa",
+    "schema_version": 1,
+    "kind": "iam.access_decision",
+    "subject": {
+      "type": "job_run",
+      "file": "111111111111_glue-curated.json",
+      "symbol": "arn:aws:iam::111111111111:role/glue-curated#s3:PutObject@arn:aws:s3:::sparkforge-demo/curated/*"
+    },
+    "measures": {
+      "matched_statements": 0
+    },
+    "attrs": {
+      "role_arn": "arn:aws:iam::111111111111:role/glue-curated",
+      "action": "s3:PutObject",
+      "resource": "arn:aws:s3:::sparkforge-demo/curated/*",
+      "decision": "implicitDeny",
+      "allowed": false,
+      "denied_by": "permissions_boundary",
+      "scoped_to_resource": true,
+      "missing_context_values": [],
+      "extractor": "iam_access@0.1.0"
+    },
+    "provenance": {
+      "extractor": "iam_access@0.1.0",
+      "artifact": "111111111111_glue-curated.json"
+    }
+  }
+]

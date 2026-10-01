@@ -1,0 +1,868 @@
+﻿# Catálogo de roteamento — direcionamento determinístico
+# Mesmo motor de regras, predicado sobre o estado do case em vez de sobre facts.
+# É isto que faz o próximo passo ser decidido por dado e não por julgamento do modelo,
+# e é o que sobrevive à troca de sessão Devin <-> Claude Code e à troca de modelo.
+#
+# Avaliado em ordem. O primeiro match vira recommended_skill; os seguintes que casarem
+# entram em alternatives, com rank.
+
+catalog_version: 1
+schema_version: 1
+area: ROUTE
+retrieved: 2026-07-29
+
+# Contrato dos gates do case — quem produz a evidência que destrava cada um.
+# `store.set_phase` lê este bloco quando o case tem `strict_gates`: gate com
+# `satisfied_by` é fail-closed nas fases de `guards_phases`; gate sem
+# `satisfied_by` permanece advisory, mesmo sob rigor. A decisão é DADO, não `if`
+# em Python — pela mesma razão que o roteamento de coordenador é dado.
+#
+# Os QUATRO gates de `store.GATES` aparecem aqui, inclusive os advisory: gate
+# ausente do bloco seria ambíguo entre "esqueceram" e "é advisory de propósito".
+#
+# `guards_phases` é LISTA porque `set_phase` valida só pertinência a `PHASES` —
+# nada impede `experiment -> report`, então uma fase só seria contornada pulando
+# fase. A lista é o sufixo de `PHASES` a partir da primeira fase guardada.
+#
+# LIMITE, declarado onde ele opera: a checagem é por PRESENÇA do kind, não por
+# conteúdo do fact. Ela prova que a análise rodou e produziu o artefato que
+# destrava — nunca que ela cobriu todo `scope.entrypoints`, nem que o benchmark
+# é do job certo.
+gates:
+
+  baseline_captured:
+    satisfied_by: bench.run_delta
+    produced_by: "sparkforge benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json"
+    # `experiment` NÃO entra: `bench.run_delta` exige o lado `--after`, que só
+    # existe depois de rodar o job mudado. Guardar `experiment` seria gate
+    # insatisfazível no momento em que morde.
+    guards_phases: [validation, report]
+
+  flows_mapped:
+    satisfied_by: callgraph.reachable_spark_work
+    produced_by: "sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json"
+    # NÃO `callgraph.summary`: aquele kind é emitido incondicionalmente, então
+    # destravaria rodando `analyze call-graph` sobre um facts vazio.
+    # `callgraph.reachable_spark_work` só existe se algum entrypoint alcança
+    # trabalho Spark.
+    guards_phases: [hypothesis, experiment, validation, report]
+
+  dominant_bottleneck_identified:
+    # SEM satisfied_by: dominância é ordenação entre candidatos, e nenhum dos
+    # 102 kinds do vocabulário a afirma. O que se aproxima é um Finding, que
+    # não é Fact -- mora em findings_index e não chega a `set_phase`.
+    advisory_reason: "nenhum fact prova dominancia; o julgamento e do catalogo, nao da evidencia"
+
+  functional_validation_defined:
+    # A Fase 4c entregou o produtor, e o gate endurece DECLARANDO `satisfied_by`
+    # -- sem tocar em uma linha de `store.py`. Era a propriedade que o criterio da
+    # Fase 4b prometia, e ela cobra aqui.
+    #
+    # `funcval.plan`, e NAO `funcval.check_delta` nem `funcval.analyzed`: o nome
+    # do gate diz *defined*, nao *executed*. O que satisfaz e o PLANO, e a ordem
+    # importa -- definir o que validar DEPOIS de medir e escolher o check que
+    # passa. `dq.check` foi medido e REJEITADO na Fase 4b: prova validacao dentro
+    # do job, que e verdade antes e depois da mudanca e nao compara duas execucoes.
+    satisfied_by: funcval.plan
+    # `--facts` e REPETIVEL e precisa ser: o alvo vem do `pyspark.write` e o
+    # schema/os agregados vem do `catalog.table_schema`, e nenhum verbo de
+    # `analyze` produz os dois no mesmo arquivo. `--out` e obrigatorio -- o plano
+    # e a evidencia deste gate, nao uma conveniencia.
+    produced_by: "sparkforge funcval plan --facts .sparkforge/facts.json --facts .sparkforge/facts_catalog.json --out .sparkforge/facts_funcval_plan.json"
+    # SO `report`, e a medicao que decide e o `phase_in` da ROTA que destrava este
+    # gate. Pela R1 da Task 1 da Fase 4b -- o gate nao pode morder numa fase em que
+    # a rota que o destrava ainda opera, senao a rota vira letra morta --, e a rota
+    # aqui e a ROUTE-015 (`blocked_by: [functional_validation_defined]`), que opera
+    # em `[validation, report]`.
+    #
+    # Guardar `validation` mataria a ROUTE-015: ela so casa com o gate FALSO, e um
+    # case sob rigor nao entraria em `validation` com o gate falso -- a unica rota
+    # que manda definir a validacao nunca apareceria para ninguem. Guardando so
+    # `report`, o case entra em `validation`, a ROUTE-015 casa ali, o operador roda
+    # `funcval plan`, e o fechamento passa a exigir o plano. E e literalmente o que
+    # o `reason` da propria ROUTE-015 diz: "definir a validacao antes de fechar o
+    # relatorio".
+    #
+    # A R2 (a fase guardada precisa ser uma em que o fact produtor ja possa
+    # existir) nao empurra nada aqui, ao contrario do `baseline_captured`:
+    # `funcval.plan` e DERIVADO de `pyspark.write` e `catalog.table_schema`, entao
+    # ele e satisfazivel desde `facts` -- muito antes de morder.
+    #
+    # R3: a lista e o sufixo de `PHASES` a partir da primeira fase guardada, e
+    # `report` e a ultima, entao o sufixo tem um elemento so.
+    guards_phases: [report]
+
+rules:
+
+  - id: ROUTE-001
+    phase_in: [intake]
+    title: Runtime não detectado
+    when:
+      any:
+        - {case: runtime.glue, absent: true}
+        - {case: runtime.divergences, count_gt: 0}
+    recommended_skill: sparkforge-diagnose
+    reason: >
+      Sem runtime confirmado, nenhum limiar nem API pode ser aplicado com segurança.
+      Divergência entre fontes não é resolvida escolhendo uma.
+    missing_artifacts: [terraform, event_log]
+    collect_commands: ["sparkforge runtime detect", "sparkforge collect eventlog --job-run <id>"]
+
+  - id: ROUTE-002
+    phase_in: [intake, inventory]
+    title: Sem inventário de código
+    when:
+      all:
+        - {case: facts_index.count, count_eq: 0}
+    recommended_skill: analyze-library-call-graph
+    reason: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.
+    collect_commands: ["sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json"]
+
+  - id: ROUTE-003
+    phase_in: [inventory, diagnosis]
+    title: Fluxos full e incremental não separados
+    when:
+      all:
+        - {case: scope.entrypoints, count_gt: 1}
+        - {case: gates.flows_mapped, equals: false}
+    recommended_skill: design-incremental-processing
+    reason: >
+      Com dois fluxos, o DAG de cada um precisa ser separado antes de diagnosticar.
+      Trabalho global executado no fluxo incremental é a suspeita padrão, e não aparece
+      sem essa separação.
+
+  - id: ROUTE-004
+    phase_in: [diagnosis]
+    title: Action ou write dentro de loop encontrado
+    when:
+      all:
+        - {finding: SF-PY-004, present: true}
+    recommended_skill: analyze-batch-loop
+    reason: >
+      Recomputação de DAG por iteração domina qualquer outro custo e mascara os demais
+      diagnósticos. Resolver antes de investigar joins, skew ou capacidade.
+
+  - id: ROUTE-005
+    phase_in: [diagnosis]
+    title: Executor removido sem OOM de heap
+    when:
+      all:
+        - {finding: SF-UI-005, present: true}
+    recommended_skill: diagnose-oom
+    reason: >
+      Assinatura de estouro de container fora do heap. A correção é memoryOverhead, não
+      memory, e classificar errado leva a "aumentei a memória e continuou".
+
+  - id: ROUTE-006
+    phase_in: [diagnosis]
+    title: Skew de duração com input desigual
+    when:
+      all:
+        - {finding: SF-UI-001, present: true}
+        - {finding: SF-UI-002, present: true}
+    recommended_skill: diagnose-data-skew
+    reason: Duração e input ambos desiguais indicam skew de dados, tratável na chave.
+
+  - id: ROUTE-007
+    phase_in: [diagnosis]
+    title: Skew de duração com input uniforme
+    when:
+      all:
+        - {finding: SF-UI-001, present: true}
+        - {finding: SF-UI-002, present: false}
+    recommended_skill: optimize-pyspark-code
+    reason: >
+      Duração desigual com input uniforme é skew de computação, não de dados.
+      Repartition não resolve. Investigar UDF e explode.
+
+  - id: ROUTE-008
+    phase_in: [diagnosis]
+    title: Pruning de partição ausente
+    when:
+      all:
+        - {finding: SF-PQ-002, present: true}
+    recommended_skill: analyze-spark-plan
+    reason: >
+      Ler a tabela inteira invalida qualquer conclusão sobre capacidade. É o achado de
+      maior alavanca e o mais rápido de confirmar no plano físico.
+
+  - id: ROUTE-009
+    phase_in: [diagnosis]
+    title: Small files dominando
+    when:
+      any:
+        - {finding: SF-PQ-001, present: true}
+        - {finding: SF-ICE-001, present: true}
+    recommended_skill: optimize-parquet-layout
+    reason: >
+      Gargalo de contagem de objetos e round-trips S3. Capacidade não corrige. Se a
+      tabela é Iceberg, seguir para optimize-iceberg-table para corrigir na escrita.
+
+  - id: ROUTE-010
+    phase_in: [diagnosis]
+    title: Dívida de metadados Iceberg
+    when:
+      any:
+        - {finding: SF-ICE-002, present: true}
+        - {finding: SF-ICE-003, present: true}
+    recommended_skill: optimize-iceberg-table
+    reason: >
+      Planejamento lento aponta para manifests, snapshots e delete files, não para data
+      files. Compactar dados quando o problema é metadado custa horas de DPU sem ganho.
+
+  - id: ROUTE-011
+    phase_in: [diagnosis]
+    title: Spill dominante sem skew
+    when:
+      all:
+        - {finding: SF-UI-003, present: true}
+        - {finding: SF-UI-001, present: false}
+    recommended_skill: optimize-pyspark-code
+    reason: >
+      Pressão de memória sem skew: reduzir bytes no shuffle por filtro, projeção e
+      pré-agregação antes de considerar capacidade.
+
+  - id: ROUTE-012
+    phase_in: [diagnosis, hypothesis]
+    title: Gargalo dominante identificado, sem baseline
+    when:
+      all:
+        - {case: gates.dominant_bottleneck_identified, equals: true}
+        - {case: gates.baseline_captured, equals: false}
+    recommended_skill: benchmark-pyspark-job
+    reason: >
+      Sem baseline não há como provar impacto, e qualquer número de ganho seria
+      inventado. Capturar antes de mudar.
+    blocked_by: [baseline_captured]
+
+  - id: ROUTE-013
+    phase_in: [hypothesis, experiment]
+    title: Baseline capturado e gargalo identificado
+    when:
+      all:
+        - {case: gates.baseline_captured, equals: true}
+        - {case: gates.dominant_bottleneck_identified, equals: true}
+        - {case: hypotheses, any_where: {status: open}}
+    recommended_skill: benchmark-pyspark-job
+    reason: >
+      Alterar uma variável principal por experimento e medir. Hipótese aberta sem
+      experimento é opinião.
+
+  - id: ROUTE-014
+    phase_in: [diagnosis]
+    title: Nenhum achado de código, dados ou execução
+    when:
+      all:
+        - {case: findings_index.count, count_eq: 0}
+        - {case: facts_index.count, count_gt: 0}
+    recommended_skill: review-glue-terraform
+    reason: >
+      Facts extraídos e nenhum finding: o código não é o gargalo. Revisar capacidade,
+      observabilidade e configuração de IaC, agora com evidência de que o problema não
+      está no código.
+
+  - id: ROUTE-015
+    phase_in: [validation, report]
+    title: Mudança medida sem validação funcional definida
+    when:
+      all:
+        - {case: gates.functional_validation_defined, equals: false}
+    recommended_skill: review-pyspark-pr
+    reason: >
+      Ganho de performance sem validação de contagem, schema, chaves e agregados não é
+      resultado, é risco. Definir a validação antes de fechar o relatório.
+    blocked_by: [functional_validation_defined]
+
+  - id: ROUTE-016
+    phase_in: [diagnosis]
+    title: Consumo por Athena presente
+    when:
+      all:
+        - {case: scope.consumers, contains: athena}
+    recommended_skill: optimize-iceberg-table
+    reason: >
+      Decisões de formato, particionamento e format version do job determinam o custo em
+      Athena. Verificar as restrições cruzadas antes de recomendar mudança de formato ou
+      de versão de Glue.
+    note: >
+      Ver knowledge/cross-service-constraints.md secao 1. Iceberg V3 escrito por Glue
+      5.1 não é legível por Athena.
+
+  # Rotas de COORDENADOR. Escolher agente deixa de ser julgamento e vira consulta,
+  # pelo mesmo motivo que a escolha de skill virou: prosa dizendo "use o agente certo"
+  # multiplica vocabulario quando ha seis deles.
+  - id: AGENT-001
+    phase_in: [intake, inventory]
+    title: Sem runtime nem inventário
+    when:
+      any:
+        - {case: runtime.glue, absent: true}
+    recommended_agent: spark-performance-architect
+    reason: >
+      Coordenador geral enquanto o terreno não está mapeado. Sem runtime confirmado,
+      nenhuma especialização se justifica — a guarda de versão de qualquer área falha
+      fechada.
+
+  - id: AGENT-002
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em infraestrutura Glue
+    when:
+      all:
+        - {findings_area: SF-GLUE, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O gargalo está na definição do job, não no código: worker, bookmark, retries,
+      observabilidade. Tuning de código não move nenhum deles.
+
+  - id: AGENT-003
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em consulta Athena
+    when:
+      all:
+        - {findings_area: SF-ATH, count_gt: 0}
+    recommended_agent: athena-query-optimizer
+    reason: >
+      Athena cobra por bytes escaneados. O caminho passa por consulta, schema do catálogo
+      e a fusão dos dois — nenhuma das três responde sozinha.
+
+  # A POSIÇÃO NESTE ARQUIVO É PRECEDÊNCIA: `router._matching_rules` devolve na ordem
+  # do YAML e `next_step` projeta `agent_matches[0]`. Esta rota vem ANTES da AGENT-004
+  # de propósito, e é o único par da tabela em que isso precisa ser dito, porque é o
+  # único par que lê O MESMO artefato -- o `.py` do job. SF-DQ é estritamente mais
+  # estreita: um achado dela só existe se alguém rodou o extrator de validação, e a
+  # pergunta que ela responde some junto com as linhas de validação. Deixada depois da
+  # AGENT-004, a rota seria letra morta na prática, porque SF-PY dispara em quase todo
+  # job -- e rota que nunca casa é a mesma classe de defeito que os invariantes de
+  # cobertura desta fase existem para pegar. Nenhuma decisão anterior muda: facts `dq.*`
+  # não existiam antes da Fase 5c, então nenhum case já resolvido tinha como casar aqui.
+  - id: AGENT-008
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em validação de dados
+    when:
+      all:
+        - {findings_area: SF-DQ, count_gt: 0}
+    recommended_agent: data-quality-reviewer
+    reason: >
+      A pergunta é sobre a validação, e não sobre o dado: onde ela roda em relação ao
+      write, se o resultado leva a alguma consequência e quantas passadas ela cobra.
+      Revisão de código responde ao custo da chamada; ela não responde se a garantia
+      que a suíte aparenta dar existe.
+
+  - id: AGENT-089
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em governança de Glue DQ ADVANCED
+    when:
+      all:
+        - {findings_area: SF-DQ-AI, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      O achado trata exposição de dados, fronteira cross-Region, KMS, revisão
+      humana ou compatibilidade estrutural da recomendação ADVANCED. A análise
+      de segurança deve confirmar a cadeia de acesso e os limites declarados.
+
+  # SF-GRAPH entra AQUI, e não numa rota própria antes desta, e o número que decidiu está
+  # medido em `tests/test_rules_graph_boundary.py` e escrito em `agents/pyspark-code-reviewer.md`:
+  # nas 25 fixtures de `fixtures/graph/`, SF-PY dispara 23 vezes em 20 e SF-GRAPH 9 vezes em
+  # 6, e as seis são SUBCONJUNTO das vinte — proporção remedida na revisão final da 6a,
+  # depois de o corpus ir de 19 para 25 fixtures, e ela não mudou de lado. O inverso do que a Fase 5c mediu para SF-DQ,
+  # que por isso ganhou a AGENT-008 com precedência declarada. Como o destino é o MESMO
+  # agente, a pergunta de precedência não existe nesta rota. Antes desta linha, um case com
+  # achados só de grafo voltava de `next_step` com `recommended_agent: None`.
+  - id: AGENT-004
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em código PySpark
+    when:
+      any:
+        - {findings_area: SF-PY, count_gt: 0}
+        - {findings_area: SF-PLAN, count_gt: 0}
+        - {findings_area: SF-CG, count_gt: 0}
+        - {findings_area: SF-GRAPH, count_gt: 0}
+    recommended_agent: pyspark-code-reviewer
+    reason: >
+      Fonte, plano físico e grafo de chamadas são três leituras do mesmo código, e o
+      achado só é forte quando elas concordam. Job de grafo com GraphFrames é uma quarta
+      leitura do mesmo `.py`, e no corpus da própria área o achado de PySpark é o
+      dominante — apagar as linhas de GraphFrames não deixa job nenhum de pé.
+
+  - id: AGENT-005
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em Iceberg ou layout
+    when:
+      any:
+        - {findings_area: SF-ICE, count_gt: 0}
+        - {findings_area: SF-PQ, count_gt: 0}
+    recommended_agent: iceberg-performance-engineer
+    reason: >
+      Distinguir data files, delete files, manifests, snapshots e metadata files decide
+      qual manutenção resolve — e compactar a camada errada gasta DPU sem efeito.
+
+  - id: AGENT-006
+    phase_in: [diagnosis, hypothesis, experiment]
+    title: Fluxo incremental com latest-per-key
+    when:
+      any:
+        - {case: scope.entrypoints, contains: incremental}
+    recommended_agent: glue-incremental-performance-architect
+    reason: >
+      Fluxo full e incremental no mesmo job, latest-per-key em tabela bilionária e
+      batching exigem mapear a biblioteca inteira antes de qualquer tuning localizado.
+
+  # `SF-EMRS` entra AQUI, e a correção é PRÉ-EXISTENTE — não é regressão da Fase 6a.
+  # `emr-infra-reviewer` declara a área em `rule_areas` desde a Fase 5d, e a condição
+  # casava `findings_area` por IGUALDADE exata: um case só com achados de EMR
+  # Serverless — as seis regras `SF-EMRS-*` — voltava de `next_step` com
+  # `recommended_agent: None`, sem coordenador nenhum. `all:` com uma condição vira
+  # `any:` com duas, e o destino é o mesmo agente, então não há pergunta de
+  # precedência dentro desta rota. Um case com SF-GLUE junto continua indo para a
+  # AGENT-002, que vem antes: nada do despacho já existente muda.
+  - id: AGENT-007
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em infraestrutura EMR — cluster, Serverless ou on EKS
+    when:
+      any:
+        - {findings_area: SF-EMR, count_gt: 0}
+        - {findings_area: SF-EMRS, count_gt: 0}
+      # `SF-EMRK` entra AQUI pela MESMA razao que `SF-EMRS` entrou na Fase 5d, e o
+      # precedente esta escrito acima: `all:` com uma condicao ja virou `any:` com
+      # duas porque um case so de Serverless voltava de `next_step` com
+      # `recommended_agent: None`. Um case so de EMR on EKS teria o mesmo destino
+      # sem esta linha. O agente e o mesmo, entao nao ha pergunta de precedencia
+      # dentro desta rota.
+        - {findings_area: SF-EMRK, count_gt: 0}
+    recommended_agent: emr-infra-reviewer
+    reason: >
+      O gargalo ou o risco está na definição do cluster, da application ou da execução,
+      não no código: modelo de instância, purchasing option por papel, managed scaling e
+      Configurations em dois níveis no EMR on EC2; capacidade pré-inicializada faturada
+      com a application ociosa, janela de auto-stop e segredo em `runtimeConfiguration`
+      no Serverless. Em EMR on EKS o objeto é outro de novo — cluster virtual mapeado a
+      um namespace de Kubernetes, papel de execução declarado por job run, e as DUAS
+      superfícies de configuração (`applicationConfiguration` e `sparkSubmitParameters`,
+      com a segunda vencendo a primeira) —, e o destino de log é por execução: não há
+      armazenamento gerenciado com retenção publicada, então a ausência do bloco de
+      monitoramento já é ausência de log, e não default seguro como no Serverless.
+      Nenhum deles tem equivalente em Glue, e a correção é a próxima submissão ou o
+      próximo provisionamento — não uma edição no que já está em execução.
+
+  # AS TRÊS ÁREAS DE MEDIÇÃO, e a posição desta rota é precedência declarada.
+  # `SF-UI`, `SF-BENCH` e `SF-FVAL` são as três áreas cujo artefato é uma EXECUÇÃO —
+  # a Spark UI de um job que rodou, a comparação entre duas execuções, a validação
+  # funcional de antes e depois —, e `spark-performance-architect` é o único
+  # coordenador que declara as três em `rule_areas`. Como ele também declara `SF-PY` e
+  # `SF-PLAN`, esta rota vem DEPOIS da AGENT-004: um case com achado de código e de
+  # execução continua indo para o `pyspark-code-reviewer`, exatamente como antes desta
+  # linha existir. Medido: nenhum despacho já resolvido muda, porque antes daqui as
+  # três áreas não casavam rota nenhuma.
+  - id: AGENT-009
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em medição de execução
+    when:
+      any:
+        - {findings_area: SF-UI, count_gt: 0}
+        - {findings_area: SF-BENCH, count_gt: 0}
+        - {findings_area: SF-FVAL, count_gt: 0}
+        - {findings_area: SF-TIMEOUT, count_gt: 0}
+        - {findings_area: SF-WASTE, count_gt: 0}
+    recommended_agent: spark-performance-architect
+    reason: >
+      O achado veio de uma execução medida — Spark UI, comparação entre duas execuções,
+      validação funcional de antes e depois, diagnóstico de timeout ou folga de capacidade
+      —, e nenhuma delas responde sozinha qual é o gargalo dominante. Correlacionar código,
+      plano físico e medição é o trabalho do coordenador geral, e é ele quem decide se a
+      especialização se justifica.
+
+
+      A PRECEDÊNCIA das duas áreas novas é esta rota, e não uma própria, porque as duas
+      terminam na mesma pergunta que ela já faz. `SF-TIMEOUT` nomeia QUAL timeout, e a
+      categoria só vira decisão depois de cruzar com skew, spill e GC — que são `SF-UI`.
+      `SF-WASTE` é o par que separa folga de ociosidade por skew, e a segunda metade dele
+      é literalmente um limiar de `SF-UI-001`. Rotear qualquer uma das duas para um
+      coordenador que não vê a medição de execução mandaria a pergunta para quem não tem
+      a evidência que a responde.
+
+  # `SF-ENV` POR ÚLTIMO, e a razão é que ela é a área que TRÊS coordenadores declaram:
+  # `glue-infra-reviewer`, `emr-infra-reviewer` e `glue-incremental-performance-architect`.
+  # A posição resolve o empate sem inventar condição de runtime: quando há qualquer
+  # evidência de outra área — Glue, EMR, Iceberg, código —, a rota daquela área vem antes
+  # e leva o case. Esta só casa quando SF-ENV é TUDO que há, e aí a pergunta é sobre a
+  # definição do job (versão de Glue, `glueContext`, default de AQE, format version do
+  # Iceberg), que é o assunto do `glue-infra-reviewer`.
+  # `SF-CTM` VAI PARA O ESPECIALISTA DE RUNTIME, e a razão é a mesma que já leva
+  # `SF-MIG` e `SF-SPARK4` para lá: a pergunta é de **compatibilidade entre
+  # versões**, e o que muda é o produto, não o tipo de pergunta. O coordenador
+  # declara a área em `rule_areas` e já cita `sparkforge_controlm_describe` — o
+  # verbo que responde o outro lado da mesma pergunta ("o que a versão alvo tem?").
+  #
+  # ROTA PRÓPRIA, e não uma linha a mais na AGENT-007 (infraestrutura EMR). Ali o
+  # `any:` cresceu porque as três áreas são a mesma plataforma vista de três
+  # ângulos e o destino é o mesmo agente. Control-M não é EMR, não roda Spark e
+  # não tem cluster: enfiá-lo naquele `any:` mandaria o case para um coordenador
+  # cujo vocabulário inteiro — instance fleet, purchasing option, namespace de
+  # Kubernetes — não descreve nada do artefato.
+  #
+  # POSIÇÃO: antes da AGENT-010 (`SF-ENV` sozinha, que é a rota de desempate por
+  # último) e depois de todas as que decidem por evidência de plataforma. Um case
+  # que tenha achado de Glue, EMR, Iceberg ou código continua indo para a rota
+  # daquela área, exatamente como antes desta linha existir — medido: antes daqui
+  # `SF-CTM` não casava rota nenhuma e um case só de Control-M voltava de
+  # `next_step` com `recommended_agent: None`, que é o defeito que `SF-EMRS` teve
+  # por uma fase inteira.
+  #
+  # O ID É `AGENT-082` e a POSIÇÃO é aqui — os dois são independentes. A
+  # numeração `AGENT-0NN` é só identidade, e o espaço até `AGENT-081` já está
+  # tomado pela expansão agêntica; o que decide precedência é a ORDEM de
+  # avaliação, e ela põe esta rota antes da AGENT-010 e depois de todas as que
+  # decidem por evidência de plataforma.
+  # `SF-BRIDGE` e a PRIMEIRA area que cruza artefato estatico com artefato de
+  # execucao, e por isso ela nao herda a rota de nenhuma das duas metades:
+  # `SF-PY` iria para quem le codigo e `SF-SPARK` para quem le event log, e o
+  # caso precisa de alguem que saiba pedir OS DOIS.
+  #
+  # A posicao e ANTES de AGENT-082 porque um caso pode ter achado de ponte E de
+  # outra area, e a ponte e a leitura mais forte: ela ja tem execucao ao lado.
+  - id: AGENT-083
+    phase_in: [diagnosis, hypothesis]
+    title: Achado que cruza codigo-fonte com event log
+    when:
+      all:
+        - {findings_area: SF-BRIDGE, count_gt: 0}
+    recommended_agent: spark-performance-architect
+    reason: >
+      O achado nasce do cruzamento entre uma leitura estatica do codigo e um
+      stage medido no event log, e a proxima pergunta e de correlacao entre
+      plano, execucao e codigo -- que e exatamente o que este coordenador
+      compoe. Manda-lo para quem le so uma das metades faria o caso voltar
+      pedindo o artefato que ja esta na mesa.
+
+  - id: AGENT-082
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em definição Jobs-as-Code do Control-M
+    when:
+      all:
+        - {findings_area: SF-CTM, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      O achado é sobre a definição de job do Control-M cruzada com a versão do
+      Automation API do ambiente alvo, e a fronteira é de VERSÃO — a mesma
+      natureza de pergunta que `SF-MIG` e `SF-SPARK4` já fazem, sobre outro
+      produto. Quem responde precisa ler os dois eixos que a matriz publica
+      (capacidade com fronteira, e exigência de componente: Java, Python, pip),
+      porque trocar o job type e esbarrar na exigência de Java seria descobrir a
+      segunda barreira depois de já ter pago a primeira. E precisa lembrar que a
+      versão foi DECLARADA pelo operador, nunca lida do artefato: confirmar a
+      versão real do ambiente vem antes de qualquer edição no JSON.
+
+  - id: AGENT-010
+    phase_in: [diagnosis, hypothesis]
+    title: Achado apenas em ambiente e runtime
+    when:
+      all:
+        - {findings_area: SF-ENV, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O achado é sobre o ambiente em que o job roda, e não sobre o que ele faz: divergência
+      entre fontes de detecção de runtime, format version escrita por um runtime e lida por
+      outro, observabilidade declarada sem o contexto que a alimenta. Todos se decidem na
+      definição do job, e nenhum se resolve editando transformação.
+
+# Fallback: nenhuma regra casou.
+  - id: AGENT-013
+    phase_in: [diagnosis, hypothesis]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_runtime__"}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Explicit runtime specialist mode.
+  - id: AGENT-026
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_terraform__"}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Explicit sf-terraform-specialist mode.
+  - id: AGENT-071
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_security__"}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      Security governance mode uses the security coordinator.
+  - id: AGENT-075
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_lake_governance__"}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      Lake governance mode uses the Lake Formation coordinator.
+
+  # SF-MIG entrou na Task 7 desta fase (compatibilidade de migracao entre
+  # versoes de Glue: SDK v1 fora do classpath, EMRFS virando S3A, cast sem
+  # guarda sob ANSI mode) e o commit que ligou o coordenador (`ad176ff`) so
+  # editou `agents/sf-runtime-specialist.md` -- acrescentou SF-MIG a
+  # `rule_areas` sem escrever rota nenhuma aqui. Declarar nao e rotear, o mesmo
+  # furo que custou SF-BENCH/SF-EMRS/SF-ENV/SF-FVAL/SF-UI antes desta fase (ver
+  # cabecalho deste arquivo de teste em `tests/test_router_agents.py`): um case
+  # so com achados SF-MIG voltava de `next_step` com `recommended_agent: None`.
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-MIG em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota.
+  - id: AGENT-076
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-MIG, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Compatibilidade entre versoes de Glue numa migracao -- import de SDK
+      sobrevivendo em runtime que nao o carrega mais, configuracao exclusiva
+      do EMRFS num runtime S3A, cast sem guarda sob ANSI mode. Nenhum se
+      resolve editando transformacao de negocio; todos se decidem na fronteira
+      de runtime que a migracao cruza.
+
+  # SF-SPARK4 entrou depois de SF-MIG e ganha ENTRADA PROPRIA, nao um `any` na
+  # de cima. Declarar a area em `rule_areas` do agente NAO roteia -- e o furo
+  # que orfanou SF-BENCH/SF-EMRS/SF-ENV/SF-FVAL/SF-UI e, de novo, o proprio
+  # SF-MIG na Task 7. Entrada separada porque `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-SPARK4-001` ->
+  # `SF-SPARK4`), entao a contagem de SF-MIG nunca inclui SF-SPARK4: um case so
+  # com achados de Spark 4 voltaria de `next_step` com
+  # `recommended_agent: None` se dependesse da regra acima.
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-SPARK4 em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota.
+  - id: AGENT-077
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-SPARK4, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Compatibilidade do codigo com o Apache Spark 4 -- config que mudou de
+      nome e parou de ser lida, API de pandas-on-Spark removida que quebra em
+      runtime, pin de dependencia Python abaixo do piso do 4.1. A fronteira e
+      do Apache e nao do Glue, entao vale igual num EMR com Spark 4; quem
+      decide os tres e quem conhece o runtime, nao quem conhece a regra de
+      negocio.
+  # SF-LF entrou com a area de Lake Formation FGAC e ganha ENTRADA PROPRIA, pelo
+  # mesmo motivo que SF-SPARK4 ganhou a dela: declarar a area em `rule_areas` do
+  # agente NAO roteia. Esse foi o furo que orfanou SF-BENCH/SF-EMRS/SF-ENV/
+  # SF-FVAL/SF-UI, depois SF-MIG e depois SF-SPARK4, e `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-LF-001` -> `SF-LF`),
+  # entao nenhuma contagem de outra area inclui esta.
+  #
+  # `sf-lake-formation-specialist` e o UNICO coordenador que declara SF-LF em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota. Ele nao e
+  # `glue-infra-reviewer` (AGENT-002) de proposito, ainda que as duas regras
+  # leiam `aws_glue_job` do Terraform -- a decisao que o achado exige nao e de
+  # dimensionamento nem de observabilidade, e de GOVERNANCA -- escolher entre
+  # controle de acesso fino e uma dependencia do job, sabendo o que cada lado
+  # custa em permissao concedida. Um case com SF-GLUE junto continua indo para a
+  # AGENT-002, que vem antes.
+  - id: AGENT-078
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em controle de acesso fino do Lake Formation
+    when:
+      all:
+        - {findings_area: SF-LF, count_gt: 0}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      O job pede, no mesmo `aws_glue_job`, duas coisas que a AWS declara
+      incompativeis sob FGAC -- JAR adicional, que o Glue bloqueia para
+      preservar o isolamento do system driver, ou streaming, que esta na lista
+      de nao suportados. Nao existe meio-termo de configuracao -- a escolha e
+      entre FGAC e a outra metade, e ela se decide com quem responde pela
+      governanca do dado, nao com quem tuna o job.
+
+  # SF-KMS, SF-NET e SF-XACC entraram com os tres eixos da secao 32 que o
+  # contrato de migracao nomeava e ninguem preenchia, e cada uma ganha ENTRADA
+  # PROPRIA pelo mesmo motivo que SF-LF ganhou a dela: declarar a area em
+  # `rule_areas` do agente NAO roteia, e `findings_area` conta por prefixo
+  # exato do `rule_id` ate o ultimo hifen. Sem estas tres, os quatro achados
+  # novos cairiam no fallback.
+  #
+  # PRECEDENCIA, e ela e deliberada. As tres vem DEPOIS de AGENT-002
+  # (`glue-infra-reviewer`, achado dominante em infra de Glue): um case que
+  # tenha SF-GLUE junto continua indo para la, porque dimensionamento e
+  # observabilidade sao a conversa maior. Estas tres so pegam o case cujo
+  # achado dominante e do eixo delas.
+  # SF-IAM entrou com `collect iam-access` (2026-09-09) e ganha ENTRADA PROPRIA
+  # pelo mesmo motivo das anteriores: declarar a area em `rule_areas` NAO
+  # roteia, e `findings_area` conta por prefixo exato do `rule_id`. Sem esta
+  # entrada, um case cujo unico achado e "a acao foi negada pelo boundary"
+  # cairia no fallback -- e o fallback nao sabe que a conversa e de quem
+  # administra a policy, e nao de quem tuna o job.
+  - id: AGENT-085
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em autorizacao de IAM e rota ate quem responde por policy
+    when:
+      all:
+        - {findings_area: SF-IAM, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      A AWS respondeu que a acao esta negada e nomeou a CAMADA -- permissions
+      boundary, service control policy, ou `Deny` explicito. Nos tres casos o
+      conserto nao esta na policy que o time do job abriria primeiro: o boundary
+      e teto de plataforma, a SCP e da organizacao, e o `Deny` foi escrito de
+      proposito por alguem. Quem decide os tres e quem responde por policy.
+
+  - id: AGENT-079
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em encriptacao e rota ate o KMS
+    when:
+      all:
+        - {findings_area: SF-KMS, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      O job declara encriptacao -- security configuration, ou Iceberg com
+      server-side encryption propria -- e a documentacao da AWS exige, junto,
+      uma configuracao que o bloco do job nao mostra: rota ate o endpoint do
+      KMS, ou a configuracao de SSE da propria tabela. Quem confere isso e quem
+      responde por chave e politica, nao quem tuna o job.
+
+  - id: AGENT-080
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em conectividade de VPC
+    when:
+      all:
+        - {findings_area: SF-NET, count_gt: 0}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Declarar `connections` coloca o job dentro da VPC e transfere para a rede
+      a responsabilidade por alcancar o S3 e por deixar os componentes do Glue
+      se falarem. As duas exigencias vivem em security group e tabela de rotas,
+      que sao recursos de Terraform -- e e no Terraform que a confirmacao
+      acontece, nao no codigo do job.
+
+  - id: AGENT-081
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em leitura de catalogo entre contas
+    when:
+      all:
+        - {findings_area: SF-XACC, count_gt: 0}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      O job aponta para o Data Catalog de outra conta, e a cadeia que sustenta
+      isso -- concessao do Lake Formation, aceitacao do convite do AWS RAM,
+      resource link na conta consumidora -- vive fora deste artefato e e
+      operada por outro time. E decisao de governanca de dado compartilhado, a
+      mesma familia de SF-LF.
+
+  # SF-ERR entrou com a frente de stacktrace intelligence e ganha ENTRADA
+  # PROPRIA, pelo mesmo motivo que SF-SPARK4 e SF-LF ganharam as delas:
+  # declarar a area em `rule_areas` do agente NAO roteia, e `findings_area`
+  # conta por prefixo exato do `rule_id` ate o ultimo hifen (`SF-ERR-001` ->
+  # `SF-ERR`). Sem esta entrada, um case cujo unico achado e a excecao
+  # confirmada voltaria de `next_step` com `recommended_agent: None`.
+  #
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-ERR, e a
+  # escolha nao e por eliminacao: as duas regras da area sao a metade
+  # `confirmed` do que SF-SPARK4-004 e a area SF-MIG ja afirmam de forma
+  # estrutural -- fronteira binaria de Scala e piso de SDK numa migracao para o
+  # Glue 6.0 --, e ele ja declara SF-SPARK4 e SF-MIG, com as skills
+  # `migrate-glue-6` e `spark4-compatibility`. O achado nao se resolve editando
+  # transformacao de negocio; resolve-se no artefato que o IaC entrega ao
+  # classpath.
+  #
+  # PRECEDENCIA: vem DEPOIS de AGENT-002 (`glue-infra-reviewer`), como
+  # SF-LF/SF-KMS/SF-NET/SF-XACC. Um case que tenha SF-GLUE junto continua indo
+  # para la, porque dimensionamento e observabilidade sao a conversa maior.
+  - id: AGENT-084
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em excecao confirmada em runtime
+    when:
+      all:
+        - {findings_area: SF-ERR, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      O job LANCOU a excecao, e a assinatura que casou aponta para a fronteira
+      de runtime da migracao -- JAR compilado contra um Scala que o Glue 6.0 nao
+      carrega, ou SDK empacotado abaixo do piso do runtime com
+      `--user-jars-first` ligado. Quem decide os dois e quem conhece o runtime e
+      o classpath que o IaC monta, nao quem conhece a regra de negocio.
+
+  # SF-SFN entrou com `docs/sdd/STEP_FUNCTIONS/` (2026-09-19) e ganha ENTRADA PROPRIA
+  # pelo motivo de sempre: `rule_areas` do agente NAO roteia, e `findings_area` conta
+  # por prefixo exato do `rule_id` ate o ultimo hifen.
+  #
+  # `glue-infra-reviewer` e o dono porque as quatro regras julgam COMO o job Glue e
+  # disparado e quantas vezes ele roda -- padrao de integracao, retry do Step
+  # Functions, retry do proprio job --, a mesma conversa de `max_retries` que ele ja
+  # tem em SF-GLUE-004. PRECEDENCIA: depois de AGENT-002; um case com SF-GLUE junto vai
+  # pela rota de cima, e o destino e o mesmo.
+  - id: AGENT-086
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em como o Step Functions dispara o job Glue
+    when:
+      all:
+        - {findings_area: SF-SFN, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      A state machine que dispara o job decide se o fluxo espera o job terminar, e ela e
+      o segundo lugar onde a retentativa do job esta declarada -- o `max_retries` do
+      `aws_glue_job` e o primeiro. Quantas vezes uma falha reexecuta o job inteiro e o
+      que a documentacao NAO diz (U1 de `docs/sdd/STEP_FUNCTIONS/define.md`): o que se
+      afirma e que as duas camadas existem sobre o mesmo job. O conserto mora na
+      definicao ASL e no Terraform -- os dois artefatos de infraestrutura que este
+      coordenador ja le --, e nao no codigo do job.
+
+  # SF-AIRFLOW entrou com `docs/sdd/AIRFLOW_DAG/` (2026-09-19) e ganha ENTRADA PROPRIA
+  # pelo motivo de sempre: `rule_areas` do agente NAO roteia, e `findings_area` conta
+  # por prefixo exato do `rule_id` ate o ultimo hifen.
+  #
+  # `glue-infra-reviewer` e o dono pelo mesmo motivo de AGENT-086: as quatro regras
+  # julgam COMO o job Glue e disparado e quantas vezes ele roda -- espera, prazo, forma
+  # de esperar e retry --, e o conserto mora no arquivo do DAG e no `max_retries` do
+  # `aws_glue_job`, nao no codigo do job. PRECEDENCIA: depois de AGENT-002 e de
+  # AGENT-086; um case com SF-GLUE ou SF-SFN junto vai pela rota de cima, e o destino e
+  # o mesmo.
+  - id: AGENT-087
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em como o DAG do Airflow dispara o job Glue
+    when:
+      all:
+        - {findings_area: SF-AIRFLOW, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O DAG que dispara o job decide se o fluxo espera o job terminar, se o operador
+      pede a parada do JobRun quando a task e morta, e se a espera segura um slot de
+      worker. Ele e tambem o segundo lugar onde a retentativa do job esta declarada --
+      quantas vezes uma falha reexecuta o job inteiro e o que a documentacao NAO diz (U1
+      de `docs/sdd/AIRFLOW_DAG/define.md`), e o que se afirma e que as duas camadas
+      existem sobre o mesmo job. O conserto mora no arquivo do DAG e no `max_retries` do
+      `aws_glue_job` -- artefato de infraestrutura, que este coordenador ja le --, e nao
+      no codigo do job.
+
+  # SF-SFNX entrou com `docs/sdd/SFN_HISTORY/` (2026-09-20) e ganha ENTRADA PROPRIA pelo
+  # motivo de sempre: `rule_areas` do agente NAO roteia, e `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-SFNX-001` -> `SF-SFNX`). Sem esta
+  # entrada, um case cujo unico achado e uma tentativa observada voltaria de `next_step`
+  # com `recommended_agent: None`.
+  #
+  # O MESMO dono de SF-SFN (`glue-infra-reviewer`), e nao um coordenador novo: as tres
+  # regras julgam COMO o job Glue foi disparado e quantas vezes ele rodou, a mesma
+  # conversa de `max_retries` que ele ja tem em SF-GLUE-004 e em SF-SFN. Uma area so nao
+  # justifica coordenador novo, e o criterio de dominio exige area que julga.
+  #
+  # PRECEDENCIA: depois de AGENT-002 (`glue-infra-reviewer`) e de AGENT-086 (SF-SFN); um
+  # case com SF-GLUE ou SF-SFN junto vai pelas rotas de cima, e o destino e o mesmo.
+  - id: AGENT-088
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante no que a execucao do Step Functions registrou
+    when:
+      all:
+        - {findings_area: SF-SFNX, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O historico da execucao diz quantas vezes o Task foi agendado de verdade, e o que
+      ficou sem desfecho quando o relogio do Task ou o da execucao parou. O conserto
+      mora na definicao ASL, no prazo declarado e no tratamento de abort -- os
+      artefatos de infraestrutura que este coordenador ja le --, e nao no codigo do job.
+
+fallback:
+  recommended_skill: sparkforge-diagnose
+  reason: >
+    Nenhuma regra de roteamento casou com o estado atual do case. Voltar ao diagnóstico
+    ponta a ponta e registrar em open_questions qual evidência falta, para que uma regra
+    nova cubra este estado.

@@ -1,0 +1,44 @@
+name: session_catalog_com_sparkcatalog
+proves: >
+  O POSITIVO de `SF-ICE-006`, e a primeira fixture do repositorio em que uma
+  regra da area SF-ICE dispara SEM dump de metadata table Iceberg nenhum.
+
+  Um `aws_glue_job` em Glue 5.1 aponta o catalogo de SESSAO -- `spark_catalog`,
+  o que resolve todo nome de tabela nao qualificado -- para
+  `org.apache.iceberg.spark.SparkCatalog`. A documentacao do Apache Iceberg
+  declara que a implementacao com backend Hive "only loads Iceberg tables", e
+  que para carregar tabela nao-Iceberg no mesmo metastore se usa um session
+  catalog. A que delega e `SparkSessionCatalog`, e nao esta.
+
+  NAO ha argumento de FGAC nesta fixture, e a ausencia e o ponto: SF-ICE-006 e
+  sobre a CLASSE do catalogo de sessao, nao sobre Lake Formation. Ligar FGAC
+  aqui faria SF-LF-003 e SF-LF-005 entrarem e a fixture deixaria de isolar o que
+  prova. O par dela e `fgac_com_catalogo_nomeado`, que exercita o recorte da
+  AWS -- o do NOME do catalogo -- e nao o do Iceberg.
+
+  O que a fixture prova sobre o EXTRATOR: as tres chaves
+  `spark.sql.catalog.spark_catalog*` produzem UM
+  `lakeformation.iceberg_catalog`, com `is_session_catalog: true` e
+  `catalog_impl` preenchido a partir da chave sem sufixo. `type` e `warehouse`
+  sao propriedades do catalogo, nao catalogos novos.
+
+  `lakeformation.unresolved` NAO sai aqui, ao contrario das outras fixtures
+  desta familia: sem argumento de FGAC nao ha `access_model`, e e a ele que a
+  recusa esta ancorada.
+
+  A fixture e TF-only pela mesma razao das outras: o `.py` acrescentaria facts
+  de PySpark capazes de fazer outra regra disparar junto.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - lakeformation.iceberg_catalog
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+  - tf.spark_conf
+expects_rules:
+  - SF-ICE-006

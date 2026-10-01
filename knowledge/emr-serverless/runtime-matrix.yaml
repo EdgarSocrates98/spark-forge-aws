@@ -1,0 +1,111 @@
+# Matriz de runtime do Amazon EMR Serverless. Dado, nunca constante em Python.
+#
+# POR QUE ESTE ARQUIVO EXISTE, e por que ele nao existia. A pagina irma
+# `runtime-matrix.md` abriu (secao 7 do cabecalho, "esta pagina nao tem espelho
+# executavel") declarando que NENHUMA tabela daqui viraria dado -- e a razao
+# escrita na secao 6 era a certa para a pergunta que se fazia ali: a matriz do
+# EMR on EC2 nao pode ser reaproveitada para o Serverless. Isso continua valendo
+# inteiro.
+#
+# O que a divida da primeira linha do `STATUS.md` mediu depois e OUTRA pergunta:
+# com `--emr` na mao, o motor derivava `spark`, `python` e `iceberg` da
+# `EMR_MATRIX` de EC2 sobre um conjunto de facts `emrs.*`. Nao derivar nada
+# deixava tres eixos INVENTADOS; recusar a flag deixaria o operador sem o eixo
+# `spark`, que a fonte do Serverless PUBLICA. Este arquivo e a terceira saida:
+# da o que a fonte publica, e nada alem.
+#
+# O QUE ELE NAO TEM, e nao por esquecimento:
+#
+#   `python`  -- nenhuma release. A unica citacao de numero em todo o guia do
+#                Serverless e "Python 3.7.10 for Amazon EMR release 6.6.0", num
+#                aviso de PROCEDIMENTO sobre empacotar bibliotecas. Um ponto num
+#                aviso nao e matriz, e interpolar para as outras 23 seria
+#                inventar (secao 5 do .md).
+#   `hadoop`  -- nenhuma release. Nenhuma das 24 paginas por release do
+#                Serverless nomeia Hadoop (secao 5 do .md).
+#   `iceberg` -- so nas DUAS releases da secao 4, que sao as unicas em que a
+#                fonte do Serverless publica o numero. As 24 numeradas nao
+#                publicam, e a "Iceberg release history" do ReleaseGuide nao se
+#                declara aplicavel ao Serverless e enumera releases que o
+#                Serverless nao tem.
+#
+# E O SUFIXO DO FORK. Nas 24 releases numeradas o valor e a versao de
+# COMUNIDADE, sem `-amzn-N`: e o que a fonte publica, e afirmar o fork seria
+# copiar um dado de EC2. Nas duas `spark-8.0*` o sufixo APARECE porque a fonte do
+# Serverless o publica ali -- o formato daquelas duas paginas e outro. A chave e
+# o release label sem o prefixo `emr-`, a mesma normalizacao de
+# `sparkforge/facts/runtime_detect.py::_emr_key`, e por isso `spark-8.0.0` e
+# `spark-8.0-preview` sao chaves legitimas: sao release labels de verdade, que a
+# `EMR_MATRIX` de EC2 nao conhece.
+#
+# FONTE POR CELULA, e por que ela nao esta por celula. As 24 paginas por release
+# NAO estao individualmente em `knowledge/sources.lock.json`: a watchlist e
+# derivada das secoes `Fontes` de `knowledge/**.md`, e o .md desta area escreve
+# `release-version-<N>.html` como PADRAO, de proposito -- a decisao esta
+# documentada no docstring de `scripts/refresh_knowledge.py`. Citar as 24 aqui
+# criaria 24 URLs que nenhum mecanismo revalida. As tres fontes abaixo sao as que
+# a watchlist ja vigia, e o lastro celula a celula fica onde ele foi auditado: na
+# tabela da secao 2 do .md, que
+# `tests/test_emr_serverless_runtime_boundary.py::TestGuardDeDriftContraOKnowledge`
+# compara com este arquivo linha a linha.
+schema_version: 1
+sources:
+  - "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-versions.html"
+  - "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-version-emr-spark-8.0.0.html"
+  - "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-version-emr-spark-8.0-preview.html"
+retrieved: "2026-08-04"
+versions:
+  "7.13.0":
+    spark: "3.5.6"
+  "7.12.0":
+    spark: "3.5.6"
+  "7.11.0":
+    spark: "3.5.6"
+  "7.10.0":
+    spark: "3.5.5"
+  "7.9.0":
+    spark: "3.5.5"
+  "7.8.0":
+    spark: "3.5.4"
+  "7.7.0":
+    spark: "3.5.3"
+  "7.6.0":
+    spark: "3.5.3"
+  "7.5.0":
+    spark: "3.5.2"
+  "7.4.0":
+    spark: "3.5.2"
+  "7.3.0":
+    spark: "3.5.1"
+  "7.2.0":
+    spark: "3.5.1"
+  "7.1.0":
+    spark: "3.5.0"
+  "7.0.0":
+    spark: "3.5.0"
+  "6.15.0":
+    spark: "3.4.1"
+  "6.14.0":
+    spark: "3.4.1"
+  "6.13.0":
+    spark: "3.4.1"
+  "6.12.0":
+    spark: "3.4.0"
+  "6.11.0":
+    spark: "3.3.2"
+  "6.10.0":
+    spark: "3.3.1"
+  "6.9.0":
+    spark: "3.3.0"
+  "6.8.0":
+    spark: "3.3.0"
+  "6.7.0":
+    spark: "3.2.1"
+  "6.6.0":
+    spark: "3.2.0"
+  "spark-8.0.0":
+    spark: "4.0.2-amzn-0"
+    iceberg: "1.10.1-amzn-0"
+  "spark-8.0-preview":
+    spark: "4.0.1"
+    iceberg: "1.10.0-amzn-spark-0"

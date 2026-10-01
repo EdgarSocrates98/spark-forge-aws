@@ -1,0 +1,26 @@
+{
+  "applied": false,
+  "copy_skipped": [],
+  "files_changed": [],
+  "id": null,
+  "kept_count": 0,
+  "main_tree_touched": false,
+  "moved_candidates": [],
+  "new": [],
+  "next_steps": [],
+  "proof_obligations": [],
+  "refused": [
+    {
+      "detail": "lib/job.py @@ -1,2 +1,2 @@: na linha 2 esperava '    spark.conf.set(\"spark.sql.shuffle.partitions\", \"900\")' e o arquivo tem '    spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\")'",
+      "reason": "diff_nao_aplica",
+      "unlock": "o diff foi feito sobre outra versao do arquivo; gere-o de novo sobre a arvore atual"
+    }
+  ],
+  "resolved": [],
+  "sandbox": null,
+  "scan_refused": {
+    "after": [],
+    "before": []
+  },
+  "stage": "sandbox_execute"
+}

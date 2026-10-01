@@ -1,0 +1,72 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SparkForge",
+          "semanticVersion": "0.0.0+golden",
+          "informationUri": "https://github.com/EdgarSocrates98/spark-forge-aws",
+          "rules": [
+            {
+              "id": "SF-ERR-006",
+              "name": "SFERR006",
+              "shortDescription": {
+                "text": "Permissão do Lake Formation negada em runtime, num job que lê o Data Catalog de outra conta"
+              },
+              "fullDescription": {
+                "text": "O job FALHOU com `Insufficient Lake Formation permission(s) on`, e o Terraform declara `spark.hadoop.hive.metastore.glue.catalogid` apontando para outra conta. As duas evidências juntas dizem que a cadeia de concessão entre contas -- convite do AWS RAM aceito, resource link no catálogo da conta consumidora, `SELECT` concedido na conta produtora -- tem um elo faltando, e que ele já custou este run.\n\n**O que a regra NÃO afirma:** QUAL elo. A assinatura `ERR-LF-001` declara `lakeformation.missing_grant` e `ram.unaccepted_share` em `evidence_required`, e MEDIDO em 2026-09-09 nenhum dos dois é kind que este motor emite -- nada aqui lê Lake Formation nem AWS RAM, e o estado dos dois vive em recursos de OUTRA conta, fora do alcance do `.tf` do job. Por isso a ação é `investigate`: a regra localiza a cadeia a conferir, e é o operador que a percorre.\n\nA irmã é `SF-XACC-001`, que marca a mesma dependência a partir do Terraform parado e diz explicitamente que NÃO afirma que ela está quebrada. Esta afirma -- porque o log do run diz."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "precision": "high"
+              },
+              "help": {
+                "text": "Mudanca proposta:\n- Confirmar o estado do compartilhamento no AWS RAM da conta consumidora: convite aceito, não pendente.\n- Confirmar o `DESCRIBE` no resource link da conta consumidora e o `SELECT` na tabela alvo da conta produtora -- os dois lados, porque um sozinho produz exatamente esta mensagem.\n- Ler o nome do recurso na própria linha de log: a mensagem nomeia a tabela ou o banco negado, e é por ele que a conferência começa.\n- Se os dados estão encriptados com chave gerenciada pelo cliente, confirmar que a política da chave autoriza o papel da conta consumidora -- a falha de KMS chega com outra mensagem, mas a cadeia é a mesma.\nValidacao:\n- Re-executar o job e confirmar que a leitura passa -- exercitando a MESMA tabela nomeada na linha de log, não uma equivalente.\n- Estado do convite no AWS RAM da conta consumidora, e as duas concessões (`DESCRIBE` no resource link, `SELECT` na tabela alvo) lidas depois da mudança.\n- Nenhum eixo de dado é exigido, e declarar isso é parte da validação: conceder permissão não muda o conteúdo lido, muda quem consegue lê-lo. Se a leitura passou a devolver linhas onde antes falhava, a contagem contra o esperado do lote é a conferência, não o eixo da mudança.\nRollback:\n- Revogar as concessões acrescentadas devolve o estado anterior. Não é rollback de dado, e o run que falhou continua tendo falhado.",
+                "markdown": "**Mudanca proposta**\n\n- Confirmar o estado do compartilhamento no AWS RAM da conta consumidora: convite aceito, não pendente.\n- Confirmar o `DESCRIBE` no resource link da conta consumidora e o `SELECT` na tabela alvo da conta produtora -- os dois lados, porque um sozinho produz exatamente esta mensagem.\n- Ler o nome do recurso na própria linha de log: a mensagem nomeia a tabela ou o banco negado, e é por ele que a conferência começa.\n- Se os dados estão encriptados com chave gerenciada pelo cliente, confirmar que a política da chave autoriza o papel da conta consumidora -- a falha de KMS chega com outra mensagem, mas a cadeia é a mesma.\n\n**Validacao**\n\n- Re-executar o job e confirmar que a leitura passa -- exercitando a MESMA tabela nomeada na linha de log, não uma equivalente.\n- Estado do convite no AWS RAM da conta consumidora, e as duas concessões (`DESCRIBE` no resource link, `SELECT` na tabela alvo) lidas depois da mudança.\n- Nenhum eixo de dado é exigido, e declarar isso é parte da validação: conceder permissão não muda o conteúdo lido, muda quem consegue lê-lo. Se a leitura passou a devolver linhas onde antes falhava, a contagem contra o esperado do lote é a conferência, não o eixo da mudança.\n\n**Rollback**\n\n- Revogar as concessões acrescentadas devolve o estado anterior. Não é rollback de dado, e o run que falhou continua tendo falhado."
+              },
+              "helpUri": "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "SF-ERR-006",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Permissão do Lake Formation negada em runtime, num job que lê o Data Catalog de outra conta"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "a/main.tf",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 24
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              "f_7dc110",
+              "f_205f31"
+            ],
+            "severity": "P0",
+            "status": "confirmed"
+          }
+        }
+      ],
+      "automationDetails": {
+        "id": "fixture-misto/"
+      }
+    }
+  ]
+}

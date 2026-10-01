@@ -1,0 +1,12 @@
+description: >-
+  SF-PY-004 (acao dentro de laco) move runtime.wall_clock; a uniao traz o
+  benchmark de clean_improvement. O tempo de task somado caiu: not_refuted, com
+  o proxy declarado (tempo de task nao e wall clock).
+findings: [fixtures/pyspark/action_in_loop/expected/findings.json]
+facts:
+  - fixtures/pyspark/action_in_loop/expected/facts.json
+  - fixtures/bench/clean_improvement/expected/facts.json
+after_facts: [fixtures/pyspark/action_in_loop/expected/facts.json]
+applied: [SF-PY-004]
+expect:
+  - {rule_id: SF-PY-004, kind: axis, axis: runtime.wall_clock, outcome: not_refuted}

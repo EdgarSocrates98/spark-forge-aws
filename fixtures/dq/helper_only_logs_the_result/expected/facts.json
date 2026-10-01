@@ -1,0 +1,56 @@
+[
+  {
+    "id": "f_9fe2ed",
+    "schema_version": 1,
+    "kind": "dq.check",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 44,
+      "col": 16,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line": 44,
+      "checks_on_target": 1
+    },
+    "attrs": {
+      "framework": "handmade",
+      "check_type": "count_of_violations",
+      "target": "vendas",
+      "target_persisted": true,
+      "action_after_check": true,
+      "shares_scan": false,
+      "position_vs_write": "before_write"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "66d28f0f74c88ce47e512362ce73b8d46be3ef87fe021c843a95e4a4b9aebc39",
+      "extractor": "data_quality@0.1.0"
+    }
+  },
+  {
+    "id": "f_2f3f0c",
+    "schema_version": 1,
+    "kind": "dq.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "check_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "66d28f0f74c88ce47e512362ce73b8d46be3ef87fe021c843a95e4a4b9aebc39",
+      "extractor": "data_quality@0.1.0"
+    }
+  }
+]

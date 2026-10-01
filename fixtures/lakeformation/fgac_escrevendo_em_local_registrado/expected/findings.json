@@ -1,0 +1,78 @@
+[
+  {
+    "rule_id": "SF-LF-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Escrita sob controle de acesso fino em tabela com localização REGISTRADA -- a documentação da AWS não fecha",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 23,
+      "symbol": "aws_glue_job.etl_fgac_alvo_registrado"
+    },
+    "evidence": [
+      "f_e16cc2",
+      "f_4847da"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "**Este achado não afirma um defeito. Ele afirma que a documentação da AWS não fecha para esta combinação, e traz a evidência de que o caso está nela.**\n\nQuatro frases, todas da documentação atual:\n\n1. a migração para o Glue 5.1 declara *\"Support Spark-native FGAC writes\n   on AWS Lake Formation registered tables\"*;\n2. a tabela de operações da página de FGAC diz, para DDL e para DML\n   `INSERT`/`UPDATE`/`DELETE`: *\"With IAM permissions only\"*;\n3. as considerações listam, entre o que **não** é suportado: *\"Write with\n   Lake Formation granted permissions\"*;\n4. as mesmas considerações dizem que, para localização **registrada**, o\n   caminho de dado usa a credencial armazenada do Lake Formation\n   *\"regardless of the IAM permission for the AWS Glue job runtime role\"*.\n\n\n**1, 2 e 3 fecham entre si:** a escrita passou a rodar no 5.1, e quem a autoriza é o IAM do runtime role. **3 e 4 não fecham:** para localização registrada o caminho do role não é usado (4), e o grant do Lake Formation não autoriza escrita (3). A escrita fica sem caminho declarado.\n\n**É a classe de sintoma em que trocar a API não muda nada.** `writeTo`, `insertInto` e `INSERT INTO` atravessam o mesmo caminho de credencial, e falham juntas quando é ele que não fecha.\n\nSeveridade P1 e não P0 porque **o SparkForge não sabe se a escrita falha** — ele sabe que a combinação não tem resposta publicada. Ver `knowledge/glue/lakeformation-fgac.md` §6.",
+    "proposed_change": [
+      "Confirmar primeiro que a escrita realmente falha, e com qual mensagem. A combinação ser indefinida na documentação não é o mesmo que ela quebrar, e agir antes de medir é o erro que este achado tenta evitar.",
+      "Saída 1 — o alvo **não** ser registrado no Lake Formation. Aí a escrita é do runtime role, e o que resta conferir é `s3:PutObject`, `s3:DeleteObject` e KMS, que `sparkforge collect iam-access` responde.",
+      "Saída 2 — trocar o job para **Full Table Access**. Aí quem escreve é a credencial do Lake Formation, com `ALL` no grant, mais `lakeformation:GetDataAccess` no IAM, mais o passo de conta, mais EMRFS restaurado no Glue 5.1.",
+      "Saída 3 — **separar leitura e escrita em dois jobs**. FGAC e FTA não coexistem no mesmo job, e quando a leitura precisa de FGAC e a escrita precisa de credencial do Lake Formation, um job só não resolve.",
+      "Nenhuma das três é trocar a API de escrita, e as três são decisão de desenho -- não de configuração."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Desregistrar a localização (saída 1) muda o caminho de acesso de **todo** consumidor daquela localização, e não só deste job. Exige inventário de quem mais a lê.",
+      "Trocar para Full Table Access (saída 2) remove os controles de linha, coluna e célula que o FGAC dava. É decisão de governança com dono.",
+      "A regra correlaciona o modelo de acesso declarado no job com o registro da localização coletado do Lake Formation. Ela **não** verifica que a tabela do registro é a mesma que o job escreve -- nada no case liga as duas, e um case com várias tabelas produz o achado sobre a combinação, e não sobre um par."
+    ],
+    "tradeoffs": [
+      "Registrar a localização é o que dá ao Lake Formation o controle do caminho de dado. Desregistrá-la devolve o controle ao IAM, que é mais grosso. As duas saídas trocam uma garantia por outra."
+    ],
+    "validation": [
+      "A mensagem exata da primeira operação de escrita que falha, coletada por `sparkforge collect cloudwatch-logs`. Sem ela, o resto é hipótese.",
+      "Contagem de linhas e agregado por chave no destino, antes e depois da saída escolhida -- as três mudam o caminho de escrita, e caminho diferente pode escrever em outro lugar.",
+      "Se a saída foi desregistrar: uma leitura de controle com um principal que dependia da credencial do Lake Formation, confirmando o que ele passou a enxergar."
+    ],
+    "rollback": [
+      "Registrar de volta a localização, ou restaurar o modelo de acesso anterior. Se houve escrita no intervalo, o rollback é de dado: o destino precisa ser comparado antes de a configuração anterior voltar."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html",
+        "retrieved": "2026-09-09"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "security.verify_access_chain",
+      "target": "lakeformation.registered_write_path",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [],
+      "depends_on": []
+    }
+  }
+]

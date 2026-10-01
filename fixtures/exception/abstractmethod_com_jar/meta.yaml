@@ -1,0 +1,46 @@
+name: abstractmethod_com_jar
+proves: >
+  O POSITIVO de `SF-ERR-011`, a UNICA das tres em que adicionar JAR PIORA.
+
+  A classe esta presente e o metodo nao -- nenhuma explicacao de ausencia cobre
+  isso. O que cobre e haver DUAS versoes do mesmo artefato, e a que venceu o
+  classpath nao implementa um metodo que a interface ganhou depois.
+
+  A acao e `remove` sobre `job.extra_jars.duplicate`, e o `target` e proprio de
+  proposito: `SF-ERR-009` faz `add` sobre `job.extra_jars`, e confundir os dois
+  inventaria contradicao entre duas regras que na verdade tratam de coisas
+  opostas.
+
+  A regra NAO afirma qual das duas copias esta la, nem que a precedencia de
+  JARs do usuario esta ligada: `mig.jar_binary` le o NOME do arquivo, e nenhum
+  extrator abre o JAR.
+runtime:
+  glue: "6.0"
+  spark: "4.0.0"
+  python: "3.11"
+  iceberg: "1.9.1"
+expects_kinds:
+  - error.signature_match
+  - mig.jar_binary
+  - spark.cluster.cores
+  - spark.conf_effective
+  - spark.conf_excluded
+  - spark.exception
+  - spark.exception.frame
+  - spark.job.spill_summary
+  - spark.log_analyzed
+  - spark.runtime_version
+  - spark.stage.callsite
+  - spark.stage.failure
+  - spark.stage.gc
+  - spark.stage.spill
+  - spark.stage.task_count
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules:
+  - SF-ERR-011
+  - SF-SPARK4-004

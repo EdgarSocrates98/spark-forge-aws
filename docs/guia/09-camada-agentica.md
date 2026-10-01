@@ -1,0 +1,175 @@
+# Camada agêntica: executores determinísticos, e o que ela ainda não é
+
+O resumo está no [README](../../README.md). Aqui fica o detalhe das entidades, dos
+dois executores e do que a camada **não** afirma. O passo a passo com saída real está
+em [Arbitragem e debate](usos/arbitragem-e-debate.md).
+
+## As entidades
+
+`sparkforge/agentic/` (18 módulos fora o `__init__.py`, contados em 2026-09-28) traz
+entidades de primeira classe e engines para trabalho agêntico auditável: `Claim`,
+`Evidence` (com tiers de autoridade T1-T6), `Hypothesis`, `Experiment`, `Decision`,
+`Unknown`, `Contradiction`, `Objection`, `Rebuttal`; mais blackboard JSONL, protocolo
+de debate, arbitragem com detecção de falso consenso, ADR automático, memória
+institucional, budget, Governor por profile/risco, RecoveryPolicy bounded, control
+plane explícito para `shadow`/`active` e níveis de autonomia L0-L5.
+
+## O executor determinístico
+
+`sparkforge/agentic/executor/` (11 módulos fora o `__init__.py`, contados em
+2026-09-18) é o **produtor** dessas entidades, e ele é determinístico.
+`sparkforge arbitrate` roda depois de `judge` e escreve no blackboard do case — num
+case rodado, `blackboard summary` deixa de devolver zero.
+
+## O executor de debate (2026-09-11)
+
+Quando a arbitragem não fecha, o `arbitrate` emite um `DebatePlan` e para, com
+`debate.unresolved`. Desde 2026-09-11 esse plano tem executor:
+`sparkforge debate start|next|submit` (tools `sparkforge_debate_start|next|submit`).
+É uma máquina de estados L0 que diz de quem é a vez, recusa por nome a submissão fora
+do protocolo e só aceita evidência nova **reextraída** por extrator da allowlist. O
+fechamento é sempre do `referee`. O argumento é escrito pelo host, pela skill
+`run-debate` ou por `scripts/run_debate.py` (`claude -p`), nunca dentro do pacote. O
+placar da suíte `evals/agentic/debate/` sai de
+`python -m sparkforge.evals debate --run <nome>`.
+
+## Decision Plane: observação sem troca de dispatch
+
+O Decision Plane é uma camada declarativa separada da decisão ADR em
+`sparkforge/agentic/decision.py`. O contrato atual é
+`config/decisions/routing.data_domain.yaml`; ele avalia `DecisionInput`, registra a
+comparação com a rota vigente e escreve receipt verificável, mas permanece em
+`mode: shadow`. Nenhum provider é chamado e nenhum resultado shadow altera a rota.
+
+```bash
+sparkforge decision validate --repo .
+sparkforge decision benchmark --repo .
+sparkforge decision shadow --input decision.json --repo . --out shadow.json
+sparkforge decision compare --shadow shadow.json --current-route tier_3_cheap_local
+sparkforge decision receipt --path .sparkforge/decision-receipts/<receipt>.json --repo .
+```
+
+A seed offline tem 23 casos e passou 23/23 na validação atual. Isso prova o contrato
+e a mecânica da avaliação, não prontidão para ativação, qualidade geral, economia
+financeira ou tokens do provider. A ativação continua fail-closed até existir corpus
+rotulado mínimo e os gates de qualidade e economia.
+
+### Completion do control plane por gates
+
+A conclusão do kernel segue sete gates independentes e um commit por gate. O Gate 1 fecha o
+contrato antes da avaliação: estado extra é recusado por padrão, opcionais precisam ser
+declarados, referências fora do schema recusam o contrato e Route/Gate usam a mesma validação
+estrutural de condição. Confidences ficam limitadas a `[0,1]` no load.
+
+O estado aberto é exceção explícita (`additional_properties: true`) e mantém fingerprint
+determinística. O resultado unresolved nomeia o campo extra; o sistema não descarta erro de
+input silenciosamente. Gates seguintes tratam cache, recovery, autoridade, adapters e benchmark.
+
+O Gate 2 torna cache parte da identidade, não detalhe de implementação: policy ou calibration
+version diferente produz miss mesmo com contrato e estado iguais. `cache_max_entries` é aplicado
+no runtime. Fact, decision e artifact continuam namespaces distintos; a API histórica de
+`sparkforge.economy.cache` encaminha para `sparkforge.decision.cache.ArtifactCache`.
+
+O Gate 3 fecha recovery como transição governada. `RecoveryGovernor` reavalia profile/risco,
+consome retry/replan do `CaseBudget` e grava receipt de recovery com referência ao receipt-base.
+Fingerprint de estratégia repetida termina em `stop` terminal; retry não pode virar loop implícito.
+
+O Gate 4 separa autoridade de status. Shadow só observa; assisted pode propor, mas legacy pode
+vetar e continua sendo fallback; active exige activation evidence, governor e rollback registrado.
+Receipts carregam authority e legacy_vetoed quando aplicável. O kernel genérico continua sem
+autoridade ativa por default.
+
+O Gate 5 adiciona adapters host finos para Claude, Codex e Devin. Eles só traduzem envelopes
+gravados para o protocolo bounded e delegam replay local; não importam SDK, não chamam rede e
+não inferem tokens de bytes. Transcript ausente deixa provider_tokens unresolved.
+
+O Gate 6 fecha o benchmark same-case com 50 tarefas rotuladas em 10 domínios, train/holdout,
+três profiles e runners old/new. Cada linha mantém qualidade, `payload_bytes`,
+`provider_tokens` e custo separados. O comparador exige `case_id`/label/`input_manifest`
+iguais e recusa volume de entrada acima de 10%; tokens sem usage e custo sem `cost_basis`
+ficam unresolved com razão nomeada. O comando continua replay offline: não mede provider real
+nem promove autoridade, mas impede claims com denominador incompatível.
+
+O Gate 7 fecha a promoção active no kernel genérico. `mode: active` exige `ActivePromotion`
+explícito, contrato/versão compatíveis, corpus mínimo de 50 labels, quality/economy gates,
+CI verificado e rollback nomeado. A checagem acontece antes do cache; decisão cacheada não
+substitui autorização. `config/decisions/agentic_control_plane.yaml` permanece shadow por
+default e active disabled. O bridge economy só usa o kernel active quando recebe esse registro;
+sem ele, a decisão recusa e conserva fallback.
+
+O Gate 8 governa evolução de prompts e agents offline. `config/evolution/prompt_agents.yaml`
+registra candidatos com digest de conteúdo, pai, contrato e calibração. O ciclo permitido é
+`candidate -> evaluated -> accepted -> rolled_back` ou `evaluated -> rejected`; avaliação usa
+replay same-case e não concede autoridade. Comandos e recibos estão documentados em
+[`docs/agentic-evolution.md`](../agentic-evolution.md).
+
+O manifesto usa `candidate_digest` para a identidade completa da especificacao e
+`content_sha256` para os bytes do conteudo. `root` nao aceita pai; `mutation` exige
+`parent_digest` e `contract_sha256` deve coincidir com o contrato carregado. A avaliacao
+executa baseline e candidato separadamente, deriva `quality_gate` e `economy_gate` dos
+metrics e verifica o digest do receipt antes de reusar uma avaliacao.
+
+## O que ela NÃO é, e isso governa o resto
+
+Nenhum `AgentRuntime` concreto mora no pacote, e nada aqui chama provider — quem gasta
+token é o host que executa os agents. Os executores são **L0**: `applied_changes` sai
+sempre `false`, e o ADR é proposta com `rollback` obrigatório, nunca registro de coisa
+feita.
+
+Por isso **não há afirmação de ganho** publicada em lugar nenhum. Os dois lados
+rodam, mas o debate alcança um único par de regras (`SF-GRAPH-005` × `SF-LF-001`, de
+157 com `action`). Esse par só existe na união dos facts de dois jobs, e o baseline de
+modelo foi deliberadamente não rodado. Detalhe em [`evals/README.md`](../../evals/README.md).
+
+## Os comandos
+
+```bash
+sparkforge arbitrate --findings f.json --facts a.json --facts b.json --repo .
+sparkforge debate start --rules A,B --findings f.json --facts a.json --facts b.json --repo .
+sparkforge debate next --debate <id> --repo .                 # brief da vez, ou done
+sparkforge debate submit --debate <id> --file s.json --repo . # submissao do lado
+sparkforge blackboard summary --repo .        # contagem do blackboard do case
+sparkforge decisions list --repo .            # decisões do case e da memória
+sparkforge decisions explain <id> --repo .    # rollback e falsification_condition
+sparkforge budget show --repo .               # budget DECLARADO no case.yaml
+sparkforge budget show --template             # defaults do código, rotulados
+sparkforge autonomy show --level L3           # perfil de autonomia
+```
+
+`--facts` é **repetível, e a repetição é o contrato**: o executor recebe a UNIÃO dos
+facts do case, o mesmo conjunto que `judge` recebeu para produzir aqueles findings.
+Alimentá-lo com um subconjunto fabrica claim desancorada que a execução real não
+produz. A tool MCP equivalente é `sparkforge_arbitrate`, e ela é `LOCAL_MUTATION`,
+como as três `sparkforge_debate_start|next|submit`.
+
+Status por componente, defeitos corrigidos na auditoria de 2026-09-03 e o que falta:
+[`docs/agentic-evolution-report.md`](../agentic-evolution-report.md).
+
+## Próximos passos
+
+- [Arbitragem e debate](usos/arbitragem-e-debate.md): o fluxo rodado, com saída real.
+- [Economia de contexto](usos/economia-de-contexto.md): o que medir antes de afirmar que economizou.
+- [Agents e skills](05-agents-e-skills.md): coordenadores, executores e o `playbook`.
+
+### Controle de decisão: autoridade, recovery e evidência
+
+Para testar o caminho local, use `shadow` por padrão. O modo `assisted` requer `caller_authorized`
+e continua não autoritativo; `active` requer também promoção com corpus rotulado, gates, CI,
+rollback e política habilitada. `AuthorityPolicy` é a única fonte dessa decisão.
+
+```python
+from sparkforge.decision import AuthorityPolicy, PromotionEvidence
+
+policy = AuthorityPolicy.from_repo(".")
+decision = policy.authorize_promotion(
+    mode="active",
+    contract=contract,
+    evidence=PromotionEvidence(...),
+    caller_authorized=True,
+)
+```
+
+Não atribua tokens a partir de `payload_bytes`. Adapters Claude/Codex/Devin aceitam recordings;
+hash divergente deixa usage unresolved. O replay amplo está em
+`evals/token_efficient/fixtures/decision_control_plane_cases.yaml` e deve ser lido como
+evidência por caso/profile, não como autorização ou economia financeira.

@@ -1,0 +1,21 @@
+name: schema_diverged
+proves: >
+  O schema, e as TRES formas de ele divergir num caso so: `dt` sumiu,
+  `carga_ts` apareceu, e `valor` passou de `double` para `decimal(18,2)`.
+  Contagem e agregados ficam identicos -- a mudanca reescreveu o layout,
+  nao o conteudo --, entao o unico check divergente e `schema`. E a razao
+  de o check carregar o MAPA coluna->tipo e nao `column_count`: aqui o
+  numero de colunas e QUATRO dos dois lados, e um check de contagem de
+  coluna nao veria absolutamente nada. Repare tambem que `agg:sum:valor`
+  continua comparado como ponto flutuante mesmo com a coluna virando
+  decimal do lado depois: o modo vem do PLANO, nunca do resultado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules:
+  - SF-FVAL-002

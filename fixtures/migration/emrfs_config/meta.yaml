@@ -1,0 +1,16 @@
+name: emrfs_config
+proves: >
+  Configuracao exclusiva do EMRFS (`fs.s3.consistent`, `fs.s3.maxRetries`)
+  sobrevivendo num job Glue. Runtime Glue 5.0 escolhido de proposito: e a
+  fronteira em que o sistema de arquivos S3 vira S3A e deixa de ler essas
+  chaves em silencio (`runtime_scope: {glue: ">=5.0"}` de SF-MIG-002), entao e
+  o runtime em que a regra precisa disparar para provar a regra positiva.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.emrfs_config
+expects_rules:
+  - SF-MIG-002

@@ -1,0 +1,6 @@
+name: cost_from_observed_dpu
+job_name: etl_pedidos_diario
+proves: 'Tres runs de G.2X x5 com `DPUSeconds` MEDIDO pela API do Glue (7200, 2 horas)
+  -- nao ha derivacao por formula. `dpu_source: observed` viaja ate o fact de custo,
+  e o custo sai igual (2 horas * 0,44 = 0,88): o modulo nao trata DPU observado e
+  derivado de forma diferente na aritmetica, so na proveniencia.'

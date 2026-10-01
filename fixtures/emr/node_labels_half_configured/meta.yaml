@@ -1,0 +1,34 @@
+name: node_labels_half_configured
+proves: >
+  A proteção PELA METADE, que é o caso interessante de SF-EMR-008 e o mais
+  fácil de escrever errado. O `yarn-site` deste cluster 7.3.0 tem
+  `yarn.node-labels.enabled: true` e NÃO tem
+  `yarn.node-labels.am.default-node-label-expression`. Alguém olhando o dump vê
+  node labels configuradas e conclui que o ApplicationMaster está preso; ele não
+  está. Com as labels ligadas e sem expressão de AM, o AM cai na partição
+  DEFAULT — e o EMR não rotula nós de task, então a partição DEFAULT é
+  exatamente onde o Spot deste cluster está.
+  Por isso `sparkforge/facts/emr_cluster.py::_am_node_label_facts` NÃO emite
+  `emr.yarn.am_node_label` aqui, e SF-EMR-008 dispara. Uma versão do extrator
+  que emitisse o fact ao ver qualquer propriedade de node label transformaria
+  esta fixture em silêncio, e o silêncio leria como "revisei e está protegido".
+  O par positivo/negativo da regra: aqui e em `instance_groups_spot_task` ela
+  dispara (as duas propriedades ausentes lá, uma só aqui); em
+  `all_spot_groups_maximize` ela não dispara, e é o fact derivado que a barra —
+  aquele dump tem as DUAS propriedades no nível cluster, com `CORE`.
+  Nenhuma outra regra da área dispara aqui, de propósito: `LogUri` presente
+  fecha SF-EMR-006, MASTER e CORE On-Demand fecham SF-EMR-004, não há
+  `maximizeResourceAllocation`, nem managed scaling, nem segredo, nem
+  `partitionOverwriteMode`. O golden isola a regra nova.
+runtime:
+  emr: "7.3.0"
+  spark: "3.5.1-amzn-1"
+  iceberg: "1.5.2-amzn-0"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.configuration
+  - emr.instance_capacity
+expects_rules:
+  - SF-EMR-008

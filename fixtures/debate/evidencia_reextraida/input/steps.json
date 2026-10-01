@@ -1,0 +1,171 @@
+[
+  {
+    "op": "start"
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "evidence_artifacts": [
+        {
+          "extractor": "shell",
+          "path": "artifacts/job_graphframes.tf"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "evidence_artifacts": [
+        {
+          "extractor": "terraform",
+          "path": "../fora.tf"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "evidence_artifacts": [
+        {
+          "extractor": "terraform",
+          "path": ".sparkforge/case.yaml"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "evidence_artifacts": [
+        {
+          "extractor": "terraform",
+          "path": "artifacts/nao_existe.tf"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_d9303b"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "evidence_artifacts": [
+        {
+          "extractor": "terraform",
+          "path": "artifacts/job_graphframes.tf",
+          "fact": {}
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_7764fc"
+          ],
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "op": "submit",
+    "payload": {
+      "side": "A",
+      "round": 1,
+      "claims": [
+        {
+          "claim_type": "inference",
+          "statement": "o job importa GraphFrames e o IaC nao entrega o JAR da biblioteca",
+          "evidence_refs": [
+            "f_32bc0d",
+            "f_7764fc"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "evidence_artifacts": [
+        {
+          "extractor": "terraform",
+          "path": "artifacts/job_graphframes.tf"
+        }
+      ]
+    }
+  },
+  {
+    "op": "next"
+  }
+]

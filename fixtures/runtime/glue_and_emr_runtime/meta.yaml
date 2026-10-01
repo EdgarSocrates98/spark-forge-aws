@@ -1,0 +1,28 @@
+name: glue_and_emr_runtime
+proves: >
+  Duas PLATAFORMAS detectadas com as versoes derivadas COINCIDINDO. O Terraform
+  declara Glue 4.0, que a matriz mapeia para Spark 3.3.0, e o event log observou
+  Spark 3.3.0 num cluster EMR 6.10.0. SF-ENV-001 NAO dispara, e nao e defeito:
+  `distinct_versions` e 1, nao ha divergencia de versao alguma. Era exatamente
+  aqui que a dupla deteccao passava muda -- a secao 3.3 do spec da Fase 5
+  registrou o buraco de proposito, para ninguem assumir que estava coberto.
+
+  A release era `emr-6.10.0` ate a Task 2 da Fase 5b, e o par era impossivel:
+  emr-6.10.0 embarca Spark 3.3.1-amzn-0. `emr-6.9.0` e a release que de fato
+  embarca 3.3.0 (como 3.3.0-amzn-1), e a coincidencia deixa de ser estipulada.
+  As duas matrizes discordam sobre Iceberg -- Glue 4.0 diz 1.0.0, emr-6.9.0 diz
+  0.14.1-amzn-0 --, e isso NAO vira SF-ENV-001: `distinct_versions` e contado
+  por plataforma, porque duas plataformas derivando valores diferentes e a
+  consequencia do defeito que SF-ENV-005 ja reporta, com outro remedio.
+  SF-ENV-005 dispara sobre `env.platform`, que conta IDENTIDADE e nao versao, e
+  e a unica coisa que produz sinal neste par. P0 porque o defeito nao invalida
+  um achado: invalida a ancora de todo o eixo de infraestrutura do relatorio.
+runtime:
+  glue: "4.0"
+  emr: "6.9.0"
+  spark: "3.3.0"
+expects_kinds:
+  - env.platform
+  - env.runtime_signal
+expects_rules:
+  - SF-ENV-005

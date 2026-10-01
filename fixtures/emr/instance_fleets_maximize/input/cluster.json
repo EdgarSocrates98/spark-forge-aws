@@ -1,0 +1,50 @@
+{
+  "Cluster": {
+    "Id": "j-2FLEETSCLUSTER",
+    "Name": "etl-eventos",
+    "ReleaseLabel": "emr-7.5.0",
+    "InstanceCollectionType": "INSTANCE_FLEET",
+    "ScaleDownBehavior": "TERMINATE_AT_TASK_COMPLETION",
+    "AutoTerminate": true,
+    "Status": {"State": "WAITING"},
+    "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+    "Configurations": [
+      {
+        "Classification": "spark",
+        "Properties": {"maximizeResourceAllocation": "true"}
+      }
+    ],
+    "InstanceFleets": [
+      {
+        "Id": "if-MASTER",
+        "InstanceFleetType": "MASTER",
+        "TargetOnDemandCapacity": 0,
+        "TargetSpotCapacity": 1,
+        "InstanceTypeSpecifications": [{"InstanceType": "m5.xlarge", "WeightedCapacity": 1}],
+        "LaunchSpecifications": {
+          "SpotSpecification": {"AllocationStrategy": "capacity-optimized"}
+        }
+      },
+      {
+        "Id": "if-CORE",
+        "InstanceFleetType": "CORE",
+        "TargetOnDemandCapacity": 8,
+        "TargetSpotCapacity": 0,
+        "InstanceTypeSpecifications": [
+          {
+            "InstanceType": "r5.2xlarge",
+            "WeightedCapacity": 8,
+            "Configurations": [
+              {
+                "Classification": "spark-defaults",
+                "Properties": {"spark.executor.memory": "20g"}
+              }
+            ]
+          },
+          {"InstanceType": "r5.4xlarge", "WeightedCapacity": 16}
+        ]
+      }
+    ],
+    "BootstrapActions": []
+  }
+}

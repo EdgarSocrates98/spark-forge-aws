@@ -1,0 +1,173 @@
+[
+  {
+    "id": "f_637b78",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 2,
+      "configuration_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_29296c",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsaudavel00000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 5,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fsaudavel00000001",
+      "name": "etl-diario",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "architecture": "X86_64",
+      "auto_start_declared": true,
+      "auto_stop_declared": true,
+      "auto_start_enabled": true,
+      "auto_stop_enabled": true,
+      "initial_exceeds_maximum": false,
+      "capacity_axes_exceeded": []
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_5172b0",
+    "schema_version": 1,
+    "kind": "emrs.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsaudavel00000001/configuration/spark-defaults/spark.dynamicAllocation.enabled"
+    },
+    "measures": {},
+    "attrs": {
+      "classification": "spark-defaults",
+      "key": "spark.dynamicAllocation.enabled",
+      "value": "true"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_c46554",
+    "schema_version": 1,
+    "kind": "emrs.configuration",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsaudavel00000001/configuration/spark-defaults/spark.executor.cores"
+    },
+    "measures": {},
+    "attrs": {
+      "classification": "spark-defaults",
+      "key": "spark.executor.cores",
+      "value": "4"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_5cb735",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsaudavel00000001/initial_capacity/DRIVER"
+    },
+    "measures": {
+      "worker_count": 1,
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_9cd8d9",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsaudavel00000001/initial_capacity/EXECUTOR"
+    },
+    "measures": {
+      "worker_count": 4,
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_ebcf56",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsaudavel00000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": true,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "e94673d9b85cd37270a6c25f8cadb9b38e9afcf0ee86053fa69d066375c6d4da",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

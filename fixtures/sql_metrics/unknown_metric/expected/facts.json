@@ -1,0 +1,100 @@
+[
+  {
+    "id": "f_64d822",
+    "schema_version": 1,
+    "kind": "spark.sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "executions": 1,
+      "scan_nodes": 1,
+      "unattributed_accumulators": 0,
+      "malformed_lines": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_21e067",
+    "schema_version": 1,
+    "kind": "spark.sql.execution",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "execution",
+      "relation": "",
+      "symbol": "0:0",
+      "execution_id": 0
+    },
+    "measures": {
+      "scan_nodes": 1,
+      "nodes_total": 2
+    },
+    "attrs": {
+      "plan_source": "initial",
+      "description": "save at Job.scala:42",
+      "redacted": false
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_eb2cf0",
+    "schema_version": 1,
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet db.clientes",
+      "relation": "db.clientes",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet db.clientes"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_530e19",
+    "schema_version": 1,
+    "kind": "spark.sql.unresolved",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet db.clientes",
+      "relation": "db.clientes",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "unknown_metric_name",
+      "metric_name": "bytes of shuffle write",
+      "detail": "Nome de metrica fora de knowledge/spark/sql-metrics.yaml. Casar por substring produziria numero com aparencia de medido; o nome cru fica aqui para quem for atualizar o mapa."
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

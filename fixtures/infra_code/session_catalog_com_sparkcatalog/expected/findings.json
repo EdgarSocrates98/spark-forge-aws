@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-ICE-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Catálogo de sessão configurado com SparkCatalog, que não carrega tabela não-Iceberg",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 23,
+      "symbol": "aws_glue_job.etl_session_catalog_sparkcatalog#spark.sql.catalog.spark_catalog"
+    },
+    "evidence": [
+      "f_91cc3f"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A documentação do Apache Iceberg declara as duas implementações lado a lado: `org.apache.iceberg.spark.SparkCatalog` *\"supports a Hive Metastore or a Hadoop warehouse as a catalog\"*, e `org.apache.iceberg.spark.SparkSessionCatalog` *\"adds support for Iceberg tables to Spark's built-in catalog, and delegates to the built-in catalog for non-Iceberg tables\"*. Sobre a primeira, com backend Hive, a mesma página é explícita: *\"The Hive-based catalog only loads Iceberg tables. To load non-Iceberg tables in the same Hive metastore, use a session catalog.\"*\n\nEste job aponta o **catálogo de sessão** -- `spark_catalog`, o que resolve todo nome de tabela não qualificado -- para a implementação que não delega. Pela própria fonte, tabela que não é Iceberg deixa de carregar por esse caminho.\n\n**O sintoma aparece na tabela ERRADA.** A tabela Iceberg continua resolvendo, e é a tabela Parquet que para -- com erro de tabela não encontrada, que não se parece com problema de configuração de Iceberg. Job que lê Parquet e Iceberg na mesma sessão é onde isso morde, e é o arranjo em que a troca é mais fácil de fazer sem perceber.\n\n**Isto é independente de Lake Formation.** `SF-LF-003` restringe o NOME do catálogo sob FGAC; esta regra restringe a CLASSE no catálogo de sessão, e quem a declara é o Apache Iceberg. Um job pode violar uma sem violar a outra -- ver o quadro da §3 de `knowledge/storage/iceberg-catalog.md`.",
+    "proposed_change": [
+      "Trocar a classe do catálogo de sessão para a que delega: `spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog`, que é a forma que a documentação publica para adicionar suporte a Iceberg ao catálogo embutido.",
+      "Se o job precisa de `SparkCatalog` por outra razão -- funções SQL com escopo de catálogo, que a página declara indisponíveis via `spark_catalog` antes do Spark 4.2.0 --, declará-lo num catálogo de nome próprio ao lado, e deixar `spark_catalog` com `SparkSessionCatalog`.",
+      "Conferir se alguma tabela não-Iceberg é lida por nome não qualificado. É esse conjunto que a configuração atual deixa de alcançar, e ele é o que mede o tamanho do problema."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "A regra afirma que a configuração está fora do recorte que a documentação sustenta, e **não** que uma falha observada veio dela. A conclusão vem de DUAS frases da mesma página somadas, não de uma frase única -- a derivação está escrita na §2 do documento de conhecimento, e o achado é `structural` por isso.",
+      "Um job que lê SOMENTE tabela Iceberg funciona com esta configuração, e para ele o achado não descreve defeito nenhum. O que separa os dois casos é o conjunto de tabelas lidas, e nada neste motor o mede.",
+      "`SparkCatalog` em catálogo de nome próprio é a configuração que a própria fonte exemplifica três vezes, e correta. A regra só dispara quando o nome é `spark_catalog`."
+    ],
+    "tradeoffs": [
+      "`SparkSessionCatalog` envolve o catálogo embutido, e a página registra uma limitação em troca: antes do Spark 4.2.0, funções com escopo de catálogo (`system.bucket`, `system.days`, `system.iceberg_version`) não estão disponíveis por `spark_catalog`. Job que dependa delas precisa de um catálogo nomeado ao lado."
+    ],
+    "validation": [
+      "Resolver, no run seguinte, cada tabela não-Iceberg que o job lê por nome não qualificado -- é esse conjunto que a mudança destrava, e contá-lo antes e depois é o que prova.",
+      "Contagem de linhas e schema da tabela Iceberg alvo antes e depois: trocar a classe do catálogo troca o caminho de resolução dela também, e o resultado é que prova que resolveu para o mesmo lugar.",
+      "A configuração efetiva do run seguinte, lida do event log (`spark.conf_effective`), e não a declarada no Terraform."
+    ],
+    "rollback": [
+      "Restaurar a classe anterior em `spark.sql.catalog.spark_catalog`. Se um catálogo nomeado foi acrescentado junto, remover os dois na mesma mudança -- deixar o catálogo nomeado sozinho muda como as referências qualificadas resolvem."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-configuration/",
+        "retrieved": "2026-09-09"
+      }
+    ],
+    "action": {
+      "kind": "config.replace_property_value",
+      "target": "spark.sql.catalog.spark_catalog",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "correctness.read_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

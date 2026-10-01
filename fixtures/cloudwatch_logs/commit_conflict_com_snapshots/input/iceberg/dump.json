@@ -1,0 +1,32 @@
+{
+  "table": "glue_catalog.curated.fato_vendas",
+  "format_version": 2,
+  "properties": {
+    "write.distribution-mode": "hash"
+  },
+  "files": [
+    {
+      "file_path": "s3://lake/curated/fato_vendas/data/f0.parquet",
+      "file_size_in_bytes": 268435456,
+      "record_count": 800000
+    }
+  ],
+  "delete_files": [],
+  "snapshots": [
+    {
+      "snapshot_id": 1,
+      "committed_at": "2026-09-09T10:00:00Z",
+      "operation": "append"
+    },
+    {
+      "snapshot_id": 2,
+      "committed_at": "2026-09-09T10:04:00Z",
+      "operation": "append"
+    },
+    {
+      "snapshot_id": 3,
+      "committed_at": "2026-09-09T10:07:58Z",
+      "operation": "append"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+name: connected_components_sem_checkpoint
+proves: >
+  O positivo da exigencia de checkpoint, isolado num eixo so: vertices e
+  arestas persistidos, nada dentro de laco, nenhum ponto cego, e
+  `connectedComponents` sem diretorio em lugar nenhum do arquivo.
+  `checkpoint_required: true` com `checkpoint_configured_in_module: false` e o
+  par que a regra P0 da Task 5 consome -- os dois no MESMO fact, porque o motor
+  avalia um fact por vez e `_where_matches` reprova caminho ausente, entao
+  nenhuma regra consegue exprimir "o codigo nao declarou saida nenhuma".
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.module_analyzed
+expects_rules:
+  - SF-GRAPH-001

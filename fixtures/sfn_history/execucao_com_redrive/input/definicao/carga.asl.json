@@ -1,0 +1,13 @@
+{
+  "Comment": "Carga diaria com UMA tentativa extra declarada: teto efetivo de duas.",
+  "StartAt": "CargaDiaria",
+  "States": {
+    "CargaDiaria": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {"JobName": "carga-diaria"},
+      "Retry": [{"ErrorEquals": ["States.TaskFailed"], "MaxAttempts": 1}],
+      "End": true
+    }
+  }
+}

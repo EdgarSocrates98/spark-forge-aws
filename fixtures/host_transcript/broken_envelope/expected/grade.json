@@ -1,0 +1,26 @@
+{
+  "id": "q-mcp",
+  "status": "ungraded",
+  "answer": null,
+  "abstention": null,
+  "tools": null,
+  "cost": null,
+  "unresolved": [
+    {
+      "reason": "host_format_unknown",
+      "count": 1
+    },
+    {
+      "reason": "malformed_line",
+      "count": 1
+    },
+    {
+      "reason": "message_field_not_object",
+      "count": 2
+    },
+    {
+      "reason": "no_assistant_message",
+      "count": 1
+    }
+  ]
+}

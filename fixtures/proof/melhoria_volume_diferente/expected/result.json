@@ -1,0 +1,82 @@
+{
+  "applied_count": 1,
+  "attribution": "single",
+  "fact_count": {
+    "after": 5,
+    "union": 10
+  },
+  "policy": {
+    "delta_sign_convention": {
+      "reason": "Sem regra de veredito para o eixo, \"nao melhorou\" e qualquer delta que nao seja negativo. E convencao declarada, nao limiar medido (regra 11), e vale so onde nenhuma regra do catalogo julga o eixo. Onde uma regra julga (`refuted_by`), ela vence a convencao.",
+      "refutes_when": "delta_pct >= 0"
+    },
+    "policy_version": 1
+  },
+  "refused": [
+    {
+      "field": "proven",
+      "reason": "nenhuma_medida_do_pacote_prova_equivalencia_ou_melhoria"
+    },
+    {
+      "field": "gain_estimate",
+      "reason": "exige_o_run_que_nao_aconteceu_regra_13"
+    }
+  ],
+  "results": [
+    {
+      "obligations": [
+        {
+          "evidence": [
+            "f_85aa2c"
+          ],
+          "kind": "resolution",
+          "outcome": "refuted",
+          "reason": "regra_ainda_dispara",
+          "rule_id": "SF-PY-004"
+        },
+        {
+          "axis": "runtime.wall_clock",
+          "kind": "axis",
+          "measure": "total_task_ms",
+          "outcome": "inconclusive",
+          "proxy": "task_ms_nao_e_wall_clock",
+          "reason": "volumes_de_entrada_diferentes",
+          "source": "bench",
+          "verdicts": [
+            "SF-BENCH-001"
+          ]
+        },
+        {
+          "axis": "correctness.write_result",
+          "kind": "axis",
+          "outcome": "unproven",
+          "reason": "sem_funcval",
+          "source": "funcval",
+          "unlock": "sparkforge funcval plan ... --out <plano> e sparkforge funcval compare --plan <plano> --before <resultado-antes> --after <resultado-depois>"
+        }
+      ],
+      "rule_id": "SF-PY-004",
+      "stable_key": {
+        "file": "lib/job.py",
+        "symbol": "processar",
+        "type": "source_location"
+      },
+      "subject": {
+        "col": 4,
+        "end_line": 3,
+        "file": "lib/job.py",
+        "line": 2,
+        "snippet": "for lote in lotes:",
+        "symbol": "processar",
+        "type": "source_location"
+      },
+      "summary": {
+        "inconclusive": 1,
+        "not_refuted": 0,
+        "refuted": 1,
+        "unproven": 1
+      }
+    }
+  ],
+  "unresolved": []
+}

@@ -1,0 +1,78 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_006",
+  "source_count": 1,
+  "axes": {
+    "scan_intensity": {
+      "value": "low",
+      "confidence": "measured",
+      "basis": "history_percentile",
+      "evidence": [
+        "f_d87500"
+      ]
+    },
+    "file_pressure": {
+      "value": "medium",
+      "confidence": "measured",
+      "basis": "files_per_mib",
+      "evidence": [
+        "f_d87500"
+      ]
+    },
+    "shuffle_intensity": {
+      "value": "extreme",
+      "confidence": "measured",
+      "basis": "history_percentile",
+      "evidence": [
+        "f_47187c"
+      ]
+    },
+    "skew_risk": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.task_duration",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "memory_pressure": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.spill",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "join_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "plan.join",
+      "collect_command": "sparkforge analyze plan --path <explain.txt> --out <facts.json>"
+    },
+    "sla_class": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "workload.declared:sla_minutes",
+      "collect_command": "declare o job em workload.yaml com `sla_minutes`"
+    },
+    "primary_input_class": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "workload.declared:primary_source",
+      "collect_command": "declare o job em workload.yaml com `primary_source`"
+    }
+  },
+  "unknown_axes": [
+    "join_intensity",
+    "memory_pressure",
+    "primary_input_class",
+    "skew_risk",
+    "sla_class"
+  ]
+}
