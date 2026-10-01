@@ -4,6 +4,11 @@
 This is a deterministic repository maintenance tool. It does not call a model,
 AWS, or the network. `skills/` remains canonical; run `sync_skills.py` after it.
 """
+
+# Long template literals below are intentionally preserved as generated skill
+# content; line wrapping them would change the emitted artifacts.
+# ruff: noqa: E501
+
 from __future__ import annotations
 
 import argparse
@@ -25,15 +30,36 @@ COMMON_REFS = [
 
 DOMAIN_REFS: dict[str, list[str]] = {
     "aws": ["../../knowledge/cross-service-constraints.md", "../../knowledge/offline-policy.md"],
-    "spark": ["../../knowledge/spark/execution-model.md", "../../knowledge/performance-principles.md"],
-    "iceberg": ["../../knowledge/storage/iceberg-performance.md", "../../knowledge/storage/iceberg-catalog.md"],
-    "lakeformation": ["../../knowledge/lakeformation/architecture.md", "../../knowledge/glue/lakeformation-fgac.md"],
+    "spark": [
+        "../../knowledge/spark/execution-model.md",
+        "../../knowledge/performance-principles.md",
+    ],
+    "iceberg": [
+        "../../knowledge/storage/iceberg-performance.md",
+        "../../knowledge/storage/iceberg-catalog.md",
+    ],
+    "lakeformation": [
+        "../../knowledge/lakeformation/architecture.md",
+        "../../knowledge/glue/lakeformation-fgac.md",
+    ],
     "sdd": ["../../docs/sdd/README.md", "../../docs/sdd/CONTRATO.md"],
-    "terraform": ["../../knowledge/terraform-data-platform.md", "../../knowledge/domain-tool-matrix.md"],
-    "emr": ["../../knowledge/emr/runtime-matrix.md", "../../knowledge/emr/cluster-configuration.md"],
+    "terraform": [
+        "../../knowledge/terraform-data-platform.md",
+        "../../knowledge/domain-tool-matrix.md",
+    ],
+    "emr": [
+        "../../knowledge/emr/runtime-matrix.md",
+        "../../knowledge/emr/cluster-configuration.md",
+    ],
     "graph": ["../../knowledge/graph/graphframes-api.md", "../../knowledge/graph/availability.md"],
-    "quality": ["../../knowledge/dq/validation-frameworks.md", "../../knowledge/data-contracts-schema-evolution.md"],
-    "architecture": ["../../knowledge/data-platform-architecture.md", "../../knowledge/cross-service-constraints.md"],
+    "quality": [
+        "../../knowledge/dq/validation-frameworks.md",
+        "../../knowledge/data-contracts-schema-evolution.md",
+    ],
+    "architecture": [
+        "../../knowledge/data-platform-architecture.md",
+        "../../knowledge/cross-service-constraints.md",
+    ],
 }
 
 FALLBACK_VERBS = {
@@ -155,7 +181,9 @@ def domain_refs(name: str) -> list[str]:
     keys = []
     if name.startswith("aws-") or name in {"harden-s3-bucket", "provision-s3-tables-table"}:
         keys.append("aws")
-    if any(token in name for token in ("spark", "pyspark", "batch", "oom", "skew", "variable-volume")):
+    if any(
+        token in name for token in ("spark", "pyspark", "batch", "oom", "skew", "variable-volume")
+    ):
         keys.append("spark")
     if "iceberg" in name or "parquet" in name:
         keys.append("iceberg")
@@ -201,11 +229,26 @@ def contract_section(name: str, verbs: list[str], refs: list[str]) -> str:
 
 def references_readme(name: str, refs: list[str]) -> str:
     focus = FOCUS.get(name, name.replace("-", " "))
-    links = ["../../_shared/references/evidence-first.md", "../../_shared/references/evaluation-contract.md", "../../_shared/references/operational-safety.md"]
+    links = [
+        "../../_shared/references/evidence-first.md",
+        "../../_shared/references/evaluation-contract.md",
+        "../../_shared/references/operational-safety.md",
+    ]
     links.extend(path.replace("../../", "../../../") for path in refs if path not in COMMON_REFS)
-    lines = [f"# Referências — {name}", "", f"Escopo: {focus}.", "", "Referências verificáveis no repositório:", ""]
+    lines = [
+        f"# Referências — {name}",
+        "",
+        f"Escopo: {focus}.",
+        "",
+        "Referências verificáveis no repositório:",
+        "",
+    ]
     lines.extend(f"- `{path}`" for path in links)
-    lines += ["", "A auditoria `python scripts/audit_skills.py --strict` confere todos os caminhos.", ""]
+    lines += [
+        "",
+        "A auditoria `python scripts/audit_skills.py --strict` confere todos os caminhos.",
+        "",
+    ]
     return "\n".join(lines)
 
 
@@ -235,7 +278,10 @@ def evals(name: str, verbs: list[str], refs: list[str]) -> dict:
                 "prompt": f"Apply {name} to a before/after change involving {focus}. Decide what can be concluded, what must be measured, and how an operator can safely revert.",
                 "expected_output": "A bounded decision that distinguishes observed result from hypothesis, records provenance, and names the next deterministic validation command.",
                 "files": [],
-                "expectations": common + ["The response does not claim a performance or cost gain without a same-case measurement."],
+                "expectations": common
+                + [
+                    "The response does not claim a performance or cost gain without a same-case measurement."
+                ],
             },
         ],
     }
@@ -290,14 +336,18 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="report drift without writing")
     args = parser.parse_args()
     total = 0
-    for skill_dir in sorted(p for p in SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").exists()):
+    for skill_dir in sorted(
+        p for p in SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").exists()
+    ):
         if args.check:
             changed = upgrade_skill(skill_dir, write=False)
             if changed:
                 raise SystemExit(f"drift detected for {skill_dir.name}; run without --check")
         else:
             total += upgrade_skill(skill_dir, write=True)
-    print(f"{len([p for p in SKILLS.iterdir() if (p / 'SKILL.md').exists()])} skills processadas; {total} arquivos atualizados")
+    print(
+        f"{len([p for p in SKILLS.iterdir() if (p / 'SKILL.md').exists()])} skills processadas; {total} arquivos atualizados"
+    )
     return 0
 
 

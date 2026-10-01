@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate skill-creator evals/evals.json coverage for every source skill."""
+
 from __future__ import annotations
 
 import argparse
@@ -48,14 +49,21 @@ def check_one(skill_dir: Path) -> list[str]:
             if candidate.is_absolute() or ".." in candidate.parts:
                 errors.append(f"{name}: caso {case.get('id')} tem file inseguro: {relative}")
             elif not (skill_dir / candidate).is_file():
-                errors.append(f"{name}: caso {case.get('id')} referencia arquivo ausente: {relative}")
+                errors.append(
+                    f"{name}: caso {case.get('id')} referencia arquivo ausente: {relative}"
+                )
     if len(set(ids)) != len(ids):
         errors.append(f"{name}: ids de eval duplicados")
     return errors
 
 
 def errors() -> list[str]:
-    return [error for skill_dir in sorted(SKILLS.iterdir()) if skill_dir.is_dir() and (skill_dir / "SKILL.md").is_file() for error in check_one(skill_dir)]
+    return [
+        error
+        for skill_dir in sorted(SKILLS.iterdir())
+        if skill_dir.is_dir() and (skill_dir / "SKILL.md").is_file()
+        for error in check_one(skill_dir)
+    ]
 
 
 def main() -> int:
@@ -66,7 +74,11 @@ def main() -> int:
     if problems:
         print("\n".join(problems))
     else:
-        count = sum(1 for path in SKILLS.iterdir() if path.is_dir() and (path / "evals" / "evals.json").is_file())
+        count = sum(
+            1
+            for path in SKILLS.iterdir()
+            if path.is_dir() and (path / "evals" / "evals.json").is_file()
+        )
         print(f"OK: {count} skill eval manifests válidos")
     return 1 if args.strict and problems else 0
 

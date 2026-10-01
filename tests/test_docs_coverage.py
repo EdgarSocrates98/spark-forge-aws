@@ -243,8 +243,7 @@ class TestManifest:
         """
         manifest = json.loads(_read("manifest.json"))
         on_disk = {
-            p.name for p in (ROOT / "skills").iterdir()
-            if p.is_dir() and (p / "SKILL.md").is_file()
+            p.name for p in (ROOT / "skills").iterdir() if p.is_dir() and (p / "SKILL.md").is_file()
         }
         assert set(manifest["skills"]) == on_disk
 

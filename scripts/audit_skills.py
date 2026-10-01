@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Audit canonical SparkForge skills against the repository quality contract."""
+
 from __future__ import annotations
 
 import argparse
@@ -55,7 +56,11 @@ def _metadata_values(front: str, key: str) -> list[str]:
     match = re.search(rf"^  {re.escape(key)}:\s*\n((?:^  - .*\n?)+)", block, re.MULTILINE)
     if not match:
         return []
-    return [line.strip()[2:].strip() for line in match.group(1).splitlines() if line.strip().startswith("-")]
+    return [
+        line.strip()[2:].strip()
+        for line in match.group(1).splitlines()
+        if line.strip().startswith("-")
+    ]
 
 
 def audit_skill(skill_dir: Path) -> list[Finding]:
@@ -101,7 +106,9 @@ def audit_skill(skill_dir: Path) -> list[Finding]:
         if key in {"references", "scripts"}:
             for relative in values:
                 if not (skill_dir / relative).is_file():
-                    findings.append(Finding(name, "error", f"metadata.{key} aponta para ausente: {relative}"))
+                    findings.append(
+                        Finding(name, "error", f"metadata.{key} aponta para ausente: {relative}")
+                    )
     if "expected_gain" in text:
         findings.append(Finding(name, "error", "skill usa expected_gain proibido pelo contrato"))
     return findings
@@ -111,7 +118,9 @@ def audit() -> list[Finding]:
     findings: list[Finding] = []
     dirs = sorted(p for p in SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
     if len(dirs) != 52:
-        findings.append(Finding("catalog", "error", f"esperadas 52 skills fonte; encontradas {len(dirs)}"))
+        findings.append(
+            Finding("catalog", "error", f"esperadas 52 skills fonte; encontradas {len(dirs)}")
+        )
     for skill_dir in dirs:
         findings.extend(audit_skill(skill_dir))
     return findings
@@ -131,7 +140,9 @@ def main() -> int:
     }
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        args.out.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
     if findings:
         for item in findings:
             print(f"{item.severity}: {item.skill}: {item.message}")

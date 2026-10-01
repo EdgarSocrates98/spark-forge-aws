@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run deterministic, provider-free checks for the skill eval catalog."""
+
 from __future__ import annotations
 
 import argparse
@@ -11,8 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.audit_skills import audit
-from scripts.check_skill_evals import check_one
+from scripts.audit_skills import audit  # noqa: E402
+from scripts.check_skill_evals import check_one  # noqa: E402
 
 SKILLS = ROOT / "skills"
 
@@ -25,7 +26,13 @@ def run() -> dict:
     for path in skill_dirs:
         payload = json.loads((path / "evals" / "evals.json").read_text(encoding="utf-8"))
         for case in payload["evals"]:
-            cases.append({"skill": path.name, "id": case["id"], "passed": not audit_errors and not eval_errors})
+            cases.append(
+                {
+                    "skill": path.name,
+                    "id": case["id"],
+                    "passed": not audit_errors and not eval_errors,
+                }
+            )
     passed = sum(case["passed"] for case in cases)
     return {
         "mode": "offline_contract",
@@ -44,7 +51,9 @@ def run() -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--offline", action="store_true", help="required explicit mode; no provider is contacted")
+    parser.add_argument(
+        "--offline", action="store_true", help="required explicit mode; no provider is contacted"
+    )
     parser.add_argument("--out", type=Path, help="write JSON report")
     args = parser.parse_args()
     if not args.offline:

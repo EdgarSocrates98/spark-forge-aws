@@ -3,6 +3,7 @@
 Complementam test_package_structure/test_v020_structure (que checam existência)
 validando frontmatter, seções padronizadas, referências e paridade das 3 cópias.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -22,9 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ROOT / "skills"
 MIRRORS = (ROOT / ".claude" / "skills", ROOT / ".agents" / "skills")
 
-SKILL_DIRS = sorted(
-    p for p in CANONICAL.iterdir() if p.is_dir() and (p / "SKILL.md").is_file()
-)
+SKILL_DIRS = sorted(p for p in CANONICAL.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
 SKILL_IDS = [p.name for p in SKILL_DIRS]
 
 # Diretórios de suporte referenciáveis por caminho relativo à raiz do repo.
@@ -140,9 +139,7 @@ PROVENANCE_FIELDS = tuple(k for k, v in _RUNTIME_FIELDS.items() if isinstance(v,
 # `--iceberg <version>`, `--spark <>`. E a forma exata do defeito que esta task
 # removeu -- pedir ao agente um valor que ele nao tem de onde tirar. Uma versao
 # concreta (`--glue 5.1`) e declaracao legitima e passa.
-RUNTIME_FLAG_PLACEHOLDER = re.compile(
-    r"--(?:" + "|".join(RUNTIME_COMPONENTS) + r")[=\s]+<[^>\n]*>"
-)
+RUNTIME_FLAG_PLACEHOLDER = re.compile(r"--(?:" + "|".join(RUNTIME_COMPONENTS) + r")[=\s]+<[^>\n]*>")
 
 
 def _runtime_scope_reason() -> str:
@@ -153,7 +150,9 @@ def _runtime_scope_reason() -> str:
     a string no teste, e o que mantem a exigencia amarrada ao motor.
     """
     _findings, skipped = judge(
-        [], [{"id": "PROBE-RUNTIME-SCOPE", "runtime_scope": {"glue": ">=99.0"}}], {},
+        [],
+        [{"id": "PROBE-RUNTIME-SCOPE", "runtime_scope": {"glue": ">=99.0"}}],
+        {},
         return_skipped=True,
     )
     assert skipped, "regra-sonda deveria ter sido pulada por runtime_scope"

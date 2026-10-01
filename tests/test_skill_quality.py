@@ -1,7 +1,7 @@
 """Deterministic gates for the 52-skill quality contract and eval catalog."""
+
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import yaml
@@ -22,7 +22,9 @@ def test_all_source_skills_have_skill_creator_evals() -> None:
 
 
 def test_all_frontmatter_is_skill_creator_compatible() -> None:
-    skill_dirs = sorted(path for path in (ROOT / "skills").iterdir() if (path / "SKILL.md").is_file())
+    skill_dirs = sorted(
+        path for path in (ROOT / "skills").iterdir() if (path / "SKILL.md").is_file()
+    )
     assert len(skill_dirs) == 52
     for skill_dir in skill_dirs:
         parsed = _frontmatter((skill_dir / "SKILL.md").read_text(encoding="utf-8"))

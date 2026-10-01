@@ -3,6 +3,7 @@
 Nao executa tool nenhuma. Le o catalogo, os arquivos de skill e os de knowledge,
 e conta byte.
 """
+
 from __future__ import annotations
 
 from sparkforge.observability.surface import measure_surface
@@ -25,10 +26,7 @@ class TestAMedidaEstatica:
         from pathlib import Path
 
         raiz = Path(__file__).resolve().parents[1] / "skills"
-        no_disco = {
-            p.name for p in raiz.iterdir()
-            if p.is_dir() and (p / "SKILL.md").is_file()
-        }
+        no_disco = {p.name for p in raiz.iterdir() if p.is_dir() and (p / "SKILL.md").is_file()}
         medida = measure_surface()
 
         assert set(medida["skills"]["by_name"]) == no_disco
