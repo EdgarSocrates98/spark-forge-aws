@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/plan.md
-  sha256: "8fe3bfbbccd7424472c7fe53193f3a1af987ea02cfbf33c619b431b78f0bdf64"
+  sha256: "6b9c93aaa78890d94932425c5cd2a6b2f1fabbdbd38896a2f247b0cedec4a584"
 tasks:
   - id: T1
     status: done
@@ -64,6 +64,9 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
 - A primeira suíte completa encontrou expectativas históricas de 114 tools em
   `tests/test_adapters_mcp_compact.py` e `tests/test_host_surface_contracts.py`;
   ambas foram atualizadas para o contador declarado de 115 (114 no HTTP full).
+- O lote de goldens encontrou duas referências derivadas da superfície nova:
+  `tests/test_fixtures_golden_mcp_parity.py` recebeu a allowlist da tool e o
+  golden de knowledge drift foi regenerado pelo flag oficial, sem edição manual.
 
 ## Gates e revisões
 
@@ -84,6 +87,10 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
 - `python -m pytest -p no:cacheprovider --basetemp E:\\pytest-lf-surface-fix-20261001
   tests/test_adapters_mcp_compact.py tests/test_host_surface_contracts.py -q` —
   exit 0; 14 passed.
+- `SPARKFORGE_REGEN_DRIFT=1 python -m pytest tests/test_fixtures_golden_knowledge_drift.py -q`
+  — exit 0; 11 passed.
+- `python -m pytest tests/test_fixtures_golden_mcp_parity.py -q` — exit 0; 13
+  passed.
 
 ## Revisão final
 

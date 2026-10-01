@@ -24,6 +24,8 @@ files:
   - {path: tests/test_sync_render.py, action: modify, reason: "Fixar relação medida entre nova skill e coordenadores."}
   - {path: tests/test_adapters_mcp_compact.py, action: modify, reason: "Atualizar contadores de superfície full após declarar a nova tool."}
   - {path: tests/test_host_surface_contracts.py, action: modify, reason: "Atualizar contrato de tamanho da superfície MCP após declarar a nova tool."}
+  - {path: tests/test_fixtures_golden_mcp_parity.py, action: modify, reason: "Declarar a nova tool no allowlist de migração do golden MCP."}
+  - {path: fixtures/knowledge_drift/lf_consideracoes/expected/result.json, action: modify, reason: "Regenerar impacto do documento knowledge novo pelo mecanismo oficial de drift."}
   - {path: manifest.json, action: modify, reason: "Publicar skill e tool novas no manifesto instalado."}
   - {path: docs/surface.lock.json, action: modify, reason: "Declarar crescimento mensurado da superfície MCP e skills."}
   - {path: docs/guia/usos/lake-formation-e-acesso.md, action: modify, reason: "Documentar o contrato novo, CLI e exemplos version-aware."}

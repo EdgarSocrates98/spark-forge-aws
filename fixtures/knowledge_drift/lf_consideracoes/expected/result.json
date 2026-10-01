@@ -101,6 +101,13 @@
           "reason": "mudou_depois_da_validacao",
           "retrieved": "2026-08-22",
           "state": "stale"
+        },
+        {
+          "id": "knowledge/lakeformation/architecture.md",
+          "kind": "doc",
+          "reason": "mudou_depois_da_validacao",
+          "retrieved": null,
+          "state": "stale"
         }
       ],
       "impact": {
@@ -109,7 +116,8 @@
           "agents/spark-performance-architect.md"
         ],
         "docs": [
-          "knowledge/glue/lakeformation-fgac.md"
+          "knowledge/glue/lakeformation-fgac.md",
+          "knowledge/lakeformation/architecture.md"
         ],
         "evals": [
           "evals/README.md",
@@ -157,7 +165,7 @@
   ],
   "totals": {
     "agents": 2,
-    "docs": 1,
+    "docs": 2,
     "evals": 5,
     "goldens": 2,
     "rules": 2
