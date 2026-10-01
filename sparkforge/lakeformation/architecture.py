@@ -321,12 +321,87 @@ def _access_explain(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[s
     if evidence.get("registered_location") is not False:
         data.append("credential_vending")
     data.append("s3")
-    nodes = list(dict.fromkeys(metadata + data + ["target_catalog", "kms"]))
-    edges = [
-        {"from": left, "to": right}
-        for left, right in zip(nodes, nodes[1:], strict=False)
+    nodes = list(
+        dict.fromkeys(
+            ["job", "role"]
+            + metadata[1:]
+            + data
+            + ["target_catalog", "kms"]
+            + (
+                ["spark", "iceberg", "s3fileio"]
+                if "iceberg" in {payload.get("source_format"), payload.get("target_format")}
+                else []
+            )
+        )
+    )
+    edges = [{"from": left, "to": right} for left, right in zip(nodes, nodes[1:], strict=False)]
+    paths = [
+        {"name": "metadata", "nodes": metadata},
+        {"name": "data", "nodes": data},
     ]
-    return {"nodes": nodes, "edges": edges, "metadata_path": metadata, "data_path": data}
+    if "iceberg" in {payload.get("source_format"), payload.get("target_format")}:
+        paths.append(
+            {
+                "name": "iceberg_data",
+                "nodes": [
+                    "spark",
+                    "iceberg",
+                    "glue_catalog",
+                    "lake_formation",
+                    "credential_vending",
+                    "s3fileio",
+                ],
+            }
+        )
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "metadata_path": metadata,
+        "data_path": data,
+        "paths": paths,
+        "observability": _observability(payload),
+    }
+
+
+def _observability(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("observability")
+    observed = dict(raw) if isinstance(raw, dict) else {}
+    cloudtrail_raw = observed.get("cloudtrail")
+    cloudtrail = dict(cloudtrail_raw) if isinstance(cloudtrail_raw, dict) else {}
+    required: list[str] = []
+    legs: dict[str, dict[str, Any]] = {}
+    for leg in ("consumer", "producer"):
+        value = cloudtrail.get(leg)
+        if isinstance(value, dict):
+            legs[leg] = dict(value)
+            if value.get("status") not in {"present", "observed", "pass", "accepted"}:
+                required.append(f"cloudtrail_{leg}")
+        elif value in {"present", "observed", "pass", "accepted"}:
+            legs[leg] = {"status": value}
+        else:
+            legs[leg] = {
+                "status": "unresolved",
+                "required_verification": f"cloudtrail_{leg}",
+            }
+            if payload.get("cross_account"):
+                required.append(f"cloudtrail_{leg}")
+    result = {
+        "sources": [
+            "cloudtrail",
+            "glue_logs",
+            "spark_logs",
+            "lakeformation_audit",
+            "ram_state",
+        ],
+        "cloudtrail": legs,
+        "glue_logs": observed.get("glue_logs", "unresolved"),
+        "spark_logs": observed.get("spark_logs", "unresolved"),
+        "lakeformation_audit": observed.get("lakeformation_audit", "unresolved"),
+        "ram_state": observed.get("ram_state", "unresolved"),
+        "required_verification": sorted(set(required)),
+    }
+    result["status"] = "observed" if not required else "unresolved"
+    return result
 
 
 def _authorization(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[str, Any]:
@@ -359,6 +434,7 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
             "status": "not_requested",
             "from": None,
             "to": None,
+            "transition_family": "none",
             "breaking_changes": [],
             "semantic_changes": [],
             "security_changes": [],
@@ -367,14 +443,74 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
             "testing_plan": [],
             "rollback_plan": ["No migration change is applied by this analyzer."],
         }
+    source_engine = str(migration.get("from_engine") or payload.get("engine") or "")
+    target_engine = str(migration.get("to_engine") or payload.get("engine") or "")
     source = str(migration.get("from_runtime", ""))
     target = str(migration.get("to_runtime", ""))
+    source_model = str(migration.get("from_access_model") or "").lower()
+    target_model = str(migration.get("to_access_model") or "").lower()
+    family = "unknown"
     breaking: list[str] = []
     semantic: list[str] = []
     security: list[str] = []
     performance: list[str] = []
     cost: list[str] = []
-    if source == "4.0" and target in {"5.0", "5.1"}:
+    if (
+        source_model in {"fgac", "fta"}
+        and target_model in {"fgac", "fta"}
+        and source_model != target_model
+    ):
+        family = f"{source_model}_to_{target_model}"
+        breaking.append(
+            f"Access model changes from {source_model.upper()} to {target_model.upper()}."
+        )
+        semantic.extend(
+            [
+                "recheck operation permissions",
+                "recheck credential path",
+                "recheck table format semantics",
+            ]
+        )
+        security.append("revalidate Lake Formation grants, IAM and registered-location behavior")
+        performance.append("benchmark the same workload after changing the access model")
+        cost.append("compare measured runtime, workers and DPUSeconds only")
+    elif source_engine == "glue" and target_engine.startswith("emr"):
+        family = "glue_to_emr"
+        breaking.append(
+            "Glue job semantics do not transfer automatically to the selected EMR deployment mode."
+        )
+        semantic.extend(
+            [
+                "recheck Spark and filesystem configuration",
+                "recheck catalog and Iceberg integration",
+                "recheck job bootstrap and application lifecycle",
+            ]
+        )
+        security.append(
+            "revalidate EMR execution role, Lake Formation integration, RAM and credential vending"
+        )
+        performance.append("benchmark Glue and EMR on the same data volume and operation")
+        cost.append("compare measured runtime, workers and platform pricing basis")
+    elif source_engine.startswith("emr") and target_engine.startswith("emr") and source != target:
+        family = "emr_release_upgrade"
+        breaking.append(
+            "EMR release changes can alter FGAC/FTA, filesystem and "
+            "open-table-format capability cells."
+        )
+        semantic.extend(
+            [
+                "recheck release capability matrix",
+                "recheck Iceberg/Hudi/Delta operation semantics",
+                "recheck EMRFS versus S3A behavior",
+            ]
+        )
+        security.append(
+            "revalidate Lake Formation integration, cross-account version and credential path"
+        )
+        performance.append("repeat the same workload benchmark on the target release")
+        cost.append("compare measured DPUSeconds or EMR usage/cost basis only")
+    elif source_engine == "glue" and source == "4.0" and target in {"5.0", "5.1"}:
+        family = "glue_4_to_5"
         breaking.append(
             "FGAC moves from GlueContext/DynamicFrame semantics to the Spark-native path."
         )
@@ -389,7 +525,8 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
         security.append("revalidate FGAC/FTA mode, resource links, grants and GetDataAccess")
         performance.append("measure system/user context overhead against a same-volume baseline")
         cost.append("measure runtime duration, workers and DPUSeconds; no saving is inferred")
-    elif source == "5.0" and target == "5.1":
+    elif source_engine == "glue" and source == "5.0" and target == "5.1":
+        family = "glue_5.0_to_5.1"
         breaking.append(
             "Revalidate DDL/DML and open-table-format capability cells for the target operation."
         )
@@ -398,12 +535,16 @@ def _migration_report(payload: dict[str, Any]) -> dict[str, Any]:
         performance.append("repeat the same workload benchmark")
         cost.append("compare measured DPUSeconds only")
     else:
+        family = "runtime_transition"
         semantic.append("use the capability matrix for the declared source and target releases")
         cost.append("collect a measured baseline before any capacity or cost claim")
     return {
         "status": "required" if breaking else "version_dependent",
         "from": source,
         "to": target,
+        "from_engine": source_engine,
+        "to_engine": target_engine,
+        "transition_family": family,
         "breaking_changes": breaking,
         "semantic_changes": semantic,
         "security_changes": security,
@@ -428,9 +569,29 @@ def _preflight(
     checks: list[dict[str, Any]] = []
 
     def add(code: str, layer: str, value: Any, required: str) -> None:
+        version_pass = (
+            code == "CROSS-ACCOUNT-VERSION"
+            and isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and value >= 4
+        )
         status = (
             "pass"
-            if value in {True, "allowed", "accepted", "present", "enabled", "all", "super"}
+            if value
+            in {
+                True,
+                "allowed",
+                "accepted",
+                "present",
+                "enabled",
+                "active",
+                "associated",
+                "verified",
+                "closed",
+                "all",
+                "super",
+            }
+            or version_pass
             else ("fail" if value in {False, "denied", "absent", "pending"} else "unresolved")
         )
         checks.append(
@@ -459,13 +620,33 @@ def _preflight(
         "registered_location",
     )
     if payload.get("cross_account"):
-        add("RAM-SHARE", "ram", evidence.get("ram"), "active share and association")
         add(
-            "RESOURCE-LINK",
-            "catalog",
-            evidence.get("resource_link"),
-            "resource link with source name",
+            "RAM-SHARE",
+            "ram",
+            evidence.get("ram_share_status", evidence.get("ram")),
+            "active AWS RAM share",
         )
+        add(
+            "RAM-ASSOCIATION",
+            "ram",
+            evidence.get("ram_association"),
+            "consumer principal/resource association",
+        )
+        add(
+            "CROSS-ACCOUNT-VERSION",
+            "cross_account",
+            evidence.get("cross_account_version"),
+            "declared Lake Formation cross-account version",
+        )
+        route = payload.get("cross_account_resolution")
+        route_mode = route.get("mode") if isinstance(route, dict) else None
+        if route_mode in {None, "resource_link"}:
+            add(
+                "RESOURCE-LINK",
+                "catalog",
+                evidence.get("resource_link"),
+                "resource link with source name when this route requires one",
+            )
     if payload.get("cross_account") or str(payload.get("access_model", "")).lower() == "fta":
         add(
             "GET-DATA-ACCESS",
@@ -497,6 +678,27 @@ def _performance_finops(payload: dict[str, Any]) -> dict[str, Any]:
             observed.append(
                 {"metric": key, "value": evidence[key], "source": "declared benchmark/run fact"}
             )
+    dimensions = {
+        "security_requirement": {
+            "status": "conditional",
+            "requires": ["declared_row_column_cell_need", "least_privilege_review"],
+        },
+        "latency": {
+            "status": "conditional",
+            "requires": ["same_volume_benchmark", "runtime_duration"],
+        },
+        "resource_overhead": {
+            "status": "conditional",
+            "requires": ["workers", "system_user_context_observation"],
+        },
+        "worker_requirements": {
+            "status": "conditional",
+            "requires": ["runtime_worker_configuration", "same_volume_benchmark"],
+        },
+        "runtime_duration": {"status": "conditional", "requires": ["duration_seconds"]},
+        "dpu_seconds": {"status": "conditional", "requires": ["dpu_seconds"]},
+        "cost": {"status": "conditional", "requires": ["dpu_seconds", "cost_basis"]},
+    }
     return {
         "claims": [
             {
@@ -519,8 +721,32 @@ def _performance_finops(payload: dict[str, Any]) -> dict[str, Any]:
             "same_volume_correctness_check",
         ],
         "observed_measurements": observed,
+        "dimensions": dimensions,
         "claim_policy": "No numeric gain, cost, latency or token saving without measured evidence.",
     }
+
+
+def _decision_graph(payload: dict[str, Any]) -> dict[str, Any]:
+    values = {
+        "engine": payload.get("engine"),
+        "runtime": payload.get("runtime"),
+        "access_model": payload.get("access_model") or payload.get("table_access_model"),
+        "format": payload.get("target_format") or payload.get("source_format"),
+        "operation": payload.get("target_operation") or payload.get("operation"),
+        "cross_account": payload.get("cross_account"),
+    }
+    nodes = [
+        {
+            "id": name,
+            "value": value,
+            "status": "observed" if value not in (None, "") else "unresolved",
+        }
+        for name, value in values.items()
+    ]
+    names = list(values)
+    edges = [{"from": left, "to": right} for left, right in zip(names, names[1:], strict=False)]
+    unresolved = [name for name, value in values.items() if value in (None, "")]
+    return {"nodes": nodes, "edges": edges, "dimensions": names, "unresolved": unresolved}
 
 
 def _cross_review(payload: dict[str, Any], taxonomy: list[dict[str, Any]]) -> list[dict[str, str]]:
@@ -567,7 +793,7 @@ def _progressive_disclosure(payload: dict[str, Any]) -> dict[str, Any]:
         refs.append("knowledge/storage/iceberg-catalog.md")
     if payload.get("engine") == "glue":
         refs.append("knowledge/glue/lakeformation-fgac.md")
-    if payload.get("cross_account"):
+    if payload.get("cross_account") and payload.get("engine") == "glue":
         refs.append("knowledge/glue/lakeformation-fgac.md")
     runbooks = [
         "docs/guia/usos/lake-formation-operacional.md#credential-vending",
@@ -722,19 +948,24 @@ def _cross_account_resolution(
                     "resource_link",
                 )
             )
-        return {
-            "status": "pass" if not required else "unresolved",
-            "mode": mode,
-            "service": resolution.get("service"),
-        }, checks, required
+        return (
+            {
+                "status": "pass" if not required else "unresolved",
+                "mode": mode,
+                "service": resolution.get("service"),
+            },
+            checks,
+            required,
+        )
     if mode == "explicit_catalog_id":
         catalog_id = resolution.get("catalog_id")
         source_catalog = payload.get("source_catalog")
         source_catalog = source_catalog if isinstance(source_catalog, dict) else {}
         expected = source_catalog.get("glue_id") or source_catalog.get("owner_account_id")
-        valid_service = str(payload.get("engine", "")).lower() == "glue" and str(
-            resolution.get("service", "glue_etl")
-        ).lower() == "glue_etl"
+        valid_service = (
+            str(payload.get("engine", "")).lower() == "glue"
+            and str(resolution.get("service", "glue_etl")).lower() == "glue_etl"
+        )
         if not valid_service or not catalog_id or str(catalog_id) != str(expected):
             required.add("cross_account_catalog_id")
             checks.append(
@@ -746,12 +977,16 @@ def _cross_account_resolution(
                     "declare the producer CatalogId for the Glue ETL route",
                 )
             )
-        return {
-            "status": "pass" if not required else "unresolved",
-            "mode": mode,
-            "catalog_id": catalog_id,
-            "service": resolution.get("service", "glue_etl"),
-        }, checks, required
+        return (
+            {
+                "status": "pass" if not required else "unresolved",
+                "mode": mode,
+                "catalog_id": catalog_id,
+                "service": resolution.get("service", "glue_etl"),
+            },
+            checks,
+            required,
+        )
     evidence_key = {
         "shared_catalog": "shared_catalog",
         "other_supported_route": "route_verified",
@@ -770,11 +1005,15 @@ def _cross_account_resolution(
                 sorted(required),
             )
         )
-    return {
-        "status": "pass" if not required else "unresolved",
-        "mode": mode,
-        "service": resolution.get("service"),
-    }, checks, required
+    return (
+        {
+            "status": "pass" if not required else "unresolved",
+            "mode": mode,
+            "service": resolution.get("service"),
+        },
+        checks,
+        required,
+    )
 
 
 def _governance_mode(payload: dict[str, Any]) -> str:
@@ -794,6 +1033,7 @@ def _operational_review(
     return {
         "code_and_iac": code_and_iac,
         "access_explain": _access_explain(payload, evidence),
+        "observability": _observability(payload),
         "authorization": _authorization(payload, evidence),
         "error_taxonomy": taxonomy,
         "root_cause": _root_cause(payload, checks + code_and_iac["findings"], taxonomy),
@@ -802,6 +1042,7 @@ def _operational_review(
         "performance_finops": _performance_finops(payload),
         "cross_review": _cross_review(payload, taxonomy),
         "progressive_disclosure": _progressive_disclosure(payload),
+        "decision_graph": _decision_graph(payload),
         "cross_account_resolution": resolution,
     }
 
@@ -815,9 +1056,21 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
         payload.get("table_access_model") or payload.get("access_model", "unknown")
     ).lower()
     evidence = _evidence(payload)
+    error_taxonomy = _error_taxonomy(payload)
     checks: list[dict[str, Any]] = []
     required = set(routing.get("required_verification", []))
-    hard_block = False
+    hard_block = bool(error_taxonomy)
+    if error_taxonomy:
+        for item in error_taxonomy:
+            checks.append(
+                _check(
+                    "OBSERVED-ERROR",
+                    "blocked",
+                    item["category"],
+                    item["message"],
+                    item["evidence"],
+                )
+            )
     observed: list[str] = list(routing.get("observed", []))
     inferred: list[str] = []
     risks: list[str] = []
@@ -862,7 +1115,43 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
     )
     checks.extend(source_checks + target_checks)
     required.update(source_required | target_required)
-    hard_block = source_blocked or target_blocked
+    hard_block = hard_block or source_blocked or target_blocked
+
+    if access_model in {"fgac", "fta"}:
+        permission = evidence.get("lakeformation_permission")
+        if permission in {False, "denied"}:
+            hard_block = True
+            checks.append(
+                _check(
+                    "LF-PERMISSION",
+                    "blocked",
+                    "lakeformation",
+                    "Lake Formation permission was explicitly denied",
+                    "grant only the exact operation after resource and principal are proven",
+                )
+            )
+        elif permission in {None, "", "unknown", "absent", "pending"}:
+            required.add("lakeformation_permission")
+            checks.append(
+                _check(
+                    "LF-PERMISSION",
+                    "unresolved",
+                    "lakeformation",
+                    "Lake Formation permission was not independently measured",
+                    "lakeformation_permission",
+                )
+            )
+    if evidence.get("kms") in {False, "denied"}:
+        hard_block = True
+        checks.append(
+            _check(
+                "KMS-DECRYPT",
+                "blocked",
+                "kms",
+                "KMS evidence explicitly denies the governed data path",
+                "verify the exact key policy, encryption context and role before changing access",
+            )
+        )
     for decision in (source_decision, target_decision):
         observed.append(
             f"{decision['leg']} {decision['engine']} {decision['runtime']} "
@@ -915,8 +1204,8 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
         engine == "glue"
         and runtime in {"5.0", "5.1"}
         and access_model == "fgac"
-            and (source_api == "dynamicframe" or target_api == "dynamicframe")
-        ):
+        and (source_api == "dynamicframe" or target_api == "dynamicframe")
+    ):
         hard_block = True
         checks.append(
             _check(
@@ -947,9 +1236,7 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
         )
 
     write_operations = {
-        value
-        for value in (source_operation, target_operation)
-        if value in _WRITE_OPERATIONS
+        value for value in (source_operation, target_operation) if value in _WRITE_OPERATIONS
     }
     if write_operations:
         permission = evidence.get("lakeformation_permission")
@@ -1049,6 +1336,19 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
                     "iam_get_data_access",
                 )
             )
+        if "cross_account_version" in evidence:
+            version = evidence.get("cross_account_version")
+            if not isinstance(version, (int, float)) or version < 4:
+                required.add("cross_account_version")
+                checks.append(
+                    _check(
+                        "XACC-VERSION",
+                        "unresolved",
+                        "cross_account",
+                        f"cross-account version={version or 'unknown'} is not closed",
+                        "cross_account_version",
+                    )
+                )
     governance_mode = _governance_mode(payload)
     if governance_mode not in {"lakeformation", "iam", "hybrid"}:
         required.add("access_governance_mode")
@@ -1122,9 +1422,7 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
             "capability": target_decision["capability"],
             "source_decision": source_decision,
             "target_decision": target_decision,
-            "capability_checks": [
-                item for item in checks if item.get("layer") == "capability"
-            ],
+            "capability_checks": [item for item in checks if item.get("layer") == "capability"],
             "observed": observed,
             "inferred": inferred,
             "required_verification": sorted(required),
