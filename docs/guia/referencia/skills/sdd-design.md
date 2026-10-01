@@ -2,7 +2,7 @@
 
 # Skill `sdd-design`
 
-Use quando o define.md da feature está ready e falta decidir como construir — "desenha a solução", "quais arquivos mudam?", "como desfazer?", "fase design" — no SparkForge ou num job do operador.
+Use quando o define.md da feature está ready e falta decidir como construir — \"desenha a solução\", \"quais arquivos mudam?\", \"como desfazer?\", \"fase design\" — no SparkForge ou num job do operador.
 
 | Campo | Valor |
 |---|---|

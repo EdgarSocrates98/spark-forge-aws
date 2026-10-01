@@ -1,6 +1,6 @@
 ---
 name: sdd-define
-description: Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador.
+description: "Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — \\\"define os requisitos\\\", \\\"quais os critérios de aceite?\\\", \\\"fase define\\\" — para uma mudança no SparkForge ou num job do operador."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

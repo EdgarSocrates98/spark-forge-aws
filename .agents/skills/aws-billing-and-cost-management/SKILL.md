@@ -1,6 +1,6 @@
 ---
 name: aws-billing-and-cost-management
-description: Use quando for analisar custos AWS, encontrar economias, gerenciar budgets, avaliar Savings Plans e Reserved Instances, right-size EC2/Lambda/RDS/EBS com Compute Optimizer, consultar pricing de serviço, query CUR com Athena, detectar anomalias de custo, escopar custos a billing views, ou monitorar Free Tier. Gatilhos: conta AWS, análise de custo, reduzir spend, savings plan, reserved instance, right-size, budget alert, cost optimization, pricing, free tier, cost anomaly, CUR, cost audit, billing view.
+description: "Use quando for analisar custos AWS, encontrar economias, gerenciar budgets, avaliar Savings Plans e Reserved Instances, right-size EC2/Lambda/RDS/EBS com Compute Optimizer, consultar pricing de serviço, query CUR com Athena, detectar anomalias de custo, escopar custos a billing views, ou monitorar Free Tier. Gatilhos: conta AWS, análise de custo, reduzir spend, savings plan, reserved instance, right-size, budget alert, cost optimization, pricing, free tier, cost anomaly, CUR, cost audit, billing view."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

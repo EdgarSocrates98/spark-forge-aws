@@ -2,7 +2,7 @@
 
 # Skill `aws-database`
 
-Use quando precisar escolher, comparar, recomendar, iniciar ou operar um banco de dados AWS — roteia para o servico correto entre Aurora, DSQL, RDS, DynamoDB, ElastiCache, MemoryDB, DocumentDB, Keyspaces, Timestream, Neptune. Aplica quando alguem descreve uma aplicacao que vai armazenar, recuperar ou gerenciar dados na AWS, mesmo sem mencionar "banco de dados" explicitamente. Cobre relacional (Aurora, DSQL, RDS PostgreSQL/MySQL/MariaDB/Oracle/SQL Server/Db2), key-value (DynamoDB), wide-column (Keyspaces), documento (DocumentDB), grafo (Neptune), serie temporal (Timestream) e em-memory/cache (ElastiCache, MemoryDB). NAO use para armazenamento de objeto/arquivo (S3, EFS, FSx — use aws-storage) nem para analytics query engines (Athena, Redshift).
+Use quando precisar escolher, comparar, recomendar, iniciar ou operar um banco de dados AWS — roteia para o servico correto entre Aurora, DSQL, RDS, DynamoDB, ElastiCache, MemoryDB, DocumentDB, Keyspaces, Timestream, Neptune. Aplica quando alguem descreve uma aplicacao que vai armazenar, recuperar ou gerenciar dados na AWS, mesmo sem mencionar \"banco de dados\" explicitamente. Cobre relacional (Aurora, DSQL, RDS PostgreSQL/MySQL/MariaDB/Oracle/SQL Server/Db2), key-value (DynamoDB), wide-column (Keyspaces), documento (DocumentDB), grafo (Neptune), serie temporal (Timestream) e em-memory/cache (ElastiCache, MemoryDB). NAO use para armazenamento de objeto/arquivo (S3, EFS, FSx — use aws-storage) nem para analytics query engines (Athena, Redshift).
 
 | Campo | Valor |
 |---|---|

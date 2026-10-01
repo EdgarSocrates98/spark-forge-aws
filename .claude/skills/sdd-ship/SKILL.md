@@ -1,6 +1,6 @@
 ---
 name: sdd-ship
-description: Use quando o build_report.md da feature está pronto e é hora de entregar — "entrega a feature", "fecha o ciclo", "fase ship", "posso abrir o PR?", "posso fazer merge?" — no SparkForge ou num job do operador.
+description: "Use quando o build_report.md da feature está pronto e é hora de entregar — \\\"entrega a feature\\\", \\\"fecha o ciclo\\\", \\\"fase ship\\\", \\\"posso abrir o PR?\\\", \\\"posso fazer merge?\\\" — no SparkForge ou num job do operador."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

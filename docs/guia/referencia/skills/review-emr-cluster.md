@@ -2,12 +2,12 @@
 
 # Skill `review-emr-cluster`
 
-Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for "por que esse cluster custa isso", "o cluster subiu e não desce", "esse cluster morreu no bootstrap" ou "cadê os logs do cluster que terminou", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-cluster` no olho, rode `sparkforge analyze emr-cluster` e `sparkforge judge` em vez disso — o extrator normaliza grupos e frotas num kind só e o catálogo aplica as regras SF-EMR sobre o que ele achou. Cobre também EMR Serverless: se o dump é `get-application`, o verbo é `sparkforge analyze emr-serverless` e a área é SF-EMRS.
+Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for \"por que esse cluster custa isso\", \"o cluster subiu e não desce\", \"esse cluster morreu no bootstrap\" ou \"cadê os logs do cluster que terminou\", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-cluster` no olho, rode `sparkforge analyze emr-cluster` e `sparkforge judge` em vez disso — o extrator normaliza grupos e frotas num kind só e o catálogo aplica as regras SF-EMR sobre o que ele achou. Cobre também EMR Serverless: se o dump é `get-application`, o verbo é `sparkforge analyze emr-serverless` e a área é SF-EMRS.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-emr-cluster/SKILL.md` |
-| `metadata` |  |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/emr/runtime-matrix.md', '../../knowledge/emr/cluster-configuration.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze emr-cluster', 'sparkforge judge', 'sparkforge analyze emr-serverless']} |
 
 ## Procedimento (texto integral)
 

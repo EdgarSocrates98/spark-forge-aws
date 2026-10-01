@@ -2,7 +2,7 @@
 
 # Skill `optimize-variable-volume-job`
 
-Use quando o mesmo job Glue roda de dezenas de registros a centenas de milhões e um único perfil configurado para o pior caso fica caro em microcarga e ainda inadequado no full. Use também quando a pergunta for "por que a carga vazia demora 5 minutos", "o job de teste custa quase igual ao de produção" ou "ficou mais lento essa semana" num job cujo volume varia muito entre execuções. Se você está prestes a comparar runs de volumes diferentes só de cabeça, rode `sparkforge analyze event-log` em cada run e `sparkforge analyze pyspark` no código em vez disso — subparalelismo (SF-UI-006) que é esperado numa carga micro é sintoma real numa carga full, e o catálogo não distingue os dois perfis sozinho; quem separa é você.
+Use quando o mesmo job Glue roda de dezenas de registros a centenas de milhões e um único perfil configurado para o pior caso fica caro em microcarga e ainda inadequado no full. Use também quando a pergunta for \"por que a carga vazia demora 5 minutos\", \"o job de teste custa quase igual ao de produção\" ou \"ficou mais lento essa semana\" num job cujo volume varia muito entre execuções. Se você está prestes a comparar runs de volumes diferentes só de cabeça, rode `sparkforge analyze event-log` em cada run e `sparkforge analyze pyspark` no código em vez disso — subparalelismo (SF-UI-006) que é esperado numa carga micro é sintoma real numa carga full, e o catálogo não distingue os dois perfis sozinho; quem separa é você.
 
 | Campo | Valor |
 |---|---|

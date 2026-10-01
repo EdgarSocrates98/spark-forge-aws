@@ -2,7 +2,7 @@
 
 # Skill `sdd-build`
 
-Use quando o plan.md da feature está ready e é hora de construir — "executa o plano", "implementa a feature", "fase build" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox).
+Use quando o plan.md da feature está ready e é hora de construir — \"executa o plano\", \"implementa a feature\", \"fase build\" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox).
 
 | Campo | Valor |
 |---|---|

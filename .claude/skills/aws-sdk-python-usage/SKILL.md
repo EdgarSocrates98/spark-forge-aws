@@ -1,6 +1,6 @@
 ---
 name: aws-sdk-python-usage
-description: Use quando for escrever código Python que usa serviços AWS via boto3 ou botocore — criar service clients ou resources, configurar sessions e credenciais, tratar erros com ClientError, usar paginators e waiters, transferências S3 e presigned URLs, operações de tabela DynamoDB, ou qualquer configuração de client boto3/botocore. Use sempre que código Python importar boto3 ou botocore, ou quando o usuário perguntar sobre operações AWS em Python.
+description: "Use quando for escrever código Python que usa serviços AWS via boto3 ou botocore — criar service clients ou resources, configurar sessions e credenciais, tratar erros com ClientError, usar paginators e waiters, transferências S3 e presigned URLs, operações de tabela DynamoDB, ou qualquer configuração de client boto3/botocore. Use sempre que código Python importar boto3 ou botocore, ou quando o usuário perguntar sobre operações AWS em Python."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

@@ -5,6 +5,7 @@ Generated from the canonical catalog on 2026-10-01.
 | Gate | Result |
 |---|---:|
 | Source skills audited | 52/52 |
+| Skill-creator quick validation | 52/52 |
 | Skill-creator eval manifests | 52/52 |
 | Offline eval cases | 104/104 |
 | Provider calls | 0 |

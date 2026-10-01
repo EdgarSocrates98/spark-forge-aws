@@ -1,6 +1,6 @@
 ---
 name: design-data-architecture
-description: Use quando for necessario desenhar arquiteturas de dados completas.
+description: "Use quando for necessario desenhar arquiteturas de dados completas."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

@@ -2,7 +2,7 @@
 
 name: analyze-functional-rules
 
-description: Use quando for necessario estudar regras funcionais, contratos, estados, excecoes e criterios de aceite.
+description: "Use quando for necessario estudar regras funcionais, contratos, estados, excecoes e criterios de aceite."
 
 metadata:
   sparkforge_contract: v1

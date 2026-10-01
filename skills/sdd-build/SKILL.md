@@ -1,6 +1,6 @@
 ---
 name: sdd-build
-description: Use quando o plan.md da feature está ready e é hora de construir — "executa o plano", "implementa a feature", "fase build" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox).
+description: "Use quando o plan.md da feature está ready e é hora de construir — \\\"executa o plano\\\", \\\"implementa a feature\\\", \\\"fase build\\\" — no SparkForge (perfil dev) ou num job do operador (perfil operator, sempre por change sandbox)."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

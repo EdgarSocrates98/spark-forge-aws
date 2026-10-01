@@ -2,7 +2,7 @@
 
 # Skill `sdd-explore`
 
-Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job Glue/PySpark do operador — "quero fazer X", "uso A ou B?", "como você atacaria isso?" — e ainda não há define, design nem código. Requisito já claro vai direto para sdd-define.
+Use quando uma ideia ainda sem forma vai virar mudança no SparkForge ou num job Glue/PySpark do operador — \"quero fazer X\", \"uso A ou B?\", \"como você atacaria isso?\" — e ainda não há define, design nem código. Requisito já claro vai direto para sdd-define.
 
 | Campo | Valor |
 |---|---|

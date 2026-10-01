@@ -8,6 +8,8 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 REQUIRED_HEADINGS = ("## Quando NÃO usar", "## Referência rápida", "## Red flags")
@@ -32,7 +34,17 @@ def _frontmatter(text: str) -> tuple[str, str] | None:
 
 def _first_line(front: str, key: str) -> str:
     match = re.search(rf"^{re.escape(key)}:\s*(.*?)\s*$", front, re.MULTILINE)
-    return match.group(1).strip() if match else ""
+    if not match:
+        return ""
+    value = match.group(1).strip()
+    if key == "description":
+        try:
+            parsed = yaml.safe_load(value)
+            if isinstance(parsed, str):
+                return parsed
+        except yaml.YAMLError:
+            pass
+    return value
 
 
 def _metadata_values(front: str, key: str) -> list[str]:

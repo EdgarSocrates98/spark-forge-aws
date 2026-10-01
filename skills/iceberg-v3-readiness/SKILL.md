@@ -1,6 +1,6 @@
 ---
 name: iceberg-v3-readiness
-description: Use quando alguém pergunta "posso subir essa tabela para Iceberg format v3?", "o Athena lê v3?", "vale a pena o VARIANT / os deletion vectors / o row lineage?" ou quando uma query em Athena passou a falhar com `Cannot read unsupported version 3` depois de uma migração de runtime. Use antes de qualquer recomendação de mudar `format-version`. Se você está prestes a responder de memória o que cada engine suporta, rode `sparkforge iceberg assess-upgrade <dir> --from 2 --to 3` — a matriz de suporte tem uma célula por par engine/feature, cada uma com fonte, e a maioria é `UNKNOWN`, que é o resultado honesto e não uma lacuna a preencher por inferência.
+description: "Use quando alguém pergunta \\\"posso subir essa tabela para Iceberg format v3?\\\", \\\"o Athena lê v3?\\\", \\\"vale a pena o VARIANT / os deletion vectors / o row lineage?\\\" ou quando uma query em Athena passou a falhar com `Cannot read unsupported version 3` depois de uma migração de runtime. Use antes de qualquer recomendação de mudar `format-version`. Se você está prestes a responder de memória o que cada engine suporta, rode `sparkforge iceberg assess-upgrade dir --from 2 --to 3` — a matriz de suporte tem uma célula por par engine/feature, cada uma com fonte, e a maioria é `UNKNOWN`, que é o resultado honesto e não uma lacuna a preencher por inferência."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

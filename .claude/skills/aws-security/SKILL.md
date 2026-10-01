@@ -1,6 +1,6 @@
 ---
 name: aws-security
-description: Use quando a pergunta envolver serviços AWS de segurança — Security Hub V2 (OCSF) findings, conectores, agregadores, automation rules e resumo de postura; Security Hub CSPM (V1/ASFF) controles e padrões de compliance; GuardDuty threat findings; Inspector vulnerability findings; Macie sensitive data findings; Detective investigation; e Security Lake. Use para postura de segurança, Exposure findings, controles CSPM falhados, threat findings, vulnerability findings, sensitive data findings, automation rules ou configuração cross-service de segurança em ambientes AWS. Procedimentos usam sintaxe AWS CLI padrão e funcionam com ou sem o AWS MCP server.
+description: "Use quando a pergunta envolver serviços AWS de segurança — Security Hub V2 (OCSF) findings, conectores, agregadores, automation rules e resumo de postura; Security Hub CSPM (V1/ASFF) controles e padrões de compliance; GuardDuty threat findings; Inspector vulnerability findings; Macie sensitive data findings; Detective investigation; e Security Lake. Use para postura de segurança, Exposure findings, controles CSPM falhados, threat findings, vulnerability findings, sensitive data findings, automation rules ou configuração cross-service de segurança em ambientes AWS. Procedimentos usam sintaxe AWS CLI padrão e funcionam com ou sem o AWS MCP server."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

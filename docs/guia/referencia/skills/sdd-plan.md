@@ -2,7 +2,7 @@
 
 # Skill `sdd-plan`
 
-Use quando o design.md da feature está ready e falta quebrar a construção em tarefas pequenas, com teste e código, que outra sessão execute sem contexto — "escreve o plano", "quebra em tarefas", "fase plan".
+Use quando o design.md da feature está ready e falta quebrar a construção em tarefas pequenas, com teste e código, que outra sessão execute sem contexto — \"escreve o plano\", \"quebra em tarefas\", \"fase plan\".
 
 | Campo | Valor |
 |---|---|

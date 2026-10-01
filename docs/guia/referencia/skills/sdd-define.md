@@ -2,7 +2,7 @@
 
 # Skill `sdd-define`
 
-Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — "define os requisitos", "quais os critérios de aceite?", "fase define" — para uma mudança no SparkForge ou num job do operador.
+Use quando a abordagem já está escolhida, ou o pedido já é claro, e falta fixar o que significa pronto — \"define os requisitos\", \"quais os critérios de aceite?\", \"fase define\" — para uma mudança no SparkForge ou num job do operador.
 
 | Campo | Valor |
 |---|---|

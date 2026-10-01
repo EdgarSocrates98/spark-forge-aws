@@ -117,6 +117,32 @@ def split_frontmatter(text: str) -> tuple[str, str]:
     return text[: end + 4], text[end + 4 :]
 
 
+def normalize_frontmatter(front: str) -> str:
+    """Quote description as YAML-safe UTF-8 and remove forbidden placeholders."""
+    lines = front.splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if not line.startswith("description:"):
+            continue
+        value = line.partition(":")[2].strip()
+        try:
+            parsed = yaml.safe_load(value)
+            if isinstance(parsed, str):
+                value = parsed
+        except yaml.YAMLError:
+            pass
+        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        # Agent skill frontmatter rejects angle-bracket placeholders. Keep the
+        # command meaning while making descriptions portable across validators.
+        value = re.sub(r"<([^<>]+)>", r"\1", value)
+        if len(value) > 1024:
+            value = value[:1021].rstrip() + "..."
+        newline = "\n" if line.endswith("\n") else ""
+        lines[index] = f"description: {json.dumps(value, ensure_ascii=False)}{newline}"
+        break
+    return "".join(lines)
+
+
 def primary_verbs(name: str, body: str) -> list[str]:
     found: list[str] = []
     for verb in re.findall(r"sparkforge [a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?", body):
@@ -228,6 +254,7 @@ def generated_files(skill_dir: Path) -> dict[Path, str]:
     skill_path = skill_dir / "SKILL.md"
     text = skill_path.read_text(encoding="utf-8")
     front, body = split_frontmatter(text)
+    front = normalize_frontmatter(front)
     verbs = primary_verbs(name, text)
     refs = [*COMMON_REFS, *domain_refs(name)]
     if "metadata:" not in front:

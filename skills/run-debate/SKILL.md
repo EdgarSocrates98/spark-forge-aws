@@ -1,6 +1,6 @@
 ---
 name: run-debate
-description: Use quando `sparkforge arbitrate` devolver `debate.unresolved` com um `debate_plan` para um par de regras e o operador quiser conduzir o debate na sessão — "roda o debate entre SF-X e SF-Y", "qual das duas ações fica?", "o arbitrate parou em debate, e agora?". A sessão faz o papel de cada lado, pede o brief ao executor com `sparkforge_debate_next`, escreve a submissão e a entrega com `sparkforge_debate_submit`, até o executor devolver `done`. O fechamento é sempre do `referee`, nunca da sessão.
+description: "Use quando `sparkforge arbitrate` devolver `debate.unresolved` com um `debate_plan` para um par de regras e o operador quiser conduzir o debate na sessão — \\\"roda o debate entre SF-X e SF-Y\\\", \\\"qual das duas ações fica?\\\", \\\"o arbitrate parou em debate, e agora?\\\". A sessão faz o papel de cada lado, pede o brief ao executor com `sparkforge_debate_next`, escreve a submissão e a entrega com `sparkforge_debate_submit`, até o executor devolver `done`. O fechamento é sempre do `referee`, nunca da sessão."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

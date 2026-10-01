@@ -2,7 +2,7 @@
 
 # Skill `spark4-compatibility`
 
-Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e alguém pergunta "o que quebra no Spark 4?", "essa config mudou de nome?", "ANSI mode vai estourar meu cast?" ou "meu JAR de Scala 2.12 funciona?". Use também quando o job falha com `NoSuchMethodError`, `ClassNotFoundException` ou uma exceção de overflow que antes devolvia NULL. Se você está prestes a comparar o código com o guia de migração do Apache no olho, rode `sparkforge migrate glue <dir> --from 5.1 --to 6.0` e `sparkforge glue dependency-audit <dir> --glue 6.0` — a área `SF-SPARK4` guarda cada regra pela versão de **Spark**, não de Glue, e por isso vale igual num EMR.
+Use quando o código PySpark ou o `.jar` precisa rodar sob Apache Spark 4 e alguém pergunta \"o que quebra no Spark 4?\", \"essa config mudou de nome?\", \"ANSI mode vai estourar meu cast?\" ou \"meu JAR de Scala 2.12 funciona?\". Use também quando o job falha com `NoSuchMethodError`, `ClassNotFoundException` ou uma exceção de overflow que antes devolvia NULL. Se você está prestes a comparar o código com o guia de migração do Apache no olho, rode `sparkforge migrate glue dir --from 5.1 --to 6.0` e `sparkforge glue dependency-audit dir --glue 6.0` — a área `SF-SPARK4` guarda cada regra pela versão de **Spark**, não de Glue, e por isso vale igual num EMR.
 
 | Campo | Valor |
 |---|---|

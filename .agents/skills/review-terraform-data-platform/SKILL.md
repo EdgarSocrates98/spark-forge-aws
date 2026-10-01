@@ -1,6 +1,6 @@
 ---
 name: review-terraform-data-platform
-description: Use quando for necessario revisar Terraform de plataformas de dados, IAM, providers, plans e drift.
+description: "Use quando for necessario revisar Terraform de plataformas de dados, IAM, providers, plans e drift."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

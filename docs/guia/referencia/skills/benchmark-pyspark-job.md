@@ -2,7 +2,7 @@
 
 # Skill `benchmark-pyspark-job`
 
-Use quando precisar comprovar — não estimar — o efeito de uma mudança de performance num job Glue, com comparação antes/depois de duração de stage, spill, GC e executor perdido, isolando uma variável por vez. Use também quando for escrever "X% mais rápido", "reduziu o shuffle pela metade", "resolveu o OOM" ou qualquer alegação quantificada de ganho. Se você está prestes a escrever um percentual de ganho sem rodar `sparkforge validate --findings`, pare — o schema rejeita `expected_effect` quantificado (%, x, vezes) sem `benchmark_ref`, e ganho previsto sem benchmark é invenção, não resultado.
+Use quando precisar comprovar — não estimar — o efeito de uma mudança de performance num job Glue, com comparação antes/depois de duração de stage, spill, GC e executor perdido, isolando uma variável por vez. Use também quando for escrever \"X% mais rápido\", \"reduziu o shuffle pela metade\", \"resolveu o OOM\" ou qualquer alegação quantificada de ganho. Se você está prestes a escrever um percentual de ganho sem rodar `sparkforge validate --findings`, pare — o schema rejeita `expected_effect` quantificado (%, x, vezes) sem `benchmark_ref`, e ganho previsto sem benchmark é invenção, não resultado.
 
 | Campo | Valor |
 |---|---|

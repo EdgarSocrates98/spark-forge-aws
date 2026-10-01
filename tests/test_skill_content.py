@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 from scripts import sync_skills
 from sparkforge.adapters.cli import build_parser
@@ -36,11 +37,8 @@ def parse_frontmatter(text: str) -> dict[str, str]:
         raise AssertionError("SKILL.md deve começar com frontmatter YAML (---).")
     end = text.index("\n---", 3)
     body = text[3:end]
-    data: dict[str, str] = {}
-    for line in body.splitlines():
-        if ":" in line and not line.startswith(" "):
-            key, _, value = line.partition(":")
-            data[key.strip()] = value.strip()
+    data = yaml.safe_load(body)
+    assert isinstance(data, dict), "frontmatter deve ser um mapa YAML"
     return data
 
 

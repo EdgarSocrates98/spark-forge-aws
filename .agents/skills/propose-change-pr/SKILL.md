@@ -1,6 +1,6 @@
 ---
 name: propose-change-pr
-description: Use quando o operador quiser levar ao repositório uma mudança de configuração que já passou pelo sandbox — "abre o PR dessa mudança", "propõe essa troca", "o sandbox passou, e agora?". A sessão monta o pacote com `sparkforge_change_propose` e roda os comandos git/gh do `commands.md` passo a passo, PARANDO para confirmação explícita antes de `git push` e de `gh pr create`. O pacote nunca roda git; quem roda é a sessão, com aprovação humana.
+description: "Use quando o operador quiser levar ao repositório uma mudança de configuração que já passou pelo sandbox — \\\"abre o PR dessa mudança\\\", \\\"propõe essa troca\\\", \\\"o sandbox passou, e agora?\\\". A sessão monta o pacote com `sparkforge_change_propose` e roda os comandos git/gh do `commands.md` passo a passo, PARANDO para confirmação explícita antes de `git push` e de `gh pr create`. O pacote nunca roda git; quem roda é a sessão, com aprovação humana."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

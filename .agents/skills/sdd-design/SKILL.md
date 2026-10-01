@@ -1,6 +1,6 @@
 ---
 name: sdd-design
-description: Use quando o define.md da feature está ready e falta decidir como construir — "desenha a solução", "quais arquivos mudam?", "como desfazer?", "fase design" — no SparkForge ou num job do operador.
+description: "Use quando o define.md da feature está ready e falta decidir como construir — \\\"desenha a solução\\\", \\\"quais arquivos mudam?\\\", \\\"como desfazer?\\\", \\\"fase design\\\" — no SparkForge ou num job do operador."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

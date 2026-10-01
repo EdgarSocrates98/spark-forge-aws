@@ -22,6 +22,12 @@ python scripts/run_skill_evals.py --offline --out .sparkforge/skill-evals.json
 python scripts/sync_skills.py --check
 ```
 
+Validate frontmatter with local `skill-creator` checker:
+
+```powershell
+Get-ChildItem skills -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') } | ForEach-Object { python -X utf8 $env:USERPROFILE\.agents\skills\skill-creator\scripts\quick_validate.py $_.FullName }
+```
+
 `run_skill_evals.py` is a deterministic contract gate. It does not invoke a
 provider, AWS, MCP, or network. A real model benchmark needs separate
 with-skill/baseline transcripts, a grader, and a review of assertion quality;

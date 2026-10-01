@@ -2,7 +2,7 @@
 
 # Skill `glue-incremental-performance-architect`
 
-Use quando investigar de ponta a ponta uma biblioteca PySpark no AWS Glue com fluxos full e incremental, latest-per-key sobre tabela Iceberg bilionária, batching por lote, OOM que só aparece depois de horas, ou carga que varia de dezenas a milhões de registros — e for preciso orquestrar as skills especializadas em vez de mexer isoladamente num sintoma. Use também quando a pergunta for "o job incremental tá tão lento quanto o full", "o job só morre de memória depois de um bom tempo rodando" ou "esse job tem dois jeitos de rodar e não sei qual tá causando o problema", mesmo que ninguém fale em full/incremental. Se você está prestes a mexer em workers, shuffle partitions ou cache antes de mapear a biblioteca inteira, pare — é exatamente isso que este documento existe para evitar. Leia `PROMPT_INICIAL_MESTRE.md` primeiro.
+Use quando investigar de ponta a ponta uma biblioteca PySpark no AWS Glue com fluxos full e incremental, latest-per-key sobre tabela Iceberg bilionária, batching por lote, OOM que só aparece depois de horas, ou carga que varia de dezenas a milhões de registros — e for preciso orquestrar as skills especializadas em vez de mexer isoladamente num sintoma. Use também quando a pergunta for \"o job incremental tá tão lento quanto o full\", \"o job só morre de memória depois de um bom tempo rodando\" ou \"esse job tem dois jeitos de rodar e não sei qual tá causando o problema\", mesmo que ninguém fale em full/incremental. Se você está prestes a mexer em workers, shuffle partitions ou cache antes de mapear a biblioteca inteira, pare — é exatamente isso que este documento existe para evitar. Leia `PROMPT_INICIAL_MESTRE.md` primeiro.
 
 | Campo | Valor |
 |---|---|

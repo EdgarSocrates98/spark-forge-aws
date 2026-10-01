@@ -2,7 +2,7 @@
 
 # Skill `tune-glue-job`
 
-Use quando for ajustar workers, worker type, Auto Scaling, execution class ou argumentos de um job Glue depois de já ter um gargalo comprovado — não para descobri-lo. Use também quando a pergunta for "aumenta os workers?", "põe mais DPU", "troca pra worker maior" ou "liga Auto Scaling", mesmo sem esse vocabulário. Se você está prestes a recomendar mais workers a partir só do código ou de instinto, rode `sparkforge analyze terraform`, `sparkforge collect glue-job` e `sparkforge judge` em vez disso — o catálogo SF-GLUE-* aponta contradição de max_capacity com worker_type/number_of_workers, observabilidade ausente e retry sobre escrita não idempotente antes de qualquer decisão de capacidade, e a tabela de decisão em knowledge/glue/workers-and-capacity.md tem capacidade como resposta errada em metade dos casos.
+Use quando for ajustar workers, worker type, Auto Scaling, execution class ou argumentos de um job Glue depois de já ter um gargalo comprovado — não para descobri-lo. Use também quando a pergunta for \"aumenta os workers?\", \"põe mais DPU\", \"troca pra worker maior\" ou \"liga Auto Scaling\", mesmo sem esse vocabulário. Se você está prestes a recomendar mais workers a partir só do código ou de instinto, rode `sparkforge analyze terraform`, `sparkforge collect glue-job` e `sparkforge judge` em vez disso — o catálogo SF-GLUE-* aponta contradição de max_capacity com worker_type/number_of_workers, observabilidade ausente e retry sobre escrita não idempotente antes de qualquer decisão de capacidade, e a tabela de decisão em knowledge/glue/workers-and-capacity.md tem capacidade como resposta errada em metade dos casos.
 
 | Campo | Valor |
 |---|---|

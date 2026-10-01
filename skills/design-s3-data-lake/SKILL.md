@@ -1,6 +1,6 @@
 ---
 name: design-s3-data-lake
-description: Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lake.
+description: "Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lake."
 metadata:
   sparkforge_contract: v1
   evals: evals/evals.json

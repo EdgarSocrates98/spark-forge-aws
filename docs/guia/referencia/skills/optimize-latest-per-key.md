@@ -2,12 +2,12 @@
 
 # Skill `optimize-latest-per-key`
 
-Use quando o job calcula o registro mais recente por chave (row_number/Window, max_by, max(struct), join-back) sobre tabelas Spark/Iceberg grandes, e suspeitar de Window global sem partitionBy, sort/shuffle de todo o histórico, empates por timestamp mal tratados, late data ou recomputação a cada ciclo. Use também quando perguntarem "por que o latest demora tanto", "isso escala com o histórico inteiro" ou "o resultado muda entre execuções", mesmo sem citar Window ou row_number. Se você está prestes a inspecionar a chamada de Window de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.window` e `pyspark.chain` em vez disso — eles dizem se a Window tem partitionBy e onde o join entra na cadeia, mas não decidem se a chave escolhida é a correta: isso é julgamento seu.
+Use quando o job calcula o registro mais recente por chave (row_number/Window, max_by, max(struct), join-back) sobre tabelas Spark/Iceberg grandes, e suspeitar de Window global sem partitionBy, sort/shuffle de todo o histórico, empates por timestamp mal tratados, late data ou recomputação a cada ciclo. Use também quando perguntarem \"por que o latest demora tanto\", \"isso escala com o histórico inteiro\" ou \"o resultado muda entre execuções\", mesmo sem citar Window ou row_number. Se você está prestes a inspecionar a chamada de Window de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.window` e `pyspark.chain` em vez disso — eles dizem se a Window tem partitionBy e onde o join entra na cadeia, mas não decidem se a chave escolhida é a correta: isso é julgamento seu.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/optimize-latest-per-key/SKILL.md` |
-| `metadata` |  |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze pyspark', 'sparkforge judge', 'sparkforge analyze terraform']} |
 
 ## Procedimento (texto integral)
 

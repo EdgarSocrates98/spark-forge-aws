@@ -2,12 +2,12 @@
 
 # Skill `compare-releases`
 
-Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — "vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter", "o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?", "que versão de Python o Glue 5.1 publica" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge release describe` e `sparkforge release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge migrate glue` e `sparkforge migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`.
+Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — \"vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter\", \"o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?\", \"que versão de Python o Glue 5.1 publica\" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge release describe` e `sparkforge release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge migrate glue` e `sparkforge migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/compare-releases/SKILL.md` |
-| `metadata` |  |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge release describe', 'sparkforge release diff', 'sparkforge migrate glue']} |
 
 ## Procedimento (texto integral)
 

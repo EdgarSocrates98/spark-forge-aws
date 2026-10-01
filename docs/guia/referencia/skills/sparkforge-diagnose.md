@@ -2,12 +2,12 @@
 
 # Skill `sparkforge-diagnose`
 
-Use quando o pedido for genérico e amplo — "meu job Glue tá lento", "por que esse pipeline ficou caro", "não sei por onde começar" — e ainda não há gargalo isolado nem skill específica escolhida. Use também como a primeira skill de qualquer investigação nova, antes de ter event log, plano físico ou qualquer fact coletado. Esta skill não analisa: ela abre o case, coleta o que está disponível, e deixa `sparkforge next-step` decidir a rota. Se você está prestes a escolher a próxima skill "pelo que parece óbvio", pare — rode `sparkforge next-step` em vez disso: a árvore de decisão vive em `rules/catalog/routing.yaml`, e escolher por julgamento próprio é exatamente o que a regra 2 do AGENT_PROTOCOL.md proíbe.
+Use quando o pedido for genérico e amplo — \"meu job Glue tá lento\", \"por que esse pipeline ficou caro\", \"não sei por onde começar\" — e ainda não há gargalo isolado nem skill específica escolhida. Use também como a primeira skill de qualquer investigação nova, antes de ter event log, plano físico ou qualquer fact coletado. Esta skill não analisa: ela abre o case, coleta o que está disponível, e deixa `sparkforge next-step` decidir a rota. Se você está prestes a escolher a próxima skill \"pelo que parece óbvio\", pare — rode `sparkforge next-step` em vez disso: a árvore de decisão vive em `rules/catalog/routing.yaml`, e escolher por julgamento próprio é exatamente o que a regra 2 do AGENT_PROTOCOL.md proíbe.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/sparkforge-diagnose/SKILL.md` |
-| `metadata` |  |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/spark/execution-model.md', '../../knowledge/performance-principles.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge next-step', 'sparkforge runtime detect', 'sparkforge analyze terraform']} |
 
 ## Procedimento (texto integral)
 

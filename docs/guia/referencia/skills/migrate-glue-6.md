@@ -2,7 +2,7 @@
 
 # Skill `migrate-glue-6`
 
-Use quando alguém pergunta "dá para subir esse job para o Glue 6.0?", "o que quebra se eu migrar de 4.0/5.0/5.1 para 6.0?", "vale a pena migrar por causa dos 30% mais barato?" ou precisa de um plano de migração entre versões de runtime do AWS Glue. Use também quando o job já foi migrado e passou a falhar com `NoSuchMethodError`, `NoSuchFieldError` ou erro de ANSI mode. Se você está prestes a ler o guia de migração da AWS e comparar com o código no olho, rode `sparkforge migrate glue <dir> --from X --to Y` em vez disso — o motor expande o par em degraus, julga cada um com o catálogo versionado e devolve os eixos que **não** foram avaliados em vez de deixá-los passar como aprovados.
+Use quando alguém pergunta \"dá para subir esse job para o Glue 6.0?\", \"o que quebra se eu migrar de 4.0/5.0/5.1 para 6.0?\", \"vale a pena migrar por causa dos 30% mais barato?\" ou precisa de um plano de migração entre versões de runtime do AWS Glue. Use também quando o job já foi migrado e passou a falhar com `NoSuchMethodError`, `NoSuchFieldError` ou erro de ANSI mode. Se você está prestes a ler o guia de migração da AWS e comparar com o código no olho, rode `sparkforge migrate glue dir --from X --to Y` em vez disso — o motor expande o par em degraus, julga cada um com o catálogo versionado e devolve os eixos que **não** foram avaliados em vez de deixá-los passar como aprovados.
 
 | Campo | Valor |
 |---|---|

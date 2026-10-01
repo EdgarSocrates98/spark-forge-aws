@@ -2,7 +2,7 @@
 
 # Skill `review-emr-eks`
 
-Use quando revisar a execução de um job Amazon EMR on EKS pelo par `describe-virtual-cluster` + `describe-job-run` do `emr-containers` (segredo em texto claro nas duas superfícies de configuração, destino de log ausente, `persistentAppUI` desligado, alocação dinâmica sem `shuffleTracking` no Kubernetes). Use também quando a pergunta for "cadê os logs desse job run", "por que não tem Spark UI", "esse job rodou com qual configuração" ou "quem submeteu isso com senha na linha de submit", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-job-run` no olho, rode `sparkforge analyze emr-eks` e `sparkforge judge` em vez disso. Esta skill NÃO julga capacidade de nó, pod pendente nem pod template — nada disso está no `emr-containers`, e supor que está é inventar. Para EMR on EC2 e EMR Serverless a skill é `review-emr-cluster`.
+Use quando revisar a execução de um job Amazon EMR on EKS pelo par `describe-virtual-cluster` + `describe-job-run` do `emr-containers` (segredo em texto claro nas duas superfícies de configuração, destino de log ausente, `persistentAppUI` desligado, alocação dinâmica sem `shuffleTracking` no Kubernetes). Use também quando a pergunta for \"cadê os logs desse job run\", \"por que não tem Spark UI\", \"esse job rodou com qual configuração\" ou \"quem submeteu isso com senha na linha de submit\", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-job-run` no olho, rode `sparkforge analyze emr-eks` e `sparkforge judge` em vez disso. Esta skill NÃO julga capacidade de nó, pod pendente nem pod template — nada disso está no `emr-containers`, e supor que está é inventar. Para EMR on EC2 e EMR Serverless a skill é `review-emr-cluster`.
 
 | Campo | Valor |
 |---|---|
