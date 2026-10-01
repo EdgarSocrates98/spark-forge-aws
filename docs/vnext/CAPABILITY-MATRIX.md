@@ -42,3 +42,7 @@ The Lake Formation acceptance matrix is audited by
 `tests/test_lakeformation_prompt_acceptance.py`. The operational review exposes
 a bounded decision graph and requires separate CloudTrail evidence for consumer
 and producer in cross-account cases; missing evidence remains `unresolved`.
+The final matrix also covers Glue FTA Parquet, EMR Serverless/resource-link,
+Hybrid cross-account, LF-TBAC/RAM, a newer cross-account version and newer EMR
+FGAC DML as explicitly unresolved/version-dependent cases where no exact cell
+exists. A missing cell is not promoted to `not_supported`.

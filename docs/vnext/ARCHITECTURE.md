@@ -67,6 +67,13 @@ vending/RAM/S3/KMS, gera preflight/root-cause/migration e seleciona referências
 por progressive disclosure. Números de performance/FinOps só entram com
 benchmark ou DPUSeconds observado.
 
+O migration report mantém campos legados e também expõe
+`review.migration.sections`: runtime, Spark, Python, Iceberg, Lake Formation,
+DynamicFrame, FGAC/FTA, cross-account, CatalogId/RAM/IDs, código, Terraform,
+IAM/LF, testes e rollback. Para EMR, o disclosure carrega a matriz EMR sem
+carregar a referência específica de Glue; combinações não declaradas continuam
+`unknown`/`unresolved`.
+
 ### Layer 1: Canonical Factory Registry (Single Source of Truth)
 - Substitui a dispersão de definições manuais por um registro canônico tipado via Pydantic e validado contra JSON Schema.
 - Entidades canônicas:

@@ -41,9 +41,11 @@ proof, fix least-privilege e verification. Não produz `Action: "*"`,
 ## Migração e matriz
 
 Para Glue 4.0 → 5.0/5.1, o relatório separa breaking, semantic, security,
-performance e cost changes. DynamicFrame/GlueContext FGAC não é convertido
-cegamente em acesso S3; a revisão precisa revalidar bookmarks, pushdown,
-schema, catálogo, RAM, grants e credential path.
+performance e cost changes e publica `review.migration.sections` com runtime,
+Spark, Python, Iceberg, Lake Formation, DynamicFrame, FGAC/FTA, cross-account,
+routing, RAM, IDs, código, Terraform, IAM/LF, testes e rollback. DynamicFrame/
+GlueContext FGAC não é convertido cegamente em acesso S3; a revisão precisa
+revalidar bookmarks, pushdown, schema, catálogo, RAM, grants e credential path.
 
 Glue 6.0 tem células próprias. A fonte de migração documenta continuidade de
 FTA e limitações de FGAC, Iceberg v3 e VARIANT; ela não autoriza copiar toda a
@@ -92,8 +94,13 @@ EMR, Hudi ou Delta sem dimensão declarada.
    convite, ownership, versão cross-account e nome do link.
 6. **FTA falha:** conferir modelo exclusivo, full-table permission, filesystem,
    aplicação integrada e `GetDataAccess`.
-7. **EMR FGAC/FTA:** confirmar release, filesystem, integração do produtor e
-   consumidor; FGAC e FTA não coexistem na mesma aplicação.
+7. **LF grant existe mas tabela Spark não aparece:** separar `CatalogId`,
+   owner/`glue.id`, nome do resource link, catálogo ativo da sessão Spark e
+   `EntityNotFound` de uma negativa de autorização; não concluir pela mensagem
+   isolada.
+8. **EMR FGAC isolation issue:** confirmar release, system/user driver,
+   filesystem, integração do produtor e consumidor, e se a aplicação declarou
+   exatamente um modelo; FGAC e FTA não coexistem na mesma aplicação.
 
 ## Fontes oficiais
 

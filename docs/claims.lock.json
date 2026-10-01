@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "afd38bed1f6d2ddf72ff2914724cf599ab4c5493",
+  "extracted_from": "f531e60c8073fc8d9c29b8e6a4e71cee90949571",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -64,7 +64,7 @@
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
-      "line": 91,
+      "line": 98,
       "text": "7",
       "context": "- **Cascata de 7 Tiers**:",
       "type": "number",
@@ -84,7 +84,7 @@
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
-      "line": 92,
+      "line": 99,
       "text": "0",
       "context": "- `Tier 0` (Determinístico): Extração de fatos e regras (Custo 0).",
       "type": "number",

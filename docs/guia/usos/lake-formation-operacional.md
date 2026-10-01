@@ -13,7 +13,10 @@ O mesmo payload pode ser enviado a `sparkforge_lakeformation_architect`.
 - `review.authorization`: separação de catálogo, grant, credencial, S3 e KMS.
 - `review.preflight`: checks por layer, sem conclusão por ausência.
 - `review.root_cause`: erro, hipóteses, evidence, prova requerida e rollback.
-- `review.migration`: mudanças para Glue 4→5.1 ou outra transição declarada.
+- `review.migration`: mudanças para Glue 4→5.1 ou outra transição declarada;
+  `review.migration.sections` organiza runtime, Spark, Python, Iceberg, LF,
+  DynamicFrame, FGAC/FTA, cross-account, routing, RAM, IDs, código, Terraform,
+  IAM/LF, testes e rollback.
 - `review.performance_finops`: medidas necessárias; sem ganho inventado.
 - `review.observability`: fontes de log e pernas CloudTrail de consumidor e
   produtor em cross-account.
@@ -42,6 +45,11 @@ Glue 4→5.1 revalidar DynamicFrame, DataFrame/Spark SQL, bookmarks, pushdown,
 catálogo Iceberg, RAM e credential path. Execute plano de teste positivo e
 negativo antes de promover. Rollback: restaurar runtime/configuração anterior;
 o analyzer não altera AWS.
+
+Se o grant existe mas a tabela Spark não aparece, confira `CatalogId`,
+owner/`glue.id`, nome do resource link e catálogo ativo antes de classificar
+como autorização. Para EMR, um problema de isolamento FGAC exige verificar
+system/user driver, release, integração e o modelo exclusivo FGAC/FTA.
 
 ## Rollback e limites
 

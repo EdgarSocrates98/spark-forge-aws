@@ -82,6 +82,12 @@ Lake Formation acceptance and observability are version-aware: the decision
 graph selects only declared dimensions, while CloudTrail consumer/producer legs,
 Glue/Spark logs, Lake Formation audit and RAM state remain independent evidence
 sources. See `docs/sdd/LAKE_FORMATION_PROMPT_ACCEPTANCE_COMPLETION/`.
+The final prompt-gap audit also proves EMR Serverless/resource-link, Hybrid
+cross-account, LF-TBAC/RAM and newer-version routing cases without loading
+Glue-only knowledge into EMR decisions.
+The final prompt-gap audit also proves EMR Serverless/resource-link, Hybrid
+cross-account, LF-TBAC/RAM and version-5 routing cases without loading Glue-only
+knowledge into EMR decisions.
 
 ## Vocabulário de prova
 

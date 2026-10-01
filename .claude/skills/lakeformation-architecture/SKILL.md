@@ -60,7 +60,12 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
 7. Leia a seção `review` para operational review: `code_and_iac`,
    `access_explain`, `authorization`, `root_cause`, `preflight`, `migration`,
    `performance_finops` e progressive disclosure (`progressive_disclosure`). Facts ausentes ficam
-   `required_verification`.
+`required_verification`.
+
+`review.migration.sections` é a forma estruturada do relatório de migração:
+runtime, Spark, Python, Iceberg, Lake Formation, DynamicFrame, FGAC/FTA,
+cross-account, routing/RAM/IDs, código/Terraform, IAM/LF, testes e rollback.
+Seção vazia ou `not_requested` não é uma capacidade presumida.
 
 ## Regras de interpretação
 
@@ -89,8 +94,12 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
   trate `GetDataAccess`, RAM ou KMS como detalhe implícito.
 - `review.decision_graph` é bounded e version-aware: engine, runtime, modelo,
   formato, operação e rota cross-account entram como dimensões; ausência fica
-  `unresolved`. `review.observability` exige CloudTrail separado para
-  consumidor/produtor, além de Glue/Spark logs, Lake Formation audit e RAM.
+`unresolved`. `review.observability` exige CloudTrail separado para
+consumidor/produtor, além de Glue/Spark logs, Lake Formation audit e RAM.
+
+- Para EMR EC2, progressive disclosure inclui `knowledge/emr/runtime-matrix.md`;
+  para EMR Serverless inclui `knowledge/emr-serverless/runtime-matrix.md`.
+  A referência específica de Glue não deve aparecer em decisão EMR.
 
 ## Não faz
 
