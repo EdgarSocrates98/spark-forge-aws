@@ -230,7 +230,17 @@ def write_mirror(src: Path, dst: Path) -> None:
 
 
 def iter_skill_files() -> list[Path]:
-    return sorted(p for p in CANONICAL.rglob("*") if p.is_file())
+    """Return publishable skill assets, excluding interpreter caches.
+
+    A quality gate imports the shared validator and Python may leave a
+    `__pycache__` beside it. Caches are local execution residue, not skill
+    assets, and must never enter a rendered mirror.
+    """
+    return sorted(
+        p
+        for p in CANONICAL.rglob("*")
+        if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"
+    )
 
 
 def iter_agent_files() -> list[Path]:
