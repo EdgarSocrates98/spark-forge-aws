@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_OPERATIONAL_CLOSURE/design.md
-  sha256: "f6abec0beaf648af195ba1c1eccd9aa9d247775288c8eb9e5c7cd97939264277"
+  sha256: "b8ff0d024da686a29c94395821c6cdd058196ae92de3e8d0b1ef097456ec9f39"
 tasks:
   - id: T1
     files: [tests/test_lakeformation_operational_closure.py, sparkforge/lakeformation/architecture.py]

@@ -150,3 +150,59 @@ def test_matrix_closure_keeps_format_and_source_boundaries():
     assert delta_51["status"] == "version_dependent"
     assert fta_60["status"] == "supported"
     assert hudi_51["source"] and hudi_51["limitations"]
+
+
+def test_review_preflight_is_least_privilege_and_cross_reviewed():
+    result = analyze_architecture(
+        _payload(
+            facts=[
+                {
+                    "kind": "tf.spark_conf",
+                    "subject": {"file": "main.tf", "line": 12},
+                    "attrs": {"key": "spark.sql.catalog.source.glue.id", "value": "111111111111"},
+                }
+            ],
+            errors=[
+                {
+                    "message": "GetDataAccess AccessDeniedException",
+                    "source": {"file": "driver.log", "line": 8},
+                }
+            ],
+            evidence={
+                "ram": "pending",
+                "resource_link": "absent",
+                "iam_get_data_access": "denied",
+                "lakeformation_permission": "select",
+                "registered_location": None,
+                "iam_allowed_principals": True,
+            },
+        )
+    )
+    review = result["review"]
+    preflight = {item["code"]: item for item in review["preflight"]}
+    assert preflight["GET-DATA-ACCESS"]["status"] == "fail"
+    assert preflight["RAM-SHARE"]["status"] == "fail"
+    assert preflight["RESOURCE-LINK"]["status"] == "fail"
+    assert preflight["IAMALLOWEDPRINCIPALS"]["status"] == "pass"
+    profiles = {item["profile"] for item in review["cross_review"]}
+    assert {"sf-lake-formation-specialist", "sf-security-reviewer", "glue-infra-reviewer"} <= profiles
+    assert "sf-terraform-specialist" in profiles
+    assert "pyspark-code-reviewer" in profiles
+    serialized = str(review)
+    assert "Action: '*'" not in serialized
+    assert "Resource: '*'" not in serialized
+
+
+def test_review_preserves_evidence_and_progressive_disclosure():
+    result = analyze_architecture(_payload())
+    review = result["review"]
+    finops = review["performance_finops"]
+    assert finops["observed_measurements"] == []
+    assert {"runtime_duration", "workers", "dpu_seconds"} <= set(finops["measurements_required"])
+    assert "No numeric gain" in finops["claim_policy"]
+    disclosure = review["progressive_disclosure"]
+    assert {"glue", "5.1", "fgac", "iceberg", "merge", "cross_account"} <= set(
+        disclosure["dimensions"]
+    )
+    assert "knowledge/storage/iceberg-catalog.md" in disclosure["knowledge_refs"]
+    assert not any("emr" in ref for ref in disclosure["knowledge_refs"])

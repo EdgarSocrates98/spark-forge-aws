@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_OPERATIONAL_CLOSURE/define.md
-  sha256: "b8a2c895fcf96f0c883f5db1730515ea8f14c08ae9027eb6906c94842eb5759b"
+  sha256: "3216abd562258e18e7e53d7722efe005bebb85f79671d08436dfee43dda1d6ab"
 files:
   - {path: tests/test_lakeformation_operational_closure.py, action: create, reason: "Provas acceptance do delta operacional, escritas antes do código."}
   - {path: sparkforge/lakeformation/architecture.py, action: modify, reason: "Compor revisão operacional evidence-first sobre o decision engine existente, mantendo CLI/MCP no mesmo núcleo."}

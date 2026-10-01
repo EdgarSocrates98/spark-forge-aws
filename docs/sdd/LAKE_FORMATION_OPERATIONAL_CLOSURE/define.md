@@ -20,9 +20,11 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_lakeformation_operational_closure.py::test_review_builds_version_aware_migration_report"}
   - id: AC4
     statement: "O preflight valida least privilege, IAMAllowedPrincipals/hybrid, RAM, resource link, GetDataAccess, registro e operações read/write; recomendações não usam Allow * nem bypass S3."
+    guard: "A revisão T1 já compõe preflight e cross-review; estes testes permanecem guardas contra regressão enquanto T3 fecha a documentação e gates operacionais."
     verified_by: {kind: test, ref: "tests/test_lakeformation_operational_closure.py::test_review_preflight_is_least_privilege_and_cross_reviewed"}
   - id: AC5
     statement: "A análise de performance/FinOps expõe impacto condicional de FGAC/FTA e workers/latência/custo como medidas requeridas, usando números somente quando benchmark ou DPUSeconds declarados; contexto carregado é limitado por engine/runtime/model/format/operation."
+    guard: "A revisão T1 já compõe performance_finops e progressive disclosure; estes testes permanecem guardas contra regressão enquanto T3 fecha a documentação e gates operacionais."
     verified_by: {kind: test, ref: "tests/test_lakeformation_operational_closure.py::test_review_preserves_evidence_and_progressive_disclosure"}
   - id: AC6
     statement: "A matriz operacional cobre operações e formatos Hive/Parquet/Iceberg/Hudi/Delta para Glue 5.1/6.0 e EMR 7.12, mantendo unknown quando as fontes oficiais divergem ou não fecham a célula."
