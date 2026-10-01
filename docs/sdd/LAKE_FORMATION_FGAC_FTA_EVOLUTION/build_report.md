@@ -3,7 +3,7 @@ sdd: 1
 feature: LAKE_FORMATION_FGAC_FTA_EVOLUTION
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/plan.md
   sha256: "6870b671f21b8fa19310fee7a700a361f1ed80fbcd092cfc75fa109646ca1b3e"
@@ -107,8 +107,22 @@ espelhos são derivados dos agentes fonte e os registros de surface, claims,
 knowledge e referência foram atualizados. Não há mutação AWS nem ganho de
 desempenho a medir nesta feature.
 
-## Pendência de integração
+## Suíte completa
 
-A suíte completa será executada em lotes somente no encerramento da feature,
-antes do commit de ship/push. Até essa execução, o relatório permanece
-`ready`, não `done`.
+Executada em nove lotes disjuntos, um por vez, com `-p no:cacheprovider` e
+`--basetemp` externo, conforme `tests/test_suite_batches.py`:
+
+- `a-c`: 2506 passed, 2 skipped.
+- `d-e`: 559 passed.
+- `f-sem-golden`: 1929 passed, 2 skipped.
+- `goldens-1`: 1452 passed, 4 skipped.
+- `goldens-2`: 579 passed.
+- `goldens-3`: 371 passed.
+- `goldens-4`: 305 passed.
+- `goldens-5`: 523 passed.
+- `g-z`: 5451 passed, 6 skipped.
+
+Total final: **13689 coletados, 13675 passed, 14 skipped**. Uma primeira
+execução encontrou e corrigiu expectativas de superfície, goldens derivados,
+contadores correntes e fragilidade Windows no teste de fronteira; os lotes
+afetados foram repetidos verdes após cada correção.
