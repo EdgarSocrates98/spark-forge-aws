@@ -11,7 +11,7 @@ hypothesis_outcome: confirmed
 registries: [offline_manifest, sources_lock, sync_skills, agents_parity, surface_lock, generated_reference, claims_gate]
 deviations:
   - "T3 do plano permaneceu skipped como implementação: os contratos de preflight, performance/FinOps e cross-review já estavam compostos e foram preservados por testes de guarda, conforme o build_report."
-  - "A suíte completa foi executada pela receita de lotes do repositório; nenhum arquivo de produção ou AWS foi alterado durante o ship."
+  - "A execução local adicional da receita de lotes foi interrompida após o lote a-c (2506 passed, 2 skipped); o ship não usa essa tentativa como prova de suíte completa. Nenhum arquivo de produção ou AWS foi alterado durante o ship."
 ---
 
 # LAKE_FORMATION_OPERATIONAL_CLOSURE — entrega
@@ -30,6 +30,8 @@ houve benchmark AWS nem DPUSeconds observado nesta feature.
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-lf-op tests/test_lakeformation_operational_closure.py -q` (exit 0; 8 passed)
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-lf-arch tests/test_lakeformation_architecture.py -q` (exit 0; 13 passed)
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-lf-fta tests/test_lakeformation_fgac_fta_improvements.py tests/test_lakeformation_access_graph.py tests/test_lakeformation_engine.py -q` (exit 0; 34 passed)
+- `python -m pytest -p no:cacheprovider --basetemp E:\pytest-gap-a tests/test_lakeformation_fgac_fta_improvements.py::test_capability_statuses_are_enforced tests/test_lakeformation_fgac_fta_improvements.py::test_source_and_target_are_evaluated_independently tests/test_lakeformation_fgac_fta_improvements.py::test_cross_account_resolution_modes tests/test_lakeformation_fgac_fta_improvements.py::test_hybrid_access_is_governance_aware tests/test_lakeformation_fgac_fta_improvements.py::test_glue4_current_architecture_is_not_migration -q` (exit 0; 5 passed)
+- `python -m pytest -p no:cacheprovider --basetemp E:\pytest-gap-b tests/test_lakeformation_architecture.py::test_read_and_write_authorization_are_separate tests/test_lakeformation_architecture.py::test_cross_account_governance_requires_independent_evidence tests/test_lakeformation_architecture.py::test_golden_path_glue51_cross_account_iceberg tests/test_lakeformation_architecture.py::test_negative_scenarios_fail_closed -q` (exit 0; 4 passed)
 - `python scripts/sync_skills.py --check` (exit 0)
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-ref tests/test_reference_docs.py -q` (exit 0; 5 passed)
 - `python scripts/gen_reference_docs.py` (exit 0; 242 páginas, 0 regravadas, 0 removidas)
@@ -41,6 +43,23 @@ houve benchmark AWS nem DPUSeconds observado nesta feature.
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-batches tests/test_suite_batches.py -q` (exit 0; 4 passed)
 - `python -m pytest -p no:cacheprovider --basetemp E:\pytest-sdd tests/test_sdd.py -q` (exit 0; 165 passed)
 - `sparkforge sdd check --repo . --feature LAKE_FORMATION_OPERATIONAL_CLOSURE` (exit 0; sem recusas ou lacunas)
+
+## Checklist da revisão contra a main `8b8fb54a`
+
+- `not_supported` bloqueia: `test_capability_statuses_are_enforced` exige
+  `status: blocked` e `CAPABILITY-NOT-SUPPORTED`; `read_only` também bloqueia
+  escrita e `limited/version_dependent` permanece unresolved sem prova específica.
+- Source e target são independentes: `test_source_and_target_are_evaluated_independently`
+  valida formato, operação e capability por perna.
+- Cross-account não exige resource link universalmente:
+  `explicit_catalog_id` fecha a rota Glue ETL e não adiciona `resource_link` à
+  verificação obrigatória; rota ausente permanece unresolved.
+- Hybrid Access é governança separada de FGAC/FTA:
+  `IAMAllowedPrincipals` não bloqueia o caso híbrido completo; ausência de
+  opt-in/versionamento mantém o caso unresolved.
+- Glue 4.0 corrente não vira migração sem alvo: o teste corrente não emite
+  `GLUE-LF-MIGRATION`; a mesma arquitetura só exige migração quando há
+  `migration.to_runtime` declarado.
 
 ## Pendências honestas
 
