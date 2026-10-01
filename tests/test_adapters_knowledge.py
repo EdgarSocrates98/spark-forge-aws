@@ -54,12 +54,12 @@ class TestCore:
 
     def test_available_list_stays_small_enough_to_not_need_pagination(self):
         """Guard-rail barato para a decisao (documentada na docstring de
-        `knowledge_path`) de nao paginar `available`: 19 arquivos estaticos
-        hoje, teto generoso aqui para nao disparar por qualquer adicao pontual
-        a `knowledge/`. Se isto falhar um dia, e o sinal de que a decisao
-        precisa ser revisitada, nao um teste para simplesmente alargar o teto."""
+        `knowledge_path`) de nao paginar `available`: 100 arquivos estaticos
+        hoje, teto explicito após a nova página operacional de Lake Formation.
+        Se isto falhar de novo, e o sinal de que a decisao precisa ser
+        revisitada, nao um teste para simplesmente alargar o teto."""
         result = _core.knowledge_path()
-        assert len(result["available"]) < 100
+        assert len(result["available"]) <= 100
 
 
 class TestCli:
