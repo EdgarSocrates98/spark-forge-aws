@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_EVOLUTION/plan.md
-  sha256: "6b9c93aaa78890d94932425c5cd2a6b2f1fabbdbd38896a2f247b0cedec4a584"
+  sha256: "6870b671f21b8fa19310fee7a700a361f1ed80fbcd092cfc75fa109646ca1b3e"
 tasks:
   - id: T1
     status: done
@@ -67,6 +67,12 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
 - O lote de goldens encontrou duas referências derivadas da superfície nova:
   `tests/test_fixtures_golden_mcp_parity.py` recebeu a allowlist da tool e o
   golden de knowledge drift foi regenerado pelo flag oficial, sem edição manual.
+- A suíte completa expôs fragilidade de um teste de fronteira que injetava
+  código no checkout real e falhava ao restaurar esse arquivo no Windows; o
+  cenário foi isolado em runtime temporário, mantendo a mesma prova do
+  detector e eliminando contaminação entre testes.
+- A expansão da skill alterou bytes da superfície; `docs/surface.lock.json` foi
+  reemitido pelo medidor e conferido sem divergência.
 
 ## Gates e revisões
 
@@ -91,6 +97,7 @@ AWS, não altera permissões e não promete custo, latência, workers ou tokens.
   — exit 0; 11 passed.
 - `python -m pytest tests/test_fixtures_golden_mcp_parity.py -q` — exit 0; 13
   passed.
+- `python -m pytest tests/test_harness_boundary.py::TestADeteccaoEnxergaImportRelativo::test_violacao_relativa_injetada_num_modulo_real_fica_vermelha tests/test_integrate.py::test_scope_user_nao_escreve_no_repo_pela_cli tests/test_surface_lock.py::TestOLockBateComAMedida -q` — exit 0; 9 passed.
 
 ## Revisão final
 

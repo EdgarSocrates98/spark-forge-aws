@@ -92,15 +92,13 @@ def _modulos_importados(arquivo: Path, raiz: Path = RAIZ) -> set[str]:
     return nomes
 
 
-def _arquivos_do_runtime() -> list[Path]:
+def _arquivos_do_runtime(runtime: Path = RUNTIME) -> list[Path]:
     return sorted(
-        p
-        for p in RUNTIME.rglob("*.py")
-        if AVALIACAO not in p.parents and "__pycache__" not in p.parts
+        p for p in runtime.rglob("*.py") if "__pycache__" not in p.parts
     )
 
 
-def _cruzamentos() -> list[str]:
+def _cruzamentos(raiz: Path = RAIZ, runtime: Path = RUNTIME) -> list[str]:
     """Os modulos de runtime que importam a avaliacao.
 
     Extraido para que o proprio teste consiga exercitar a DETECCAO com uma
@@ -109,9 +107,9 @@ def _cruzamentos() -> list[str]:
     cruzasse.
     """
     return [
-        str(arquivo.relative_to(RAIZ))
-        for arquivo in _arquivos_do_runtime()
-        if any(_e_avaliacao(m) for m in _modulos_importados(arquivo))
+        str(arquivo.relative_to(raiz))
+        for arquivo in _arquivos_do_runtime(runtime)
+        if any(_e_avaliacao(m) for m in _modulos_importados(arquivo, raiz=raiz))
     ]
 
 
@@ -211,7 +209,7 @@ class TestADeteccaoEnxergaImportRelativo:
         assert _e_avaliacao("sparkforge.evals.runner")
         assert not _e_avaliacao("sparkforge.evalsuite")
 
-    def test_violacao_relativa_injetada_num_modulo_real_fica_vermelha(self):
+    def test_violacao_relativa_injetada_num_modulo_real_fica_vermelha(self, tmp_path):
         """O par de ponta a ponta. Sem ele os testes acima provariam so que a
         resolucao sabe resolver, nunca que o gate usa a resolucao.
 
@@ -219,15 +217,17 @@ class TestADeteccaoEnxergaImportRelativo:
         --, aqui automatizado, porque procedimento manual so pega a regressao
         se alguem lembrar de repetir.
         """
-        alvo = RUNTIME / "migration" / "assessment.py"
-        nome = str(alvo.relative_to(RAIZ))
-        original = alvo.read_bytes()
-        assert nome not in _cruzamentos()
-        try:
-            alvo.write_bytes(
-                b"from ..evals.runner import EvaluationRunner  # violacao\n" + original
-            )
-            assert nome in _cruzamentos()
-        finally:
-            alvo.write_bytes(original)
-        assert nome not in _cruzamentos()
+        raiz = tmp_path / "repo"
+        runtime = raiz / "sparkforge"
+        alvo = runtime / "migration" / "assessment.py"
+        alvo.parent.mkdir(parents=True)
+        nome = str(alvo.relative_to(raiz))
+        original = b'"""runtime sintetico"""\n'
+        alvo.write_bytes(original)
+        assert nome not in _cruzamentos(raiz=raiz, runtime=runtime)
+        alvo.write_bytes(
+            b"from ..evals.runner import EvaluationRunner  # violacao\n" + original
+        )
+        assert nome in _cruzamentos(raiz=raiz, runtime=runtime)
+        alvo.write_bytes(original)
+        assert nome not in _cruzamentos(raiz=raiz, runtime=runtime)
