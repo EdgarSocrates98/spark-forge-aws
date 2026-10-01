@@ -93,8 +93,11 @@ def _modulos_importados(arquivo: Path, raiz: Path = RAIZ) -> set[str]:
 
 
 def _arquivos_do_runtime(runtime: Path = RUNTIME) -> list[Path]:
+    avaliacao = runtime / "evals"
     return sorted(
-        p for p in runtime.rglob("*.py") if "__pycache__" not in p.parts
+        p
+        for p in runtime.rglob("*.py")
+        if avaliacao not in p.parents and "__pycache__" not in p.parts
     )
 
 
