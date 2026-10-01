@@ -29,6 +29,14 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`glue/observability.md`](glue/observability.md) | Métricas CloudWatch exatas, 28 categorias de erro, o que cada uma prova |
 | [`glue/lakeformation-fgac.md`](glue/lakeformation-fgac.md) | Controle de acesso fino do Lake Formation — o que exige, o que bloqueia, realocação de worker, recorte de Iceberg |
 
+### Lake Formation
+| Arquivo | Conteúdo |
+|---|---|
+| [`lakeformation/capability-matrix.yaml`](lakeformation/capability-matrix.yaml) | Células versionadas por engine, release, modelo, formato, operação e API |
+| [`lakeformation/architecture.md`](lakeformation/architecture.md) | Contrato do decision engine, routing de catálogos e estados fail-closed |
+| [`lakeformation/operational-closure.md`](lakeformation/operational-closure.md) | Revisão operacional, explain-access, root cause, preflight, migração e runbooks |
+| [`lakeformation/fgac-fta-improvements.md`](lakeformation/fgac-fta-improvements.md) | Enforcement por capability, source/target, resolução cross-account, Hybrid Access e semântica de IDs |
+
 ### Amazon EMR
 | Arquivo | Conteúdo |
 |---|---|

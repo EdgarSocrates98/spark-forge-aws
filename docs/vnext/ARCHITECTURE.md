@@ -189,3 +189,19 @@ transcript é calculado sobre conteúdo canônico sem o hash declarado, e provid
 quando usage e transcript coincidem; caso contrário, ficam `tokens_unresolved`. O replay benchmark
 mantém qualidade, rota, bytes, tokens e custo como eixos independentes. Custo requer `cost_basis`;
 bytes nunca são convertidos em tokens.
+## 6. Lake Formation FGAC/FTA — decision graph por perna
+
+O motor `sparkforge/lakeformation/architecture.py` agora compõe decisões
+independentes para source e target, preservando formato e operação de cada lado.
+`not_supported` bloqueia; escrita em `read_only` bloqueia; `limited` e
+`version_dependent` exigem evidência específica; `unknown` permanece
+`unresolved`. A decisão composta não transforma uma leitura Parquet em suporte
+implícito para um `MERGE` Iceberg.
+
+`table_access_model` (FGAC/FTA) é separado de `access_governance_mode`
+(Lake Formation/IAM/Hybrid). Cross-account declara uma rota: Glue ETL pode usar
+CatalogId explícito sem resource link quando a evidência liga o id ao catálogo
+produtor. `IAMAllowedPrincipals` não é bloqueio universal em Hybrid Access;
+registro, opt-in e versão cross-account continuam verificações independentes.
+`glue.id` é comparado a ownership e `glue.account-id` ao contexto esperado,
+sem alias entre propriedades.

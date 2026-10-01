@@ -5642,7 +5642,7 @@ def knowledge_path(
     pip nao tem como adivinhar o caminho dentro do site-packages, e listar e o
     que torna o verbo utilizavel sem tentativa e erro.
 
-    `available` nao pagina, diferente de `rules_lookup`/`analyze_*`: sao 100
+    `available` nao pagina, diferente de `rules_lookup`/`analyze_*`: sao 110
     arquivos estaticos, curados via `knowledge/INDEX.md` e embarcados no wheel
     -- nao cresce por acao do usuario como uma lista de findings ou regras.
     Paginar aqui seria complexidade sem consumidor. Revisite se `knowledge/`

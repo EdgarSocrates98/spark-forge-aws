@@ -51,6 +51,24 @@ cross-review com o especialista de Terraform para IaC, o de Iceberg para
 semântica de tabela e o de segurança para IAM/RAM/KMS. Isso é roteamento de
 revisão; não cria agentes novos nem executa mutação AWS.
 
+## Topologia source/target e capability enforcement
+
+Quando o payload tiver `source_operation` e `target_operation`, leia
+`decision.source_decision` e `decision.target_decision` separadamente. Uma
+origem Parquet em `read` não fecha o destino Iceberg em `merge`; cada perna
+precisa da sua célula de engine/runtime/modelo/formato/operação/API.
+
+`not_supported` bloqueia. `read_only` bloqueia escrita. `limited` e
+`version_dependent` exigem `evidence.capability_verification`; `unknown` pede a
+fonte oficial. Não promova uma célula por analogia entre releases.
+
+Em cross-account, a rota vem de `cross_account_resolution.mode`. Glue ETL pode
+usar `explicit_catalog_id` sem resource link quando o CatalogId aponta para o
+catálogo produtor; RAM, ownership e credential vending continuam checks
+independentes. `access_governance_mode=hybrid` separa Hybrid Access de FGAC/FTA:
+`IAMAllowedPrincipals` exige opt-in e registro verificáveis, não bloqueio
+universal.
+
 ## As onze perguntas que a área responde hoje
 
 | Regra | A pergunta |

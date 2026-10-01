@@ -1858,7 +1858,8 @@
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-51.html": {
       "checked_at": "2026-09-21",
       "docs": [
-        "knowledge/glue/lakeformation-fgac.md"
+        "knowledge/glue/lakeformation-fgac.md",
+        "knowledge/lakeformation/fgac-fta-improvements.md"
       ],
       "pinned": false,
       "retrieved": [
@@ -1874,6 +1875,7 @@
       "checked_at": "2026-09-21",
       "docs": [
         "knowledge/glue/runtime-matrix.md",
+        "knowledge/lakeformation/fgac-fta-improvements.md",
         "knowledge/spark/spark4-migration.md",
         "knowledge/storage/iceberg-v3.md"
       ],
@@ -1999,7 +2001,8 @@
     "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable.html": {
       "checked_at": "2026-09-21",
       "docs": [
-        "knowledge/glue/lakeformation-fgac.md"
+        "knowledge/glue/lakeformation-fgac.md",
+        "knowledge/lakeformation/fgac-fta-improvements.md"
       ],
       "pinned": false,
       "retrieved": [
@@ -2102,6 +2105,14 @@
       ],
       "sha256": "5b33793c239501453c58c0250f63a918916f57e7cd767b5e2ada67877f0cc5be"
     },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-prereqs.html": {
+      "docs": [
+        "knowledge/lakeformation/fgac-fta-improvements.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html": {
       "checked_at": "2026-09-21",
       "docs": [],
@@ -2134,6 +2145,14 @@
       ],
       "sha256": "5ac36bdf5661a23a5f34db43cb68dc823634d4fb62de2dc46076d7dae4423160"
     },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/hybrid-access-mode-update.html": {
+      "docs": [
+        "knowledge/lakeformation/fgac-fta-improvements.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html": {
       "docs": [],
       "pinned": false,
@@ -2155,6 +2174,14 @@
         "SF-LF-010"
       ],
       "sha256": "9e739116424826fa7f8d59e53b20edf495da11e28bb06719468c8467b1af78ec"
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/resource-links-about.html": {
+      "docs": [
+        "knowledge/lakeformation/fgac-fta-improvements.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/upgrade-glue-lake-formation.html": {
       "checked_at": "2026-09-21",

@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "4b57346991862ec8642fcd007d163a32da636ec536a7ecbe73f133ee90d78c5e"
+      "sha256": "ea6ba489a4df8a68ddaba55158b99d8ad4c798fe42dfacf5458db13d5182415a"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -124,20 +124,19 @@
       "sha256": "2db72d37e099d14d8fbe9e47f38c4f931b058fa3bd8568cbed6deac635851618"
     },
     {
-      "path": "knowledge/glue/job-arguments.md",
-      "title": "job-arguments",
-      "sha256": "52c7109eeb424321284d54286be59d363b3f454f2d58052573f075e6d0cbcb3d"
-    },
-    {
       "path": "knowledge/glue/dq-advanced-matrix.md",
       "title": "dq-advanced-matrix",
       "sha256": "5349bd3dbdecc72459ea1d48abe95156546057f8585c26484f4b84e20bf98cf8"
     },
     {
+      "path": "knowledge/glue/job-arguments.md",
+      "title": "job-arguments",
+      "sha256": "52c7109eeb424321284d54286be59d363b3f454f2d58052573f075e6d0cbcb3d"
+    },
+    {
       "path": "knowledge/glue/lakeformation-fgac.md",
       "title": "lakeformation-fgac",
-      "sha256": "c9cda03cb0383b132bbcf8895cc4bcafed98eb996c5b735e4e7fc2ced332b61a",
-      "bytes": null
+      "sha256": "c9cda03cb0383b132bbcf8895cc4bcafed98eb996c5b735e4e7fc2ced332b61a"
     },
     {
       "path": "knowledge/glue/lakeformation-index.md",
@@ -183,6 +182,11 @@
       "path": "knowledge/lake-governance.md",
       "title": "lake-governance",
       "sha256": "f8b7799c31bcedd8f43761b58cabecd2645ba78fc26a46e0f99bdbe858ee1c99"
+    },
+    {
+      "path": "knowledge/lakeformation/fgac-fta-improvements.md",
+      "title": "fgac-fta-improvements",
+      "sha256": "ce35a7f1b245b049310d2d274a18faa6f43f93e09cfb81ff02f4bde595bd8978"
     },
     {
       "path": "knowledge/model-selection-observability.md",

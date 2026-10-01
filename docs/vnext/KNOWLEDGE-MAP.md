@@ -91,3 +91,8 @@ ancorada num commit. Alegação sem entrada reprova; entrada órfã também.
 **Gates por tipo de mudança.** A lista de quais testes uma mudança toca, escrita porque
 este repositório guarda invariantes em listas feitas à mão que nada mais cobra.
 [`../gates-por-mudanca.md`](../gates-por-mudanca.md).
+As melhorias de FGAC/FTA estão em `knowledge/lakeformation/fgac-fta-improvements.md`:
+enforcement por capability, decisões source/target, resolução cross-account,
+Hybrid Access e comparação semântica de `glue.id`/`glue.account-id`. O runtime
+corrente legado só entra em migration report quando há destino ou intent
+declarado.

@@ -107,13 +107,34 @@ def test_glue_access_model_is_version_and_operation_aware():
 
 def test_emr_release_capabilities_are_version_aware():
     fgac = analyze_architecture(
-        _golden_input(engine="emr_ec2", runtime="6.15.0", access_model="fgac", operation="read")
+        _golden_input(
+            engine="emr_ec2",
+            runtime="6.15.0",
+            access_model="fgac",
+            operation="read",
+            source_operation="read",
+            target_operation="read",
+        )
     )
     fta = analyze_architecture(
-        _golden_input(engine="emr_ec2", runtime="7.8.0", access_model="fta", operation="read")
+        _golden_input(
+            engine="emr_ec2",
+            runtime="7.8.0",
+            access_model="fta",
+            operation="read",
+            source_operation="read",
+            target_operation="read",
+        )
     )
     unknown = analyze_architecture(
-        _golden_input(engine="emr_serverless", runtime="7.1", access_model="fta", operation="read")
+        _golden_input(
+            engine="emr_serverless",
+            runtime="7.1",
+            access_model="fta",
+            operation="read",
+            source_operation="read",
+            target_operation="read",
+        )
     )
     assert fgac["decision"]["capability"] == "supported"
     assert fta["decision"]["capability"] == "supported"

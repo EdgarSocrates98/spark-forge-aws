@@ -31,6 +31,13 @@ por release, modelo de acesso, formato e operação. Não carregue uma limitaç�
 de Glue 5.0 para 5.1, nem converta uma lacuna de capability em recomendação de
 S3 direto.
 
+Separe análise da arquitetura corrente de migração: Glue 4.0 com FGAC e
+DynamicFrame é célula corrente válida; `migration_required` só aparece quando
+o payload declara `migration`, `target_runtime` ou intent explícito. Quando
+source e target diferem, valide cada `source_decision`/`target_decision` antes
+de compor o resultado. `version_dependent` só fecha com evidência específica
+da operação e release.
+
 Os quatro eixos que exigem execução real — dados, performance, custo e canary —
 voltam `BLOCKED` com o motivo. Isso é o resultado, não uma lacuna a preencher com
 julgamento: sem job rodando no runtime alvo, ninguém provou reconciliação nenhuma.

@@ -18,14 +18,18 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
 
 ### Procedimento
 
-1. Monte JSON offline com `engine`, `runtime`, `access_model`, formato e
-   operação. Declare source/target catalogs com nome, owner, `glue_id` e
-   `glue_account_id`.
+1. Monte JSON offline com `engine`, `runtime`, `table_access_model`/`access_model`,
+   formato e operação. Quando origem e destino diferem, declare
+   `source_operation` e `target_operation`. Declare source/target catalogs com
+   nome, owner, `glue_id` e `glue_account_id`.
 2. Preserve todas as contas: job, local, source, target e owners dos catálogos.
    Nunca use `glue.id` como alias de `glue.account-id`.
 3. Inclua evidências observadas separadamente: `ram`, `resource_link`,
    `iam_get_data_access`, grant Lake Formation, localização registrada,
-   application integration e filesystem.
+   application integration e filesystem. Declare `cross_account_resolution.mode`
+   (`resource_link`, `explicit_catalog_id`, `shared_catalog` ou rota verificada)
+   quando houver compartilhamento e use `capability_verification` somente para
+   fechar célula `limited`/`version_dependent` com prova específica.
 4. Rode:
 
    ```bash
@@ -35,7 +39,10 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
    Ou use a tool `sparkforge_lakeformation_architect` com `payload` igual ao
    objeto JSON. CLI e MCP chamam o mesmo núcleo e devem retornar o mesmo shape.
 
-5. Leia `status`, `checks` e `decision.required_verification`. `consistent`
+5. Leia `status`, `checks` e `decision.required_verification`. Leia também
+   `decision.source_decision` e `decision.target_decision`: `not_supported` e
+   escrita em `read_only` são bloqueios; `limited`, `version_dependent` e
+   `unknown` não fecham sem evidência correspondente. `consistent`
    não autoriza mutação; `unresolved` não é compatível; `blocked` exige
    resolver conflito ou trocar a declaração.
 6. Quando faltar evidência AWS, siga os coletores existentes e reexecute a
@@ -52,12 +59,22 @@ nome do serviço, de uma release vizinha ou de uma permissão isolada.
 - FGAC e FTA são modelos mutuamente exclusivos por job/aplicação.
 - Read e write têm capacidades e permissões diferentes; `SELECT` não prova
   autorização de escrita.
-- Glue 4.0 DynamicFrame e Glue 5.x Spark-native FGAC exigem migração sem
-  substituir o catálogo governado por S3 direto.
+- Glue 4.0 DynamicFrame é uma arquitetura corrente válida; migração só é
+  reportada quando o payload declara runtime/intent de destino. Glue 5.x
+  Spark-native FGAC é caminho diferente e não autoriza substituir catálogo por
+  S3 direto.
 - Glue, EMR EC2 e EMR Serverless têm matrizes e releases diferentes; ausência
   de célula é `unknown`, não `not_supported`.
-- Cross-account exige evidência independente de RAM, resource link e
-  credential vending; ownership de origem e destino permanece explícito.
+- Cross-account exige rota declarada e evidência independente de RAM e
+  credential vending. Glue ETL pode fechar `explicit_catalog_id` sem resource
+  link; resource link continua uma rota possível, não universal. Ownership de
+  origem e destino permanece explícito.
+- `access_governance_mode` é separado de FGAC/FTA. Em `hybrid`,
+  `IAMAllowedPrincipals` exige registro Hybrid Access, opt-in do principal e,
+  em cross-account, versão 4+; não é bloqueio universal.
+- `glue.id` compara com owner do catálogo; `glue.account-id` compara com
+  contexto esperado declarado. Divergência semântica não é alias nem erro
+  automático.
 - Não alegue custo, ganho de performance ou autorização efetiva sem medição e
   fact correspondente.
 - Use explain-access e root-cause para separar metadata de data access; não
@@ -77,6 +94,7 @@ operador validar.
 - `skills/lakeformation-fgac-guard/SKILL.md`
 - `skills/diagnose-lakeformation-access/SKILL.md`
 - `knowledge/lakeformation/operational-closure.md`
+- `knowledge/lakeformation/fgac-fta-improvements.md`
 
 ### Protocolo
 

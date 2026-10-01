@@ -29,3 +29,9 @@ com operational review e runbook para validar uso real antes de declarar suporte
 write, DDL/DML por release. Cada release tem células próprias; divergência entre
 fontes oficiais permanece `version_dependent`/`unknown`, nunca suporte por
 analogia.
+O decision engine aplica o status da célula: `not_supported` é bloqueio,
+`read_only` bloqueia escrita e `limited`/`version_dependent` exigem evidência
+específica. A composição usa `source_decision` e `target_decision`, portanto o
+formato e a operação da origem não são substituídos pelo destino. A rota
+cross-account pode ser resource link ou CatalogId explícito na integração Glue
+ETL; o payload deve declarar qual caminho foi provado.
