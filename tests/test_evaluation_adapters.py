@@ -173,6 +173,84 @@ def test_authorized_command_pins_artifact_and_rejects_runtime_args(tmp_path: Pat
         adapter.run("identity", argv=("mutable",))
 
 
+def test_authorized_command_requires_declared_file_artifact(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    script = repo / "runner.py"
+    script.write_text("print('{}')\n", encoding="utf-8")
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    adapter = AuthorizedCommandAdapter(
+        {
+            "missing": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "args": [str(script)],
+            }
+        },
+        repo=repo,
+    )
+
+    with pytest.raises(EvidenceAdapterError, match="artifact_declaration"):
+        adapter.identity("missing")
+
+    adapter.commands["missing"]["artifact"] = str(script)
+    with pytest.raises(EvidenceAdapterError, match="identity_missing:artifact"):
+        adapter.identity("missing")
+
+
+def test_authorized_command_rejects_undeclared_or_external_file_argument(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    declared = repo / "declared.py"
+    actual = repo / "actual.py"
+    declared.write_text("print('{}')\n", encoding="utf-8")
+    actual.write_text("print('{}')\n", encoding="utf-8")
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    adapter = AuthorizedCommandAdapter(
+        {
+            "mismatch": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "artifact": str(declared),
+                "artifact_sha256": hashlib.sha256(declared.read_bytes()).hexdigest(),
+                "args": [str(actual)],
+            }
+        },
+        repo=repo,
+    )
+
+    with pytest.raises(EvidenceAdapterError, match="artifact_not_in_args"):
+        adapter.identity("mismatch")
+
+    external = tmp_path / "external.py"
+    external.write_text("print('{}')\n", encoding="utf-8")
+    adapter.commands["mismatch"]["args"] = [str(external)]
+    with pytest.raises(EvidenceAdapterError, match="evidence_adapter_path_escape"):
+        adapter.identity("mismatch")
+
+
+def test_authorized_command_allows_self_contained_executable(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    executable_sha256 = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+    adapter = AuthorizedCommandAdapter(
+        {
+            "self-contained": {
+                "executable": sys.executable,
+                "executable_sha256": executable_sha256,
+                "args": [],
+            }
+        },
+        repo=repo,
+    )
+
+    identity = adapter.identity("self-contained")
+    assert identity.artifact_sha256 is None
+    assert identity.args == ()
+
+
 def test_imported_adapter_has_no_provider_sdk_dependency() -> None:
     source = Path("sparkforge/evals/evidence_adapters.py").read_text(encoding="utf-8")
     assert all(name not in source for name in ("anthropic", "openai", "bedrock", "litellm"))

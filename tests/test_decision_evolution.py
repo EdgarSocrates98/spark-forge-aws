@@ -8,7 +8,11 @@ from pathlib import Path
 import pytest
 
 from sparkforge.decision.fingerprint import digest
-from sparkforge.evals.decision_replay import load_replay_suite
+from sparkforge.evals.decision_replay import (
+    load_replay_suite,
+    run_replay_benchmark,
+    split_replay_benchmark,
+)
 from sparkforge.evals.evidence import EvaluationEvidenceBundle
 from sparkforge.evals.evolution import (
     CandidateEvaluation,
@@ -17,8 +21,10 @@ from sparkforge.evals.evolution import (
     CandidateStatus,
     EvolutionError,
     EvolutionService,
+    _candidate_runner,
     transition,
 )
+from sparkforge.evals.metric_compiler import compile_reports
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -176,6 +182,107 @@ def test_evaluate_compares_accepted_parent_with_candidate_and_derives_gates(
     )
 
 
+def test_active_promotion_refuses_surrogate_evaluation(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    shutil.copytree(ROOT / "config", repo / "config")
+    shutil.copytree(ROOT / "evals", repo / "evals")
+    service = EvolutionService(repo)
+    candidate = service.registry.get("routing-variant")
+    evaluation = service.evaluate(
+        candidate,
+        ci_verified=True,
+        evidence_refs=("benchmark:holdout",),
+    )
+    authority_path = repo / "config" / "decisions" / "agentic_control_plane.yaml"
+    authority_path.write_text(
+        authority_path.read_text(encoding="utf-8").replace(
+            "    enabled: false", "    enabled: true", 1
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(EvolutionError, match="surrogate_active_forbidden"):
+        service.promote(candidate, evaluation, caller_authorized=True)
+
+
+def test_active_promotion_checks_unverified_evidence_without_bundle_id(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    shutil.copytree(ROOT / "config", repo / "config")
+    shutil.copytree(ROOT / "evals", repo / "evals")
+    service = EvolutionService(repo)
+    candidate = service.registry.get("routing-variant")
+    evaluation = CandidateEvaluation(
+        candidate_digest=candidate.candidate_digest,
+        suite_sha256="suite-sha",
+        labeled_tasks=50,
+        quality_gate=True,
+        economy_gate=True,
+        ci_verified=True,
+        evidence_refs=("benchmark:holdout",),
+        rollback_target=candidate.parent_digest or "",
+        comparison={"cells": [], "metrics": {}},
+        metrics_derived=True,
+        execution_mode="recorded_host",
+        bundle_id="declared-but-unverified",
+        evidence_verified=False,
+    )
+    service._write(
+        "evaluation", {"candidate": candidate.to_dict(), "evaluation": evaluation.to_dict()}
+    )
+    authority_path = repo / "config" / "decisions" / "agentic_control_plane.yaml"
+    authority_path.write_text(
+        authority_path.read_text(encoding="utf-8").replace(
+            "    enabled: false", "    enabled: true", 1
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(EvolutionError, match="evidence_unverified"):
+        service.promote(candidate, evaluation, caller_authorized=True)
+
+
+def test_active_promotion_requires_all_policy_evidence_kinds(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    shutil.copytree(ROOT / "config", repo / "config")
+    shutil.copytree(ROOT / "evals", repo / "evals")
+    service = EvolutionService(repo)
+    candidate = service.registry.get("routing-variant")
+    evaluation = CandidateEvaluation(
+        candidate_digest=candidate.candidate_digest,
+        suite_sha256="suite-sha",
+        labeled_tasks=50,
+        quality_gate=True,
+        economy_gate=True,
+        ci_verified=True,
+        evidence_refs=("ci:holdout",),
+        rollback_target=candidate.parent_digest or "",
+        comparison={"cells": [], "metrics": {}},
+        metrics_derived=True,
+        execution_mode="recorded_host",
+        verified_evidence_refs=("ci:holdout",),
+        verified_evidence_kinds=("ci",),
+        evidence_verified=True,
+    )
+    service._write(
+        "evaluation", {"candidate": candidate.to_dict(), "evaluation": evaluation.to_dict()}
+    )
+    authority_path = repo / "config" / "decisions" / "agentic_control_plane.yaml"
+    authority_path.write_text(
+        authority_path.read_text(encoding="utf-8").replace(
+            "    enabled: false", "    enabled: true", 1
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(EvolutionError, match="evidence_missing:benchmark,review"):
+        service.promote(candidate, evaluation, caller_authorized=True)
+
+
 def test_evaluate_derives_quality_failure_from_candidate_behavior(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -286,7 +393,27 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
         repo / "evals/token_efficient/fixtures/decision_control_plane_cases.yaml",
         minimum_labeled_tasks=policy.minimum_labeled_tasks,
     )
-    first = service.evaluate(candidate, ci_verified=True, evidence_refs=("benchmark:fixture",))
+    service.evaluate(candidate, ci_verified=True, evidence_refs=("benchmark:fixture",))
+    baseline = service.registry.get("routing-baseline")
+    paired = run_replay_benchmark(
+        suite,
+        old_runner=_candidate_runner(baseline),
+        new_runner=_candidate_runner(candidate),
+        baseline_identity={
+            "candidate_id": baseline.candidate_id,
+            "version": baseline.version,
+            "candidate_digest": baseline.candidate_digest,
+        },
+        candidate_identity={
+            "candidate_id": candidate.candidate_id,
+            "version": candidate.version,
+            "candidate_digest": candidate.candidate_digest,
+        },
+    )
+    baseline_report, candidate_report = split_replay_benchmark(paired)
+    metrics = compile_reports(
+        {"baseline": baseline_report, "candidate": candidate_report}, require_raw=True
+    )
     input_manifest_sha256 = digest(
         [dict(case["input_manifest"]) for case in suite["cases"]]
     )
@@ -309,14 +436,13 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
             "input_manifest_sha256": input_manifest_sha256,
             "labeled_tasks": suite["labeled_tasks"],
         },
-        "execution": {"mode": "surrogate", "adapter": "fixture", "sequence": 1},
+        "execution": {"mode": "recorded_host", "adapter": "fixture", "sequence": 1},
         "transcripts": {"baseline": None, "candidate": None},
         "reports": {
-            "baseline": {"metrics": first.comparison["metrics"]["baseline"]},
-            "candidate": {"metrics": first.comparison["metrics"]["candidate"]},
-            "comparison": first.comparison,
+            "baseline": baseline_report,
+            "candidate": candidate_report,
         },
-        "metrics": {"comparison": first.comparison, "quality": {}, "economy": {}},
+        "metrics": metrics,
         "policy": {
             "policy_id": policy.policy_id,
             "policy_version": policy.policy_version,
@@ -326,6 +452,15 @@ def test_new_evaluation_binds_policy_bundle_and_sequence(tmp_path: Path) -> None
         "rollback_target": candidate.parent_digest,
         "unresolved": [],
     }
+    transcript_root = repo / ".sparkforge" / "evidence" / "ci"
+    transcript_root.mkdir(parents=True, exist_ok=True)
+    for side in ("baseline", "candidate"):
+        transcript = transcript_root / f"{side}-transcript.json"
+        transcript.write_text(side, encoding="utf-8")
+        raw["transcripts"][side] = {
+            "source_ref": f"file:{transcript.name}",
+            "sha256": hashlib.sha256(transcript.read_bytes()).hexdigest(),
+        }
     for kind in ("ci", "benchmark", "review"):
         root = (
             repo / ".sparkforge" / "evidence" / ("reviews" if kind == "review" else kind)

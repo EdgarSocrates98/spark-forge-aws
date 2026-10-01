@@ -162,11 +162,13 @@ class AuthorizedCommandAdapter:
                     ):
                         process.kill()
                         process.wait()
+                        time.sleep(0.05)
                         failure = "external_command_output_too_large"
                         break
                     if time.monotonic() >= deadline:
                         process.kill()
                         process.wait()
+                        time.sleep(0.05)
                         failure = "external_command_timeout"
                         break
                     time.sleep(0.01)
@@ -226,9 +228,18 @@ class AuthorizedCommandAdapter:
         actual = hashlib.sha256(executable_path.read_bytes()).hexdigest()
         if actual != declared_sha256.removeprefix("sha256:"):
             raise EvidenceAdapterError("external_command_executable_digest_mismatch")
+        file_args = self._fixed_file_args(configured_args)
+        artifact_path = (
+            _confined_path(self.repo, artifact) if artifact is not None else None
+        )
+        if file_args and artifact_path is None:
+            raise EvidenceAdapterError(
+                "external_command_identity_missing:artifact_declaration"
+            )
+        if artifact_path is not None and file_args and artifact_path not in file_args:
+            raise EvidenceAdapterError("external_command_artifact_not_in_args")
         actual_artifact: str | None = None
-        if artifact is not None:
-            artifact_path = _confined_path(self.repo, artifact)
+        if artifact_path is not None:
             if not artifact_path.is_file():
                 raise EvidenceAdapterError("external_command_artifact_not_found")
             if not artifact_sha256:
@@ -245,6 +256,15 @@ class AuthorizedCommandAdapter:
             timeout_seconds=timeout,
             max_output_bytes=output_limit,
         )
+
+    def _fixed_file_args(self, args: Sequence[str]) -> tuple[Path, ...]:
+        files: list[Path] = []
+        for value in args:
+            candidate = Path(value).expanduser()
+            resolved = (candidate if candidate.is_absolute() else self.repo / candidate).resolve()
+            if resolved.is_file():
+                files.append(_confined_path(self.repo, resolved))
+        return tuple(files)
 
     def _spec(
         self, value: Any

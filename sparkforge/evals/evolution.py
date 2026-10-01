@@ -905,23 +905,30 @@ class EvolutionService:
             raise EvolutionError("candidate_promotion_requires_evaluated")
         if evaluation.candidate_digest != candidate.candidate_digest:
             raise EvolutionError("candidate_evaluation_digest_mismatch")
-        if not evaluation.gates_pass:
-            raise EvolutionError("candidate_promotion_gates_incomplete")
         policy = self.registry.policy_for(candidate)
         if evaluation.policy_sha256 and evaluation.policy_sha256 != policy.policy_sha256:
             raise EvolutionError("candidate_promotion_policy_digest_mismatch")
-        if evaluation.bundle_id:
+        authority_policy = AuthorityPolicy.from_repo(self.repo)
+        if authority_policy.active_enabled:
+            if evaluation.execution_mode == "surrogate":
+                raise EvolutionError("candidate_promotion_surrogate_active_forbidden")
             if not evaluation.evidence_verified:
                 raise EvolutionError("candidate_promotion_evidence_unverified")
+            if not evaluation.verified_evidence_refs:
+                raise EvolutionError("candidate_promotion_evidence_missing:refs")
+            if not evaluation.verified_evidence_kinds:
+                raise EvolutionError("candidate_promotion_evidence_missing:kinds")
             required_kinds = set(policy.required_verified_evidence_kinds)
             missing = sorted(required_kinds - set(evaluation.verified_evidence_kinds))
             if missing:
                 raise EvolutionError(
                     f"candidate_promotion_evidence_missing:{','.join(missing)}"
                 )
+        if not evaluation.gates_pass:
+            raise EvolutionError("candidate_promotion_gates_incomplete")
         if self.registry.authority_policy.require_rollback_target:
             self._validate_rollback_target(candidate, evaluation.rollback_target)
-        policy = AuthorityPolicy.from_repo(self.repo)
+        policy = authority_policy
         contract = _ContractIdentity(
             candidate.contract_id,
             candidate.contract_version,

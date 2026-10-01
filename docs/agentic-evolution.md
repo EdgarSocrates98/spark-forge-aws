@@ -123,4 +123,23 @@ python -m sparkforge.evals candidate evaluate --repo . --candidate routing-varia
 python -m sparkforge.evals candidate evaluate --repo . --candidate routing-variant --external-command command-id
 ```
 
+### Active promotion provenance
+
+Surrogate replay remains valid for evaluation, shadow, assisted and regression
+flows, but it is never eligible for active promotion. When active authority is
+enabled, promotion requires resolver-verified evidence, at least one verified
+reference and verified evidence kinds covering every kind required by the
+candidate policy. `bundle_id` identifies a bundle; it does not prove that its
+evidence was verified.
+
+The promotion order is evaluation, evidence resolution, active provenance gate,
+rollback validation and authority policy. Missing or unverified provenance is a
+named refusal and never falls back to raw `evidence_refs`.
+
+Authorized external commands must pin every repo-confined regular file passed by
+fixed arguments through the existing `artifact`/`script` declaration and its
+`artifact_sha256`/`script_sha256`. A missing declaration, path escape, digest
+mismatch or argument/artifact mismatch fails closed. Self-contained executables
+with no file argument remain valid without an artifact declaration.
+
 Ap¢s alterar skills ou agents, execute `python scripts/sync_skills.py`. Antes de publicar uma mudan‡a, execute os testes focados, a su¡te completa e as avalia‡äes existentes. Mudan‡as de infraestrutura, escrita ou publica‡Æo exigem aprova‡Æo humana, plano de rollback e evidˆncia do impacto.
