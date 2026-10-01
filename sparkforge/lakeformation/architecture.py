@@ -330,7 +330,12 @@ def _access_explain(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[s
 
 
 def _authorization(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[str, Any]:
+    operation = str(payload.get("target_operation") or payload.get("operation", "read")).lower()
     return {
+        "governance_mode": _governance_mode(payload),
+        "table_access_model": str(
+            payload.get("table_access_model") or payload.get("access_model", "unknown")
+        ).lower(),
         "metadata": {
             "catalog": evidence.get("catalog_metadata", "unknown"),
             "lakeformation": evidence.get("lakeformation_permission", "unknown"),
@@ -341,8 +346,8 @@ def _authorization(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[st
             "storage": evidence.get("storage", "unknown"),
             "kms": evidence.get("kms", "unknown"),
         },
-        "read_operation": str(payload.get("operation", "read")).lower() in _READ_OPERATIONS,
-        "write_operation": str(payload.get("operation", "read")).lower() in _WRITE_OPERATIONS,
+        "read_operation": operation in _READ_OPERATIONS,
+        "write_operation": operation in _WRITE_OPERATIONS,
         "separation": "metadata_authorization != data_authorization",
     }
 
@@ -575,6 +580,208 @@ def _progressive_disclosure(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _capability_evidence(evidence: dict[str, Any], leg: str) -> Any:
+    value = evidence.get(f"{leg}_capability_verification")
+    if value is not None:
+        return value
+    value = evidence.get("capability_verification")
+    if isinstance(value, dict):
+        return value.get(leg)
+    return value
+
+
+def _capability_decision(
+    engine: str,
+    runtime: str,
+    access_model: str,
+    table_format: str,
+    operation: str,
+    api: str | None,
+    leg: str,
+    evidence: dict[str, Any],
+) -> tuple[dict[str, Any], list[dict[str, Any]], set[str], bool]:
+    cell = capability(engine, runtime, access_model, table_format, operation, api)
+    status = str(cell.get("status", "unknown"))
+    checks: list[dict[str, Any]] = []
+    required: set[str] = set()
+    hard_block = False
+    verification = _capability_evidence(evidence, leg)
+    verified = verification in {True, "accepted", "verified", "present", "closed"}
+    if status == "unknown":
+        required.add("capability_not_declared")
+        checks.append(
+            _check(
+                f"CAPABILITY-{leg.upper()}-UNKNOWN",
+                "unresolved",
+                "knowledge",
+                cell.get("reason", "capability not declared"),
+                "capability_not_declared",
+            )
+        )
+    elif status == "not_supported":
+        hard_block = True
+        checks.append(
+            _check(
+                "CAPABILITY-NOT-SUPPORTED",
+                "blocked",
+                "capability",
+                (
+                    f"{leg} capability is explicitly not_supported for the declared "
+                    "release and operation"
+                ),
+                "choose a supported access model/format/operation or change the runtime",
+            )
+        )
+    elif status == "read_only" and operation in _WRITE_OPERATIONS:
+        hard_block = True
+        checks.append(
+            _check(
+                "CAPABILITY-READ-ONLY",
+                "blocked",
+                "capability",
+                f"{leg} capability is read_only but operation is {operation}",
+                "use a read operation or choose a capability with write support",
+            )
+        )
+    elif status in {"limited", "version_dependent"} and not verified:
+        required.add("capability_specific_verification")
+        code = "CAPABILITY-LIMITED" if status == "limited" else "CAPABILITY-VERSION-DEPENDENT"
+        checks.append(
+            _check(
+                code,
+                "unresolved",
+                "capability",
+                f"{leg} capability status {status} needs evidence for the exact operation",
+                "capability_specific_verification",
+            )
+        )
+    elif status in {"limited", "version_dependent"}:
+        checks.append(
+            _check(
+                f"CAPABILITY-{status.upper()}",
+                "pass",
+                "capability",
+                f"{leg} capability {status} was closed by declared operation evidence",
+                "retain the exact evidence with the deployment record",
+            )
+        )
+    decision = {
+        "leg": leg,
+        "engine": engine,
+        "runtime": runtime,
+        "access_model": access_model,
+        "format": table_format,
+        "operation": operation,
+        "api": api,
+        "capability": status,
+        "status": "blocked" if hard_block else ("unresolved" if required else "consistent"),
+        "cell": cell,
+        "required_verification": sorted(required),
+    }
+    return decision, checks, required, hard_block
+
+
+def _cross_account_resolution(
+    payload: dict[str, Any], evidence: dict[str, Any]
+) -> tuple[dict[str, Any], list[dict[str, Any]], set[str]]:
+    if not payload.get("cross_account"):
+        return {"status": "not_applicable", "mode": "local"}, [], set()
+    raw = payload.get("cross_account_resolution")
+    resolution = dict(raw) if isinstance(raw, dict) else {}
+    mode = str(resolution.get("mode") or "").lower()
+    if not mode and evidence.get("resource_link") in {"accepted", "present"}:
+        mode = "resource_link"
+        resolution["mode"] = mode
+    checks: list[dict[str, Any]] = []
+    required: set[str] = set()
+    if not mode:
+        required.update({"cross_account_resolution", "resource_link"})
+        checks.append(
+            _check(
+                "XACC-RESOLUTION",
+                "unresolved",
+                "cross_account",
+                "cross-account access method was not declared",
+                (
+                    "choose resource_link, explicit_catalog_id, shared_catalog or "
+                    "another verified route"
+                ),
+            )
+        )
+        return {"status": "unresolved", "mode": None}, checks, required
+    if mode == "resource_link":
+        value = evidence.get("resource_link")
+        if value not in {"accepted", "present", True}:
+            required.add("resource_link")
+            checks.append(
+                _check(
+                    "XACC-RESOURCE-LINK",
+                    "unresolved",
+                    "cross_account",
+                    f"resource_link evidence is {value or 'unknown'}",
+                    "resource_link",
+                )
+            )
+        return {
+            "status": "pass" if not required else "unresolved",
+            "mode": mode,
+            "service": resolution.get("service"),
+        }, checks, required
+    if mode == "explicit_catalog_id":
+        catalog_id = resolution.get("catalog_id")
+        source_catalog = payload.get("source_catalog")
+        source_catalog = source_catalog if isinstance(source_catalog, dict) else {}
+        expected = source_catalog.get("glue_id") or source_catalog.get("owner_account_id")
+        valid_service = str(payload.get("engine", "")).lower() == "glue" and str(
+            resolution.get("service", "glue_etl")
+        ).lower() == "glue_etl"
+        if not valid_service or not catalog_id or str(catalog_id) != str(expected):
+            required.add("cross_account_catalog_id")
+            checks.append(
+                _check(
+                    "XACC-CATALOG-ID",
+                    "unresolved",
+                    "cross_account",
+                    "explicit CatalogId route is not proven for the source catalog",
+                    "declare the producer CatalogId for the Glue ETL route",
+                )
+            )
+        return {
+            "status": "pass" if not required else "unresolved",
+            "mode": mode,
+            "catalog_id": catalog_id,
+            "service": resolution.get("service", "glue_etl"),
+        }, checks, required
+    evidence_key = {
+        "shared_catalog": "shared_catalog",
+        "other_supported_route": "route_verified",
+    }.get(mode)
+    if evidence_key is None:
+        required.add("cross_account_resolution")
+    elif evidence.get(evidence_key) not in {"accepted", "present", "verified", True}:
+        required.add(evidence_key)
+    if required:
+        checks.append(
+            _check(
+                "XACC-RESOLUTION",
+                "unresolved",
+                "cross_account",
+                f"cross-account route {mode} lacks independent evidence",
+                sorted(required),
+            )
+        )
+    return {
+        "status": "pass" if not required else "unresolved",
+        "mode": mode,
+        "service": resolution.get("service"),
+    }, checks, required
+
+
+def _governance_mode(payload: dict[str, Any]) -> str:
+    value = payload.get("access_governance_mode", "lakeformation")
+    return str(value).lower()
+
+
 def _operational_review(
     payload: dict[str, Any],
     routing: dict[str, Any],
@@ -583,6 +790,7 @@ def _operational_review(
 ) -> dict[str, Any]:
     code_and_iac = _review_code_and_iac(payload)
     taxonomy = _error_taxonomy(payload)
+    resolution, _, _ = _cross_account_resolution(payload, evidence)
     return {
         "code_and_iac": code_and_iac,
         "access_explain": _access_explain(payload, evidence),
@@ -594,6 +802,7 @@ def _operational_review(
         "performance_finops": _performance_finops(payload),
         "cross_review": _cross_review(payload, taxonomy),
         "progressive_disclosure": _progressive_disclosure(payload),
+        "cross_account_resolution": resolution,
     }
 
 
@@ -602,15 +811,13 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
     routing = route_catalogs(payload)
     engine = str(payload.get("engine", ""))
     runtime = str(payload.get("runtime", ""))
-    access_model = str(payload.get("access_model", "unknown")).lower()
-    table_format = str(payload.get("target_format") or payload.get("source_format") or "")
-    operation = str(payload.get("operation", "read")).lower()
-    api = payload.get("api")
+    access_model = str(
+        payload.get("table_access_model") or payload.get("access_model", "unknown")
+    ).lower()
     evidence = _evidence(payload)
     checks: list[dict[str, Any]] = []
     required = set(routing.get("required_verification", []))
     hard_block = False
-    migration_required = False
     observed: list[str] = list(routing.get("observed", []))
     inferred: list[str] = []
     risks: list[str] = []
@@ -621,21 +828,46 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
         )
     ]
 
-    cell = capability(engine, runtime, access_model, table_format, operation, api)
-    if cell.get("status") == "unknown":
-        required.add("capability_not_declared")
-        checks.append(
-            _check(
-                "CAPABILITY-UNKNOWN",
-                "unresolved",
-                "knowledge",
-                cell.get("reason", "capability not declared"),
-                "capability_not_declared",
-            )
-        )
-    else:
+    source_format = str(payload.get("source_format") or payload.get("target_format") or "")
+    target_format = str(payload.get("target_format") or payload.get("source_format") or "")
+    source_operation = str(
+        payload.get("source_operation") or payload.get("operation", "read")
+    ).lower()
+    target_operation = str(
+        payload.get("target_operation") or payload.get("operation", "read")
+    ).lower()
+    source_model = str(payload.get("source_access_model") or access_model).lower()
+    target_model = str(payload.get("target_access_model") or access_model).lower()
+    source_api = payload.get("source_api") or payload.get("api")
+    target_api = payload.get("target_api") or payload.get("api")
+    source_decision, source_checks, source_required, source_blocked = _capability_decision(
+        engine,
+        runtime,
+        source_model,
+        source_format,
+        source_operation,
+        source_api,
+        "source",
+        evidence,
+    )
+    target_decision, target_checks, target_required, target_blocked = _capability_decision(
+        engine,
+        runtime,
+        target_model,
+        target_format,
+        target_operation,
+        target_api,
+        "target",
+        evidence,
+    )
+    checks.extend(source_checks + target_checks)
+    required.update(source_required | target_required)
+    hard_block = source_blocked or target_blocked
+    for decision in (source_decision, target_decision):
         observed.append(
-            f"{engine} {runtime} {access_model} {table_format} {operation}: {cell['status']}"
+            f"{decision['leg']} {decision['engine']} {decision['runtime']} "
+            f"{decision['access_model']} {decision['format']} "
+            f"{decision['operation']}: {decision['capability']}"
         )
 
     if access_model == "both":
@@ -650,7 +882,18 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
             )
         )
 
-    if engine == "glue" and runtime == "4.0" and access_model == "fgac" and api == "dynamicframe":
+    migration = payload.get("migration")
+    migration_requested = isinstance(migration, dict) or bool(
+        payload.get("target_runtime") or payload.get("migration_intent") == "migration"
+    )
+    migration_required = False
+    if (
+        migration_requested
+        and engine == "glue"
+        and runtime == "4.0"
+        and access_model == "fgac"
+        and (source_api == "dynamicframe" or target_api == "dynamicframe")
+    ):
         migration_required = True
         checks.append(
             _check(
@@ -672,8 +915,8 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
         engine == "glue"
         and runtime in {"5.0", "5.1"}
         and access_model == "fgac"
-        and api == "dynamicframe"
-    ):
+            and (source_api == "dynamicframe" or target_api == "dynamicframe")
+        ):
         hard_block = True
         checks.append(
             _check(
@@ -688,7 +931,7 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
             )
         )
 
-    if payload.get("cross_account") and api == "direct_s3":
+    if payload.get("cross_account") and (source_api == "direct_s3" or target_api == "direct_s3"):
         hard_block = True
         checks.append(
             _check(
@@ -703,7 +946,12 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
             )
         )
 
-    if operation in _WRITE_OPERATIONS:
+    write_operations = {
+        value
+        for value in (source_operation, target_operation)
+        if value in _WRITE_OPERATIONS
+    }
+    if write_operations:
         permission = evidence.get("lakeformation_permission")
         if access_model == "fta" and permission not in {"all", "super"}:
             hard_block = True
@@ -713,7 +961,7 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
                     "blocked",
                     "lakeformation",
                     (
-                        f"write operation {operation} has {permission or 'unknown'} "
+                        f"write operation {sorted(write_operations)} has {permission or 'unknown'} "
                         "rather than full-table permission"
                     ),
                     "ALL or SUPER",
@@ -725,7 +973,7 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
                 "authorization check; do not infer from SELECT."
             )
 
-    if access_model == "fta":
+    if access_model == "fta" or source_model == "fta" or target_model == "fta":
         get_data_access = evidence.get("iam_get_data_access")
         if get_data_access == "denied":
             hard_block = True
@@ -772,23 +1020,24 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
                 )
             )
 
+    resolution, resolution_checks, resolution_required = _cross_account_resolution(
+        payload, evidence
+    )
+    checks.extend(resolution_checks)
+    required.update(resolution_required)
     if payload.get("cross_account"):
-        for key in ("ram", "resource_link"):
-            value = evidence.get(key)
-            if value != "accepted" and value != "present":
-                required.add(key)
-                checks.append(
-                    _check(
-                        f"XACC-{key.upper()}",
-                        "unresolved",
-                        "cross_account",
-                        (
-                            f"cross-account evidence {key}={value or 'unknown'} does "
-                            "not prove the route"
-                        ),
-                        key,
-                    )
+        value = evidence.get("ram")
+        if value not in {"accepted", "present", True}:
+            required.add("ram")
+            checks.append(
+                _check(
+                    "XACC-RAM",
+                    "unresolved",
+                    "cross_account",
+                    f"cross-account evidence ram={value or 'unknown'} does not prove the share",
+                    "ram",
                 )
+            )
         if access_model != "fta" and evidence.get("iam_get_data_access") != "allowed":
             required.add("iam_get_data_access")
             checks.append(
@@ -800,7 +1049,42 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
                     "iam_get_data_access",
                 )
             )
-        if evidence.get("iam_allowed_principals") is True:
+    governance_mode = _governance_mode(payload)
+    if governance_mode not in {"lakeformation", "iam", "hybrid"}:
+        required.add("access_governance_mode")
+        checks.append(
+            _check(
+                "GOVERNANCE-MODE",
+                "unresolved",
+                "governance",
+                f"unknown access_governance_mode={governance_mode}",
+                "lakeformation, iam or hybrid",
+            )
+        )
+    if evidence.get("iam_allowed_principals") is True:
+        if governance_mode == "hybrid":
+            hybrid_requirements = {
+                "hybrid_access_enabled": evidence.get("hybrid_access_enabled"),
+                "hybrid_principal_opt_in": evidence.get("hybrid_principal_opt_in"),
+            }
+            if payload.get("cross_account"):
+                hybrid_requirements["cross_account_version"] = evidence.get("cross_account_version")
+            for key, value in hybrid_requirements.items():
+                valid = value is True or value in {"accepted", "present", "enabled", "verified"}
+                if key == "cross_account_version":
+                    valid = isinstance(value, (int, float)) and value >= 4
+                if not valid:
+                    required.add(key)
+                    checks.append(
+                        _check(
+                            f"HYBRID-{key.upper()}",
+                            "unresolved",
+                            "governance",
+                            f"hybrid evidence {key}={value or 'unknown'} is not closed",
+                            key,
+                        )
+                    )
+        elif governance_mode == "lakeformation":
             hard_block = True
             checks.append(
                 _check(
@@ -833,12 +1117,20 @@ def analyze_architecture(payload: dict[str, Any]) -> dict[str, Any]:
         "checks": checks,
         "decision": {
             "access_model": decision_model,
-            "capability": cell.get("status", "unknown"),
+            "table_access_model": access_model,
+            "access_governance_mode": governance_mode,
+            "capability": target_decision["capability"],
+            "source_decision": source_decision,
+            "target_decision": target_decision,
+            "capability_checks": [
+                item for item in checks if item.get("layer") == "capability"
+            ],
             "observed": observed,
             "inferred": inferred,
             "required_verification": sorted(required),
             "risks": risks,
             "rollback": rollback,
+            "cross_account_resolution": resolution,
         },
         "review": _operational_review(payload, routing, checks, evidence),
     }

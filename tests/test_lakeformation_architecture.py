@@ -42,6 +42,7 @@ def _golden_input(**overrides):
             "registered_location": True,
             "application_integration": "enabled",
             "filesystem": "s3a",
+            "capability_verification": "accepted",
         },
         "source_operation": "read",
         "target_operation": "merge",
@@ -88,6 +89,7 @@ def test_glue4_dynamicframe_to_glue5_fgac_is_migration():
             operation="read",
             api="dynamicframe",
             cross_account=False,
+            migration={"from_runtime": "4.0", "to_runtime": "5.1"},
         )
     )
     assert result["decision"]["access_model"] == "migration_required"
