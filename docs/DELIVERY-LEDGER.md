@@ -155,6 +155,7 @@ do wheel e de uma CLI real do host.
 | `d4a7ba9` | facts, composição, regras, fixtures e portas CLI/MCP da avaliação SLO |
 | `a1388ee` | SDD build/ship, knowledge, skills, referências, manifests e documentação transversal da avaliação SLO |
 | `1cba6fb` | avaliação SLO direta sobre lag Kafka e iterator age Kinesis, identidade, timestamps, goldens e paridade CLI/MCP |
+| `08b219a` | SDD ship, knowledge, skills, referências, mirrors, surface lock, offline manifest, status e ledger da avaliação SLO de transporte |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
