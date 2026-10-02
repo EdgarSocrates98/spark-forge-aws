@@ -187,6 +187,7 @@ DEVIN_SKILL_DISPATCH_KEYS = frozenset({"subagent", "agent"})
 # duvida, nao despacha.
 DISPATCHABLE_SKILLS = {
     "analyze-batch-loop": "extrai o loop do codigo e julga; a saida e relatorio",
+    "review-structured-streaming": "extrai source/progress de Structured Streaming e julga limites observados; a saida e relatorio",
     "analyze-flink-job": "extrai dumps Flink/Managed Flink e julga; a saida e relatorio",
     "review-glue-streaming": "extrai dumps Glue Streaming/RTM e julga restricoes observadas; a saida e relatorio",
     "review-cdc-replication": "extrai dumps CDC, Debezium/DMS e julga contratos observados; a saida e relatorio",

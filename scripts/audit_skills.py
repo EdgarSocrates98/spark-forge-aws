@@ -117,9 +117,9 @@ def audit_skill(skill_dir: Path) -> list[Finding]:
 def audit() -> list[Finding]:
     findings: list[Finding] = []
     dirs = sorted(p for p in SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
-    if len(dirs) != 59:
+    if len(dirs) != 60:
         findings.append(
-            Finding("catalog", "error", f"esperadas 59 skills fonte; encontradas {len(dirs)}")
+            Finding("catalog", "error", f"esperadas 60 skills fonte; encontradas {len(dirs)}")
         )
     for skill_dir in dirs:
         findings.extend(audit_skill(skill_dir))

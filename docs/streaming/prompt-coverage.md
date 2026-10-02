@@ -8,7 +8,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 
 | Capability | Nível medido | Evidência atual | Lacuna para P0/P1 |
 |---|---|---|---|
-| Structured Streaming | `diagnosable` parcial | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers e collector read-only | runtime/cross-artifact com código e progresso live, joins/state funcionais e skill dedicada |
+| Structured Streaming | `diagnosable` | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`: exigem workload/runtime real; cross-artifact permanece unresolved quando artefato não existe |
 | Spark Real-Time | `knowledge-only` | knowledge geral Spark/streaming | matriz de versão e separação upstream/runtime gerenciado |
 | Kafka | `fact-aware` parcial | `facts/transport.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, fixtures e analyzers | Connect REST, métricas temporais de broker/grupo e segurança completa |
 | Amazon MSK | `fact-aware` parcial | `msk.cluster` em `facts/transport.py`, `collect streaming-integrations`, `knowledge/transport-diagnostics.md` | matriz upstream↔MSK↔broker, configuração/rede/segurança/lag temporal |
@@ -67,6 +67,10 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
   Kinesis, MSK e DMS, com redaction, cache por hash, manifesto, CLI/MCP e
   testes com clientes falsos. Connect REST, Kafka Streams runtime, OpenLineage
   live, lag temporal, replay e benchmark continuam `N/A + motivo`.
+- Wave L: workflow dedicado `review-structured-streaming`, eval, validador de
+  evidence, coordenador, mirrors e SDD ship para source/progress/checkpoint;
+  execução Spark, replay e benchmark continuam `N/A + motivo` por dependerem de
+  workload/runtime real.
 
 ## Waves necessárias para fechar o prompt
 

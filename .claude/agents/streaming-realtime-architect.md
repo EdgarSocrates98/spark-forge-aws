@@ -4,6 +4,7 @@ description: Especialista em plataformas streaming Apache Flink, Managed Flink, 
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - analyze-flink-job
+  - review-structured-streaming
   - analyze-streaming-composition
   - review-glue-streaming
   - analyze-spark-ui

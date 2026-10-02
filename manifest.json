@@ -49,6 +49,7 @@
     "design-realtime-data-architecture",
     "review-event-driven-architecture",
     "review-streaming-operations",
+    "review-structured-streaming",
     "review-terraform-data-platform",
     "run-debate",
     "sdd-build",

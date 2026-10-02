@@ -13,7 +13,7 @@ Especialista em plataformas streaming Apache Flink, Managed Flink, Structured St
 
 ## Skills que ele usa
 
-[`analyze-flink-job`](../skills/analyze-flink-job.md), [`analyze-streaming-composition`](../skills/analyze-streaming-composition.md), [`review-glue-streaming`](../skills/review-glue-streaming.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`aws-messaging-and-streaming`](../skills/aws-messaging-and-streaming.md), [`review-event-driven-architecture`](../skills/review-event-driven-architecture.md), [`design-realtime-data-architecture`](../skills/design-realtime-data-architecture.md), [`review-streaming-operations`](../skills/review-streaming-operations.md)
+[`analyze-flink-job`](../skills/analyze-flink-job.md), [`review-structured-streaming`](../skills/review-structured-streaming.md), [`analyze-streaming-composition`](../skills/analyze-streaming-composition.md), [`review-glue-streaming`](../skills/review-glue-streaming.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`aws-messaging-and-streaming`](../skills/aws-messaging-and-streaming.md), [`review-event-driven-architecture`](../skills/review-event-driven-architecture.md), [`design-realtime-data-architecture`](../skills/design-realtime-data-architecture.md), [`review-streaming-operations`](../skills/review-streaming-operations.md)
 
 ## Executores que ele despacha
 

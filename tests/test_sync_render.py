@@ -257,6 +257,7 @@ RELACAO_MEDIDA = {
     "analyze-streaming-composition": ("streaming-realtime-architect",),
     "design-realtime-data-architecture": ("streaming-realtime-architect",),
     "review-glue-streaming": ("streaming-realtime-architect",),
+    "review-structured-streaming": ("streaming-realtime-architect",),
     "review-event-driven-architecture": ("streaming-realtime-architect",),
     "review-streaming-operations": ("streaming-realtime-architect",),
     "review-cdc-replication": ("cdc-contract-reviewer",),
@@ -792,6 +793,7 @@ class TestSkillsReais:
             # passaram a ter um coordenador so.
             "analyze-functional-rules": "data-quality-reviewer",
             "review-data-validation": "data-quality-reviewer",
+            "review-structured-streaming": "streaming-realtime-architect",
             "analyze-flink-job": "streaming-realtime-architect",
             "analyze-streaming-composition": "streaming-realtime-architect",
             "design-realtime-data-architecture": "streaming-realtime-architect",

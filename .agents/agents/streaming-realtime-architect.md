@@ -3,6 +3,7 @@ name: streaming-realtime-architect
 description: Especialista em plataformas streaming Apache Flink, Managed Flink, Structured Streaming e AWS Glue Streaming/RTM, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultado sem assumir exactly-once ou capacidade por nome.
 skills:
   - analyze-flink-job
+  - review-structured-streaming
   - analyze-streaming-composition
   - review-glue-streaming
   - analyze-spark-ui
