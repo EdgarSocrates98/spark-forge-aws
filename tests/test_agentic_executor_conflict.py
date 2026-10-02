@@ -293,7 +293,7 @@ class TestContradicaoCondicional:
 class TestOCatalogoDeHojeNaoProduzContradicaoCondicional:
     """O estado correto, medido -- nao um bug a corrigir forcando um caso.
 
-    A guarda de sintoma nao existe no catalogo: as CINCO `requires_absent` sao
+    A guarda de sintoma nao existe no catalogo: as SETE `requires_absent` sao
     kinds de RECUSA. Onze candidatas de sintoma foram medidas e recusadas nos
     sete lotes, sempre porque o kind sai sempre (`spark.stage.spill` e
     `spark.stage.gc` saem para todo stage, inclusive com zero byte) ou sai por
@@ -304,6 +304,10 @@ class TestOCatalogoDeHojeNaoProduzContradicaoCondicional:
     de `SF-ENV-002` pela mesma razao: as duas propoem trocar o format version
     da tabela, e mudar format version com o inventario de consumidores
     incompleto e o que as duas mandam nao fazer.
+
+    `SF-STREAMICE-001` e `SF-STREAMOBS-001` guardam
+    `streaming.composition.unresolved`: composição de streaming sem evidência
+    completa não pode ser tratada como operação confirmada.
     """
 
     def test_as_guardas_do_catalogo_sao_kinds_de_recusa(self, findings_do_catalogo):
@@ -318,6 +322,8 @@ class TestOCatalogoDeHojeNaoProduzContradicaoCondicional:
             ("SF-EMRK-002", "emrc.pod_template.unresolved"),
             ("SF-ENV-002", "env.unresolved"),
             ("SF-ERR-003", "env.unresolved"),
+            ("SF-STREAMICE-001", "streaming.composition.unresolved"),
+            ("SF-STREAMOBS-001", "streaming.composition.unresolved"),
         ]
         assert all(
             kind.endswith(".unapplied") or kind.endswith(".unresolved")
