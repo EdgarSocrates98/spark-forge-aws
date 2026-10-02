@@ -412,11 +412,12 @@ def build_parser() -> argparse.ArgumentParser:
     composition_p.add_argument(
         "--mode",
         required=True,
-        choices=("iceberg", "iceberg_temporal", "observability", "temporal"),
-        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
+        choices=("iceberg", "iceberg_temporal", "observability", "slo", "temporal"),
+        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progresso ou janela temporal pareada.",
     )
     composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
     composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
+    composition_p.add_argument("--slo-name", default="", help="Nome do SLO declarado; obrigatório quando há mais de uma declaração.")
     composition_p.add_argument(
         "--transport-key",
         default="",
@@ -3495,6 +3496,7 @@ def _cmd_analyze_streaming_composition(args: argparse.Namespace) -> int:
         mode=args.mode,
         table=args.table,
         query_name=args.query_name,
+        slo_name=args.slo_name,
         transport_key=args.transport_key,
         max_skew_seconds=args.max_skew_seconds,
         kind=args.kind,

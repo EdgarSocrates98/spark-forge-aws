@@ -115,3 +115,24 @@ def test_temporal_iceberg_rule_requires_pairs_and_non_append():
         for finding in judge([append_only], rules, {})
         if finding.rule_id == "SF-STREAMICE-002"
     ]
+
+
+def test_slo_evaluation_rules_are_evidence_first():
+    rules = [rule for rule in load_catalog() if rule["id"] in {"SF-STREAM-011", "SF-STREAM-012"}]
+    violated = _fact(
+        "streaming.slo.evaluation",
+        attrs={"status": "violated", "query_name": "orders-query", "causal_inference": False},
+        measures={"observation_count": 3, "violated_count": 1},
+    )
+    findings = judge([violated], rules, {})
+    assert [finding for finding in findings if finding.rule_id == "SF-STREAM-011"]
+    assert all(finding.evidence for finding in findings)
+
+    met = _fact("streaming.slo.evaluation", attrs={"status": "met"})
+    assert not judge([met], rules, {})
+
+    unresolved = _fact(
+        "streaming.slo.unresolved",
+        attrs={"reason": "window_not_covered", "query_name": "orders-query"},
+    )
+    assert [finding for finding in judge([unresolved], rules, {}) if finding.rule_id == "SF-STREAM-012"]

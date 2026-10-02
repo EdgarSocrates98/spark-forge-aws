@@ -98,6 +98,7 @@ def _derivados_de_facts(pool):
         runtime_detect,
         streaming_composition,
         streaming_iceberg_temporal,
+        streaming_slo,
         streaming_temporal,
         timeout_diagnosis,
         utilization,
@@ -117,6 +118,9 @@ def _derivados_de_facts(pool):
     )
     yield "streaming_iceberg_temporal", streaming_iceberg_temporal.build_streaming_iceberg_temporal(
         pool, table="<unresolved>", query_name="<unresolved>", max_skew_seconds=0
+    )
+    yield "streaming_slo", streaming_slo.build_streaming_slo(
+        pool, slo_name="<unresolved>", query_name="<unresolved>"
     )
     # `run_cost` deriva custo a partir de `glue.job_run`, e nao de caminho.
     # O pool pode nao ter run nenhum: a chamada devolve lista vazia, e isso

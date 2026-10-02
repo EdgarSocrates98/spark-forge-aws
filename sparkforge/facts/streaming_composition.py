@@ -13,6 +13,7 @@ from typing import Any
 from sparkforge.findings.models import Fact, sort_facts
 from sparkforge.facts.streaming_temporal import build_streaming_temporal_diagnostics
 from sparkforge.facts.streaming_iceberg_temporal import build_streaming_iceberg_temporal
+from sparkforge.facts.streaming_slo import build_streaming_slo
 
 EXTRACTOR_ID = "streaming_composition@0.1.0"
 
@@ -25,6 +26,8 @@ EMITTED_KINDS = frozenset(
         "streaming.temporal.diagnostic",
         "streaming.temporal.unresolved",
         "streaming.iceberg.temporal",
+        "streaming.slo.evaluation",
+        "streaming.slo.unresolved",
     }
 )
 
@@ -281,6 +284,7 @@ def build_streaming_composition(
     mode: str,
     table: str = "",
     query_name: str = "",
+    slo_name: str = "",
     transport_key: str = "",
     max_skew_seconds: float | None = None,
 ) -> list[Fact]:
@@ -299,6 +303,10 @@ def build_streaming_composition(
         derived = _observability_link(
             source_facts, transport_key=transport_key, query_name=query_name
         )
+    elif mode == "slo":
+        derived = build_streaming_slo(
+            source_facts, slo_name=slo_name, query_name=query_name
+        )
     elif mode == "temporal":
         derived = build_streaming_temporal_diagnostics(
             source_facts,
@@ -308,6 +316,15 @@ def build_streaming_composition(
         )
     else:
         derived = [_unresolved(mode, "unknown_mode", source_facts)]
+    analyzed_attrs = {
+        "mode": mode,
+        "table": table or None,
+        "query_name": query_name or None,
+        "transport_key": transport_key or None,
+        "max_skew_seconds": max_skew_seconds,
+    }
+    if mode == "slo" or slo_name:
+        analyzed_attrs["slo_name"] = slo_name or None
     derived.append(
         Fact(
             kind="streaming.composition.analyzed",
@@ -317,13 +334,7 @@ def build_streaming_composition(
                 "derived_fact_count": len(derived),
                 "unresolved_count": sum(f.kind.endswith(".unresolved") for f in derived),
             },
-            attrs={
-                "mode": mode,
-                "table": table or None,
-                "query_name": query_name or None,
-                "transport_key": transport_key or None,
-                "max_skew_seconds": max_skew_seconds,
-            },
+            attrs=analyzed_attrs,
             provenance=_provenance(source_facts),
         )
     )

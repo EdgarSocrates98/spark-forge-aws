@@ -6013,8 +6013,8 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. "
             "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
             "produz link quando a correspondência é observada sem ambiguidade. Preserva "
-            "ids dos facts de origem, operações Iceberg, lag/iterator age, janela temporal "
-            "pareada e unresolved. Modes temporal e iceberg_temporal exigem "
+            "ids dos facts de origem, operações Iceberg, lag/iterator age, avaliação "
+            "SLO, janela temporal pareada e unresolved. Modes temporal e iceberg_temporal exigem "
             "`max_skew_seconds` declarado. "
             "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
         ),
@@ -6030,11 +6030,12 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "mode": {
                     "type": "string",
-                    "enum": ["iceberg", "iceberg_temporal", "observability", "temporal"],
-                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
+                    "enum": ["iceberg", "iceberg_temporal", "observability", "slo", "temporal"],
+                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progresso ou janela temporal pareada.",
                 },
                 "table": {"type": "string", "description": "Tabela Iceberg declarada."},
                 "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
+                "slo_name": {"type": "string", "description": "Nome do SLO declarado; obrigatório quando há mais de uma declaração."},
                 "transport_key": {
                     "type": "string",
                     "description": "Grupo/topic Kafka ou stream Kinesis declarado.",
@@ -10864,6 +10865,7 @@ def _h_analyze_streaming_composition(args: dict[str, Any]) -> dict[str, Any]:
         mode=args["mode"],
         table=args.get("table", ""),
         query_name=args.get("query_name", ""),
+        slo_name=args.get("slo_name", ""),
         transport_key=args.get("transport_key", ""),
         max_skew_seconds=args.get("max_skew_seconds"),
         kind=args.get("kind"),

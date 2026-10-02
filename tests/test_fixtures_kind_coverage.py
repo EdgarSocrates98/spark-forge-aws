@@ -81,6 +81,7 @@ from sparkforge.facts import (
     streaming_iceberg_temporal,
     streaming_integrations,
     streaming_ops,
+    streaming_slo,
     sfn_history,
     spark_plan,
     streaming,
@@ -250,6 +251,7 @@ EXTRACTORS = {
     "streaming_iceberg_temporal": streaming_iceberg_temporal,
     "streaming_integrations": streaming_integrations,
     "streaming_ops": streaming_ops,
+    "streaming_slo": streaming_slo,
     "flink": flink,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/

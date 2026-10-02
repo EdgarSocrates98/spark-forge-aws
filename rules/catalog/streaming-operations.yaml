@@ -103,3 +103,74 @@ rules:
       - {url: "https://docs.aws.amazon.com/msk/latest/developerguide/msk-authentication.html", retrieved: 2026-10-02}
       - {url: "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html", retrieved: 2026-10-02}
     knowledge_refs: [{ref: knowledge/streaming-operations.md}]
+
+  - id: SF-STREAM-011
+    category: streaming_slo
+    title: SLO de streaming observado fora do target declarado
+    requires_facts: [streaming.slo.evaluation]
+    when:
+      all:
+        - fact: streaming.slo.evaluation
+          expr: 'attrs.status == "violated" and measures.violated_count > 0'
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A série Structured Streaming observada cobre a janela declarada e contém
+      ao menos uma métrica fora do operador e target do SLO. Isso confirma a
+      violação observada, mas não identifica causa, custo ou impacto funcional.
+    proposed_change:
+      - Preservar a série e investigar backlog, duração, state, sink e runtime na mesma janela.
+      - Alterar uma variável principal por experimento e validar o resultado funcional.
+    risks: ["Escalar capacidade ou mudar target sem localizar o gargalo pode aumentar custo sem restaurar o SLO."]
+    tradeoffs: ["Retenção de séries SLO exige observabilidade e disciplina de janela."]
+    validation:
+      - Reauditar query, métrica, unidade, operador, target, timestamps e source_fact_ids.
+      - Repetir coleta na mesma janela depois da mudança e comparar os valores observados.
+    rollback: ["Reverter a mudança experimental e preservar baseline e evidência da violação."]
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.slo
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, observability.diagnostic_artifacts, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.lastProgress.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/streaming-operations.md}]
+
+  - id: SF-STREAM-012
+    category: streaming_slo
+    title: SLO de streaming sem janela observada suficiente
+    requires_facts: [streaming.slo.unresolved]
+    when:
+      all:
+        - fact: streaming.slo.unresolved
+          expr: 'attrs.reason != "missing_declared_slo" and attrs.reason != "slo_target_missing"'
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A declaração SLO existe ou foi solicitada, mas o artefato fornecido não
+      sustenta comparação: identidade, métrica direta, unidade, source, timestamp,
+      observações ou cobertura da janela ficaram unresolved. Isso não é sucesso
+      nem falha do SLO.
+    proposed_change:
+      - Coletar batches com query, métrica, unidade e timestamps suficientes para a janela declarada.
+      - Corrigir a declaração somente quando o contrato estiver incompleto; não preencher observações ausentes.
+    risks: ["Tratar janela incompleta como met pode esconder violação operacional."]
+    tradeoffs: ["Instrumentação e retenção maiores aumentam custo de observabilidade."]
+    validation:
+      - Conferir motivo unresolved, source_fact_ids e cobertura temporal antes de julgar novamente.
+    rollback: ["Remover apenas a conclusão não comprovada e preservar o artefato parcial para reauditoria."]
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.slo
+      direction: add
+      requires_absent: []
+      moves: [observability.diagnostic_artifacts, runtime.wall_clock]
+      depends_on: []
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/streaming-operations.md}]

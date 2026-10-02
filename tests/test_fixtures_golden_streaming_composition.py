@@ -7,6 +7,7 @@ import yaml
 
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_path
 from sparkforge.facts.streaming import extract_streaming_progress_path
+from sparkforge.facts.streaming_ops import extract_streaming_ops_path
 from sparkforge.facts.streaming_composition import build_streaming_composition
 from sparkforge.facts.transport import extract_transport_path
 from sparkforge.findings.models import sort_facts
@@ -24,6 +25,9 @@ REQUIRED_FIXTURES = {
     "observability_lag",
     "observability_kinesis",
     "unresolved_link",
+    "slo_met",
+    "slo_violated",
+    "slo_unresolved",
 }
 
 
@@ -32,6 +36,8 @@ def _facts(directory: Path):
     for path in sorted((directory / "input").iterdir()):
         if path.name == "progress.jsonl":
             facts.extend(extract_streaming_progress_path(path))
+        elif path.name == "contract.json":
+            facts.extend(extract_streaming_ops_path(path))
         elif path.name == "iceberg.json":
             facts.extend(extract_iceberg_metadata_path(path))
         elif path.name == "kafka.json":
@@ -54,6 +60,7 @@ def test_fixture_goldens():
                 mode=meta["mode"],
                 table=meta.get("table", ""),
                 query_name=meta.get("query_name", ""),
+                slo_name=meta.get("slo_name", ""),
                 transport_key=meta.get("transport_key", ""),
                 max_skew_seconds=meta.get("max_skew_seconds"),
             )

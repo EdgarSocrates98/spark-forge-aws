@@ -1,0 +1,291 @@
+[
+  {
+    "id": "f_545e48",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "slo",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 7,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "slo",
+      "table": null,
+      "query_name": "orders-query",
+      "transport_key": null,
+      "max_skew_seconds": null,
+      "slo_name": "throughput"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\contract.json",
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_d7ab1c",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 3,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_0ec6fb",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "input_rows_per_second": 120,
+      "processed_rows_per_second": 100
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_741906",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "input_rows_per_second": 120,
+      "processed_rows_per_second": 90
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:05:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_d8757b",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 3,
+      "observed_index": 2,
+      "input_rows_per_second": 120,
+      "processed_rows_per_second": 110
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:10:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_8734d3",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 3,
+      "first_batch_id": 1,
+      "last_batch_id": 3,
+      "input_rows_per_second_first": 120.0,
+      "input_rows_per_second_last": 120.0,
+      "processed_rows_per_second_first": 100.0,
+      "processed_rows_per_second_last": 110.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 2,
+      "all_processed_below_input": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl",
+      "artifact_sha256": "677951ef0456be6df90b6d02a00ced1f31180d8ece5b65116143036458e9da88",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_2b96aa",
+    "schema_version": 1,
+    "kind": "streaming.slo",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "throughput",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 90
+    },
+    "attrs": {
+      "name": "throughput",
+      "metric": "processed_rows_per_second",
+      "operator": "gte",
+      "unit": "rows_per_second",
+      "window": "5m",
+      "source": "spark_progress"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\contract.json",
+      "artifact_sha256": "eab98bf12f6b47ea1318d548b4a7a4f83e20b8b6562d617ce19a337838d89064",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf204c",
+    "schema_version": 1,
+    "kind": "streaming.slo.evaluation",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query:throughput",
+      "snippet": ""
+    },
+    "measures": {
+      "target": 90,
+      "observed_min": 90.0,
+      "observed_max": 110.0,
+      "observation_count": 3,
+      "observed_span_seconds": 600.0,
+      "window_seconds": 300.0,
+      "violated_count": 0
+    },
+    "attrs": {
+      "name": "throughput",
+      "metric": "processed_rows_per_second",
+      "operator": "gte",
+      "unit": "rows_per_second",
+      "window": "5m",
+      "source": "spark_progress",
+      "query_name": "orders-query",
+      "status": "met",
+      "window_covered": true,
+      "causal_inference": false,
+      "source_fact_ids": [
+        "f_0ec6fb",
+        "f_2b96aa",
+        "f_741906",
+        "f_d8757b"
+      ]
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\contract.json",
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_slo@0.1.0"
+    }
+  },
+  {
+    "id": "f_3c0460",
+    "schema_version": 1,
+    "kind": "streaming_ops.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 1
+    },
+    "attrs": {
+      "sections": [
+        "finops",
+        "lakehouse",
+        "security",
+        "serving",
+        "slo"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_met\\input\\contract.json",
+      "artifact_sha256": "eab98bf12f6b47ea1318d548b4a7a4f83e20b8b6562d617ce19a337838d89064",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  }
+]

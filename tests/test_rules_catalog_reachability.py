@@ -91,6 +91,7 @@ from sparkforge.facts import (
     streaming_iceberg_temporal,
     streaming_integrations,
     streaming_ops,
+    streaming_slo,
     s3_listing,
     # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
     # ele aqui, `sfn.attempt` e `sfn.retry_observado` contam como orfaos e as tres
@@ -134,6 +135,7 @@ EXTRACTORS = (
     streaming_iceberg_temporal,
     streaming_integrations,
     streaming_ops,
+    streaming_slo,
     catalog_schema,
     # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os
     # comentarios vizinhos ja descrevem: kind emitido por extrator que existe,

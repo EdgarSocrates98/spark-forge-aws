@@ -1078,6 +1078,7 @@ def analyze_streaming_composition(
     mode: str,
     table: str = "",
     query_name: str = "",
+    slo_name: str = "",
     transport_key: str = "",
     max_skew_seconds: float | None = None,
     kind: list[str] | None = None,
@@ -1105,6 +1106,7 @@ def analyze_streaming_composition(
         mode=mode,
         table=table,
         query_name=query_name,
+        slo_name=slo_name,
         transport_key=transport_key,
         max_skew_seconds=max_skew_seconds,
     )
