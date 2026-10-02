@@ -139,6 +139,8 @@ do wheel e de uma CLI real do host.
 | `758ae0b` | economia observada do grafo/contexto |
 | `87ee83c` / `ddf35ef` | documentação e ship do Forge Lab |
 | `09d6f31` | consolidação transversal da evolução |
+| `a626220` | composição temporal offline, regra e goldens Kafka/Kinesis |
+| `fab535a` | ship SDD, mirrors, referências, surface lock e documentação temporal |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

@@ -1,8 +1,8 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-02  
-**Base técnica de referência:** `758ae0b`; fechamento documental anterior:
-`09d6f31`
+**Base técnica de referência:** `a626220`; fechamento documental atual:
+`fab535a`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
