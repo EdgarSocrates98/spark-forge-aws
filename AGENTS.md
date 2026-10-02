@@ -142,7 +142,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**126 tools, 52 with `detail_level`** (recounted 2026-10-02) (`summary`, `normal`, `full`).
+**134 tools, 54 with `detail_level`** (recounted 2026-10-02) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.
@@ -173,7 +173,7 @@ The Gateway preserves critical evidence, `fact_id`, `rule_id`, risks and
 of truncating silently. Context results expose `context_tree`, `execution_plan`
 and expandable refs where available.
 
-MCP remains full by default with **126 tools**. Compact MCP is explicit opt-in
+MCP remains full by default with **134 tools**. Compact MCP is explicit opt-in
 and publishes exactly **7 operations**. Full/compact adapters use the same envelope;
 surface changes require `docs/surface.lock.json` and
 `python scripts/check_surface_lock.py`.
