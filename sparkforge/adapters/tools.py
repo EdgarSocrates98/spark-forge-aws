@@ -987,6 +987,48 @@ _ANALYZE_CALL_GRAPH_SCHEMA: dict[str, Any] = {
     },
 }
 
+_PLATFORM_GRAPH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["graph", "impact"],
+    "properties": {
+        "graph": {
+            "type": "object",
+            "required": [
+                "schema_version",
+                "platform",
+                "nodes",
+                "edges",
+                "provenance",
+                "unresolved",
+                "fingerprint",
+            ],
+            "properties": {
+                "schema_version": {"type": "integer"},
+                "platform": {"type": "string"},
+                "nodes": {"type": "array", "items": {"type": "object"}},
+                "edges": {"type": "array", "items": {"type": "object"}},
+                "provenance": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        },
+        "impact": {
+            "type": ["object", "null"],
+            "properties": {
+                "root": {"type": "string"},
+                "direction": {"type": "string"},
+                "max_depth": {"type": "integer"},
+                "changed_attribute": {"type": ["string", "null"]},
+                "direct": {"type": "array", "items": {"type": "string"}},
+                "transitive": {"type": "array", "items": {"type": "string"}},
+                "affected": {"type": "array", "items": {"type": "string"}},
+                "paths": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+            },
+        },
+    },
+}
+
 # `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
 # paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
 # nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
@@ -6946,6 +6988,37 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_platform_graph": {
+        "description": (
+            "Analisa um Metadata Graph de plataforma declarado em JSON/YAML e calcula "
+            "lineage impact bounded. Suporta entidades de dataset, job, run, producer, "
+            "consumer, contract, owner, SLO, schema, dashboard, metric, model, service, "
+            "topic, stream, catalog, orchestrator, feature e vector index. IDs são a "
+            "única chave de junção; arestas não são inferidas por label. Conflitos, "
+            "endpoints ausentes e atributo não observado permanecem em unresolved. "
+            "Opera offline e read-only; não consulta AWS, Kafka, Flink, dbt ou catálogo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON ou YAML do grafo."},
+                "changed_node": {"type": "string"},
+                "changed_attribute": {"type": "string"},
+                "direction": {
+                    "type": "string",
+                    "enum": ["downstream", "upstream", "both"],
+                },
+                "max_depth": {"type": "integer", "minimum": 0},
+                "max_items": {"type": "integer", "minimum": 1},
+            },
+        },
+        "outputSchema": _may_fail(
+            _PLATFORM_GRAPH_SCHEMA,
+            "Grafo de plataforma e impacto bounded, ou erro se o manifesto for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -10979,6 +11052,17 @@ def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_platform_graph(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_platform_graph(
+        args["path"],
+        changed_node=args.get("changed_node"),
+        changed_attribute=args.get("changed_attribute"),
+        direction=args.get("direction", "downstream"),
+        max_depth=args.get("max_depth", 3),
+        max_items=args.get("max_items", 500),
+    )
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -11562,6 +11646,7 @@ _HANDLERS = {
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_dq_ai": _h_analyze_dq_ai,
     "sparkforge_analyze_graph": _h_analyze_graph,
+    "sparkforge_analyze_platform_graph": _h_analyze_platform_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,

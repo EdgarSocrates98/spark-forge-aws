@@ -212,6 +212,10 @@ from sparkforge.migration.version_path import (
 )
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.reporting.dq_ai import build_dq_ai_report
+from sparkforge.platform.graph import (
+    PlatformGraphError,
+    analyze_platform_graph as _analyze_platform_graph,
+)
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -2307,6 +2311,34 @@ def analyze_graph(
 ) -> dict[str, Any]:
     facts = _extract_graph_facts(path)
     return _facts_page(facts, "graph.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze platform-graph
+# --------------------------------------------------------------------------- #
+
+
+def analyze_platform_graph(
+    path: str,
+    *,
+    changed_node: str | None = None,
+    changed_attribute: str | None = None,
+    direction: str = "downstream",
+    max_depth: int = 3,
+    max_items: int = 500,
+) -> dict[str, Any]:
+    """Analyze explicit platform metadata and bounded lineage impact offline."""
+    try:
+        return _analyze_platform_graph(
+            path,
+            changed_node=changed_node,
+            changed_attribute=changed_attribute,
+            direction=direction,
+            max_depth=max_depth,
+            max_items=max_items,
+        )
+    except PlatformGraphError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
 
 
 # --------------------------------------------------------------------------- #

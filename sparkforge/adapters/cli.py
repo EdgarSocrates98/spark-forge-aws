@@ -798,6 +798,28 @@ def build_parser() -> argparse.ArgumentParser:
     graph_p.add_argument("--cursor")
     _add_detail_level(graph_p)
 
+    platform_graph_p = analyze_sub.add_parser(
+        "platform-graph",
+        help="Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.",
+    )
+    platform_graph_p.add_argument(
+        "--path", required=True, help="Arquivo JSON ou YAML do Platform Intelligence Graph."
+    )
+    platform_graph_p.add_argument(
+        "--changed-node", help="ID da entidade alterada para calcular blast radius."
+    )
+    platform_graph_p.add_argument(
+        "--changed-attribute", help="Caminho de atributo declarado no nó alterado."
+    )
+    platform_graph_p.add_argument(
+        "--direction",
+        choices=("downstream", "upstream", "both"),
+        default="downstream",
+    )
+    platform_graph_p.add_argument("--max-depth", type=int, default=3)
+    platform_graph_p.add_argument("--max-items", type=int, default=500)
+    platform_graph_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
     s3_p = analyze_sub.add_parser(
         "s3-listing",
         help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
@@ -3984,6 +4006,23 @@ def _cmd_analyze_graph(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_platform_graph(args: argparse.Namespace) -> int:
+    payload = _core.analyze_platform_graph(
+        args.path,
+        changed_node=args.changed_node,
+        changed_attribute=args.changed_attribute,
+        direction=args.direction,
+        max_depth=args.max_depth,
+        max_items=args.max_items,
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
     full = _core.analyze_call_graph(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -5578,6 +5617,7 @@ _DISPATCH = {
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "dq-ai"): _cmd_analyze_dq_ai,
     ("analyze", "graph"): _cmd_analyze_graph,
+    ("analyze", "platform-graph"): _cmd_analyze_platform_graph,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
