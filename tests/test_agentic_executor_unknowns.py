@@ -351,7 +351,7 @@ def test_nenhum_campo_preve_ganho() -> None:
     )
 
 
-def test_corpus_declarates_recusas_citadas_por_finding() -> None:
+def test_corpus_declara_recusas_citadas_por_finding() -> None:
     """Recusas citadas viram Unknown bloqueante; recusa solta nao vira.
 
     E o mesmo achado que `conflict.py` registrou sobre as guardas
@@ -373,8 +373,13 @@ def test_corpus_declarates_recusas_citadas_por_finding() -> None:
     assert {name for name, _ in bloqueantes_de_recusa} == {
         "cdc_missing_key",
         "cdc_seam_unresolved",
-        "debezium_unresolved",
-        "schema_unresolved",
+            "debezium_unresolved",
+            "schema_unresolved",
+            "missing_contract",
+            "incomplete",
+            "rtm_missing_capacity",
+            "redaction",
+            "dms_missing",
     }
 
 
