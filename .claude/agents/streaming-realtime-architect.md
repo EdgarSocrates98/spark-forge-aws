@@ -42,6 +42,12 @@ Para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage, use
 `sparkforge_judge`; ausência de endpoint, credencial ou série temporal fica
 `unresolved`.
 
+Para operações e composição multi-engine, use `sparkforge_analyze_streaming_ops`,
+`sparkforge_analyze_streaming_composition` e `sparkforge_collect_streaming_integrations`;
+para topologia de laboratório e dependências de evento, use
+`sparkforge_analyze_forge_lab` e `sparkforge_analyze_event_driven`. Essas superfícies
+continuam declarativas/read-only no host do agente.
+
 ## Ciclo de investigação
 
 1. Estabelecer runtime, escopo e baseline observável.

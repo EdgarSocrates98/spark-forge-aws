@@ -14,6 +14,11 @@ executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 
 **Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
+Quando o caso cruza engenharia analítica e lakehouse, use
+`sparkforge_analyze_dbt_artifacts`, `sparkforge_analyze_duckdb_microscope` e
+`sparkforge_analyze_lakehouse_catalog` para ler manifests, consultas e bindings
+declarados. Esses analyzers são offline e não comprovam execução nem credenciais.
+
 ## Três leituras do mesmo código
 
 **Fonte** — `sparkforge_analyze_pyspark`. AST estático, nunca importa nem executa o código
