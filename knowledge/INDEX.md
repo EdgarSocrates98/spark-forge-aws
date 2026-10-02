@@ -18,6 +18,8 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards and metrics; blind spots remain explicit |
 | [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg; preserva procedência, não infere causalidade e nomeia pontos cegos |
 | [`streaming-realtime-candidate-matrix.md`](streaming-realtime-candidate-matrix.md) | Matriz offline de candidatos Spark, Glue, Flink, Kafka Streams, Iceberg e Redshift; separa requirements de assumptions e recusa vencedor sem eliminação factual |
+| [`streaming-operations.md`](streaming-operations.md) | Contrato offline de SLO, FinOps, segurança e redaction para streaming; separa medida, atribuição e hipótese |
+| [`streaming-format-serving-matrix.md`](streaming-format-serving-matrix.md) | Matriz arquitetural Delta/Hudi/Iceberg e serving Redshift, ClickHouse, Pinot, Druid e Trino, com compatibilidade explicitamente unresolved |
 | [`event-driven-architecture.md`](event-driven-architecture.md) | Contrato offline para EventBridge, Pipes, SQS, SNS e padrões event-driven |
 | [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, checkpoints, state, service configuration, connectors, metrics and unresolved blind spots |
 | [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, source, RTM restrictions, observed capacity and unresolved blind spots |

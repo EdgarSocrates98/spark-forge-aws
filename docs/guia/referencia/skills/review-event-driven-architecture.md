@@ -7,7 +7,7 @@ Use quando houver dump de EventBridge, EventBridge Pipes, SQS ou SNS e for preci
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-event-driven-architecture/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/event-driven-architecture.md'], 'primary_verbs': ['sparkforge analyze event-driven', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/event-driven-architecture.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze event-driven', 'sparkforge judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -52,3 +52,28 @@ sparkforge judge --facts event-driven.facts.json --show-skipped
 
 Toda recomendação mantém evidence, root cause como hipótese quando necessário,
 risks, trade-offs, validation e rollback.
+
+### Quando NÃO usar
+
+Não use para provar entrega em produção, latência, replay ou idempotência sem
+event log/métrica correspondente.
+
+### Referência rápida
+
+`fact_id` ancora configuração; `*.unresolved` registra o ponto cego; findings
+separam observação de hipótese e exigem `validation` e `rollback`.
+
+### Red flags
+
+Retry configurado não prova entrega; DLQ configurada não prova recuperação; a
+ausência de erro em configuração não prova saúde.
+
+### Contrato de qualidade SparkForge (v1)
+
+Nenhuma declaração de EventBridge, SQS ou SNS vira prova de execução sem
+evidência observada e rastreável.
+
+### Protocolo
+
+Siga `AGENT_PROTOCOL.md`, não execute manutenção destrutiva; sobe qualquer
+mutação ao operador.

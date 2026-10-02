@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "3e6435b1742d813af0581d6494c8565b6c1ae80b90643f87896465220e55a377"
+      "sha256": "047902ffb442447478bb46a3927d1a61192a78497b7cbf492c3434fad0e11328"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -307,6 +307,16 @@
       "path": "knowledge/streaming-realtime-candidate-matrix.md",
       "title": "streaming-realtime-candidate-matrix",
       "sha256": "b9532d5d36726cfbb0a5812f2c23e1005193f1d707dd45d4055ff0dd80aed212"
+    },
+    {
+      "path": "knowledge/streaming-format-serving-matrix.md",
+      "title": "streaming-format-serving-matrix",
+      "sha256": "e738b403769aa5ccc1765fe1a405ee552bd0f057251535a29c4bc0fc30fc00f0"
+    },
+    {
+      "path": "knowledge/streaming-operations.md",
+      "title": "streaming-operations",
+      "sha256": "159bcf46bb5e53c4ee6a34a30cdfd0f9179815e61e9cfd2b3f346de8f896ee7d"
     },
     {
       "path": "knowledge/transport-diagnostics.md",

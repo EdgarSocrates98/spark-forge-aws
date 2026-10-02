@@ -78,6 +78,7 @@ from sparkforge.facts import (
     s3_listing,
     schema_registry,
     streaming_composition,
+    streaming_ops,
     sfn_history,
     spark_plan,
     streaming,
@@ -244,6 +245,7 @@ EXTRACTORS = {
     "cdc": cdc,
     "schema_registry": schema_registry,
     "streaming_composition": streaming_composition,
+    "streaming_ops": streaming_ops,
     "flink": flink,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/

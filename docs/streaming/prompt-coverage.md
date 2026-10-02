@@ -24,13 +24,13 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | Debezium | `diagnosable` parcial | namespace `debezium.*`, config/status/schema-history/tombstone/unresolved, rules e fixtures | collector Kafka Connect, matriz de versões, offsets/DLQ e replay funcional |
 | Schema Registry/data contracts | `diagnosable` parcial | `facts/schema_registry.py`, `rules/catalog/schema_registry.yaml`, fixtures `schema_registry`, `sparkforge_analyze_schema_registry`, `review-cdc-replication` | collectors/live registry, matriz completa de formato/versão, consumidores cross-artifact e validação funcional |
 | Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py`, `facts/streaming_composition.py`, `analyze streaming-composition`, regras `streaming_composition.yaml` e goldens | collectors/live lineage, SLO/FinOps e validação causal/funcional permanecem lacunas |
-| Delta/Hudi | `knowledge-only` | conhecimento Iceberg dominante | matrizes de compatibilidade e decisão arquitetural; collectors ficam P1/P2 |
+| Delta/Hudi | `knowledge-aware` parcial | `streaming_ops.lakehouse`, `knowledge/streaming-format-serving-matrix.md`, fixtures e matriz de formatos | runtime/feature compatibility e collectors ficam P1/P2 |
 | Event-driven architecture | `diagnosable` parcial | `facts/event_driven.py`, regras `SF-EVENT`, fixtures, `analyze event-driven`, MCP, skill, routing e SDD | collector live, Step Functions, teste temporal de entrega/replay e decisão vs streaming |
-| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `analyze streaming-composition` e regras offline de lag/iterator age | collectors temporais, SLO, lineage cross-service e FinOps permanecem lacunas |
-| Streaming FinOps | `knowledge-only` | FinOps batch/genérico | custo por transport/process/runtime/sink e evidence path temporal |
-| Streaming security | `knowledge-only` | skills AWS IAM/security genéricas | facts de TLS/IAM/KMS/VPC/secrets/cross-account e revisão de collectors |
-| Real-time analytics/serving | `knowledge-only` | nenhuma família real-time própria | Redshift streaming, Delta/Hudi e knowledge P1; ClickHouse/Pinot/Druid/Trino P2 |
-| Architecture decision support | `diagnosable` parcial | `sparkforge architecture streaming`, matriz de candidatos, fixtures, skill e ADR offline | integração com facts de runtime/serving, custo/SLO/security observados e validação experimental |
+| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `facts/streaming_ops.py`, `analyze streaming-ops` e regras offline | collectors temporais, SLO temporal, lineage OpenLineage e FinOps continuam lacunas |
+| Streaming FinOps | `diagnosable` parcial | `streaming.finops`, `SF-STREAM-005`, CLI/MCP, fixtures e `knowledge/streaming-operations.md` | CUR/CloudWatch temporal e atribuição por transport/process/runtime/sink |
+| Streaming security | `diagnosable` parcial | `streaming.security`, redaction, `SF-STREAM-006`, CLI/MCP e fixtures | IAM/KMS/VPC/resource-policy collectors e eficácia runtime |
+| Real-time analytics/serving | `knowledge-aware` parcial | `streaming.serving`, `knowledge/streaming-format-serving-matrix.md`, matriz Redshift/ClickHouse/Pinot/Druid/Trino | collectors/evals por sistema e benchmark de latência/throughput |
+| Architecture decision support | `diagnosable` parcial | `sparkforge architecture streaming`, matriz de candidatos, fixtures, skill, ADR e contrato operacional | integrar facts observados de runtime/serving, custo/SLO/security e validação experimental |
 
 ## O que já foi realmente entregue
 
@@ -54,6 +54,10 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
   `STREAMING_TRANSPORT_DIAGNOSTICS`. Wave D: `STREAMING_FLINK_PLATFORM`.
 - Wave H2: decisão offline separa requirements de assumptions, elimina por
   constraints factuais e mantém ADR unresolved quando há empate ou blind spot.
+- Wave I parcial: contrato operacional offline para SLO, FinOps, segurança com
+  redaction, serving e formatos lakehouse; regra, CLI/MCP, fixtures, skill,
+  conhecimento e SDD ship. Compatibilidade runtime, collectors e benchmark
+  permanecem explicitamente fora.
 
 ## Waves necessárias para fechar o prompt
 
@@ -62,10 +66,10 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
-| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição offline parcial entregue**: streaming→Iceberg e progresso→Kafka/Kinesis; collectors, lineage/SLO/FinOps e correlação temporal de longo período permanecem lacunas |
-| H | Event-driven + architecture decision + agents/skills/routing | **event-driven parcial entregue**: requirements→facts→candidates→constraints→ADR ainda falta |
-| I | Delta/Hudi/Redshift and P2 knowledge | matrices/evals e artefacts somente onde existir caminho determinístico |
-| J | security, failure fixtures, integration, performance, packaging and all gates | full suite, package/install/CLI/MCP smoke, security/economy review |
+| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline parcial entregue**: streaming→Iceberg, progresso→Kafka/Kinesis e declarações SLO/FinOps; collectors temporais, OpenLineage e correlação de longo período permanecem lacunas |
+| H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |
+| I | Delta/Hudi/Redshift and P2 knowledge | **matrizes e facts declarativos entregues**: compatibilidade e serving são knowledge-aware; evals/collectors/benchmark continuam P1/P2 |
+| J | security, failure fixtures, integration, performance, packaging and all gates | em execução: fechar Connect/OpenLineage/checkpoint cross-artifact, suite completa, package/install/CLI/MCP smoke, security/economy review |
 
 ## Regra de conclusão
 

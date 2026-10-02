@@ -7,7 +7,7 @@ Use quando houver dump JSON/JSONL de job Apache Flink ou Managed Flink e for pre
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/analyze-flink-job/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/flink-streaming.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze flink', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/flink-streaming.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze flink', 'sparkforge judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -76,3 +76,22 @@ use `sparkforge_rules_lookup` para regra e fonte, valide a saída e encaminhe
 qualquer mutação ao operador. A skill não executa manutenção destrutiva; sobe
 a decisão ao operador. Para correlacionar transporte, use
 `sparkforge_analyze_transport` quando houver dump compatível.
+
+### Quando NÃO usar
+
+Não use para código PySpark, event logs sem vocabulário Flink ou para alterar
+cluster/serviço. Encaminhe collector live ao operador.
+
+### Referência rápida
+
+`fact_id` ancora observação; `*.unresolved` nomeia lacuna; finding exige
+`validation` e recomendação reversível com `rollback`.
+
+### Red flags
+
+Exactly-once, capacidade, custo ou saúde sem medida são hipótese, não fato.
+
+### Contrato de qualidade SparkForge (v1)
+
+Separe facts, findings e unresolved; preserve `fact_id`, fonte, `validation` e
+`rollback` em toda recomendação.

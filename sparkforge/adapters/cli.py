@@ -307,6 +307,17 @@ def build_parser() -> argparse.ArgumentParser:
     event_driven_p.add_argument("--cursor")
     _add_detail_level(event_driven_p)
 
+    streaming_ops_p = analyze_sub.add_parser(
+        "streaming-ops",
+        help="Extrai facts declarados de SLO, FinOps, segurança e serving streaming.",
+    )
+    streaming_ops_p.add_argument("--path", required=True, help="Arquivo ou diretório JSON.")
+    streaming_ops_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    streaming_ops_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    streaming_ops_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    streaming_ops_p.add_argument("--cursor")
+    _add_detail_level(streaming_ops_p)
+
     # architecture decision support --------------------------------------
     architecture_p = sub.add_parser(
         "architecture",
@@ -3391,6 +3402,11 @@ def _cmd_architecture_streaming(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_streaming_ops(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming_ops(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
     full = _core.analyze_parquet_footer(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5464,6 +5480,7 @@ _DISPATCH = {
     ("analyze", "cdc"): _cmd_analyze_cdc,
     ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
     ("analyze", "event-driven"): _cmd_analyze_event_driven,
+    ("analyze", "streaming-ops"): _cmd_analyze_streaming_ops,
     ("architecture", "streaming"): _cmd_architecture_streaming,
     ("analyze", "streaming-composition"): _cmd_analyze_streaming_composition,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,

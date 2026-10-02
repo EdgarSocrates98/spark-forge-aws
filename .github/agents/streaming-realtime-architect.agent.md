@@ -10,6 +10,7 @@ skills:
   - aws-messaging-and-streaming
   - review-event-driven-architecture
   - design-realtime-data-architecture
+  - review-streaming-operations
 rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM, SF-STREAMICE, SF-STREAMOBS, SF-EVENT]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---

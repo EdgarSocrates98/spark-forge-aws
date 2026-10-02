@@ -193,6 +193,7 @@ DISPATCHABLE_SKILLS = {
     "analyze-streaming-composition": "compoe facts declarados de streaming, transporte e Iceberg; a saida e relatorio",
     "review-event-driven-architecture": "extrai e julga EventBridge, Pipes, SQS e SNS; a saida e relatorio",
     "design-realtime-data-architecture": "compara candidatos streaming por constraints declaradas; recusa vencedor sem evidencia",
+    "review-streaming-operations": "revisa SLO, FinOps, segurança, serving e lakehouse por contrato offline; preserva unresolved",
     "analyze-library-call-graph": "varre a biblioteca e devolve o grafo; leitura fechada",
     "analyze-spark-plan": "interpreta um plano fisico ja salvo; nao pede nada a ninguem",
     "analyze-spark-ui": "coleta e julga o event log de um run identificado no pedido",

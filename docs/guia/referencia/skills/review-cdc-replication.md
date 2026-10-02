@@ -7,7 +7,7 @@ Use quando houver dump local de eventos CDC, Debezium/Kafka Connect, AWS DMS ou 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-cdc-replication/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md', '../../knowledge/schema-registry-data-contracts.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze cdc', 'sparkforge analyze schema-registry', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', 'references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md', '../../knowledge/schema-registry-data-contracts.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze cdc', 'sparkforge analyze schema-registry', 'sparkforge judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -73,3 +73,23 @@ Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
 `sparkforge_next_step`, use `sparkforge_rules_lookup` para regra e fonte,
 valide a saída, não executa manutenção destrutiva e sobe qualquer mutação ao
 operador.
+
+### Contrato de qualidade SparkForge (v1)
+
+Facts preservam `fact_id`; `*.unresolved` nomeia lacunas; toda recomendação
+declara validation, risco e rollback.
+
+### Quando NÃO usar
+
+Não use para produzir eventos, alterar connector, registry, banco ou broker.
+Sem artefato salvo, encaminhe coleta ao operador.
+
+### Referência rápida
+
+Posição, chave e seam devem ser observados. Cada finding usa `fact_id`; cada
+`*.unresolved` vira uma lacuna; `validation` e `rollback` são obrigatórios.
+
+### Red flags
+
+Snapshot concluído não prova CDC contínuo; tombstone ausente não prova delete
+perdido; compatibilidade declarada não prova consumidor compatível.

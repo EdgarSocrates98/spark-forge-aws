@@ -45,6 +45,10 @@
     "review-glue-terraform",
     "review-pyspark-pr",
     "review-glue-streaming",
+    "analyze-streaming-composition",
+    "design-realtime-data-architecture",
+    "review-event-driven-architecture",
+    "review-streaming-operations",
     "review-terraform-data-platform",
     "run-debate",
     "sdd-build",
@@ -94,7 +98,7 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 201,
+    "rule_count": 204,
     "retrieved": "2026-10-02"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
@@ -104,6 +108,7 @@
     "sparkforge_analyze_cdc",
     "sparkforge_analyze_schema_registry",
     "sparkforge_analyze_event_driven",
+    "sparkforge_analyze_streaming_ops",
     "sparkforge_analyze_streaming_composition",
     "sparkforge_analyze_catalog_schema",
     "sparkforge_analyze_cloudwatch",

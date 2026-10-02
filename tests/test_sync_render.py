@@ -254,7 +254,11 @@ RELACAO_MEDIDA = {
         "streaming-realtime-architect",
     ),
     "analyze-flink-job": ("streaming-realtime-architect",),
+    "analyze-streaming-composition": ("streaming-realtime-architect",),
+    "design-realtime-data-architecture": ("streaming-realtime-architect",),
     "review-glue-streaming": ("streaming-realtime-architect",),
+    "review-event-driven-architecture": ("streaming-realtime-architect",),
+    "review-streaming-operations": ("streaming-realtime-architect",),
     "review-cdc-replication": ("cdc-contract-reviewer",),
     "aws-messaging-and-streaming": (
         "cdc-contract-reviewer",
@@ -789,7 +793,11 @@ class TestSkillsReais:
             "analyze-functional-rules": "data-quality-reviewer",
             "review-data-validation": "data-quality-reviewer",
             "analyze-flink-job": "streaming-realtime-architect",
+            "analyze-streaming-composition": "streaming-realtime-architect",
+            "design-realtime-data-architecture": "streaming-realtime-architect",
             "review-glue-streaming": "streaming-realtime-architect",
+            "review-event-driven-architecture": "streaming-realtime-architect",
+            "review-streaming-operations": "streaming-realtime-architect",
             "review-cdc-replication": "cdc-contract-reviewer",
         }
 

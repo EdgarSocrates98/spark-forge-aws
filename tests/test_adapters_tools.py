@@ -47,6 +47,7 @@ class TestToolSurface:
             "sparkforge_analyze_cdc",
             "sparkforge_analyze_schema_registry",
             "sparkforge_analyze_event_driven",
+            "sparkforge_analyze_streaming_ops",
             "sparkforge_analyze_streaming_composition",
             "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
@@ -2288,6 +2289,22 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             encoding="utf-8",
         )
         return call_tool("sparkforge_analyze_event_driven", {"path": str(dump)})
+
+    if name == "sparkforge_analyze_streaming_ops":
+        dump = tmp_path / "streaming_ops.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "slo": [{"name": "freshness", "metric": "p95", "target": 30, "unit": "s", "window": "5m", "source": "cloudwatch"}],
+                    "finops": [{"metric": "worker_hours", "value": 2, "unit": "hours", "period": "hour", "region": "us-east-1", "tier": "standard", "source": "cur"}],
+                    "security": [{"system": "msk", "transport": "tls", "auth": "iam", "tls": True, "kms": True, "vpc": True, "secrets_manager": True, "cross_account": False, "resource_policy": True}],
+                    "serving": [{"name": "redshift", "system": "redshift", "source": "iceberg", "mode": "streaming", "schema": "orders"}],
+                    "lakehouse": [{"name": "events", "format": "iceberg", "mode": "append", "checkpoint": "s3://lake/checkpoints/events"}],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_streaming_ops", {"path": str(dump)})
 
     if name == "sparkforge_analyze_streaming_composition":
         dump = tmp_path / "streaming_facts.json"

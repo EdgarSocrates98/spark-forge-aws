@@ -1,0 +1,173 @@
+[
+  {
+    "id": "f_3c2d91",
+    "schema_version": 1,
+    "kind": "streaming.security",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "0",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "transport": "tls",
+      "auth": "iam",
+      "tls": true,
+      "kms": true,
+      "vpc": true,
+      "secrets_manager": true,
+      "cross_account": false,
+      "resource_policy": true,
+      "system": "kinesis"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_fa0d50",
+    "schema_version": 1,
+    "kind": "streaming_ops.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "fact_count": 6
+    },
+    "attrs": {
+      "sections": [
+        "security"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_6984df",
+    "schema_version": 1,
+    "kind": "streaming_ops.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "artifact_secret_redacted:security[0].password",
+      "domain": "artifact"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_6984df",
+    "schema_version": 1,
+    "kind": "streaming_ops.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "finops_declaration_missing",
+      "domain": "finops"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_6984df",
+    "schema_version": 1,
+    "kind": "streaming_ops.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "lakehouse_declaration_missing",
+      "domain": "lakehouse"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_6984df",
+    "schema_version": 1,
+    "kind": "streaming_ops.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "serving_declaration_missing",
+      "domain": "serving"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  },
+  {
+    "id": "f_6984df",
+    "schema_version": 1,
+    "kind": "streaming_ops.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "slo_declaration_missing",
+      "domain": "slo"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "artifact_sha256": "cb1b41acff39e24c3dac66e3369edb6f2514a29373f9acefce6f6c43f37e39e0",
+      "extractor": "streaming_ops@0.1.0"
+    }
+  }
+]

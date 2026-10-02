@@ -105,6 +105,10 @@ from sparkforge.facts.emr_serverless import (
 )
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.event_driven import extract_event_driven_path, extract_event_driven_tree
+from sparkforge.facts.streaming_ops import (
+    extract_streaming_ops_path,
+    extract_streaming_ops_tree,
+)
 from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
 from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
 from sparkforge.facts.schema_registry import (
@@ -1199,6 +1203,26 @@ def analyze_event_driven(
         else extract_event_driven_path(target, repo_root=target.parent)
     )
     return _facts_page(facts, "event_driven.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_streaming_ops(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extract declared streaming SLO, FinOps, security and serving facts."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise streaming-ops: {path}")
+    facts = (
+        extract_streaming_ops_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_streaming_ops_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "streaming_ops.unresolved", kind, limit, cursor, detail_level)
 
 
 def analyze_glue_streaming(

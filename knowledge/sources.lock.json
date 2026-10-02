@@ -121,6 +121,18 @@
       "rules": [],
       "sha256": "7f7f8438ed27002f045d8862c6fc15a98cde1dc9599f64770d43162a81f2c281"
     },
+    "https://aws.amazon.com/aws-cost-management/aws-cost-and-usage-reporting/": {
+      "docs": [
+        "knowledge/streaming-operations.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAM-005"
+      ]
+    },
     "https://aws.amazon.com/blogs/aws/aws-glue-6-0-now-available-with-30-lower-price-and-full-apache-iceberg-v3-support/": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -277,6 +289,14 @@
       ],
       "sha256": "19a38945af86b3f9593c2902e94558228093be9a6b0357efa455f12ae6c67324"
     },
+    "https://clickhouse.com/docs/en/integrations/kafka/kafka-table-engine": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://debezium.io/documentation/reference/stable/configuration/signalling.html": {
       "docs": [],
       "pinned": false,
@@ -361,7 +381,9 @@
     },
     "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html": {
       "checked_at": "2026-09-21",
-      "docs": [],
+      "docs": [
+        "knowledge/streaming-operations.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-09-09"
@@ -2247,6 +2269,18 @@
       ],
       "sha256": "ca1d372eb2ab5aee04f9dbddd3016ce820d155c4c502ba6026ab32540c283f94"
     },
+    "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html": {
+      "docs": [
+        "knowledge/streaming-operations.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAM-006"
+      ]
+    },
     "https://docs.aws.amazon.com/lake-formation/latest/APIReference/API_GetTemporaryGlueTableCredentials.html": {
       "checked_at": "2026-09-21",
       "docs": [],
@@ -2401,6 +2435,18 @@
       "retrieved": [],
       "rules": []
     },
+    "https://docs.aws.amazon.com/msk/latest/developerguide/msk-authentication.html": {
+      "docs": [
+        "knowledge/streaming-operations.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAM-006"
+      ]
+    },
     "https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html": {
       "docs": [
         "knowledge/transport-diagnostics.md"
@@ -2463,6 +2509,7 @@
     },
     "https://docs.aws.amazon.com/redshift/latest/mgmt/materialized-view-streaming-ingestion.html": {
       "docs": [
+        "knowledge/streaming-format-serving-matrix.md",
         "knowledge/streaming-realtime-candidate-matrix.md"
       ],
       "pinned": false,
@@ -2697,6 +2744,22 @@
       ],
       "rules": [],
       "sha256": "312e0474c3458e3e781059f7eac815f753771423aecf50a4121e9712b1bc48e7"
+    },
+    "https://docs.delta.io/latest/delta-change-data-feed.html": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://docs.delta.io/latest/delta-streaming.html": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.devin.ai/cli/changelog/stable.md": {
       "checked_at": "2026-09-21",
@@ -3020,6 +3083,14 @@
       "rules": [],
       "sha256": "c0a4ffce0abb104c09cadae19a4c05be709a86241d91151e54cd8dd4b86c3b85"
     },
+    "https://docs.pinot.apache.org/basics/data-import/realtime-ingestion": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -3112,6 +3183,14 @@
       "rules": [
         "SF-CTM-001"
       ]
+    },
+    "https://druid.apache.org/docs/latest/ingestion/streaming/": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md": {
       "docs": [
@@ -3243,6 +3322,22 @@
       ],
       "sha256": "b2e9e19faa6213df1f56ccf0f01f3d877cdb0fc910d5a3e44b55cfb06f94995c"
     },
+    "https://hudi.apache.org/docs/concepts/": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://hudi.apache.org/docs/querying_data/": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://iceberg.apache.org/docs/latest/spark-configuration/": {
       "checked_at": "2026-09-21",
       "docs": [],
@@ -3290,6 +3385,7 @@
     },
     "https://iceberg.apache.org/docs/latest/spark-structured-streaming/": {
       "docs": [
+        "knowledge/streaming-format-serving-matrix.md",
         "knowledge/streaming-realtime-candidate-matrix.md"
       ],
       "pinned": false,
@@ -4003,6 +4099,7 @@
     },
     "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html": {
       "docs": [
+        "knowledge/streaming-operations.md",
         "knowledge/streaming-realtime-candidate-matrix.md"
       ],
       "pinned": false,
@@ -4014,8 +4111,25 @@
         "SF-STREAM-001",
         "SF-STREAM-002",
         "SF-STREAM-003",
+        "SF-STREAM-004",
         "SF-STREAMOBS-001"
       ]
+    },
+    "https://trino.io/docs/current/connector/iceberg.html": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://trino.io/docs/current/connector/kafka.html": {
+      "docs": [
+        "knowledge/streaming-format-serving-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://www.dremio.com/blog/compaction-in-apache-iceberg-fine-tuning-your-iceberg-tables-data-files/": {
       "checked_at": "2026-09-21",

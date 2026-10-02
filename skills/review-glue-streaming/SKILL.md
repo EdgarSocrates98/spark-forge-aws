@@ -5,10 +5,13 @@ metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
   references:
+  - references/README.md
   - ../_shared/references/evidence-first.md
   - ../_shared/references/evaluation-contract.md
   - ../_shared/references/operational-safety.md
   - ../../knowledge/glue-streaming-rtm.md
+  scripts:
+  - scripts/validate_evidence.py
   primary_verbs:
   - sparkforge analyze glue-streaming
   - sparkforge judge
@@ -53,3 +56,23 @@ que permaneça unresolved.
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
 `sparkforge_next_step`, valide a saída, não executa manutenção destrutiva e
 sobe mutações ao operador.
+
+## Quando NÃO usar
+
+Não use para provisionar Glue, alterar job ou coletar CloudWatch. Sem dump
+observado, a resposta deve permanecer unresolved.
+
+## Referência rápida
+
+Declare runtime e artefato; `fact_id` ancora cada finding; `*.unresolved` nomeia
+blind spots; toda recomendação traz `validation` e `rollback`.
+
+## Red flags
+
+Worker count não é task capacity; RTM não é micro-batch; configuração não prova
+backlog, latência ou resultado funcional.
+
+## Contrato de qualidade SparkForge (v1)
+
+Facts offline sustentam diagnóstico; não invente capacidade nem ganho e mantenha
+risco, trade-off, validation e rollback.

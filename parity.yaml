@@ -167,6 +167,31 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: review declared streaming SLO, FinOps, security, serving and lakehouse operations
+    tools: [sparkforge_analyze_streaming_ops]
+    cli: [analyze streaming-ops]
+    knowledge:
+      - knowledge/streaming-operations.md
+      - knowledge/streaming-format-serving-matrix.md
+      - rules/catalog/streaming-operations.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: decide realtime architecture from declared requirements and constraints
+    tools: []
+    cli: [architecture streaming]
+    knowledge: [knowledge/streaming-realtime-candidate-matrix.md]
+    platforms:
+      claude_code: [cli, files]
+      devin_desktop: [cli, files]
+      devin_cli: [cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract AWS Glue Streaming and Real-Time Mode artifact facts
     tools: [sparkforge_analyze_glue_streaming]
     cli: [analyze glue-streaming]

@@ -251,6 +251,9 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         "decision receipt": "local receipt verification; no MCP surface.",
         "decision shadow": "local shadow evaluation; no MCP surface.",
         "decision validate": "local contract validation; no MCP surface.",
+        "architecture streaming": (
+            "CLI-only offline decision engine; no MCP surface by design."
+        ),
     }
 
     def _subcomandos(self, parser):

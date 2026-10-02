@@ -5,10 +5,13 @@ metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
   references:
+  - references/README.md
   - ../_shared/references/evidence-first.md
   - ../_shared/references/evaluation-contract.md
   - ../_shared/references/operational-safety.md
   - ../../knowledge/streaming-lakehouse-observability.md
+  scripts:
+  - scripts/validate_evidence.py
   primary_verbs:
   - sparkforge analyze streaming-composition
   - sparkforge judge
@@ -89,3 +92,26 @@ alteração live ou manutenção destrutiva pertence a esta skill.
   funcionais; reportar todos os unresolved.
 - **Segurança:** não executar collector ou escrita AWS; propor somente ações
   reversíveis com rollback explícito.
+
+validation deve ser registrada literalmente no handoff; rollback deve apontar a
+reversão concreta da recomendação.
+
+## Quando NÃO usar
+
+Não use sem Facts compatíveis ou quando a pergunta exigir benchmark, causalidade
+ou estado live de Kafka, Kinesis, Spark ou Iceberg.
+
+## Referência rápida
+
+Identidade declarada vincula os lados; `fact_id` ancora cada observação e
+`*.unresolved` impede preencher um campo ausente.
+
+## Red flags
+
+Mesmo nome de query, tabela ou tópico não prova que os artefatos pertencem ao
+mesmo caminho; ausência de finding não prova saúde.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`, não executa manutenção destrutiva; sobe qualquer
+mutação ao operador.

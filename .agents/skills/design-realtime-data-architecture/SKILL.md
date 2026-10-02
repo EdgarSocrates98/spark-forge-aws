@@ -5,11 +5,14 @@ metadata:
   sparkforge_contract: v1
   evals: evals/evals.json
   references:
+  - references/README.md
   - ../_shared/references/evidence-first.md
   - ../_shared/references/evaluation-contract.md
   - ../_shared/references/operational-safety.md
   - ../../knowledge/streaming-realtime-candidate-matrix.md
-primary_verbs:
+  scripts:
+  - scripts/validate_evidence.py
+  primary_verbs:
   - sparkforge architecture streaming
 subagent: true
 agent: streaming-realtime-architect
@@ -44,3 +47,27 @@ sparkforge architecture streaming \
 - a matriz não mede benchmark, custo, throughput, SLO ou disponibilidade;
 - nenhum serviço é alterado e nenhuma infraestrutura é provisionada;
 - a decisão exige validação de runtime, contrato, replay, segurança e rollback.
+
+## Quando NÃO usar
+
+Não use para ranking por preço, benchmark ou provisionamento. Requisitos não
+declarados ficam unresolved.
+
+## Referência rápida
+
+Requirements e assumptions ficam separados; `fact_id` e `*.unresolved` guiam o
+ADR; toda recomendação inclui `validation` e `rollback`.
+
+## Red flags
+
+Candidate supported não significa escolhido, capaz, barato ou exatamente-once.
+
+## Contrato de qualidade SparkForge (v1)
+
+O engine não inventa evidência: preserve facts, findings, `fact_id`, unresolved,
+validation e rollback.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`, não executa manutenção destrutiva; sobe qualquer
+mudança de runtime ao operador.
