@@ -17,6 +17,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze cloudwatch-logs`](#sparkforge-analyze-cloudwatch-logs) | Extrai facts do LOG do run ja coletado do CloudWatch Logs. |
 | [`sparkforge analyze consumers`](#sparkforge-analyze-consumers) | Extrai facts do inventario declarado de consumidores de tabela. |
 | [`sparkforge analyze controlm-jobs`](#sparkforge-analyze-controlm-jobs) | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem. |
+| [`sparkforge analyze data-observability`](#sparkforge-analyze-data-observability) | Avalia SLI/SLO, error budget, incidentes e dependências offline. |
 | [`sparkforge analyze data-quality`](#sparkforge-analyze-data-quality) | Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa. |
 | [`sparkforge analyze dbt-artifacts`](#sparkforge-analyze-dbt-artifacts) | Analisa manifest, catalog e run_results do dbt sem executar dbt. |
 | [`sparkforge analyze dq-ai`](#sparkforge-analyze-dq-ai) | Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas. |
@@ -264,6 +265,25 @@ sparkforge analyze controlm-jobs --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_controlm_jobs`](../tools/sparkforge_analyze_controlm_jobs.md)
+
+## `sparkforge analyze data-observability`
+
+Avalia SLI/SLO, error budget, incidentes e dependências offline.
+
+```bash
+sparkforge analyze data-observability --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML de observabilidade. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_data_observability`](../tools/sparkforge_analyze_data_observability.md)
 
 ## `sparkforge analyze data-quality`
 
