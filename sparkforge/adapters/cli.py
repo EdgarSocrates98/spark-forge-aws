@@ -218,6 +218,8 @@ def build_parser() -> argparse.ArgumentParser:
     lab_scenarios_p = lab_sub.add_parser("scenarios", help="Lista o Golden 20 e suas fidelidades.")
     lab_scenarios_p.add_argument("--repo", default=".")
     lab_scenarios_p.add_argument("--json", action="store_true", help="Mantido por compatibilidade; saída já é JSON.")
+    lab_verify_p = lab_sub.add_parser("verify", help="Verifica registry, Golden 20, schemas e action plans offline.")
+    lab_verify_p.add_argument("--repo", default=".")
     for action, help_text in (("describe", "Descreve um cenário"), ("plan", "Compila cenário em actions"), ("run", "Planeja ou executa cenário")):
         scenario_p = lab_sub.add_parser(action, help=help_text)
         scenario_p.add_argument("scenario")

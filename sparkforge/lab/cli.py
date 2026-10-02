@@ -21,6 +21,26 @@ def dispatch(args: Any) -> dict[str, Any]:
         return run_doctor(repo).to_dict()
     if args.lab_action == "profiles":
         return {"profiles": [{"name": name, **value} for name, value in PROFILE_REQUIREMENTS.items()]}
+    if args.lab_action == "verify":
+        registry = load_version_registry(repo / "lab" / "versions.yaml")
+        suite = load_scenario_suite(repo / "lab" / "scenarios" / "golden.yaml")
+        for scenario in suite.scenarios:
+            scenario.compile_actions()
+        required = (
+            repo / "lab" / "contracts" / "scenario-v1.schema.json",
+            repo / "lab" / "contracts" / "run-v1.schema.json",
+            repo / "lab" / "contracts" / "receipt-v1.schema.json",
+            repo / "lab" / "probes" / "catalog.yaml",
+        )
+        missing = [path.as_posix() for path in required if not path.is_file()]
+        return {
+            "valid": not missing,
+            "registry_components": len(registry.defaults),
+            "scenario_count": len(suite.scenarios),
+            "action_count": sum(len(scenario.compile_actions()) for scenario in suite.scenarios),
+            "missing": missing,
+            "provider_tokens": "unresolved_without_host_transcript",
+        }
     suite = load_scenario_suite(repo / "lab" / "scenarios" / "golden.yaml")
     if args.lab_action == "scenarios":
         return {"suite": suite.fingerprint, "scenario_count": len(suite.scenarios), "scenarios": [{"id": item.scenario_id, "slug": item.slug, "title": item.title, "fingerprint": item.fingerprint, "fidelity": item.fidelity.to_dict()} for item in suite.scenarios]}

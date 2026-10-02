@@ -20,6 +20,23 @@ from sparkforge.lab.scenario import (
     ScenarioSuite,
     load_scenario_suite,
 )
+from sparkforge.lab.compatibility import (
+    BlastRadiusComparison,
+    EquivalencePlan,
+    build_equivalence_plan,
+    compare_blast_radius,
+)
+from sparkforge.lab.doctor import DoctorReport, run_doctor
+from sparkforge.lab.evidence import (
+    capture_artifact,
+    compare_oracle,
+    create_run,
+    finalize_receipt,
+    promote_fixture,
+    verify_receipt,
+)
+from sparkforge.lab.oracle import ExpectedOracle, OracleResult
+from sparkforge.lab.runtime import RuntimePlan, build_lifecycle_command, build_runtime_plan, guard_mutation
 
 from sparkforge.lab.spec import (
     FORGE_LAB_COMPONENTS,
@@ -32,6 +49,10 @@ from sparkforge.lab.spec import (
 
 __all__ = [
     "ACTION_KINDS",
+    "BlastRadiusComparison",
+    "DoctorReport",
+    "EquivalencePlan",
+    "ExpectedOracle",
     "FIDELITY_NAMES",
     "FIDELITY_TIERS",
     "FORGE_LAB_COMPONENTS",
@@ -48,9 +69,23 @@ __all__ = [
     "ScenarioSpec",
     "ScenarioSuite",
     "VersionRegistry",
+    "OracleResult",
+    "RuntimePlan",
     "analyze_forge_lab",
+    "build_equivalence_plan",
+    "build_lifecycle_command",
+    "build_runtime_plan",
+    "capture_artifact",
+    "compare_blast_radius",
+    "compare_oracle",
+    "create_run",
+    "finalize_receipt",
+    "guard_mutation",
     "load_forge_lab",
     "load_resource_contract",
     "load_scenario_suite",
     "load_version_registry",
+    "promote_fixture",
+    "run_doctor",
+    "verify_receipt",
 ]
