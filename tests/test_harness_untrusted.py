@@ -96,6 +96,7 @@ def _derivados_de_facts(pool):
         lakeformation_missing_grant,
         run_cost,
         runtime_detect,
+        streaming_composition,
         timeout_diagnosis,
         utilization,
     )
@@ -106,6 +107,9 @@ def _derivados_de_facts(pool):
     yield "funcval", funcval.build_plan(pool)
     yield "benchmark", benchmark.build_benchmark(pool, pool)
     yield "runtime_detect", runtime_detect.detect_runtime({})[1]
+    yield "streaming_composition", streaming_composition.build_streaming_composition(
+        pool, mode="observability", transport_key="<unresolved>"
+    )
     # `run_cost` deriva custo a partir de `glue.job_run`, e nao de caminho.
     # O pool pode nao ter run nenhum: a chamada devolve lista vazia, e isso
     # ainda conta como exercitado -- o que a medida precisa saber e que o

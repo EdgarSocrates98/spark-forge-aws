@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "047902ffb442447478bb46a3927d1a61192a78497b7cbf492c3434fad0e11328"
+      "sha256": "284b31568adf82b56c10386ccf21e8129dc408587ef10a7466096d3f10b67cf4"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -317,6 +317,11 @@
       "path": "knowledge/streaming-operations.md",
       "title": "streaming-operations",
       "sha256": "159bcf46bb5e53c4ee6a34a30cdfd0f9179815e61e9cfd2b3f346de8f896ee7d"
+    },
+    {
+      "path": "knowledge/streaming-integrations.md",
+      "title": "streaming-integrations",
+      "sha256": "f9638b2d9b3c89ea479b587e8481136c69ddfa4257663f38b03dc5dd9e5d307d"
     },
     {
       "path": "knowledge/transport-diagnostics.md",

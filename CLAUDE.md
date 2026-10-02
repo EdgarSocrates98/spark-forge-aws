@@ -141,7 +141,7 @@ Regras que valem para todos eles:
 
 ## Economia: o que medir antes de afirmar que economizou
 
-**124 tools, 51 com `detail_level`** (recontado em 2026-10-02). Os niveis sao `summary`,
+**125 tools, 52 com `detail_level`** (recontado em 2026-10-02). Os niveis sao `summary`,
 `normal` e `full`, e a regra 28 vale para os tres. Num corpus pequeno o envelope fixo do
 pacote domina, e `detail_level` quase nao move (medido em 2026-09-02: 1,3%).
 
@@ -186,7 +186,7 @@ bytes), `balanced` (16/6/16, 16.000) e `deep` (32/12/32, 30.000). Seleção e
 redução são determinísticas; evidência crítica, refs, riscos e `unresolved`
 geram recusa nomeada quando não cabem.
 
-MCP é **full por padrão (115 tools)**; `compact` é opt-in (7 operações publicadas). Ambos usam
+MCP é **full por padrão (117 tools)**; `compact` é opt-in (7 operações publicadas). Ambos usam
 o mesmo envelope. Crescimento exige `docs/surface.lock.json` e
 `python scripts/check_surface_lock.py`.
 

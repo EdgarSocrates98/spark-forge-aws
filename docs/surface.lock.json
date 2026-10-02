@@ -2,9 +2,9 @@
   "schema_version": 1,
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
-    "tool_count": 124,
-    "total_bytes": 652601,
-    "by_name_sha256": "06a5564990ecb202222ddb7a125733d4f37e2dfa8cd37a25e3fd34250c1071ee"
+    "tool_count": 125,
+    "total_bytes": 659621,
+    "by_name_sha256": "3747ff8c551239a602a653e86f7ce7e57ca2a868f562fecbffbcc1baab6d6495"
   },
   "compact": {
     "tool_count": 7,
@@ -17,8 +17,8 @@
     "by_name_sha256": "e1cb58fea00626c69e32b83acf8e37a39eb9eb9015f7d9e2a128b1df04efe0e4"
   },
   "knowledge": {
-    "document_count": 70,
-    "total_bytes": 585846,
-    "by_name_sha256": "e76a038a7a30e587b2a0c400f2c4e38d76ecf5fd8adb35d2f4a0042d26975936"
+    "document_count": 71,
+    "total_bytes": 588995,
+    "by_name_sha256": "38e72f9a258d1e11cc5281c2adb778bf47d33dca5ac50050aeb1e626360ac8db"
   }
 }

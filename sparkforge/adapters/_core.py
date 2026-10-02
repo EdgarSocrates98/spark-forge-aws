@@ -109,6 +109,10 @@ from sparkforge.facts.streaming_ops import (
     extract_streaming_ops_path,
     extract_streaming_ops_tree,
 )
+from sparkforge.facts.streaming_integrations import (
+    extract_streaming_integrations_path,
+    extract_streaming_integrations_tree,
+)
 from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
 from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
 from sparkforge.facts.schema_registry import (
@@ -1223,6 +1227,33 @@ def analyze_streaming_ops(
         else extract_streaming_ops_path(target, repo_root=target.parent)
     )
     return _facts_page(facts, "streaming_ops.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_streaming_integrations(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extract checkpoint, Kafka Connect/Streams and OpenLineage facts."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise streaming-integrations: {path}")
+    facts = (
+        extract_streaming_integrations_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_streaming_integrations_path(target, repo_root=target.parent)
+    )
+    return _facts_page(
+        facts,
+        "streaming_integrations.unresolved",
+        kind,
+        limit,
+        cursor,
+        detail_level,
+    )
 
 
 def analyze_glue_streaming(

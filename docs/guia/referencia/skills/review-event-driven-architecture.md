@@ -75,5 +75,5 @@ evidência observada e rastreável.
 
 ### Protocolo
 
-Siga `AGENT_PROTOCOL.md`, não execute manutenção destrutiva; sobe qualquer
+Siga `AGENT_PROTOCOL.md`, não executa manutenção destrutiva; sobe qualquer
 mutação ao operador.

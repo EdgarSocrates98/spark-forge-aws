@@ -35,6 +35,11 @@ micro-batch. Ausência de partições, task slots ou restrição de RTM vira
 Para o domínio Glue, use `sparkforge_analyze_glue_streaming` e depois
 `sparkforge_judge`; a ferramenta só lê dumps já salvos.
 
+Para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage, use
+`sparkforge_analyze_streaming_integrations` sobre dump sanitizado e depois
+`sparkforge_judge`; ausência de endpoint, credencial ou série temporal fica
+`unresolved`.
+
 ## Ciclo de investigação
 
 1. Estabelecer runtime, escopo e baseline observável.

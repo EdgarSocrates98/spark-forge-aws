@@ -48,6 +48,7 @@ class TestToolSurface:
             "sparkforge_analyze_schema_registry",
             "sparkforge_analyze_event_driven",
             "sparkforge_analyze_streaming_ops",
+            "sparkforge_analyze_streaming_integrations",
             "sparkforge_analyze_streaming_composition",
             "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
@@ -2305,6 +2306,23 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             encoding="utf-8",
         )
         return call_tool("sparkforge_analyze_streaming_ops", {"path": str(dump)})
+    if name == "sparkforge_analyze_streaming_integrations":
+        dump = tmp_path / "streaming_integrations.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "openlineage": {
+                        "eventType": "COMPLETE",
+                        "job": {"name": "job"},
+                        "run": {"runId": "run"},
+                        "inputs": [],
+                        "outputs": [],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_streaming_integrations", {"path": str(dump)})
 
     if name == "sparkforge_analyze_streaming_composition":
         dump = tmp_path / "streaming_facts.json"

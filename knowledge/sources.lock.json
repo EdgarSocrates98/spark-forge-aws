@@ -3426,13 +3426,27 @@
       "retrieved": [],
       "rules": []
     },
+    "https://kafka.apache.org/documentation/#connect_rest": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAM-008"
+      ]
+    },
     "https://kafka.apache.org/documentation/streams/": {
       "docs": [
         "knowledge/streaming-realtime-candidate-matrix.md"
       ],
       "pinned": false,
-      "retrieved": [],
-      "rules": []
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAM-009"
+      ]
     },
     "https://nightlies.apache.org/flink/flink-docs-stable/docs/learn-flink/fault_tolerance/": {
       "docs": [
@@ -3485,6 +3499,16 @@
       "pinned": false,
       "retrieved": [],
       "rules": []
+    },
+    "https://openlineage.io/docs/spec/object-model/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAM-010"
+      ]
     },
     "https://parquet.apache.org/docs/file-format/data-pages/compression/": {
       "checked_at": "2026-09-21",
@@ -4112,6 +4136,7 @@
         "SF-STREAM-002",
         "SF-STREAM-003",
         "SF-STREAM-004",
+        "SF-STREAM-007",
         "SF-STREAMOBS-001"
       ]
     },

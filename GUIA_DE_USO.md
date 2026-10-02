@@ -294,7 +294,7 @@ sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
 verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
 ao vivo que não foi observada.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 124 tools fazem (recontado em 2026-10-02)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 125 tools fazem (recontado em 2026-10-02)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 

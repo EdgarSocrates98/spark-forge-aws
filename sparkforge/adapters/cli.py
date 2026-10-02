@@ -318,6 +318,17 @@ def build_parser() -> argparse.ArgumentParser:
     streaming_ops_p.add_argument("--cursor")
     _add_detail_level(streaming_ops_p)
 
+    streaming_integrations_p = analyze_sub.add_parser(
+        "streaming-integrations",
+        help="Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.",
+    )
+    streaming_integrations_p.add_argument("--path", required=True, help="Arquivo ou diretório JSON/JSONL.")
+    streaming_integrations_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    streaming_integrations_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    streaming_integrations_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    streaming_integrations_p.add_argument("--cursor")
+    _add_detail_level(streaming_integrations_p)
+
     # architecture decision support --------------------------------------
     architecture_p = sub.add_parser(
         "architecture",
@@ -3407,6 +3418,11 @@ def _cmd_analyze_streaming_ops(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_streaming_integrations(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming_integrations(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
     full = _core.analyze_parquet_footer(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5481,6 +5497,7 @@ _DISPATCH = {
     ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
     ("analyze", "event-driven"): _cmd_analyze_event_driven,
     ("analyze", "streaming-ops"): _cmd_analyze_streaming_ops,
+    ("analyze", "streaming-integrations"): _cmd_analyze_streaming_integrations,
     ("architecture", "streaming"): _cmd_architecture_streaming,
     ("analyze", "streaming-composition"): _cmd_analyze_streaming_composition,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,

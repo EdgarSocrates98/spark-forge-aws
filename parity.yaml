@@ -181,6 +181,19 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: analyze streaming checkpoints, Kafka Connect/Streams and OpenLineage artifacts
+    tools: [sparkforge_analyze_streaming_integrations]
+    cli: [analyze streaming-integrations]
+    knowledge:
+      - knowledge/streaming-integrations.md
+      - rules/catalog/streaming-integrations.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: decide realtime architecture from declared requirements and constraints
     tools: []
     cli: [architecture streaming]

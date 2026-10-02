@@ -5776,6 +5776,35 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_streaming_integrations": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL sanitizados para checkpoint "
+            "Structured Streaming, Kafka Connect, Kafka Streams e OpenLineage. Mede séries "
+            "de backlog/estado quando declaradas, preserva status/tarefas/topologia e emite "
+            "unresolved para contexto ausente. Não consulta Kafka, AWS, Spark ou OpenLineage "
+            "e nunca copia secrets."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts de integrações de streaming, ou erro se o path não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_streaming_composition": {
         "description": (
             "Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. "
@@ -10413,6 +10442,16 @@ def _h_analyze_streaming_ops(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_streaming_integrations(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming_integrations(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_streaming_composition(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_streaming_composition(
         args["facts_paths"],
@@ -11448,6 +11487,7 @@ _HANDLERS = {
     "sparkforge_analyze_schema_registry": _h_analyze_schema_registry,
     "sparkforge_analyze_event_driven": _h_analyze_event_driven,
     "sparkforge_analyze_streaming_ops": _h_analyze_streaming_ops,
+    "sparkforge_analyze_streaming_integrations": _h_analyze_streaming_integrations,
     "sparkforge_analyze_streaming_composition": _h_analyze_streaming_composition,
     "sparkforge_analyze_glue_streaming": _h_analyze_glue_streaming,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,

@@ -15,6 +15,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | Arquivo | Conteúdo |
 |---|---|
 | [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC later waves are explicitly unresolved |
+| [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; coleta live, credenciais e eficácia runtime permanecem unresolved |
 | [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards and metrics; blind spots remain explicit |
 | [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg; preserva procedência, não infere causalidade e nomeia pontos cegos |
 | [`streaming-realtime-candidate-matrix.md`](streaming-realtime-candidate-matrix.md) | Matriz offline de candidatos Spark, Glue, Flink, Kafka Streams, Iceberg e Redshift; separa requirements de assumptions e recusa vencedor sem eliminação factual |

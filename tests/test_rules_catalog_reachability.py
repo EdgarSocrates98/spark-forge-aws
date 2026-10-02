@@ -88,6 +88,7 @@ from sparkforge.facts import (
     runtime_detect,
     schema_registry,
     streaming_composition,
+    streaming_integrations,
     streaming_ops,
     s3_listing,
     # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
@@ -129,6 +130,7 @@ EXTRACTORS = (
     cdc,
     schema_registry,
     streaming_composition,
+    streaming_integrations,
     streaming_ops,
     catalog_schema,
     # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os
