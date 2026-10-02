@@ -204,6 +204,55 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
+    # Forge Lab -----------------------------------------------------------
+    # CLI-first by design. The default is a read-only plan; mutating actions
+    # require both --execute and --confirm and never become MCP actions.
+    lab_p = sub.add_parser(
+        "lab",
+        help="Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita.",
+    )
+    lab_sub = lab_p.add_subparsers(dest="lab_action", required=True)
+    lab_doctor_p = lab_sub.add_parser("doctor", help="Verifica host, registry e perfis sem iniciar serviços.")
+    lab_doctor_p.add_argument("--repo", default=".")
+    lab_sub.add_parser("profiles", help="Lista profiles e requisitos declarados.").add_argument("--repo", default=".")
+    lab_scenarios_p = lab_sub.add_parser("scenarios", help="Lista o Golden 20 e suas fidelidades.")
+    lab_scenarios_p.add_argument("--repo", default=".")
+    lab_scenarios_p.add_argument("--json", action="store_true", help="Mantido por compatibilidade; saída já é JSON.")
+    for action, help_text in (("describe", "Descreve um cenário"), ("plan", "Compila cenário em actions"), ("run", "Planeja ou executa cenário")):
+        scenario_p = lab_sub.add_parser(action, help=help_text)
+        scenario_p.add_argument("scenario")
+        scenario_p.add_argument("--repo", default=".")
+        scenario_p.add_argument("--backend", choices=("compose", "testcontainers"), default="compose")
+        scenario_p.add_argument("--seed", type=int, default=None)
+        scenario_p.add_argument("--execute", action="store_true")
+        scenario_p.add_argument("--confirm", action="store_true")
+    lab_inspect_p = lab_sub.add_parser("inspect", help="Inspeciona run/receipt e verifica hash.")
+    lab_inspect_p.add_argument("path")
+    lab_inspect_p.add_argument("--repo", default=".")
+    lab_analyze_p = lab_sub.add_parser("analyze", help="Aponta artifacts capturados para análise posterior.")
+    lab_analyze_p.add_argument("path")
+    lab_analyze_p.add_argument("--repo", default=".")
+    lab_compare_p = lab_sub.add_parser("compare", help="Compara dois receipts/runs sem afirmar performance.")
+    lab_compare_p.add_argument("before")
+    lab_compare_p.add_argument("after")
+    lab_compare_p.add_argument("--repo", default=".")
+    lab_promote_p = lab_sub.add_parser("promote-fixture", help="Promove run revisado para fixture curated.")
+    lab_promote_p.add_argument("run")
+    lab_promote_p.add_argument("destination")
+    lab_promote_p.add_argument("--reviewed", action="store_true")
+    lab_promote_p.add_argument("--repo", default=".")
+    lab_reproduce_p = lab_sub.add_parser("reproduce", help="Verifica receipt e devolve plano reproduzível.")
+    lab_reproduce_p.add_argument("receipt")
+    lab_reproduce_p.add_argument("--repo", default=".")
+    for action, help_text in (("up", "Sobe profile Compose"), ("down", "Derruba projeto Compose"), ("shell", "Planeja shell de serviço"), ("gc", "Planeja coleta de runs")):
+        lifecycle_p = lab_sub.add_parser(action, help=help_text)
+        lifecycle_p.add_argument("--repo", default=".")
+        lifecycle_p.add_argument("--project", default="forge-lab")
+        lifecycle_p.add_argument("--profile", default="core")
+        lifecycle_p.add_argument("--service", default="")
+        lifecycle_p.add_argument("--execute", action="store_true")
+        lifecycle_p.add_argument("--confirm", action="store_true")
+
     # analyze pyspark ------------------------------------------------------
     analyze_p = sub.add_parser("analyze", help="Extrai facts deterministicos de codigo-fonte.")
     analyze_sub = analyze_p.add_subparsers(dest="analyze_target", required=True)
@@ -3371,6 +3420,18 @@ def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_lab(args: argparse.Namespace) -> int:
+    from sparkforge.lab.cli import dispatch
+    from sparkforge.lab.contract import LabContractError
+
+    try:
+        payload = dispatch(args)
+    except LabContractError as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_streaming(args: argparse.Namespace) -> int:
     full = _core.analyze_streaming(
         args.path,
@@ -5699,6 +5760,7 @@ def _cmd_autonomy_show(args: argparse.Namespace) -> int:
 
 
 _DISPATCH = {
+    ("lab", None): _cmd_lab,
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "streaming"): _cmd_analyze_streaming,
     ("analyze", "transport"): _cmd_analyze_transport,
@@ -5907,7 +5969,8 @@ def _com_journal(tool: str, handler: Any, args: argparse.Namespace) -> int:
 
 def _dispatch(args: argparse.Namespace) -> int:
     sub_action = (
-        getattr(args, "analyze_target", None)
+        getattr(args, "lab_action", None)
+        or getattr(args, "analyze_target", None)
         or getattr(args, "case_action", None)
         or getattr(args, "funcval_action", None)
         or getattr(args, "sdd_action", None)
