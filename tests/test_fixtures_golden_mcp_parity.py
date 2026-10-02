@@ -109,6 +109,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_lakeformation_architect": (
         "2026-10-01: contrato offline de arquitetura Lake Formation FGAC/FTA"
     ),
+    "sparkforge_analyze_streaming": (
+        "2026-10-01: facts offline de Structured Streaming e StreamingQueryProgress"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
