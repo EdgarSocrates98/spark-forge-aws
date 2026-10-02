@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_RUNTIME_MATRIX
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_RUNTIME_MATRIX/plan.md
   sha256: "d5a742557c5a8741a03822c7831d3b2c16498d1e29ae2e0c4d81688317e56066"
@@ -19,5 +19,7 @@ change_id: null
 # STREAMING_RUNTIME_MATRIX — build report
 
 Build concluído com matriz versionada, fontes rastreáveis e limites sem
-inferência. A matriz não fecha runtime live nem benchmark: esses resultados
-continuam dependentes de artefatos do operador.
+inferência. Os testes específicos terminaram com `3 passed`; bundle offline,
+refresh de conhecimento, números correntes e SDD check terminaram com exit 0.
+A matriz não fecha runtime live nem benchmark: esses resultados continuam
+dependentes de artefatos do operador.
