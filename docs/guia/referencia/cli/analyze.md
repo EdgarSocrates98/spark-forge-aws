@@ -26,6 +26,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze event-driven`](#sparkforge-analyze-event-driven) | Extrai facts offline de EventBridge/Pipes, SQS e SNS. |
 | [`sparkforge analyze event-log`](#sparkforge-analyze-event-log) | Extrai facts de um Spark event log (.jsonl) ja coletado. |
 | [`sparkforge analyze flink`](#sparkforge-analyze-flink) | Extrai facts offline de dumps Apache Flink ou Managed Flink. |
+| [`sparkforge analyze forge-lab`](#sparkforge-analyze-forge-lab) | Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas. |
 | [`sparkforge analyze glue-job-runs`](#sparkforge-analyze-glue-job-runs) | Extrai facts de historico do diretorio de artefatos de run Glue. |
 | [`sparkforge analyze glue-resource-link`](#sparkforge-analyze-glue-resource-link) | Extrai a topologia do catalogo ja coletada: link, alvo e nome. |
 | [`sparkforge analyze glue-streaming`](#sparkforge-analyze-glue-streaming) | Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode. |
@@ -468,6 +469,25 @@ sparkforge analyze flink --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_flink`](../tools/sparkforge_analyze_flink.md)
+
+## `sparkforge analyze forge-lab`
+
+Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.
+
+```bash
+sparkforge analyze forge-lab --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo YAML/JSON da topologia Forge Lab. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_forge_lab`](../tools/sparkforge_analyze_forge_lab.md)
 
 ## `sparkforge analyze glue-job-runs`
 
