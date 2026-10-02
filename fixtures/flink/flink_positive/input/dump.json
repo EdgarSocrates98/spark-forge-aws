@@ -1,0 +1,54 @@
+{
+  "job": {
+    "job_id": "job-001",
+    "name": "orders-enrichment",
+    "api": "DataStream",
+    "runtime_version": "1.20.1",
+    "parallelism": 4,
+    "task_slots": 4
+  },
+  "operators": [
+    {
+      "operator_id": "source",
+      "name": "Kafka Source",
+      "uid": "source-orders",
+      "type": "Source",
+      "parallelism": 4,
+      "num_records_in": 1000,
+      "num_records_out": 1000,
+      "backpressured_ratio": 0.25
+    },
+    {
+      "operator_id": "sink",
+      "name": "Iceberg Sink",
+      "uid": "sink-orders",
+      "type": "Sink",
+      "parallelism": 4,
+      "num_records_in": 1000,
+      "num_records_out": 1000,
+      "busy_ratio": 0.8
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": 42,
+      "status": "COMPLETED",
+      "type": "CHECKPOINT",
+      "externalized": true,
+      "duration_ms": 850,
+      "alignment_ms": 120,
+      "state_size_bytes": 1048576,
+      "num_subtasks": 4,
+      "acknowledged_subtasks": 4
+    }
+  ],
+  "state": [
+    {
+      "backend": "rocksdb",
+      "operator_id": "join",
+      "size_bytes": 1048576,
+      "num_entries": 250,
+      "ttl": "1h"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 | Skill | Quando usar |
 |---|---|
 | [`analyze-batch-loop`](analyze-batch-loop.md) | Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você... |
+| [`analyze-flink-job`](analyze-flink-job.md) | Use quando houver dump JSON/JSONL de job Apache Flink ou Managed Flink e for preciso separar checkpoint, backpressure, state, configuração e métricas observadas sem inventar cap... |
 | [`analyze-functional-rules`](analyze-functional-rules.md) | Use quando for necessario estudar regras funcionais, contratos, estados, excecoes e criterios de aceite. |
 | [`analyze-library-call-graph`](analyze-library-call-graph.md) | Use quando o job Glue chama uma biblioteca Python com múltiplos módulos, factories, decorators ou helpers, e você precisa saber onde estão leituras, actions, caches, loops, UDFs... |
 | [`analyze-spark-plan`](analyze-spark-plan.md) | Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (B... |

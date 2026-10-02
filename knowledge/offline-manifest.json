@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "410d5f030b215224750c2c32df7a6e020c89fc9e7adc38505f3c219e8d37aa64"
+      "sha256": "9b6d08bc038e249080be6e1da9242b6b48f1fd1ea537dd77171dcea00209807c"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -272,6 +272,11 @@
       "path": "knowledge/storage/parquet-layout.md",
       "title": "parquet-layout",
       "sha256": "871c8c2faa0ac33f2c663b7a482a45b2d88ae92dd1cd8a54f8c93f3061b5f191"
+    },
+    {
+      "path": "knowledge/flink-streaming.md",
+      "title": "flink-streaming",
+      "sha256": "e56a82952500186bd63dd648eefc602dcdda1fdb81bacf51c569b967e8d886dd"
     },
     {
       "path": "knowledge/streaming-reliability.md",

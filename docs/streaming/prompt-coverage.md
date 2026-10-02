@@ -15,8 +15,8 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | Kafka Connect | `knowledge-only` | nenhuma família de facts/rules própria | config/status/tasks/offsets/DLQ e comparação arquitetural |
 | Kafka Streams | `knowledge-only` | sem extractor/rules próprios | state stores, repartition, joins/windows e decisão contra Spark/Flink |
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` e goldens | collector/CloudWatch temporal, reshard, KCL/EFO e rules com evidência |
-| Apache Flink | `knowledge-only` | sem facts, analyzer ou rules próprios | config, state, checkpoints, savepoints, backpressure, runtime matrix |
-| Managed Service for Apache Flink | `knowledge-only` | sem artefato ou matriz própria | separar upstream/AWS, application config, connectors, IAM/VPC/CloudWatch |
+| Apache Flink | `diagnosable` parcial | `facts/flink.py`, `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures e `analyze-flink-job` | collector/matriz de runtime, savepoints, métricas temporais e validação funcional |
+| Managed Service for Apache Flink | `diagnosable` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures e mesmo analyzer | collector/matriz upstream↔AWS, IAM/VPC/CloudWatch temporal e validação funcional |
 | Glue Streaming | `workflow-only` parcial | conhecimento Glue e AST streaming | job/Terraform cross-artifact, runtime guards, source/sink e rules |
 | Glue Real-Time Mode | `knowledge-only` | referências dispersas no prompt/knowledge Glue | capability versionada, restrições Glue 6.x revalidadas e rules |
 | CDC | `knowledge-only` | sem domínio CDC próprio | snapshot/CDC/transaction/delete/replay/DDL facts e troubleshooting |
@@ -38,14 +38,17 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
   fixtures e knowledge.
 - Wave C parcial: dumps offline Kafka/MSK/Kinesis, facts específicos,
   unresolved, fixtures, CLI/MCP e locks.
+- Wave D: dumps offline Flink/Managed Flink, namespaces separados, regras de
+  checkpoint/backpressure, unresolved, fixtures, CLI/MCP, skill, especialista,
+  routing e SDD ship.
 - SDD fechado para essas duas waves: `STREAMING_REALTIME_DATA_PLATFORM` e
-  `STREAMING_TRANSPORT_DIAGNOSTICS`.
+  `STREAMING_TRANSPORT_DIAGNOSTICS`. Wave D: `STREAMING_FLINK_PLATFORM`.
 
 ## Waves necessárias para fechar o prompt
 
 | Wave | Escopo | Critério de fechamento |
 |---|---|---|
-| D | Flink + Managed Flink | artifact contract, extractor, unresolved, version matrix, rules, fixtures, analyzer e skill |
+| D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
 | F | CDC + Debezium + DMS + Schema | config analyzers, contract diff, compatibility, transactions, fixtures e routing |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | correlação temporal, não inferência causal, telemetry/context drill-down |

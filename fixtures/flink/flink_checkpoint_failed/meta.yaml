@@ -1,0 +1,5 @@
+artifact: flink
+expects_kinds:
+  - flink.analyzed
+  - flink.checkpoint
+  - flink.job

@@ -251,7 +251,10 @@ RELACAO_MEDIDA = {
         "emr-infra-reviewer",
         "glue-incremental-performance-architect",
         "spark-performance-architect",
+        "streaming-realtime-architect",
     ),
+    "analyze-flink-job": ("streaming-realtime-architect",),
+    "aws-messaging-and-streaming": ("streaming-realtime-architect",),
     "benchmark-pyspark-job": (
         "athena-query-optimizer",
         "emr-infra-reviewer",
@@ -455,7 +458,6 @@ class TestRelacaoDerivada:
             "aws-iam",
             "aws-observability",
             "aws-billing-and-cost-management",
-            "aws-messaging-and-streaming",
             "aws-security",
             "aws-sdk-python-usage",
             # `diagnose-lakeformation-access` (2026-09-09) entra pela MESMA
@@ -781,6 +783,7 @@ class TestSkillsReais:
             # passaram a ter um coordenador so.
             "analyze-functional-rules": "data-quality-reviewer",
             "review-data-validation": "data-quality-reviewer",
+            "analyze-flink-job": "streaming-realtime-architect",
         }
 
     def test_o_frontmatter_sobrevive_a_insercao(self):

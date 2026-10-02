@@ -251,6 +251,23 @@ def build_parser() -> argparse.ArgumentParser:
     transport_p.add_argument("--cursor")
     _add_detail_level(transport_p)
 
+    flink_p = analyze_sub.add_parser(
+        "flink",
+        help="Extrai facts offline de dumps Apache Flink ou Managed Flink.",
+    )
+    flink_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    flink_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("flink", "managed_flink"),
+        help="Vocabulário do dump: Flink upstream ou Managed Flink.",
+    )
+    flink_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    flink_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    flink_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    flink_p.add_argument("--cursor")
+    _add_detail_level(flink_p)
+
     catalog_p = analyze_sub.add_parser(
         "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
     )
@@ -3148,6 +3165,16 @@ def _cmd_analyze_transport(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_flink(args: argparse.Namespace) -> int:
+    full = _core.analyze_flink(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
     full = _core.analyze_catalog_schema(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -5278,6 +5305,7 @@ _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "streaming"): _cmd_analyze_streaming,
     ("analyze", "transport"): _cmd_analyze_transport,
+    ("analyze", "flink"): _cmd_analyze_flink,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,

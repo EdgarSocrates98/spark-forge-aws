@@ -5626,6 +5626,39 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_flink": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de Apache Flink "
+            "ou Managed Flink. Preserva job/operator/checkpoint/state, application/config "
+            "e unresolved. Mantém namespaces separados: Flink upstream não prova capacidade "
+            "do serviço AWS. Não chama runtime, AWS ou CloudWatch."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["flink", "managed_flink"],
+                    "description": "Vocabulário do dump a analisar.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts Flink extraídos, ou erro se o path ou artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_catalog_schema": {
         "description": (
             "Extrai facts de um dump JSON ja coletado do Glue Data Catalog "
@@ -10138,6 +10171,17 @@ def _h_analyze_transport(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_flink(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_flink(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
     return _core.judge_findings(
         facts=args.get("facts"),
@@ -11144,6 +11188,7 @@ _HANDLERS = {
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
     "sparkforge_analyze_streaming": _h_analyze_streaming,
     "sparkforge_analyze_transport": _h_analyze_transport,
+    "sparkforge_analyze_flink": _h_analyze_flink,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,

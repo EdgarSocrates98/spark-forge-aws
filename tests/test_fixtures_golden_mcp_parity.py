@@ -115,6 +115,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_transport": (
         "2026-10-02: facts offline de dumps Kafka, MSK e Kinesis"
     ),
+    "sparkforge_analyze_flink": (
+        "2026-10-02: facts offline de dumps Apache Flink e Managed Flink"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

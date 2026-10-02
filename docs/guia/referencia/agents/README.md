@@ -20,6 +20,7 @@ Coordenadores despacham executores em ordem; especialistas respondem uma área; 
 | [`sf-security-reviewer`](sf-security-reviewer.md) | IAM, KMS, S3 e exfiltracao. |
 | [`sf-terraform-specialist`](sf-terraform-specialist.md) | Revisar ou construir Terraform para plataformas de dados. |
 | [`spark-performance-architect`](spark-performance-architect.md) | Coordena diagnostico e otimizacao de job PySpark no AWS Glue - correlaciona codigo, plano fisico, Spark UI, Parquet e Iceberg para achar o gargalo dominante antes de recomendar... |
+| [`streaming-realtime-architect`](streaming-realtime-architect.md) | Especialista em plataformas streaming Apache Flink, Managed Flink e Structured Streaming, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultad... |
 
 ## Executors
 

@@ -53,6 +53,7 @@ from sparkforge.facts import (
     emr_serverless,
     event_log,
     exception,
+    flink,
     funcval,
     fusion,
     glue_dq_advanced,
@@ -143,6 +144,7 @@ EXTRACTORS = (
     # `SF-CTM-001` seria forcada a `blocked_on` sobre um extrator que esta no
     # repositorio desde este mesmo commit.
     controlm_jobs,
+    flink,
     # Esta lista e manual e duplicada em `tests/test_fixtures_kind_coverage.py`:
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
     data_quality,

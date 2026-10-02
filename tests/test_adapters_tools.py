@@ -41,6 +41,7 @@ class TestToolSurface:
             "sparkforge_analyze_pyspark",
             "sparkforge_analyze_streaming",
             "sparkforge_analyze_transport",
+            "sparkforge_analyze_flink",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
             "sparkforge_analyze_sql_metrics",
@@ -2241,6 +2242,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         return call_tool(
             "sparkforge_analyze_transport",
             {"path": str(dump), "artifact": "kinesis"},
+        )
+
+    if name == "sparkforge_analyze_flink":
+        dump = tmp_path / "flink.json"
+        dump.write_text('{"job":{"job_id":"job-1","parallelism":2}}', encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_flink",
+            {"path": str(dump), "artifact": "flink"},
         )
 
     if name == "sparkforge_judge":

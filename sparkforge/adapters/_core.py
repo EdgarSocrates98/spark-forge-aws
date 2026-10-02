@@ -104,6 +104,7 @@ from sparkforge.facts.emr_serverless import (
     extract_emr_serverless_tree,
 )
 from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_dq_advanced import (
@@ -1051,6 +1052,31 @@ def analyze_transport(
         extract_transport_tree(target, artifact_type=artifact)
         if target.is_dir()
         else extract_transport_path(target, artifact_type=artifact)
+    )
+    return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_flink(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de dumps Apache Flink ou Managed Flink."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise Flink: {path}")
+    if artifact not in {"flink", "managed_flink"}:
+        raise AdapterError(
+            f"Artefato Flink desconhecido: {artifact}. Use `flink` ou `managed_flink`."
+        )
+    facts = (
+        extract_flink_tree(target, artifact=artifact)
+        if target.is_dir()
+        else extract_flink_path(target, artifact=artifact)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
 

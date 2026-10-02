@@ -2205,6 +2205,30 @@
       ],
       "sha256": "e421723e8bd89d33c14b3729e0e7b174807a20481729be983660fd0f876d9323"
     },
+    "https://docs.aws.amazon.com/managed-flink/latest/java/metrics-dimensions.html": {
+      "docs": [
+        "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/managed-flink/latest/java/performance-monitoring.html": {
+      "docs": [
+        "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/managed-flink/latest/java/troubleshooting-checkpoints.html": {
+      "docs": [
+        "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/msk/latest/developerguide/consumer-lag.html": {
       "docs": [
         "knowledge/transport-diagnostics.md"
@@ -3105,6 +3129,50 @@
     "https://kafka.apache.org/40/operations/basic-kafka-operations/": {
       "docs": [
         "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://nightlies.apache.org/flink/flink-docs-stable/docs/learn-flink/fault_tolerance/": {
+      "docs": [
+        "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/metrics/": {
+      "docs": [
+        "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/monitoring/back_pressure/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-FLINK-002"
+      ]
+    },
+    "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/state/checkpoints/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-FLINK-001"
+      ]
+    },
+    "https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/state/large_state_tuning/": {
+      "docs": [
+        "knowledge/flink-streaming.md"
       ],
       "pinned": false,
       "retrieved": [],

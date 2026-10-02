@@ -41,6 +41,7 @@ from sparkforge.facts import (
     emr_serverless,
     event_log,
     exception,
+    flink,
     funcval,
     fusion,
     glue_dq_advanced,
@@ -232,6 +233,7 @@ EXTRACTORS = {
     "spark_plan": spark_plan,
     "streaming": streaming,
     "transport": transport,
+    "flink": flink,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
     # sql_metrics/`), depois de o extrator e o mapa canonico ja existirem

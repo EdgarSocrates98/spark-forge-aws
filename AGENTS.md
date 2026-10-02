@@ -78,7 +78,7 @@ For full/incremental AWS Glue workloads, start with `glue-incremental-performanc
 
 ## Coordinators and executors
 
-Eight coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
+Thirteen coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
 declares `rule_areas`, the `skills` it draws on, and the five `executors` it dispatches
 (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`, in
 `agents/executors/*.md`, each with an explicit `## Não faz` boundary and a
@@ -96,6 +96,7 @@ the case, decides which executor runs next, and records which one ran
 | `iceberg-performance-engineer` | dívida de data files, delete files, manifests, snapshots e manutenção de tabela Iceberg | SF-ICE, SF-PQ |
 | `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 **ou** de uma application EMR Serverless | SF-EMR, SF-EMRS, SF-ENV |
 | `data-quality-reviewer` | o job valida dado e a pergunta é se a validação está no lugar certo, se tem consequência e quanto custa | SF-DQ |
+| `streaming-realtime-architect` | diagnóstico de plataformas Flink, Managed Flink e Structured Streaming com transporte, checkpoint, state e observabilidade | SF-STREAM, SF-FLINK |
 
 Which coordinator to use is data, not judgment: routes in `rules/catalog/routing.yaml`
 map the case's phase and dominant finding area to a `recommended_agent`, and
@@ -104,7 +105,7 @@ inspection.
 
 **Three platforms dispatch**: Claude Code, the Devin CLI and the Devin Local agent. Devin
 reads `.agents/agents/` natively and imports `.claude/agents/*.md` — both are generated
-mirrors of `agents/`, so the eight coordinators are subagent profiles there. The five
+mirrors of `agents/`, so the thirteen coordinators are subagent profiles there. The five
 executors are not at a documented discovery layout (`executors/` is neither flat nor
 `agents/<name>/AGENT.md`), so do not presume they are published. A coordinator dispatched
 as a subagent does **not** dispatch the executors: subagents cannot spawn subagents, so
@@ -140,7 +141,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**117 tools, 44 with `detail_level`** (recounted 2026-10-01) (`summary`, `normal`, `full`).
+**118 tools, 45 with `detail_level`** (recounted 2026-10-01) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.
