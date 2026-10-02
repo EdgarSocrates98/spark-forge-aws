@@ -291,10 +291,21 @@ def _msk_record(data: dict[str, Any], artifact: str, line: int, provenance: dict
 
 def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
     facts: list[Fact] = []
-    stream = _as_dict(data.get("stream")) or data
-    stream_keys = ("stream_name", "streamName", "stream_mode", "streamMode", "status", "stream_status")
-    stream_attrs = {key: stream[key] for key in stream_keys if key in stream}
-    shards = data.get("shards", stream.get("shards"))
+    stream = _as_dict(data.get("stream")) or _as_dict(data.get("streamDescription")) or data
+    def _alias(*keys: str) -> Any:
+        return next((stream[key] for key in keys if key in stream), None)
+
+    stream_attrs = {}
+    if (value := _alias("stream_name", "streamName", "StreamName")) is not None:
+        stream_attrs["stream_name"] = value
+    if (value := _alias("stream_mode", "streamMode", "StreamMode")) is not None:
+        stream_attrs["stream_mode"] = value
+    mode_details = _as_dict(_alias("StreamModeDetails", "stream_mode_details"))
+    if mode_details is not None and mode_details.get("StreamMode") is not None:
+        stream_attrs["stream_mode"] = mode_details["StreamMode"]
+    if (value := _alias("status", "stream_status", "StreamStatus")) is not None:
+        stream_attrs["status"] = value
+    shards = data.get("shards", stream.get("shards", stream.get("Shards")))
     if stream_attrs or isinstance(shards, list):
         facts.append(
             _fact(
@@ -311,17 +322,37 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
             if not isinstance(shard, dict):
                 facts.append(_unresolved(artifact, line, provenance, "kinesis", "invalid_shard_record"))
                 continue
+            shard_measures = _numeric_fields(shard, ("incoming_bytes", "outgoing_bytes", "record_count"))
+            for key in ("iterator_age_ms", "iterator_age_milliseconds", "IteratorAgeMilliseconds"):
+                number = _number(shard.get(key))
+                if number is not None:
+                    shard_measures["iterator_age_ms"] = number
+                    break
+            shard_attrs = {
+                "shard_id": next(
+                    (shard[key] for key in ("shard_id", "ShardId") if key in shard),
+                    None,
+                ),
+                **{
+                    key: shard[key]
+                    for key in (
+                        "parent_shard_id",
+                        "ParentShardId",
+                        "adjacent_parent_shard_id",
+                        "AdjacentParentShardId",
+                    )
+                    if key in shard
+                },
+            }
+            shard_attrs = {key: value for key, value in shard_attrs.items() if value is not None}
             facts.append(
                 _fact(
                     "kinesis.shard",
                     artifact,
                     line,
                     provenance,
-                    measures=_numeric_fields(
-                        shard,
-                        ("iterator_age_ms", "iterator_age_milliseconds", "incoming_bytes", "outgoing_bytes", "record_count"),
-                    ),
-                    attrs={key: shard[key] for key in ("shard_id", "parent_shard_id", "adjacent_parent_shard_id") if key in shard},
+                    measures=shard_measures,
+                    attrs=shard_attrs,
                 )
             )
     metrics = data.get("metrics", stream.get("metrics"))

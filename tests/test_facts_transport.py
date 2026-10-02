@@ -93,3 +93,19 @@ def test_transport_blind_spots_are_unresolved():
     assert any(f.kind == "kafka.unresolved" and f.attrs["reason"] == "invalid_json" for f in bad)
     assert any(f.kind == "kinesis.unresolved" and f.attrs["reason"] == "missing_shape" for f in unknown)
     assert any(f.kind == "kinesis.analyzed" for f in unknown)
+
+
+def test_kinesis_api_aliases_are_normalized_without_inventing_values():
+    payload = {
+        "streamDescription": {
+            "StreamName": "events",
+            "StreamModeDetails": {"StreamMode": "PROVISIONED"},
+            "Shards": [{"ShardId": "shardId-000", "IteratorAgeMilliseconds": 1200}],
+        }
+    }
+    facts = extract_transport_text(json.dumps(payload), "kinesis-api.json", artifact="kinesis")
+    stream = next(f for f in facts if f.kind == "kinesis.stream")
+    shard = next(f for f in facts if f.kind == "kinesis.shard")
+    assert stream.attrs["stream_name"] == "events"
+    assert shard.attrs["shard_id"] == "shardId-000"
+    assert shard.measures["iterator_age_ms"] == 1200
