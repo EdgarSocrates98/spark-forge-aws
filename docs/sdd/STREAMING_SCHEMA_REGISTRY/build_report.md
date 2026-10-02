@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_SCHEMA_REGISTRY
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_SCHEMA_REGISTRY/plan.md
   sha256: "b440a1f4062e7542026c42d24c0d9dd251047a7703bde2e2d5e64f39d9e773c1"
@@ -21,4 +21,5 @@ claims:
 # STREAMING_SCHEMA_REGISTRY — build report
 
 Implementação offline concluída com fixtures/goldens, rules, CLI/MCP e skill.
-As verificações e eventuais reds serão registradas pelo executor na entrega.
+Os testes específicos terminaram com `11 passed`; sync de skills, referências,
+surface lock, números correntes e bundle offline terminaram com exit 0.
