@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "284b31568adf82b56c10386ccf21e8129dc408587ef10a7466096d3f10b67cf4"
+      "sha256": "62f31421a9531219f3436f562bed806bbf825d11c2d4d550039f2ce1289310c8"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -307,6 +307,11 @@
       "path": "knowledge/streaming-realtime-candidate-matrix.md",
       "title": "streaming-realtime-candidate-matrix",
       "sha256": "b9532d5d36726cfbb0a5812f2c23e1005193f1d707dd45d4055ff0dd80aed212"
+    },
+    {
+      "path": "knowledge/streaming/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "1b0575935f982c1e283cd3d95e6612098e95acc6fd1ef53f3593cc73b535b7cc"
     },
     {
       "path": "knowledge/streaming-format-serving-matrix.md",
