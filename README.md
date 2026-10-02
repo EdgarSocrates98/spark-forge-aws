@@ -26,7 +26,8 @@ por tarefa, com receita para copiar e colar, e uma referência de cada comando, 
 agent e skill gerada do código.
 
 Para ver o que foi entregue nas waves de control plane, streaming, CDC, economia
-observada e Forge Lab, consulte o [mapa de evolução atual](docs/EVOLUTION-CURRENT.md).
+observada e Forge Lab, consulte o [mapa de evolução atual](docs/EVOLUTION-CURRENT.md)
+e o [ledger completo de entrega](docs/DELIVERY-LEDGER.md).
 
 ## Como ele pensa: extrair, julgar, compor
 

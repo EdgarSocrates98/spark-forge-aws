@@ -6,6 +6,8 @@ O estado das waves que consomem esta base está em
 [`docs/EVOLUTION-CURRENT.md`](../docs/EVOLUTION-CURRENT.md). A matriz de
 streaming abaixo lista contratos offline entregues e mantém live/runtime sem
 artefato como `unresolved`.
+O inventário completo das features, commits e provas está em
+[`docs/DELIVERY-LEDGER.md`](../docs/DELIVERY-LEDGER.md).
 
 ## Regra de uso
 

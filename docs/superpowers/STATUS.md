@@ -4,6 +4,8 @@
 **Base técnica de referência:** `758ae0b`, fechamento SDD da economia observada.
 Este fechamento documental atualiza o índice transversal; o commit que o contém
 é a nova referência corrente.
+O inventário completo das três evoluções está em
+[`docs/DELIVERY-LEDGER.md`](../DELIVERY-LEDGER.md).
 Ver a seção *Forge Lab* abaixo.
 Fechamentos anteriores: harness v0.1, fases I1 a I3 (2026-08-23); eixo Glue,
 fases G1 a H6 (2026-08-23); auditoria de lastro do vNext em `46b1187`

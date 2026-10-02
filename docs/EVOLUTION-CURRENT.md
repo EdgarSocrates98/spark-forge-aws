@@ -1,7 +1,8 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-02  
-**Base técnica de referência:** `758ae0b` (antes deste fechamento documental)  
+**Base técnica de referência:** `758ae0b`; fechamento documental anterior:
+`09d6f31`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
@@ -9,6 +10,9 @@ Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
 relatórios antigos continuam preservados como histórico; quando houver conflito,
 este mapa e [`docs/superpowers/STATUS.md`](superpowers/STATUS.md) são a leitura
 corrente.
+
+O ledger completo, com inventário SDD, commits de fase, provas e lacunas, está
+em [`docs/DELIVERY-LEDGER.md`](DELIVERY-LEDGER.md).
 
 ## Estado executivo
 

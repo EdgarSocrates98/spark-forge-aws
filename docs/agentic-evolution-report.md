@@ -80,6 +80,9 @@ de workspace e economia local em
 `payload_bytes`, `provider_tokens` e `cost_basis` separados e não transforma
 medida local em claim de provider.
 
+O inventário transversal das entregas, incluindo streaming, batch, Forge Lab,
+commits e lacunas, está em [`docs/DELIVERY-LEDGER.md`](DELIVERY-LEDGER.md).
+
 O Forge Lab (`docs/sdd/FORGE_LAB_PRODUCT/`) é a fábrica de evidências que permite
 reprodução controlada de cenários streaming e batch. Ele é CLI-first, plan-only
 por padrão, usa oracle independente e receipts; não concede autoridade ao agente

@@ -8,7 +8,8 @@
 > não é o inventário corrente. Para as waves posteriores de control plane,
 > streaming/CDC, Forge Lab e economia observada, consulte
 > [`docs/EVOLUTION-CURRENT.md`](EVOLUTION-CURRENT.md) e
-> [`docs/superpowers/STATUS.md`](superpowers/STATUS.md). Números de testes e
+> [`docs/superpowers/STATUS.md`](superpowers/STATUS.md). O inventário transversal
+> atual está em [`docs/DELIVERY-LEDGER.md`](DELIVERY-LEDGER.md). Números de testes e
 > catálogos abaixo são históricos da entrega descrita nesta página.
 
 ## 1. Resumo executivo

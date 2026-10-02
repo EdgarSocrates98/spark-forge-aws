@@ -10,7 +10,8 @@ Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 O estado consolidado das evoluções de control plane, streaming, economia observada
 e Forge Lab está no [mapa de evolução atual](../EVOLUTION-CURRENT.md). Este índice
 separa entrega comprovada de capacidade que ainda exige runtime, endpoint ou
-transcript real.
+transcript real. O [ledger de entrega](../DELIVERY-LEDGER.md) lista todas as
+features SDD, commits de fase, provas e lacunas.
 
 ## Comece aqui
 

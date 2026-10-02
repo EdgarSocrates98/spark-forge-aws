@@ -30,6 +30,8 @@ O estado consolidado das features está em
 registrou 55 features: 53 ships done, uma plan ready e uma draft. A feature
 draft não deve ser promovida só para tornar o check global verde; as recusas
 `hypothesis_open_at_ship` e `registry_unchecked` são parte da evidência.
+O inventário detalhado por prompt e frente está em
+[`../DELIVERY-LEDGER.md`](../DELIVERY-LEDGER.md).
 
 ## Os três verbos
 

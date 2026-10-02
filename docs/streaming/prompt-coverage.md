@@ -8,6 +8,8 @@ O mapa transversal das três evoluções do repositório está em
 [`docs/EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). Esta página permanece
 especializada em streaming e conserva `N/A + motivo` onde falta runtime, janela,
 endpoint, credencial ou workload reais.
+O inventário de commits, features e provas compartilhadas está em
+[`docs/DELIVERY-LEDGER.md`](../DELIVERY-LEDGER.md).
 
 ## Estado atual auditado após as waves implementadas
 
