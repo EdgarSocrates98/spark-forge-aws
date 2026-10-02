@@ -2,7 +2,7 @@
 
 **Atualizado em:** 2026-10-02  
 **Base técnica de referência:** `171074b`; fechamento documental atual:
-`fab535a` (ledger deste fechamento entra no commit documental seguinte)
+`fb0f5c5`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,

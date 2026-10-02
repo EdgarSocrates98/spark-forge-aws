@@ -144,6 +144,7 @@ do wheel e de uma CLI real do host.
 | `a626220` | composição temporal offline, regra e goldens Kafka/Kinesis |
 | `fab535a` | ship SDD, mirrors, referências, surface lock e documentação temporal |
 | `171074b` | facts granulares de snapshots Iceberg, composição temporal, regra, fixtures e schema |
+| `fb0f5c5` | SDD ship, mirrors, referências, knowledge, surface lock, status e ledger da correlação temporal Iceberg |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
