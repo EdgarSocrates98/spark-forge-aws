@@ -75,6 +75,7 @@ from sparkforge.facts import (
     sfn_history,
     spark_plan,
     streaming,
+    transport,
     sql_literal,
     sql_metrics,
     stepfunctions,
@@ -230,6 +231,7 @@ EXTRACTORS = {
     "s3_listing": s3_listing,
     "spark_plan": spark_plan,
     "streaming": streaming,
+    "transport": transport,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
     # sql_metrics/`), depois de o extrator e o mapa canonico ja existirem

@@ -1,0 +1,4 @@
+artifact: kafka
+expects_kinds:
+  - kafka.analyzed
+  - kafka.unresolved

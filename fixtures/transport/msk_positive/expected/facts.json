@@ -1,0 +1,54 @@
+[
+  {
+    "id": "f_13caae",
+    "schema_version": 1,
+    "kind": "msk.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_positive\\input\\cluster.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "msk"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_positive\\input\\cluster.json",
+      "artifact_sha256": "33179027900e4b26d9579d80ed408fc13c9ee3c82cbf8eae1a5da5a1b716fb82",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_c2b369",
+    "schema_version": 1,
+    "kind": "msk.cluster",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_positive\\input\\cluster.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "cluster_arn": "arn:aws:kafka:us-east-1:1:cluster/x",
+      "current_version": "K3AEGXETSR30VB",
+      "kafka_version": "3.6.0",
+      "broker_type": "express",
+      "encryption_observed": true,
+      "client_authentication_observed": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\msk_positive\\input\\cluster.json",
+      "artifact_sha256": "33179027900e4b26d9579d80ed408fc13c9ee3c82cbf8eae1a5da5a1b716fb82",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  }
+]

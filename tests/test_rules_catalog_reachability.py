@@ -89,6 +89,7 @@ from sparkforge.facts import (
     sfn_history,
     spark_plan,
     streaming,
+    transport,
     sql_literal,
     sql_metrics,
     # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:
@@ -236,6 +237,7 @@ EXTRACTORS = (
     sfn_history,
     spark_plan,
     streaming,
+    transport,
     sql_literal,
     sql_metrics,
     # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:

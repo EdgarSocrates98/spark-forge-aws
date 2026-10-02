@@ -112,6 +112,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_streaming": (
         "2026-10-01: facts offline de Structured Streaming e StreamingQueryProgress"
     ),
+    "sparkforge_analyze_transport": (
+        "2026-10-02: facts offline de dumps Kafka, MSK e Kinesis"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
