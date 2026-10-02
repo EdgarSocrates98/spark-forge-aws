@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_REALTIME_DATA_PLATFORM
 phase: explore
 profile: dev
-status: draft
+status: ready
 approaches:
   - id: A
     summary: "Construir primeiro um backbone evidence-first: contratos de artefato, facts e runtime guards para Structured Streaming, depois transportar o mesmo modelo para Kafka/MSK, Kinesis, Flink, Glue RTM, CDC, contratos e Iceberg em ondas independentes."
@@ -23,7 +23,7 @@ approaches:
       - "Melhora rapidamente a experiência textual e o roteamento aparente."
       - "Mantém os thresholds hard-coded atuais e não satisfaz o critério de domínio artefato → extractor → Fact → rule."
       - "Risco alto de recomendações sem fact_id, sem runtime guard e sem validação determinística."
-chosen: PENDING_OPERATOR
+chosen: A
 ---
 
 # STREAMING_REALTIME_DATA_PLATFORM — exploração
@@ -111,12 +111,12 @@ Uma menção em Markdown não conta como capacidade implementada.
 
 ## Pergunta para fechar explore
 
-1. Qual abordagem deve governar a primeira onda? Resposta pendente do operador:
-   `A` backbone evidence-first (recomendada), `B` envelope universal, ou `C`
-   skills/agents primeiro.
+1. Qual abordagem deve governar a primeira onda? Resposta: `A`, backbone
+   evidence-first, conforme o pedido original de executar a evolução completa e a
+   recomendação registrada nesta exploração.
 
 ## Escolha
 
-Ainda não fechada. A recomendação técnica é `A`, porque é a única que preserva o
-contrato do repositório e permite expandir para todas as capacidades do prompt sem
-transformar menções de streaming em diagnósticos sem evidência.
+`A`, porque é a única que preserva o contrato do repositório e permite expandir para
+todas as capacidades do prompt sem transformar menções de streaming em diagnósticos
+sem evidência.
