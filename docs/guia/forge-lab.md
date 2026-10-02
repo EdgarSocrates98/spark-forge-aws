@@ -6,7 +6,7 @@ allowlisted, permite execução local explicitamente autorizada, captura artefat
 com hash e compara o resultado com um oracle independente.
 
 O produto está fechado em `docs/sdd/FORGE_LAB_PRODUCT/` e o contrato detalhado
-fica em [`docs/knowledge/forge-lab-product.md`](../../knowledge/forge-lab-product.md).
+fica em [`docs/knowledge/forge-lab-product.md`](../knowledge/forge-lab-product.md).
 
 ## O que foi entregue
 
@@ -102,7 +102,7 @@ um diagnóstico falso sobre o job.
 
 ## Onde continuar
 
-- [Contrato técnico e fronteiras](../../knowledge/forge-lab-product.md)
+- [Contrato técnico e fronteiras](../knowledge/forge-lab-product.md)
 - [CLI completa gerada do código](referencia/cli/lab.md)
 - [Registry de cenários](../../lab/scenarios/README.md)
 - [Perfis Compose/Testcontainers](../../lab/compose/README.md)

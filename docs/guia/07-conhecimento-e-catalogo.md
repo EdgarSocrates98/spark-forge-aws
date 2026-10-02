@@ -30,7 +30,7 @@ as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
 ## Forge Lab como fábrica de evidências
 
-O contrato do Forge Lab vive em [`knowledge/forge-lab-product.md`](../../knowledge/forge-lab-product.md)
+O contrato do Forge Lab vive em [`knowledge/forge-lab-product.md`](../knowledge/forge-lab-product.md)
 e usa conhecimento declarativo para montar experimentos, não para inventar
 resultados. `lab/versions.yaml` fixa as imagens, `lab/scenarios/golden.yaml`
 define o Golden 20 e `lab/probes/catalog.yaml` lista as fontes observáveis.
