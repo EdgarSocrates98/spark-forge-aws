@@ -149,6 +149,16 @@ class TestToolSurface:
             "sparkforge_collect_emr_serverless",
             "sparkforge_collect_emr_eks",
             "sparkforge_collect_verify",
+            # Platform analysis surfaces were added after the original catalog
+            # fixture; keep the explicit allowlist synchronized with TOOLS.
+            "sparkforge_analyze_data_observability",
+            "sparkforge_analyze_dbt_artifacts",
+            "sparkforge_analyze_duckdb_microscope",
+            "sparkforge_analyze_forge_lab",
+            "sparkforge_analyze_lakehouse_catalog",
+            "sparkforge_analyze_orchestration",
+            "sparkforge_analyze_platform_ecosystem",
+            "sparkforge_analyze_platform_graph",
             # SPEC 56-77: SEIS tools de Code Intelligence, e nao as onze que as
             # secoes 57 a 67 listam. A justificativa por nome esta no comentario
             # de bloco de `tools.py` -- resumo: 59+61 colapsam (mesma entrada,
