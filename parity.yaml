@@ -146,7 +146,8 @@ capabilities:
     cli: [analyze streaming-composition]
     knowledge:
       - knowledge/streaming-lakehouse-observability.md
-      - rules/catalog/streaming_composition.yaml
+      - rules/catalog/streaming_iceberg.yaml
+      - rules/catalog/streaming_observability.yaml
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

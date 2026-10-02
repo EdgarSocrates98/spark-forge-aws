@@ -1,7 +1,0 @@
-# Regras compostas: só fatos derivados com vínculo declarado e observado.
-catalog_version: 1
-schema_version: 1
-area: SF-STREAM-COMPOSITION
-retrieved: 2026-10-02
-
-rules:
