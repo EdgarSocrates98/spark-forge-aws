@@ -158,6 +158,7 @@ from sparkforge.facts.streaming import (
     extract_streaming_progress_path,
     extract_streaming_progress_tree,
 )
+from sparkforge.facts.streaming_composition import build_streaming_composition
 from sparkforge.facts.transport import extract_transport_path, extract_transport_tree
 from sparkforge.facts.stepfunctions import (
     extract_stepfunctions_path,
@@ -1032,6 +1033,50 @@ def analyze_streaming(
         )
     raise AdapterError(
         f"Artefato streaming desconhecido: {artifact}. Use `source` ou `progress`."
+    )
+
+
+def analyze_streaming_composition(
+    facts_paths: list[str],
+    *,
+    mode: str,
+    table: str = "",
+    query_name: str = "",
+    transport_key: str = "",
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Compõe facts já extraídos de streaming, transporte e Iceberg.
+
+    Este verbo não reabre artefatos de origem. Os nomes informados pelo
+    chamador são declarações de identidade; a composição só produz link quando
+    os facts confirmam essa identidade sem ambiguidade.
+    """
+    if not facts_paths:
+        raise AdapterError(
+            "Informe ao menos um arquivo de facts para composição streaming.\n"
+            "  Gere-os com `sparkforge analyze streaming`, `analyze transport` ou `analyze iceberg`."
+        )
+    facts = _merge_facts_files(
+        facts_paths,
+        producer="sparkforge analyze <streaming|transport|iceberg> --out {path}",
+    )
+    composed = build_streaming_composition(
+        facts,
+        mode=mode,
+        table=table,
+        query_name=query_name,
+        transport_key=transport_key,
+    )
+    return _facts_page(
+        composed,
+        "streaming.composition.unresolved",
+        kind,
+        limit,
+        cursor,
+        detail_level,
     )
 
 

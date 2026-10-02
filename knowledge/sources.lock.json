@@ -2561,8 +2561,12 @@
         "knowledge/transport-diagnostics.md"
       ],
       "pinned": false,
-      "retrieved": [],
-      "rules": []
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAMOBS-001"
+      ]
     },
     "https://docs.databricks.com/api/workspace/clusters/create": {
       "checked_at": "2026-09-21",
@@ -3217,6 +3221,16 @@
       ],
       "rules": [],
       "sha256": "86d5b16a88bf197905101aea08851464c27ae2765cd8e66c0af1ad14e919aadd"
+    },
+    "https://iceberg.apache.org/docs/latest/spark-structured-streaming/": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-STREAMICE-001"
+      ]
     },
     "https://iceberg.apache.org/docs/latest/spark-writes/": {
       "checked_at": "2026-09-21",
@@ -3907,12 +3921,14 @@
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-10-01"
+        "2026-10-01",
+        "2026-10-02"
       ],
       "rules": [
         "SF-STREAM-001",
         "SF-STREAM-002",
-        "SF-STREAM-003"
+        "SF-STREAM-003",
+        "SF-STREAMOBS-001"
       ]
     },
     "https://www.dremio.com/blog/compaction-in-apache-iceberg-fine-tuning-your-iceberg-tables-data-files/": {

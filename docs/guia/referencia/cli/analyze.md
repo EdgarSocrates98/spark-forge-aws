@@ -42,6 +42,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze sql-metrics`](#sparkforge-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
 | [`sparkforge analyze step-functions`](#sparkforge-analyze-step-functions) | Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao. |
 | [`sparkforge analyze streaming`](#sparkforge-analyze-streaming) | Extrai facts de fonte Structured Streaming ou StreamingQueryProgress. |
+| [`sparkforge analyze streaming-composition`](#sparkforge-analyze-streaming-composition) | Compõe facts já extraídos de streaming, transporte e Iceberg. |
 | [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
 | [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
 | [`sparkforge analyze transport`](#sparkforge-analyze-transport) | Extrai facts offline de dumps Kafka, MSK ou Kinesis. |
@@ -835,6 +836,33 @@ sparkforge analyze streaming --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_streaming`](../tools/sparkforge_analyze_streaming.md)
+
+## `sparkforge analyze streaming-composition`
+
+Compõe facts já extraídos de streaming, transporte e Iceberg.
+
+```bash
+sparkforge analyze streaming-composition --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--facts` | sim | texto | sim |  | Arquivo de facts gerado por um analyze; repetível para unir fontes. |
+| `--mode` | sim | `iceberg`, `observability` |  |  | Relação a analisar: streaming→Iceberg ou progresso→transporte. |
+| `--table` | não | texto |  | `` | Tabela Iceberg declarada. |
+| `--query-name` | não | texto |  | `` | Query Structured Streaming declarada. |
+| `--transport-key` | não | texto |  | `` | Grupo/topic Kafka ou stream Kinesis declarado. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetível. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_streaming_composition`](../tools/sparkforge_analyze_streaming_composition.md)
 
 ## `sparkforge analyze terraform`
 

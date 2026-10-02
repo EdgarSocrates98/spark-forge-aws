@@ -190,6 +190,7 @@ DISPATCHABLE_SKILLS = {
     "analyze-flink-job": "extrai dumps Flink/Managed Flink e julga; a saida e relatorio",
     "review-glue-streaming": "extrai dumps Glue Streaming/RTM e julga restricoes observadas; a saida e relatorio",
     "review-cdc-replication": "extrai dumps CDC, Debezium/DMS e julga contratos observados; a saida e relatorio",
+    "analyze-streaming-composition": "compoe facts declarados de streaming, transporte e Iceberg; a saida e relatorio",
     "analyze-library-call-graph": "varre a biblioteca e devolve o grafo; leitura fechada",
     "analyze-spark-plan": "interpreta um plano fisico ja salvo; nao pede nada a ninguem",
     "analyze-spark-ui": "coleta e julga o event log de um run identificado no pedido",

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import jsonschema
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from sparkforge.adapters.tools import TOOLS, call_tool
 
 JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture()
@@ -44,6 +46,7 @@ class TestToolSurface:
             "sparkforge_analyze_flink",
             "sparkforge_analyze_cdc",
             "sparkforge_analyze_schema_registry",
+            "sparkforge_analyze_streaming_composition",
             "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
@@ -2276,6 +2279,24 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             encoding="utf-8",
         )
         return call_tool("sparkforge_analyze_schema_registry", {"path": str(dump)})
+
+    if name == "sparkforge_analyze_streaming_composition":
+        dump = tmp_path / "streaming_facts.json"
+        source = json.loads(
+            (ROOT / "fixtures/streaming_composition/iceberg_non_append/expected/facts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        dump.write_text(json.dumps(source), encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_streaming_composition",
+            {
+                "facts_paths": [str(dump)],
+                "mode": "iceberg",
+                "table": "db.events",
+                "query_name": "orders-query",
+            },
+        )
 
     if name == "sparkforge_analyze_glue_streaming":
         dump = tmp_path / "glue_streaming.json"

@@ -23,10 +23,10 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | AWS DMS | `diagnosable` parcial | namespace `dms.*`, task/endpoint/mapping/stats/unresolved, rules e fixtures | collector read-only, matriz de versões, logs temporais e recovery funcional |
 | Debezium | `diagnosable` parcial | namespace `debezium.*`, config/status/schema-history/tombstone/unresolved, rules e fixtures | collector Kafka Connect, matriz de versões, offsets/DLQ e replay funcional |
 | Schema Registry/data contracts | `diagnosable` parcial | `facts/schema_registry.py`, `rules/catalog/schema_registry.yaml`, fixtures `schema_registry`, `sparkforge_analyze_schema_registry`, `review-cdc-replication` | collectors/live registry, matriz completa de formato/versão, consumidores cross-artifact e validação funcional |
-| Streaming + Iceberg | `workflow-only` parcial | `facts/iceberg_metadata.py`, regras Iceberg e facts streaming separados | correlação progress↔snapshots/commits/files/metadata e evidence-driven rules |
+| Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py`, `facts/streaming_composition.py`, `analyze streaming-composition`, regras `streaming_composition.yaml` e goldens | collectors/live lineage, SLO/FinOps e validação causal/funcional permanecem lacunas |
 | Delta/Hudi | `knowledge-only` | conhecimento Iceberg dominante | matrizes de compatibilidade e decisão arquitetural; collectors ficam P1/P2 |
 | Event-driven architecture | `knowledge-only` | skills AWS messaging e workflows genéricos | artifact contract para EventBridge/Pipes/SQS/SNS/Step Functions e decisão vs streaming |
-| Streaming observability | `artifact-aware` parcial | progress facts e Glue observability | lag/backpressure/freshness/SLO/lineage/telemetry cross-service |
+| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `analyze streaming-composition` e regras offline de lag/iterator age | collectors temporais, SLO, lineage cross-service e FinOps permanecem lacunas |
 | Streaming FinOps | `knowledge-only` | FinOps batch/genérico | custo por transport/process/runtime/sink e evidence path temporal |
 | Streaming security | `knowledge-only` | skills AWS IAM/security genéricas | facts de TLS/IAM/KMS/VPC/secrets/cross-account e revisão de collectors |
 | Real-time analytics/serving | `knowledge-only` | nenhuma família real-time própria | Redshift streaming, Delta/Hudi e knowledge P1; ClickHouse/Pinot/Druid/Trino P2 |
@@ -44,6 +44,9 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 - Wave F parcial: Schema Registry/data contracts com registro, definição,
   compatibilidade declarada, diff estrutural, auto-register, unresolved,
   fixtures, CLI/MCP, skill, routing e SDD ship.
+- Wave G parcial: composição offline entre streaming, Iceberg e observabilidade
+  de Kafka/Kinesis, com identidade declarada, facts linkados, unresolved,
+  rules evidence-driven, CLI/MCP, skill, routing, fixtures e SDD.
 - SDD fechado para essas duas waves: `STREAMING_REALTIME_DATA_PLATFORM` e
   `STREAMING_TRANSPORT_DIAGNOSTICS`. Wave D: `STREAMING_FLINK_PLATFORM`.
 
@@ -54,7 +57,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
-| G | Iceberg streaming + observability + lineage + SLO + FinOps | correlação temporal, não inferência causal, telemetry/context drill-down |
+| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição offline parcial entregue**: streaming→Iceberg e progresso→Kafka/Kinesis; collectors, lineage/SLO/FinOps e correlação temporal de longo período permanecem lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | requirements→facts→candidates→constraints→ADR com unresolved |
 | I | Delta/Hudi/Redshift and P2 knowledge | matrices/evals e artefacts somente onde existir caminho determinístico |
 | J | security, failure fixtures, integration, performance, packaging and all gates | full suite, package/install/CLI/MCP smoke, security/economy review |

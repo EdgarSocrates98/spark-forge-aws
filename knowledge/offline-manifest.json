@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "326a84e11c0f255a10df830304f602dca51f13686f27604253eaaca248da10ff"
+      "sha256": "646044aadf5c4f3a329122137e300594a9fc99bc5d3e5d571006a73fa891ebae"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -292,6 +292,11 @@
       "path": "knowledge/streaming-reliability.md",
       "title": "streaming-reliability",
       "sha256": "3fdd2032bb3a9f7707b263df02928719fd78442a35c4125f96958b4432683e9e"
+    },
+    {
+      "path": "knowledge/streaming-lakehouse-observability.md",
+      "title": "streaming-lakehouse-observability",
+      "sha256": "5ed4377239f93d234471bb21322e327963555e4c166b6025e980fb491f70e424"
     },
     {
       "path": "knowledge/transport-diagnostics.md",

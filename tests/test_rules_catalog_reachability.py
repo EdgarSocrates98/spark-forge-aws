@@ -86,6 +86,7 @@ from sparkforge.facts import (
     run_cost,
     runtime_detect,
     schema_registry,
+    streaming_composition,
     s3_listing,
     # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
     # ele aqui, `sfn.attempt` e `sfn.retry_observado` contam como orfaos e as tres
@@ -125,6 +126,7 @@ EXTRACTORS = (
     call_graph,
     cdc,
     schema_registry,
+    streaming_composition,
     catalog_schema,
     # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os
     # comentarios vizinhos ja descrevem: kind emitido por extrator que existe,

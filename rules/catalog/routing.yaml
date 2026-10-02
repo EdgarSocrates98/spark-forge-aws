@@ -506,6 +506,20 @@ rules:
       runtime e correlacionar backpressure, state, source, sink, observabilidade
       e resultado antes de propor uma única variável experimental.
 
+  - id: AGENT-097
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado em composição streaming, Iceberg ou observabilidade
+    when:
+      any:
+        - {findings_area: SF-STREAMICE, count_gt: 0}
+        - {findings_area: SF-STREAMOBS, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado depende de um vínculo declarado entre progresso, transporte e
+      Iceberg. O coordenador streaming é o destino que consegue separar
+      correlação de causalidade, confirmar a janela temporal, cruzar source,
+      sink, state e consumidor e preservar validação funcional e rollback.
+
   # `SF-ENV` POR ÚLTIMO, e a razão é que ela é a área que TRÊS coordenadores declaram:
   # `glue-infra-reviewer`, `emr-infra-reviewer` e `glue-incremental-performance-architect`.
   # A posição resolve o empate sem inventar condição de runtime: quando há qualquer

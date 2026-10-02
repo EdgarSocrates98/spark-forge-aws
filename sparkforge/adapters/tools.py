@@ -5721,6 +5721,51 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_streaming_composition": {
+        "description": (
+            "Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. "
+            "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
+            "produz link quando a correspondência é observada sem ambiguidade. Preserva "
+            "ids dos facts de origem, operações Iceberg, lag/iterator age e unresolved. "
+            "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_paths", "mode"],
+            "properties": {
+                "facts_paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "description": "Arquivos de facts produzidos por analyzers; repetível.",
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["iceberg", "observability"],
+                    "description": "Relação streaming→Iceberg ou progresso→transporte.",
+                },
+                "table": {"type": "string", "description": "Tabela Iceberg declarada."},
+                "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
+                "transport_key": {
+                    "type": "string",
+                    "description": "Grupo/topic Kafka ou stream Kinesis declarado.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts compostos, unresolved nomeado ou erro se algum arquivo não existir.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_glue_streaming": {
         "description": (
             "Extrai facts determinísticos de dumps JSON/JSONL já salvos de AWS Glue "
@@ -10293,6 +10338,20 @@ def _h_analyze_schema_registry(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_streaming_composition(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming_composition(
+        args["facts_paths"],
+        mode=args["mode"],
+        table=args.get("table", ""),
+        query_name=args.get("query_name", ""),
+        transport_key=args.get("transport_key", ""),
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_glue_streaming(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_glue_streaming(
         args["path"],
@@ -11312,6 +11371,7 @@ _HANDLERS = {
     "sparkforge_analyze_flink": _h_analyze_flink,
     "sparkforge_analyze_cdc": _h_analyze_cdc,
     "sparkforge_analyze_schema_registry": _h_analyze_schema_registry,
+    "sparkforge_analyze_streaming_composition": _h_analyze_streaming_composition,
     "sparkforge_analyze_glue_streaming": _h_analyze_glue_streaming,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,

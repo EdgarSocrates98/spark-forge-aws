@@ -3,10 +3,11 @@ name: streaming-realtime-architect
 description: Especialista em plataformas streaming Apache Flink, Managed Flink, Structured Streaming e AWS Glue Streaming/RTM, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultado sem assumir exactly-once ou capacidade por nome.
 skills:
   - analyze-flink-job
+  - analyze-streaming-composition
   - review-glue-streaming
   - analyze-spark-ui
   - aws-messaging-and-streaming
-rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM]
+rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM, SF-STREAMICE, SF-STREAMOBS]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

@@ -94,7 +94,7 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 197,
+    "rule_count": 199,
     "retrieved": "2026-10-02"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
@@ -103,6 +103,7 @@
     "sparkforge_analyze_call_graph",
     "sparkforge_analyze_cdc",
     "sparkforge_analyze_schema_registry",
+    "sparkforge_analyze_streaming_composition",
     "sparkforge_analyze_catalog_schema",
     "sparkforge_analyze_cloudwatch",
     "sparkforge_analyze_cloudwatch_logs",

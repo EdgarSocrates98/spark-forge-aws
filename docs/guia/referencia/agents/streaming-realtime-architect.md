@@ -9,11 +9,11 @@ Especialista em plataformas streaming Apache Flink, Managed Flink, Structured St
 | Papel | coordenador |
 | Arquivo de origem | `agents/streaming-realtime-architect.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash, Edit, Write |
-| Áreas de regra | SF-STREAM, SF-FLINK, SF-GLUESTREAM |
+| Áreas de regra | SF-STREAM, SF-FLINK, SF-GLUESTREAM, SF-STREAMICE, SF-STREAMOBS |
 
 ## Skills que ele usa
 
-[`analyze-flink-job`](../skills/analyze-flink-job.md), [`review-glue-streaming`](../skills/review-glue-streaming.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`aws-messaging-and-streaming`](../skills/aws-messaging-and-streaming.md)
+[`analyze-flink-job`](../skills/analyze-flink-job.md), [`analyze-streaming-composition`](../skills/analyze-streaming-composition.md), [`review-glue-streaming`](../skills/review-glue-streaming.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`aws-messaging-and-streaming`](../skills/aws-messaging-and-streaming.md)
 
 ## Executores que ele despacha
 

@@ -1,0 +1,274 @@
+[
+  {
+    "id": "f_271e58",
+    "schema_version": 1,
+    "kind": "kafka.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "artifact_type": "kafka"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "artifact_sha256": "d2f5e9b2a2ba1871cb72ad5b9b2b97f34d199141ca0bdd70cdff97295bcd17ae",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_14de77",
+    "schema_version": 1,
+    "kind": "kafka.consumer_group",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "group": "orders-group",
+      "state": "Stable"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "artifact_sha256": "d2f5e9b2a2ba1871cb72ad5b9b2b97f34d199141ca0bdd70cdff97295bcd17ae",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_e4ddff",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "current_offset": 100,
+      "log_end_offset": 140,
+      "lag": 40
+    },
+    "attrs": {
+      "group": "orders-group",
+      "topic": "orders"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "artifact_sha256": "d2f5e9b2a2ba1871cb72ad5b9b2b97f34d199141ca0bdd70cdff97295bcd17ae",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_ec0daf",
+    "schema_version": 1,
+    "kind": "streaming.composition.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "observability",
+      "snippet": ""
+    },
+    "measures": {
+      "input_fact_count": 7,
+      "derived_fact_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "observability",
+      "table": null,
+      "query_name": "orders-query",
+      "transport_key": "orders-group"
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_e49554",
+    "schema_version": 1,
+    "kind": "streaming.observability.link",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query<->orders-group",
+      "snippet": ""
+    },
+    "measures": {
+      "progress_observation_count": 2,
+      "transport_measurement_count": 1,
+      "max_lag": 40.0,
+      "lag_sum": 40.0
+    },
+    "attrs": {
+      "query_name": "orders-query",
+      "transport_key": "orders-group",
+      "transport_kinds": [
+        "kafka"
+      ],
+      "processed_below_input": true,
+      "transport_measurement_observed": true,
+      "link_kind": "declared_input",
+      "causal_inference": false,
+      "source_fact_ids": [
+        "f_34cc06",
+        "f_d2aaaf",
+        "f_e4ddff",
+        "f_e848b4"
+      ]
+    },
+    "provenance": {
+      "artifact": "<composition>",
+      "artifacts": [
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl"
+      ],
+      "extractor": "streaming_composition@0.1.0"
+    }
+  },
+  {
+    "id": "f_6eb86b",
+    "schema_version": 1,
+    "kind": "streaming.progress.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "record_count": 2,
+      "unresolved_count": 0,
+      "series_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_e848b4",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 1,
+      "observed_index": 0,
+      "num_input_rows": 100,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 80.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:00Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_34cc06",
+    "schema_version": 1,
+    "kind": "streaming.progress.batch",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "line": 2,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "batch_id": 2,
+      "observed_index": 1,
+      "num_input_rows": 100,
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 70.0
+    },
+    "attrs": {
+      "timestamp": "2026-10-01T00:00:05Z",
+      "query_id": null,
+      "run_id": null,
+      "query_name": "orders-query"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  },
+  {
+    "id": "f_d2aaaf",
+    "schema_version": 1,
+    "kind": "streaming.progress.series",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "observation_count": 2,
+      "first_batch_id": 1,
+      "last_batch_id": 2,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 80.0,
+      "processed_rows_per_second_last": 70.0
+    },
+    "attrs": {
+      "first_observed_index": 0,
+      "last_observed_index": 1,
+      "all_processed_below_input": true
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
+      "extractor": "streaming_progress@0.1.0"
+    }
+  }
+]

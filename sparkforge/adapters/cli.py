@@ -296,6 +296,35 @@ def build_parser() -> argparse.ArgumentParser:
     schema_p.add_argument("--cursor")
     _add_detail_level(schema_p)
 
+    composition_p = analyze_sub.add_parser(
+        "streaming-composition",
+        help="Compõe facts já extraídos de streaming, transporte e Iceberg.",
+    )
+    composition_p.add_argument(
+        "--facts",
+        action="append",
+        required=True,
+        help="Arquivo de facts gerado por um analyze; repetível para unir fontes.",
+    )
+    composition_p.add_argument(
+        "--mode",
+        required=True,
+        choices=("iceberg", "observability"),
+        help="Relação a analisar: streaming→Iceberg ou progresso→transporte.",
+    )
+    composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
+    composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
+    composition_p.add_argument(
+        "--transport-key",
+        default="",
+        help="Grupo/topic Kafka ou stream Kinesis declarado.",
+    )
+    composition_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    composition_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    composition_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    composition_p.add_argument("--cursor")
+    _add_detail_level(composition_p)
+
     glue_streaming_p = analyze_sub.add_parser(
         "glue-streaming",
         help="Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.",
@@ -3233,6 +3262,19 @@ def _cmd_analyze_schema_registry(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_streaming_composition(args: argparse.Namespace) -> int:
+    full = _core.analyze_streaming_composition(
+        args.facts,
+        mode=args.mode,
+        table=args.table,
+        query_name=args.query_name,
+        transport_key=args.transport_key,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_glue_streaming(args: argparse.Namespace) -> int:
     full = _core.analyze_glue_streaming(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5371,6 +5413,7 @@ _DISPATCH = {
     ("analyze", "flink"): _cmd_analyze_flink,
     ("analyze", "cdc"): _cmd_analyze_cdc,
     ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
+    ("analyze", "streaming-composition"): _cmd_analyze_streaming_composition,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,

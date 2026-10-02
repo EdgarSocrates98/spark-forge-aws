@@ -4,10 +4,11 @@ description: Especialista em plataformas streaming Apache Flink, Managed Flink, 
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - analyze-flink-job
+  - analyze-streaming-composition
   - review-glue-streaming
   - analyze-spark-ui
   - aws-messaging-and-streaming
-rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM]
+rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM, SF-STREAMICE, SF-STREAMOBS]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

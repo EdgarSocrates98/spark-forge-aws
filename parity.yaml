@@ -141,6 +141,19 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: compose streaming lakehouse and transport observability evidence
+    tools: [sparkforge_analyze_streaming_composition]
+    cli: [analyze streaming-composition]
+    knowledge:
+      - knowledge/streaming-lakehouse-observability.md
+      - rules/catalog/streaming_composition.yaml
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract AWS Glue Streaming and Real-Time Mode artifact facts
     tools: [sparkforge_analyze_glue_streaming]
     cli: [analyze glue-streaming]
