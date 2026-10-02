@@ -9,5 +9,8 @@ record image digests in `versions.json`. The repository does not download
 images, mount the Docker socket, use host networking or pass cloud credentials
 implicitly.
 
-`up`, `down`, `shell` and `gc` are plan-only unless the operator provides both
-`--execute` and `--confirm`.
+Profiles are `core`, `spark`, `kafka`, `streaming`, `flink`, `lakehouse`, `cdc`,
+`polaris`, `observability`, `chaos` and `full`. `up`, `down`, `shell` and `gc`
+are plan-only unless the operator provides both `--execute` and `--confirm`.
+The same guard applies to a mutating `lab run`; `plan` and `verify` never start
+services.

@@ -436,6 +436,24 @@ diretório do pack, `sparkforge pack list` mostra os packs ativos e os
 recusados, com o motivo. Detalhes em `docs/forge-pack.md` e na
 [referência do `pack`](referencia/cli/pack.md).
 
+### Forge Lab / Digital Twin
+
+O Forge Lab é a camada de experimentação reproduzível do SparkForge. Ele não
+substitui `analyze`/`judge`: compila cenários em ações allowlisted, executa
+localmente somente quando o operador autoriza, captura evidências e entrega um
+receipt que pode ser inspecionado, comparado e reproduzido.
+
+O cenário é dado versionado, não script arbitrário. O Golden 20 em
+`lab/scenarios/golden.yaml` cobre streaming, batch, Kafka, Flink, Spark,
+Iceberg, CDC, observabilidade, faults e serving; `labs/forge-lab/lab.yaml`
+continua sendo o blueprint topológico de sete cenários. `lab verify` valida os
+20 cenários e seus 240 planos de ação sem iniciar Docker.
+
+Os níveis de fidelidade são L0 (fixture determinístico), L1 (engine local real),
+L2 (contrato de serviço) e L3 (validação cloud). Um resultado local não prova
+capacidade de produção, latência absoluta, custo AWS, IAM ou exactly-once. Veja
+o [guia operacional do Forge Lab](forge-lab.md).
+
 ### Hipótese
 
 Uma hipótese é uma afirmação testável registrada no case. O SparkForge exige

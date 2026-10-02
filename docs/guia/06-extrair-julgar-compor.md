@@ -14,6 +14,27 @@ de regras versionado em YAML ([Conhecimento e catálogo](07-conhecimento-e-catal
 e um ciclo de vida de case (`.sparkforge/case.yaml`) que atravessa sessões e
 ferramentas.
 
+## Forge Lab: quando a pergunta exige experimentar
+
+Para investigar uma condição controlada de streaming ou batch, use o Forge Lab
+depois de definir o artefato e a hipótese. O Lab não substitui a cadeia
+`analyze` → `judge`: ele cria o cenário, executa a plataforma local autorizada,
+captura evidências e devolve um receipt para análise e comparação.
+
+```bash
+sparkforge lab verify --repo .
+sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+sparkforge lab run iceberg-small-files --backend compose --seed 42 \
+  --execute --confirm --repo .
+sparkforge lab analyze .sparkforge/lab/runs/<run-id> --repo .
+```
+
+O Golden 20 é compilado de `lab/scenarios/golden.yaml`; o oracle esperado é
+independente do analyzer. `verify` e `plan` são offline e não iniciam serviços.
+`run`, `up`, `down`, `shell` e `gc` só mutam ambiente local com
+`--execute --confirm`. Para o fluxo completo e os limites de L0–L3, veja o
+[guia do Forge Lab](forge-lab.md).
+
 ## Sequência mínima
 
 ```bash

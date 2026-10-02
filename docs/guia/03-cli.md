@@ -253,6 +253,18 @@ comando.
 | `arbitrate` | Arbitra findings já julgados e grava claims, evidências e contradições no blackboard do case. Grava no disco. | [arbitrate](referencia/cli/arbitrate.md) |
 | `debate` | Conduz e arbitra o protocolo de debate do case. Não gera argumento. | [debate](referencia/cli/debate.md) |
 
+### Forge Lab / Digital Twin
+
+| Comando | O que faz | Referência |
+|---|---|---|
+| `lab doctor` | Verifica host, registry e profiles sem iniciar serviços. | [lab](referencia/cli/lab.md) |
+| `lab verify` | Valida registry, Golden 20, schemas e planos de ações offline. | [lab](referencia/cli/lab.md) |
+| `lab scenarios`, `describe`, `profiles` | Lista e explica cenários, fidelidades, perfis e requisitos declarados. | [lab](referencia/cli/lab.md) |
+| `lab plan`, `run` | Compila ou executa um cenário; a execução mutável exige `--execute --confirm`. | [lab](referencia/cli/lab.md) |
+| `lab inspect`, `analyze`, `compare`, `reproduce` | Inspeciona evidências, analisa artifacts, compara receipts e recria planos. | [lab](referencia/cli/lab.md) |
+| `lab promote-fixture` | Promove run revisado para fixture somente com receipt válido e `--reviewed`. | [lab](referencia/cli/lab.md) |
+| `lab up`, `down`, `shell`, `gc` | Planeja lifecycle Compose; mutação local exige `--execute --confirm`. | [lab](referencia/cli/lab.md) |
+
 ### Estado da investigação
 
 | Comando | O que faz | Referência |

@@ -28,6 +28,23 @@ Ler [`knowledge/cross-service-constraints.md`](../../knowledge/cross-service-con
 antes de recomendar mudança de versão, formato de tabela ou particionamento — são
 as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
+## Forge Lab como fábrica de evidências
+
+O contrato do Forge Lab vive em [`knowledge/forge-lab-product.md`](../../knowledge/forge-lab-product.md)
+e usa conhecimento declarativo para montar experimentos, não para inventar
+resultados. `lab/versions.yaml` fixa as imagens, `lab/scenarios/golden.yaml`
+define o Golden 20 e `lab/probes/catalog.yaml` lista as fontes observáveis.
+
+O Lab separa quatro coisas: cenário esperado, ação allowlisted, artefato
+capturado e finding produzido pelo analyzer. O oracle não lê o resultado para
+montar o expected; ele é autorado fora do pipeline observado. Assim, uma
+execução pode terminar em `PASS`, `FAIL`, `UNRESOLVED`, `INFRA_FAILURE` ou
+`INVALID_SCENARIO` sem converter ausência de evidência em sucesso.
+
+O registry offline foi verificado com 11 componentes, 20 cenários e 240 ações.
+Isso é integridade de contrato, não prova de performance, custo, capacidade
+cloud ou compatibilidade entre engines sem receipt.
+
 ## AWS Glue 6.0
 
 **AWS Glue 6.0** é suportado e analisado: matriz de runtime com procedência por

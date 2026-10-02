@@ -109,6 +109,29 @@ O pacote instalado carrega o catálogo de regras e `knowledge/` dentro do wheel:
 clonado. Extras, verificação e erros comuns em [Instalação](docs/guia/02-instalacao.md);
 a anatomia de cada comando e um fluxo rodado de verdade em [CLI](docs/guia/03-cli.md).
 
+## Forge Lab / Digital Twin
+
+O Forge Lab transforma cenários streaming e batch em planos de ações
+allowlisted, executa localmente somente com autorização explícita, captura
+artefatos com hash e compara a observação com um oracle independente. Compose e
+Testcontainers consomem a mesma DSL; a AWS é um tier separado e nunca é tocada
+pelo core offline.
+
+```bash
+sparkforge lab doctor
+sparkforge lab verify --repo .
+sparkforge lab scenarios --json --repo .
+sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+```
+
+O produto entregue possui registry com 11 componentes, Golden 20 com 240 ações
+compiladas, receipts, promoção revisada de fixtures, equivalência multi-engine,
+profiles de streaming/batch/CDC/lakehouse/observabilidade/chaos e tiers L0–L3.
+`verify` não inicia Docker. Execuções mutáveis exigem `--execute --confirm`; um
+run local não prova capacidade, custo, latência ou semântica AWS de produção.
+O detalhe está no [guia do Forge Lab](docs/guia/forge-lab.md) e no
+[contrato técnico](docs/knowledge/forge-lab-product.md).
+
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:
 
@@ -218,6 +241,7 @@ e [Política de segurança](docs/guia/usos/politica-de-seguranca.md).
 | Quero... | Onde |
 |---|---|
 | Começar, com receita para copiar e colar | [`docs/guia/README.md`](docs/guia/README.md) |
+| Construir evidência reproduzível de streaming e batch | [Forge Lab / Digital Twin](docs/guia/forge-lab.md) |
 | O glossário, os objetivos e os dados mínimos a juntar | [Conceitos](docs/guia/01-conceitos.md) |
 | Instalar, e usar sem o repositório clonado | [Instalação](docs/guia/02-instalacao.md) |
 | Ler a saída da CLI e seus códigos de saída | [CLI](docs/guia/03-cli.md) |

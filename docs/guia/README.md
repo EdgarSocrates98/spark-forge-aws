@@ -14,31 +14,34 @@ Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 3. [Usando a CLI (a linha de comando)](03-cli.md).
 4. [Usando pelo MCP (Claude Code, Devin, Copilot e outros)](04-mcp.md).
 5. [Agents e skills: quem faz o quê](05-agents-e-skills.md).
+6. [Forge Lab / Digital Twin](forge-lab.md): cenários reproduzíveis, evidências,
+   receipts, Compose/Testcontainers e limites de prova.
 
 ## O detalhe do projeto
 
 O [README](../../README.md) é a porta de entrada e resume. O detalhe que ele resume mora
 aqui:
 
-6. [Extrair, julgar, compor](06-extrair-julgar-compor.md): a sequência mínima em Glue,
+7. [Extrair, julgar, compor](06-extrair-julgar-compor.md): a sequência mínima em Glue,
    EMR e Databricks, por que extração e julgamento são verbos separados, e o que cada
    extrator lê.
-7. [Conhecimento e catálogo](07-conhecimento-e-catalogo.md): `knowledge/`, Glue 6.0, o
+8. [Conhecimento e catálogo](07-conhecimento-e-catalogo.md): `knowledge/`, Glue 6.0, o
    catálogo de regras, as áreas e o bloco `action:`.
-8. [Rigor, assinatura e handoff](08-rigor-e-handoff.md): gates fail-closed, assinatura de
+9. [Rigor, assinatura e handoff](08-rigor-e-handoff.md): gates fail-closed, assinatura de
    correspondência, Code Scanning e o que se commita ao pausar.
-9. [Camada agêntica](09-camada-agentica.md): as entidades, os executores L0 e o que a
+10. [Camada agêntica](09-camada-agentica.md): as entidades, os executores L0 e o que a
    camada não afirma.
-10. [Ecossistema caveman](10-caveman.md): compressão de output ligada por padrão, o que foi
+11. [Ecossistema caveman](10-caveman.md): compressão de output ligada por padrão, o que foi
     medido e o que ficou de fora.
-11. [Segurança](11-seguranca.md): o que executa ao clonar, e as operações destrutivas.
-12. [Espelhos e dependências](12-espelhos-e-dependencias.md): para quem contribui.
+12. [Segurança](11-seguranca.md): o que executa ao clonar, e as operações destrutivas.
+13. [Espelhos e dependências](12-espelhos-e-dependencias.md): para quem contribui.
 
 ## Manuais por tarefa
 
 | Eu quero... | Manual |
 |---|---|
 | Conferir o ambiente e rodar tudo o que cabe no repositório de uma vez | [Scan e doctor](usos/scan-e-doctor.md) |
+| Construir e validar cenários streaming/batch reproduzíveis | [Forge Lab / Digital Twin](forge-lab.md) |
 | Decidir o que um agente pode fazer sozinho, o que pede confirmação e o que é proibido | [Política de segurança](usos/politica-de-seguranca.md) |
 | Descobrir por que um job PySpark no Glue está lento | [Job lento](usos/job-lento.md) |
 | Saber quanto um job custa e qual capacidade escolher | [Custo e capacidade](usos/custo-e-capacidade.md) |

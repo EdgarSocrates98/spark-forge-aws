@@ -15,6 +15,23 @@ Abra a ferramenta no repositório que contém:
 
 Cole ou invoque o conteúdo de `PROMPT_INICIAL_MESTRE.md`.
 
+## 1.1 Forge Lab / Digital Twin
+
+Para construir evidência reproduzível de um caso streaming ou batch, consulte o
+[guia operacional do Forge Lab](docs/guia/forge-lab.md). O caminho mínimo é:
+
+```bash
+sparkforge lab doctor
+sparkforge lab verify --repo .
+sparkforge lab scenarios --json --repo .
+sparkforge lab plan iceberg-small-files --backend compose --seed 42 --repo .
+```
+
+O Lab é plan-only por padrão. `run`, `up`, `down`, `shell` e `gc` só podem
+mutar ambiente local com `--execute --confirm`; execução AWS é tier separado e
+recusada pelo core offline. O Golden 20, receipts, oracle independente e limites
+de prova estão descritos no [contrato do produto](docs/knowledge/forge-lab-product.md).
+
 ## 2. Claude Code
 
 Use o agente:

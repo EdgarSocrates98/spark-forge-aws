@@ -53,6 +53,20 @@ Every lifecycle command is plan-only by default. Local mutation requires both
 `--execute --confirm`; AWS execution is a separate tier and remains refused by
 the offline core.
 
+## Fechamento da entrega
+
+O fechamento da feature `FORGE_LAB_PRODUCT` foi registrado em
+`docs/sdd/FORGE_LAB_PRODUCT/ship.md`. A verificação offline final retornou
+`valid: true`, 11 componentes do registry, 20 cenários Golden e 240 ações
+compiladas. A suíte final do repositório coletou 14301 testes e terminou com
+14287 passados e 14 ignorados, depois da repetição dos lotes afetados por
+guardas documentais.
+
+Isso prova a integridade dos contratos e planos locais; não prova que imagens
+Docker estão disponíveis no host, que um cenário L1 foi executado ou que uma
+integração AWS foi validada. Sem transcript do host, `provider_tokens` continua
+`unresolved_without_host_transcript`.
+
 ## Run layout and result classes
 
 Runs live under `.sparkforge/lab/runs/<run-id>/` and contain `run.json`,
