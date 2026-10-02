@@ -15,10 +15,13 @@ ausência como sucesso e não compara séries com janelas ou unidades diferentes
 ### Avaliação offline observada
 
 `sparkforge analyze streaming-composition --mode slo` compõe uma declaração
-`streaming.slo` com `streaming.progress.batch` já extraído. A composição exige
-`--query-name`, seleciona `--slo-name` quando há mais de uma declaração e aceita
-somente métricas diretamente presentes no progress: `input_rows_per_second`,
-`processed_rows_per_second`, `batch_duration_ms` e `num_input_rows`.
+`streaming.slo` com facts já extraídos. Para Structured Streaming, exige
+`--query-name` e aceita somente métricas diretamente presentes no progress:
+`input_rows_per_second`, `processed_rows_per_second`, `batch_duration_ms` e
+`num_input_rows`. Para transporte, `source: kafka` usa `kafka.lag` e
+`source: kinesis` usa `kinesis.shard`; nesses dois casos `--transport-key` é a
+identidade declarada (grupo/topic Kafka ou stream Kinesis) e `query_name` não é
+necessário.
 
 Para emitir `streaming.slo.evaluation`, a unidade precisa ser compatível, o
 operador precisa ser `lt`, `lte`, `gt`, `gte` ou `eq`, há pelo menos duas
@@ -28,11 +31,14 @@ O status `met` significa que todos os valores observados passaram no comparador;
 `source_fact_ids`, extremos, contagem, janela e `causal_inference: false`.
 
 Declaração, identidade, source, métrica, unidade, timestamp, quantidade ou
-cobertura ausente produzem `streaming.slo.unresolved`. O Forge não calcula p95
-de uma taxa, não converte unidade, não usa nome de janela como prova de
-cobertura e não consulta CloudWatch/Kafka live. `SF-STREAM-011` julga somente
-violação observada; `SF-STREAM-012` torna a lacuna explícita. Nenhum dos dois
-atribui causa, custo, disponibilidade ou resultado funcional.
+cobertura ausente produzem `streaming.slo.unresolved`. Para transporte, a
+série precisa ser diretamente observada, timestampada com timezone e cobrir a
+janela; o Forge não agrega grupos/shards, usa ordem do arquivo, preenche
+timestamp, converte unidade ou transforma `kinesis.metric` sem timestamp em
+série. O Forge não calcula p95 de uma taxa, não usa nome de janela como prova
+de cobertura e não consulta CloudWatch/Kafka live. `SF-STREAM-011` julga
+somente violação observada; `SF-STREAM-012` torna a lacuna explícita. Nenhum
+dos dois atribui causa, custo, disponibilidade ou resultado funcional.
 
 ## FinOps
 

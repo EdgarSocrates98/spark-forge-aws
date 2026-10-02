@@ -1041,11 +1041,11 @@ sparkforge analyze streaming-composition --help
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
 | `--facts` | sim | texto | sim |  | Arquivo de facts gerado por um analyze; repetível para unir fontes. |
-| `--mode` | sim | `iceberg`, `iceberg_temporal`, `observability`, `slo`, `temporal` |  |  | Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progresso ou janela temporal pareada. |
+| `--mode` | sim | `iceberg`, `iceberg_temporal`, `observability`, `slo`, `temporal` |  |  | Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/transporte ou janela temporal pareada. |
 | `--table` | não | texto |  | `` | Tabela Iceberg declarada. |
 | `--query-name` | não | texto |  | `` | Query Structured Streaming declarada. |
 | `--slo-name` | não | texto |  | `` | Nome do SLO declarado; obrigatório quando há mais de uma declaração. |
-| `--transport-key` | não | texto |  | `` | Grupo/topic Kafka ou stream Kinesis declarado. |
+| `--transport-key` | não | texto |  | `` | Grupo/topic Kafka ou stream Kinesis declarado; obrigatório no mode=slo de transporte. |
 | `--max-skew-seconds` | não | texto |  |  | Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved. |
 | `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
 | `--kind` | não | texto | sim |  | Filtra por kind. Repetível. |

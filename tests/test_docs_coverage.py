@@ -16,6 +16,14 @@ def test_streaming_coverage_mentions_slo_evaluation():
     assert "SF-STREAM-012" in text
 
 
+def test_streaming_transport_slo_coverage_mentions_transport_key():
+    text = _read("docs/streaming/prompt-coverage.md")
+    assert "STREAMING_SLO_TRANSPORT_EVALUATION" in text
+    assert "transport_key" in text
+    assert "kafka.lag" in text
+    assert "kinesis.shard" in text
+
+
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
 

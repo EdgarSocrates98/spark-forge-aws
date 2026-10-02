@@ -38,6 +38,26 @@ AWS publica métricas em nível de stream e, quando habilitadas, em nível de
 shard; o analyzer não transforma stream-level em shard-level nem inventa uma
 distribuição.
 
+## SLO observado de transporte
+
+`sparkforge analyze streaming-composition --mode slo` pode avaliar um SLO
+declarado sobre `kafka.lag` ou `kinesis.shard` quando o chamador fornece
+`--transport-key`. O valor é a identidade de um grupo/topic Kafka ou de um
+stream Kinesis; a chave não é inferida pelo nome de arquivo, e grupos, topics,
+streams ou shards diferentes não são agregados.
+
+Kafka usa `lag` em `records`; Kinesis usa `iterator_age_ms` em `ms`. Cada
+observação precisa trazer `timestamp` ou `observed_at` textual com timezone,
+há pelo menos duas observações e o span observado cobre a janela do contrato.
+O resultado preserva `source_fact_ids`, `transport_key`, `observation_source` e
+`causal_inference: false`, com status `met` ou `violated`. Identidade, métrica,
+unidade, timestamp ou cobertura ausente produz `streaming.slo.unresolved` e
+`SF-STREAM-012`; violação observada produz `SF-STREAM-011`.
+
+Esse caminho não prova freshness, p95, disponibilidade, sink health, causa,
+custo ou estado live. `kinesis.metric` sem timestamp não vira série por ordem
+do arquivo, e CloudWatch não é consultado pelo compositor.
+
 ## Blind spots e sequência operacional
 
 1. identificar origem, instante, comando/API e unidade do dump;

@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **58 features**:
+O status atual registra **59 features**:
 
-- **56** em `ship/done`;
+- **57** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -52,6 +52,7 @@ SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_GLUE_RTM,
 STREAMING_ICEBERG_TEMPORAL,
 STREAMING_SLO_EVALUATION,
+STREAMING_SLO_TRANSPORT_EVALUATION,
 STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
@@ -99,8 +100,9 @@ do wheel e de uma CLI real do host.
 - Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
   granulares e janela temporal progresso→Iceberg, progresso→transporte e janela
   temporal pareada entre progresso e Kafka/Kinesis; `mode=slo` compara SLO
-  declarados contra métricas diretamente observadas em progress, emitindo
-  `met`, `violated` ou `unresolved` sem inferir causa, custo ou saúde end-to-end;
+  declarados contra métricas diretamente observadas em progress, `kafka.lag` ou
+  `kinesis.shard`, emitindo `met`, `violated` ou `unresolved` sem inferir causa,
+  custo ou saúde end-to-end;
   operações, serving, SLO, FinOps, security/redaction,
   EventBridge/Pipes/SQS/SNS e decisão arquitetural por constraints.
 
@@ -152,6 +154,7 @@ do wheel e de uma CLI real do host.
 | `4831844` | alinhamento do SDD e contagens correntes da avaliação SLO |
 | `d4a7ba9` | facts, composição, regras, fixtures e portas CLI/MCP da avaliação SLO |
 | `a1388ee` | SDD build/ship, knowledge, skills, referências, manifests e documentação transversal da avaliação SLO |
+| `1cba6fb` | avaliação SLO direta sobre lag Kafka e iterator age Kinesis, identidade, timestamps, goldens e paridade CLI/MCP |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -166,7 +169,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
 | Evidência temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge; 769 runtime-scope; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
-| Avaliação SLO observada | 16 focused tests; 2 golden checks; 919 gates de catálogo/reachability; 4 snippet-measure; SDD check verde |
+| Avaliação SLO observada | progress: 16 focused tests; transporte: 22 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos; 14 docs/referências/surface; SDD check verde |
 
 Essas provas validam contratos locais, determinismo, paridade e documentação.
 Não provam throughput, latência, custo, capacidade cloud, exactly-once, semântica

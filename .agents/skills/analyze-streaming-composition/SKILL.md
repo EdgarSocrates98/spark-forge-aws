@@ -63,6 +63,11 @@ sparkforge analyze streaming-composition \
   --facts slo-contract.facts.json --facts progress.facts.json \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts kafka.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
 ```
 
 3. Para `mode=temporal` e `mode=iceberg_temporal`, `max-skew-seconds` é
@@ -73,15 +78,18 @@ sparkforge analyze streaming-composition \
    antes de julgar. Query, tabela, grupo, stream, timestamp ou janela ausente
    é ponto cego; não vira zero nem “saudável”.
 
-Para `mode=slo`, a declaração `streaming.slo` precisa casar com uma query e
-com uma métrica diretamente observada em `streaming.progress.batch`. A versão
-offline suporta taxas, duração e contagem com unidade canônica; exige pelo
-menos duas observações timestampadas e span observado igual ou maior que a
-janela declarada. `streaming.slo.evaluation` informa `met` ou `violated`;
+Para `mode=slo`, `source` Structured Streaming exige query e métrica diretamente
+observada em `streaming.progress.batch`. `source: kafka` exige
+`--transport-key` e lê `kafka.lag`; `source: kinesis` exige a mesma identidade
+e lê `kinesis.shard`. Kafka usa `lag`/`records`; Kinesis usa
+`iterator_age_ms`/`ms`. Em todos os casos, exige unidade canônica, pelo menos
+duas observações timestampadas e span observado igual ou maior que a janela
+declarada. `streaming.slo.evaluation` informa `met` ou `violated`;
 `streaming.slo.unresolved` informa a barreira sem transformar ausência em
 sucesso. `SF-STREAM-011` julga violação observada; `SF-STREAM-012` julga a
-lacuna estrutural. O compositor não calcula p95/freshness, não converte
-unidades e não usa CloudWatch/Kafka live.
+lacuna estrutural. O compositor não agrega grupos/shards, calcula
+p95/freshness, converte unidades, usa ordem do arquivo ou consulta
+CloudWatch/Kafka live.
 
 5. Julgue o arquivo composto:
 
@@ -113,7 +121,7 @@ permanece explícito. Valide replay, leitura incremental, consumidores e
 resultado funcional antes de alterar o sink.
 
 `mode=slo` só produz avaliação resolvida quando a janela declarada foi coberta
-por facts de progress. `met` significa que todos os valores observados
+por facts de progress ou transporte compatível. `met` significa que todos os valores observados
 passaram pelo comparador; não significa disponibilidade, saúde end-to-end,
 causa, custo ou atendimento fora do artefato fornecido.
 
