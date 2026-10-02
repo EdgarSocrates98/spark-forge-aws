@@ -51,6 +51,11 @@ sparkforge analyze streaming-composition \
   --facts progress.facts.json --facts iceberg.facts.json \
   --mode iceberg_temporal --table db.events --query-name orders-query \
   --max-skew-seconds 3 --out iceberg-temporal.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
 ```
 
 3. Para `mode=temporal` e `mode=iceberg_temporal`, `max-skew-seconds` é
@@ -60,6 +65,16 @@ sparkforge analyze streaming-composition \
 4. Leia `streaming.composition.unresolved` e `streaming.temporal.unresolved`
    antes de julgar. Query, tabela, grupo, stream, timestamp ou janela ausente
    é ponto cego; não vira zero nem “saudável”.
+
+Para `mode=slo`, a declaração `streaming.slo` precisa casar com uma query e
+com uma métrica diretamente observada em `streaming.progress.batch`. A versão
+offline suporta taxas, duração e contagem com unidade canônica; exige pelo
+menos duas observações timestampadas e span observado igual ou maior que a
+janela declarada. `streaming.slo.evaluation` informa `met` ou `violated`;
+`streaming.slo.unresolved` informa a barreira sem transformar ausência em
+sucesso. `SF-STREAM-011` julga violação observada; `SF-STREAM-012` julga a
+lacuna estrutural. O compositor não calcula p95/freshness, não converte
+unidades e não usa CloudWatch/Kafka live.
 
 5. Julgue o arquivo composto:
 
@@ -90,6 +105,11 @@ indica operação não-append observada nessa janela; `causal_inference: false`
 permanece explícito. Valide replay, leitura incremental, consumidores e
 resultado funcional antes de alterar o sink.
 
+`mode=slo` só produz avaliação resolvida quando a janela declarada foi coberta
+por facts de progress. `met` significa que todos os valores observados
+passaram pelo comparador; não significa disponibilidade, saúde end-to-end,
+causa, custo ou atendimento fora do artefato fornecido.
+
 ### Limites
 
 - uma amostra não prova tendência;
@@ -105,6 +125,8 @@ resultado funcional antes de alterar o sink.
 - use `--detail-level summary` para triagem barata e reexecute `full` apenas
   quando precisar dos facts/proveniências, mantendo `source_fact_ids` para
   reauditoria.
+- `streaming.slo.unresolved` deve ser reportado mesmo quando não há finding de
+  violação; ausência de finding não prova SLO atendido.
 
 Toda recomendação mantém risco, trade-off, validação e rollback. Nenhuma
 alteração live ou manutenção destrutiva pertence a esta skill.

@@ -4030,10 +4030,12 @@
       "docs": [],
       "pinned": false,
       "retrieved": [
-        "2026-10-01"
+        "2026-10-01",
+        "2026-10-02"
       ],
       "rules": [
-        "SF-STREAM-002"
+        "SF-STREAM-002",
+        "SF-STREAM-011"
       ]
     },
     "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {
@@ -4175,6 +4177,8 @@
         "SF-STREAM-003",
         "SF-STREAM-004",
         "SF-STREAM-007",
+        "SF-STREAM-011",
+        "SF-STREAM-012",
         "SF-STREAMICE-002",
         "SF-STREAMOBS-001",
         "SF-STREAMOBS-002"

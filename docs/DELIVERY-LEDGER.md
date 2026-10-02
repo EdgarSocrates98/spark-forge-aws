@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **57 features**:
+O status atual registra **58 features**:
 
-- **55** em `ship/done`;
+- **56** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -51,6 +51,7 @@ SDD_SKILLS_REVISAO, SFN_HISTORY, SFN_TENTATIVA, SF_STUBS,
 SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_GLUE_RTM,
 STREAMING_ICEBERG_TEMPORAL,
+STREAMING_SLO_EVALUATION,
 STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
@@ -97,7 +98,9 @@ do wheel e de uma CLI real do host.
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
 - Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
   granulares e janela temporal progresso→Iceberg, progresso→transporte e janela
-  temporal pareada entre progresso e Kafka/Kinesis;
+  temporal pareada entre progresso e Kafka/Kinesis; `mode=slo` compara SLO
+  declarados contra métricas diretamente observadas em progress, emitindo
+  `met`, `violated` ou `unresolved` sem inferir causa, custo ou saúde end-to-end;
   operações, serving, SLO, FinOps, security/redaction,
   EventBridge/Pipes/SQS/SNS e decisão arquitetural por constraints.
 
@@ -146,6 +149,8 @@ do wheel e de uma CLI real do host.
 | `171074b` | facts granulares de snapshots Iceberg, composição temporal, regra, fixtures e schema |
 | `fb0f5c5` | SDD ship, mirrors, referências, knowledge, surface lock, status e ledger da correlação temporal Iceberg |
 | `2fbf157` | re-stamp final do SDD ship após fechamento do build report |
+| `4831844` | alinhamento do SDD e contagens correntes da avaliação SLO |
+| `d4a7ba9` | facts, composição, regras, fixtures e portas CLI/MCP da avaliação SLO |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -160,6 +165,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
 | Evidência temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge; 769 runtime-scope; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
+| Avaliação SLO observada | 16 focused tests; 2 golden checks; 919 gates de catálogo/reachability; 4 snippet-measure; SDD check verde |
 
 Essas provas validam contratos locais, determinismo, paridade e documentação.
 Não provam throughput, latência, custo, capacidade cloud, exactly-once, semântica
@@ -170,8 +176,9 @@ AWS ou eficácia de uma recomendação em produção.
 1. Execução/replay/benchmark funcional Spark e Flink dependem de workload e runtime.
 2. Kafka Connect REST, Kafka Streams runtime, OpenLineage live e métricas
    temporais de broker/grupo exigem endpoint, credencial e janela.
-3. A janela temporal curta offline está entregue; CloudWatch temporal, reshard,
-   KCL/EFO, FinOps atribuído e SLO de longo período ainda exigem coleta pareada live.
+3. A janela temporal curta offline e a avaliação SLO sobre progress estão entregues;
+   CloudWatch temporal, reshard, KCL/EFO, FinOps atribuído, SLO de transport/sink
+   e SLO de longo período ainda exigem coleta pareada live.
 4. IAM/KMS/VPC/resource policies e snapshots regionais/managed runtime precisam
    do artefato correspondente.
 5. `FORGE_LAB_DIGITAL_TWIN` não é ship enquanto não houver build/ship próprio.

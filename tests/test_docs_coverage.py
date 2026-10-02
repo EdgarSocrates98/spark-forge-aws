@@ -8,6 +8,14 @@ from sparkforge.adapters.tools import TOOLS
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_streaming_coverage_mentions_slo_evaluation():
+    text = _read("docs/streaming/prompt-coverage.md")
+    assert "STREAMING_SLO_EVALUATION" in text
+    assert "mode=slo" in text
+    assert "SF-STREAM-011" in text
+    assert "SF-STREAM-012" in text
+
+
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
 

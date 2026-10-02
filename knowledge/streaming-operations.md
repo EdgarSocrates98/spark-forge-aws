@@ -12,6 +12,28 @@ Declaração mínima: métrica, target, operador, unidade, janela e fonte. Exemp
 disponibilidade e tolerância a perda. O Forge não escolhe `X`, não interpreta
 ausência como sucesso e não compara séries com janelas ou unidades diferentes.
 
+### Avaliação offline observada
+
+`sparkforge analyze streaming-composition --mode slo` compõe uma declaração
+`streaming.slo` com `streaming.progress.batch` já extraído. A composição exige
+`--query-name`, seleciona `--slo-name` quando há mais de uma declaração e aceita
+somente métricas diretamente presentes no progress: `input_rows_per_second`,
+`processed_rows_per_second`, `batch_duration_ms` e `num_input_rows`.
+
+Para emitir `streaming.slo.evaluation`, a unidade precisa ser compatível, o
+operador precisa ser `lt`, `lte`, `gt`, `gte` ou `eq`, há pelo menos duas
+observações timestampadas e o span observado cobre a janela declarada (`s/m/h/d`).
+O status `met` significa que todos os valores observados passaram no comparador;
+`violated` significa que ao menos um não passou. O fact preserva
+`source_fact_ids`, extremos, contagem, janela e `causal_inference: false`.
+
+Declaração, identidade, source, métrica, unidade, timestamp, quantidade ou
+cobertura ausente produzem `streaming.slo.unresolved`. O Forge não calcula p95
+de uma taxa, não converte unidade, não usa nome de janela como prova de
+cobertura e não consulta CloudWatch/Kafka live. `SF-STREAM-011` julga somente
+violação observada; `SF-STREAM-012` torna a lacuna explícita. Nenhum dos dois
+atribui causa, custo, disponibilidade ou resultado funcional.
+
 ## FinOps
 
 Separar três perguntas:
