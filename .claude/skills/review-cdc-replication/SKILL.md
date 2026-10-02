@@ -102,3 +102,10 @@ Posição, chave e seam devem ser observados. Cada finding usa `fact_id`; cada
 
 Snapshot concluído não prova CDC contínuo; tombstone ausente não prova delete
 perdido; compatibilidade declarada não prova consumidor compatível.
+
+## Runtime e escopo
+
+Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+`detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
+facts reextraídos ou de versão concreta declarada; não invente versão. Regras
+fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

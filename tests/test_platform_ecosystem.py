@@ -37,4 +37,5 @@ def test_ecosystem_surfaces_share_contract() -> None:
 
 def test_ecosystem_knowledge_marks_radar_optional() -> None:
     document = Path(__file__).parents[1] / "docs" / "knowledge" / "data-platform-ecosystem.md"
-    assert "opcional" in document.read_text(encoding="utf-8").lower()
+    text = document.read_text(encoding="utf-8").lower()
+    assert "optional" in text or "opcional" in text

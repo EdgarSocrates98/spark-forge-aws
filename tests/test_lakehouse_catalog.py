@@ -37,4 +37,4 @@ def test_lakehouse_catalog_knowledge_declares_unresolved_boundary() -> None:
     text = document.read_text(encoding="utf-8")
 
     assert "unresolved" in text
-    assert "credenciais" in text.lower()
+    assert "credential" in text.lower() or "credenciais" in text.lower()

@@ -90,3 +90,10 @@ end-to-end.
 Facts offline sustentam diagnóstico; cada finding precisa de `fact_id` e
 `rule_id`; recomendações mantêm `validation` e `rollback`; ausência de dado
 continua `*.unresolved`.
+
+### Runtime e escopo
+
+Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+`detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
+facts reextraídos ou de versão concreta declarada; não invente versão. Regras
+fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.

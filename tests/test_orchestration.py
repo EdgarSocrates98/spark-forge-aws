@@ -41,4 +41,5 @@ def test_orchestration_surfaces_share_contract() -> None:
 
 def test_orchestration_knowledge_preserves_read_only_boundary() -> None:
     document = Path(__file__).parents[1] / "docs" / "knowledge" / "orchestration-control-plane.md"
-    assert "não dispara" in document.read_text(encoding="utf-8")
+    text = document.read_text(encoding="utf-8").lower()
+    assert "does not trigger" in text or "não dispara" in text

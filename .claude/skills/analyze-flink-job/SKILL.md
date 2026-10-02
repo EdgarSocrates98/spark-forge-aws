@@ -102,3 +102,10 @@ Exactly-once, capacidade, custo ou saúde sem medida são hipótese, não fato.
 
 Separe facts, findings e unresolved; preserve `fact_id`, fonte, `validation` e
 `rollback` em toda recomendação.
+
+## Runtime e escopo
+
+Rode `sparkforge judge --facts <facts.json> --show-skipped` e leia `runtime`,
+`detected_from`, `divergences` e `reason: runtime_scope`. Runtime deve vir de
+facts reextraídos ou de versão concreta declarada; não invente versão. Regras
+fora do `runtime_scope` são recusadas/puladas, não equivalem a ausência de finding.
