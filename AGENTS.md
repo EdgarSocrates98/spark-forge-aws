@@ -385,6 +385,17 @@ Subagents: none. Tools declared in this registry: none. The sixteen ephemeral co
 Teams: governance-security.
 Offline guarantee: consult knowledge/offline-manifest.json first, verify SHA-256, never invent a missing source, and return unresolved when network-only evidence is unavailable.
 
+## Forge Lab / Digital Twin
+
+`lab/versions.yaml` e `lab/scenarios/golden.yaml` são a fonte declarativa do
+Forge Lab. A CLI `sparkforge lab` compila cenários em ações allowlisted,
+captura evidências e receipts e só muta Compose/Testcontainers com
+`--execute --confirm`; não há tool MCP nova nem execução AWS implícita. O
+Golden 20 foi verificado offline com 11 componentes e 240 ações. O contrato
+completo, os limites L0–L3 e o fechamento da feature estão em
+`docs/knowledge/forge-lab-product.md`, `docs/guia/forge-lab.md` e
+`docs/sdd/FORGE_LAB_PRODUCT/ship.md`.
+
 ## Skills AWS oficiais complementares
 
 Eleven AWS operational-procedure skills, adapted from `aws/agent-toolkit-for-aws` (commit

@@ -47,6 +47,12 @@ para topologia de laboratório e dependências de evento, use
 `sparkforge_analyze_forge_lab` e `sparkforge_analyze_event_driven`. Essas superfícies
 continuam declarativas/read-only no host do agente.
 
+Quando a pergunta for reproduzir ou experimentar um incidente, use o Forge Lab
+CLI (`sparkforge lab verify`, `scenarios`, `plan`, `run`, `inspect`, `analyze`,
+`compare`, `reproduce`) e preserve o receipt. `run`, `up`, `down`, `shell` e
+`gc` só podem receber `--execute --confirm` após confirmação explícita do
+operador; o agente não inicia laboratório por inferência.
+
 ## Ciclo de investigação
 
 1. Estabelecer runtime, escopo e baseline observável.
