@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_GLUE_RTM
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_GLUE_RTM/plan.md
   sha256: "0dd956f7be83cdb5dacb4fa29f3933e8d77219272d0ed8af66507404175839a1"
@@ -58,3 +58,10 @@ O build foi guiado pelos contratos offline: ausência permaneceu unresolved,
 rules foram limitadas a observações e a superfície reutilizou o mesmo envelope
 de facts. O resultado não afirma compatibilidade produtiva, custo, latência ou
 ganho sem artefatos de execução.
+
+## Validação final
+
+Os testes específicos terminaram com `10 passed`; o gate combinado de
+paridade, agentes, offline expansion, kinds e reachability terminou com
+`1018 passed`. Sync de skills, referências, surface lock, números correntes,
+bundle offline e o comando CLI Glue Streaming terminaram com exit 0.
