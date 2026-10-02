@@ -2205,6 +2205,22 @@
       ],
       "sha256": "e421723e8bd89d33c14b3729e0e7b174807a20481729be983660fd0f876d9323"
     },
+    "https://docs.aws.amazon.com/msk/latest/developerguide/consumer-lag.html": {
+      "docs": [
+        "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html": {
+      "docs": [
+        "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html": {
       "checked_at": "2026-09-21",
       "docs": [],
@@ -2401,6 +2417,14 @@
       ],
       "rules": [],
       "sha256": "8890b66dd499ab844768357dcab87aeb0479ff06e3c18dfa7fabe5c25ece4918"
+    },
+    "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html": {
+      "docs": [
+        "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.databricks.com/api/workspace/clusters/create": {
       "checked_at": "2026-09-21",
@@ -3069,6 +3093,22 @@
         "SF-ICE-008"
       ],
       "sha256": "5c366580ea6c29a7df93617a56de3f9835207a93622b9126644d9986dc8913f9"
+    },
+    "https://kafka.apache.org/40/implementation/distribution/": {
+      "docs": [
+        "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://kafka.apache.org/40/operations/basic-kafka-operations/": {
+      "docs": [
+        "knowledge/transport-diagnostics.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://parquet.apache.org/docs/file-format/data-pages/compression/": {
       "checked_at": "2026-09-21",

@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "dd0d23c3785b086e78c0e48c6dfb4c1693023a8012fdc76853685a90c9d18288"
+      "sha256": "410d5f030b215224750c2c32df7a6e020c89fc9e7adc38505f3c219e8d37aa64"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -277,6 +277,11 @@
       "path": "knowledge/streaming-reliability.md",
       "title": "streaming-reliability",
       "sha256": "3fdd2032bb3a9f7707b263df02928719fd78442a35c4125f96958b4432683e9e"
+    },
+    {
+      "path": "knowledge/transport-diagnostics.md",
+      "title": "transport-diagnostics",
+      "sha256": "08023f82db27513e6e9b1968d3a0cbc3c4a775f7a67da8f55416055f244d10a1"
     },
     {
       "path": "knowledge/terraform-data-platform.md",

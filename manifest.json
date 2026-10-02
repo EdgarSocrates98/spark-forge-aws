@@ -78,7 +78,10 @@
     "Data Validation",
     "Graph Processing",
     "Structured Streaming",
-    "StreamingQueryProgress"
+    "StreamingQueryProgress",
+    "Kafka",
+    "Amazon MSK",
+    "Kinesis Data Streams"
   ],
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
@@ -112,6 +115,7 @@
     "sparkforge_analyze_plan",
     "sparkforge_analyze_pyspark",
     "sparkforge_analyze_streaming",
+    "sparkforge_analyze_transport",
     "sparkforge_analyze_s3_listing",
     "sparkforge_analyze_sfn_history",
     "sparkforge_analyze_sql",
