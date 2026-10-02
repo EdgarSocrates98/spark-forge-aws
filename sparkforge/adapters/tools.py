@@ -6014,7 +6014,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
             "produz link quando a correspondência é observada sem ambiguidade. Preserva "
             "ids dos facts de origem, operações Iceberg, lag/iterator age, avaliação "
-            "SLO, janela temporal pareada e unresolved. Modes temporal e iceberg_temporal exigem "
+            "SLO de progress/Kafka/Kinesis, janela temporal pareada e unresolved. Modes temporal e iceberg_temporal exigem "
             "`max_skew_seconds` declarado. "
             "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
         ),
@@ -6031,7 +6031,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "mode": {
                     "type": "string",
                     "enum": ["iceberg", "iceberg_temporal", "observability", "slo", "temporal"],
-                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progresso ou janela temporal pareada.",
+                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/transporte ou janela temporal pareada.",
                 },
                 "table": {"type": "string", "description": "Tabela Iceberg declarada."},
                 "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},

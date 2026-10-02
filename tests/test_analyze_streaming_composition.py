@@ -343,3 +343,92 @@ def test_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         text=True,
     )
     assert json.loads(completed.stdout) == expected
+
+
+def test_transport_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
+    contract = tmp_path / "contract-transport.json"
+    kafka = tmp_path / "kafka-transport.json"
+    contract.write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "streaming.slo",
+                    "subject": {
+                        "type": "source_location",
+                        "file": "contract",
+                        "line": 1,
+                        "col": 0,
+                        "symbol": "transport-slo",
+                    },
+                    "attrs": {
+                        "name": "transport-slo",
+                        "metric": "lag",
+                        "operator": "lte",
+                        "unit": "records",
+                        "window": "5m",
+                        "source": "kafka",
+                    },
+                    "measures": {"target": 50},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    kafka.write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "kafka.lag",
+                    "subject": {"type": "source_location", "file": "kafka", "line": 1, "col": 0},
+                    "attrs": {"group": "orders-group", "topic": "orders", "observed_at": timestamp},
+                    "measures": {"partition": 0, "lag": value},
+                }
+                for value, timestamp in (
+                    (40, "2026-10-02T12:00:00Z"),
+                    (50, "2026-10-02T12:05:00Z"),
+                    (45, "2026-10-02T12:10:00Z"),
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+    args = {
+        "facts_paths": [str(contract), str(kafka)],
+        "mode": "slo",
+        "slo_name": "transport-slo",
+        "transport_key": "orders-group",
+        "limit": 20,
+    }
+    expected = analyze_streaming_composition(**args)
+    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    assert actual == expected
+    assert any(
+        item["kind"] == "streaming.slo.evaluation" and item["attrs"]["status"] == "met"
+        for item in expected["items"]
+    )
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sparkforge.adapters.cli",
+            "analyze",
+            "streaming-composition",
+            "--facts",
+            str(contract),
+            "--facts",
+            str(kafka),
+            "--mode",
+            "slo",
+            "--slo-name",
+            "transport-slo",
+            "--transport-key",
+            "orders-group",
+            "--limit",
+            "20",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == expected

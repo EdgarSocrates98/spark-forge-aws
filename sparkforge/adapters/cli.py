@@ -413,7 +413,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         required=True,
         choices=("iceberg", "iceberg_temporal", "observability", "slo", "temporal"),
-        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progresso ou janela temporal pareada.",
+        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/transporte ou janela temporal pareada.",
     )
     composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
     composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
@@ -421,7 +421,7 @@ def build_parser() -> argparse.ArgumentParser:
     composition_p.add_argument(
         "--transport-key",
         default="",
-        help="Grupo/topic Kafka ou stream Kinesis declarado.",
+        help="Grupo/topic Kafka ou stream Kinesis declarado; obrigatório no mode=slo de transporte.",
     )
     composition_p.add_argument(
         "--max-skew-seconds",

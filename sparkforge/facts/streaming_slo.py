@@ -1,9 +1,10 @@
 """Evidence-first SLO evaluation over previously extracted streaming facts.
 
 This module is a compositor, not an extractor: it never opens an artifact or
-calls a provider. It only evaluates metrics that are directly present in
-``streaming.progress.batch`` and refuses when identity, units or window
-coverage cannot be proven from the supplied facts.
+calls a provider. It evaluates metrics directly present in
+``streaming.progress.batch``, ``kafka.lag`` or ``kinesis.shard`` and refuses
+when identity, units, timestamps or window coverage cannot be proven from the
+supplied facts.
 """
 from __future__ import annotations
 
@@ -27,12 +28,21 @@ _METRIC_ALIASES = {
     "batchdurationms": "batch_duration_ms",
     "num_input_rows": "num_input_rows",
     "numinputrows": "num_input_rows",
+    "lag": "lag",
+    "max_lag": "lag",
+    "maxlag": "lag",
+    "iterator_age_ms": "iterator_age_ms",
+    "iterator_age_milliseconds": "iterator_age_ms",
+    "iteratoragems": "iterator_age_ms",
+    "iteratoragemilliseconds": "iterator_age_ms",
 }
 _METRIC_UNITS = {
     "input_rows_per_second": "rows_per_second",
     "processed_rows_per_second": "rows_per_second",
     "batch_duration_ms": "ms",
     "num_input_rows": "rows",
+    "lag": "records",
+    "iterator_age_ms": "ms",
 }
 _UNIT_ALIASES = {
     "ms": "ms",
@@ -44,6 +54,9 @@ _UNIT_ALIASES = {
     "rows/s": "rows_per_second",
     "row_per_second": "rows_per_second",
     "row/s": "rows_per_second",
+    "records": "records",
+    "record": "records",
+    "count": "records",
 }
 _OPERATOR_ALIASES = {
     "lt": "lt",
@@ -61,6 +74,7 @@ _OPERATOR_ALIASES = {
 }
 _WINDOW_RE = re.compile(r"^\s*(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>[smhd])\s*$", re.IGNORECASE)
 _SOURCE_ALIASES = {"spark_progress", "structured_streaming", "structured streaming", "spark"}
+_TRANSPORT_SOURCES = {"kafka": "kafka.lag", "kinesis": "kinesis.shard"}
 
 
 def _subject(symbol: str) -> dict[str, Any]:
@@ -194,8 +208,15 @@ def build_streaming_slo(
     *,
     slo_name: str = "",
     query_name: str = "",
+    transport_key: str = "",
 ) -> list[Fact]:
-    """Evaluate one declared SLO over one unambiguous progress series."""
+    """Evaluate one declared SLO over one unambiguous observed series.
+
+    Spark progress requires ``query_name``. Kafka and Kinesis require the
+    explicitly declared ``transport_key`` and use only timestamped direct
+    lag/iterator-age observations; no CloudWatch interpolation or causal
+    inference is performed here.
+    """
     source_facts = list({fact.id: fact for fact in facts}.values())
     slo, selection_error = _select_slo(source_facts, slo_name)
     if selection_error is not None:
@@ -204,22 +225,28 @@ def build_streaming_slo(
         assert slo is not None
         attrs = slo.attrs or {}
         declared_name = str(attrs.get("name") or (slo.subject or {}).get("symbol") or slo_name or "")
-        if not query_name:
+        source = str(attrs.get("source") or "").strip().lower()
+        is_transport = source in _TRANSPORT_SOURCES
+        declared_transport_key = transport_key or str(attrs.get("transport_key") or "").strip()
+        identity = declared_transport_key if is_transport else query_name
+        identity_attrs = {"transport_key": declared_transport_key} if is_transport else {"query_name": query_name}
+        if not is_transport and not query_name:
             derived = [_unresolved(source_facts, "missing_declared_query_name", slo_name=declared_name)]
+        elif is_transport and not declared_transport_key:
+            derived = [_unresolved(source_facts, "missing_declared_transport_key", slo_name=declared_name, **identity_attrs)]
         else:
             required = ("metric", "operator", "unit", "window", "source")
             missing = next((field for field in required if not str(attrs.get(field) or "").strip()), None)
             target = _number((slo.measures or {}).get("target"))
             if missing is not None:
-                derived = [_unresolved(source_facts, f"slo_{missing}_missing", slo_name=declared_name, query_name=query_name)]
+                derived = [_unresolved(source_facts, f"slo_{missing}_missing", slo_name=declared_name, **identity_attrs)]
             elif target is None:
-                derived = [_unresolved(source_facts, "slo_target_missing", slo_name=declared_name, query_name=query_name)]
+                derived = [_unresolved(source_facts, "slo_target_missing", slo_name=declared_name, **identity_attrs)]
             else:
                 metric = _canonical_metric(attrs.get("metric"))
                 operator = _canonical_operator(attrs.get("operator"))
                 unit = _canonical_unit(attrs.get("unit"))
                 window_seconds = _parse_window(attrs.get("window"))
-                source = str(attrs.get("source")).strip().lower()
                 if metric is None:
                     reason = "metric_not_observed"
                 elif operator is None:
@@ -228,52 +255,70 @@ def build_streaming_slo(
                     reason = "unit_mismatch"
                 elif window_seconds is None:
                     reason = "invalid_window"
-                elif source not in _SOURCE_ALIASES:
+                elif source not in _SOURCE_ALIASES and source not in _TRANSPORT_SOURCES:
                     reason = "unsupported_observation_source"
                 else:
                     reason = ""
                 if reason:
-                    derived = [_unresolved(source_facts, reason, slo_name=declared_name, query_name=query_name)]
+                    derived = [_unresolved(source_facts, reason, slo_name=declared_name, **identity_attrs)]
                 else:
-                    batches = [
-                        fact
-                        for fact in source_facts
-                        if fact.kind == "streaming.progress.batch"
-                        and str((fact.attrs or {}).get("query_name") or "") == query_name
-                    ]
-                    source_files = sorted({_source_file(fact) for fact in batches})
-                    if not batches:
-                        derived = [_unresolved(source_facts, "query_not_found", slo_name=declared_name, query_name=query_name)]
+                    if is_transport:
+                        source_kind = _TRANSPORT_SOURCES[source]
+                        observations_source = [
+                            fact
+                            for fact in source_facts
+                            if fact.kind == source_kind
+                            and identity in {
+                                str((fact.attrs or {}).get("group", "")),
+                                str((fact.attrs or {}).get("topic", "")),
+                                str((fact.attrs or {}).get("stream_name", "")),
+                            }
+                        ]
+                    else:
+                        observations_source = [
+                            fact
+                            for fact in source_facts
+                            if fact.kind == "streaming.progress.batch"
+                            and str((fact.attrs or {}).get("query_name") or "") == query_name
+                        ]
+                    source_files = sorted({_source_file(fact) for fact in observations_source})
+                    if not observations_source:
+                        reason = "transport_not_found" if is_transport else "query_not_found"
+                        derived = [_unresolved(source_facts, reason, slo_name=declared_name, **identity_attrs)]
                     elif len(source_files) != 1:
+                        reason = "ambiguous_transport" if is_transport else "ambiguous_query"
                         derived = [
                             _unresolved(
                                 source_facts,
-                                "ambiguous_query",
+                                reason,
                                 slo_name=declared_name,
-                                query_name=query_name,
                                 match_count=len(source_files),
+                                **identity_attrs,
                             )
                         ]
                     else:
                         observations: list[tuple[float, datetime, Fact]] = []
                         missing_field = ""
-                        for batch in batches:
-                            value = _number((batch.measures or {}).get(metric))
-                            timestamp = _parse_timestamp((batch.attrs or {}).get("timestamp"))
+                        for observation in observations_source:
+                            value = _number((observation.measures or {}).get(metric))
+                            observed_at = (observation.attrs or {}).get("timestamp")
+                            if observed_at is None:
+                                observed_at = (observation.attrs or {}).get("observed_at")
+                            timestamp = _parse_timestamp(observed_at)
                             if value is None:
                                 missing_field = "metric"
                                 break
                             if timestamp is None:
                                 missing_field = "timestamp"
                                 break
-                            observations.append((float(value), timestamp, batch))
+                            observations.append((float(value), timestamp, observation))
                         if missing_field:
                             derived = [
                                 _unresolved(
                                     source_facts,
                                     f"observation_{missing_field}_missing",
                                     slo_name=declared_name,
-                                    query_name=query_name,
+                                    **identity_attrs,
                                 )
                             ]
                         elif len(observations) < 2:
@@ -282,9 +327,9 @@ def build_streaming_slo(
                                     source_facts,
                                     "insufficient_observations",
                                     slo_name=declared_name,
-                                    query_name=query_name,
                                     required_observations=2,
                                     observed_observations=len(observations),
+                                    **identity_attrs,
                                 )
                             ]
                         else:
@@ -296,9 +341,9 @@ def build_streaming_slo(
                                         source_facts,
                                         "window_not_covered",
                                         slo_name=declared_name,
-                                        query_name=query_name,
                                         observed_span_seconds=observed_span,
                                         window_seconds=window_seconds,
+                                        **identity_attrs,
                                     )
                                 ]
                             else:
@@ -319,6 +364,9 @@ def build_streaming_slo(
                                     "causal_inference": False,
                                     "source_fact_ids": sorted([slo.id, *[item[2].id for item in observations]]),
                                 }
+                                if is_transport:
+                                    evaluation_attrs["transport_key"] = declared_transport_key
+                                    evaluation_attrs["observation_source"] = _TRANSPORT_SOURCES[source]
                                 evaluation_measures = {
                                     "target": target,
                                     "observed_min": min(values),
@@ -331,7 +379,7 @@ def build_streaming_slo(
                                 derived = [
                                     Fact(
                                         kind="streaming.slo.evaluation",
-                                        subject=_subject(f"{query_name}:{declared_name}"),
+                                        subject=_subject(f"{identity}:{declared_name}"),
                                         attrs=evaluation_attrs,
                                         measures=evaluation_measures,
                                         provenance=_provenance([slo, *[item[2] for item in observations]]),

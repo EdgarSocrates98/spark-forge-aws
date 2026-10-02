@@ -342,6 +342,7 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
                     (shard[key] for key in ("shard_id", "ShardId") if key in shard),
                     None,
                 ),
+                "stream_name": stream_attrs.get("stream_name"),
                 **{
                     key: shard[key]
                     for key in (

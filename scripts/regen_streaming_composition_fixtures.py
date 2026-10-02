@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 
 import yaml
 
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_path
 from sparkforge.facts.streaming import extract_streaming_progress_path
+from sparkforge.facts.streaming_ops import extract_streaming_ops_path
 from sparkforge.facts.streaming_composition import build_streaming_composition
 from sparkforge.facts.transport import extract_transport_path
 from sparkforge.rules.engine import judge
@@ -23,6 +25,8 @@ def _facts(directory: Path):
     for path in sorted((directory / "input").iterdir()):
         if path.name == "progress.jsonl":
             facts.extend(extract_streaming_progress_path(path))
+        elif path.name == "contract.json":
+            facts.extend(extract_streaming_ops_path(path))
         elif path.name == "iceberg.json":
             facts.extend(extract_iceberg_metadata_path(path))
         elif path.name == "kafka.json":
@@ -33,14 +37,22 @@ def _facts(directory: Path):
 
 
 def main() -> None:
-    for directory in sorted(path for path in FIXTURES.iterdir() if path.is_dir()):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--only", action="append", help="Fixture directory name; repeatable.")
+    args = parser.parse_args()
+    selected = set(args.only or ())
+    for directory in sorted(
+        path for path in FIXTURES.iterdir() if path.is_dir() and (not selected or path.name in selected)
+    ):
         meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
         facts = build_streaming_composition(
             _facts(directory),
             mode=meta["mode"],
             table=meta.get("table", ""),
             query_name=meta.get("query_name", ""),
+            slo_name=meta.get("slo_name", ""),
             transport_key=meta.get("transport_key", ""),
+            max_skew_seconds=meta.get("max_skew_seconds"),
         )
         findings = judge(facts, load_catalog(), {})
         expected = directory / "expected"

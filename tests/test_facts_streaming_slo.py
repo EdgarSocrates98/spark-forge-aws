@@ -105,3 +105,92 @@ def test_slo_unresolved_reasons(facts, slo_name: str, query_name: str, reason: s
     assert not [fact for fact in result if fact.kind == "streaming.slo.evaluation"]
     unresolved = [fact for fact in result if fact.kind == "streaming.slo.unresolved"]
     assert unresolved and unresolved[0].attrs["reason"] == reason
+
+
+def _transport_facts(
+    *, source: str = "kafka", metric: str = "lag", unit: str = "records", values=(40, 50, 60),
+    window: str = "5m", target: float = 50, operator: str = "lte", transport_key: str = "orders-group",
+    declared_transport_key: str | None = "orders-group",
+    timestamps=("2026-10-01T00:00:00Z", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z"),
+) -> list[Fact]:
+    slo_attrs = {
+        "name": "transport-slo",
+        "metric": metric,
+        "operator": operator,
+        "unit": unit,
+        "window": window,
+        "source": source,
+    }
+    if declared_transport_key is not None:
+        slo_attrs["transport_key"] = declared_transport_key
+    facts = [
+        _fact(
+            "streaming.slo",
+            file="contract.json",
+            symbol="transport-slo",
+            attrs=slo_attrs,
+            measures={"target": target},
+        )
+    ]
+    kind = "kafka.lag" if source == "kafka" else "kinesis.shard"
+    identity = {"group": transport_key} if source == "kafka" else {"stream_name": transport_key, "shard_id": "shard-000"}
+    for index, (value, timestamp) in enumerate(zip(values, timestamps), start=1):
+        facts.append(
+            _fact(
+                kind,
+                file=f"{source}.jsonl",
+                attrs={**identity, "observed_at": timestamp},
+                measures={"partition": 0, metric: value} if source == "kafka" else {"iterator_age_ms": value},
+            )
+        )
+    return facts
+
+
+def test_evaluates_transport_slo_by_declared_identity():
+    result = build_streaming_slo(
+        _transport_facts(), slo_name="transport-slo", transport_key="orders-group"
+    )
+    evaluation = next(fact for fact in result if fact.kind == "streaming.slo.evaluation")
+    assert evaluation.attrs["status"] == "violated"
+    assert evaluation.attrs["transport_key"] == "orders-group"
+    assert evaluation.attrs["observation_source"] == "kafka.lag"
+    assert evaluation.measures["observed_span_seconds"] == 600.0
+    assert evaluation.measures["violated_count"] == 1
+    assert len(evaluation.attrs["source_fact_ids"]) == 4
+
+
+def test_evaluates_kinesis_iterator_age_and_kafka_lag():
+    result = build_streaming_slo(
+        _transport_facts(
+            source="kinesis",
+            metric="iterator_age_ms",
+            unit="ms",
+            values=(1000, 1500, 2000),
+            target=2000,
+            operator="lte",
+            transport_key="clicks-stream",
+        ),
+        slo_name="transport-slo",
+        transport_key="clicks-stream",
+    )
+    evaluation = next(fact for fact in result if fact.kind == "streaming.slo.evaluation")
+    assert evaluation.attrs["status"] == "met"
+    assert evaluation.attrs["observation_source"] == "kinesis.shard"
+    assert evaluation.attrs["unit"] == "ms"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "transport_key", "reason"),
+    [
+        ({"declared_transport_key": ""}, "", "missing_declared_transport_key"),
+        ({"timestamps": ("not-a-timestamp", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z")}, "orders-group", "observation_timestamp_missing"),
+        ({"window": "15m"}, "orders-group", "window_not_covered"),
+    ],
+)
+def test_transport_slo_unresolved_reasons(kwargs, transport_key: str, reason: str):
+    result = build_streaming_slo(
+        _transport_facts(**kwargs), slo_name="transport-slo", transport_key=transport_key
+    )
+    assert not [fact for fact in result if fact.kind == "streaming.slo.evaluation"]
+    unresolved = [fact for fact in result if fact.kind == "streaming.slo.unresolved"]
+    assert unresolved and unresolved[0].attrs["reason"] == reason

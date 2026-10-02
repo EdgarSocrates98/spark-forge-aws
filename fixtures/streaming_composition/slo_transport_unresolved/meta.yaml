@@ -1,0 +1,4 @@
+mode: slo
+slo_name: transport-slo
+expects_findings: [SF-STREAM-012]
+expects_kinds: [kafka.analyzed, kafka.consumer_group, kafka.lag, streaming.composition.analyzed, streaming.slo, streaming.slo.unresolved, streaming_ops.analyzed]

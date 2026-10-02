@@ -305,7 +305,10 @@ def build_streaming_composition(
         )
     elif mode == "slo":
         derived = build_streaming_slo(
-            source_facts, slo_name=slo_name, query_name=query_name
+            source_facts,
+            slo_name=slo_name,
+            query_name=query_name,
+            transport_key=transport_key,
         )
     elif mode == "temporal":
         derived = build_streaming_temporal_diagnostics(

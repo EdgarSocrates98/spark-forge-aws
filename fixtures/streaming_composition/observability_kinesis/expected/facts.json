@@ -41,7 +41,8 @@
       "iterator_age_ms": 2500
     },
     "attrs": {
-      "shard_id": "shard-000"
+      "shard_id": "shard-000",
+      "stream_name": "clicks-stream"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
@@ -120,7 +121,7 @@
     "measures": {
       "progress_observation_count": 2,
       "transport_measurement_count": 1,
-      "max_iterator_age_ms": 2500
+      "max_iterator_age_ms": 2500.0
     },
     "attrs": {
       "query_name": "clicks-query",
@@ -190,8 +191,8 @@
       "batch_id": 1,
       "observed_index": 0,
       "num_input_rows": 10,
-      "input_rows_per_second": 10,
-      "processed_rows_per_second": 10
+      "input_rows_per_second": 10.0,
+      "processed_rows_per_second": 10.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:00Z",
@@ -221,8 +222,8 @@
       "batch_id": 2,
       "observed_index": 1,
       "num_input_rows": 10,
-      "input_rows_per_second": 10,
-      "processed_rows_per_second": 10
+      "input_rows_per_second": 10.0,
+      "processed_rows_per_second": 10.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:05Z",
@@ -252,10 +253,10 @@
       "observation_count": 2,
       "first_batch_id": 1,
       "last_batch_id": 2,
-      "input_rows_per_second_first": 10,
-      "input_rows_per_second_last": 10,
-      "processed_rows_per_second_first": 10,
-      "processed_rows_per_second_last": 10
+      "input_rows_per_second_first": 10.0,
+      "input_rows_per_second_last": 10.0,
+      "processed_rows_per_second_first": 10.0,
+      "processed_rows_per_second_last": 10.0
     },
     "attrs": {
       "first_observed_index": 0,
