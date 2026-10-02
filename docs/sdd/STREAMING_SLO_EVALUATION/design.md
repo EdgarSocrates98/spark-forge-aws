@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_SLO_EVALUATION/define.md
-  sha256: "3faac0ac3fa085041023d89d4117105888f492656c024a9556642b21df160ab3"
+  sha256: "0d342bd28bd368bbba8de8e6d543a74e265d220465744c7ed642fed47142f36d"
 files:
   - {path: sparkforge/facts/streaming_slo.py, action: create, reason: "compor status SLO sobre declarations e batches observados"}
   - {path: sparkforge/facts/streaming_composition.py, action: modify, reason: "despachar mode=slo e preservar envelope analisado"}

@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_SLO_EVALUATION/design.md
-  sha256: "b4e21f02b43722dbfffdff465b917784a1036fbc4dda24d9f6a689c71107dd11"
+  sha256: "f7c7738dc096485d8b8529aed21dac5c3be668247c8a32f0ab36db515a11fd00"
 tasks:
   - id: T1
     files: [tests/test_facts_streaming_slo.py, sparkforge/facts/streaming_slo.py]
@@ -31,7 +31,7 @@ tasks:
   - id: T6
     files: [docs/surface.lock.json, knowledge/offline-manifest.json, docs/superpowers/STATUS.md]
     covers: [AC7]
-    test: {path: tests/test_surface_lock.py, name: test_surface_lock_is_current}
+    test: {path: tests/test_surface_lock.py, name: TestOLockBateComAMedida::test_the_tool_catalogue_matches}
 ---
 
 # STREAMING_SLO_EVALUATION — plano

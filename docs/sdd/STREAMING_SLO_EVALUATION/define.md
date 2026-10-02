@@ -22,7 +22,7 @@ acceptance:
     statement: "Falta de SLO, query, métrica, unidade, operador, janela, source compatível, observações suficientes ou cobertura temporal produz unresolved nomeado e nunca status met por ausência de evidência."
     verified_by: {kind: test, ref: tests/test_facts_streaming_slo.py::test_slo_unresolved_reasons}
   - id: AC4
-    statement: "SF-STREAM-010 julga somente streaming.slo.evaluation com status violated, e SF-STREAM-011 nomeia streaming.slo.unresolved; ambos preservam evidence e não atribuem causalidade ou custo."
+    statement: "SF-STREAM-011 julga somente streaming.slo.evaluation com status violated, e SF-STREAM-012 nomeia streaming.slo.unresolved; ambos preservam evidence e não atribuem causalidade ou custo."
     verified_by: {kind: test, ref: tests/test_streaming_rules.py::test_slo_evaluation_rules_are_evidence_first}
   - id: AC5
     statement: "CLI e MCP expõem mode=slo, slo_name e query_name pelo mesmo core read-only, com envelope e detail_level compatíveis."
