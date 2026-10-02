@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_CDC
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_CDC/plan.md
   sha256: "a4717315c922c1bd117499970cb62e8591bd985eda868ae1d7a70cab248f63bc"
@@ -47,3 +47,11 @@ change_id: null
 O build corrigiu as duas lacunas encontradas pelos próprios gates: produtor e
 golden de `cdc.connector`, e golden explícito para `snapshot_cdc_seam`. O
 resultado não afirma compatibilidade, custo, latência ou exatamente-once.
+
+## Validação final
+
+Os gates finais foram executados após a correção de três links relativos nos
+guias Forge Lab descobertos pelo conjunto de referências: a rodada ampla
+terminou com `1184 passed, 1 failed` antes da correção, e a repetição focada
+terminou com `21 passed` após a correção. Sync de skills, surface lock,
+referências, números correntes e bundle offline terminaram com exit 0.
