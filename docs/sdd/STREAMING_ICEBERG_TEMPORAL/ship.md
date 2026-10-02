@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_ICEBERG_TEMPORAL/build_report.md
-  sha256: "0b3c2828246cf4fa5d715d91b08eb22c49dd3d553e1de735fa1c21e490eca64a"
+  sha256: "915f96c2759554bca9c72c7d754eaf4e0269f83cdd3c3bd25fecdd6694468866"
 hypothesis_outcome: confirmed
 registries: [surface_lock, generated_reference, offline_manifest, sources_lock, status_numbers, status_numbers_gate, manifest_rule_count, reachability_lists, fixture_kind_coverage, fixture_corpus_gates, snippet_measure, rules_catalog_gates, runtime_scope_gate, wheel_gate, sync_skills, agents_parity, sdd_check]
 deviations:
