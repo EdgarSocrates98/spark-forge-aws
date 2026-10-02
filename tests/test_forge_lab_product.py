@@ -56,7 +56,11 @@ def test_receipt_oracle_and_equivalence_are_independent(tmp_path: Path) -> None:
     scenario = load_scenario_suite(ROOT / "lab" / "scenarios" / "golden.yaml").by_id("LAB-004")
     run = create_run(tmp_path, scenario, seed=42)
     oracle = ExpectedOracle.from_scenario(scenario)
-    result = compare_oracle(oracle, facts=[{"kind": "kafka.consumer.lag"}], findings=[])
+    result = compare_oracle(
+        oracle,
+        facts=[{"kind": item} for item in oracle.expected_facts],
+        findings=[{"rule_id": item} for item in oracle.expected_findings],
+    )
     receipt = finalize_receipt(run, result)
 
     assert result.classification in {"PASS", "UNRESOLVED"}
