@@ -148,6 +148,7 @@ from sparkforge.facts.streaming import (
     extract_streaming_progress_path,
     extract_streaming_progress_tree,
 )
+from sparkforge.facts.transport import extract_transport_path, extract_transport_tree
 from sparkforge.facts.stepfunctions import (
     extract_stepfunctions_path,
     extract_stepfunctions_tree,
@@ -1022,6 +1023,36 @@ def analyze_streaming(
     raise AdapterError(
         f"Artefato streaming desconhecido: {artifact}. Use `source` ou `progress`."
     )
+
+
+def analyze_transport(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de dumps Kafka, MSK ou Kinesis.
+
+    O domínio é obrigatório para impedir que um dump de serviço seja
+    reinterpretado com o vocabulário de outro. Collector live não pertence a
+    este verbo.
+    """
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise de transporte: {path}")
+    if artifact not in {"kafka", "msk", "kinesis"}:
+        raise AdapterError(
+            f"Artefato de transporte desconhecido: {artifact}. Use `kafka`, `msk` ou `kinesis`."
+        )
+    facts = (
+        extract_transport_tree(target, artifact_type=artifact)
+        if target.is_dir()
+        else extract_transport_path(target, artifact_type=artifact)
+    )
+    return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #

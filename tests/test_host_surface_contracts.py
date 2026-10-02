@@ -5,7 +5,7 @@ from sparkforge.adapters.tools import TOOLS, call_tool
 
 
 def test_full_and_compact_surfaces_have_declared_sizes() -> None:
-    assert len(tools_do_transporte("stdio", "full")) == 116
+    assert len(tools_do_transporte("stdio", "full")) == 117
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
 

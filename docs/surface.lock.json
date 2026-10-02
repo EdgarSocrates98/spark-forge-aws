@@ -2,9 +2,9 @@
   "schema_version": 1,
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
-    "tool_count": 116,
-    "total_bytes": 595944,
-    "by_name_sha256": "44cbe714165b5fab63a4a00d4a923764742200dde270f15f47ab66eb27220934"
+    "tool_count": 117,
+    "total_bytes": 603072,
+    "by_name_sha256": "bf0caae447dd6d1557001c7b7ae2abfb2451ec68c4579ecc209e65ec362de99a"
   },
   "compact": {
     "tool_count": 7,
@@ -17,8 +17,8 @@
     "by_name_sha256": "4dfc42f75023dc214724569ac027d7b31508d91eb05cd3c0397754ae98207f9e"
   },
   "knowledge": {
-    "document_count": 60,
-    "total_bytes": 558909,
-    "by_name_sha256": "f0a77cafd888c115bf1efcd1904733d114af352ccb01308479c377e1daa725fa"
+    "document_count": 61,
+    "total_bytes": 562151,
+    "by_name_sha256": "2a301f6faa0d9e6a6977801761c62abbce16b3f7e31603e785e80a1cf5186e96"
   }
 }

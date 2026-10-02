@@ -97,6 +97,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract Kafka MSK and Kinesis transport artifact facts
+    tools: [sparkforge_analyze_transport]
+    cli: [analyze transport]
+    knowledge: [knowledge/transport-diagnostics.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from a Glue Data Catalog schema dump
     tools: [sparkforge_analyze_catalog_schema]
     cli: [analyze catalog-schema]

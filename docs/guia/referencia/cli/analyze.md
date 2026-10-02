@@ -40,6 +40,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze streaming`](#sparkforge-analyze-streaming) | Extrai facts de fonte Structured Streaming ou StreamingQueryProgress. |
 | [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
 | [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
+| [`sparkforge analyze transport`](#sparkforge-analyze-transport) | Extrai facts offline de dumps Kafka, MSK ou Kinesis. |
 | [`sparkforge analyze workload`](#sparkforge-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
 
 ## `sparkforge analyze airflow-dag`
@@ -783,6 +784,30 @@ sparkforge analyze terraform-diff --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_terraform_diff`](../tools/sparkforge_analyze_terraform_diff.md)
+
+## `sparkforge analyze transport`
+
+Extrai facts offline de dumps Kafka, MSK ou Kinesis.
+
+```bash
+sparkforge analyze transport --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--artifact` | sim | `kafka`, `msk`, `kinesis` |  |  | Vocabulário do dump: Kafka, MSK ou Kinesis. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_transport`](../tools/sparkforge_analyze_transport.md)
 
 ## `sparkforge analyze workload`
 

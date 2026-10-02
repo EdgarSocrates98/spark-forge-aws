@@ -106,7 +106,11 @@ def _as_dict(value: Any) -> dict[str, Any] | None:
 
 
 def _records(text: str, artifact: str) -> tuple[list[tuple[int, Any]], list[tuple[int, str]]]:
-    if artifact.lower().endswith("jsonl") or "\n" in text.strip():
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError as whole_exc:
+        if not artifact.lower().endswith("jsonl"):
+            return [], [(1, whole_exc.msg)]
         records: list[tuple[int, Any]] = []
         invalid: list[tuple[int, str]] = []
         for line, raw in enumerate(text.splitlines(), 1):
@@ -117,10 +121,6 @@ def _records(text: str, artifact: str) -> tuple[list[tuple[int, Any]], list[tupl
             except json.JSONDecodeError as exc:
                 invalid.append((line, exc.msg))
         return records, invalid
-    try:
-        value = json.loads(text)
-    except json.JSONDecodeError as exc:
-        return [], [(1, exc.msg)]
     if isinstance(value, list):
         return [(index + 1, item) for index, item in enumerate(value)], []
     return [(1, value)], []
@@ -399,8 +399,9 @@ def extract_transport_path(path: Path, *, artifact_type: str) -> list[Fact]:
 
 def extract_transport_tree(path: Path, *, artifact_type: str) -> list[Fact]:
     facts: list[Fact] = []
-    for child in iter_source_files(path, suffixes=(".json", ".jsonl")):
-        facts.extend(extract_transport_path(child, artifact_type=artifact_type))
+    for pattern in ("*.json", "*.jsonl"):
+        for child in iter_source_files(path, pattern):
+            facts.extend(extract_transport_path(child, artifact_type=artifact_type))
     return sort_facts(facts)
 
 

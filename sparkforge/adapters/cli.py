@@ -234,6 +234,23 @@ def build_parser() -> argparse.ArgumentParser:
     streaming_p.add_argument("--cursor")
     _add_detail_level(streaming_p)
 
+    transport_p = analyze_sub.add_parser(
+        "transport",
+        help="Extrai facts offline de dumps Kafka, MSK ou Kinesis.",
+    )
+    transport_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    transport_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("kafka", "msk", "kinesis"),
+        help="Vocabulário do dump: Kafka, MSK ou Kinesis.",
+    )
+    transport_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    transport_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    transport_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    transport_p.add_argument("--cursor")
+    _add_detail_level(transport_p)
+
     catalog_p = analyze_sub.add_parser(
         "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
     )
@@ -3121,6 +3138,16 @@ def _cmd_analyze_streaming(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_transport(args: argparse.Namespace) -> int:
+    full = _core.analyze_transport(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
     full = _core.analyze_catalog_schema(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -5250,6 +5277,7 @@ def _cmd_autonomy_show(args: argparse.Namespace) -> int:
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "streaming"): _cmd_analyze_streaming,
+    ("analyze", "transport"): _cmd_analyze_transport,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,

@@ -40,6 +40,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_analyze_streaming`](sparkforge_analyze_streaming.md) | só leitura | Extrai facts determinísticos da superfície Structured Streaming: fonte PySpark via AST estático ou registros JSON/JSONL de StreamingQueryProgress. |
 | [`sparkforge_analyze_terraform`](sparkforge_analyze_terraform.md) | só leitura | Extrai facts de blocos `resource "aws_glue_job"` em HCL Terraform: glue_version, worker_type, number_of_workers, default_arguments, observabilidade do Spark UI. |
 | [`sparkforge_analyze_terraform_diff`](sparkforge_analyze_terraform_diff.md) | só leitura | Compara dois estados de um modulo Terraform (dois checkouts, dois `git worktree`, o main e o branch do PR) e devolve os facts do lado DEPOIS, com `attrs.changed` e `attrs.previo... |
+| [`sparkforge_analyze_transport`](sparkforge_analyze_transport.md) | só leitura | Extrai facts determinísticos de dumps JSON/JSONL já salvos de Kafka, MSK ou Kinesis. |
 | [`sparkforge_analyze_workload`](sparkforge_analyze_workload.md) | só leitura | Extrai facts do inventario DECLARADO de workload (`workload.yaml`, versionado com o repositorio): `sla_minutes` e `primary_source` de cada job, como `workload.declared`, mais `w... |
 
 ## arbitrate
