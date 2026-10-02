@@ -4,7 +4,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 `sparkforge sdd status`, `sparkforge sdd check` nas features de streaming e
 `sparkforge code sync`; ela mede artefatos existentes, não menções em Markdown.
 
-## Estado atual antes da conclusão do prompt
+## Estado atual auditado após as waves implementadas
 
 | Capability | Nível medido | Evidência atual | Lacuna para P0/P1 |
 |---|---|---|---|
@@ -72,7 +72,40 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
   execução Spark, replay e benchmark continuam `N/A + motivo` por dependerem de
   workload/runtime real.
 
-## Waves necessárias para fechar o prompt
+## Fechamentos adicionados nesta atualização
+
+- `STREAMING_CDC`: facts de Debezium, DMS, eventos, seams e blind spots,
+  regras, fixtures, CLI/MCP, skill, routing e ship SDD.
+- `STREAMING_GLUE_RTM`: contrato offline de Glue Streaming e Real-Time Mode,
+  restrições de estado, capacidade e runtime, com unresolved explícito.
+- `STREAMING_SCHEMA_REGISTRY`: contrato/diff estrutural de compatibilidade,
+  auto-register, políticas ausentes, fixtures, analyzer e ship SDD.
+- `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`: checkpoint metadata, Kafka
+  Connect, Kafka Streams e OpenLineage com facts separados e limites
+  temporais preservados.
+- `STREAMING_READ_ONLY_COLLECTORS`: coleta AWS read-only versionada para
+  checkpoint S3, Glue Streaming, Kinesis, MSK e DMS, com cache por hash,
+  manifesto e redaction.
+- `STREAMING_RUNTIME_MATRIX`: matriz upstream/managed/observed com estados
+  `VERIFIED`, `UNRESOLVED` e `N/A + motivo`; MSK e Managed Flink continuam
+  unresolved sem snapshot regional/managed local.
+- `STREAMING_STRUCTURED_REVIEW`: workflow evidence-first, eval, validador,
+  coordenador e mirrors sincronizados.
+- `STREAMING_ARCHITECTURE_DECISION` e `EVENT_DRIVEN_ARCHITECTURE`: decisão
+  por constraints, ADR unresolved, EventBridge/Pipes/SQS/SNS, routing e ship.
+- `STREAMING_FLINK_PLATFORM`, `STREAMING_LAKEHOUSE_OBSERVABILITY`,
+  `STREAMING_OPERATIONS_AND_SERVING` e `STREAMING_REALTIME_DATA_PLATFORM`:
+  relatórios build/ship regularizados e hashes SDD atualizados.
+- `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS` e
+  `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS`: ships SDD adicionados para as
+  decisões de governança offline, sempre fail-closed.
+
+Todos os itens acima passaram os gates globais de skills, referências, surface,
+números correntes e bundle offline em 2026-10-02. Isso fecha contratos offline e
+documentação; não converte lacunas de execução, replay, benchmark ou endpoint
+live em capacidade comprovada.
+
+## Gaps que permanecem para fechar o prompt operacional
 
 | Wave | Escopo | Critério de fechamento |
 |---|---|---|
