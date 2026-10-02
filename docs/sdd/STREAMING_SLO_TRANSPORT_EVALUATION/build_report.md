@@ -66,7 +66,8 @@ são observáveis.
 ## Revisão por tarefa
 
 - **T1:** comparador de progress foi estendido para Kafka/Kinesis, preservando
-  o caminho Structured Streaming e unresolved nomeado; 22 testes verdes.
+  o caminho Structured Streaming, recusando séries misturadas e publicando
+  unresolved nomeado; 24 testes verdes.
 - **T2:** composição, CLI e MCP encaminham `transport_key` ao mesmo core; teste
   de paridade CLI/MCP verde.
 - **T3:** três fixtures novas cobrem met, violated, identidade ausente,
@@ -79,7 +80,7 @@ são observáveis.
 
 ## Evidência de gates
 
-- 22 testes focados de fatos/composição/ops.
+- 24 testes focados de fatos/composição/ops.
 - 18 testes de paridade e goldens no lote de transporte/SLO.
 - 14 testes de docs, referências e surface.
 - `check_surface_lock.py`, `check_status_numbers.py --strict`,

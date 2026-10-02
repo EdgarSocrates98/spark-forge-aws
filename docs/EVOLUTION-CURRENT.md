@@ -120,7 +120,7 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs de streaming | 14 passed no lote focalizado de coverage/referências/surface; inclui cobertura de SLO de transporte |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
-| Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 22 testes de fatos e 18 no lote CLI/goldens; snippet measure adicional: 4 passed |
+| Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; snippet measure adicional: 4 passed |
 | Janela temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge e 769 gates de runtime-scope |
 | Claims e proveniência | 174 passed, 5 skipped |
 | Checks globais | skills, referências, surface lock, status numbers, bundle offline e claims sem divergência |

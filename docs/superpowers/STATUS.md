@@ -97,7 +97,7 @@ skill, knowledge, referências, mirrors e três goldens usam o mesmo core
 offline. Não há p95/freshness, SLO de sink, CloudWatch live, causalidade, custo
 ou saúde end-to-end.
 
-Provas focadas: 22 testes de fatos/composição/ops, 18 no lote CLI/goldens,
+Provas focadas: 24 testes de fatos/composição/ops, 18 no lote CLI/goldens,
 14 em docs/referências/surface, bundle offline 69/69 e SDD check verde. Suíte
 completa não foi executada nesta fase.
 

@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_SLO_TRANSPORT_EVALUATION/build_report.md
-  sha256: "e78d169a132c790803071cd059589cedb88522d60fd5f96c1013b7940ab7eafa"
+  sha256: "65674055c4228a0932938f11f3492aac4c0a03a8b4648afb9dd553d64d22d5ee"
 hypothesis_outcome: confirmed
 registries: [surface_lock, generated_reference, offline_manifest, sources_lock, status_numbers, status_numbers_gate, manifest_rule_count, reachability_lists, fixture_kind_coverage, fixture_corpus_gates, snippet_measure, rules_catalog_gates, runtime_scope_gate, sync_skills, agents_parity, sdd_check]
 deviations:
@@ -29,7 +29,7 @@ produz `met` ou `violated`; quando a evidência não basta, produz
 
 | critério | evidência | resultado |
 |---|---|---|
-| AC1–AC3 | `tests/test_facts_streaming_slo.py` | verde; identidade, Kafka/Kinesis, unidade e unresolved |
+| AC1–AC3 | `tests/test_facts_streaming_slo.py` | verde; identidade, Kafka/Kinesis, unidade, séries misturadas e unresolved |
 | AC4 | `tests/test_analyze_streaming_composition.py::test_transport_slo_cli_and_mcp_envelopes_match` | verde; CLI/MCP/core compatíveis |
 | AC5 | `fixtures/streaming_composition/slo_kafka_met`, `slo_kinesis_violated`, `slo_transport_unresolved` | verde; 3 goldens novos |
 | AC6 | skill, knowledge, coverage, referências, mirrors, surface, manifest, status e SDD | verde |
@@ -38,7 +38,7 @@ produz `met` ou `violated`; quando a evidência não basta, produz
 
 | registro | comando | resultado |
 |---|---|---|
-| fatos/composição | pytest focalizado de SLO, ops, composition e paridade | verde; 22 testes de fatos e 18 no lote CLI/goldens |
+| fatos/composição | pytest focalizado de SLO, ops, composition e paridade | verde; 24 testes de fatos e 18 no lote CLI/goldens |
 | docs/referências/surface | pytest focalizado de coverage, references e surface | verde; 14 passed |
 | mirrors | `python scripts/sync_skills.py --check` | OK |
 | referências | `python scripts/gen_reference_docs.py --check` | OK |

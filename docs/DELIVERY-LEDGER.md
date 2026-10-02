@@ -170,7 +170,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
 | Evidência temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge; 769 runtime-scope; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
-| Avaliação SLO observada | progress: 16 focused tests; transporte: 22 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos; 14 docs/referências/surface; SDD check verde |
+| Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; 14 docs/referências/surface; SDD check verde |
 
 Essas provas validam contratos locais, determinismo, paridade e documentação.
 Não provam throughput, latência, custo, capacidade cloud, exactly-once, semântica
