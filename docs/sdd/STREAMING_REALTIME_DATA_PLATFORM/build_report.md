@@ -82,7 +82,13 @@ change_id: null
 
 ## Desvios do plano
 
-Nenhum.
+Nenhum desvio de implementação. A integração com contratos derivados foi
+descoberta depois do T7 e registrada como correção de build: a nova capability
+foi adicionada ao `parity.yaml`, o allowlist de paridade MCP/fixtures e o
+inventário canônico de kinds foram atualizados, e os goldens derivados de
+assessment foram recalculados contra o catálogo medido (177 para 180 regras).
+As contagens de superfície passaram a refletir 116 tools em stdio/full e 107
+tools que declaram caminho.
 
 ## Revisão
 
@@ -97,7 +103,12 @@ e AC7 foram reproduzidos nos snapshots imediatamente anteriores às tarefas em
 `.sdd-red-replay-20261001/`, pois o primeiro registro de T4/T5 usava coleta do
 arquivo inteiro e o primeiro T2 não incluía o terceiro teste. T7 valida o surface
 lock diretamente porque sua saída é gerada por catálogo, não por uma regra de
-negócio.
+negócio. A suíte final em lotes confirmou 5.509 testes e 6 skips no lote
+`g-z`; o único teste adicional que falhou nesse lote (`test_integrate.py`) passou
+isoladamente com basetemp curto, caracterizando limite de caminho do isolamento
+Windows, não falha funcional. O gate histórico `check_vnext_claims.py` continua
+recusando 164 referências a commits que não existem neste clone; nenhum claim
+histórico foi alterado por esta feature.
 
 Achados da revisão: nenhum crítico ou importante aberto. A cobertura de Kafka,
 Kinesis, Flink, CDC, contratos e manutenção de lakehouse continua explicitamente
