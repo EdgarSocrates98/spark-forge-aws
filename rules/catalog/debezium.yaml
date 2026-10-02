@@ -1,0 +1,69 @@
+catalog_version: 1
+schema_version: 1
+area: SF-DEBEZIUM
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-DEBEZIUM-001
+    category: debezium
+    title: Debezium sem schema history observada
+    requires_facts: [debezium.connector, debezium.unresolved]
+    when:
+      all:
+        - fact: debezium.unresolved
+          where: {attrs.reason: schema_history}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A configuração observada não traz o armazenamento de schema history. Sem
+      esse artefato não é possível avaliar recuperação após restart ou DDL.
+    proposed_change:
+      - Coletar a configuração efetiva de schema history e o tópico/armazenamento usado.
+      - Validar DDL, restart e replay em ambiente controlado.
+    risks: ["Perder histórico pode interpretar colunas futuras com schema errado."]
+    tradeoffs: ["Schema history exige retenção e governança de acesso adicionais."]
+    validation: ["Reiniciar a task após DDL e comparar schema/valores do consumidor."]
+    rollback: ["Restaurar o conector anterior preservando offsets e histórico."]
+    action:
+      kind: measurement.collect_baseline
+      target: debezium.schema_history
+      direction: investigate
+      requires_absent: []
+      moves: [correctness.write_result, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://debezium.io/documentation/reference/stable/configuration/storage.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/cdc-replication.md}]
+
+  - id: SF-DEBEZIUM-002
+    category: debezium
+    title: Debezium declara tombstone desligado para deletes
+    requires_facts: [debezium.connector]
+    when:
+      all:
+        - fact: debezium.connector
+          expr: 'attrs.tombstones_on_delete == False'
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O conector observado desabilita tombstones. A consequência depende de
+      consumidores, compactação e delete handling; o finding não presume o uso.
+    proposed_change:
+      - Inventariar consumidores do tópico e testar deletes/compactação.
+      - Declarar a política de tombstone no contrato do evento.
+    risks: ["Consumidores compactados podem reter registros apagados."]
+    tradeoffs: ["Habilitar tombstone aumenta mensagens e retenção transitória."]
+    validation: ["Reprocessar delete em consumidor real e confirmar remoção por chave."]
+    rollback: ["Restaurar a configuração anterior mantendo offsets e evidência."]
+    action:
+      kind: measurement.localize_divergence
+      target: debezium.tombstones_on_delete
+      direction: increase
+      requires_absent: []
+      moves: [correctness.write_result, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://debezium.io/documentation/reference/stable/connectors/postgresql.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/cdc-replication.md}]

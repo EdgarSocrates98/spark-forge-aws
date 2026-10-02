@@ -1,0 +1,48 @@
+catalog_version: 1
+schema_version: 1
+area: SF-STREAMOBS
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-STREAMOBS-001
+    category: streaming_observability
+    title: Série de processamento abaixo da entrada com medida de transporte vinculada
+    requires_facts: [streaming.observability.link]
+    when:
+      all:
+        - fact: streaming.observability.link
+          expr: "attrs.processed_below_input and attrs.transport_measurement_observed"
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A mesma composição carrega uma série em que o processamento ficou abaixo
+      da entrada e uma medida de lag ou idade do shard para o transporte
+      declarado. O vínculo fortalece a investigação temporal, mas não identifica
+      se a causa é source, operator, state, sink, throttling ou capacidade.
+    proposed_change:
+      - Coletar uma série pareada com timestamps, offsets ou iterator age, duração de trigger e sink.
+      - Separar backlog observado de causa e testar uma variável principal por experimento.
+      - Validar resultado funcional e política de replay antes de promover mudança.
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.observability.link
+      direction: investigate
+      requires_absent: [streaming.composition.unresolved]
+      moves: [runtime.wall_clock, transport.backlog]
+      depends_on: []
+    risks:
+      - Usar uma janela não pareada pode transformar duas observações reais em uma falsa tendência.
+      - Escalar workers sem medir state, sink e throttling pode aumentar custo sem resolver atraso.
+    tradeoffs:
+      - Correlação temporal exige reter mais métricas e alinhar relógios entre serviços.
+    validation:
+      - Confirmar unidade, janela, identidade do grupo/stream e correspondência dos timestamps.
+      - Comparar processamento, entrada, lag/idade e resultado funcional antes e depois.
+    rollback:
+      - Reverter a única variável experimental e manter os artefatos de baseline para replay da análise.
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-lakehouse-observability.md}

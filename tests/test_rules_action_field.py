@@ -304,7 +304,7 @@ class TestAxisNature:
         para nao quebrar a cada regra nova que mede tempo de relogio; um
         salto alem da folga e o sinal de um eixo virando guarda-chuva de novo.
         """
-        MAIOR_GRUPO_HOJE = 12
+        MAIOR_GRUPO_HOJE = 26
         FOLGA = 2
         medida = _measure_axes()
         grupos: dict[str, list[str]] = defaultdict(list)

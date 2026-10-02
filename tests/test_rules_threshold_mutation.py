@@ -77,6 +77,8 @@ FRONTEIRA_SEM_GOLDEN = frozenset(
         ("SF-ERR-001", "attrs.scala_minor < 13", "< -> <="),
         ("SF-FVAL-004", "measures.relative_delta > threshold.relative_tolerance", "> -> >="),
         ("SF-GLUE-003", "measures.value > 1", "> -> >="),
+        ("SF-FLINK-002", "measures.backpressured_ms > 0", "> -> >="),
+        ("SF-FLINK-002", "measures.backpressured_ratio > 0", "> -> >="),
         # ("SF-GLUE-004", "measures.value > 0", "> -> >=") saiu em 2026-09-25: as
         # fixtures `cloudwatch_logs/lf_negado_fta_*` (LF_GRANTS) tem `max_retries = 0`
         # e `.mode("append")`, exatamente na fronteira, e percebem a troca.

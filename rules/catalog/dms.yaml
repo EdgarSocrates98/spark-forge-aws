@@ -1,0 +1,101 @@
+catalog_version: 1
+schema_version: 1
+area: SF-DMS
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-DMS-001
+    category: dms
+    title: AWS DMS sem table mappings observados
+    requires_facts: [dms.task, dms.unresolved]
+    when:
+      all:
+        - fact: dms.unresolved
+          where: {attrs.reason: missing_table_mappings}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O dump do task DMS não traz regras que definam tabelas, schemas ou
+      transformações. Sem elas o escopo da replicação não pode ser auditado.
+    proposed_change:
+      - Coletar table mappings efetivos e conferir seleção, transformação e destino.
+      - Não iniciar cutover sem revisar o conjunto de tabelas declarado.
+    risks: ["Escopo ausente pode omitir tabela ou replicar objeto indevido."]
+    tradeoffs: ["Mapeamento explícito exige manutenção quando o schema evolui."]
+    validation: ["Comparar tabelas esperadas, capturadas e estatísticas do task."]
+    rollback: ["Parar o task e restaurar a última versão dos mappings."]
+    action:
+      kind: measurement.collect_baseline
+      target: dms.table_mappings
+      direction: investigate
+      requires_absent: []
+      moves: [correctness.write_result, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Introduction.Components.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/cdc-replication.md}]
+
+  - id: SF-DMS-002
+    category: dms
+    title: AWS DMS sem endpoint de origem observado
+    requires_facts: [dms.task, dms.unresolved]
+    when:
+      all:
+        - fact: dms.unresolved
+          where: {attrs.reason: missing_source_endpoint}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O artefato do task não permite identificar a origem conectada. Isso
+      impede validar engine, log nativo, permissões e posição de CDC.
+    proposed_change:
+      - Coletar endpoint por ARN/identificador sem incluir segredos.
+      - Conferir engine, região, rede e usuário de captura separadamente.
+    risks: ["Endpoint incorreto pode capturar outro banco ou falhar no log."]
+    tradeoffs: ["Dump de endpoint precisa redigir credenciais e dados sensíveis."]
+    validation: ["Comparar engine/identidade do endpoint com o task e teste de captura."]
+    rollback: ["Remover somente o dump redigido conforme retenção; não mutar endpoint."]
+    action:
+      kind: measurement.collect_baseline
+      target: dms.source_endpoint
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.engine_version, security.identity_access, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Tasks.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/cdc-replication.md}]
+
+  - id: SF-DMS-003
+    category: dms
+    title: AWS DMS Full Load + CDC sem corte observável
+    requires_facts: [dms.task, dms.unresolved]
+    when:
+      all:
+        - fact: dms.unresolved
+          where: {attrs.reason: snapshot_cdc_seam}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O task declara Full Load + CDC sem timestamp ou posição de corte no dump.
+      A transição não pode ser provada apenas pela modalidade do task.
+    proposed_change:
+      - Coletar posição de log/timestamp e checkpoint usados na transição.
+      - Validar duplicidade e lacunas por chave antes do cutover.
+    risks: ["Sem corte, mudanças podem ser perdidas ou reaplicadas."]
+    tradeoffs: ["A coleta de posição aumenta rastreabilidade e esforço operacional."]
+    validation: ["Executar reconciliação de contagem, schema, chaves e valores no seam."]
+    rollback: ["Reverter o cutover e preservar posição anterior do task."]
+    action:
+      kind: measurement.collect_baseline
+      target: dms.snapshot_cdc_seam
+      direction: investigate
+      requires_absent: []
+      moves: [correctness.write_result, runtime.wall_clock]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/cdc-replication.md}]

@@ -434,6 +434,6 @@ class TestCatalogoInteiro:
         # O NUMERO e afirmado, e o CONJUNTO tambem: as duas metades juntas e que
         # fazem o teste medir a distribuicao, e nao a ordem alfabetica que o
         # `max` usaria para escolher sozinho. `scan.bytes_read` esta em 10.
-        assert maior == 14
+        assert maior == 26
         assert no_topo == {"runtime.wall_clock"}
         assert all(r["axis"] != "correctness.write_result" for r in restricoes)

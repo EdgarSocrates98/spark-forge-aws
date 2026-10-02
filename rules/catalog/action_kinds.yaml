@@ -344,6 +344,18 @@ kinds:
     axis: schema
     reversible: true
     description: Separar a mudanca de schema em outra entrega, com aviso ao consumidor.
+  contract.review_compatibility:
+    axis: schema
+    reversible: true
+    description: Revisar compatibilidade do contrato entre produtor, registro e consumidores.
+  contract.require_review:
+    axis: schema
+    reversible: true
+    description: Exigir revisão explícita antes de promover uma mudança de contrato.
+  contract.collect_policy:
+    axis: schema
+    reversible: true
+    description: Coletar a política efetiva de compatibilidade que governa o contrato.
 
   # --- validacao ------------------------------------------------------------
   validation.move_before_write:
@@ -366,6 +378,10 @@ kinds:
     axis: validacao
     reversible: true
     description: Medir nos dois lados os checks que faltaram, ou declarar por escrito por que nao ha valor.
+  validation.functional_replay:
+    axis: validacao
+    reversible: true
+    description: Reexecutar um caso funcional controlado para verificar semântica e replay.
 
   # --- medicao --------------------------------------------------------------
   measurement.collect_baseline:
@@ -386,6 +402,14 @@ kinds:
     description: Declarar a afirmacao mais fraca que a medida sustenta, em vez de apresentar o total.
 
   # --- orquestracao ---------------------------------------------------------
+  event_driven.require_dlq:
+    axis: orquestracao
+    reversible: true
+    description: Exigir uma rota de descarte observável para eventos que não possam ser processados.
+  event_driven.verify_target:
+    axis: orquestracao
+    reversible: true
+    description: Confirmar o destino efetivo e a política de entrega do evento.
   orchestration.replace_unsupported_capability:
     axis: orquestracao
     reversible: true
@@ -451,6 +475,9 @@ axes:
   runtime.wall_clock:
     nature: measure
     description: Duracao de relogio do job.
+  reliability.recovery:
+    nature: risk
+    description: Capacidade de recuperar o processamento por replay, retry ou runbook.
   capacity.worker_count:
     nature: measure
     description: Numero de workers ou nos que a definicao declara.
@@ -497,6 +524,12 @@ axes:
     # pares), nunca contado como grandeza.
     nature: risk
     description: As superficies de API e de IaC que devolvem o literal do segredo.
+  security.identity_access:
+    nature: risk
+    description: Identidade, permissoes e cadeia de acesso que autorizam a operacao.
+  security.verify_access_chain:
+    nature: risk
+    description: Verificacao dos elos da cadeia de acesso entre identidade e recurso.
 
   # Acrescentado no lote B (spark-ui, spark-plan, timeout, benchmark).
   skew.task_duration_ratio:
@@ -544,6 +577,9 @@ axes:
   storage.snapshot_count:
     nature: measure
     description: Snapshots e metadata files acumulados na tabela.
+  storage.snapshot_history:
+    nature: risk
+    description: Historico de snapshots e janela de replay preservados pela tabela.
   scan.bytes_read:
     nature: measure
     description: Bytes que a leitura escaneia, medidos no plano fisico ou nas estatisticas de execucao da query.
@@ -553,6 +589,9 @@ axes:
   metadata.partition_resolution_time:
     nature: measure
     description: Tempo gasto resolvendo as particoes da tabela antes do scan.
+  transport.backlog:
+    nature: measure
+    description: Backlog, lag ou idade observada no transporte de eventos.
 
   # Acrescentado no lote G (controlm). E o eixo de AGENDAMENTO que nenhuma area
   # anterior movia: as regras de A a F mudam o QUE o job faz ou com que recurso,

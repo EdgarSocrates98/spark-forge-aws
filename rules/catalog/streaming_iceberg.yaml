@@ -1,0 +1,49 @@
+catalog_version: 1
+schema_version: 1
+area: SF-STREAMICE
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-STREAMICE-001
+    category: streaming_iceberg
+    title: Operação não-append observada no caminho streaming para Iceberg
+    requires_facts: [streaming.iceberg.link]
+    when:
+      all:
+        - fact: streaming.iceberg.link
+          where: {attrs.non_append_observed: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O vínculo declarado entre a query e a tabela contém pelo menos uma operação
+      Iceberg não-append observada no dump de snapshots. Isso não prova que a
+      operação quebrou a query, mas muda a pergunta de uma escrita append-only
+      para uma compatibilidade que precisa ser validada contra o consumidor, o
+      modo de leitura e a janela de replay.
+    proposed_change:
+      - Confirmar a operação e o snapshot no metadata dump e revisar consumidores downstream.
+      - Testar leitura incremental, reinício e replay em ambiente controlado antes de alterar o sink.
+      - Definir rollback de dados e retenção de snapshots com o dono da tabela.
+    action:
+      kind: validation.functional_replay
+      target: streaming.iceberg.link
+      direction: investigate
+      requires_absent: [streaming.composition.unresolved]
+      moves: [correctness.write_result, storage.snapshot_history]
+      depends_on: []
+    risks:
+      - Tratar a correlação como causa pode levar a mudar o sink sem evidência do modo de falha.
+      - Expirar snapshots antes da validação pode remover o caminho de rollback.
+    tradeoffs:
+      - Preservar histórico e executar replay aumenta armazenamento e duração do teste.
+    validation:
+      - Comparar snapshots, operações, progresso e proxies funcionais antes e depois do experimento.
+      - Confirmar que consumidores downstream aceitam a semântica observada.
+    rollback:
+      - Reverter a configuração do sink e preservar snapshots necessários ao replay; não executar expiração sem aprovação.
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-structured-streaming/", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-lakehouse-observability.md}
+

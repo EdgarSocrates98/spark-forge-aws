@@ -351,17 +351,17 @@ def test_nenhum_campo_preve_ganho() -> None:
     )
 
 
-def test_no_corpus_nenhuma_recusa_e_citada_por_finding() -> None:
-    """Medida, nao suposicao: hoje nenhum fact `*.unresolved` ancora finding.
+def test_corpus_declarates_recusas_citadas_por_finding() -> None:
+    """Recusas citadas viram Unknown bloqueante; recusa solta nao vira.
 
     E o mesmo achado que `conflict.py` registrou sobre as guardas
     `requires_absent`: kind de recusa diz *nao deu para ler*, e regra nao
-    dispara sobre "nao li". Consequencia -- os 61 `Unknown` de origem 1 que o
-    corpus produz sobre a uniao dos facts sao todos NAO bloqueantes, e nenhum
-    experimento sai deles.
+    dispara sobre "nao li". O corpus agora contém casos CDC/schema em que a
+    regra depende explicitamente da recusa; esses casos devem permanecer
+    visíveis e bloqueantes.
 
-    Se este teste cair, o corpus ganhou o caso que hoje nao tem. A remediacao e
-    atualizar a nota, nunca afrouxar o criterio de `blocking`.
+    Se novos casos aparecerem, atualize conjunto abaixo; nunca afrouxe o
+    criterio de `blocking`.
     """
     bloqueantes_de_recusa = [
         (pasta.parent.name, unknown.question)
@@ -370,9 +370,12 @@ def test_no_corpus_nenhuma_recusa_e_citada_por_finding() -> None:
         if unknown.blocking and not unknown.question.startswith("finding ")
     ]
 
-    assert not bloqueantes_de_recusa, (
-        "o corpus passou a citar fact de recusa como ancora: " f"{bloqueantes_de_recusa[:3]}"
-    )
+    assert {name for name, _ in bloqueantes_de_recusa} == {
+        "cdc_missing_key",
+        "cdc_seam_unresolved",
+        "debezium_unresolved",
+        "schema_unresolved",
+    }
 
 
 def test_no_corpus_com_a_uniao_nenhuma_claim_fica_desancorada() -> None:

@@ -45,6 +45,12 @@ axes:
   correctness.read_result:
     source: funcval
 
+  reliability.recovery:
+    source: none
+    unlock: >-
+      comparar replay, retry e recuperação antes e depois com evidência do
+      workflow; nenhum comparador dedicado existe hoje
+
   runtime.wall_clock:
     source: bench
     measure: total_task_ms
@@ -105,6 +111,11 @@ axes:
     unlock: >-
       `sparkforge analyze iceberg` sobre o metadata de antes e de depois; nao ha
       comparador entre dois dumps
+  storage.snapshot_history:
+    source: none
+    unlock: >-
+      comparar snapshots e janela de replay antes e depois; o comparador de
+      histórico ainda não existe
   runtime.engine_version:
     source: none
     unlock: >-
@@ -145,6 +156,21 @@ axes:
     unlock: >-
       a resolucao cobre: a regra de segredo deixa de disparar sobre os
       artefatos do depois
+  security.identity_access:
+    source: none
+    unlock: >-
+      comparar identidade, permissões e cadeia de acesso nos dois lados; a
+      análise atual não mede essa mudança
+  security.verify_access_chain:
+    source: none
+    unlock: >-
+      coletar todos os elos da cadeia de acesso antes e depois; o resultado
+      atual é uma verificação, não uma medida comparável
+  transport.backlog:
+    source: none
+    unlock: >-
+      comparar backlog, lag ou idade do transporte antes e depois com a mesma
+      janela; não há comparador entre séries hoje
   schedule.ordered_dates:
     source: none
     unlock: >-
