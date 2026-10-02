@@ -31,6 +31,9 @@ REQUIRED_FIXTURES = {
     "slo_kafka_met",
     "slo_kinesis_violated",
     "slo_transport_unresolved",
+    "slo_sink_met",
+    "slo_sink_violated",
+    "slo_sink_unresolved",
 }
 
 

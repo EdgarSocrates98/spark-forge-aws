@@ -145,7 +145,7 @@ def _slo(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tup
     for item in items:
         name = _text(item.get("name")) or "unresolved"
         attrs, safe_unresolved = _safe_attrs(
-            item, ("name", "metric", "operator", "unit", "window", "source", "transport_key")
+            item, ("name", "metric", "operator", "unit", "window", "source", "transport_key", "sink_name")
         )
         unresolved.extend(safe_unresolved)
         target = _number(item.get("target"))

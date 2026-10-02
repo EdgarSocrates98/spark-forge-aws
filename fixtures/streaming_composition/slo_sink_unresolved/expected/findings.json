@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-STREAM-012",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "SLO de streaming sem janela observada suficiente",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "<composition>",
+      "line": 0,
+      "col": 0,
+      "symbol": "orders-query:sink-output",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_65ded3"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A declara\u00e7\u00e3o SLO existe ou foi solicitada, mas o artefato fornecido n\u00e3o sustenta compara\u00e7\u00e3o: identidade, m\u00e9trica direta, unidade, source, timestamp, observa\u00e7\u00f5es ou cobertura da janela ficaram unresolved. Isso n\u00e3o \u00e9 sucesso nem falha do SLO.",
+    "proposed_change": [
+      "Coletar batches com query, m\u00e9trica, unidade e timestamps suficientes para a janela declarada.",
+      "Corrigir a declara\u00e7\u00e3o somente quando o contrato estiver incompleto; n\u00e3o preencher observa\u00e7\u00f5es ausentes."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar janela incompleta como met pode esconder viola\u00e7\u00e3o operacional."
+    ],
+    "tradeoffs": [
+      "Instrumenta\u00e7\u00e3o e reten\u00e7\u00e3o maiores aumentam custo de observabilidade."
+    ],
+    "validation": [
+      "Conferir motivo unresolved, source_fact_ids e cobertura temporal antes de julgar novamente."
+    ],
+    "rollback": [
+      "Remover apenas a conclus\u00e3o n\u00e3o comprovada e preservar o artefato parcial para reauditoria."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.slo",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  }
+]

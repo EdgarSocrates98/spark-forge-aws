@@ -432,3 +432,113 @@ def test_transport_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
         text=True,
     )
     assert json.loads(completed.stdout) == expected
+
+
+def test_sink_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
+    contract = tmp_path / "contract-sink.json"
+    progress = tmp_path / "progress-sink.json"
+    contract.write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "streaming.slo",
+                    "subject": {"type": "source_location", "file": "contract", "line": 1, "col": 0, "symbol": "sink-output"},
+                    "attrs": {
+                        "name": "sink-output",
+                        "metric": "num_output_rows",
+                        "operator": "gte",
+                        "unit": "rows",
+                        "window": "5m",
+                        "source": "streaming_sink",
+                        "sink_name": "iceberg-orders",
+                    },
+                    "measures": {"target": 90},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    progress.write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "streaming.progress.batch",
+                    "subject": {"type": "source_location", "file": "progress", "line": 1, "col": 0},
+                    "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:00:00Z"},
+                    "measures": {"batch_id": 1},
+                },
+                {
+                    "kind": "streaming.progress.sink",
+                    "subject": {"type": "source_location", "file": "progress", "line": 1, "col": 0},
+                    "attrs": {"description": "iceberg-orders"},
+                    "measures": {"batch_id": 1, "num_output_rows": 100},
+                },
+                {
+                    "kind": "streaming.progress.batch",
+                    "subject": {"type": "source_location", "file": "progress", "line": 2, "col": 0},
+                    "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:05:00Z"},
+                    "measures": {"batch_id": 2},
+                },
+                {
+                    "kind": "streaming.progress.sink",
+                    "subject": {"type": "source_location", "file": "progress", "line": 2, "col": 0},
+                    "attrs": {"description": "iceberg-orders"},
+                    "measures": {"batch_id": 2, "num_output_rows": 90},
+                },
+                {
+                    "kind": "streaming.progress.batch",
+                    "subject": {"type": "source_location", "file": "progress", "line": 3, "col": 0},
+                    "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:10:00Z"},
+                    "measures": {"batch_id": 3},
+                },
+                {
+                    "kind": "streaming.progress.sink",
+                    "subject": {"type": "source_location", "file": "progress", "line": 3, "col": 0},
+                    "attrs": {"description": "iceberg-orders"},
+                    "measures": {"batch_id": 3, "num_output_rows": 110},
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    args = {
+        "facts_paths": [str(contract), str(progress)],
+        "mode": "slo",
+        "slo_name": "sink-output",
+        "query_name": "orders-query",
+        "limit": 20,
+    }
+    expected = analyze_streaming_composition(**args)
+    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    assert actual == expected
+    assert any(
+        item["kind"] == "streaming.slo.evaluation"
+        and item["attrs"]["observation_source"] == "streaming.progress.sink"
+        for item in expected["items"]
+    )
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sparkforge.adapters.cli",
+            "analyze",
+            "streaming-composition",
+            "--facts",
+            str(contract),
+            "--facts",
+            str(progress),
+            "--mode",
+            "slo",
+            "--slo-name",
+            "sink-output",
+            "--query-name",
+            "orders-query",
+            "--limit",
+            "20",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == expected

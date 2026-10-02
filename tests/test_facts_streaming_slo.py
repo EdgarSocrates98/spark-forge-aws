@@ -107,6 +107,99 @@ def test_slo_unresolved_reasons(facts, slo_name: str, query_name: str, reason: s
     assert unresolved and unresolved[0].attrs["reason"] == reason
 
 
+def _sink_facts(
+    *,
+    target: float = 90,
+    metric: str = "num_output_rows",
+    unit: str = "rows",
+    source: str = "streaming_sink",
+    sink_name: str | None = "iceberg-orders",
+    descriptions: tuple[str | None, ...] = ("iceberg-orders", "iceberg-orders", "iceberg-orders"),
+    values: tuple[int, ...] = (100, 90, 110),
+    include_batches: bool = True,
+) -> list[Fact]:
+    slo_attrs = {
+        "name": "sink-output",
+        "metric": metric,
+        "operator": "gte",
+        "unit": unit,
+        "window": "5m",
+        "source": source,
+    }
+    if sink_name is not None:
+        slo_attrs["sink_name"] = sink_name
+    facts = [
+        _fact(
+            "streaming.slo",
+            file="contract.json",
+            symbol="sink-output",
+            attrs=slo_attrs,
+            measures={"target": target},
+        )
+    ]
+    timestamps = ("2026-10-01T00:00:00Z", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z")
+    for index, (value, description) in enumerate(zip(values, descriptions), start=1):
+        facts.append(
+            _fact(
+                "streaming.progress.sink",
+                file="progress.jsonl",
+                attrs={"description": description},
+                measures={"batch_id": index, "num_output_rows": value},
+            )
+        )
+        if include_batches:
+            facts.append(
+                _fact(
+                    "streaming.progress.batch",
+                    file="progress.jsonl",
+                    attrs={"query_name": "orders-query", "timestamp": timestamps[index - 1]},
+                    measures={"batch_id": index},
+                )
+            )
+    return facts
+
+
+def test_evaluates_sink_output_slo():
+    result = build_streaming_slo(
+        _sink_facts(), slo_name="sink-output", query_name="orders-query"
+    )
+    evaluation = next(fact for fact in result if fact.kind == "streaming.slo.evaluation")
+    assert evaluation.attrs["status"] == "met"
+    assert evaluation.attrs["observation_source"] == "streaming.progress.sink"
+    assert evaluation.attrs["sink_name"] == "iceberg-orders"
+    assert evaluation.measures["observed_span_seconds"] == 600.0
+    assert evaluation.measures["violated_count"] == 0
+
+
+def test_sink_slo_uses_batch_timestamp_and_provenance():
+    result = build_streaming_slo(
+        _sink_facts(target=95), slo_name="sink-output", query_name="orders-query"
+    )
+    evaluation = next(fact for fact in result if fact.kind == "streaming.slo.evaluation")
+    assert evaluation.attrs["status"] == "violated"
+    assert evaluation.measures["violated_count"] == 1
+    assert len(evaluation.attrs["source_fact_ids"]) == 7
+    assert evaluation.provenance["artifacts"] == ["contract.json", "progress.jsonl"]
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "query_name", "reason"),
+    [
+        ({"include_batches": False}, "orders-query", "sink_batch_not_found"),
+        ({"unit": "ms"}, "orders-query", "unit_mismatch"),
+        ({"descriptions": ("iceberg-orders", "dead-letter", "iceberg-orders"), "sink_name": None}, "orders-query", "ambiguous_sink"),
+        ({"sink_name": "missing-sink"}, "orders-query", "sink_not_found"),
+    ],
+)
+def test_sink_slo_unresolved_reasons(kwargs, query_name: str, reason: str):
+    result = build_streaming_slo(
+        _sink_facts(**kwargs), slo_name="sink-output", query_name=query_name
+    )
+    assert not [fact for fact in result if fact.kind == "streaming.slo.evaluation"]
+    unresolved = [fact for fact in result if fact.kind == "streaming.slo.unresolved"]
+    assert unresolved and unresolved[0].attrs["reason"] == reason
+
+
 def _transport_facts(
     *, source: str = "kafka", metric: str = "lag", unit: str = "records", values=(40, 50, 60),
     window: str = "5m", target: float = 50, operator: str = "lte", transport_key: str = "orders-group",

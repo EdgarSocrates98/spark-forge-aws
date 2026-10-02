@@ -24,6 +24,14 @@ def test_streaming_transport_slo_coverage_mentions_transport_key():
     assert "kinesis.shard" in text
 
 
+def test_streaming_sink_slo_coverage_mentions_batch_link():
+    text = _read("docs/streaming/prompt-coverage.md")
+    assert "STREAMING_SINK_SLO_EVALUATION" in text
+    assert "num_output_rows" in text
+    assert "batch_id" in text
+    assert "sink_name" in text
+
+
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
 
