@@ -26,10 +26,10 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_streaming_rules.py::test_streaming_rules_require_runtime_and_sufficient_evidence"}
   - id: AC5
     statement: "O corpus possui casos positivos, negativos, unresolved e runtime divergente para a primeira onda, com facts e findings esperados."
-    verified_by: {kind: test, ref: "tests/test_fixtures_golden_streaming.py::test_streaming_fixture_corpus_covers_positive_negative_unresolved_and_runtime"}
+    verified_by: {kind: test, ref: "tests/test_fixtures_golden_streaming.py::test_all_required_fixtures_exist"}
   - id: AC6
     statement: "A superfície CLI e MCP expõe o mesmo contrato para analisar código Structured Streaming e StreamingQueryProgress."
-    verified_by: {kind: test, ref: "tests/test_streaming_surface.py::test_cli_and_mcp_streaming_analysis_have_one_contract"}
+    verified_by: {kind: test, ref: "tests/test_analyze_streaming.py::test_cli_and_core_emit_identical_streaming_envelope"}
   - id: AC7
     statement: "A extração é determinística e não altera o comportamento dos extractors batch existentes."
     verified_by: {kind: test, ref: "tests/test_facts_streaming.py::test_streaming_extraction_is_deterministic_and_batch_safe"}
@@ -39,7 +39,7 @@ acceptance:
 success:
   - id: SC1
     metric: "Casos de streaming da primeira onda com extração, julgamento, routing e validação verdes"
-    source: "pytest focado em tests/test_facts_streaming.py, tests/test_streaming_rules.py, tests/test_fixtures_golden_streaming.py e tests/test_streaming_surface.py"
+    source: "pytest focado em tests/test_facts_streaming.py, tests/test_streaming_rules.py, tests/test_fixtures_golden_streaming.py e tests/test_analyze_streaming.py"
   - id: SC2
     metric: "Diferença entre a superfície declarada e a superfície gerada"
     source: "python scripts/check_surface_lock.py"

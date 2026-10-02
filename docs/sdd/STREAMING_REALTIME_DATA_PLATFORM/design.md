@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_REALTIME_DATA_PLATFORM/define.md
-  sha256: "a06501996647b99807d05047eae8545a4910451b9c33f301cda39a1330971205"
+  sha256: "1aa247b5fee9475f008a37b0ebcbcacc6abb7b883566d563188ea2c169c891da"
 files:
   - {path: sparkforge/facts/pyspark_ast.py, action: modify, reason: "Emite facts estruturais adicionais para APIs Structured Streaming sem remover facts batch."}
   - {path: sparkforge/facts/streaming.py, action: create, reason: "Extrai StreamingQueryProgress local em JSON/JSONL, inclusive séries e unresolved nomeados."}

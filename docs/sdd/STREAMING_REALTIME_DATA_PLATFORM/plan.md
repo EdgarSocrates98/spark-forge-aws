@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_REALTIME_DATA_PLATFORM/design.md
-  sha256: "5c5443742b1ba8b822eae7a8f315116d8ee364e8033c506397bbb4a63e54656a"
+  sha256: "79d221d3db5ae647b26d1fa7492519ae0c39693598631a4c098cc8b677a3f6e3"
 tasks:
   - id: T1
     files: [tests/test_facts_streaming.py, sparkforge/facts/pyspark_ast.py, tests/test_fixtures_kind_coverage.py, tests/test_rules_catalog_reachability.py]
@@ -23,15 +23,15 @@ tasks:
   - id: T4
     files: [tests/test_fixtures_golden_streaming.py, fixtures/streaming/streaming_source.py, fixtures/streaming/batch_only.py, fixtures/streaming/progress_positive.jsonl, fixtures/streaming/progress_single.jsonl, fixtures/streaming/progress_malformed.jsonl, fixtures/streaming/meta.yaml]
     covers: [AC3, AC5, AC7]
-    test: {path: tests/test_fixtures_golden_streaming.py, name: test_streaming_fixture_corpus_covers_positive_negative_unresolved_and_runtime}
+    test: {path: tests/test_fixtures_golden_streaming.py, name: test_all_required_fixtures_exist}
   - id: T5
-    files: [tests/test_streaming_surface.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
+    files: [tests/test_analyze_streaming.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
     covers: [AC6]
-    test: {path: tests/test_streaming_surface.py, name: test_cli_and_mcp_streaming_analysis_have_one_contract}
+    test: {path: tests/test_analyze_streaming.py, name: test_cli_and_core_emit_identical_streaming_envelope}
   - id: T6
     files: [knowledge/streaming-reliability.md, knowledge/INDEX.md, knowledge/offline-manifest.json, knowledge/sources.lock.json, manifest.json]
     covers: [AC4, AC8]
-    test: {path: tests/test_refresh_knowledge.py, name: TestKnowledgeSources::test_the_committed_lock_matches_the_watchlist}
+    test: {path: tests/test_offline_expansion.py, name: test_offline_manifest_verifies_without_network}
   - id: T7
     files: [docs/surface.lock.json, docs/guia/referencia/cli/analyze.md, docs/guia/referencia/tools/sparkforge_analyze_streaming.md, docs/guia/referencia/tools/README.md]
     covers: [AC8]
@@ -130,7 +130,7 @@ runtime divergente. Os expected facts/findings são comparados por `to_dict()` e
 em `meta.yaml` são conferidos.
 
 ```bash
-python -m pytest tests/test_fixtures_golden_streaming.py::test_streaming_fixture_corpus_covers_positive_negative_unresolved_and_runtime -q
+python -m pytest tests/test_fixtures_golden_streaming.py::test_all_required_fixtures_exist -q
 ```
 
 O vermelho esperado é fixture ausente ou expected rule mismatch. Criar as cinco entradas
@@ -145,13 +145,13 @@ git commit -m "test(streaming): add golden corpus for source and progress"
 
 ## T5 — contrato CLI/MCP
 
-Teste primeiro em `tests/test_streaming_surface.py`: chamar `_core.analyze_streaming` e
+Teste primeiro em `tests/test_analyze_streaming.py`: chamar `_core.analyze_streaming` e
 `call_tool("sparkforge_analyze_streaming", ...)` com o mesmo source e progress, comparar
 envelope, `by_kind`, unresolved e ids; construir CLI com `analyze streaming --artifact` e
 conferir saída JSON. Garantir que o path não é importado/executado.
 
 ```bash
-python -m pytest tests/test_streaming_surface.py::test_cli_and_mcp_streaming_analysis_have_one_contract -q
+python -m pytest tests/test_analyze_streaming.py::test_cli_and_core_emit_identical_streaming_envelope -q
 ```
 
 O vermelho esperado é atributo/tool ausente. Adicionar import e função no core, parser e
@@ -160,8 +160,8 @@ o mesmo core. `--artifact` é obrigatório e limitado a `source|progress`; o out
 continua sendo a lista completa de facts.
 
 ```bash
-python -m pytest tests/test_streaming_surface.py tests/test_adapters_tools.py -q
-git add sparkforge/adapters/_core.py sparkforge/adapters/cli.py sparkforge/adapters/tools.py tests/test_streaming_surface.py
+python -m pytest tests/test_analyze_streaming.py tests/test_adapters_tools.py -q
+git add sparkforge/adapters/_core.py sparkforge/adapters/cli.py sparkforge/adapters/tools.py tests/test_analyze_streaming.py
 git commit -m "feat(streaming): expose unified cli and mcp analysis"
 ```
 
@@ -173,7 +173,7 @@ medidas, não estimadas. Regenerar hashes offline:
 
 ```bash
 python scripts/refresh_knowledge.py --update --offline
-python -m pytest tests/test_refresh_knowledge.py::TestKnowledgeSources::test_the_committed_lock_matches_the_watchlist tests/test_offline_expansion.py -q
+python -m pytest tests/test_refresh_knowledge.py tests/test_offline_expansion.py -q
 ```
 
 O vermelho esperado é lock ou hash fora de sincronia. Depois rodar `python scripts/verify_offline_bundle.py`
@@ -191,7 +191,7 @@ Regenerar referências e lock a partir dos catálogos reais:
 ```bash
 python scripts/gen_reference_docs.py
 python scripts/check_surface_lock.py
-python -m pytest tests/test_reference_docs.py::test_referencia_em_dia tests/test_surface_lock.py -q
+python -m pytest tests/test_reference_docs.py tests/test_surface_lock.py -q
 ```
 
 O vermelho esperado é página velha, tool não documentada ou surface lock divergente.
