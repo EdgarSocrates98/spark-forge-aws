@@ -47,12 +47,22 @@ sparkforge analyze streaming-composition \
   --facts progress.facts.json --facts transport.facts.json \
   --mode observability --query-name orders-query --transport-key orders-group \
   --out composed.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts progress.facts.json --facts transport.facts.json \
+  --mode temporal --query-name orders-query --transport-key orders-group \
+  --max-skew-seconds 3 --out temporal.facts.json
 ```
 
-3. Leia `streaming.composition.unresolved` antes de julgar. Query, tabela,
-grupo, stream ausente ou ambíguo é ponto cego; não vira zero nem “saudável”.
+3. Para `mode=temporal`, `max-skew-seconds` é obrigatório como declaração do
+   chamador. O compositor só usa timestamps observados; ordem do arquivo,
+   relógio local e tolerância implícita não contam.
 
-4. Julgue o arquivo composto:
+4. Leia `streaming.composition.unresolved` e `streaming.temporal.unresolved`
+   antes de julgar. Query, tabela, grupo, stream, timestamp ou janela ausente
+   é ponto cego; não vira zero nem “saudável”.
+
+5. Julgue o arquivo composto:
 
 ```bash
 sparkforge judge --facts composed.facts.json --show-skipped
@@ -69,6 +79,11 @@ coexiste com lag/iterator age observado no transporte declarado. Não é root
 cause. Colete timestamps pareados, duração de trigger, state, sink, throttling e
 resultado funcional antes de escolher uma mudança.
 
+`SF-STREAMOBS-002` exige pelo menos dois pares temporais completos, dentro da
+tolerância declarada, com processamento abaixo da entrada e backlog/idade
+observados. É evidência de coexistência na janela; não identifica causa, SLO,
+custo ou ganho de capacidade.
+
 ## Limites
 
 - uma amostra não prova tendência;
@@ -77,6 +92,11 @@ resultado funcional antes de escolher uma mudança.
 - checkpoint não prova exactly-once end-to-end;
 - correlação não prova causalidade;
 - ausência de finding não prova saúde.
+- timestamp sem timezone, timestamp ausente ou par fora da janela produz
+  `streaming.temporal.unresolved`;
+- use `--detail-level summary` para triagem barata e reexecute `full` apenas
+  quando precisar dos facts/proveniências, mantendo `source_fact_ids` para
+  reauditoria.
 
 Toda recomendação mantém risco, trade-off, validação e rollback. Nenhuma
 alteração live ou manutenção destrutiva pertence a esta skill.

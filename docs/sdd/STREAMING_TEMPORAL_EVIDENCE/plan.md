@@ -27,7 +27,7 @@ tasks:
   - id: T5
     files: [fixtures/streaming_temporal, tests/test_fixtures_golden_streaming_temporal.py]
     covers: [AC5]
-    test: {path: tests/test_fixtures_golden_streaming_temporal.py, name: test_fixture_corpus_is_complete}
+    test: {path: tests/test_fixtures_golden_streaming_temporal.py, name: test_fixture_goldens}
   - id: T6
     files: [skills/analyze-streaming-composition/SKILL.md, knowledge/streaming-lakehouse-observability.md, docs/streaming/prompt-coverage.md, docs/guia/referencia, docs/surface.lock.json, knowledge/offline-manifest.json]
     covers: [AC7]

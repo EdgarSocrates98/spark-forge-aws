@@ -17,11 +17,11 @@ O inventário de commits, features e provas compartilhadas está em
 |---|---|---|---|
 | Structured Streaming | `diagnosable` | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`: exigem workload/runtime real; cross-artifact permanece unresolved quando artefato não existe |
 | Spark Real-Time | `version-aware` parcial | `knowledge/streaming/runtime-matrix.md` revalidada; separação upstream/runtime gerenciado e limite de `Trigger.RealTime` | capability no runtime observado, guard executável e prova de latência continuam `N/A + motivo` sem workload/runtime |
-| Kafka | `fact-aware` parcial | `facts/transport.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, fixtures e analyzers | Connect REST, métricas temporais de broker/grupo e segurança completa |
+| Kafka | `fact-aware` parcial | `facts/transport.py` preserva timestamps observados; `facts/streaming_temporal.py`, modo `analyze streaming-composition --mode temporal`, fixtures e regra `SF-STREAMOBS-002` pareiam progresso e lag em dumps | Connect REST, série temporal live de broker/grupo e segurança completa |
 | Amazon MSK | `version-aware` parcial | `msk.cluster` em `facts/transport.py`, `collect streaming-integrations`, `knowledge/transport-diagnostics.md`, `knowledge/streaming/runtime-matrix.md` | snapshot regional/broker-type, configuração/rede/segurança/lag temporal |
 | Kafka Connect | `fact-aware` parcial | `kafka.connect`, `kafka.connect.task`, `SF-STREAM-008`, fixtures e `sparkforge_analyze_streaming_integrations` | collector REST live, offsets/erros temporais e validação funcional |
 | Kafka Streams | `fact-aware` parcial | `kafka.streams`, `kafka.streams.state_store`, `SF-STREAM-009`, fixtures e `sparkforge_analyze_streaming_integrations` | métricas/topologia live e decisão composta contra Spark/Flink |
-| Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric`, `collect streaming-integrations` e goldens | CloudWatch temporal, reshard history, KCL/EFO e rules com evidência |
+| Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline | CloudWatch temporal live, reshard history, KCL/EFO e série de longa duração |
 | Apache Flink | `version-aware` parcial | `facts/flink.py`, `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
 | Managed Service for Apache Flink | `version-aware` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures, mesmo analyzer e matriz com `UNRESOLVED` explícito | matriz AWS por região/release, IAM/VPC/CloudWatch temporal e validação funcional |
 | Glue Streaming | `version-aware` parcial | `facts/glue_streaming.py`, regras RTM, fixtures, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | job/Terraform cross-artifact, runtime observado/collector, source/sink e validação funcional |
@@ -33,7 +33,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py`, `facts/streaming_composition.py`, `analyze streaming-composition`, regras `streaming_iceberg.yaml` e goldens | collectors/live lineage, SLO/FinOps e validação causal/funcional permanecem lacunas |
 | Delta/Hudi | `knowledge-aware` parcial | `streaming_ops.lakehouse`, `knowledge/streaming-format-serving-matrix.md`, fixtures e matriz de formatos | runtime/feature compatibility e collectors ficam P1/P2 |
 | Event-driven architecture | `diagnosable` parcial | `facts/event_driven.py`, regras `SF-EVENT`, fixtures, `analyze event-driven`, MCP, skill, routing e SDD | collector live, Step Functions, teste temporal de entrega/replay e decisão vs streaming |
-| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `facts/streaming_ops.py`, `facts/streaming_integrations.py`, analyzers, collectors read-only e regras offline | collectors temporais de série longa, SLO temporal, correlação live e FinOps continuam lacunas; OpenLineage offline já tem fact, sem endpoint live |
+| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `facts/streaming_temporal.py`, `facts/streaming_ops.py`, analyzers, collectors read-only e `SF-STREAMOBS-002` | collectors temporais de série longa, SLO temporal, correlação live e FinOps continuam lacunas; OpenLineage offline já tem fact, sem endpoint live |
 | Streaming FinOps | `diagnosable` parcial | `streaming.finops`, `SF-STREAM-005`, CLI/MCP, fixtures e `knowledge/streaming-operations.md` | CUR/CloudWatch temporal e atribuição por transport/process/runtime/sink |
 | Streaming security | `diagnosable` parcial | `streaming.security`, redaction, `SF-STREAM-006`, CLI/MCP e fixtures | IAM/KMS/VPC/resource-policy collectors e eficácia runtime |
 | Real-time analytics/serving | `knowledge-aware` parcial | `streaming.serving`, `knowledge/streaming-format-serving-matrix.md`, matriz Redshift/ClickHouse/Pinot/Druid/Trino | collectors/evals por sistema e benchmark de latência/throughput |
@@ -110,6 +110,9 @@ O inventário de commits, features e provas compartilhadas está em
 - `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`: habilitadores transversais para
   medir contexto e ligar workspace/semantic graph sem inferir tokens, custo ou
   telemetria de provider.
+- `STREAMING_TEMPORAL_EVIDENCE`: modo temporal no compositor existente, timestamps
+  observados em Kafka/Kinesis, pareamento declarativo, unresolved, regra P1,
+  fixtures Kafka/Kinesis, CLI/MCP e uso compacto com `detail_level`.
 
 Todos os itens acima passaram os gates globais de skills, referências, surface,
 números correntes e bundle offline em 2026-10-02. Isso fecha contratos offline e
@@ -123,7 +126,7 @@ live em capacidade comprovada.
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
-| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline parcial entregue**: streaming→Iceberg, progresso→Kafka/Kinesis, OpenLineage facts e declarações SLO/FinOps; collectors temporais, endpoint live e correlação de longo período permanecem lacunas |
+| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, progresso→Kafka/Kinesis, janela temporal pareada, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, endpoint live, correlação de longo período e atribuição continuam lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |
 | I | Delta/Hudi/Redshift and P2 knowledge | **matrizes e facts declarativos entregues**: compatibilidade e serving são knowledge-aware; evals/collectors/benchmark continuam P1/P2 |
 | J | security, failure fixtures, integration, performance, packaging and all gates | **contratos offline entregues**: Connect/OpenLineage/checkpoint/Streams, failure goldens, CLI/MCP, SDD e gates; faltam runtime temporal, replay, benchmark e integração live |

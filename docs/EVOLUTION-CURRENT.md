@@ -34,14 +34,14 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **55 features**: **53 `ship/done`**,
+`sparkforge sdd status --repo .` encontrou **56 features**: **54 `ship/done`**,
 uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
 | Frente | Features entregues | Estado documentado |
 |---|---|---|
 | Nova janela / Data Platform Control Plane | `PLATFORM_INTELLIGENCE_GRAPH`, `PLATFORM_INTELLIGENCE_EVALS`, `OPEN_LAKEHOUSE_CATALOG`, `DATA_OBSERVABILITY_SRE`, `ORCHESTRATION_CONTROL_PLANE`, `ANALYTICS_ENGINEERING_MICROSCOPE`, `DATA_PLATFORM_ECOSYSTEM`, além dos fechamentos de decisão e governança | Entregue; ativação produtiva do Decision Plane continua opt-in e `shadow` por padrão |
-| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; evidência live, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
+| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_FLINK_PLATFORM`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; janela curta temporal agora é pareada por timestamps observados e tolerância declarada; evidência live, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
 | Forge Lab | `FORGE_LAB_PRODUCT` | Entregue e verificado offline; `FORGE_LAB_DIGITAL_TWIN` permanece como registro SDD separado em `plan/ready` |
 | Economia observada | `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`, `TOKEN_ESTIMATE_UNICO`, `AGENTIC_ECONOMY_COMPLETION` | Entregue; bytes, tokens do provider e custo continuam eixos independentes |
 | Governança | `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS`, `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` e famílias Lake Formation relacionadas | Entregue offline, fail-closed e com gates focados |
@@ -54,6 +54,9 @@ skills, routing, collectors AWS read-only e SDD para os domínios acima.
 
 Ainda não são claims de capacidade de produção:
 
+- correlação temporal longa ou causalidade: a nova janela offline exige query,
+  transporte, timestamps e `max_skew_seconds` declarados e só emite finding com
+  dois pares observados;
 - endpoint live de Kafka Connect, Kafka Streams, OpenLineage e métricas temporais
   de broker/grupo;
 - replay funcional, execução Spark/Flink real, benchmark de latência/throughput
@@ -114,6 +117,7 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Docs de streaming | 32 passed em `tests/test_reference_docs.py tests/test_docs_coverage.py` |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
 | Extração e fixtures | 905 passed no lote de reachability/kind coverage/untrusted |
+| Janela temporal | 17 testes core; 66 testes de goldens/coverage; 1188 gates de catálogo/docs/knowledge e 766 gates de runtime-scope |
 | Claims e proveniência | 174 passed, 5 skipped |
 | Checks globais | skills, referências, surface lock, status numbers, bundle offline e claims sem divergência |
 

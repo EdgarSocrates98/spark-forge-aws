@@ -20,6 +20,22 @@ declarado e encontrado. O resultado carrega `causal_inference: false`: lag
 correlacionado a processamento abaixo da entrada orienta a coleta seguinte, mas
 não escolhe source, state, sink, throttling ou capacidade como causa.
 
+## Janela temporal pareada
+
+`mode=temporal` do compositor aceita Facts de progresso e Kafka/Kinesis com
+identidade declarada e `max_skew_seconds` fornecido pelo chamador. Timestamps ISO
+com timezone e timestamps numéricos observados são normalizados; a ordem dos
+arquivos e o relógio local nunca substituem um timestamp. Múltiplas partições ou
+shards no mesmo timestamp formam um snapshot agregado, preservando todos os
+`source_fact_ids`.
+
+`streaming.temporal.diagnostic` só aparece com pelo menos dois pares. A saída é
+compacta: contagens, skew máximo, intervalo, medidas agregadas e ids de origem.
+Use `detail_level=summary` para triagem e reexecute em `full` para reauditar os
+facts de origem. Ausência de identidade, timestamp, medida, tolerância ou par
+produz `streaming.temporal.unresolved`; diagnóstico temporal não prova causalidade,
+SLO, custo, throughput ou exactly-once.
+
 ## Pontos cegos
 
 Sem query, tabela, grupo ou stream declarados, o compositor emite

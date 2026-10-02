@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **55 features**:
+O status atual registra **56 features**:
 
-- **53** em `ship/done`;
+- **54** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -54,7 +54,8 @@ STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
 STREAMING_SCHEMA_REGISTRY, STREAMING_STRUCTURED_REVIEW,
-STREAMING_TRANSPORT_DIAGNOSTICS, TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH,
+STREAMING_TEMPORAL_EVIDENCE, STREAMING_TRANSPORT_DIAGNOSTICS,
+TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH,
 TOKEN_ESTIMATE_UNICO, TOOLS_OK
 ```
 
@@ -94,7 +95,8 @@ do wheel e de uma CLI real do host.
 - Checkpoints, Kafka Connect, Kafka Streams e OpenLineage como facts separados;
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
 - Iceberg/observabilidade: composição offline streaming→Iceberg e
-  progresso→transporte; operações, serving, SLO, FinOps, security/redaction,
+  progresso→transporte e janela temporal pareada entre progresso e Kafka/Kinesis;
+  operações, serving, SLO, FinOps, security/redaction,
   EventBridge/Pipes/SQS/SNS e decisão arquitetural por constraints.
 
 ### Forge Lab
@@ -149,6 +151,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 32 passed em `tests/test_reference_docs.py tests/test_docs_coverage.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
+| Evidência temporal | 17 testes core; 66 testes de goldens/coverage; Kafka, Kinesis e unresolved com facts/findings persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 
 Essas provas validam contratos locais, determinismo, paridade e documentação.
@@ -160,8 +163,8 @@ AWS ou eficácia de uma recomendação em produção.
 1. Execução/replay/benchmark funcional Spark e Flink dependem de workload e runtime.
 2. Kafka Connect REST, Kafka Streams runtime, OpenLineage live e métricas
    temporais de broker/grupo exigem endpoint, credencial e janela.
-3. CloudWatch temporal, reshard, KCL/EFO, FinOps atribuído e SLO de longo período
-   exigem coleta pareada.
+3. A janela temporal curta offline está entregue; CloudWatch temporal, reshard,
+   KCL/EFO, FinOps atribuído e SLO de longo período ainda exigem coleta pareada live.
 4. IAM/KMS/VPC/resource policies e snapshots regionais/managed runtime precisam
    do artefato correspondente.
 5. `FORGE_LAB_DIGITAL_TWIN` não é ship enquanto não houver build/ship próprio.

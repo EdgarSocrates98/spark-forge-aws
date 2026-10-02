@@ -1041,10 +1041,11 @@ sparkforge analyze streaming-composition --help
 | Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
 |---|---|---|---|---|---|
 | `--facts` | sim | texto | sim |  | Arquivo de facts gerado por um analyze; repetível para unir fontes. |
-| `--mode` | sim | `iceberg`, `observability` |  |  | Relação a analisar: streaming→Iceberg ou progresso→transporte. |
+| `--mode` | sim | `iceberg`, `observability`, `temporal` |  |  | Relação a analisar: streaming→Iceberg, progresso→transporte ou janela temporal pareada. |
 | `--table` | não | texto |  | `` | Tabela Iceberg declarada. |
 | `--query-name` | não | texto |  | `` | Query Structured Streaming declarada. |
 | `--transport-key` | não | texto |  | `` | Grupo/topic Kafka ou stream Kinesis declarado. |
+| `--max-skew-seconds` | não | texto |  |  | Tolerância temporal declarada para mode=temporal; sem valor sai unresolved. |
 | `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
 | `--kind` | não | texto | sim |  | Filtra por kind. Repetível. |
 | `--limit` | não | texto |  | `50` |  |

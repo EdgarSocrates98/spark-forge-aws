@@ -50,8 +50,8 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 54 extratores emitem 353 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **208** regras de diagnóstico em YAML, **208 delas executáveis** (todas), cada uma
+Os 55 extratores emitem 355 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **209** regras de diagnóstico em YAML, **209 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;

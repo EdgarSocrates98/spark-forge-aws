@@ -6,18 +6,19 @@
 
 ## O que faz
 
-Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só produz link quando a correspondência é observada sem ambiguidade. Preserva ids dos facts de origem, operações Iceberg, lag/iterator age e unresolved. Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade.
+Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só produz link quando a correspondência é observada sem ambiguidade. Preserva ids dos facts de origem, operações Iceberg, lag/iterator age, janela temporal pareada e unresolved. Mode=temporal exige `max_skew_seconds` declarado. Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade.
 
 ## Parâmetros
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `facts_paths` | array de string | sim | Arquivos de facts produzidos por analyzers; repetível. |
-| `mode` | string: `iceberg`, `observability` | sim | Relação streaming→Iceberg ou progresso→transporte. |
+| `mode` | string: `iceberg`, `observability`, `temporal` | sim | Relação streaming→Iceberg, progresso→transporte ou janela temporal pareada. |
 | `cursor` | string | não |  |
 | `detail_level` | string: `summary`, `normal`, `full` | não | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e `schema_version` UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a `id`, `kind`, `measures`, `at` (arquivo:linha) e `symbol`. Nada e apagado em silencio: o que sai do item aparece no envelope. NAO existe verbo que busque um fato por id -- para ter o fato inteiro de volta, reexecute o mesmo verbo em `full` e pague o payload inteiro outra vez. O `id` e estavel entre execucoes, entao serve para casar a linha do resumo com o mesmo fato numa execucao `full`. |
 | `kind` | array de string | não |  |
 | `limit` | integer | não |  |
+| `max_skew_seconds` | number | não | Tolerância temporal declarada para mode=temporal; sem valor sai unresolved. |
 | `query_name` | string | não | Query Structured Streaming declarada. |
 | `table` | string | não | Tabela Iceberg declarada. |
 | `transport_key` | string | não | Grupo/topic Kafka ou stream Kinesis declarado. |
