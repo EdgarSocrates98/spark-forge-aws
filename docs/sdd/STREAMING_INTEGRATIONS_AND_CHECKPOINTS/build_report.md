@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_INTEGRATIONS_AND_CHECKPOINTS
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_INTEGRATIONS_AND_CHECKPOINTS/plan.md
   sha256: "a1fcfa4acd3b4d46c81ec189538543952762b08c98842ec8a80cae058b1aa9c3"
@@ -25,3 +25,10 @@ change_id: null
 
 O build mantém o core offline. A coleta live e a validação funcional são
 limitações nomeadas, não capabilities silenciosamente omitidas.
+
+## Validação final
+
+Os testes focados de integração, regras e fixtures terminaram com `904 passed`;
+o gate de capabilities e surface terminou com `46 passed`. Referências,
+surface lock, números correntes, bundle offline e `sdd check` passaram com
+exit 0.
