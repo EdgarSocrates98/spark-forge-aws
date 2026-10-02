@@ -36,6 +36,9 @@ e como obtê-lo.
 1. Abra ou carregue o case (`sparkforge_case_open` / `sparkforge_case_get`).
 2. Detecte o runtime (`sparkforge_runtime_detect`) antes de citar qualquer API ou limiar.
 3. Extraia facts de código com `sparkforge_analyze_pyspark` — nunca leia o código e conclua de memória.
+   Para a primeira onda Structured Streaming, use `sparkforge_analyze_streaming` sobre o
+   código-fonte ou a série local de `StreamingQueryProgress`, mantendo a mesma separação entre
+   fato observado, regra e julgamento.
 4. Julgue os facts contra o catálogo com `sparkforge_judge`.
 5. Deixe `sparkforge_next_step` decidir a rota. Não escolha skill por julgamento próprio.
 6. Consulte `sparkforge_rules_lookup` para todo limiar, guarda de versão e fonte — nunca de memória.
