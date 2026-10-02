@@ -117,6 +117,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_collect_iceberg_metadata`](sparkforge_collect_iceberg_metadata.md) | acessa a AWS | Consulta as cinco metadata tables Iceberg de uma tabela via Athena (`SELECT * FROM "db"."tabela$secao"`) e registra no manifesto. |
 | [`sparkforge_collect_lakeformation`](sparkforge_collect_lakeformation.md) | acessa a AWS | Coleta a PERMISSAO de UMA tabela no Lake Formation: `list_permissions` (quem tem o que), `describe_resource` (a localizacao S3 esta registrada, e com qual role) e `get_data_lake... |
 | [`sparkforge_collect_parquet_footer`](sparkforge_collect_parquet_footer.md) | acessa a AWS | Le so o FOOTER dos primeiros `max_files` arquivos Parquet de um prefixo (diretorio local ou `s3://`) -- schema, row groups, estatistica min/max por coluna -- e registra o artefa... |
+| [`sparkforge_collect_streaming_integrations`](sparkforge_collect_streaming_integrations.md) | acessa a AWS | Coleta snapshots read-only para o contrato streaming_integrations: prefixo de checkpoint Spark em S3, Glue Streaming, Kinesis, MSK e DMS. |
 | [`sparkforge_collect_verify`](sparkforge_collect_verify.md) | só leitura | Verifica presenca e integridade (sha256 recalculado) de todos os artefatos registrados no manifesto local. |
 
 ## context

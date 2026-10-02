@@ -135,6 +135,7 @@ class TestToolSurface:
             "sparkforge_change_propose",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
+            "sparkforge_collect_streaming_integrations",
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
@@ -204,6 +205,7 @@ class TestToolSurface:
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
             "sparkforge_collect_emr_eks",
+            "sparkforge_collect_streaming_integrations",
         }
 
     def test_every_open_world_tool_also_writes_locally(self):
@@ -3219,6 +3221,32 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         )
         assert result["kind"] == "parquet_footer", result
         return result
+
+    if name == "sparkforge_collect_streaming_integrations":
+        from sparkforge.collect import streaming as collect_streaming
+
+        class _Kinesis:
+            def describe_stream_summary(self, **kwargs):
+                return {"StreamDescriptionSummary": {"StreamName": kwargs["StreamName"]}}
+
+            def list_shards(self, **kwargs):
+                return {"Shards": [{"ShardId": "shard-0"}]}
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "kinesis"
+                return _Kinesis()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_streaming, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "kinesis_stream_name": "orders",
+                "now": "2026-10-02T00:00:00Z",
+            },
+        )
 
     if name in (
         "sparkforge_collect_event_log",

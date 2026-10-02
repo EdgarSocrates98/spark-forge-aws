@@ -9407,6 +9407,37 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_streaming_integrations": {
+        "description": (
+            "Coleta snapshots read-only para o contrato streaming_integrations: prefixo "
+            "de checkpoint Spark em S3, Glue Streaming, Kinesis, MSK e DMS. O coletor "
+            "grava apenas no manifesto local, redige chaves secret-like e é offline-first. "
+            "Kafka Connect, Kafka Streams e OpenLineage não possuem API AWS universal; "
+            "sem artefato/endpoint próprio eles permanecem unresolved no analyzer."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "now"],
+            "additionalProperties": False,
+            "properties": {
+                "repo": {"type": "string"},
+                "checkpoint_s3_uri": {"type": "string"},
+                "glue_job_name": {"type": "string"},
+                "kinesis_stream_name": {"type": "string"},
+                "msk_cluster_arn": {"type": "string"},
+                "dms_task_arn": {"type": "string"},
+                "region_name": {"type": "string"},
+                "max_objects": {"type": "integer", "minimum": 1, "maximum": 500},
+                "max_shards": {"type": "integer", "minimum": 1, "maximum": 500},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato streaming coletado ou cache hit local, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_cloudwatch": {
         "description": (
             "Baixa as metricas de observabilidade Glue via `cloudwatch.get_metric_data` "
@@ -11262,6 +11293,21 @@ def _h_collect_glue_job(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_glue_job(args["repo"], job_name=args["job_name"], now=args["now"])
 
 
+def _h_collect_streaming_integrations(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_streaming_integrations(
+        args["repo"],
+        now=args["now"],
+        checkpoint_s3_uri=args.get("checkpoint_s3_uri", ""),
+        glue_job_name=args.get("glue_job_name", ""),
+        kinesis_stream_name=args.get("kinesis_stream_name", ""),
+        msk_cluster_arn=args.get("msk_cluster_arn", ""),
+        dms_task_arn=args.get("dms_task_arn", ""),
+        region_name=args.get("region_name", ""),
+        max_objects=args.get("max_objects", 500),
+        max_shards=args.get("max_shards", 500),
+    )
+
+
 def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_cloudwatch(
         args["repo"],
@@ -11571,6 +11617,7 @@ _HANDLERS = {
     "sparkforge_telemetry_export": _h_telemetry_export,
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
+    "sparkforge_collect_streaming_integrations": _h_collect_streaming_integrations,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_lakeformation": _h_collect_lakeformation,

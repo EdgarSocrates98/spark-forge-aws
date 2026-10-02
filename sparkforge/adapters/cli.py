@@ -3219,6 +3219,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     emrc_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    streaming_collect_p = collect_sub.add_parser(
+        "streaming-integrations",
+        help=(
+            "Coleta snapshots read-only de checkpoint Spark, Glue Streaming, Kinesis, "
+            "MSK e DMS; Connect/Streams/OpenLineage continuam unresolved sem endpoint proprio."
+        ),
+    )
+    streaming_collect_p.add_argument("--repo", required=True)
+    streaming_collect_p.add_argument(
+        "--checkpoint-s3-uri", default="", help="Prefixo S3 do checkpoint Spark."
+    )
+    streaming_collect_p.add_argument(
+        "--glue-job", dest="glue_job_name", default="", help="Nome do job Glue."
+    )
+    streaming_collect_p.add_argument(
+        "--kinesis-stream", dest="kinesis_stream_name", default="", help="Nome do stream Kinesis."
+    )
+    streaming_collect_p.add_argument(
+        "--msk-cluster-arn", default="", help="ARN do cluster MSK."
+    )
+    streaming_collect_p.add_argument(
+        "--dms-task-arn", default="", help="ARN da replication task DMS."
+    )
+    streaming_collect_p.add_argument(
+        "--region", dest="region_name", default="", help="Região AWS explícita, quando necessária."
+    )
+    streaming_collect_p.add_argument(
+        "--max-objects", type=int, default=500, help="Teto de objetos do checkpoint (1..500)."
+    )
+    streaming_collect_p.add_argument(
+        "--max-shards", type=int, default=500, help="Teto de shards Kinesis (1..500)."
+    )
+    streaming_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     workspace_graph_p = collect_sub.add_parser(
         "workspace-graph",
         help=("Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."),
@@ -5091,6 +5125,23 @@ def _cmd_collect_emr_eks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_streaming_integrations(args: argparse.Namespace) -> int:
+    payload = _core.collect_streaming_integrations(
+        args.repo,
+        now=args.now,
+        checkpoint_s3_uri=args.checkpoint_s3_uri,
+        glue_job_name=args.glue_job_name,
+        kinesis_stream_name=args.kinesis_stream_name,
+        msk_cluster_arn=args.msk_cluster_arn,
+        dms_task_arn=args.dms_task_arn,
+        region_name=args.region_name,
+        max_objects=args.max_objects,
+        max_shards=args.max_shards,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_workspace_graph(args: argparse.Namespace) -> int:
     payload = _core.collect_workspace_graph(
         args.repo,
@@ -5635,6 +5686,7 @@ _DISPATCH = {
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
+    ("collect", "streaming-integrations"): _cmd_collect_streaming_integrations,
     ("collect", "workspace-graph"): _cmd_collect_workspace_graph,
     ("collect", "verify"): _cmd_collect_verify,
     # agentic

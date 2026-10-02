@@ -43,6 +43,7 @@ from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect import live_graph as collect_live_graph
 from sparkforge.collect import parquet_footer as collect_parquet
+from sparkforge.collect import streaming as collect_streaming
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
 from sparkforge.controlm import migration as _ctm_migration
@@ -7797,6 +7798,52 @@ def collect_emr_eks(
     try:
         entry = collect_aws.collect_emr_eks(virtual_cluster_id, job_run_id, Path(repo), now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_streaming_integrations(
+    repo: str,
+    *,
+    now: str,
+    checkpoint_s3_uri: str = "",
+    glue_job_name: str = "",
+    kinesis_stream_name: str = "",
+    msk_cluster_arn: str = "",
+    dms_task_arn: str = "",
+    region_name: str = "",
+    max_objects: int = 500,
+    max_shards: int = 500,
+) -> dict[str, Any]:
+    """Coleta snapshots read-only de integrações streaming e registra manifesto."""
+    rel_path = collect_streaming.streaming_integrations_path(
+        checkpoint_s3_uri=checkpoint_s3_uri,
+        glue_job_name=glue_job_name,
+        kinesis_stream_name=kinesis_stream_name,
+        msk_cluster_arn=msk_cluster_arn,
+        dms_task_arn=dms_task_arn,
+    )
+    command = (
+        "sparkforge collect streaming-integrations --repo <repo> "
+        f"--now {now}"
+    )
+    try:
+        entry = collect_streaming.collect_streaming_integrations(
+            Path(repo),
+            now=now,
+            checkpoint_s3_uri=checkpoint_s3_uri,
+            glue_job_name=glue_job_name,
+            kinesis_stream_name=kinesis_stream_name,
+            msk_cluster_arn=msk_cluster_arn,
+            dms_task_arn=dms_task_arn,
+            region_name=region_name,
+            max_objects=max_objects,
+            max_shards=max_shards,
+            collect_command=command,
+        )
+    except ValueError as exc:
+        raise AdapterError(f"collect streaming-integrations: {exc}", exit_code=2) from exc
+    except (CollectorUnavailable, collect_streaming.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
 

@@ -1297,3 +1297,14 @@ capabilities:
       devin_cli: [mcp, cli, files]
       codex: [cli, files]
       copilot_ci: [cli, files]
+
+  - name: collect read-only streaming integration snapshots
+    tools: [sparkforge_collect_streaming_integrations]
+    cli: [collect streaming-integrations]
+    knowledge: [knowledge/streaming-integrations.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]

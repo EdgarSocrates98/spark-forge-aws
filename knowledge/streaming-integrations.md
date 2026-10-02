@@ -38,14 +38,24 @@ não vira lineage completo e não é correlacionado com Spark/Flink/Iceberg sem
 identidade declarada. O suporte é opcional: ausência de OpenLineage permanece
 `unresolved`, nunca prova de ausência de lineage.
 
-## Coleta live e fronteira de segurança
+## Coleta read-only e fronteira de segurança
 
-Collector Kafka/Connect, CloudWatch temporal, registry live e endpoint
-OpenLineage ficam `N/A + motivo` nesta wave: exigem endpoint, credencial,
-permissão, janela e política operacional que não pertencem ao core offline.
-O operador deve salvar dump sanitizado com data, runtime, região/cluster e
-comando de coleta; depois `analyze streaming-integrations` produz facts e
-unresolved. Não copie secrets nem trate config declarada como controle eficaz.
+`sparkforge collect streaming-integrations` grava um artefato composto em
+`.sparkforge/artifacts/streaming_integrations/` e registra SHA-256 no manifesto.
+As fontes suportadas são:
+
+- `--checkpoint-s3-uri`: lista limitada de objetos do diretório de checkpoint;
+- `--glue-job`: snapshot de `glue.get_job`;
+- `--kinesis-stream`: `describe_stream_summary` e `list_shards`;
+- `--msk-cluster-arn`: `describe_cluster_v2`, com fallback explícito;
+- `--dms-task-arn`: `describe_replication_tasks` filtrado por ARN.
+
+São chamadas de leitura. Valores secret-like são redigidos antes da escrita
+local. O cache só é aceito quando o arquivo local e o hash do manifesto batem.
+Lag temporal, replay, throughput e reachability continuam `unresolved` porque
+exigem uma janela de métricas, logs ou endpoint específico. Kafka Connect,
+Kafka Streams e OpenLineage não têm uma API AWS universal: devem entrar por
+export próprio, e não por uma coleta inventada.
 
 Fontes oficiais:
 

@@ -171,6 +171,7 @@
     "sparkforge_collect_emr_serverless",
     "sparkforge_collect_event_log",
     "sparkforge_collect_glue_job",
+    "sparkforge_collect_streaming_integrations",
     "sparkforge_collect_glue_job_runs",
     "sparkforge_collect_glue_resource_link",
     "sparkforge_collect_iam_access",
