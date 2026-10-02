@@ -58,6 +58,7 @@ from sparkforge.facts import (
     fusion,
     glue_dq_advanced,
     glue_job_run,
+    glue_streaming,
     # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
     # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
@@ -199,6 +200,7 @@ EXTRACTORS = (
     funcval,
     fusion,
     glue_job_run,
+    glue_streaming,
     # `graph` pela mesma razao, uma fase depois: sem ele aqui, os seis kinds
     # `graph.*` contam como orfaos e as regras SF-GRAPH da Task 5 seriam
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no

@@ -26,6 +26,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze flink`](#sparkforge-analyze-flink) | Extrai facts offline de dumps Apache Flink ou Managed Flink. |
 | [`sparkforge analyze glue-job-runs`](#sparkforge-analyze-glue-job-runs) | Extrai facts de historico do diretorio de artefatos de run Glue. |
 | [`sparkforge analyze glue-resource-link`](#sparkforge-analyze-glue-resource-link) | Extrai a topologia do catalogo ja coletada: link, alvo e nome. |
+| [`sparkforge analyze glue-streaming`](#sparkforge-analyze-glue-streaming) | Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode. |
 | [`sparkforge analyze graph`](#sparkforge-analyze-graph) | Extrai facts de processamento de grafo (GraphFrames) no codigo PySpark: import e versao declarada, construcao do GraphFrame e persistencia dos dois DataFrames, algoritmo chamado com seus argumentos, e se o algoritmo exige checkpoint sem que o modulo o configure. |
 | [`sparkforge analyze iam-access`](#sparkforge-analyze-iam-access) | Extrai a DECISAO de IAM ja simulada, com a camada que decidiu. |
 | [`sparkforge analyze iceberg`](#sparkforge-analyze-iceberg) | Extrai facts de um dump JSON das metadata tables Iceberg. |
@@ -461,6 +462,29 @@ sparkforge analyze glue-resource-link --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
+
+## `sparkforge analyze glue-streaming`
+
+Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.
+
+```bash
+sparkforge analyze glue-streaming --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_glue_streaming`](../tools/sparkforge_analyze_glue_streaming.md)
 
 ## `sparkforge analyze graph`
 

@@ -1,0 +1,18 @@
+{
+  "job": {
+    "name": "rtm-capacity-unknown",
+    "glue_version": "6.0",
+    "command": "gluestreaming",
+    "default_arguments": {
+      "--enable-real-time-mode": "true",
+      "--job-language": "scala"
+    },
+    "stream": {
+      "source_type": "kafka",
+      "stateful": false,
+      "output_mode": "Update",
+      "foreach_batch": false,
+      "autoscaling": false
+    }
+  }
+}

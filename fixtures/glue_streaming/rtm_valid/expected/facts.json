@@ -1,0 +1,80 @@
+[
+  {
+    "id": "f_75cfc4",
+    "schema_version": 1,
+    "kind": "glue.streaming.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "mode": "REAL_TIME"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact_sha256": "b92c6b196f2b260f24124ba4b90ddb0d87cd63e5157fa0676ed20059b0479673",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_e72b85",
+    "schema_version": 1,
+    "kind": "glue.streaming.job",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "rtm-valid",
+      "snippet": ""
+    },
+    "measures": {
+      "partition_count": 4,
+      "task_slots": 4
+    },
+    "attrs": {
+      "name": "rtm-valid",
+      "mode": "REAL_TIME",
+      "command": "GLUESTREAMING",
+      "glue_version": "6.0",
+      "language": "SCALA",
+      "source_type": "KAFKA",
+      "output_mode": "UPDATE",
+      "stateful": false,
+      "foreach_batch": false,
+      "autoscaling": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact_sha256": "b92c6b196f2b260f24124ba4b90ddb0d87cd63e5157fa0676ed20059b0479673",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  },
+  {
+    "id": "f_c444e5",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "glue_version": "6.0"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact_sha256": "b92c6b196f2b260f24124ba4b90ddb0d87cd63e5157fa0676ed20059b0479673",
+      "extractor": "glue_streaming@0.1.0"
+    }
+  }
+]

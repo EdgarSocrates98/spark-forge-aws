@@ -268,6 +268,17 @@ def build_parser() -> argparse.ArgumentParser:
     flink_p.add_argument("--cursor")
     _add_detail_level(flink_p)
 
+    glue_streaming_p = analyze_sub.add_parser(
+        "glue-streaming",
+        help="Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.",
+    )
+    glue_streaming_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    glue_streaming_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    glue_streaming_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    glue_streaming_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    glue_streaming_p.add_argument("--cursor")
+    _add_detail_level(glue_streaming_p)
+
     catalog_p = analyze_sub.add_parser(
         "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
     )
@@ -3175,6 +3186,11 @@ def _cmd_analyze_flink(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_glue_streaming(args: argparse.Namespace) -> int:
+    full = _core.analyze_glue_streaming(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
     full = _core.analyze_catalog_schema(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -5306,6 +5322,7 @@ _DISPATCH = {
     ("analyze", "streaming"): _cmd_analyze_streaming,
     ("analyze", "transport"): _cmd_analyze_transport,
     ("analyze", "flink"): _cmd_analyze_flink,
+    ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
     ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,

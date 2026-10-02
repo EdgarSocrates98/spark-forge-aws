@@ -5659,6 +5659,34 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_glue_streaming": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de AWS Glue "
+            "Streaming e Real-Time Mode. Preserva runtime, modo, fonte, restrições "
+            "observadas, capacidade e unresolved quando a medida faltar. Não chama "
+            "Glue, Kafka, Kinesis ou CloudWatch."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts Glue Streaming extraídos, ou erro se o path for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_catalog_schema": {
         "description": (
             "Extrai facts de um dump JSON ja coletado do Glue Data Catalog "
@@ -10182,6 +10210,16 @@ def _h_analyze_flink(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_glue_streaming(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_glue_streaming(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
     return _core.judge_findings(
         facts=args.get("facts"),
@@ -11189,6 +11227,7 @@ _HANDLERS = {
     "sparkforge_analyze_streaming": _h_analyze_streaming,
     "sparkforge_analyze_transport": _h_analyze_transport,
     "sparkforge_analyze_flink": _h_analyze_flink,
+    "sparkforge_analyze_glue_streaming": _h_analyze_glue_streaming,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,

@@ -28,10 +28,10 @@ Os dois arquivos ao lado já fazem o resto:
 
 | Arquivo | O que faz |
 |---|---|
-| `mcp_config.json` | expõe as **118 tools** por stdio (recontado em 2026-10-01). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
+| `mcp_config.json` | expõe as **119 tools** por stdio (recontado em 2026-10-02). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **53 skills** e os **13 coordenadores** o Devin lê sozinho de `.agents/`, que
+As **54 skills** e os **13 coordenadores** o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
@@ -142,7 +142,7 @@ linhas lido a olho vira opinião; passado por `sparkforge analyze emr-eks` vira
 fact com namespace fechado, e `sparkforge judge` diz o que o catálogo tem a
 dizer sobre ele.
 
-As **53 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
+As **54 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
 dizendo **quando** entrar e **o que ela não julga**. Ler a fronteira antes de
 trazer o artefato economiza a investigação inteira.
 

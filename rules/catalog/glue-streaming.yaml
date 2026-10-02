@@ -1,0 +1,131 @@
+catalog_version: 1
+schema_version: 1
+area: SF-GLUESTREAM
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-GLUESTREAM-001
+    category: glue_streaming
+    title: Glue Real-Time Mode com requisito observado incompatível
+    requires_facts: [glue.streaming.job]
+    when:
+      all:
+        - fact: glue.streaming.job
+          expr: >-
+            attrs.mode == "REAL_TIME" and
+            (attrs.language != "SCALA" or attrs.source_type != "KAFKA" or
+             attrs.stateful == True or attrs.output_mode != "UPDATE" or
+             attrs.foreach_batch == True)
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O dump observado marca Real-Time Mode e também traz pelo menos uma
+      propriedade incompatível com as restrições documentadas do Glue 6.0:
+      linguagem Scala, fonte Kafka, operação stateless, output Update e uso
+      direto de streaming sem foreachBatch. O achado não substitui a
+      confirmação da versão/runtime efetivos.
+    proposed_change:
+      - Confirmar Glue 6.0, tipo gluestreaming e argumento de habilitação no job efetivo.
+      - Remover ou substituir somente a restrição observada após validar requisito funcional.
+      - Se o workload for stateful, Kafka não for a fonte ou PySpark for necessário, avaliar micro-batch.
+    risks:
+      - Migrar para RTM pode alterar semântica de state, output e recuperação.
+      - Trocar modo sem validar consumidores pode perder latência ou resultado esperado.
+    tradeoffs:
+      - RTM reduz latência em uma classe restrita de workload, mas reduz opções de operação.
+    validation:
+      - Reextrair a definição do job e confirmar cada requisito contra a versão observada.
+      - Executar teste controlado com contagem, schema, chaves, agregados e comportamento do sink.
+      - Comparar latência somente com janelas, volume e fonte equivalentes.
+    rollback:
+      - Reverter o argumento/configuração RTM e restaurar o modo anterior preservando checkpoint e evidência.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.rtm_constraints
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.engine_version, correctness.write_result, runtime.wall_clock]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-002
+    category: glue_streaming
+    title: Capacidade de partições Kafka para Glue RTM não observada
+    requires_facts: [glue.streaming.job, glue.streaming.unresolved]
+    when:
+      all:
+        - fact: glue.streaming.job
+          expr: 'attrs.mode == "REAL_TIME" and attrs.source_type == "KAFKA"'
+        - fact: glue.streaming.unresolved
+          where: {attrs.reason: partition_capacity}
+    status: structural
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O job observado é RTM sobre Kafka, mas o artefato não traz partições e
+      task slots suficientes para comparar cobertura. A ausência não prova
+      insuficiência nem segurança; impede medir se todas as partições têm slot.
+    proposed_change:
+      - Coletar partições da fonte e task slots efetivos do job, sem preencher valores por nome de worker.
+      - Comparar as duas medidas na mesma janela e declarar a unidade.
+    risks:
+      - Escalar antes de medir partições pode aumentar custo sem responder ao risco.
+    tradeoffs:
+      - Coleta adicional aumenta evidência e custo operacional de retenção.
+    validation:
+      - Reexecutar análise com ambas as medidas observadas e julgar novamente.
+    rollback:
+      - Não há mutação proposta; descartar apenas o artefato coletado se a política de retenção exigir.
+    action:
+      kind: measurement.collect_baseline
+      target: glue.streaming.rtm.partition_capacity
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}
+
+  - id: SF-GLUESTREAM-003
+    category: glue_streaming
+    title: Auto Scaling declarado junto com Glue RTM
+    requires_facts: [glue.streaming.job]
+    when:
+      all:
+        - fact: glue.streaming.job
+          expr: 'attrs.mode == "REAL_TIME" and attrs.autoscaling == True'
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump traz RTM e auto scaling habilitado no mesmo job. A documentação
+      oficial declara que auto scaling não é compatível com RTM; o fato não
+      mede impacto operacional desta aplicação.
+    proposed_change:
+      - Confirmar se auto scaling está efetivamente aplicado, não apenas declarado.
+      - Avaliar worker count fixo com partições observadas antes de qualquer alteração.
+    risks:
+      - Fixar workers sem medir partições pode deixar capacidade insuficiente ou ociosa.
+    tradeoffs:
+      - Worker count fixo troca elasticidade por previsibilidade da execução RTM.
+    validation:
+      - Comparar partições, task slots, backlog e latência antes e depois da mudança.
+    rollback:
+      - Restaurar a configuração anterior preservando métricas e resultado funcional.
+    action:
+      kind: measurement.localize_divergence
+      target: glue.streaming.rtm.autoscaling
+      direction: remove
+      requires_absent: []
+      moves: [runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/glue-streaming-rtm.md}

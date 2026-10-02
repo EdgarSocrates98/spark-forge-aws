@@ -1,0 +1,5 @@
+artifact: glue_streaming
+expects_kinds:
+  - glue.streaming.analyzed
+  - glue.streaming.job
+  - glue.streaming.runtime

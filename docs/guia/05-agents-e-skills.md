@@ -163,7 +163,7 @@ teria como ser:** os dois caminhos de descoberta estão ligados por default
 (`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa**
 sobre qual vence quando os dois existem, e o default de `allowed-tools` é *"all tools"* —
 omitir é a opção **mais permissiva**, não a mais restrita. O que carrega a fronteira é a
-prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As 20 skills
+prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As 21 skills
 despacháveis (contadas em 2026-09-19 com `grep -l '^subagent: true' .agents/skills/*/SKILL.md`)
 declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara, no próprio
 texto, que não executa manutenção destrutiva.
@@ -294,7 +294,7 @@ Use a skill sparkforge-diagnose para analisar este job Glue.
 ```
 
 `sparkforge-diagnose` **não** despacha subagente de propósito: ela abre o case e roteia, e
-o ciclo de vida do case tem que ficar na sessão que continua. As 20 skills despacháveis
+o ciclo de vida do case tem que ficar na sessão que continua. As 21 skills despacháveis
 (as que declaram `subagent: true` no espelho `.agents/skills/`) podem rodar como
 subagente. Detalhe em [`GUIA_DE_USO.md`](../../GUIA_DE_USO.md), seção 3.
 

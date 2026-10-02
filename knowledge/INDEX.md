@@ -17,6 +17,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC later waves are explicitly unresolved |
 | [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards and metrics; blind spots remain explicit |
 | [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, checkpoints, state, service configuration, connectors, metrics and unresolved blind spots |
+| [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, source, RTM restrictions, observed capacity and unresolved blind spots |
 | [`spark/execution-model.md`](spark/execution-model.md) | Como Spark executa: lazy eval, actions, jobs/stages/tasks, fronteiras de shuffle, codegen, o que quebra pushdown |
 | [`spark/config-reference.md`](spark/config-reference.md) | Configs com nome exato, default e significado — AQE, shuffle, broadcast, leitura de arquivos |
 | [`spark/shuffle-join-skew.md`](spark/shuffle-join-skew.md) | Estratégias físicas de join, custo de shuffle, diagnóstico e tratamento de skew |

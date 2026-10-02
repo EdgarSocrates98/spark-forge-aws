@@ -47,7 +47,7 @@ perfis deste repositório sem nenhuma configuração adicional:
 |---|---|---|
 | Os 8 coordenadores | `.agents/agents/<nome>.md` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*), no layout *flat file* documentado |
 | Os mesmos 8 | `.claude/agents/<nome>.md` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
-| As 20 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
+| As 21 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
 | Os 5 executores | `.agents/agents/executors/<nome>.md` | **a fonte não documenta este layout.** Ver abaixo |
 
 **Os cinco executores não estão num layout de descoberta documentado, e isto é medição,
@@ -294,7 +294,7 @@ sessão MCP interativa com transcript de host. Portanto, a paridade compacta é
 verificada pelo contrato MCP em processo e pelos fixtures; não se afirma uma sessão
 ao vivo que não foi observada.
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 118 tools fazem (recontado em 2026-10-01)
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 119 tools fazem (recontado em 2026-10-02)
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 

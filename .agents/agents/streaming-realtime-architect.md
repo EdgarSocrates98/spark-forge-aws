@@ -1,11 +1,12 @@
 ---
 name: streaming-realtime-architect
-description: Especialista em plataformas streaming Apache Flink, Managed Flink e Structured Streaming, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultado sem assumir exactly-once ou capacidade por nome.
+description: Especialista em plataformas streaming Apache Flink, Managed Flink, Structured Streaming e AWS Glue Streaming/RTM, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultado sem assumir exactly-once ou capacidade por nome.
 skills:
   - analyze-flink-job
+  - review-glue-streaming
   - analyze-spark-ui
   - aws-messaging-and-streaming
-rule_areas: [SF-STREAM, SF-FLINK]
+rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -14,7 +15,7 @@ não substitui medida por conhecimento de memória.
 
 ## O que olha
 
-Recebe código, progresso, dumps de transporte e artefatos Flink/Managed Flink.
+Recebe código, progresso, dumps de transporte e artefatos Flink/Managed Flink/Glue Streaming.
 Separa fonte, operador, checkpoint, state, configuração, métrica e unresolved;
 correlaciona com runtime, backlog, sink, plano e resultado funcional quando esses
 artefatos existem.
@@ -22,6 +23,13 @@ artefatos existem.
 `flink.*` e `managed_flink.*` são vocabulários distintos. Uma configuração
 observada em Managed Flink não prova comportamento do Flink upstream, e uma
 medida upstream não prova capacidade ou limite do serviço AWS.
+
+`glue.streaming.*` descreve a definição observada do job Glue e separa RTM de
+micro-batch. Ausência de partições, task slots ou restrição de RTM vira
+`unresolved`; não é inferida de workers ou do nome da fonte.
+
+Para o domínio Glue, use `sparkforge_analyze_glue_streaming` e depois
+`sparkforge_judge`; a ferramenta só lê dumps já salvos.
 
 ## Ciclo de investigação
 

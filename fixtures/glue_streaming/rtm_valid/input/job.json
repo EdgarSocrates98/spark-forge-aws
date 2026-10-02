@@ -1,0 +1,20 @@
+{
+  "job": {
+    "name": "rtm-valid",
+    "glue_version": "6.0",
+    "command": "gluestreaming",
+    "default_arguments": {
+      "--enable-real-time-mode": "true",
+      "--job-language": "scala"
+    },
+    "stream": {
+      "source_type": "kafka",
+      "partition_count": 4,
+      "task_slots": 4,
+      "stateful": false,
+      "output_mode": "Update",
+      "foreach_batch": false,
+      "autoscaling": false
+    }
+  }
+}

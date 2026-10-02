@@ -2,18 +2,18 @@
 
 # Agent `streaming-realtime-architect`
 
-Especialista em plataformas streaming Apache Flink, Managed Flink e Structured Streaming, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultado sem assumir exactly-once ou capacidade por nome.
+Especialista em plataformas streaming Apache Flink, Managed Flink, Structured Streaming e AWS Glue Streaming/RTM, correlacionando transporte, checkpoint, state, backpressure, observabilidade e resultado sem assumir exactly-once ou capacidade por nome.
 
 | Campo | Valor |
 |---|---|
 | Papel | coordenador |
 | Arquivo de origem | `agents/streaming-realtime-architect.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash, Edit, Write |
-| Áreas de regra | SF-STREAM, SF-FLINK |
+| Áreas de regra | SF-STREAM, SF-FLINK, SF-GLUESTREAM |
 
 ## Skills que ele usa
 
-[`analyze-flink-job`](../skills/analyze-flink-job.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`aws-messaging-and-streaming`](../skills/aws-messaging-and-streaming.md)
+[`analyze-flink-job`](../skills/analyze-flink-job.md), [`review-glue-streaming`](../skills/review-glue-streaming.md), [`analyze-spark-ui`](../skills/analyze-spark-ui.md), [`aws-messaging-and-streaming`](../skills/aws-messaging-and-streaming.md)
 
 ## Executores que ele despacha
 
@@ -26,7 +26,7 @@ não substitui medida por conhecimento de memória.
 
 #### O que olha
 
-Recebe código, progresso, dumps de transporte e artefatos Flink/Managed Flink.
+Recebe código, progresso, dumps de transporte e artefatos Flink/Managed Flink/Glue Streaming.
 Separa fonte, operador, checkpoint, state, configuração, métrica e unresolved;
 correlaciona com runtime, backlog, sink, plano e resultado funcional quando esses
 artefatos existem.
@@ -34,6 +34,13 @@ artefatos existem.
 `flink.*` e `managed_flink.*` são vocabulários distintos. Uma configuração
 observada em Managed Flink não prova comportamento do Flink upstream, e uma
 medida upstream não prova capacidade ou limite do serviço AWS.
+
+`glue.streaming.*` descreve a definição observada do job Glue e separa RTM de
+micro-batch. Ausência de partições, task slots ou restrição de RTM vira
+`unresolved`; não é inferida de workers ou do nome da fonte.
+
+Para o domínio Glue, use `sparkforge_analyze_glue_streaming` e depois
+`sparkforge_judge`; a ferramenta só lê dumps já salvos.
 
 #### Ciclo de investigação
 

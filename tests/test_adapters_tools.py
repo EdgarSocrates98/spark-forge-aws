@@ -42,6 +42,7 @@ class TestToolSurface:
             "sparkforge_analyze_streaming",
             "sparkforge_analyze_transport",
             "sparkforge_analyze_flink",
+            "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
             "sparkforge_analyze_sql_metrics",
@@ -2251,6 +2252,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_analyze_flink",
             {"path": str(dump), "artifact": "flink"},
         )
+
+    if name == "sparkforge_analyze_glue_streaming":
+        dump = tmp_path / "glue_streaming.json"
+        dump.write_text(
+            '{"job":{"name":"rtm","glue_version":"6.0",'
+            '"default_arguments":{"--enable-real-time-mode":"true",'
+            '"--job-language":"scala"},"stream":{"source_type":"kafka",'
+            '"partition_count":2,"task_slots":2,"stateful":false,'
+            '"output_mode":"Update","foreach_batch":false}}}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_glue_streaming", {"path": str(dump)})
 
     if name == "sparkforge_judge":
         lib = _write_job(tmp_path)

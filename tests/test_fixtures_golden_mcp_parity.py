@@ -118,6 +118,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_flink": (
         "2026-10-02: facts offline de dumps Apache Flink e Managed Flink"
     ),
+    "sparkforge_analyze_glue_streaming": (
+        "2026-10-02: facts offline de dumps AWS Glue Streaming e Real-Time Mode"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

@@ -105,6 +105,10 @@ from sparkforge.facts.emr_serverless import (
 )
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
+from sparkforge.facts.glue_streaming import (
+    extract_glue_streaming_path,
+    extract_glue_streaming_tree,
+)
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_dq_advanced import (
@@ -1079,6 +1083,26 @@ def analyze_flink(
         else extract_flink_path(target, artifact=artifact)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_glue_streaming(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise Glue Streaming: {path}")
+    facts = (
+        extract_glue_streaming_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_glue_streaming_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "glue.streaming.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #

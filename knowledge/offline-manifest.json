@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "9b6d08bc038e249080be6e1da9242b6b48f1fd1ea537dd77171dcea00209807c"
+      "sha256": "0ca202ea759ecc1e36fa559090c599a5195d1e3f2d598bc3a09c2c3d7ca2f0f3"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -277,6 +277,11 @@
       "path": "knowledge/flink-streaming.md",
       "title": "flink-streaming",
       "sha256": "e56a82952500186bd63dd648eefc602dcdda1fdb81bacf51c569b967e8d886dd"
+    },
+    {
+      "path": "knowledge/glue-streaming-rtm.md",
+      "title": "glue-streaming-rtm",
+      "sha256": "19e3f49998a23768566693a99ee30b5c9bf16f71140fd9bfbc682058825fbb45"
     },
     {
       "path": "knowledge/streaming-reliability.md",

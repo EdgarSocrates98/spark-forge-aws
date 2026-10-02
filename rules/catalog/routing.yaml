@@ -886,6 +886,20 @@ rules:
       mora na definicao ASL, no prazo declarado e no tratamento de abort -- os
       artefatos de infraestrutura que este coordenador ja le --, e nao no codigo do job.
 
+  - id: AGENT-092
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em AWS Glue Streaming ou Real-Time Mode
+    when:
+      all:
+        - {findings_area: SF-GLUESTREAM, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado depende das restricoes declaradas do job Glue Streaming/RTM e de
+      medidas de capacidade que não podem ser inferidas do nome da fonte ou de
+      workers. O especialista streaming correlaciona essa definição com
+      transporte, checkpoint, observabilidade e validação funcional antes de
+      propor qualquer mudança.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

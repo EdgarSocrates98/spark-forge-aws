@@ -119,6 +119,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract AWS Glue Streaming and Real-Time Mode artifact facts
+    tools: [sparkforge_analyze_glue_streaming]
+    cli: [analyze glue-streaming]
+    knowledge: [knowledge/glue-streaming-rtm.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from a Glue Data Catalog schema dump
     tools: [sparkforge_analyze_catalog_schema]
     cli: [analyze catalog-schema]

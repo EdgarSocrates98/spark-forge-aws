@@ -2052,6 +2052,18 @@
       ],
       "sha256": "702c21bbea6aea11ac7d16d61f23be2d2290506cf5242e40d7d2a31eef9e501f"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/streaming-chapter.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-GLUESTREAM-001",
+        "SF-GLUESTREAM-002",
+        "SF-GLUESTREAM-003"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html": {
       "checked_at": "2026-09-21",
       "docs": [],

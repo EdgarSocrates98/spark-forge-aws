@@ -254,6 +254,7 @@ RELACAO_MEDIDA = {
         "streaming-realtime-architect",
     ),
     "analyze-flink-job": ("streaming-realtime-architect",),
+    "review-glue-streaming": ("streaming-realtime-architect",),
     "aws-messaging-and-streaming": ("streaming-realtime-architect",),
     "benchmark-pyspark-job": (
         "athena-query-optimizer",
@@ -784,6 +785,7 @@ class TestSkillsReais:
             "analyze-functional-rules": "data-quality-reviewer",
             "review-data-validation": "data-quality-reviewer",
             "analyze-flink-job": "streaming-realtime-architect",
+            "review-glue-streaming": "streaming-realtime-architect",
         }
 
     def test_o_frontmatter_sobrevive_a_insercao(self):

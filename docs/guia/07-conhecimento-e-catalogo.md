@@ -40,11 +40,11 @@ em [Migração de versão](usos/migracao-de-versao.md).
 
 ## O catálogo de regras
 
-`rules/catalog/` é a forma **executável** desse conhecimento: **182** regras de
+`rules/catalog/` é a forma **executável** desse conhecimento: **185** regras de
 diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data —
-**182 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
+**185 delas executáveis**, ou seja, todas; as 35 declarações de área de coordenação
 (`executable: false`) saíram em 2026-09-19, porque nomeavam área sem julgar nada
-(feature `docs/sdd/SF_STUBS/`) —, mais **46** rotas determinísticas em `routing.yaml`. Funciona
+(feature `docs/sdd/SF_STUBS/`) —, mais **47** rotas determinísticas em `routing.yaml`. Funciona
 como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da
 escada de portabilidade. Ver [`rules/catalog/README.md`](../../rules/catalog/README.md).
 Os números correntes ficam na tabela *Números correntes* de
@@ -54,7 +54,7 @@ produz — e reprova também as frases deste manual que publicam contagem.
 
 ## As áreas
 
-As 182 executáveis se distribuem em 34 áreas (medido em 2026-10-02 com `area_of`):
+As 185 executáveis se distribuem em 35 áreas (medido em 2026-10-02 com `area_of`):
 `SF-ERR` 23 (a exceção que o job lançou, e a maior área do catálogo), `SF-PY` 12
 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-PQ` 9 (Parquet/S3), `SF-CTM` 6
 (Control-M), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura
@@ -70,7 +70,7 @@ Step Functions dispara o job Glue), `SF-KMS` 2, `SF-TIMEOUT` 2, `SF-WASTE` 2, `S
 camada que negou: boundary, service control policy ou `Deny` explícito), `SF-XACC` 3
 (cross-account: o catálogo de outra conta, o nome do resource link e o alvo dele),
 e uma cada em `SF-BRIDGE`, `SF-CG` e `SF-NET`, além de `SF-STREAM` 3 (Structured
-Streaming). **Conte área com `area_of`, nunca
+Streaming) e `SF-GLUESTREAM` 3 (AWS Glue Streaming/RTM). **Conte área com `area_of`, nunca
 somando lista escrita à mão** — `SF-EMR` é prefixo de `SF-EMRS` e de `SF-EMRK`, e
 comparar por `startswith` mede a fronteira ao contrário. A área não é etiqueta de
 serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o
@@ -78,7 +78,7 @@ artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## O bloco `action:`
 
-Cada uma das 182 carrega um bloco **`action:`** — `kind` (70 no vocabulário
+Cada uma das 185 carrega um bloco **`action:`** — `kind` (70 no vocabulário
 fechado), `target`, `direction` (`increase`/`decrease`/`add`/`remove`/`replace`/`investigate`),
 `requires_absent`, `moves` (23 eixos, cada um `nature: measure` ou `risk`) e
 `depends_on`. É o que torna **contradição** e **ordem de aplicação** legíveis sem
