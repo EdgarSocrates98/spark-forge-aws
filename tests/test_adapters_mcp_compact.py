@@ -97,8 +97,8 @@ def test_compact_catalog_matches_its_golden_fixture():
 
 
 def test_full_catalog_remains_declared_and_http_compact_has_no_source_tool():
-    assert len(tools_do_transporte("stdio", "full")) == 122
-    assert len(tools_do_transporte("http", "full")) == 121
+    assert len(tools_do_transporte("stdio", "full")) == 123
+    assert len(tools_do_transporte("http", "full")) == 122
     assert len(tools_do_transporte("stdio", "compact")) == 7
     assert len(tools_do_transporte("http", "compact")) == 7
     assert "sparkforge_code_read" not in tools_do_transporte("http", "compact")

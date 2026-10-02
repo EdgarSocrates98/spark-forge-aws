@@ -17,6 +17,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC later waves are explicitly unresolved |
 | [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards and metrics; blind spots remain explicit |
 | [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg; preserva procedência, não infere causalidade e nomeia pontos cegos |
+| [`event-driven-architecture.md`](event-driven-architecture.md) | Contrato offline para EventBridge, Pipes, SQS, SNS e padrões event-driven |
 | [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, checkpoints, state, service configuration, connectors, metrics and unresolved blind spots |
 | [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, source, RTM restrictions, observed capacity and unresolved blind spots |
 | [`cdc-replication.md`](cdc-replication.md) | Offline CDC/Debezium/AWS DMS contract: operations, positions, keys, transactions, snapshot/CDC seam, tombstones, schema history, endpoints, mappings and unresolved blind spots |

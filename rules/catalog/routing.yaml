@@ -964,6 +964,18 @@ rules:
       observada no contrato. O especialista separa proxy estrutural de prova
       end-to-end e exige owner, consumidores e validação antes da publicação.
 
+  - id: AGENT-098
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em arquitetura event-driven
+    when:
+      all:
+        - {findings_area: SF-EVENT, count_gt: 0}
+    recommended_agent: streaming-realtime-architect
+    reason: >
+      O achado depende da cadeia de evento, target, retry, redrive ou DLQ
+      observados. O especialista separa configuração de prova de entrega,
+      replay e idempotência e pede métricas ou runbook quando faltarem.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "646044aadf5c4f3a329122137e300594a9fc99bc5d3e5d571006a73fa891ebae"
+      "sha256": "453e95eeb4c17b7e7b5e1cef99d6b06f337de544cdd10e5e67220e3354aedfab"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -297,6 +297,11 @@
       "path": "knowledge/streaming-lakehouse-observability.md",
       "title": "streaming-lakehouse-observability",
       "sha256": "5ed4377239f93d234471bb21322e327963555e4c166b6025e980fb491f70e424"
+    },
+    {
+      "path": "knowledge/event-driven-architecture.md",
+      "title": "event-driven-architecture",
+      "sha256": "87e703f670c3b74b5587862a43775902b482f4f4d1d8eaea569d7c3006f30464"
     },
     {
       "path": "knowledge/transport-diagnostics.md",

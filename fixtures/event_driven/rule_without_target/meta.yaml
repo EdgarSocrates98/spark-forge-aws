@@ -1,0 +1,3 @@
+artifact: input/architecture.json
+expects_findings: [SF-EVENT-002]
+expects_kinds: [eventbridge.rule, event_driven.analyzed]

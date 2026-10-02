@@ -52,6 +52,7 @@ from sparkforge.facts import (
     emr_cluster,
     emr_eks,
     emr_serverless,
+    event_driven,
     event_log,
     exception,
     flink,
@@ -170,6 +171,7 @@ EXTRACTORS = (
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
     # repositorio desde a Task 2 desta fase.
     emr_serverless,
+    event_driven,
     event_log,
     # `exception` entra ANTES de a area SF-ERR existir, e de proposito: sem ele
     # aqui, os tres kinds `spark.exception*` contam como orfaos, e a primeira

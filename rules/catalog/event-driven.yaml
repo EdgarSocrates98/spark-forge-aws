@@ -1,0 +1,70 @@
+catalog_version: 1
+schema_version: 1
+area: SF-EVENT
+retrieved: 2026-10-02
+
+rules:
+  - id: SF-EVENT-001
+    category: event_driven
+    title: Fila SQS sem redrive/DLQ declarado
+    requires_facts: [sqs.queue]
+    when:
+      all:
+        - fact: sqs.queue
+          expr: 'attrs.redrive_declared == False'
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A fila observada não declara redrive para uma dead-letter queue. Isso não
+      prova perda de mensagem, mas remove evidência importante de isolamento de
+      poison messages e recuperação controlada.
+    proposed_change:
+      - Declarar uma DLQ, maxReceiveCount e retenção compatíveis com replay.
+      - Testar consumer idempotente e redrive sem duplicar efeito de negócio.
+    risks: ["Adicionar DLQ sem runbook pode apenas mover a falha para outro lugar."]
+    tradeoffs: ["DLQ exige operação, retenção e monitoramento adicionais."]
+    validation: ["Publicar mensagem inválida controlada e comprovar redrive e replay."]
+    rollback: ["Reverter configuração somente após preservar mensagens e evidência."]
+    action:
+      kind: event_driven.require_dlq
+      target: sqs.redrive_policy
+      direction: add
+      requires_absent: []
+      moves: [reliability.recovery, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/event-driven-architecture.md}]
+
+  - id: SF-EVENT-002
+    category: event_driven
+    title: Regra EventBridge habilitada sem target observado
+    requires_facts: [eventbridge.rule]
+    when:
+      all:
+        - fact: eventbridge.rule
+          expr: 'attrs.state == "ENABLED" and measures.target_count == 0'
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A regra está habilitada, mas o dump não traz target. O extractor não infere
+      destino por nome; a configuração precisa ser completada ou coletada novamente.
+    proposed_change:
+      - Confirmar target, role e política de invocação no mesmo snapshot.
+      - Reanalisar o dump depois de corrigir ou capturar a configuração faltante.
+    risks: ["Regra habilitada sem destino pode produzir falsa sensação de automação."]
+    tradeoffs: ["Validar targets aumenta disciplina de inventário e custo operacional."]
+    validation: ["Comparar target observado com métrica de invocações e falhas."]
+    rollback: ["Desabilitar regra até que target e permissões estejam comprovados."]
+    action:
+      kind: event_driven.verify_target
+      target: eventbridge.rule.target
+      direction: investigate
+      requires_absent: []
+      moves: [correctness.write_result, observability.diagnostic_artifacts]
+      depends_on: []
+    sources:
+      - {url: "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html", retrieved: 2026-10-02}
+    knowledge_refs: [{ref: knowledge/event-driven-architecture.md}]

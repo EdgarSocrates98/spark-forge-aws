@@ -57,11 +57,11 @@ sparkforge judge --facts composed.facts.json --show-skipped
 
 ## Interpretação
 
-`SF-STREAM-ICE-001` significa operação não-append observada no vínculo
+`SF-STREAMICE-001` significa operação não-append observada no vínculo
 declarado. Não significa que a query falhou. Confirme leitura incremental,
 consumidores, replay e retenção de snapshots antes de qualquer manutenção.
 
-`SF-STREAM-OBS-001` significa que uma série de processamento abaixo da entrada
+`SF-STREAMOBS-001` significa que uma série de processamento abaixo da entrada
 coexiste com lag/iterator age observado no transporte declarado. Não é root
 cause. Colete timestamps pareados, duração de trigger, state, sink, throttling e
 resultado funcional antes de escolher uma mudança.

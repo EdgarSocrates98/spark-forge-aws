@@ -23,6 +23,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze emr-eks`](#sparkforge-analyze-emr-eks) | Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump. |
 | [`sparkforge analyze emr-serverless`](#sparkforge-analyze-emr-serverless) | Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe. |
 | [`sparkforge analyze error-signatures`](#sparkforge-analyze-error-signatures) | Casa knowledge/errors/ contra os facts do case. Derivacao pura. |
+| [`sparkforge analyze event-driven`](#sparkforge-analyze-event-driven) | Extrai facts offline de EventBridge/Pipes, SQS e SNS. |
 | [`sparkforge analyze event-log`](#sparkforge-analyze-event-log) | Extrai facts de um Spark event log (.jsonl) ja coletado. |
 | [`sparkforge analyze flink`](#sparkforge-analyze-flink) | Extrai facts offline de dumps Apache Flink ou Managed Flink. |
 | [`sparkforge analyze glue-job-runs`](#sparkforge-analyze-glue-job-runs) | Extrai facts de historico do diretorio de artefatos de run Glue. |
@@ -394,6 +395,29 @@ sparkforge analyze error-signatures --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_cloudwatch_logs`](../tools/sparkforge_analyze_cloudwatch_logs.md), [`sparkforge_analyze_error_signatures`](../tools/sparkforge_analyze_error_signatures.md)
+
+## `sparkforge analyze event-driven`
+
+Extrai facts offline de EventBridge/Pipes, SQS e SNS.
+
+```bash
+sparkforge analyze event-driven --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_event_driven`](../tools/sparkforge_analyze_event_driven.md)
 
 ## `sparkforge analyze event-log`
 

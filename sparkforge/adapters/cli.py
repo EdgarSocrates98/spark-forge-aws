@@ -296,6 +296,17 @@ def build_parser() -> argparse.ArgumentParser:
     schema_p.add_argument("--cursor")
     _add_detail_level(schema_p)
 
+    event_driven_p = analyze_sub.add_parser(
+        "event-driven",
+        help="Extrai facts offline de EventBridge/Pipes, SQS e SNS.",
+    )
+    event_driven_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON.")
+    event_driven_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    event_driven_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    event_driven_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    event_driven_p.add_argument("--cursor")
+    _add_detail_level(event_driven_p)
+
     composition_p = analyze_sub.add_parser(
         "streaming-composition",
         help="Compõe facts já extraídos de streaming, transporte e Iceberg.",
@@ -3341,6 +3352,11 @@ def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_event_driven(args: argparse.Namespace) -> int:
+    full = _core.analyze_event_driven(args.path, kind=args.kind, limit=None)
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
     full = _core.analyze_parquet_footer(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5413,6 +5429,7 @@ _DISPATCH = {
     ("analyze", "flink"): _cmd_analyze_flink,
     ("analyze", "cdc"): _cmd_analyze_cdc,
     ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
+    ("analyze", "event-driven"): _cmd_analyze_event_driven,
     ("analyze", "streaming-composition"): _cmd_analyze_streaming_composition,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,

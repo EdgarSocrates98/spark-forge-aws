@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-EVENT-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Fila SQS sem redrive/DLQ declarado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_fe337a"
+    ],
+    "measured": {
+      "visibility_timeout_seconds": 60
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A fila observada não declara redrive para uma dead-letter queue. Isso não prova perda de mensagem, mas remove evidência importante de isolamento de poison messages e recuperação controlada.",
+    "proposed_change": [
+      "Declarar uma DLQ, maxReceiveCount e retenção compatíveis com replay.",
+      "Testar consumer idempotente e redrive sem duplicar efeito de negócio."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Adicionar DLQ sem runbook pode apenas mover a falha para outro lugar."
+    ],
+    "tradeoffs": [
+      "DLQ exige operação, retenção e monitoramento adicionais."
+    ],
+    "validation": [
+      "Publicar mensagem inválida controlada e comprovar redrive e replay."
+    ],
+    "rollback": [
+      "Reverter configuração somente após preservar mensagens e evidência."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "event_driven.require_dlq",
+      "target": "sqs.redrive_policy",
+      "direction": "add",
+      "requires_absent": [],
+      "moves": [
+        "reliability.recovery",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

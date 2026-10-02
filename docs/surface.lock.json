@@ -2,9 +2,9 @@
   "schema_version": 1,
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
-    "tool_count": 122,
-    "total_bytes": 638759,
-    "by_name_sha256": "0230fed48b660b8f61d2054c87600f3cf46978c3464ba802279c6579189e8017"
+    "tool_count": 123,
+    "total_bytes": 645659,
+    "by_name_sha256": "e7d12a444b39b094fd82db9e36baa4b9d7caed504ba51f0979eeab56633c47b8"
   },
   "compact": {
     "tool_count": 7,
@@ -12,13 +12,13 @@
     "by_name_sha256": "9b9c74808930fa718046245b2b966998ad6e661e6373d9de8ed403db52d344b2"
   },
   "skills": {
-    "document_count": 56,
-    "total_bytes": 647523,
-    "by_name_sha256": "a501764062fab1bd512156f77823e6b382603d8b76e90dc5c3a53cbe17550d35"
+    "document_count": 57,
+    "total_bytes": 649441,
+    "by_name_sha256": "14c1b81ebbf3d77e67fa4c151b2c4f94e6120e1608aadfa6abbfacd5dd032879"
   },
   "knowledge": {
-    "document_count": 66,
-    "total_bytes": 574283,
-    "by_name_sha256": "5d0d5985deef18b147d3ac4af169c88ba924441a2fde030d5c48796036cb112a"
+    "document_count": 67,
+    "total_bytes": 576107,
+    "by_name_sha256": "a80e0d046add3df875fc16b4b24482e693045dd2810708c88b348ef6f2d755a7"
   }
 }

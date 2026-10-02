@@ -308,6 +308,18 @@
         "SF-DEBEZIUM-002"
       ]
     },
+    "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html": {
+      "docs": [
+        "knowledge/event-driven-architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-EVENT-001"
+      ]
+    },
     "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html": {
       "changed_at": "2026-09-21",
       "checked_at": "2026-09-21",
@@ -1748,6 +1760,26 @@
         "SF-SCHEMA-003"
       ]
     },
+    "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html": {
+      "docs": [
+        "knowledge/event-driven-architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html": {
+      "docs": [
+        "knowledge/event-driven-architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-EVENT-002"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/add-job-streaming.html": {
       "docs": [],
       "pinned": false,
@@ -2424,6 +2456,14 @@
         "SF-EMRK-001"
       ],
       "sha256": "6fcf74bf681672793f78541e64a66e92b3744277067b04ede321b33fcb34946b"
+    },
+    "https://docs.aws.amazon.com/sns/latest/dg/sns-message-delivery-retries.html": {
+      "docs": [
+        "knowledge/event-driven-architecture.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.aws.amazon.com/step-functions/latest/apireference/API_CreateStateMachine.html": {
       "checked_at": "2026-09-21",

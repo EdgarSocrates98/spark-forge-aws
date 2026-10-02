@@ -40,6 +40,7 @@ from sparkforge.facts import (
     emr_cluster,
     emr_eks,
     emr_serverless,
+    event_driven,
     event_log,
     exception,
     flink,
@@ -159,6 +160,7 @@ EXTRACTORS = {
     # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
     # que falhar.
     "emr_serverless": emr_serverless,
+    "event_driven": event_driven,
     "event_log": event_log,
     "exception": exception,
     # `lakeformation` entra nas DUAS listas manuais no MESMO commit de

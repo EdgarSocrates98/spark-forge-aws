@@ -7,7 +7,8 @@ skills:
   - review-glue-streaming
   - analyze-spark-ui
   - aws-messaging-and-streaming
-rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM, SF-STREAMICE, SF-STREAMOBS]
+  - review-event-driven-architecture
+rule_areas: [SF-STREAM, SF-FLINK, SF-GLUESTREAM, SF-STREAMICE, SF-STREAMOBS, SF-EVENT]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
