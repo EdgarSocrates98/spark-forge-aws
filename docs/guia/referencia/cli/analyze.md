@@ -735,7 +735,7 @@ sparkforge analyze streaming --help
 
 ### Tool MCP equivalente
 
-Nenhuma: este verbo existe só na CLI.
+[`sparkforge_analyze_streaming`](../tools/sparkforge_analyze_streaming.md)
 
 ## `sparkforge analyze terraform`
 

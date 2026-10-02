@@ -21,7 +21,11 @@ Extrai facts determinísticos da superfície Structured Streaming: fonte PySpark
 
 ## Na CLI
 
-Sem verbo de CLI declarado para esta tool.
+[`sparkforge analyze streaming`](../cli/analyze.md)
+
+## Capacidade
+
+extract Structured Streaming source and StreamingQueryProgress facts
 
 ## Anotações MCP
 
