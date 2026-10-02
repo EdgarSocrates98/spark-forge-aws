@@ -456,6 +456,28 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: analyze dbt manifest catalog and run results
+    tools: [sparkforge_analyze_dbt_artifacts]
+    cli: [analyze dbt-artifacts]
+    knowledge: [docs/knowledge/analytics-engineering-microscope.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: analyze read-only DuckDB Parquet and Iceberg microscope bundles
+    tools: [sparkforge_analyze_duckdb_microscope]
+    cli: [analyze duckdb-microscope]
+    knowledge: [docs/knowledge/analytics-engineering-microscope.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from an S3 object listing
     tools: [sparkforge_analyze_s3_listing]
     cli: [analyze s3-listing]

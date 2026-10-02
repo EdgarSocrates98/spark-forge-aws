@@ -221,6 +221,11 @@ from sparkforge.catalog.contract import (
     LakehouseCatalogError,
     analyze_lakehouse_catalog as _analyze_lakehouse_catalog,
 )
+from sparkforge.analytics.dbt import DbtArtifactsError, analyze_dbt_artifacts as _analyze_dbt_artifacts
+from sparkforge.analytics.duckdb import (
+    DuckDBMicroscopeError,
+    analyze_duckdb_microscope as _analyze_duckdb_microscope,
+)
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -2369,6 +2374,27 @@ def analyze_lakehouse_catalog(path: str) -> dict[str, Any]:
     try:
         return _analyze_lakehouse_catalog(path)
     except LakehouseCatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze analytics engineering artifacts
+# --------------------------------------------------------------------------- #
+
+
+def analyze_dbt_artifacts(path: str) -> dict[str, Any]:
+    """Normalize dbt artifacts without importing or executing dbt."""
+    try:
+        return _analyze_dbt_artifacts(path)
+    except DbtArtifactsError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+def analyze_duckdb_microscope(path: str) -> dict[str, Any]:
+    """Read a read-only DuckDB microscope bundle without importing DuckDB."""
+    try:
+        return _analyze_duckdb_microscope(path)
+    except DuckDBMicroscopeError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 

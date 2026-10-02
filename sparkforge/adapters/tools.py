@@ -1093,6 +1093,46 @@ _LAKEHOUSE_CATALOG_SCHEMA: dict[str, Any] = {
     },
 }
 
+_DBT_ARTIFACTS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["dbt"],
+    "properties": {
+        "dbt": {
+            "type": "object",
+            "required": ["project", "manifest_schema", "resources", "catalog_nodes", "run_results", "unresolved", "fingerprint"],
+            "properties": {
+                "project": {"type": "string"},
+                "manifest_schema": {"type": "string"},
+                "resources": {"type": "array", "items": {"type": "object"}},
+                "catalog_nodes": {"type": "array", "items": {"type": "object"}},
+                "run_results": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
+_DUCKDB_MICROSCOPE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["duckdb"],
+    "properties": {
+        "duckdb": {
+            "type": "object",
+            "required": ["database", "read_only", "objects", "queries", "comparisons", "unresolved", "fingerprint"],
+            "properties": {
+                "database": {"type": "string"},
+                "read_only": {"const": True},
+                "objects": {"type": "array", "items": {"type": "object"}},
+                "queries": {"type": "array", "items": {"type": "object"}},
+                "comparisons": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
 # `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
 # paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
 # nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
@@ -7125,6 +7165,42 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_dbt_artifacts": {
+        "description": (
+            "Normaliza manifest.json, catalog.json e run_results.json do dbt em "
+            "recursos, dependências, colunas, materialization, testes, exposições "
+            "e resultados. Não importa nem executa dbt; referência ausente vira "
+            "unresolved e não sucesso implícito."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Diretório dbt ou manifest.json."}},
+        },
+        "outputSchema": _may_fail(
+            _DBT_ARTIFACTS_SCHEMA,
+            "Artefatos dbt normalizados, ou erro se o manifest for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_duckdb_microscope": {
+        "description": (
+            "Lê bundle offline de microscópio DuckDB com objetos Parquet/Iceberg, "
+            "colunas, estatísticas, snapshots, EXPLAIN e comparações SQL declaradas. "
+            "Só aceita consultas read-only; não instala DuckDB, não executa SQL e "
+            "não altera banco ou arquivos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Bundle JSON/YAML do microscópio."}},
+        },
+        "outputSchema": _may_fail(
+            _DUCKDB_MICROSCOPE_SCHEMA,
+            "Bundle DuckDB read-only normalizado, ou erro se houver SQL mutável.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -11177,6 +11253,14 @@ def _h_analyze_lakehouse_catalog(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_lakehouse_catalog(args["path"])
 
 
+def _h_analyze_dbt_artifacts(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_dbt_artifacts(args["path"])
+
+
+def _h_analyze_duckdb_microscope(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_duckdb_microscope(args["path"])
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -11763,6 +11847,8 @@ _HANDLERS = {
     "sparkforge_analyze_platform_graph": _h_analyze_platform_graph,
     "sparkforge_analyze_forge_lab": _h_analyze_forge_lab,
     "sparkforge_analyze_lakehouse_catalog": _h_analyze_lakehouse_catalog,
+    "sparkforge_analyze_dbt_artifacts": _h_analyze_dbt_artifacts,
+    "sparkforge_analyze_duckdb_microscope": _h_analyze_duckdb_microscope,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
