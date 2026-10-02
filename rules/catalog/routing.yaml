@@ -900,6 +900,44 @@ rules:
       transporte, checkpoint, observabilidade e validação funcional antes de
       propor qualquer mudança.
 
+  - id: AGENT-093
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em eventos CDC ou contrato de replicação
+    when:
+      all:
+        - {findings_area: SF-CDC, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende de posição de origem, chave, transação, operação,
+      snapshot/CDC seam ou delete observado no artefato de mudança. O
+      especialista correlaciona a semântica com consumidor, contrato e
+      validação funcional sem declarar exatamente-once por configuração.
+
+  - id: AGENT-094
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em configuração Debezium
+    when:
+      all:
+        - {findings_area: SF-DEBEZIUM, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende da configuração ou status Debezium observado, incluindo
+      schema history, tombstones, snapshot e transações. O especialista
+      separa configuração de prova de comportamento e nomeia o artefato de
+      consumidor que ainda falta.
+
+  - id: AGENT-095
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em tarefa AWS DMS
+    when:
+      all:
+        - {findings_area: SF-DMS, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende de task, endpoint, table mappings, estatísticas ou
+      posição de corte DMS. O especialista revisa o escopo e a transição
+      Full Load + CDC sem expor segredos nem mutar AWS.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

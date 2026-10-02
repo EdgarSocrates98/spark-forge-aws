@@ -1,0 +1,123 @@
+[
+  {
+    "rule_id": "SF-CDC-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Posição de origem repetida no dump CDC",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_events\\input\\events.jsonl",
+      "line": 5,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_6b4b1b"
+    ],
+    "measured": {
+      "occurrence": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A mesma posição de origem aparece mais de uma vez no artefato. Isso é evidência de replay ou duplicação observada, mas não identifica sozinho se o consumidor aplicou o evento duas vezes.",
+    "proposed_change": [
+      "Correlacionar posição, transaction_id, chave e resultado no destino.",
+      "Tornar idempotência e replay parte do experimento de recuperação."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Deduplicar só por posição pode colapsar eventos legítimos de fontes diferentes."
+    ],
+    "tradeoffs": [
+      "Guardar posição e chave aumenta estado do consumidor."
+    ],
+    "validation": [
+      "Comparar eventos aplicados e linhas finais por chave declarada."
+    ],
+    "rollback": [
+      "Reverter a deduplicação para a política anterior mantendo o dump."
+    ],
+    "sources": [
+      {
+        "url": "https://debezium.io/documentation/reference/stable/connectors/postgresql.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "cdc.replay.duplicate_position",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-CDC-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Delete CDC com tombstone explicitamente desabilitado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_events\\input\\events.jsonl",
+      "line": 4,
+      "col": 0,
+      "symbol": "orders",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_b2c8da",
+      "f_b9090f"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O evento observado é DELETE e o dump declara tombstone false. O finding não afirma que todo consumidor exige tombstone; exige decidir a semântica do tópico e do compacted log para esse consumidor.",
+    "proposed_change": [
+      "Confirmar delete handling e necessidade de tombstone por consumidor.",
+      "Testar delete, replay e compactação com schema e chave reais."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover tombstone pode deixar estado apagado em consumidores compactados."
+    ],
+    "tradeoffs": [
+      "Tombstones aumentam tráfego e retenção até a compactação."
+    ],
+    "validation": [
+      "Verificar que consumidores removem a chave e não apenas ignoram o evento."
+    ],
+    "rollback": [
+      "Restaurar a política anterior de tombstone após preservar evidência."
+    ],
+    "sources": [
+      {
+        "url": "https://debezium.io/documentation/reference/stable/configuration/signalling.html",
+        "retrieved": "2026-10-02"
+      }
+    ],
+    "action": {
+      "kind": "measurement.localize_divergence",
+      "target": "cdc.delete.tombstone",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "correctness.write_result",
+        "observability.diagnostic_artifacts"
+      ],
+      "depends_on": []
+    }
+  }
+]

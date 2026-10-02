@@ -42,6 +42,7 @@ from sparkforge.facts import (
     benchmark,
     bridge,
     call_graph,
+    cdc,
     catalog_schema,
     cloudwatch,
     cloudwatch_logs,
@@ -121,6 +122,7 @@ EXTRACTORS = (
     benchmark,
     bridge,
     call_graph,
+    cdc,
     catalog_schema,
     # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os
     # comentarios vizinhos ja descrevem: kind emitido por extrator que existe,

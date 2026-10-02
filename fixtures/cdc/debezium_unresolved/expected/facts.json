@@ -1,0 +1,116 @@
+[
+  {
+    "id": "f_aead74",
+    "schema_version": 1,
+    "kind": "debezium.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "debezium"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "artifact_sha256": "7ae1ffa5c81d5d11f5305c009c20711369c6376680f0d3a38231d81fd6c96a2c",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_b9c918",
+    "schema_version": 1,
+    "kind": "debezium.connector",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-connector",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-connector",
+      "connector_class": "io.debezium.connector.mysql.MySqlConnector",
+      "database": "orders",
+      "delete_handling": "rewrite",
+      "tombstones_on_delete": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "artifact_sha256": "7ae1ffa5c81d5d11f5305c009c20711369c6376680f0d3a38231d81fd6c96a2c",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_af59e4",
+    "schema_version": 1,
+    "kind": "debezium.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_snapshot_mode"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "artifact_sha256": "7ae1ffa5c81d5d11f5305c009c20711369c6376680f0d3a38231d81fd6c96a2c",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_af59e4",
+    "schema_version": 1,
+    "kind": "debezium.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_topic_prefix"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "artifact_sha256": "7ae1ffa5c81d5d11f5305c009c20711369c6376680f0d3a38231d81fd6c96a2c",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_af59e4",
+    "schema_version": 1,
+    "kind": "debezium.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "schema_history"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "artifact_sha256": "7ae1ffa5c81d5d11f5305c009c20711369c6376680f0d3a38231d81fd6c96a2c",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

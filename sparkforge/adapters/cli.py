@@ -268,6 +268,23 @@ def build_parser() -> argparse.ArgumentParser:
     flink_p.add_argument("--cursor")
     _add_detail_level(flink_p)
 
+    cdc_p = analyze_sub.add_parser(
+        "cdc",
+        help="Extrai facts offline de dumps CDC, Debezium ou AWS DMS.",
+    )
+    cdc_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    cdc_p.add_argument(
+        "--artifact",
+        required=True,
+        choices=("cdc", "debezium", "dms"),
+        help="Vocabulário do dump: eventos CDC, Debezium ou AWS DMS.",
+    )
+    cdc_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    cdc_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    cdc_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    cdc_p.add_argument("--cursor")
+    _add_detail_level(cdc_p)
+
     glue_streaming_p = analyze_sub.add_parser(
         "glue-streaming",
         help="Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.",
@@ -3186,6 +3203,16 @@ def _cmd_analyze_flink(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_cdc(args: argparse.Namespace) -> int:
+    full = _core.analyze_cdc(
+        args.path,
+        artifact=args.artifact,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_glue_streaming(args: argparse.Namespace) -> int:
     full = _core.analyze_glue_streaming(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5322,6 +5349,7 @@ _DISPATCH = {
     ("analyze", "streaming"): _cmd_analyze_streaming,
     ("analyze", "transport"): _cmd_analyze_transport,
     ("analyze", "flink"): _cmd_analyze_flink,
+    ("analyze", "cdc"): _cmd_analyze_cdc,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,

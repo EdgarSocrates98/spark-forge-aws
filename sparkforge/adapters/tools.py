@@ -5659,6 +5659,39 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_cdc": {
+        "description": (
+            "Extrai facts determinísticos de dumps JSON/JSONL já salvos de eventos CDC, "
+            "Debezium ou AWS DMS. Preserva posições, chaves, operações, transações, "
+            "snapshot/CDC seam, configurações, endpoints, mappings, estatísticas e "
+            "unresolved. Não chama Kafka, DMS, Glue ou banco de dados."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório JSON/JSONL."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["cdc", "debezium", "dms"],
+                    "description": "Vocabulário do dump a analisar.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts CDC extraídos, ou erro se o path ou artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_glue_streaming": {
         "description": (
             "Extrai facts determinísticos de dumps JSON/JSONL já salvos de AWS Glue "
@@ -10210,6 +10243,17 @@ def _h_analyze_flink(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_cdc(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_cdc(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_glue_streaming(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_glue_streaming(
         args["path"],
@@ -11227,6 +11271,7 @@ _HANDLERS = {
     "sparkforge_analyze_streaming": _h_analyze_streaming,
     "sparkforge_analyze_transport": _h_analyze_transport,
     "sparkforge_analyze_flink": _h_analyze_flink,
+    "sparkforge_analyze_cdc": _h_analyze_cdc,
     "sparkforge_analyze_glue_streaming": _h_analyze_glue_streaming,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,

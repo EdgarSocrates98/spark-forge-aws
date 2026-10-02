@@ -121,6 +121,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_glue_streaming": (
         "2026-10-02: facts offline de dumps AWS Glue Streaming e Real-Time Mode"
     ),
+    "sparkforge_analyze_cdc": (
+        "2026-10-02: facts offline de eventos CDC, Debezium e AWS DMS"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

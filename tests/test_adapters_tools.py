@@ -42,6 +42,7 @@ class TestToolSurface:
             "sparkforge_analyze_streaming",
             "sparkforge_analyze_transport",
             "sparkforge_analyze_flink",
+            "sparkforge_analyze_cdc",
             "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
@@ -2251,6 +2252,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         return call_tool(
             "sparkforge_analyze_flink",
             {"path": str(dump), "artifact": "flink"},
+        )
+
+    if name == "sparkforge_analyze_cdc":
+        dump = tmp_path / "debezium.json"
+        dump.write_text(
+            '{"connector":{"name":"orders","connector.class":"io.debezium.connector.postgresql.PostgresConnector",'
+            '"topic.prefix":"orders","snapshot.mode":"initial","schema.history.internal":"ok"}}',
+            encoding="utf-8",
+        )
+        return call_tool(
+            "sparkforge_analyze_cdc",
+            {"path": str(dump), "artifact": "debezium"},
         )
 
     if name == "sparkforge_analyze_glue_streaming":

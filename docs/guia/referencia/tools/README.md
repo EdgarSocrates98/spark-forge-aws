@@ -12,6 +12,7 @@ Uma página por tool, agrupadas pela primeira palavra do nome. O efeito diz se a
 | [`sparkforge_analyze_athena_workgroup`](sparkforge_analyze_athena_workgroup.md) | só leitura | Extrai facts de um dump JSON de workgroups do Athena (`get_work_group`): engine version efetiva, state, bytes_scanned_cutoff. |
 | [`sparkforge_analyze_call_graph`](sparkforge_analyze_call_graph.md) | só leitura | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA extraidos (tipicamente `sparkforge_analyze_pyspark` gravado em disco via `--out`) -- funcao pura sobre... |
 | [`sparkforge_analyze_catalog_schema`](sparkforge_analyze_catalog_schema.md) | só leitura | Extrai facts de um dump JSON ja coletado do Glue Data Catalog (`GetTables`/`GetTable`): schema, colunas, chaves de particao, contagem de particoes e table properties. |
+| [`sparkforge_analyze_cdc`](sparkforge_analyze_cdc.md) | só leitura | Extrai facts determinísticos de dumps JSON/JSONL já salvos de eventos CDC, Debezium ou AWS DMS. |
 | [`sparkforge_analyze_cloudwatch`](sparkforge_analyze_cloudwatch.md) | só leitura | Extrai facts `glue.metric` de um artefato de metricas do CloudWatch ja coletado. |
 | [`sparkforge_analyze_cloudwatch_logs`](sparkforge_analyze_cloudwatch_logs.md) | só leitura | Extrai facts do LOG do run ja coletado por `collect cloudwatch-logs`. |
 | [`sparkforge_analyze_consumers`](sparkforge_analyze_consumers.md) | só leitura | Extrai facts do inventario DECLARADO de consumidores de tabela (`.sparkforge/consumers.yaml`, versionado com o repositorio). |

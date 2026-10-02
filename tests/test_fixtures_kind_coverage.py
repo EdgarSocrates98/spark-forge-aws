@@ -31,6 +31,7 @@ from sparkforge.facts import (
     benchmark,
     bridge,
     call_graph,
+    cdc,
     catalog_schema,
     cloudwatch_logs,
     consumers,
@@ -119,6 +120,7 @@ EXTRACTORS = {
     "benchmark": benchmark,
     "bridge": bridge,
     "call_graph": call_graph,
+    "cdc": cdc,
     "catalog_schema": catalog_schema,
     # `cloudwatch_logs` entra nas DUAS listas manuais no MESMO commit do coletor
     # de log (T5 de `stacktrace-intelligence`). Ele e artefato SEPARADO de
@@ -235,6 +237,7 @@ EXTRACTORS = {
     "spark_plan": spark_plan,
     "streaming": streaming,
     "transport": transport,
+    "cdc": cdc,
     "flink": flink,
     "sql_literal": sql_literal,
     # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/

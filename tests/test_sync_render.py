@@ -255,7 +255,11 @@ RELACAO_MEDIDA = {
     ),
     "analyze-flink-job": ("streaming-realtime-architect",),
     "review-glue-streaming": ("streaming-realtime-architect",),
-    "aws-messaging-and-streaming": ("streaming-realtime-architect",),
+    "review-cdc-replication": ("cdc-contract-reviewer",),
+    "aws-messaging-and-streaming": (
+        "cdc-contract-reviewer",
+        "streaming-realtime-architect",
+    ),
     "benchmark-pyspark-job": (
         "athena-query-optimizer",
         "emr-infra-reviewer",
@@ -786,6 +790,7 @@ class TestSkillsReais:
             "review-data-validation": "data-quality-reviewer",
             "analyze-flink-job": "streaming-realtime-architect",
             "review-glue-streaming": "streaming-realtime-architect",
+            "review-cdc-replication": "cdc-contract-reviewer",
         }
 
     def test_o_frontmatter_sobrevive_a_insercao(self):

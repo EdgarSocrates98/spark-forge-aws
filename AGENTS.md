@@ -97,6 +97,7 @@ the case, decides which executor runs next, and records which one ran
 | `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 **ou** de uma application EMR Serverless | SF-EMR, SF-EMRS, SF-ENV |
 | `data-quality-reviewer` | o job valida dado e a pergunta é se a validação está no lugar certo, se tem consequência e quanto custa | SF-DQ |
 | `streaming-realtime-architect` | diagnóstico de plataformas Flink, Managed Flink e Structured Streaming com transporte, checkpoint, state e observabilidade | SF-STREAM, SF-FLINK |
+| `cdc-contract-reviewer` | revisão de eventos CDC, Debezium/Kafka Connect, AWS DMS e contratos de mudança com posição, chave, seam, tombstone, schema history e mappings | SF-CDC, SF-DEBEZIUM, SF-DMS, SF-SCHEMA |
 
 Which coordinator to use is data, not judgment: routes in `rules/catalog/routing.yaml`
 map the case's phase and dominant finding area to a `recommended_agent`, and
@@ -105,7 +106,7 @@ inspection.
 
 **Three platforms dispatch**: Claude Code, the Devin CLI and the Devin Local agent. Devin
 reads `.agents/agents/` natively and imports `.claude/agents/*.md` — both are generated
-mirrors of `agents/`, so the thirteen coordinators are subagent profiles there. The five
+mirrors of `agents/`, so the fourteen coordinators are subagent profiles there. The five
 executors are not at a documented discovery layout (`executors/` is neither flat nor
 `agents/<name>/AGENT.md`), so do not presume they are published. A coordinator dispatched
 as a subagent does **not** dispatch the executors: subagents cannot spawn subagents, so
@@ -141,7 +142,7 @@ glue-incremental-performance-architect skill.`
 
 ## Economy: measure before claiming a saving
 
-**119 tools, 46 with `detail_level`** (recounted 2026-10-02) (`summary`, `normal`, `full`).
+**120 tools, 47 with `detail_level`** (recounted 2026-10-02) (`summary`, `normal`, `full`).
 Rule 28 of `CLAUDE.md` applies: *read the number before claiming `detail_level` reduces
 anything*. `sparkforge_economy_report` returns `detail_level_effect` with the bytes of
 each level requested and does not conclude for you.

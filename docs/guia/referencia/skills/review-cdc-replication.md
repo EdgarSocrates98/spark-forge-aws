@@ -1,0 +1,65 @@
+<!-- Gerado por scripts/gen_reference_docs.py a partir do codigo. Nao edite a mao: rode `python scripts/gen_reference_docs.py`. -->
+
+# Skill `review-cdc-replication`
+
+Use quando houver dump local de eventos CDC, Debezium/Kafka Connect ou AWS DMS e for preciso revisar chaves, posições, transações, snapshot/CDC seam, deletes, tombstones, schema history, endpoints, mappings e pontos cegos sem chamar serviços externos.
+
+| Campo | Valor |
+|---|---|
+| Arquivo de origem | `skills/review-cdc-replication/SKILL.md` |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze cdc', 'sparkforge judge']} |
+| `subagent` | True |
+
+## Procedimento (texto integral)
+
+## Review CDC Replication
+
+Analise somente artefatos CDC, Debezium/Kafka Connect ou AWS DMS já salvos.
+O fluxo é offline: não chama banco, broker, connector, DMS, Glue ou provider.
+O `artifact` seleciona o vocabulário e impede misturar configuração de
+Debezium com evento CDC ou tarefa DMS.
+
+### Procedimento
+
+1. Confirme a origem, destino, runtime e janela do caso. Se o dump não trouxer
+   posição, chave, schema history ou corte snapshot/CDC, preserve o `*.unresolved`.
+2. Extraia o domínio:
+
+   ```bash
+   sparkforge analyze cdc --path <dump-ou-diretorio> --artifact cdc --out .sparkforge/facts_cdc.json
+   sparkforge analyze cdc --path <dump-ou-diretorio> --artifact debezium --out .sparkforge/facts_debezium.json
+   sparkforge analyze cdc --path <dump-ou-diretorio> --artifact dms --out .sparkforge/facts_dms.json
+   ```
+
+3. Julgue fatos observados:
+
+   ```bash
+   sparkforge judge --facts .sparkforge/facts_cdc.json --show-skipped
+   ```
+
+   Em MCP, a extração é `sparkforge_analyze_cdc`.
+4. Correlacione posição e chave por entidade, transação, snapshot/CDC seam,
+   delete/tombstone, schema history, table mappings, endpoints e estatísticas.
+5. Valide contagem, schema, chaves e agregados como proxies declarados; eles
+   não provam identidade completa do resultado.
+
+### Limites
+
+- Não inferir exactly-once de checkpoint, posição ou configuração.
+- Não transformar ausência de evidência em ausência do comportamento.
+- Não afirmar compatibilidade, ausência de perda, custo ou ganho sem medida.
+- Não publicar segredos, credenciais ou endpoints sensíveis.
+- Não executar alteração em banco, broker, connector, DMS ou AWS.
+
+### Entrega
+
+Separar facts, findings, unresolved, hipótese e recomendação. Toda
+recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`,
+`proposed_change`, `expected_effect`, `risks`, `tradeoffs`, `validation` e
+`rollback`. Declarar exatamente qual artefato destrava cada próxima decisão.
+
+### Protocolo
+
+Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
+`sparkforge_next_step`, use `sparkforge_rules_lookup` para regra e fonte,
+valide a saída e encaminhe qualquer mutação ao operador.

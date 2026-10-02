@@ -104,6 +104,7 @@ from sparkforge.facts.emr_serverless import (
     extract_emr_serverless_tree,
 )
 from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
 from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
 from sparkforge.facts.glue_streaming import (
     extract_glue_streaming_path,
@@ -1081,6 +1082,31 @@ def analyze_flink(
         extract_flink_tree(target, artifact=artifact)
         if target.is_dir()
         else extract_flink_path(target, artifact=artifact)
+    )
+    return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_cdc(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de CDC, Debezium ou AWS DMS."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise CDC: {path}")
+    if artifact not in {"cdc", "debezium", "dms"}:
+        raise AdapterError(
+            f"Artefato CDC desconhecido: {artifact}. Use `cdc`, `debezium` ou `dms`."
+        )
+    facts = (
+        extract_cdc_tree(target, artifact=artifact)
+        if target.is_dir()
+        else extract_cdc_path(target, artifact=artifact)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
 

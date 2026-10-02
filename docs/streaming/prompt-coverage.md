@@ -17,11 +17,11 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` e goldens | collector/CloudWatch temporal, reshard, KCL/EFO e rules com evidência |
 | Apache Flink | `diagnosable` parcial | `facts/flink.py`, `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures e `analyze-flink-job` | collector/matriz de runtime, savepoints, métricas temporais e validação funcional |
 | Managed Service for Apache Flink | `diagnosable` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures e mesmo analyzer | collector/matriz upstream↔AWS, IAM/VPC/CloudWatch temporal e validação funcional |
-| Glue Streaming | `workflow-only` parcial | conhecimento Glue e AST streaming | job/Terraform cross-artifact, runtime guards, source/sink e rules |
-| Glue Real-Time Mode | `knowledge-only` | referências dispersas no prompt/knowledge Glue | capability versionada, restrições Glue 6.x revalidadas e rules |
-| CDC | `knowledge-only` | sem domínio CDC próprio | snapshot/CDC/transaction/delete/replay/DDL facts e troubleshooting |
-| AWS DMS | `knowledge-only` | nenhum analyzer DMS | task/endpoint/mapping/stats/logs e recovery sem collector write-capable |
-| Debezium | `knowledge-only` | nenhum analyzer Debezium | connector config, snapshot, heartbeat, tombstone, outbox e schema history |
+| Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py`, regras RTM, fixtures, CLI/MCP e `review-glue-streaming` | job/Terraform cross-artifact, runtime matrix/collector, source/sink e validação funcional |
+| Glue Real-Time Mode | `diagnosable` parcial | namespace `glue.streaming.*`, restrições/capacidade observadas, rules e unresolved | matriz completa, collector live, cross-artifact e validação funcional |
+| CDC | `diagnosable` parcial | `facts/cdc.py`, regras `SF-CDC`, fixtures de evento/connector/seam/unresolved, CLI/MCP e `review-cdc-replication` | collector/replay temporal, cross-artifact com consumidor e validação funcional |
+| AWS DMS | `diagnosable` parcial | namespace `dms.*`, task/endpoint/mapping/stats/unresolved, rules e fixtures | collector read-only, matriz de versões, logs temporais e recovery funcional |
+| Debezium | `diagnosable` parcial | namespace `debezium.*`, config/status/schema-history/tombstone/unresolved, rules e fixtures | collector Kafka Connect, matriz de versões, offsets/DLQ e replay funcional |
 | Schema Registry/data contracts | `knowledge-only` | `knowledge/data-contracts-schema-evolution.md` | registry/schema-version/diff determinístico, oito compatibilities, integrations |
 | Streaming + Iceberg | `workflow-only` parcial | `facts/iceberg_metadata.py`, regras Iceberg e facts streaming separados | correlação progress↔snapshots/commits/files/metadata e evidence-driven rules |
 | Delta/Hudi | `knowledge-only` | conhecimento Iceberg dominante | matrizes de compatibilidade e decisão arquitetural; collectors ficam P1/P2 |
@@ -50,7 +50,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 |---|---|---|
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
-| F | CDC + Debezium + DMS + Schema | config analyzers, contract diff, compatibility, transactions, fixtures e routing |
+| F | CDC + Debezium + DMS + Schema | **CDC parcial entregue**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; Schema Registry e cross-artifact permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | correlação temporal, não inferência causal, telemetry/context drill-down |
 | H | Event-driven + architecture decision + agents/skills/routing | requirements→facts→candidates→constraints→ADR com unresolved |
 | I | Delta/Hudi/Redshift and P2 knowledge | matrices/evals e artefacts somente onde existir caminho determinístico |

@@ -52,4 +52,5 @@ que permaneça unresolved.
 ## Protocolo
 
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
-`sparkforge_next_step`, valide a saída e suba mutações ao operador.
+`sparkforge_next_step`, valide a saída, não executa manutenção destrutiva e
+sobe mutações ao operador.

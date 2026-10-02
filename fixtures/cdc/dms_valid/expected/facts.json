@@ -1,0 +1,160 @@
+[
+  {
+    "id": "f_552bd8",
+    "schema_version": 1,
+    "kind": "dms.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "domain": "dms"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_069c5c",
+    "schema_version": 1,
+    "kind": "dms.endpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "port": 9092
+    },
+    "attrs": {
+      "endpoint_type": "TARGET",
+      "engine": "kafka",
+      "server": "msk.example"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_1cd1a0",
+    "schema_version": 1,
+    "kind": "dms.endpoint",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "port": 5432
+    },
+    "attrs": {
+      "endpoint_type": "SOURCE",
+      "engine": "postgres",
+      "server": "orders.example"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_3f1864",
+    "schema_version": 1,
+    "kind": "dms.mapping",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "rule_type": "selection",
+      "rule_action": "include",
+      "schema": "public",
+      "table": "orders",
+      "target_schema": null,
+      "target_table": null,
+      "key_columns_declared": null
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_413883",
+    "schema_version": 1,
+    "kind": "dms.stats",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "full_load_rows": 10,
+      "cdc_changes": 4,
+      "latency_seconds": 2
+    },
+    "attrs": {
+      "schema": "public",
+      "table": "orders",
+      "status": null
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  },
+  {
+    "id": "f_addbff",
+    "schema_version": 1,
+    "kind": "dms.task",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-full-cdc",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "name": "orders-full-cdc",
+      "migration_type": "FULL-LOAD-AND-CDC",
+      "status": "RUNNING",
+      "source_engine": "postgres",
+      "target_engine": "kafka",
+      "validation_enabled": true,
+      "cdc_start_position": "0/16B6C50"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_valid\\input\\task.json",
+      "artifact_sha256": "146f2e955385ea26ba5d42e829c7398aeb7edc8e7f8f33034fbb8e85e912868b",
+      "extractor": "cdc@0.1.0"
+    }
+  }
+]

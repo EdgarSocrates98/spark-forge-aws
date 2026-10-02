@@ -12,6 +12,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze athena-workgroup`](#sparkforge-analyze-athena-workgroup) | Extrai facts de um dump JSON de workgroups do Athena. |
 | [`sparkforge analyze call-graph`](#sparkforge-analyze-call-graph) | Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos. |
 | [`sparkforge analyze catalog-schema`](#sparkforge-analyze-catalog-schema) | Extrai facts de um dump JSON do Glue Data Catalog. |
+| [`sparkforge analyze cdc`](#sparkforge-analyze-cdc) | Extrai facts offline de dumps CDC, Debezium ou AWS DMS. |
 | [`sparkforge analyze cloudwatch`](#sparkforge-analyze-cloudwatch) | Extrai facts de um artefato de metricas do CloudWatch ja coletado. |
 | [`sparkforge analyze cloudwatch-logs`](#sparkforge-analyze-cloudwatch-logs) | Extrai facts do LOG do run ja coletado do CloudWatch Logs. |
 | [`sparkforge analyze consumers`](#sparkforge-analyze-consumers) | Extrai facts do inventario declarado de consumidores de tabela. |
@@ -136,6 +137,30 @@ sparkforge analyze catalog-schema --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_catalog_schema`](../tools/sparkforge_analyze_catalog_schema.md)
+
+## `sparkforge analyze cdc`
+
+Extrai facts offline de dumps CDC, Debezium ou AWS DMS.
+
+```bash
+sparkforge analyze cdc --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--artifact` | sim | `cdc`, `debezium`, `dms` |  |  | Vocabulário do dump: eventos CDC, Debezium ou AWS DMS. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_cdc`](../tools/sparkforge_analyze_cdc.md)
 
 ## `sparkforge analyze cloudwatch`
 

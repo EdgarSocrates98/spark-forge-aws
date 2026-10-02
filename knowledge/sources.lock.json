@@ -277,6 +277,37 @@
       ],
       "sha256": "19a38945af86b3f9593c2902e94558228093be9a6b0357efa455f12ae6c67324"
     },
+    "https://debezium.io/documentation/reference/stable/configuration/signalling.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-CDC-003"
+      ]
+    },
+    "https://debezium.io/documentation/reference/stable/configuration/storage.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-DEBEZIUM-001"
+      ]
+    },
+    "https://debezium.io/documentation/reference/stable/connectors/postgresql.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-CDC-002",
+        "SF-DEBEZIUM-002"
+      ]
+    },
     "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html": {
       "changed_at": "2026-09-21",
       "checked_at": "2026-09-21",
@@ -394,6 +425,47 @@
         "SF-EMRK-003"
       ],
       "sha256": "f0d7a5a1d4a3832aebca71c7dbfa54ec04a6dd608fc7d07c8499bff3d1408c83"
+    },
+    "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Introduction.Components.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-DMS-001"
+      ]
+    },
+    "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-CDC-004",
+        "SF-DMS-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Tasks.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-DMS-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Troubleshooting.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-CDC-001"
+      ]
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ConfigurationOverrides.html": {
       "checked_at": "2026-09-21",
