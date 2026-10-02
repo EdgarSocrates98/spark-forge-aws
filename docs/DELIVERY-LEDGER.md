@@ -158,6 +158,7 @@ do wheel e de uma CLI real do host.
 | `cef138c` | recusa `ambiguous_transport` para impedir mistura de grupos, topics, partições e shards em uma avaliação SLO |
 | `08b219a` | SDD ship, knowledge, skills, referências, mirrors, surface lock, offline manifest, status e ledger da avaliação SLO de transporte |
 | `1a9bbe3` | atualização do SDD, evolução, status e ledger para a guarda contra séries de transporte misturadas |
+| `7a1290d` | atualização transversal de README, guias CLI/MCP/agents, prompt mestre, payload Devin, contagens correntes e documentação de SLO observado |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

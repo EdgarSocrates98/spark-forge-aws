@@ -4,7 +4,7 @@
 **Base técnica de referência:** `cef138c`, fechamento técnico da guarda contra
 séries de transporte misturadas na avaliação SLO observada.
 Este fechamento documental atualiza o índice transversal após o commit técnico;
-o fechamento documental é versionado separadamente nesta rodada.
+o fechamento documental `7a1290d` é versionado separadamente nesta rodada.
 O inventário completo das três evoluções está em
 [`docs/DELIVERY-LEDGER.md`](../DELIVERY-LEDGER.md).
 Ver a seção *Forge Lab* abaixo.
