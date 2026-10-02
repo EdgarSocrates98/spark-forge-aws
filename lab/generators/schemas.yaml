@@ -1,0 +1,18 @@
+schema_version: 1
+schemas:
+  customer: {key: customer_id, event_time: updated_at}
+  order: {key: order_id, event_time: event_time}
+  payment: {key: payment_id, event_time: event_time}
+  clickstream: {key: session_id, event_time: event_time}
+  iot_sensor: {key: sensor_id, event_time: event_time}
+  transaction: {key: transaction_id, event_time: event_time}
+  cdc_customer: {key: customer_id, event_time: source_ts}
+  fraud_event: {key: event_id, event_time: event_time}
+distribution_axes:
+  - seed
+  - record_count
+  - key_cardinality
+  - skew
+  - null_rate
+  - late_event_ratio
+  - duplicate_ratio

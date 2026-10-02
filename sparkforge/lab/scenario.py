@@ -12,6 +12,9 @@ from typing import Any
 import yaml
 
 from .contract import Fidelity, LabContractError, load_resource_contract
+from .faults import compile_fault
+from .generators import CANONICAL_SCHEMAS
+from .workload import compile_workload
 
 
 ACTION_KINDS = frozenset(
@@ -62,11 +65,13 @@ class ScenarioSpec:
 
     def compile_actions(self) -> tuple[ScenarioAction, ...]:
         """Compile only allowlisted primitives; never emit arbitrary shell."""
+        workload_plan = compile_workload(self.workload, seed=int(self.dataset["seed"]))
+        fault_plan = compile_fault(self.fault)
         actions = (
             ScenarioAction("seed_dataset", {"dataset": _plain(self.dataset)}),
-            ScenarioAction("start_workload", {"workload": _plain(self.workload)}),
+            ScenarioAction("start_workload", {"workload": _plain(self.workload), "plan": _plain(workload_plan)}),
             ScenarioAction("capture_baseline", {"observe": list(self.observe)}),
-            ScenarioAction("inject_fault", {"fault": _plain(self.fault), "requires_confirmation": True}),
+            ScenarioAction("inject_fault", {"fault": fault_plan}),
             ScenarioAction("wait_condition", {"condition": _plain(self.fault.get("wait_until", {"status": "changed"}))}),
             ScenarioAction("capture_artifacts", {"paths": list(self.expected.get("artifact_paths", []))}),
             ScenarioAction("analyze", {"analyzers": list(self.expected.get("analyzers", []))}),
@@ -174,6 +179,8 @@ def _build_scenario(raw: object) -> ScenarioSpec:
         raise LabContractError(f"scenario {scenario_id} dataset.seed must be integer")
     if not isinstance(dataset.get("records"), int) or dataset["records"] <= 0:
         raise LabContractError(f"scenario {scenario_id} dataset.records must be positive")
+    if dataset.get("schema") not in CANONICAL_SCHEMAS:
+        raise LabContractError(f"scenario {scenario_id} uses unsupported dataset schema")
     setup = _mapping(raw.get("setup", {}), "setup")
     workload = _mapping(raw.get("workload", {}), "workload")
     fault = _mapping(raw.get("fault", {"type": "none"}), "fault")
