@@ -3,7 +3,7 @@ sdd: 1
 feature: EVENT_DRIVEN_ARCHITECTURE
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/EVENT_DRIVEN_ARCHITECTURE/plan.md
   sha256: "76c20e33c15b1ed6939031975cd0ce3d53a928046abb4f804c00caeddf05f81c"

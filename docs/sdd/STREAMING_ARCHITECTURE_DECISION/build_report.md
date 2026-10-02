@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_ARCHITECTURE_DECISION
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_ARCHITECTURE_DECISION/plan.md
   sha256: "0fcf6c30cdfd2ff5b4cb0f0edb554919848a4fce24288d819086229761f5bf22"

@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_STRUCTURED_REVIEW
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_STRUCTURED_REVIEW/plan.md
   sha256: "dcba45025dfba673df93712cb3c68cdf86cb458555f03f289964ab0c0db2fcb3"

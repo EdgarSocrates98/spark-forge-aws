@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_FLINK_PLATFORM/build_report.md
-  sha256: "7dfd73ee22f78ed59d2ab66dc948f7e97c8b156d15337fe303ed2178e898d224"
+  sha256: "ea9ecb9175967b01422c620ccd37d1c68111865f09c9b67a672c05a029947e55"
 hypothesis_outcome: confirmed
 registries: [reachability_lists, fixture_kind_coverage, snippet_measure, fixture_corpus_gates, offline_manifest, sources_lock, surface_lock, generated_reference, rules_catalog_gates, manifest_rule_count, routing_yaml, coordinator_rule_areas, router_gates, sync_skills, agents_parity, status_numbers_gate]
 deviations:

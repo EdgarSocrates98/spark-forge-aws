@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_OPERATIONS_AND_SERVING/build_report.md
-  sha256: "be0f34571bc0c2e3ae937665ae5552d8e16a65a7cb48d3fc0bb634c95f78eec9"
+  sha256: "dc0e0ac8f40cb42bf4cbdbb030b464ad319d222b8eab3551db49e54f2bc45804"
 hypothesis_outcome: confirmed
 registries: [offline_manifest, sources_lock, generated_reference, surface_lock, fixture_corpus_gates, fixture_kind_coverage, reachability_lists, snippet_measure, sync_skills, agents_parity, status_numbers_gate, rules_catalog_gates, manifest_rule_count]
 deviations: []

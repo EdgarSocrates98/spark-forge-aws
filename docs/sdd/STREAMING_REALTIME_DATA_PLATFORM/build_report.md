@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_REALTIME_DATA_PLATFORM
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_REALTIME_DATA_PLATFORM/plan.md
   sha256: "1ef4e3f76ac6faab455d2d51489aaf6e17e2535a00016374d39c0cb702cfd359"

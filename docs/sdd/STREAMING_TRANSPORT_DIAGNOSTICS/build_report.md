@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_TRANSPORT_DIAGNOSTICS
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_TRANSPORT_DIAGNOSTICS/plan.md
   sha256: "f305c218a4bbd95a22a30482eb81dd450a5bbd82ce9c44a3c25c3a11a097faf0"

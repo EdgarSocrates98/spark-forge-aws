@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_OPERATIONS_AND_SERVING
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_OPERATIONS_AND_SERVING/plan.md
   sha256: "0f414e3818a6e787583f71f33c9db33ebe910d0ec978473d96689ba6d8f1b9fb"

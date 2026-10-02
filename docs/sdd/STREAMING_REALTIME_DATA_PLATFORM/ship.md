@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_REALTIME_DATA_PLATFORM/build_report.md
-  sha256: "bf478f72f8db0e3887dd18e55a88e23ef0c1de5e97da50d9ee14c8899883c1a3"
+  sha256: "9f2f0fce0830669683a926a9d6809cd95ab738b73a04a048b8b5cfb9266b7320"
 hypothesis_outcome: confirmed
 registries: [reachability_lists, fixture_kind_coverage, snippet_measure, rules_catalog_gates, manifest_rule_count, runtime_scope_gates, routing_yaml, coordinator_rule_areas, fixture_corpus_gates, offline_manifest, sources_lock, surface_lock, generated_reference, router_gates, sync_skills, agents_parity]
 deviations:

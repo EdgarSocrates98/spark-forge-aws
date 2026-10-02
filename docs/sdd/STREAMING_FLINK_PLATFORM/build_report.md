@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_FLINK_PLATFORM
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_FLINK_PLATFORM/plan.md
   sha256: "23bcb51c82b2383436a254df95c5f5be63d0725304ef3bd2c93125dc010e3bf0"

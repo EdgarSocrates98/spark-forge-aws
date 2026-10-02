@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_LAKEHOUSE_OBSERVABILITY
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_LAKEHOUSE_OBSERVABILITY/plan.md
   sha256: "dc0fa3dfc236bcee933ef94c954cd691640429312bd219e0abf8d9bf61be97df"

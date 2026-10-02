@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_TRANSPORT_DIAGNOSTICS/build_report.md
-  sha256: "cdc0db6a0cbe8b65b574144238fec302669efa1898e5f32e5dae68fc0b4fa893"
+  sha256: "f5bae26de13ff2e18035ea0b701cd570165296c8fcd747d3befc6b450eca0b42"
 hypothesis_outcome: confirmed
 registries:
   - reachability_lists
