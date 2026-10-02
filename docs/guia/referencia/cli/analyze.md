@@ -37,6 +37,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze sql`](#sparkforge-analyze-sql) | Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark. |
 | [`sparkforge analyze sql-metrics`](#sparkforge-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
 | [`sparkforge analyze step-functions`](#sparkforge-analyze-step-functions) | Extrai facts da definicao ASL de uma state machine do AWS Step Functions (`.asl.json` ou a saida salva de `aws stepfunctions describe-state-machine`): um fact por estado Task, com padrao de integracao, JobName, retry efetivo, Catch e TimeoutSeconds. Le a DEFINICAO, nunca o historico de execucao. |
+| [`sparkforge analyze streaming`](#sparkforge-analyze-streaming) | Extrai facts de fonte Structured Streaming ou StreamingQueryProgress. |
 | [`sparkforge analyze terraform`](#sparkforge-analyze-terraform) | Extrai facts de blocos aws_glue_job em HCL Terraform. |
 | [`sparkforge analyze terraform-diff`](#sparkforge-analyze-terraform-diff) | Compara dois estados de um modulo Terraform e marca o que mudou. |
 | [`sparkforge analyze workload`](#sparkforge-analyze-workload) | Extrai facts do inventario declarado de workload (workload.yaml: SLA e fonte primaria), que capacity, finops e workload consomem. |
@@ -711,6 +712,30 @@ sparkforge analyze step-functions --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_step_functions`](../tools/sparkforge_analyze_step_functions.md)
+
+## `sparkforge analyze streaming`
+
+Extrai facts de fonte Structured Streaming ou StreamingQueryProgress.
+
+```bash
+sparkforge analyze streaming --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio a analisar. |
+| `--artifact` | sim | `source`, `progress` |  |  | Tipo do artefato: fonte PySpark ou progresso JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+Nenhuma: este verbo existe só na CLI.
 
 ## `sparkforge analyze terraform`
 

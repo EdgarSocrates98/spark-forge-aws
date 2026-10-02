@@ -9,7 +9,7 @@ Coordena diagnostico e otimizacao de job PySpark no AWS Glue - correlaciona codi
 | Papel | coordenador |
 | Arquivo de origem | `agents/spark-performance-architect.md` |
 | Ferramentas do host | Read, Grep, Glob, Bash, Edit, Write |
-| Áreas de regra | SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE, SF-BRIDGE |
+| Áreas de regra | SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE, SF-BRIDGE, SF-STREAM |
 
 ## Skills que ele usa
 
