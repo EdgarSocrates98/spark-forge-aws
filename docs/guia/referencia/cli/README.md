@@ -39,6 +39,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge journal`](journal.md) | Journal de eventos do case (.sparkforge/journal.jsonl): um started e um finished por verbo que muda estado, encadeados por hash. |
 | [`sparkforge judge`](judge.md) | Aplica o catalogo de regras versionado sobre facts ja extraidos. |
 | [`sparkforge knowledge`](knowledge.md) | Localiza os arquivos de conhecimento versionado. |
+| [`sparkforge lab`](lab.md) | Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita. |
 | [`sparkforge lakeformation`](lakeformation.md) | Eixo de VERSAO de Lake Formation por runtime Glue -- capacidade, nao versao de componente. |
 | [`sparkforge migrate`](migrate.md) | Avalia migracao entre versoes de runtime com o catalogo. |
 | [`sparkforge next-step`](next-step.md) | Rota deterministica a partir de routing.yaml (nunca julgamento do agente). |
