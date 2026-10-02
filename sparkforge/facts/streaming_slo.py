@@ -170,6 +170,21 @@ def _canonical_operator(value: Any) -> str | None:
     return _OPERATOR_ALIASES.get(value.strip().lower())
 
 
+def _transport_series_identity(fact: Fact, source: str) -> tuple[str, ...]:
+    attrs = fact.attrs or {}
+    measures = fact.measures or {}
+    if source == "kafka":
+        return (
+            str(attrs.get("group") or ""),
+            str(attrs.get("topic") or ""),
+            str(measures.get("partition") or ""),
+        )
+    return (
+        str(attrs.get("stream_name") or ""),
+        str(attrs.get("shard_id") or ""),
+    )
+
+
 def _passes(operator: str, observed: float, target: float) -> bool:
     comparators: dict[str, Callable[[float, float], bool]] = {
         "lt": lambda left, right: left < right,
@@ -282,9 +297,23 @@ def build_streaming_slo(
                             and str((fact.attrs or {}).get("query_name") or "") == query_name
                         ]
                     source_files = sorted({_source_file(fact) for fact in observations_source})
+                    series_keys = {
+                        _transport_series_identity(fact, source)
+                        for fact in observations_source
+                    } if is_transport else set()
                     if not observations_source:
                         reason = "transport_not_found" if is_transport else "query_not_found"
                         derived = [_unresolved(source_facts, reason, slo_name=declared_name, **identity_attrs)]
+                    elif is_transport and len(series_keys) != 1:
+                        derived = [
+                            _unresolved(
+                                source_facts,
+                                "ambiguous_transport",
+                                slo_name=declared_name,
+                                match_count=len(series_keys),
+                                **identity_attrs,
+                            )
+                        ]
                     elif len(source_files) != 1:
                         reason = "ambiguous_transport" if is_transport else "ambiguous_query"
                         derived = [

@@ -179,6 +179,22 @@ def test_evaluates_kinesis_iterator_age_and_kafka_lag():
     assert evaluation.attrs["unit"] == "ms"
 
 
+def test_transport_slo_refuses_mixed_transport_series():
+    facts = _transport_facts()
+    facts.append(
+        _fact(
+            "kafka.lag",
+            file="other-kafka.jsonl",
+            attrs={"group": "orders-group", "topic": "returns", "observed_at": "2026-10-01T00:00:00Z"},
+            measures={"partition": 0, "lag": 10},
+        )
+    )
+    result = build_streaming_slo(facts, slo_name="transport-slo", transport_key="orders-group")
+    assert not [fact for fact in result if fact.kind == "streaming.slo.evaluation"]
+    unresolved = [fact for fact in result if fact.kind == "streaming.slo.unresolved"]
+    assert unresolved and unresolved[0].attrs["reason"] == "ambiguous_transport"
+
+
 @pytest.mark.parametrize(
     ("kwargs", "transport_key", "reason"),
     [
