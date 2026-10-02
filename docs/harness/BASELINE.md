@@ -11,11 +11,18 @@ de outro documento do repositório. Onde isso não foi possível — porque a
 medição exigiria infraestrutura que o repositório ainda não tem — a seção
 final diz isso explicitamente, em vez de estimar.
 
-- **Commit medido**: `6a76b7a` (`git rev-parse --short HEAD`)
+- **Commit medido**: `a540c78` (snapshot raiz disponível neste clone)
 - **Branch**: `feat/fase6b-sf-cfg`
 - **Data**: 2026-08-22
 
-Precedente direto: o commit `6c3c396` publicou `docs/vnext/FINAL-REPORT.md`
+Os SHAs históricos citados pela versão anterior deste documento não estão
+retidos neste clone. As provas históricas foram reancoradas no commit raiz
+disponível `a540c78`; isso torna a referência verificável, mas não transforma o
+snapshot atual em uma nova medição histórica. A receita `cmd` continua
+preservada no lock para registrar como o número original deveria ser
+reproduzido quando o histórico completo estiver disponível.
+
+Precedente direto: o commit histórico publicou `docs/vnext/FINAL-REPORT.md`
 com números como "-81,8% custo por 1k tasks" e "94,5% cache hit rate" sem
 nenhum artefato de medição por trás. Uma auditoria de onze tarefas provou isso
 e removeu os números; `docs/claims.lock.json` e
