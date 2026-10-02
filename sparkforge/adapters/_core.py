@@ -217,6 +217,10 @@ from sparkforge.platform.graph import (
     analyze_platform_graph as _analyze_platform_graph,
 )
 from sparkforge.lab.spec import ForgeLabError, analyze_forge_lab as _analyze_forge_lab
+from sparkforge.catalog.contract import (
+    LakehouseCatalogError,
+    analyze_lakehouse_catalog as _analyze_lakehouse_catalog,
+)
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -2352,6 +2356,19 @@ def analyze_forge_lab(path: str) -> dict[str, Any]:
     try:
         return _analyze_forge_lab(path)
     except ForgeLabError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze lakehouse-catalog
+# --------------------------------------------------------------------------- #
+
+
+def analyze_lakehouse_catalog(path: str) -> dict[str, Any]:
+    """Describe catalog/engine bindings without contacting a catalog."""
+    try:
+        return _analyze_lakehouse_catalog(path)
+    except LakehouseCatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 

@@ -445,6 +445,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: analyze open lakehouse catalog and multi-engine bindings
+    tools: [sparkforge_analyze_lakehouse_catalog]
+    cli: [analyze lakehouse-catalog]
+    knowledge: [docs/knowledge/open-lakehouse-catalog.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from an S3 object listing
     tools: [sparkforge_analyze_s3_listing]
     cli: [analyze s3-listing]

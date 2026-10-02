@@ -827,6 +827,14 @@ def build_parser() -> argparse.ArgumentParser:
     forge_lab_p.add_argument("--path", required=True, help="Arquivo YAML/JSON da topologia Forge Lab.")
     forge_lab_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
+    lakehouse_catalog_p = analyze_sub.add_parser(
+        "lakehouse-catalog",
+        help="Analisa topologia declarada de catalogs, engines, tabelas e bindings.",
+    )
+    lakehouse_catalog_p.add_argument(
+        "--path", required=True, help="Arquivo JSON/YAML da topologia de catalog.")
+    lakehouse_catalog_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
     s3_p = analyze_sub.add_parser(
         "s3-listing",
         help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
@@ -4040,6 +4048,16 @@ def _cmd_analyze_forge_lab(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_lakehouse_catalog(args: argparse.Namespace) -> int:
+    payload = _core.analyze_lakehouse_catalog(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
     full = _core.analyze_call_graph(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -5636,6 +5654,7 @@ _DISPATCH = {
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "platform-graph"): _cmd_analyze_platform_graph,
     ("analyze", "forge-lab"): _cmd_analyze_forge_lab,
+    ("analyze", "lakehouse-catalog"): _cmd_analyze_lakehouse_catalog,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,

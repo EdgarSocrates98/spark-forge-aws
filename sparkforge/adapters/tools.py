@@ -1061,6 +1061,38 @@ _FORGE_LAB_SCHEMA: dict[str, Any] = {
     },
 }
 
+_LAKEHOUSE_CATALOG_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["catalog"],
+    "properties": {
+        "catalog": {
+            "type": "object",
+            "required": [
+                "schema_version",
+                "topology",
+                "catalogs",
+                "engines",
+                "tables",
+                "bindings",
+                "provenance",
+                "unresolved",
+                "fingerprint",
+            ],
+            "properties": {
+                "schema_version": {"type": "integer"},
+                "topology": {"type": "string"},
+                "catalogs": {"type": "array", "items": {"type": "object"}},
+                "engines": {"type": "array", "items": {"type": "object"}},
+                "tables": {"type": "array", "items": {"type": "object"}},
+                "bindings": {"type": "array", "items": {"type": "object"}},
+                "provenance": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
 # `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
 # paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
 # nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
@@ -7072,6 +7104,27 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_lakehouse_catalog": {
+        "description": (
+            "Analisa topologia declarada de Glue, Iceberg REST, Polaris, S3 Tables, "
+            "Lake Formation e integrações futuras, relacionando engines, tabelas e "
+            "bindings com evidence. Não negocia protocolo, não consulta catálogos e "
+            "não cria recursos. Recusa campos de segredo e mantém referências ou "
+            "compatibilidade não resolvidas em unresolved."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON ou YAML da topologia de catalog."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _LAKEHOUSE_CATALOG_SCHEMA,
+            "Topologia de catalogs e engines, ou erro se o manifesto for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -11120,6 +11173,10 @@ def _h_analyze_forge_lab(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_forge_lab(args["path"])
 
 
+def _h_analyze_lakehouse_catalog(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_lakehouse_catalog(args["path"])
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -11705,6 +11762,7 @@ _HANDLERS = {
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_platform_graph": _h_analyze_platform_graph,
     "sparkforge_analyze_forge_lab": _h_analyze_forge_lab,
+    "sparkforge_analyze_lakehouse_catalog": _h_analyze_lakehouse_catalog,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
