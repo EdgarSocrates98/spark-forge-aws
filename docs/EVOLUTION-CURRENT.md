@@ -1,7 +1,7 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-02  
-**Base técnica de referência:** `1cba6fb`; fechamento documental anterior:
+**Base técnica de referência:** `cef138c`; fechamento documental anterior:
 `a1388ee`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
