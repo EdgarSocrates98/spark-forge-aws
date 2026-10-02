@@ -53,7 +53,7 @@ aqui:
 |---|---|
 | Conferir o ambiente e rodar tudo o que cabe no repositório de uma vez | [Scan e doctor](usos/scan-e-doctor.md) |
 | Construir e validar cenários streaming/batch reproduzíveis | [Forge Lab / Digital Twin](forge-lab.md) |
-| Avaliar SLO observado de progress, Kafka ou Kinesis | [CLI](03-cli.md#avaliar-slo-observado-de-streaming) e [referência da composição](referencia/skills/analyze-streaming-composition.md) |
+| Avaliar SLO observado de progress, sink, Kafka ou Kinesis | [CLI](03-cli.md#avaliar-slo-observado-de-streaming) e [referência da composição](referencia/skills/analyze-streaming-composition.md) |
 | Decidir o que um agente pode fazer sozinho, o que pede confirmação e o que é proibido | [Política de segurança](usos/politica-de-seguranca.md) |
 | Descobrir por que um job PySpark no Glue está lento | [Job lento](usos/job-lento.md) |
 | Saber quanto um job custa e qual capacidade escolher | [Custo e capacidade](usos/custo-e-capacidade.md) |

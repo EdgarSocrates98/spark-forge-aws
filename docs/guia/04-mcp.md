@@ -177,20 +177,22 @@ que o cliente já salvou:
 
 ```json
 {
-  "facts_paths": ["slo-contract.facts.json", "transport.facts.json"],
+  "facts_paths": ["slo-contract.facts.json", "progress.facts.json"],
   "mode": "slo",
-  "slo_name": "consumer-lag",
-  "transport_key": "orders-group",
+  "slo_name": "output-rows",
+  "query_name": "orders-query",
+  "sink_name": "orders-sink",
   "detail_level": "summary"
 }
 ```
 
 O envelope preserva `source_fact_ids` e devolve `streaming.slo.evaluation` com
 `met`/`violated`, ou `streaming.slo.unresolved` quando identidade, unidade,
-timestamps, janela ou série única não estão provados. Kafka usa `kafka.lag` em
-`records`; Kinesis usa `kinesis.shard` em `ms`. O modo não calcula p95/freshness,
-não agrega partições ou shards e não prova saúde end-to-end. A mesma chamada
-pode usar `query_name` para progress Structured Streaming; detalhes de campos
+timestamps, janela ou série única não estão provados. Sink usa
+`num_output_rows`/`rows` e timestamp do batch ligado por `batch_id`; Kafka usa
+`kafka.lag` em `records`; Kinesis usa `kinesis.shard` em `ms`. O modo não calcula
+p95/freshness, não agrega partições, shards ou sinks e não prova saúde end-to-end.
+A mesma chamada pode usar `query_name` para progress Structured Streaming; detalhes de campos
 estão na [referência MCP](referencia/tools/sparkforge_analyze_streaming_composition.md).
 
 ## Como verificar que funciona

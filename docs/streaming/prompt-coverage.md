@@ -30,10 +30,10 @@ O inventário de commits, features e provas compartilhadas está em
 | AWS DMS | `diagnosable` parcial | namespace `dms.*`, `collect streaming-integrations`, task/endpoint/mapping/stats/unresolved, rules e fixtures | matriz de versões, logs temporais e recovery funcional |
 | Debezium | `diagnosable` parcial | namespace `debezium.*`, config/status/schema-history/tombstone/unresolved, rules e fixtures | collector Kafka Connect, matriz de versões, offsets/DLQ e replay funcional |
 | Schema Registry/data contracts | `diagnosable` parcial | `facts/schema_registry.py`, `rules/catalog/schema_registry.yaml`, fixtures `schema_registry`, `sparkforge_analyze_schema_registry`, `review-cdc-replication` | collectors/live registry, matriz completa de formato/versão, consumidores cross-artifact e validação funcional |
-| Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py` emite `iceberg.snapshot`, `facts/streaming_iceberg_temporal.py` compõe janela `StreamingQueryProgress`→`committed_at`, `analyze streaming-composition --mode iceberg_temporal`, regras `streaming_iceberg.yaml`, fixtures e goldens; avaliação SLO observada existe no progress por `mode=slo` | collectors/live lineage, SLO específico de commit/sink, FinOps e validação causal/funcional permanecem lacunas |
+| Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py` emite `iceberg.snapshot`, `facts/streaming_iceberg_temporal.py` compõe janela `StreamingQueryProgress`→`committed_at`, `analyze streaming-composition --mode iceberg_temporal`, regras `streaming_iceberg.yaml`, fixtures e goldens; avaliação SLO observada existe no progress e sink por `mode=slo` | collectors/live lineage, SLO específico de commit, FinOps e validação causal/funcional permanecem lacunas |
 | Delta/Hudi | `knowledge-aware` parcial | `streaming_ops.lakehouse`, `knowledge/streaming-format-serving-matrix.md`, fixtures e matriz de formatos | runtime/feature compatibility e collectors ficam P1/P2 |
 | Event-driven architecture | `diagnosable` parcial | `facts/event_driven.py`, regras `SF-EVENT`, fixtures, `analyze event-driven`, MCP, skill, routing e SDD | collector live, Step Functions, teste temporal de entrega/replay e decisão vs streaming |
-| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `facts/streaming_temporal.py`, `facts/streaming_slo.py`, `facts/streaming_ops.py`, analyzers, collectors read-only, `mode=slo` para progress/Kafka/Kinesis, `SF-STREAMOBS-002`, `SF-STREAM-011` e `SF-STREAM-012` | collectors temporais de série longa, SLO de sink e correlação live continuam lacunas; OpenLineage offline já tem fact, sem endpoint live |
+| Streaming observability | `diagnosable` parcial | progress/transport/sink facts, `facts/streaming_composition.py`, `facts/streaming_temporal.py`, `facts/streaming_slo.py`, `facts/streaming_ops.py`, analyzers, collectors read-only, `mode=slo` para progress/sink/Kafka/Kinesis, `SF-STREAMOBS-002`, `SF-STREAM-011` e `SF-STREAM-012` | collectors temporais de série longa, freshness/p95 e correlação live continuam lacunas; sink usa `num_output_rows` ligado a batch, e OpenLineage offline já tem fact, sem endpoint live |
 | Streaming FinOps | `diagnosable` parcial | `streaming.finops`, `SF-STREAM-005`, CLI/MCP, fixtures e `knowledge/streaming-operations.md` | CUR/CloudWatch temporal e atribuição por transport/process/runtime/sink |
 | Streaming security | `diagnosable` parcial | `streaming.security`, redaction, `SF-STREAM-006`, CLI/MCP e fixtures | IAM/KMS/VPC/resource-policy collectors e eficácia runtime |
 | Real-time analytics/serving | `knowledge-aware` parcial | `streaming.serving`, `knowledge/streaming-format-serving-matrix.md`, matriz Redshift/ClickHouse/Pinot/Druid/Trino | collectors/evals por sistema e benchmark de latência/throughput |
@@ -84,7 +84,7 @@ O inventário de commits, features e provas compartilhadas está em
   `transport_key`, unidades canônicas, timestamps timezone-aware, janela
   coberta, goldens Kafka/Kinesis, paridade CLI/MCP e unresolved fail-closed.
   Não calcula p95/freshness, não agrega grupos/shards, não usa CloudWatch live e
-  não prova SLO de sink ou saúde end-to-end.
+  não prova saúde end-to-end.
 
 ## Fechamentos adicionados nesta atualização
 
@@ -132,8 +132,12 @@ O inventário de commits, features e provas compartilhadas está em
   (`kafka.lag`) e `iterator_age_ms` Kinesis (`kinesis.shard`) por
   `transport_key`, somente com timestamps observados e janela coberta; inclui
   fixtures Kafka met, Kinesis violated, identidade ausente, mirrors, knowledge,
-  referências e SDD. SLO de sink, freshness, CloudWatch live e causalidade
-  continuam fora do contrato.
+  referências e SDD.
+- `STREAMING_SINK_SLO_EVALUATION`: `mode=slo` avalia `num_output_rows` de
+  `streaming.progress.sink`, liga `batch_id` ao timestamp/query do batch,
+  permite `sink_name`, separa met/violated/unresolved e inclui goldens,
+  CLI/MCP, skill, knowledge, referências e SDD. Freshness, p95, exactly-once,
+  CloudWatch live e causalidade continuam fora do contrato.
 
 Todos os itens acima passaram os gates globais de skills, referências, surface,
 números correntes e bundle offline em 2026-10-02. Isso fecha contratos offline e
@@ -147,7 +151,7 @@ live em capacidade comprovada.
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
-| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, avaliação SLO sobre progress/Kafka/Kinesis com janela coberta, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, SLO de sink, endpoint live, correlação de longo período e atribuição continuam lacunas |
+| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, SLO sobre progress/sink/Kafka/Kinesis com janela coberta, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, freshness, endpoint live, correlação de longo período e atribuição continuam lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |
 | I | Delta/Hudi/Redshift and P2 knowledge | **matrizes e facts declarativos entregues**: compatibilidade e serving são knowledge-aware; evals/collectors/benchmark continuam P1/P2 |
 | J | security, failure fixtures, integration, performance, packaging and all gates | **contratos offline entregues**: Connect/OpenLineage/checkpoint/Streams, failure goldens, CLI/MCP, SDD e gates; faltam runtime temporal, replay, benchmark e integração live |

@@ -18,7 +18,10 @@ ausência como sucesso e não compara séries com janelas ou unidades diferentes
 `streaming.slo` com facts já extraídos. Para Structured Streaming, exige
 `--query-name` e aceita somente métricas diretamente presentes no progress:
 `input_rows_per_second`, `processed_rows_per_second`, `batch_duration_ms` e
-`num_input_rows`. Para transporte, `source: kafka` usa `kafka.lag` e
+`num_input_rows`. `source: streaming_sink` aceita `num_output_rows` de
+`streaming.progress.sink`; o `batch_id` deve encontrar exatamente um batch
+da mesma origem para obter timestamp e query. `sink_name` pode selecionar uma
+descrição quando há mais de um sink. Para transporte, `source: kafka` usa `kafka.lag` e
 `source: kinesis` usa `kinesis.shard`; nesses dois casos `--transport-key` é a
 identidade declarada (grupo/topic Kafka ou stream Kinesis) e `query_name` não é
 necessário.
@@ -35,7 +38,8 @@ cobertura ausente produzem `streaming.slo.unresolved`. Para transporte, a
 série precisa ser diretamente observada, timestampada com timezone e cobrir a
 janela; o Forge não agrega grupos/shards, usa ordem do arquivo, preenche
 timestamp, converte unidade ou transforma `kinesis.metric` sem timestamp em
-série. O Forge não calcula p95 de uma taxa, não usa nome de janela como prova
+série. Para sink, batch ausente, batch ambíguo ou sink sem identidade suficiente
+também permanece unresolved. O Forge não calcula p95 de uma taxa, não usa nome de janela como prova
 de cobertura e não consulta CloudWatch/Kafka live. `SF-STREAM-011` julga
 somente violação observada; `SF-STREAM-012` torna a lacuna explícita. Nenhum
 dos dois atribui causa, custo, disponibilidade ou resultado funcional.

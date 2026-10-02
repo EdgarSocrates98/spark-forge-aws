@@ -67,6 +67,11 @@ sparkforge analyze streaming-composition \
   --facts slo-contract.facts.json --facts kafka.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out transport-slo.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name sink-output --query-name orders-query \
+  --out sink-slo.facts.json
 ```
 
 3. Para `mode=temporal` e `mode=iceberg_temporal`, `max-skew-seconds` é
@@ -78,7 +83,11 @@ sparkforge analyze streaming-composition \
    é ponto cego; não vira zero nem “saudável”.
 
 Para `mode=slo`, `source` Structured Streaming exige query e métrica diretamente
-observada em `streaming.progress.batch`. `source: kafka` exige
+observada em `streaming.progress.batch`. `source: streaming_sink` exige query e
+avalia `num_output_rows` diretamente observada em `streaming.progress.sink`;
+o `batch_id` liga cada saída ao timestamp do batch correspondente. `sink_name`
+é opcional quando há uma única descrição e desambigua descrições distintas.
+`source: kafka` exige
 `--transport-key` e lê `kafka.lag`; `source: kinesis` exige a mesma identidade
 e lê `kinesis.shard`. Kafka usa `lag`/`records`; Kinesis usa
 `iterator_age_ms`/`ms`. Em todos os casos, exige unidade canônica, pelo menos
@@ -86,7 +95,7 @@ duas observações timestampadas e span observado igual ou maior que a janela
 declarada. `streaming.slo.evaluation` informa `met` ou `violated`;
 `streaming.slo.unresolved` informa a barreira sem transformar ausência em
 sucesso. `SF-STREAM-011` julga violação observada; `SF-STREAM-012` julga a
-lacuna estrutural. O compositor não agrega grupos/shards, calcula
+lacuna estrutural. O compositor não agrega grupos/shards/sinks, calcula
 p95/freshness, converte unidades, usa ordem do arquivo ou consulta
 CloudWatch/Kafka live.
 

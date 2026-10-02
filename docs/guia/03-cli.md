@@ -252,7 +252,7 @@ comando.
 | `root-cause` | Ordena os achados por consequência declarada e nomeia a lacuna. | [root-cause](referencia/cli/root-cause.md) |
 | `arbitrate` | Arbitra findings já julgados e grava claims, evidências e contradições no blackboard do case. Grava no disco. | [arbitrate](referencia/cli/arbitrate.md) |
 | `debate` | Conduz e arbitra o protocolo de debate do case. Não gera argumento. | [debate](referencia/cli/debate.md) |
-| `analyze streaming-composition` | Compõe progress Structured Streaming, transporte ou Iceberg; `--mode slo` avalia SLO observado em progress, Kafka ou Kinesis. | [analyze](referencia/cli/analyze.md) |
+| `analyze streaming-composition` | Compõe progress Structured Streaming, transporte ou Iceberg; `--mode slo` avalia SLO observado em progress, sink, Kafka ou Kinesis. | [analyze](referencia/cli/analyze.md) |
 
 ## Avaliar SLO observado de streaming
 
@@ -266,6 +266,12 @@ sparkforge analyze streaming-composition \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
 
+# Saída do sink Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
 # Transporte Kafka/Kinesis
 sparkforge analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
@@ -275,7 +281,9 @@ sparkforge analyze streaming-composition \
 sparkforge judge --facts transport-slo.facts.json --show-skipped
 ```
 
-Para Kafka, `transport_key` identifica grupo/topic e a unidade canônica é
+Para sink, `query_name` identifica a query, `sink_name` desambigua o sink e
+`num_output_rows` usa a unidade canônica `rows`; o timestamp vem do batch único
+ligado por `batch_id`. Para Kafka, `transport_key` identifica grupo/topic e a unidade canônica é
 `records` sobre `kafka.lag`. Para Kinesis, identifica stream e a unidade é `ms`
 para `iterator_age_ms` em `kinesis.shard`. O resultado resolvido informa
 `streaming.slo.evaluation` com `met` ou `violated`; falta de identidade,

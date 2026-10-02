@@ -48,12 +48,19 @@ sparkforge analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out slo-evaluation.facts.json
+
+# saída do sink Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
 ```
 
 `met`/`violated` valem apenas para a série diretamente observada, com identidade,
-unidade, timestamps e janela coberta. `streaming.slo.unresolved` permanece na
-saída quando falta evidência; não há p95/freshness, consulta live, causalidade,
-custo ou prova end-to-end.
+unidade, timestamps e janela coberta. Sink usa `num_output_rows` e exige vínculo
+único com batch por `batch_id`/`query_name`; `streaming.slo.unresolved` permanece
+na saída quando falta evidência. Não há p95/freshness, consulta live,
+causalidade, custo ou prova end-to-end.
 
 ## 2. Claude Code
 

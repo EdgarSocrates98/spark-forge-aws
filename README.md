@@ -140,7 +140,8 @@ O detalhe está no [guia do Forge Lab](docs/guia/forge-lab.md) e no
 
 O compositor `analyze streaming-composition` pode avaliar um contrato SLO
 declarado contra facts diretamente observados, sem acessar Spark, Kafka, Kinesis
-ou AWS em modo offline. Há três fontes suportadas:
+ou AWS em modo offline. Há quatro formas de observação suportadas: progress de
+batch, saída de sink, lag Kafka e iterator age Kinesis:
 
 ```bash
 # progress Structured Streaming
@@ -149,6 +150,12 @@ sparkforge analyze streaming-composition \
   --mode slo --slo-name throughput --query-name orders-query \
   --out slo-evaluation.facts.json
 
+# saída observada do sink, ligada ao batch por batch_id/query_name
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
 # lag Kafka ou iterator age Kinesis
 sparkforge analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
@@ -156,12 +163,14 @@ sparkforge analyze streaming-composition \
   --out transport-slo.facts.json
 ```
 
-Kafka usa `kafka.lag` em `records`; Kinesis usa `kinesis.shard` em `ms` para
-`iterator_age_ms`. A avaliação exige identidade, unidade canônica, timestamps e
-janela declarada coberta; séries misturadas, janela incompleta ou evidência
-ausente saem como `streaming.slo.unresolved`. `met` e `violated` significam
-somente o comparador observado no artefato: não são p95, freshness,
-disponibilidade, causalidade ou saúde end-to-end. Detalhe em
+Sink usa `num_output_rows` em `rows` e só é resolvido quando há um batch único
+com `batch_id`, `query_name` e timestamp. Kafka usa `kafka.lag` em `records`;
+Kinesis usa `kinesis.shard` em `ms` para `iterator_age_ms`. A avaliação exige
+identidade, unidade canônica, timestamps e janela declarada coberta; séries
+misturadas, janela incompleta ou evidência ausente saem como
+`streaming.slo.unresolved`. `met` e `violated` significam somente o comparador
+observado no artefato: não são p95, freshness, disponibilidade, causalidade ou
+saúde end-to-end. Detalhe em
 [cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
 [referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
 

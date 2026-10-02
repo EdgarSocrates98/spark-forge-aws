@@ -51,13 +51,20 @@ sparkforge analyze streaming-composition \
   --out slo-evaluation.facts.json
 
 sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name output-rows --query-name orders-query \
+  --sink-name orders-sink --out sink-slo.facts.json
+
+sparkforge analyze streaming-composition \
   --facts slo-contract.facts.json --facts transport.facts.json \
   --mode slo --slo-name consumer-lag --transport-key orders-group \
   --out transport-slo.facts.json
 ```
 
-O primeiro caminho compara `streaming.progress.batch`; o segundo compara
-`kafka.lag` (`records`) ou `kinesis.shard` (`ms`, `iterator_age_ms`). O fact
+O primeiro caminho compara `streaming.progress.batch`; o segundo avalia
+`streaming.progress.sink` (`num_output_rows`, `rows`) ligado ao batch por
+`batch_id`/`query_name`; o terceiro compara `kafka.lag` (`records`) ou
+`kinesis.shard` (`ms`, `iterator_age_ms`). O fact
 `streaming.slo.evaluation` informa `met` ou `violated` somente para a janela
 observada. Falta de identidade, unidade, timestamp, janela coberta ou série
 única produz `streaming.slo.unresolved`. O compositor preserva os facts de
