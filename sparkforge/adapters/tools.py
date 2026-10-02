@@ -1133,6 +1133,26 @@ _DUCKDB_MICROSCOPE_SCHEMA: dict[str, Any] = {
     },
 }
 
+_DATA_OBSERVABILITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["observability"],
+    "properties": {
+        "observability": {
+            "type": "object",
+            "required": ["service", "slo_reports", "incidents", "dependencies", "blast_radius", "unresolved", "fingerprint"],
+            "properties": {
+                "service": {"type": "string"},
+                "slo_reports": {"type": "array", "items": {"type": "object"}},
+                "incidents": {"type": "array", "items": {"type": "object"}},
+                "dependencies": {"type": "array", "items": {"type": "object"}},
+                "blast_radius": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
 # `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
 # paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
 # nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
@@ -7201,6 +7221,25 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_data_observability": {
+        "description": (
+            "Avalia SLI/SLO, freshness, completeness, latency, lag, throughput e "
+            "availability a partir de medições exportadas. Calcula compliance e "
+            "error budget, preserva incidentes/MTTR, dependências e blast radius "
+            "declarado. Não consulta Prometheus, CloudWatch ou OTel live; ausência "
+            "de medição vira unresolved."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML de observabilidade."}},
+        },
+        "outputSchema": _may_fail(
+            _DATA_OBSERVABILITY_SCHEMA,
+            "Relatório SRE e SLO, ou erro se o artefato for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -11261,6 +11300,10 @@ def _h_analyze_duckdb_microscope(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_duckdb_microscope(args["path"])
 
 
+def _h_analyze_data_observability(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_data_observability(args["path"])
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -11849,6 +11892,7 @@ _HANDLERS = {
     "sparkforge_analyze_lakehouse_catalog": _h_analyze_lakehouse_catalog,
     "sparkforge_analyze_dbt_artifacts": _h_analyze_dbt_artifacts,
     "sparkforge_analyze_duckdb_microscope": _h_analyze_duckdb_microscope,
+    "sparkforge_analyze_data_observability": _h_analyze_data_observability,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,

@@ -226,6 +226,10 @@ from sparkforge.analytics.duckdb import (
     DuckDBMicroscopeError,
     analyze_duckdb_microscope as _analyze_duckdb_microscope,
 )
+from sparkforge.observability.sre import (
+    DataObservabilityError,
+    analyze_data_observability as _analyze_data_observability,
+)
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -2395,6 +2399,19 @@ def analyze_duckdb_microscope(path: str) -> dict[str, Any]:
     try:
         return _analyze_duckdb_microscope(path)
     except DuckDBMicroscopeError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze data-observability
+# --------------------------------------------------------------------------- #
+
+
+def analyze_data_observability(path: str) -> dict[str, Any]:
+    """Evaluate exported SLO/incident evidence without querying observability APIs."""
+    try:
+        return _analyze_data_observability(path)
+    except DataObservabilityError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
