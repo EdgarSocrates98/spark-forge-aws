@@ -145,9 +145,18 @@ def promote_fixture(run: str | Path, destination: str | Path, *, reviewed: bool 
 
 def _list_artifacts(run: Path) -> list[dict[str, Any]]:
     result = []
-    for path in sorted(run.rglob("*")):
-        if path.is_file() and path.name not in {"receipt.json"}:
-            result.append({"path": path.relative_to(run).as_posix(), "sha256": _sha256(path), "bytes": path.stat().st_size})
+    for root, directories, files in os.walk(run):
+        directories.sort()
+        for filename in sorted(files):
+            path = Path(root) / filename
+            if path.name != "receipt.json":
+                result.append(
+                    {
+                        "path": path.relative_to(run).as_posix(),
+                        "sha256": _sha256(path),
+                        "bytes": path.stat().st_size,
+                    }
+                )
     return result
 
 

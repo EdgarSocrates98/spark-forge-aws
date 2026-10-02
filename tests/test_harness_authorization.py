@@ -991,7 +991,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         # sem mover `SEM_CAMINHO`. `analyze_streaming` (2026-10-01) e
         # `analyze_transport` (2026-10-02) e `analyze_flink` (2026-10-02) declaram `path`, portanto acrescentam
         # entradas ao lado que declara caminho.
-        assert len(TOOLS) - len(sem_caminho) == 109
+        # The platform and Forge Lab analyzers add path-bearing read-only
+        # capabilities; the exception set remains explicit and unchanged.
+        assert len(TOOLS) - len(sem_caminho) == 125
 
 
 class TestAImposicaoNoDespacho:
