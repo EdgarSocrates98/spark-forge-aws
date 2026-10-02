@@ -4,6 +4,13 @@
 > 19 agentes `sf-*` que só as declaravam e 10 skills sem artefato saíram do repositório.
 > Este documento é registro histórico e cita nomes que não existem mais.
 
+> **Estado atual (2026-10-02):** este relatório registra a entrega agentic v2 e
+> não é o inventário corrente. Para as waves posteriores de control plane,
+> streaming/CDC, Forge Lab e economia observada, consulte
+> [`docs/EVOLUTION-CURRENT.md`](EVOLUTION-CURRENT.md) e
+> [`docs/superpowers/STATUS.md`](superpowers/STATUS.md). Números de testes e
+> catálogos abaixo são históricos da entrega descrita nesta página.
+
 ## 1. Resumo executivo
 
 Esta entrega evolui o SparkForge AWS de um conjunto de skills e analisadores determinísticos para uma plataforma de times de agents especializados, cooperativos e verificáveis. O runtime agora controla loops, orçamento, contexto, autonomia, seleção adaptativa de modelos, observabilidade opcional, salas como protocolo de cooperação e handoffs estruturados. A solução cobre engenharia de dados AWS e engenharia agêntica, preservando os contratos existentes de skills, agents, regras, fixtures, adapters, sincronização e espelhos de plataforma.

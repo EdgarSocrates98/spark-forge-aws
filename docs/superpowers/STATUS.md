@@ -1,8 +1,9 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-10-02
-**Commit de referência:** `ddf35ef`, fechamento do Forge Lab / Digital Twin
-(`docs/sdd/FORGE_LAB_PRODUCT`) com documentação, gates e suíte final verdes.
+**Base técnica de referência:** `758ae0b`, fechamento SDD da economia observada.
+Este fechamento documental atualiza o índice transversal; o commit que o contém
+é a nova referência corrente.
 Ver a seção *Forge Lab* abaixo.
 Fechamentos anteriores: harness v0.1, fases I1 a I3 (2026-08-23); eixo Glue,
 fases G1 a H6 (2026-08-23); auditoria de lastro do vNext em `46b1187`
@@ -62,6 +63,31 @@ skipped**. Os quatro lotes afetados por guardas foram repetidos depois das
 correções e fecharam verdes. Esse resultado valida contratos e regressões do
 repositório; não é claim de performance, custo, capacidade cloud ou execução
 real do laboratório.
+
+## Atualização corrente — mapa integrado das waves (2026-10-02)
+
+O índice consolidado da evolução está em
+[`docs/EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). Ele reúne as entregas de
+`prompt_evo_nova_janela.md`, `prompt_evo_streaming.md` e
+`prompt_evo_forge_lab.md`, com os limites que continuam `unresolved`.
+
+O SDD corrente encontrou **55 features**: **53 `ship/done`**, uma em
+`plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e uma em `ship/draft`
+(`INTEGRACAO_USUARIO`). Templates não entram na contagem. A feature de produto
+Forge Lab está fechada em `FORGE_LAB_PRODUCT`; a pasta Digital Twin é registro
+SDD separado e não deve ser contada como segundo ship.
+
+As waves de streaming agora têm ships próprios para CDC, Glue RTM, Schema
+Registry, integrações/checkpoints, collectors read-only, runtime matrix e
+structured review, além dos fechamentos de Flink, lakehouse/observabilidade,
+operações/serving, realtime platform, arquitetura/event-driven e governança.
+O detalhamento e os gaps operacionais estão em
+[`docs/streaming/prompt-coverage.md`](../streaming/prompt-coverage.md).
+
+O fechamento da economia observada está em
+[`docs/sdd/TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH/ship.md`](../sdd/TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH/ship.md):
+`payload_bytes`, `provider_tokens` e `cost_basis` permanecem dimensões
+independentes; sem transcript de host, tokens seguem `unresolved`.
 
 ## Atualização corrente — Decision Plane shadow mode (2026-09-28)
 

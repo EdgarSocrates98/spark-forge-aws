@@ -7,6 +7,11 @@
 Manuais simples para usar tudo o que o projeto tem. Cada manual começa com uma
 **receita rápida** (poucos comandos para copiar e colar) e depois explica o resto.
 
+O estado consolidado das evoluções de control plane, streaming, economia observada
+e Forge Lab está no [mapa de evolução atual](../EVOLUTION-CURRENT.md). Este índice
+separa entrega comprovada de capacidade que ainda exige runtime, endpoint ou
+transcript real.
+
 ## Comece aqui
 
 1. [O que é o SparkForge, em palavras simples](01-conceitos.md), com o glossário.

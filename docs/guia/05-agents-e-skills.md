@@ -3,6 +3,12 @@
 Este manual explica, sem teoria, como pedir ajuda aos agents e às skills do
 SparkForge. O glossário completo fica em [Conceitos](01-conceitos.md).
 
+O inventário consolidado das waves e dos limites de produção fica no
+[mapa de evolução atual](../EVOLUTION-CURRENT.md). Para streaming, CDC e
+incidentes reproduzíveis, combine o especialista `streaming-realtime-architect`
+ou `cdc-contract-reviewer` com o Forge Lab quando houver workload/runtime para
+capturar.
+
 ## Receita rápida
 
 Você não sabe por onde começar? Deixe o SparkForge escolher. Rode da raiz do

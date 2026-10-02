@@ -5,6 +5,10 @@ cada plataforma, por que extração e julgamento são verbos separados, e o que 
 extrator lê. A anatomia dos comandos está em [CLI](03-cli.md); o glossário, em
 [Conceitos](01-conceitos.md).
 
+As waves correntes de streaming, CDC, Forge Lab e economia observada estão
+indexadas em [`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md); este manual
+explica o fluxo operacional e não transforma contrato offline em capacidade live.
+
 ## A camada determinística
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote

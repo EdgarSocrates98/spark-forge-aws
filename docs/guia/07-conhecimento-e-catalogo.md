@@ -24,6 +24,12 @@ em `knowledge/glue/lakeformation-matrix.yaml` e, desde 2026-09-25, a tabela que
 diz qual permissão cada operação do job exige em cada modelo, com a frase da AWS
 por trás de cada linha, em `knowledge/glue/lakeformation-permissions.yaml`.
 
+As waves de 2026-10-02 acrescentaram conhecimento operacional de streaming/CDC,
+Flink, Glue RTM, Schema Registry, transport diagnostics, serving, runtime matrix,
+Forge Lab e economia observada. O mapa de entrega e os limites de evidência estão
+em [`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md); esta página continua
+sendo o índice da base versionada, não um claim de runtime live.
+
 Ler [`knowledge/cross-service-constraints.md`](../../knowledge/cross-service-constraints.md)
 antes de recomendar mudança de versão, formato de tabela ou particionamento — são
 as armadilhas em que a mudança funciona no job e quebra no consumidor.

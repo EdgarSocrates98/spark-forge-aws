@@ -2,6 +2,11 @@
 
 Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam**. Ela não contém procedimento de investigação — isso vive em `skills/`. Não contém estado de investigação — isso vive em `.sparkforge/case.yaml`.
 
+O estado das waves que consomem esta base está em
+[`docs/EVOLUTION-CURRENT.md`](../docs/EVOLUTION-CURRENT.md). A matriz de
+streaming abaixo lista contratos offline entregues e mantém live/runtime sem
+artefato como `unresolved`.
+
 ## Regra de uso
 
 1. **Nenhum limiar aplicado sem checar a versão.** Toda tabela aqui tem coluna ou nota de versão. Config de Spark 3.5 não vale automaticamente em Spark 3.3 (Glue 4.0).
@@ -19,7 +24,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 ### Spark / PySpark
 | Arquivo | Conteúdo |
 |---|---|
-| [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC later waves are explicitly unresolved |
+| [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC have offline contracts, enquanto live/replay/runtime sem artefato seguem unresolved |
 | [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; coleta live, credenciais e eficácia runtime permanecem unresolved |
 | [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards and metrics; blind spots remain explicit |
 | [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg; preserva procedência, não infere causalidade e nomeia pontos cegos |

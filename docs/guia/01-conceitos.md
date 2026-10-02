@@ -3,6 +3,9 @@
 Este guia explica o que o SparkForge é e o que significa cada palavra da saída
 dos comandos. Os outros guias usam estes termos sem repetir a explicação.
 
+Para separar o que já foi entregue do que ainda exige runtime ou evidência externa,
+consulte o [mapa de evolução atual](../EVOLUTION-CURRENT.md).
+
 ## Receita rápida
 
 Veja as três peças principais funcionando em menos de um minuto. Rode na raiz

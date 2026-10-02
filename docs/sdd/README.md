@@ -25,6 +25,12 @@ tipo de mudança para registros do ship em `sparkforge/sdd/change_kinds.yaml`.
 Todo campo e todo código de recusa e de lacuna, com quando dispara e em que
 fase, está em [`CONTRATO.md`](CONTRATO.md), travado por teste contra o código.
 
+O estado consolidado das features está em
+[`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). Em 2026-10-02, o status
+registrou 55 features: 53 ships done, uma plan ready e uma draft. A feature
+draft não deve ser promovida só para tornar o check global verde; as recusas
+`hypothesis_open_at_ship` e `registry_unchecked` são parte da evidência.
+
 ## Os três verbos
 
 | verbo | tool MCP | o que faz |

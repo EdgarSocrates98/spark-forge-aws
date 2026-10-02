@@ -25,6 +25,9 @@ O que ele **não** é:
 por tarefa, com receita para copiar e colar, e uma referência de cada comando, tool,
 agent e skill gerada do código.
 
+Para ver o que foi entregue nas waves de control plane, streaming, CDC, economia
+observada e Forge Lab, consulte o [mapa de evolução atual](docs/EVOLUTION-CURRENT.md).
+
 ## Como ele pensa: extrair, julgar, compor
 
 Três etapas, e cada uma é um verbo diferente.
@@ -242,6 +245,7 @@ e [Política de segurança](docs/guia/usos/politica-de-seguranca.md).
 |---|---|
 | Começar, com receita para copiar e colar | [`docs/guia/README.md`](docs/guia/README.md) |
 | Construir evidência reproduzível de streaming e batch | [Forge Lab / Digital Twin](docs/guia/forge-lab.md) |
+| Ver o estado consolidado das evoluções | [Mapa de evolução atual](docs/EVOLUTION-CURRENT.md) |
 | O glossário, os objetivos e os dados mínimos a juntar | [Conceitos](docs/guia/01-conceitos.md) |
 | Instalar, e usar sem o repositório clonado | [Instalação](docs/guia/02-instalacao.md) |
 | Ler a saída da CLI e seus códigos de saída | [CLI](docs/guia/03-cli.md) |

@@ -11,6 +11,11 @@ muda **quem** chama: em vez de você digitar o comando, o assistente chama a too
 
 Termos novos estão no [glossário](01-conceitos.md).
 
+O estado atual da superfície, das waves de streaming, do Forge Lab e da economia
+observada está em [`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). A página
+de referência de tools é gerada do código; este manual explica o contrato de
+uso e os limites de autorização.
+
 ## Receita rápida (Claude Code)
 
 Rode na raiz do repositório clonado:

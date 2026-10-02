@@ -4,6 +4,11 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 `sparkforge sdd status`, `sparkforge sdd check` nas features de streaming e
 `sparkforge code sync`; ela mede artefatos existentes, não menções em Markdown.
 
+O mapa transversal das três evoluções do repositório está em
+[`docs/EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). Esta página permanece
+especializada em streaming e conserva `N/A + motivo` onde falta runtime, janela,
+endpoint, credencial ou workload reais.
+
 ## Estado atual auditado após as waves implementadas
 
 | Capability | Nível medido | Evidência atual | Lacuna para P0/P1 |
@@ -26,7 +31,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | Streaming + Iceberg | `diagnosable` parcial | `facts/iceberg_metadata.py`, `facts/streaming_composition.py`, `analyze streaming-composition`, regras `streaming_iceberg.yaml` e goldens | collectors/live lineage, SLO/FinOps e validação causal/funcional permanecem lacunas |
 | Delta/Hudi | `knowledge-aware` parcial | `streaming_ops.lakehouse`, `knowledge/streaming-format-serving-matrix.md`, fixtures e matriz de formatos | runtime/feature compatibility e collectors ficam P1/P2 |
 | Event-driven architecture | `diagnosable` parcial | `facts/event_driven.py`, regras `SF-EVENT`, fixtures, `analyze event-driven`, MCP, skill, routing e SDD | collector live, Step Functions, teste temporal de entrega/replay e decisão vs streaming |
-| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `facts/streaming_ops.py`, `facts/streaming_integrations.py`, analyzers e regras offline | collectors temporais, SLO temporal, correlação de longo período e FinOps continuam lacunas |
+| Streaming observability | `diagnosable` parcial | progress/transport facts, `facts/streaming_composition.py`, `facts/streaming_ops.py`, `facts/streaming_integrations.py`, analyzers, collectors read-only e regras offline | collectors temporais de série longa, SLO temporal, correlação live e FinOps continuam lacunas; OpenLineage offline já tem fact, sem endpoint live |
 | Streaming FinOps | `diagnosable` parcial | `streaming.finops`, `SF-STREAM-005`, CLI/MCP, fixtures e `knowledge/streaming-operations.md` | CUR/CloudWatch temporal e atribuição por transport/process/runtime/sink |
 | Streaming security | `diagnosable` parcial | `streaming.security`, redaction, `SF-STREAM-006`, CLI/MCP e fixtures | IAM/KMS/VPC/resource-policy collectors e eficácia runtime |
 | Real-time analytics/serving | `knowledge-aware` parcial | `streaming.serving`, `knowledge/streaming-format-serving-matrix.md`, matriz Redshift/ClickHouse/Pinot/Druid/Trino | collectors/evals por sistema e benchmark de latência/throughput |
@@ -61,7 +66,8 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 - Wave J parcial: contrato offline para checkpoint metadata, Kafka Connect,
   Kafka Streams e OpenLineage; facts, unresolved, quatro rules P1, fixtures
   completas/incompletas, analyzer CLI/MCP, conhecimento, superfície e SDD ship.
-  Collector live, replay temporal, benchmark e eficácia end-to-end permanecem
+  OpenLineage offline está coberto por fact; collector live, replay temporal,
+  benchmark e eficácia end-to-end permanecem
   `N/A + motivo` por dependerem de endpoint, credencial, janela e workload reais.
 - Wave K parcial: collector AWS read-only para checkpoint S3, Glue Streaming,
   Kinesis, MSK e DMS, com redaction, cache por hash, manifesto, CLI/MCP e
@@ -99,6 +105,9 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 - `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS` e
   `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS`: ships SDD adicionados para as
   decisões de governança offline, sempre fail-closed.
+- `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`: habilitadores transversais para
+  medir contexto e ligar workspace/semantic graph sem inferir tokens, custo ou
+  telemetria de provider.
 
 Todos os itens acima passaram os gates globais de skills, referências, surface,
 números correntes e bundle offline em 2026-10-02. Isso fecha contratos offline e
@@ -112,10 +121,10 @@ live em capacidade comprovada.
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
-| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline parcial entregue**: streaming→Iceberg, progresso→Kafka/Kinesis e declarações SLO/FinOps; collectors temporais, OpenLineage e correlação de longo período permanecem lacunas |
+| G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline parcial entregue**: streaming→Iceberg, progresso→Kafka/Kinesis, OpenLineage facts e declarações SLO/FinOps; collectors temporais, endpoint live e correlação de longo período permanecem lacunas |
 | H | Event-driven + architecture decision + agents/skills/routing | **entregue parcialmente**: Event-driven e decision engine têm facts/constraints/ADR; integração automática com execução e teste temporal permanecem lacunas |
 | I | Delta/Hudi/Redshift and P2 knowledge | **matrizes e facts declarativos entregues**: compatibilidade e serving são knowledge-aware; evals/collectors/benchmark continuam P1/P2 |
-| J | security, failure fixtures, integration, performance, packaging and all gates | **contratos offline entregues**: Connect/OpenLineage/checkpoint/Streams, failure goldens, CLI/MCP, SDD e gates; faltam runtime temporal, replay, benchmark e revisão final de economia |
+| J | security, failure fixtures, integration, performance, packaging and all gates | **contratos offline entregues**: Connect/OpenLineage/checkpoint/Streams, failure goldens, CLI/MCP, SDD e gates; faltam runtime temporal, replay, benchmark e integração live |
 | K | collectors read-only AWS | **entregue parcialmente**: checkpoint S3, Glue, Kinesis, MSK e DMS; cache, redaction, manifesto, CLI/MCP e testes; endpoints Connect/Streams/OpenLineage permanecem fora por não haver API AWS universal |
 
 ## Regra de conclusão

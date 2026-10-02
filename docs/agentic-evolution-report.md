@@ -8,6 +8,12 @@
 **Spec:** `docs/superpowers/specs/2026-09-03-sparkforge-agentic-evolution-design.md`
 **Spec do executor:** `docs/superpowers/specs/2026-09-08-sparkforge-executor-agentico-design.md`
 
+> **Leitura corrente (2026-10-02):** este relatório mantém a evolução agêntica
+> como histórico técnico. O mapa de estado atual, incluindo Decision Plane,
+> Forge Lab, streaming e economia observada, está em
+> [`docs/EVOLUTION-CURRENT.md`](EVOLUTION-CURRENT.md) e
+> [`docs/superpowers/STATUS.md`](superpowers/STATUS.md).
+
 ## Resumo executivo
 
 O SparkForge ganhou uma **biblioteca agêntica** em `sparkforge/agentic/`: 13
@@ -65,6 +71,19 @@ outra.
 
 A camada determinística existente (Fact, Finding, Rule, Case, Gates) **não foi
 substituída** — foi acrescentada ao lado.
+
+## Atualização corrente — economia observada e Forge Lab (2026-10-02)
+
+O control plane agêntico agora tem fechamento documental para o grafo observado
+de workspace e economia local em
+`docs/sdd/TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH/`. O contrato preserva
+`payload_bytes`, `provider_tokens` e `cost_basis` separados e não transforma
+medida local em claim de provider.
+
+O Forge Lab (`docs/sdd/FORGE_LAB_PRODUCT/`) é a fábrica de evidências que permite
+reprodução controlada de cenários streaming e batch. Ele é CLI-first, plan-only
+por padrão, usa oracle independente e receipts; não concede autoridade ao agente
+para iniciar containers ou tocar AWS sem confirmação explícita.
 
 ## Atualização corrente — 2026-09-28 — Decision Plane em shadow mode
 
