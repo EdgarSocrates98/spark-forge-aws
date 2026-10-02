@@ -1666,6 +1666,16 @@
       ],
       "sha256": "7a6646c19f3df727ce852fbaa8334a4c4f6abf0e765268d3ec92e97264b0d61d"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/add-job-streaming.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-01"
+      ],
+      "rules": [
+        "SF-STREAM-001"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html": {
       "checked_at": "2026-09-21",
       "docs": [
@@ -3528,6 +3538,26 @@
         "SF-SPARK4-003"
       ]
     },
+    "https://spark.apache.org/docs/latest/api/python/_modules/pyspark/sql/streaming/listener.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-01"
+      ],
+      "rules": [
+        "SF-STREAM-003"
+      ]
+    },
+    "https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.lastProgress.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-01"
+      ],
+      "rules": [
+        "SF-STREAM-002"
+      ]
+    },
     "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {
       "checked_at": "2026-09-21",
       "docs": [],
@@ -3650,6 +3680,18 @@
         "SF-ERR-019"
       ],
       "sha256": "1701f8c278b2c8f48fee4a5004d7788e51953fb97ebeb77712cfc936be346f9d"
+    },
+    "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-01"
+      ],
+      "rules": [
+        "SF-STREAM-001",
+        "SF-STREAM-002",
+        "SF-STREAM-003"
+      ]
     },
     "https://www.dremio.com/blog/compaction-in-apache-iceberg-fine-tuning-your-iceberg-tables-data-files/": {
       "checked_at": "2026-09-21",
