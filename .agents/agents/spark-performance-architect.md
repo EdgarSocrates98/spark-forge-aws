@@ -12,7 +12,7 @@ skills:
   - optimize-iceberg-table
   - benchmark-pyspark-job
   - review-pyspark-pr
-rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE, SF-BRIDGE]
+rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE, SF-BRIDGE, SF-STREAM]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

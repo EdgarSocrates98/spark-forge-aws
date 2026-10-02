@@ -88,6 +88,7 @@ from sparkforge.facts import (
     # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     sfn_history,
     spark_plan,
+    streaming,
     sql_literal,
     sql_metrics,
     # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:
@@ -234,6 +235,7 @@ EXTRACTORS = (
     # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     sfn_history,
     spark_plan,
+    streaming,
     sql_literal,
     sql_metrics,
     # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:

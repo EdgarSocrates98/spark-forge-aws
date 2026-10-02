@@ -480,6 +480,19 @@ rules:
       coordenador que não vê a medição de execução mandaria a pergunta para quem não tem
       a evidência que a responde.
 
+  - id: AGENT-090
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em Structured Streaming
+    when:
+      all:
+        - {findings_area: SF-STREAM, count_gt: 0}
+    recommended_agent: spark-performance-architect
+    reason: >
+      O achado veio de código Structured Streaming ou de StreamingQueryProgress.
+      A próxima pergunta precisa correlacionar source, sink, checkpoint, state,
+      watermark e série observada com runtime e resultado; o coordinator já
+      possui o ciclo de baseline, plano, execução, validação funcional e rollback.
+
   # `SF-ENV` POR ÚLTIMO, e a razão é que ela é a área que TRÊS coordenadores declaram:
   # `glue-infra-reviewer`, `emr-infra-reviewer` e `glue-incremental-performance-architect`.
   # A posição resolve o empate sem inventar condição de runtime: quando há qualquer
