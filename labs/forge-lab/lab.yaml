@@ -1,5 +1,24 @@
 schema_version: 1
 lab: spark-forge-digital-twin
+product:
+  registry: lab/versions.yaml
+  scenario_suite: lab/scenarios/golden.yaml
+  run_root: .sparkforge/lab/runs
+  result_classifications: [PASS, FAIL, UNRESOLVED, INFRA_FAILURE, INVALID_SCENARIO]
+  fidelity:
+    L0: deterministic_fixture
+    L1: real_local_engine
+    L2: service_contract
+    L3: cloud_validation
+  modes: [lite, standard, deep]
+  profiles: [core, spark, kafka, streaming, flink, lakehouse, cdc, polaris, observability, chaos, full]
+  safety:
+    network: isolated
+    secrets: ephemeral_only
+    aws_default: refused
+    privileged: forbidden
+    host_network: forbidden
+    docker_socket_mount: forbidden
 components:
   - id: postgres
     kind: postgres
