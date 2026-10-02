@@ -66,7 +66,7 @@ unknowns:
     blocks: []
     unlock: "Obter amostras oficiais de checkpoint metadata por versão; sem isso, manter a capacidade como unresolved e fora da primeira onda."
 case_id: null
-change_kinds: [extractor, rule, rule_runtime_scope, rule_area, fixture_corpus, knowledge_doc, tool_or_verb, routing]
+change_kinds: [extractor, rule, rule_runtime_scope, rule_area, fixture_corpus, knowledge_doc, tool_or_verb, routing, agent_or_skill]
 ---
 
 # STREAMING_REALTIME_DATA_PLATFORM — requisitos
