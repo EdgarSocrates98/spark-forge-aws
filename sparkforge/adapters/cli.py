@@ -307,6 +307,25 @@ def build_parser() -> argparse.ArgumentParser:
     event_driven_p.add_argument("--cursor")
     _add_detail_level(event_driven_p)
 
+    # architecture decision support --------------------------------------
+    architecture_p = sub.add_parser(
+        "architecture",
+        help="Avalia arquitetura declarada sem escolher por preferência ou custo inventado.",
+    )
+    architecture_sub = architecture_p.add_subparsers(
+        dest="architecture_action", required=True
+    )
+    architecture_streaming_p = architecture_sub.add_parser(
+        "streaming",
+        help="Compara candidatos streaming por constraints factuais declaradas.",
+    )
+    architecture_streaming_p.add_argument(
+        "--path", required=True, help="JSON com requirements e assumptions separados."
+    )
+    architecture_streaming_p.add_argument(
+        "--out", help="Escreve o ADR e a matriz completa neste arquivo."
+    )
+
     composition_p = analyze_sub.add_parser(
         "streaming-composition",
         help="Compõe facts já extraídos de streaming, transporte e Iceberg.",
@@ -3357,6 +3376,21 @@ def _cmd_analyze_event_driven(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_architecture_streaming(args: argparse.Namespace) -> int:
+    from sparkforge.architecture.streaming import analyze_streaming_architecture
+
+    try:
+        payload = analyze_streaming_architecture(args.path)
+    except ValueError as exc:
+        raise _core.AdapterError(str(exc), exit_code=2) from exc
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_parquet_footer(args: argparse.Namespace) -> int:
     full = _core.analyze_parquet_footer(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5430,6 +5464,7 @@ _DISPATCH = {
     ("analyze", "cdc"): _cmd_analyze_cdc,
     ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
     ("analyze", "event-driven"): _cmd_analyze_event_driven,
+    ("architecture", "streaming"): _cmd_architecture_streaming,
     ("analyze", "streaming-composition"): _cmd_analyze_streaming_composition,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
@@ -5580,7 +5615,9 @@ _DISPATCH = {
     ("journal", "verify"): _cmd_journal_verify,
 }
 
-_FORA_DOS_ARGS_DO_JOURNAL = frozenset({"command", "subcommand", "analyze_target", "dq_ai_action"})
+_FORA_DOS_ARGS_DO_JOURNAL = frozenset(
+    {"command", "subcommand", "analyze_target", "dq_ai_action", "architecture_action"}
+)
 
 
 def _tool_da_cli(comando: str, sub_action: str | None) -> str:
@@ -5646,6 +5683,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "dq_ai_action", None)
         or getattr(args, "context_action", None)
         or getattr(args, "decision_action", None)
+        or getattr(args, "architecture_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

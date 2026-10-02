@@ -1781,7 +1781,9 @@
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/add-job-streaming.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-10-01"
@@ -1951,6 +1953,14 @@
       "rules": [
         "SF-LF-011"
       ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/glue-streaming.html": {
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.aws.amazon.com/glue/latest/dg/lake-formation-access-control-models.html": {
       "docs": [
@@ -2375,6 +2385,14 @@
       "retrieved": [],
       "rules": []
     },
+    "https://docs.aws.amazon.com/managed-flink/latest/java/what-is.html": {
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/msk/latest/developerguide/consumer-lag.html": {
       "docs": [
         "knowledge/transport-diagnostics.md"
@@ -2442,6 +2460,14 @@
         "SF-PLAN-002"
       ],
       "sha256": "e426dc396a6cb32e557e8600437593c20ff8ee5cb024dbee0de7a99385816777"
+    },
+    "https://docs.aws.amazon.com/redshift/latest/mgmt/materialized-view-streaming-ingestion.html": {
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
     },
     "https://docs.aws.amazon.com/secretsmanager/latest/userguide/integrating-emr.html": {
       "checked_at": "2026-09-21",
@@ -3263,7 +3289,9 @@
       "sha256": "86d5b16a88bf197905101aea08851464c27ae2765cd8e66c0af1ad14e919aadd"
     },
     "https://iceberg.apache.org/docs/latest/spark-structured-streaming/": {
-      "docs": [],
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-10-02"
@@ -3302,9 +3330,25 @@
       "retrieved": [],
       "rules": []
     },
+    "https://kafka.apache.org/documentation/streams/": {
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
     "https://nightlies.apache.org/flink/flink-docs-stable/docs/learn-flink/fault_tolerance/": {
       "docs": [
         "knowledge/flink-streaming.md"
+      ],
+      "pinned": false,
+      "retrieved": [],
+      "rules": []
+    },
+    "https://nightlies.apache.org/flink/flink-docs-stable/docs/learn-flink/streaming/": {
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
       ],
       "pinned": false,
       "retrieved": [],
@@ -3958,7 +4002,9 @@
       "sha256": "1701f8c278b2c8f48fee4a5004d7788e51953fb97ebeb77712cfc936be346f9d"
     },
     "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/streaming-realtime-candidate-matrix.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-10-01",

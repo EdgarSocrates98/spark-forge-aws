@@ -26,6 +26,7 @@ Uma skill é um procedimento escrito que o agente segue para uma tarefa focada. 
 | [`compare-releases`](compare-releases.md) | Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — \"vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a te... |
 | [`design-data-architecture`](design-data-architecture.md) | Use quando for necessario desenhar arquiteturas de dados completas. |
 | [`design-incremental-processing`](design-incremental-processing.md) | Use quando um job dito incremental continua lento mesmo com pouca entrada, faz scan global, recomputa estado histórico, ou você precisa projetar bootstrap, ciclos, backfill, lat... |
+| [`design-realtime-data-architecture`](design-realtime-data-architecture.md) | Use quando houver requisitos de workload streaming e for necessário comparar candidatos por constraints, preservando assumptions, unresolved e ADR sem fabricar vencedor. |
 | [`design-s3-data-lake`](design-s3-data-lake.md) | Use quando for necessario projetar S3, zonas, lifecycle e governanca de data lake. |
 | [`diagnose-data-skew`](diagnose-data-skew.md) | Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou de... |
 | [`diagnose-lakeformation-access`](diagnose-lakeformation-access.md) | Use quando um job Glue lê tabela governada e falha ao escrever, ou quando alguém pergunta \"por que a leitura passa e a escrita não?\", \"tomo AccessDenied e já dei SELECT\", \"... |

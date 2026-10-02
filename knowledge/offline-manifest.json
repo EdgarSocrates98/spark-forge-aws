@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "453e95eeb4c17b7e7b5e1cef99d6b06f337de544cdd10e5e67220e3354aedfab"
+      "sha256": "3e6435b1742d813af0581d6494c8565b6c1ae80b90643f87896465220e55a377"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -302,6 +302,11 @@
       "path": "knowledge/event-driven-architecture.md",
       "title": "event-driven-architecture",
       "sha256": "87e703f670c3b74b5587862a43775902b482f4f4d1d8eaea569d7c3006f30464"
+    },
+    {
+      "path": "knowledge/streaming-realtime-candidate-matrix.md",
+      "title": "streaming-realtime-candidate-matrix",
+      "sha256": "b9532d5d36726cfbb0a5812f2c23e1005193f1d707dd45d4055ff0dd80aed212"
     },
     {
       "path": "knowledge/transport-diagnostics.md",

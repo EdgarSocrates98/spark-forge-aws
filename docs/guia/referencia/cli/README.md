@@ -9,6 +9,7 @@ Um comando de topo por página, com todos os subcomandos e opções. Todo comand
 | [`sparkforge agents`](agents.md) | Lista e inspeciona agentes do runtime agêntico. |
 | [`sparkforge analyze`](analyze.md) | Extrai facts deterministicos de codigo-fonte. |
 | [`sparkforge arbitrate`](arbitrate.md) | Executor agentico deterministico: arbitra findings ja julgados e grava claim, evidencia, contradicao, lacuna e decisao no blackboard do case. |
+| [`sparkforge architecture`](architecture.md) | Avalia arquitetura declarada sem escolher por preferência ou custo inventado. |
 | [`sparkforge autonomy`](autonomy.md) | Mostra níveis de autonomia L0-L5. |
 | [`sparkforge benchmark`](benchmark.md) | Compara duas execucoes a partir dos facts de event log de cada uma. |
 | [`sparkforge blackboard`](blackboard.md) | Lê o shared blackboard (.sparkforge/blackboard/). |

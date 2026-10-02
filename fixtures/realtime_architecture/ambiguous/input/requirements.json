@@ -1,0 +1,12 @@
+{
+  "requirements": {
+    "source": "kafka",
+    "stateful": true,
+    "for_each_batch": false,
+    "output_mode": "update"
+  },
+  "assumptions": {
+    "traffic_profile": "unknown",
+    "team_operates_kafka": true
+  }
+}

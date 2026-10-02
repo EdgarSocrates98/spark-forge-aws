@@ -30,7 +30,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | Streaming FinOps | `knowledge-only` | FinOps batch/genérico | custo por transport/process/runtime/sink e evidence path temporal |
 | Streaming security | `knowledge-only` | skills AWS IAM/security genéricas | facts de TLS/IAM/KMS/VPC/secrets/cross-account e revisão de collectors |
 | Real-time analytics/serving | `knowledge-only` | nenhuma família real-time própria | Redshift streaming, Delta/Hudi e knowledge P1; ClickHouse/Pinot/Druid/Trino P2 |
-| Architecture decision support | `workflow-only` parcial | `design-data-architecture`, `decision` e matriz genérica | facts declarados, eliminação por constraint, ADR streaming e evidence/cost unresolved |
+| Architecture decision support | `diagnosable` parcial | `sparkforge architecture streaming`, matriz de candidatos, fixtures, skill e ADR offline | integração com facts de runtime/serving, custo/SLO/security observados e validação experimental |
 
 ## O que já foi realmente entregue
 
@@ -50,8 +50,10 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 - Wave H parcial: contrato offline de EventBridge rules/Pipes, SQS e SNS, com
   DLQ/redrive/target facts, unresolved, rules evidence-driven, CLI/MCP, skill,
   routing, fixtures, mirrors, bundle offline e SDD ship.
-- SDD fechado para essas duas waves: `STREAMING_REALTIME_DATA_PLATFORM` e
+- SDD fechado para essas waves: `STREAMING_REALTIME_DATA_PLATFORM`,
   `STREAMING_TRANSPORT_DIAGNOSTICS`. Wave D: `STREAMING_FLINK_PLATFORM`.
+- Wave H2: decisão offline separa requirements de assumptions, elimina por
+  constraints factuais e mantém ADR unresolved quando há empate ou blind spot.
 
 ## Waves necessárias para fechar o prompt
 
