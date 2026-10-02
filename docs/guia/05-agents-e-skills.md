@@ -126,7 +126,8 @@ pacote tem duas camadas de agente:
   herdados, um por área de investigação (`spark-performance-architect`,
   `glue-incremental-performance-architect`, `glue-infra-reviewer`,
   `athena-query-optimizer`, `pyspark-code-reviewer`, `iceberg-performance-engineer`,
-  `emr-infra-reviewer` e `data-quality-reviewer`), e 4 `sf-*` da expansão agêntica.
+  `emr-infra-reviewer` e `data-quality-reviewer`), `streaming-realtime-architect`,
+  `cdc-contract-reviewer` e 4 `sf-*` da expansão agêntica.
   Não executa: lê o case, decide qual executor rodar em seguida e registra no case qual
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
   `emr-infra-reviewer` lê `SF-EMR`, `SF-EMRS`, `SF-EMRK` e `SF-ENV`,
@@ -324,6 +325,7 @@ A tabela é um ponto de partida. A escolha oficial é sempre a do `next-step`.
 | "Workers, auto scaling ou Terraform do Glue" | [`glue-infra-reviewer`](referencia/agents/glue-infra-reviewer.md) | [`review-glue-terraform`](referencia/skills/review-glue-terraform.md), [`tune-glue-job`](referencia/skills/tune-glue-job.md) |
 | "Cluster EMR, EMR Serverless ou EMR on EKS" | [`emr-infra-reviewer`](referencia/agents/emr-infra-reviewer.md) | [`review-emr-cluster`](referencia/skills/review-emr-cluster.md), [`review-emr-eks`](referencia/skills/review-emr-eks.md) |
 | "A validação de dado do job está no lugar certo?" | [`data-quality-reviewer`](referencia/agents/data-quality-reviewer.md) | [`review-data-validation`](referencia/skills/review-data-validation.md) |
+| "O SLO de progress, Kafka ou Kinesis foi atendido?" | [`streaming-realtime-architect`](referencia/agents/streaming-realtime-architect.md) | [`analyze-streaming-composition`](referencia/skills/analyze-streaming-composition.md), [`review-streaming-operations`](referencia/skills/review-streaming-operations.md) |
 | "Quero reproduzir um incidente streaming/batch e capturar evidência" | — | Forge Lab: [`guia operacional`](forge-lab.md) e CLI [`sparkforge lab`](referencia/cli/lab.md) |
 | "A leitura passa e a escrita dá AccessDenied" (Lake Formation) | [`sf-lake-formation-specialist`](referencia/agents/sf-lake-formation-specialist.md) | [`diagnose-lakeformation-access`](referencia/skills/diagnose-lakeformation-access.md), [`lakeformation-fgac-guard`](referencia/skills/lakeformation-fgac-guard.md) |
 | "Quanto custa e qual capacidade escolher" | — | verbo `sparkforge finops`, [`tune-glue-job`](referencia/skills/tune-glue-job.md); veja também [Custo e capacidade](usos/custo-e-capacidade.md) |

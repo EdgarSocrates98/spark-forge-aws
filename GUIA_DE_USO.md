@@ -32,6 +32,29 @@ mutar ambiente local com `--execute --confirm`; execução AWS é tier separado 
 recusada pelo core offline. O Golden 20, receipts, oracle independente e limites
 de prova estão descritos no [contrato do produto](docs/knowledge/forge-lab-product.md).
 
+## 1.2 Streaming, CDC e SLO observado
+
+Para um caso streaming, use `streaming-realtime-architect` ou
+`cdc-contract-reviewer` conforme a rota devolvida por `sparkforge next-step`.
+Extraia progress, transporte, checkpoint, CDC, Flink ou Glue separadamente e
+componha somente depois. A avaliação SLO offline usa a mesma superfície para
+progress Structured Streaming e para `kafka.lag`/`kinesis.shard`:
+
+```bash
+sparkforge analyze streaming --path progress.jsonl --artifact progress --out progress.facts.json
+sparkforge analyze transport --path kafka.json --artifact kafka --out transport.facts.json
+sparkforge analyze streaming-ops --path slo-contract.json --out slo-contract.facts.json
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out slo-evaluation.facts.json
+```
+
+`met`/`violated` valem apenas para a série diretamente observada, com identidade,
+unidade, timestamps e janela coberta. `streaming.slo.unresolved` permanece na
+saída quando falta evidência; não há p95/freshness, consulta live, causalidade,
+custo ou prova end-to-end.
+
 ## 2. Claude Code
 
 Use o agente:
@@ -62,9 +85,9 @@ perfis deste repositório sem nenhuma configuração adicional:
 
 | O que | Onde | Como o Devin lê |
 |---|---|---|
-| Os 8 coordenadores | `.agents/agents/<nome>.md` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*), no layout *flat file* documentado |
-| Os mesmos 8 | `.claude/agents/<nome>.md` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
-| As 24 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
+| Os 14 coordenadores | `.agents/agents/<nome>.md` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*), no layout *flat file* documentado |
+| Os mesmos 14 | `.claude/agents/<nome>.md` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
+| As 60 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
 | Os 5 executores | `.agents/agents/executors/<nome>.md` | **a fonte não documenta este layout.** Ver abaixo |
 
 **Os cinco executores não estão num layout de descoberta documentado, e isto é medição,
@@ -370,9 +393,9 @@ Ou selecione o agente **Glue Incremental Performance Architect**.
 ## 5. Coordenador e playbook: como entrar sem escolher à mão
 
 Qual coordenador usar não é escolha manual. `sparkforge next-step` (CLI) ou
-`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-010` de
+`sparkforge_next_step` (MCP) consulta as rotas `AGENT-*` de
 `rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
-fase da investigação e área do achado dominante. Há oito coordenadores, cada um com
+fase da investigação e área do achado dominante. Há 14 coordenadores, cada um com
 executores declarados: ver a tabela em `AGENTS.md`.
 
 Dois deles não são sobre performance de código, e é por isso que quem procura só

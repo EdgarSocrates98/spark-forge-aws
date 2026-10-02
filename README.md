@@ -136,6 +136,35 @@ run local não prova capacidade, custo, latência ou semântica AWS de produçã
 O detalhe está no [guia do Forge Lab](docs/guia/forge-lab.md) e no
 [contrato técnico](docs/knowledge/forge-lab-product.md).
 
+## SLO observado em streaming
+
+O compositor `analyze streaming-composition` pode avaliar um contrato SLO
+declarado contra facts diretamente observados, sem acessar Spark, Kafka, Kinesis
+ou AWS em modo offline. Há três fontes suportadas:
+
+```bash
+# progress Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+# lag Kafka ou iterator age Kinesis
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+```
+
+Kafka usa `kafka.lag` em `records`; Kinesis usa `kinesis.shard` em `ms` para
+`iterator_age_ms`. A avaliação exige identidade, unidade canônica, timestamps e
+janela declarada coberta; séries misturadas, janela incompleta ou evidência
+ausente saem como `streaming.slo.unresolved`. `met` e `violated` significam
+somente o comparador observado no artefato: não são p95, freshness,
+disponibilidade, causalidade ou saúde end-to-end. Detalhe em
+[cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
+[referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
+
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:
 

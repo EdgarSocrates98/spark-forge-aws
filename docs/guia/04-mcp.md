@@ -169,6 +169,30 @@ Variáveis de ambiente opcionais:
 | `SPARKFORGE_PACKS` | Carregar Forge Packs. Ver [packs e conhecimento](usos/packs-e-conhecimento.md) |
 | `SPARKFORGE_RUN_ID` | Agrupar as chamadas numa medição. Ver [economia de contexto](usos/economia-de-contexto.md) |
 
+## Exemplo: SLO observado de streaming
+
+Use a tool `sparkforge_analyze_streaming_composition` com o mesmo contrato da
+CLI. O servidor não consulta AWS, Kafka, Kinesis ou Spark; ele compõe os facts
+que o cliente já salvou:
+
+```json
+{
+  "facts_paths": ["slo-contract.facts.json", "transport.facts.json"],
+  "mode": "slo",
+  "slo_name": "consumer-lag",
+  "transport_key": "orders-group",
+  "detail_level": "summary"
+}
+```
+
+O envelope preserva `source_fact_ids` e devolve `streaming.slo.evaluation` com
+`met`/`violated`, ou `streaming.slo.unresolved` quando identidade, unidade,
+timestamps, janela ou série única não estão provados. Kafka usa `kafka.lag` em
+`records`; Kinesis usa `kinesis.shard` em `ms`. O modo não calcula p95/freshness,
+não agrega partições ou shards e não prova saúde end-to-end. A mesma chamada
+pode usar `query_name` para progress Structured Streaming; detalhes de campos
+estão na [referência MCP](referencia/tools/sparkforge_analyze_streaming_composition.md).
+
 ## Como verificar que funciona
 
 **Sem cliente nenhum.** Monte o servidor em Python:

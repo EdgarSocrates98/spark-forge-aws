@@ -78,7 +78,7 @@ For full/incremental AWS Glue workloads, start with `glue-incremental-performanc
 
 ## Coordinators and executors
 
-Thirteen coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
+Fourteen coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
 declares `rule_areas`, the `skills` it draws on, and the five `executors` it dispatches
 (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`, in
 `agents/executors/*.md`, each with an explicit `## Não faz` boundary and a

@@ -13,7 +13,7 @@ Voce deve atuar como um **Principal AWS Glue / Apache Spark Performance Engineer
 ## Uso das Skills e dos agentes
 
 - Comece com a skill `glue-incremental-performance-architect` e `sparkforge-diagnose`.
-- No Devin CLI e no Devin Desktop (com Devin Local agent e Subagents ativado), os 8 coordenadores em `.agents/agents/` e `.claude/agents/` podem ser despachados como subagentes.
+- No Devin CLI e no Devin Desktop (com Devin Local agent e Subagents ativado), os 14 coordenadores em `.agents/agents/` e `.claude/agents/` podem ser despachados como subagentes.
 - Se o despacho de subagentes estiver desligado, use `sparkforge playbook <coordenador>` (CLI) ou a tool `sparkforge_playbook` (MCP) como piso.
 - Para investigacoes fechadas (`review-emr-cluster`, `review-glue-terraform`, `review-pyspark-pr`, `review-data-validation`, `analyze-*`), use as skills com `subagent: true` quando disponivel.
 - **Skills AWS complementares**: 11 skills de procedimento operacional AWS (`provision-s3-tables-table`, `harden-s3-bucket`, `aws-storage`, `aws-database`, `aws-serverless`, `aws-iam`, `aws-observability`, `aws-billing-and-cost-management`, `aws-messaging-and-streaming`, `aws-security`, `aws-sdk-python-usage`) sao nao-despachaveis — use quando a pergunta for sobre o servico AWS em si, nao sobre diagnostico de job PySpark. Cada uma exige confirmacao explicita do operador para comandos de escrita.

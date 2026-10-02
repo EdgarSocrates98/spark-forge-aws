@@ -252,6 +252,40 @@ comando.
 | `root-cause` | Ordena os achados por consequência declarada e nomeia a lacuna. | [root-cause](referencia/cli/root-cause.md) |
 | `arbitrate` | Arbitra findings já julgados e grava claims, evidências e contradições no blackboard do case. Grava no disco. | [arbitrate](referencia/cli/arbitrate.md) |
 | `debate` | Conduz e arbitra o protocolo de debate do case. Não gera argumento. | [debate](referencia/cli/debate.md) |
+| `analyze streaming-composition` | Compõe progress Structured Streaming, transporte ou Iceberg; `--mode slo` avalia SLO observado em progress, Kafka ou Kinesis. | [analyze](referencia/cli/analyze.md) |
+
+## Avaliar SLO observado de streaming
+
+Extraia os contratos e as observações separadamente. O compositor preserva os
+`fact_id` de origem e não consulta runtime live:
+
+```bash
+# Progress Structured Streaming
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+# Transporte Kafka/Kinesis
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+
+sparkforge judge --facts transport-slo.facts.json --show-skipped
+```
+
+Para Kafka, `transport_key` identifica grupo/topic e a unidade canônica é
+`records` sobre `kafka.lag`. Para Kinesis, identifica stream e a unidade é `ms`
+para `iterator_age_ms` em `kinesis.shard`. O resultado resolvido informa
+`streaming.slo.evaluation` com `met` ou `violated`; falta de identidade,
+timestamps, cobertura da janela, unidade ou série única produz
+`streaming.slo.unresolved`. Séries de grupos, topics, partições ou shards
+misturados são recusadas, nunca agregadas silenciosamente.
+
+Esse modo não calcula p95/freshness, não consulta CloudWatch/Kafka live, não
+prova disponibilidade, causalidade, custo ou saúde end-to-end. Ausência de
+finding não significa SLO atendido; reporte também todo `*.unresolved`.
 
 ### Forge Lab / Digital Twin
 

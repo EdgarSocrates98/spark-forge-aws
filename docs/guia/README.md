@@ -13,6 +13,11 @@ separa entrega comprovada de capacidade que ainda exige runtime, endpoint ou
 transcript real. O [ledger de entrega](../DELIVERY-LEDGER.md) lista todas as
 features SDD, commits de fase, provas e lacunas.
 
+Para uma leitura especializada do que já existe em streaming, consulte a
+[matriz de cobertura do prompt](../streaming/prompt-coverage.md). Ela separa
+contrato offline entregue de evidência que ainda exige runtime, endpoint,
+credencial, janela ou workload real.
+
 ## Comece aqui
 
 1. [O que é o SparkForge, em palavras simples](01-conceitos.md), com o glossário.
@@ -48,6 +53,7 @@ aqui:
 |---|---|
 | Conferir o ambiente e rodar tudo o que cabe no repositório de uma vez | [Scan e doctor](usos/scan-e-doctor.md) |
 | Construir e validar cenários streaming/batch reproduzíveis | [Forge Lab / Digital Twin](forge-lab.md) |
+| Avaliar SLO observado de progress, Kafka ou Kinesis | [CLI](03-cli.md#avaliar-slo-observado-de-streaming) e [referência da composição](referencia/skills/analyze-streaming-composition.md) |
 | Decidir o que um agente pode fazer sozinho, o que pede confirmação e o que é proibido | [Política de segurança](usos/politica-de-seguranca.md) |
 | Descobrir por que um job PySpark no Glue está lento | [Job lento](usos/job-lento.md) |
 | Saber quanto um job custa e qual capacidade escolher | [Custo e capacidade](usos/custo-e-capacidade.md) |

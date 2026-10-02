@@ -1,7 +1,8 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-10-02
-**Base técnica de referência:** `d4a7ba9`, fechamento técnico da avaliação SLO observada.
+**Base técnica de referência:** `cef138c`, fechamento técnico da guarda contra
+séries de transporte misturadas na avaliação SLO observada.
 Este fechamento documental atualiza o índice transversal após o commit técnico;
 o fechamento documental é versionado separadamente nesta rodada.
 O inventário completo das três evoluções está em

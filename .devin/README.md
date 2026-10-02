@@ -31,7 +31,7 @@ Os dois arquivos ao lado já fazem o resto:
 | `mcp_config.json` | expõe as **134 tools** por stdio (recontado em 2026-10-02). Sem variável de ambiente — o `.mcp.json` da raiz é do plugin do Claude Code e usa `${CLAUDE_PLUGIN_ROOT}`, que nenhuma página do Devin documenta expandir |
 | `config.json` | `permissions` para os verbos de leitura, e `read_config_from.claude: false` com a razão escrita |
 
-As **55 skills** e os **14 coordenadores** o Devin lê sozinho de `.agents/`, que
+As **60 skills** e os **14 coordenadores** o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
 ## Governança de acesso: simular, nunca parsear
@@ -142,14 +142,14 @@ linhas lido a olho vira opinião; passado por `sparkforge analyze emr-eks` vira
 fact com namespace fechado, e `sparkforge judge` diz o que o catálogo tem a
 dizer sobre ele.
 
-As **55 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
+As **60 skills** em `.agents/skills/` são gatilhos para isso: cada uma abre
 dizendo **quando** entrar e **o que ela não julga**. Ler a fronteira antes de
 trazer o artefato economiza a investigação inteira.
 
 
 ## Economia: o que medir antes de dizer que economizou
 
-**68 tools, 31 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
+**134 tools, 52 com `detail_level`** — `summary`, `normal`, `full`. Peca `summary`
 quando so precisa do veredito.
 
 **Leia o numero antes de afirmar reducao.** Medido em 2026-09-02 sobre o gold set
@@ -227,8 +227,8 @@ Se você atualizar um número, conte.
 | [`../GUIA_DE_USO.md`](../GUIA_DE_USO.md) | uso ponta a ponta; a §3.4 é a de MCP no Devin |
 | [`../docs/superpowers/STATUS.md`](../docs/superpowers/STATUS.md) | **a fonte da verdade sobre onde o projeto está.** Specs e plans são registro histórico: descrevem o que se pretendia numa data, não o repositório de hoje. Quando um número divergir, este arquivo ganha |
 | [`../docs/gates-por-mudanca.md`](../docs/gates-por-mudanca.md) | qual gate cada tipo de mudança toca |
-| [`../knowledge/`](../knowledge/) | o conhecimento com fonte: **220** URLs vigiadas em `sources.lock.json` |
-| [`../rules/catalog/`](../rules/catalog/) | as **140** regras, cada uma com fonte, validação e rollback |
+| [`../knowledge/`](../knowledge/) | o conhecimento com fonte: **337** URLs vigiadas em `sources.lock.json` |
+| [`../rules/catalog/`](../rules/catalog/) | as **212** regras, cada uma com fonte, validação e rollback |
 | [`../knowledge/devin/agents-and-subagents.md`](../knowledge/devin/agents-and-subagents.md) | o que este repositório **mediu** sobre o próprio Devin, com dez veredictos e um bloco de vetos |
 
 ## O que este diretório deliberadamente não tem

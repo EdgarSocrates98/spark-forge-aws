@@ -9,7 +9,7 @@ Os gates por tipo de mudança estão em [`docs/gates-por-mudanca.md`](../gates-p
 A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claude/skills/`
 e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é
 **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e
-`agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje 8
+`agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje 9
 das 27 despacháveis, contadas em 2026-10-02 com
 `grep -l '^subagent: true' .agents/skills/*/SKILL.md` e `grep -l '^agent:'`), e os
 perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`,

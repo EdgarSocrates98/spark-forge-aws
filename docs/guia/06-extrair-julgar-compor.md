@@ -39,6 +39,31 @@ independente do analyzer. `verify` e `plan` são offline e não iniciam serviço
 `--execute --confirm`. Para o fluxo completo e os limites de L0–L3, veja o
 [guia do Forge Lab](forge-lab.md).
 
+## Composição e SLO observado de streaming
+
+Quando o caso já possui facts de progress, contrato SLO e transporte, use a
+composição offline. A identidade e os timestamps precisam vir dos artefatos:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts progress.facts.json \
+  --mode slo --slo-name throughput --query-name orders-query \
+  --out slo-evaluation.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts slo-contract.facts.json --facts transport.facts.json \
+  --mode slo --slo-name consumer-lag --transport-key orders-group \
+  --out transport-slo.facts.json
+```
+
+O primeiro caminho compara `streaming.progress.batch`; o segundo compara
+`kafka.lag` (`records`) ou `kinesis.shard` (`ms`, `iterator_age_ms`). O fact
+`streaming.slo.evaluation` informa `met` ou `violated` somente para a janela
+observada. Falta de identidade, unidade, timestamp, janela coberta ou série
+única produz `streaming.slo.unresolved`. O compositor preserva os facts de
+origem, não calcula p95/freshness, não consulta endpoints live e não prova
+causalidade, custo ou saúde end-to-end.
+
 ## Sequência mínima
 
 ```bash

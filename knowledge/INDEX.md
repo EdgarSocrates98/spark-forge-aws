@@ -28,11 +28,11 @@ O inventário completo das features, commits e provas está em
 |---|---|
 | [`streaming-reliability.md`](streaming-reliability.md) | Structured Streaming source/progress evidence, checkpoint, watermark, state, sink and runtime-gated reliability workflow; Kafka/Kinesis/Flink/CDC have offline contracts, enquanto live/replay/runtime sem artefato seguem unresolved |
 | [`streaming-integrations.md`](streaming-integrations.md) | Contrato offline para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage; coleta live, credenciais e eficácia runtime permanecem unresolved |
-| [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards and metrics; blind spots remain explicit |
+| [`transport-diagnostics.md`](transport-diagnostics.md) | Offline Kafka/MSK/Kinesis artifact contract: topics, partitions, consumer groups, lag, broker/version/security, shards, metrics and observed transport SLO; blind spots remain explicit |
 | [`streaming-lakehouse-observability.md`](streaming-lakehouse-observability.md) | Composição declarada entre progresso Structured Streaming, transporte e metadata Iceberg, incluindo snapshots granulares e janela temporal; preserva procedência, não infere causalidade e nomeia pontos cegos |
 | [`streaming-realtime-candidate-matrix.md`](streaming-realtime-candidate-matrix.md) | Matriz offline de candidatos Spark, Glue, Flink, Kafka Streams, Iceberg e Redshift; separa requirements de assumptions e recusa vencedor sem eliminação factual |
 | [`streaming/runtime-matrix.md`](streaming/runtime-matrix.md) | Releases upstream versus managed, escopos verificados, `UNRESOLVED` de serviço/região e limites de capacidade para Spark, Kafka, Flink, Glue, MSK, Kinesis e Iceberg |
-| [`streaming-operations.md`](streaming-operations.md) | Contrato offline de SLO, FinOps, segurança e redaction para streaming; separa medida, atribuição e hipótese |
+| [`streaming-operations.md`](streaming-operations.md) | Contrato offline de SLO, FinOps, segurança e redaction para streaming; separa declaração, medida, atribuição e hipótese |
 | [`streaming-format-serving-matrix.md`](streaming-format-serving-matrix.md) | Matriz arquitetural Delta/Hudi/Iceberg e serving Redshift, ClickHouse, Pinot, Druid e Trino, com compatibilidade explicitamente unresolved |
 | [`event-driven-architecture.md`](event-driven-architecture.md) | Contrato offline para EventBridge, Pipes, SQS, SNS e padrões event-driven |
 | [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, checkpoints, state, service configuration, connectors, metrics and unresolved blind spots |
