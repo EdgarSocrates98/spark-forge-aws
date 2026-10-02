@@ -151,6 +151,7 @@ do wheel e de uma CLI real do host.
 | `2fbf157` | re-stamp final do SDD ship após fechamento do build report |
 | `4831844` | alinhamento do SDD e contagens correntes da avaliação SLO |
 | `d4a7ba9` | facts, composição, regras, fixtures e portas CLI/MCP da avaliação SLO |
+| `a1388ee` | SDD build/ship, knowledge, skills, referências, manifests e documentação transversal da avaliação SLO |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
