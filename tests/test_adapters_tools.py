@@ -2241,6 +2241,28 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
     if name == "sparkforge_knowledge_path":
         return call_tool("sparkforge_knowledge_path", {"file": "glue/runtime-matrix.md"})
 
+    if name in {
+        "sparkforge_analyze_data_observability",
+        "sparkforge_analyze_dbt_artifacts",
+        "sparkforge_analyze_duckdb_microscope",
+        "sparkforge_analyze_forge_lab",
+        "sparkforge_analyze_lakehouse_catalog",
+        "sparkforge_analyze_orchestration",
+        "sparkforge_analyze_platform_ecosystem",
+        "sparkforge_analyze_platform_graph",
+    }:
+        fixture_by_tool = {
+            "sparkforge_analyze_data_observability": ROOT / "fixtures" / "observability" / "sre.yaml",
+            "sparkforge_analyze_dbt_artifacts": ROOT / "fixtures" / "analytics" / "dbt",
+            "sparkforge_analyze_duckdb_microscope": ROOT / "fixtures" / "analytics" / "duckdb" / "microscope.yaml",
+            "sparkforge_analyze_forge_lab": ROOT / "labs" / "forge-lab" / "lab.yaml",
+            "sparkforge_analyze_lakehouse_catalog": ROOT / "fixtures" / "platform" / "catalog.yaml",
+            "sparkforge_analyze_orchestration": ROOT / "fixtures" / "orchestration" / "control-plane.yaml",
+            "sparkforge_analyze_platform_ecosystem": ROOT / "fixtures" / "platform" / "ecosystem.yaml",
+            "sparkforge_analyze_platform_graph": ROOT / "fixtures" / "platform" / "graph.yaml",
+        }
+        return call_tool(name, {"path": str(fixture_by_tool[name])})
+
     if name == "sparkforge_analyze_pyspark":
         lib = _write_job(tmp_path)
         return call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
