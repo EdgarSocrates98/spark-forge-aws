@@ -127,6 +127,45 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_schema_registry": (
         "2026-10-02: facts offline de contratos e evolução de Schema Registry"
     ),
+    "sparkforge_analyze_data_observability": (
+        "2026-10-02: SLO, incidentes, dependências e blast radius offline"
+    ),
+    "sparkforge_analyze_dbt_artifacts": (
+        "2026-10-02: lineage, catalog e run results de artifacts dbt"
+    ),
+    "sparkforge_analyze_duckdb_microscope": (
+        "2026-10-02: objetos, queries e comparações read-only de DuckDB"
+    ),
+    "sparkforge_analyze_event_driven": (
+        "2026-10-02: topologia declarada de EventBridge, SQS e SNS"
+    ),
+    "sparkforge_analyze_forge_lab": (
+        "2026-10-02: topologia declarativa offline do Forge Lab"
+    ),
+    "sparkforge_analyze_lakehouse_catalog": (
+        "2026-10-02: bindings declarados de catálogos e engines lakehouse"
+    ),
+    "sparkforge_analyze_orchestration": (
+        "2026-10-02: controles de confiabilidade de orquestração"
+    ),
+    "sparkforge_analyze_platform_ecosystem": (
+        "2026-10-02: inventário de serving, ingestion, AI e radar"
+    ),
+    "sparkforge_analyze_platform_graph": (
+        "2026-10-02: impacto e caminhos do grafo de plataforma"
+    ),
+    "sparkforge_analyze_streaming_composition": (
+        "2026-10-02: composição offline de streaming, transporte e Iceberg"
+    ),
+    "sparkforge_analyze_streaming_integrations": (
+        "2026-10-02: contratos offline de integrações streaming"
+    ),
+    "sparkforge_analyze_streaming_ops": (
+        "2026-10-02: SLO, FinOps, segurança, serving e lakehouse streaming"
+    ),
+    "sparkforge_collect_streaming_integrations": (
+        "2026-10-02: coleta AWS declarada para integrações streaming"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
