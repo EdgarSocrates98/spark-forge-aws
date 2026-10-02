@@ -47,6 +47,7 @@ Use `sparkforge_analyze_cdc` com o `artifact` correspondente e depois
 
 #### Não faz
 
+- Toda manutenção destrutiva exige confirmação explícita do operador.
 - Não conecta em banco, Kafka Connect, Debezium, DMS, Glue Schema Registry ou AWS.
 - Não declara exactly-once, idempotência, ausência de perda ou compatibilidade sem evidência.
 - Não trata posição ausente, chave ausente ou schema history ausente como valor conhecido.

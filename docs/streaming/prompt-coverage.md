@@ -22,7 +22,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 | CDC | `diagnosable` parcial | `facts/cdc.py`, regras `SF-CDC`, fixtures de evento/connector/seam/unresolved, CLI/MCP e `review-cdc-replication` | collector/replay temporal, cross-artifact com consumidor e validação funcional |
 | AWS DMS | `diagnosable` parcial | namespace `dms.*`, task/endpoint/mapping/stats/unresolved, rules e fixtures | collector read-only, matriz de versões, logs temporais e recovery funcional |
 | Debezium | `diagnosable` parcial | namespace `debezium.*`, config/status/schema-history/tombstone/unresolved, rules e fixtures | collector Kafka Connect, matriz de versões, offsets/DLQ e replay funcional |
-| Schema Registry/data contracts | `knowledge-only` | `knowledge/data-contracts-schema-evolution.md` | registry/schema-version/diff determinístico, oito compatibilities, integrations |
+| Schema Registry/data contracts | `diagnosable` parcial | `facts/schema_registry.py`, `rules/catalog/schema_registry.yaml`, fixtures `schema_registry`, `sparkforge_analyze_schema_registry`, `review-cdc-replication` | collectors/live registry, matriz completa de formato/versão, consumidores cross-artifact e validação funcional |
 | Streaming + Iceberg | `workflow-only` parcial | `facts/iceberg_metadata.py`, regras Iceberg e facts streaming separados | correlação progress↔snapshots/commits/files/metadata e evidence-driven rules |
 | Delta/Hudi | `knowledge-only` | conhecimento Iceberg dominante | matrizes de compatibilidade e decisão arquitetural; collectors ficam P1/P2 |
 | Event-driven architecture | `knowledge-only` | skills AWS messaging e workflows genéricos | artifact contract para EventBridge/Pipes/SQS/SNS/Step Functions e decisão vs streaming |
@@ -41,6 +41,9 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 - Wave D: dumps offline Flink/Managed Flink, namespaces separados, regras de
   checkpoint/backpressure, unresolved, fixtures, CLI/MCP, skill, especialista,
   routing e SDD ship.
+- Wave F parcial: Schema Registry/data contracts com registro, definição,
+  compatibilidade declarada, diff estrutural, auto-register, unresolved,
+  fixtures, CLI/MCP, skill, routing e SDD ship.
 - SDD fechado para essas duas waves: `STREAMING_REALTIME_DATA_PLATFORM` e
   `STREAMING_TRANSPORT_DIAGNOSTICS`. Wave D: `STREAMING_FLINK_PLATFORM`.
 
@@ -50,7 +53,7 @@ Data da auditoria: 2026-10-02. Esta matriz foi escrita depois de executar
 |---|---|---|
 | D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | job/Terraform cross-artifact, runtime guard, capability evidence e rules |
-| F | CDC + Debezium + DMS + Schema | **CDC parcial entregue**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; Schema Registry e cross-artifact permanecem |
+| F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | correlação temporal, não inferência causal, telemetry/context drill-down |
 | H | Event-driven + architecture decision + agents/skills/routing | requirements→facts→candidates→constraints→ADR com unresolved |
 | I | Delta/Hudi/Redshift and P2 knowledge | matrices/evals e artefacts somente onde existir caminho determinístico |

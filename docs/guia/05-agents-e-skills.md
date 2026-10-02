@@ -135,7 +135,7 @@ pacote tem duas camadas de agente:
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
   contrato de handoff que fazem a cadeia ser determinística entre modelos.
 
-Qual coordenador usar é dado, não julgamento: as **31** rotas `AGENT-*` (de 50 rotas no
+Qual coordenador usar é dado, não julgamento: as **31** rotas `AGENT-*` (de 51 rotas no
 total, recontadas em 2026-09-19; os ids não são contínuos desde a remoção das 54 rotas
 `AGENT-017..025, 029..070, 072..074` na feature `docs/sdd/SF_STUBS/`) de
 `rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o

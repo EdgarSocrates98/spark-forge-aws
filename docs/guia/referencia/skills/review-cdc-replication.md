@@ -2,12 +2,12 @@
 
 # Skill `review-cdc-replication`
 
-Use quando houver dump local de eventos CDC, Debezium/Kafka Connect ou AWS DMS e for preciso revisar chaves, posições, transações, snapshot/CDC seam, deletes, tombstones, schema history, endpoints, mappings e pontos cegos sem chamar serviços externos.
+Use quando houver dump local de eventos CDC, Debezium/Kafka Connect, AWS DMS ou Schema Registry e for preciso revisar chaves, posições, transações, snapshot/CDC seam, deletes, tombstones, schema history, compatibilidade, contratos e pontos cegos sem chamar serviços externos.
 
 | Campo | Valor |
 |---|---|
 | Arquivo de origem | `skills/review-cdc-replication/SKILL.md` |
-| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze cdc', 'sparkforge judge']} |
+| `metadata` | {'sparkforge_contract': 'v1', 'evals': 'evals/evals.json', 'references': ['references/README.md', '../_shared/references/evidence-first.md', '../_shared/references/evaluation-contract.md', '../_shared/references/operational-safety.md', '../../knowledge/cdc-replication.md', '../../knowledge/schema-registry-data-contracts.md'], 'scripts': ['scripts/validate_evidence.py'], 'primary_verbs': ['sparkforge analyze cdc', 'sparkforge analyze schema-registry', 'sparkforge judge']} |
 | `subagent` | True |
 
 ## Procedimento (texto integral)
@@ -38,8 +38,17 @@ Debezium com evento CDC ou tarefa DMS.
    ```
 
    Em MCP, a extração é `sparkforge_analyze_cdc`.
+   Para contrato/evolução de schema:
+
+   ```bash
+   sparkforge analyze schema-registry --path <contract.json> --out .sparkforge/facts_schema.json
+   sparkforge judge --facts .sparkforge/facts_schema.json --show-skipped
+   ```
+
+   Em MCP, a extração é `sparkforge_analyze_schema_registry`.
 4. Correlacione posição e chave por entidade, transação, snapshot/CDC seam,
-   delete/tombstone, schema history, table mappings, endpoints e estatísticas.
+   delete/tombstone, schema history, compatibilidade e evolução de contrato,
+   table mappings, endpoints e estatísticas.
 5. Valide contagem, schema, chaves e agregados como proxies declarados; eles
    não provam identidade completa do resultado.
 
@@ -62,4 +71,5 @@ recomendação usa `title`, `severity`, `confidence`, `evidence`, `root_cause`,
 
 Siga `AGENT_PROTOCOL.md`: abra/recupere o case, consulte
 `sparkforge_next_step`, use `sparkforge_rules_lookup` para regra e fonte,
-valide a saída e encaminhe qualquer mutação ao operador.
+valide a saída, não executa manutenção destrutiva e sobe qualquer mutação ao
+operador.

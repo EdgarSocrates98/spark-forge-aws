@@ -1,0 +1,154 @@
+[
+  {
+    "id": "f_47f631",
+    "schema_version": 1,
+    "kind": "schema.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "provider": "glue",
+      "subject": "orders-value",
+      "format": "AVRO"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "artifact_sha256": "3809c9e61e1cf10c7ef699eb0d9034cc19f9b70d263bdaf057181cad9a4e572e",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_6b8e22",
+    "schema_version": 1,
+    "kind": "schema.compatibility",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "subject": "orders-value",
+      "mode": "BACKWARD"
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "artifact_sha256": "3809c9e61e1cf10c7ef699eb0d9034cc19f9b70d263bdaf057181cad9a4e572e",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_894846",
+    "schema_version": 1,
+    "kind": "schema.definition",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "measures": {
+      "field_count": 2
+    },
+    "attrs": {
+      "subject": "orders-value",
+      "type": "record",
+      "fields": {
+        "id": "int",
+        "status": "string"
+      },
+      "field_names": [
+        "id",
+        "status"
+      ],
+      "required_fields": [
+        "id",
+        "status"
+      ]
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "artifact_sha256": "3809c9e61e1cf10c7ef699eb0d9034cc19f9b70d263bdaf057181cad9a4e572e",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_7005ca",
+    "schema_version": 1,
+    "kind": "schema.diff",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "measures": {
+      "changed_field_count": 3
+    },
+    "attrs": {
+      "subject": "orders-value",
+      "compatibility": "BACKWARD",
+      "added": [
+        "status"
+      ],
+      "removed": [
+        "total"
+      ],
+      "type_changes": [
+        "id"
+      ],
+      "required_changes": [
+        "status"
+      ],
+      "backward_breaking": true,
+      "forward_breaking": true,
+      "compatible": false
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "artifact_sha256": "3809c9e61e1cf10c7ef699eb0d9034cc19f9b70d263bdaf057181cad9a4e572e",
+      "extractor": "schema_registry@0.1.0"
+    }
+  },
+  {
+    "id": "f_a62e6f",
+    "schema_version": 1,
+    "kind": "schema.registry",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders-value",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "registry": "orders",
+      "provider": "glue",
+      "subject": "orders-value",
+      "format": "AVRO",
+      "compatibility": "BACKWARD",
+      "auto_register": true,
+      "version": 3
+    },
+    "provenance": {
+      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "artifact_sha256": "3809c9e61e1cf10c7ef699eb0d9034cc19f9b70d263bdaf057181cad9a4e572e",
+      "extractor": "schema_registry@0.1.0"
+    }
+  }
+]

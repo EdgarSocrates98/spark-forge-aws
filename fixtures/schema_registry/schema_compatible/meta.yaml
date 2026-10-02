@@ -1,0 +1,7 @@
+artifact: schema_registry
+expects_kinds:
+  - schema.analyzed
+  - schema.compatibility
+  - schema.definition
+  - schema.diff
+  - schema.registry

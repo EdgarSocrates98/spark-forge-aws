@@ -106,6 +106,10 @@ from sparkforge.facts.emr_serverless import (
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
 from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
+from sparkforge.facts.schema_registry import (
+    extract_schema_registry_path,
+    extract_schema_registry_tree,
+)
 from sparkforge.facts.glue_streaming import (
     extract_glue_streaming_path,
     extract_glue_streaming_tree,
@@ -1109,6 +1113,26 @@ def analyze_cdc(
         else extract_cdc_path(target, artifact=artifact)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_schema_registry(
+    path: str,
+    *,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai facts offline de contratos e evolução de schemas."""
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(f"Caminho nao encontrado para analise Schema Registry: {path}")
+    facts = (
+        extract_schema_registry_tree(target, repo_root=target)
+        if target.is_dir()
+        else extract_schema_registry_path(target, repo_root=target.parent)
+    )
+    return _facts_page(facts, "schema.unresolved", kind, limit, cursor, detail_level)
 
 
 def analyze_glue_streaming(

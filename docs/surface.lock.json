@@ -2,9 +2,9 @@
   "schema_version": 1,
   "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
   "tools": {
-    "tool_count": 120,
-    "total_bytes": 624204,
-    "by_name_sha256": "ee7e9a7e4c435047f486f7c514daaf49b2d357575935fc7a2871156b257c3c32"
+    "tool_count": 121,
+    "total_bytes": 631205,
+    "by_name_sha256": "c25195d8cd51fe7832f0900289b17534b83e968307bb22945578e2dd01f00c72"
   },
   "compact": {
     "tool_count": 7,
@@ -13,12 +13,12 @@
   },
   "skills": {
     "document_count": 55,
-    "total_bytes": 643485,
-    "by_name_sha256": "f794de2bfc271ae72ae21bd09d6d14bd43d26c36b0c49aa324af66a243e64d07"
+    "total_bytes": 644012,
+    "by_name_sha256": "1f41d23259795720d224737d352913c6132ab7b599347e12d6a56f08709f25c2"
   },
   "knowledge": {
-    "document_count": 64,
-    "total_bytes": 569899,
-    "by_name_sha256": "5fcfafa54c3c1941bb37cd729836dca7e9993065e5c376ddef5186413fe4df88"
+    "document_count": 65,
+    "total_bytes": 572221,
+    "by_name_sha256": "ea83dd1568e8d88286ecf3af17af8c7b85b702bee54eb3a91df85c9a1fe8ef5b"
   }
 }

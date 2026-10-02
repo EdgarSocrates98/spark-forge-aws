@@ -938,6 +938,18 @@ rules:
       posição de corte DMS. O especialista revisa o escopo e a transição
       Full Load + CDC sem expor segredos nem mutar AWS.
 
+  - id: AGENT-096
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em Schema Registry ou data contract
+    when:
+      all:
+        - {findings_area: SF-SCHEMA, count_gt: 0}
+    recommended_agent: cdc-contract-reviewer
+    reason: >
+      O achado depende da definição, versão, diff ou política de compatibilidade
+      observada no contrato. O especialista separa proxy estrutural de prova
+      end-to-end e exige owner, consumidores e validação antes da publicação.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

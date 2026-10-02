@@ -36,6 +36,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze plan`](#sparkforge-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
 | [`sparkforge analyze pyspark`](#sparkforge-analyze-pyspark) | Extrai facts de PySpark via AST estatico (nunca importa o codigo). |
 | [`sparkforge analyze s3-listing`](#sparkforge-analyze-s3-listing) | Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel). |
+| [`sparkforge analyze schema-registry`](#sparkforge-analyze-schema-registry) | Extrai facts offline de contratos e evolução de schemas. |
 | [`sparkforge analyze sfn-history`](#sparkforge-analyze-sfn-history) | Extrai facts do HISTORICO de execucao de uma state machine do AWS Step Functions (a saida salva de `aws stepfunctions get-execution-history`): uma tentativa por par TaskScheduled/terminal, com ordem, resultado, duracao, erro e o JobRunId do Glue lido do output do TaskSubmitted. Le o que ACONTECEU, nunca a definicao. |
 | [`sparkforge analyze sql`](#sparkforge-analyze-sql) | Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark. |
 | [`sparkforge analyze sql-metrics`](#sparkforge-analyze-sql-metrics) | Extrai metrica por no do plano de um Spark event log ja coletado. |
@@ -694,6 +695,29 @@ sparkforge analyze s3-listing --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_s3_listing`](../tools/sparkforge_analyze_s3_listing.md)
+
+## `sparkforge analyze schema-registry`
+
+Extrai facts offline de contratos e evolução de schemas.
+
+```bash
+sparkforge analyze schema-registry --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo ou diretorio JSON/JSONL. |
+| `--out` | não | texto |  |  | Escreve a lista completa de facts (JSON). |
+| `--kind` | não | texto | sim |  | Filtra por kind. Repetivel. |
+| `--limit` | não | texto |  | `50` |  |
+| `--cursor` | não | texto |  |  |  |
+| `--detail-level` | não | `summary`, `normal`, `full` |  | `full` | Verbosidade da saida. `full` (default) devolve o fato inteiro, com a procedencia dentro de cada item -- e o modo de reauditoria. `normal` declara procedencia e schema_version UMA VEZ no envelope e referencia a procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um fato por id: para ter o fato inteiro de volta, reexecute em `full` e pague o payload inteiro outra vez. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_schema_registry`](../tools/sparkforge_analyze_schema_registry.md)
 
 ## `sparkforge analyze sfn-history`
 

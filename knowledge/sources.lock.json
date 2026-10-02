@@ -1738,6 +1738,16 @@
       ],
       "sha256": "7a6646c19f3df727ce852fbaa8334a4c4f6abf0e765268d3ec92e97264b0d61d"
     },
+    "https://docs.aws.amazon.com/en_en/glue/latest/dg/aws-glue-api-schema-registry-api.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-SCHEMA-003"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/add-job-streaming.html": {
       "docs": [],
       "pinned": false,
@@ -2028,6 +2038,26 @@
       ],
       "rules": [],
       "sha256": "1777ce21b09507eb5407445dea16acf0824078d6259e5def1b782c4499473d34"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/schema-registry-works.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-SCHEMA-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-02"
+      ],
+      "rules": [
+        "SF-SCHEMA-001"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/security-access-control-fta.html": {
       "checked_at": "2026-09-21",

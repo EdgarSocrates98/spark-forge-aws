@@ -285,6 +285,17 @@ def build_parser() -> argparse.ArgumentParser:
     cdc_p.add_argument("--cursor")
     _add_detail_level(cdc_p)
 
+    schema_p = analyze_sub.add_parser(
+        "schema-registry",
+        help="Extrai facts offline de contratos e evolução de schemas.",
+    )
+    schema_p.add_argument("--path", required=True, help="Arquivo ou diretorio JSON/JSONL.")
+    schema_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    schema_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    schema_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    schema_p.add_argument("--cursor")
+    _add_detail_level(schema_p)
+
     glue_streaming_p = analyze_sub.add_parser(
         "glue-streaming",
         help="Extrai facts offline de dumps AWS Glue Streaming/Real-Time Mode.",
@@ -3213,6 +3224,15 @@ def _cmd_analyze_cdc(args: argparse.Namespace) -> int:
     return _emit_facts_page(full, args)
 
 
+def _cmd_analyze_schema_registry(args: argparse.Namespace) -> int:
+    full = _core.analyze_schema_registry(
+        args.path,
+        kind=args.kind,
+        limit=None,
+    )
+    return _emit_facts_page(full, args)
+
+
 def _cmd_analyze_glue_streaming(args: argparse.Namespace) -> int:
     full = _core.analyze_glue_streaming(args.path, kind=args.kind, limit=None)
     return _emit_facts_page(full, args)
@@ -5350,6 +5370,7 @@ _DISPATCH = {
     ("analyze", "transport"): _cmd_analyze_transport,
     ("analyze", "flink"): _cmd_analyze_flink,
     ("analyze", "cdc"): _cmd_analyze_cdc,
+    ("analyze", "schema-registry"): _cmd_analyze_schema_registry,
     ("analyze", "glue-streaming"): _cmd_analyze_glue_streaming,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,

@@ -130,6 +130,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract Schema Registry and data-contract artifact facts
+    tools: [sparkforge_analyze_schema_registry]
+    cli: [analyze schema-registry]
+    knowledge: [knowledge/schema-registry-data-contracts.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract AWS Glue Streaming and Real-Time Mode artifact facts
     tools: [sparkforge_analyze_glue_streaming]
     cli: [analyze glue-streaming]

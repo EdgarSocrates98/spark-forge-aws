@@ -43,6 +43,7 @@ class TestToolSurface:
             "sparkforge_analyze_transport",
             "sparkforge_analyze_flink",
             "sparkforge_analyze_cdc",
+            "sparkforge_analyze_schema_registry",
             "sparkforge_analyze_glue_streaming",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
@@ -2265,6 +2266,16 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_analyze_cdc",
             {"path": str(dump), "artifact": "debezium"},
         )
+
+    if name == "sparkforge_analyze_schema_registry":
+        dump = tmp_path / "schema.json"
+        dump.write_text(
+            '{"registry":{"name":"orders","provider":"glue","compatibility":"BACKWARD"},'
+            '"schema":{"name":"orders-value","format":"AVRO","definition":'
+            '{"type":"record","fields":[{"name":"id","type":"string"}]}}}',
+            encoding="utf-8",
+        )
+        return call_tool("sparkforge_analyze_schema_registry", {"path": str(dump)})
 
     if name == "sparkforge_analyze_glue_streaming":
         dump = tmp_path / "glue_streaming.json"

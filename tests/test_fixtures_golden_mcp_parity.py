@@ -124,6 +124,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_analyze_cdc": (
         "2026-10-02: facts offline de eventos CDC, Debezium e AWS DMS"
     ),
+    "sparkforge_analyze_schema_registry": (
+        "2026-10-02: facts offline de contratos e evolução de Schema Registry"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com
