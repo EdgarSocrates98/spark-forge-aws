@@ -34,6 +34,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze iam-access`](#sparkforge-analyze-iam-access) | Extrai a DECISAO de IAM ja simulada, com a camada que decidiu. |
 | [`sparkforge analyze iceberg`](#sparkforge-analyze-iceberg) | Extrai facts de um dump JSON das metadata tables Iceberg. |
 | [`sparkforge analyze lakeformation-grants`](#sparkforge-analyze-lakeformation-grants) | Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings). |
+| [`sparkforge analyze lakehouse-catalog`](#sparkforge-analyze-lakehouse-catalog) | Analisa topologia declarada de catalogs, engines, tabelas e bindings. |
 | [`sparkforge analyze parquet-footer`](#sparkforge-analyze-parquet-footer) | Extrai facts do FOOTER do Parquet ja coletado. |
 | [`sparkforge analyze plan`](#sparkforge-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
 | [`sparkforge analyze platform-graph`](#sparkforge-analyze-platform-graph) | Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos. |
@@ -651,6 +652,25 @@ sparkforge analyze lakeformation-grants --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_glue_resource_link`](../tools/sparkforge_analyze_glue_resource_link.md), [`sparkforge_analyze_iam_access`](../tools/sparkforge_analyze_iam_access.md), [`sparkforge_analyze_lakeformation_grants`](../tools/sparkforge_analyze_lakeformation_grants.md)
+
+## `sparkforge analyze lakehouse-catalog`
+
+Analisa topologia declarada de catalogs, engines, tabelas e bindings.
+
+```bash
+sparkforge analyze lakehouse-catalog --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML da topologia de catalog. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_lakehouse_catalog`](../tools/sparkforge_analyze_lakehouse_catalog.md)
 
 ## `sparkforge analyze parquet-footer`
 
