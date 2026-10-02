@@ -86,6 +86,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract Structured Streaming source and StreamingQueryProgress facts
+    tools: [sparkforge_analyze_streaming]
+    cli: [analyze streaming]
+    knowledge: [knowledge/streaming-reliability.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from a Glue Data Catalog schema dump
     tools: [sparkforge_analyze_catalog_schema]
     cli: [analyze catalog-schema]

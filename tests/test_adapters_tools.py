@@ -2222,6 +2222,18 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         lib = _write_job(tmp_path)
         return call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
 
+    if name == "sparkforge_analyze_streaming":
+        lib = tmp_path / "streaming.py"
+        lib.write_text(
+            "query = (spark.readStream.format('rate').load()"
+            ".writeStream.format('memory').queryName('rates').start())\n",
+            encoding="utf-8",
+        )
+        return call_tool(
+            "sparkforge_analyze_streaming",
+            {"path": str(lib), "artifact": "source"},
+        )
+
     if name == "sparkforge_judge":
         lib = _write_job(tmp_path)
         facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})

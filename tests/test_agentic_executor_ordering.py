@@ -423,11 +423,10 @@ class TestCatalogoInteiro:
         _, restricoes, _ = order_actions(findings_do_catalogo)
         maior = max(len(r["rules"]) for r in restricoes)
         no_topo = {r["axis"] for r in restricoes if len(r["rules"]) == maior}
-        # 12 desde `SF-ERR-021` (`MetadataFetchFailedException`, do Lote B), que
-        # acrescentou `runtime.wall_clock`. **Este numero ficou defasado por uma
-        # entrega inteira**: a linha dizia 11 desde `SF-ERR-013`, o Lote B levou
-        # o grupo a 12, e o teste ficou vermelho na arvore sem que nada acusasse
-        # -- confirmado com `git checkout` no commit anterior a esta sessao.
+        # 14 desde `SF-ERR-021` (`MetadataFetchFailedException`, do Lote B), que
+        # acrescentou `runtime.wall_clock`; a primeira onda Structured Streaming
+        # também passou a publicar regras executáveis nesse mesmo eixo. O número
+        # é recontado pelo catálogo, não mantido como expectativa histórica.
         # A licao e a mesma que o proprio docstring ja registrava: assinatura de
         # erro nova quase sempre move um grupo de restricao, porque `judge`
         # propor "aumente o limite" e sobre relogio.
@@ -435,6 +434,6 @@ class TestCatalogoInteiro:
         # O NUMERO e afirmado, e o CONJUNTO tambem: as duas metades juntas e que
         # fazem o teste medir a distribuicao, e nao a ordem alfabetica que o
         # `max` usaria para escolher sozinho. `scan.bytes_read` esta em 10.
-        assert maior == 12
+        assert maior == 14
         assert no_topo == {"runtime.wall_clock"}
         assert all(r["axis"] != "correctness.write_result" for r in restricoes)
