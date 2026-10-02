@@ -4,7 +4,18 @@ feature: STREAMING_TRANSPORT_DIAGNOSTICS
 phase: explore
 profile: dev
 status: ready
-decision: "A"
+approaches:
+  - id: A
+    summary: "Contrato único analyze transport com especializações Kafka, MSK e Kinesis."
+    tradeoffs:
+      - "um envelope comum para CLI e MCP"
+      - "parser precisa preservar diferenças específicas por domínio"
+  - id: B
+    summary: "Um verbo independente por serviço de transporte."
+    tradeoffs:
+      - "isolamento por serviço"
+      - "triplica superfície e fixtures sem ganho medido nesta onda"
+chosen: A
 ---
 
 # STREAMING_TRANSPORT_DIAGNOSTICS — exploração

@@ -6,8 +6,8 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_TRANSPORT_DIAGNOSTICS/explore.md
-  sha256: "eaff7d5535690065648428dd7b154440054a77554d5b2e412154d1efb2da98db"
-change_kinds: [extractor, fixture_corpus, knowledge_doc, tool_or_verb]
+  sha256: "cd6b1e775b32ebd2dac8b40e5bbca1b3cf77d5a4a01db68e635ebec45ab321a3"
+change_kinds: [extractor, fixture_corpus, knowledge_doc, tool_or_verb, status_numbers]
 acceptance:
   - id: AC1
     statement: "Kafka topic, partition, consumer group e lag facts preservam âncoras, offsets e distribuição por partition quando presentes."
@@ -27,16 +27,32 @@ acceptance:
   - id: AC6
     statement: "Surface pública, capability/parity e referências geradas ficam sincronizadas."
     verified_by: {kind: command, ref: python scripts/check_surface_lock.py}
-prediction:
-  statement: "Um contrato comum reduzirá duplicação de envelope sem apagar diferenças entre Kafka, MSK e Kinesis, e dará ao agente facts suficientes para pedir o próximo artefato sem afirmar causa."
-  measure: "Comparar golden facts por domínio, count de unresolved e igualdade CLI/MCP; não medir ganho de performance."
-  falsifier: "Se qualquer domínio perder sua âncora específica, ou CLI/MCP divergirem, a opção A é refutada."
+hypothesis:
+  claim: "Um contrato comum reduz duplicação de envelope sem apagar diferenças entre Kafka, MSK e Kinesis."
+  prediction: "Goldens preservam âncoras específicas, unresolved nomeado e igualdade CLI/MCP; se qualquer domínio perder sua âncora ou as superfícies divergirem, a hipótese é refutada."
+  experiment: "Comparar facts dos goldens por domínio, contar unresolved e executar o teste de igualdade CLI/MCP; não medir ganho de performance."
+success:
+  - id: SC1
+    metric: "Todos os AC1–AC6 passam; CLI e MCP retornam envelopes equivalentes; unresolved permanece nomeado nos goldens cegos."
+    source: "pytest dos AC1–AC5 e python scripts/check_surface_lock.py para AC6"
 out_of_scope:
   - collector live de Kafka, MSK, Kinesis ou CloudWatch
   - regra de hot partition, custo, throughput ou capacidade sem série e baseline
   - compatibilidade completa de versões Kafka upstream/MSK
   - agentes especializados novos
-unknowns: [U1, U2, U3, U4]
+unknowns:
+  - id: U1
+    blocks: [AC4]
+    unlock: "Adicionar collector read-only e fixture de resposta real Kafka/MSK/Kinesis."
+  - id: U2
+    blocks: [AC1, AC2]
+    unlock: "Coletar dumps com timestamp comum em mais de uma execução."
+  - id: U3
+    blocks: [AC1, AC2]
+    unlock: "Coletar distribuição completa por partition/shard e métricas de throughput."
+  - id: U4
+    blocks: [AC2]
+    unlock: "Comparar versão declarada com dump de serviço e matriz oficial versionada."
 ---
 
 # STREAMING_TRANSPORT_DIAGNOSTICS — definição
