@@ -2689,7 +2689,8 @@
         "2026-10-02"
       ],
       "rules": [
-        "SF-STREAMOBS-001"
+        "SF-STREAMOBS-001",
+        "SF-STREAMOBS-002"
       ]
     },
     "https://docs.databricks.com/api/workspace/clusters/create": {
@@ -3421,7 +3422,8 @@
         "2026-10-02"
       ],
       "rules": [
-        "SF-STREAMICE-001"
+        "SF-STREAMICE-001",
+        "SF-STREAMICE-002"
       ]
     },
     "https://iceberg.apache.org/docs/latest/spark-writes/": {
@@ -4173,7 +4175,9 @@
         "SF-STREAM-003",
         "SF-STREAM-004",
         "SF-STREAM-007",
-        "SF-STREAMOBS-001"
+        "SF-STREAMICE-002",
+        "SF-STREAMOBS-001",
+        "SF-STREAMOBS-002"
       ]
     },
     "https://spark.apache.org/news/": {

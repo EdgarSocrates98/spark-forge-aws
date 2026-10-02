@@ -46,11 +46,16 @@ sparkforge analyze streaming-composition \
   --facts progress.facts.json --facts transport.facts.json \
   --mode temporal --query-name orders-query --transport-key orders-group \
   --max-skew-seconds 3 --out temporal.facts.json
+
+sparkforge analyze streaming-composition \
+  --facts progress.facts.json --facts iceberg.facts.json \
+  --mode iceberg_temporal --table db.events --query-name orders-query \
+  --max-skew-seconds 3 --out iceberg-temporal.facts.json
 ```
 
-3. Para `mode=temporal`, `max-skew-seconds` é obrigatório como declaração do
-   chamador. O compositor só usa timestamps observados; ordem do arquivo,
-   relógio local e tolerância implícita não contam.
+3. Para `mode=temporal` e `mode=iceberg_temporal`, `max-skew-seconds` é
+   obrigatório como declaração do chamador. O compositor só usa timestamps
+   observados; ordem do arquivo, relógio local e tolerância implícita não contam.
 
 4. Leia `streaming.composition.unresolved` e `streaming.temporal.unresolved`
    antes de julgar. Query, tabela, grupo, stream, timestamp ou janela ausente
@@ -78,6 +83,13 @@ tolerância declarada, com processamento abaixo da entrada e backlog/idade
 observados. É evidência de coexistência na janela; não identifica causa, SLO,
 custo ou ganho de capacidade.
 
+`mode=iceberg_temporal` produz `iceberg.snapshot` granular e
+`streaming.iceberg.temporal` somente quando há pelo menos dois pares entre
+`StreamingQueryProgress` e `committed_at` do Iceberg. `SF-STREAMICE-002`
+indica operação não-append observada nessa janela; `causal_inference: false`
+permanece explícito. Valide replay, leitura incremental, consumidores e
+resultado funcional antes de alterar o sink.
+
 ### Limites
 
 - uma amostra não prova tendência;
@@ -86,8 +98,10 @@ custo ou ganho de capacidade.
 - checkpoint não prova exactly-once end-to-end;
 - correlação não prova causalidade;
 - ausência de finding não prova saúde.
+- snapshot agregado não substitui a observação granular de cada snapshot;
 - timestamp sem timezone, timestamp ausente ou par fora da janela produz
-  `streaming.temporal.unresolved`;
+  `streaming.temporal.unresolved` ou `streaming.composition.unresolved`,
+  conforme o modo;
 - use `--detail-level summary` para triagem barata e reexecute `full` apenas
   quando precisar dos facts/proveniências, mantendo `source_fact_ids` para
   reauditoria.

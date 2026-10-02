@@ -49,6 +49,11 @@ Para checkpoint metadata, Kafka Connect, Kafka Streams e OpenLineage, use
 
 Para operações e composição multi-engine, use `sparkforge_analyze_streaming_ops`,
 `sparkforge_analyze_streaming_composition` e `sparkforge_collect_streaming_integrations`;
+quando houver progresso Structured Streaming e metadata Iceberg na mesma janela,
+declare tabela, query e `max_skew_seconds`, use
+`sparkforge_analyze_streaming_composition --mode iceberg_temporal` e confira
+`iceberg.snapshot`, `streaming.iceberg.temporal`, `SF-STREAMICE-002` e os
+`source_fact_ids` antes de propor replay ou mudança no sink;
 para topologia de laboratório e dependências de evento, use
 `sparkforge_analyze_forge_lab` e `sparkforge_analyze_event_driven`. Essas superfícies
 continuam declarativas/read-only no host do agente.

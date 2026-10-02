@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **56 features**:
+O status atual registra **57 features**:
 
-- **54** em `ship/done`;
+- **55** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -50,6 +50,7 @@ SDD_EVAL, SDD_MIGRATION, SDD_OPERATOR, SDD_OPERATOR_DURAVEL, SDD_SKILLS,
 SDD_SKILLS_REVISAO, SFN_HISTORY, SFN_TENTATIVA, SF_STUBS,
 SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_GLUE_RTM,
+STREAMING_ICEBERG_TEMPORAL,
 STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
@@ -94,8 +95,9 @@ do wheel e de uma CLI real do host.
   auto-register e políticas ausentes.
 - Checkpoints, Kafka Connect, Kafka Streams e OpenLineage como facts separados;
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
-- Iceberg/observabilidade: composição offline streaming→Iceberg e
-  progresso→transporte e janela temporal pareada entre progresso e Kafka/Kinesis;
+- Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
+  granulares e janela temporal progresso→Iceberg, progresso→transporte e janela
+  temporal pareada entre progresso e Kafka/Kinesis;
   operações, serving, SLO, FinOps, security/redaction,
   EventBridge/Pipes/SQS/SNS e decisão arquitetural por constraints.
 
@@ -141,6 +143,7 @@ do wheel e de uma CLI real do host.
 | `09d6f31` | consolidação transversal da evolução |
 | `a626220` | composição temporal offline, regra e goldens Kafka/Kinesis |
 | `fab535a` | ship SDD, mirrors, referências, surface lock e documentação temporal |
+| `171074b` | facts granulares de snapshots Iceberg, composição temporal, regra, fixtures e schema |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -153,7 +156,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 32 passed em `tests/test_reference_docs.py tests/test_docs_coverage.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
-| Evidência temporal | 17 testes core; 66 testes de goldens/coverage; Kafka, Kinesis e unresolved com facts/findings persistidos |
+| Evidência temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge; 769 runtime-scope; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 
 Essas provas validam contratos locais, determinismo, paridade e documentação.

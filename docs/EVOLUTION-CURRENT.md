@@ -1,8 +1,8 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-02  
-**Base técnica de referência:** `a626220`; fechamento documental atual:
-`fab535a`
+**Base técnica de referência:** `171074b`; fechamento documental atual:
+`fab535a` (ledger deste fechamento entra no commit documental seguinte)
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
@@ -34,14 +34,14 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **56 features**: **54 `ship/done`**,
+`sparkforge sdd status --repo .` encontrou **57 features**: **55 `ship/done`**,
 uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
 | Frente | Features entregues | Estado documentado |
 |---|---|---|
 | Nova janela / Data Platform Control Plane | `PLATFORM_INTELLIGENCE_GRAPH`, `PLATFORM_INTELLIGENCE_EVALS`, `OPEN_LAKEHOUSE_CATALOG`, `DATA_OBSERVABILITY_SRE`, `ORCHESTRATION_CONTROL_PLANE`, `ANALYTICS_ENGINEERING_MICROSCOPE`, `DATA_PLATFORM_ECOSYSTEM`, além dos fechamentos de decisão e governança | Entregue; ativação produtiva do Decision Plane continua opt-in e `shadow` por padrão |
-| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_FLINK_PLATFORM`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; janela curta temporal agora é pareada por timestamps observados e tolerância declarada; evidência live, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
+| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_FLINK_PLATFORM`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; progresso→Iceberg agora tem snapshots granulares e janela temporal pareada por timestamps observados e tolerância declarada; evidência live, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
 | Forge Lab | `FORGE_LAB_PRODUCT` | Entregue e verificado offline; `FORGE_LAB_DIGITAL_TWIN` permanece como registro SDD separado em `plan/ready` |
 | Economia observada | `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`, `TOKEN_ESTIMATE_UNICO`, `AGENTIC_ECONOMY_COMPLETION` | Entregue; bytes, tokens do provider e custo continuam eixos independentes |
 | Governança | `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS`, `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` e famílias Lake Formation relacionadas | Entregue offline, fail-closed e com gates focados |
@@ -116,8 +116,8 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs de streaming | 32 passed em `tests/test_reference_docs.py tests/test_docs_coverage.py` |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
-| Extração e fixtures | 905 passed no lote de reachability/kind coverage/untrusted |
-| Janela temporal | 17 testes core; 66 testes de goldens/coverage; 1188 gates de catálogo/docs/knowledge e 766 gates de runtime-scope |
+| Extração e fixtures | 980 passed no lote focado; snippet measure adicional: 4 passed |
+| Janela temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge e 769 gates de runtime-scope |
 | Claims e proveniência | 174 passed, 5 skipped |
 | Checks globais | skills, referências, surface lock, status numbers, bundle offline e claims sem divergência |
 

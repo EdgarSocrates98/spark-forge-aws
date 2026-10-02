@@ -12,6 +12,24 @@ files. `non_append_observed` é uma observação de operação, não uma conclus
 falha. Leitura incremental e comportamento de overwrite/delete precisam ser
 validados para o runtime e consumidor presentes.
 
+### Janela temporal streaming → Iceberg
+
+`iceberg.snapshot` preserva cada observação de snapshot com identidade,
+`snapshot_id`, operação observada e `committed_at` quando o metadata fornece
+esses valores. `mode=iceberg_temporal` exige tabela, query e tolerância
+`max_skew_seconds` declaradas; pareia deterministicamente progresso da query e
+snapshots da tabela pela menor distância temporal, sem usar ordem do arquivo ou
+relógio local.
+
+`streaming.iceberg.temporal` só aparece com pelo menos dois pares completos.
+Carrega contagens, skew declarado, janela observada, operações, todos os
+`source_fact_ids` e `causal_inference: false`. `SF-STREAMICE-002` é uma
+recomendação de validação quando a janela completa contém operação não-append;
+não prova que o commit causou atraso, falha ou divergência. Falta de identidade,
+timestamp, snapshot ou par suficiente produz `streaming.composition.unresolved`.
+O resumo agregado `iceberg.snapshots_summary` continua compatível para o modo
+estrutural anterior.
+
 ## Vínculo progresso → transporte
 
 `streaming.observability.link` aproxima uma série `StreamingQueryProgress` de
