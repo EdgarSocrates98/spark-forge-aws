@@ -109,3 +109,37 @@ def test_kinesis_api_aliases_are_normalized_without_inventing_values():
     assert stream.attrs["stream_name"] == "events"
     assert shard.attrs["shard_id"] == "shardId-000"
     assert shard.measures["iterator_age_ms"] == 1200
+
+
+def test_transport_preserves_observed_timestamp():
+    kafka = {
+        "consumer_groups": [
+            {
+                "group": "orders",
+                "offsets": [
+                    {
+                        "topic": "events",
+                        "partition": 0,
+                        "lag": 4,
+                        "timestamp": 1790942401,
+                    }
+                ],
+            }
+        ]
+    }
+    kinesis = {
+        "stream_name": "events",
+        "shards": [{"shard_id": "shard-000", "iterator_age_ms": 1200, "timestamp": 1790942401}],
+    }
+    kafka_lag = next(
+        fact
+        for fact in extract_transport_text(json.dumps(kafka), "kafka.json", artifact="kafka")
+        if fact.kind == "kafka.lag"
+    )
+    kinesis_shard = next(
+        fact
+        for fact in extract_transport_text(json.dumps(kinesis), "kinesis.json", artifact="kinesis")
+        if fact.kind == "kinesis.shard"
+    )
+    assert kafka_lag.measures["timestamp"] == 1790942401
+    assert kinesis_shard.measures["timestamp"] == 1790942401

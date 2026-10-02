@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from sparkforge.findings.models import Fact, sort_facts
+from sparkforge.facts.streaming_temporal import build_streaming_temporal_diagnostics
 
 EXTRACTOR_ID = "streaming_composition@0.1.0"
 
@@ -20,6 +21,8 @@ EMITTED_KINDS = frozenset(
         "streaming.observability.link",
         "streaming.composition.unresolved",
         "streaming.composition.analyzed",
+        "streaming.temporal.diagnostic",
+        "streaming.temporal.unresolved",
     }
 )
 
@@ -277,6 +280,7 @@ def build_streaming_composition(
     table: str = "",
     query_name: str = "",
     transport_key: str = "",
+    max_skew_seconds: float | None = None,
 ) -> list[Fact]:
     """Build a deterministic composition over previously extracted facts."""
     source_facts = _unique_by_id(facts)
@@ -285,6 +289,13 @@ def build_streaming_composition(
     elif mode == "observability":
         derived = _observability_link(
             source_facts, transport_key=transport_key, query_name=query_name
+        )
+    elif mode == "temporal":
+        derived = build_streaming_temporal_diagnostics(
+            source_facts,
+            query_name=query_name,
+            transport_key=transport_key,
+            max_skew_seconds=max_skew_seconds,
         )
     else:
         derived = [_unresolved(mode, "unknown_mode", source_facts)]
@@ -302,6 +313,7 @@ def build_streaming_composition(
                 "table": table or None,
                 "query_name": query_name or None,
                 "transport_key": transport_key or None,
+                "max_skew_seconds": max_skew_seconds,
             },
             provenance=_provenance(source_facts),
         )

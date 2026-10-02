@@ -46,3 +46,49 @@ rules:
       - {url: "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html", retrieved: 2026-10-02}
     knowledge_refs:
       - {ref: knowledge/streaming-lakehouse-observability.md}
+
+  - id: SF-STREAMOBS-002
+    category: streaming_observability
+    title: Janela temporal pareada com processamento abaixo da entrada e backlog observado
+    requires_facts: [streaming.temporal.diagnostic, env.runtime_signal]
+    when:
+      all:
+        - fact: streaming.temporal.diagnostic
+          expr: "measures.paired_observation_count >= 2 and attrs.temporal_window_complete and attrs.all_paired_processed_below_input and attrs.transport_backlog_observed"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A composição observou pelo menos dois pares de progresso e transporte
+      dentro da tolerância temporal declarada. Em todos os pares comparáveis, a
+      taxa processada ficou abaixo da entrada e uma medida de lag ou idade foi
+      observada. Isso fortalece a investigação, mas não prova causa, impacto
+      funcional, SLO ou ganho de capacidade.
+    proposed_change:
+      - Conferir a janela, unidades, identidade, relógios e completude dos pares.
+      - Correlacionar state, sink, duração, throttling, offsets e resultado funcional.
+      - Alterar uma variável principal por experimento e comparar o mesmo caso.
+    action:
+      kind: measurement.collect_baseline
+      target: streaming.temporal.diagnostic
+      direction: investigate
+      requires_absent: [streaming.temporal.unresolved]
+      moves: [runtime.wall_clock, transport.backlog]
+      depends_on: []
+    risks:
+      - Uma tolerância ampla pode parear snapshots de janelas diferentes.
+      - Relógios sem timezone ou métricas agregadas podem mascarar a granularidade real.
+      - Escalar capacidade sem medir state e sink pode aumentar custo sem resolver atraso.
+    tradeoffs:
+      - Série temporal pareada exige retenção, sincronização de relógio e bytes adicionais.
+    validation:
+      - Confirmar `max_skew_seconds`, timestamps, identidade e unidades no artefato de origem.
+      - Repetir a coleta na mesma janela e conferir count, schema, chaves e agregados do resultado.
+      - Comparar throughput, backlog e duração antes/depois da única variável experimental.
+    rollback:
+      - Reverter a única variável experimental e preservar os facts pareados para reauditoria.
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-lakehouse-observability.md}

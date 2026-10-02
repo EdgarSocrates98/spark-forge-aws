@@ -51,3 +51,41 @@ def test_streaming_rules_require_runtime_and_sufficient_evidence():
         attrs={"all_processed_below_input": True},
     )
     assert not judge([runtime, one_observation], rules, {"spark": "3.5.6"})
+
+
+def test_temporal_rule_requires_paired_observations():
+    rules = [rule for rule in load_catalog() if rule["id"].startswith("SF-STREAMOBS-")]
+    assert "SF-STREAMOBS-002" in {rule["id"] for rule in rules}
+    temporal = _fact(
+        "streaming.temporal.diagnostic",
+        measures={"paired_observation_count": 2},
+        attrs={
+            "temporal_window_complete": True,
+            "all_paired_processed_below_input": True,
+            "transport_backlog_observed": True,
+            "causal_inference": False,
+        },
+    )
+    runtime = _fact(
+        "env.runtime_signal",
+        measures={"distinct_versions": 1},
+        attrs={"observed": {"spark": ["3.5.6"]}},
+    )
+    findings = judge([temporal, runtime], rules, {"spark": "3.5.6"})
+    assert [finding for finding in findings if finding.rule_id == "SF-STREAMOBS-002"]
+    assert all(finding.evidence for finding in findings)
+
+    one_pair = _fact(
+        "streaming.temporal.diagnostic",
+        measures={"paired_observation_count": 1},
+        attrs={
+            "temporal_window_complete": True,
+            "all_paired_processed_below_input": True,
+            "transport_backlog_observed": True,
+        },
+    )
+    assert not [
+        finding
+        for finding in judge([one_pair, runtime], rules, {"spark": "3.5.6"})
+        if finding.rule_id == "SF-STREAMOBS-002"
+    ]

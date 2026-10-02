@@ -1079,6 +1079,7 @@ def analyze_streaming_composition(
     table: str = "",
     query_name: str = "",
     transport_key: str = "",
+    max_skew_seconds: float | None = None,
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
@@ -1105,6 +1106,7 @@ def analyze_streaming_composition(
         table=table,
         query_name=query_name,
         transport_key=transport_key,
+        max_skew_seconds=max_skew_seconds,
     )
     return _facts_page(
         composed,

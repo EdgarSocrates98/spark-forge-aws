@@ -231,9 +231,16 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                         continue
                     measures = _numeric_fields(
                         offset,
-                        ("partition", "current_offset", "log_end_offset", "lag"),
+                        ("partition", "current_offset", "log_end_offset", "lag", "timestamp"),
                     )
                     if measures:
+                        attrs = {"group": group_name, "topic": offset.get("topic")}
+                        if isinstance(offset.get("timestamp"), str):
+                            attrs["timestamp"] = offset["timestamp"]
+                        for key in ("observed_at", "observedAt"):
+                            if isinstance(offset.get(key), str):
+                                attrs["observed_at"] = offset[key]
+                                break
                         facts.append(
                             _fact(
                                 "kafka.lag",
@@ -241,7 +248,7 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                                 line,
                                 provenance,
                                 measures=measures,
-                                attrs={"group": group_name, "topic": offset.get("topic")},
+                                attrs=attrs,
                             )
                         )
                     else:
@@ -322,7 +329,9 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
             if not isinstance(shard, dict):
                 facts.append(_unresolved(artifact, line, provenance, "kinesis", "invalid_shard_record"))
                 continue
-            shard_measures = _numeric_fields(shard, ("incoming_bytes", "outgoing_bytes", "record_count"))
+            shard_measures = _numeric_fields(
+                shard, ("incoming_bytes", "outgoing_bytes", "record_count", "timestamp")
+            )
             for key in ("iterator_age_ms", "iterator_age_milliseconds", "IteratorAgeMilliseconds"):
                 number = _number(shard.get(key))
                 if number is not None:
@@ -344,6 +353,12 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
                     if key in shard
                 },
             }
+            if isinstance(shard.get("timestamp"), str):
+                shard_attrs["timestamp"] = shard["timestamp"]
+            for key in ("observed_at", "observedAt"):
+                if isinstance(shard.get(key), str):
+                    shard_attrs["observed_at"] = shard[key]
+                    break
             shard_attrs = {key: value for key, value in shard_attrs.items() if value is not None}
             facts.append(
                 _fact(

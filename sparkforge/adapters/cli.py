@@ -412,8 +412,8 @@ def build_parser() -> argparse.ArgumentParser:
     composition_p.add_argument(
         "--mode",
         required=True,
-        choices=("iceberg", "observability"),
-        help="Relação a analisar: streaming→Iceberg ou progresso→transporte.",
+        choices=("iceberg", "observability", "temporal"),
+        help="Relação a analisar: streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
     )
     composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
     composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
@@ -421,6 +421,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--transport-key",
         default="",
         help="Grupo/topic Kafka ou stream Kinesis declarado.",
+    )
+    composition_p.add_argument(
+        "--max-skew-seconds",
+        type=float,
+        default=None,
+        help="Tolerância temporal declarada para mode=temporal; sem valor sai unresolved.",
     )
     composition_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
     composition_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
@@ -3490,6 +3496,7 @@ def _cmd_analyze_streaming_composition(args: argparse.Namespace) -> int:
         table=args.table,
         query_name=args.query_name,
         transport_key=args.transport_key,
+        max_skew_seconds=args.max_skew_seconds,
         kind=args.kind,
         limit=None,
     )

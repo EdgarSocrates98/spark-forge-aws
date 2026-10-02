@@ -6013,7 +6013,8 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Compõe facts já extraídos de Structured Streaming, transporte e Iceberg. "
             "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
             "produz link quando a correspondência é observada sem ambiguidade. Preserva "
-            "ids dos facts de origem, operações Iceberg, lag/iterator age e unresolved. "
+            "ids dos facts de origem, operações Iceberg, lag/iterator age, janela temporal "
+            "pareada e unresolved. Mode=temporal exige `max_skew_seconds` declarado. "
             "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
         ),
         "inputSchema": {
@@ -6028,14 +6029,18 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "mode": {
                     "type": "string",
-                    "enum": ["iceberg", "observability"],
-                    "description": "Relação streaming→Iceberg ou progresso→transporte.",
+                    "enum": ["iceberg", "observability", "temporal"],
+                    "description": "Relação streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
                 },
                 "table": {"type": "string", "description": "Tabela Iceberg declarada."},
                 "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
                 "transport_key": {
                     "type": "string",
                     "description": "Grupo/topic Kafka ou stream Kinesis declarado.",
+                },
+                "max_skew_seconds": {
+                    "type": "number",
+                    "description": "Tolerância temporal declarada para mode=temporal; sem valor sai unresolved.",
                 },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
@@ -10859,6 +10864,7 @@ def _h_analyze_streaming_composition(args: dict[str, Any]) -> dict[str, Any]:
         table=args.get("table", ""),
         query_name=args.get("query_name", ""),
         transport_key=args.get("transport_key", ""),
+        max_skew_seconds=args.get("max_skew_seconds"),
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
