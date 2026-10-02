@@ -55,3 +55,32 @@ def test_kinesis_iterator_age_is_linked_by_declared_stream():
     link = next(fact for fact in facts if fact.kind == "streaming.observability.link")
     assert link.measures["max_iterator_age_ms"] == 2500.0
     assert link.attrs["transport_kinds"] == ["kinesis"]
+
+
+def test_iceberg_temporal_pairs_progress_and_snapshots():
+    facts = build_streaming_composition(
+        _facts("iceberg_non_append"),
+        mode="iceberg_temporal",
+        table="db.events",
+        query_name="orders-query",
+        max_skew_seconds=0,
+    )
+    diagnostic = next(fact for fact in facts if fact.kind == "streaming.iceberg.temporal")
+    assert diagnostic.measures["paired_observation_count"] == 2
+    assert diagnostic.attrs["non_append_observed"] is True
+    assert diagnostic.attrs["causal_inference"] is False
+    assert len(diagnostic.attrs["source_fact_ids"]) == 4
+
+
+def test_iceberg_temporal_requires_complete_window():
+    facts = build_streaming_composition(
+        _facts("unresolved_link"),
+        mode="iceberg_temporal",
+        table="db.events",
+        query_name="orders-query",
+        max_skew_seconds=2,
+    )
+    assert not [fact for fact in facts if fact.kind == "streaming.iceberg.temporal"]
+    unresolved = [fact for fact in facts if fact.kind == "streaming.composition.unresolved"]
+    assert unresolved
+    assert unresolved[-1].attrs["reason"] == "insufficient_snapshot_observations"

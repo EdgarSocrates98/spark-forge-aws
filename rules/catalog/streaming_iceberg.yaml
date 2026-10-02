@@ -47,3 +47,47 @@ rules:
     knowledge_refs:
       - {ref: knowledge/streaming-lakehouse-observability.md}
 
+  - id: SF-STREAMICE-002
+    category: streaming_iceberg
+    title: Operação não-append observada na janela temporal da query e do Iceberg
+    requires_facts: [streaming.iceberg.temporal]
+    when:
+      all:
+        - fact: streaming.iceberg.temporal
+          expr: "measures.paired_observation_count >= 2 and attrs.temporal_window_complete and attrs.non_append_observed"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A janela declarada contém pelo menos dois pares de progresso e snapshot
+      Iceberg, e um snapshot pareado registra operação não-append. A observação
+      fortalece a necessidade de validar replay, leitura incremental e resultado
+      funcional, mas não prova que o commit causou atraso ou divergência.
+    proposed_change:
+      - Confirmar timestamps, ids, operações e tolerância no dump de origem.
+      - Validar consumidores, leitura incremental, reinício e replay em ambiente controlado.
+      - Comparar contagem, schema, chaves e agregados antes de qualquer mudança no sink.
+    action:
+      kind: validation.functional_replay
+      target: streaming.iceberg.temporal
+      direction: investigate
+      requires_absent: [streaming.composition.unresolved]
+      moves: [correctness.write_result, storage.snapshot_history]
+      depends_on: []
+    risks:
+      - Pareamento temporal não prova causalidade entre commit e atraso da query.
+      - Expirar snapshots antes da validação remove uma opção de rollback.
+      - Tolerância ampla pode juntar janelas de execução diferentes.
+    tradeoffs:
+      - Preservar snapshots e fatos granulares aumenta armazenamento e bytes de análise.
+    validation:
+      - Conferir dois ou mais pares, skew observado, identidade e operação no metadata.
+      - Repetir a coleta na mesma janela e executar proxies funcionais do destino.
+      - Comparar replay e leitura incremental sem atribuir ganho não medido.
+    rollback:
+      - Reverter a configuração experimental do sink e preservar snapshots necessários ao replay.
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-structured-streaming/", retrieved: 2026-10-02}
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-lakehouse-observability.md}

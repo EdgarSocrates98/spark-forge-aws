@@ -16,7 +16,15 @@ from sparkforge.rules.loader import load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_composition"
-REQUIRED_FIXTURES = {"iceberg_non_append", "observability_lag", "observability_kinesis", "unresolved_link"}
+REQUIRED_FIXTURES = {
+    "iceberg_non_append",
+    "iceberg_temporal_append",
+    "iceberg_temporal_non_append",
+    "iceberg_temporal_unresolved",
+    "observability_lag",
+    "observability_kinesis",
+    "unresolved_link",
+}
 
 
 def _facts(directory: Path):
@@ -47,6 +55,7 @@ def test_fixture_goldens():
                 table=meta.get("table", ""),
                 query_name=meta.get("query_name", ""),
                 transport_key=meta.get("transport_key", ""),
+                max_skew_seconds=meta.get("max_skew_seconds"),
             )
         )
         findings = judge(facts, load_catalog(), {})

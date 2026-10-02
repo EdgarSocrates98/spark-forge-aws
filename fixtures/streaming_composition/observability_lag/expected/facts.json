@@ -96,7 +96,8 @@
       "mode": "observability",
       "table": null,
       "query_name": "orders-query",
-      "transport_key": "orders-group"
+      "transport_key": "orders-group",
+      "max_skew_seconds": null
     },
     "provenance": {
       "artifact": "<composition>",
@@ -122,8 +123,8 @@
     "measures": {
       "progress_observation_count": 2,
       "transport_measurement_count": 1,
-      "max_lag": 40.0,
-      "lag_sum": 40.0
+      "max_lag": 40,
+      "lag_sum": 40
     },
     "attrs": {
       "query_name": "orders-query",
@@ -193,8 +194,8 @@
       "batch_id": 1,
       "observed_index": 0,
       "num_input_rows": 100,
-      "input_rows_per_second": 100.0,
-      "processed_rows_per_second": 80.0
+      "input_rows_per_second": 100,
+      "processed_rows_per_second": 80
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:00Z",
@@ -224,8 +225,8 @@
       "batch_id": 2,
       "observed_index": 1,
       "num_input_rows": 100,
-      "input_rows_per_second": 100.0,
-      "processed_rows_per_second": 70.0
+      "input_rows_per_second": 100,
+      "processed_rows_per_second": 70
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:05Z",
@@ -255,10 +256,10 @@
       "observation_count": 2,
       "first_batch_id": 1,
       "last_batch_id": 2,
-      "input_rows_per_second_first": 100.0,
-      "input_rows_per_second_last": 100.0,
-      "processed_rows_per_second_first": 80.0,
-      "processed_rows_per_second_last": 70.0
+      "input_rows_per_second_first": 100,
+      "input_rows_per_second_last": 100,
+      "processed_rows_per_second_first": 80,
+      "processed_rows_per_second_last": 70
     },
     "attrs": {
       "first_observed_index": 0,

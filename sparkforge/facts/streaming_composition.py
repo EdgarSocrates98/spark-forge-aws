@@ -12,6 +12,7 @@ from typing import Any
 
 from sparkforge.findings.models import Fact, sort_facts
 from sparkforge.facts.streaming_temporal import build_streaming_temporal_diagnostics
+from sparkforge.facts.streaming_iceberg_temporal import build_streaming_iceberg_temporal
 
 EXTRACTOR_ID = "streaming_composition@0.1.0"
 
@@ -23,6 +24,7 @@ EMITTED_KINDS = frozenset(
         "streaming.composition.analyzed",
         "streaming.temporal.diagnostic",
         "streaming.temporal.unresolved",
+        "streaming.iceberg.temporal",
     }
 )
 
@@ -286,6 +288,13 @@ def build_streaming_composition(
     source_facts = _unique_by_id(facts)
     if mode == "iceberg":
         derived = _iceberg_link(source_facts, table=table, query_name=query_name)
+    elif mode == "iceberg_temporal":
+        derived = build_streaming_iceberg_temporal(
+            source_facts,
+            table=table,
+            query_name=query_name,
+            max_skew_seconds=max_skew_seconds,
+        )
     elif mode == "observability":
         derived = _observability_link(
             source_facts, transport_key=transport_key, query_name=query_name

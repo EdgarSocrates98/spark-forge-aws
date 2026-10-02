@@ -1,5 +1,6 @@
-mode: iceberg
+mode: iceberg_temporal
 table: db.events
-query_name: ""
+query_name: orders-query
+max_skew_seconds: 0
 expects_findings: []
 expects_kinds: [iceberg.format_version, iceberg.snapshot, iceberg.snapshots_summary, iceberg.table_analyzed, streaming.composition.analyzed, streaming.composition.unresolved, streaming.progress.analyzed, streaming.progress.batch, streaming.progress.series]

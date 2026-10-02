@@ -118,6 +118,7 @@ EMITTED_KINDS = frozenset(
         "iceberg.table_property",
         "iceberg.unresolved",
         "iceberg.format_version",
+        "iceberg.snapshot",
         "iceberg.table_analyzed",
     }
 )
@@ -443,6 +444,58 @@ def _snapshots_summary_fact(
     )
 
 
+def _snapshot_observation_facts(
+    snapshots: list[Any], subject: dict[str, Any], provenance: dict[str, Any]
+) -> list[Fact]:
+    """Emit one factual observation per snapshot entry.
+
+    `snapshots_summary` remains the compact aggregate consumed by existing
+    rules. The singular facts preserve identity and timestamp granularity for
+    cross-artifact temporal composition; missing timestamps stay explicit and
+    are never replaced by file order or local time.
+    """
+    facts: list[Fact] = []
+    for index, entry in enumerate(snapshots):
+        if not isinstance(entry, dict):
+            continue
+        snapshot_id = entry.get("snapshot_id")
+        if isinstance(snapshot_id, bool) or not isinstance(snapshot_id, (int, float, str)):
+            snapshot_key: Any = f"index:{index}"
+        else:
+            snapshot_key = snapshot_id
+        attrs: dict[str, Any] = {
+            "snapshot_index": index,
+            "timestamp_observed": False,
+            "operation_observed": False,
+        }
+        if snapshot_id is not None and not isinstance(snapshot_id, (dict, list)):
+            attrs["snapshot_id"] = snapshot_id
+        committed_at = entry.get("committed_at")
+        parsed = _parse_iso(committed_at) if isinstance(committed_at, str) else None
+        if parsed is not None:
+            attrs["committed_at"] = parsed.isoformat()
+            attrs["timestamp_observed"] = True
+        operation = entry.get("operation")
+        if isinstance(operation, str) and operation:
+            attrs["operation"] = operation
+            attrs["operation_observed"] = True
+        facts.append(
+            Fact(
+                kind="iceberg.snapshot",
+                subject={
+                    "type": "snapshot",
+                    "file": subject["file"],
+                    "symbol": subject["symbol"],
+                    "snapshot_id": snapshot_key,
+                },
+                measures={"snapshot_index": index},
+                attrs=attrs,
+                provenance=provenance,
+            )
+        )
+    return facts
+
+
 def _manifests_summary_fact(
     manifests: list[Any], subject: dict[str, Any], provenance: dict[str, Any]
 ) -> Fact:
@@ -723,6 +776,7 @@ def extract_iceberg_metadata(
         facts.append(snapshots_error)
     if snapshots is not None:
         sections_present += 1
+        facts.extend(_snapshot_observation_facts(snapshots, subject, provenance))
         facts.append(_snapshots_summary_fact(snapshots, subject, provenance))
 
     manifests, manifests_error = _get_list_section(payload, "manifests", path, provenance)

@@ -159,3 +159,97 @@ def test_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
         text=True,
     )
     assert json.loads(completed.stdout) == expected
+
+
+def test_iceberg_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
+    progress = tmp_path / "progress-iceberg-temporal.json"
+    iceberg = tmp_path / "iceberg-iceberg-temporal.json"
+    progress.write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "streaming.progress.batch",
+                    "subject": {"type": "source_location", "file": "progress", "line": 1, "col": 0},
+                    "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:00:00Z"},
+                    "measures": {"batch_id": 1},
+                },
+                {
+                    "kind": "streaming.progress.batch",
+                    "subject": {"type": "source_location", "file": "progress", "line": 2, "col": 0},
+                    "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:00:10Z"},
+                    "measures": {"batch_id": 2},
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    iceberg.write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "iceberg.snapshot",
+                    "subject": {"type": "snapshot", "file": "metadata", "symbol": "db.events", "snapshot_id": 101},
+                    "attrs": {
+                        "snapshot_id": 101,
+                        "committed_at": "2026-10-02T12:00:00Z",
+                        "timestamp_observed": True,
+                        "operation_observed": True,
+                        "operation": "append",
+                    },
+                    "measures": {"snapshot_index": 0},
+                },
+                {
+                    "kind": "iceberg.snapshot",
+                    "subject": {"type": "snapshot", "file": "metadata", "symbol": "db.events", "snapshot_id": 102},
+                    "attrs": {
+                        "snapshot_id": 102,
+                        "committed_at": "2026-10-02T12:00:10Z",
+                        "timestamp_observed": True,
+                        "operation_observed": True,
+                        "operation": "replace",
+                    },
+                    "measures": {"snapshot_index": 1},
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    args = {
+        "facts_paths": [str(progress), str(iceberg)],
+        "mode": "iceberg_temporal",
+        "table": "db.events",
+        "query_name": "orders-query",
+        "max_skew_seconds": 0,
+        "limit": 20,
+    }
+    expected = analyze_streaming_composition(**args)
+    actual = call_tool("sparkforge_analyze_streaming_composition", args)
+    assert actual == expected
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sparkforge.adapters.cli",
+            "analyze",
+            "streaming-composition",
+            "--facts",
+            str(progress),
+            "--facts",
+            str(iceberg),
+            "--mode",
+            "iceberg_temporal",
+            "--table",
+            "db.events",
+            "--query-name",
+            "orders-query",
+            "--max-skew-seconds",
+            "0",
+            "--limit",
+            "20",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == expected

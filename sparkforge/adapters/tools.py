@@ -6014,7 +6014,8 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
             "produz link quando a correspondência é observada sem ambiguidade. Preserva "
             "ids dos facts de origem, operações Iceberg, lag/iterator age, janela temporal "
-            "pareada e unresolved. Mode=temporal exige `max_skew_seconds` declarado. "
+            "pareada e unresolved. Modes temporal e iceberg_temporal exigem "
+            "`max_skew_seconds` declarado. "
             "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
         ),
         "inputSchema": {
@@ -6029,8 +6030,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "mode": {
                     "type": "string",
-                    "enum": ["iceberg", "observability", "temporal"],
-                    "description": "Relação streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
+                    "enum": ["iceberg", "iceberg_temporal", "observability", "temporal"],
+                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
                 },
                 "table": {"type": "string", "description": "Tabela Iceberg declarada."},
                 "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
@@ -6040,7 +6041,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "max_skew_seconds": {
                     "type": "number",
-                    "description": "Tolerância temporal declarada para mode=temporal; sem valor sai unresolved.",
+                    "description": "Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
                 },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},

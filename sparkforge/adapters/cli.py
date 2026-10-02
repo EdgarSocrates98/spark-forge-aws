@@ -412,8 +412,8 @@ def build_parser() -> argparse.ArgumentParser:
     composition_p.add_argument(
         "--mode",
         required=True,
-        choices=("iceberg", "observability", "temporal"),
-        help="Relação a analisar: streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
+        choices=("iceberg", "iceberg_temporal", "observability", "temporal"),
+        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte ou janela temporal pareada.",
     )
     composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
     composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
@@ -426,7 +426,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-skew-seconds",
         type=float,
         default=None,
-        help="Tolerância temporal declarada para mode=temporal; sem valor sai unresolved.",
+        help="Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
     )
     composition_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
     composition_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
