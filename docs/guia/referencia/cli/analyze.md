@@ -35,6 +35,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze lakeformation-grants`](#sparkforge-analyze-lakeformation-grants) | Extrai a PERMISSAO do Lake Formation ja coletada (grant, registro, settings). |
 | [`sparkforge analyze parquet-footer`](#sparkforge-analyze-parquet-footer) | Extrai facts do FOOTER do Parquet ja coletado. |
 | [`sparkforge analyze plan`](#sparkforge-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
+| [`sparkforge analyze platform-graph`](#sparkforge-analyze-platform-graph) | Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos. |
 | [`sparkforge analyze pyspark`](#sparkforge-analyze-pyspark) | Extrai facts de PySpark via AST estatico (nunca importa o codigo). |
 | [`sparkforge analyze s3-listing`](#sparkforge-analyze-s3-listing) | Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel). |
 | [`sparkforge analyze schema-registry`](#sparkforge-analyze-schema-registry) | Extrai facts offline de contratos e evolução de schemas. |
@@ -676,6 +677,30 @@ sparkforge analyze plan --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_plan`](../tools/sparkforge_analyze_plan.md)
+
+## `sparkforge analyze platform-graph`
+
+Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.
+
+```bash
+sparkforge analyze platform-graph --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON ou YAML do Platform Intelligence Graph. |
+| `--changed-node` | não | texto |  |  | ID da entidade alterada para calcular blast radius. |
+| `--changed-attribute` | não | texto |  |  | Caminho de atributo declarado no nó alterado. |
+| `--direction` | não | `downstream`, `upstream`, `both` |  | `downstream` |  |
+| `--max-depth` | não | texto |  | `3` |  |
+| `--max-items` | não | texto |  | `500` |  |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_platform_graph`](../tools/sparkforge_analyze_platform_graph.md)
 
 ## `sparkforge analyze pyspark`
 

@@ -423,6 +423,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: analyze explicit Data Platform metadata graph and bounded lineage impact
+    tools: [sparkforge_analyze_platform_graph]
+    cli: [analyze platform-graph]
+    knowledge: [docs/knowledge/platform-intelligence-graph.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from an S3 object listing
     tools: [sparkforge_analyze_s3_listing]
     cli: [analyze s3-listing]

@@ -13,12 +13,16 @@ files:
   - {path: sparkforge/adapters/_core.py, action: modify, reason: "Ponto comum para CLI e MCP analisar o grafo de plataforma."}
   - {path: sparkforge/adapters/cli.py, action: modify, reason: "Verbo analyze platform-graph e paginação/saída estruturada."}
   - {path: sparkforge/adapters/tools.py, action: modify, reason: "Contrato MCP e handler parity com CLI."}
+  - {path: parity.yaml, action: modify, reason: "Declara paridade CLI/MCP e integração nas plataformas suportadas."}
   - {path: contracts/platform-graph-v1.schema.json, action: create, reason: "Contrato publicável para manifests de Metadata Graph."}
   - {path: fixtures/platform/graph.yaml, action: create, reason: "Fixture sintético para smoke command e documentação."}
   - {path: tests/test_platform_graph.py, action: create, reason: "Casos de fingerprint, impacto explícito e unresolved."}
   - {path: docs/knowledge/platform-intelligence-graph.md, action: create, reason: "Guia operacional do contrato e limites."}
   - {path: docs/surface.lock.json, action: modify, reason: "Registro exigido por novo tool MCP."}
-  - {path: docs/reference/mcp.md, action: modify, reason: "Referência gerada da nova ferramenta."}
+  - {path: docs/guia/referencia/README.md, action: modify, reason: "Índice da referência gerada."}
+  - {path: docs/guia/referencia/cli/analyze.md, action: modify, reason: "Referência gerada do verbo CLI."}
+  - {path: docs/guia/referencia/tools/README.md, action: modify, reason: "Índice gerado das tools MCP."}
+  - {path: docs/guia/referencia/tools/sparkforge_analyze_platform_graph.md, action: create, reason: "Referência gerada do contrato MCP."}
 decisions:
   - id: D1
     choice: "Reusar GraphFragment/FederatedGraph como primitives de composição e adicionar PlatformGraph como contrato de domínio."

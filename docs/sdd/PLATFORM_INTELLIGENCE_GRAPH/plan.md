@@ -6,18 +6,18 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/PLATFORM_INTELLIGENCE_GRAPH/design.md
-  sha256: "f1cf1e23f7b7332b61aecde452a0d4865daff898961e85f8a466f550ff125722"
+  sha256: "5eaf22d770cfb8b7f6ce9e48bc39862a756cd1b8f5944591cbb8acd961d6317c"
 tasks:
   - id: T1
     files: [sparkforge/platform/__init__.py, sparkforge/platform/graph.py, contracts/platform-graph-v1.schema.json, fixtures/platform/graph.yaml, tests/test_platform_graph.py]
     covers: [AC1, AC2]
     test: {path: tests/test_platform_graph.py, name: test_platform_graph_loads_and_fingerprints_deterministically}
   - id: T2
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
+    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, parity.yaml]
     covers: [AC3]
     test: {path: tests/test_platform_graph.py, name: test_platform_graph_cli_and_mcp_share_contract}
   - id: T3
-    files: [docs/knowledge/platform-intelligence-graph.md, docs/surface.lock.json, docs/reference/mcp.md]
+    files: [docs/knowledge/platform-intelligence-graph.md, docs/surface.lock.json, docs/guia/referencia/README.md, docs/guia/referencia/cli/analyze.md, docs/guia/referencia/tools/README.md, docs/guia/referencia/tools/sparkforge_analyze_platform_graph.md]
     covers: [AC3]
     test: {path: tests/test_platform_graph.py, name: test_platform_graph_reference_is_registered}
 ---
