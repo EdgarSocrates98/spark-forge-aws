@@ -58,7 +58,10 @@ class VersionRegistry:
     raw: Mapping[str, Any]
 
     def serialized_values(self) -> tuple[str, ...]:
-        return tuple(_walk_strings(self.raw))
+        # Contract values are checked for forbidden mutable tags. Mapping keys
+        # describe the schema and may legitimately contain words such as
+        # ``forbid_latest``; they are not image/version values.
+        return tuple(_walk_values(self.raw))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -192,6 +195,23 @@ def _walk_strings(value: object) -> list[str]:
         result = []
         for item in value:
             result.extend(_walk_strings(item))
+        return result
+    return []
+
+
+def _walk_values(value: object) -> list[str]:
+    """Return scalar strings from values, excluding mapping keys."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, Mapping):
+        result: list[str] = []
+        for item in value.values():
+            result.extend(_walk_values(item))
+        return result
+    if isinstance(value, list):
+        result = []
+        for item in value:
+            result.extend(_walk_values(item))
         return result
     return []
 
