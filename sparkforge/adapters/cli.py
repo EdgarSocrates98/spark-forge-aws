@@ -856,6 +856,13 @@ def build_parser() -> argparse.ArgumentParser:
     observability_p.add_argument("--path", required=True, help="Arquivo JSON/YAML de observabilidade.")
     observability_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
+    orchestration_p = analyze_sub.add_parser(
+        "orchestration",
+        help="Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.",
+    )
+    orchestration_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do control plane.")
+    orchestration_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
     s3_p = analyze_sub.add_parser(
         "s3-listing",
         help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
@@ -4109,6 +4116,16 @@ def _cmd_analyze_data_observability(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_orchestration(args: argparse.Namespace) -> int:
+    payload = _core.analyze_orchestration(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
     full = _core.analyze_call_graph(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -5709,6 +5726,7 @@ _DISPATCH = {
     ("analyze", "dbt-artifacts"): _cmd_analyze_dbt_artifacts,
     ("analyze", "duckdb-microscope"): _cmd_analyze_duckdb_microscope,
     ("analyze", "data-observability"): _cmd_analyze_data_observability,
+    ("analyze", "orchestration"): _cmd_analyze_orchestration,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,

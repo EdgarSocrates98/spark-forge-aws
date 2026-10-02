@@ -1153,6 +1153,24 @@ _DATA_OBSERVABILITY_SCHEMA: dict[str, Any] = {
     },
 }
 
+_ORCHESTRATION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["orchestration"],
+    "properties": {
+        "orchestration": {
+            "type": "object",
+            "required": ["topology", "orchestrators", "workflows", "unresolved", "fingerprint"],
+            "properties": {
+                "topology": {"type": "string"},
+                "orchestrators": {"type": "array", "items": {"type": "object"}},
+                "workflows": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
 # `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
 # paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
 # nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
@@ -7240,6 +7258,24 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_orchestration": {
+        "description": (
+            "Normaliza um inventário de Airflow, Dagster, Step Functions e Control-M "
+            "com schedules, sensors, retries, backoff, pools, concurrency, backfill, "
+            "idempotência e dependências. Não dispara workflow nem executa backfill; "
+            "propriedade ausente ou referência inválida permanece unresolved."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML do control plane."}},
+        },
+        "outputSchema": _may_fail(
+            _ORCHESTRATION_SCHEMA,
+            "Mapa de orquestração normalizado, ou erro se o artefato for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -11304,6 +11340,10 @@ def _h_analyze_data_observability(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_data_observability(args["path"])
 
 
+def _h_analyze_orchestration(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_orchestration(args["path"])
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -11893,6 +11933,7 @@ _HANDLERS = {
     "sparkforge_analyze_dbt_artifacts": _h_analyze_dbt_artifacts,
     "sparkforge_analyze_duckdb_microscope": _h_analyze_duckdb_microscope,
     "sparkforge_analyze_data_observability": _h_analyze_data_observability,
+    "sparkforge_analyze_orchestration": _h_analyze_orchestration,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,

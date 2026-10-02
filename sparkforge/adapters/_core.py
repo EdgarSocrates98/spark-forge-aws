@@ -230,6 +230,10 @@ from sparkforge.observability.sre import (
     DataObservabilityError,
     analyze_data_observability as _analyze_data_observability,
 )
+from sparkforge.orchestration.topology import (
+    OrchestrationError,
+    analyze_orchestration as _analyze_orchestration,
+)
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -2412,6 +2416,19 @@ def analyze_data_observability(path: str) -> dict[str, Any]:
     try:
         return _analyze_data_observability(path)
     except DataObservabilityError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze orchestration
+# --------------------------------------------------------------------------- #
+
+
+def analyze_orchestration(path: str) -> dict[str, Any]:
+    """Normalize declared orchestration controls without triggering workloads."""
+    try:
+        return _analyze_orchestration(path)
+    except OrchestrationError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
