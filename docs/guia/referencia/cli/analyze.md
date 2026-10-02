@@ -18,7 +18,9 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze consumers`](#sparkforge-analyze-consumers) | Extrai facts do inventario declarado de consumidores de tabela. |
 | [`sparkforge analyze controlm-jobs`](#sparkforge-analyze-controlm-jobs) | Extrai facts de uma definicao `Jobs-as-Code` do Control-M (BMC): folder, job com Type/Name/RunAs/Application, agendamento (When), dependencia por evento e por Flow, acao condicional (Type: If) e variavel. Le CODIGO-FONTE versionado, nunca execucao. Com --version, cruza as capacidades observadas com a matriz do Automation API e diz quais a versao declarada nao tem. |
 | [`sparkforge analyze data-quality`](#sparkforge-analyze-data-quality) | Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great Expectations e validacao artesanal): onde o check roda, se tem consequencia, e quantas passadas custa. |
+| [`sparkforge analyze dbt-artifacts`](#sparkforge-analyze-dbt-artifacts) | Analisa manifest, catalog e run_results do dbt sem executar dbt. |
 | [`sparkforge analyze dq-ai`](#sparkforge-analyze-dq-ai) | Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas. |
+| [`sparkforge analyze duckdb-microscope`](#sparkforge-analyze-duckdb-microscope) | Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL. |
 | [`sparkforge analyze emr-cluster`](#sparkforge-analyze-emr-cluster) | Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os cinco dumps que o completam). |
 | [`sparkforge analyze emr-eks`](#sparkforge-analyze-emr-eks) | Extrai facts de um dump JSON de execucao Amazon EMR on EKS (describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe neste dump. |
 | [`sparkforge analyze emr-serverless`](#sparkforge-analyze-emr-serverless) | Extrai facts de um dump JSON de application EMR Serverless (get-application). Descreve o PADRAO da application, nunca o que um job run executou -- StartJobRun sobrepoe. |
@@ -286,6 +288,25 @@ sparkforge analyze data-quality --help
 
 [`sparkforge_analyze_data_quality`](../tools/sparkforge_analyze_data_quality.md)
 
+## `sparkforge analyze dbt-artifacts`
+
+Analisa manifest, catalog e run_results do dbt sem executar dbt.
+
+```bash
+sparkforge analyze dbt-artifacts --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Diretório dbt ou manifest.json. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_dbt_artifacts`](../tools/sparkforge_analyze_dbt_artifacts.md)
+
 ## `sparkforge analyze dq-ai`
 
 Extrai facts de manifesto Glue DQ BASIC/ADVANCED sem carregar linhas.
@@ -308,6 +329,25 @@ sparkforge analyze dq-ai --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_dq_ai`](../tools/sparkforge_analyze_dq_ai.md), [`sparkforge_dq_ai_assess`](../tools/sparkforge_dq_ai_assess.md)
+
+## `sparkforge analyze duckdb-microscope`
+
+Analisa bundle read-only de DuckDB/Parquet/Iceberg sem executar SQL.
+
+```bash
+sparkforge analyze duckdb-microscope --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML do microscópio DuckDB. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_duckdb_microscope`](../tools/sparkforge_analyze_duckdb_microscope.md)
 
 ## `sparkforge analyze emr-cluster`
 
