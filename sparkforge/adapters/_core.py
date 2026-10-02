@@ -7823,10 +7823,23 @@ def collect_streaming_integrations(
         msk_cluster_arn=msk_cluster_arn,
         dms_task_arn=dms_task_arn,
     )
-    command = (
-        "sparkforge collect streaming-integrations --repo <repo> "
-        f"--now {now}"
-    )
+    command_parts = ["sparkforge collect streaming-integrations --repo <repo>"]
+    for option, value in (
+        ("--checkpoint-s3-uri", checkpoint_s3_uri),
+        ("--glue-job", glue_job_name),
+        ("--kinesis-stream", kinesis_stream_name),
+        ("--msk-cluster-arn", msk_cluster_arn),
+        ("--dms-task-arn", dms_task_arn),
+        ("--region", region_name),
+    ):
+        if value:
+            command_parts.append(f"{option} {value}")
+    if max_objects != 500:
+        command_parts.append(f"--max-objects {max_objects}")
+    if max_shards != 500:
+        command_parts.append(f"--max-shards {max_shards}")
+    command_parts.append(f"--now {now}")
+    command = " ".join(command_parts)
     try:
         entry = collect_streaming.collect_streaming_integrations(
             Path(repo),
