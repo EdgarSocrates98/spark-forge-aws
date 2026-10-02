@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS/plan.md
-  sha256: "9403467aad378839d560f0abddaf07b7bb341d6409b7d9c27708c45efea7fc10"
+  sha256: "34d468874d788e771981860ed7036b2728dafb77b972c77fb8bebd20398dd419"
 tasks:
   - id: T1
     status: done
