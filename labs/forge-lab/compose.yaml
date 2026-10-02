@@ -1,0 +1,85 @@
+name: spark-forge-digital-twin
+
+services:
+  postgres:
+    image: ${LAB_POSTGRES_IMAGE:?Set LAB_POSTGRES_IMAGE to a pinned local image}
+    profiles: [cdc]
+    environment:
+      POSTGRES_USER: ${LAB_POSTGRES_USER:-sparkforge}
+      POSTGRES_PASSWORD: ${LAB_POSTGRES_PASSWORD:?Set LAB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${LAB_POSTGRES_DB:-orders}
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U ${LAB_POSTGRES_USER:-sparkforge}]
+
+  kafka:
+    image: ${LAB_KAFKA_IMAGE:?Set LAB_KAFKA_IMAGE to a pinned local image}
+    profiles: [streaming, cdc]
+    environment:
+      KAFKA_NODE_ID: ${LAB_KAFKA_NODE_ID:-1}
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  debezium:
+    image: ${LAB_DEBEZIUM_IMAGE:?Set LAB_DEBEZIUM_IMAGE to a pinned local image}
+    profiles: [cdc]
+    depends_on: [kafka, postgres]
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: ${LAB_DEBEZIUM_GROUP_ID:-sparkforge-connect}
+
+  jobmanager:
+    image: ${LAB_FLINK_IMAGE:?Set LAB_FLINK_IMAGE to a pinned local image}
+    profiles: [streaming]
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+
+  taskmanager:
+    image: ${LAB_FLINK_IMAGE:?Set LAB_FLINK_IMAGE to a pinned local image}
+    profiles: [streaming]
+    command: taskmanager
+    depends_on: [jobmanager]
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+
+  spark:
+    image: ${LAB_SPARK_IMAGE:?Set LAB_SPARK_IMAGE to a pinned local image}
+    profiles: [batch]
+    depends_on: [minio]
+    command: sleep infinity
+
+  minio:
+    image: ${LAB_MINIO_IMAGE:?Set LAB_MINIO_IMAGE to a pinned local image}
+    profiles: [lakehouse, batch]
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${LAB_MINIO_ROOT_USER:?Set LAB_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${LAB_MINIO_ROOT_PASSWORD:?Set LAB_MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+
+  iceberg-rest:
+    image: ${LAB_ICEBERG_REST_IMAGE:?Set LAB_ICEBERG_REST_IMAGE to a pinned local image}
+    profiles: [lakehouse]
+    depends_on: [minio]
+    environment:
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+
+  polaris:
+    image: ${LAB_POLARIS_IMAGE:?Set LAB_POLARIS_IMAGE to a pinned local image}
+    profiles: [lakehouse]
+    depends_on: [minio]
+
+  prometheus:
+    image: ${LAB_PROMETHEUS_IMAGE:?Set LAB_PROMETHEUS_IMAGE to a pinned local image}
+    profiles: [observability]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+volumes:
+  minio-data:

@@ -1029,6 +1029,38 @@ _PLATFORM_GRAPH_SCHEMA: dict[str, Any] = {
     },
 }
 
+_FORGE_LAB_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["lab"],
+    "properties": {
+        "lab": {
+            "type": "object",
+            "required": [
+                "schema_version",
+                "lab",
+                "mode",
+                "readiness",
+                "components",
+                "topology_order",
+                "scenarios",
+                "unresolved",
+                "fingerprint",
+            ],
+            "properties": {
+                "schema_version": {"type": "integer"},
+                "lab": {"type": "string"},
+                "mode": {"type": "string"},
+                "readiness": {"type": "string"},
+                "components": {"type": "array", "items": {"type": "object"}},
+                "topology_order": {"type": "array", "items": {"type": "string"}},
+                "scenarios": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
 # `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
 # paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
 # nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
@@ -7019,6 +7051,27 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_forge_lab": {
+        "description": (
+            "Descreve a topologia declarativa do Forge Lab/Digital Twin, incluindo "
+            "Kafka, Flink, Spark, Iceberg REST, Polaris, MinIO, PostgreSQL, Debezium "
+            "e Prometheus, ordem de dependências e cenários de falha. É offline e "
+            "read-only: não executa Docker, não mata broker, não reinicia CDC e não "
+            "muta dados. Cenários exigem confirmação do operador fora desta tool."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON ou YAML da topologia Forge Lab."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FORGE_LAB_SCHEMA,
+            "Topologia e cenários do Forge Lab, ou erro se o manifesto for inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -11063,6 +11116,10 @@ def _h_analyze_platform_graph(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_forge_lab(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_forge_lab(args["path"])
+
+
 def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
@@ -11647,6 +11704,7 @@ _HANDLERS = {
     "sparkforge_analyze_dq_ai": _h_analyze_dq_ai,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_platform_graph": _h_analyze_platform_graph,
+    "sparkforge_analyze_forge_lab": _h_analyze_forge_lab,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,

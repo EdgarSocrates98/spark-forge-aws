@@ -216,6 +216,7 @@ from sparkforge.platform.graph import (
     PlatformGraphError,
     analyze_platform_graph as _analyze_platform_graph,
 )
+from sparkforge.lab.spec import ForgeLabError, analyze_forge_lab as _analyze_forge_lab
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -2338,6 +2339,19 @@ def analyze_platform_graph(
             max_items=max_items,
         )
     except PlatformGraphError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze forge-lab
+# --------------------------------------------------------------------------- #
+
+
+def analyze_forge_lab(path: str) -> dict[str, Any]:
+    """Describe a Forge Lab manifest without starting or mutating services."""
+    try:
+        return _analyze_forge_lab(path)
+    except ForgeLabError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
