@@ -3,7 +3,7 @@ sdd: 1
 feature: STREAMING_READ_ONLY_COLLECTORS
 phase: build_report
 profile: dev
-status: ready
+status: done
 upstream:
   path: docs/sdd/STREAMING_READ_ONLY_COLLECTORS/plan.md
   sha256: "853f190e786ac277581eebdbacb48bbe5f48939641ca010e3da676d8586a2d91"
@@ -24,3 +24,9 @@ change_id: null
 
 O resultado mede aquisição segura, não saúde operacional. Métricas temporais e
 eficácia end-to-end continuam dependentes do artefato correto.
+
+## Validação final
+
+Os testes de collectors e base terminaram com `84 passed`; o gate de schemas e
+surface terminou com `5 passed`. Referências, surface lock, números correntes,
+bundle offline e `sdd check` passaram com exit 0.
