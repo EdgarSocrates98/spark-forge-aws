@@ -434,6 +434,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: inventory serving ingestion AI data and optional radar ecosystem
+    tools: [sparkforge_analyze_platform_ecosystem]
+    cli: [analyze platform-ecosystem]
+    knowledge: [docs/knowledge/data-platform-ecosystem.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: describe offline Forge Lab topology and failure scenarios
     tools: [sparkforge_analyze_forge_lab]
     cli: [analyze forge-lab]

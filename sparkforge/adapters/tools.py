@@ -1029,6 +1029,25 @@ _PLATFORM_GRAPH_SCHEMA: dict[str, Any] = {
     },
 }
 
+_PLATFORM_ECOSYSTEM_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["ecosystem"],
+    "properties": {
+        "ecosystem": {
+            "type": "object",
+            "required": ["ecosystem", "systems", "reliability", "integrations", "unresolved", "fingerprint"],
+            "properties": {
+                "ecosystem": {"type": "string"},
+                "systems": {"type": "array", "items": {"type": "object"}},
+                "reliability": {"type": "array", "items": {"type": "object"}},
+                "integrations": {"type": "array", "items": {"type": "object"}},
+                "unresolved": {"type": "array", "items": {"type": "object"}},
+                "fingerprint": {"type": "string"},
+            },
+        }
+    },
+}
+
 _FORGE_LAB_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["lab"],
@@ -7161,6 +7180,26 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_platform_ecosystem": {
+        "description": (
+            "Normaliza inventário de serving/OLAP, conectores de ingestão e CDC, "
+            "AI Data Engineering e radar Beam/DataHub/OpenMetadata. Preserva owner, "
+            "evidence, bindings e Connector Reliability Model (idempotência, "
+            "checkpoint, retry, DLQ, rate limit, schema, freshness e recovery). "
+            "Radar permanece opcional; ausências ficam unresolved. Não instala nem "
+            "consulta os produtos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML do inventário de ecossistema."}},
+        },
+        "outputSchema": _may_fail(
+            _PLATFORM_ECOSYSTEM_SCHEMA,
+            "Inventário de ecossistema e reliability model, ou erro se inválido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_forge_lab": {
         "description": (
             "Descreve a topologia declarativa do Forge Lab/Digital Twin, incluindo "
@@ -11320,6 +11359,10 @@ def _h_analyze_platform_graph(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_platform_ecosystem(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_platform_ecosystem(args["path"])
+
+
 def _h_analyze_forge_lab(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_forge_lab(args["path"])
 
@@ -11928,6 +11971,7 @@ _HANDLERS = {
     "sparkforge_analyze_dq_ai": _h_analyze_dq_ai,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_platform_graph": _h_analyze_platform_graph,
+    "sparkforge_analyze_platform_ecosystem": _h_analyze_platform_ecosystem,
     "sparkforge_analyze_forge_lab": _h_analyze_forge_lab,
     "sparkforge_analyze_lakehouse_catalog": _h_analyze_lakehouse_catalog,
     "sparkforge_analyze_dbt_artifacts": _h_analyze_dbt_artifacts,

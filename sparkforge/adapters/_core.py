@@ -216,6 +216,10 @@ from sparkforge.platform.graph import (
     PlatformGraphError,
     analyze_platform_graph as _analyze_platform_graph,
 )
+from sparkforge.platform.ecosystem import (
+    PlatformEcosystemError,
+    analyze_platform_ecosystem as _analyze_platform_ecosystem,
+)
 from sparkforge.lab.spec import ForgeLabError, analyze_forge_lab as _analyze_forge_lab
 from sparkforge.catalog.contract import (
     LakehouseCatalogError,
@@ -2356,6 +2360,14 @@ def analyze_platform_graph(
             max_items=max_items,
         )
     except PlatformGraphError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+
+def analyze_platform_ecosystem(path: str) -> dict[str, Any]:
+    """Analyze serving, ingestion, AI and optional radar inventory offline."""
+    try:
+        return _analyze_platform_ecosystem(path)
+    except PlatformEcosystemError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 

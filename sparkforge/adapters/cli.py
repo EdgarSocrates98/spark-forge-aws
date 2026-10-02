@@ -820,6 +820,13 @@ def build_parser() -> argparse.ArgumentParser:
     platform_graph_p.add_argument("--max-items", type=int, default=500)
     platform_graph_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
+    platform_ecosystem_p = analyze_sub.add_parser(
+        "platform-ecosystem",
+        help="Analisa serving, ingestion, AI Data Engineering e radar opcional.",
+    )
+    platform_ecosystem_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do inventário.")
+    platform_ecosystem_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
+
     forge_lab_p = analyze_sub.add_parser(
         "forge-lab",
         help="Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.",
@@ -4066,6 +4073,16 @@ def _cmd_analyze_platform_graph(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_platform_ecosystem(args: argparse.Namespace) -> int:
+    payload = _core.analyze_platform_ecosystem(args.path)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_forge_lab(args: argparse.Namespace) -> int:
     payload = _core.analyze_forge_lab(args.path)
     if args.out:
@@ -5721,6 +5738,7 @@ _DISPATCH = {
     ("analyze", "dq-ai"): _cmd_analyze_dq_ai,
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "platform-graph"): _cmd_analyze_platform_graph,
+    ("analyze", "platform-ecosystem"): _cmd_analyze_platform_ecosystem,
     ("analyze", "forge-lab"): _cmd_analyze_forge_lab,
     ("analyze", "lakehouse-catalog"): _cmd_analyze_lakehouse_catalog,
     ("analyze", "dbt-artifacts"): _cmd_analyze_dbt_artifacts,
