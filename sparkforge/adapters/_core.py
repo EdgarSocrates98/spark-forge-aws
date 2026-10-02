@@ -144,6 +144,10 @@ from sparkforge.facts.sfn_history import (
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge.facts.streaming import (
+    extract_streaming_progress_path,
+    extract_streaming_progress_tree,
+)
 from sparkforge.facts.stepfunctions import (
     extract_stepfunctions_path,
     extract_stepfunctions_tree,
@@ -967,6 +971,57 @@ def analyze_pyspark(
     }
     declarar_no_envelope(resultado, procedencias, versao_do_schema)
     return resultado
+
+
+def analyze_streaming(
+    path: str,
+    *,
+    artifact: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    """Extrai a superfície streaming de código ou de progresso observado.
+
+    A forma do envelope é a mesma dos demais verbos de facts. Para fonte AST,
+    facts PySpark não-streaming ficam fora de ``items`` mas seus pontos cegos
+    ``pyspark.unresolved`` continuam contados, para um filtro de domínio não
+    transformar análise parcial em lista vazia aparentemente limpa.
+    """
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise streaming: {path}\n"
+            "  Aponte para fonte PySpark ou JSON/JSONL de StreamingQueryProgress."
+        )
+    if artifact == "source":
+        all_facts = _extract_facts(path)
+        facts = [fact for fact in all_facts if fact.kind.startswith("streaming.")]
+        result = _facts_page(facts, None, kind, limit, cursor, detail_level)
+        unresolved_facts = [fact for fact in all_facts if fact.kind == "pyspark.unresolved"]
+        result["unresolved"] = len(unresolved_facts)
+        result["unresolved_at"] = [
+            {
+                "file": fact.subject.get("file", ""),
+                "line": fact.subject.get("line", 0),
+                "reason": fact.attrs.get("reason", ""),
+            }
+            for fact in unresolved_facts
+        ]
+        return result
+    if artifact == "progress":
+        facts = (
+            extract_streaming_progress_tree(target, repo_root=target)
+            if target.is_dir()
+            else extract_streaming_progress_path(target, repo_root=target.parent)
+        )
+        return _facts_page(
+            facts, "streaming.progress.unresolved", kind, limit, cursor, detail_level
+        )
+    raise AdapterError(
+        f"Artefato streaming desconhecido: {artifact}. Use `source` ou `progress`."
+    )
 
 
 # --------------------------------------------------------------------------- #

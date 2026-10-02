@@ -39,6 +39,7 @@ class TestToolSurface:
             "sparkforge_runtime_detect",
             "sparkforge_knowledge_path",
             "sparkforge_analyze_pyspark",
+            "sparkforge_analyze_streaming",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
             "sparkforge_analyze_sql_metrics",

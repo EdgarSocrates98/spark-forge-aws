@@ -59,7 +59,7 @@ rules:
     when:
       all:
         - fact: streaming.progress.series
-          expr: "measures.observation_count >= 2 and measures.all_processed_below_input"
+          expr: "measures.observation_count >= 2 and attrs.all_processed_below_input"
     status: confirmed
     severity_default: P1
     runtime_scope: {}
@@ -103,7 +103,7 @@ rules:
     when:
       all:
         - fact: streaming.progress.series
-          expr: "measures.observation_count >= 2 and measures.state_growth_observed"
+          expr: "measures.observation_count >= 2 and attrs.state_growth_observed"
     status: confirmed
     severity_default: P1
     runtime_scope: {}

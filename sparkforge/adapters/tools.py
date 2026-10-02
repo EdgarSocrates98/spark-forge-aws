@@ -5559,6 +5559,40 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_streaming": {
+        "description": (
+            "Extrai facts determinísticos da superfície Structured Streaming: fonte "
+            "PySpark via AST estático ou registros JSON/JSONL de StreamingQueryProgress. "
+            "Nunca importa, executa código ou consulta checkpoint interno. A análise "
+            "preserva pontos cegos, unidades e ordem observada; não atribui severidade "
+            "nem inventa tendência com uma única observação."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "artifact"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretório a analisar."},
+                "artifact": {
+                    "type": "string",
+                    "enum": ["source", "progress"],
+                    "description": "Fonte PySpark ou progresso JSON/JSONL.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts streaming extraídos, ou erro se o path ou tipo de artefato forem inválidos.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_catalog_schema": {
         "description": (
             "Extrai facts de um dump JSON ja coletado do Glue Data Catalog "
@@ -10049,6 +10083,17 @@ def _h_analyze_pyspark(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_streaming(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_streaming(
+        args["path"],
+        artifact=args["artifact"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
     return _core.judge_findings(
         facts=args.get("facts"),
@@ -11053,6 +11098,7 @@ _HANDLERS = {
     "sparkforge_runtime_detect": _h_runtime_detect,
     "sparkforge_knowledge_path": _h_knowledge_path,
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
+    "sparkforge_analyze_streaming": _h_analyze_streaming,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
     "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,

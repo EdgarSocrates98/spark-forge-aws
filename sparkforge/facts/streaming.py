@@ -337,6 +337,10 @@ def _progress_facts(
                 "input_rows_per_second_last": inputs[-1],
                 "processed_rows_per_second_first": processed[0],
                 "processed_rows_per_second_last": processed[-1],
+            }
+            series_attrs = {
+                "first_observed_index": valid[0][2],
+                "last_observed_index": valid[-1][2],
                 "all_processed_below_input": all(right < left for left, right in rate_rows),
             }
             if state_totals:
@@ -344,9 +348,9 @@ def _progress_facts(
                     {
                         "state_rows_total_first": state_totals[0],
                         "state_rows_total_last": state_totals[-1],
-                        "state_growth_observed": state_totals[-1] > state_totals[0],
                     }
                 )
+                series_attrs["state_growth_observed"] = state_totals[-1] > state_totals[0]
             facts.append(
                 _fact(
                     "streaming.progress.series",
@@ -354,7 +358,7 @@ def _progress_facts(
                     valid[0][0],
                     provenance,
                     measures=measures,
-                    attrs={"first_observed_index": valid[0][2], "last_observed_index": valid[-1][2]},
+                    attrs=series_attrs,
                 )
             )
         else:

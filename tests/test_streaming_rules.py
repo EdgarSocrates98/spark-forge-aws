@@ -22,9 +22,8 @@ def test_streaming_rules_require_runtime_and_sufficient_evidence():
         "streaming.progress.series",
         measures={
             "observation_count": 2,
-            "all_processed_below_input": True,
-            "state_growth_observed": True,
         },
+        attrs={"all_processed_below_input": True, "state_growth_observed": True},
     )
     runtime = _fact(
         "env.runtime_signal",
@@ -48,6 +47,7 @@ def test_streaming_rules_require_runtime_and_sufficient_evidence():
 
     one_observation = _fact(
         "streaming.progress.series",
-        measures={"observation_count": 1, "all_processed_below_input": True},
+        measures={"observation_count": 1},
+        attrs={"all_processed_below_input": True},
     )
     assert not judge([runtime, one_observation], rules, {"spark": "3.5.6"})
