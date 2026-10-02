@@ -1,0 +1,229 @@
+[
+  {
+    "rule_id": "SF-ENV-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Divergência de runtime entre fontes de detecção",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "evidence": [
+      "f_87d800"
+    ],
+    "measured": {
+      "distinct_versions": 2,
+      "source_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A versão do runtime é detectável por event log (spark.version), Terraform (glue_version, --datalake-formats), e arquivos de dependência do projeto. Quando as fontes discordam, o extrator não escolhe uma: registra a divergência. Toda recomendação que dependa de versão fica sem base até isso ser resolvido, porque o limiar aplicado e a API sugerida podem não existir no runtime real. O salto de Iceberg entre Glue 4.0 (1.0.0), 5.0 (1.7.1) e 5.1 (1.10.0) é grande o suficiente para invalidar procedimentos inteiros. Ver knowledge/glue/runtime-matrix.md.",
+    "proposed_change": [
+      "Confirmar a versão efetiva na aba Environment do Spark UI, que é a fonte mais confiável.",
+      "Alinhar o Terraform e os arquivos de dependência ao runtime efetivo.",
+      "Registrar no relatório a matriz detectada e a divergência encontrada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Prosseguir com a investigação sem resolver a divergência produz recomendações que podem não se aplicar."
+    ],
+    "tradeoffs": [
+      "Nenhum. Resolver a divergência é pré-requisito",
+      "não escolha."
+    ],
+    "validation": [
+      "Aba Environment do Spark UI e Terraform concordando após a correção.",
+      "Versão de Iceberg confirmada no classpath, não inferida da versão da plataforma (Glue, EMR ou Databricks)."
+    ],
+    "rollback": [
+      "Não aplicável; é correção de metadado de projeto",
+      "não de comportamento."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-7.x.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html",
+        "retrieved": "2026-08-01"
+      }
+    ],
+    "action": {
+      "kind": "version.align_declared_runtime",
+      "target": "runtime.declared_version",
+      "direction": "replace",
+      "requires_absent": [],
+      "moves": [
+        "runtime.engine_version"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAM-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Série observada com processamento abaixo da entrada",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_runtime_divergent\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2701b4"
+    ],
+    "measured": {
+      "observation_count": 2,
+      "first_batch_id": 30,
+      "last_batch_id": 31,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 110.0,
+      "processed_rows_per_second_first": 70.0,
+      "processed_rows_per_second_last": 80.0,
+      "state_rows_total_first": 10.0,
+      "state_rows_total_last": 20.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Em todas as observações da série, a taxa processada ficou abaixo da taxa de entrada registrada no mesmo progresso. O fato não identifica sozinho se a causa é fonte, trigger, estado, sink, capacidade ou atraso de métrica; a investigação deve cruzar o plano, o runtime e o backlog do transporte.",
+    "proposed_change": [
+      "Coletar uma série comparável de progresso, duração de trigger, offsets e backlog da fonte.",
+      "Localizar se a diferença nasce em processamento, state store, sink ou capacidade.",
+      "Alterar uma variável principal por experimento e validar o resultado funcional."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Comparar janelas ou fontes não pareadas pode criar uma diferença que não existe.",
+      "Escalar infraestrutura antes de localizar o gargalo pode aumentar custo sem resolver atraso."
+    ],
+    "tradeoffs": [
+      "Maior observabilidade aumenta volume de logs e custo de retenção."
+    ],
+    "validation": [
+      "Confirmar unidade, janela, batch_id, fonte e timestamp de cada observação.",
+      "Comparar backlog e duração por batch antes e depois da única variável alterada.",
+      "Executar proxies de contagem, schema, chaves e agregados do resultado."
+    ],
+    "rollback": [
+      "Reverter a única alteração experimental e manter os artefatos de baseline."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-01"
+      },
+      {
+        "url": "https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.lastProgress.html",
+        "retrieved": "2026-10-01"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.progress.series",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  },
+  {
+    "rule_id": "SF-STREAM-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Crescimento de state observado na série",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_runtime_divergent\\input\\progress.jsonl",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2701b4"
+    ],
+    "measured": {
+      "observation_count": 2,
+      "first_batch_id": 30,
+      "last_batch_id": 31,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 110.0,
+      "processed_rows_per_second_first": 70.0,
+      "processed_rows_per_second_last": 80.0,
+      "state_rows_total_first": 10.0,
+      "state_rows_total_last": 20.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A série contém medidas de state operator e o total de linhas de state no último ponto é maior que no primeiro. Isso é crescimento observado, não prova vazamento: watermark, cardinalidade, janela, atraso de eventos e política de limpeza ainda precisam ser medidos.",
+    "proposed_change": [
+      "Correlacionar state rows, watermark, event-time, janela e late data por batch.",
+      "Confirmar se a operação é bounded e se o state store possui caminho de limpeza.",
+      "Medir memória e duração antes de escolher mudança de watermark, chave ou capacidade."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reduzir watermark ou alterar chave pode descartar eventos tardios ou alterar agregados.",
+      "Limpar state sem replay controlado pode tornar o resultado irreprodutível."
+    ],
+    "tradeoffs": [
+      "Watermark mais agressivo reduz state potencial e reduz tolerância a atraso de evento."
+    ],
+    "validation": [
+      "Comparar state rows, memoryUsedBytes, watermark e agregados por janela.",
+      "Reprocessar amostra com atraso conhecido e conferir a política de late data.",
+      "Validar resultado funcional e reinício a partir do checkpoint."
+    ],
+    "rollback": [
+      "Reverter a mudança de query e manter checkpoint/artefatos para replay controlado."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-01"
+      },
+      {
+        "url": "https://spark.apache.org/docs/latest/api/python/_modules/pyspark/sql/streaming/listener.html",
+        "retrieved": "2026-10-01"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.progress.state_operator",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "runtime.wall_clock",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

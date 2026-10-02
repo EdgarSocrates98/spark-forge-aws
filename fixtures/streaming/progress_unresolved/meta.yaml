@@ -1,0 +1,9 @@
+name: progress_unresolved
+artifact: progress
+runtime:
+  spark: "3.5.6"
+expects_rules: []
+expects_kinds:
+  - streaming.progress.analyzed
+  - streaming.progress.batch
+  - streaming.progress.unresolved

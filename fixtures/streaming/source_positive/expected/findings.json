@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-STREAM-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Checkpoint não declarado na definição da query",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 30,
+      "col": 4,
+      "end_line": 30,
+      "symbol": "",
+      "snippet": "deduplicated.writeStream.outputMode(\"append\").start()"
+    },
+    "evidence": [
+      "f_4c5169"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A leitura estática observou uma query Structured Streaming sem uma opção checkpointLocation na cadeia analisada. Isso não prova que uma configuração externa inexiste nem que houve perda de dados; exige conferir a configuração efetiva e o destino antes de recomendar mudança.",
+    "proposed_change": [
+      "Confirmar o runtime e a configuração efetiva da query.",
+      "Declarar um checkpoint estável e exclusivo por query somente se a medição confirmar que falta.",
+      "Verificar reinício, replay e idempotência do sink antes de alterar produção."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Apontar query para checkpoint já usado pode misturar estado ou offsets incompatíveis.",
+      "Alterar checkpoint pode mudar o ponto de retomada e exigir procedimento de replay."
+    ],
+    "tradeoffs": [
+      "Persistência do checkpoint acrescenta armazenamento e operação de retenção."
+    ],
+    "validation": [
+      "Confirmar localização, permissões, isolamento por query e runtime efetivo.",
+      "Fazer teste controlado de parada e retomada com um sink idempotente.",
+      "Comparar contagem, chaves e agregados do resultado antes de promover a mudança."
+    ],
+    "rollback": [
+      "Reverter a alteração de configuração e preservar o checkpoint anterior sem apagá-lo."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html",
+        "retrieved": "2026-10-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/add-job-streaming.html",
+        "retrieved": "2026-10-01"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "streaming.checkpoint",
+      "direction": "investigate",
+      "requires_absent": [],
+      "moves": [
+        "observability.diagnostic_artifacts",
+        "correctness.write_result"
+      ],
+      "depends_on": []
+    }
+  }
+]

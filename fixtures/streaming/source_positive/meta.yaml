@@ -1,0 +1,29 @@
+name: source_positive
+artifact: source
+runtime:
+  spark: "3.5.4"
+expects_rules:
+  - SF-STREAM-001
+expects_kinds:
+  - pyspark.action
+  - pyspark.action
+  - pyspark.chain
+  - pyspark.module_analyzed
+  - pyspark.dedup
+  - pyspark.function_def
+  - pyspark.join
+  - pyspark.write
+  - env.platform
+  - env.runtime_signal
+  - streaming.checkpoint
+  - streaming.dedup
+  - streaming.foreach_batch
+  - streaming.join
+  - streaming.module_analyzed
+  - streaming.output_mode
+  - streaming.query
+  - streaming.sink
+  - streaming.source
+  - streaming.stateful_operation
+  - streaming.trigger
+  - streaming.watermark
