@@ -41,6 +41,7 @@ Extrai facts deterministicos de codigo-fonte.
 | [`sparkforge analyze orchestration`](#sparkforge-analyze-orchestration) | Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M. |
 | [`sparkforge analyze parquet-footer`](#sparkforge-analyze-parquet-footer) | Extrai facts do FOOTER do Parquet ja coletado. |
 | [`sparkforge analyze plan`](#sparkforge-analyze-plan) | Extrai facts do texto de um plano fisico (`df.explain("formatted")` / EXPLAIN FORMATTED). |
+| [`sparkforge analyze platform-ecosystem`](#sparkforge-analyze-platform-ecosystem) | Analisa serving, ingestion, AI Data Engineering e radar opcional. |
 | [`sparkforge analyze platform-graph`](#sparkforge-analyze-platform-graph) | Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos. |
 | [`sparkforge analyze pyspark`](#sparkforge-analyze-pyspark) | Extrai facts de PySpark via AST estatico (nunca importa o codigo). |
 | [`sparkforge analyze s3-listing`](#sparkforge-analyze-s3-listing) | Extrai facts de um dump de `aws s3api list-objects-v2` (small files, compressao nao splitavel). |
@@ -797,6 +798,25 @@ sparkforge analyze plan --help
 ### Tool MCP equivalente
 
 [`sparkforge_analyze_plan`](../tools/sparkforge_analyze_plan.md)
+
+## `sparkforge analyze platform-ecosystem`
+
+Analisa serving, ingestion, AI Data Engineering e radar opcional.
+
+```bash
+sparkforge analyze platform-ecosystem --help
+```
+
+### Opções
+
+| Opção | Obrigatória | Valor | Repetível | Padrão | O que faz |
+|---|---|---|---|---|---|
+| `--path` | sim | texto |  |  | Arquivo JSON/YAML do inventário. |
+| `--out` | não | texto |  |  | Escreve o envelope completo em JSON. |
+
+### Tool MCP equivalente
+
+[`sparkforge_analyze_platform_ecosystem`](../tools/sparkforge_analyze_platform_ecosystem.md)
 
 ## `sparkforge analyze platform-graph`
 
