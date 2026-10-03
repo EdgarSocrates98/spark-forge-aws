@@ -8,7 +8,6 @@ from sparkforge.adapters import _core
 from sparkforge.adapters.tools import call_tool
 from sparkforge.catalog.contract import analyze_lakehouse_catalog, load_lakehouse_catalog
 
-
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "platform" / "catalog.yaml"
 
 

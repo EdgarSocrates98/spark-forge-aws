@@ -23,7 +23,9 @@ def fixture_dirs():
 
 def run_fixture(directory: Path):
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
-    facts = sort_facts(extract_glue_streaming_tree(directory / "input"))
+    facts = sort_facts(
+        extract_glue_streaming_tree(directory / "input", repo_root=directory / "input")
+    )
     return meta, facts, judge(facts, load_catalog(), {})
 
 
@@ -32,7 +34,9 @@ def test_glue_streaming_fixture_corpus_is_complete():
     for directory in fixture_dirs():
         meta, facts, findings = run_fixture(directory)
         expected = json.loads((directory / "expected" / "facts.json").read_text(encoding="utf-8"))
-        expected_findings = json.loads((directory / "expected" / "findings.json").read_text(encoding="utf-8"))
+        expected_findings = json.loads(
+            (directory / "expected" / "findings.json").read_text(encoding="utf-8")
+        )
         assert [fact.to_dict() for fact in facts] == expected
         assert [finding.to_dict() for finding in findings] == expected_findings
         assert {fact.kind for fact in facts} == set(meta["expects_kinds"])

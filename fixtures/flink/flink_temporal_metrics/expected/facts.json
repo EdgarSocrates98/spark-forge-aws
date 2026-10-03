@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_759331",
+    "id": "f_4b1fa6",
     "schema_version": 1,
     "kind": "flink.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,19 +19,19 @@
       "artifact": "flink"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_38b397",
+    "id": "f_e356ce",
     "schema_version": 1,
     "kind": "flink.checkpoint",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -47,19 +47,19 @@
       "externalized": null
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_3bdce4",
+    "id": "f_79b12f",
     "schema_version": 1,
     "kind": "flink.job",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -71,19 +71,19 @@
       "runtime_version": "1.20.1"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_0c6e1b",
+    "id": "f_59471e",
     "schema_version": 1,
     "kind": "flink.metric",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "backpressuredRatio",
@@ -101,19 +101,19 @@
       "operator_id": "aggregate"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_5ff61b",
+    "id": "f_bf3158",
     "schema_version": 1,
     "kind": "flink.metric",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "busyTimeMsPerSecond",
@@ -131,19 +131,19 @@
       "operator_id": "aggregate"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_8b0622",
+    "id": "f_9b5e47",
     "schema_version": 1,
     "kind": "flink.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -154,19 +154,19 @@
       "reason": "source_metrics_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_8b0622",
+    "id": "f_9b5e47",
     "schema_version": 1,
     "kind": "flink.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -177,19 +177,19 @@
       "reason": "sink_metrics_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_8b0622",
+    "id": "f_9b5e47",
     "schema_version": 1,
     "kind": "flink.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -200,7 +200,7 @@
       "reason": "metric_timestamp_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_temporal_metrics\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "33eea9e2f9945f67b22e7b98d02774c2035f26061cf5e1ee0dd5390a3090de62",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"

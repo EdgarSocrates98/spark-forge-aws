@@ -7,9 +7,9 @@ O resultado é evidência temporal; nunca é diagnóstico causal.
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from datetime import datetime
-import math
 from typing import Any
 
 from sparkforge.findings.models import Fact, sort_facts

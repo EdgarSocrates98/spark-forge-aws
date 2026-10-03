@@ -31,7 +31,9 @@ def fixture_dirs():
 def run_fixture(directory: Path):
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     return meta, sort_facts(
-        extract_transport_tree(directory / "input", artifact_type=meta["artifact"])
+        extract_transport_tree(
+            directory / "input", artifact_type=meta["artifact"], repo_root=directory / "input"
+        )
     )
 
 

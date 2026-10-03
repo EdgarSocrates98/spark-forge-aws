@@ -25,12 +25,12 @@
     }
   },
   {
-    "id": "f_cec0b8",
+    "id": "f_b75ed6",
     "schema_version": 1,
     "kind": "streaming.progress.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -45,18 +45,18 @@
       "parsed": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_38b152",
+    "id": "f_4681b5",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -79,18 +79,18 @@
       "query_name": "orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_f34f8b",
+    "id": "f_20b6ca",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -113,18 +113,18 @@
       "query_name": "orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_15d7bc",
+    "id": "f_6a5571",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -147,18 +147,18 @@
       "query_name": "orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_070606",
+    "id": "f_de8c43",
     "schema_version": 1,
     "kind": "streaming.progress.event_time",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -175,18 +175,18 @@
       }
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_657e2f",
+    "id": "f_e927d0",
     "schema_version": 1,
     "kind": "streaming.progress.event_time",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -203,18 +203,18 @@
       }
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_649519",
+    "id": "f_e67f69",
     "schema_version": 1,
     "kind": "streaming.progress.event_time",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -231,18 +231,18 @@
       }
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_283268",
+    "id": "f_085c08",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -281,18 +281,18 @@
       "watermark_stalled": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_373889",
+    "id": "f_0d5fc7",
     "schema_version": 1,
     "kind": "streaming.progress.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -307,18 +307,18 @@
       "description": "IcebergSink"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_91d220",
+    "id": "f_aa6522",
     "schema_version": 1,
     "kind": "streaming.progress.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -333,18 +333,18 @@
       "description": "IcebergSink"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_421715",
+    "id": "f_3a2afc",
     "schema_version": 1,
     "kind": "streaming.progress.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -359,18 +359,18 @@
       "description": "IcebergSink"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_23f04a",
+    "id": "f_30184a",
     "schema_version": 1,
     "kind": "streaming.progress.source",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -391,18 +391,18 @@
       "latest_offset": "{\"orders\":{\"0\":120}}"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_0556db",
+    "id": "f_66b9d4",
     "schema_version": 1,
     "kind": "streaming.progress.source",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -423,18 +423,18 @@
       "latest_offset": "{\"orders\":{\"0\":130}}"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_4abaa2",
+    "id": "f_6cd2ab",
     "schema_version": 1,
     "kind": "streaming.progress.source",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -455,18 +455,18 @@
       "latest_offset": "{\"orders\":{\"0\":140}}"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_42694c",
+    "id": "f_f794d8",
     "schema_version": 1,
     "kind": "streaming.progress.state_operator",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -485,18 +485,18 @@
       "custom_metrics": {}
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_4bf827",
+    "id": "f_22dce1",
     "schema_version": 1,
     "kind": "streaming.progress.state_operator",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -515,18 +515,18 @@
       "custom_metrics": {}
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_9bde4e",
+    "id": "f_0b4626",
     "schema_version": 1,
     "kind": "streaming.progress.state_operator",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -545,7 +545,7 @@
       "custom_metrics": {}
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_watermark_stalled\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "c07061f746b9b900664b1901c32aa2dcc5aebc4baf24e4f7dd1aa608620906a5",
       "extractor": "streaming_progress@0.1.0"
     }

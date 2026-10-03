@@ -8,15 +8,24 @@ from sparkforge.adapters import _core
 from sparkforge.adapters.tools import call_tool
 from sparkforge.platform.ecosystem import load_platform_ecosystem
 
-
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "platform" / "ecosystem.yaml"
 
 
 def test_ecosystem_normalizes_domains_and_reliability() -> None:
     ecosystem = load_platform_ecosystem(FIXTURE)
 
-    assert {item["category"] for item in ecosystem.systems} == {"serving", "ingestion", "ai", "radar"}
-    assert next(item for item in ecosystem.reliability if item["system_id"] == "debezium")["checkpointing"] == "offsets"
+    assert {item["category"] for item in ecosystem.systems} == {
+        "serving",
+        "ingestion",
+        "ai",
+        "radar",
+    }
+    assert (
+        next(item for item in ecosystem.reliability if item["system_id"] == "debezium")[
+            "checkpointing"
+        ]
+        == "offsets"
+    )
     assert any(item["relation"] == "serves" for item in ecosystem.integrations)
 
 
@@ -25,7 +34,11 @@ def test_ecosystem_preserves_unresolved_and_optional_radar() -> None:
     codes = {item["code"] for item in ecosystem.unresolved}
 
     assert "reliability_model_unresolved" in codes
-    assert all(item.get("runtime_dependency") is False for item in ecosystem.integrations if item.get("role") == "radar")
+    assert all(
+        item.get("runtime_dependency") is False
+        for item in ecosystem.integrations
+        if item.get("role") == "radar"
+    )
 
 
 def test_ecosystem_surfaces_share_contract() -> None:

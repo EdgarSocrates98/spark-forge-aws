@@ -9,15 +9,29 @@ from sparkforge.findings.models import Fact
 def _fact(kind: str, *, attrs=None, measures=None, symbol: str = "") -> Fact:
     return Fact(
         kind=kind,
-        subject={"type": "source_location", "file": "fixture.jsonl", "line": 1, "col": 0, "symbol": symbol},
+        subject={
+            "type": "source_location",
+            "file": "fixture.jsonl",
+            "line": 1,
+            "col": 0,
+            "symbol": symbol,
+        },
         attrs=attrs or {},
         measures=measures or {},
-        provenance={"artifact": "fixture.jsonl", "artifact_sha256": "a" * 64, "extractor": "test@0.1.0"},
+        provenance={
+            "artifact": "fixture.jsonl",
+            "artifact_sha256": "a" * 64,
+            "extractor": "test@0.1.0",
+        },
     )
 
 
 def _epoch(value: str) -> float:
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=timezone.utc).timestamp()
+    return (
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        .replace(tzinfo=timezone.utc)
+        .timestamp()
+    )
 
 
 def _facts(*, complete: bool = True) -> list[Fact]:
@@ -75,7 +89,9 @@ def test_temporal_requires_timestamps_and_declared_window():
         transport_key="orders-group",
         max_skew_seconds=None,
     )
-    reasons = {fact.attrs["reason"] for fact in unresolved if fact.kind == "streaming.temporal.unresolved"}
+    reasons = {
+        fact.attrs["reason"] for fact in unresolved if fact.kind == "streaming.temporal.unresolved"
+    }
     assert "missing_declared_max_skew" in reasons
     assert not [fact for fact in unresolved if fact.kind == "streaming.temporal.diagnostic"]
 

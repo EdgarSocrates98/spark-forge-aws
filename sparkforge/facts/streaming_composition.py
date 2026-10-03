@@ -5,16 +5,17 @@ extraídos, exige identidade declarada pelo chamador e produz um Fact composto
 com os ids das observações de origem. Sem identidade ou com ambiguidade, emite
 ``streaming.composition.unresolved``.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from sparkforge.findings.models import Fact, sort_facts
-from sparkforge.facts.streaming_temporal import build_streaming_temporal_diagnostics
 from sparkforge.facts.streaming_iceberg_temporal import build_streaming_iceberg_temporal
-from sparkforge.facts.streaming_slo import build_streaming_slo
 from sparkforge.facts.streaming_pipeline import build_streaming_pipeline
+from sparkforge.facts.streaming_slo import build_streaming_slo
+from sparkforge.facts.streaming_temporal import build_streaming_temporal_diagnostics
+from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "streaming_composition@0.1.0"
 
@@ -52,11 +53,7 @@ def _subject(symbol: str) -> dict[str, Any]:
 
 def _provenance(facts: Sequence[Fact]) -> dict[str, Any]:
     artifacts = sorted(
-        {
-            str(f.provenance.get("artifact", ""))
-            for f in facts
-            if f.provenance.get("artifact")
-        }
+        {str(f.provenance.get("artifact", "")) for f in facts if f.provenance.get("artifact")}
     )
     return {"artifact": "<composition>", "artifacts": artifacts, "extractor": EXTRACTOR_ID}
 
@@ -104,21 +101,19 @@ def _progress_series_for_query(
     if len(matched) == 1:
         return matched[0], None
     if not matched:
-        return None, _unresolved(
-            "iceberg", "query_not_found", facts, query_name=query_name
-        )
+        return None, _unresolved("iceberg", "query_not_found", facts, query_name=query_name)
     return None, _unresolved(
         "iceberg", "ambiguous_query", facts, query_name=query_name, match_count=len(matched)
     )
 
 
-def _iceberg_link(
-    facts: Sequence[Fact], *, table: str, query_name: str
-) -> list[Fact]:
+def _iceberg_link(facts: Sequence[Fact], *, table: str, query_name: str) -> list[Fact]:
     if not table:
         return [_unresolved("iceberg", "missing_declared_table", facts)]
     if not query_name:
-        return [_unresolved("iceberg", "missing_declared_query_name", facts, query_name_required=True)]
+        return [
+            _unresolved("iceberg", "missing_declared_query_name", facts, query_name_required=True)
+        ]
     series, series_error = _progress_series_for_query(facts, query_name)
     if series_error is not None:
         return [series_error]
@@ -131,7 +126,11 @@ def _iceberg_link(
     if not snapshots:
         return [_unresolved("iceberg", "table_not_found", facts, table=table)]
     if len(snapshots) > 1:
-        return [_unresolved("iceberg", "ambiguous_table", facts, table=table, match_count=len(snapshots))]
+        return [
+            _unresolved(
+                "iceberg", "ambiguous_table", facts, table=table, match_count=len(snapshots)
+            )
+        ]
     assert series is not None
     snapshot = snapshots[0]
     file_summaries = [
@@ -240,7 +239,14 @@ def _observability_link(
     ]
     transport = _transport_matches(facts, transport_key)
     if not transport:
-        return [_unresolved("observability", "transport_measurement_not_found", facts, transport_key=transport_key)]
+        return [
+            _unresolved(
+                "observability",
+                "transport_measurement_not_found",
+                facts,
+                transport_key=transport_key,
+            )
+        ]
     kinds = sorted({fact.kind.split(".", 1)[0] for fact in transport})
     measures: dict[str, Any] = {
         "progress_observation_count": series.measures.get("observation_count"),
@@ -270,7 +276,9 @@ def _observability_link(
         "transport_measurement_observed": True,
         "link_kind": "declared_input",
         "causal_inference": False,
-        "source_fact_ids": sorted({series.id, *[fact.id for fact in identity_facts], *(fact.id for fact in transport)}),
+        "source_fact_ids": sorted(
+            {series.id, *[fact.id for fact in identity_facts], *(fact.id for fact in transport)}
+        ),
     }
     return [
         Fact(

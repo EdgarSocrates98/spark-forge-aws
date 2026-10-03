@@ -11,7 +11,6 @@ from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_ops"
 
@@ -19,7 +18,9 @@ FIXTURES = ROOT / "fixtures" / "streaming_ops"
 def test_streaming_ops_goldens():
     for directory in sorted(path for path in FIXTURES.iterdir() if path.is_dir()):
         meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
-        facts = sort_facts(extract_streaming_ops_path(directory / meta["artifact"]))
+        facts = sort_facts(
+            extract_streaming_ops_path(directory / meta["artifact"], repo_root=directory / "input")
+        )
         findings = judge(facts, load_catalog(), {})
         assert [fact.to_dict() for fact in facts] == json.loads(
             (directory / "expected/facts.json").read_text(encoding="utf-8")

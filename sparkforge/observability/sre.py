@@ -75,10 +75,20 @@ def _build(raw: object) -> ObservabilityReport:
         "unresolved": _unique(unresolved),
     }
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return ObservabilityReport(service, tuple(reports), tuple(incidents), tuple(dependencies), tuple(blast_radius), tuple(_unique(unresolved)), fingerprint)
+    return ObservabilityReport(
+        service,
+        tuple(reports),
+        tuple(incidents),
+        tuple(dependencies),
+        tuple(blast_radius),
+        tuple(_unique(unresolved)),
+        fingerprint,
+    )
 
 
-def _evaluate_slos(slos: list[dict[str, Any]], measurements: list[dict[str, Any]], unresolved: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _evaluate_slos(
+    slos: list[dict[str, Any]], measurements: list[dict[str, Any]], unresolved: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for slo in slos:
         identifier = _required(slo.get("id"), "slo.id")
@@ -88,13 +98,34 @@ def _evaluate_slos(slos: list[dict[str, Any]], measurements: list[dict[str, Any]
         unit = slo.get("unit")
         if not isinstance(objective, (int, float)) or not 0 < objective <= 1:
             unresolved.append({"code": "slo_objective_unresolved", "slo_id": identifier})
-        if operator not in {"gte", "lte", "eq"} or not isinstance(target, (int, float)) or not isinstance(unit, str):
+        if (
+            operator not in {"gte", "lte", "eq"}
+            or not isinstance(target, (int, float))
+            or not isinstance(unit, str)
+        ):
             unresolved.append({"code": "slo_target_unresolved", "slo_id": identifier})
         observations = [item for item in measurements if item.get("slo_id") == identifier]
-        valid = [item for item in observations if isinstance(item.get("value"), (int, float)) and item.get("unit") == unit]
+        valid = [
+            item
+            for item in observations
+            if isinstance(item.get("value"), (int, float)) and item.get("unit") == unit
+        ]
         if not valid:
-            unresolved.append({"code": "slo_measurement_unresolved", "slo_id": identifier, "reason": "no_compatible_observation"})
-            result.append({"id": identifier, "indicator": slo.get("indicator", ""), "status": "unresolved", "sample_count": 0})
+            unresolved.append(
+                {
+                    "code": "slo_measurement_unresolved",
+                    "slo_id": identifier,
+                    "reason": "no_compatible_observation",
+                }
+            )
+            result.append(
+                {
+                    "id": identifier,
+                    "indicator": slo.get("indicator", ""),
+                    "status": "unresolved",
+                    "sample_count": 0,
+                }
+            )
             continue
         passed = [_compare(float(item["value"]), operator, float(target)) for item in valid]
         good = sum(passed)
@@ -131,11 +162,21 @@ def _incidents(value: object, unresolved: list[dict[str, Any]]) -> list[dict[str
         report = {**item, "id": identifier, "status": "resolved" if resolved else "open"}
         if isinstance(started, str) and isinstance(resolved, str):
             try:
-                report["mttr_seconds"] = (_timestamp(resolved) - _timestamp(started)).total_seconds()
+                report["mttr_seconds"] = (
+                    _timestamp(resolved) - _timestamp(started)
+                ).total_seconds()
             except ValueError:
-                unresolved.append({"code": "incident_timestamp_unresolved", "incident_id": identifier})
+                unresolved.append(
+                    {"code": "incident_timestamp_unresolved", "incident_id": identifier}
+                )
         else:
-            unresolved.append({"code": "incident_mttr_unresolved", "incident_id": identifier, "reason": "incident_open_or_timestamp_missing"})
+            unresolved.append(
+                {
+                    "code": "incident_mttr_unresolved",
+                    "incident_id": identifier,
+                    "reason": "incident_open_or_timestamp_missing",
+                }
+            )
         result.append(report)
     return sorted(result, key=lambda item: item["id"])
 
@@ -191,4 +232,9 @@ def _canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
 
 
-__all__ = ["DataObservabilityError", "ObservabilityReport", "analyze_data_observability", "load_data_observability"]
+__all__ = [
+    "DataObservabilityError",
+    "ObservabilityReport",
+    "analyze_data_observability",
+    "load_data_observability",
+]

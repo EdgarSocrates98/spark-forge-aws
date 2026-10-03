@@ -4,6 +4,7 @@ O artefato deve ser um dump JSON salvo de uma definição de job ou um contrato
 equivalente. O módulo observa configuração; não aplica regras, não consulta AWS
 e não transforma campo ausente em zero.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -29,7 +30,14 @@ EMITTED_KINDS = frozenset(
 
 
 def _subject(artifact: str, line: int, symbol: str = "") -> dict[str, Any]:
-    return {"type": "source_location", "file": artifact, "line": line, "col": 0, "symbol": symbol, "snippet": ""}
+    return {
+        "type": "source_location",
+        "file": artifact,
+        "line": line,
+        "col": 0,
+        "symbol": symbol,
+        "snippet": "",
+    }
 
 
 def _fact(
@@ -56,7 +64,11 @@ def _unresolved(artifact: str, line: int, provenance: dict[str, Any], reason: st
 
 
 def _provenance(text: str, artifact: str) -> dict[str, Any]:
-    return {"artifact": artifact, "artifact_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(), "extractor": EXTRACTOR_ID}
+    return {
+        "artifact": artifact,
+        "artifact_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "extractor": EXTRACTOR_ID,
+    }
 
 
 def _number(value: Any) -> int | float | None:
@@ -194,16 +206,18 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
     mode_value = stream.get("mode", stream.get("streaming_mode"))
     enabled = args.get("--enable-real-time-mode", args.get("enable_real_time_mode"))
     enabled_bool = _bool(enabled)
-    mode = "REAL_TIME" if enabled_bool is True or str(mode_value).upper() in {"REAL_TIME", "RTM"} else "MICRO_BATCH"
+    mode = (
+        "REAL_TIME"
+        if enabled_bool is True or str(mode_value).upper() in {"REAL_TIME", "RTM"}
+        else "MICRO_BATCH"
+    )
     language = _text(args.get("--job-language", args.get("job_language", stream.get("language"))))
     source_type = _text(stream.get("source_type", stream.get("source")))
     output_mode = _text(stream.get("output_mode"))
     stateful = _bool(stream.get("stateful"))
     foreach_batch = _bool(stream.get("foreach_batch"))
     autoscaling = _bool(stream.get("autoscaling"))
-    worker_type = _text(
-        job.get("worker_type", job.get("WorkerType", stream.get("worker_type")))
-    )
+    worker_type = _text(job.get("worker_type", job.get("WorkerType", stream.get("worker_type"))))
     attrs = {
         "name": _text(job.get("name", job.get("Name"))) or "",
         "mode": mode,
@@ -226,12 +240,22 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
         for key, value in {
             "partition_count": stream.get("partition_count"),
             "task_slots": stream.get("task_slots"),
-        "worker_count": stream.get("worker_count", job.get("number_of_workers", job.get("NumberOfWorkers"))),
+            "worker_count": stream.get(
+                "worker_count", job.get("number_of_workers", job.get("NumberOfWorkers"))
+            ),
         }.items()
         if (number := _number(value)) is not None
     }
     facts = [
-        _fact("glue.streaming.job", artifact, line, provenance, measures=measures, attrs=attrs, symbol=attrs["name"]),
+        _fact(
+            "glue.streaming.job",
+            artifact,
+            line,
+            provenance,
+            measures=measures,
+            attrs=attrs,
+            symbol=attrs["name"],
+        ),
     ]
     facts.extend(
         _endpoint_facts(
@@ -281,11 +305,34 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
         )
     )
     if glue_version is not None:
-        facts.append(_fact("glue.streaming.runtime", artifact, line, provenance, attrs={"glue_version": glue_version}))
-    missing = [key for key, value in {"language": language, "source_type": source_type, "output_mode": output_mode, "stateful": stateful, "foreach_batch": foreach_batch}.items() if value is None]
+        facts.append(
+            _fact(
+                "glue.streaming.runtime",
+                artifact,
+                line,
+                provenance,
+                attrs={"glue_version": glue_version},
+            )
+        )
+    missing = [
+        key
+        for key, value in {
+            "language": language,
+            "source_type": source_type,
+            "output_mode": output_mode,
+            "stateful": stateful,
+            "foreach_batch": foreach_batch,
+        }.items()
+        if value is None
+    ]
     if mode == "REAL_TIME" and missing:
         facts.append(_unresolved(artifact, line, provenance, "rtm_constraints"))
-    if mode == "REAL_TIME" and source_type and source_type.upper() == "KAFKA" and ("partition_count" not in measures or "task_slots" not in measures):
+    if (
+        mode == "REAL_TIME"
+        and source_type
+        and source_type.upper() == "KAFKA"
+        and ("partition_count" not in measures or "task_slots" not in measures)
+    ):
         facts.append(_unresolved(artifact, line, provenance, "partition_capacity"))
     facts.append(_fact("glue.streaming.analyzed", artifact, line, provenance, attrs={"mode": mode}))
     return facts
@@ -294,7 +341,9 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
 def _extract_text(text: str, artifact: str) -> list[Fact]:
     provenance = _provenance(text, artifact)
     records, invalid = _records(text, artifact)
-    facts: list[Fact] = [_unresolved(artifact, line, provenance, "invalid_json") for line, _ in invalid]
+    facts: list[Fact] = [
+        _unresolved(artifact, line, provenance, "invalid_json") for line, _ in invalid
+    ]
     for line, record in records:
         facts.extend(_extract_record(record, artifact, line, provenance))
     if not facts:
@@ -302,15 +351,20 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
     return sort_facts(facts)
 
 
-def extract_glue_streaming_path(path: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_glue_streaming_path(
+    path: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     target = Path(path)
-    return _extract_text(target.read_text(encoding="utf-8"), str(target))
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return _extract_text(target.read_text(encoding="utf-8"), rel.replace("\\", "/"))
 
 
-def extract_glue_streaming_tree(root: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_glue_streaming_tree(
+    root: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     base = Path(root)
     facts: list[Fact] = []
     for pattern in ("*.json", "*.jsonl"):
         for target in iter_source_files(base, pattern):
-            facts.extend(_extract_text(target.read_text(encoding="utf-8"), str(target)))
+            facts.extend(extract_glue_streaming_path(target, repo_root=repo_root))
     return sort_facts(facts)

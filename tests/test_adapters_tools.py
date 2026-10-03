@@ -2256,13 +2256,26 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_analyze_platform_graph",
     }:
         fixture_by_tool = {
-            "sparkforge_analyze_data_observability": ROOT / "fixtures" / "observability" / "sre.yaml",
+            "sparkforge_analyze_data_observability": ROOT
+            / "fixtures"
+            / "observability"
+            / "sre.yaml",
             "sparkforge_analyze_dbt_artifacts": ROOT / "fixtures" / "analytics" / "dbt",
-            "sparkforge_analyze_duckdb_microscope": ROOT / "fixtures" / "analytics" / "duckdb" / "microscope.yaml",
+            "sparkforge_analyze_duckdb_microscope": ROOT
+            / "fixtures"
+            / "analytics"
+            / "duckdb"
+            / "microscope.yaml",
             "sparkforge_analyze_forge_lab": ROOT / "labs" / "forge-lab" / "lab.yaml",
             "sparkforge_analyze_lakehouse_catalog": ROOT / "fixtures" / "platform" / "catalog.yaml",
-            "sparkforge_analyze_orchestration": ROOT / "fixtures" / "orchestration" / "control-plane.yaml",
-            "sparkforge_analyze_platform_ecosystem": ROOT / "fixtures" / "platform" / "ecosystem.yaml",
+            "sparkforge_analyze_orchestration": ROOT
+            / "fixtures"
+            / "orchestration"
+            / "control-plane.yaml",
+            "sparkforge_analyze_platform_ecosystem": ROOT
+            / "fixtures"
+            / "platform"
+            / "ecosystem.yaml",
             "sparkforge_analyze_platform_graph": ROOT / "fixtures" / "platform" / "graph.yaml",
         }
         return call_tool(name, {"path": str(fixture_by_tool[name])})
@@ -2334,11 +2347,57 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         dump.write_text(
             json.dumps(
                 {
-                    "slo": [{"name": "freshness", "metric": "p95", "target": 30, "unit": "s", "window": "5m", "source": "cloudwatch"}],
-                    "finops": [{"metric": "worker_hours", "value": 2, "unit": "hours", "period": "hour", "region": "us-east-1", "tier": "standard", "source": "cur"}],
-                    "security": [{"system": "msk", "transport": "tls", "auth": "iam", "tls": True, "kms": True, "vpc": True, "secrets_manager": True, "cross_account": False, "resource_policy": True}],
-                    "serving": [{"name": "redshift", "system": "redshift", "source": "iceberg", "mode": "streaming", "schema": "orders"}],
-                    "lakehouse": [{"name": "events", "format": "iceberg", "mode": "append", "checkpoint": "s3://lake/checkpoints/events"}],
+                    "slo": [
+                        {
+                            "name": "freshness",
+                            "metric": "p95",
+                            "target": 30,
+                            "unit": "s",
+                            "window": "5m",
+                            "source": "cloudwatch",
+                        }
+                    ],
+                    "finops": [
+                        {
+                            "metric": "worker_hours",
+                            "value": 2,
+                            "unit": "hours",
+                            "period": "hour",
+                            "region": "us-east-1",
+                            "tier": "standard",
+                            "source": "cur",
+                        }
+                    ],
+                    "security": [
+                        {
+                            "system": "msk",
+                            "transport": "tls",
+                            "auth": "iam",
+                            "tls": True,
+                            "kms": True,
+                            "vpc": True,
+                            "secrets_manager": True,
+                            "cross_account": False,
+                            "resource_policy": True,
+                        }
+                    ],
+                    "serving": [
+                        {
+                            "name": "redshift",
+                            "system": "redshift",
+                            "source": "iceberg",
+                            "mode": "streaming",
+                            "schema": "orders",
+                        }
+                    ],
+                    "lakehouse": [
+                        {
+                            "name": "events",
+                            "format": "iceberg",
+                            "mode": "append",
+                            "checkpoint": "s3://lake/checkpoints/events",
+                        }
+                    ],
                 }
             ),
             encoding="utf-8",
@@ -2365,9 +2424,9 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
     if name == "sparkforge_analyze_streaming_composition":
         dump = tmp_path / "streaming_facts.json"
         source = json.loads(
-            (ROOT / "fixtures/streaming_composition/iceberg_non_append/expected/facts.json").read_text(
-                encoding="utf-8"
-            )
+            (
+                ROOT / "fixtures/streaming_composition/iceberg_non_append/expected/facts.json"
+            ).read_text(encoding="utf-8")
         )
         dump.write_text(json.dumps(source), encoding="utf-8")
         return call_tool(
@@ -3333,7 +3392,8 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 return {
                     "ApplicationDetail": {
                         "ApplicationName": kwargs["ApplicationName"],
-                        "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:application/orders",
+                        "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:"
+                        "application/orders",
                         "ApplicationStatus": "RUNNING",
                         "RuntimeEnvironment": "FLINK-1_20",
                         "ApplicationVersionId": 1,

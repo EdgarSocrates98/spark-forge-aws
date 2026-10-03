@@ -9,14 +9,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders",
       "snippet": ""
     },
     "evidence": [
-      "f_fe337a"
+      "f_3fd9d2"
     ],
     "measured": {
       "visibility_timeout_seconds": 60

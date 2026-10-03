@@ -79,14 +79,26 @@ def _terraform(
             "tf.attribute",
             file="main.tf",
             symbol=symbol,
-            attrs={"key": "name", "value": name, "literal": literal_name, "present": True, "block": "root"},
+            attrs={
+                "key": "name",
+                "value": name,
+                "literal": literal_name,
+                "present": True,
+                "block": "root",
+            },
             line=3,
         ),
         _fact(
             "tf.attribute",
             file="main.tf",
             symbol=symbol,
-            attrs={"key": "glue_version", "value": version, "literal": True, "present": True, "block": "root"},
+            attrs={
+                "key": "glue_version",
+                "value": version,
+                "literal": True,
+                "present": True,
+                "block": "root",
+            },
             line=4,
         ),
     ]
@@ -96,7 +108,13 @@ def _terraform(
                 "tf.attribute",
                 file="main.tf",
                 symbol=symbol,
-                attrs={"key": "number_of_workers", "value": str(workers), "literal": True, "present": True, "block": "root"},
+                attrs={
+                    "key": "number_of_workers",
+                    "value": str(workers),
+                    "literal": True,
+                    "present": True,
+                    "block": "root",
+                },
                 measures={"value": workers},
                 line=5,
             )
@@ -107,14 +125,26 @@ def _terraform(
                 "tf.attribute",
                 file="main.tf",
                 symbol=symbol,
-                attrs={"key": "--enable-real-time-mode", "value": rtm, "literal": True, "present": True, "block": "default_arguments"},
+                attrs={
+                    "key": "--enable-real-time-mode",
+                    "value": rtm,
+                    "literal": True,
+                    "present": True,
+                    "block": "default_arguments",
+                },
                 line=6,
             ),
             _fact(
                 "tf.attribute",
                 file="main.tf",
                 symbol=symbol,
-                attrs={"key": "--job-language", "value": language, "literal": True, "present": True, "block": "default_arguments"},
+                attrs={
+                    "key": "--job-language",
+                    "value": language,
+                    "literal": True,
+                    "present": True,
+                    "block": "default_arguments",
+                },
                 line=7,
             ),
         ]
@@ -123,7 +153,11 @@ def _terraform(
 
 
 def _link(facts):
-    return [fact for fact in build_streaming_glue_cross_artifact(facts) if fact.kind == "glue.streaming.terraform_link"]
+    return [
+        fact
+        for fact in build_streaming_glue_cross_artifact(facts)
+        if fact.kind == "glue.streaming.terraform_link"
+    ]
 
 
 def test_matches_effective_glue_job_to_terraform_resource():
@@ -171,7 +205,9 @@ def test_reports_drift_and_unresolved_fields_without_inference():
 
 
 def test_cross_artifact_rules_are_evidence_backed():
-    drift = fuse([_effective(), *_terraform(version="5.0", rtm="false", language="python", workers=2)])
+    drift = fuse(
+        [_effective(), *_terraform(version="5.0", rtm="false", language="python", workers=2)]
+    )
     findings = judge(drift, load_catalog(), {})
     assert "SF-GLUESTREAM-004" in {finding.rule_id for finding in findings}
     assert all(finding.evidence for finding in findings)
@@ -188,7 +224,9 @@ def test_fuse_cross_artifact_is_guarded_and_idempotent():
 
     once = fuse([_effective(), *_terraform()])
     twice = fuse(once)
-    as_dicts = lambda facts: sorted((fact.to_dict() for fact in facts), key=lambda item: item["id"])
+    def as_dicts(facts):
+        return sorted((fact.to_dict() for fact in facts), key=lambda item: item["id"])
+
     assert as_dicts(once) == as_dicts(twice)
 
 
@@ -217,8 +255,12 @@ def test_fixture_goldens_cover_match_drift_and_unresolved():
     assert {path.name for path in FIXTURES.iterdir() if path.is_dir()} == required
     for directory in sorted(path for path in FIXTURES.iterdir() if path.is_dir()):
         meta, facts, findings = _run_fixture(directory)
-        expected_facts = json.loads((directory / "expected" / "facts.json").read_text(encoding="utf-8"))
-        expected_findings = json.loads((directory / "expected" / "findings.json").read_text(encoding="utf-8"))
+        expected_facts = json.loads(
+            (directory / "expected" / "facts.json").read_text(encoding="utf-8")
+        )
+        expected_findings = json.loads(
+            (directory / "expected" / "findings.json").read_text(encoding="utf-8")
+        )
         assert [fact.to_dict() for fact in facts] == expected_facts
         assert [finding.to_dict() for finding in findings] == expected_findings
         assert {fact.kind for fact in facts} == set(meta["expects_kinds"])

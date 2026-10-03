@@ -80,6 +80,19 @@ SO_AWS = {
         "deriva de `glue.metric` (seu `SOURCE_KINDS`), a metrica do Glue no CloudWatch; "
         "sem ela o `fuse` nem deriva"
     ),
+    "glue_streaming": (
+        "le dump de `get_job` de um job Glue Streaming/RTM (`collect glue-streaming`); "
+        "o artefato so existe na API do Glue"
+    ),
+    "streaming_glue_cross": (
+        "deriva `glue.streaming.terraform_link`/`cross.unresolved` somente cruzando "
+        "`glue.streaming.job` com `tf.resource`/`tf.attribute` de `aws_*` do Terraform; "
+        "sem os dois lados AWS o fact nao existe"
+    ),
+    "streaming_glue_runtime": (
+        "deriva `glue.streaming.runtime_link`/`runtime.unresolved` somente cruzando "
+        "`glue.streaming.job` com o contexto de runtime; sem o job Glue nao ha link"
+    ),
 }
 # Kind de extrator generico que so nasce de fonte AWS: o extrator e generico, mas
 # este kind dele so sai cruzando com um fact de extrator de `SO_AWS`.
@@ -106,10 +119,6 @@ EXCECOES = {
     "SF-PQ-002": (
         "o passo com DynamicFrame e condicional a leitura via DynamicFrame, que so "
         "existe no Glue; os demais passos da regra sao neutros"
-    ),
-    "SF-GLUESTREAM-001": (
-        "a regra revisa a configuração específica do Glue Streaming; o equivalente "
-        "neutro é a ausência de uma capacidade homônima fora do runtime AWS"
     ),
 }
 

@@ -38,7 +38,9 @@ class FakeGlue:
 
 class FakeKinesis:
     def describe_stream_summary(self, **kwargs):
-        return {"StreamDescriptionSummary": {"StreamName": kwargs["StreamName"], "OpenShardCount": 1}}
+        return {
+            "StreamDescriptionSummary": {"StreamName": kwargs["StreamName"], "OpenShardCount": 1}
+        }
 
     def list_shards(self, **kwargs):
         return {"Shards": [{"ShardId": "shardId-000000000000", "SequenceNumberRange": {}}]}
@@ -46,7 +48,9 @@ class FakeKinesis:
 
 class FakeKafka:
     def describe_cluster_v2(self, **kwargs):
-        return {"ClusterInfo": {"ClusterArn": kwargs["ClusterArn"], "CurrentBrokerSoftwareInfo": {}}}
+        return {
+            "ClusterInfo": {"ClusterArn": kwargs["ClusterArn"], "CurrentBrokerSoftwareInfo": {}}
+        }
 
 
 class FakeDms:
@@ -68,7 +72,10 @@ class FakeCloudWatch:
                     "Id": query["Id"],
                     "Label": query["Label"],
                     "Timestamps": ["2026-10-02T00:00:00+00:00", "2026-10-02T00:01:00+00:00"],
-                    "Values": [100.0 if metric == "IncomingBytes" else 2.0, 120.0 if metric == "IncomingBytes" else 3.0],
+                    "Values": [
+                        100.0 if metric == "IncomingBytes" else 2.0,
+                        120.0 if metric == "IncomingBytes" else 3.0,
+                    ],
                     "StatusCode": "Complete",
                 }
             )
@@ -104,9 +111,7 @@ def test_collector_composes_read_only_snapshots_and_redacts(monkeypatch, tmp_pat
     fake = FakeBoto3()
     monkeypatch.setattr(streaming, "require_boto3", lambda: fake)
 
-    entry = streaming.collect_streaming_integrations(
-        tmp_path, now="2026-10-02T00:00:00Z", **_ids()
-    )
+    entry = streaming.collect_streaming_integrations(tmp_path, now="2026-10-02T00:00:00Z", **_ids())
 
     payload = json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
     assert entry.kind == "streaming_integrations"
@@ -196,9 +201,7 @@ def test_kinesis_temporal_metrics_feed_transport_analyzer(monkeypatch, tmp_path)
 def test_offline_hit_does_not_touch_aws(monkeypatch, tmp_path):
     fake = FakeBoto3()
     monkeypatch.setattr(streaming, "require_boto3", lambda: fake)
-    first = streaming.collect_streaming_integrations(
-        tmp_path, now="2026-10-02T00:00:00Z", **_ids()
-    )
+    first = streaming.collect_streaming_integrations(tmp_path, now="2026-10-02T00:00:00Z", **_ids())
 
     def boom():
         raise AssertionError("cache hit deveria permanecer offline")
@@ -275,9 +278,7 @@ def test_cli_and_mcp_streaming_temporal_collection_match(monkeypatch, tmp_path, 
         "2026-10-02T00:10:00Z",
     ]
 
-    cli_code = main(
-        ["collect", "streaming-integrations", "--repo", str(tmp_path / "cli"), *common]
-    )
+    cli_code = main(["collect", "streaming-integrations", "--repo", str(tmp_path / "cli"), *common])
     cli_payload = json.loads(capsys.readouterr().out)
     mcp_payload = call_tool(
         "sparkforge_collect_streaming_integrations",

@@ -5,14 +5,15 @@ observed timestamps inside a caller-declared window and emits one compact fact
 with source ids. It never infers order from file position, uses local time, or
 claims that a snapshot caused a streaming symptom.
 """
+
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from datetime import datetime
-import math
 from typing import Any
 
-from sparkforge.findings.models import Fact, sort_facts
+from sparkforge.findings.models import Fact
 
 EXTRACTOR_ID = "streaming_iceberg_temporal@0.1.0"
 EMITTED_KINDS = frozenset({"streaming.iceberg.temporal"})
@@ -104,28 +105,46 @@ def build_streaming_iceberg_temporal(
     except (TypeError, ValueError):
         tolerance = -1
     if not math.isfinite(tolerance) or tolerance < 0:
-        return [_unresolved("invalid_declared_max_skew", source_facts, max_skew_seconds=max_skew_seconds)]
+        return [
+            _unresolved(
+                "invalid_declared_max_skew", source_facts, max_skew_seconds=max_skew_seconds
+            )
+        ]
 
     progress = [
         fact
         for fact in source_facts
         if fact.kind == "streaming.progress.batch"
-        and str((fact.attrs or {}).get("query_name", (fact.attrs or {}).get("name", ""))) == query_name
+        and str((fact.attrs or {}).get("query_name", (fact.attrs or {}).get("name", "")))
+        == query_name
     ]
     snapshots = [
         fact
         for fact in source_facts
-        if fact.kind == "iceberg.snapshot"
-        and str((fact.subject or {}).get("symbol", "")) == table
+        if fact.kind == "iceberg.snapshot" and str((fact.subject or {}).get("symbol", "")) == table
     ]
     if not progress:
         return [_unresolved("query_not_found", source_facts, query_name=query_name)]
     if not snapshots:
         return [_unresolved("table_snapshots_not_found", source_facts, table=table)]
     if len(progress) < 2:
-        return [_unresolved("insufficient_progress_observations", source_facts, observed_observations=len(progress), required_observations=2)]
+        return [
+            _unresolved(
+                "insufficient_progress_observations",
+                source_facts,
+                observed_observations=len(progress),
+                required_observations=2,
+            )
+        ]
     if len(snapshots) < 2:
-        return [_unresolved("insufficient_snapshot_observations", source_facts, observed_observations=len(snapshots), required_observations=2)]
+        return [
+            _unresolved(
+                "insufficient_snapshot_observations",
+                source_facts,
+                observed_observations=len(snapshots),
+                required_observations=2,
+            )
+        ]
 
     progress_points: list[tuple[float, Fact]] = []
     for fact in progress:
@@ -142,7 +161,9 @@ def build_streaming_iceberg_temporal(
 
     remaining = sorted(snapshot_points, key=lambda item: (item[0], item[1].id))
     pairs: list[tuple[float, Fact, Fact, float]] = []
-    for progress_timestamp, progress_fact in sorted(progress_points, key=lambda item: (item[0], item[1].id)):
+    for progress_timestamp, progress_fact in sorted(
+        progress_points, key=lambda item: (item[0], item[1].id)
+    ):
         if not remaining:
             break
         index, (snapshot_timestamp, snapshot_fact) = min(
@@ -176,7 +197,11 @@ def build_streaming_iceberg_temporal(
         }
     )
     source_ids = sorted(
-        {fact.id for _, progress_fact, snapshot_fact, _ in pairs for fact in (progress_fact, snapshot_fact)}
+        {
+            fact.id
+            for _, progress_fact, snapshot_fact, _ in pairs
+            for fact in (progress_fact, snapshot_fact)
+        }
     )
     diagnostic = Fact(
         kind="streaming.iceberg.temporal",
@@ -207,7 +232,13 @@ def build_streaming_iceberg_temporal(
             "link_kind": "declared_temporal_window",
             "causal_inference": False,
         },
-        provenance=_provenance([fact for _, progress_fact, snapshot_fact, _ in pairs for fact in (progress_fact, snapshot_fact)]),
+        provenance=_provenance(
+            [
+                fact
+                for _, progress_fact, snapshot_fact, _ in pairs
+                for fact in (progress_fact, snapshot_fact)
+            ]
+        ),
     )
     return [diagnostic]
 

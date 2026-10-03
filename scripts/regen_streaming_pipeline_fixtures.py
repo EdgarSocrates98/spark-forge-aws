@@ -1,10 +1,9 @@
 """Regenerate streaming pipeline facts/findings goldens from fixture inputs."""
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
-
-import yaml
 
 from sparkforge.facts.streaming_pipeline import build_streaming_pipeline
 from sparkforge.findings.models import Fact, sort_facts
@@ -27,7 +26,8 @@ def regenerate(directory: Path) -> None:
         newline="\n",
     )
     (directory / "expected/findings.json").write_text(
-        json.dumps([finding.to_dict() for finding in findings], indent=2, ensure_ascii=False) + "\n",
+        json.dumps([finding.to_dict() for finding in findings], indent=2, ensure_ascii=False)
+        + "\n",
         encoding="utf-8",
         newline="\n",
     )

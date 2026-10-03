@@ -27,8 +27,24 @@ FIDELITY_NAMES = {
     "L3": "cloud_validation",
 }
 LAB_MODES = frozenset({"lite", "standard", "deep"})
-LAB_PROFILES = frozenset({"core", "spark", "kafka", "streaming", "flink", "lakehouse", "cdc", "polaris", "observability", "chaos", "full"})
-RESULT_CLASSIFICATIONS = frozenset({"PASS", "FAIL", "UNRESOLVED", "INFRA_FAILURE", "INVALID_SCENARIO"})
+LAB_PROFILES = frozenset(
+    {
+        "core",
+        "spark",
+        "kafka",
+        "streaming",
+        "flink",
+        "lakehouse",
+        "cdc",
+        "polaris",
+        "observability",
+        "chaos",
+        "full",
+    }
+)
+RESULT_CLASSIFICATIONS = frozenset(
+    {"PASS", "FAIL", "UNRESOLVED", "INFRA_FAILURE", "INVALID_SCENARIO"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,7 +132,12 @@ def load_version_registry(path: str | Path) -> VersionRegistry:
             raise LabContractError("version registry defaults must map names to objects")
         tag = value.get("tag")
         image = value.get("image")
-        if not isinstance(image, str) or not image.strip() or not isinstance(tag, str) or not tag.strip():
+        if (
+            not isinstance(image, str)
+            or not image.strip()
+            or not isinstance(tag, str)
+            or not tag.strip()
+        ):
             raise LabContractError(f"registry component {name} requires image and tag")
         if "latest" in f"{image}:{tag}".lower():
             raise LabContractError(f"registry component {name} cannot use latest")
@@ -143,7 +164,9 @@ def load_resource_contract(value: object) -> LabResourceContract:
     if mode not in LAB_MODES:
         raise LabContractError(f"unsupported lab mode: {mode}")
     ports = value.get("ports", [])
-    if not isinstance(ports, list) or not all(isinstance(port, int) and 1 <= port <= 65535 for port in ports):
+    if not isinstance(ports, list) or not all(
+        isinstance(port, int) and 1 <= port <= 65535 for port in ports
+    ):
         raise LabContractError("resource.ports must contain valid integers")
     required_memory = value.get("required_memory_gb", 0.5)
     required_cpu = value.get("required_cpu", 1)

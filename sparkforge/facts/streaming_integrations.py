@@ -5,6 +5,7 @@ extractor records declarations and observed series without deciding whether a
 runtime is healthy. Missing operational context becomes an unresolved fact.
 Secret-like values are never copied to the fact store.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -124,7 +125,9 @@ def _safe_attrs(item: dict[str, Any], names: tuple[str, ...]) -> tuple[dict[str,
     return attrs, unresolved
 
 
-def _section(data: dict[str, Any], name: str, aliases: tuple[str, ...] = ()) -> tuple[list[dict[str, Any]], list[str]]:
+def _section(
+    data: dict[str, Any], name: str, aliases: tuple[str, ...] = ()
+) -> tuple[list[dict[str, Any]], list[str]]:
     key = next((candidate for candidate in (name, *aliases) if candidate in data), None)
     if key is None:
         return [], [f"{name}_declaration_missing"]
@@ -143,7 +146,10 @@ def _series_measures(item: dict[str, Any]) -> tuple[dict[str, int | float], list
     unresolved: list[str] = []
     lengths: list[int] = []
     for name in _SERIES:
-        value = item.get(name, item.get("metrics", {}).get(name) if isinstance(item.get("metrics"), dict) else None)
+        value = item.get(
+            name,
+            item.get("metrics", {}).get(name) if isinstance(item.get("metrics"), dict) else None,
+        )
         if value is None:
             continue
         values = value if isinstance(value, list) else [value]
@@ -156,9 +162,13 @@ def _series_measures(item: dict[str, Any]) -> tuple[dict[str, int | float], list
         measures[f"{name}_last"] = numeric[-1]
         measures[f"{name}_max"] = max(numeric)
         if name == "backlog":
-            measures["backlog_non_decreasing"] = int(all(left <= right for left, right in zip(numeric, numeric[1:])))
+            measures["backlog_non_decreasing"] = int(
+                all(left <= right for left, right in zip(numeric, numeric[1:], strict=False))
+            )
         if name == "state_rows":
-            measures["state_rows_non_decreasing"] = int(all(left <= right for left, right in zip(numeric, numeric[1:])))
+            measures["state_rows_non_decreasing"] = int(
+                all(left <= right for left, right in zip(numeric, numeric[1:], strict=False))
+            )
     if lengths:
         observation_count = max(lengths)
         measures["observation_count"] = observation_count
@@ -167,7 +177,9 @@ def _series_measures(item: dict[str, Any]) -> tuple[dict[str, int | float], list
     return measures, unresolved
 
 
-def _checkpoint(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _checkpoint(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     records, unresolved = _section(data, "checkpoint")
     facts: list[Fact] = []
     for index, item in enumerate(records):
@@ -189,7 +201,11 @@ def _checkpoint(data: dict[str, Any], artifact: str, provenance: dict[str, Any])
             ),
         )
         unresolved.extend(safe_unresolved)
-        missing = [field for field in ("query_name", "path", "storage") if not _text(item.get(field, item.get("name") if field == "query_name" else None))]
+        missing = [
+            field
+            for field in ("query_name", "path", "storage")
+            if not _text(item.get(field, item.get("name") if field == "query_name" else None))
+        ]
         unresolved.extend(f"checkpoint_context_missing:{name}:{field}" for field in missing)
         measures, series_unresolved = _series_measures(item)
         unresolved.extend(f"{reason}:{name}" for reason in series_unresolved)
@@ -197,12 +213,25 @@ def _checkpoint(data: dict[str, Any], artifact: str, provenance: dict[str, Any])
         if trigger_interval is not None:
             measures["trigger_interval_ms"] = trigger_interval
         if measures.get("batch_duration_ms_max", 0) and trigger_interval is not None:
-            measures["batch_duration_exceeds_trigger"] = int(measures["batch_duration_ms_max"] > trigger_interval)
-        facts.append(_fact("streaming.checkpoint", artifact, provenance, attrs=attrs, measures=measures, symbol=name))
+            measures["batch_duration_exceeds_trigger"] = int(
+                measures["batch_duration_ms_max"] > trigger_interval
+            )
+        facts.append(
+            _fact(
+                "streaming.checkpoint",
+                artifact,
+                provenance,
+                attrs=attrs,
+                measures=measures,
+                symbol=name,
+            )
+        )
     return facts, unresolved
 
 
-def _connect(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _connect(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     records, unresolved = _section(data, "kafka_connect")
     facts: list[Fact] = []
     for index, item in enumerate(records):
@@ -228,7 +257,11 @@ def _connect(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) ->
             ),
         )
         unresolved.extend(safe_unresolved)
-        missing = [field for field in ("connector_class", "mode", "status", "tasks", "offsets") if field not in item]
+        missing = [
+            field
+            for field in ("connector_class", "mode", "status", "tasks", "offsets")
+            if field not in item
+        ]
         unresolved.extend(f"kafka_connect_context_missing:{name}:{field}" for field in missing)
         tasks = item.get("tasks", [])
         if isinstance(tasks, list):
@@ -236,7 +269,9 @@ def _connect(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) ->
                 if not isinstance(task, dict):
                     unresolved.append(f"kafka_connect_task_invalid:{name}:{task_index}")
                     continue
-                task_attrs, task_unresolved = _safe_attrs(task, ("id", "state", "worker_id", "trace"))
+                task_attrs, task_unresolved = _safe_attrs(
+                    task, ("id", "state", "worker_id", "trace")
+                )
                 unresolved.extend(f"{reason}:{name}:{task_index}" for reason in task_unresolved)
                 task_attrs["connector"] = name
                 facts.append(
@@ -250,11 +285,22 @@ def _connect(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) ->
                 )
         else:
             unresolved.append(f"kafka_connect_tasks_invalid:{name}")
-        facts.append(_fact("kafka.connect", artifact, provenance, attrs=attrs, measures={"task_count": len(tasks) if isinstance(tasks, list) else 0}, symbol=name))
+        facts.append(
+            _fact(
+                "kafka.connect",
+                artifact,
+                provenance,
+                attrs=attrs,
+                measures={"task_count": len(tasks) if isinstance(tasks, list) else 0},
+                symbol=name,
+            )
+        )
     return facts, unresolved
 
 
-def _streams(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _streams(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     records, unresolved = _section(data, "kafka_streams")
     facts: list[Fact] = []
     for index, item in enumerate(records):
@@ -275,28 +321,61 @@ def _streams(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) ->
             ),
         )
         unresolved.extend(safe_unresolved)
-        missing = [field for field in ("application_id", "processing_guarantee", "state_stores", "repartition_topics", "changelog_topics") if field not in item]
+        missing = [
+            field
+            for field in (
+                "application_id",
+                "processing_guarantee",
+                "state_stores",
+                "repartition_topics",
+                "changelog_topics",
+            )
+            if field not in item
+        ]
         unresolved.extend(f"kafka_streams_context_missing:{name}:{field}" for field in missing)
         stores = item.get("state_stores", [])
         if isinstance(stores, list):
             for store_index, store in enumerate(stores):
                 if isinstance(store, dict):
-                    store_attrs, store_unresolved = _safe_attrs(store, ("name", "type", "persistent", "retention", "changelog_topic"))
+                    store_attrs, store_unresolved = _safe_attrs(
+                        store, ("name", "type", "persistent", "retention", "changelog_topic")
+                    )
                     store_attrs["application_id"] = name
-                    unresolved.extend(f"{reason}:{name}:{store_index}" for reason in store_unresolved)
+                    unresolved.extend(
+                        f"{reason}:{name}:{store_index}" for reason in store_unresolved
+                    )
                 elif isinstance(store, str):
                     store_attrs = {"name": store, "application_id": name}
                 else:
                     unresolved.append(f"kafka_streams_state_store_invalid:{name}:{store_index}")
                     continue
-                facts.append(_fact("kafka.streams.state_store", artifact, provenance, attrs=store_attrs, symbol=f"{name}.store.{store_index}"))
+                facts.append(
+                    _fact(
+                        "kafka.streams.state_store",
+                        artifact,
+                        provenance,
+                        attrs=store_attrs,
+                        symbol=f"{name}.store.{store_index}",
+                    )
+                )
         else:
             unresolved.append(f"kafka_streams_state_stores_invalid:{name}")
-        facts.append(_fact("kafka.streams", artifact, provenance, attrs=attrs, measures={"state_store_count": len(stores) if isinstance(stores, list) else 0}, symbol=name))
+        facts.append(
+            _fact(
+                "kafka.streams",
+                artifact,
+                provenance,
+                attrs=attrs,
+                measures={"state_store_count": len(stores) if isinstance(stores, list) else 0},
+                symbol=name,
+            )
+        )
     return facts, unresolved
 
 
-def _openlineage(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _openlineage(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     records, unresolved = _section(data, "openlineage", ("lineage",))
     facts: list[Fact] = []
     for index, item in enumerate(records):
@@ -331,7 +410,19 @@ def _openlineage(data: dict[str, Any], artifact: str, provenance: dict[str, Any]
         unresolved.extend(f"openlineage_context_missing:{name}:{field}" for field in missing)
         if isinstance(facets, dict) and any(_sensitive_key(key) for key in facets):
             unresolved.append(f"openlineage_sensitive_facet_redacted:{name}")
-        facts.append(_fact("lineage.openlineage", artifact, provenance, attrs=attrs, measures={"input_count": attrs["input_count"], "output_count": attrs["output_count"]}, symbol=name))
+        facts.append(
+            _fact(
+                "lineage.openlineage",
+                artifact,
+                provenance,
+                attrs=attrs,
+                measures={
+                    "input_count": attrs["input_count"],
+                    "output_count": attrs["output_count"],
+                },
+                symbol=name,
+            )
+        )
     return facts, unresolved
 
 
@@ -340,9 +431,23 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
-        return [_fact("streaming_integrations.unresolved", artifact, provenance, attrs={"reason": "invalid_json", "domain": "artifact", "line": exc.lineno})]
+        return [
+            _fact(
+                "streaming_integrations.unresolved",
+                artifact,
+                provenance,
+                attrs={"reason": "invalid_json", "domain": "artifact", "line": exc.lineno},
+            )
+        ]
     if not isinstance(data, dict):
-        return [_fact("streaming_integrations.unresolved", artifact, provenance, attrs={"reason": "root_must_be_object", "domain": "artifact"})]
+        return [
+            _fact(
+                "streaming_integrations.unresolved",
+                artifact,
+                provenance,
+                attrs={"reason": "root_must_be_object", "domain": "artifact"},
+            )
+        ]
     facts: list[Fact] = []
     reasons: list[str] = []
     for builder in (_checkpoint, _connect, _streams, _openlineage):
@@ -371,23 +476,34 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
             "streaming_integrations.analyzed",
             artifact,
             provenance,
-            attrs={"sections": sorted(key for key in ("checkpoint", "kafka_connect", "kafka_streams", "openlineage") if key in data)},
+            attrs={
+                "sections": sorted(
+                    key
+                    for key in ("checkpoint", "kafka_connect", "kafka_streams", "openlineage")
+                    if key in data
+                )
+            },
             measures={"fact_count": len(facts)},
         )
     )
     return sort_facts(facts)
 
 
-def extract_streaming_integrations_path(path: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_streaming_integrations_path(
+    path: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     target = Path(path)
-    return _extract_text(target.read_text(encoding="utf-8"), str(target))
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return _extract_text(target.read_text(encoding="utf-8"), rel.replace("\\", "/"))
 
 
-def extract_streaming_integrations_tree(root: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_streaming_integrations_tree(
+    root: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     facts: list[Fact] = []
     for pattern in ("*.json", "*.jsonl"):
         for path in iter_source_files(Path(root), pattern):
-            facts.extend(_extract_text(path.read_text(encoding="utf-8"), str(path)))
+            facts.extend(extract_streaming_integrations_path(path, repo_root=repo_root))
     return sort_facts(facts)
 
 

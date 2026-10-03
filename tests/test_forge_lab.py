@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sparkforge.lab.spec import FORGE_LAB_COMPONENTS, FORGE_LAB_SCENARIOS, analyze_forge_lab, load_forge_lab
-
+from sparkforge.lab.spec import (
+    FORGE_LAB_COMPONENTS,
+    FORGE_LAB_SCENARIOS,
+    analyze_forge_lab,
+    load_forge_lab,
+)
 
 FIXTURE = Path(__file__).parents[1] / "labs" / "forge-lab" / "lab.yaml"
 
@@ -26,7 +30,11 @@ def test_forge_lab_analysis_is_offline_and_structured() -> None:
     assert payload["lab"]["mode"] == "offline_spec_only"
     assert payload["lab"]["readiness"].startswith("unresolved_until_operator")
     assert payload["lab"]["fingerprint"]
-    assert {item["id"] for item in payload["lab"]["components"]} >= {"kafka", "flink", "iceberg_rest"}
+    assert {item["id"] for item in payload["lab"]["components"]} >= {
+        "kafka",
+        "flink",
+        "iceberg_rest",
+    }
 
 
 def test_forge_lab_docs_match_declared_scenarios() -> None:

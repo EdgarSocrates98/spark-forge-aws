@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_c1002e",
+    "id": "f_6178f0",
     "schema_version": 1,
     "kind": "kafka.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,102 +19,18 @@
       "artifact_type": "kafka"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_00665e",
+    "id": "f_35d994",
     "schema_version": 1,
     "kind": "kafka.lag",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
-      "line": 1,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {
-      "partition": 0,
-      "lag": 4
-    },
-    "attrs": {
-      "group": "orders",
-      "topic": "events",
-      "observed_at": "2026-10-03T00:00:00Z",
-      "series_observation": true
-    },
-    "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
-      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
-      "extractor": "streaming_transport@0.1.0"
-    }
-  },
-  {
-    "id": "f_2e3874",
-    "schema_version": 1,
-    "kind": "kafka.lag",
-    "subject": {
-      "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
-      "line": 1,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {
-      "partition": 1,
-      "lag": 3
-    },
-    "attrs": {
-      "group": "orders",
-      "topic": "events",
-      "observed_at": "2026-10-03T00:01:00Z",
-      "series_observation": true
-    },
-    "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
-      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
-      "extractor": "streaming_transport@0.1.0"
-    }
-  },
-  {
-    "id": "f_52b904",
-    "schema_version": 1,
-    "kind": "kafka.lag",
-    "subject": {
-      "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
-      "line": 1,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {
-      "partition": 0,
-      "lag": 9
-    },
-    "attrs": {
-      "group": "orders",
-      "topic": "events",
-      "observed_at": "2026-10-03T00:01:00Z",
-      "series_observation": true
-    },
-    "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
-      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
-      "extractor": "streaming_transport@0.1.0"
-    }
-  },
-  {
-    "id": "f_b1c899",
-    "schema_version": 1,
-    "kind": "kafka.lag",
-    "subject": {
-      "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -131,18 +47,102 @@
       "series_observation": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_e62d23",
+    "id": "f_74007d",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 1,
+      "lag": 3
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:01:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_9034de",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "lag": 9
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:01:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_922994",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "lag": 4
+    },
+    "attrs": {
+      "group": "orders",
+      "topic": "events",
+      "observed_at": "2026-10-03T00:00:00Z",
+      "series_observation": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5a711",
     "schema_version": 1,
     "kind": "kafka.lag.series",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "orders:events:0",
@@ -165,23 +165,23 @@
       "monotonic_increase": true,
       "causal_inference": false,
       "observation_fact_ids": [
-        "f_00665e",
-        "f_52b904"
+        "f_922994",
+        "f_9034de"
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_110724",
+    "id": "f_c0b778",
     "schema_version": 1,
     "kind": "kafka.lag.series",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "orders:events:1",
@@ -204,12 +204,12 @@
       "monotonic_increase": false,
       "causal_inference": false,
       "observation_fact_ids": [
-        "f_b1c899",
-        "f_2e3874"
+        "f_35d994",
+        "f_74007d"
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "235cfaa327aeaf76031a35da3fc71c8e47049f657742965c62089efbcc8a6511",
       "extractor": "streaming_transport@0.1.0"
     }

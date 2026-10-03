@@ -9,14 +9,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "fixtures\\transport\\kafka_isr_deficit\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_3da02f"
+      "f_b68b2c"
     ],
     "measured": {
       "partition": 0,
@@ -72,12 +72,6 @@
         "runtime.wall_clock"
       ],
       "depends_on": []
-    },
-    "evidence_standing": {
-      "value": "low",
-      "source_tier": "T4_RECOGNIZED_AUTHORITY",
-      "in_version_scope": true,
-      "measures_present": true
     }
   }
 ]

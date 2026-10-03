@@ -12,7 +12,6 @@ from sparkforge.findings.models import Fact
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -42,9 +41,24 @@ def _contract() -> dict:
         "pipeline_id": "orders",
         "nodes": [
             {"id": "cdc", "selector": {"kind": "cdc.event", "attrs": {"topic": "orders"}}},
-            {"id": "transport", "selector": {"kind": "kafka.partition", "attrs": {"topic": "orders", "partition": 0}}},
-            {"id": "processor", "selector": {"kind": "flink.job", "attrs": {"job_name": "orders-job"}}},
-            {"id": "sink", "selector": {"kind": "iceberg.snapshots_summary", "attrs": {"table": "catalog.db.orders"}}},
+            {
+                "id": "transport",
+                "selector": {
+                    "kind": "kafka.partition",
+                    "attrs": {"topic": "orders", "partition": 0},
+                },
+            },
+            {
+                "id": "processor",
+                "selector": {"kind": "flink.job", "attrs": {"job_name": "orders-job"}},
+            },
+            {
+                "id": "sink",
+                "selector": {
+                    "kind": "iceberg.snapshots_summary",
+                    "attrs": {"table": "catalog.db.orders"},
+                },
+            },
         ],
         "edges": [
             {"id": "cdc-to-kafka", "from": "cdc", "to": "transport"},
@@ -79,20 +93,30 @@ def test_pipeline_contract_emits_verified_nodes_and_edges():
     assert all(fact.attrs["source_fact_ids"] for fact in nodes + links)
     assert not [fact for fact in composed if fact.kind == "streaming.pipeline.unresolved"]
 
-    ambiguous = _facts() + [_fact("kafka.partition", "partition-1", {"topic": "orders", "partition": 0})]
+    ambiguous = _facts() + [
+        _fact("kafka.partition", "partition-1", {"topic": "orders", "partition": 0})
+    ]
     unresolved = build_streaming_pipeline(ambiguous, _contract())
     reasons = {
-        fact.attrs["reason"]
-        for fact in unresolved
-        if fact.kind == "streaming.pipeline.unresolved"
+        fact.attrs["reason"] for fact in unresolved if fact.kind == "streaming.pipeline.unresolved"
     }
     assert "selector_ambiguous" in reasons
-    assert not [fact for fact in unresolved if fact.kind == "streaming.pipeline.link" and fact.attrs["status"] == "verified" and fact.attrs["edge_id"] == "cdc-to-kafka"]
+    assert not [
+        fact
+        for fact in unresolved
+        if fact.kind == "streaming.pipeline.link"
+        and fact.attrs["status"] == "verified"
+        and fact.attrs["edge_id"] == "cdc-to-kafka"
+    ]
 
 
 def test_pipeline_rule_fires_only_for_observed_blind_spot():
     complete = build_streaming_pipeline(_facts(), _contract())
-    assert not {finding.rule_id for finding in judge(complete, load_catalog(), {}) if finding.rule_id == "SF-STREAM-015"}
+    assert not {
+        finding.rule_id
+        for finding in judge(complete, load_catalog(), {})
+        if finding.rule_id == "SF-STREAM-015"
+    }
 
     missing = _contract()
     missing["nodes"][-1]["selector"]["attrs"]["table"] = "catalog.db.missing"

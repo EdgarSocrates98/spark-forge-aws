@@ -9,15 +9,15 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "checkpoint_context_missing:orders:path",
       "snippet": ""
     },
     "evidence": [
-      "f_b75e73",
-      "f_ddf20c"
+      "f_9156fc",
+      "f_1110bd"
     ],
     "measured": {},
     "threshold": {},
@@ -69,15 +69,15 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "kafka_connect_context_missing:orders-source:offsets",
       "snippet": ""
     },
     "evidence": [
-      "f_559ec3",
-      "f_9e0f4a"
+      "f_1409a0",
+      "f_d2c4de"
     ],
     "measured": {},
     "threshold": {},
@@ -129,15 +129,15 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "kafka_streams_context_missing:orders-enrichment:changelog_topics",
       "snippet": ""
     },
     "evidence": [
-      "f_712034",
-      "f_3f4e35"
+      "f_89ce23",
+      "f_3e866c"
     ],
     "measured": {},
     "threshold": {},
@@ -189,14 +189,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "openlineage_context_missing:orders-enrichment:run",
       "snippet": ""
     },
     "evidence": [
-      "f_7831bc"
+      "f_60121f"
     ],
     "measured": {},
     "threshold": {},

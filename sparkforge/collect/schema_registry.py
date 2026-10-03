@@ -5,12 +5,13 @@ local consumível por ``analyze schema-registry``. Nenhuma operação de criaç�
 alteração, registro ou exclusão é chamada. Definição acima do limite não é
 truncada: sai como ``unresolved`` no contrato coletado.
 """
+
 from __future__ import annotations
 
 import json
 import re
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from sparkforge.collect.aws import CollectionFailed, _offline_hit, _write_and_register
 from sparkforge.collect.base import ArtifactEntry, require_boto3
@@ -18,7 +19,9 @@ from sparkforge.collect.base import ArtifactEntry, require_boto3
 _MAX_SCHEMAS = 500
 _MAX_DEFINITION_BYTES = 170_000
 _PAGE_SIZE = 100
-_SECRET_KEY = re.compile(r"(?:secret|password|token|private.?key|access.?key|session.?token|authorization)", re.I)
+_SECRET_KEY = re.compile(
+    r"(?:secret|password|token|private.?key|access.?key|session.?token|authorization)", re.I
+)
 
 
 def _slug(value: str) -> str:
@@ -26,7 +29,9 @@ def _slug(value: str) -> str:
     return result.strip("._")[:120] or "schema-registry"
 
 
-def schema_registry_path(*, registry_name: str = "", schema_name: str = "", schema_arn: str = "") -> str:
+def schema_registry_path(
+    *, registry_name: str = "", schema_name: str = "", schema_arn: str = ""
+) -> str:
     """Return deterministic artifact path from declared identity only."""
     identity = schema_arn or ":".join(item for item in (registry_name, schema_name) if item)
     return f".sparkforge/artifacts/schema_registry/{_slug(identity)}.json"
@@ -116,7 +121,11 @@ def _schema_record(
     collection_unresolved: list[str],
 ) -> dict[str, Any]:
     name = str(schema_summary.get("SchemaName") or schema_summary.get("name") or "")
-    identity = {"SchemaArn": schema_arn} if schema_arn else {"RegistryName": registry.get("name", ""), "SchemaName": name}
+    identity = (
+        {"SchemaArn": schema_arn}
+        if schema_arn
+        else {"RegistryName": registry.get("name", ""), "SchemaName": name}
+    )
     metadata = client.get_schema(SchemaId=identity)
     schema = _safe_attrs(
         metadata,
@@ -153,7 +162,9 @@ def _schema_record(
             "CreatedTime": "version_created_at",
         },
     )
-    definition, definition_reason = _definition(version.get("SchemaDefinition"), max_definition_bytes)
+    definition, definition_reason = _definition(
+        version.get("SchemaDefinition"), max_definition_bytes
+    )
     unresolved = list(collection_unresolved)
     if definition is not None:
         schema["definition"] = definition
@@ -234,14 +245,17 @@ def collect_schema_registry(
         )
         for summary in summaries[:max_schemas]
     ]
-    content = (json.dumps(records, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    content = (json.dumps(records, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode(
+        "utf-8"
+    )
     return _write_and_register(
         root,
         rel_path,
         content,
         kind="schema_registry",
         source="aws-glue-schema-registry-read-only",
-        collect_command=collect_command or "sparkforge collect schema-registry --repo <repo> --now <ISO8601>",
+        collect_command=collect_command
+        or "sparkforge collect schema-registry --repo <repo> --now <ISO8601>",
         now=now,
     )
 

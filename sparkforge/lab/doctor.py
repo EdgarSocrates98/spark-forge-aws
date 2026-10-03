@@ -47,27 +47,56 @@ PROFILE_REQUIREMENTS = {
 }
 
 
-def run_doctor(repo: str | Path = ".", *, registry_path: str | Path = "lab/versions.yaml") -> DoctorReport:
+def run_doctor(
+    repo: str | Path = ".", *, registry_path: str | Path = "lab/versions.yaml"
+) -> DoctorReport:
     root = Path(repo).expanduser().resolve()
     checks: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
     docker = shutil.which("docker")
-    checks.append({"name": "docker", "status": "available" if docker else "unavailable", "path": docker or ""})
-    checks.append({"name": "compose", "status": "available" if docker else "unresolved", "reason": "requires docker compose plugin"})
+    checks.append(
+        {"name": "docker", "status": "available" if docker else "unavailable", "path": docker or ""}
+    )
+    checks.append(
+        {
+            "name": "compose",
+            "status": "available" if docker else "unresolved",
+            "reason": "requires docker compose plugin",
+        }
+    )
     checks.append({"name": "architecture", "status": "available", "value": platform.machine()})
     checks.append({"name": "cpu", "status": "available", "value": os.cpu_count() or 1})
     disk = shutil.disk_usage(root)
-    checks.append({"name": "disk_gb", "status": "available", "value": round(disk.free / 1024**3, 2)})
+    checks.append(
+        {"name": "disk_gb", "status": "available", "value": round(disk.free / 1024**3, 2)}
+    )
     try:
         registry = load_version_registry(root / registry_path)
     except LabContractError as exc:
         checks.append({"name": "version_registry", "status": "unavailable", "reason": str(exc)})
     else:
-        missing_digest = sorted(name for name, value in registry.defaults.items() if not value.get("digest"))
-        checks.append({"name": "version_registry", "status": "available", "components": len(registry.defaults)})
+        missing_digest = sorted(
+            name for name, value in registry.defaults.items() if not value.get("digest")
+        )
+        checks.append(
+            {
+                "name": "version_registry",
+                "status": "available",
+                "components": len(registry.defaults),
+            }
+        )
         if missing_digest:
-            unresolved.append({"code": "image_digest_unresolved", "components": missing_digest, "reason": "registry declares tags; host must resolve digest before run"})
-    profiles = tuple({"name": name, **value, "status": "unresolved_until_host_check"} for name, value in PROFILE_REQUIREMENTS.items())
+            unresolved.append(
+                {
+                    "code": "image_digest_unresolved",
+                    "components": missing_digest,
+                    "reason": "registry declares tags; host must resolve digest before run",
+                }
+            )
+    profiles = tuple(
+        {"name": name, **value, "status": "unresolved_until_host_check"}
+        for name, value in PROFILE_REQUIREMENTS.items()
+    )
     return DoctorReport(tuple(checks), profiles, tuple(unresolved))
 
 

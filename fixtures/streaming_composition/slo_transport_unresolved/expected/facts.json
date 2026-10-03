@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_bcfe62",
+    "id": "f_d2553c",
     "schema_version": 1,
     "kind": "kafka.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,18 +19,18 @@
       "artifact_type": "kafka"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "artifact": "kafka.json",
       "artifact_sha256": "c1995023700d4c22c0cb1c7db444d153ee616589c8e4ccabee2be57739eff5db",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_289895",
+    "id": "f_2715ee",
     "schema_version": 1,
     "kind": "kafka.consumer_group",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -42,18 +42,18 @@
       "state": null
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "artifact": "kafka.json",
       "artifact_sha256": "c1995023700d4c22c0cb1c7db444d153ee616589c8e4ccabee2be57739eff5db",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_889376",
+    "id": "f_38d435",
     "schema_version": 1,
     "kind": "kafka.lag",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -69,45 +69,18 @@
       "observed_at": "2026-10-01T00:10:00Z"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "artifact": "kafka.json",
       "artifact_sha256": "c1995023700d4c22c0cb1c7db444d153ee616589c8e4ccabee2be57739eff5db",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_a26cdf",
+    "id": "f_a74454",
     "schema_version": 1,
     "kind": "kafka.lag",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
-      "line": 1,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {
-      "partition": 0,
-      "lag": 40
-    },
-    "attrs": {
-      "group": "orders-group",
-      "topic": "orders",
-      "observed_at": "2026-10-01T00:00:00Z"
-    },
-    "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
-      "artifact_sha256": "c1995023700d4c22c0cb1c7db444d153ee616589c8e4ccabee2be57739eff5db",
-      "extractor": "streaming_transport@0.1.0"
-    }
-  },
-  {
-    "id": "f_d514c3",
-    "schema_version": 1,
-    "kind": "kafka.lag",
-    "subject": {
-      "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -123,7 +96,34 @@
       "observed_at": "2026-10-01T00:05:00Z"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json",
+      "artifact": "kafka.json",
+      "artifact_sha256": "c1995023700d4c22c0cb1c7db444d153ee616589c8e4ccabee2be57739eff5db",
+      "extractor": "streaming_transport@0.1.0"
+    }
+  },
+  {
+    "id": "f_bef25d",
+    "schema_version": 1,
+    "kind": "kafka.lag",
+    "subject": {
+      "type": "source_location",
+      "file": "kafka.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "partition": 0,
+      "lag": 40
+    },
+    "attrs": {
+      "group": "orders-group",
+      "topic": "orders",
+      "observed_at": "2026-10-01T00:00:00Z"
+    },
+    "provenance": {
+      "artifact": "kafka.json",
       "artifact_sha256": "c1995023700d4c22c0cb1c7db444d153ee616589c8e4ccabee2be57739eff5db",
       "extractor": "streaming_transport@0.1.0"
     }
@@ -156,19 +156,19 @@
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\contract.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json"
+        "contract.json",
+        "kafka.json"
       ],
       "extractor": "streaming_composition@0.1.0"
     }
   },
   {
-    "id": "f_ee720a",
+    "id": "f_11c51d",
     "schema_version": 1,
     "kind": "streaming.slo",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "transport-slo",
@@ -186,7 +186,7 @@
       "source": "kafka"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "4b7233df333d79d54043ee2d769500b395c6b3a90e425ca0c066044ffe973b2b",
       "extractor": "streaming_ops@0.1.0"
     }
@@ -214,19 +214,19 @@
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\contract.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\kafka.json"
+        "contract.json",
+        "kafka.json"
       ],
       "extractor": "streaming_slo@0.1.0"
     }
   },
   {
-    "id": "f_6771ae",
+    "id": "f_2ff6da",
     "schema_version": 1,
     "kind": "streaming_ops.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -245,7 +245,7 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_transport_unresolved\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "4b7233df333d79d54043ee2d769500b395c6b3a90e425ca0c066044ffe973b2b",
       "extractor": "streaming_ops@0.1.0"
     }

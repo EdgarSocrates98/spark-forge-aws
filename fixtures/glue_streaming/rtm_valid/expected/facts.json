@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_75cfc4",
+    "id": "f_545657",
     "schema_version": 1,
     "kind": "glue.streaming.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -16,18 +16,18 @@
       "mode": "REAL_TIME"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_e72b85",
+    "id": "f_667615",
     "schema_version": 1,
     "kind": "glue.streaming.job",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "rtm-valid",
@@ -50,18 +50,18 @@
       "autoscaling": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_c444e5",
+    "id": "f_1b9d34",
     "schema_version": 1,
     "kind": "glue.streaming.runtime",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -72,18 +72,18 @@
       "glue_version": "6.0"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_46dfc0",
+    "id": "f_dbe90a",
     "schema_version": 1,
     "kind": "glue.streaming.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -99,18 +99,18 @@
       "table": "prod.orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_360412",
+    "id": "f_b297ac",
     "schema_version": 1,
     "kind": "glue.streaming.source",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -126,7 +126,7 @@
       "topic": "orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_valid\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "3097dcab2688060013d8ac20b24c41255e16b1c8fa03ade3aff228157bb19b8f",
       "extractor": "glue_streaming@0.1.0"
     }

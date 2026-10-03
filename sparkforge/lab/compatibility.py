@@ -15,7 +15,13 @@ class EquivalencePlan:
     status: str
 
     def to_dict(self) -> dict[str, Any]:
-        return {"table": self.table, "catalog": self.catalog, "engines": list(self.engines), "operations": [dict(item) for item in self.operations], "status": self.status}
+        return {
+            "table": self.table,
+            "catalog": self.catalog,
+            "engines": list(self.engines),
+            "operations": [dict(item) for item in self.operations],
+            "status": self.status,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,10 +33,18 @@ class BlastRadiusComparison:
     false_positive: tuple[str, ...]
 
     def to_dict(self) -> dict[str, Any]:
-        return {"predicted": list(self.predicted), "observed": list(self.observed), "true_positive": list(self.true_positive), "missed": list(self.missed), "false_positive": list(self.false_positive)}
+        return {
+            "predicted": list(self.predicted),
+            "observed": list(self.observed),
+            "true_positive": list(self.true_positive),
+            "missed": list(self.missed),
+            "false_positive": list(self.false_positive),
+        }
 
 
-def build_equivalence_plan(*, table: str, catalog: str, engines: tuple[str, ...] = ("spark", "flink", "trino", "duckdb")) -> EquivalencePlan:
+def build_equivalence_plan(
+    *, table: str, catalog: str, engines: tuple[str, ...] = ("spark", "flink", "trino", "duckdb")
+) -> EquivalencePlan:
     operations = (
         {"writer": "spark", "reader": "flink", "operation": "write_read"},
         {"writer": "flink", "reader": "spark", "operation": "write_read"},
@@ -52,4 +66,9 @@ def compare_blast_radius(predicted: list[str], observed: list[str]) -> BlastRadi
     )
 
 
-__all__ = ["BlastRadiusComparison", "EquivalencePlan", "build_equivalence_plan", "compare_blast_radius"]
+__all__ = [
+    "BlastRadiusComparison",
+    "EquivalencePlan",
+    "build_equivalence_plan",
+    "compare_blast_radius",
+]

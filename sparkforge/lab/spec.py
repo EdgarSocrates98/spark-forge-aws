@@ -12,12 +12,29 @@ from typing import Any
 
 import yaml
 
-
 FORGE_LAB_COMPONENTS = frozenset(
-    {"postgres", "debezium", "kafka", "flink", "spark", "iceberg_rest", "polaris", "minio", "prometheus"}
+    {
+        "postgres",
+        "debezium",
+        "kafka",
+        "flink",
+        "spark",
+        "iceberg_rest",
+        "polaris",
+        "minio",
+        "prometheus",
+    }
 )
 FORGE_LAB_SCENARIOS = frozenset(
-    {"broker_kill", "skew", "consumer_lag", "checkpoint_failure", "small_files", "schema_evolution", "cdc_restart"}
+    {
+        "broker_kill",
+        "skew",
+        "consumer_lag",
+        "checkpoint_failure",
+        "small_files",
+        "schema_evolution",
+        "cdc_restart",
+    }
 )
 
 
@@ -110,7 +127,11 @@ def _build_spec(raw: object, *, source: str) -> ForgeLabSpec:
         for dependency in item.get("depends_on", ()):
             if dependency not in component_ids:
                 unresolved.append(
-                    {"code": "forge_lab_dependency_unresolved", "component": item["id"], "dependency": dependency}
+                    {
+                        "code": "forge_lab_dependency_unresolved",
+                        "component": item["id"],
+                        "dependency": dependency,
+                    }
                 )
     scenarios = _scenarios(raw.get("scenarios"), component_ids, unresolved)
     unresolved.extend(_records(raw.get("unresolved", []), "unresolved"))
@@ -148,14 +169,25 @@ def _components(value: object) -> list[dict[str, Any]]:
         if not isinstance(kind, str) or kind not in FORGE_LAB_COMPONENTS:
             raise ForgeLabError(f"unsupported forge lab component kind: {kind!r}")
         dependencies = raw.get("depends_on", [])
-        if not isinstance(dependencies, list) or not all(isinstance(item, str) for item in dependencies):
+        if not isinstance(dependencies, list) or not all(
+            isinstance(item, str) for item in dependencies
+        ):
             raise ForgeLabError(f"component {identifier} depends_on must be a list of strings")
-        result.append({**dict(raw), "id": identifier.strip(), "kind": kind, "depends_on": sorted(set(dependencies))})
+        result.append(
+            {
+                **dict(raw),
+                "id": identifier.strip(),
+                "kind": kind,
+                "depends_on": sorted(set(dependencies)),
+            }
+        )
         seen.add(identifier)
     return sorted(result, key=lambda item: str(item["id"]))
 
 
-def _scenarios(value: object, component_ids: set[str], unresolved: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _scenarios(
+    value: object, component_ids: set[str], unresolved: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         raise ForgeLabError("forge lab scenarios must be a list")
     result: list[dict[str, Any]] = []
@@ -165,22 +197,46 @@ def _scenarios(value: object, component_ids: set[str], unresolved: list[dict[str
             raise ForgeLabError("forge lab scenario must be an object")
         identifier = raw.get("id")
         target = raw.get("target")
-        if not isinstance(identifier, str) or identifier not in FORGE_LAB_SCENARIOS or identifier in seen:
+        if (
+            not isinstance(identifier, str)
+            or identifier not in FORGE_LAB_SCENARIOS
+            or identifier in seen
+        ):
             raise ForgeLabError(f"unsupported or duplicate forge lab scenario: {identifier!r}")
         if not isinstance(target, str) or not target.strip():
             raise ForgeLabError(f"scenario {identifier} target must be a non-empty string")
         if target not in component_ids:
-            unresolved.append({"code": "forge_lab_scenario_target_unresolved", "scenario": identifier, "target": target})
+            unresolved.append(
+                {
+                    "code": "forge_lab_scenario_target_unresolved",
+                    "scenario": identifier,
+                    "target": target,
+                }
+            )
         evidence = raw.get("expected_evidence", [])
-        if not isinstance(evidence, list) or not all(isinstance(item, str) and item.strip() for item in evidence):
-            raise ForgeLabError(f"scenario {identifier} expected_evidence must be non-empty strings")
+        if not isinstance(evidence, list) or not all(
+            isinstance(item, str) and item.strip() for item in evidence
+        ):
+            raise ForgeLabError(
+                f"scenario {identifier} expected_evidence must be non-empty strings"
+            )
         action = raw.get("action")
         if not isinstance(action, str) or not action.strip():
             raise ForgeLabError(f"scenario {identifier} action must be a non-empty description")
-        result.append({**dict(raw), "id": identifier, "target": target, "expected_evidence": list(evidence), "requires_confirmation": True})
+        result.append(
+            {
+                **dict(raw),
+                "id": identifier,
+                "target": target,
+                "expected_evidence": list(evidence),
+                "requires_confirmation": True,
+            }
+        )
         seen.add(identifier)
     missing = sorted(FORGE_LAB_SCENARIOS - seen)
-    unresolved.extend({"code": "forge_lab_scenario_unresolved", "scenario": item} for item in missing)
+    unresolved.extend(
+        {"code": "forge_lab_scenario_unresolved", "scenario": item} for item in missing
+    )
     return sorted(result, key=lambda item: str(item["id"]))
 
 

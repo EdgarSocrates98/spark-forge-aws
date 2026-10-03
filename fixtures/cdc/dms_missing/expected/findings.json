@@ -9,14 +9,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_cc5757"
+      "f_3aff72"
     ],
     "measured": {},
     "threshold": {},
@@ -68,14 +68,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_cc5757"
+      "f_3aff72"
     ],
     "measured": {},
     "threshold": {},
@@ -128,14 +128,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_cc5757"
+      "f_3aff72"
     ],
     "measured": {},
     "threshold": {},

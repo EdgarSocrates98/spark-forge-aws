@@ -6,6 +6,7 @@ e publica um resumo reauditable com os ids das fontes. Valor ausente ou
 interpolado continua ``unresolved``; resource name não substitui identidade do
 job.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -14,12 +15,8 @@ from typing import Any
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "streaming_glue_cross@0.1.0"
-SOURCE_KINDS = frozenset(
-    {"glue.streaming.job", "tf.resource", "tf.attribute", "tf.unresolved"}
-)
-EMITTED_KINDS = frozenset(
-    {"glue.streaming.terraform_link", "glue.streaming.cross.unresolved"}
-)
+SOURCE_KINDS = frozenset({"glue.streaming.job", "tf.resource", "tf.attribute", "tf.unresolved"})
+EMITTED_KINDS = frozenset({"glue.streaming.terraform_link", "glue.streaming.cross.unresolved"})
 
 _COMPARISON_FIELDS = (
     "glue_version",
@@ -257,9 +254,15 @@ def _link(job: Fact, resource: Fact, attributes: Sequence[Fact], all_facts: Sequ
                 if fact.kind == "tf.attribute"
                 and (
                     (field == "glue_version" and (fact.attrs or {}).get("key") == "glue_version")
-                    or (field == "rtm_enabled" and (fact.attrs or {}).get("key") == "--enable-real-time-mode")
+                    or (
+                        field == "rtm_enabled"
+                        and (fact.attrs or {}).get("key") == "--enable-real-time-mode"
+                    )
                     or (field == "language" and (fact.attrs or {}).get("key") == "--job-language")
-                    or (field == "worker_count" and (fact.attrs or {}).get("key") == "number_of_workers")
+                    or (
+                        field == "worker_count"
+                        and (fact.attrs or {}).get("key") == "number_of_workers"
+                    )
                 )
             )
             if value != declared_value:

@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_15826f",
+    "id": "f_731b9f",
     "schema_version": 1,
     "kind": "cdc.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_invalid\\input\\bad.json",
+      "file": "bad.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -17,18 +17,18 @@
       "event_count": 0
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_invalid\\input\\bad.json",
+      "artifact": "bad.json",
       "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_f284bb",
+    "id": "f_49b4b1",
     "schema_version": 1,
     "kind": "cdc.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_invalid\\input\\bad.json",
+      "file": "bad.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -39,7 +39,7 @@
       "reason": "invalid_json"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_invalid\\input\\bad.json",
+      "artifact": "bad.json",
       "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
       "extractor": "cdc@0.1.0"
     }

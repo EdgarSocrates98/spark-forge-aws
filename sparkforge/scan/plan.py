@@ -42,6 +42,8 @@ KIND_PARA_ANALYZE: dict[str, str | None] = {
     "lakeformation": "lakeformation-grants",
     "glue_resource_link": "glue-resource-link",
     "streaming_integrations": "streaming-integrations",
+    "schema_registry": "schema-registry",
+    "managed_flink_application": "flink",
     # O grafo live é um artefato composto para auditoria. Ainda não há
     # `analyze workspace-graph`; manter `None` produz recusa nomeada em vez
     # de encaminhar o JSON a um extrator incompatível.

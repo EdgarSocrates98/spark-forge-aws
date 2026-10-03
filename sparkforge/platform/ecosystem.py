@@ -11,15 +11,51 @@ from typing import Any
 
 import yaml
 
-
 ECOSYSTEM_CATEGORIES = frozenset({"serving", "ingestion", "ai", "radar"})
 ECOSYSTEM_KINDS = {
-    "serving": frozenset({"trino", "redshift", "clickhouse", "pinot", "druid", "duckdb", "snowflake", "bigquery"}),
-    "ingestion": frozenset({"airbyte", "meltano", "kafka_connect", "debezium", "dms", "jdbc", "api", "sftp", "saas", "mainframe", "sap"}),
-    "ai": frozenset({"feature_store", "feast", "sagemaker_feature_store", "embedding_store", "vector_index", "unstructured_store", "model"}),
+    "serving": frozenset(
+        {"trino", "redshift", "clickhouse", "pinot", "druid", "duckdb", "snowflake", "bigquery"}
+    ),
+    "ingestion": frozenset(
+        {
+            "airbyte",
+            "meltano",
+            "kafka_connect",
+            "debezium",
+            "dms",
+            "jdbc",
+            "api",
+            "sftp",
+            "saas",
+            "mainframe",
+            "sap",
+        }
+    ),
+    "ai": frozenset(
+        {
+            "feature_store",
+            "feast",
+            "sagemaker_feature_store",
+            "embedding_store",
+            "vector_index",
+            "unstructured_store",
+            "model",
+        }
+    ),
     "radar": frozenset({"beam", "datahub", "openmetadata"}),
 }
-RELIABILITY_CONTROLS = frozenset({"idempotency", "checkpointing", "retry", "dlq", "rate_limit", "schema_contract", "freshness_slo", "recovery"})
+RELIABILITY_CONTROLS = frozenset(
+    {
+        "idempotency",
+        "checkpointing",
+        "retry",
+        "dlq",
+        "rate_limit",
+        "schema_contract",
+        "freshness_slo",
+        "recovery",
+    }
+)
 
 
 class PlatformEcosystemError(ValueError):
@@ -76,12 +112,26 @@ def _build(raw: object) -> PlatformEcosystem:
         category = item["category"]
         kind = item["kind"]
         if category not in ECOSYSTEM_CATEGORIES:
-            unresolved.append({"code": "ecosystem_category_unresolved", "system_id": item["id"], "category": category})
+            unresolved.append(
+                {
+                    "code": "ecosystem_category_unresolved",
+                    "system_id": item["id"],
+                    "category": category,
+                }
+            )
         elif kind not in ECOSYSTEM_KINDS[category]:
-            unresolved.append({"code": "ecosystem_kind_unresolved", "system_id": item["id"], "kind": kind})
+            unresolved.append(
+                {"code": "ecosystem_kind_unresolved", "system_id": item["id"], "kind": kind}
+            )
         for field in ("owner", "source_ref"):
             if not item.get(field):
-                unresolved.append({"code": "ecosystem_identity_unresolved", "system_id": item["id"], "field": field})
+                unresolved.append(
+                    {
+                        "code": "ecosystem_identity_unresolved",
+                        "system_id": item["id"],
+                        "field": field,
+                    }
+                )
         if item["id"] not in reliability_ids:
             unresolved.append({"code": "reliability_model_unresolved", "system_id": item["id"]})
     for model in reliability:
@@ -90,19 +140,56 @@ def _build(raw: object) -> PlatformEcosystem:
             unresolved.append({"code": "reliability_system_unresolved", "system_id": system_id})
         for control in RELIABILITY_CONTROLS:
             if control not in model or model[control] is None:
-                unresolved.append({"code": "reliability_control_unresolved", "system_id": system_id, "control": control})
+                unresolved.append(
+                    {
+                        "code": "reliability_control_unresolved",
+                        "system_id": system_id,
+                        "control": control,
+                    }
+                )
     for edge in integrations:
         for field in ("source", "target"):
             if edge.get(field) not in system_ids:
-                unresolved.append({"code": "ecosystem_integration_unresolved", "field": field, "value": edge.get(field)})
+                unresolved.append(
+                    {
+                        "code": "ecosystem_integration_unresolved",
+                        "field": field,
+                        "value": edge.get(field),
+                    }
+                )
         if edge.get("role") == "radar" and edge.get("runtime_dependency") is not False:
-            unresolved.append({"code": "radar_dependency_unresolved", "system_id": edge.get("target"), "reason": "radar must remain optional"})
+            unresolved.append(
+                {
+                    "code": "radar_dependency_unresolved",
+                    "system_id": edge.get("target"),
+                    "reason": "radar must remain optional",
+                }
+            )
     systems.sort(key=lambda item: item["id"])
     reliability.sort(key=lambda item: str(item.get("system_id", "")))
-    integrations.sort(key=lambda item: (str(item.get("source", "")), str(item.get("target", "")), str(item.get("relation", ""))))
-    payload = {"ecosystem": name, "systems": systems, "reliability": reliability, "integrations": integrations, "unresolved": _unique(unresolved)}
+    integrations.sort(
+        key=lambda item: (
+            str(item.get("source", "")),
+            str(item.get("target", "")),
+            str(item.get("relation", "")),
+        )
+    )
+    payload = {
+        "ecosystem": name,
+        "systems": systems,
+        "reliability": reliability,
+        "integrations": integrations,
+        "unresolved": _unique(unresolved),
+    }
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return PlatformEcosystem(name, tuple(systems), tuple(reliability), tuple(integrations), tuple(_unique(unresolved)), fingerprint)
+    return PlatformEcosystem(
+        name,
+        tuple(systems),
+        tuple(reliability),
+        tuple(integrations),
+        tuple(_unique(unresolved)),
+        fingerprint,
+    )
 
 
 def _systems(value: object) -> list[dict[str, Any]]:
@@ -143,4 +230,12 @@ def _canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
 
 
-__all__ = ["ECOSYSTEM_CATEGORIES", "ECOSYSTEM_KINDS", "RELIABILITY_CONTROLS", "PlatformEcosystem", "PlatformEcosystemError", "analyze_platform_ecosystem", "load_platform_ecosystem"]
+__all__ = [
+    "ECOSYSTEM_CATEGORIES",
+    "ECOSYSTEM_KINDS",
+    "RELIABILITY_CONTROLS",
+    "PlatformEcosystem",
+    "PlatformEcosystemError",
+    "analyze_platform_ecosystem",
+    "load_platform_ecosystem",
+]

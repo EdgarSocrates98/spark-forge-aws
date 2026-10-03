@@ -9,7 +9,6 @@ from sparkforge.adapters import _core
 from sparkforge.adapters.tools import call_tool
 from sparkforge.platform.graph import analyze_platform_graph, load_platform_graph
 
-
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "platform" / "graph.yaml"
 
 

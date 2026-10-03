@@ -8,14 +8,18 @@ from sparkforge.adapters import _core
 from sparkforge.adapters.tools import call_tool
 from sparkforge.orchestration.topology import load_orchestration
 
-
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "orchestration" / "control-plane.yaml"
 
 
 def test_orchestration_normalizes_reliability_controls() -> None:
     topology = load_orchestration(FIXTURE)
 
-    assert {item["kind"] for item in topology.orchestrators} == {"airflow", "dagster", "step_functions", "controlm"}
+    assert {item["kind"] for item in topology.orchestrators} == {
+        "airflow",
+        "dagster",
+        "step_functions",
+        "controlm",
+    }
     airflow = next(item for item in topology.workflows if item["id"] == "airflow.orders_ingest")
     assert airflow["retry"]["max_attempts"] == 3
     assert airflow["concurrency"]["pool"] == "streaming"

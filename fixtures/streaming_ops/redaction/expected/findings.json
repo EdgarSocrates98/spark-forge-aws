@@ -9,14 +9,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_6984df"
+      "f_7f5931"
     ],
     "measured": {},
     "threshold": {},
@@ -68,14 +68,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_ops\\redaction\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_6984df"
+      "f_7f5931"
     ],
     "measured": {},
     "threshold": {},

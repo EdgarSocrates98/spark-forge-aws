@@ -40,7 +40,9 @@ def test_streaming_rules_require_runtime_and_sufficient_evidence():
         "SF-STREAM-003",
     }
     assert all(finding.evidence for finding in findings)
-    assert not [item for item in skipped if item["rule_id"] in {finding.rule_id for finding in findings}]
+    assert not [
+        item for item in skipped if item["rule_id"] in {finding.rule_id for finding in findings}
+    ]
 
     no_runtime = judge([query, series], rules, {"spark": "3.5.6"})
     assert not no_runtime
@@ -135,7 +137,9 @@ def test_slo_evaluation_rules_are_evidence_first():
         "streaming.slo.unresolved",
         attrs={"reason": "window_not_covered", "query_name": "orders-query"},
     )
-    assert [finding for finding in judge([unresolved], rules, {}) if finding.rule_id == "SF-STREAM-012"]
+    assert [
+        finding for finding in judge([unresolved], rules, {}) if finding.rule_id == "SF-STREAM-012"
+    ]
 
 
 def test_progress_observability_depth_rules_are_evidence_first():
@@ -204,6 +208,16 @@ def test_kafka_transport_rules_require_observed_conditions():
         "SF-STREAMOBS-004",
     }
     assert all(finding.evidence for finding in findings)
-    assert not [finding for finding in judge([isr_equal], rules, {}) if finding.rule_id == "SF-STREAMOBS-003"]
-    assert not [finding for finding in judge([non_monotonic], rules, {}) if finding.rule_id == "SF-STREAMOBS-004"]
-    assert not [finding for finding in judge([short], rules, {}) if finding.rule_id == "SF-STREAMOBS-004"]
+    assert not [
+        finding
+        for finding in judge([isr_equal], rules, {})
+        if finding.rule_id == "SF-STREAMOBS-003"
+    ]
+    assert not [
+        finding
+        for finding in judge([non_monotonic], rules, {})
+        if finding.rule_id == "SF-STREAMOBS-004"
+    ]
+    assert not [
+        finding for finding in judge([short], rules, {}) if finding.rule_id == "SF-STREAMOBS-004"
+    ]

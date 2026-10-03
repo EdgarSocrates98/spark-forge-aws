@@ -7,8 +7,8 @@ import yaml
 
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_path
 from sparkforge.facts.streaming import extract_streaming_progress_path
-from sparkforge.facts.streaming_ops import extract_streaming_ops_path
 from sparkforge.facts.streaming_composition import build_streaming_composition
+from sparkforge.facts.streaming_ops import extract_streaming_ops_path
 from sparkforge.facts.transport import extract_transport_path
 from sparkforge.findings.models import sort_facts
 from sparkforge.findings.validate import validate_fact, validate_finding
@@ -39,18 +39,19 @@ REQUIRED_FIXTURES = {
 
 
 def _facts(directory: Path):
+    input_dir = directory / "input"
     facts = []
-    for path in sorted((directory / "input").iterdir()):
+    for path in sorted(input_dir.iterdir()):
         if path.name == "progress.jsonl":
-            facts.extend(extract_streaming_progress_path(path))
+            facts.extend(extract_streaming_progress_path(path, repo_root=input_dir))
         elif path.name == "contract.json":
-            facts.extend(extract_streaming_ops_path(path))
+            facts.extend(extract_streaming_ops_path(path, repo_root=input_dir))
         elif path.name == "iceberg.json":
-            facts.extend(extract_iceberg_metadata_path(path))
+            facts.extend(extract_iceberg_metadata_path(path, repo_root=input_dir))
         elif path.name == "kafka.json":
-            facts.extend(extract_transport_path(path, artifact_type="kafka"))
+            facts.extend(extract_transport_path(path, artifact_type="kafka", repo_root=input_dir))
         elif path.name == "kinesis.json":
-            facts.extend(extract_transport_path(path, artifact_type="kinesis"))
+            facts.extend(extract_transport_path(path, artifact_type="kinesis", repo_root=input_dir))
     return facts
 
 

@@ -10,8 +10,18 @@ from typing import Any
 
 from .contract import LabContractError
 
-
-CANONICAL_SCHEMAS = frozenset({"customer", "order", "payment", "clickstream", "iot_sensor", "transaction", "cdc_customer", "fraud_event"})
+CANONICAL_SCHEMAS = frozenset(
+    {
+        "customer",
+        "order",
+        "payment",
+        "clickstream",
+        "iot_sensor",
+        "transaction",
+        "cdc_customer",
+        "fraud_event",
+    }
+)
 
 
 def generate_records(
@@ -29,10 +39,14 @@ def generate_records(
         raise LabContractError(f"unsupported canonical schema: {schema}")
     if record_count <= 0 or key_cardinality <= 0:
         raise LabContractError("record_count and key_cardinality must be positive")
-    for field, value in (("skew", skew), ("late_event_ratio", late_event_ratio), ("duplicate_ratio", duplicate_ratio)):
+    for field, value in (
+        ("skew", skew),
+        ("late_event_ratio", late_event_ratio),
+        ("duplicate_ratio", duplicate_ratio),
+    ):
         if not 0 <= value <= 1:
             raise LabContractError(f"{field} must be between 0 and 1")
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - gerador deterministico de dados sinteticos, nao cripto
     previous: dict[str, Any] | None = None
     for index in range(record_count):
         if previous is not None and rng.random() < duplicate_ratio:

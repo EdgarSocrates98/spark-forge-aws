@@ -23,7 +23,9 @@ def _paths(tmp_path: Path) -> list[str]:
         )
     )
     progress.write_text(
-        json.dumps([fact for fact in progress_facts if fact["kind"].startswith("streaming.progress")]),
+        json.dumps(
+            [fact for fact in progress_facts if fact["kind"].startswith("streaming.progress")]
+        ),
         encoding="utf-8",
     )
     kafka.write_text(
@@ -89,13 +91,21 @@ def test_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
                     "kind": "streaming.progress.batch",
                     "subject": {"type": "source_location", "file": "progress", "line": 1, "col": 0},
                     "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:00:00Z"},
-                    "measures": {"batch_id": 1, "input_rows_per_second": 100, "processed_rows_per_second": 80},
+                    "measures": {
+                        "batch_id": 1,
+                        "input_rows_per_second": 100,
+                        "processed_rows_per_second": 80,
+                    },
                 },
                 {
                     "kind": "streaming.progress.batch",
                     "subject": {"type": "source_location", "file": "progress", "line": 2, "col": 0},
                     "attrs": {"query_name": "orders-query", "timestamp": "2026-10-02T12:00:10Z"},
-                    "measures": {"batch_id": 2, "input_rows_per_second": 110, "processed_rows_per_second": 90},
+                    "measures": {
+                        "batch_id": 2,
+                        "input_rows_per_second": 110,
+                        "processed_rows_per_second": 90,
+                    },
                 },
             ]
         ),
@@ -188,7 +198,12 @@ def test_iceberg_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
             [
                 {
                     "kind": "iceberg.snapshot",
-                    "subject": {"type": "snapshot", "file": "metadata", "symbol": "db.events", "snapshot_id": 101},
+                    "subject": {
+                        "type": "snapshot",
+                        "file": "metadata",
+                        "symbol": "db.events",
+                        "snapshot_id": 101,
+                    },
                     "attrs": {
                         "snapshot_id": 101,
                         "committed_at": "2026-10-02T12:00:00Z",
@@ -200,7 +215,12 @@ def test_iceberg_temporal_cli_and_mcp_envelopes_match(tmp_path: Path):
                 },
                 {
                     "kind": "iceberg.snapshot",
-                    "subject": {"type": "snapshot", "file": "metadata", "symbol": "db.events", "snapshot_id": 102},
+                    "subject": {
+                        "type": "snapshot",
+                        "file": "metadata",
+                        "symbol": "db.events",
+                        "snapshot_id": 102,
+                    },
                     "attrs": {
                         "snapshot_id": 102,
                         "committed_at": "2026-10-02T12:00:10Z",
@@ -263,7 +283,13 @@ def test_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
             [
                 {
                     "kind": "streaming.slo",
-                    "subject": {"type": "source_location", "file": "contract", "line": 1, "col": 0, "symbol": "throughput"},
+                    "subject": {
+                        "type": "source_location",
+                        "file": "contract",
+                        "line": 1,
+                        "col": 0,
+                        "symbol": "throughput",
+                    },
                     "attrs": {
                         "name": "throughput",
                         "metric": "processed_rows_per_second",
@@ -442,7 +468,13 @@ def test_sink_slo_cli_and_mcp_envelopes_match(tmp_path: Path):
             [
                 {
                     "kind": "streaming.slo",
-                    "subject": {"type": "source_location", "file": "contract", "line": 1, "col": 0, "symbol": "sink-output"},
+                    "subject": {
+                        "type": "source_location",
+                        "file": "contract",
+                        "line": 1,
+                        "col": 0,
+                        "symbol": "sink-output",
+                    },
                     "attrs": {
                         "name": "sink-output",
                         "metric": "num_output_rows",

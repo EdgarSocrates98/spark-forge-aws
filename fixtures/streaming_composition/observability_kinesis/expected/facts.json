@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_e30e14",
+    "id": "f_19063f",
     "schema_version": 1,
     "kind": "kinesis.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
+      "file": "kinesis.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,18 +19,18 @@
       "artifact_type": "kinesis"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
+      "artifact": "kinesis.json",
       "artifact_sha256": "ac71955f2f83313a610599101e6f67e69cad1f75a5c7c7d6b7876426f9354ec2",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_96b1d6",
+    "id": "f_e1ece5",
     "schema_version": 1,
     "kind": "kinesis.shard",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
+      "file": "kinesis.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -45,18 +45,18 @@
       "stream_name": "clicks-stream"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
+      "artifact": "kinesis.json",
       "artifact_sha256": "ac71955f2f83313a610599101e6f67e69cad1f75a5c7c7d6b7876426f9354ec2",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_d26a4d",
+    "id": "f_cc6aab",
     "schema_version": 1,
     "kind": "kinesis.stream",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
+      "file": "kinesis.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -68,7 +68,7 @@
       "status": "ACTIVE"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
+      "artifact": "kinesis.json",
       "artifact_sha256": "ac71955f2f83313a610599101e6f67e69cad1f75a5c7c7d6b7876426f9354ec2",
       "extractor": "streaming_transport@0.1.0"
     }
@@ -100,8 +100,8 @@
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl"
+        "kinesis.json",
+        "progress.jsonl"
       ],
       "extractor": "streaming_composition@0.1.0"
     }
@@ -134,28 +134,28 @@
       "link_kind": "declared_input",
       "causal_inference": false,
       "source_fact_ids": [
-        "f_48726d",
-        "f_81555b",
-        "f_96b1d6",
-        "f_d2ae14"
+        "f_c5dc8e",
+        "f_de92e9",
+        "f_e1ece5",
+        "f_f3eda8"
       ]
     },
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\kinesis.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl"
+        "kinesis.json",
+        "progress.jsonl"
       ],
       "extractor": "streaming_composition@0.1.0"
     }
   },
   {
-    "id": "f_97dcb6",
+    "id": "f_2962af",
     "schema_version": 1,
     "kind": "streaming.progress.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -170,18 +170,18 @@
       "parsed": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "6a2e4f19aca6f606679726384484f235e7c86e1665ee181e694a29b8ee81c1f4",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_d2ae14",
+    "id": "f_de92e9",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -201,18 +201,18 @@
       "query_name": "clicks-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "6a2e4f19aca6f606679726384484f235e7c86e1665ee181e694a29b8ee81c1f4",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_81555b",
+    "id": "f_c5dc8e",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -232,18 +232,18 @@
       "query_name": "clicks-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "6a2e4f19aca6f606679726384484f235e7c86e1665ee181e694a29b8ee81c1f4",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_48726d",
+    "id": "f_f3eda8",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -267,7 +267,7 @@
       "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_kinesis\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "6a2e4f19aca6f606679726384484f235e7c86e1665ee181e694a29b8ee81c1f4",
       "extractor": "streaming_progress@0.1.0"
     }

@@ -5,6 +5,7 @@ declared and safe to persist. Secret-like keys are never copied into facts.
 This extractor measures declarations; it does not calculate price, attribute
 cost to a cause, or prove a security control is effective at runtime.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -139,7 +140,9 @@ def _items(data: Any, section: str) -> tuple[list[dict[str, Any]], list[str]]:
     return [item for item in value if isinstance(item, dict)], invalid
 
 
-def _slo(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _slo(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     items, unresolved = _items(data, "slo")
     facts: list[Fact] = []
     for item in items:
@@ -170,12 +173,21 @@ def _slo(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tup
             unresolved.append(f"slo_target_missing:{name}")
         else:
             facts.append(
-                _fact("streaming.slo", artifact, provenance, attrs=attrs, measures={"target": target}, symbol=name)
+                _fact(
+                    "streaming.slo",
+                    artifact,
+                    provenance,
+                    attrs=attrs,
+                    measures={"target": target},
+                    symbol=name,
+                )
             )
     return facts, unresolved
 
 
-def _finops(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _finops(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     items, unresolved = _items(data, "finops")
     facts: list[Fact] = []
     required = ("metric", "unit", "period", "region", "tier", "source")
@@ -186,19 +198,39 @@ def _finops(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> 
         value = _number(item.get("value"))
         if value is None:
             unresolved.append(f"finops_measurement_missing:{name}")
-        missing = [field for field in ("unit", "period", "region", "source") if not _text(item.get(field))]
+        missing = [
+            field for field in ("unit", "period", "region", "source") if not _text(item.get(field))
+        ]
         unresolved.extend(f"finops_context_missing:{name}:{field}" for field in missing)
         if value is not None and not missing:
             facts.append(
-                _fact("streaming.finops", artifact, provenance, attrs=attrs, measures={"value": value}, symbol=name)
+                _fact(
+                    "streaming.finops",
+                    artifact,
+                    provenance,
+                    attrs=attrs,
+                    measures={"value": value},
+                    symbol=name,
+                )
             )
     return facts, unresolved
 
 
-def _security(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _security(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     items, unresolved = _items(data, "security")
     facts: list[Fact] = []
-    controls = ("transport", "auth", "tls", "kms", "vpc", "secrets_manager", "cross_account", "resource_policy")
+    controls = (
+        "transport",
+        "auth",
+        "tls",
+        "kms",
+        "vpc",
+        "secrets_manager",
+        "cross_account",
+        "resource_policy",
+    )
     for index, item in enumerate(items):
         attrs, safe_unresolved = _safe_attrs(item, controls + ("system", "source"))
         unresolved.extend(safe_unresolved)
@@ -207,11 +239,15 @@ def _security(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -
             continue
         missing = [control for control in controls if control not in item]
         unresolved.extend(f"security_control_unresolved:{index}:{control}" for control in missing)
-        facts.append(_fact("streaming.security", artifact, provenance, attrs=attrs, symbol=str(index)))
+        facts.append(
+            _fact("streaming.security", artifact, provenance, attrs=attrs, symbol=str(index))
+        )
     return facts, unresolved
 
 
-def _serving(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _serving(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     items, unresolved = _items(data, "serving")
     facts: list[Fact] = []
     for item in items:
@@ -224,17 +260,29 @@ def _serving(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) ->
             unresolved.append(f"serving_system_missing:{name}")
         latency = _number(item.get("latency_target_ms"))
         measures = {"latency_target_ms": latency} if latency is not None else {}
-        facts.append(_fact("streaming.serving", artifact, provenance, attrs=attrs, measures=measures, symbol=name))
+        facts.append(
+            _fact(
+                "streaming.serving",
+                artifact,
+                provenance,
+                attrs=attrs,
+                measures=measures,
+                symbol=name,
+            )
+        )
     return facts, unresolved
 
 
-def _lakehouse(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tuple[list[Fact], list[str]]:
+def _lakehouse(
+    data: dict[str, Any], artifact: str, provenance: dict[str, Any]
+) -> tuple[list[Fact], list[str]]:
     items, unresolved = _items(data, "lakehouse")
     facts: list[Fact] = []
     for item in items:
         name = _text(item.get("name", item.get("format"))) or "unresolved"
         attrs, safe_unresolved = _safe_attrs(
-            item, ("name", "format", "mode", "change_feed", "checkpoint", "schema_evolution", "features")
+            item,
+            ("name", "format", "mode", "change_feed", "checkpoint", "schema_evolution", "features"),
         )
         unresolved.extend(safe_unresolved)
         if not _text(item.get("format")):
@@ -248,14 +296,34 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
-        return [_fact("streaming_ops.unresolved", artifact, provenance, attrs={"reason": "invalid_json", "line": exc.lineno})]
+        return [
+            _fact(
+                "streaming_ops.unresolved",
+                artifact,
+                provenance,
+                attrs={"reason": "invalid_json", "line": exc.lineno},
+            )
+        ]
     if not isinstance(data, dict):
-        return [_fact("streaming_ops.unresolved", artifact, provenance, attrs={"reason": "root_must_be_object"})]
+        return [
+            _fact(
+                "streaming_ops.unresolved",
+                artifact,
+                provenance,
+                attrs={"reason": "root_must_be_object"},
+            )
+        ]
 
     facts: list[Fact] = []
     reasons: list[str] = []
     for section in ("slo", "finops", "security", "serving", "lakehouse"):
-        builder = {"slo": _slo, "finops": _finops, "security": _security, "serving": _serving, "lakehouse": _lakehouse}[section]
+        builder = {
+            "slo": _slo,
+            "finops": _finops,
+            "security": _security,
+            "serving": _serving,
+            "lakehouse": _lakehouse,
+        }[section]
         section_facts, section_reasons = builder(data, artifact, provenance)
         facts.extend(section_facts)
         reasons.extend(section_reasons)
@@ -275,22 +343,33 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
             "streaming_ops.analyzed",
             artifact,
             provenance,
-            attrs={"sections": sorted(section for section in ("slo", "finops", "security", "serving", "lakehouse") if section in data)},
+            attrs={
+                "sections": sorted(
+                    section
+                    for section in ("slo", "finops", "security", "serving", "lakehouse")
+                    if section in data
+                )
+            },
             measures={"fact_count": len(facts)},
         )
     )
     return sort_facts(facts)
 
 
-def extract_streaming_ops_path(path: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_streaming_ops_path(
+    path: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     target = Path(path)
-    return _extract_text(target.read_text(encoding="utf-8"), str(target))
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return _extract_text(target.read_text(encoding="utf-8"), rel.replace("\\", "/"))
 
 
-def extract_streaming_ops_tree(root: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_streaming_ops_tree(
+    root: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     facts: list[Fact] = []
     for path in iter_source_files(Path(root), "*.json"):
-        facts.extend(_extract_text(path.read_text(encoding="utf-8"), str(path)))
+        facts.extend(extract_streaming_ops_path(path, repo_root=repo_root))
     return sort_facts(facts)
 
 

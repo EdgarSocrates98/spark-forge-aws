@@ -9,14 +9,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_missing_key\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_f4ce15"
+      "f_44c3d7"
     ],
     "measured": {},
     "threshold": {},

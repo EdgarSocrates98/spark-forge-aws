@@ -14,6 +14,7 @@ no manifesto com SHA-256. Connect, Kafka Streams e OpenLineage não possuem uma
 API AWS universal; a ausência fica nomeada para o analyzer, nunca é preenchida
 por inferência.
 """
+
 from __future__ import annotations
 
 import json
@@ -26,7 +27,6 @@ from urllib.parse import urlparse
 from sparkforge.collect.aws import CollectionFailed, _offline_hit, _write_and_register
 from sparkforge.collect.base import (
     ArtifactEntry,
-    CollectorUnavailable,
     require_boto3,
 )
 
@@ -108,7 +108,9 @@ def _parse_iso(value: str) -> datetime:
     except ValueError as exc:
         raise CollectionFailed(f"janela CloudWatch invalida: {value!r}; use ISO 8601") from exc
     if parsed.tzinfo is None:
-        raise CollectionFailed(f"janela CloudWatch sem timezone: {value!r}; use ISO 8601 com timezone")
+        raise CollectionFailed(
+            f"janela CloudWatch sem timezone: {value!r}; use ISO 8601 com timezone"
+        )
     return parsed
 
 
@@ -125,7 +127,11 @@ def _validate_metrics_window(
     end = _parse_iso(metrics_end)
     if end <= start:
         raise CollectionFailed("janela CloudWatch exige metrics_end posterior a metrics_start")
-    if not isinstance(metrics_period, int) or isinstance(metrics_period, bool) or not 60 <= metrics_period <= 86400:
+    if (
+        not isinstance(metrics_period, int)
+        or isinstance(metrics_period, bool)
+        or not 60 <= metrics_period <= 86400
+    ):
         raise ValueError("metrics_period deve estar entre 60 e 86400 segundos")
     if metrics_period % 60:
         raise ValueError("metrics_period deve ser múltiplo de 60 segundos")
@@ -235,7 +241,9 @@ def _kinesis_metrics(
             "reduza a janela ou aumente o período para evitar artifact parcial"
         )
 
-    by_id = {query["Id"]: definition for query, definition in zip(queries, definitions)}
+    by_id = {
+        query["Id"]: definition for query, definition in zip(queries, definitions, strict=True)
+    }
     returned = {str(result.get("Label")) for result in results if result.get("Label")}
     expected = {item["name"] for item in definitions}
     missing = sorted(expected - returned)
@@ -254,7 +262,7 @@ def _kinesis_metrics(
         status = result.get("StatusCode")
         if status not in (None, "Complete"):
             unresolved.append(f"kinesis_metric_status:{definition['name']}:{status}")
-        for timestamp, value in zip(timestamps, values):
+        for timestamp, value in zip(timestamps, values, strict=True):
             if not isinstance(value, (int, float)) or isinstance(value, bool):
                 unresolved.append(f"kinesis_metric_value_invalid:{definition['name']}")
                 continue
@@ -335,7 +343,8 @@ def _kinesis(
         payload["unresolved"].extend(payload["metrics"]["unresolved"])
     else:
         payload["unresolved"].append(
-            "CloudWatch lag, iterator age and reshard history require a separate time-window collection"
+            "CloudWatch lag, iterator age and reshard history "
+            "require a separate time-window collection"
         )
     return payload
 
@@ -352,7 +361,8 @@ def _msk(client: Any, cluster_arn: str) -> dict[str, Any]:
         "api": api,
         "cluster": _redact(response),
         "unresolved": [
-            "broker throughput, consumer lag and network reachability require temporal or endpoint evidence"
+            "broker throughput, consumer lag and network reachability "
+            "require temporal or endpoint evidence"
         ],
     }
 
@@ -363,7 +373,8 @@ def _glue(client: Any, job_name: str) -> dict[str, Any]:
         "job_name": job_name,
         "job": _redact(response.get("Job", response)),
         "unresolved": [
-            "job run progress and Glue Real-Time Mode capability require a run artifact and declared runtime"
+            "job run progress and Glue Real-Time Mode capability "
+            "require a run artifact and declared runtime"
         ],
     }
 
@@ -376,7 +387,8 @@ def _dms(client: Any, task_arn: str) -> dict[str, Any]:
         "task_arn": task_arn,
         "tasks": _redact(response.get("ReplicationTasks", [])),
         "unresolved": [
-            "transaction order, CDC lag history and endpoint connectivity require task statistics or logs"
+            "transaction order, CDC lag history and endpoint connectivity "
+            "require task statistics or logs"
         ],
     }
 
@@ -467,7 +479,8 @@ def collect_streaming_integrations(
             "read_only": True,
             "sections": sorted(sections),
             "unresolved": [
-                "Kafka Connect, Kafka Streams and OpenLineage require their own endpoint or exported artifact"
+                "Kafka Connect, Kafka Streams and OpenLineage "
+                "require their own endpoint or exported artifact"
             ],
         },
         **sections,

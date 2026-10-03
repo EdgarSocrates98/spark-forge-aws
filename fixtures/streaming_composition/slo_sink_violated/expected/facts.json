@@ -27,19 +27,19 @@
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\contract.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl"
+        "contract.json",
+        "progress.jsonl"
       ],
       "extractor": "streaming_composition@0.1.0"
     }
   },
   {
-    "id": "f_6fccc2",
+    "id": "f_b75ed6",
     "schema_version": 1,
     "kind": "streaming.progress.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -54,18 +54,18 @@
       "parsed": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_f3fd72",
+    "id": "f_8c6021",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -84,18 +84,18 @@
       "query_name": "orders-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_ff10d4",
+    "id": "f_7d7ce3",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -114,18 +114,18 @@
       "query_name": "orders-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_8cdbf5",
+    "id": "f_998a1f",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -144,18 +144,18 @@
       "query_name": "orders-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_da2c5f",
+    "id": "f_dc821e",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -179,18 +179,18 @@
       "observed_timestamp_last": "2026-10-01T00:10:00+00:00"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_e627cc",
+    "id": "f_e65e54",
     "schema_version": 1,
     "kind": "streaming.progress.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -205,18 +205,18 @@
       "description": "iceberg-orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_f73019",
+    "id": "f_b14003",
     "schema_version": 1,
     "kind": "streaming.progress.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -231,18 +231,18 @@
       "description": "iceberg-orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_b29421",
+    "id": "f_8a80cc",
     "schema_version": 1,
     "kind": "streaming.progress.sink",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 3,
       "col": 0,
       "symbol": "",
@@ -257,18 +257,18 @@
       "description": "iceberg-orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "b14ef15a593ef20ee607eec4edf85948cf28442a93e675888e3dc443e9f2f48a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_f83b09",
+    "id": "f_a5d296",
     "schema_version": 1,
     "kind": "streaming.slo",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "sink-output",
@@ -287,7 +287,7 @@
       "sink_name": "iceberg-orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "05647ed4bf6e25f7fd27a4a0132507481c1aafd567d7530fd1138d7cb96d5568",
       "extractor": "streaming_ops@0.1.0"
     }
@@ -325,13 +325,13 @@
       "window_covered": true,
       "causal_inference": false,
       "source_fact_ids": [
-        "f_8cdbf5",
-        "f_b29421",
-        "f_e627cc",
-        "f_f3fd72",
-        "f_f73019",
-        "f_f83b09",
-        "f_ff10d4"
+        "f_7d7ce3",
+        "f_8a80cc",
+        "f_8c6021",
+        "f_998a1f",
+        "f_a5d296",
+        "f_b14003",
+        "f_e65e54"
       ],
       "observation_source": "streaming.progress.sink",
       "sink_name": "iceberg-orders"
@@ -339,19 +339,19 @@
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\contract.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\progress.jsonl"
+        "contract.json",
+        "progress.jsonl"
       ],
       "extractor": "streaming_slo@0.1.0"
     }
   },
   {
-    "id": "f_6e296d",
+    "id": "f_2ff6da",
     "schema_version": 1,
     "kind": "streaming_ops.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -370,7 +370,7 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_sink_violated\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "05647ed4bf6e25f7fd27a4a0132507481c1aafd567d7530fd1138d7cb96d5568",
       "extractor": "streaming_ops@0.1.0"
     }

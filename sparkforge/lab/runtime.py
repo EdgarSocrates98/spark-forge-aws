@@ -9,7 +9,6 @@ from typing import Any
 from .contract import LabContractError
 from .scenario import ScenarioAction, ScenarioSpec
 
-
 COMPOSE_PROFILES = {
     "core": "lakehouse",
     "spark": "batch",
@@ -101,12 +100,21 @@ def build_runtime_plan(
     )
 
 
-def build_lifecycle_command(action: str, *, project_name: str, profile: str = "", service: str = "") -> tuple[str, ...]:
+def build_lifecycle_command(
+    action: str, *, project_name: str, profile: str = "", service: str = ""
+) -> tuple[str, ...]:
     if action not in {"up", "down", "status", "shell", "gc"}:
         raise LabContractError(f"unsupported lab lifecycle action: {action}")
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", project_name):
         raise LabContractError("invalid lab project name")
-    base = ["docker", "compose", "--project-name", project_name, "-f", "labs/forge-lab/compose.yaml"]
+    base = [
+        "docker",
+        "compose",
+        "--project-name",
+        project_name,
+        "-f",
+        "labs/forge-lab/compose.yaml",
+    ]
     if action == "up":
         if not profile:
             raise LabContractError("lab up requires a profile")
@@ -136,4 +144,10 @@ def _project_name(slug: str) -> str:
     return f"forge-lab-{value[:48]}"
 
 
-__all__ = ["COMPOSE_PROFILES", "RuntimePlan", "build_lifecycle_command", "build_runtime_plan", "guard_mutation"]
+__all__ = [
+    "COMPOSE_PROFILES",
+    "RuntimePlan",
+    "build_lifecycle_command",
+    "build_runtime_plan",
+    "guard_mutation",
+]

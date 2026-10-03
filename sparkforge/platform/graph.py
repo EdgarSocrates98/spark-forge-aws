@@ -17,7 +17,6 @@ from typing import Any
 
 import yaml
 
-
 PLATFORM_NODE_KINDS = frozenset(
     {
         "dataset",
@@ -187,7 +186,10 @@ class PlatformGraph:
                     continue
                 seen.add(candidate)
                 next_path = (*path, candidate)
-                next_relations = (*relations, {"source": current, "relation": relation, "target": candidate})
+                next_relations = (
+                    *relations,
+                    {"source": current, "relation": relation, "target": candidate},
+                )
                 discovered.append((candidate, depth + 1, next_path, next_relations))
                 queue.append((candidate, depth + 1, next_path, next_relations))
 
@@ -200,8 +202,12 @@ class PlatformGraph:
                 }
             )
 
-        direct = tuple(sorted(candidate for candidate, depth, _path, _relations in discovered if depth == 1))
-        transitive = tuple(sorted(candidate for candidate, depth, _path, _relations in discovered if depth > 1))
+        direct = tuple(
+            sorted(candidate for candidate, depth, _path, _relations in discovered if depth == 1)
+        )
+        transitive = tuple(
+            sorted(candidate for candidate, depth, _path, _relations in discovered if depth > 1)
+        )
         paths = tuple(
             {
                 "node_id": candidate,
@@ -243,7 +249,11 @@ def load_platform_graph(path: str | Path) -> PlatformGraph:
     if not target.is_file():
         raise PlatformGraphError(f"platform graph manifest not found: {path}")
     try:
-        raw = json.loads(target.read_text(encoding="utf-8")) if target.suffix.lower() == ".json" else yaml.safe_load(target.read_text(encoding="utf-8"))
+        raw = (
+            json.loads(target.read_text(encoding="utf-8"))
+            if target.suffix.lower() == ".json"
+            else yaml.safe_load(target.read_text(encoding="utf-8"))
+        )
     except (OSError, json.JSONDecodeError, yaml.YAMLError) as exc:
         raise PlatformGraphError(f"platform graph manifest unreadable: {path}") from exc
     return _build_graph(raw, source=target.as_posix())
@@ -294,7 +304,13 @@ def _build_graph(raw: object, *, source: str) -> PlatformGraph:
         candidates = sorted(node_candidates[node_id], key=lambda item: _canonical(item.to_dict()))
         nodes.append(candidates[0])
         if len({_canonical(item.to_dict()) for item in candidates}) > 1:
-            unresolved.append({"code": "platform_node_conflict", "node_id": node_id, "candidates": len(candidates)})
+            unresolved.append(
+                {
+                    "code": "platform_node_conflict",
+                    "node_id": node_id,
+                    "candidates": len(candidates),
+                }
+            )
 
     edge_candidates: dict[tuple[str, str, str], list[PlatformEdge]] = {}
     for raw_edge in edges_raw:
@@ -306,11 +322,22 @@ def _build_graph(raw: object, *, source: str) -> PlatformGraph:
         candidates = sorted(edge_candidates[key], key=lambda item: _canonical(item.to_dict()))
         edge = candidates[0]
         if edge.source not in node_ids or edge.target not in node_ids:
-            unresolved.append({"code": "platform_edge_unresolved", **dict(zip(("source", "relation", "target"), key))})
+            unresolved.append(
+                {
+                    "code": "platform_edge_unresolved",
+                    **dict(zip(("source", "relation", "target"), key, strict=True)),
+                }
+            )
             continue
         edges.append(edge)
         if len({_canonical(item.to_dict()) for item in candidates}) > 1:
-            unresolved.append({"code": "platform_edge_conflict", **dict(zip(("source", "relation", "target"), key)), "candidates": len(candidates)})
+            unresolved.append(
+                {
+                    "code": "platform_edge_conflict",
+                    **dict(zip(("source", "relation", "target"), key, strict=True)),
+                    "candidates": len(candidates),
+                }
+            )
 
     payload = {
         "schema_version": 1,
@@ -410,7 +437,9 @@ def _required_string(value: object, field_name: str) -> str:
     return value.strip()
 
 
-def _adjacency(edges: Sequence[PlatformEdge], direction: str) -> dict[str, tuple[tuple[str, str], ...]]:
+def _adjacency(
+    edges: Sequence[PlatformEdge], direction: str
+) -> dict[str, tuple[tuple[str, str], ...]]:
     values: dict[str, list[tuple[str, str]]] = {}
     for edge in edges:
         if direction in {"downstream", "both"}:

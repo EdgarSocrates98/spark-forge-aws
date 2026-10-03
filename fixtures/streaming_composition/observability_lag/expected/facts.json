@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_271e58",
+    "id": "f_d2553c",
     "schema_version": 1,
     "kind": "kafka.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,18 +19,18 @@
       "artifact_type": "kafka"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "artifact": "kafka.json",
       "artifact_sha256": "d2f5e9b2a2ba1871cb72ad5b9b2b97f34d199141ca0bdd70cdff97295bcd17ae",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_14de77",
+    "id": "f_2715ee",
     "schema_version": 1,
     "kind": "kafka.consumer_group",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -42,18 +42,18 @@
       "state": "Stable"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "artifact": "kafka.json",
       "artifact_sha256": "d2f5e9b2a2ba1871cb72ad5b9b2b97f34d199141ca0bdd70cdff97295bcd17ae",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_e4ddff",
+    "id": "f_0af33e",
     "schema_version": 1,
     "kind": "kafka.lag",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "file": "kafka.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -70,7 +70,7 @@
       "topic": "orders"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
+      "artifact": "kafka.json",
       "artifact_sha256": "d2f5e9b2a2ba1871cb72ad5b9b2b97f34d199141ca0bdd70cdff97295bcd17ae",
       "extractor": "streaming_transport@0.1.0"
     }
@@ -102,8 +102,8 @@
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl"
+        "kafka.json",
+        "progress.jsonl"
       ],
       "extractor": "streaming_composition@0.1.0"
     }
@@ -137,28 +137,28 @@
       "link_kind": "declared_input",
       "causal_inference": false,
       "source_fact_ids": [
-        "f_34cc06",
-        "f_ac42dd",
-        "f_e4ddff",
-        "f_e848b4"
+        "f_0af33e",
+        "f_cc8abc",
+        "f_d2ddbc",
+        "f_d8728f"
       ]
     },
     "provenance": {
       "artifact": "<composition>",
       "artifacts": [
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\kafka.json",
-        "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl"
+        "kafka.json",
+        "progress.jsonl"
       ],
       "extractor": "streaming_composition@0.1.0"
     }
   },
   {
-    "id": "f_6eb86b",
+    "id": "f_2962af",
     "schema_version": 1,
     "kind": "streaming.progress.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -173,18 +173,18 @@
       "parsed": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_e848b4",
+    "id": "f_d8728f",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -204,18 +204,18 @@
       "query_name": "orders-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_34cc06",
+    "id": "f_cc8abc",
     "schema_version": 1,
     "kind": "streaming.progress.batch",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -235,18 +235,18 @@
       "query_name": "orders-query"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
       "extractor": "streaming_progress@0.1.0"
     }
   },
   {
-    "id": "f_ac42dd",
+    "id": "f_d2ddbc",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -270,7 +270,7 @@
       "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",
+      "artifact": "progress.jsonl",
       "artifact_sha256": "4574e930c487e708ed9c1d59e661e96721e0bc2dbaf2ff621cda489b56aa462a",
       "extractor": "streaming_progress@0.1.0"
     }

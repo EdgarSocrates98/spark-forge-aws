@@ -6,7 +6,6 @@ from sparkforge.facts.schema_registry import extract_schema_registry_tree
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

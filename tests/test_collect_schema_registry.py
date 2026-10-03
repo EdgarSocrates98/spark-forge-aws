@@ -101,7 +101,10 @@ def test_collector_paginates_and_preserves_schema_versions(monkeypatch, tmp_path
     assert any(fact["kind"] == "schema.definition" for fact in facts)
     assert any(fact["kind"] == "schema.unresolved" for fact in facts)
     assert [name for name, _ in fake_glue.calls].count("list_schemas") == 2
-    assert all(name in {"get_registry", "list_schemas", "get_schema", "get_schema_version"} for name, _ in fake_glue.calls)
+    assert all(
+        name in {"get_registry", "list_schemas", "get_schema", "get_schema_version"}
+        for name, _ in fake_glue.calls
+    )
 
 
 def test_collector_cache_is_offline_and_manifested(monkeypatch, tmp_path):

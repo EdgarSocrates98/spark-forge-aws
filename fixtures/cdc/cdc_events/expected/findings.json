@@ -9,14 +9,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_events\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 5,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_6b4b1b"
+      "f_1a008f"
     ],
     "measured": {
       "occurrence": 2
@@ -70,15 +70,15 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_events\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 4,
       "col": 0,
       "symbol": "orders",
       "snippet": ""
     },
     "evidence": [
-      "f_b2c8da",
-      "f_b9090f"
+      "f_d9c2c2",
+      "f_acf822"
     ],
     "measured": {},
     "threshold": {},

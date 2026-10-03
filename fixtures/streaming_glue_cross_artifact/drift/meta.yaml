@@ -5,4 +5,5 @@ expects_kinds:
   - tf.resource
   - tf.attribute
   - glue.streaming.terraform_link
+  - glue.streaming.runtime.unresolved
   - fusion.summary

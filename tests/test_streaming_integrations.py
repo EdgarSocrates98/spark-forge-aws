@@ -14,7 +14,6 @@ from sparkforge.findings.validate import validate_fact, validate_finding
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_integrations"
 
@@ -22,7 +21,9 @@ FIXTURES = ROOT / "fixtures" / "streaming_integrations"
 def test_goldens_cover_checkpoint_connect_streams_and_openlineage():
     for directory in sorted(path for path in FIXTURES.iterdir() if path.is_dir()):
         meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
-        facts = extract_streaming_integrations_path(directory / meta["artifact"])
+        facts = extract_streaming_integrations_path(
+            directory / meta["artifact"], repo_root=directory / "input"
+        )
         findings = judge(facts, load_catalog(), {})
         assert [fact.to_dict() for fact in facts] == json.loads(
             (directory / "expected/facts.json").read_text(encoding="utf-8")
@@ -42,14 +43,36 @@ def test_goldens_cover_checkpoint_connect_streams_and_openlineage():
 def test_cli_and_mcp_envelopes_match(tmp_path: Path):
     source = tmp_path / "integrations.json"
     source.write_text(
-        json.dumps({"openlineage": {"eventType": "COMPLETE", "job": {"name": "job"}, "run": {"runId": "run"}, "inputs": [], "outputs": []}}),
+        json.dumps(
+            {
+                "openlineage": {
+                    "eventType": "COMPLETE",
+                    "job": {"name": "job"},
+                    "run": {"runId": "run"},
+                    "inputs": [],
+                    "outputs": [],
+                }
+            }
+        ),
         encoding="utf-8",
     )
     expected = analyze_streaming_integrations(str(source), limit=20)
-    actual = call_tool("sparkforge_analyze_streaming_integrations", {"path": str(source), "limit": 20})
+    actual = call_tool(
+        "sparkforge_analyze_streaming_integrations", {"path": str(source), "limit": 20}
+    )
     assert actual == expected
     completed = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "analyze", "streaming-integrations", "--path", str(source), "--limit", "20"],
+        [
+            sys.executable,
+            "-m",
+            "sparkforge.adapters.cli",
+            "analyze",
+            "streaming-integrations",
+            "--path",
+            str(source),
+            "--limit",
+            "20",
+        ],
         cwd=ROOT,
         check=True,
         capture_output=True,

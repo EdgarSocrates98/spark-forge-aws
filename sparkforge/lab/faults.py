@@ -7,7 +7,6 @@ from typing import Any
 
 from .contract import LabContractError
 
-
 FAULT_TARGETS = {
     "none": "application",
     "latency": "network",
@@ -38,9 +37,13 @@ def compile_fault(spec: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "type": fault_type,
         "target_kind": FAULT_TARGETS[fault_type],
-        "parameters": {str(key): value for key, value in spec.items() if key not in {"type", "duration"}},
+        "parameters": {
+            str(key): value for key, value in spec.items() if key not in {"type", "duration"}
+        },
         "duration": duration,
-        "mechanism": "toxiproxy" if FAULT_TARGETS[fault_type] == "network" else "declared_backend_action",
+        "mechanism": "toxiproxy"
+        if FAULT_TARGETS[fault_type] == "network"
+        else "declared_backend_action",
         "requires_confirmation": fault_type != "none",
     }
 

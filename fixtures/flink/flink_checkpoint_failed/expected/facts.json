@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_79eb94",
+    "id": "f_3ba9f2",
     "schema_version": 1,
     "kind": "flink.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,19 +19,19 @@
       "artifact": "flink"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_49064a",
+    "id": "f_33cbd4",
     "schema_version": 1,
     "kind": "flink.checkpoint",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -48,19 +48,19 @@
       "externalized": null
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_3bb5fa",
+    "id": "f_e53652",
     "schema_version": 1,
     "kind": "flink.job",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -75,19 +75,19 @@
       "runtime_version": "1.19.2"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_6fae57",
+    "id": "f_9b5e47",
     "schema_version": 1,
     "kind": "flink.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -98,19 +98,19 @@
       "reason": "source_metrics_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"
     }
   },
   {
-    "id": "f_6fae57",
+    "id": "f_9b5e47",
     "schema_version": 1,
     "kind": "flink.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -121,7 +121,7 @@
       "reason": "sink_metrics_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\flink\\flink_checkpoint_failed\\input\\dump.json",
+      "artifact": "dump.json",
       "artifact_sha256": "27d76b6f77b354e2bc4cd1f264fd843ad2cfe2999829c8fba41a8ddb61f5ab5f",
       "extractor": "flink_streaming@0.1.0",
       "domain": "flink"

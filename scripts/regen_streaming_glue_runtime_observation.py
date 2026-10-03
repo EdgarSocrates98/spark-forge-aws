@@ -1,4 +1,5 @@
 """Regenera goldens da observação Glue Streaming efetiva→runs terminais."""
+
 from __future__ import annotations
 
 import json
@@ -41,10 +42,13 @@ def main() -> int:
         (expected / "facts.json").write_text(
             json.dumps([fact.to_dict() for fact in facts], ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
+            newline="\n",
         )
         (expected / "findings.json").write_text(
-            json.dumps([finding.to_dict() for finding in findings], ensure_ascii=False, indent=2) + "\n",
+            json.dumps([finding.to_dict() for finding in findings], ensure_ascii=False, indent=2)
+            + "\n",
             encoding="utf-8",
+            newline="\n",
         )
         print(f"{directory.name}: {len(facts)} facts, {len(findings)} findings")
     return 0

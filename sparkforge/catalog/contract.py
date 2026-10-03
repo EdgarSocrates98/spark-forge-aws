@@ -11,10 +11,27 @@ from typing import Any
 
 import yaml
 
-
-CATALOG_KINDS = frozenset({"glue", "iceberg_rest", "polaris", "s3_tables", "lakeformation", "unity", "nessie"})
-ENGINE_KINDS = frozenset({"spark", "flink", "trino", "athena", "duckdb", "redshift", "clickhouse", "pinot", "druid", "snowflake", "bigquery"})
-_SECRET_KEYS = frozenset({"password", "token", "secret", "access_key", "secret_key", "private_key", "credential"})
+CATALOG_KINDS = frozenset(
+    {"glue", "iceberg_rest", "polaris", "s3_tables", "lakeformation", "unity", "nessie"}
+)
+ENGINE_KINDS = frozenset(
+    {
+        "spark",
+        "flink",
+        "trino",
+        "athena",
+        "duckdb",
+        "redshift",
+        "clickhouse",
+        "pinot",
+        "druid",
+        "snowflake",
+        "bigquery",
+    }
+)
+_SECRET_KEYS = frozenset(
+    {"password", "token", "secret", "access_key", "secret_key", "private_key", "credential"}
+)
 
 
 class LakehouseCatalogError(ValueError):
@@ -82,21 +99,47 @@ def _build(raw: object) -> LakehouseCatalogTopology:
     table_ids = {str(item["id"]) for item in tables}
     for item in catalogs:
         if item["kind"] not in CATALOG_KINDS:
-            unresolved.append({"code": "catalog_kind_unresolved", "catalog_id": item["id"], "kind": item["kind"]})
+            unresolved.append(
+                {"code": "catalog_kind_unresolved", "catalog_id": item["id"], "kind": item["kind"]}
+            )
     for item in engines:
         if item["kind"] not in ENGINE_KINDS:
-            unresolved.append({"code": "engine_kind_unresolved", "engine_id": item["id"], "kind": item["kind"]})
+            unresolved.append(
+                {"code": "engine_kind_unresolved", "engine_id": item["id"], "kind": item["kind"]}
+            )
     for item in tables:
         catalog_id = item.get("catalog_id")
         if catalog_id not in catalog_ids:
-            unresolved.append({"code": "table_catalog_unresolved", "table_id": item["id"], "catalog_id": catalog_id})
+            unresolved.append(
+                {
+                    "code": "table_catalog_unresolved",
+                    "table_id": item["id"],
+                    "catalog_id": catalog_id,
+                }
+            )
     for item in bindings:
-        for field, values in (("catalog_id", (item.get("catalog_id"),)), ("engine_id", (item.get("engine_id"),))):
+        for field, values in (
+            ("catalog_id", (item.get("catalog_id"),)),
+            ("engine_id", (item.get("engine_id"),)),
+        ):
             if values[0] not in (catalog_ids if field == "catalog_id" else engine_ids):
-                unresolved.append({"code": "binding_reference_unresolved", "binding_id": item["id"], "field": field, "value": values[0]})
+                unresolved.append(
+                    {
+                        "code": "binding_reference_unresolved",
+                        "binding_id": item["id"],
+                        "field": field,
+                        "value": values[0],
+                    }
+                )
         for table_id in item.get("table_ids", []):
             if table_id not in table_ids:
-                unresolved.append({"code": "binding_table_unresolved", "binding_id": item["id"], "table_id": table_id})
+                unresolved.append(
+                    {
+                        "code": "binding_table_unresolved",
+                        "binding_id": item["id"],
+                        "table_id": table_id,
+                    }
+                )
     payload = {
         "schema_version": 1,
         "topology": name,
@@ -108,7 +151,17 @@ def _build(raw: object) -> LakehouseCatalogTopology:
         "unresolved": _unique(unresolved),
     }
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return LakehouseCatalogTopology(name, 1, tuple(catalogs), tuple(engines), tuple(tables), tuple(bindings), tuple(provenance), tuple(_unique(unresolved)), fingerprint)
+    return LakehouseCatalogTopology(
+        name,
+        1,
+        tuple(catalogs),
+        tuple(engines),
+        tuple(tables),
+        tuple(bindings),
+        tuple(provenance),
+        tuple(_unique(unresolved)),
+        fingerprint,
+    )
 
 
 def _entities(value: object, label: str, identifier_field: str) -> list[dict[str, Any]]:
@@ -127,7 +180,9 @@ def _entities(value: object, label: str, identifier_field: str) -> list[dict[str
         normalized[identifier_field] = identifier.strip()
         for key in ("capabilities", "table_ids"):
             if key in normalized:
-                if not isinstance(normalized[key], list) or not all(isinstance(item, str) for item in normalized[key]):
+                if not isinstance(normalized[key], list) or not all(
+                    isinstance(item, str) for item in normalized[key]
+                ):
                     raise LakehouseCatalogError(f"{label}.{key} must be a list of strings")
                 normalized[key] = sorted(set(normalized[key]))
         result.append(normalized)
@@ -139,7 +194,9 @@ def _reject_secrets(value: object, path: str) -> None:
     if isinstance(value, Mapping):
         for key, item in value.items():
             key_text = str(key).lower()
-            if key_text in _SECRET_KEYS or any(marker in key_text for marker in ("password", "token", "secret")):
+            if key_text in _SECRET_KEYS or any(
+                marker in key_text for marker in ("password", "token", "secret")
+            ):
                 raise LakehouseCatalogError(f"secret-bearing field refused: {path}.{key}")
             _reject_secrets(item, f"{path}.{key}")
     elif isinstance(value, list):

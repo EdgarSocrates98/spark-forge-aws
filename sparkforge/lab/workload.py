@@ -23,7 +23,7 @@ def compile_workload(spec: Mapping[str, Any], *, seed: int) -> tuple[dict[str, A
     late_events = spec.get("late_events", {})
     if late_events and not isinstance(late_events, Mapping):
         raise LabContractError("workload.late_events must be an object")
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - gerador deterministico de dados sinteticos, nao cripto
     steps = int(spec.get("steps", 3))
     if steps <= 0 or steps > 1000:
         raise LabContractError("workload.steps must be between 1 and 1000")

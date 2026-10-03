@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_2b8c83",
+    "id": "f_e0a7e4",
     "schema_version": 1,
     "kind": "event_driven.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -22,18 +22,18 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact": "architecture.json",
       "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
       "extractor": "event_driven@0.1.0"
     }
   },
   {
-    "id": "f_bed684",
+    "id": "f_7c8443",
     "schema_version": 1,
     "kind": "eventbridge.pipe",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-pipe",
@@ -48,18 +48,18 @@
       "enrichment_declared": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact": "architecture.json",
       "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
       "extractor": "event_driven@0.1.0"
     }
   },
   {
-    "id": "f_437ff4",
+    "id": "f_078624",
     "schema_version": 1,
     "kind": "eventbridge.rule",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-rule",
@@ -79,18 +79,18 @@
       "dead_letter_declared": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact": "architecture.json",
       "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
       "extractor": "event_driven@0.1.0"
     }
   },
   {
-    "id": "f_82928a",
+    "id": "f_dc77a0",
     "schema_version": 1,
     "kind": "sns.subscription",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-events",
@@ -104,18 +104,18 @@
       "redrive_declared": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact": "architecture.json",
       "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
       "extractor": "event_driven@0.1.0"
     }
   },
   {
-    "id": "f_c6e8d6",
+    "id": "f_93e301",
     "schema_version": 1,
     "kind": "sns.topic",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-events",
@@ -126,18 +126,18 @@
       "name": "orders-events"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact": "architecture.json",
       "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
       "extractor": "event_driven@0.1.0"
     }
   },
   {
-    "id": "f_fe337a",
+    "id": "f_3fd9d2",
     "schema_version": 1,
     "kind": "sqs.queue",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders",
@@ -152,7 +152,7 @@
       "redrive_declared": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\sqs_without_dlq\\input\\architecture.json",
+      "artifact": "architecture.json",
       "artifact_sha256": "101c393d9882369ea85fc6c2858222602681577031227899df53a85d635ef777",
       "extractor": "event_driven@0.1.0"
     }

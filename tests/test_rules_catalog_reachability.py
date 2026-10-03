@@ -42,8 +42,8 @@ from sparkforge.facts import (
     benchmark,
     bridge,
     call_graph,
-    cdc,
     catalog_schema,
+    cdc,
     cloudwatch,
     cloudwatch_logs,
     consumers,
@@ -60,11 +60,11 @@ from sparkforge.facts import (
     fusion,
     glue_dq_advanced,
     glue_job_run,
-    glue_streaming,
     # `iam_access` fecha o TERCEIRO item que `lakeformation.unresolved` nomeia,
     # e o faz por SIMULACAO -- `iam:SimulatePrincipalPolicy` -- e nao por parse
     # de policy. Boundary, SCP e deny explicito nao aparecem no documento do role.
     glue_resource_link,
+    glue_streaming,
     graph,
     host_transcript,
     # `glue_resource_link` fecha a perna que `build_access_graph` devolvia
@@ -86,31 +86,31 @@ from sparkforge.facts import (
     pyspark_ast,
     run_cost,
     runtime_detect,
-    schema_registry,
-    streaming_composition,
-    streaming_pipeline,
-    streaming_iceberg_temporal,
-    streaming_integrations,
-    streaming_ops,
-    streaming_slo,
-    streaming_glue_cross,
-    streaming_glue_runtime,
     s3_listing,
+    schema_registry,
     # `sfn_history` entra nas DUAS listas manuais no MESMO commit da area SF-SFNX: sem
     # ele aqui, `sfn.attempt` e `sfn.retry_observado` contam como orfaos e as tres
     # regras seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     sfn_history,
     spark_plan,
-    streaming,
-    transport,
     sql_literal,
     sql_metrics,
     # `stepfunctions` entra nas DUAS listas manuais no MESMO commit da area SF-SFN:
     # sem ele aqui, os cinco kinds `sfn.*` contam como orfaos e as quatro regras
     # seriam forcadas a `blocked_on` sobre um extrator que esta no repositorio.
     stepfunctions,
+    streaming,
+    streaming_composition,
+    streaming_glue_cross,
+    streaming_glue_runtime,
+    streaming_iceberg_temporal,
+    streaming_integrations,
+    streaming_ops,
+    streaming_pipeline,
+    streaming_slo,
     terraform,
     timeout_diagnosis,
+    transport,
     utilization,
     workload,
 )

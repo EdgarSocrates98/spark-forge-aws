@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX = ROOT / "knowledge" / "streaming" / "runtime-matrix.md"
 LOCK = ROOT / "knowledge" / "sources.lock.json"

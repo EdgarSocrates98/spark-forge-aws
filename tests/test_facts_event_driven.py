@@ -4,7 +4,6 @@ from pathlib import Path
 
 from sparkforge.facts.event_driven import extract_event_driven_path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

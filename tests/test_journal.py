@@ -70,7 +70,9 @@ class TestConjunto:
         # 28 -> 29 com `collect_streaming_integrations` (2026-10-02): coleta
         # contrato local de integrações streaming e grava artefato + manifesto.
         # `upstream.sha256` do artefato SDD. `sdd_check` e `sdd_status` so leem.
-        assert len(esperado) == 29
+        # 29 -> 31 com `collect_schema_registry` e `collect_managed_flink`:
+        # ambos gravam artefato + manifesto como os demais coletores.
+        assert len(esperado) == 31
 
     def test_todo_verbo_do_journal_tem_porta_de_cli_pela_convencao(self) -> None:
         assert journaled() <= _verbos_de_cli()

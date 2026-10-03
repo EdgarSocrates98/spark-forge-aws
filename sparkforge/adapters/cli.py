@@ -209,44 +209,72 @@ def build_parser() -> argparse.ArgumentParser:
     # require both --execute and --confirm and never become MCP actions.
     lab_p = sub.add_parser(
         "lab",
-        help="Planeja e inspeciona experimentos Forge Lab; execução mutável exige confirmação explícita.",
+        help="Planeja e inspeciona experimentos Forge Lab; "
+        "execução mutável exige confirmação explícita.",
     )
     lab_sub = lab_p.add_subparsers(dest="lab_action", required=True)
-    lab_doctor_p = lab_sub.add_parser("doctor", help="Verifica host, registry e perfis sem iniciar serviços.")
+    lab_doctor_p = lab_sub.add_parser(
+        "doctor", help="Verifica host, registry e perfis sem iniciar serviços."
+    )
     lab_doctor_p.add_argument("--repo", default=".")
-    lab_sub.add_parser("profiles", help="Lista profiles e requisitos declarados.").add_argument("--repo", default=".")
+    lab_sub.add_parser("profiles", help="Lista profiles e requisitos declarados.").add_argument(
+        "--repo", default="."
+    )
     lab_scenarios_p = lab_sub.add_parser("scenarios", help="Lista o Golden 20 e suas fidelidades.")
     lab_scenarios_p.add_argument("--repo", default=".")
-    lab_scenarios_p.add_argument("--json", action="store_true", help="Mantido por compatibilidade; saída já é JSON.")
-    lab_verify_p = lab_sub.add_parser("verify", help="Verifica registry, Golden 20, schemas e action plans offline.")
+    lab_scenarios_p.add_argument(
+        "--json", action="store_true", help="Mantido por compatibilidade; saída já é JSON."
+    )
+    lab_verify_p = lab_sub.add_parser(
+        "verify", help="Verifica registry, Golden 20, schemas e action plans offline."
+    )
     lab_verify_p.add_argument("--repo", default=".")
-    for action, help_text in (("describe", "Descreve um cenário"), ("plan", "Compila cenário em actions"), ("run", "Planeja ou executa cenário")):
+    for action, help_text in (
+        ("describe", "Descreve um cenário"),
+        ("plan", "Compila cenário em actions"),
+        ("run", "Planeja ou executa cenário"),
+    ):
         scenario_p = lab_sub.add_parser(action, help=help_text)
         scenario_p.add_argument("scenario")
         scenario_p.add_argument("--repo", default=".")
-        scenario_p.add_argument("--backend", choices=("compose", "testcontainers"), default="compose")
+        scenario_p.add_argument(
+            "--backend", choices=("compose", "testcontainers"), default="compose"
+        )
         scenario_p.add_argument("--seed", type=int, default=None)
         scenario_p.add_argument("--execute", action="store_true")
         scenario_p.add_argument("--confirm", action="store_true")
     lab_inspect_p = lab_sub.add_parser("inspect", help="Inspeciona run/receipt e verifica hash.")
     lab_inspect_p.add_argument("path")
     lab_inspect_p.add_argument("--repo", default=".")
-    lab_analyze_p = lab_sub.add_parser("analyze", help="Aponta artifacts capturados para análise posterior.")
+    lab_analyze_p = lab_sub.add_parser(
+        "analyze", help="Aponta artifacts capturados para análise posterior."
+    )
     lab_analyze_p.add_argument("path")
     lab_analyze_p.add_argument("--repo", default=".")
-    lab_compare_p = lab_sub.add_parser("compare", help="Compara dois receipts/runs sem afirmar performance.")
+    lab_compare_p = lab_sub.add_parser(
+        "compare", help="Compara dois receipts/runs sem afirmar performance."
+    )
     lab_compare_p.add_argument("before")
     lab_compare_p.add_argument("after")
     lab_compare_p.add_argument("--repo", default=".")
-    lab_promote_p = lab_sub.add_parser("promote-fixture", help="Promove run revisado para fixture curated.")
+    lab_promote_p = lab_sub.add_parser(
+        "promote-fixture", help="Promove run revisado para fixture curated."
+    )
     lab_promote_p.add_argument("run")
     lab_promote_p.add_argument("destination")
     lab_promote_p.add_argument("--reviewed", action="store_true")
     lab_promote_p.add_argument("--repo", default=".")
-    lab_reproduce_p = lab_sub.add_parser("reproduce", help="Verifica receipt e devolve plano reproduzível.")
+    lab_reproduce_p = lab_sub.add_parser(
+        "reproduce", help="Verifica receipt e devolve plano reproduzível."
+    )
     lab_reproduce_p.add_argument("receipt")
     lab_reproduce_p.add_argument("--repo", default=".")
-    for action, help_text in (("up", "Sobe profile Compose"), ("down", "Derruba projeto Compose"), ("shell", "Planeja shell de serviço"), ("gc", "Planeja coleta de runs")):
+    for action, help_text in (
+        ("up", "Sobe profile Compose"),
+        ("down", "Derruba projeto Compose"),
+        ("shell", "Planeja shell de serviço"),
+        ("gc", "Planeja coleta de runs"),
+    ):
         lifecycle_p = lab_sub.add_parser(action, help=help_text)
         lifecycle_p.add_argument("--repo", default=".")
         lifecycle_p.add_argument("--project", default="forge-lab")
@@ -373,9 +401,13 @@ def build_parser() -> argparse.ArgumentParser:
         "streaming-integrations",
         help="Extrai facts offline de checkpoints, Kafka Connect/Streams e OpenLineage.",
     )
-    streaming_integrations_p.add_argument("--path", required=True, help="Arquivo ou diretório JSON/JSONL.")
+    streaming_integrations_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretório JSON/JSONL."
+    )
     streaming_integrations_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
-    streaming_integrations_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
+    streaming_integrations_p.add_argument(
+        "--kind", action="append", help="Filtra por kind. Repetível."
+    )
     streaming_integrations_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     streaming_integrations_p.add_argument("--cursor")
     _add_detail_level(streaming_integrations_p)
@@ -385,9 +417,7 @@ def build_parser() -> argparse.ArgumentParser:
         "architecture",
         help="Avalia arquitetura declarada sem escolher por preferência ou custo inventado.",
     )
-    architecture_sub = architecture_p.add_subparsers(
-        dest="architecture_action", required=True
-    )
+    architecture_sub = architecture_p.add_subparsers(dest="architecture_action", required=True)
     architecture_streaming_p = architecture_sub.add_parser(
         "streaming",
         help="Compara candidatos streaming por constraints factuais declaradas.",
@@ -413,21 +443,31 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         required=True,
         choices=("iceberg", "iceberg_temporal", "observability", "slo", "temporal", "pipeline"),
-        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline.",
+        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, "
+        "progresso→transporte, SLO→progress/sink/transporte, janela temporal "
+        "pareada ou contrato pipeline.",
     )
     composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
-    composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
-    composition_p.add_argument("--slo-name", default="", help="Nome do SLO declarado; obrigatório quando há mais de uma declaração.")
+    composition_p.add_argument(
+        "--query-name", default="", help="Query Structured Streaming declarada."
+    )
+    composition_p.add_argument(
+        "--slo-name",
+        default="",
+        help="Nome do SLO declarado; obrigatório quando há mais de uma declaração.",
+    )
     composition_p.add_argument(
         "--transport-key",
         default="",
-        help="Grupo/topic Kafka ou stream Kinesis declarado; obrigatório no mode=slo de transporte.",
+        help="Grupo/topic Kafka ou stream Kinesis declarado; "
+        "obrigatório no mode=slo de transporte.",
     )
     composition_p.add_argument(
         "--max-skew-seconds",
         type=float,
         default=None,
-        help="Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
+        help="Tolerância temporal declarada para modes temporal/iceberg_temporal; "
+        "sem valor sai unresolved.",
     )
     composition_p.add_argument(
         "--pipeline-path",
@@ -863,7 +903,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     platform_graph_p = analyze_sub.add_parser(
         "platform-graph",
-        help="Analisa Metadata Graph declarado e impacto de linhagem, sem acessar serviços externos.",
+        help="Analisa Metadata Graph declarado e impacto de linhagem, "
+        "sem acessar serviços externos.",
     )
     platform_graph_p.add_argument(
         "--path", required=True, help="Arquivo JSON ou YAML do Platform Intelligence Graph."
@@ -887,14 +928,18 @@ def build_parser() -> argparse.ArgumentParser:
         "platform-ecosystem",
         help="Analisa serving, ingestion, AI Data Engineering e radar opcional.",
     )
-    platform_ecosystem_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do inventário.")
+    platform_ecosystem_p.add_argument(
+        "--path", required=True, help="Arquivo JSON/YAML do inventário."
+    )
     platform_ecosystem_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
     forge_lab_p = analyze_sub.add_parser(
         "forge-lab",
         help="Descreve topologia e cenários do Forge Lab sem executar Docker ou falhas.",
     )
-    forge_lab_p.add_argument("--path", required=True, help="Arquivo YAML/JSON da topologia Forge Lab.")
+    forge_lab_p.add_argument(
+        "--path", required=True, help="Arquivo YAML/JSON da topologia Forge Lab."
+    )
     forge_lab_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
     lakehouse_catalog_p = analyze_sub.add_parser(
@@ -902,7 +947,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Analisa topologia declarada de catalogs, engines, tabelas e bindings.",
     )
     lakehouse_catalog_p.add_argument(
-        "--path", required=True, help="Arquivo JSON/YAML da topologia de catalog.")
+        "--path", required=True, help="Arquivo JSON/YAML da topologia de catalog."
+    )
     lakehouse_catalog_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
     dbt_p = analyze_sub.add_parser(
@@ -923,14 +969,18 @@ def build_parser() -> argparse.ArgumentParser:
         "data-observability",
         help="Avalia SLI/SLO, error budget, incidentes e dependências offline.",
     )
-    observability_p.add_argument("--path", required=True, help="Arquivo JSON/YAML de observabilidade.")
+    observability_p.add_argument(
+        "--path", required=True, help="Arquivo JSON/YAML de observabilidade."
+    )
     observability_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
     orchestration_p = analyze_sub.add_parser(
         "orchestration",
         help="Analisa mapa normalizado de Airflow, Dagster, Step Functions e Control-M.",
     )
-    orchestration_p.add_argument("--path", required=True, help="Arquivo JSON/YAML do control plane.")
+    orchestration_p.add_argument(
+        "--path", required=True, help="Arquivo JSON/YAML do control plane."
+    )
     orchestration_p.add_argument("--out", help="Escreve o envelope completo em JSON.")
 
     s3_p = analyze_sub.add_parser(
@@ -3373,9 +3423,7 @@ def build_parser() -> argparse.ArgumentParser:
     streaming_collect_p.add_argument(
         "--kinesis-stream", dest="kinesis_stream_name", default="", help="Nome do stream Kinesis."
     )
-    streaming_collect_p.add_argument(
-        "--msk-cluster-arn", default="", help="ARN do cluster MSK."
-    )
+    streaming_collect_p.add_argument("--msk-cluster-arn", default="", help="ARN do cluster MSK.")
     streaming_collect_p.add_argument(
         "--dms-task-arn", default="", help="ARN da replication task DMS."
     )
@@ -3411,13 +3459,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Coleta metadata e latest version read-only do AWS Glue Schema Registry.",
     )
     schema_registry_collect_p.add_argument("--repo", required=True)
-    schema_registry_collect_p.add_argument("--registry-name", default="", help="Nome do registry Glue.")
-    schema_registry_collect_p.add_argument("--schema-name", default="", help="Filtra schema dentro do registry.")
-    schema_registry_collect_p.add_argument("--schema-arn", default="", help="ARN do schema Glue.")
-    schema_registry_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
-    schema_registry_collect_p.add_argument("--max-schemas", type=int, default=100, help="Teto de schemas (1..500).")
     schema_registry_collect_p.add_argument(
-        "--max-definition-bytes", type=int, default=170_000, help="Teto por definição; acima sai unresolved."
+        "--registry-name", default="", help="Nome do registry Glue."
+    )
+    schema_registry_collect_p.add_argument(
+        "--schema-name", default="", help="Filtra schema dentro do registry."
+    )
+    schema_registry_collect_p.add_argument("--schema-arn", default="", help="ARN do schema Glue.")
+    schema_registry_collect_p.add_argument(
+        "--region", dest="region_name", default="", help="Região AWS explícita."
+    )
+    schema_registry_collect_p.add_argument(
+        "--max-schemas", type=int, default=100, help="Teto de schemas (1..500)."
+    )
+    schema_registry_collect_p.add_argument(
+        "--max-definition-bytes",
+        type=int,
+        default=170_000,
+        help="Teto por definição; acima sai unresolved.",
     )
     schema_registry_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
@@ -3429,13 +3488,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     managed_flink_collect_p.add_argument("--repo", required=True)
-    managed_flink_collect_p.add_argument("--application-name", required=True, help="Nome da aplicação Managed Flink.")
-    managed_flink_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
+    managed_flink_collect_p.add_argument(
+        "--application-name", required=True, help="Nome da aplicação Managed Flink."
+    )
+    managed_flink_collect_p.add_argument(
+        "--region", dest="region_name", default="", help="Região AWS explícita."
+    )
     managed_flink_collect_p.add_argument(
         "--metrics-start", default="", help="Início ISO 8601 da janela CloudWatch Managed Flink."
     )
     managed_flink_collect_p.add_argument(
-        "--metrics-end", default="", help="Fim ISO 8601 da janela CloudWatch Managed Flink; exige --metrics-start."
+        "--metrics-end",
+        default="",
+        help="Fim ISO 8601 da janela CloudWatch Managed Flink; exige --metrics-start.",
     )
     managed_flink_collect_p.add_argument(
         "--metrics-period",

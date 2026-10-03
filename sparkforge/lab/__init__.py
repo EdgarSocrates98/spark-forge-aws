@@ -1,5 +1,11 @@
 """Offline Forge Lab / Digital Twin and product contracts."""
 
+from sparkforge.lab.compatibility import (
+    BlastRadiusComparison,
+    EquivalencePlan,
+    build_equivalence_plan,
+    compare_blast_radius,
+)
 from sparkforge.lab.contract import (
     FIDELITY_NAMES,
     FIDELITY_TIERS,
@@ -13,19 +19,6 @@ from sparkforge.lab.contract import (
     load_resource_contract,
     load_version_registry,
 )
-from sparkforge.lab.scenario import (
-    ACTION_KINDS,
-    ScenarioAction,
-    ScenarioSpec,
-    ScenarioSuite,
-    load_scenario_suite,
-)
-from sparkforge.lab.compatibility import (
-    BlastRadiusComparison,
-    EquivalencePlan,
-    build_equivalence_plan,
-    compare_blast_radius,
-)
 from sparkforge.lab.doctor import DoctorReport, run_doctor
 from sparkforge.lab.evidence import (
     capture_artifact,
@@ -36,8 +29,19 @@ from sparkforge.lab.evidence import (
     verify_receipt,
 )
 from sparkforge.lab.oracle import ExpectedOracle, OracleResult
-from sparkforge.lab.runtime import RuntimePlan, build_lifecycle_command, build_runtime_plan, guard_mutation
-
+from sparkforge.lab.runtime import (
+    RuntimePlan,
+    build_lifecycle_command,
+    build_runtime_plan,
+    guard_mutation,
+)
+from sparkforge.lab.scenario import (
+    ACTION_KINDS,
+    ScenarioAction,
+    ScenarioSpec,
+    ScenarioSuite,
+    load_scenario_suite,
+)
 from sparkforge.lab.spec import (
     FORGE_LAB_COMPONENTS,
     FORGE_LAB_SCENARIOS,

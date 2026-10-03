@@ -21,7 +21,17 @@ def test_cli_and_mcp_envelopes_match(tmp_path: Path):
     actual = call_tool("sparkforge_analyze_event_driven", {"path": str(dump), "limit": 20})
     assert actual == expected
     completed = subprocess.run(
-        [sys.executable, "-m", "sparkforge.adapters.cli", "analyze", "event-driven", "--path", str(dump), "--limit", "20"],
+        [
+            sys.executable,
+            "-m",
+            "sparkforge.adapters.cli",
+            "analyze",
+            "event-driven",
+            "--path",
+            str(dump),
+            "--limit",
+            "20",
+        ],
         cwd=ROOT,
         check=True,
         capture_output=True,

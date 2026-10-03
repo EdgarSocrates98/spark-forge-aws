@@ -9,14 +9,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "rtm-incompatible",
       "snippet": ""
     },
     "evidence": [
-      "f_c5992a"
+      "f_4eea5a"
     ],
     "measured": {
       "partition_count": 4,
@@ -76,14 +76,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "rtm-incompatible",
       "snippet": ""
     },
     "evidence": [
-      "f_c5992a"
+      "f_4eea5a"
     ],
     "measured": {
       "partition_count": 4,

@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_edea22",
+    "id": "f_915124",
     "schema_version": 1,
     "kind": "dms.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -16,18 +16,18 @@
       "domain": "dms"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "artifact": "task.json",
       "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_ecb13e",
+    "id": "f_b9d4fd",
     "schema_version": 1,
     "kind": "dms.task",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-full-cdc",
@@ -40,18 +40,18 @@
       "status": "STOPPED"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "artifact": "task.json",
       "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_cc5757",
+    "id": "f_3aff72",
     "schema_version": 1,
     "kind": "dms.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -62,18 +62,18 @@
       "reason": "missing_source_endpoint"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "artifact": "task.json",
       "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_cc5757",
+    "id": "f_3aff72",
     "schema_version": 1,
     "kind": "dms.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -84,18 +84,18 @@
       "reason": "missing_target_endpoint"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "artifact": "task.json",
       "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_cc5757",
+    "id": "f_3aff72",
     "schema_version": 1,
     "kind": "dms.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -106,18 +106,18 @@
       "reason": "missing_table_mappings"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "artifact": "task.json",
       "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_cc5757",
+    "id": "f_3aff72",
     "schema_version": 1,
     "kind": "dms.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "file": "task.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -128,7 +128,7 @@
       "reason": "snapshot_cdc_seam"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\dms_missing\\input\\task.json",
+      "artifact": "task.json",
       "artifact_sha256": "ef5a1bd5b39fbe103178afc839ac0cf9f6a820e6b2904c8deaac2c0d149581c5",
       "extractor": "cdc@0.1.0"
     }

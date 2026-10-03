@@ -8,7 +8,6 @@ from sparkforge.catalog.contract import analyze_lakehouse_catalog
 from sparkforge.platform.ecosystem import analyze_platform_ecosystem
 from sparkforge.platform.graph import analyze_platform_graph
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "platform"
 

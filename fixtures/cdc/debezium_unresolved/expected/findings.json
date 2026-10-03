@@ -9,14 +9,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "file": "connector.json",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_af59e4"
+      "f_7b2186"
     ],
     "measured": {},
     "threshold": {},
@@ -68,14 +68,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\debezium_unresolved\\input\\connector.json",
+      "file": "connector.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-connector",
       "snippet": ""
     },
     "evidence": [
-      "f_b9c918"
+      "f_e9b61b"
     ],
     "measured": {},
     "threshold": {},

@@ -7,7 +7,6 @@ from pathlib import Path
 from sparkforge.analytics.dbt import analyze_dbt_artifacts
 from sparkforge.analytics.duckdb import analyze_duckdb_microscope
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "analytics"
 

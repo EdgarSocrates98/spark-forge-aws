@@ -18,7 +18,8 @@ class FakeManagedFlink:
         return {
             "ApplicationDetail": {
                 "ApplicationName": kwargs["ApplicationName"],
-                "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:application/orders",
+                "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:"
+                "application/orders",
                 "ApplicationStatus": "RUNNING",
                 "RuntimeEnvironment": "FLINK-1_20",
                 "ApplicationVersionId": 7,
@@ -70,7 +71,10 @@ class FakeManagedFlink:
                     },
                 },
                 "CloudWatchLoggingOptionDescriptions": [
-                    {"CloudWatchLoggingOptionId": "log-1", "LogStreamARN": "arn:aws:logs:::log-stream"}
+                    {
+                        "CloudWatchLoggingOptionId": "log-1",
+                        "LogStreamARN": "arn:aws:logs:::log-stream",
+                    }
                 ],
             }
         }
@@ -218,7 +222,10 @@ def test_managed_flink_temporal_metrics_are_collected_and_normalized(monkeypatch
     assert metrics["metrics_missing"] == ["numberOfFailedCheckpoints"]
     assert metrics["metrics_returned"] == 4
     assert metrics["observations"]
-    assert all(observation["observed_at"] == "2026-10-03T01:00:00+00:00" for observation in metrics["observations"])
+    assert all(
+        observation["observed_at"] == "2026-10-03T01:00:00+00:00"
+        for observation in metrics["observations"]
+    )
     assert all(observation["value"] != 0 for observation in metrics["observations"])
     assert "managed_flink_metric_missing:numberOfFailedCheckpoints" in payload["unresolved"]
 
@@ -226,7 +233,9 @@ def test_managed_flink_temporal_metrics_are_collected_and_normalized(monkeypatch
 def test_managed_flink_temporal_cache_is_offline(monkeypatch, tmp_path):
     first_client = FakeManagedFlink()
     first_cloudwatch = FakeCloudWatch()
-    monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(first_client, first_cloudwatch))
+    monkeypatch.setattr(
+        managed_flink, "require_boto3", lambda: FakeBoto3(first_client, first_cloudwatch)
+    )
     common = {
         "application_name": "orders",
         "region_name": "us-east-1",
@@ -364,9 +373,15 @@ def test_collected_artifact_feeds_managed_flink_analyzer(monkeypatch, tmp_path):
 
     result = analyze_flink(str(tmp_path / entry.path), artifact="managed_flink", limit=100)
     kinds = {item["kind"] for item in result["items"]}
-    assert {"managed_flink.application", "managed_flink.config", "managed_flink.unresolved"} <= kinds
+    assert {
+        "managed_flink.application",
+        "managed_flink.config",
+        "managed_flink.unresolved",
+    } <= kinds
     assert "flink.application" not in kinds
-    application = next(item for item in result["items"] if item["kind"] == "managed_flink.application")
+    application = next(
+        item for item in result["items"] if item["kind"] == "managed_flink.application"
+    )
     assert application["attrs"]["application_version_id"] == 7
     assert any(
         item["attrs"].get("reason") == "managed_flink_connectors_not_observed"
@@ -433,7 +448,9 @@ def test_managed_flink_temporal_docs_state_window_and_limits():
         (root / "knowledge/streaming/runtime-matrix.md").read_text(encoding="utf-8"),
         (root / "docs/guia/03-cli.md").read_text(encoding="utf-8"),
         (root / "docs/guia/04-mcp.md").read_text(encoding="utf-8"),
-        (root / "docs/guia/referencia/tools/sparkforge_collect_managed_flink.md").read_text(encoding="utf-8"),
+        (root / "docs/guia/referencia/tools/sparkforge_collect_managed_flink.md").read_text(
+            encoding="utf-8"
+        ),
         (root / "docs/streaming/prompt-coverage.md").read_text(encoding="utf-8"),
     ]
     for document in documents:

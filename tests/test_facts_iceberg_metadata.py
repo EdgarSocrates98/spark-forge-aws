@@ -116,7 +116,11 @@ class TestSnapshotsSummary:
             "table": "db.t",
             "snapshots": [
                 {"snapshot_id": 101, "committed_at": "2026-01-01T00:00:00Z", "operation": "append"},
-                {"snapshot_id": 102, "committed_at": "2026-01-01T00:00:05Z", "operation": "replace"},
+                {
+                    "snapshot_id": 102,
+                    "committed_at": "2026-01-01T00:00:05Z",
+                    "operation": "replace",
+                },
                 {"snapshot_id": 103, "operation": "delete"},
             ],
         }

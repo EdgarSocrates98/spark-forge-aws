@@ -16,7 +16,9 @@ def _fact(kind: str, *, file: str, symbol: str = "", attrs=None, measures=None) 
     )
 
 
-def _facts(*, target: float = 90, metric: str = "processed_rows_per_second", window: str = "5m") -> list[Fact]:
+def _facts(
+    *, target: float = 90, metric: str = "processed_rows_per_second", window: str = "5m"
+) -> list[Fact]:
     facts = [
         _fact(
             "streaming.slo",
@@ -76,7 +78,13 @@ def test_slo_status_and_window_coverage():
 
 @pytest.mark.parametrize(
     ("operator", "target", "expected"),
-    [("lt", 111, "met"), ("lte", 110, "met"), ("gt", 89, "met"), ("gte", 90, "met"), ("eq", 90, "violated")],
+    [
+        ("lt", 111, "met"),
+        ("lte", 110, "met"),
+        ("gt", 89, "met"),
+        ("gte", 90, "met"),
+        ("eq", 90, "violated"),
+    ],
 )
 def test_slo_comparators(operator: str, target: float, expected: str):
     facts = _facts(target=target)
@@ -96,7 +104,12 @@ def test_slo_comparators(operator: str, target: float, expected: str):
     ("facts", "slo_name", "query_name", "reason"),
     [
         (_facts(), "throughput", "", "missing_declared_query_name"),
-        (_facts(metric="p95_end_to_end_latency"), "throughput", "orders-query", "metric_not_observed"),
+        (
+            _facts(metric="p95_end_to_end_latency"),
+            "throughput",
+            "orders-query",
+            "metric_not_observed",
+        ),
         (_facts(window="15m"), "throughput", "orders-query", "window_not_covered"),
     ],
 )
@@ -138,7 +151,7 @@ def _sink_facts(
         )
     ]
     timestamps = ("2026-10-01T00:00:00Z", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z")
-    for index, (value, description) in enumerate(zip(values, descriptions), start=1):
+    for index, (value, description) in enumerate(zip(values, descriptions, strict=True), start=1):
         facts.append(
             _fact(
                 "streaming.progress.sink",
@@ -160,9 +173,7 @@ def _sink_facts(
 
 
 def test_evaluates_sink_output_slo():
-    result = build_streaming_slo(
-        _sink_facts(), slo_name="sink-output", query_name="orders-query"
-    )
+    result = build_streaming_slo(_sink_facts(), slo_name="sink-output", query_name="orders-query")
     evaluation = next(fact for fact in result if fact.kind == "streaming.slo.evaluation")
     assert evaluation.attrs["status"] == "met"
     assert evaluation.attrs["observation_source"] == "streaming.progress.sink"
@@ -187,7 +198,14 @@ def test_sink_slo_uses_batch_timestamp_and_provenance():
     [
         ({"include_batches": False}, "orders-query", "sink_batch_not_found"),
         ({"unit": "ms"}, "orders-query", "unit_mismatch"),
-        ({"descriptions": ("iceberg-orders", "dead-letter", "iceberg-orders"), "sink_name": None}, "orders-query", "ambiguous_sink"),
+        (
+            {
+                "descriptions": ("iceberg-orders", "dead-letter", "iceberg-orders"),
+                "sink_name": None,
+            },
+            "orders-query",
+            "ambiguous_sink",
+        ),
         ({"sink_name": "missing-sink"}, "orders-query", "sink_not_found"),
     ],
 )
@@ -201,8 +219,15 @@ def test_sink_slo_unresolved_reasons(kwargs, query_name: str, reason: str):
 
 
 def _transport_facts(
-    *, source: str = "kafka", metric: str = "lag", unit: str = "records", values=(40, 50, 60),
-    window: str = "5m", target: float = 50, operator: str = "lte", transport_key: str = "orders-group",
+    *,
+    source: str = "kafka",
+    metric: str = "lag",
+    unit: str = "records",
+    values=(40, 50, 60),
+    window: str = "5m",
+    target: float = 50,
+    operator: str = "lte",
+    transport_key: str = "orders-group",
     declared_transport_key: str | None = "orders-group",
     timestamps=("2026-10-01T00:00:00Z", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z"),
 ) -> list[Fact]:
@@ -226,14 +251,20 @@ def _transport_facts(
         )
     ]
     kind = "kafka.lag" if source == "kafka" else "kinesis.shard"
-    identity = {"group": transport_key} if source == "kafka" else {"stream_name": transport_key, "shard_id": "shard-000"}
-    for index, (value, timestamp) in enumerate(zip(values, timestamps), start=1):
+    identity = (
+        {"group": transport_key}
+        if source == "kafka"
+        else {"stream_name": transport_key, "shard_id": "shard-000"}
+    )
+    for value, timestamp in zip(values, timestamps, strict=True):
         facts.append(
             _fact(
                 kind,
                 file=f"{source}.jsonl",
                 attrs={**identity, "observed_at": timestamp},
-                measures={"partition": 0, metric: value} if source == "kafka" else {"iterator_age_ms": value},
+                measures={"partition": 0, metric: value}
+                if source == "kafka"
+                else {"iterator_age_ms": value},
             )
         )
     return facts
@@ -278,7 +309,11 @@ def test_transport_slo_refuses_mixed_transport_series():
         _fact(
             "kafka.lag",
             file="other-kafka.jsonl",
-            attrs={"group": "orders-group", "topic": "returns", "observed_at": "2026-10-01T00:00:00Z"},
+            attrs={
+                "group": "orders-group",
+                "topic": "returns",
+                "observed_at": "2026-10-01T00:00:00Z",
+            },
             measures={"partition": 0, "lag": 10},
         )
     )
@@ -292,7 +327,11 @@ def test_transport_slo_refuses_mixed_transport_series():
     ("kwargs", "transport_key", "reason"),
     [
         ({"declared_transport_key": ""}, "", "missing_declared_transport_key"),
-        ({"timestamps": ("not-a-timestamp", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z")}, "orders-group", "observation_timestamp_missing"),
+        (
+            {"timestamps": ("not-a-timestamp", "2026-10-01T00:05:00Z", "2026-10-01T00:10:00Z")},
+            "orders-group",
+            "observation_timestamp_missing",
+        ),
         ({"window": "15m"}, "orders-group", "window_not_covered"),
     ],
 )
@@ -323,6 +362,7 @@ def test_evaluates_p95_freshness_slo():
     for fact, value in zip(
         [item for item in facts if item.kind == "streaming.progress.batch"],
         (100.0, 200.0, 1000.0),
+        strict=True,
     ):
         fact.measures["freshness_ms"] = value
 

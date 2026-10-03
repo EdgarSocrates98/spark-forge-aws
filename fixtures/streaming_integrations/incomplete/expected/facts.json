@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_4e8918",
+    "id": "f_142dda",
     "schema_version": 1,
     "kind": "kafka.connect",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-source",
@@ -20,18 +20,18 @@
       "connector_class": "io.debezium.connector.postgresql.PostgresConnector"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_7cd16b",
+    "id": "f_d2e433",
     "schema_version": 1,
     "kind": "kafka.connect.task",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-source.task.0",
@@ -44,18 +44,18 @@
       "connector": "orders-source"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_06cbda",
+    "id": "f_e9f246",
     "schema_version": 1,
     "kind": "kafka.streams",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-enrichment",
@@ -69,18 +69,18 @@
       "processing_guarantee": "at_least_once"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_df8325",
+    "id": "f_83e524",
     "schema_version": 1,
     "kind": "kafka.streams.state_store",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-enrichment.store.0",
@@ -93,18 +93,18 @@
       "application_id": "orders-enrichment"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_f2035e",
+    "id": "f_45c527",
     "schema_version": 1,
     "kind": "lineage.openlineage",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-enrichment",
@@ -125,18 +125,18 @@
       "facet_names": []
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_e02e8e",
+    "id": "f_de023a",
     "schema_version": 1,
     "kind": "streaming.checkpoint",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders",
@@ -158,18 +158,18 @@
       "storage": "s3"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_03cf38",
+    "id": "f_9dae4f",
     "schema_version": 1,
     "kind": "streaming_integrations.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -187,18 +187,18 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_b75e73",
+    "id": "f_9156fc",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "checkpoint_context_missing:orders:path",
@@ -210,18 +210,18 @@
       "domain": "checkpoint"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_ddf20c",
+    "id": "f_1110bd",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "checkpoint_series_insufficient:orders",
@@ -233,18 +233,18 @@
       "domain": "checkpoint"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_559ec3",
+    "id": "f_1409a0",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "kafka_connect_context_missing:orders-source:offsets",
@@ -256,18 +256,18 @@
       "domain": "kafka_connect"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_9e0f4a",
+    "id": "f_d2c4de",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "kafka_connect_context_missing:orders-source:status",
@@ -279,18 +279,18 @@
       "domain": "kafka_connect"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_712034",
+    "id": "f_89ce23",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "kafka_streams_context_missing:orders-enrichment:changelog_topics",
@@ -302,18 +302,18 @@
       "domain": "kafka_streams"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_3f4e35",
+    "id": "f_3e866c",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "kafka_streams_context_missing:orders-enrichment:repartition_topics",
@@ -325,18 +325,18 @@
       "domain": "kafka_streams"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }
   },
   {
-    "id": "f_7831bc",
+    "id": "f_60121f",
     "schema_version": 1,
     "kind": "streaming_integrations.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "openlineage_context_missing:orders-enrichment:run",
@@ -348,7 +348,7 @@
       "domain": "openlineage"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_integrations\\incomplete\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "58043a602ace8c29db9917c395bc66d38dc1af3ed0ed924000d000ef8422c771",
       "extractor": "streaming_integrations@0.1.0"
     }

@@ -5,6 +5,7 @@ Confluent, Kafka ou qualquer catálogo. A compatibilidade é uma conclusão
 estrutural limitada ao schema declarado; ausência de contexto vira
 ``schema.unresolved`` e nunca é preenchida por inferência.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -30,19 +31,47 @@ EMITTED_KINDS = frozenset(
 
 
 def _subject(artifact: str, line: int, symbol: str = "") -> dict[str, Any]:
-    return {"type": "source_location", "file": artifact, "line": line, "col": 0, "symbol": symbol, "snippet": ""}
+    return {
+        "type": "source_location",
+        "file": artifact,
+        "line": line,
+        "col": 0,
+        "symbol": symbol,
+        "snippet": "",
+    }
 
 
-def _fact(kind: str, artifact: str, line: int, provenance: dict[str, Any], *, attrs: dict[str, Any] | None = None, measures: dict[str, Any] | None = None, symbol: str = "") -> Fact:
-    return Fact(kind=kind, subject=_subject(artifact, line, symbol), attrs=attrs or {}, measures=measures or {}, provenance=provenance)
+def _fact(
+    kind: str,
+    artifact: str,
+    line: int,
+    provenance: dict[str, Any],
+    *,
+    attrs: dict[str, Any] | None = None,
+    measures: dict[str, Any] | None = None,
+    symbol: str = "",
+) -> Fact:
+    return Fact(
+        kind=kind,
+        subject=_subject(artifact, line, symbol),
+        attrs=attrs or {},
+        measures=measures or {},
+        provenance=provenance,
+    )
 
 
-def _unresolved(artifact: str, line: int, provenance: dict[str, Any], reason: str, **attrs: Any) -> Fact:
+def _unresolved(
+    artifact: str, line: int, provenance: dict[str, Any], reason: str, **attrs: Any
+) -> Fact:
     return _fact("schema.unresolved", artifact, line, provenance, attrs={"reason": reason, **attrs})
 
 
 def _provenance(text: str, artifact: str) -> dict[str, Any]:
-    return {"artifact": artifact, "artifact_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(), "extractor": EXTRACTOR_ID}
+    return {
+        "artifact": artifact,
+        "artifact_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "extractor": EXTRACTOR_ID,
+    }
 
 
 def _text(value: Any) -> str | None:
@@ -127,7 +156,11 @@ def _fields(definition: dict[str, Any]) -> tuple[dict[str, str], list[str]]:
 def _schema_record(data: Any) -> dict[str, Any] | None:
     if not isinstance(data, dict):
         return None
-    return data.get("contract", data.get("schema_record", data)) if isinstance(data.get("contract", data.get("schema_record", data)), dict) else None
+    return (
+        data.get("contract", data.get("schema_record", data))
+        if isinstance(data.get("contract", data.get("schema_record", data)), dict)
+        else None
+    )
 
 
 def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
@@ -143,11 +176,23 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
     previous_definition = _definition(previous)
     name = _text(schema.get("name", schema.get("subject", record.get("subject")))) or ""
     provider = (_text(registry.get("provider", record.get("provider"))) or "generic").lower()
-    format_name = (_text(schema.get("format", schema.get("data_format", record.get("format")))) or "unknown").upper()
-    compatibility = (_text(record.get("compatibility", registry.get("compatibility", schema.get("compatibility")))) or "").upper()
+    format_name = (
+        _text(schema.get("format", schema.get("data_format", record.get("format")))) or "unknown"
+    ).upper()
+    compatibility = (
+        _text(
+            record.get("compatibility", registry.get("compatibility", schema.get("compatibility")))
+        )
+        or ""
+    ).upper()
     auto_register = _bool(record.get("auto_register", schema.get("auto_register")))
     version = record.get("version", schema.get("version"))
-    attrs = {"registry": _text(registry.get("name")) or "", "provider": provider, "subject": name, "format": format_name}
+    attrs = {
+        "registry": _text(registry.get("name")) or "",
+        "provider": provider,
+        "subject": name,
+        "format": format_name,
+    }
     if compatibility:
         attrs["compatibility"] = compatibility
     if auto_register is not None:
@@ -157,35 +202,111 @@ def _extract_record(data: Any, artifact: str, line: int, provenance: dict[str, A
     facts = [_fact("schema.registry", artifact, line, provenance, attrs=attrs, symbol=name)]
     if definition is None:
         facts.append(_unresolved(artifact, line, provenance, "missing_definition", subject=name))
-        facts.append(_fact("schema.analyzed", artifact, line, provenance, attrs={"provider": provider, "subject": name}))
+        facts.append(
+            _fact(
+                "schema.analyzed",
+                artifact,
+                line,
+                provenance,
+                attrs={"provider": provider, "subject": name},
+            )
+        )
         return facts
     fields, required = _fields(definition)
-    facts.append(_fact("schema.definition", artifact, line, provenance, attrs={"subject": name, "type": _type_name(definition.get("type", "record")), "fields": fields, "field_names": sorted(fields), "required_fields": required}, measures={"field_count": len(fields)}, symbol=name))
+    facts.append(
+        _fact(
+            "schema.definition",
+            artifact,
+            line,
+            provenance,
+            attrs={
+                "subject": name,
+                "type": _type_name(definition.get("type", "record")),
+                "fields": fields,
+                "field_names": sorted(fields),
+                "required_fields": required,
+            },
+            measures={"field_count": len(fields)},
+            symbol=name,
+        )
+    )
     if compatibility:
-        facts.append(_fact("schema.compatibility", artifact, line, provenance, attrs={"subject": name, "mode": compatibility}))
+        facts.append(
+            _fact(
+                "schema.compatibility",
+                artifact,
+                line,
+                provenance,
+                attrs={"subject": name, "mode": compatibility},
+            )
+        )
     else:
-        facts.append(_unresolved(artifact, line, provenance, "compatibility_not_declared", subject=name))
+        facts.append(
+            _unresolved(artifact, line, provenance, "compatibility_not_declared", subject=name)
+        )
     if previous_definition is not None:
         old_fields, old_required = _fields(previous_definition)
         added = sorted(set(fields) - set(old_fields))
         removed = sorted(set(old_fields) - set(fields))
-        type_changes = sorted(name for name in set(fields) & set(old_fields) if fields[name] != old_fields[name])
+        type_changes = sorted(
+            name for name in set(fields) & set(old_fields) if fields[name] != old_fields[name]
+        )
         required_changes = sorted(set(required) - set(old_required))
-        backward_breaking = bool(set(removed) & set(old_required) or type_changes or set(required_changes) - set())
+        backward_breaking = bool(
+            set(removed) & set(old_required) or type_changes or set(required_changes) - set()
+        )
         forward_breaking = bool(set(added) & set(required) or type_changes)
         mode = compatibility or "UNKNOWN"
-        compatible = not (("BACKWARD" in mode or mode == "FULL") and backward_breaking) and not (("FORWARD" in mode or mode == "FULL") and forward_breaking)
-        facts.append(_fact("schema.diff", artifact, line, provenance, attrs={"subject": name, "compatibility": mode, "added": added, "removed": removed, "type_changes": type_changes, "required_changes": required_changes, "backward_breaking": backward_breaking, "forward_breaking": forward_breaking, "compatible": compatible}, measures={"changed_field_count": len(set(removed) | set(type_changes) | set(required_changes) | set(added))}, symbol=name))
+        compatible = not (("BACKWARD" in mode or mode == "FULL") and backward_breaking) and not (
+            ("FORWARD" in mode or mode == "FULL") and forward_breaking
+        )
+        facts.append(
+            _fact(
+                "schema.diff",
+                artifact,
+                line,
+                provenance,
+                attrs={
+                    "subject": name,
+                    "compatibility": mode,
+                    "added": added,
+                    "removed": removed,
+                    "type_changes": type_changes,
+                    "required_changes": required_changes,
+                    "backward_breaking": backward_breaking,
+                    "forward_breaking": forward_breaking,
+                    "compatible": compatible,
+                },
+                measures={
+                    "changed_field_count": len(
+                        set(removed) | set(type_changes) | set(required_changes) | set(added)
+                    )
+                },
+                symbol=name,
+            )
+        )
     elif "compatibility" in record or "compatibility" in schema:
-        facts.append(_unresolved(artifact, line, provenance, "previous_schema_missing", subject=name))
-    facts.append(_fact("schema.analyzed", artifact, line, provenance, attrs={"provider": provider, "subject": name, "format": format_name}))
+        facts.append(
+            _unresolved(artifact, line, provenance, "previous_schema_missing", subject=name)
+        )
+    facts.append(
+        _fact(
+            "schema.analyzed",
+            artifact,
+            line,
+            provenance,
+            attrs={"provider": provider, "subject": name, "format": format_name},
+        )
+    )
     return facts
 
 
 def _extract_text(text: str, artifact: str) -> list[Fact]:
     provenance = _provenance(text, artifact)
     records, invalid = _records(text, artifact)
-    facts: list[Fact] = [_unresolved(artifact, line, provenance, "invalid_json") for line, _ in invalid]
+    facts: list[Fact] = [
+        _unresolved(artifact, line, provenance, "invalid_json") for line, _ in invalid
+    ]
     for line, record in records:
         facts.extend(_extract_record(record, artifact, line, provenance))
     if not facts:
@@ -193,18 +314,28 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
     return sort_facts(facts)
 
 
-def extract_schema_registry_path(path: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_schema_registry_path(
+    path: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     target = Path(path)
-    return _extract_text(target.read_text(encoding="utf-8"), str(target))
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return _extract_text(target.read_text(encoding="utf-8"), rel.replace("\\", "/"))
 
 
-def extract_schema_registry_tree(root: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_schema_registry_tree(
+    root: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     base = Path(root)
     facts: list[Fact] = []
     for pattern in ("*.json", "*.jsonl"):
         for target in iter_source_files(base, pattern):
-            facts.extend(_extract_text(target.read_text(encoding="utf-8"), str(target)))
+            facts.extend(extract_schema_registry_path(target, repo_root=repo_root))
     return sort_facts(facts)
 
 
-__all__ = ["EMITTED_KINDS", "EXTRACTOR_ID", "extract_schema_registry_path", "extract_schema_registry_tree"]
+__all__ = [
+    "EMITTED_KINDS",
+    "EXTRACTOR_ID",
+    "extract_schema_registry_path",
+    "extract_schema_registry_tree",
+]

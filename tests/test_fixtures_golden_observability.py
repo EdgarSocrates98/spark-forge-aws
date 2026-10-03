@@ -6,7 +6,6 @@ from pathlib import Path
 
 from sparkforge.observability.sre import analyze_data_observability
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "observability"
 

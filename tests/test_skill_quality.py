@@ -31,7 +31,14 @@ def test_all_frontmatter_is_skill_creator_compatible() -> None:
         assert parsed is not None
         front, _ = parsed
         document = yaml.safe_load(front)
-        assert set(document) <= {"name", "description", "metadata", "primary_verbs", "subagent", "agent"}
+        assert set(document) <= {
+            "name",
+            "description",
+            "metadata",
+            "primary_verbs",
+            "subagent",
+            "agent",
+        }
         assert document["name"] == skill_dir.name
         assert document["description"].startswith("Use quando")
         assert len(document["description"]) <= 1024

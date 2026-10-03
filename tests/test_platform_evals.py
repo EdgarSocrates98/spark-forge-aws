@@ -6,7 +6,6 @@ from pathlib import Path
 
 from scripts.check_platform_eval_contract import validate
 
-
 SUITE = Path(__file__).parents[1] / "evals" / "platform_intelligence" / "suite.yaml"
 
 

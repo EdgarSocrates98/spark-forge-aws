@@ -82,14 +82,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_runtime_divergent\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_b3ae4a"
+      "f_e88d7e"
     ],
     "measured": {
       "observation_count": 2,
@@ -160,14 +160,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_runtime_divergent\\input\\progress.jsonl",
+      "file": "progress.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
       "snippet": ""
     },
     "evidence": [
-      "f_b3ae4a"
+      "f_e88d7e"
     ],
     "measured": {
       "observation_count": 2,

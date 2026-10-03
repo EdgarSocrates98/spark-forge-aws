@@ -5,6 +5,7 @@ capacidade por inferência. A definição efetiva fornece a expectativa observad
 no artefato; ``glue.job_run`` fornece o que o histórico terminal registrou.
 Ausência de run/campo é ``unresolved``, nunca igualdade.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -97,7 +98,11 @@ def _observed_values(runs: Sequence[Fact], axis: str) -> list[Any]:
 
 
 def _run_id(fact: Fact) -> str:
-    return _text((fact.subject or {}).get("job_run_id")) or _text((fact.subject or {}).get("symbol")) or fact.id
+    return (
+        _text((fact.subject or {}).get("job_run_id"))
+        or _text((fact.subject or {}).get("symbol"))
+        or fact.id
+    )
 
 
 def _unresolved(

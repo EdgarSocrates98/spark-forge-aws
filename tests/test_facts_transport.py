@@ -44,8 +44,18 @@ def test_kafka_dump_emits_topic_partition_group_and_lag_facts():
         ],
     }
     facts = extract_transport_text(json.dumps(payload), "kafka.json", artifact="kafka")
-    assert {"kafka.cluster", "kafka.topic", "kafka.partition", "kafka.consumer_group", "kafka.lag", "kafka.config", "kafka.analyzed"} <= _kinds(facts)
-    partition = next(f for f in facts if f.kind == "kafka.partition" and f.measures["isr_count"] == 1)
+    assert {
+        "kafka.cluster",
+        "kafka.topic",
+        "kafka.partition",
+        "kafka.consumer_group",
+        "kafka.lag",
+        "kafka.config",
+        "kafka.analyzed",
+    } <= _kinds(facts)
+    partition = next(
+        f for f in facts if f.kind == "kafka.partition" and f.measures["isr_count"] == 1
+    )
     assert partition.measures["replication_factor"] == 2
     assert partition.measures["isr_count"] == 1
     lag = next(f for f in facts if f.kind == "kafka.lag")
@@ -77,21 +87,32 @@ def test_msk_and_kinesis_dump_emit_observed_facts():
                 "record_count": 3,
             }
         ],
-        "metrics": [{"name": "GetRecords.IteratorAgeMilliseconds", "value": 1200, "unit": "Milliseconds"}],
+        "metrics": [
+            {"name": "GetRecords.IteratorAgeMilliseconds", "value": 1200, "unit": "Milliseconds"}
+        ],
     }
     msk_facts = extract_transport_text(json.dumps(msk), "msk.json", artifact="msk")
     kinesis_facts = extract_transport_text(json.dumps(kinesis), "kinesis.json", artifact="kinesis")
     assert {"msk.cluster", "msk.analyzed"} <= _kinds(msk_facts)
     assert next(f for f in msk_facts if f.kind == "msk.cluster").attrs["kafka_version"] == "3.6.0"
-    assert {"kinesis.stream", "kinesis.shard", "kinesis.metric", "kinesis.analyzed"} <= _kinds(kinesis_facts)
-    assert next(f for f in kinesis_facts if f.kind == "kinesis.shard").measures["iterator_age_ms"] == 1200
+    assert {"kinesis.stream", "kinesis.shard", "kinesis.metric", "kinesis.analyzed"} <= _kinds(
+        kinesis_facts
+    )
+    assert (
+        next(f for f in kinesis_facts if f.kind == "kinesis.shard").measures["iterator_age_ms"]
+        == 1200
+    )
 
 
 def test_transport_blind_spots_are_unresolved():
     bad = extract_transport_text("{not-json", "bad.json", artifact="kafka")
-    unknown = extract_transport_text(json.dumps({"something": True}), "unknown.json", artifact="kinesis")
+    unknown = extract_transport_text(
+        json.dumps({"something": True}), "unknown.json", artifact="kinesis"
+    )
     assert any(f.kind == "kafka.unresolved" and f.attrs["reason"] == "invalid_json" for f in bad)
-    assert any(f.kind == "kinesis.unresolved" and f.attrs["reason"] == "missing_shape" for f in unknown)
+    assert any(
+        f.kind == "kinesis.unresolved" and f.attrs["reason"] == "missing_shape" for f in unknown
+    )
     assert any(f.kind == "kinesis.analyzed" for f in unknown)
 
 
@@ -231,7 +252,6 @@ def test_kafka_legacy_snapshot_does_not_infer_lag_series():
     assert any(fact.kind == "kafka.lag" for fact in facts)
     assert not any(fact.kind == "kafka.lag.series" for fact in facts)
     assert not any(
-        fact.kind == "kafka.unresolved"
-        and fact.attrs["reason"].startswith("lag_series_")
+        fact.kind == "kafka.unresolved" and fact.attrs["reason"].startswith("lag_series_")
         for fact in facts
     )

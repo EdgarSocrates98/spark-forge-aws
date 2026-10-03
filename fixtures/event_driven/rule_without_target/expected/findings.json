@@ -9,14 +9,14 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\event_driven\\rule_without_target\\input\\architecture.json",
+      "file": "architecture.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-rule",
       "snippet": ""
     },
     "evidence": [
-      "f_b8623d"
+      "f_ddcd2f"
     ],
     "measured": {
       "target_count": 0

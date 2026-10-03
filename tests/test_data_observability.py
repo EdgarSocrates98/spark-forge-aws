@@ -8,7 +8,6 @@ from sparkforge.adapters import _core
 from sparkforge.adapters.tools import call_tool
 from sparkforge.observability.sre import load_data_observability
 
-
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "observability" / "sre.yaml"
 
 
@@ -20,7 +19,10 @@ def test_observability_evaluates_slos_and_error_budget() -> None:
     assert by_id["orders_freshness"]["error_budget_consumed_fraction"] > 0
     assert by_id["orders_completeness"]["status"] == "met"
     assert by_id["orders_latency_missing"]["status"] == "unresolved"
-    assert {item["code"] for item in report.unresolved} >= {"slo_measurement_unresolved", "incident_mttr_unresolved"}
+    assert {item["code"] for item in report.unresolved} >= {
+        "slo_measurement_unresolved",
+        "incident_mttr_unresolved",
+    }
 
 
 def test_observability_preserves_incidents_dependencies_and_blast_radius() -> None:

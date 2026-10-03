@@ -11,7 +11,6 @@ from pathlib import Path
 from sparkforge.lab.contract import load_version_registry
 from sparkforge.lab.scenario import load_scenario_suite
 
-
 ROOT = Path(__file__).parents[1]
 
 

@@ -4,6 +4,7 @@ The extractor accepts saved JSON for EventBridge rules/Pipes, SQS queues and
 SNS topics/subscriptions. It never calls AWS and keeps missing redrive, retry,
 or target evidence unresolved instead of treating absence as a safe default.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -106,7 +107,9 @@ def _section(data: dict[str, Any], *names: str) -> Any:
     return None
 
 
-def _rules(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _rules(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     raw = _section(data, "eventbridge_rules", "eventbridge", "rules")
     if isinstance(raw, dict):
         raw = raw.get("rules", raw.get("Rules"))
@@ -136,9 +139,7 @@ def _rules(data: dict[str, Any], artifact: str, line: int, provenance: dict[str,
         )
         dlq_declared = any(
             isinstance(target, dict)
-            and isinstance(
-                target.get("dead_letter_config", target.get("DeadLetterConfig")), dict
-            )
+            and isinstance(target.get("dead_letter_config", target.get("DeadLetterConfig")), dict)
             for target in targets
         )
         attrs: dict[str, Any] = {
@@ -165,7 +166,9 @@ def _rules(data: dict[str, Any], artifact: str, line: int, provenance: dict[str,
     return facts
 
 
-def _pipes(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _pipes(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     raw = _section(data, "eventbridge_pipes", "pipes")
     if isinstance(raw, dict):
         raw = raw.get("pipes", raw.get("Pipes"))
@@ -187,15 +190,23 @@ def _pipes(data: dict[str, Any], artifact: str, line: int, provenance: dict[str,
         attrs = {
             "name": name,
             "state": _text(item.get("state", item.get("State"))) or "unknown",
-            "source_type": _text(source.get("type")) if isinstance(source, dict) else _text(source) or "unknown",
-            "target_type": _text(target.get("type")) if isinstance(target, dict) else _text(target) or "unknown",
+            "source_type": _text(source.get("type"))
+            if isinstance(source, dict)
+            else _text(source) or "unknown",
+            "target_type": _text(target.get("type"))
+            if isinstance(target, dict)
+            else _text(target) or "unknown",
             "enrichment_declared": item.get("enrichment") is not None,
         }
-        facts.append(_fact("eventbridge.pipe", artifact, line, provenance, attrs=attrs, symbol=name))
+        facts.append(
+            _fact("eventbridge.pipe", artifact, line, provenance, attrs=attrs, symbol=name)
+        )
     return facts
 
 
-def _queues(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _queues(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     raw = _section(data, "sqs_queues", "sqs", "queues")
     if isinstance(raw, dict):
         raw = raw.get("queues", raw.get("Queues"))
@@ -231,7 +242,11 @@ def _queues(data: dict[str, Any], artifact: str, line: int, provenance: dict[str
         visibility = item.get("visibility_timeout", item.get("VisibilityTimeout"))
         if isinstance(visibility, (int, float)) and not isinstance(visibility, bool):
             measures["visibility_timeout_seconds"] = visibility
-        facts.append(_fact("sqs.queue", artifact, line, provenance, attrs=attrs, measures=measures, symbol=name))
+        facts.append(
+            _fact(
+                "sqs.queue", artifact, line, provenance, attrs=attrs, measures=measures, symbol=name
+            )
+        )
     return facts
 
 
@@ -252,7 +267,9 @@ def _sns(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, A
             continue
         name = _text(item.get("name", item.get("TopicArn")))
         if name:
-            facts.append(_fact("sns.topic", artifact, line, provenance, attrs={"name": name}, symbol=name))
+            facts.append(
+                _fact("sns.topic", artifact, line, provenance, attrs={"name": name}, symbol=name)
+            )
         else:
             facts.append(_unresolved(artifact, line, provenance, "sns_topic_name_missing"))
     if subscriptions is not None and not isinstance(subscriptions, list):
@@ -266,7 +283,9 @@ def _sns(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, A
         protocol = _text(item.get("protocol", item.get("Protocol")))
         endpoint = _text(item.get("endpoint", item.get("Endpoint")))
         if not topic or not protocol:
-            facts.append(_unresolved(artifact, line, provenance, "sns_subscription_identity_missing"))
+            facts.append(
+                _unresolved(artifact, line, provenance, "sns_subscription_identity_missing")
+            )
             continue
         redrive = item.get("redrive_policy", item.get("RedrivePolicy"))
         facts.append(
@@ -308,24 +327,42 @@ def _extract_text(text: str, artifact: str) -> list[Fact]:
             artifact,
             1,
             provenance,
-            attrs={"sections": sorted({fact.kind.split(".", 1)[0] for fact in facts if not fact.kind.endswith("unresolved")})},
+            attrs={
+                "sections": sorted(
+                    {
+                        fact.kind.split(".", 1)[0]
+                        for fact in facts
+                        if not fact.kind.endswith("unresolved")
+                    }
+                )
+            },
             measures={"fact_count": len(facts)},
         )
     )
     return sort_facts(facts)
 
 
-def extract_event_driven_path(path: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_event_driven_path(
+    path: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     target = Path(path)
-    return _extract_text(target.read_text(encoding="utf-8"), str(target))
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return _extract_text(target.read_text(encoding="utf-8"), rel.replace("\\", "/"))
 
 
-def extract_event_driven_tree(root: str | Path, *, repo_root: str | Path | None = None) -> list[Fact]:
+def extract_event_driven_tree(
+    root: str | Path, *, repo_root: str | Path | None = None
+) -> list[Fact]:
     base = Path(root)
     facts: list[Fact] = []
     for path in iter_source_files(base, "*.json"):
-        facts.extend(_extract_text(path.read_text(encoding="utf-8"), str(path)))
+        facts.extend(extract_event_driven_path(path, repo_root=repo_root))
     return sort_facts(facts)
 
 
-__all__ = ["EMITTED_KINDS", "EXTRACTOR_ID", "extract_event_driven_path", "extract_event_driven_tree"]
+__all__ = [
+    "EMITTED_KINDS",
+    "EXTRACTOR_ID",
+    "extract_event_driven_path",
+    "extract_event_driven_tree",
+]

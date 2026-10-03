@@ -8,7 +8,6 @@ from pathlib import Path
 from sparkforge.adapters._core import analyze_streaming_ops
 from sparkforge.adapters.tools import TOOLS, call_tool
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

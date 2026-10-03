@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_63894e",
+    "id": "f_ed6281",
     "schema_version": 1,
     "kind": "cdc.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -17,18 +17,18 @@
       "event_count": 2
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_106811",
+    "id": "f_1ba100",
     "schema_version": 1,
     "kind": "cdc.event",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "orders",
@@ -49,18 +49,18 @@
       "schema_changed": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_00a41b",
+    "id": "f_938513",
     "schema_version": 1,
     "kind": "cdc.event",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "orders",
@@ -80,18 +80,18 @@
       "schema_changed": false
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_715b5e",
+    "id": "f_4dadfb",
     "schema_version": 1,
     "kind": "cdc.snapshot",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -102,18 +102,18 @@
       "state": "false"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_715b5e",
+    "id": "f_4dadfb",
     "schema_version": 1,
     "kind": "cdc.snapshot",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -124,18 +124,18 @@
       "state": "true"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_6f5bf0",
+    "id": "f_45aab1",
     "schema_version": 1,
     "kind": "cdc.transaction",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -151,18 +151,18 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_6f5bf0",
+    "id": "f_45aab1",
     "schema_version": 1,
     "kind": "cdc.transaction",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -178,18 +178,18 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_55c2e8",
+    "id": "f_44c3d7",
     "schema_version": 1,
     "kind": "cdc.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -200,18 +200,18 @@
       "reason": "snapshot_cdc_seam"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }
   },
   {
-    "id": "f_5f7eb4",
+    "id": "f_d691fb",
     "schema_version": 1,
     "kind": "cdc.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "file": "events.jsonl",
       "line": 2,
       "col": 0,
       "symbol": "",
@@ -223,7 +223,7 @@
       "operation": "UPDATE"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\cdc\\cdc_seam_unresolved\\input\\events.jsonl",
+      "artifact": "events.jsonl",
       "artifact_sha256": "de28f13137bda87a52d71bd172481a26b86fdd0c204244122bd3d3f958a68b27",
       "extractor": "cdc@0.1.0"
     }

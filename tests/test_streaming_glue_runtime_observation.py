@@ -21,7 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "streaming_glue_runtime_observation"
 
 
-def _fact(kind: str, *, attrs=None, measures=None, subject=None, file="artifact.json", symbol="", line=1):
+def _fact(
+    kind: str, *, attrs=None, measures=None, subject=None, file="artifact.json", symbol="", line=1
+):
     return Fact(
         kind=kind,
         subject=subject
@@ -50,7 +52,9 @@ def _effective(name="orders-stream", *, version="6.0", workers=4, worker_type="G
     measures = {}
     if workers is not None:
         measures["worker_count"] = workers
-    return _fact("glue.streaming.job", attrs=attrs, measures=measures, file="effective.json", symbol=name)
+    return _fact(
+        "glue.streaming.job", attrs=attrs, measures=measures, file="effective.json", symbol=name
+    )
 
 
 def _run(
@@ -62,7 +66,11 @@ def _run(
     worker_type="G.1X",
     state="SUCCEEDED",
 ):
-    attrs = {"state": state, "started_on": "2026-10-02T00:00:00Z", "completed_on": "2026-10-02T00:01:00Z"}
+    attrs = {
+        "state": state,
+        "started_on": "2026-10-02T00:00:00Z",
+        "completed_on": "2026-10-02T00:01:00Z",
+    }
     if version is not None:
         attrs["glue_version"] = version
     if worker_type is not None:
@@ -81,7 +89,11 @@ def _run(
 
 
 def _link(facts):
-    return [fact for fact in build_streaming_glue_runtime_observation(facts) if fact.kind == "glue.streaming.runtime_link"]
+    return [
+        fact
+        for fact in build_streaming_glue_runtime_observation(facts)
+        if fact.kind == "glue.streaming.runtime_link"
+    ]
 
 
 def test_effective_glue_fact_preserves_runtime_capacity_fields(tmp_path):
@@ -129,7 +141,11 @@ def test_runtime_link_reports_drift_and_unresolved_without_inference():
 
     missing = _link([_effective(), _run(version=None, workers=None, worker_type=None)])[0]
     assert missing.attrs["comparison_status"] == "unresolved"
-    assert set(missing.attrs["unresolved_fields"]) == {"glue_version", "worker_type", "worker_count"}
+    assert set(missing.attrs["unresolved_fields"]) == {
+        "glue_version",
+        "worker_type",
+        "worker_count",
+    }
     assert missing.measures["unresolved_count"] == 3
 
     no_run = build_streaming_glue_runtime_observation([_effective()])
@@ -155,7 +171,9 @@ def test_fuse_runtime_observation_is_guarded_and_idempotent():
 
     once = fuse([_effective(), _run()])
     twice = fuse(once)
-    as_dicts = lambda facts: sorted((fact.to_dict() for fact in facts), key=lambda item: item["id"])
+    def as_dicts(facts):
+        return sorted((fact.to_dict() for fact in facts), key=lambda item: item["id"])
+
     assert as_dicts(once) == as_dicts(twice)
 
 
@@ -184,8 +202,12 @@ def test_fixture_goldens_cover_consistent_drift_and_unresolved():
     assert {path.name for path in FIXTURES.iterdir() if path.is_dir()} == required
     for directory in sorted(path for path in FIXTURES.iterdir() if path.is_dir()):
         meta, facts, findings = _run_fixture(directory)
-        expected_facts = json.loads((directory / "expected" / "facts.json").read_text(encoding="utf-8"))
-        expected_findings = json.loads((directory / "expected" / "findings.json").read_text(encoding="utf-8"))
+        expected_facts = json.loads(
+            (directory / "expected" / "facts.json").read_text(encoding="utf-8")
+        )
+        expected_findings = json.loads(
+            (directory / "expected" / "findings.json").read_text(encoding="utf-8")
+        )
         assert [fact.to_dict() for fact in facts] == expected_facts
         assert [finding.to_dict() for finding in findings] == expected_findings
         assert {fact.kind for fact in facts} == set(meta["expects_kinds"])

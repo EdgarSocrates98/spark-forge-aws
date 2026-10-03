@@ -97,9 +97,9 @@ def _derivados_de_facts(pool):
         run_cost,
         runtime_detect,
         streaming_composition,
-        streaming_iceberg_temporal,
         streaming_glue_cross,
         streaming_glue_runtime,
+        streaming_iceberg_temporal,
         streaming_pipeline,
         streaming_slo,
         streaming_temporal,
@@ -126,7 +126,10 @@ def _derivados_de_facts(pool):
     # lista explícita mantém a medida fail-closed quando um novo derivador
     # declara EMITTED_KINDS mas não possui extract_*_path/tree.
     yield "streaming_glue_cross", streaming_glue_cross.build_streaming_glue_cross_artifact(pool)
-    yield "streaming_glue_runtime", streaming_glue_runtime.build_streaming_glue_runtime_observation(pool)
+    yield (
+        "streaming_glue_runtime",
+        streaming_glue_runtime.build_streaming_glue_runtime_observation(pool),
+    )
     yield "streaming_pipeline", streaming_pipeline.build_streaming_pipeline(
         pool,
         {

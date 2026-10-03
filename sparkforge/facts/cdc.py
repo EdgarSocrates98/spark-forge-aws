@@ -4,6 +4,7 @@ O módulo consome dumps JSON/JSONL já salvos. Não chama banco, Kafka Connect,
 Debezium ou AWS DMS. Posições, chaves, transações e estados ausentes ficam
 nomeados como ``unresolved``; nenhum offset, delete ou capacidade é inferido.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -80,7 +81,9 @@ def _unresolved(
     reason: str,
     **attrs: Any,
 ) -> Fact:
-    return _fact(f"{domain}.unresolved", artifact, line, provenance, attrs={"reason": reason, **attrs})
+    return _fact(
+        f"{domain}.unresolved", artifact, line, provenance, attrs={"reason": reason, **attrs}
+    )
 
 
 def _provenance(text: str, artifact: str) -> dict[str, Any]:
@@ -144,12 +147,15 @@ def _mapping_rules(value: Any) -> list[dict[str, Any]]:
     return []
 
 
-def _extract_debezium(data: Any, artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _extract_debezium(
+    data: Any, artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     if not isinstance(data, dict):
         return [_unresolved("debezium", artifact, line, provenance, "invalid_connector_record")]
     config = data.get("connector", data.get("config", data))
     if not isinstance(config, dict):
         return [_unresolved("debezium", artifact, line, provenance, "missing_connector_config")]
+
     def value(*keys: str) -> Any:
         for key in keys:
             if key in config:
@@ -189,13 +195,24 @@ def _extract_debezium(data: Any, artifact: str, line: int, provenance: dict[str,
         if item is not None
     }
     facts: list[Fact] = [
-        _fact("debezium.connector", artifact, line, provenance, attrs=attrs, symbol=attrs.get("name", "")),
+        _fact(
+            "debezium.connector",
+            artifact,
+            line,
+            provenance,
+            attrs=attrs,
+            symbol=attrs.get("name", ""),
+        ),
         _fact("debezium.analyzed", artifact, line, provenance, attrs={"domain": "debezium"}),
     ]
     status = data.get("status", data.get("connect_status"))
     if isinstance(status, dict):
         task_states = status.get("tasks", [])
-        states = [item.get("state") for item in task_states if isinstance(item, dict) and item.get("state")]
+        states = [
+            item.get("state")
+            for item in task_states
+            if isinstance(item, dict) and item.get("state")
+        ]
         facts.append(
             _fact(
                 "debezium.status",
@@ -203,16 +220,27 @@ def _extract_debezium(data: Any, artifact: str, line: int, provenance: dict[str,
                 line,
                 provenance,
                 measures={"task_count": len(task_states)},
-                attrs={"connector_state": status.get("connector", {}).get("state") if isinstance(status.get("connector"), dict) else status.get("state"), "task_states": states},
+                attrs={
+                    "connector_state": status.get("connector", {}).get("state")
+                    if isinstance(status.get("connector"), dict)
+                    else status.get("state"),
+                    "task_states": states,
+                },
             )
         )
-    for field, reason in ((connector_class, "connector_class"), (snapshot_mode, "snapshot_mode"), (topic_prefix, "topic_prefix")):
+    for field, reason in (
+        (connector_class, "connector_class"),
+        (snapshot_mode, "snapshot_mode"),
+        (topic_prefix, "topic_prefix"),
+    ):
         if field is None:
             facts.append(_unresolved("debezium", artifact, line, provenance, f"missing_{reason}"))
     if history is None:
         facts.append(_unresolved("debezium", artifact, line, provenance, "schema_history"))
     if tombstones is None and delete_handling is not None:
-        facts.append(_unresolved("debezium", artifact, line, provenance, "delete_tombstone_behavior"))
+        facts.append(
+            _unresolved("debezium", artifact, line, provenance, "delete_tombstone_behavior")
+        )
     return facts
 
 
@@ -221,11 +249,20 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
         return [_unresolved("dms", artifact, line, provenance, "invalid_task_record")]
     task = data.get("task", data.get("replication_task", data))
     task = task if isinstance(task, dict) else {}
-    migration_type = _text(task.get("migration_type", task.get("MigrationType", data.get("migration_type"))))
+    migration_type = _text(
+        task.get("migration_type", task.get("MigrationType", data.get("migration_type")))
+    )
     name = _text(task.get("name", task.get("ReplicationTaskIdentifier", data.get("name"))))
     settings = task.get("settings", task.get("ReplicationTaskSettings", data.get("settings", {})))
     settings = settings if isinstance(settings, dict) else {}
-    validation = _bool(task.get("validation_enabled", settings.get("ValidationSettings", {}).get("EnableValidation") if isinstance(settings.get("ValidationSettings"), dict) else None))
+    validation = _bool(
+        task.get(
+            "validation_enabled",
+            settings.get("ValidationSettings", {}).get("EnableValidation")
+            if isinstance(settings.get("ValidationSettings"), dict)
+            else None,
+        )
+    )
     attrs = {
         key: item
         for key, item in {
@@ -235,8 +272,17 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
             "source_engine": _text(task.get("source_engine", task.get("SourceEndpointEngine"))),
             "target_engine": _text(task.get("target_engine", task.get("TargetEndpointEngine"))),
             "validation_enabled": validation,
-            "recovery_table": _bool(task.get("recovery_table", settings.get("ControlTablesSettings", {}).get("ControlSchema") if isinstance(settings.get("ControlTablesSettings"), dict) else None)),
-            "cdc_start_position": _text(task.get("cdc_start_position", task.get("CdcStartPosition"))),
+            "recovery_table": _bool(
+                task.get(
+                    "recovery_table",
+                    settings.get("ControlTablesSettings", {}).get("ControlSchema")
+                    if isinstance(settings.get("ControlTablesSettings"), dict)
+                    else None,
+                )
+            ),
+            "cdc_start_position": _text(
+                task.get("cdc_start_position", task.get("CdcStartPosition"))
+            ),
         }.items()
         if item is not None
     }
@@ -244,7 +290,10 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
         _fact("dms.task", artifact, line, provenance, attrs=attrs, symbol=name or ""),
         _fact("dms.analyzed", artifact, line, provenance, attrs={"domain": "dms"}),
     ]
-    for endpoint_key, endpoint_type in (("source_endpoint", "SOURCE"), ("target_endpoint", "TARGET")):
+    for endpoint_key, endpoint_type in (
+        ("source_endpoint", "SOURCE"),
+        ("target_endpoint", "TARGET"),
+    ):
         endpoint = data.get(endpoint_key, data.get(endpoint_key.replace("_", "")))
         if isinstance(endpoint, dict):
             endpoint_attrs = {
@@ -259,9 +308,22 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
                 if item is not None
             }
             measures = {"port": endpoint_attrs.pop("port")} if "port" in endpoint_attrs else {}
-            facts.append(_fact("dms.endpoint", artifact, line, provenance, measures=measures, attrs=endpoint_attrs))
+            facts.append(
+                _fact(
+                    "dms.endpoint",
+                    artifact,
+                    line,
+                    provenance,
+                    measures=measures,
+                    attrs=endpoint_attrs,
+                )
+            )
         else:
-            facts.append(_unresolved("dms", artifact, line, provenance, f"missing_{endpoint_type.lower()}_endpoint"))
+            facts.append(
+                _unresolved(
+                    "dms", artifact, line, provenance, f"missing_{endpoint_type.lower()}_endpoint"
+                )
+            )
     mapping_rules = _mapping_rules(data.get("table_mappings", data.get("TableMappings")))
     for mapping in mapping_rules:
         locator = mapping.get("object_locator", mapping.get("objectLocator", {}))
@@ -277,7 +339,9 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
                     "rule_action": _text(mapping.get("rule_action", mapping.get("ruleAction"))),
                     "schema": _text(locator.get("schema_name", locator.get("schemaName"))),
                     "table": _text(locator.get("table_name", locator.get("tableName"))),
-                    "target_schema": _text(mapping.get("target_schema", mapping.get("targetSchema"))),
+                    "target_schema": _text(
+                        mapping.get("target_schema", mapping.get("targetSchema"))
+                    ),
                     "target_table": _text(mapping.get("target_table", mapping.get("targetTable"))),
                     "key_columns_declared": mapping.get("key_columns", mapping.get("keyColumns")),
                 },
@@ -285,7 +349,12 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
         )
     if not mapping_rules:
         facts.append(_unresolved("dms", artifact, line, provenance, "missing_table_mappings"))
-    if migration_type and migration_type.upper() in {"FULL-LOAD-AND-CDC", "FULL_LOAD_AND_CDC", "FULL LOAD AND CDC"} and not attrs.get("cdc_start_position"):
+    if (
+        migration_type
+        and migration_type.upper()
+        in {"FULL-LOAD-AND-CDC", "FULL_LOAD_AND_CDC", "FULL LOAD AND CDC"}
+        and not attrs.get("cdc_start_position")
+    ):
         facts.append(_unresolved("dms", artifact, line, provenance, "snapshot_cdc_seam"))
     stats = data.get("stats", data.get("table_statistics", []))
     if isinstance(stats, list):
@@ -299,17 +368,34 @@ def _extract_dms(data: Any, artifact: str, line: int, provenance: dict[str, Any]
                     "full_load_rows": stat.get("full_load_rows", stat.get("FullLoadRows")),
                     "cdc_changes": stat.get("cdc_changes", stat.get("CdcChanges")),
                     "latency_seconds": stat.get("latency_seconds", stat.get("CDCLatencySource")),
-                    "validation_failures": stat.get("validation_failures", stat.get("ValidationFailedRecords")),
+                    "validation_failures": stat.get(
+                        "validation_failures", stat.get("ValidationFailedRecords")
+                    ),
                 }.items()
                 if (number := _number(raw)) is not None
             }
-            facts.append(_fact("dms.stats", artifact, line, provenance, measures=measures, attrs={"schema": stat.get("schema"), "table": stat.get("table"), "status": stat.get("status")}))
+            facts.append(
+                _fact(
+                    "dms.stats",
+                    artifact,
+                    line,
+                    provenance,
+                    measures=measures,
+                    attrs={
+                        "schema": stat.get("schema"),
+                        "table": stat.get("table"),
+                        "status": stat.get("status"),
+                    },
+                )
+            )
     elif stats is not None:
         facts.append(_unresolved("dms", artifact, line, provenance, "missing_task_stats"))
     return facts
 
 
-def _extract_cdc_events(records: list[tuple[int, Any]], artifact: str, provenance: dict[str, Any]) -> list[Fact]:
+def _extract_cdc_events(
+    records: list[tuple[int, Any]], artifact: str, provenance: dict[str, Any]
+) -> list[Fact]:
     facts: list[Fact] = []
     positions: Counter[str] = Counter()
     transactions: dict[str, dict[str, Any]] = defaultdict(lambda: {"events": 0, "tables": set()})
@@ -346,11 +432,23 @@ def _extract_cdc_events(records: list[tuple[int, Any]], artifact: str, provenanc
         source = payload.get("source", {})
         source = source if isinstance(source, dict) else {}
         op_raw = _text(payload.get("op", record.get("op")))
-        operation = {"c": "CREATE", "r": "READ", "u": "UPDATE", "d": "DELETE", "t": "TRUNCATE"}.get((op_raw or "").lower(), op_raw.upper() if op_raw else None)
+        operation = {"c": "CREATE", "r": "READ", "u": "UPDATE", "d": "DELETE", "t": "TRUNCATE"}.get(
+            (op_raw or "").lower(), op_raw.upper() if op_raw else None
+        )
         before = payload.get("before")
         after = payload.get("after")
-        position = _text(source.get("lsn", source.get("pos", source.get("file_pos", source.get("offset", payload.get("source_position"))))))
-        transaction_id = _text(source.get("txId", source.get("txid", payload.get("transaction_id"))))
+        position = _text(
+            source.get(
+                "lsn",
+                source.get(
+                    "pos",
+                    source.get("file_pos", source.get("offset", payload.get("source_position"))),
+                ),
+            )
+        )
+        transaction_id = _text(
+            source.get("txId", source.get("txid", payload.get("transaction_id")))
+        )
         table = _text(source.get("table", payload.get("table")))
         key = payload.get("key", record.get("key"))
         key_fields = sorted(key) if isinstance(key, dict) else (["key"] if key is not None else [])
@@ -372,19 +470,57 @@ def _extract_cdc_events(records: list[tuple[int, Any]], artifact: str, provenanc
             }.items()
             if item is not None
         }
-        facts.append(_fact("cdc.event", artifact, line, provenance, attrs=attrs, symbol=table or ""))
+        facts.append(
+            _fact("cdc.event", artifact, line, provenance, attrs=attrs, symbol=table or "")
+        )
         if position is None:
-            facts.append(_unresolved("cdc", artifact, line, provenance, "missing_source_position", operation=operation))
+            facts.append(
+                _unresolved(
+                    "cdc",
+                    artifact,
+                    line,
+                    provenance,
+                    "missing_source_position",
+                    operation=operation,
+                )
+            )
             if snapshot not in {None, "true", "last"}:
                 live_missing_position = True
         else:
             positions[position] += 1
             if positions[position] > 1:
-                facts.append(_fact("cdc.duplicate", artifact, line, provenance, measures={"occurrence": positions[position]}, attrs={"source_position": position, "transaction_id": transaction_id, "table": table}))
+                facts.append(
+                    _fact(
+                        "cdc.duplicate",
+                        artifact,
+                        line,
+                        provenance,
+                        measures={"occurrence": positions[position]},
+                        attrs={
+                            "source_position": position,
+                            "transaction_id": transaction_id,
+                            "table": table,
+                        },
+                    )
+                )
         if operation in {"CREATE", "READ", "UPDATE", "DELETE"} and not key_fields:
-            facts.append(_unresolved("cdc", artifact, line, provenance, "missing_primary_key", operation=operation, table=table))
+            facts.append(
+                _unresolved(
+                    "cdc",
+                    artifact,
+                    line,
+                    provenance,
+                    "missing_primary_key",
+                    operation=operation,
+                    table=table,
+                )
+            )
         if operation == "DELETE" and tombstone is None:
-            facts.append(_unresolved("cdc", artifact, line, provenance, "delete_tombstone_behavior", table=table))
+            facts.append(
+                _unresolved(
+                    "cdc", artifact, line, provenance, "delete_tombstone_behavior", table=table
+                )
+            )
         if transaction_id:
             transactions[transaction_id]["events"] += 1
             if table:
@@ -394,17 +530,39 @@ def _extract_cdc_events(records: list[tuple[int, Any]], artifact: str, provenanc
     for snapshot in sorted(snapshots):
         facts.append(_fact("cdc.snapshot", artifact, 1, provenance, attrs={"state": snapshot}))
     for txid, details in sorted(transactions.items()):
-        facts.append(_fact("cdc.transaction", artifact, 1, provenance, measures={"event_count": details["events"]}, attrs={"transaction_id": txid, "tables": sorted(details["tables"])}))
+        facts.append(
+            _fact(
+                "cdc.transaction",
+                artifact,
+                1,
+                provenance,
+                measures={"event_count": details["events"]},
+                attrs={"transaction_id": txid, "tables": sorted(details["tables"])},
+            )
+        )
     if snapshots and live_missing_position:
         facts.append(_unresolved("cdc", artifact, 1, provenance, "snapshot_cdc_seam"))
-    facts.append(_fact("cdc.analyzed", artifact, 1, provenance, attrs={"domain": "cdc", "event_count": len([fact for fact in facts if fact.kind == "cdc.event"])}))
+    facts.append(
+        _fact(
+            "cdc.analyzed",
+            artifact,
+            1,
+            provenance,
+            attrs={
+                "domain": "cdc",
+                "event_count": len([fact for fact in facts if fact.kind == "cdc.event"]),
+            },
+        )
+    )
     return facts
 
 
 def _extract_text(text: str, artifact: str, domain: str) -> list[Fact]:
     provenance = _provenance(text, artifact)
     records, invalid = _records(text, artifact)
-    facts: list[Fact] = [_unresolved(domain, artifact, line, provenance, "invalid_json") for line, _ in invalid]
+    facts: list[Fact] = [
+        _unresolved(domain, artifact, line, provenance, "invalid_json") for line, _ in invalid
+    ]
     if domain == "debezium":
         for line, record in records:
             facts.extend(_extract_debezium(record, artifact, line, provenance))
@@ -418,19 +576,24 @@ def _extract_text(text: str, artifact: str, domain: str) -> list[Fact]:
     return sort_facts(facts)
 
 
-def extract_cdc_path(path: str | Path, *, artifact: str = "cdc", repo_root: str | Path | None = None) -> list[Fact]:
+def extract_cdc_path(
+    path: str | Path, *, artifact: str = "cdc", repo_root: str | Path | None = None
+) -> list[Fact]:
     if artifact not in _ARTIFACTS:
         raise ValueError(f"artifact must be one of {sorted(_ARTIFACTS)}")
     target = Path(path)
-    return _extract_text(target.read_text(encoding="utf-8"), str(target), artifact)
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return _extract_text(target.read_text(encoding="utf-8"), rel.replace("\\", "/"), artifact)
 
 
-def extract_cdc_tree(root: str | Path, *, artifact: str = "cdc", repo_root: str | Path | None = None) -> list[Fact]:
+def extract_cdc_tree(
+    root: str | Path, *, artifact: str = "cdc", repo_root: str | Path | None = None
+) -> list[Fact]:
     if artifact not in _ARTIFACTS:
         raise ValueError(f"artifact must be one of {sorted(_ARTIFACTS)}")
     base = Path(root)
     facts: list[Fact] = []
     for pattern in ("*.json", "*.jsonl"):
         for target in iter_source_files(base, pattern):
-            facts.extend(_extract_text(target.read_text(encoding="utf-8"), str(target), artifact))
+            facts.extend(extract_cdc_path(target, artifact=artifact, repo_root=repo_root))
     return sort_facts(facts)

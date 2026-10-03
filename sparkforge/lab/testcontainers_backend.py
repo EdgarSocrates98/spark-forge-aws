@@ -16,7 +16,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--scenario", required=True)
     parser.add_argument("--profile", required=True)
     args = parser.parse_args(argv)
-    print(json.dumps({"backend": "testcontainers", "scenario": args.scenario, "profile": args.profile, "execute": False}))
+    print(
+        json.dumps(
+            {
+                "backend": "testcontainers",
+                "scenario": args.scenario,
+                "profile": args.profile,
+                "execute": False,
+            }
+        )
+    )
     return 0
 
 

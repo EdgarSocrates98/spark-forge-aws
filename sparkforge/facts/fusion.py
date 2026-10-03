@@ -89,11 +89,17 @@ from sparkforge.facts.stepfunctions import SOURCE_KINDS as SFN_SOURCE_KINDS
 from sparkforge.facts.stepfunctions import build_sfn_glue_link
 from sparkforge.facts.streaming_glue_cross import (
     EMITTED_KINDS as GLUE_CROSS_EMITTED_KINDS,
+)
+from sparkforge.facts.streaming_glue_cross import (
     build_streaming_glue_cross_artifact,
 )
 from sparkforge.facts.streaming_glue_runtime import (
     EMITTED_KINDS as GLUE_RUNTIME_EMITTED_KINDS,
+)
+from sparkforge.facts.streaming_glue_runtime import (
     SOURCE_KINDS as GLUE_RUNTIME_SOURCE_KINDS,
+)
+from sparkforge.facts.streaming_glue_runtime import (
     build_streaming_glue_runtime_observation,
 )
 from sparkforge.facts.timeout_diagnosis import EMITTED_KINDS as TIMEOUT_EMITTED_KINDS

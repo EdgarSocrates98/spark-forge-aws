@@ -4,7 +4,6 @@ from pathlib import Path
 
 from sparkforge.facts.streaming_ops import extract_streaming_ops_path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

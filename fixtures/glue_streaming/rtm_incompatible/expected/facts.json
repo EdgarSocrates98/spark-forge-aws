@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_7a64ea",
+    "id": "f_545657",
     "schema_version": 1,
     "kind": "glue.streaming.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -16,18 +16,18 @@
       "mode": "REAL_TIME"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "b6f67c258d4586b699b70bdf44e40a17299b1a42d307bbde4f677be5645865ae",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_c5992a",
+    "id": "f_4eea5a",
     "schema_version": 1,
     "kind": "glue.streaming.job",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "rtm-incompatible",
@@ -50,18 +50,18 @@
       "autoscaling": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "b6f67c258d4586b699b70bdf44e40a17299b1a42d307bbde4f677be5645865ae",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_99d49e",
+    "id": "f_1b9d34",
     "schema_version": 1,
     "kind": "glue.streaming.runtime",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -72,18 +72,18 @@
       "glue_version": "6.0"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "b6f67c258d4586b699b70bdf44e40a17299b1a42d307bbde4f677be5645865ae",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_595a0d",
+    "id": "f_445ea7",
     "schema_version": 1,
     "kind": "glue.streaming.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -94,18 +94,18 @@
       "reason": "source_metrics_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "b6f67c258d4586b699b70bdf44e40a17299b1a42d307bbde4f677be5645865ae",
       "extractor": "glue_streaming@0.1.0"
     }
   },
   {
-    "id": "f_595a0d",
+    "id": "f_445ea7",
     "schema_version": 1,
     "kind": "glue.streaming.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -116,7 +116,7 @@
       "reason": "sink_metrics_missing"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_incompatible\\input\\job.json",
+      "artifact": "job.json",
       "artifact_sha256": "b6f67c258d4586b699b70bdf44e40a17299b1a42d307bbde4f677be5645865ae",
       "extractor": "glue_streaming@0.1.0"
     }

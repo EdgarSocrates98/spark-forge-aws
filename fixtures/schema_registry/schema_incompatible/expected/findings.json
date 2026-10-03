@@ -9,14 +9,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-value",
       "snippet": ""
     },
     "evidence": [
-      "f_7005ca"
+      "f_7f3b13"
     ],
     "measured": {
       "changed_field_count": 3
@@ -70,14 +70,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_incompatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-value",
       "snippet": ""
     },
     "evidence": [
-      "f_a62e6f"
+      "f_1f2f47"
     ],
     "measured": {},
     "threshold": {},

@@ -5,13 +5,13 @@ capability table. It does not rank platforms by preference, estimate cost, or
 pretend that an assumption is a fact. A winner is emitted only when hard
 constraints leave exactly one viable candidate.
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
 from pathlib import Path
 from typing import Any
-
 
 ENGINE_VERSION = "streaming_architecture@0.1.0"
 
@@ -183,7 +183,9 @@ def _evaluate_candidate(candidate: dict[str, Any], requirements: dict[str, Any])
         if sink is None:
             unresolved.append("sink_missing")
         elif sink != candidate.get("sink"):
-            constraints.append({"requirement": "sink", "expected": candidate.get("sink"), "observed": sink})
+            constraints.append(
+                {"requirement": "sink", "expected": candidate.get("sink"), "observed": sink}
+            )
         else:
             evidence.append(f"sink={sink}")
     else:
@@ -194,7 +196,9 @@ def _evaluate_candidate(candidate: dict[str, Any], requirements: dict[str, Any])
         if source is None:
             unresolved.append("source_missing")
         elif source not in candidate["sources"]:
-            constraints.append({"requirement": "source", "supported": candidate["sources"], "observed": source})
+            constraints.append(
+                {"requirement": "source", "supported": candidate["sources"], "observed": source}
+            )
         else:
             evidence.append(f"source={source}")
 
@@ -210,7 +214,9 @@ def _evaluate_candidate(candidate: dict[str, Any], requirements: dict[str, Any])
         if for_each_batch is None:
             unresolved.append("for_each_batch_missing")
         elif for_each_batch is True and candidate["for_each_batch"] is False:
-            constraints.append({"requirement": "for_each_batch", "expected": True, "observed": False})
+            constraints.append(
+                {"requirement": "for_each_batch", "expected": True, "observed": False}
+            )
         elif for_each_batch is False or candidate["for_each_batch"] is True:
             evidence.append(f"for_each_batch={for_each_batch}")
 
@@ -218,21 +224,31 @@ def _evaluate_candidate(candidate: dict[str, Any], requirements: dict[str, Any])
         if output_mode is None:
             unresolved.append("output_mode_missing")
         elif output_mode not in candidate["output_modes"]:
-            constraints.append({"requirement": "output_mode", "supported": candidate["output_modes"], "observed": output_mode})
+            constraints.append(
+                {
+                    "requirement": "output_mode",
+                    "supported": candidate["output_modes"],
+                    "observed": output_mode,
+                }
+            )
         else:
             evidence.append(f"output_mode={output_mode}")
 
         api = requirements.get("engine_api")
         if api is not None:
             if api not in candidate["apis"]:
-                constraints.append({"requirement": "engine_api", "supported": candidate["apis"], "observed": api})
+                constraints.append(
+                    {"requirement": "engine_api", "supported": candidate["apis"], "observed": api}
+                )
             else:
                 evidence.append(f"engine_api={api}")
 
     managed_only = requirements.get("aws_managed_only")
     if managed_only is True:
         if candidate["managed"] is False:
-            constraints.append({"requirement": "aws_managed_only", "expected": True, "observed": False})
+            constraints.append(
+                {"requirement": "aws_managed_only", "expected": True, "observed": False}
+            )
         else:
             evidence.append("aws_managed_only=True")
 
@@ -308,7 +324,10 @@ def analyze_streaming_architecture_path(path: str | Path) -> dict[str, Any]:
         },
         "adr": {
             "status": decision_status,
-            "context": "Escolha de plataforma para workload streaming baseada em requisitos declarados.",
+            "context": (
+                "Escolha de plataforma para workload streaming "
+                "baseada em requisitos declarados."
+            ),
             "requirements": requirements,
             "assumptions": assumptions,
             "observed_facts": _requirement_facts(requirements),
@@ -322,7 +341,10 @@ def analyze_streaming_architecture_path(path: str | Path) -> dict[str, Any]:
             "validation": [
                 "Validar runtime, contrato, replay, SLO e custo com artefatos do ambiente.",
             ],
-            "rollback": "Reabrir decisao, preservar input e substituir somente requisitos comprovados.",
+            "rollback": (
+                "Reabrir decisao, preservar input e substituir "
+                "somente requisitos comprovados."
+            ),
         },
         "unresolved": sorted(set(unresolved)),
     }

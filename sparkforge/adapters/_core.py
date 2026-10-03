@@ -22,11 +22,25 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from sparkforge.analytics.dbt import DbtArtifactsError
+from sparkforge.analytics.dbt import analyze_dbt_artifacts as _analyze_dbt_artifacts
+from sparkforge.analytics.duckdb import (
+    DuckDBMicroscopeError,
+)
+from sparkforge.analytics.duckdb import (
+    analyze_duckdb_microscope as _analyze_duckdb_microscope,
+)
 from sparkforge.capacity import build_capacity_plan
 from sparkforge.case import router, store
 from sparkforge.case.playbook import build_playbook
 from sparkforge.case.resume import render_handoff
 from sparkforge.case.resume import resume as run_resume
+from sparkforge.catalog.contract import (
+    LakehouseCatalogError,
+)
+from sparkforge.catalog.contract import (
+    analyze_lakehouse_catalog as _analyze_lakehouse_catalog,
+)
 from sparkforge.codeintel import budget as _codeintel_budget
 from sparkforge.codeintel import context as _codeintel_context
 from sparkforge.codeintel import db as _codeintel_db
@@ -42,10 +56,10 @@ from sparkforge.collect import glue_resource_link as collect_rlink
 from sparkforge.collect import iam_access as collect_iam
 from sparkforge.collect import lakeformation as collect_lf
 from sparkforge.collect import live_graph as collect_live_graph
-from sparkforge.collect import parquet_footer as collect_parquet
-from sparkforge.collect import streaming as collect_streaming
-from sparkforge.collect import schema_registry as collect_schema_registry_collector
 from sparkforge.collect import managed_flink as collect_managed_flink_collector
+from sparkforge.collect import parquet_footer as collect_parquet
+from sparkforge.collect import schema_registry as collect_schema_registry_collector
+from sparkforge.collect import streaming as collect_streaming
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
 from sparkforge.controlm import migration as _ctm_migration
@@ -86,6 +100,7 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
+from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
 from sparkforge.facts.cloudwatch import extract_cloudwatch_path
 from sparkforge.facts.cloudwatch_logs import (
     extract_cloudwatch_logs_path,
@@ -106,26 +121,9 @@ from sparkforge.facts.emr_serverless import (
     extract_emr_serverless_path,
     extract_emr_serverless_tree,
 )
-from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.event_driven import extract_event_driven_path, extract_event_driven_tree
-from sparkforge.facts.streaming_ops import (
-    extract_streaming_ops_path,
-    extract_streaming_ops_tree,
-)
-from sparkforge.facts.streaming_integrations import (
-    extract_streaming_integrations_path,
-    extract_streaming_integrations_tree,
-)
-from sparkforge.facts.cdc import extract_cdc_path, extract_cdc_tree
+from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.flink import extract_flink_path, extract_flink_tree
-from sparkforge.facts.schema_registry import (
-    extract_schema_registry_path,
-    extract_schema_registry_tree,
-)
-from sparkforge.facts.glue_streaming import (
-    extract_glue_streaming_path,
-    extract_glue_streaming_tree,
-)
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.glue_dq_advanced import (
@@ -137,6 +135,10 @@ from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
 from sparkforge.facts.glue_resource_link import (
     extract_glue_resource_link_path,
     extract_glue_resource_link_tree,
+)
+from sparkforge.facts.glue_streaming import (
+    extract_glue_streaming_path,
+    extract_glue_streaming_tree,
 )
 from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
 from sparkforge.facts.iam_access import (
@@ -159,6 +161,10 @@ from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import EMITTED_KINDS as RUNTIME_DETECT_KINDS
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
+from sparkforge.facts.schema_registry import (
+    extract_schema_registry_path,
+    extract_schema_registry_tree,
+)
 from sparkforge.facts.sfn_history import (
     extract_sfn_history_path,
     extract_sfn_history_tree,
@@ -166,21 +172,29 @@ from sparkforge.facts.sfn_history import (
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+from sparkforge.facts.stepfunctions import (
+    extract_stepfunctions_path,
+    extract_stepfunctions_tree,
+)
 from sparkforge.facts.streaming import (
     extract_streaming_progress_path,
     extract_streaming_progress_tree,
 )
 from sparkforge.facts.streaming_composition import build_streaming_composition
-from sparkforge.facts.transport import extract_transport_path, extract_transport_tree
-from sparkforge.facts.stepfunctions import (
-    extract_stepfunctions_path,
-    extract_stepfunctions_tree,
+from sparkforge.facts.streaming_integrations import (
+    extract_streaming_integrations_path,
+    extract_streaming_integrations_tree,
+)
+from sparkforge.facts.streaming_ops import (
+    extract_streaming_ops_path,
+    extract_streaming_ops_tree,
 )
 from sparkforge.facts.terraform import (
     extract_terraform_diff,
     extract_terraform_path,
     extract_terraform_tree,
 )
+from sparkforge.facts.transport import extract_transport_path, extract_transport_tree
 from sparkforge.facts.workload import extract_workload_path
 from sparkforge.findings import signature as _signature
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
@@ -188,6 +202,8 @@ from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
+from sparkforge.lab.spec import ForgeLabError
+from sparkforge.lab.spec import analyze_forge_lab as _analyze_forge_lab
 from sparkforge.lakeformation.architecture import analyze_architecture as _analyze_lf_architecture
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
@@ -213,33 +229,31 @@ from sparkforge.migration.version_path import (
     DEFAULT_PLATFORM as MIGRATION_DEFAULT_PLATFORM,
 )
 from sparkforge.observability.context_ledger import shared_ledger
-from sparkforge.reporting.dq_ai import build_dq_ai_report
-from sparkforge.platform.graph import (
-    PlatformGraphError,
-    analyze_platform_graph as _analyze_platform_graph,
-)
-from sparkforge.platform.ecosystem import (
-    PlatformEcosystemError,
-    analyze_platform_ecosystem as _analyze_platform_ecosystem,
-)
-from sparkforge.lab.spec import ForgeLabError, analyze_forge_lab as _analyze_forge_lab
-from sparkforge.catalog.contract import (
-    LakehouseCatalogError,
-    analyze_lakehouse_catalog as _analyze_lakehouse_catalog,
-)
-from sparkforge.analytics.dbt import DbtArtifactsError, analyze_dbt_artifacts as _analyze_dbt_artifacts
-from sparkforge.analytics.duckdb import (
-    DuckDBMicroscopeError,
-    analyze_duckdb_microscope as _analyze_duckdb_microscope,
-)
 from sparkforge.observability.sre import (
     DataObservabilityError,
+)
+from sparkforge.observability.sre import (
     analyze_data_observability as _analyze_data_observability,
 )
 from sparkforge.orchestration.topology import (
     OrchestrationError,
+)
+from sparkforge.orchestration.topology import (
     analyze_orchestration as _analyze_orchestration,
 )
+from sparkforge.platform.ecosystem import (
+    PlatformEcosystemError,
+)
+from sparkforge.platform.ecosystem import (
+    analyze_platform_ecosystem as _analyze_platform_ecosystem,
+)
+from sparkforge.platform.graph import (
+    PlatformGraphError,
+)
+from sparkforge.platform.graph import (
+    analyze_platform_graph as _analyze_platform_graph,
+)
+from sparkforge.reporting.dq_ai import build_dq_ai_report
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -1069,9 +1083,7 @@ def analyze_streaming(
         return _facts_page(
             facts, "streaming.progress.unresolved", kind, limit, cursor, detail_level
         )
-    raise AdapterError(
-        f"Artefato streaming desconhecido: {artifact}. Use `source` ou `progress`."
-    )
+    raise AdapterError(f"Artefato streaming desconhecido: {artifact}. Use `source` ou `progress`.")
 
 
 def analyze_streaming_composition(
@@ -1098,7 +1110,8 @@ def analyze_streaming_composition(
     if not facts_paths:
         raise AdapterError(
             "Informe ao menos um arquivo de facts para composição streaming.\n"
-            "  Gere-os com `sparkforge analyze streaming`, `analyze transport` ou `analyze iceberg`."
+            "  Gere-os com `sparkforge analyze streaming`, `analyze transport` "
+            "ou `analyze iceberg`."
         )
     facts = _merge_facts_files(
         facts_paths,
@@ -1158,9 +1171,9 @@ def analyze_transport(
             f"Artefato de transporte desconhecido: {artifact}. Use `kafka`, `msk` ou `kinesis`."
         )
     facts = (
-        extract_transport_tree(target, artifact_type=artifact)
+        extract_transport_tree(target, artifact_type=artifact, repo_root=target)
         if target.is_dir()
-        else extract_transport_path(target, artifact_type=artifact)
+        else extract_transport_path(target, artifact_type=artifact, repo_root=target.parent)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
 
@@ -1183,9 +1196,9 @@ def analyze_flink(
             f"Artefato Flink desconhecido: {artifact}. Use `flink` ou `managed_flink`."
         )
     facts = (
-        extract_flink_tree(target, artifact=artifact)
+        extract_flink_tree(target, artifact=artifact, repo_root=target)
         if target.is_dir()
-        else extract_flink_path(target, artifact=artifact)
+        else extract_flink_path(target, artifact=artifact, repo_root=target.parent)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
 
@@ -1208,9 +1221,9 @@ def analyze_cdc(
             f"Artefato CDC desconhecido: {artifact}. Use `cdc`, `debezium` ou `dms`."
         )
     facts = (
-        extract_cdc_tree(target, artifact=artifact)
+        extract_cdc_tree(target, artifact=artifact, repo_root=target)
         if target.is_dir()
-        else extract_cdc_path(target, artifact=artifact)
+        else extract_cdc_path(target, artifact=artifact, repo_root=target.parent)
     )
     return _facts_page(facts, f"{artifact}.unresolved", kind, limit, cursor, detail_level)
 

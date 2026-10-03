@@ -9,7 +9,6 @@ from sparkforge.adapters.tools import call_tool
 from sparkforge.analytics.dbt import load_dbt_artifacts
 from sparkforge.analytics.duckdb import load_duckdb_microscope
 
-
 DBT_FIXTURE = Path(__file__).parents[1] / "fixtures" / "analytics" / "dbt"
 DUCKDB_FIXTURE = Path(__file__).parents[1] / "fixtures" / "analytics" / "duckdb" / "microscope.yaml"
 
@@ -17,7 +16,9 @@ DUCKDB_FIXTURE = Path(__file__).parents[1] / "fixtures" / "analytics" / "duckdb"
 def test_dbt_artifacts_preserve_lineage_and_results() -> None:
     artifacts = load_dbt_artifacts(DBT_FIXTURE)
 
-    model = next(item for item in artifacts.resources if item["unique_id"] == "model.synthetic.orders")
+    model = next(
+        item for item in artifacts.resources if item["unique_id"] == "model.synthetic.orders"
+    )
     assert model["depends_on"] == ["source.synthetic.postgres.orders"]
     assert model["config"]["materialized"] == "incremental"
     assert len(artifacts.catalog_nodes) == 1

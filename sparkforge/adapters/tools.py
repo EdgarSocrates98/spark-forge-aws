@@ -1036,7 +1036,14 @@ _PLATFORM_ECOSYSTEM_SCHEMA: dict[str, Any] = {
     "properties": {
         "ecosystem": {
             "type": "object",
-            "required": ["ecosystem", "systems", "reliability", "integrations", "unresolved", "fingerprint"],
+            "required": [
+                "ecosystem",
+                "systems",
+                "reliability",
+                "integrations",
+                "unresolved",
+                "fingerprint",
+            ],
             "properties": {
                 "ecosystem": {"type": "string"},
                 "systems": {"type": "array", "items": {"type": "object"}},
@@ -1119,7 +1126,15 @@ _DBT_ARTIFACTS_SCHEMA: dict[str, Any] = {
     "properties": {
         "dbt": {
             "type": "object",
-            "required": ["project", "manifest_schema", "resources", "catalog_nodes", "run_results", "unresolved", "fingerprint"],
+            "required": [
+                "project",
+                "manifest_schema",
+                "resources",
+                "catalog_nodes",
+                "run_results",
+                "unresolved",
+                "fingerprint",
+            ],
             "properties": {
                 "project": {"type": "string"},
                 "manifest_schema": {"type": "string"},
@@ -1139,7 +1154,15 @@ _DUCKDB_MICROSCOPE_SCHEMA: dict[str, Any] = {
     "properties": {
         "duckdb": {
             "type": "object",
-            "required": ["database", "read_only", "objects", "queries", "comparisons", "unresolved", "fingerprint"],
+            "required": [
+                "database",
+                "read_only",
+                "objects",
+                "queries",
+                "comparisons",
+                "unresolved",
+                "fingerprint",
+            ],
             "properties": {
                 "database": {"type": "string"},
                 "read_only": {"const": True},
@@ -1159,7 +1182,15 @@ _DATA_OBSERVABILITY_SCHEMA: dict[str, Any] = {
     "properties": {
         "observability": {
             "type": "object",
-            "required": ["service", "slo_reports", "incidents", "dependencies", "blast_radius", "unresolved", "fingerprint"],
+            "required": [
+                "service",
+                "slo_reports",
+                "incidents",
+                "dependencies",
+                "blast_radius",
+                "unresolved",
+                "fingerprint",
+            ],
             "properties": {
                 "service": {"type": "string"},
                 "slo_reports": {"type": "array", "items": {"type": "object"}},
@@ -6015,10 +6046,13 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Exige identidade declarada (`table`/`query_name` ou `transport_key`) e só "
             "produz link quando a correspondência é observada sem ambiguidade. Preserva "
             "ids dos facts de origem, operações Iceberg, lag/iterator age, avaliação "
-            "SLO de progress/sink/Kafka/Kinesis, janela temporal pareada e unresolved. `streaming_sink` liga "
-            "num_output_rows ao batch por batch_id; `sink_name` pode desambiguar descrições. Modes temporal e iceberg_temporal exigem "
+            "SLO de progress/sink/Kafka/Kinesis, janela temporal pareada e "
+            "unresolved. `streaming_sink` liga "
+            "num_output_rows ao batch por batch_id; `sink_name` pode desambiguar "
+            "descrições. Modes temporal e iceberg_temporal exigem "
             "`max_skew_seconds` declarado. "
-            "Mode pipeline aceita contrato JSON declarativo com selectors exatos por kind/attrs e preserva unresolved para zero ou múltiplos matches. "
+            "Mode pipeline aceita contrato JSON declarativo com selectors exatos "
+            "por kind/attrs e preserva unresolved para zero ou múltiplos matches. "
             "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
         ),
         "inputSchema": {
@@ -6033,23 +6067,48 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "mode": {
                     "type": "string",
-                    "enum": ["iceberg", "iceberg_temporal", "observability", "slo", "temporal", "pipeline"],
-                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline.",
+                    "enum": [
+                        "iceberg",
+                        "iceberg_temporal",
+                        "observability",
+                        "slo",
+                        "temporal",
+                        "pipeline",
+                    ],
+                    "description": (
+                        "Relação streaming→Iceberg, janela streaming→Iceberg, "
+                        "progresso→transporte, SLO→progress/sink/transporte, "
+                        "janela temporal pareada ou contrato pipeline."
+                    ),
                 },
                 "table": {"type": "string", "description": "Tabela Iceberg declarada."},
-                "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
-                "slo_name": {"type": "string", "description": "Nome do SLO declarado; obrigatório quando há mais de uma declaração."},
+                "query_name": {
+                    "type": "string",
+                    "description": "Query Structured Streaming declarada.",
+                },
+                "slo_name": {
+                    "type": "string",
+                    "description": (
+                        "Nome do SLO declarado; obrigatório quando há mais de uma declaração."
+                    ),
+                },
                 "transport_key": {
                     "type": "string",
                     "description": "Grupo/topic Kafka ou stream Kinesis declarado.",
                 },
                 "max_skew_seconds": {
                     "type": "number",
-                    "description": "Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
+                    "description": (
+                        "Tolerância temporal declarada para modes "
+                        "temporal/iceberg_temporal; sem valor sai unresolved."
+                    ),
                 },
                 "pipeline_path": {
                     "type": "string",
-                    "description": "Arquivo JSON do contrato declarativo de nós/arestas; obrigatório no mode=pipeline.",
+                    "description": (
+                        "Arquivo JSON do contrato declarativo de nós/arestas; "
+                        "obrigatório no mode=pipeline."
+                    ),
                 },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
@@ -7206,7 +7265,12 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": {
             "type": "object",
             "required": ["path"],
-            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML do inventário de ecossistema."}},
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo JSON/YAML do inventário de ecossistema.",
+                }
+            },
         },
         "outputSchema": _may_fail(
             _PLATFORM_ECOSYSTEM_SCHEMA,
@@ -7226,7 +7290,10 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "required": ["path"],
             "properties": {
-                "path": {"type": "string", "description": "Arquivo JSON ou YAML da topologia Forge Lab."},
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo JSON ou YAML da topologia Forge Lab.",
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -7247,7 +7314,10 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "required": ["path"],
             "properties": {
-                "path": {"type": "string", "description": "Arquivo JSON ou YAML da topologia de catalog."},
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo JSON ou YAML da topologia de catalog.",
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -7266,7 +7336,9 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": {
             "type": "object",
             "required": ["path"],
-            "properties": {"path": {"type": "string", "description": "Diretório dbt ou manifest.json."}},
+            "properties": {
+                "path": {"type": "string", "description": "Diretório dbt ou manifest.json."}
+            },
         },
         "outputSchema": _may_fail(
             _DBT_ARTIFACTS_SCHEMA,
@@ -7284,7 +7356,9 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": {
             "type": "object",
             "required": ["path"],
-            "properties": {"path": {"type": "string", "description": "Bundle JSON/YAML do microscópio."}},
+            "properties": {
+                "path": {"type": "string", "description": "Bundle JSON/YAML do microscópio."}
+            },
         },
         "outputSchema": _may_fail(
             _DUCKDB_MICROSCOPE_SCHEMA,
@@ -7303,7 +7377,9 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": {
             "type": "object",
             "required": ["path"],
-            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML de observabilidade."}},
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON/YAML de observabilidade."}
+            },
         },
         "outputSchema": _may_fail(
             _DATA_OBSERVABILITY_SCHEMA,
@@ -7321,7 +7397,9 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": {
             "type": "object",
             "required": ["path"],
-            "properties": {"path": {"type": "string", "description": "Arquivo JSON/YAML do control plane."}},
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo JSON/YAML do control plane."}
+            },
         },
         "outputSchema": _may_fail(
             _ORCHESTRATION_SCHEMA,
@@ -9881,8 +9959,14 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "repo": {"type": "string"},
                 "application_name": {"type": "string", "minLength": 1, "maxLength": 128},
                 "region_name": {"type": "string"},
-                "metrics_start": {"type": "string", "description": "Início ISO 8601 da janela CloudWatch."},
-                "metrics_end": {"type": "string", "description": "Fim ISO 8601 da janela CloudWatch."},
+                "metrics_start": {
+                    "type": "string",
+                    "description": "Início ISO 8601 da janela CloudWatch.",
+                },
+                "metrics_end": {
+                    "type": "string",
+                    "description": "Fim ISO 8601 da janela CloudWatch.",
+                },
                 "metrics_period": {"type": "integer", "minimum": 60, "maximum": 86400},
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
             },

@@ -11,7 +11,6 @@ from typing import Any
 
 import yaml
 
-
 ORCHESTRATOR_KINDS = frozenset({"airflow", "dagster", "step_functions", "controlm"})
 
 
@@ -64,19 +63,50 @@ def _build(raw: object) -> OrchestrationTopology:
     workflow_ids = {str(item["id"]) for item in workflows}
     for item in orchestrators:
         if item["kind"] not in ORCHESTRATOR_KINDS:
-            unresolved.append({"code": "orchestrator_kind_unresolved", "orchestrator_id": item["id"], "kind": item["kind"]})
+            unresolved.append(
+                {
+                    "code": "orchestrator_kind_unresolved",
+                    "orchestrator_id": item["id"],
+                    "kind": item["kind"],
+                }
+            )
     for item in workflows:
         if item["orchestrator_id"] not in orchestrator_ids:
-            unresolved.append({"code": "workflow_orchestrator_unresolved", "workflow_id": item["id"], "orchestrator_id": item["orchestrator_id"]})
+            unresolved.append(
+                {
+                    "code": "workflow_orchestrator_unresolved",
+                    "workflow_id": item["id"],
+                    "orchestrator_id": item["orchestrator_id"],
+                }
+            )
         for dependency in item["dependencies"]:
             if dependency not in workflow_ids:
-                unresolved.append({"code": "workflow_dependency_unresolved", "workflow_id": item["id"], "dependency": dependency})
+                unresolved.append(
+                    {
+                        "code": "workflow_dependency_unresolved",
+                        "workflow_id": item["id"],
+                        "dependency": dependency,
+                    }
+                )
         for field in ("idempotent", "retry", "concurrency", "backfill"):
             if field not in item or item[field] is None:
-                unresolved.append({"code": "workflow_control_unresolved", "workflow_id": item["id"], "control": field})
-    payload = {"topology": name, "orchestrators": orchestrators, "workflows": workflows, "unresolved": _unique(unresolved)}
+                unresolved.append(
+                    {
+                        "code": "workflow_control_unresolved",
+                        "workflow_id": item["id"],
+                        "control": field,
+                    }
+                )
+    payload = {
+        "topology": name,
+        "orchestrators": orchestrators,
+        "workflows": workflows,
+        "unresolved": _unique(unresolved),
+    }
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return OrchestrationTopology(name, tuple(orchestrators), tuple(workflows), tuple(_unique(unresolved)), fingerprint)
+    return OrchestrationTopology(
+        name, tuple(orchestrators), tuple(workflows), tuple(_unique(unresolved)), fingerprint
+    )
 
 
 def _orchestrators(value: object) -> list[dict[str, Any]]:
@@ -99,16 +129,30 @@ def _workflows(value: object) -> list[dict[str, Any]]:
     seen: set[str] = set()
     for item in entries:
         identifier = _required(item.get("id"), "workflow.id")
-        orchestrator_id = _required(item.get("orchestrator_id"), f"workflow[{identifier}].orchestrator_id")
+        orchestrator_id = _required(
+            item.get("orchestrator_id"), f"workflow[{identifier}].orchestrator_id"
+        )
         if identifier in seen:
             raise OrchestrationError(f"duplicate workflow: {identifier}")
         dependencies = item.get("dependencies", [])
-        if not isinstance(dependencies, list) or not all(isinstance(dep, str) for dep in dependencies):
-            raise OrchestrationError(f"workflow[{identifier}].dependencies must be a list of strings")
+        if not isinstance(dependencies, list) or not all(
+            isinstance(dep, str) for dep in dependencies
+        ):
+            raise OrchestrationError(
+                f"workflow[{identifier}].dependencies must be a list of strings"
+            )
         sensors = item.get("sensors", [])
         if not isinstance(sensors, list) or not all(isinstance(sensor, str) for sensor in sensors):
             raise OrchestrationError(f"workflow[{identifier}].sensors must be a list of strings")
-        result.append({**item, "id": identifier, "orchestrator_id": orchestrator_id, "dependencies": sorted(set(dependencies)), "sensors": sorted(set(sensors))})
+        result.append(
+            {
+                **item,
+                "id": identifier,
+                "orchestrator_id": orchestrator_id,
+                "dependencies": sorted(set(dependencies)),
+                "sensors": sorted(set(sensors)),
+            }
+        )
         seen.add(identifier)
     return sorted(result, key=lambda item: item["id"])
 
@@ -136,4 +180,10 @@ def _canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
 
 
-__all__ = ["ORCHESTRATOR_KINDS", "OrchestrationError", "OrchestrationTopology", "analyze_orchestration", "load_orchestration"]
+__all__ = [
+    "ORCHESTRATOR_KINDS",
+    "OrchestrationError",
+    "OrchestrationTopology",
+    "analyze_orchestration",
+    "load_orchestration",
+]

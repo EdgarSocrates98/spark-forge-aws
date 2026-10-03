@@ -70,7 +70,9 @@
       "mcp__sparkforge__sparkforge_collect_iam_access",
       "mcp__sparkforge__sparkforge_collect_iceberg_metadata",
       "mcp__sparkforge__sparkforge_collect_lakeformation",
+      "mcp__sparkforge__sparkforge_collect_managed_flink",
       "mcp__sparkforge__sparkforge_collect_parquet_footer",
+      "mcp__sparkforge__sparkforge_collect_schema_registry",
       "mcp__sparkforge__sparkforge_collect_streaming_integrations"
     ]
   }

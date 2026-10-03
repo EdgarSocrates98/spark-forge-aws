@@ -9,14 +9,14 @@
     "status": "confirmed",
     "subject": {
       "type": "source_location",
-      "file": "fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "file": "dump.json",
       "line": 1,
       "col": 0,
       "symbol": "orders:events:0",
       "snippet": ""
     },
     "evidence": [
-      "f_ad15da"
+      "f_a5a711"
     ],
     "measured": {
       "observation_count": 2,
@@ -70,12 +70,6 @@
         "runtime.wall_clock"
       ],
       "depends_on": []
-    },
-    "evidence_standing": {
-      "value": "low",
-      "source_tier": "T4_RECOGNIZED_AUTHORITY",
-      "in_version_scope": true,
-      "measures_present": true
     }
   }
 ]

@@ -4,6 +4,7 @@ O módulo consome dumps JSON/JSONL já salvos. Não chama Flink, AWS ou
 CloudWatch. Os namespaces são deliberadamente separados: capacidade upstream
 não prova capacidade do serviço gerenciado.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -193,7 +194,9 @@ def _flink_metric_facts(
         elif any(key in raw for key in ("name", "metric_name", "metricName")):
             records = [raw]
         else:
-            return [_unresolved(artifact, line, provenance, "flink", "metrics_observations_missing")]
+            return [
+                _unresolved(artifact, line, provenance, "flink", "metrics_observations_missing")
+            ]
     elif isinstance(raw, list):
         records = raw
     else:
@@ -238,10 +241,14 @@ def _flink_metric_facts(
 
         observed_at = _value(metric, "observed_at", "observedAt", "timestamp", "time")
         if observed_at is None:
-            facts.append(_unresolved(artifact, line, provenance, "flink", "metric_timestamp_missing"))
+            facts.append(
+                _unresolved(artifact, line, provenance, "flink", "metric_timestamp_missing")
+            )
             continue
         if not isinstance(observed_at, str) or not observed_at.strip():
-            facts.append(_unresolved(artifact, line, provenance, "flink", "metric_timestamp_invalid"))
+            facts.append(
+                _unresolved(artifact, line, provenance, "flink", "metric_timestamp_invalid")
+            )
             continue
 
         metric_name = name.strip()
@@ -303,7 +310,9 @@ def _records(text: str, artifact: str) -> tuple[list[tuple[int, Any]], list[tupl
     return [(1, value)], []
 
 
-def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _flink_record(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     facts: list[Fact] = []
     job = _as_dict(data.get("job")) or data
     job_attrs = {
@@ -387,7 +396,9 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     if isinstance(operators, list):
         for operator in operators:
             if not isinstance(operator, dict):
-                facts.append(_unresolved(artifact, line, provenance, "flink", "invalid_operator_record"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "flink", "invalid_operator_record")
+                )
                 continue
             attrs = {
                 "operator_id": _value(operator, "operator_id", "operatorId", "id"),
@@ -410,9 +421,15 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                 ),
             )
             if not attrs and not measures:
-                facts.append(_unresolved(artifact, line, provenance, "flink", "operator_fields_missing"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "flink", "operator_fields_missing")
+                )
             else:
-                facts.append(_fact("flink.operator", artifact, line, provenance, measures=measures, attrs=attrs))
+                facts.append(
+                    _fact(
+                        "flink.operator", artifact, line, provenance, measures=measures, attrs=attrs
+                    )
+                )
     elif operators is not None:
         facts.append(_unresolved(artifact, line, provenance, "flink", "operators_not_a_list"))
 
@@ -423,7 +440,9 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     if isinstance(checkpoints, list):
         for checkpoint in checkpoints:
             if not isinstance(checkpoint, dict):
-                facts.append(_unresolved(artifact, line, provenance, "flink", "invalid_checkpoint_record"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "flink", "invalid_checkpoint_record")
+                )
                 continue
             checkpoint_count += 1
             attrs = {
@@ -443,7 +462,11 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                     "acknowledged_subtasks",
                 ),
             )
-            facts.append(_fact("flink.checkpoint", artifact, line, provenance, measures=measures, attrs=attrs))
+            facts.append(
+                _fact(
+                    "flink.checkpoint", artifact, line, provenance, measures=measures, attrs=attrs
+                )
+            )
     elif checkpoints is not None:
         facts.append(_unresolved(artifact, line, provenance, "flink", "checkpoints_not_a_list"))
     else:
@@ -455,18 +478,26 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     if isinstance(states, list):
         for state in states:
             if not isinstance(state, dict):
-                facts.append(_unresolved(artifact, line, provenance, "flink", "invalid_state_record"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "flink", "invalid_state_record")
+                )
                 continue
             attrs = {
                 "backend": _value(state, "backend", "state_backend"),
                 "operator_id": _value(state, "operator_id", "operatorId"),
                 "ttl": _value(state, "ttl", "ttl_ms"),
             }
-            measures = _numbers(state, ("size_bytes", "num_entries", "keyed_state_bytes", "operator_state_bytes"))
+            measures = _numbers(
+                state, ("size_bytes", "num_entries", "keyed_state_bytes", "operator_state_bytes")
+            )
             if attrs or measures:
-                facts.append(_fact("flink.state", artifact, line, provenance, measures=measures, attrs=attrs))
+                facts.append(
+                    _fact("flink.state", artifact, line, provenance, measures=measures, attrs=attrs)
+                )
             else:
-                facts.append(_unresolved(artifact, line, provenance, "flink", "state_fields_missing"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "flink", "state_fields_missing")
+                )
     elif states is not None:
         facts.append(_unresolved(artifact, line, provenance, "flink", "state_not_a_list"))
 
@@ -490,30 +521,59 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     return facts
 
 
-def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _managed_record(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     facts: list[Fact] = []
     application = _as_dict(data.get("application")) or data
     attrs = {
         "application_name": _value(application, "application_name", "applicationName", "name"),
         "application_arn": _value(application, "application_arn", "applicationArn", "arn"),
         "status": _value(application, "status", "state"),
-        "runtime_version": _value(application, "runtime_version", "flink_version", "runtimeVersion"),
-        "application_version_id": _value(application, "application_version_id", "applicationVersionId", "version_id"),
-        "service_execution_role": _value(application, "service_execution_role", "serviceExecutionRole"),
+        "runtime_version": _value(
+            application, "runtime_version", "flink_version", "runtimeVersion"
+        ),
+        "application_version_id": _value(
+            application, "application_version_id", "applicationVersionId", "version_id"
+        ),
+        "service_execution_role": _value(
+            application, "service_execution_role", "serviceExecutionRole"
+        ),
         "application_mode": _value(application, "application_mode", "applicationMode"),
     }
     measures = _numbers(application, ("parallelism", "parallelism_per_kpu", "kpu", "task_slots"))
     if attrs or measures:
-        facts.append(_fact("managed_flink.application", artifact, line, provenance, measures=measures, attrs=attrs))
+        facts.append(
+            _fact(
+                "managed_flink.application",
+                artifact,
+                line,
+                provenance,
+                measures=measures,
+                attrs=attrs,
+            )
+        )
     else:
-        facts.append(_unresolved(artifact, line, provenance, "managed_flink", "application_fields_missing"))
+        facts.append(
+            _unresolved(artifact, line, provenance, "managed_flink", "application_fields_missing")
+        )
 
     config = data.get("configuration", data.get("config"))
     if isinstance(config, dict):
         for key, value in sorted(config.items(), key=lambda item: str(item[0])):
-            facts.append(_fact("managed_flink.config", artifact, line, provenance, attrs={"key": str(key), "value": value}))
+            facts.append(
+                _fact(
+                    "managed_flink.config",
+                    artifact,
+                    line,
+                    provenance,
+                    attrs={"key": str(key), "value": value},
+                )
+            )
     elif config is not None:
-        facts.append(_unresolved(artifact, line, provenance, "managed_flink", "config_not_an_object"))
+        facts.append(
+            _unresolved(artifact, line, provenance, "managed_flink", "config_not_an_object")
+        )
 
     connectors = data.get("connectors")
     if isinstance(connectors, list):
@@ -525,11 +585,19 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
                         artifact,
                         line,
                         provenance,
-                        attrs={key: value for key, value in connector.items() if not isinstance(value, (dict, list))},
+                        attrs={
+                            key: value
+                            for key, value in connector.items()
+                            if not isinstance(value, (dict, list))
+                        },
                     )
                 )
             else:
-                facts.append(_unresolved(artifact, line, provenance, "managed_flink", "invalid_connector_record"))
+                facts.append(
+                    _unresolved(
+                        artifact, line, provenance, "managed_flink", "invalid_connector_record"
+                    )
+                )
 
     metrics = data.get("metrics")
     nested_unresolved: list[Any] = []
@@ -539,16 +607,39 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
         if isinstance(observations, list):
             metrics = observations
         else:
-            facts.append(_unresolved(artifact, line, provenance, "managed_flink", "metrics_observations_missing"))
+            facts.append(
+                _unresolved(
+                    artifact, line, provenance, "managed_flink", "metrics_observations_missing"
+                )
+            )
             metrics = []
     if isinstance(metrics, list):
         for metric in metrics:
             if not isinstance(metric, dict):
-                facts.append(_unresolved(artifact, line, provenance, "managed_flink", "invalid_metric_record"))
+                facts.append(
+                    _unresolved(
+                        artifact, line, provenance, "managed_flink", "invalid_metric_record"
+                    )
+                )
                 continue
-            measures = _numbers(metric, ("value", "timestamp", "count", "duration_ms", "backpressured_ms"))
-            attrs = {key: value for key, value in metric.items() if key not in measures and not isinstance(value, (dict, list))}
-            facts.append(_fact("managed_flink.metric", artifact, line, provenance, measures=measures, attrs=attrs))
+            measures = _numbers(
+                metric, ("value", "timestamp", "count", "duration_ms", "backpressured_ms")
+            )
+            attrs = {
+                key: value
+                for key, value in metric.items()
+                if key not in measures and not isinstance(value, (dict, list))
+            }
+            facts.append(
+                _fact(
+                    "managed_flink.metric",
+                    artifact,
+                    line,
+                    provenance,
+                    measures=measures,
+                    attrs=attrs,
+                )
+            )
     else:
         facts.append(_unresolved(artifact, line, provenance, "managed_flink", "metrics_missing"))
 
@@ -563,7 +654,9 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
         if isinstance(reason, str) and reason.strip() and reason.strip() not in seen_reasons:
             seen_reasons.add(reason.strip())
             if isinstance(reason, str) and reason.strip():
-                facts.append(_unresolved(artifact, line, provenance, "managed_flink", reason.strip()))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "managed_flink", reason.strip())
+                )
 
     facts.append(
         _fact(
@@ -586,7 +679,9 @@ def extract_flink_text(text: str, artifact_path: str, *, artifact: str) -> list[
     facts: list[Fact] = []
     domain = "managed_flink" if artifact == "managed_flink" else "flink"
     for line, reason in invalid:
-        facts.append(_unresolved(artifact_path, line, provenance, domain, "invalid_json", detail=reason))
+        facts.append(
+            _unresolved(artifact_path, line, provenance, domain, "invalid_json", detail=reason)
+        )
     for line, value in records:
         if not isinstance(value, dict):
             facts.append(_unresolved(artifact_path, line, provenance, domain, "record_not_object"))
@@ -601,15 +696,22 @@ def extract_flink_text(text: str, artifact_path: str, *, artifact: str) -> list[
     return sort_facts(facts)
 
 
-def extract_flink_path(path: Path | str, *, artifact: str) -> list[Fact]:
+def extract_flink_path(
+    path: Path | str, *, artifact: str, repo_root: Path | str | None = None
+) -> list[Fact]:
     target = Path(path)
-    return extract_flink_text(target.read_text(encoding="utf-8-sig"), str(target), artifact=artifact)
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
+    return extract_flink_text(
+        target.read_text(encoding="utf-8-sig"), rel.replace("\\", "/"), artifact=artifact
+    )
 
 
-def extract_flink_tree(path: Path | str, *, artifact: str) -> list[Fact]:
+def extract_flink_tree(
+    path: Path | str, *, artifact: str, repo_root: Path | str | None = None
+) -> list[Fact]:
     root = Path(path)
     facts: list[Fact] = []
     for pattern in ("*.json", "*.jsonl"):
         for source in iter_source_files(root, pattern):
-            facts.extend(extract_flink_path(source, artifact=artifact))
+            facts.extend(extract_flink_path(source, artifact=artifact, repo_root=repo_root))
     return sort_facts(facts)

@@ -16,8 +16,18 @@ import yaml
 from .contract import LabContractError
 from .oracle import ExpectedOracle, OracleResult
 
-
-RUN_DIRECTORIES = ("input", "logs", "metrics", "spark", "kafka", "flink", "iceberg", "cdc", "facts", "findings")
+RUN_DIRECTORIES = (
+    "input",
+    "logs",
+    "metrics",
+    "spark",
+    "kafka",
+    "flink",
+    "iceberg",
+    "cdc",
+    "facts",
+    "findings",
+)
 
 
 def create_run(
@@ -34,9 +44,15 @@ def create_run(
     run.mkdir(parents=True, exist_ok=False)
     for directory in RUN_DIRECTORIES:
         (run / directory).mkdir()
-    (run / "scenario.yaml").write_text(yaml.safe_dump(scenario.to_dict(), sort_keys=False), encoding="utf-8")
-    (run / "environment.json").write_text(_json(environment or {"platform": os.name}), encoding="utf-8")
-    (run / "versions.json").write_text(_json(versions or {"status": "unresolved_until_runtime"}), encoding="utf-8")
+    (run / "scenario.yaml").write_text(
+        yaml.safe_dump(scenario.to_dict(), sort_keys=False), encoding="utf-8"
+    )
+    (run / "environment.json").write_text(
+        _json(environment or {"platform": os.name}), encoding="utf-8"
+    )
+    (run / "versions.json").write_text(
+        _json(versions or {"status": "unresolved_until_runtime"}), encoding="utf-8"
+    )
     run_record = {
         "run_id": run_id,
         "scenario": scenario.scenario_id,
@@ -52,7 +68,9 @@ def create_run(
     return run
 
 
-def capture_artifact(run: str | Path, source: str | Path, *, category: str, name: str | None = None) -> dict[str, Any]:
+def capture_artifact(
+    run: str | Path, source: str | Path, *, category: str, name: str | None = None
+) -> dict[str, Any]:
     run_path = Path(run).expanduser().resolve()
     if category not in RUN_DIRECTORIES:
         raise LabContractError(f"unsupported artifact category: {category}")
@@ -63,10 +81,21 @@ def capture_artifact(run: str | Path, source: str | Path, *, category: str, name
     if destination.name in {"", ".", ".."} or destination.parent != (run_path / category):
         raise LabContractError("artifact destination must remain in category root")
     shutil.copy2(source_path, destination)
-    return {"category": category, "path": destination.relative_to(run_path).as_posix(), "sha256": _sha256(destination), "bytes": destination.stat().st_size}
+    return {
+        "category": category,
+        "path": destination.relative_to(run_path).as_posix(),
+        "sha256": _sha256(destination),
+        "bytes": destination.stat().st_size,
+    }
 
 
-def compare_oracle(oracle: ExpectedOracle, *, facts: list[dict[str, Any]], findings: list[dict[str, Any]], unresolved: list[str] | None = None) -> OracleResult:
+def compare_oracle(
+    oracle: ExpectedOracle,
+    *,
+    facts: list[dict[str, Any]],
+    findings: list[dict[str, Any]],
+    unresolved: list[str] | None = None,
+) -> OracleResult:
     return oracle.compare(facts, findings, unresolved)
 
 
@@ -100,7 +129,11 @@ def finalize_receipt(
         "findings": findings or [],
         "oracle_source": "scenario.expected",
         "oracle": result.to_dict(),
-        "assertions": {"passed": result.classification == "PASS", "failed": result.classification == "FAIL", "classification": result.classification},
+        "assertions": {
+            "passed": result.classification == "PASS",
+            "failed": result.classification == "FAIL",
+            "classification": result.classification,
+        },
     }
     payload["receipt_sha256"] = _sha256_bytes(_canonical(payload).encode("utf-8"))
     (run_path / "receipt.json").write_text(_json(payload), encoding="utf-8")
@@ -119,7 +152,9 @@ def verify_receipt(path: str | Path) -> dict[str, Any]:
     return {"valid": expected == actual, "expected": expected, "actual": actual}
 
 
-def promote_fixture(run: str | Path, destination: str | Path, *, reviewed: bool = False) -> dict[str, Any]:
+def promote_fixture(
+    run: str | Path, destination: str | Path, *, reviewed: bool = False
+) -> dict[str, Any]:
     if not reviewed:
         raise LabContractError("fixture promotion requires reviewed=True")
     run_path = Path(run).expanduser().resolve()
@@ -140,7 +175,13 @@ def promote_fixture(run: str | Path, destination: str | Path, *, reviewed: bool 
         else:
             continue
         copied.append(relative)
-    return {"promoted": True, "source": run_path.as_posix(), "destination": target.as_posix(), "receipt": verification, "paths": copied}
+    return {
+        "promoted": True,
+        "source": run_path.as_posix(),
+        "destination": target.as_posix(),
+        "receipt": verification,
+        "paths": copied,
+    }
 
 
 def _list_artifacts(run: Path) -> list[dict[str, Any]]:
@@ -186,4 +227,12 @@ def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-__all__ = ["RUN_DIRECTORIES", "capture_artifact", "compare_oracle", "create_run", "finalize_receipt", "promote_fixture", "verify_receipt"]
+__all__ = [
+    "RUN_DIRECTORIES",
+    "capture_artifact",
+    "compare_oracle",
+    "create_run",
+    "finalize_receipt",
+    "promote_fixture",
+    "verify_receipt",
+]

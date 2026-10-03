@@ -76,7 +76,9 @@ def test_extract_streaming_progress_emits_batch_source_sink_and_state_facts(tmp_
 
 def test_insufficient_progress_is_unresolved_not_a_trend(tmp_path):
     path = tmp_path / "single.jsonl"
-    path.write_text(__import__("json").dumps(_progress(0, 100.0, 80.0, 10)) + "\n", encoding="utf-8")
+    path.write_text(
+        __import__("json").dumps(_progress(0, 100.0, 80.0, 10)) + "\n", encoding="utf-8"
+    )
 
     facts = extract_streaming_progress_path(path, repo_root=tmp_path)
     unresolved = [fact for fact in facts if fact.kind == "streaming.progress.unresolved"]
@@ -89,7 +91,9 @@ def test_insufficient_progress_is_unresolved_not_a_trend(tmp_path):
 
 def test_streaming_extraction_is_deterministic_and_batch_safe(tmp_path):
     path = tmp_path / "progress.jsonl"
-    path.write_text(__import__("json").dumps(_progress(0, 100.0, 80.0, 10)) + "\n", encoding="utf-8")
+    path.write_text(
+        __import__("json").dumps(_progress(0, 100.0, 80.0, 10)) + "\n", encoding="utf-8"
+    )
     first = [fact.to_dict() for fact in extract_streaming_progress_path(path, repo_root=tmp_path)]
     second = [fact.to_dict() for fact in extract_streaming_progress_path(path, repo_root=tmp_path)]
     assert first == second
@@ -203,7 +207,7 @@ def test_progress_preserves_explicit_end_to_end_latency(tmp_path):
 
 
 def test_extract_structured_streaming_source_emits_anchored_facts():
-    source = '''
+    source = """
 from pyspark.sql import functions as F
 
 events = (
@@ -225,7 +229,7 @@ query = (
     .foreachBatch(write_batch)
     .start()
 )
-'''
+"""
 
     facts = extract_source(source, "fixtures/streaming/source.py")
     streaming = [fact for fact in facts if fact.kind.startswith("streaming.")]
@@ -247,7 +251,9 @@ query = (
     } <= kinds
     assert streaming
     assert all(fact.subject["file"] == "fixtures/streaming/source.py" for fact in streaming)
-    assert all(fact.subject["line"] > 0 for fact in streaming if fact.kind != "streaming.module_analyzed")
+    assert all(
+        fact.subject["line"] > 0 for fact in streaming if fact.kind != "streaming.module_analyzed"
+    )
     assert all(fact.provenance["extractor"] == "pyspark_ast@0.1.0" for fact in streaming)
 
     batch = extract_source(

@@ -46,25 +46,49 @@ class ExpectedOracle:
     predicates: tuple[str, ...]
 
     @classmethod
-    def from_scenario(cls, scenario: Any) -> "ExpectedOracle":
+    def from_scenario(cls, scenario: Any) -> ExpectedOracle:
         expected = scenario.expected
         return cls(
             source="scenario.expected",
             expected_facts=tuple(sorted(str(item) for item in expected.get("facts", []))),
             expected_findings=tuple(sorted(str(item) for item in expected.get("findings", []))),
-            forbidden_findings=tuple(sorted(str(item) for item in expected.get("must_not_find", expected.get("forbidden", [])))),
+            forbidden_findings=tuple(
+                sorted(
+                    str(item)
+                    for item in expected.get("must_not_find", expected.get("forbidden", []))
+                )
+            ),
             expected_unresolved=tuple(sorted(str(item) for item in expected.get("unresolved", []))),
             predicates=tuple(sorted(str(item) for item in expected.get("predicates", []))),
         )
 
-    def compare(self, facts: list[dict[str, Any]], findings: list[dict[str, Any]], unresolved: list[str] | None = None) -> OracleResult:
-        observed_facts = tuple(sorted({str(item.get("kind")) for item in facts if item.get("kind")}))
-        observed_findings = tuple(sorted({str(item.get("rule_id", item.get("id"))) for item in findings if item.get("rule_id", item.get("id"))}))
+    def compare(
+        self,
+        facts: list[dict[str, Any]],
+        findings: list[dict[str, Any]],
+        unresolved: list[str] | None = None,
+    ) -> OracleResult:
+        observed_facts = tuple(
+            sorted({str(item.get("kind")) for item in facts if item.get("kind")})
+        )
+        observed_findings = tuple(
+            sorted(
+                {
+                    str(item.get("rule_id", item.get("id")))
+                    for item in findings
+                    if item.get("rule_id", item.get("id"))
+                }
+            )
+        )
         observed_unresolved = tuple(sorted(set(unresolved or [])))
         missing_facts = tuple(item for item in self.expected_facts if item not in observed_facts)
-        missing_findings = tuple(item for item in self.expected_findings if item not in observed_findings)
+        missing_findings = tuple(
+            item for item in self.expected_findings if item not in observed_findings
+        )
         forbidden = tuple(item for item in observed_findings if item in self.forbidden_findings)
-        missing_unresolved = tuple(item for item in self.expected_unresolved if item not in observed_unresolved)
+        missing_unresolved = tuple(
+            item for item in self.expected_unresolved if item not in observed_unresolved
+        )
         reasons: list[str] = []
         if missing_facts:
             reasons.append("expected_fact_missing")

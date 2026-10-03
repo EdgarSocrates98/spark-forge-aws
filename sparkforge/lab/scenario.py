@@ -16,7 +16,6 @@ from .faults import compile_fault
 from .generators import CANONICAL_SCHEMAS
 from .workload import compile_workload
 
-
 ACTION_KINDS = frozenset(
     {
         "seed_dataset",
@@ -69,15 +68,24 @@ class ScenarioSpec:
         fault_plan = compile_fault(self.fault)
         actions = (
             ScenarioAction("seed_dataset", {"dataset": _plain(self.dataset)}),
-            ScenarioAction("start_workload", {"workload": _plain(self.workload), "plan": _plain(workload_plan)}),
+            ScenarioAction(
+                "start_workload", {"workload": _plain(self.workload), "plan": _plain(workload_plan)}
+            ),
             ScenarioAction("capture_baseline", {"observe": list(self.observe)}),
             ScenarioAction("inject_fault", {"fault": fault_plan}),
-            ScenarioAction("wait_condition", {"condition": _plain(self.fault.get("wait_until", {"status": "changed"}))}),
-            ScenarioAction("capture_artifacts", {"paths": list(self.expected.get("artifact_paths", []))}),
+            ScenarioAction(
+                "wait_condition",
+                {"condition": _plain(self.fault.get("wait_until", {"status": "changed"}))},
+            ),
+            ScenarioAction(
+                "capture_artifacts", {"paths": list(self.expected.get("artifact_paths", []))}
+            ),
             ScenarioAction("analyze", {"analyzers": list(self.expected.get("analyzers", []))}),
             ScenarioAction("judge", {"rules": list(self.expected.get("findings", []))}),
             ScenarioAction("compare_oracle", {"expected": _plain(self.expected)}),
-            ScenarioAction("capture_recovery", {"observe": list(self.observe), "phase": "recovery"}),
+            ScenarioAction(
+                "capture_recovery", {"observe": list(self.observe), "phase": "recovery"}
+            ),
             ScenarioAction("cleanup", {"cleanup": _plain(self.cleanup)}),
             ScenarioAction("receipt", {"scenario": self.scenario_id}),
         )
@@ -148,14 +156,18 @@ def load_scenario_suite(path: str | Path) -> ScenarioSuite:
         raise LabContractError("scenario suite has duplicate ids")
     payload = [scenario.to_dict() for scenario in scenarios]
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return ScenarioSuite(1, tuple(sorted(scenarios, key=lambda item: item.scenario_id)), fingerprint)
+    return ScenarioSuite(
+        1, tuple(sorted(scenarios, key=lambda item: item.scenario_id)), fingerprint
+    )
 
 
 def _build_scenario(raw: object) -> ScenarioSpec:
     if not isinstance(raw, Mapping):
         raise LabContractError("scenario must be an object")
     scenario_id = _required(raw.get("id"), "scenario.id")
-    slug = _required(raw.get("slug", scenario_id.lower().replace("_", "-")), f"scenario[{scenario_id}].slug")
+    slug = _required(
+        raw.get("slug", scenario_id.lower().replace("_", "-")), f"scenario[{scenario_id}].slug"
+    )
     version = raw.get("version")
     if version != 1:
         raise LabContractError(f"scenario {scenario_id} version must be 1")
@@ -168,7 +180,9 @@ def _build_scenario(raw: object) -> ScenarioSpec:
     fidelity = Fidelity(
         tier=tier,
         environment=_required(fidelity_raw.get("environment", "local"), "fidelity.environment"),
-        implementation=_required(fidelity_raw.get("implementation", "declared"), "fidelity.implementation"),
+        implementation=_required(
+            fidelity_raw.get("implementation", "declared"), "fidelity.implementation"
+        ),
         proves=_strings(fidelity_raw.get("proves", []), "fidelity.proves"),
         does_not_prove=_strings(fidelity_raw.get("does_not_prove", []), "fidelity.does_not_prove"),
     )
@@ -238,7 +252,9 @@ def _mapping(value: object, field: str) -> dict[str, Any]:
 
 
 def _strings(value: object, field: str) -> tuple[str, ...]:
-    if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
+    if not isinstance(value, list) or not all(
+        isinstance(item, str) and item.strip() for item in value
+    ):
         raise LabContractError(f"{field} must be a list of non-empty strings")
     return tuple(sorted(set(item.strip() for item in value)))
 

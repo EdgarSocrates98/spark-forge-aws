@@ -4,6 +4,7 @@ Aceita dumps JSON/JSONL já salvos de Kafka, MSK e Kinesis. Não chama brokers,
 AWS ou CloudWatch. Ausência de campo é preservada como ``unresolved``; zeros
 só aparecem quando o dump trouxe zero explicitamente.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -145,13 +146,17 @@ def _numeric_fields(record: dict[str, Any], keys: tuple[str, ...]) -> dict[str, 
     return {key: number for key in keys if (number := _number(record.get(key))) is not None}
 
 
-def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _kafka_record(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     facts: list[Fact] = []
     cluster = _as_dict(data.get("cluster"))
     if cluster is not None:
         attrs = {
             "cluster_id": cluster.get("cluster_id", cluster.get("clusterId")),
-            "version": cluster.get("version", cluster.get("kafka_version", cluster.get("kafkaVersion"))),
+            "version": cluster.get(
+                "version", cluster.get("kafka_version", cluster.get("kafkaVersion"))
+            ),
             "security_protocol": cluster.get("security_protocol", cluster.get("securityProtocol")),
         }
         facts.append(
@@ -168,7 +173,9 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     if isinstance(topics, list):
         for topic in topics:
             if not isinstance(topic, dict):
-                facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_topic_record"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "kafka", "invalid_topic_record")
+                )
                 continue
             name = topic.get("name", topic.get("topic"))
             partitions = topic.get("partitions")
@@ -178,7 +185,9 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                     artifact,
                     line,
                     provenance,
-                    measures={"partition_count": len(partitions)} if isinstance(partitions, list) else {},
+                    measures={"partition_count": len(partitions)}
+                    if isinstance(partitions, list)
+                    else {},
                     attrs={"name": name} if name is not None else {},
                 )
             )
@@ -197,11 +206,21 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
             if isinstance(partitions, list):
                 for partition in partitions:
                     if not isinstance(partition, dict):
-                        facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_partition_record"))
+                        facts.append(
+                            _unresolved(
+                                artifact, line, provenance, "kafka", "invalid_partition_record"
+                            )
+                        )
                         continue
                     measures = _numeric_fields(
                         partition,
-                        ("partition", "leader", "replication_factor", "isr_count", "log_end_offset"),
+                        (
+                            "partition",
+                            "leader",
+                            "replication_factor",
+                            "isr_count",
+                            "log_end_offset",
+                        ),
                     )
                     replicas = partition.get("replicas")
                     isr = partition.get("isr")
@@ -223,7 +242,11 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     if isinstance(groups, list):
         for group in groups:
             if not isinstance(group, dict):
-                facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_consumer_group_record"))
+                facts.append(
+                    _unresolved(
+                        artifact, line, provenance, "kafka", "invalid_consumer_group_record"
+                    )
+                )
                 continue
             group_name = group.get("group", group.get("group_id", group.get("groupId")))
             members = group.get("members", group.get("member_count"))
@@ -242,7 +265,11 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
             if isinstance(offsets, list):
                 for offset in offsets:
                     if not isinstance(offset, dict):
-                        facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_offset_record"))
+                        facts.append(
+                            _unresolved(
+                                artifact, line, provenance, "kafka", "invalid_offset_record"
+                            )
+                        )
                         continue
                     measures = _numeric_fields(
                         offset,
@@ -267,22 +294,43 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                             )
                         )
                     else:
-                        facts.append(_unresolved(artifact, line, provenance, "kafka", "lag_fields_missing", group=group_name))
+                        facts.append(
+                            _unresolved(
+                                artifact,
+                                line,
+                                provenance,
+                                "kafka",
+                                "lag_fields_missing",
+                                group=group_name,
+                            )
+                        )
     if "lag_observations" in data:
         observations = data.get("lag_observations")
         if not isinstance(observations, list):
-            facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_lag_observations"))
+            facts.append(
+                _unresolved(artifact, line, provenance, "kafka", "invalid_lag_observations")
+            )
         else:
             for observation in observations:
                 if not isinstance(observation, dict):
-                    facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_lag_observation_record"))
+                    facts.append(
+                        _unresolved(
+                            artifact, line, provenance, "kafka", "invalid_lag_observation_record"
+                        )
+                    )
                     continue
-                group_name = observation.get("group", observation.get("group_id", observation.get("groupId")))
+                group_name = observation.get(
+                    "group", observation.get("group_id", observation.get("groupId"))
+                )
                 topic_name = observation.get("topic")
                 partition = _number(observation.get("partition"))
                 lag = _number(observation.get("lag"))
                 timestamp_key = next(
-                    (key for key in ("observed_at", "observedAt", "timestamp") if key in observation),
+                    (
+                        key
+                        for key in ("observed_at", "observedAt", "timestamp")
+                        if key in observation
+                    ),
                     None,
                 )
                 timestamp_value = observation.get(timestamp_key) if timestamp_key else None
@@ -322,7 +370,9 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                             line,
                             provenance,
                             "kafka",
-                            "lag_observation_timestamp_invalid" if timestamp_key else "lag_observation_timestamp_missing",
+                            "lag_observation_timestamp_invalid"
+                            if timestamp_key
+                            else "lag_observation_timestamp_missing",
                             group=group_name,
                             topic=topic_name,
                             partition=partition,
@@ -357,7 +407,9 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
     return facts
 
 
-def _compose_kafka_lag_series(facts: list[Fact], artifact: str, provenance: dict[str, Any]) -> list[Fact]:
+def _compose_kafka_lag_series(
+    facts: list[Fact], artifact: str, provenance: dict[str, Any]
+) -> list[Fact]:
     grouped: dict[tuple[Any, Any, Any], list[Fact]] = {}
     for fact in facts:
         if fact.kind != "kafka.lag" or fact.attrs.get("series_observation") is not True:
@@ -398,7 +450,10 @@ def _compose_kafka_lag_series(facts: list[Fact], artifact: str, provenance: dict
             )
             continue
         timestamps = [_timestamp_seconds(fact.attrs.get("observed_at")) for fact in observations]
-        if any(current is None or previous is None or current <= previous for previous, current in zip(timestamps, timestamps[1:])):
+        if any(
+            current is None or previous is None or current <= previous
+            for previous, current in zip(timestamps, timestamps[1:], strict=False)
+        ):
             composed.append(
                 _unresolved(
                     artifact,
@@ -412,7 +467,9 @@ def _compose_kafka_lag_series(facts: list[Fact], artifact: str, provenance: dict
             )
             continue
         lags = [fact.measures["lag"] for fact in observations]
-        increases = sum(current > previous for previous, current in zip(lags, lags[1:]))
+        increases = sum(
+            current > previous for previous, current in zip(lags, lags[1:], strict=False)
+        )
         composed.append(
             _fact(
                 "kafka.lag.series",
@@ -433,7 +490,10 @@ def _compose_kafka_lag_series(facts: list[Fact], artifact: str, provenance: dict
                     "partition": partition,
                     "timestamp_start": observations[0].attrs["observed_at"],
                     "timestamp_end": observations[-1].attrs["observed_at"],
-                    "monotonic_increase": all(current > previous for previous, current in zip(lags, lags[1:])),
+                    "monotonic_increase": all(
+                        current > previous
+                        for previous, current in zip(lags, lags[1:], strict=False)
+                    ),
                     "causal_inference": False,
                     "observation_fact_ids": [fact.id for fact in observations],
                 },
@@ -443,7 +503,9 @@ def _compose_kafka_lag_series(facts: list[Fact], artifact: str, provenance: dict
     return composed
 
 
-def _msk_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _msk_record(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     cluster = _as_dict(data.get("cluster")) or data
     aliases = {
         "cluster_arn": ("clusterArn", "cluster_arn"),
@@ -481,11 +543,14 @@ def _msk_record(data: dict[str, Any], artifact: str, line: int, provenance: dict
     return facts
 
 
-def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
+def _kinesis_record(
+    data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]
+) -> list[Fact]:
     facts: list[Fact] = []
     if isinstance(data.get("kinesis"), dict):
         data = data["kinesis"]
     stream = _as_dict(data.get("stream")) or _as_dict(data.get("streamDescription")) or data
+
     def _alias(*keys: str) -> Any:
         return next((stream[key] for key in keys if key in stream), None)
 
@@ -514,7 +579,9 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
     if isinstance(shards, list):
         for shard in shards:
             if not isinstance(shard, dict):
-                facts.append(_unresolved(artifact, line, provenance, "kinesis", "invalid_shard_record"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "kinesis", "invalid_shard_record")
+                )
                 continue
             shard_measures = _numeric_fields(
                 shard, ("incoming_bytes", "outgoing_bytes", "record_count", "timestamp")
@@ -561,15 +628,21 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
     metrics = data.get("metrics", stream.get("metrics"))
     if isinstance(metrics, dict):
         observations = metrics.get("observations")
-        metrics = observations if isinstance(observations, list) else [
-            {"name": name, "value": value} for name, value in metrics.items()
-        ]
+        metrics = (
+            observations
+            if isinstance(observations, list)
+            else [{"name": name, "value": value} for name, value in metrics.items()]
+        )
     if isinstance(metrics, list):
         for metric in metrics:
             if not isinstance(metric, dict):
-                facts.append(_unresolved(artifact, line, provenance, "kinesis", "invalid_metric_record"))
+                facts.append(
+                    _unresolved(artifact, line, provenance, "kinesis", "invalid_metric_record")
+                )
                 continue
-            measures = _numeric_fields(metric, ("value", "timestamp", "minimum", "maximum", "average", "sum"))
+            measures = _numeric_fields(
+                metric, ("value", "timestamp", "minimum", "maximum", "average", "sum")
+            )
             facts.append(
                 _fact(
                     "kinesis.metric",
@@ -579,7 +652,14 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
                     measures=measures,
                     attrs={
                         key: metric[key]
-                        for key in ("name", "unit", "stream_name", "shard_id", "stat", "observed_at")
+                        for key in (
+                            "name",
+                            "unit",
+                            "stream_name",
+                            "shard_id",
+                            "stat",
+                            "observed_at",
+                        )
                         if key in metric
                     },
                 )
@@ -589,9 +669,15 @@ def _kinesis_record(data: dict[str, Any], artifact: str, line: int, provenance: 
     return facts
 
 
-def _record(data: Any, artifact: str, line: int, domain: str, provenance: dict[str, Any]) -> list[Fact]:
+def _record(
+    data: Any, artifact: str, line: int, domain: str, provenance: dict[str, Any]
+) -> list[Fact]:
     if not isinstance(data, dict):
-        return [_unresolved(artifact, line, provenance, domain, "invalid_record", value_type=type(data).__name__)]
+        return [
+            _unresolved(
+                artifact, line, provenance, domain, "invalid_record", value_type=type(data).__name__
+            )
+        ]
     if domain == "kafka":
         return _kafka_record(data, artifact, line, provenance)
     if domain == "msk":
@@ -621,30 +707,49 @@ def extract_transport_text(text: str, artifact_path: str, *, artifact: str) -> l
             artifact_path,
             1,
             provenance,
-            measures={"record_count": len(records), "unresolved_count": sum(f.kind.endswith(".unresolved") for f in facts)},
+            measures={
+                "record_count": len(records),
+                "unresolved_count": sum(f.kind.endswith(".unresolved") for f in facts),
+            },
             attrs={"artifact_type": artifact},
         )
     )
     return sort_facts(facts)
 
 
-def extract_transport_path(path: Path, *, artifact_type: str) -> list[Fact]:
+def extract_transport_path(
+    path: Path, *, artifact_type: str, repo_root: Path | str | None = None
+) -> list[Fact]:
+    rel = str(path.relative_to(repo_root)) if repo_root else str(path)
+    anchor = rel.replace("\\", "/")
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
-        provenance = _provenance(str(exc), str(path))
+        provenance = _provenance(str(exc), anchor)
         return [
-            _unresolved(str(path), 1, provenance, artifact_type, "unreadable_artifact", detail=str(exc)),
-            _fact(f"{artifact_type}.analyzed", str(path), 1, provenance, attrs={"artifact_type": artifact_type}),
+            _unresolved(
+                anchor, 1, provenance, artifact_type, "unreadable_artifact", detail=str(exc)
+            ),
+            _fact(
+                f"{artifact_type}.analyzed",
+                anchor,
+                1,
+                provenance,
+                attrs={"artifact_type": artifact_type},
+            ),
         ]
-    return extract_transport_text(text, str(path), artifact=artifact_type)
+    return extract_transport_text(text, anchor, artifact=artifact_type)
 
 
-def extract_transport_tree(path: Path, *, artifact_type: str) -> list[Fact]:
+def extract_transport_tree(
+    path: Path, *, artifact_type: str, repo_root: Path | str | None = None
+) -> list[Fact]:
     facts: list[Fact] = []
     for pattern in ("*.json", "*.jsonl"):
         for child in iter_source_files(path, pattern):
-            facts.extend(extract_transport_path(child, artifact_type=artifact_type))
+            facts.extend(
+                extract_transport_path(child, artifact_type=artifact_type, repo_root=repo_root)
+            )
     return sort_facts(facts)
 
 

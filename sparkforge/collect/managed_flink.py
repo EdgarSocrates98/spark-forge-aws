@@ -6,6 +6,7 @@ que ``analyze flink --artifact managed_flink`` já consome; código do job,
 job-plan, métricas temporais e conectores não observados ficam nomeados como
 unresolved, nunca inferidos.
 """
+
 from __future__ import annotations
 
 import json
@@ -127,7 +128,9 @@ def _configuration(detail: dict[str, Any]) -> dict[str, Any]:
     if isinstance(vpcs, list):
         records = [record for record in vpcs if isinstance(record, dict)]
         result["vpc_configuration_count"] = len(records)
-        result["vpc_ids"] = [record["VpcId"] for record in records if isinstance(record.get("VpcId"), str)]
+        result["vpc_ids"] = [
+            record["VpcId"] for record in records if isinstance(record.get("VpcId"), str)
+        ]
         result["subnet_count"] = sum(
             len(record.get("SubnetIds", []))
             for record in records
@@ -147,11 +150,15 @@ def _configuration(detail: dict[str, Any]) -> dict[str, Any]:
             result.update(_pick(content, {"CodeMD5": "code_md5", "CodeSize": "code_size"}))
             location = content.get("S3ApplicationCodeLocationDescription")
             if isinstance(location, dict):
-                result.update(_pick(location, {"BucketARN": "code_bucket_arn", "FileKey": "code_file_key"}))
+                result.update(
+                    _pick(location, {"BucketARN": "code_bucket_arn", "FileKey": "code_file_key"})
+                )
 
     encryption = description.get("ApplicationEncryptionConfigurationDescription")
     if isinstance(encryption, dict):
-        result.update(_pick(encryption, {"KeyType": "encryption_key_type", "KeyId": "encryption_key_id"}))
+        result.update(
+            _pick(encryption, {"KeyType": "encryption_key_type", "KeyId": "encryption_key_id"})
+        )
     logging_options = detail.get("CloudWatchLoggingOptionDescriptions")
     if isinstance(logging_options, list):
         result["cloudwatch_logging_option_count"] = sum(
@@ -173,7 +180,9 @@ def _parse_iso(value: str) -> Any:
     except ValueError as exc:
         raise CollectionFailed(f"janela CloudWatch invalida: {value!r}; use ISO 8601") from exc
     if parsed.tzinfo is None:
-        raise CollectionFailed(f"janela CloudWatch sem timezone: {value!r}; use ISO 8601 com timezone")
+        raise CollectionFailed(
+            f"janela CloudWatch sem timezone: {value!r}; use ISO 8601 com timezone"
+        )
     return parsed
 
 
@@ -261,7 +270,9 @@ def _metrics(
             "reduza a janela ou aumente o período para evitar artifact parcial"
         )
 
-    by_id = {query["Id"]: definition for query, definition in zip(queries, definitions)}
+    by_id = {
+        query["Id"]: definition for query, definition in zip(queries, definitions, strict=True)
+    }
     returned: set[str] = set()
     unresolved: list[str] = []
     observations: list[dict[str, Any]] = []
@@ -280,7 +291,7 @@ def _metrics(
         status = result.get("StatusCode")
         if status not in (None, "Complete"):
             unresolved.append(f"managed_flink_metric_status:{name}:{status}")
-        for timestamp, value in zip(timestamps, values):
+        for timestamp, value in zip(timestamps, values, strict=True):
             if not _metric_value(value):
                 unresolved.append(f"managed_flink_metric_value_invalid:{name}")
                 continue
@@ -351,7 +362,11 @@ def collect_managed_flink(
         return hit
 
     boto3 = require_boto3()
-    client = boto3.client("kinesisanalyticsv2", region_name=region_name) if region_name else boto3.client("kinesisanalyticsv2")
+    client = (
+        boto3.client("kinesisanalyticsv2", region_name=region_name)
+        if region_name
+        else boto3.client("kinesisanalyticsv2")
+    )
     response = client.describe_application(
         ApplicationName=application_name,
         IncludeAdditionalDetails=False,
@@ -395,7 +410,11 @@ def collect_managed_flink(
     if metrics_window is None:
         payload["unresolved"].append("managed_flink_metrics_not_observed")
     else:
-        cloudwatch = boto3.client("cloudwatch", region_name=region_name) if region_name else boto3.client("cloudwatch")
+        cloudwatch = (
+            boto3.client("cloudwatch", region_name=region_name)
+            if region_name
+            else boto3.client("cloudwatch")
+        )
         payload["metrics"] = _metrics(
             cloudwatch,
             application_name,
@@ -405,14 +424,18 @@ def collect_managed_flink(
         )
         payload["unresolved"].extend(payload["metrics"]["unresolved"])
     payload["unresolved"] = sorted(set(payload["unresolved"]))
-    content = (json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    content = (json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode(
+        "utf-8"
+    )
     return _write_and_register(
         root,
         rel_path,
         content,
         kind="managed_flink_application",
         source="aws-managed-flink-describe-application-read-only",
-        collect_command=collect_command or "sparkforge collect managed-flink --repo <repo> --application-name <name> --now <ISO8601>",
+        collect_command=collect_command
+        or "sparkforge collect managed-flink --repo <repo> "
+        "--application-name <name> --now <ISO8601>",
         now=now,
     )
 

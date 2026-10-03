@@ -18,7 +18,9 @@ FIXTURES = ROOT / "fixtures" / "event_driven"
 def test_event_driven_goldens():
     for directory in sorted(path for path in FIXTURES.iterdir() if path.is_dir()):
         meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
-        facts = sort_facts(extract_event_driven_path(directory / meta["artifact"]))
+        facts = sort_facts(
+            extract_event_driven_path(directory / meta["artifact"], repo_root=directory / "input")
+        )
         findings = judge(facts, load_catalog(), {})
         assert [f.to_dict() for f in facts] == json.loads(
             (directory / "expected/facts.json").read_text(encoding="utf-8")

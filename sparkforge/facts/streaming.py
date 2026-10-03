@@ -5,6 +5,7 @@ O formato aceito acompanha o dicionário público retornado por
 checkpoint interno, não chama Spark e não interpreta offsets como capacidade:
 quando um campo ou uma série não pode ser lida, emite ``unresolved``.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -193,8 +194,7 @@ def _progress_facts(
                 )
             )
         if "endToEndLatencyMs" in value and (
-            "end_to_end_latency_ms" not in measures
-            or measures["end_to_end_latency_ms"] < 0
+            "end_to_end_latency_ms" not in measures or measures["end_to_end_latency_ms"] < 0
         ):
             measures.pop("end_to_end_latency_ms", None)
             facts.append(
@@ -209,13 +209,15 @@ def _progress_facts(
             )
         event_time = value.get("eventTime")
         event_time_max = event_time.get("max") if isinstance(event_time, dict) else None
-        if "freshnessMs" not in value and "freshness_ms" not in measures and event_time_max is not None:
+        if (
+            "freshnessMs" not in value
+            and "freshness_ms" not in measures
+            and event_time_max is not None
+        ):
             observed_timestamp = _timestamp(timestamp)
             parsed_event_time_max = _timestamp(event_time_max)
             if observed_timestamp is not None and parsed_event_time_max is not None:
-                freshness_ms = (
-                    observed_timestamp - parsed_event_time_max
-                ).total_seconds() * 1000
+                freshness_ms = (observed_timestamp - parsed_event_time_max).total_seconds() * 1000
                 if freshness_ms >= 0:
                     measures["freshness_ms"] = freshness_ms
                 else:
@@ -401,7 +403,9 @@ def _progress_facts(
             (value.get("inputRowsPerSecond"), value.get("processedRowsPerSecond"))
             for _, value, _ in valid
         ]
-        if all(_number(left) is not None and _number(right) is not None for left, right in rate_rows):
+        if all(
+            _number(left) is not None and _number(right) is not None for left, right in rate_rows
+        ):
             inputs = [float(left) for left, _ in rate_rows]
             processed = [float(right) for _, right in rate_rows]
             measures.update(
@@ -439,14 +443,10 @@ def _progress_facts(
                 state_memory = []
                 break
             row_values = [
-                _number(item.get("numRowsTotal"))
-                for item in operators
-                if isinstance(item, dict)
+                _number(item.get("numRowsTotal")) for item in operators if isinstance(item, dict)
             ]
             memory_values = [
-                _number(item.get("memoryUsedBytes"))
-                for item in operators
-                if isinstance(item, dict)
+                _number(item.get("memoryUsedBytes")) for item in operators if isinstance(item, dict)
             ]
             if len(row_values) != len(operators) or any(item is None for item in row_values):
                 state_totals = []
@@ -506,7 +506,9 @@ def _progress_facts(
         if any(watermark is not None for watermark in watermarks):
             parsed_watermarks = [_timestamp(watermark) for watermark in watermarks]
             if all(watermark is not None for watermark in parsed_watermarks):
-                watermark_values = [watermark for watermark in parsed_watermarks if watermark is not None]
+                watermark_values = [
+                    watermark for watermark in parsed_watermarks if watermark is not None
+                ]
                 measures["watermark_advance_ms"] = (
                     watermark_values[-1] - watermark_values[0]
                 ).total_seconds() * 1000
@@ -571,7 +573,9 @@ def extract_streaming_progress_text(text: str, artifact: str, suffix: str = ".js
             measures={
                 "record_count": len(records),
                 "unresolved_count": sum(1 for fact in facts if fact.kind.endswith(".unresolved")),
-                "series_count": sum(1 for fact in facts if fact.kind == "streaming.progress.series"),
+                "series_count": sum(
+                    1 for fact in facts if fact.kind == "streaming.progress.series"
+                ),
             },
             attrs={"parsed": True},
         )
@@ -582,16 +586,21 @@ def extract_streaming_progress_text(text: str, artifact: str, suffix: str = ".js
     return sort_facts(facts)
 
 
-def extract_streaming_progress_path(path: Path | str, repo_root: Path | str | None = None) -> list[Fact]:
+def extract_streaming_progress_path(
+    path: Path | str, repo_root: Path | str | None = None
+) -> list[Fact]:
     target = Path(path)
     if not target.is_file():
         raise FileNotFoundError(target)
+    rel = str(target.relative_to(repo_root)) if repo_root else str(target)
     return extract_streaming_progress_text(
-        target.read_text(encoding="utf-8"), str(target), target.suffix
+        target.read_text(encoding="utf-8"), rel.replace("\\", "/"), target.suffix
     )
 
 
-def extract_streaming_progress_tree(root: Path | str, repo_root: Path | str | None = None) -> list[Fact]:
+def extract_streaming_progress_tree(
+    root: Path | str, repo_root: Path | str | None = None
+) -> list[Fact]:
     base = Path(root)
     facts: list[Fact] = []
     for path in iter_source_files(base, "*.json*"):

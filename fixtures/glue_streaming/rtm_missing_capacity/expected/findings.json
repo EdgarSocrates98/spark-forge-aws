@@ -9,15 +9,15 @@
     "status": "structural",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\glue_streaming\\rtm_missing_capacity\\input\\job.json",
+      "file": "job.json",
       "line": 1,
       "col": 0,
       "symbol": "rtm-capacity-unknown",
       "snippet": ""
     },
     "evidence": [
-      "f_40a76c",
-      "f_cfa609"
+      "f_f4e405",
+      "f_445ea7"
     ],
     "measured": {},
     "threshold": {},

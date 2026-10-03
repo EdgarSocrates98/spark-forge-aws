@@ -52,7 +52,11 @@ def analyze_dbt_artifacts(path: str | Path) -> dict[str, Any]:
     return {"dbt": load_dbt_artifacts(path).to_dict()}
 
 
-def _build(manifest: Mapping[str, Any], catalog: Mapping[str, Any] | None, results: Mapping[str, Any] | None) -> DbtArtifacts:
+def _build(
+    manifest: Mapping[str, Any],
+    catalog: Mapping[str, Any] | None,
+    results: Mapping[str, Any] | None,
+) -> DbtArtifacts:
     raw_resources: list[Mapping[str, Any]] = []
     for group in ("nodes", "sources", "exposures", "metrics", "semantic_models"):
         entries = manifest.get(group, {})
@@ -67,8 +71,14 @@ def _build(manifest: Mapping[str, Any], catalog: Mapping[str, Any] | None, resul
             unresolved.append({"code": "dbt_resource_id_unresolved"})
             continue
         known_ids.add(unique_id)
-        depends_on = raw.get("depends_on", {}).get("nodes", []) if isinstance(raw.get("depends_on", {}), Mapping) else []
-        if not isinstance(depends_on, list) or not all(isinstance(item, str) for item in depends_on):
+        depends_on = (
+            raw.get("depends_on", {}).get("nodes", [])
+            if isinstance(raw.get("depends_on", {}), Mapping)
+            else []
+        )
+        if not isinstance(depends_on, list) or not all(
+            isinstance(item, str) for item in depends_on
+        ):
             unresolved.append({"code": "dbt_dependencies_unresolved", "unique_id": unique_id})
             depends_on = []
         resources.append(
@@ -87,39 +97,73 @@ def _build(manifest: Mapping[str, Any], catalog: Mapping[str, Any] | None, resul
     for item in resources:
         for dependency in item["depends_on"]:
             if dependency not in known_ids:
-                unresolved.append({"code": "dbt_dependency_unresolved", "unique_id": item["unique_id"], "dependency": dependency})
+                unresolved.append(
+                    {
+                        "code": "dbt_dependency_unresolved",
+                        "unique_id": item["unique_id"],
+                        "dependency": dependency,
+                    }
+                )
 
     catalog_nodes = _catalog_nodes(catalog, unresolved)
     run_results = _run_results(results, unresolved)
     resources.sort(key=lambda item: item["unique_id"])
     payload = {
-        "project": str(manifest.get("metadata", {}).get("project_name", "")) if isinstance(manifest.get("metadata", {}), Mapping) else "",
-        "manifest_schema": str(manifest.get("metadata", {}).get("dbt_schema_version", "")) if isinstance(manifest.get("metadata", {}), Mapping) else "",
+        "project": str(manifest.get("metadata", {}).get("project_name", ""))
+        if isinstance(manifest.get("metadata", {}), Mapping)
+        else "",
+        "manifest_schema": str(manifest.get("metadata", {}).get("dbt_schema_version", ""))
+        if isinstance(manifest.get("metadata", {}), Mapping)
+        else "",
         "resources": resources,
         "catalog_nodes": catalog_nodes,
         "run_results": run_results,
         "unresolved": _unique(unresolved),
     }
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return DbtArtifacts(payload["project"], payload["manifest_schema"], tuple(resources), tuple(catalog_nodes), tuple(run_results), tuple(_unique(unresolved)), fingerprint)
+    return DbtArtifacts(
+        payload["project"],
+        payload["manifest_schema"],
+        tuple(resources),
+        tuple(catalog_nodes),
+        tuple(run_results),
+        tuple(_unique(unresolved)),
+        fingerprint,
+    )
 
 
-def _catalog_nodes(catalog: Mapping[str, Any] | None, unresolved: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _catalog_nodes(
+    catalog: Mapping[str, Any] | None, unresolved: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     if catalog is None:
         unresolved.append({"code": "dbt_catalog_unresolved", "reason": "catalog_json_missing"})
         return []
     result: list[dict[str, Any]] = []
-    for unique_id, raw in (catalog.get("nodes", {}) if isinstance(catalog.get("nodes", {}), Mapping) else {}).items():
+    for unique_id, raw in (
+        catalog.get("nodes", {}) if isinstance(catalog.get("nodes", {}), Mapping) else {}
+    ).items():
         if not isinstance(raw, Mapping):
             unresolved.append({"code": "dbt_catalog_node_unresolved", "unique_id": unique_id})
             continue
-        result.append({"unique_id": str(unique_id), "metadata": dict(raw.get("metadata", {})) if isinstance(raw.get("metadata", {}), Mapping) else {}, "columns": _columns(raw.get("columns", {}))})
+        result.append(
+            {
+                "unique_id": str(unique_id),
+                "metadata": dict(raw.get("metadata", {}))
+                if isinstance(raw.get("metadata", {}), Mapping)
+                else {},
+                "columns": _columns(raw.get("columns", {})),
+            }
+        )
     return sorted(result, key=lambda item: item["unique_id"])
 
 
-def _run_results(results: Mapping[str, Any] | None, unresolved: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _run_results(
+    results: Mapping[str, Any] | None, unresolved: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     if results is None:
-        unresolved.append({"code": "dbt_run_results_unresolved", "reason": "run_results_json_missing"})
+        unresolved.append(
+            {"code": "dbt_run_results_unresolved", "reason": "run_results_json_missing"}
+        )
         return []
     values = results.get("results", [])
     if not isinstance(values, list):
@@ -145,7 +189,11 @@ def _columns(value: object) -> list[dict[str, Any]]:
         return []
     return sorted(
         [
-            {"name": str(name), "data_type": str(item.get("data_type", item.get("type", ""))), "description": str(item.get("description", ""))}
+            {
+                "name": str(name),
+                "data_type": str(item.get("data_type", item.get("type", ""))),
+                "description": str(item.get("description", "")),
+            }
             for name, item in value.items()
             if isinstance(item, Mapping)
         ],
@@ -156,8 +204,19 @@ def _columns(value: object) -> list[dict[str, Any]]:
 def _config(value: object) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         return {}
-    keys = ("materialized", "incremental_strategy", "on_schema_change", "unique_key", "schema", "alias")
-    return {key: value[key] for key in keys if key in value and isinstance(value[key], (str, int, float, bool, list))}
+    keys = (
+        "materialized",
+        "incremental_strategy",
+        "on_schema_change",
+        "unique_key",
+        "schema",
+        "alias",
+    )
+    return {
+        key: value[key]
+        for key in keys
+        if key in value and isinstance(value[key], (str, int, float, bool, list))
+    }
 
 
 def _json(path: Path) -> Mapping[str, Any]:

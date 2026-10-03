@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_958f9a",
+    "id": "f_378bf7",
     "schema_version": 1,
     "kind": "schema.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -18,18 +18,18 @@
       "format": "AVRO"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
       "extractor": "schema_registry@0.1.0"
     }
   },
   {
-    "id": "f_35a59d",
+    "id": "f_f75071",
     "schema_version": 1,
     "kind": "schema.compatibility",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -41,18 +41,18 @@
       "mode": "BACKWARD"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
       "extractor": "schema_registry@0.1.0"
     }
   },
   {
-    "id": "f_f04107",
+    "id": "f_d48f23",
     "schema_version": 1,
     "kind": "schema.definition",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-value",
@@ -80,18 +80,18 @@
       ]
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
       "extractor": "schema_registry@0.1.0"
     }
   },
   {
-    "id": "f_03641a",
+    "id": "f_f806b4",
     "schema_version": 1,
     "kind": "schema.diff",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-value",
@@ -114,18 +114,18 @@
       "compatible": true
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
       "extractor": "schema_registry@0.1.0"
     }
   },
   {
-    "id": "f_c4b635",
+    "id": "f_1f2f47",
     "schema_version": 1,
     "kind": "schema.registry",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "file": "contract.json",
       "line": 1,
       "col": 0,
       "symbol": "orders-value",
@@ -142,7 +142,7 @@
       "version": 2
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\schema_registry\\schema_compatible\\input\\contract.json",
+      "artifact": "contract.json",
       "artifact_sha256": "444fbf3be5f9c1ec1770c9b36836245af050d531d1dd5abb72de07df0d2dd9c4",
       "extractor": "schema_registry@0.1.0"
     }

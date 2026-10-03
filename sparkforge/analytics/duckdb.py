@@ -64,9 +64,22 @@ def _build(raw: object) -> DuckDBMicroscope:
     queries = _queries(raw.get("queries", []))
     comparisons = _comparisons(raw.get("comparisons", []))
     unresolved = _records(raw.get("unresolved", []), "unresolved")
-    payload = {"database": database.strip(), "objects": objects, "queries": queries, "comparisons": comparisons, "unresolved": _unique(unresolved)}
+    payload = {
+        "database": database.strip(),
+        "objects": objects,
+        "queries": queries,
+        "comparisons": comparisons,
+        "unresolved": _unique(unresolved),
+    }
     fingerprint = hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
-    return DuckDBMicroscope(database.strip(), tuple(objects), tuple(queries), tuple(comparisons), tuple(_unique(unresolved)), fingerprint)
+    return DuckDBMicroscope(
+        database.strip(),
+        tuple(objects),
+        tuple(queries),
+        tuple(comparisons),
+        tuple(_unique(unresolved)),
+        fingerprint,
+    )
 
 
 def _objects(value: object) -> list[dict[str, Any]]:
@@ -77,7 +90,11 @@ def _objects(value: object) -> list[dict[str, Any]]:
         if not isinstance(raw, Mapping) or not isinstance(raw.get("id"), str):
             raise DuckDBMicroscopeError("object requires id")
         item = dict(raw)
-        item["columns"] = sorted(item.get("columns", []), key=lambda column: str(column.get("name", ""))) if isinstance(item.get("columns", []), list) else []
+        item["columns"] = (
+            sorted(item.get("columns", []), key=lambda column: str(column.get("name", "")))
+            if isinstance(item.get("columns", []), list)
+            else []
+        )
         result.append(item)
     return sorted(result, key=lambda item: str(item["id"]))
 
@@ -87,7 +104,11 @@ def _queries(value: object) -> list[dict[str, Any]]:
         raise DuckDBMicroscopeError("queries must be a list")
     result: list[dict[str, Any]] = []
     for raw in value:
-        if not isinstance(raw, Mapping) or not isinstance(raw.get("id"), str) or not isinstance(raw.get("sql"), str):
+        if (
+            not isinstance(raw, Mapping)
+            or not isinstance(raw.get("id"), str)
+            or not isinstance(raw.get("sql"), str)
+        ):
             raise DuckDBMicroscopeError("query requires id and sql")
         sql = _normalize_sql(raw["sql"])
         if not _read_only(sql):
@@ -99,14 +120,27 @@ def _queries(value: object) -> list[dict[str, Any]]:
 def _comparisons(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         raise DuckDBMicroscopeError("comparisons must be a list")
-    return sorted([dict(item) for item in value if isinstance(item, Mapping)], key=lambda item: str(item.get("id", "")))
+    return sorted(
+        [dict(item) for item in value if isinstance(item, Mapping)],
+        key=lambda item: str(item.get("id", "")),
+    )
 
 
 def _read_only(sql: str) -> bool:
-    statement = re.sub(r"^\s*(--[^\n]*\n|/\*.*?\*/\s*)*", "", sql, flags=re.DOTALL | re.MULTILINE).lower()
-    if re.search(r"\b(insert|update|delete|merge|create|drop|alter|copy|install|load|attach|detach)\b", statement):
+    statement = re.sub(
+        r"^\s*(--[^\n]*\n|/\*.*?\*/\s*)*", "", sql, flags=re.DOTALL | re.MULTILINE
+    ).lower()
+    if re.search(
+        r"\b(insert|update|delete|merge|create|drop|alter|copy|install|load|attach|detach)\b",
+        statement,
+    ):
         return False
-    return statement.startswith(("select", "with", "explain", "describe", "show", "summarize", "pragma")) and "pragma" not in statement[6:]
+    return (
+        statement.startswith(
+            ("select", "with", "explain", "describe", "show", "summarize", "pragma")
+        )
+        and "pragma" not in statement[6:]
+    )
 
 
 def _normalize_sql(sql: str) -> str:
@@ -130,4 +164,9 @@ def _canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
 
 
-__all__ = ["DuckDBMicroscope", "DuckDBMicroscopeError", "analyze_duckdb_microscope", "load_duckdb_microscope"]
+__all__ = [
+    "DuckDBMicroscope",
+    "DuckDBMicroscopeError",
+    "analyze_duckdb_microscope",
+    "load_duckdb_microscope",
+]

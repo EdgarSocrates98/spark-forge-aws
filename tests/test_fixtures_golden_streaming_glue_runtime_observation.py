@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from test_streaming_glue_runtime_observation import _run_fixture
 
 ROOT = Path(__file__).resolve().parents[1]

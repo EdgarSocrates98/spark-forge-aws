@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_d0a21e",
+    "id": "f_294635",
     "schema_version": 1,
     "kind": "kinesis.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\malformed.json",
+      "file": "malformed.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -19,18 +19,18 @@
       "artifact_type": "kinesis"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\malformed.json",
+      "artifact": "malformed.json",
       "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_76239b",
+    "id": "f_a3e58d",
     "schema_version": 1,
     "kind": "kinesis.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\unknown.json",
+      "file": "unknown.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -44,18 +44,18 @@
       "artifact_type": "kinesis"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\unknown.json",
+      "artifact": "unknown.json",
       "artifact_sha256": "468890e58373e7ef51ddc79dc40b30fc2aa848e40dd119e743ad1a3197a9e4b5",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_3f8624",
+    "id": "f_1fee74",
     "schema_version": 1,
     "kind": "kinesis.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\malformed.json",
+      "file": "malformed.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -67,18 +67,18 @@
       "detail": "Expecting property name enclosed in double quotes"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\malformed.json",
+      "artifact": "malformed.json",
       "artifact_sha256": "5715ea11351f96c1faee52d83ceb8edf41612427a452f7acc780b6bc05072500",
       "extractor": "streaming_transport@0.1.0"
     }
   },
   {
-    "id": "f_65ba54",
+    "id": "f_87c709",
     "schema_version": 1,
     "kind": "kinesis.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\unknown.json",
+      "file": "unknown.json",
       "line": 1,
       "col": 0,
       "symbol": "",
@@ -89,7 +89,7 @@
       "reason": "missing_shape"
     },
     "provenance": {
-      "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\unresolved\\input\\unknown.json",
+      "artifact": "unknown.json",
       "artifact_sha256": "468890e58373e7ef51ddc79dc40b30fc2aa848e40dd119e743ad1a3197a9e4b5",
       "extractor": "streaming_transport@0.1.0"
     }
