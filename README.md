@@ -236,19 +236,6 @@ live, throughput, saúde, exactly-once, capacidade ou validação funcional.
 Detalhes em [`knowledge/glue-streaming-rtm.md`](knowledge/glue-streaming-rtm.md)
 e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
-### Glue Streaming: source e sink explícitos
-
-O mesmo analyzer também preserva `glue.streaming.source` e
-`glue.streaming.sink` quando `stream.sources`/`source` e `stream.sinks`/`sink`
-estão declarados como objeto ou lista. Identidade, connector, topic/stream/table
-e medidas de partições, shards, lag, registros, commits ou falhas são mantidos
-somente quando observados. Estruturas desconhecidas são descartadas e campos
-ausentes não viram zero; ausência ou forma inválida vira
-`glue.streaming.unresolved` com razão nomeada. Esses facts não provam execução
-live, throughput, saúde, exactly-once, capacidade ou validação funcional.
-Detalhes em [`knowledge/glue-streaming-rtm.md`](knowledge/glue-streaming-rtm.md)
-e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
-
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:
 
