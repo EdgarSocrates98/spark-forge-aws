@@ -137,6 +137,7 @@ class TestToolSurface:
             "sparkforge_collect_glue_job",
             "sparkforge_collect_streaming_integrations",
             "sparkforge_collect_schema_registry",
+            "sparkforge_collect_managed_flink",
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_cloudwatch_logs",
             "sparkforge_collect_lakeformation",
@@ -218,6 +219,7 @@ class TestToolSurface:
             "sparkforge_collect_emr_eks",
             "sparkforge_collect_streaming_integrations",
             "sparkforge_collect_schema_registry",
+            "sparkforge_collect_managed_flink",
         }
 
     def test_every_open_world_tool_also_writes_locally(self):
@@ -3323,6 +3325,38 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             },
         )
 
+    if name == "sparkforge_collect_managed_flink":
+        from sparkforge.collect import managed_flink as collect_managed_flink
+
+        class _ManagedFlink:
+            def describe_application(self, **kwargs):
+                return {
+                    "ApplicationDetail": {
+                        "ApplicationName": kwargs["ApplicationName"],
+                        "ApplicationARN": "arn:aws:kinesisanalytics:us-east-1:111111111111:application/orders",
+                        "ApplicationStatus": "RUNNING",
+                        "RuntimeEnvironment": "FLINK-1_20",
+                        "ApplicationVersionId": 1,
+                    }
+                }
+
+        class _Boto3:
+            def client(self, service, **kwargs):
+                assert service == "kinesisanalyticsv2"
+                return _ManagedFlink()
+
+        assert monkeypatch is not None
+        monkeypatch.setattr(collect_managed_flink, "require_boto3", lambda: _Boto3())
+        return call_tool(
+            name,
+            {
+                "repo": str(tmp_path),
+                "application_name": "orders",
+                "region_name": "us-east-1",
+                "now": "2026-10-03T00:00:00Z",
+            },
+        )
+
     if name in (
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
@@ -3337,6 +3371,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_emr_cluster",
         "sparkforge_collect_emr_serverless",
         "sparkforge_collect_emr_eks",
+        "sparkforge_collect_managed_flink",
     ):
         assert monkeypatch is not None, f"{name} precisa de monkeypatch para o client AWS falso"
         _fake_collect_boto3(monkeypatch)

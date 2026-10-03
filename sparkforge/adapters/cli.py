@@ -3398,6 +3398,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     schema_registry_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    managed_flink_collect_p = collect_sub.add_parser(
+        "managed-flink",
+        help="Coleta descrição read-only de uma aplicação Managed Flink.",
+    )
+    managed_flink_collect_p.add_argument("--repo", required=True)
+    managed_flink_collect_p.add_argument("--application-name", required=True, help="Nome da aplicação Managed Flink.")
+    managed_flink_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
+    managed_flink_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     workspace_graph_p = collect_sub.add_parser(
         "workspace-graph",
         help=("Coleta grafo live limitado aos cloud_resources declarados no workspace manifest."),
@@ -5403,6 +5412,17 @@ def _cmd_collect_schema_registry(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_managed_flink(args: argparse.Namespace) -> int:
+    payload = _core.collect_managed_flink(
+        args.repo,
+        application_name=args.application_name,
+        region_name=args.region_name,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_workspace_graph(args: argparse.Namespace) -> int:
     payload = _core.collect_workspace_graph(
         args.repo,
@@ -5958,6 +5978,7 @@ _DISPATCH = {
     ("collect", "emr-eks"): _cmd_collect_emr_eks,
     ("collect", "streaming-integrations"): _cmd_collect_streaming_integrations,
     ("collect", "schema-registry"): _cmd_collect_schema_registry,
+    ("collect", "managed-flink"): _cmd_collect_managed_flink,
     ("collect", "workspace-graph"): _cmd_collect_workspace_graph,
     ("collect", "verify"): _cmd_collect_verify,
     # agentic

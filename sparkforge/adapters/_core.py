@@ -45,6 +45,7 @@ from sparkforge.collect import live_graph as collect_live_graph
 from sparkforge.collect import parquet_footer as collect_parquet
 from sparkforge.collect import streaming as collect_streaming
 from sparkforge.collect import schema_registry as collect_schema_registry_collector
+from sparkforge.collect import managed_flink as collect_managed_flink_collector
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.context.gateway_models import AnswerStatus
 from sparkforge.controlm import migration as _ctm_migration
@@ -8046,6 +8047,39 @@ def collect_schema_registry(
     except ValueError as exc:
         raise AdapterError(f"collect schema-registry: {exc}", exit_code=2) from exc
     except (CollectorUnavailable, collect_schema_registry_collector.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_managed_flink(
+    repo: str,
+    *,
+    application_name: str,
+    now: str,
+    region_name: str = "",
+) -> dict[str, Any]:
+    """Coleta descrição read-only de uma aplicação Managed Flink."""
+    rel_path = collect_managed_flink_collector.managed_flink_path(
+        application_name=application_name, region_name=region_name
+    )
+    command_parts = [
+        "sparkforge collect managed-flink --repo <repo>",
+        f"--application-name {application_name}",
+    ]
+    if region_name:
+        command_parts.append(f"--region {region_name}")
+    command_parts.append(f"--now {now}")
+    try:
+        entry = collect_managed_flink_collector.collect_managed_flink(
+            Path(repo),
+            application_name=application_name,
+            now=now,
+            region_name=region_name,
+            collect_command=" ".join(command_parts),
+        )
+    except ValueError as exc:
+        raise AdapterError(f"collect managed-flink: {exc}", exit_code=2) from exc
+    except CollectorUnavailable as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
 

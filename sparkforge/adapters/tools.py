@@ -9844,6 +9844,32 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_managed_flink": {
+        "description": (
+            "Coleta a descrição de uma aplicação do Managed Service for Apache Flink via "
+            "kinesisanalyticsv2.DescribeApplication, sempre com IncludeAdditionalDetails=false. "
+            "Registra runtime, status, versão, checkpoint, paralelismo, VPC, logging e "
+            "configuração observados; job plan, código, métricas temporais e conectores "
+            "ficam unresolved e nunca são inferidos. Somente leitura AWS; grava apenas "
+            "artifact/manifesto local e usa cache offline-first."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "application_name", "now"],
+            "additionalProperties": False,
+            "properties": {
+                "repo": {"type": "string"},
+                "application_name": {"type": "string", "minLength": 1, "maxLength": 128},
+                "region_name": {"type": "string"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artifact Managed Flink coletado ou cache hit local, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_cloudwatch": {
         "description": (
             "Baixa as metricas de observabilidade Glue via `cloudwatch.get_metric_data` "
@@ -11768,6 +11794,15 @@ def _h_collect_schema_registry(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_managed_flink(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_managed_flink(
+        args["repo"],
+        now=args["now"],
+        application_name=args["application_name"],
+        region_name=args.get("region_name", ""),
+    )
+
+
 def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_cloudwatch(
         args["repo"],
@@ -12087,6 +12122,7 @@ _HANDLERS = {
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_streaming_integrations": _h_collect_streaming_integrations,
     "sparkforge_collect_schema_registry": _h_collect_schema_registry,
+    "sparkforge_collect_managed_flink": _h_collect_managed_flink,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_cloudwatch_logs": _h_collect_cloudwatch_logs,
     "sparkforge_collect_lakeformation": _h_collect_lakeformation,

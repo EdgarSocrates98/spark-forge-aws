@@ -169,6 +169,9 @@ NOVAS_DEPOIS_DO_GOLDEN = {
     "sparkforge_collect_schema_registry": (
         "2026-10-03: coleta read-only do Glue Schema Registry com latest version e manifesto"
     ),
+    "sparkforge_collect_managed_flink": (
+        "2026-10-03: coleta read-only de DescribeApplication do Managed Flink com unresolved"
+    ),
 }
 
 # Padroes de schema ALARGADOS depois do golden: o par exato (antes, agora), com

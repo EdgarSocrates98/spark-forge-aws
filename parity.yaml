@@ -1408,3 +1408,14 @@ capabilities:
       devin_cli: [mcp, cli, files]
       codex: [cli, files]
       copilot_ci: [cli, files]
+
+  - name: collect Managed Flink application configuration read-only
+    tools: [sparkforge_collect_managed_flink]
+    cli: [collect managed-flink]
+    knowledge: [knowledge/flink-streaming.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
