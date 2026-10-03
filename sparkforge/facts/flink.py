@@ -20,6 +20,8 @@ EMITTED_KINDS = frozenset(
     {
         "flink.job",
         "flink.operator",
+        "flink.source",
+        "flink.sink",
         "flink.checkpoint",
         "flink.state",
         "flink.unresolved",
@@ -118,6 +120,53 @@ def _numbers(data: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
     return result
 
 
+def _endpoint_facts(
+    data: dict[str, Any],
+    artifact: str,
+    line: int,
+    provenance: dict[str, Any],
+    *,
+    plural_key: str,
+    singular_key: str,
+    role: str,
+    kind: str,
+    measure_keys: tuple[str, ...],
+) -> list[Fact]:
+    """Extract explicit Flink source/sink records without filling gaps."""
+    raw = data.get(plural_key, data.get(singular_key))
+    if raw is None:
+        return [_unresolved(artifact, line, provenance, "flink", f"{role}_metrics_missing")]
+    if isinstance(raw, dict):
+        records: list[Any] = [raw]
+    elif isinstance(raw, list):
+        records = raw
+    else:
+        return [_unresolved(artifact, line, provenance, "flink", f"{plural_key}_not_a_list")]
+    if not records:
+        return [_unresolved(artifact, line, provenance, "flink", f"{role}_metrics_missing")]
+
+    facts: list[Fact] = []
+    for record in records:
+        if not isinstance(record, dict):
+            facts.append(_unresolved(artifact, line, provenance, "flink", f"invalid_{role}_record"))
+            continue
+        attrs = {
+            f"{role}_id": _value(record, f"{role}_id", f"{role}Id", "id"),
+            "name": _value(record, "name", f"{role}_name", f"{role}Name"),
+            "uid": _value(record, "uid", f"{role}_uid"),
+            "type": _value(record, "type", f"{role}_type"),
+            "connector": _value(record, "connector", "connector_type", f"{role}_connector"),
+            "delivery_semantics": _value(record, "delivery_semantics", "deliverySemantics"),
+        }
+        attrs = {key: value for key, value in attrs.items() if value is not None}
+        measures = _numbers(record, measure_keys)
+        if attrs or measures:
+            facts.append(_fact(kind, artifact, line, provenance, measures=measures, attrs=attrs))
+        else:
+            facts.append(_unresolved(artifact, line, provenance, "flink", f"{role}_fields_missing"))
+    return facts
+
+
 def _records(text: str, artifact: str) -> tuple[list[tuple[int, Any]], list[tuple[int, str]]]:
     try:
         value = json.loads(text)
@@ -163,6 +212,59 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                 attrs={key: value for key, value in job_attrs.items() if value is not None},
             )
         )
+
+    facts.extend(
+        _endpoint_facts(
+            data,
+            artifact,
+            line,
+            provenance,
+            plural_key="sources",
+            singular_key="source",
+            role="source",
+            kind="flink.source",
+            measure_keys=(
+                "parallelism",
+                "num_records_in",
+                "num_records_out",
+                "backlog",
+                "backlog_records",
+                "lag",
+                "lag_records",
+                "busy_ms",
+                "backpressured_ms",
+                "backpressured_ratio",
+                "idle_ms",
+                "idle_ratio",
+            ),
+        )
+    )
+    facts.extend(
+        _endpoint_facts(
+            data,
+            artifact,
+            line,
+            provenance,
+            plural_key="sinks",
+            singular_key="sink",
+            role="sink",
+            kind="flink.sink",
+            measure_keys=(
+                "parallelism",
+                "num_records_in",
+                "num_records_out",
+                "pending_commits",
+                "commit_duration_ms",
+                "commit_failures",
+                "failed_writes",
+                "busy_ms",
+                "backpressured_ms",
+                "backpressured_ratio",
+                "idle_ms",
+                "idle_ratio",
+            ),
+        )
+    )
 
     operators = data.get("operators", data.get("operator"))
     if isinstance(operators, dict):

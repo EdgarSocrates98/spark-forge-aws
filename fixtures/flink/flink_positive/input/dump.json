@@ -7,6 +7,35 @@
     "parallelism": 4,
     "task_slots": 4
   },
+  "sources": [
+    {
+      "source_id": "orders-source",
+      "name": "Kafka orders",
+      "uid": "source-orders",
+      "type": "KafkaSource",
+      "connector": "kafka",
+      "delivery_semantics": "at_least_once",
+      "parallelism": 4,
+      "num_records_in": 1000,
+      "num_records_out": 1000,
+      "backlog_records": 12,
+      "lag_records": 12
+    }
+  ],
+  "sinks": [
+    {
+      "sink_id": "orders-sink",
+      "name": "Iceberg orders",
+      "uid": "sink-orders",
+      "type": "IcebergSink",
+      "connector": "iceberg",
+      "delivery_semantics": "exactly_once",
+      "parallelism": 4,
+      "num_records_in": 1000,
+      "num_records_out": 998,
+      "pending_commits": 1
+    }
+  ],
   "operators": [
     {
       "operator_id": "source",
