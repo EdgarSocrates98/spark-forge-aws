@@ -238,6 +238,8 @@ do wheel e de uma CLI real do host.
 | `14e6bec` | facts `managed_flink.metric` e unresolved temporal |
 | `a151d3f` | propagação temporal por adapters CLI/MCP, parity e manifesto |
 | `b2ac759` | prova de cache temporal offline e restamp do SDD |
+| `da8ebce` | documentação transversal, locks, contadores e build report Managed Flink temporal |
+| `2ee4663` | ship SDD e fechamento do contrato temporal Managed Flink |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

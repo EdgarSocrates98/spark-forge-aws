@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** `b2ac759`, coletor Kinesis temporal bounded,
+**Base técnica de referência:** `2ee4663`, coletor Kinesis temporal bounded,
 Managed Flink temporal read-only, facts explícitos de source/sink Flink e p95/freshness
 sobre séries temporais de streaming.
 Este fechamento documental atualiza o índice transversal após o commit técnico;
@@ -286,7 +286,7 @@ funcional continuam fora do contrato.
 
 Provas focadas: **10 testes** no arquivo do feature, incluindo collector,
 cache offline, analyzer, paridade e documentação; `14492` testes coletados;
-suíte completa não foi executada.
+gates finais estão registrados no `ship.md`; suíte completa não foi executada.
 
 O contrato está em
 [`docs/sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/ship.md`](../sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/ship.md).
