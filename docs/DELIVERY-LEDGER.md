@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **72 features**:
+O status atual registra **73 features**:
 
-- **70** em `ship/done`;
+- **71** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -68,6 +68,7 @@ STREAMING_SCHEMA_REGISTRY, STREAMING_SCHEMA_REGISTRY_COLLECTOR,
 STREAMING_MANAGED_FLINK_COLLECTOR,
 STREAMING_STRUCTURED_REVIEW,
 STREAMING_TEMPORAL_EVIDENCE, STREAMING_TRANSPORT_DIAGNOSTICS,
+STREAMING_END_TO_END_PIPELINE,
 TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH,
 TOKEN_ESTIMATE_UNICO, TOOLS_OK
 ```
@@ -117,6 +118,12 @@ do wheel e de uma CLI real do host.
   escalares e medidas numéricas observadas; `glue.streaming.unresolved`
   nomeia ausência, shape inválido ou métrica ausente. Não há rule, collector
   live ou conclusão de saúde nesta wave.
+- Pipeline end-to-end declarado: `mode=pipeline` compõe nós e links entre
+  facts de engines diferentes por selectors exatos, preservando
+  `source_fact_ids` e emitindo `streaming.pipeline.unresolved` para selector
+  ausente/ambíguo, contrato inválido ou endpoint de link não resolvido. Não
+  infere causalidade, latência, throughput, custo, saúde, exatamente uma vez
+  ou compatibilidade sem evidência observada.
 - CDC: Debezium, AWS DMS, eventos, posições, transações, tombstones, schema
   history, seams snapshot/CDC e blind spots.
 - Schema Registry/data contracts: compatibilidade, evolução, diff estrutural,
@@ -186,6 +193,9 @@ do wheel e de uma CLI real do host.
   guias de operação, help da CLI, referências geradas e `analyze-flink-job`;
   também explicitou que o contrato upstream não tem métrica temporal genérica.
   O contrato permanece sem tool MCP nova e com CLI/MCP paritários.
+- A atualização de 2026-10-03 também propagou o pipeline end-to-end declarado
+  para README, guias, prompt mestre, prompt coverage, knowledge, skill,
+  coordenador, mirrors, referências geradas, surface lock e manifesto offline.
 
 ## Commits de fechamento por fase
 
@@ -262,6 +272,7 @@ do wheel e de uma CLI real do host.
 | `e1adefb` | skill, mirrors, knowledge, referências, coverage, manifesto e surface lock do contrato Flink temporal |
 | `8019b0f` | build/ship SDD, contagens e documentação transversal do contrato Flink temporal |
 | `912eeb9` | restamp final do ship Flink temporal; base corrente de `STATUS.md` e `EVOLUTION-CURRENT.md` |
+| `1515a93` | pipeline end-to-end declarado: composição exata cross-engine, regra de unresolved, fixtures, docs, mirrors, locks e SDD |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -271,10 +282,10 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14496** coletados em 2026-10-03; Flink temporal: 11 unitários, 7 goldens, 69 kinds, documentação 196 e reachability 946 passed; suíte completa não executada |
+| Coleta atual de testes | **14533** coletados em 2026-10-03; pipeline end-to-end: 5 goldens, 967 testes de fixtures/reachability/kinds e gates focados; Flink temporal: 11 unitários, 7 goldens, 69 kinds; suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped; resultado histórico, não reexecutado após Flink temporal |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
-| Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes |
+| Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes; `verify_wheel` byte-reprodutível, mas paridade instalada 47 failed/3467 passed/5 skipped por drift de goldens anterior |
 | Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; Flink temporal upstream: 11 unitários, 7 goldens e 69 kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; snippet measure corrigido e verde; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |

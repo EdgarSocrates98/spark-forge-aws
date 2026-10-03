@@ -131,6 +131,13 @@ avalia progress Structured Streaming ou métricas diretamente observadas de Kafk
 Ele não calcula p95/freshness, não consulta endpoints live e não prova saúde end-to-end;
 ausência de evidência sai `streaming.slo.unresolved`.
 
+Quando for necessário correlacionar CDC, transporte, processador e sink, use
+`analyze-streaming-composition --mode pipeline --pipeline-path <contract.json>`.
+O contrato exige selectors exatos por `kind`/atributos escalares e match único;
+nodes/edges sem evidência ficam `streaming.pipeline.unresolved`. Isso preserva
+proveniência e `source_fact_ids`, mas não descobre topologia nem prova latência,
+throughput, causalidade, exactly-once ou saúde end-to-end.
+
 ## Contexto do problema
 
 O sistema possui dois fluxos:

@@ -68,6 +68,13 @@ declare tabela, query e `max_skew_seconds`, use
 `sparkforge_analyze_streaming_composition --mode iceberg_temporal` e confira
 `iceberg.snapshot`, `streaming.iceberg.temporal`, `SF-STREAMICE-002` e os
 `source_fact_ids` antes de propor replay ou mudança no sink;
+para correlacionar CDC, transporte, processador e sink, use
+`sparkforge_analyze_streaming_composition --mode pipeline --pipeline-path <contract.json>`.
+O contrato exige selectors exatos por `kind`/atributos escalares; zero ou
+múltiplos matches ficam `streaming.pipeline.unresolved`, e uma edge só é
+verified com os dois endpoints. Isso prova correspondência declarada nos facts
+fornecidos, não topologia descoberta, latência, throughput, exactly-once,
+saúde ou causalidade.
 para topologia de laboratório e dependências de evento, use
 `sparkforge_analyze_forge_lab` e `sparkforge_analyze_event_driven`. Essas superfícies
 continuam declarativas/read-only no host do agente.

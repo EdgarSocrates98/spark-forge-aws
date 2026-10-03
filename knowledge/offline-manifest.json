@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "963506937236e1f3176b9fb647c971b45199d418fa273a8a675784affc43ab99"
+      "sha256": "c1315dd2c7d5534060ead0835fe6ddaa7fcdb1f92d8f2d736d76f52ce863257b"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -312,6 +312,11 @@
       "path": "knowledge/streaming-operations.md",
       "title": "streaming-operations",
       "sha256": "eeb94f43ac9154ad0c62c4e10fc39bbfcbd97fd0a737a32d7001032c789e0944"
+    },
+    {
+      "path": "knowledge/streaming-pipeline-diagnostics.md",
+      "title": "streaming-pipeline-diagnostics",
+      "sha256": "cd1e250de4daac9325e292d7fd663c71bd1de2907c6a5fc5712a2490de0355f0"
     },
     {
       "path": "knowledge/streaming-realtime-candidate-matrix.md",

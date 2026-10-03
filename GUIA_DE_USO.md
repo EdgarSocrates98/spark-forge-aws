@@ -63,6 +63,21 @@ na saída quando falta evidência. `statistic: p95` usa nearest-rank sobre a
 amostra e `freshness_ms` exige `timestamp` + `eventTime.max`; isso continua
 offline e não prova consulta live, causalidade, custo ou latência end-to-end.
 
+Para declarar a composição cross-engine de um pipeline, use selectors exatos e
+facts já extraídos:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
+  --facts iceberg-facts.json --mode pipeline \
+  --pipeline-path orders-pipeline.json --out pipeline-facts.json
+```
+
+O contrato só verifica node com um match de `kind`/atributos e edge com dois
+endpoints verificados. Zero ou múltiplos matches permanecem
+`streaming.pipeline.unresolved`; isso não é topologia descoberta nem prova de
+latência, throughput, causalidade, exactly-once ou saúde.
+
 Para revisar drift entre Glue Streaming efetivo e Terraform, use os facts já
 extraídos e o compositor geral:
 

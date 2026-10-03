@@ -1,8 +1,8 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** `STREAMING_KAFKA_TRANSPORT_EVIDENCE`; fechamento
-técnico corrente: `STREAMING_KAFKA_TRANSPORT_EVIDENCE`
+**Base técnica de referência:** `STREAMING_END_TO_END_PIPELINE`; fechamento
+técnico corrente: `STREAMING_END_TO_END_PIPELINE`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
@@ -35,15 +35,15 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **72 features** após este fechamento:
-**70 `ship/done`**, uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e
+`sparkforge sdd status --repo .` encontrou **73 features** após este fechamento:
+**71 `ship/done`**, uma feature em `plan/ready` (`FORGE_LAB_DIGITAL_TWIN`) e
 uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
 | Frente | Features entregues | Estado documentado |
 |---|---|---|
 | Nova janela / Data Platform Control Plane | `PLATFORM_INTELLIGENCE_GRAPH`, `PLATFORM_INTELLIGENCE_EVALS`, `OPEN_LAKEHOUSE_CATALOG`, `DATA_OBSERVABILITY_SRE`, `ORCHESTRATION_CONTROL_PLANE`, `ANALYTICS_ENGINEERING_MICROSCOPE`, `DATA_PLATFORM_ECOSYSTEM`, além dos fechamentos de decisão e governança | Entregue; ativação produtiva do Decision Plane continua opt-in e `shadow` por padrão |
-| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_KAFKA_TRANSPORT_EVIDENCE`, `STREAMING_KINESIS_TEMPORAL_METRICS`, `STREAMING_MANAGED_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`, `STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_GLUE_CROSS_ARTIFACT`, `STREAMING_GLUE_RUNTIME_OBSERVATION`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_SCHEMA_REGISTRY_COLLECTOR`, `STREAMING_MANAGED_FLINK_COLLECTOR`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; Schema Registry agora tem coleta Glue read-only de metadata/latest version, paginação, cache, manifesto, limites e unresolved; Flink preserva `flink.source`/`flink.sink`, emite `flink.metric` para observações temporais explícitas e nomeia ausência/shape inválido como unresolved; Glue Streaming agora preserva `glue.streaming.source`/`glue.streaming.sink` com atributos escalares e medidas observadas, além de comparar configuração efetiva com Terraform por nome literal único e runs terminais nos eixos de runtime, distinguindo drift de unresolved; Kinesis coleta cinco métricas stream-level e Managed Flink coleta cinco métricas application-level do CloudWatch com janela explícita, facts temporais e missing/unresolved; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; enhanced/shard-level, dimensões detalhadas Managed Flink, reshard history, evidência live longa, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
+| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_KAFKA_TRANSPORT_EVIDENCE`, `STREAMING_KINESIS_TEMPORAL_METRICS`, `STREAMING_MANAGED_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`, `STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_GLUE_CROSS_ARTIFACT`, `STREAMING_GLUE_RUNTIME_OBSERVATION`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_SCHEMA_REGISTRY_COLLECTOR`, `STREAMING_MANAGED_FLINK_COLLECTOR`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `STREAMING_END_TO_END_PIPELINE`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; o pipeline end-to-end declarado compõe nós e links cross-engine por selectors exatos, preserva ids de fatos e transforma ausência, ambiguidade e endpoint não resolvido em `streaming.pipeline.unresolved`; Schema Registry agora tem coleta Glue read-only de metadata/latest version, paginação, cache, manifesto, limites e unresolved; Flink preserva `flink.source`/`flink.sink`, emite `flink.metric` para observações temporais explícitas e nomeia ausência/shape inválido como unresolved; Glue Streaming agora preserva `glue.streaming.source`/`glue.streaming.sink` com atributos escalares e medidas observadas, além de comparar configuração efetiva com Terraform por nome literal único e runs terminais nos eixos de runtime, distinguindo drift de unresolved; Kinesis coleta cinco métricas stream-level e Managed Flink coleta cinco métricas application-level do CloudWatch com janela explícita, facts temporais e missing/unresolved; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; enhanced/shard-level, dimensões detalhadas Managed Flink, reshard history, evidência live longa, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
 | Forge Lab | `FORGE_LAB_PRODUCT` | Entregue e verificado offline; `FORGE_LAB_DIGITAL_TWIN` permanece como registro SDD separado em `plan/ready` |
 | Economia observada | `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`, `TOKEN_ESTIMATE_UNICO`, `AGENTIC_ECONOMY_COMPLETION` | Entregue; bytes, tokens do provider e custo continuam eixos independentes |
 | Governança | `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS`, `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` e famílias Lake Formation relacionadas | Entregue offline, fail-closed e com gates focados |
@@ -97,6 +97,21 @@ Ainda não são claims de capacidade de produção:
 
 O comportamento correto para cada lacuna é `N/A + motivo`, fact
 `*.unresolved` ou recusa nomeada; nenhuma lacuna é preenchida por inferência.
+
+`STREAMING_END_TO_END_PIPELINE` fecha somente a topologia declarada: o
+contrato versionado lista `nodes` e `edges`, cada selector exige `kind` e
+todos os atributos escalares, e o compositor aceita somente match único. O
+resultado publica `streaming.pipeline.node`, `streaming.pipeline.link` e
+`streaming.pipeline`, mantendo `source_fact_ids`; zero matches, múltiplos
+matches e endpoints não resolvidos viram `streaming.pipeline.unresolved`.
+Não é health check, tracing, prova de latência/throughput/custo, causalidade,
+exactly-once ou validação funcional end-to-end.
+
+O gate de distribuição dessa wave construiu wheel/sdist byte-identical, mas a
+paridade instalada reproduziu **47** falhas de goldens anteriores ao pipeline
+(`iceberg.snapshot`, Glue runtime/scan e cenários com catálogo esperado 208).
+O subset no checkout reproduz o mesmo drift; a dívida permanece explícita e
+nenhum golden fora do escopo foi regenerado para mascará-la.
 
 `STREAMING_FLINK_TEMPORAL_METRICS` fecha o contrato offline de pontos temporais
 upstream: `metrics`/`metrics.observations` exige nome, valor numérico e

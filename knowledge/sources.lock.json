@@ -3578,6 +3578,16 @@
       "retrieved": [],
       "rules": []
     },
+    "https://openlineage.io/docs/spec/object-model": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-10-03"
+      ],
+      "rules": [
+        "SF-STREAM-015"
+      ]
+    },
     "https://openlineage.io/docs/spec/object-model/": {
       "docs": [],
       "pinned": false,
@@ -4212,7 +4222,8 @@
       "pinned": false,
       "retrieved": [
         "2026-10-01",
-        "2026-10-02"
+        "2026-10-02",
+        "2026-10-03"
       ],
       "rules": [
         "SF-STREAM-001",
@@ -4224,6 +4235,7 @@
         "SF-STREAM-012",
         "SF-STREAM-013",
         "SF-STREAM-014",
+        "SF-STREAM-015",
         "SF-STREAMICE-002",
         "SF-STREAMOBS-001",
         "SF-STREAMOBS-002"

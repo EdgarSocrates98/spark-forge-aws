@@ -34,6 +34,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Delta/Hudi | `knowledge-aware` parcial | `streaming_ops.lakehouse`, `knowledge/streaming-format-serving-matrix.md`, fixtures e matriz de formatos | runtime/feature compatibility e collectors ficam P1/P2 |
 | Event-driven architecture | `diagnosable` parcial | `facts/event_driven.py`, regras `SF-EVENT`, fixtures, `analyze event-driven`, MCP, skill, routing e SDD | collector live, Step Functions, teste temporal de entrega/replay e decisão vs streaming |
 | Streaming observability | `diagnosable` parcial | progress/transport/sink facts, `facts/streaming_composition.py`, `facts/streaming_temporal.py`, `facts/streaming_slo.py`, `facts/streaming_ops.py`, analyzers, collectors read-only, `mode=slo` para progress/sink/Kafka/Kinesis, p95 nearest-rank, `freshness_ms` por `timestamp` + `eventTime.max`, `SF-STREAMOBS-002`, `SF-STREAM-011` e `SF-STREAM-012` | collectors temporais de série longa, latência end-to-end implícita e correlação live continuam lacunas; sink usa `num_output_rows` ligado a batch, e OpenLineage offline já tem fact, sem endpoint live |
+| Pipeline cross-engine declarado | `fact-aware` entregue offline | `facts/streaming_pipeline.py`, `mode=pipeline` no compositor, selectors exatos por `kind`/atributos, `streaming.pipeline.node/link`, `streaming.pipeline.unresolved`, `SF-STREAM-015`, quatro goldens, CLI/MCP, `knowledge/streaming-pipeline-diagnostics.md`, skill e coordenador | descoberta automática de topologia, collectors live, latência/throughput end-to-end, causalidade, exactly-once, saúde e validação funcional continuam `N/A + motivo` |
 | Streaming FinOps | `diagnosable` parcial | `streaming.finops`, `SF-STREAM-005`, CLI/MCP, fixtures e `knowledge/streaming-operations.md` | CUR/CloudWatch temporal e atribuição por transport/process/runtime/sink |
 | Streaming security | `diagnosable` parcial | `streaming.security`, redaction, `SF-STREAM-006`, CLI/MCP e fixtures | IAM/KMS/VPC/resource-policy collectors e eficácia runtime |
 | Real-time analytics/serving | `knowledge-aware` parcial | `streaming.serving`, `knowledge/streaming-format-serving-matrix.md`, matriz Redshift/ClickHouse/Pinot/Druid/Trino | collectors/evals por sistema e benchmark de latência/throughput |
@@ -103,6 +104,12 @@ O inventário de commits, features e provas compartilhadas está em
   inferência a partir de snapshot legado, skill, coordenador e cobertura
   auditada. Não coleta broker/consumer live nem atribui causa, SLO, throughput,
   custo ou saúde.
+- `STREAMING_END_TO_END_PIPELINE`: adiciona composição declarativa cross-engine
+  para CDC→transporte→processador→sink. Selectors exigem match único e exato;
+  edges só são verified com endpoints verified; zero/múltiplos matches e
+  contratos inválidos ficam `streaming.pipeline.unresolved` e `SF-STREAM-015`.
+  Não é descoberta de topologia nem claim de latência, throughput, causalidade,
+  exactly-once ou saúde.
 
 ## Fechamentos adicionados nesta atualização
 

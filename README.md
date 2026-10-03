@@ -50,8 +50,8 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 59 extratores emitem 369 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **220** regras de diagnóstico em YAML, **220 delas executáveis** (todas), cada uma
+Os 60 extratores emitem 373 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **221** regras de diagnóstico em YAML, **221 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
@@ -175,6 +175,25 @@ observado no artefato: não são disponibilidade, causalidade ou saúde end-to-e
 Detalhe em
 [cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
 [referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
+
+### Pipeline cross-engine declarado
+
+Para correlacionar CDC, transporte, processador e sink, use um contrato JSON
+versionado com selectors exatos por `kind` e atributos escalares:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
+  --facts iceberg-facts.json --mode pipeline \
+  --pipeline-path orders-pipeline.json --out pipeline-facts.json
+```
+
+Cada node precisa de exatamente um match; zero ou múltiplos matches viram
+`streaming.pipeline.unresolved`, e edges só são verified quando os dois
+endpoints existem sem ambiguidade. O resultado preserva provenance e
+`source_fact_ids`, mas não prova topologia descoberta, latência, throughput,
+exactly-once, saúde ou causalidade. Veja
+[`knowledge/streaming-pipeline-diagnostics.md`](knowledge/streaming-pipeline-diagnostics.md).
 
 ### Apache Flink: endpoints explícitos e limite temporal
 

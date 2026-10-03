@@ -65,6 +65,24 @@ legado em `consumer_groups[].offsets` é snapshot, não tendência. Ausência ou
 timestamp inválido permanece `kafka.unresolved`; não invente causa, throughput,
 SLO ou saúde do consumidor.
 
+### Declared cross-engine pipeline
+
+Quando o caso precisa correlacionar CDC, transporte, processador e sink, use
+um contrato JSON versionado e selectors exatos:
+
+```bash
+sparkforge analyze streaming-composition \
+  --facts cdc-facts.json --facts kafka-facts.json --facts flink-facts.json \
+  --facts iceberg-facts.json --mode pipeline \
+  --pipeline-path pipeline.json --out pipeline-facts.json
+```
+
+Cada node precisa de exatamente um match por `kind` e atributos escalares;
+zero ou múltiplos matches viram `streaming.pipeline.unresolved`. Edges só são
+verified com os dois endpoints verified. Leia `source_fact_ids` e provenance;
+não transforme o resultado em prova de topologia descoberta, latência,
+throughput, exactly-once, saúde ou causalidade.
+
 ## Limites
 
 - declaração de controle não prova eficácia em runtime;
