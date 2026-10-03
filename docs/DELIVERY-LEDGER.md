@@ -1,6 +1,6 @@
 # SparkForge AWS — ledger de entrega das evoluções
 
-**Atualizado em:** 2026-10-02  
+**Atualizado em:** 2026-10-03
 **Fonte de estado:** `sparkforge sdd status --repo .`  
 **Escopo:** `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md` e
 `prompt_evo_forge_lab.md`
@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **64 features**:
+O status atual registra **65 features**:
 
-- **62** em `ship/done`;
+- **63** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -49,7 +49,8 @@ PLATFORM_INTELLIGENCE_EVALS, PLATFORM_INTELLIGENCE_GRAPH, SDD_ENDURECIMENTO,
 SDD_EVAL, SDD_MIGRATION, SDD_OPERATOR, SDD_OPERATOR_DURAVEL, SDD_SKILLS,
 SDD_SKILLS_REVISAO, SFN_HISTORY, SFN_TENTATIVA, SF_STUBS,
 SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
-STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_GLUE_RTM,
+STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_FLINK_SOURCE_SINK_ARTIFACTS,
+STREAMING_GLUE_RTM,
 STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
 STREAMING_ICEBERG_TEMPORAL,
 STREAMING_SLO_EVALUATION,
@@ -190,6 +191,7 @@ do wheel e de uma CLI real do host.
 | `cdc0556` | ship SDD, guias, knowledge, skill, mirrors, referências, locks e ledgers do cross-artifact Glue |
 | `79a38db` | facts, fuse, regras, fixtures, goldens e SDD da observação Glue Streaming→runs |
 | `2b17519` | documentação transversal, skill/mirrors, knowledge, locks, ledgers e status da observação Glue Streaming |
+| `6084a17` | facts explícitos `flink.source`/`flink.sink`, unresolved nomeado, testes unitários e goldens Flink |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -203,7 +205,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
-| Evidência temporal | 980 testes focados; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
+| Evidência temporal | 980 testes focados; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |
 

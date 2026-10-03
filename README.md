@@ -50,7 +50,7 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 59 extratores emitem 363 kinds distintos de fact, e só `collect *` toca a AWS. O
+Os 59 extratores emitem 365 kinds distintos de fact, e só `collect *` toca a AWS. O
 catálogo tem **218** regras de diagnóstico em YAML, **218 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
@@ -175,6 +175,19 @@ observado no artefato: não são disponibilidade, causalidade ou saúde end-to-e
 Detalhe em
 [cobertura do prompt de streaming](docs/streaming/prompt-coverage.md) e na
 [referência da skill](docs/guia/referencia/skills/analyze-streaming-composition.md).
+
+### Apache Flink: source e sink como evidência separada
+
+O analyzer offline de Flink preserva `flink.source` e `flink.sink` quando o dump
+traz `sources`/`source` e `sinks`/`sink`. Identidade, connector,
+`delivery_semantics`, contadores, backlog/lag e commits pendentes são copiados
+somente quando observados; `num_records_in`/`num_records_out` não são
+throughput sem timestamp e janela. Ausência ou formato inválido publica
+`flink.unresolved` com razão nomeada, nunca zero. O namespace
+`managed_flink.*` permanece separado. Isso não prova exactly-once, saúde ou
+capacidade; correlacione os facts com checkpoint, operator, runtime e série
+temporal. Detalhes em [`knowledge/flink-streaming.md`](knowledge/flink-streaming.md)
+e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
 ### Glue Streaming: efetivo versus Terraform
 

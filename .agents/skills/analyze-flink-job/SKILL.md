@@ -39,10 +39,13 @@ capacidade, versão ou comportamento do outro.
    ```
 
    Para Amazon Managed Service for Apache Flink, use `--artifact managed_flink`.
-   O resultado pode conter `flink.job`, `flink.operator`, `flink.checkpoint`,
-   `flink.state`, ou `managed_flink.application`, `managed_flink.config`,
+   O resultado pode conter `flink.job`, `flink.operator`, `flink.source`,
+   `flink.sink`, `flink.checkpoint`, `flink.state`, ou
+   `managed_flink.application`, `managed_flink.config`,
    `managed_flink.connector`, `managed_flink.metric`. Confira os
-   `*.unresolved` antes de julgar.
+   `*.unresolved` antes de julgar. `flink.source`/`flink.sink` preservam
+   somente identidade e métricas explicitamente observadas; ausência vira
+   `source_metrics_missing`/`sink_metrics_missing`, nunca zero.
 3. Julgue fatos observados:
 
    ```bash
@@ -55,7 +58,10 @@ capacidade, versão ou comportamento do outro.
    `SF-FLINK-002` só reage a medida positiva de backpressure. A ausência da
    métrica não é zero e não gera finding.
 4. Correlacione checkpoint e state com logs, restart, source, sink, backlog,
-   throughput e janela de medição. Um finding estrutural não fecha causa raiz.
+   throughput e janela de medição. Use contadores de source/sink como
+   observações, não como throughput sem timestamp; `delivery_semantics` é
+   declaração do dump e não prova exactly-once. Um finding estrutural não fecha
+   causa raiz.
 5. Antes de propor mudança de paralelismo, state backend, checkpoint ou
    capacidade, estabeleça baseline e altere uma variável principal. Valide
    contagem, schema, chave declarada e agregados; esses proxies não provam

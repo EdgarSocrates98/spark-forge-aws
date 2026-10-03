@@ -231,6 +231,26 @@ O resultado acrescenta `glue.streaming.runtime_link` ou
 `source_fact_ids`. `SF-GLUESTREAM-006/007` não afirmam latência, saúde, custo
 ou corretude funcional.
 
+### Apache Flink: source e sink
+
+Use a ferramenta existente `sparkforge_analyze_flink`; a evolução não adiciona
+tool MCP. Para Apache Flink, informe `artifact: flink` e analise o mesmo dump
+offline:
+
+```json
+{
+  "path": "flink-dump.json",
+  "artifact": "flink",
+  "detail_level": "summary"
+}
+```
+
+O envelope pode conter `flink.source` e `flink.sink`, preservando apenas
+identidade e medidas presentes em `sources`/`source` e `sinks`/`sink`.
+`flink.unresolved` nomeia ausência ou formato inválido; o tool não consulta
+Flink/AWS e não prova exactly-once, throughput ou saúde. Use
+`artifact: managed_flink` para o namespace gerenciado, sem misturar os fatos.
+
 ## Como verificar que funciona
 
 **Sem cliente nenhum.** Monte o servidor em Python:

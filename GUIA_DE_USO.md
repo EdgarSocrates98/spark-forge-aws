@@ -93,6 +93,21 @@ Leia `glue.streaming.runtime_link`, `observed_run_ids`, `drifts` e
 `SF-GLUESTREAM-007` é evidência insuficiente. Duração e DPU continuam facts de
 execução, não latência de evento ou saúde do streaming.
 
+Para analisar um dump Apache Flink, preserve os endpoints explicitamente antes
+de correlacionar com checkpoint, operator e transporte:
+
+```bash
+sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge judge --facts flink.facts.json --show-skipped
+```
+
+O resultado pode conter `flink.source` e `flink.sink` com identidade,
+connector, `delivery_semantics` e medidas observadas. Contadores não viram
+throughput sem timestamp/janela; ausência dos blocos vira
+`flink.unresolved` (`source_metrics_missing`/`sink_metrics_missing`). Isso não
+prova exactly-once nem saúde. Para Managed Flink use `--artifact managed_flink`;
+os namespaces não se completam.
+
 ## 2. Claude Code
 
 Use o agente:

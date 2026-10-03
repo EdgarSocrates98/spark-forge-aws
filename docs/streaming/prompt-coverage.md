@@ -22,7 +22,7 @@ O inventário de commits, features e provas compartilhadas está em
 | Kafka Connect | `fact-aware` parcial | `kafka.connect`, `kafka.connect.task`, `SF-STREAM-008`, fixtures e `sparkforge_analyze_streaming_integrations` | collector REST live, offsets/erros temporais e validação funcional |
 | Kafka Streams | `fact-aware` parcial | `kafka.streams`, `kafka.streams.state_store`, `SF-STREAM-009`, fixtures e `sparkforge_analyze_streaming_integrations` | métricas/topologia live e decisão composta contra Spark/Flink |
 | Kinesis Data Streams | `fact-aware` parcial | `kinesis.stream/shard/metric` preserva timestamp observado; composição temporal, `SF-STREAMOBS-002`, collectors read-only e goldens cobrem janela offline | CloudWatch temporal live, reshard history, KCL/EFO e série de longa duração |
-| Apache Flink | `version-aware` parcial | `facts/flink.py`, `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
+| Apache Flink | `version-aware` parcial | `facts/flink.py` emite `flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`, `flink.state` e `flink.unresolved`; `rules/catalog/flink.yaml`, `sparkforge_analyze_flink`, fixtures/goldens, `analyze-flink-job` e `knowledge/streaming/runtime-matrix.md` | collector/matriz observada de runtime, savepoints, métricas temporais e validação funcional |
 | Managed Service for Apache Flink | `version-aware` parcial | namespace `managed_flink.*`, config/connectors/metrics, unresolved, fixtures, mesmo analyzer e matriz com `UNRESOLVED` explícito | matriz AWS por região/release, IAM/VPC/CloudWatch temporal e validação funcional |
 | Glue Streaming | `diagnosable` parcial | `facts/glue_streaming.py`, `facts/streaming_glue_cross.py`, `facts/streaming_glue_runtime.py`, `glue.job_run`, `fuse`, regras `SF-GLUESTREAM`, fixtures match/drift/unresolved de definição→Terraform e definição→run, CLI/MCP, `review-glue-streaming` e matriz Glue 6.0 | collector live adicional, source/sink e validação funcional |
 | Glue Real-Time Mode | `version-aware` parcial | namespace `glue.streaming.*`, restrições/capacidade observadas, rules, unresolved e matriz Glue 6.0 com constraints | collector live, cross-artifact e validação funcional |
@@ -46,8 +46,9 @@ O inventário de commits, features e provas compartilhadas está em
 - Wave C parcial: dumps offline Kafka/MSK/Kinesis, facts específicos,
   unresolved, fixtures, CLI/MCP e locks.
 - Wave D: dumps offline Flink/Managed Flink, namespaces separados, regras de
-  checkpoint/backpressure, unresolved, fixtures, CLI/MCP, skill, especialista,
-  routing e SDD ship.
+  checkpoint/backpressure, source/sink explícitos, unresolved, fixtures, CLI/MCP,
+  skill, especialista, routing e SDD ship. Source/sink continuam offline e não
+  provam throughput, exactly-once ou saúde sem janela temporal.
 - Wave F parcial: Schema Registry/data contracts com registro, definição,
   compatibilidade declarada, diff estrutural, auto-register, unresolved,
   fixtures, CLI/MCP, skill, routing e SDD ship.
@@ -99,6 +100,10 @@ O inventário de commits, features e provas compartilhadas está em
   `source_fact_ids`. `SF-GLUESTREAM-006/007` são evidence-backed; duração/DPU
   não são tratados como latência nem saúde.
   Feature SDD: `STREAMING_GLUE_RUNTIME_OBSERVATION`.
+- **Sources e sinks Flink explícitos:** `flink.py` preserva identidade,
+  connector, delivery semantics e medidas numéricas de `sources`/`source` e
+  `sinks`/`sink`; ausência ou formato inválido vira `flink.unresolved` com
+  razão nomeada. Feature SDD: `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`.
 - `STREAMING_CDC`: facts de Debezium, DMS, eventos, seams e blind spots,
   regras, fixtures, CLI/MCP, skill, routing e ship SDD.
 - `STREAMING_GLUE_RTM`: contrato offline de Glue Streaming e Real-Time Mode,
@@ -173,7 +178,7 @@ live em capacidade comprovada.
 
 | Wave | Escopo | Critério de fechamento |
 |---|---|---|
-| D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
+| D | Flink + Managed Flink | **ship parcial entregue**: artifact contract, extractor, source/sink explícitos, unresolved, rules, fixtures, analyzer, skill, specialist e routing; runtime matrix/collector/functional validation permanecem lacunas |
 | E | Glue Streaming + RTM | collector live adicional, source/sink, validação funcional e capability evidence; observação offline definição→run entregue com `SF-GLUESTREAM-006/007`; cross-artifact efetivo→Terraform entregue com `SF-GLUESTREAM-004/005` |
 | F | CDC + Debezium + DMS + Schema | **CDC + Schema Registry parciais entregues**: config/event analyzers, contract facts, rules, fixtures, CLI/MCP, skill, specialist e routing; collectors, matriz completa, consumidores cross-artifact e validação funcional permanecem |
 | G | Iceberg streaming + observability + lineage + SLO + FinOps | **composição/contrato offline ampliado**: streaming→Iceberg, snapshots granulares, janela temporal progresso→Iceberg, progresso→Kafka/Kinesis, SLO sobre progress/sink/Kafka/Kinesis com janela coberta, p95/freshness offline, OpenLineage facts e declarações SLO/FinOps; collectors temporais live, endpoint live, latência end-to-end implícita, correlação de longo período e atribuição continuam lacunas |

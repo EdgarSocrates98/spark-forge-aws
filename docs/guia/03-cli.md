@@ -331,6 +331,24 @@ O link literal compara `glue_version`, `worker_type` e `worker_count`, mantém
 `SF-GLUESTREAM-007`. Sem run ou eixo comparável, a saída é unresolved; não
 interprete `execution_time_s` ou DPU como latência de evento.
 
+### Analisar endpoints Apache Flink
+
+`analyze flink` mantém source e sink como facts independentes quando o dump os
+declara. Não há novo comando: `--artifact managed_flink` continua selecionando
+o namespace do serviço gerenciado.
+
+```bash
+sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge judge --facts flink.facts.json --show-skipped
+```
+
+O resultado pode conter `flink.source` e `flink.sink`, com identidade,
+connector, `delivery_semantics` e métricas numéricas observadas. Contadores não
+são throughput sem timestamp/janela. Source/sink ausente ou inválido aparece
+em `flink.unresolved` com razão nomeada; nenhum valor é preenchido com zero.
+Consulte `fact_id` e correlacione com checkpoint, operator e transporte antes
+de propor mudança.
+
 ### Forge Lab / Digital Twin
 
 | Comando | O que faz | Referência |

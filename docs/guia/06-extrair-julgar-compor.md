@@ -109,6 +109,26 @@ O vínculo literal `glue.streaming.runtime_link` compara `glue_version`,
 Ausência de run ou campo não prova consistência; duração e DPU não são
 latência de evento, custo atribuído ou saúde do streaming.
 
+## Apache Flink: endpoints explícitos
+
+O extrator offline também lê `sources`/`source` e `sinks`/`sink` no dump
+Apache Flink. O resultado preserva `flink.source` e `flink.sink` com identidade,
+connector, `delivery_semantics` e medidas numéricas presentes, sem copiar
+estruturas arbitrárias. `num_records_in`/`num_records_out` são contadores, não
+throughput sem timestamp e janela; `pending_commits`, backlog e lag continuam
+observações locais.
+
+```bash
+sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.facts.json
+sparkforge judge --facts flink.facts.json --show-skipped
+```
+
+Quando source ou sink não aparece, o extrator publica
+`flink.unresolved` com `source_metrics_missing` ou `sink_metrics_missing`;
+formato inválido recebe razão própria. O analyzer não infere exactly-once,
+saúde, causalidade ou capacidade. `managed_flink.*` continua namespace separado
+e exige `--artifact managed_flink`.
+
 ## Sequência mínima
 
 ```bash
@@ -178,7 +198,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 59 extratores emitem 363 kinds distintos de fact (recontado em 2026-10-02),
+Os 59 extratores emitem 365 kinds distintos de fact (recontado em 2026-10-03),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -332,7 +352,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 363 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 365 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
