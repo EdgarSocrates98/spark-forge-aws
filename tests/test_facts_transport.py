@@ -143,3 +143,95 @@ def test_transport_preserves_observed_timestamp():
     )
     assert kafka_lag.measures["timestamp"] == 1790942401
     assert kinesis_shard.measures["timestamp"] == 1790942401
+
+
+def test_kafka_explicit_lag_observations_emit_series_and_reject_insufficient():
+    payload = {
+        "lag_observations": [
+            {
+                "group": "orders",
+                "topic": "events",
+                "partition": 0,
+                "lag": 4,
+                "observed_at": "2026-10-03T00:00:00Z",
+            },
+            {
+                "group": "orders",
+                "topic": "events",
+                "partition": 0,
+                "lag": 9,
+                "observed_at": "2026-10-03T00:01:00Z",
+            },
+            {
+                "group": "orders",
+                "topic": "events",
+                "partition": 1,
+                "lag": 2,
+                "observed_at": "2026-10-03T00:00:00Z",
+            },
+            {
+                "group": "orders",
+                "topic": "events",
+                "partition": 2,
+                "lag": 1,
+                "observed_at": "2026-10-03T00:00:00",
+            },
+        ]
+    }
+    facts = extract_transport_text(json.dumps(payload), "kafka-series.json", artifact="kafka")
+
+    series = next(fact for fact in facts if fact.kind == "kafka.lag.series")
+    assert series.measures == {
+        "delta_lag": 5,
+        "first_lag": 4,
+        "increasing_step_count": 1,
+        "last_lag": 9,
+        "observation_count": 2,
+        "timestamp_span_seconds": 60.0,
+    }
+    assert series.attrs["group"] == "orders"
+    assert series.attrs["topic"] == "events"
+    assert series.attrs["partition"] == 0
+    assert series.attrs["monotonic_increase"] is True
+    assert series.attrs["causal_inference"] is False
+    assert len(series.attrs["observation_fact_ids"]) == 2
+    assert any(
+        fact.kind == "kafka.unresolved"
+        and fact.attrs["reason"] == "lag_series_insufficient_observations"
+        and fact.attrs["partition"] == 1
+        for fact in facts
+    )
+    assert any(
+        fact.kind == "kafka.unresolved"
+        and fact.attrs["reason"] == "lag_observation_timestamp_invalid"
+        and fact.attrs["partition"] == 2
+        for fact in facts
+    )
+
+
+def test_kafka_legacy_snapshot_does_not_infer_lag_series():
+    payload = {
+        "consumer_groups": [
+            {
+                "group": "orders",
+                "offsets": [
+                    {
+                        "topic": "events",
+                        "partition": 0,
+                        "current_offset": 10,
+                        "log_end_offset": 14,
+                        "lag": 4,
+                        "timestamp": "2026-10-03T00:00:00Z",
+                    }
+                ],
+            }
+        ]
+    }
+    facts = extract_transport_text(json.dumps(payload), "kafka-legacy.json", artifact="kafka")
+    assert any(fact.kind == "kafka.lag" for fact in facts)
+    assert not any(fact.kind == "kafka.lag.series" for fact in facts)
+    assert not any(
+        fact.kind == "kafka.unresolved"
+        and fact.attrs["reason"].startswith("lag_series_")
+        for fact in facts
+    )

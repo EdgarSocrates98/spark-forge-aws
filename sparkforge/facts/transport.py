@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ EMITTED_KINDS = frozenset(
         "kafka.partition",
         "kafka.consumer_group",
         "kafka.lag",
+        "kafka.lag.series",
         "kafka.config",
         "kafka.unresolved",
         "kafka.analyzed",
@@ -44,6 +46,19 @@ def _number(value: Any) -> int | float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
     return value
+
+
+def _timestamp_seconds(value: Any) -> float | None:
+    """Return epoch seconds only for an explicit timezone-aware text value."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.timestamp()
 
 
 def _subject(artifact: str, line: int, symbol: str = "") -> dict[str, Any]:
@@ -253,9 +268,179 @@ def _kafka_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                         )
                     else:
                         facts.append(_unresolved(artifact, line, provenance, "kafka", "lag_fields_missing", group=group_name))
+    if "lag_observations" in data:
+        observations = data.get("lag_observations")
+        if not isinstance(observations, list):
+            facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_lag_observations"))
+        else:
+            for observation in observations:
+                if not isinstance(observation, dict):
+                    facts.append(_unresolved(artifact, line, provenance, "kafka", "invalid_lag_observation_record"))
+                    continue
+                group_name = observation.get("group", observation.get("group_id", observation.get("groupId")))
+                topic_name = observation.get("topic")
+                partition = _number(observation.get("partition"))
+                lag = _number(observation.get("lag"))
+                timestamp_key = next(
+                    (key for key in ("observed_at", "observedAt", "timestamp") if key in observation),
+                    None,
+                )
+                timestamp_value = observation.get(timestamp_key) if timestamp_key else None
+                if group_name is None or topic_name is None or partition is None:
+                    facts.append(
+                        _unresolved(
+                            artifact,
+                            line,
+                            provenance,
+                            "kafka",
+                            "lag_observation_identity_missing",
+                            group=group_name,
+                            topic=topic_name,
+                            partition=partition,
+                        )
+                    )
+                    continue
+                if lag is None:
+                    facts.append(
+                        _unresolved(
+                            artifact,
+                            line,
+                            provenance,
+                            "kafka",
+                            "lag_observation_value_invalid",
+                            group=group_name,
+                            topic=topic_name,
+                            partition=partition,
+                        )
+                    )
+                    continue
+                timestamp_seconds = _timestamp_seconds(timestamp_value)
+                if timestamp_seconds is None:
+                    facts.append(
+                        _unresolved(
+                            artifact,
+                            line,
+                            provenance,
+                            "kafka",
+                            "lag_observation_timestamp_invalid" if timestamp_key else "lag_observation_timestamp_missing",
+                            group=group_name,
+                            topic=topic_name,
+                            partition=partition,
+                        )
+                    )
+                    continue
+                measures = {
+                    "partition": partition,
+                    "lag": lag,
+                }
+                for key in ("current_offset", "log_end_offset"):
+                    number = _number(observation.get(key))
+                    if number is not None:
+                        measures[key] = number
+                facts.append(
+                    _fact(
+                        "kafka.lag",
+                        artifact,
+                        line,
+                        provenance,
+                        measures=measures,
+                        attrs={
+                            "group": group_name,
+                            "topic": topic_name,
+                            "observed_at": timestamp_value,
+                            "series_observation": True,
+                        },
+                    )
+                )
     if not facts:
         facts.append(_unresolved(artifact, line, provenance, "kafka", "missing_shape"))
     return facts
+
+
+def _compose_kafka_lag_series(facts: list[Fact], artifact: str, provenance: dict[str, Any]) -> list[Fact]:
+    grouped: dict[tuple[Any, Any, Any], list[Fact]] = {}
+    for fact in facts:
+        if fact.kind != "kafka.lag" or fact.attrs.get("series_observation") is not True:
+            continue
+        key = (
+            fact.attrs.get("group"),
+            fact.attrs.get("topic"),
+            fact.measures.get("partition"),
+        )
+        grouped.setdefault(key, []).append(fact)
+
+    composed: list[Fact] = []
+    for (group_name, topic_name, partition), observations in sorted(
+        grouped.items(), key=lambda item: tuple(str(value) for value in item[0])
+    ):
+        observations = sorted(
+            observations,
+            key=lambda fact: _timestamp_seconds(fact.attrs.get("observed_at")) or 0.0,
+        )
+        first = observations[0]
+        identity = {
+            "group": group_name,
+            "topic": topic_name,
+            "partition": partition,
+            "observation_count": len(observations),
+        }
+        if len(observations) < 2:
+            composed.append(
+                _unresolved(
+                    artifact,
+                    first.subject["line"],
+                    provenance,
+                    "kafka",
+                    "lag_series_insufficient_observations",
+                    **identity,
+                    observation_fact_ids=[fact.id for fact in observations],
+                )
+            )
+            continue
+        timestamps = [_timestamp_seconds(fact.attrs.get("observed_at")) for fact in observations]
+        if any(current is None or previous is None or current <= previous for previous, current in zip(timestamps, timestamps[1:])):
+            composed.append(
+                _unresolved(
+                    artifact,
+                    first.subject["line"],
+                    provenance,
+                    "kafka",
+                    "lag_series_timestamps_not_increasing",
+                    **identity,
+                    observation_fact_ids=[fact.id for fact in observations],
+                )
+            )
+            continue
+        lags = [fact.measures["lag"] for fact in observations]
+        increases = sum(current > previous for previous, current in zip(lags, lags[1:]))
+        composed.append(
+            _fact(
+                "kafka.lag.series",
+                first.subject["file"],
+                first.subject["line"],
+                provenance,
+                measures={
+                    "observation_count": len(observations),
+                    "first_lag": lags[0],
+                    "last_lag": lags[-1],
+                    "delta_lag": lags[-1] - lags[0],
+                    "increasing_step_count": increases,
+                    "timestamp_span_seconds": timestamps[-1] - timestamps[0],
+                },
+                attrs={
+                    "group": group_name,
+                    "topic": topic_name,
+                    "partition": partition,
+                    "timestamp_start": observations[0].attrs["observed_at"],
+                    "timestamp_end": observations[-1].attrs["observed_at"],
+                    "monotonic_increase": all(current > previous for previous, current in zip(lags, lags[1:])),
+                    "causal_inference": False,
+                    "observation_fact_ids": [fact.id for fact in observations],
+                },
+                symbol=f"{group_name}:{topic_name}:{partition}",
+            )
+        )
+    return composed
 
 
 def _msk_record(data: dict[str, Any], artifact: str, line: int, provenance: dict[str, Any]) -> list[Fact]:
@@ -425,6 +610,8 @@ def extract_transport_text(text: str, artifact_path: str, *, artifact: str) -> l
     ]
     for line, record in records:
         facts.extend(_record(record, artifact_path, line, artifact, provenance))
+    if artifact == "kafka":
+        facts.extend(_compose_kafka_lag_series(facts, artifact_path, provenance))
     if not records and not invalid:
         facts.append(_unresolved(artifact_path, 1, provenance, artifact, "empty_artifact"))
     analyzed_kind = f"{artifact}.analyzed"
