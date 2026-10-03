@@ -223,6 +223,38 @@ def test_managed_flink_temporal_metrics_are_collected_and_normalized(monkeypatch
     assert "managed_flink_metric_missing:numberOfFailedCheckpoints" in payload["unresolved"]
 
 
+def test_managed_flink_temporal_cache_is_offline(monkeypatch, tmp_path):
+    first_client = FakeManagedFlink()
+    first_cloudwatch = FakeCloudWatch()
+    monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(first_client, first_cloudwatch))
+    common = {
+        "application_name": "orders",
+        "region_name": "us-east-1",
+        "metrics_start": "2026-10-03T00:00:00Z",
+        "metrics_end": "2026-10-03T02:00:00Z",
+        "metrics_period": 60,
+    }
+    first = managed_flink.collect_managed_flink(
+        tmp_path,
+        now="2026-10-03T02:00:00Z",
+        **common,
+    )
+
+    def boom():
+        raise AssertionError("cache temporal não pode tocar AWS")
+
+    monkeypatch.setattr(managed_flink, "require_boto3", boom)
+    second = managed_flink.collect_managed_flink(
+        tmp_path,
+        now="2026-10-04T02:00:00Z",
+        **common,
+    )
+
+    assert second == first
+    assert len(first_client.calls) == 1
+    assert len(first_cloudwatch.calls) == 1
+
+
 def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsys):
     from sparkforge.adapters.cli import main
     from sparkforge.adapters.tools import call_tool
@@ -391,3 +423,25 @@ def test_managed_flink_collection_docs_state_read_only_limits():
         assert "managed-flink" in document or "Managed Flink" in document
         assert "read-only" in document or "somente leitura" in document
         assert "metrics" in document.lower() or "métricas" in document.lower()
+
+
+def test_managed_flink_temporal_docs_state_window_and_limits():
+    root = Path(__file__).parents[1]
+    documents = [
+        (root / "knowledge/flink-streaming.md").read_text(encoding="utf-8"),
+        (root / "knowledge/transport-diagnostics.md").read_text(encoding="utf-8"),
+        (root / "knowledge/streaming/runtime-matrix.md").read_text(encoding="utf-8"),
+        (root / "docs/guia/03-cli.md").read_text(encoding="utf-8"),
+        (root / "docs/guia/04-mcp.md").read_text(encoding="utf-8"),
+        (root / "docs/guia/referencia/tools/sparkforge_collect_managed_flink.md").read_text(encoding="utf-8"),
+        (root / "docs/streaming/prompt-coverage.md").read_text(encoding="utf-8"),
+    ]
+    for document in documents:
+        assert "metrics_start" in document or "--metrics-start" in document
+        assert "metrics_end" in document or "--metrics-end" in document
+        assert "unresolved" in document
+    knowledge = documents[0]
+    assert "AWS/KinesisAnalytics" in knowledge
+    assert "lastCheckpointDuration" in knowledge
+    assert "STREAMING_MANAGED_FLINK_TEMPORAL_METRICS" in documents[-1]
+    assert "Task/Operator/Parallelism" in knowledge

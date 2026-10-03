@@ -16,8 +16,7 @@ acceptance:
     statement: "O artifact registra namespace, start/end/period, query definitions, resultados e missing metrics sem converter ausência em zero ou esconder status inválido."
     verified_by: {kind: test, ref: "tests/test_collect_managed_flink.py::test_managed_flink_temporal_metrics_are_collected_and_normalized"}
   - id: AC3
-    statement: "O analyzer consome observações temporais e preserva managed_flink.metric, unidade, estatística e observed_at."
-    guard: "O extrator managed_flink já preservava registros metric genéricos; este teste impede que a nova forma temporal quebre essa integração."
+    statement: "O analyzer descompacta as observações temporais do artifact e preserva managed_flink.metric, unidade, estatística e observed_at."
     verified_by: {kind: test, ref: "tests/test_collect_managed_flink.py::test_managed_flink_temporal_metrics_feed_analyzer"}
   - id: AC4
     statement: "CLI e MCP do collector existente propagam a janela temporal com paridade de artifact e sem aumentar a quantidade de tools."

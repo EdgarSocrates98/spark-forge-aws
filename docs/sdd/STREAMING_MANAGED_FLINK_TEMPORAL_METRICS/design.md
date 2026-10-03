@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/define.md
-  sha256: "9fac74d1adb7969ed0fe2cef2b7f91ad847e294c025aa45ad037a7a69856cdcd"
+  sha256: "7ce82ba330a887a69bdb1daa1e28856b34533e680f5cb28e0d109df531e582b6"
 files:
   - {path: tests/test_collect_managed_flink.py, action: modify, reason: "fake clients, temporal window, cache, analyzer, parity and documentation contract"}
   - {path: sparkforge/collect/managed_flink.py, action: modify, reason: "AWS/KinesisAnalytics temporal queries, normalization, bounded pagination and cache path"}
