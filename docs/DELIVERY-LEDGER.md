@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **70 features**:
+O status atual registra **71 features**:
 
-- **68** em `ship/done`;
+- **69** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -53,7 +53,7 @@ STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_FLINK_SOURCE_SINK_ARTIFACTS,
 STREAMING_GLUE_SOURCE_SINK_ARTIFACTS, STREAMING_GLUE_RTM,
 STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
 STREAMING_ICEBERG_TEMPORAL,
-STREAMING_KINESIS_TEMPORAL_METRICS,
+STREAMING_FLINK_TEMPORAL_METRICS, STREAMING_KINESIS_TEMPORAL_METRICS,
 STREAMING_MANAGED_FLINK_TEMPORAL_METRICS,
 STREAMING_SLO_EVALUATION,
 STREAMING_SLO_TRANSPORT_EVALUATION,
@@ -132,6 +132,10 @@ do wheel e de uma CLI real do host.
   unidade/estatística, missing/unresolved e cache temporal offline. Dimensões
   Task/Operator/Parallelism, job plan, conectores, IAM efetivo, série longa e
   validação funcional continuam fora.
+  `STREAMING_FLINK_TEMPORAL_METRICS` adiciona ao analyzer upstream o fact
+  `flink.metric` para `metrics`/`metrics.observations` explícitos, exigindo
+  nome, valor numérico e timestamp textual; shape inválido é unresolved e não
+  há inferência de epoch, collector live ou série longa.
 - Checkpoints, Kafka Connect, Kafka Streams e OpenLineage como facts separados;
   collectors AWS read-only para checkpoint S3, Glue, Kinesis, MSK e DMS.
 - Iceberg/observabilidade: composição offline streaming→Iceberg com snapshots
@@ -208,6 +212,8 @@ do wheel e de uma CLI real do host.
 | `08b219a` | SDD ship, knowledge, skills, referências, mirrors, surface lock, offline manifest, status e ledger da avaliação SLO de transporte |
 | `1a9bbe3` | atualização do SDD, evolução, status e ledger para a guarda contra séries de transporte misturadas |
 | `7a1290d` | atualização transversal de README, guias CLI/MCP/agents, prompt mestre, payload Devin, contagens correntes e documentação de SLO observado |
+| `74bfada` | extração upstream `flink.metric`, testes fail-closed e golden temporal |
+| `e1adefb` | skill, mirrors, knowledge, referências, coverage, manifesto e surface lock do contrato Flink temporal |
 | `b10751b` | SLO de saída do sink: `num_output_rows`, vínculo `batch_id`/`query_name`, unresolved nomeado, CLI/MCP, goldens e paridade offline |
 | `d433caf` | ship SDD e atualização transversal das docs, skills, knowledge, mirrors, referências, manifests, evolução, STATUS e prompt coverage do sink SLO |
 | `57ae53d` | SDD explore/define/design/plan da profundidade de observabilidade do progresso |
@@ -257,11 +263,11 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14492** coletados em 2026-10-03; lote Kinesis/transport/docs/reachability/fixtures: **964 passed** agregados após corrigir o exercitador de snippet; suíte completa não executada |
+| Coleta atual de testes | **14496** coletados em 2026-10-03; Flink temporal: 11 unitários, 7 goldens, 69 kinds, documentação 196 e reachability 946 passed; suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes |
-| Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; snippet measure corrigido e verde; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
+| Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; Flink temporal upstream: 11 unitários, 7 goldens e 69 kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; snippet measure corrigido e verde; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |
 
