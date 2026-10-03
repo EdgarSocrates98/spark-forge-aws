@@ -22,13 +22,14 @@ runtime:
   python: '3.11'
   iceberg: 1.10.0
 expects_kinds:
-- env.consumer
-- env.consumers_analyzed
-- iceberg.delete_files_summary
-- iceberg.files_summary
-- iceberg.format_version
-- iceberg.snapshots_summary
-- iceberg.table_analyzed
-- iceberg.table_property
+  - iceberg.snapshot
+  - env.consumer
+  - env.consumers_analyzed
+  - iceberg.delete_files_summary
+  - iceberg.files_summary
+  - iceberg.format_version
+  - iceberg.snapshots_summary
+  - iceberg.table_analyzed
+  - iceberg.table_property
 expects_rules:
 - SF-ENV-002
