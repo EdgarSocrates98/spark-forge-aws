@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** fechamento `STREAMING_END_TO_END_PIPELINE`, com contrato upstream Flink temporal offline,
+**Base técnica de referência:** fechamento `GOLDEN_DRIFT_CLOSURE`, com contrato upstream Flink temporal offline,
 coletor Kinesis temporal bounded, Managed Flink temporal read-only, facts explícitos de source/sink Flink e p95/freshness
 sobre séries temporais de streaming.
 Este fechamento documental atualiza o índice transversal após o commit técnico;
@@ -106,8 +106,30 @@ O SDD está em
 
 Provas: node de kinds **14 passed**, corpus Iceberg **94 passed**, gates de
 corpus **116 passed** e `sparkforge sdd check` verde. O subset residual não-Iceberg
-mediu **19 failed, 366 passed**; o `verify_wheel` completo será reexecutado após
-as próximas reconciliações.
+foi fechado pelas duas reconciliações seguintes.
+
+## Atualização corrente — Propagação de snapshots compostos — **CONCLUÍDA** (2026-10-03)
+
+`SNAPSHOT_GOLDEN_PROPAGATION` aplicou a mesma reconciliação temporal aos seis
+goldens compostos que dependiam de `iceberg.snapshot`: três fixtures de
+CloudWatch e três de consumers. A regeneração usou somente o script oficial,
+adicionou o kind aos `meta.yaml` e preservou findings esperados e regras.
+
+Prova: o lote completo de CloudWatch/consumers passou com **332 testes**, o
+gate comum de corpus permaneceu em **116 passed** e o build/ship SDD está em
+[`docs/sdd/SNAPSHOT_GOLDEN_PROPAGATION/ship.md`](../sdd/SNAPSHOT_GOLDEN_PROPAGATION/ship.md).
+
+## Atualização corrente — Fechamento do golden drift residual — **CONCLUÍDA** (2026-10-03)
+
+`GOLDEN_DRIFT_CLOSURE` fechou os sete drifts restantes sem alterar regras ou
+código de produção: o golden Glue cross-artifact foi regenerado pelo script
+oficial e passou a preservar ausência de runtime como `unresolved`; o scan
+`misto` foi regenerado pelo modo oficial; três cenários foram regenerados pelo
+regenerador oficial.
+
+Provas: **3 passed** no lote Glue cross-artifact, **1 passed** no scan e **37
+passed** no lote de cenários. O SDD está em
+[`docs/sdd/GOLDEN_DRIFT_CLOSURE/ship.md`](../sdd/GOLDEN_DRIFT_CLOSURE/ship.md).
 
 ## Atualização corrente — Streaming End-to-End Pipeline — **CONCLUÍDA** (2026-10-03)
 
@@ -134,13 +156,13 @@ pipeline completo, selector ausente, selector ambíguo e contrato inválido.
 Provas focadas: red/green TDD do contrato e da regra, **967** testes de
 fixtures/reachability/kind coverage, **5** testes do corpus pipeline, gates de
 docs/manifest, surface lock, sync/render, bundle offline e SDD. A suíte
-completa não foi executada nesta fase. O gate de distribuição anterior foi
-byte-identical, mas a paridade instalada terminou com **47 failed, 3467 passed,
-5 skipped**. `ICEBERG_GOLDEN_RECONCILIATION` fechou 28 divergências Iceberg;
-após o commit, o subset não-Iceberg mediu **19 failed, 366 passed** em
-CloudWatch/consumers, Glue cross-artifact, scan e cenários. O `verify_wheel`
-completo ainda precisa ser reexecutado; nenhum golden fora do escopo foi
-regenerado.
+completa não foi executada nesta fase. O gate de distribuição posterior foi
+byte-identical e fechou com paridade instalada verde: **3514 passed, 5 skipped**
+em 1:24:00. `ICEBERG_GOLDEN_RECONCILIATION` fechou 28 divergências Iceberg;
+`SNAPSHOT_GOLDEN_PROPAGATION` passou **332** testes de CloudWatch/consumers e
+`GOLDEN_DRIFT_CLOSURE` passou **41** testes dos lotes residuais. Nenhum golden
+fora dos escopos declarados foi regenerado; builds byte-identical, `twine check`
+e validação do bundle de integração também passaram.
 
 ## Atualização corrente — Streaming SLO Evaluation — **CONCLUÍDA** (2026-10-02)
 
@@ -319,10 +341,11 @@ O índice consolidado da evolução está em
 `prompt_evo_nova_janela.md`, `prompt_evo_streaming.md` e
 `prompt_evo_forge_lab.md`, com os limites que continuam `unresolved`.
 
-O SDD corrente encontrou **74 features**: **73 `ship/done`** e uma em
+O SDD corrente encontrou **76 features**: **75 `ship/done`** e uma em
 `ship/draft` (`INTEGRACAO_USUARIO`). Templates não entram na contagem. As duas
 features Forge Lab estão fechadas em `FORGE_LAB_PRODUCT` e
-`FORGE_LAB_DIGITAL_TWIN`; `ICEBERG_GOLDEN_RECONCILIATION` também está em
+`FORGE_LAB_DIGITAL_TWIN`; `ICEBERG_GOLDEN_RECONCILIATION`,
+`SNAPSHOT_GOLDEN_PROPAGATION` e `GOLDEN_DRIFT_CLOSURE` também estão em
 `ship/done`.
 
 Esta atualização adiciona `glue.streaming.source` e `glue.streaming.sink` ao
