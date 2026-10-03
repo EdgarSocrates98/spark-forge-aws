@@ -135,12 +135,13 @@ sparkforge judge --facts flink.facts.json --show-skipped
 
 Quando source ou sink não aparece, o extrator publica
 `flink.unresolved` com `source_metrics_missing` ou `sink_metrics_missing`;
-formato inválido recebe razão própria. O analyzer não infere exactly-once,
-saúde, causalidade ou capacidade. `managed_flink.*` continua namespace separado
-e exige `--artifact managed_flink`. Apache Flink upstream ainda não possui
-collector live, série temporal genérica ou fact `flink.metric`; observabilidade
-temporal bounded pertence ao collector Managed Flink e não completa os facts
-upstream.
+formato inválido recebe razão própria. `metrics`/`metrics.observations` emite
+`flink.metric` somente com nome, valor numérico e timestamp textual; os demais
+casos ficam `flink.unresolved`. O analyzer não infere exactly-once, saúde,
+causalidade ou capacidade. `managed_flink.*` continua namespace separado e
+exige `--artifact managed_flink`. Apache Flink upstream não possui collector
+live nem série longa; observabilidade temporal bounded Managed não completa
+os facts upstream.
 
 ## Sequência mínima
 

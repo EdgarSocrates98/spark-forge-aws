@@ -40,14 +40,18 @@ capacidade, versão ou comportamento do outro.
 
    Para Amazon Managed Service for Apache Flink, use `--artifact managed_flink`.
    O resultado pode conter `flink.job`, `flink.operator`, `flink.source`,
-   `flink.sink`, `flink.checkpoint`, `flink.state`, ou
+   `flink.sink`, `flink.checkpoint`, `flink.state`, `flink.metric`, ou
    `managed_flink.application`, `managed_flink.config`,
    `managed_flink.connector`, `managed_flink.metric`. Confira os
    `*.unresolved` antes de julgar. `flink.source`/`flink.sink` preservam
    somente identidade e métricas explicitamente observadas; ausência vira
    `source_metrics_missing`/`sink_metrics_missing`, nunca zero.
-   O contrato upstream não emite uma série temporal genérica nem
-   `flink.metric`; não use `managed_flink.metric` para completar esse domínio.
+   Quando o dump upstream traz `metrics` como lista (ou
+   `metrics.observations`), cada ponto exige nome, valor numérico e
+   `observed_at`/timestamp textual para emitir `flink.metric`. Shape, nome,
+   valor ou timestamp inválido vira `flink.unresolved`; não há inferência de
+   epoch nem coleta live. Não use `managed_flink.metric` para completar esse
+   domínio.
    Quando o artifact Managed Flink veio de uma janela CloudWatch bounded,
    `managed_flink.metric` preserva `name`, `stat`, `unit` e `observed_at`.
    Esses pontos continuam observações isoladas: não são automaticamente

@@ -122,14 +122,15 @@ sparkforge analyze flink --path flink-dump.json --artifact flink --out flink.fac
 sparkforge judge --facts flink.facts.json --show-skipped
 ```
 
-O resultado pode conter `flink.source` e `flink.sink` com identidade,
+O resultado pode conter `flink.source`, `flink.sink` e `flink.metric` com identidade,
 connector, `delivery_semantics` e medidas observadas. Contadores não viram
 throughput sem timestamp/janela; ausência dos blocos vira
-`flink.unresolved` (`source_metrics_missing`/`sink_metrics_missing`). Isso não
-prova exactly-once nem saúde. Para Managed Flink use `--artifact managed_flink`;
-os namespaces não se completam. O contrato upstream ainda não possui collector
-live, série temporal genérica ou `flink.metric`; a janela temporal bounded
-entregue nesta evolução é exclusiva de Managed Flink e publica
+`flink.unresolved` (`source_metrics_missing`/`sink_metrics_missing`). Pontos
+em `metrics`/`metrics.observations` precisam de nome, valor numérico e timestamp
+textual para emitir `flink.metric`; inválidos ficam unresolved. Isso não prova
+exactly-once nem saúde. Para Managed Flink use `--artifact managed_flink`;
+os namespaces não se completam. O upstream segue sem collector live ou série
+longa; a janela temporal bounded do serviço gerenciado publica
 `managed_flink.metric`.
 
 Para coletar observabilidade temporal bounded sem misturar namespaces, use os

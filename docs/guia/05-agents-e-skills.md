@@ -67,9 +67,9 @@ Nenhum dos dois inventa número. Os dois chamam a CLI ou as tools MCP do SparkFo
 e citam a evidência (`fact_id`) de cada afirmação.
 
 Para Flink, use `analyze-flink-job` com o `--artifact` correto. O perfil mantém
-Apache Flink upstream e Managed Flink separados: a janela CloudWatch bounded e
-`managed_flink.metric` pertencem ao serviço gerenciado; não há contrato temporal
-genérico upstream nesta versão.
+Apache Flink upstream e Managed Flink separados: dumps upstream com
+`metrics` explícito emitem `flink.metric` sob contrato fail-closed; a janela
+CloudWatch bounded e `managed_flink.metric` pertencem ao serviço gerenciado.
 
 ## Coordenadores e executores
 

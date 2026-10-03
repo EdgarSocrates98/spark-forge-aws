@@ -7,8 +7,8 @@ descrição do runtime ou validação funcional.
 ## Separação de domínios
 
 `sparkforge analyze flink --artifact flink` lê fatos do Flink upstream:
-`flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`
-e `flink.state`. Source e sink são endpoints explícitos quando o dump traz
+`flink.job`, `flink.operator`, `flink.source`, `flink.sink`, `flink.checkpoint`,
+`flink.state` e `flink.metric`. Source e sink são endpoints explícitos quando o dump traz
 `sources`/`source` e `sinks`/`sink`; métricas como backlog, lag e commits
 pendentes são preservadas somente quando observadas. O modo
 `--artifact managed_flink` usa `managed_flink.application`,
@@ -47,12 +47,18 @@ ausente é preenchida com zero.
 
 ## Métricas temporais upstream versus Managed Flink
 
-O contrato upstream (`--artifact flink`) não inclui collector live, série
-temporal genérica ou fact `flink.metric`. Um dump sem timestamp e janela não
-prova throughput, latência, tendência, SLO ou saúde; não converta contador,
-backpressure isolado ou ausência de campo em conclusão temporal. Para obter
-observabilidade temporal upstream, o operador ainda precisa fornecer um
-artefato compatível e uma evolução de contrato específica.
+O contrato upstream (`--artifact flink`) aceita `metrics` como lista, ou
+`metrics.observations`, quando cada observação traz nome, valor numérico e
+`observed_at`/timestamp textual. O analyzer emite `flink.metric` com valor
+medido e atributos escalares como unidade, estatística, escopo e operator id;
+estruturas aninhadas são descartadas. Shape, nome, valor ou timestamp ausente
+ou inválido vira `flink.unresolved`, sem inferir timestamp numérico ou zero.
+Esse é um contrato de artefato offline: não há collector live, série longa,
+health, SLO, causalidade ou validação funcional automática.
+
+Sem bloco `metrics`, o extrator preserva compatibilidade com artefatos antigos
+e não fabrica observação temporal. Contadores, backpressure isolado ou ausência
+de campo continuam sem interpretação temporal.
 
 Managed Flink tem contrato separado: uma janela CloudWatch bounded do collector
 read-only alimenta `managed_flink.metric` com nome, valor observado, unidade,

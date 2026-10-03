@@ -189,11 +189,13 @@ capacidade; correlacione os facts com checkpoint, operator, runtime e série
 temporal. Detalhes em [`knowledge/flink-streaming.md`](knowledge/flink-streaming.md)
 e na [cobertura de streaming](docs/streaming/prompt-coverage.md).
 
-O contrato upstream ainda não possui collector live, série temporal genérica ou
-fact `flink.metric`. A coleta temporal bounded entregue nesta evolução pertence
-ao namespace Managed Flink: `managed_flink.metric`, cinco métricas de aplicação
-do CloudWatch e janela explícita. Não misture os namespaces nem use o contrato
-Managed para afirmar runtime, saúde ou comportamento do Flink upstream.
+O contrato upstream aceita pontos temporais explícitos no dump (`metrics` ou
+`metrics.observations`) e emite `flink.metric` somente quando há nome, valor
+numérico e timestamp textual. Shape ou campo inválido vira `flink.unresolved`;
+não há collector live, série longa, health ou inferência de epoch. A coleta
+temporal bounded do serviço gerenciado pertence ao namespace Managed Flink:
+`managed_flink.metric`, cinco métricas de aplicação do CloudWatch e janela
+explícita. Não misture os namespaces.
 
 ### Métricas temporais bounded de Kinesis e Managed Flink
 

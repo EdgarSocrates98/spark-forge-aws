@@ -123,7 +123,8 @@ Para workloads streaming, CDC e real-time, acrescente conforme o artefato:
   Quando houver janela CloudWatch, preserve os cinco fatos temporais de Kinesis ou
   os cinco fatos application-level de Managed Flink antes de julgar. Não use
   `managed_flink.metric` como evidência de Apache Flink upstream: o contrato
-  upstream continua sem collector temporal genérico.
+  upstream só emite `flink.metric` quando o dump traz observação explícita com
+  nome, valor numérico e timestamp textual; não há collector live.
 
 Quando houver declaração SLO e facts já extraídos, `analyze-streaming-composition --mode slo`
 avalia progress Structured Streaming ou métricas diretamente observadas de Kafka/Kinesis.
