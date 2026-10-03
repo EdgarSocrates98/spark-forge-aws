@@ -17,6 +17,7 @@ FIXTURES = ROOT / "fixtures" / "flink"
 REQUIRED_FIXTURES = {
     "flink_positive",
     "flink_checkpoint_failed",
+    "flink_temporal_metrics",
     "flink_unresolved",
     "managed_positive",
     "managed_unresolved",

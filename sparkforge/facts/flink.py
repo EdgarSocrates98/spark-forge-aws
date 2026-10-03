@@ -24,6 +24,7 @@ EMITTED_KINDS = frozenset(
         "flink.sink",
         "flink.checkpoint",
         "flink.state",
+        "flink.metric",
         "flink.unresolved",
         "flink.analyzed",
         "managed_flink.application",
@@ -164,6 +165,120 @@ def _endpoint_facts(
             facts.append(_fact(kind, artifact, line, provenance, measures=measures, attrs=attrs))
         else:
             facts.append(_unresolved(artifact, line, provenance, "flink", f"{role}_fields_missing"))
+    return facts
+
+
+def _flink_metric_facts(
+    data: dict[str, Any],
+    artifact: str,
+    line: int,
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """Extract explicitly timestamped upstream metric observations.
+
+    The top-level ``metrics`` key is opt-in so legacy upstream artifacts keep
+    their previous fact set. A complete point needs a name, numeric value and
+    textual timestamp; anything else remains a named blind spot instead of a
+    partial or fabricated observation.
+    """
+    if "metrics" not in data:
+        return []
+
+    raw = data.get("metrics")
+    if raw is None:
+        return [_unresolved(artifact, line, provenance, "flink", "metrics_missing")]
+    if isinstance(raw, dict):
+        if "observations" in raw:
+            records = raw.get("observations")
+        elif any(key in raw for key in ("name", "metric_name", "metricName")):
+            records = [raw]
+        else:
+            return [_unresolved(artifact, line, provenance, "flink", "metrics_observations_missing")]
+    elif isinstance(raw, list):
+        records = raw
+    else:
+        return [_unresolved(artifact, line, provenance, "flink", "metrics_not_a_list")]
+
+    if not isinstance(records, list) or not records:
+        return [_unresolved(artifact, line, provenance, "flink", "metrics_missing")]
+
+    facts: list[Fact] = []
+    reserved = {
+        "name",
+        "metric_name",
+        "metricName",
+        "value",
+        "metric_value",
+        "metricValue",
+        "observed_at",
+        "observedAt",
+        "timestamp",
+        "time",
+        "unit",
+        "stat",
+        "statistic",
+        "scope",
+        "operator_id",
+        "operatorId",
+    }
+    for metric in records:
+        if not isinstance(metric, dict):
+            facts.append(_unresolved(artifact, line, provenance, "flink", "invalid_metric_record"))
+            continue
+
+        name = _value(metric, "name", "metric_name", "metricName")
+        if not isinstance(name, str) or not name.strip():
+            facts.append(_unresolved(artifact, line, provenance, "flink", "metric_name_missing"))
+            continue
+
+        value = _number(_value(metric, "value", "metric_value", "metricValue"))
+        if value is None:
+            facts.append(_unresolved(artifact, line, provenance, "flink", "metric_value_invalid"))
+            continue
+
+        observed_at = _value(metric, "observed_at", "observedAt", "timestamp", "time")
+        if observed_at is None:
+            facts.append(_unresolved(artifact, line, provenance, "flink", "metric_timestamp_missing"))
+            continue
+        if not isinstance(observed_at, str) or not observed_at.strip():
+            facts.append(_unresolved(artifact, line, provenance, "flink", "metric_timestamp_invalid"))
+            continue
+
+        metric_name = name.strip()
+        attrs: dict[str, Any] = {
+            "name": metric_name,
+            "observed_at": observed_at,
+        }
+        unit = _value(metric, "unit")
+        stat = _value(metric, "stat", "statistic")
+        scope = _value(metric, "scope")
+        operator_id = _value(metric, "operator_id", "operatorId")
+        if isinstance(unit, str) and unit:
+            attrs["unit"] = unit
+        if isinstance(stat, str) and stat:
+            attrs["stat"] = stat
+        if isinstance(scope, str) and scope:
+            attrs["scope"] = scope
+        if isinstance(operator_id, str) and operator_id:
+            attrs["operator_id"] = operator_id
+
+        for key, raw_value in metric.items():
+            if key in reserved or raw_value is None or isinstance(raw_value, (dict, list)):
+                continue
+            if isinstance(raw_value, (str, int, float, bool)):
+                attrs[str(key)] = raw_value
+
+        facts.append(
+            _fact(
+                "flink.metric",
+                artifact,
+                line,
+                provenance,
+                measures={"value": value},
+                attrs=attrs,
+                symbol=metric_name,
+            )
+        )
     return facts
 
 
@@ -354,6 +469,8 @@ def _flink_record(data: dict[str, Any], artifact: str, line: int, provenance: di
                 facts.append(_unresolved(artifact, line, provenance, "flink", "state_fields_missing"))
     elif states is not None:
         facts.append(_unresolved(artifact, line, provenance, "flink", "state_not_a_list"))
+
+    facts.extend(_flink_metric_facts(data, artifact, line, provenance))
 
     if not facts:
         facts.append(_unresolved(artifact, line, provenance, "flink", "missing_shape"))
