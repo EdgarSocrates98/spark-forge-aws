@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **63 features**:
+O status atual registra **64 features**:
 
-- **61** em `ship/done`;
+- **62** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -50,7 +50,7 @@ SDD_EVAL, SDD_MIGRATION, SDD_OPERATOR, SDD_OPERATOR_DURAVEL, SDD_SKILLS,
 SDD_SKILLS_REVISAO, SFN_HISTORY, SFN_TENTATIVA, SF_STUBS,
 SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_GLUE_RTM,
-STREAMING_GLUE_CROSS_ARTIFACT,
+STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
 STREAMING_ICEBERG_TEMPORAL,
 STREAMING_SLO_EVALUATION,
 STREAMING_SLO_TRANSPORT_EVALUATION,
@@ -98,6 +98,10 @@ do wheel e de uma CLI real do host.
 - Glue Streaming efetivo versus Terraform: `fuse` compara por nome literal único
   versão, RTM, linguagem e workers; `SF-GLUESTREAM-004` sinaliza drift e
   `SF-GLUESTREAM-005` preserva identidade/valor unresolved.
+- Glue Streaming runtime observado: `fuse` compara a definição efetiva com
+  `glue.job_run` por nome literal nos eixos `glue_version`, `worker_type` e
+  `worker_count`; `SF-GLUESTREAM-006` sinaliza drift e
+  `SF-GLUESTREAM-007` preserva ausência de run, identidade ou campo.
 - CDC: Debezium, AWS DMS, eventos, posições, transações, tombstones, schema
   history, seams snapshot/CDC e blind spots.
 - Schema Registry/data contracts: compatibilidade, evolução, diff estrutural,
@@ -184,6 +188,7 @@ do wheel e de uma CLI real do host.
 | `ebb567d` | SDD explore/define/design/plan de correlação Glue Streaming/Terraform |
 | `e8d42eb` | facts, fuse, regras, fixtures e goldens de cross-artifact Glue |
 | `cdc0556` | ship SDD, guias, knowledge, skill, mirrors, referências, locks e ledgers do cross-artifact Glue |
+| `79a38db` | facts, fuse, regras, fixtures, goldens e SDD da observação Glue Streaming→runs |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -197,7 +202,7 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
-| Evidência temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge; 769 runtime-scope; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis e unresolved persistidos |
+| Evidência temporal | 980 testes focados; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |
 
@@ -207,7 +212,7 @@ AWS ou eficácia de uma recomendação em produção.
 
 ## Lacunas honestas
 
-1. Execução/replay/benchmark funcional Spark e Flink dependem de workload e runtime.
+1. Execução/replay/benchmark funcional Spark e Flink dependem de workload e runtime; Glue Streaming agora tem observação offline de runs, mas não collector live adicional.
 2. Kafka Connect REST, Kafka Streams runtime, OpenLineage live e métricas
    temporais de broker/grupo exigem endpoint, credencial e janela.
 3. A janela temporal curta offline e as avaliações SLO sobre progress, sink e

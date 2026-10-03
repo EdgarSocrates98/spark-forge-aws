@@ -50,8 +50,8 @@ de recomputar; o catálogo muda mais depressa que o código. Separar os dois per
 do resultado mostra só o que mudou no julgamento. Detalhe em
 [Extrair, julgar, compor](docs/guia/06-extrair-julgar-compor.md#por-que-extração-e-julgamento-são-verbos-separados).
 
-Os 58 extratores emitem 361 kinds distintos de fact, e só `collect *` toca a AWS. O
-catálogo tem **216** regras de diagnóstico em YAML, **216 delas executáveis** (todas), cada uma
+Os 59 extratores emitem 363 kinds distintos de fact, e só `collect *` toca a AWS. O
+catálogo tem **218** regras de diagnóstico em YAML, **218 delas executáveis** (todas), cada uma
 com `rule_id`, limiar, guarda de versão, fonte com data e um bloco `action:` de
 vocabulário fechado. As contagens passam pelo gate
 `python scripts/check_status_numbers.py --strict`, que confere cada uma contra a medida;
@@ -194,6 +194,21 @@ linguagem e workers, preserva `source_fact_ids` e distingue `drifts` de
 `unresolved_fields`. `SF-GLUESTREAM-004` sinaliza divergência; `SF-GLUESTREAM-005`
 registra identidade ou valor não resolvido. Esse contrato não prova execução,
 capacidade, custo, latência ou validação funcional.
+
+Com histórico terminal sanitizado, componha também a definição com
+`glue.job_run`:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+`glue.streaming.runtime_link` compara `glue_version`, `worker_type` e
+`worker_count` por nome literal e preserva `observed_run_ids`, `drifts` e
+`source_fact_ids`. `SF-GLUESTREAM-006` aponta drift; `SF-GLUESTREAM-007`
+mantém ausência de run/identidade/campo como unresolved. Duração e DPU do run
+não são latência, saúde ou custo atribuído.
 
 Para usar o SparkForge em qualquer repositório da máquina sem copiar nada para ele,
 integre uma vez por host:

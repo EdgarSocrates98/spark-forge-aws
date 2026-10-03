@@ -32,7 +32,8 @@ runs e a superfície existente; não cria verbo CLI nem ferramenta MCP.
 ## Validação
 
 Os testes do contrato passaram (`9 passed`), os goldens e o gate de domínio
-passaram (`5 passed`) e a cobertura documental passou. O corpus inclui
+passaram (`5 passed`), a cobertura documental passou e os gates de
+`runtime_scope` passaram (`793 passed`). O corpus inclui
 consistent, drift e ausência de run; os cenários com `glue.job_run` preservam
 explicitamente o `spark.timeout.unresolved` já produzido pelo compositor. A
 suíte completa não foi executada nesta fase.

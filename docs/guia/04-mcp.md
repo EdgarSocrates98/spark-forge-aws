@@ -216,6 +216,21 @@ O compositor publica `glue.streaming.terraform_link` quando encontra um
 `SF-GLUESTREAM-004`, enquanto identidade ou valores não resolvidos chegam em
 `SF-GLUESTREAM-005`. A correlação é offline e não prova estado aplicado na AWS.
 
+Para observar execução terminal sem nova ferramenta MCP, passe também o arquivo
+de facts produzido por `analyze glue-job-runs` ao mesmo `sparkforge_fuse`:
+
+```json
+{
+  "facts_paths": ["glue.facts.json", "runs.facts.json"],
+  "detail_level": "summary"
+}
+```
+
+O resultado acrescenta `glue.streaming.runtime_link` ou
+`glue.streaming.runtime.unresolved` e preserva `observed_run_ids`, `drifts` e
+`source_fact_ids`. `SF-GLUESTREAM-006/007` não afirmam latência, saúde, custo
+ou corretude funcional.
+
 ## Como verificar que funciona
 
 **Sem cliente nenhum.** Monte o servidor em Python:

@@ -36,7 +36,7 @@ O inventário completo das features, commits e provas está em
 | [`streaming-format-serving-matrix.md`](streaming-format-serving-matrix.md) | Matriz arquitetural Delta/Hudi/Iceberg e serving Redshift, ClickHouse, Pinot, Druid e Trino, com compatibilidade explicitamente unresolved |
 | [`event-driven-architecture.md`](event-driven-architecture.md) | Contrato offline para EventBridge, Pipes, SQS, SNS e padrões event-driven |
 | [`flink-streaming.md`](flink-streaming.md) | Offline Apache Flink/Managed Flink contract: job, operators, checkpoints, state, service configuration, connectors, metrics and unresolved blind spots |
-| [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, source, RTM restrictions, observed capacity and unresolved blind spots |
+| [`glue-streaming-rtm.md`](glue-streaming-rtm.md) | Offline AWS Glue Streaming/Real-Time Mode contract: runtime, source, RTM restrictions, observed capacity, terminal-run correlation and unresolved blind spots |
 | [`cdc-replication.md`](cdc-replication.md) | Offline CDC/Debezium/AWS DMS contract: operations, positions, keys, transactions, snapshot/CDC seam, tombstones, schema history, endpoints, mappings and unresolved blind spots |
 | [`schema-registry-data-contracts.md`](schema-registry-data-contracts.md) | Schema Registry compatibility, evolution, versions and data-contract governance |
 | [`spark/execution-model.md`](spark/execution-model.md) | Como Spark executa: lazy eval, actions, jobs/stages/tasks, fronteiras de shuffle, codegen, o que quebra pushdown |

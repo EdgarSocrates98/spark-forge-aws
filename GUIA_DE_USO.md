@@ -80,6 +80,19 @@ vira `SF-GLUESTREAM-004`; identidade ou parâmetro ausente vira
 `SF-GLUESTREAM-005`. Isso continua evidência offline, não prova que o job em
 produção executa com a configuração declarada.
 
+Se houver histórico terminal sanitizado, componha-o com a definição efetiva:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+Leia `glue.streaming.runtime_link`, `observed_run_ids`, `drifts` e
+`source_fact_ids`. `SF-GLUESTREAM-006` é drift entre definição e run;
+`SF-GLUESTREAM-007` é evidência insuficiente. Duração e DPU continuam facts de
+execução, não latência de evento ou saúde do streaming.
+
 ## 2. Claude Code
 
 Use o agente:

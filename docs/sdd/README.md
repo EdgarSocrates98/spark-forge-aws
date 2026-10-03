@@ -27,7 +27,7 @@ fase, está em [`CONTRATO.md`](CONTRATO.md), travado por teste contra o código.
 
 O estado consolidado das features está em
 [`../EVOLUTION-CURRENT.md`](../EVOLUTION-CURRENT.md). Em 2026-10-02, o status
-registrou 63 features: 61 ships done, uma plan ready e uma draft. A feature
+registrou 64 features: 62 ships done, uma plan ready e uma draft. A feature
 draft não deve ser promovida só para tornar o check global verde; as recusas
 `hypothesis_open_at_ship` e `registry_unchecked` são parte da evidência.
 O inventário detalhado por prompt e frente está em

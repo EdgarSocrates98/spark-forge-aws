@@ -6,7 +6,7 @@ profile: dev
 status: done
 upstream:
   path: docs/sdd/STREAMING_GLUE_RUNTIME_OBSERVATION/build_report.md
-  sha256: "a91092fa288e486a4b03de3cf35f5ce8e17c8fa4779a1baafa358a99aae497f5"
+  sha256: "9fa9cda4bdcfc5f7af9eca96df8e5d418306961008440572693082b46dc219ab"
 hypothesis_outcome: confirmed
 registries: [offline_manifest, sources_lock, generated_reference, surface_lock, fixture_corpus_gates, fixture_kind_coverage, snippet_measure, reachability_lists, status_numbers_gate, rules_catalog_gates, runtime_scope_gates, manifest_rule_count, sync_skills, agents_parity]
 deviations:
@@ -29,6 +29,7 @@ mirrors e documentação de cobertura.
 - `python scripts/check_surface_lock.py`.
 - `python scripts/verify_offline_bundle.py --check`.
 - `python scripts/check_status_numbers.py --strict`.
+- `python -m pytest tests/test_rule_scope_by_nature.py tests/test_runtime_inferred_from_facts.py tests/test_runtime_glue_versions.py -q` — `793 passed`.
 - `sparkforge sdd check --repo . --feature STREAMING_GLUE_RUNTIME_OBSERVATION`.
 - Suíte completa não executada; permanece para próxima fase solicitada.
 

@@ -315,6 +315,22 @@ de identidade alimenta `SF-GLUESTREAM-005`. O resultado mantém
 `source_fact_ids`; não substitui evidência de execução, capacidade, custo ou
 validação funcional.
 
+### Glue Streaming efetivo e runs terminais
+
+Com um diretório de runs Glue já coletado, use o analyzer existente e o mesmo
+compositor:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+O link literal compara `glue_version`, `worker_type` e `worker_count`, mantém
+`observed_run_ids`/`source_fact_ids` e separa `SF-GLUESTREAM-006` de
+`SF-GLUESTREAM-007`. Sem run ou eixo comparável, a saída é unresolved; não
+interprete `execution_time_s` ou DPU como latência de evento.
+
 ### Forge Lab / Digital Twin
 
 | Comando | O que faz | Referência |

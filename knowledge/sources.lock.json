@@ -2239,7 +2239,9 @@
         "SF-GLUESTREAM-002",
         "SF-GLUESTREAM-003",
         "SF-GLUESTREAM-004",
-        "SF-GLUESTREAM-005"
+        "SF-GLUESTREAM-005",
+        "SF-GLUESTREAM-006",
+        "SF-GLUESTREAM-007"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/troubleshooting.html": {

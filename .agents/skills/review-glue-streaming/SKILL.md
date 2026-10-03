@@ -39,7 +39,13 @@ Real-Time Mode e declare o runtime observado.
    `glue.streaming.terraform_link`, `source_fact_ids`, `drifts` e
    `unresolved_fields`; `SF-GLUESTREAM-004` aponta drift e
    `SF-GLUESTREAM-005` aponta identidade/campo não resolvido.
-6. Correlacione com código, métricas, checkpoint e validação funcional quando
+6. Se houver histórico terminal, rode `sparkforge analyze glue-job-runs` e
+   componha-o com a definição via `sparkforge fuse`. Leia
+   `glue.streaming.runtime_link`, `observed_run_ids`, `source_fact_ids`,
+   `drifts` e `unresolved_fields`; `SF-GLUESTREAM-006` aponta drift de
+   `glue_version`, `worker_type` ou `worker_count`, e `SF-GLUESTREAM-007`
+   aponta ausência de identidade, run ou eixo comparável.
+7. Correlacione com código, métricas, checkpoint e validação funcional quando
    esses artefatos existirem. Um dump de configuração ou um link com drift
    resolvido não prova comportamento produtivo nem causalidade.
 

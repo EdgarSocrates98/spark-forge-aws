@@ -50,6 +50,31 @@ valor interpolado, ausência de atributo e ausência de execução não são tra
 como igualdade. O link não prova `terraform apply`, runtime live, capacidade,
 latência, custo ou resultado funcional.
 
+## Definição efetiva e runs terminais
+
+Quando também existir histórico de execução sanitizado, extraia os runs e
+componha os facts com a definição efetiva:
+
+```text
+sparkforge analyze glue-streaming --path job.json --out effective.facts.json
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts effective.facts.json --facts runs.facts.json --out fused.facts.json
+sparkforge judge --facts fused.facts.json --show-skipped
+```
+
+`fuse` casa somente o nome literal de `glue.streaming.job` com o
+`subject.job_name` de `glue.job_run`. `glue.streaming.runtime_link` compara
+`glue_version`, `worker_type` e `worker_count`, preserva `observed_states`,
+`observed_run_ids` e `source_fact_ids`, e nomeia `drifts` quando os valores não
+coincidem. `SF-GLUESTREAM-006` aponta drift observado entre definição e run.
+
+Ausência de run, identidade ambígua ou campo ausente gera
+`glue.streaming.runtime.unresolved` e `SF-GLUESTREAM-007`; nunca vira igualdade.
+`execution_time_s` e `DPUSeconds` continuam observações do run Glue: não são
+latência de evento, saúde, throughput, custo atribuído ou prova de resultado
+funcional. Essas perguntas exigem facts próprios, janela comparável e validação
+funcional.
+
 ## Glue Streaming comum
 
 Glue Streaming usa Spark Structured Streaming e documenta fontes como Kinesis,

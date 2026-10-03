@@ -92,6 +92,23 @@ voltar aos fatos, `drifts` registra divergência e `unresolved_fields` conserva
 lacunas. `SF-GLUESTREAM-004` e `SF-GLUESTREAM-005` são findings P1. Nenhum
 resultado desse fluxo infere execução, custo, capacidade ou correção funcional.
 
+## Glue Streaming efetivo versus runs terminais
+
+Com histórico sanitizado de execução, componha a definição efetiva com o
+analyzer existente de runs:
+
+```bash
+sparkforge analyze glue-job-runs --path .sparkforge/artifacts/glue_job_run --out runs.facts.json
+sparkforge fuse --facts glue.facts.json --facts runs.facts.json --out runtime.facts.json
+sparkforge judge --facts runtime.facts.json --show-skipped
+```
+
+O vínculo literal `glue.streaming.runtime_link` compara `glue_version`,
+`worker_type` e `worker_count`, preserva `observed_run_ids`, `drifts` e
+`source_fact_ids`, e separa drift de `glue.streaming.runtime.unresolved`.
+Ausência de run ou campo não prova consistência; duração e DPU não são
+latência de evento, custo atribuído ou saúde do streaming.
+
 ## Sequência mínima
 
 ```bash
@@ -161,7 +178,7 @@ no julgamento, isolado de qualquer mudança no código analisado.
 
 ## O que pode ser extraído
 
-Os 58 extratores emitem 361 kinds distintos de fact (recontado em 2026-10-02),
+Os 59 extratores emitem 363 kinds distintos de fact (recontado em 2026-10-02),
 e todos são offline: leem artefato que já está em disco e nunca chamam a AWS.
 Cada verbo abaixo tem uma tool MCP de mesmo nome.
 
@@ -315,7 +332,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 361 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 363 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
