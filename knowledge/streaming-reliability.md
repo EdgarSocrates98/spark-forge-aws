@@ -15,7 +15,9 @@ SparkForge now treats two artifacts as first-class evidence:
 * **`StreamingQueryProgress` JSON/JSONL** describes what a run observed:
   batch duration, input/output rates and rows, source offsets, sink rows,
   event-time values and state-operator measurements. A series fact is emitted
-  only with at least two valid observations and numeric input/processed rates.
+  only with at least two valid observations and at least one complete numeric
+  series. It compactly preserves observed timestamp span, batch duration,
+  total state memory and watermark values when their series is complete.
 
 Static source facts are not runtime measurements. A progress series is not a
 backlog measurement unless the transport backlog is also collected. Boolean
@@ -40,6 +42,10 @@ rules are deliberately evidence-gated:
   rate below input rate; it does not identify the bottleneck.
 * `SF-STREAM-003`: state rows grew between first and last observed point; it
   does not prove a leak or prescribe a watermark.
+* `SF-STREAM-013`: watermark values stayed equal across a valid observed
+  series; it does not prove missing input, clock failure or freshness breach.
+* `SF-STREAM-014`: summed `memoryUsedBytes` across state operators grew between
+  first and last valid point; it does not prove a leak or justify scaling.
 
 These rules request a baseline. They do not promise throughput, cost savings,
 exactly-once delivery or a universal version boundary. Correlate source,
@@ -53,7 +59,10 @@ functional result before changing one primary variable.
 2. Capture runtime/version evidence before judging API or service capability.
 3. Measure input, processed and output rows with timestamps, batch IDs and
    units; preserve source offsets and sink commit evidence.
-4. Correlate watermark, event-time distribution, late data and state rows.
+4. Correlate watermark, event-time distribution, late data, state rows and the
+   compact series measures `observed_span_seconds`, batch duration and state
+   memory. `watermark_stalled` and `state_memory_growth_observed` are symptoms,
+   not causes.
 5. Verify sink idempotency, replay, dead-letter behavior and checkpoint loss
    handling before claiming correctness.
 6. Validate count, schema, business keys and control aggregates after every

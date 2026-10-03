@@ -32,6 +32,14 @@ def test_streaming_sink_slo_coverage_mentions_batch_link():
     assert "sink_name" in text
 
 
+def test_streaming_progress_observability_depth_coverage():
+    text = _read("docs/streaming/prompt-coverage.md")
+    reliability = _read("knowledge/streaming-reliability.md")
+    assert "STREAMING_PROGRESS_OBSERVABILITY_DEPTH" in text
+    assert "watermark_stalled" in reliability
+    assert "state_memory_growth_observed" in reliability
+
+
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
 

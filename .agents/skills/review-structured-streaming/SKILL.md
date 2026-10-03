@@ -34,7 +34,9 @@ somente com artefatos salvos.
    state e `foreachBatch` declarados.
 2. Rode `sparkforge analyze streaming --artifact progress --path <progress.jsonl-ou-dir>`
    para batches, input/processed rate, duração, event time, sink e state
-   observados. Série insuficiente deve permanecer `streaming.progress.unresolved`.
+   observados. O fact `streaming.progress.series` também resume, quando completos,
+   span temporal, duração de batch, memória total do state e watermark. Série
+   insuficiente deve permanecer `streaming.progress.unresolved`.
 3. Quando houver checkpoint ou integrações declaradas, rode
    `sparkforge analyze streaming-integrations --path <dump.json-ou-dir>`.
    Metadados internos de checkpoint só podem ser interpretados quando formato
@@ -43,8 +45,9 @@ somente com artefatos salvos.
    `sparkforge judge --facts <facts...> --show-skipped` e leia os motivos dos
    rules que ficaram fora de escopo ou sem evidência.
 5. Correlacione query, progresso, transporte, checkpoint, sink e validação
-   funcional. `processedRowsPerSecond < inputRowsPerSecond` é sintoma observado,
-   não causa; duas amostras não provam tendência de longo prazo.
+   funcional. `processedRowsPerSecond < inputRowsPerSecond`, `watermark_stalled`
+   e `state_memory_growth_observed` são sintomas observados, não causas; duas
+   amostras não provam tendência de longo prazo.
 6. Para qualquer mudança, defina uma variável primária, baseline, contagem,
    schema, chave e agregados de validação, risco e rollback. Não alegue ganho,
    custo, throughput ou exactly-once sem evidência compatível.
@@ -55,6 +58,8 @@ somente com artefatos salvos.
   collectors read-only disponíveis.
 - Não transforma ausência de checkpoint, watermark, offset, sink ou métrica em
   zero; emita ou preserve `*.unresolved`.
+- Não transforma `watermark_stalled` em freshness violada nem crescimento de
+  memória em leak; ambos exigem contexto e validação adicionais.
 - Código estático não prova backlog, latência, capacidade, semântica end-to-end
   nem resultado funcional.
 - Não recomenda intervalo de trigger, número de partições, workers ou state TTL
@@ -87,7 +92,9 @@ externa ao operador responsável.
 ## Referência rápida
 
 `streaming.progress.series` exige série válida; `streaming.progress.unresolved`
-nomeia ausência. Static source facts não são medidas de execução.
+nomeia ausência ou medida temporal inválida. Static source facts não são
+medidas de execução. `SF-STREAM-013` e `SF-STREAM-014` consomem somente os
+flags observados de watermark e memória, com runtime fact presente.
 
 ## Red flags
 

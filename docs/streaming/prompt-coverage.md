@@ -15,7 +15,7 @@ O inventário de commits, features e provas compartilhadas está em
 
 | Capability | Nível medido | Evidência atual | Lacuna para P0/P1 |
 |---|---|---|---|
-| Structured Streaming | `diagnosable` | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`: exigem workload/runtime real; cross-artifact permanece unresolved quando artefato não existe |
+| Structured Streaming | `diagnosable` | `sparkforge/facts/pyspark_ast.py`, `facts/streaming.py`, `facts/streaming_integrations.py`, `sparkforge/collect/streaming.py`, `rules/catalog/streaming.yaml`, analyzers, collector read-only e `skills/review-structured-streaming` | progress series agora resume span, duração, memória do state e watermark com `SF-STREAM-013`/`SF-STREAM-014`; execução Spark, replay, benchmark e validação funcional continuam `N/A + motivo`, e cross-artifact permanece unresolved quando artefato não existe |
 | Spark Real-Time | `version-aware` parcial | `knowledge/streaming/runtime-matrix.md` revalidada; separação upstream/runtime gerenciado e limite de `Trigger.RealTime` | capability no runtime observado, guard executável e prova de latência continuam `N/A + motivo` sem workload/runtime |
 | Kafka | `fact-aware` parcial | `facts/transport.py` preserva timestamps observados; `facts/streaming_temporal.py`, modo `analyze streaming-composition --mode temporal`, fixtures e regra `SF-STREAMOBS-002` pareiam progresso e lag em dumps | Connect REST, série temporal live de broker/grupo e segurança completa |
 | Amazon MSK | `version-aware` parcial | `msk.cluster` em `facts/transport.py`, `collect streaming-integrations`, `knowledge/transport-diagnostics.md`, `knowledge/streaming/runtime-matrix.md` | snapshot regional/broker-type, configuração/rede/segurança/lag temporal |
@@ -138,6 +138,11 @@ O inventário de commits, features e provas compartilhadas está em
   permite `sink_name`, separa met/violated/unresolved e inclui goldens,
   CLI/MCP, skill, knowledge, referências e SDD. Freshness, p95, exactly-once,
   CloudWatch live e causalidade continuam fora do contrato.
+- `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`: amplia `streaming.progress.series`
+  com span temporal, duração de batch, memória agregada do state e watermark;
+  `SF-STREAM-013` detecta watermark parado e `SF-STREAM-014` memória crescente
+  somente com runtime e série suficientes. Medidas inválidas continuam
+  unresolved; não há threshold, causa, freshness ou claim de performance.
 
 Todos os itens acima passaram os gates globais de skills, referências, surface,
 números correntes e bundle offline em 2026-10-02. Isso fecha contratos offline e

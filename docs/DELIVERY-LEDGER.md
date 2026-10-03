@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **60 features**:
+O status atual registra **61 features**:
 
-- **58** em `ship/done`;
+- **59** em `ship/done`;
 - **1** em `plan/ready`: `FORGE_LAB_DIGITAL_TWIN`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
@@ -54,6 +54,7 @@ STREAMING_ICEBERG_TEMPORAL,
 STREAMING_SLO_EVALUATION,
 STREAMING_SLO_TRANSPORT_EVALUATION,
 STREAMING_SINK_SLO_EVALUATION,
+STREAMING_PROGRESS_OBSERVABILITY_DEPTH,
 STREAMING_INTEGRATIONS_AND_CHECKPOINTS, STREAMING_LAKEHOUSE_OBSERVABILITY,
 STREAMING_OPERATIONS_AND_SERVING, STREAMING_READ_ONLY_COLLECTORS,
 STREAMING_REALTIME_DATA_PLATFORM, STREAMING_RUNTIME_MATRIX,
@@ -105,6 +106,10 @@ do wheel e de uma CLI real do host.
   `kinesis.shard` ou `num_output_rows` em `streaming.progress.sink` ligado a
   batch por `batch_id`/`query_name`, emitindo `met`, `violated` ou `unresolved`
   sem inferir causa, custo ou saúde end-to-end;
+  `streaming.progress.series` resume span temporal, duração de batch, memória
+  agregada de state e watermark quando há série completa, e `SF-STREAM-013/014`
+  registram somente sintomas observados de watermark parado e memória crescente;
+  timestamps/watermarks inválidos permanecem unresolved nomeados;
   operações, serving, SLO, FinOps, security/redaction,
   EventBridge/Pipes/SQS/SNS e decisão arquitetural por constraints.
 
@@ -163,6 +168,8 @@ do wheel e de uma CLI real do host.
 | `7a1290d` | atualização transversal de README, guias CLI/MCP/agents, prompt mestre, payload Devin, contagens correntes e documentação de SLO observado |
 | `b10751b` | SLO de saída do sink: `num_output_rows`, vínculo `batch_id`/`query_name`, unresolved nomeado, CLI/MCP, goldens e paridade offline |
 | `d433caf` | ship SDD e atualização transversal das docs, skills, knowledge, mirrors, referências, manifests, evolução, STATUS e prompt coverage do sink SLO |
+| `57ae53d` | SDD explore/define/design/plan da profundidade de observabilidade do progresso |
+| `0ea23e1` | extrator temporal, `SF-STREAM-013/014`, testes, fixture e goldens de progresso |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -172,12 +179,13 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Prova | Resultado |
 |---|---|
 | `sparkforge lab verify --repo .` | `valid: true`; 11 componentes, 20 cenários, 240 ações |
+| Coleta atual de testes | 14396 testes coletados em 2026-10-02; suíte completa não executada nesta frente |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
 | Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers e bundle offline verdes |
 | Evidência temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge; 769 runtime-scope; 46 wheel; 4 snippet measure; fixtures Iceberg/Kafka/Kinesis e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
-| Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; SDD check verde |
+| Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde |
 
 Essas provas validam contratos locais, determinismo, paridade e documentação.
 Não provam throughput, latência, custo, capacidade cloud, exactly-once, semântica
