@@ -1,7 +1,7 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** `8019b0f`; fechamento técnico corrente:
+**Base técnica de referência:** `912eeb9`; fechamento técnico corrente:
 `STREAMING_FLINK_TEMPORAL_METRICS`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
@@ -156,7 +156,7 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 |---|---|
 | Forge Lab | `valid: true`, 11 componentes, 20 cenários, 240 ações |
 | Coleta atual de testes | **14496** testes coletados em 2026-10-03; Flink temporal: **11** unitários, **7** goldens, **69** kinds, documentação **196** e reachability **946** passed; esta frente não executou a suíte completa |
-| Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped |
+| Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped; resultado histórico, não reexecutado após Flink temporal |
 | Docs de streaming | cobertura documental Glue source/sink adicionada nesta wave; Flink source/sink acrescentou 83 testes no lote de facts/goldens/kinds; observação Glue runtime acrescentou 9 testes de contrato e 5 goldens/docs/corpus; inclui sink SLO, progress observability depth, p95/freshness SLO, referências geradas e mirrors |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
 | Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; p95/freshness: 74 testes focados no lote combinado e 1 golden novo; snippet measure adicional: 4 passed |

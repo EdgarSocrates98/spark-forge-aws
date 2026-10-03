@@ -72,10 +72,19 @@ functional result before changing one primary variable.
 
 ## Scope and unresolved work
 
-Kafka/MSK, Kinesis, Flink/Managed Flink, CDC/DMS/Debezium, schema registries,
-Iceberg streaming maintenance, transport backlog collection and streaming
-FinOps remain later evidence waves. Their existence in this page is a routing
-hint, not proof that a source-specific extractor or service collector ran.
+Kafka/MSK, Kinesis e Flink/Managed Flink já possuem ondas de evidência
+implementadas: dumps offline, facts específicos, unresolved e, quando a janela
+é declarada, collectors read-only bounded e composição temporal. Consulte
+[`transport-diagnostics.md`](transport-diagnostics.md) para transporte e
+[`flink-streaming.md`](flink-streaming.md) para os dois namespaces Flink.
+
+Isso não transforma um snapshot em série longa nem em estado live. Connect REST,
+Kafka Streams runtime, OpenLineage live, replay, benchmark, validação funcional,
+runtime regional/efetivo, segurança completa e atribuição de FinOps continuam
+dependendo do artefato, endpoint, credencial ou workload correspondente. CDC,
+DMS/Debezium, Schema Registry, Iceberg streaming e serving também permanecem
+parciais e devem ser roteados para seus analyzers/skills específicos; a presença
+do domínio nesta página nunca prova que o extrator ou collector foi executado.
 
 ## Official sources
 

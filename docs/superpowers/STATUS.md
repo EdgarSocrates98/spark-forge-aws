@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** `8019b0f`, contrato upstream Flink temporal offline,
+**Base técnica de referência:** `912eeb9`, contrato upstream Flink temporal offline,
 coletor Kinesis temporal bounded, Managed Flink temporal read-only, facts explícitos de source/sink Flink e p95/freshness
 sobre séries temporais de streaming.
 Este fechamento documental atualiza o índice transversal após o commit técnico;
@@ -63,11 +63,12 @@ offline não chama AWS, Docker ou provider.
 registry, 20 cenários e 240 ações. O fechamento da feature está em
 [`docs/sdd/FORGE_LAB_PRODUCT/ship.md`](../sdd/FORGE_LAB_PRODUCT/ship.md).
 
-A suíte final coletou **14301 testes** e terminou com **14287 passed, 14
-skipped**. Os quatro lotes afetados por guardas foram repetidos depois das
-correções e fecharam verdes. Esse resultado valida contratos e regressões do
-repositório; não é claim de performance, custo, capacidade cloud ou execução
-real do laboratório.
+A suíte final do fechamento Forge Lab coletou **14301 testes** e terminou com
+**14287 passed, 14 skipped**. Os quatro lotes afetados por guardas foram
+repetidos depois das correções e fecharam verdes. Esse resultado é histórico do
+ship Forge Lab: não foi reexecutado após o contrato temporal upstream de Flink.
+Ele valida contratos e regressões locais; não é claim de performance, custo,
+capacidade cloud ou execução real do laboratório.
 
 ## Atualização corrente — Streaming SLO Evaluation — **CONCLUÍDA** (2026-10-02)
 

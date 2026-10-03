@@ -195,7 +195,8 @@ numérico e timestamp textual. Shape ou campo inválido vira `flink.unresolved`;
 não há collector live, série longa, health ou inferência de epoch. A coleta
 temporal bounded do serviço gerenciado pertence ao namespace Managed Flink:
 `managed_flink.metric`, cinco métricas de aplicação do CloudWatch e janela
-explícita. Não misture os namespaces.
+explícita. Não misture os namespaces. O contrato versionado e seus gates estão
+em [`STREAMING_FLINK_TEMPORAL_METRICS`](docs/sdd/STREAMING_FLINK_TEMPORAL_METRICS/ship.md).
 
 ### Métricas temporais bounded de Kinesis e Managed Flink
 

@@ -364,6 +364,16 @@ em `flink.unresolved` com razão nomeada; nenhum valor é preenchido com zero.
 Consulte `fact_id` e correlacione com checkpoint, operator e transporte antes
 de propor mudança.
 
+O mesmo artifact pode declarar `metrics` ou `metrics.observations`. Cada ponto
+precisa de nome, valor numérico e `observed_at`/`timestamp` textual para emitir
+`flink.metric`; shape inválido, valor não numérico ou timestamp ausente/inválido
+emite `flink.unresolved`. A métrica upstream é uma observação explícita, não
+health, SLO, causalidade ou série longa. Não misture com
+`managed_flink.metric`, que nasce da janela CloudWatch bounded do serviço
+gerenciado. O contrato completo está em
+[`knowledge/flink-streaming.md`](../../knowledge/flink-streaming.md) e no
+[ship SDD](../sdd/STREAMING_FLINK_TEMPORAL_METRICS/ship.md).
+
 ### Forge Lab / Digital Twin
 
 | Comando | O que faz | Referência |
