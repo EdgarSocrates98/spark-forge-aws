@@ -12,6 +12,7 @@ proves: 'O coletor nao trouxe `format_version`. A resposta e recusa NOMEADA, nun
   '
 runtime: {}
 expects_kinds:
+- iceberg.snapshot
 - iceberg.delete_files_summary
 - iceberg.files_summary
 - iceberg.format_version

@@ -113,6 +113,60 @@
     }
   },
   {
+    "id": "f_2924e9",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_particionado",
+      "snapshot_id": 7112233445566778899
+    },
+    "measures": {
+      "snapshot_index": 0
+    },
+    "attrs": {
+      "snapshot_index": 0,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 7112233445566778899,
+      "committed_at": "2026-07-29T03:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "21fda22e9cbfde08a1537946ffa8a9f29d220286f169b072cfdfdffee2e4a12e",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_a882f2",
+    "schema_version": 1,
+    "kind": "iceberg.snapshot",
+    "subject": {
+      "type": "snapshot",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_particionado",
+      "snapshot_id": 7112233445566778900
+    },
+    "measures": {
+      "snapshot_index": 1
+    },
+    "attrs": {
+      "snapshot_index": 1,
+      "timestamp_observed": true,
+      "operation_observed": true,
+      "snapshot_id": 7112233445566778900,
+      "committed_at": "2026-07-30T03:00:00+00:00",
+      "operation": "append"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "21fda22e9cbfde08a1537946ffa8a9f29d220286f169b072cfdfdffee2e4a12e",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
     "id": "f_0afa62",
     "schema_version": 1,
     "kind": "iceberg.snapshots_summary",
