@@ -272,7 +272,7 @@ do wheel e de uma CLI real do host.
 | `e1adefb` | skill, mirrors, knowledge, referências, coverage, manifesto e surface lock do contrato Flink temporal |
 | `8019b0f` | build/ship SDD, contagens e documentação transversal do contrato Flink temporal |
 | `912eeb9` | restamp final do ship Flink temporal; base corrente de `STATUS.md` e `EVOLUTION-CURRENT.md` |
-| `1515a93` | pipeline end-to-end declarado: composição exata cross-engine, regra de unresolved, fixtures, docs, mirrors, locks e SDD |
+| `09fc1d3` | pipeline end-to-end declarado: composição exata cross-engine, regra de unresolved, fixtures, docs, mirrors, locks e SDD |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
