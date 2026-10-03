@@ -140,7 +140,7 @@
     }
   },
   {
-    "id": "f_2701b4",
+    "id": "f_b3ae4a",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
@@ -160,13 +160,16 @@
       "processed_rows_per_second_first": 70.0,
       "processed_rows_per_second_last": 80.0,
       "state_rows_total_first": 10.0,
-      "state_rows_total_last": 20.0
+      "state_rows_total_last": 20.0,
+      "observed_span_seconds": 1.0
     },
     "attrs": {
       "first_observed_index": 0,
       "last_observed_index": 1,
       "all_processed_below_input": true,
-      "state_growth_observed": true
+      "state_growth_observed": true,
+      "observed_timestamp_first": "2026-10-01T12:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T12:00:01+00:00"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_runtime_divergent\\input\\progress.jsonl",

@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +40,18 @@ def _number(value: Any) -> _NUMBER | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
     return value
+
+
+def _timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
 
 
 def _safe_key(value: str) -> str:
@@ -310,6 +323,17 @@ def _progress_facts(
             )
         )
     else:
+        measures: dict[str, Any] = {
+            "observation_count": len(valid),
+            "first_batch_id": valid[0][1]["batchId"],
+            "last_batch_id": valid[-1][1]["batchId"],
+        }
+        series_attrs: dict[str, Any] = {
+            "first_observed_index": valid[0][2],
+            "last_observed_index": valid[-1][2],
+        }
+        complete_measurement = False
+
         rate_rows = [
             (value.get("inputRowsPerSecond"), value.get("processedRowsPerSecond"))
             for _, value, _ in valid
@@ -317,40 +341,129 @@ def _progress_facts(
         if all(_number(left) is not None and _number(right) is not None for left, right in rate_rows):
             inputs = [float(left) for left, _ in rate_rows]
             processed = [float(right) for _, right in rate_rows]
-            state_totals: list[float] = []
-            for _, value, _ in valid:
-                operators = value.get("stateOperators")
-                total = sum(
-                    float(_number(item.get("numRowsTotal")) or 0)
-                    for item in operators
-                    if isinstance(item, dict) and _number(item.get("numRowsTotal")) is not None
-                ) if isinstance(operators, list) else None
-                if total is None:
-                    state_totals = []
-                    break
-                state_totals.append(total)
-            measures = {
-                "observation_count": len(valid),
-                "first_batch_id": valid[0][1]["batchId"],
-                "last_batch_id": valid[-1][1]["batchId"],
-                "input_rows_per_second_first": inputs[0],
-                "input_rows_per_second_last": inputs[-1],
-                "processed_rows_per_second_first": processed[0],
-                "processed_rows_per_second_last": processed[-1],
-            }
-            series_attrs = {
-                "first_observed_index": valid[0][2],
-                "last_observed_index": valid[-1][2],
-                "all_processed_below_input": all(right < left for left, right in rate_rows),
-            }
-            if state_totals:
-                measures.update(
-                    {
-                        "state_rows_total_first": state_totals[0],
-                        "state_rows_total_last": state_totals[-1],
-                    }
+            measures.update(
+                {
+                    "input_rows_per_second_first": inputs[0],
+                    "input_rows_per_second_last": inputs[-1],
+                    "processed_rows_per_second_first": processed[0],
+                    "processed_rows_per_second_last": processed[-1],
+                }
+            )
+            series_attrs["all_processed_below_input"] = all(
+                right < left for left, right in rate_rows
+            )
+            complete_measurement = True
+
+        durations = [_number(value.get("batchDuration")) for _, value, _ in valid]
+        if all(duration is not None for duration in durations):
+            duration_values = [float(duration) for duration in durations if duration is not None]
+            measures.update(
+                {
+                    "batch_duration_ms_first": duration_values[0],
+                    "batch_duration_ms_last": duration_values[-1],
+                    "batch_duration_ms_max": max(duration_values),
+                    "batch_duration_ms_avg": sum(duration_values) / len(duration_values),
+                }
+            )
+            complete_measurement = True
+
+        state_totals: list[float] = []
+        state_memory: list[float] = []
+        for _, value, _ in valid:
+            operators = value.get("stateOperators")
+            if not isinstance(operators, list) or not operators:
+                state_totals = []
+                state_memory = []
+                break
+            row_values = [
+                _number(item.get("numRowsTotal"))
+                for item in operators
+                if isinstance(item, dict)
+            ]
+            memory_values = [
+                _number(item.get("memoryUsedBytes"))
+                for item in operators
+                if isinstance(item, dict)
+            ]
+            if len(row_values) != len(operators) or any(item is None for item in row_values):
+                state_totals = []
+            else:
+                state_totals.append(sum(float(item) for item in row_values if item is not None))
+            if len(memory_values) != len(operators) or any(item is None for item in memory_values):
+                state_memory = []
+            else:
+                state_memory.append(sum(float(item) for item in memory_values if item is not None))
+        if len(state_totals) == len(valid):
+            measures.update(
+                {
+                    "state_rows_total_first": state_totals[0],
+                    "state_rows_total_last": state_totals[-1],
+                }
+            )
+            series_attrs["state_growth_observed"] = state_totals[-1] > state_totals[0]
+            complete_measurement = True
+        if len(state_memory) == len(valid):
+            measures.update(
+                {
+                    "state_memory_used_bytes_first": state_memory[0],
+                    "state_memory_used_bytes_last": state_memory[-1],
+                    "state_memory_used_bytes_max": max(state_memory),
+                }
+            )
+            series_attrs["state_memory_growth_observed"] = state_memory[-1] > state_memory[0]
+            complete_measurement = True
+
+        timestamps = [_timestamp(value.get("timestamp")) for _, value, _ in valid]
+        if all(timestamp is not None for timestamp in timestamps):
+            parsed_timestamps = [timestamp for timestamp in timestamps if timestamp is not None]
+            measures["observed_span_seconds"] = (
+                max(parsed_timestamps) - min(parsed_timestamps)
+            ).total_seconds()
+            series_attrs["observed_timestamp_first"] = parsed_timestamps[0].isoformat()
+            series_attrs["observed_timestamp_last"] = parsed_timestamps[-1].isoformat()
+            complete_measurement = True
+        elif any(timestamp is None for timestamp in timestamps):
+            facts.append(
+                _unresolved(
+                    artifact,
+                    valid[0][0],
+                    provenance,
+                    "invalid_series_timestamp",
+                    required_observations=2,
+                    observed_observations=len(valid),
                 )
-                series_attrs["state_growth_observed"] = state_totals[-1] > state_totals[0]
+            )
+
+        watermarks = [
+            value.get("eventTime", {}).get("watermark")
+            if isinstance(value.get("eventTime"), dict)
+            else None
+            for _, value, _ in valid
+        ]
+        if any(watermark is not None for watermark in watermarks):
+            parsed_watermarks = [_timestamp(watermark) for watermark in watermarks]
+            if all(watermark is not None for watermark in parsed_watermarks):
+                watermark_values = [watermark for watermark in parsed_watermarks if watermark is not None]
+                measures["watermark_advance_ms"] = (
+                    watermark_values[-1] - watermark_values[0]
+                ).total_seconds() * 1000
+                series_attrs["watermark_first"] = watermark_values[0].isoformat()
+                series_attrs["watermark_last"] = watermark_values[-1].isoformat()
+                series_attrs["watermark_stalled"] = len(set(watermark_values)) == 1
+                complete_measurement = True
+            else:
+                facts.append(
+                    _unresolved(
+                        artifact,
+                        valid[0][0],
+                        provenance,
+                        "invalid_watermark_series",
+                        required_observations=2,
+                        observed_observations=len(valid),
+                    )
+                )
+
+        if complete_measurement:
             facts.append(
                 _fact(
                     "streaming.progress.series",

@@ -89,7 +89,7 @@
       "snippet": ""
     },
     "evidence": [
-      "f_2701b4"
+      "f_b3ae4a"
     ],
     "measured": {
       "observation_count": 2,
@@ -100,7 +100,8 @@
       "processed_rows_per_second_first": 70.0,
       "processed_rows_per_second_last": 80.0,
       "state_rows_total_first": 10.0,
-      "state_rows_total_last": 20.0
+      "state_rows_total_last": 20.0,
+      "observed_span_seconds": 1.0
     },
     "threshold": {},
     "runtime_scope": {},
@@ -166,7 +167,7 @@
       "snippet": ""
     },
     "evidence": [
-      "f_2701b4"
+      "f_b3ae4a"
     ],
     "measured": {
       "observation_count": 2,
@@ -177,7 +178,8 @@
       "processed_rows_per_second_first": 70.0,
       "processed_rows_per_second_last": 80.0,
       "state_rows_total_first": 10.0,
-      "state_rows_total_last": 20.0
+      "state_rows_total_last": 20.0,
+      "observed_span_seconds": 1.0
     },
     "threshold": {},
     "runtime_scope": {},

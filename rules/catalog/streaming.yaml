@@ -139,3 +139,89 @@ rules:
       - {url: "https://spark.apache.org/docs/latest/api/python/_modules/pyspark/sql/streaming/listener.html", retrieved: 2026-10-01}
     knowledge_refs:
       - {ref: knowledge/streaming-reliability.md}
+
+  - id: SF-STREAM-013
+    category: streaming
+    title: Watermark observado sem avanço na série
+    requires_facts: [streaming.progress.series, env.runtime_signal]
+    when:
+      all:
+        - fact: streaming.progress.series
+          expr: "measures.observation_count >= 2 and attrs.watermark_stalled"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O watermark observado permaneceu igual entre os pontos válidos da série.
+      Isso é um sintoma temporal no artefato fornecido; não prova falta de
+      eventos, atraso de relógio, problema de source, state ou causa raiz.
+    proposed_change:
+      - Correlacionar watermark, event-time, input, atraso de eventos, state e backlog na mesma janela.
+      - Confirmar se a ausência de avanço é esperada pelo workload ou representa atraso operacional.
+      - Alterar uma variável principal somente depois de preservar baseline e validar o resultado.
+    action:
+      kind: measurement.localize_divergence
+      target: streaming.progress.watermark
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    risks:
+      - Reduzir watermark sem entender late data pode descartar eventos e mudar agregados.
+      - Uma janela curta pode capturar período sem novos eventos e parecer parada.
+    tradeoffs:
+      - Reter event-time, watermark e backlog aumenta observabilidade e armazenamento.
+    validation:
+      - Confirmar timestamps timezone-aware, query, batch ids e watermark de cada ponto.
+      - Comparar event-time, late data, state rows, backlog e resultado funcional em nova janela.
+      - Executar proxies de contagem, schema, chaves e agregados antes de promover mudança.
+    rollback:
+      - Reverter a única mudança experimental e preservar a série original para reauditoria.
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://spark.apache.org/docs/latest/api/python/_modules/pyspark/sql/streaming/listener.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-reliability.md}
+
+  - id: SF-STREAM-014
+    category: streaming
+    title: Crescimento observado de memória do state
+    requires_facts: [streaming.progress.series, env.runtime_signal]
+    when:
+      all:
+        - fact: streaming.progress.series
+          expr: "measures.observation_count >= 2 and attrs.state_memory_growth_observed"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A memória total reportada pelos state operators aumentou entre o primeiro
+      e o último ponto válido da série. O fato não prova leak, pressão de heap,
+      cardinalidade ilimitada ou que a mudança de watermark seja correta.
+    proposed_change:
+      - Correlacionar memória, state rows, watermark, cardinalidade, duração e backlog.
+      - Confirmar se todos os operadores da janela informaram a métrica e se a operação é bounded.
+      - Medir uma variável principal e validar o resultado funcional antes de escalar capacidade.
+    action:
+      kind: measurement.localize_divergence
+      target: streaming.progress.state_memory
+      direction: investigate
+      requires_absent: []
+      moves: [runtime.wall_clock, correctness.write_result]
+      depends_on: []
+    risks:
+      - Tratar crescimento observado como leak pode provocar alteração destrutiva de state ou watermark.
+      - Escalar workers sem medir cardinalidade e sink pode elevar custo sem resolver a causa.
+    tradeoffs:
+      - Métricas por operador aumentam payload e retenção, mas preservam a prova da divergência.
+    validation:
+      - Confirmar unidade bytes, operador, batch ids, timestamps e completude dos operadores.
+      - Comparar memória, state rows, watermark, input e resultado funcional antes/depois.
+      - Testar restart/replay controlado quando a mudança tocar checkpoint ou state.
+    rollback:
+      - Reverter a única mudança experimental e preservar checkpoint e baseline sem apagá-los.
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html", retrieved: 2026-10-02}
+      - {url: "https://spark.apache.org/docs/latest/api/python/_modules/pyspark/sql/streaming/listener.html", retrieved: 2026-10-02}
+    knowledge_refs:
+      - {ref: knowledge/streaming-reliability.md}

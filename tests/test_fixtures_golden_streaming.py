@@ -29,6 +29,7 @@ REQUIRED_FIXTURES = {
     "progress_positive",
     "progress_unresolved",
     "progress_runtime_divergent",
+    "progress_watermark_stalled",
 }
 
 

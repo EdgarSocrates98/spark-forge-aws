@@ -150,7 +150,7 @@
     }
   },
   {
-    "id": "f_6f7719",
+    "id": "f_89f6cc",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
@@ -169,14 +169,29 @@
       "input_rows_per_second_last": 1200.0,
       "processed_rows_per_second_first": 800.0,
       "processed_rows_per_second_last": 900.0,
+      "batch_duration_ms_first": 1000.0,
+      "batch_duration_ms_last": 1200.0,
+      "batch_duration_ms_max": 1200.0,
+      "batch_duration_ms_avg": 1100.0,
       "state_rows_total_first": 100.0,
-      "state_rows_total_last": 150.0
+      "state_rows_total_last": 150.0,
+      "state_memory_used_bytes_first": 2048.0,
+      "state_memory_used_bytes_last": 3072.0,
+      "state_memory_used_bytes_max": 3072.0,
+      "observed_span_seconds": 1.0,
+      "watermark_advance_ms": 60000.0
     },
     "attrs": {
       "first_observed_index": 0,
       "last_observed_index": 1,
       "all_processed_below_input": true,
-      "state_growth_observed": true
+      "state_growth_observed": true,
+      "state_memory_growth_observed": true,
+      "observed_timestamp_first": "2026-10-01T10:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T10:00:01+00:00",
+      "watermark_first": "2026-10-01T09:58:00+00:00",
+      "watermark_last": "2026-10-01T09:59:00+00:00",
+      "watermark_stalled": false
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming\\progress_positive\\input\\progress.jsonl",

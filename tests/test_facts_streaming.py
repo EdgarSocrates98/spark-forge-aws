@@ -107,6 +107,56 @@ def test_streaming_extraction_is_deterministic_and_batch_safe(tmp_path):
     assert not [fact for fact in batch if fact.kind.startswith("streaming.")]
 
 
+def test_progress_series_summarizes_temporal_state_and_watermark(tmp_path):
+    from sparkforge.facts.streaming import extract_streaming_progress_path
+
+    first = _progress(0, 100.0, 100.0, 10)
+    second = _progress(1, 100.0, 100.0, 10)
+    first["batchDuration"] = 1000
+    second["batchDuration"] = 1400
+    first["eventTime"]["watermark"] = "2026-10-01T00:00:00Z"
+    second["eventTime"]["watermark"] = "2026-10-01T00:00:00Z"
+    first["stateOperators"][0]["memoryUsedBytes"] = 2048
+    second["stateOperators"][0]["memoryUsedBytes"] = 4096
+    path = tmp_path / "progress.jsonl"
+    path.write_text(
+        "\n".join(__import__("json").dumps(item) for item in (first, second)) + "\n",
+        encoding="utf-8",
+    )
+
+    facts = extract_streaming_progress_path(path, repo_root=tmp_path)
+    series = next(fact for fact in facts if fact.kind == "streaming.progress.series")
+
+    assert series.measures["observed_span_seconds"] == 1.0
+    assert series.measures["batch_duration_ms_first"] == 1000
+    assert series.measures["batch_duration_ms_last"] == 1400
+    assert series.measures["batch_duration_ms_max"] == 1400
+    assert series.measures["state_memory_used_bytes_first"] == 2048
+    assert series.measures["state_memory_used_bytes_last"] == 4096
+    assert series.attrs["watermark_stalled"] is True
+    assert series.attrs["state_memory_growth_observed"] is True
+
+
+def test_progress_series_unresolved_for_invalid_temporal_measurement(tmp_path):
+    from sparkforge.facts.streaming import extract_streaming_progress_path
+
+    first = _progress(0, 100.0, 100.0, 10)
+    second = _progress(1, 100.0, 100.0, 10)
+    second["eventTime"]["watermark"] = "not-a-timestamp"
+    path = tmp_path / "progress.jsonl"
+    path.write_text(
+        "\n".join(__import__("json").dumps(item) for item in (first, second)) + "\n",
+        encoding="utf-8",
+    )
+
+    facts = extract_streaming_progress_path(path, repo_root=tmp_path)
+    unresolved = [fact for fact in facts if fact.kind == "streaming.progress.unresolved"]
+    series = next(fact for fact in facts if fact.kind == "streaming.progress.series")
+
+    assert any(fact.attrs["reason"] == "invalid_watermark_series" for fact in unresolved)
+    assert "watermark_stalled" not in series.attrs
+
+
 def test_extract_structured_streaming_source_emits_anchored_facts():
     source = '''
 from pyspark.sql import functions as F

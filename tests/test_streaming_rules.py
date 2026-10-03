@@ -136,3 +136,29 @@ def test_slo_evaluation_rules_are_evidence_first():
         attrs={"reason": "window_not_covered", "query_name": "orders-query"},
     )
     assert [finding for finding in judge([unresolved], rules, {}) if finding.rule_id == "SF-STREAM-012"]
+
+
+def test_progress_observability_depth_rules_are_evidence_first():
+    rules = [rule for rule in load_catalog() if rule["id"] in {"SF-STREAM-013", "SF-STREAM-014"}]
+    series = _fact(
+        "streaming.progress.series",
+        measures={"observation_count": 3},
+        attrs={"watermark_stalled": True, "state_memory_growth_observed": True},
+    )
+    runtime = _fact(
+        "env.runtime_signal",
+        measures={"distinct_versions": 1},
+        attrs={"observed": {"spark": ["3.5.6"]}},
+    )
+
+    findings = judge([series, runtime], rules, {"spark": "3.5.6"})
+    assert {finding.rule_id for finding in findings} == {"SF-STREAM-013", "SF-STREAM-014"}
+    assert all(finding.evidence for finding in findings)
+
+    assert not judge([series], rules, {"spark": "3.5.6"})
+    one_observation = _fact(
+        "streaming.progress.series",
+        measures={"observation_count": 1},
+        attrs={"watermark_stalled": True, "state_memory_growth_observed": True},
+    )
+    assert not judge([one_observation, runtime], rules, {"spark": "3.5.6"})
