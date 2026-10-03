@@ -5,6 +5,7 @@ import json
 import pytest
 
 from sparkforge.adapters.cli import main
+from sparkforge.adapters.tools import call_tool
 from sparkforge.collect import streaming
 from sparkforge.collect.base import CollectorUnavailable, load_manifest
 
@@ -255,3 +256,41 @@ def test_cli_parser_and_handler_are_wired(monkeypatch, tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["kind"] == "streaming_integrations"
     assert payload["cache_hit"] is False
+
+
+def test_cli_and_mcp_streaming_temporal_collection_match(monkeypatch, tmp_path, capsys):
+    fake = FakeBoto3()
+    monkeypatch.setattr(streaming, "require_boto3", lambda: fake)
+    common = [
+        "--kinesis-stream",
+        "orders",
+        "--metrics-start",
+        "2026-10-02T00:00:00Z",
+        "--metrics-end",
+        "2026-10-02T00:05:00Z",
+        "--metrics-period",
+        "60",
+        "--now",
+        "2026-10-02T00:10:00Z",
+    ]
+
+    cli_code = main(
+        ["collect", "streaming-integrations", "--repo", str(tmp_path / "cli"), *common]
+    )
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = call_tool(
+        "sparkforge_collect_streaming_integrations",
+        {
+            "repo": str(tmp_path / "mcp"),
+            "kinesis_stream_name": "orders",
+            "metrics_start": "2026-10-02T00:00:00Z",
+            "metrics_end": "2026-10-02T00:05:00Z",
+            "metrics_period": 60,
+            "now": "2026-10-02T00:10:00Z",
+        },
+    )
+
+    assert cli_code == 0
+    assert cli_payload["kind"] == mcp_payload["kind"] == "streaming_integrations"
+    assert cli_payload["path"] == mcp_payload["path"]
+    assert cli_payload["sha256"] == mcp_payload["sha256"]

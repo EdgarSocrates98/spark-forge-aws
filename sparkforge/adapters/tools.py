@@ -9807,6 +9807,20 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "region_name": {"type": "string"},
                 "max_objects": {"type": "integer", "minimum": 1, "maximum": 500},
                 "max_shards": {"type": "integer", "minimum": 1, "maximum": 500},
+                "metrics_start": {
+                    "type": "string",
+                    "description": "Início ISO 8601 da janela CloudWatch Kinesis.",
+                },
+                "metrics_end": {
+                    "type": "string",
+                    "description": "Fim ISO 8601 da janela CloudWatch Kinesis.",
+                },
+                "metrics_period": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 86400,
+                    "description": "Período em segundos; múltiplo de 60.",
+                },
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
             },
         },
@@ -11778,6 +11792,9 @@ def _h_collect_streaming_integrations(args: dict[str, Any]) -> dict[str, Any]:
         region_name=args.get("region_name", ""),
         max_objects=args.get("max_objects", 500),
         max_shards=args.get("max_shards", 500),
+        metrics_start=args.get("metrics_start", ""),
+        metrics_end=args.get("metrics_end", ""),
+        metrics_period=args.get("metrics_period", 60),
     )
 
 

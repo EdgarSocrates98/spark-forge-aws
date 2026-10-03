@@ -3381,6 +3381,22 @@ def build_parser() -> argparse.ArgumentParser:
     streaming_collect_p.add_argument(
         "--max-shards", type=int, default=500, help="Teto de shards Kinesis (1..500)."
     )
+    streaming_collect_p.add_argument(
+        "--metrics-start",
+        default="",
+        help="Início ISO 8601 da janela CloudWatch Kinesis; exige --metrics-end.",
+    )
+    streaming_collect_p.add_argument(
+        "--metrics-end",
+        default="",
+        help="Fim ISO 8601 da janela CloudWatch Kinesis; exige --metrics-start.",
+    )
+    streaming_collect_p.add_argument(
+        "--metrics-period",
+        type=int,
+        default=60,
+        help="Período CloudWatch em segundos (60..86400, múltiplo de 60).",
+    )
     streaming_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
     schema_registry_collect_p = collect_sub.add_parser(
@@ -5392,6 +5408,9 @@ def _cmd_collect_streaming_integrations(args: argparse.Namespace) -> int:
         region_name=args.region_name,
         max_objects=args.max_objects,
         max_shards=args.max_shards,
+        metrics_start=args.metrics_start,
+        metrics_end=args.metrics_end,
+        metrics_period=args.metrics_period,
     )
     _print(payload)
     return 0

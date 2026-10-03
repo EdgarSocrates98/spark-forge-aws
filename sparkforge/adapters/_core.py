@@ -7955,6 +7955,9 @@ def collect_streaming_integrations(
     region_name: str = "",
     max_objects: int = 500,
     max_shards: int = 500,
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
 ) -> dict[str, Any]:
     """Coleta snapshots read-only de integrações streaming e registra manifesto."""
     rel_path = collect_streaming.streaming_integrations_path(
@@ -7963,6 +7966,9 @@ def collect_streaming_integrations(
         kinesis_stream_name=kinesis_stream_name,
         msk_cluster_arn=msk_cluster_arn,
         dms_task_arn=dms_task_arn,
+        metrics_start=metrics_start,
+        metrics_end=metrics_end,
+        metrics_period=metrics_period,
     )
     command_parts = ["sparkforge collect streaming-integrations --repo <repo>"]
     for option, value in (
@@ -7979,6 +7985,12 @@ def collect_streaming_integrations(
         command_parts.append(f"--max-objects {max_objects}")
     if max_shards != 500:
         command_parts.append(f"--max-shards {max_shards}")
+    if metrics_start:
+        command_parts.append(f"--metrics-start {metrics_start}")
+    if metrics_end:
+        command_parts.append(f"--metrics-end {metrics_end}")
+    if metrics_period != 60:
+        command_parts.append(f"--metrics-period {metrics_period}")
     command_parts.append(f"--now {now}")
     command = " ".join(command_parts)
     try:
@@ -7993,6 +8005,9 @@ def collect_streaming_integrations(
             region_name=region_name,
             max_objects=max_objects,
             max_shards=max_shards,
+            metrics_start=metrics_start,
+            metrics_end=metrics_end,
+            metrics_period=metrics_period,
             collect_command=command,
         )
     except ValueError as exc:
