@@ -52,6 +52,27 @@ class FakeDms:
         return {"ReplicationTasks": [{"ReplicationTaskArn": kwargs["Filters"][0]["Values"][0]}]}
 
 
+class FakeCloudWatch:
+    def __init__(self):
+        self.calls: list[dict] = []
+
+    def get_metric_data(self, **kwargs):
+        self.calls.append(kwargs)
+        results = []
+        for query in kwargs["MetricDataQueries"]:
+            metric = query["MetricStat"]["Metric"]["MetricName"]
+            results.append(
+                {
+                    "Id": query["Id"],
+                    "Label": query["Label"],
+                    "Timestamps": ["2026-10-02T00:00:00+00:00", "2026-10-02T00:01:00+00:00"],
+                    "Values": [100.0 if metric == "IncomingBytes" else 2.0, 120.0 if metric == "IncomingBytes" else 3.0],
+                    "StatusCode": "Complete",
+                }
+            )
+        return {"MetricDataResults": results}
+
+
 class FakeBoto3:
     def __init__(self):
         self.clients = {
@@ -60,6 +81,7 @@ class FakeBoto3:
             "kinesis": FakeKinesis(),
             "kafka": FakeKafka(),
             "dms": FakeDms(),
+            "cloudwatch": FakeCloudWatch(),
         }
 
     def client(self, name, **kwargs):
@@ -99,6 +121,45 @@ def test_collector_composes_read_only_snapshots_and_redacts(monkeypatch, tmp_pat
     assert payload["kinesis"]["shard_count"] == 1
     assert payload["msk"]["api"] == "describe_cluster_v2"
     assert load_manifest(tmp_path)[0]["kind"] == "streaming_integrations"
+
+
+def test_kinesis_temporal_metrics_are_collected_and_normalized(monkeypatch, tmp_path):
+    fake = FakeBoto3()
+    monkeypatch.setattr(streaming, "require_boto3", lambda: fake)
+
+    entry = streaming.collect_streaming_integrations(
+        tmp_path,
+        now="2026-10-02T00:10:00Z",
+        kinesis_stream_name="orders",
+        region_name="us-east-1",
+        metrics_start="2026-10-02T00:00:00Z",
+        metrics_end="2026-10-02T00:05:00Z",
+        metrics_period=60,
+    )
+
+    payload = json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+    metrics = payload["kinesis"]["metrics"]
+    assert entry.path.endswith("__metrics_2026-10-02T00_00_00Z_2026-10-02T00_05_00Z_60.json")
+    assert metrics["namespace"] == "AWS/Kinesis"
+    assert metrics["metrics_requested"] == 5
+    assert metrics["metrics_returned"] == 5
+    assert metrics["metrics_missing"] == []
+    assert len(metrics["observations"]) == 10
+    assert {item["name"] for item in metrics["observations"]} == {
+        "IncomingBytes",
+        "IncomingRecords",
+        "GetRecords.IteratorAgeMilliseconds",
+        "ReadProvisionedThroughputExceeded",
+        "WriteProvisionedThroughputExceeded",
+    }
+    call = fake.clients["cloudwatch"].calls[0]
+    assert call["StartTime"].isoformat() == "2026-10-02T00:00:00+00:00"
+    assert call["EndTime"].isoformat() == "2026-10-02T00:05:00+00:00"
+    assert all(
+        query["MetricStat"]["Metric"]["Dimensions"] == [{"Name": "StreamName", "Value": "orders"}]
+        for query in call["MetricDataQueries"]
+    )
+    assert fake.clients["cloudwatch"].calls[0]["ScanBy"] == "TimestampAscending"
 
 
 def test_offline_hit_does_not_touch_aws(monkeypatch, tmp_path):

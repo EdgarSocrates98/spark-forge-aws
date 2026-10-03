@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -31,6 +32,14 @@ from sparkforge.collect.base import (
 
 _MAX_OBJECTS = 500
 _MAX_SHARDS = 500
+_MAX_METRIC_PAGES = 20
+_KINESIS_METRICS: tuple[tuple[str, str, str], ...] = (
+    ("IncomingBytes", "Sum", "Bytes"),
+    ("IncomingRecords", "Sum", "Count"),
+    ("GetRecords.IteratorAgeMilliseconds", "Maximum", "Milliseconds"),
+    ("ReadProvisionedThroughputExceeded", "Average", "Count"),
+    ("WriteProvisionedThroughputExceeded", "Average", "Count"),
+)
 _SECRET_KEY = re.compile(
     r"(?:secret|password|token|private.?key|access.?key|session.?token|authorization)",
     re.IGNORECASE,
@@ -49,6 +58,9 @@ def streaming_integrations_path(
     kinesis_stream_name: str = "",
     msk_cluster_arn: str = "",
     dms_task_arn: str = "",
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
 ) -> str:
     """Caminho determinístico derivado somente dos identificadores declarados."""
     values = [
@@ -59,6 +71,8 @@ def streaming_integrations_path(
         f"dms={dms_task_arn}",
     ]
     subject = _slug("__".join(item for item in values if item.split("=", 1)[1]))
+    if metrics_start or metrics_end:
+        subject += f"__metrics_{_slug(metrics_start)}_{_slug(metrics_end)}_{metrics_period}"
     return f".sparkforge/artifacts/streaming_integrations/{subject}.json"
 
 
@@ -86,6 +100,36 @@ def _s3_uri(uri: str) -> tuple[str, str]:
     if parsed.scheme != "s3" or not parsed.netloc:
         raise CollectionFailed(f"checkpoint S3 URI invalida: {uri!r}; use s3://bucket/prefix")
     return parsed.netloc, parsed.path.lstrip("/")
+
+
+def _parse_iso(value: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise CollectionFailed(f"janela CloudWatch invalida: {value!r}; use ISO 8601") from exc
+    if parsed.tzinfo is None:
+        raise CollectionFailed(f"janela CloudWatch sem timezone: {value!r}; use ISO 8601 com timezone")
+    return parsed
+
+
+def _validate_metrics_window(
+    *, kinesis_stream_name: str, metrics_start: str, metrics_end: str, metrics_period: int
+) -> tuple[datetime, datetime] | None:
+    if not metrics_start and not metrics_end:
+        return None
+    if not kinesis_stream_name:
+        raise CollectionFailed("métricas temporais exigem --kinesis-stream")
+    if not metrics_start or not metrics_end:
+        raise CollectionFailed("métricas temporais exigem --metrics-start e --metrics-end")
+    start = _parse_iso(metrics_start)
+    end = _parse_iso(metrics_end)
+    if end <= start:
+        raise CollectionFailed("janela CloudWatch exige metrics_end posterior a metrics_start")
+    if not isinstance(metrics_period, int) or isinstance(metrics_period, bool) or not 60 <= metrics_period <= 86400:
+        raise ValueError("metrics_period deve estar entre 60 e 86400 segundos")
+    if metrics_period % 60:
+        raise ValueError("metrics_period deve ser múltiplo de 60 segundos")
+    return start, end
 
 
 def _checkpoint(client: Any, uri: str, max_objects: int) -> dict[str, Any]:
@@ -133,7 +177,126 @@ def _checkpoint(client: Any, uri: str, max_objects: int) -> dict[str, Any]:
     }
 
 
-def _kinesis(client: Any, stream_name: str, max_shards: int) -> dict[str, Any]:
+def _kinesis_metrics(
+    client: Any,
+    stream_name: str,
+    *,
+    start: str,
+    end: str,
+    period: int,
+) -> dict[str, Any]:
+    definitions = [
+        {
+            "name": name,
+            "stat": stat,
+            "unit": unit,
+            "namespace": "AWS/Kinesis",
+            "dimensions": [{"Name": "StreamName", "Value": stream_name}],
+        }
+        for name, stat, unit in _KINESIS_METRICS
+    ]
+    queries = [
+        {
+            "Id": f"m{index}",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": item["namespace"],
+                    "MetricName": item["name"],
+                    "Dimensions": item["dimensions"],
+                },
+                "Period": period,
+                "Stat": item["stat"],
+                "Unit": item["unit"],
+            },
+            "Label": item["name"],
+            "ReturnData": True,
+        }
+        for index, item in enumerate(definitions)
+    ]
+    results: list[dict[str, Any]] = []
+    token: str | None = None
+    for _ in range(_MAX_METRIC_PAGES):
+        kwargs: dict[str, Any] = {
+            "MetricDataQueries": queries,
+            "StartTime": _parse_iso(start),
+            "EndTime": _parse_iso(end),
+            "ScanBy": "TimestampAscending",
+        }
+        if token:
+            kwargs["NextToken"] = token
+        page = client.get_metric_data(**kwargs)
+        results.extend(_redact(page.get("MetricDataResults") or []))
+        token = page.get("NextToken")
+        if not token:
+            break
+    else:
+        raise CollectionFailed(
+            f"`get_metric_data` ainda paginava depois de {_MAX_METRIC_PAGES} páginas; "
+            "reduza a janela ou aumente o período para evitar artifact parcial"
+        )
+
+    by_id = {query["Id"]: definition for query, definition in zip(queries, definitions)}
+    returned = {str(result.get("Label")) for result in results if result.get("Label")}
+    expected = {item["name"] for item in definitions}
+    missing = sorted(expected - returned)
+    unresolved: list[str] = [f"kinesis_metric_missing:{name}" for name in missing]
+    observations: list[dict[str, Any]] = []
+    for result in results:
+        definition = by_id.get(str(result.get("Id")))
+        if definition is None:
+            unresolved.append(f"kinesis_metric_unknown_result:{result.get('Id')}")
+            continue
+        timestamps = result.get("Timestamps") or []
+        values = result.get("Values") or []
+        if len(timestamps) != len(values):
+            unresolved.append(f"kinesis_metric_shape_invalid:{definition['name']}")
+            continue
+        status = result.get("StatusCode")
+        if status not in (None, "Complete"):
+            unresolved.append(f"kinesis_metric_status:{definition['name']}:{status}")
+        for timestamp, value in zip(timestamps, values):
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                unresolved.append(f"kinesis_metric_value_invalid:{definition['name']}")
+                continue
+            observed_at = timestamp.isoformat() if hasattr(timestamp, "isoformat") else timestamp
+            if not isinstance(observed_at, str) or not observed_at:
+                unresolved.append(f"kinesis_metric_timestamp_invalid:{definition['name']}")
+                continue
+            observations.append(
+                {
+                    "name": definition["name"],
+                    "stat": definition["stat"],
+                    "unit": definition["unit"],
+                    "value": value,
+                    "observed_at": observed_at,
+                    "stream_name": stream_name,
+                }
+            )
+    return {
+        "namespace": "AWS/Kinesis",
+        "start": start,
+        "end": end,
+        "period_seconds": period,
+        "metric_definitions": definitions,
+        "metric_data_results": results,
+        "metrics_requested": len(definitions),
+        "metrics_returned": len(returned & expected),
+        "metrics_missing": missing,
+        "observations": observations,
+        "unresolved": sorted(set(unresolved)),
+    }
+
+
+def _kinesis(
+    client: Any,
+    stream_name: str,
+    max_shards: int,
+    *,
+    cloudwatch_client: Any | None = None,
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
+) -> dict[str, Any]:
     summary = _redact(client.describe_stream_summary(StreamName=stream_name))
     shards: list[dict[str, Any]] = []
     token: str | None = None
@@ -151,16 +314,30 @@ def _kinesis(client: Any, stream_name: str, max_shards: int) -> dict[str, Any]:
         if truncated or not page.get("NextToken"):
             break
         token = page["NextToken"]
-    return {
+    payload = {
         "stream_name": stream_name,
         "summary": summary,
         "shards": shards,
         "shard_count": len(shards),
         "truncated": truncated,
-        "unresolved": [
-            "CloudWatch lag, iterator age and reshard history require a separate time-window collection"
-        ],
+        "unresolved": [],
     }
+    if metrics_start and metrics_end:
+        if cloudwatch_client is None:
+            raise CollectionFailed("cliente CloudWatch ausente para métricas temporais Kinesis")
+        payload["metrics"] = _kinesis_metrics(
+            cloudwatch_client,
+            stream_name,
+            start=metrics_start,
+            end=metrics_end,
+            period=metrics_period,
+        )
+        payload["unresolved"].extend(payload["metrics"]["unresolved"])
+    else:
+        payload["unresolved"].append(
+            "CloudWatch lag, iterator age and reshard history require a separate time-window collection"
+        )
+    return payload
 
 
 def _msk(client: Any, cluster_arn: str) -> dict[str, Any]:
@@ -216,6 +393,9 @@ def collect_streaming_integrations(
     region_name: str = "",
     max_objects: int = 500,
     max_shards: int = 500,
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
     collect_command: str = "",
 ) -> ArtifactEntry:
     """Coleta um contrato composto usando apenas APIs de leitura.
@@ -240,8 +420,19 @@ def collect_streaming_integrations(
         raise ValueError(f"max_objects deve estar entre 1 e {_MAX_OBJECTS}")
     if not 1 <= max_shards <= _MAX_SHARDS:
         raise ValueError(f"max_shards deve estar entre 1 e {_MAX_SHARDS}")
+    metrics_window = _validate_metrics_window(
+        kinesis_stream_name=kinesis_stream_name,
+        metrics_start=metrics_start,
+        metrics_end=metrics_end,
+        metrics_period=metrics_period,
+    )
 
-    rel_path = streaming_integrations_path(**identifiers)
+    rel_path = streaming_integrations_path(
+        **identifiers,
+        metrics_start=metrics_start,
+        metrics_end=metrics_end,
+        metrics_period=metrics_period,
+    )
     hit = _offline_hit(root, rel_path)
     if hit is not None:
         return hit
@@ -256,7 +447,13 @@ def collect_streaming_integrations(
         sections["glue_streaming"] = _glue(_client(boto3, "glue", region_name), glue_job_name)
     if kinesis_stream_name:
         sections["kinesis"] = _kinesis(
-            _client(boto3, "kinesis", region_name), kinesis_stream_name, max_shards
+            _client(boto3, "kinesis", region_name),
+            kinesis_stream_name,
+            max_shards,
+            cloudwatch_client=_client(boto3, "cloudwatch", region_name) if metrics_window else None,
+            metrics_start=metrics_start,
+            metrics_end=metrics_end,
+            metrics_period=metrics_period,
         )
     if msk_cluster_arn:
         sections["msk"] = _msk(_client(boto3, "kafka", region_name), msk_cluster_arn)
