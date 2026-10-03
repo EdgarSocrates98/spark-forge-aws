@@ -1,0 +1,81 @@
+[
+  {
+    "rule_id": "SF-STREAMOBS-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Série explícita de lag Kafka em crescimento monotônico",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "fixtures\\transport\\kafka_lag_series\\input\\dump.json",
+      "line": 1,
+      "col": 0,
+      "symbol": "orders:events:0",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_ad15da"
+    ],
+    "measured": {
+      "observation_count": 2,
+      "first_lag": 4,
+      "last_lag": 9,
+      "delta_lag": 5,
+      "increasing_step_count": 1,
+      "timestamp_span_seconds": 60.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A mesma identidade group/topic/partition tem pelo menos duas observações timestampadas em ordem e o lag cresceu em todos os passos da série explícita. Isso sustenta investigação de backlog observado, mas não prova causa, throughput insuficiente, SLO, impacto de negócio ou saúde do consumidor.",
+    "proposed_change": [
+      "Confirmar identidade, timezone, unidade, intervalo e completude da série.",
+      "Correlacionar current offset, log end offset, producer rate, consumer progress, assignment e runtime.",
+      "Repetir o baseline antes de alterar paralelismo, capacidade, retenção ou comportamento do consumidor."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Janela curta ou amostragem irregular pode representar apenas uma fase transitória.",
+      "Lag crescente não separa producer rate, broker replication, assignment, consumer ou sink.",
+      "Agregar identidades diferentes inventaria uma tendência que o artifact não observou."
+    ],
+    "tradeoffs": [
+      "A série compacta reduz contexto repetido, mas exige manter ids dos facts fonte para expansão sob demanda."
+    ],
+    "validation": [
+      "Conferir observation_count, delta_lag, timestamp span, source_fact_ids e identidade declarada.",
+      "Repetir a série na mesma janela e correlacionar offsets, taxa de entrada, processamento e resultado funcional.",
+      "Comparar a única variável experimental com baseline equivalente, sem estimar ganho antecipado."
+    ],
+    "rollback": [
+      "Reverter a única variável experimental e manter os artifacts temporais para replay da investigação."
+    ],
+    "sources": [
+      {
+        "url": "https://kafka.apache.org/40/operations/basic-kafka-operations/",
+        "retrieved": "2026-10-03"
+      }
+    ],
+    "action": {
+      "kind": "measurement.collect_baseline",
+      "target": "transport.backlog",
+      "direction": "investigate",
+      "requires_absent": [
+        "kafka.unresolved"
+      ],
+      "moves": [
+        "transport.backlog",
+        "runtime.wall_clock"
+      ],
+      "depends_on": []
+    },
+    "evidence_standing": {
+      "value": "low",
+      "source_tier": "T4_RECOGNIZED_AUTHORITY",
+      "in_version_scope": true,
+      "measures_present": true
+    }
+  }
+]

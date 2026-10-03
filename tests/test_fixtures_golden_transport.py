@@ -13,6 +13,8 @@ from sparkforge.findings.validate import validate_fact
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "transport"
 REQUIRED_FIXTURES = {
+    "kafka_isr_deficit",
+    "kafka_lag_series",
     "kafka_positive",
     "kafka_unresolved",
     "msk_positive",

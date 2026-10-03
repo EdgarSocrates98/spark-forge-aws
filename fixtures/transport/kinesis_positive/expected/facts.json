@@ -67,7 +67,8 @@
       "record_count": 3
     },
     "attrs": {
-      "shard_id": "shardId-000"
+      "shard_id": "shardId-000",
+      "stream_name": "events"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\transport\\kinesis_positive\\input\\stream.json",

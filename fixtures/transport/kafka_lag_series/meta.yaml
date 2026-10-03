@@ -1,0 +1,5 @@
+artifact: kafka
+expects_kinds:
+  - kafka.analyzed
+  - kafka.lag
+  - kafka.lag.series
