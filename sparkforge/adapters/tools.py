@@ -9863,8 +9863,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Coleta a descrição de uma aplicação do Managed Service for Apache Flink via "
             "kinesisanalyticsv2.DescribeApplication, sempre com IncludeAdditionalDetails=false. "
             "Registra runtime, status, versão, checkpoint, paralelismo, VPC, logging e "
-            "configuração observados; job plan, código, métricas temporais e conectores "
-            "ficam unresolved e nunca são inferidos. Somente leitura AWS; grava apenas "
+            "configuração observados; com janela explícita, consulta cinco métricas de "
+            "aplicação em AWS/KinesisAnalytics. Job plan, código e conectores ficam "
+            "unresolved e nunca são inferidos. Somente leitura AWS; grava apenas "
             "artifact/manifesto local e usa cache offline-first."
         ),
         "inputSchema": {
@@ -9875,6 +9876,9 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "repo": {"type": "string"},
                 "application_name": {"type": "string", "minLength": 1, "maxLength": 128},
                 "region_name": {"type": "string"},
+                "metrics_start": {"type": "string", "description": "Início ISO 8601 da janela CloudWatch."},
+                "metrics_end": {"type": "string", "description": "Fim ISO 8601 da janela CloudWatch."},
+                "metrics_period": {"type": "integer", "minimum": 60, "maximum": 86400},
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
             },
         },
@@ -11817,6 +11821,9 @@ def _h_collect_managed_flink(args: dict[str, Any]) -> dict[str, Any]:
         now=args["now"],
         application_name=args["application_name"],
         region_name=args.get("region_name", ""),
+        metrics_start=args.get("metrics_start", ""),
+        metrics_end=args.get("metrics_end", ""),
+        metrics_period=args.get("metrics_period", 60),
     )
 
 

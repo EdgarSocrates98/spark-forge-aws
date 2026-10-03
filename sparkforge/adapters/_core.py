@@ -8072,10 +8072,17 @@ def collect_managed_flink(
     application_name: str,
     now: str,
     region_name: str = "",
+    metrics_start: str = "",
+    metrics_end: str = "",
+    metrics_period: int = 60,
 ) -> dict[str, Any]:
-    """Coleta descrição read-only de uma aplicação Managed Flink."""
+    """Coleta descrição read-only e, opcionalmente, métricas temporais Managed Flink."""
     rel_path = collect_managed_flink_collector.managed_flink_path(
-        application_name=application_name, region_name=region_name
+        application_name=application_name,
+        region_name=region_name,
+        metrics_start=metrics_start,
+        metrics_end=metrics_end,
+        metrics_period=metrics_period,
     )
     command_parts = [
         "sparkforge collect managed-flink --repo <repo>",
@@ -8083,6 +8090,12 @@ def collect_managed_flink(
     ]
     if region_name:
         command_parts.append(f"--region {region_name}")
+    if metrics_start:
+        command_parts.append(f"--metrics-start {metrics_start}")
+    if metrics_end:
+        command_parts.append(f"--metrics-end {metrics_end}")
+    if metrics_start or metrics_end:
+        command_parts.append(f"--metrics-period {metrics_period}")
     command_parts.append(f"--now {now}")
     try:
         entry = collect_managed_flink_collector.collect_managed_flink(
@@ -8090,11 +8103,14 @@ def collect_managed_flink(
             application_name=application_name,
             now=now,
             region_name=region_name,
+            metrics_start=metrics_start,
+            metrics_end=metrics_end,
+            metrics_period=metrics_period,
             collect_command=" ".join(command_parts),
         )
     except ValueError as exc:
         raise AdapterError(f"collect managed-flink: {exc}", exit_code=2) from exc
-    except CollectorUnavailable as exc:
+    except (CollectorUnavailable, collect_managed_flink_collector.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
 

@@ -3421,6 +3421,18 @@ def build_parser() -> argparse.ArgumentParser:
     managed_flink_collect_p.add_argument("--repo", required=True)
     managed_flink_collect_p.add_argument("--application-name", required=True, help="Nome da aplicação Managed Flink.")
     managed_flink_collect_p.add_argument("--region", dest="region_name", default="", help="Região AWS explícita.")
+    managed_flink_collect_p.add_argument(
+        "--metrics-start", default="", help="Início ISO 8601 da janela CloudWatch Managed Flink."
+    )
+    managed_flink_collect_p.add_argument(
+        "--metrics-end", default="", help="Fim ISO 8601 da janela CloudWatch Managed Flink; exige --metrics-start."
+    )
+    managed_flink_collect_p.add_argument(
+        "--metrics-period",
+        type=int,
+        default=60,
+        help="Período CloudWatch em segundos (60..86400, múltiplo de 60).",
+    )
     managed_flink_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
     workspace_graph_p = collect_sub.add_parser(
@@ -5436,6 +5448,9 @@ def _cmd_collect_managed_flink(args: argparse.Namespace) -> int:
         args.repo,
         application_name=args.application_name,
         region_name=args.region_name,
+        metrics_start=args.metrics_start,
+        metrics_end=args.metrics_end,
+        metrics_period=args.metrics_period,
         now=args.now,
     )
     _print(payload)

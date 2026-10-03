@@ -267,6 +267,59 @@ def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsy
     assert cli == mcp
 
 
+def test_cli_and_mcp_managed_flink_temporal_collection_match(monkeypatch, tmp_path, capsys):
+    from sparkforge.adapters.cli import main
+    from sparkforge.adapters.tools import call_tool
+
+    common = {
+        "application_name": "orders",
+        "region_name": "us-east-1",
+        "metrics_start": "2026-10-03T00:00:00Z",
+        "metrics_end": "2026-10-03T02:00:00Z",
+        "metrics_period": 60,
+        "now": "2026-10-03T02:00:00Z",
+    }
+    first_client = FakeManagedFlink()
+    monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(first_client))
+    mcp = call_tool(
+        "sparkforge_collect_managed_flink",
+        {"repo": str(tmp_path / "mcp"), **common},
+    )
+    assert capsys.readouterr().err == ""
+
+    second_client = FakeManagedFlink()
+    monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(second_client))
+    code = main(
+        [
+            "collect",
+            "managed-flink",
+            "--repo",
+            str(tmp_path / "cli"),
+            "--application-name",
+            "orders",
+            "--region",
+            "us-east-1",
+            "--metrics-start",
+            common["metrics_start"],
+            "--metrics-end",
+            common["metrics_end"],
+            "--metrics-period",
+            str(common["metrics_period"]),
+            "--now",
+            common["now"],
+        ]
+    )
+    cli = json.loads(capsys.readouterr().out)
+    assert code == 0
+    for payload in (mcp, cli):
+        assert payload["kind"] == "managed_flink_application"
+        assert payload["cache_hit"] is False
+        payload.pop("path")
+        payload.pop("journal", None)
+        payload.pop("journal_reason", None)
+    assert cli == mcp
+
+
 def test_collected_artifact_feeds_managed_flink_analyzer(monkeypatch, tmp_path):
     fake_client = FakeManagedFlink()
     monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(fake_client))
