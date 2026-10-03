@@ -74,6 +74,7 @@ ARTIFACT_KINDS = (
     # Connect, Kafka Streams e OpenLineage continuam sendo entradas de endpoint
     # próprio; quando não chegam no contrato, o extrator publica unresolved.
     "streaming_integrations",
+    "schema_registry",
     "source",
 )
 
