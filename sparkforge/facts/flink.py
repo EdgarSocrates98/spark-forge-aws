@@ -381,6 +381,9 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
         "application_arn": _value(application, "application_arn", "applicationArn", "arn"),
         "status": _value(application, "status", "state"),
         "runtime_version": _value(application, "runtime_version", "flink_version", "runtimeVersion"),
+        "application_version_id": _value(application, "application_version_id", "applicationVersionId", "version_id"),
+        "service_execution_role": _value(application, "service_execution_role", "serviceExecutionRole"),
+        "application_mode": _value(application, "application_mode", "applicationMode"),
     }
     measures = _numbers(application, ("parallelism", "parallelism_per_kpu", "kpu", "task_slots"))
     if attrs or measures:

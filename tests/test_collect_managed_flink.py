@@ -199,6 +199,8 @@ def test_collected_artifact_feeds_managed_flink_analyzer(monkeypatch, tmp_path):
     kinds = {item["kind"] for item in result["items"]}
     assert {"managed_flink.application", "managed_flink.config", "managed_flink.unresolved"} <= kinds
     assert "flink.application" not in kinds
+    application = next(item for item in result["items"] if item["kind"] == "managed_flink.application")
+    assert application["attrs"]["application_version_id"] == 7
     assert any(
         item["attrs"].get("reason") == "managed_flink_connectors_not_observed"
         for item in result["items"]
