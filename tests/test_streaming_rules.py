@@ -162,3 +162,48 @@ def test_progress_observability_depth_rules_are_evidence_first():
         attrs={"watermark_stalled": True, "state_memory_growth_observed": True},
     )
     assert not judge([one_observation, runtime], rules, {"spark": "3.5.6"})
+
+
+def test_kafka_transport_rules_require_observed_conditions():
+    rules = [rule for rule in load_catalog() if rule["id"].startswith("SF-STREAMOBS-")]
+    isr_deficit = _fact(
+        "kafka.partition",
+        measures={"replication_factor": 3, "isr_count": 2},
+        attrs={"topic": "events", "partition": 0},
+    )
+    isr_equal = _fact(
+        "kafka.partition",
+        measures={"replication_factor": 3, "isr_count": 3},
+        attrs={"topic": "events", "partition": 1},
+    )
+    growing = _fact(
+        "kafka.lag.series",
+        measures={"observation_count": 3, "delta_lag": 5},
+        attrs={
+            "group": "orders",
+            "topic": "events",
+            "partition": 0,
+            "monotonic_increase": True,
+            "causal_inference": False,
+        },
+    )
+    non_monotonic = _fact(
+        "kafka.lag.series",
+        measures={"observation_count": 3, "delta_lag": 5},
+        attrs={"monotonic_increase": False, "causal_inference": False},
+    )
+    short = _fact(
+        "kafka.lag.series",
+        measures={"observation_count": 1, "delta_lag": 5},
+        attrs={"monotonic_increase": True, "causal_inference": False},
+    )
+
+    findings = judge([isr_deficit, growing], rules, {})
+    assert {finding.rule_id for finding in findings} >= {
+        "SF-STREAMOBS-003",
+        "SF-STREAMOBS-004",
+    }
+    assert all(finding.evidence for finding in findings)
+    assert not [finding for finding in judge([isr_equal], rules, {}) if finding.rule_id == "SF-STREAMOBS-003"]
+    assert not [finding for finding in judge([non_monotonic], rules, {}) if finding.rule_id == "SF-STREAMOBS-004"]
+    assert not [finding for finding in judge([short], rules, {}) if finding.rule_id == "SF-STREAMOBS-004"]

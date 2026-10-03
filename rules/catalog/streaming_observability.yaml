@@ -92,3 +92,92 @@ rules:
       - {url: "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html", retrieved: 2026-10-02}
     knowledge_refs:
       - {ref: knowledge/streaming-lakehouse-observability.md}
+
+  - id: SF-STREAMOBS-003
+    category: streaming_observability
+    title: ISR observado abaixo do replication factor em partição Kafka
+    requires_facts: [kafka.partition]
+    when:
+      all:
+        - fact: kafka.partition
+          expr: "measures.replication_factor > measures.isr_count"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O dump Kafka observou menos réplicas in-sync do que o replication factor
+      da partição. Isso é um sinal de replicação degradada naquela observação;
+      não prova indisponibilidade, perda de dados, causa do déficit ou violação
+      de min.insync.replicas sem esses campos no artifact.
+    proposed_change:
+      - Confirmar topic, partition, replicas, ISR, instante e procedência do dump.
+      - Coletar baseline pareado com eventos do broker, min.insync.replicas, acks e runtime efetivo.
+      - Validar escrita, leitura, resultado funcional e política de recuperação antes de alterar capacidade.
+    action:
+      kind: measurement.localize_divergence
+      target: transport.replication
+      direction: investigate
+      requires_absent: [kafka.unresolved]
+      moves: [transport.backlog, runtime.wall_clock]
+      depends_on: []
+    risks:
+      - Um snapshot único pode capturar uma transição curta e não estabelecer incidente persistente.
+      - Alterar min.insync.replicas ou brokers sem observar a configuração efetiva pode mudar semântica de escrita.
+      - Confundir ISR deficit com lag de consumidor desloca a investigação para o componente errado.
+    tradeoffs:
+      - Preservar facts por partição aumenta bytes locais, mas evita recomputar o dump para cada regra.
+    validation:
+      - Conferir replication factor, ISR, leader, timestamp e identidade da partição.
+      - Repetir a coleta na mesma partição e correlacionar broker events, producer acks e consumer lag.
+      - Validar count, schema, chaves e agregados do resultado após qualquer experimento.
+    rollback:
+      - Reverter a única mudança experimental e preservar o dump/receipt para reauditoria.
+    sources:
+      - {url: "https://kafka.apache.org/40/operations/basic-kafka-operations/", retrieved: 2026-10-03}
+      - {url: "https://kafka.apache.org/40/implementation/distribution/", retrieved: 2026-10-03}
+    knowledge_refs:
+      - {ref: knowledge/transport-diagnostics.md}
+
+  - id: SF-STREAMOBS-004
+    category: streaming_observability
+    title: Série explícita de lag Kafka em crescimento monotônico
+    requires_facts: [kafka.lag.series]
+    when:
+      all:
+        - fact: kafka.lag.series
+          expr: "measures.observation_count >= 2 and measures.delta_lag > 0 and attrs.monotonic_increase"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A mesma identidade group/topic/partition tem pelo menos duas observações
+      timestampadas em ordem e o lag cresceu em todos os passos da série
+      explícita. Isso sustenta investigação de backlog observado, mas não prova
+      causa, throughput insuficiente, SLO, impacto de negócio ou saúde do consumidor.
+    proposed_change:
+      - Confirmar identidade, timezone, unidade, intervalo e completude da série.
+      - Correlacionar current offset, log end offset, producer rate, consumer progress, assignment e runtime.
+      - Repetir o baseline antes de alterar paralelismo, capacidade, retenção ou comportamento do consumidor.
+    action:
+      kind: measurement.collect_baseline
+      target: transport.backlog
+      direction: investigate
+      requires_absent: [kafka.unresolved]
+      moves: [transport.backlog, runtime.wall_clock]
+      depends_on: []
+    risks:
+      - Janela curta ou amostragem irregular pode representar apenas uma fase transitória.
+      - Lag crescente não separa producer rate, broker replication, assignment, consumer ou sink.
+      - Agregar identidades diferentes inventaria uma tendência que o artifact não observou.
+    tradeoffs:
+      - A série compacta reduz contexto repetido, mas exige manter ids dos facts fonte para expansão sob demanda.
+    validation:
+      - Conferir observation_count, delta_lag, timestamp span, source_fact_ids e identidade declarada.
+      - Repetir a série na mesma janela e correlacionar offsets, taxa de entrada, processamento e resultado funcional.
+      - Comparar a única variável experimental com baseline equivalente, sem estimar ganho antecipado.
+    rollback:
+      - Reverter a única variável experimental e manter os artifacts temporais para replay da investigação.
+    sources:
+      - {url: "https://kafka.apache.org/40/operations/basic-kafka-operations/", retrieved: 2026-10-03}
+    knowledge_refs:
+      - {ref: knowledge/transport-diagnostics.md}
