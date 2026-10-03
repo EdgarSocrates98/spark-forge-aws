@@ -254,6 +254,10 @@ do wheel e de uma CLI real do host.
 | `bab0aac` | ledgers apontados para o contrato temporal Managed Flink em `ship` |
 | `5954cde` | histórico de fontes vigiadas e limites do contrato temporal Flink |
 | `2bc1da5` | auditoria documental transversal de Kinesis/Managed Flink temporal, CLI, skill, mirrors e referências |
+| `09eecdd` / `5026c71` / `40e7e15` | SDD explore/define/design/plan do contrato temporal upstream Flink |
+| `74bfada` | extração upstream `flink.metric`, testes fail-closed e golden temporal |
+| `e1adefb` | skill, mirrors, knowledge, referências, coverage, manifesto e surface lock do contrato Flink temporal |
+| `8019b0f` | build/ship SDD, contagens e documentação transversal do contrato Flink temporal |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.

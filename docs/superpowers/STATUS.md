@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** `e1adefb`, contrato upstream Flink temporal offline,
+**Base técnica de referência:** `8019b0f`, contrato upstream Flink temporal offline,
 coletor Kinesis temporal bounded, Managed Flink temporal read-only, facts explícitos de source/sink Flink e p95/freshness
 sobre séries temporais de streaming.
 Este fechamento documental atualiza o índice transversal após o commit técnico;

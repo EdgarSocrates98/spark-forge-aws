@@ -1,7 +1,7 @@
 # SparkForge AWS — mapa de evolução atual
 
 **Atualizado em:** 2026-10-03
-**Base técnica de referência:** `e1adefb`; fechamento técnico corrente:
+**Base técnica de referência:** `8019b0f`; fechamento técnico corrente:
 `STREAMING_FLINK_TEMPORAL_METRICS`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
