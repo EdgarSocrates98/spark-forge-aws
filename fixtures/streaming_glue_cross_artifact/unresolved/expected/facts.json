@@ -83,6 +83,42 @@
     }
   },
   {
+    "id": "f_960fc3",
+    "schema_version": 1,
+    "kind": "glue.streaming.runtime.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "<fusion>",
+      "line": 0,
+      "col": 0,
+      "symbol": "unresolved",
+      "snippet": ""
+    },
+    "measures": {
+      "run_count": 0,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "job_name": "rtm-valid",
+      "reason": "run_observation_missing",
+      "unresolved_fields": [
+        "glue_version",
+        "worker_count",
+        "worker_type"
+      ],
+      "source_fact_ids": [
+        "f_48f4b7"
+      ]
+    },
+    "provenance": {
+      "extractor": "streaming_glue_runtime@0.1.0",
+      "artifact": "<fusion>",
+      "source_fact_ids": [
+        "f_48f4b7"
+      ]
+    }
+  },
+  {
     "id": "f_31491c",
     "schema_version": 1,
     "kind": "tf.attribute",
