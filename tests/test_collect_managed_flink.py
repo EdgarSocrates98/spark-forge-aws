@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sparkforge.adapters._core import analyze_flink
@@ -75,14 +76,47 @@ class FakeManagedFlink:
         }
 
 
+class FakeCloudWatch:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def get_metric_data(self, **kwargs):
+        self.calls.append(kwargs)
+        timestamps = [datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc)]
+        results = []
+        values = {
+            "cpuUtilization": [41.5],
+            "heapMemoryUtilization": [62.0],
+            "lastCheckpointDuration": [1200.0],
+            "lastCheckpointSize": [4096.0],
+        }
+        for query in kwargs["MetricDataQueries"]:
+            name = query["MetricStat"]["Metric"]["MetricName"]
+            if name not in values:
+                continue
+            results.append(
+                {
+                    "Id": query["Id"],
+                    "Label": name,
+                    "Timestamps": timestamps,
+                    "Values": values[name],
+                    "StatusCode": "Complete",
+                }
+            )
+        return {"MetricDataResults": results}
+
+
 class FakeBoto3:
-    def __init__(self, client: FakeManagedFlink) -> None:
+    def __init__(self, client: FakeManagedFlink, cloudwatch: FakeCloudWatch | None = None) -> None:
         self.client_value = client
+        self.cloudwatch_value = cloudwatch or FakeCloudWatch()
 
     def client(self, name: str, **kwargs):
-        assert name == "kinesisanalyticsv2"
         assert kwargs["region_name"] == "us-east-1"
-        return self.client_value
+        if name == "kinesisanalyticsv2":
+            return self.client_value
+        assert name == "cloudwatch"
+        return self.cloudwatch_value
 
 
 def test_collector_normalizes_describe_response(monkeypatch, tmp_path):
@@ -139,6 +173,54 @@ def test_collector_cache_is_offline_and_manifested(monkeypatch, tmp_path):
     manifest = load_manifest(tmp_path)
     assert manifest[0]["kind"] == "managed_flink_application"
     assert manifest[0]["collect_command"].startswith("sparkforge collect managed-flink")
+
+
+def test_managed_flink_temporal_metrics_are_collected_and_normalized(monkeypatch, tmp_path):
+    fake_client = FakeManagedFlink()
+    cloudwatch = FakeCloudWatch()
+    monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(fake_client, cloudwatch))
+
+    entry = managed_flink.collect_managed_flink(
+        tmp_path,
+        application_name="orders",
+        region_name="us-east-1",
+        now="2026-10-03T02:00:00Z",
+        metrics_start="2026-10-03T00:00:00Z",
+        metrics_end="2026-10-03T02:00:00Z",
+        metrics_period=60,
+    )
+    payload = json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+    metrics = payload["metrics"]
+    names = {item["name"] for item in metrics["metric_definitions"]}
+
+    assert entry.path.endswith("__metrics_2026-10-03T00_00_00Z_2026-10-03T02_00_00Z_60.json")
+    assert metrics["namespace"] == "AWS/KinesisAnalytics"
+    assert metrics["start"] == "2026-10-03T00:00:00Z"
+    assert metrics["end"] == "2026-10-03T02:00:00Z"
+    assert metrics["period_seconds"] == 60
+    assert names == {
+        "cpuUtilization",
+        "heapMemoryUtilization",
+        "lastCheckpointDuration",
+        "lastCheckpointSize",
+        "numberOfFailedCheckpoints",
+    }
+    assert all(
+        definition["dimensions"] == [{"Name": "Application", "Value": "orders"}]
+        for definition in metrics["metric_definitions"]
+    )
+    assert len(cloudwatch.calls) == 1
+    request = cloudwatch.calls[0]
+    assert len(request["MetricDataQueries"]) == 5
+    assert request["ScanBy"] == "TimestampAscending"
+    assert request["StartTime"].isoformat() == "2026-10-03T00:00:00+00:00"
+    assert request["EndTime"].isoformat() == "2026-10-03T02:00:00+00:00"
+    assert metrics["metrics_missing"] == ["numberOfFailedCheckpoints"]
+    assert metrics["metrics_returned"] == 4
+    assert metrics["observations"]
+    assert all(observation["observed_at"] == "2026-10-03T01:00:00+00:00" for observation in metrics["observations"])
+    assert all(observation["value"] != 0 for observation in metrics["observations"])
+    assert "managed_flink_metric_missing:numberOfFailedCheckpoints" in payload["unresolved"]
 
 
 def test_cli_and_mcp_managed_flink_collection_match(monkeypatch, tmp_path, capsys):
