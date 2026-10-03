@@ -10,6 +10,7 @@ upstream:
 files:
   - {path: tests/test_collect_managed_flink.py, action: modify, reason: "fake clients, temporal window, cache, analyzer, parity and documentation contract"}
   - {path: sparkforge/collect/managed_flink.py, action: modify, reason: "AWS/KinesisAnalytics temporal queries, normalization, bounded pagination and cache path"}
+  - {path: sparkforge/facts/flink.py, action: modify, reason: "unwrap temporal observations while retaining managed_flink metric facts and unresolved declarations"}
   - {path: sparkforge/adapters/_core.py, action: modify, reason: "propagate temporal window through existing collector"}
   - {path: sparkforge/adapters/cli.py, action: modify, reason: "expose optional start/end/period on collect managed-flink"}
   - {path: sparkforge/adapters/tools.py, action: modify, reason: "declare temporal parameters in existing MCP schema and handler"}

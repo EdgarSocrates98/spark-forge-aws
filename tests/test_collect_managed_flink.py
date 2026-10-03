@@ -290,6 +290,42 @@ def test_collected_artifact_feeds_managed_flink_analyzer(monkeypatch, tmp_path):
     )
 
 
+def test_managed_flink_temporal_metrics_feed_analyzer(monkeypatch, tmp_path):
+    fake_client = FakeManagedFlink()
+    cloudwatch = FakeCloudWatch()
+    monkeypatch.setattr(managed_flink, "require_boto3", lambda: FakeBoto3(fake_client, cloudwatch))
+    entry = managed_flink.collect_managed_flink(
+        tmp_path,
+        application_name="orders",
+        region_name="us-east-1",
+        now="2026-10-03T02:00:00Z",
+        metrics_start="2026-10-03T00:00:00Z",
+        metrics_end="2026-10-03T02:00:00Z",
+        metrics_period=60,
+    )
+
+    result = analyze_flink(str(tmp_path / entry.path), artifact="managed_flink", limit=100)
+    metrics = [item for item in result["items"] if item["kind"] == "managed_flink.metric"]
+
+    assert {item["attrs"]["name"] for item in metrics} == {
+        "cpuUtilization",
+        "heapMemoryUtilization",
+        "lastCheckpointDuration",
+        "lastCheckpointSize",
+    }
+    cpu = next(item for item in metrics if item["attrs"]["name"] == "cpuUtilization")
+    assert cpu["measures"]["value"] == 41.5
+    assert cpu["attrs"]["unit"] == "Percent"
+    assert cpu["attrs"]["stat"] == "Average"
+    assert cpu["attrs"]["observed_at"] == "2026-10-03T01:00:00+00:00"
+    assert any(
+        item["attrs"].get("reason") == "managed_flink_metric_missing:numberOfFailedCheckpoints"
+        for item in result["items"]
+        if item["kind"] == "managed_flink.unresolved"
+    )
+    assert all(item["kind"] != "flink.application" for item in result["items"])
+
+
 def test_managed_flink_collection_docs_state_read_only_limits():
     root = Path(__file__).parents[1]
     documents = [

@@ -415,6 +415,15 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
                 facts.append(_unresolved(artifact, line, provenance, "managed_flink", "invalid_connector_record"))
 
     metrics = data.get("metrics")
+    nested_unresolved: list[Any] = []
+    if isinstance(metrics, dict):
+        nested_unresolved = metrics.get("unresolved") or []
+        observations = metrics.get("observations")
+        if isinstance(observations, list):
+            metrics = observations
+        else:
+            facts.append(_unresolved(artifact, line, provenance, "managed_flink", "metrics_observations_missing"))
+            metrics = []
     if isinstance(metrics, list):
         for metric in metrics:
             if not isinstance(metric, dict):
@@ -427,8 +436,15 @@ def _managed_record(data: dict[str, Any], artifact: str, line: int, provenance: 
         facts.append(_unresolved(artifact, line, provenance, "managed_flink", "metrics_missing"))
 
     declared_unresolved = data.get("unresolved")
+    reasons = []
     if isinstance(declared_unresolved, list):
-        for reason in declared_unresolved:
+        reasons.extend(declared_unresolved)
+    if isinstance(nested_unresolved, list):
+        reasons.extend(nested_unresolved)
+    seen_reasons: set[str] = set()
+    for reason in reasons:
+        if isinstance(reason, str) and reason.strip() and reason.strip() not in seen_reasons:
+            seen_reasons.add(reason.strip())
             if isinstance(reason, str) and reason.strip():
                 facts.append(_unresolved(artifact, line, provenance, "managed_flink", reason.strip()))
 

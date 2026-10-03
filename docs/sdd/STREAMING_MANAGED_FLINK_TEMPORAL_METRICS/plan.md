@@ -6,14 +6,14 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_MANAGED_FLINK_TEMPORAL_METRICS/design.md
-  sha256: "783091539e9e4393596f5bb0ca85cb8d9775790d4e1d88cbcfecccbb75dcbe45"
+  sha256: "9bca7dc96235bdc9e0036ba75f11367c374560782dbd1998fb834227809784b7"
 tasks:
   - id: T1
     files: [tests/test_collect_managed_flink.py, sparkforge/collect/managed_flink.py]
     covers: [AC1, AC2]
     test: {path: tests/test_collect_managed_flink.py, name: test_managed_flink_temporal_metrics_are_collected_and_normalized}
   - id: T2
-    files: [tests/test_collect_managed_flink.py]
+    files: [tests/test_collect_managed_flink.py, sparkforge/facts/flink.py]
     covers: [AC3]
     test: {path: tests/test_collect_managed_flink.py, name: test_managed_flink_temporal_metrics_feed_analyzer}
   - id: T3
