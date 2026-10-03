@@ -26,9 +26,9 @@ ou recusa nomeada.
 
 ## Estado SDD
 
-O status atual registra **73 features**:
+O status atual registra **74 features**:
 
-- **72** em `ship/done`;
+- **73** em `ship/done`;
 - **1** em `ship/draft`: `INTEGRACAO_USUARIO`, bloqueada por
   `hypothesis_open_at_ship` e `registry_unchecked`.
 
@@ -52,7 +52,7 @@ SKILLS_QUALITY_EVOLUTION, STEP_FUNCTIONS, STREAMING_ARCHITECTURE_DECISION,
 STREAMING_CDC, STREAMING_FLINK_PLATFORM, STREAMING_FLINK_SOURCE_SINK_ARTIFACTS,
 STREAMING_GLUE_SOURCE_SINK_ARTIFACTS, STREAMING_GLUE_RTM,
 STREAMING_GLUE_CROSS_ARTIFACT, STREAMING_GLUE_RUNTIME_OBSERVATION,
-STREAMING_ICEBERG_TEMPORAL,
+STREAMING_ICEBERG_TEMPORAL, ICEBERG_GOLDEN_RECONCILIATION,
 STREAMING_FLINK_TEMPORAL_METRICS, STREAMING_KINESIS_TEMPORAL_METRICS,
 STREAMING_MANAGED_FLINK_TEMPORAL_METRICS,
 STREAMING_SLO_EVALUATION,
@@ -73,9 +73,8 @@ TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH,
 TOKEN_ESTIMATE_UNICO, TOOLS_OK
 ```
 
-Os dois itens que não estão nessa lista são deliberadamente abertos: o Digital
-Twin aguarda build/ship próprio, e a integração do usuário aguarda verificação
-do wheel e de uma CLI real do host.
+O item que não está nessa lista é deliberadamente aberto: a integração do usuário
+aguarda verificação do wheel e de uma CLI real do host.
 
 ## Entregas por frente
 
@@ -124,6 +123,10 @@ do wheel e de uma CLI real do host.
   ausente/ambíguo, contrato inválido ou endpoint de link não resolvido. Não
   infere causalidade, latência, throughput, custo, saúde, exatamente uma vez
   ou compatibilidade sem evidência observada.
+- Reconciliação do corpus Iceberg: `ICEBERG_GOLDEN_RECONCILIATION` regenerou,
+  pelo script oficial, os 14 goldens que passaram a emitir `iceberg.snapshot`;
+  `snapshot_churn` preserva 604 observações temporais. O contrato de produção,
+  regras e findings não mudou.
 - CDC: Debezium, AWS DMS, eventos, posições, transações, tombstones, schema
   history, seams snapshot/CDC e blind spots.
 - Schema Registry/data contracts: compatibilidade, evolução, diff estrutural,
@@ -278,6 +281,7 @@ do wheel e de uma CLI real do host.
 | `912eeb9` | restamp final do ship Flink temporal; base corrente de `STATUS.md` e `EVOLUTION-CURRENT.md` |
 | `09fc1d3` | pipeline end-to-end declarado: composição exata cross-engine, regra de unresolved, fixtures, docs, mirrors, locks e SDD |
 | `24bee8b` | fechamento SDD do Forge Lab Digital Twin: build/ship, contrato topológico offline e documentação de limites |
+| `1f6519f` | reconciliação do corpus Iceberg: 14 goldens, `iceberg.snapshot`, SDD build/ship e gate de corpus |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
@@ -290,8 +294,8 @@ ser lido pelo código e pelos gates atuais, não por um número isolado de commi
 | Coleta atual de testes | **14533** coletados em 2026-10-03; pipeline end-to-end: 5 goldens, 967 testes de fixtures/reachability/kinds e gates focados; Forge Lab Digital Twin: 3 testes focados; Flink temporal: 11 unitários, 7 goldens, 69 kinds; suíte completa não executada |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped; resultado histórico, não reexecutado após Flink temporal |
 | Docs e cobertura | 137 passed em `tests/test_docs_coverage.py tests/test_reference_docs.py tests/test_surface_lock.py tests/test_status_numbers_gate.py` |
-| Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes; `verify_wheel` byte-reprodutível, mas paridade instalada 47 failed/3467 passed/5 skipped por drift de goldens anterior |
-| Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; Flink temporal upstream: 11 unitários, 7 goldens e 69 kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 46 wheel; snippet measure corrigido e verde; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
+| Gates de superfície e distribuição | `gen_reference_docs --check`, `sync_skills --check`, surface lock, status numbers, bundle offline, requirements mirror e hash locks verdes; último `verify_wheel` completo: 47 failed/3467 passed/5 skipped; após Iceberg, subset não-Iceberg: 19 failed/366 passed, e o wheel completo ainda precisa ser reexecutado |
+| Evidência temporal | 980 testes focados anteriores; Kinesis temporal: 4 testes de collector/analyzer/paridade/docs; Flink source/sink: 8 unitários e 83 em facts/goldens/kinds; Flink temporal upstream: 11 unitários, 7 goldens e 69 kinds; observação Glue runtime: 9 testes de contrato, 5 goldens/docs/corpus e 793 runtime-scope; 1193 gates de catálogo/docs/knowledge; 94 testes Iceberg, 116 gates de corpus e 604 snapshots temporais preservados; 46 wheel; snippet measure corrigido e verde; fixtures Iceberg/Kafka/Kinesis/Glue e unresolved persistidos |
 | Benchmark de contexto | 15 casos; `baseline_id=local-deterministic-v1`; envelope reproduzível, sem claim de economia |
 | Avaliação SLO observada | progress: 16 focused tests; transporte: 24 testes de fatos, 18 no lote CLI/goldens, 3 goldens novos e recusa de séries misturadas; sink: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 35 goldens, 1214 gates de catálogo e SDD check verde; p95/freshness: 74 testes focados e golden `slo_p95_freshness` |
 

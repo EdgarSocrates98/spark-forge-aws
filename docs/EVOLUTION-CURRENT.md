@@ -2,7 +2,7 @@
 
 **Atualizado em:** 2026-10-03
 **Base técnica de referência:** `STREAMING_END_TO_END_PIPELINE`; fechamento
-técnico corrente: `STREAMING_END_TO_END_PIPELINE`
+técnico corrente: `ICEBERG_GOLDEN_RECONCILIATION`
 **Fonte operacional:** `sparkforge sdd status --repo .`
 
 Este é o índice atual das entregas derivadas de `prompt_evo_nova_janela.md`,
@@ -35,14 +35,14 @@ extração, julgamento, decisão ou verificação de contrato.
 
 ## SDD e prompts de evolução
 
-`sparkforge sdd status --repo .` encontrou **73 features** após este fechamento:
-**72 `ship/done`** e uma em `ship/draft`
+`sparkforge sdd status --repo .` encontrou **74 features** após este fechamento:
+**73 `ship/done`** e uma em `ship/draft`
 (`INTEGRACAO_USUARIO`). Templates não entram como feature.
 
 | Frente | Features entregues | Estado documentado |
 |---|---|---|
 | Nova janela / Data Platform Control Plane | `PLATFORM_INTELLIGENCE_GRAPH`, `PLATFORM_INTELLIGENCE_EVALS`, `OPEN_LAKEHOUSE_CATALOG`, `DATA_OBSERVABILITY_SRE`, `ORCHESTRATION_CONTROL_PLANE`, `ANALYTICS_ENGINEERING_MICROSCOPE`, `DATA_PLATFORM_ECOSYSTEM`, além dos fechamentos de decisão e governança | Entregue; ativação produtiva do Decision Plane continua opt-in e `shadow` por padrão |
-| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_KAFKA_TRANSPORT_EVIDENCE`, `STREAMING_KINESIS_TEMPORAL_METRICS`, `STREAMING_MANAGED_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`, `STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_GLUE_CROSS_ARTIFACT`, `STREAMING_GLUE_RUNTIME_OBSERVATION`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_SCHEMA_REGISTRY_COLLECTOR`, `STREAMING_MANAGED_FLINK_COLLECTOR`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `STREAMING_END_TO_END_PIPELINE`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; o pipeline end-to-end declarado compõe nós e links cross-engine por selectors exatos, preserva ids de fatos e transforma ausência, ambiguidade e endpoint não resolvido em `streaming.pipeline.unresolved`; Schema Registry agora tem coleta Glue read-only de metadata/latest version, paginação, cache, manifesto, limites e unresolved; Flink preserva `flink.source`/`flink.sink`, emite `flink.metric` para observações temporais explícitas e nomeia ausência/shape inválido como unresolved; Glue Streaming agora preserva `glue.streaming.source`/`glue.streaming.sink` com atributos escalares e medidas observadas, além de comparar configuração efetiva com Terraform por nome literal único e runs terminais nos eixos de runtime, distinguindo drift de unresolved; Kinesis coleta cinco métricas stream-level e Managed Flink coleta cinco métricas application-level do CloudWatch com janela explícita, facts temporais e missing/unresolved; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; enhanced/shard-level, dimensões detalhadas Managed Flink, reshard history, evidência live longa, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
+| Streaming / real-time / CDC | `STREAMING_REALTIME_DATA_PLATFORM`, `STREAMING_TRANSPORT_DIAGNOSTICS`, `STREAMING_TEMPORAL_EVIDENCE`, `STREAMING_ICEBERG_TEMPORAL`, `ICEBERG_GOLDEN_RECONCILIATION`, `STREAMING_SLO_EVALUATION`, `STREAMING_SLO_TRANSPORT_EVALUATION`, `STREAMING_SINK_SLO_EVALUATION`, `STREAMING_PROGRESS_OBSERVABILITY_DEPTH`, `STREAMING_SLO_LATENCY_FRESHNESS`, `STREAMING_KAFKA_TRANSPORT_EVIDENCE`, `STREAMING_KINESIS_TEMPORAL_METRICS`, `STREAMING_MANAGED_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_TEMPORAL_METRICS`, `STREAMING_FLINK_PLATFORM`, `STREAMING_FLINK_SOURCE_SINK_ARTIFACTS`, `STREAMING_GLUE_SOURCE_SINK_ARTIFACTS`, `STREAMING_CDC`, `STREAMING_GLUE_RTM`, `STREAMING_GLUE_CROSS_ARTIFACT`, `STREAMING_GLUE_RUNTIME_OBSERVATION`, `STREAMING_SCHEMA_REGISTRY`, `STREAMING_SCHEMA_REGISTRY_COLLECTOR`, `STREAMING_MANAGED_FLINK_COLLECTOR`, `STREAMING_INTEGRATIONS_AND_CHECKPOINTS`, `STREAMING_READ_ONLY_COLLECTORS`, `STREAMING_RUNTIME_MATRIX`, `STREAMING_STRUCTURED_REVIEW`, `STREAMING_LAKEHOUSE_OBSERVABILITY`, `STREAMING_OPERATIONS_AND_SERVING`, `STREAMING_ARCHITECTURE_DECISION`, `STREAMING_END_TO_END_PIPELINE`, `EVENT_DRIVEN_ARCHITECTURE` | Entregue como contratos e diagnósticos offline; o pipeline end-to-end declarado compõe nós e links cross-engine por selectors exatos, preserva ids de fatos e transforma ausência, ambiguidade e endpoint não resolvido em `streaming.pipeline.unresolved`; a reconciliação Iceberg alinha 14 goldens ao kind temporal `iceberg.snapshot`, preservando 604 observações de `snapshot_churn` sem mudar runtime, regras ou findings; Schema Registry agora tem coleta Glue read-only de metadata/latest version, paginação, cache, manifesto, limites e unresolved; Flink preserva `flink.source`/`flink.sink`, emite `flink.metric` para observações temporais explícitas e nomeia ausência/shape inválido como unresolved; Glue Streaming agora preserva `glue.streaming.source`/`glue.streaming.sink` com atributos escalares e medidas observadas, além de comparar configuração efetiva com Terraform por nome literal único e runs terminais nos eixos de runtime, distinguindo drift de unresolved; Kinesis coleta cinco métricas stream-level e Managed Flink coleta cinco métricas application-level do CloudWatch com janela explícita, facts temporais e missing/unresolved; progresso→Iceberg tem snapshots granulares e janela temporal pareada, progress→SLO cobre progress/sink/Kafka/Kinesis, `statistic=p95` nearest-rank e `freshness_ms` por `timestamp` + `eventTime.max`, sempre separando `met`, `violated` e `unresolved`; sink usa `num_output_rows` ligado a batch por `batch_id`/`query_name`; enhanced/shard-level, dimensões detalhadas Managed Flink, reshard history, evidência live longa, latência end-to-end implícita, replay e benchmark permanecem explicitamente `unresolved` quando não fornecidos |
 | Forge Lab | `FORGE_LAB_PRODUCT`, `FORGE_LAB_DIGITAL_TWIN` | Entregue e verificado offline; produto CLI-first mais contrato topológico read-only com nove componentes, sete cenários e Compose parametrizado |
 | Economia observada | `TOKEN_EFFICIENT_OBSERVED_ECONOMY_LIVE_GRAPH`, `TOKEN_ESTIMATE_UNICO`, `AGENTIC_ECONOMY_COMPLETION` | Entregue; bytes, tokens do provider e custo continuam eixos independentes |
 | Governança | `GLUE_DQ_ADVANCED_GOVERNANCE_GAPS`, `LAKE_FORMATION_FGAC_FTA_IMPROVEMENTS` e famílias Lake Formation relacionadas | Entregue offline, fail-closed e com gates focados |
@@ -107,10 +107,26 @@ Não é health check, tracing, prova de latência/throughput/custo, causalidade,
 exactly-once ou validação funcional end-to-end.
 
 O gate de distribuição dessa wave construiu wheel/sdist byte-identical, mas a
-paridade instalada reproduziu **47** falhas de goldens anteriores ao pipeline
-(`iceberg.snapshot`, Glue runtime/scan e cenários com catálogo esperado 208).
-O subset no checkout reproduz o mesmo drift; a dívida permanece explícita e
-nenhum golden fora do escopo foi regenerado para mascará-la.
+paridade instalada anterior reproduziu **47** falhas de goldens. A
+`ICEBERG_GOLDEN_RECONCILIATION` fechou 28 divergências do corpus Iceberg:
+14 fixtures agora declaram e armazenam `iceberg.snapshot`, com 94 testes Iceberg
+verdes. O subset restante, medido após o commit, reproduz **19 falhas e 366
+passados** em CloudWatch/consumers, Glue cross-artifact, scan e cenários; o
+`verify_wheel` completo ainda precisa ser reexecutado. Nenhum golden fora do
+escopo Iceberg foi regenerado.
+
+## Reconciliação de goldens Iceberg — **CONCLUÍDA** (2026-10-03)
+
+O extrator temporal já emitia `iceberg.snapshot`, mas 14 goldens não declaravam o
+kind em `meta.yaml` nem o preservavam em `expected/facts.json`. A feature
+`ICEBERG_GOLDEN_RECONCILIATION` usou `scripts/regen_fixtures.py` somente para os
+14 nomes afetados, adicionou `expects_kinds` e revisou o diff para confirmar zero
+alterações em findings esperados.
+
+Provas: node de kinds **14 passed**, corpus Iceberg **94 passed**, gate de corpus
+(`tests/test_fixtures_kind_coverage.py` + `tests/test_verify_wheel.py`) **116
+passed** e `sparkforge sdd check` verde. `snapshot_churn` preserva 604
+observações temporais; o diff grande é consequência do dump, não claim de ganho.
 
 `STREAMING_FLINK_TEMPORAL_METRICS` fecha o contrato offline de pontos temporais
 upstream: `metrics`/`metrics.observations` exige nome, valor numérico e
@@ -187,11 +203,11 @@ reprodutibilidade; não é claim de economia financeira nem de tokens de provide
 | Gate | Resultado registrado |
 |---|---|
 | Forge Lab | `valid: true`, 11 componentes, 20 cenários, 240 ações |
-| Coleta atual de testes | **14496** testes coletados em 2026-10-03; Flink temporal: **11** unitários, **7** goldens, **69** kinds, documentação **196** e reachability **946** passed; esta frente não executou a suíte completa |
+| Coleta atual de testes | **14533** testes coletados em 2026-10-03; Iceberg: **94** goldens e **116** gates de corpus; Flink temporal: **11** unitários, **7** goldens, **69** kinds, documentação **196** e reachability **946** passed; esta frente não executou a suíte completa |
 | Suíte final do fechamento Forge Lab | 14301 coletados; 14287 passed; 14 skipped; resultado histórico, não reexecutado após Flink temporal |
 | Docs de streaming | cobertura documental Glue source/sink adicionada nesta wave; Flink source/sink acrescentou 83 testes no lote de facts/goldens/kinds; observação Glue runtime acrescentou 9 testes de contrato e 5 goldens/docs/corpus; inclui sink SLO, progress observability depth, p95/freshness SLO, referências geradas e mirrors |
 | Economia/contexto | 191 passed no lote funcional; 46 passed em parity/surface |
-| Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; p95/freshness: 74 testes focados no lote combinado e 1 golden novo; snippet measure adicional: 4 passed |
+| Extração e fixtures | SLO observado: facts/composição/ops/CLI/MCP/goldens verdes; transporte SLO: 24 testes de fatos e 18 no lote CLI/goldens, incluindo recusa de séries misturadas; sink SLO: 22 testes de fatos, 2 de aceitação e 3 goldens; progress observability depth: 2 testes de facts, 1 de regras, 35 goldens e 1 fixture nova; p95/freshness: 74 testes focados no lote combinado e 1 golden novo; reconciliação Iceberg: 94 goldens e 116 gates de corpus; snippet measure adicional: 4 passed |
 | Janela temporal | 980 testes focados; 1193 gates de catálogo/docs/knowledge e 793 gates de runtime-scope |
 | Claims e proveniência | 174 passed, 5 skipped; `check_vnext_claims.py` atualmente reporta 27 divergências históricas de provas command |
 | Checks globais | skills, referências, surface lock, status numbers e bundle offline verdes; divergências históricas de claims permanecem nomeadas |
@@ -209,7 +225,10 @@ gerenciado sem o artefato correspondente.
    workload/runtime/credencial reais e seguem `N/A + motivo` até haver receipt.
 3. `check_vnext_claims.py` ainda exige remediação das 27 provas command históricas
    antes de voltar a ser reportado como verde.
-4. `activation_ready` do Decision Plane permanece `false`; `shadow` e o router
+4. `verify_wheel` completo ainda deve ser reexecutado após a reconciliação
+   Iceberg; o subset medido deixou 19 falhas residuais fora do escopo desta
+   feature.
+5. `activation_ready` do Decision Plane permanece `false`; `shadow` e o router
    legado são o rollback target.
 
 ## Manutenção documental
