@@ -92,6 +92,20 @@ def _section(text: str, heading: str) -> str:
     return rest if end == -1 else rest[:end]
 
 
+def test_manifest_counts_match_measurements():
+    manifest = json.loads(_read("manifest.json"))
+    from sparkforge.rules.loader import load_catalog
+
+    skills = {
+        path.name
+        for path in (ROOT / "skills").iterdir()
+        if path.is_dir() and (path / "SKILL.md").is_file()
+    }
+    assert manifest["knowledge_base"]["rule_count"] == len(load_catalog())
+    assert len(manifest["tools"]) == len(TOOLS)
+    assert set(manifest["skills"]) == skills
+
+
 def test_streaming_glue_cross_artifact_coverage():
     coverage = _read("docs/streaming/prompt-coverage.md")
     knowledge = _read("knowledge/glue-streaming-rtm.md")

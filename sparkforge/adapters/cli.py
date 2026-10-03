@@ -412,8 +412,8 @@ def build_parser() -> argparse.ArgumentParser:
     composition_p.add_argument(
         "--mode",
         required=True,
-        choices=("iceberg", "iceberg_temporal", "observability", "slo", "temporal"),
-        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte ou janela temporal pareada.",
+        choices=("iceberg", "iceberg_temporal", "observability", "slo", "temporal", "pipeline"),
+        help="Relação a analisar: streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline.",
     )
     composition_p.add_argument("--table", default="", help="Tabela Iceberg declarada.")
     composition_p.add_argument("--query-name", default="", help="Query Structured Streaming declarada.")
@@ -428,6 +428,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=None,
         help="Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
+    )
+    composition_p.add_argument(
+        "--pipeline-path",
+        default=None,
+        help="Contrato JSON declarativo de nós/arestas; obrigatório quando mode=pipeline.",
     )
     composition_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
     composition_p.add_argument("--kind", action="append", help="Filtra por kind. Repetível.")
@@ -3556,6 +3561,7 @@ def _cmd_analyze_streaming_composition(args: argparse.Namespace) -> int:
         slo_name=args.slo_name,
         transport_key=args.transport_key,
         max_skew_seconds=args.max_skew_seconds,
+        pipeline_path=args.pipeline_path,
         kind=args.kind,
         limit=None,
     )

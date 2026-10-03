@@ -6,7 +6,7 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_END_TO_END_PIPELINE/define.md
-  sha256: "6e9f2e1a7edb74d9c8544ed70f39ef8f4e0209db89d0c60ef6ba95448f636ffe"
+  sha256: "4a3a14eebfa500642e41e935dc4612bb2884c1ecf6fbfff208dfb61ad2232d3b"
 files:
   - {path: tests/test_streaming_pipeline.py, action: create, reason: "contrato, seleção, paridade e regra do modo pipeline"}
   - {path: sparkforge/facts/streaming_pipeline.py, action: create, reason: "composição pura de contrato declarativo sobre Facts existentes"}

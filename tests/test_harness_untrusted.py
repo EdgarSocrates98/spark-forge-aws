@@ -100,6 +100,7 @@ def _derivados_de_facts(pool):
         streaming_iceberg_temporal,
         streaming_glue_cross,
         streaming_glue_runtime,
+        streaming_pipeline,
         streaming_slo,
         streaming_temporal,
         timeout_diagnosis,
@@ -126,6 +127,15 @@ def _derivados_de_facts(pool):
     # declara EMITTED_KINDS mas não possui extract_*_path/tree.
     yield "streaming_glue_cross", streaming_glue_cross.build_streaming_glue_cross_artifact(pool)
     yield "streaming_glue_runtime", streaming_glue_runtime.build_streaming_glue_runtime_observation(pool)
+    yield "streaming_pipeline", streaming_pipeline.build_streaming_pipeline(
+        pool,
+        {
+            "schema_version": 1,
+            "pipeline_id": "<unresolved>",
+            "nodes": [{"id": "node", "selector": {"kind": "<unresolved>"}}],
+            "edges": [],
+        },
+    )
     yield "streaming_slo", streaming_slo.build_streaming_slo(
         pool, slo_name="<unresolved>", query_name="<unresolved>"
     )

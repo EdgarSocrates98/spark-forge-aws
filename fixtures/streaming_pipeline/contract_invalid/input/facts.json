@@ -1,0 +1,3 @@
+[
+  {"schema_version": 1, "kind": "cdc.event", "subject": {"type": "source_location", "file": "fixture:cdc", "line": 1, "col": 0, "symbol": "orders-cdc", "snippet": ""}, "measures": {}, "attrs": {"topic": "orders", "operation": "u"}, "provenance": {"artifact": "fixture:cdc", "extractor": "fixture@0.1.0"}}
+]

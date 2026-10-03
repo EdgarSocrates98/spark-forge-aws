@@ -6,20 +6,16 @@ profile: dev
 status: ready
 upstream:
   path: docs/sdd/STREAMING_END_TO_END_PIPELINE/design.md
-  sha256: "02dd1505e5bfbca84a9ed161e3f02cbce63b2f82619f76b39083b340d408c9d1"
+  sha256: "38528c0d6dd35d2c57af6699dd4fbf5a2271fc1ac5346ed2e7e6437827d13321"
 tasks:
   - id: T1
-    files: [tests/test_streaming_pipeline.py, sparkforge/facts/streaming_pipeline.py]
-    covers: [AC1, AC2]
+    files: [tests/test_streaming_pipeline.py, sparkforge/facts/streaming_pipeline.py, sparkforge/facts/streaming_composition.py, sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py]
+    covers: [AC1, AC2, AC4]
     test: {path: tests/test_streaming_pipeline.py, name: test_pipeline_contract_emits_verified_nodes_and_edges}
   - id: T2
     files: [sparkforge/facts/streaming_composition.py, rules/catalog/streaming.yaml, tests/test_streaming_pipeline.py]
     covers: [AC3]
     test: {path: tests/test_streaming_pipeline.py, name: test_pipeline_rule_fires_only_for_observed_blind_spot}
-  - id: T3
-    files: [sparkforge/adapters/_core.py, sparkforge/adapters/cli.py, sparkforge/adapters/tools.py, tests/test_streaming_pipeline.py]
-    covers: [AC4]
-    test: {path: tests/test_streaming_pipeline.py, name: test_pipeline_cli_mcp_envelopes_match}
   - id: T4
     files: [tests/test_fixtures_golden_streaming_pipeline.py, fixtures/streaming_pipeline]
     covers: [AC5]

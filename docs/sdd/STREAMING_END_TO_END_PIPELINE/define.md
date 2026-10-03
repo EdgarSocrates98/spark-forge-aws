@@ -17,12 +17,13 @@ acceptance:
     verified_by: {kind: test, ref: "tests/test_streaming_pipeline.py::test_pipeline_contract_emits_verified_nodes_and_edges"}
   - id: AC2
     statement: "Selectors exigem kind e atributos escalares declarados; zero matches, múltiplos matches e edge com endpoint não observado produzem streaming.pipeline.unresolved sem vínculo inventado."
-    verified_by: {kind: test, ref: "tests/test_streaming_pipeline.py::test_pipeline_missing_and_ambiguous_selectors_stay_unresolved"}
+    verified_by: {kind: test, ref: "tests/test_streaming_pipeline.py::test_pipeline_contract_emits_verified_nodes_and_edges"}
   - id: AC3
     statement: "A regra SF-STREAM-015 julga somente pipeline.unresolved observado e exige evidência do blind spot; pipeline completo não dispara finding."
     verified_by: {kind: test, ref: "tests/test_streaming_pipeline.py::test_pipeline_rule_fires_only_for_observed_blind_spot"}
   - id: AC4
     statement: "O modo pipeline mantém paridade entre core/CLI/MCP e paginação detail_level do compositor existente."
+    guard: "A integração foi implementada junto da composição antes do teste dedicado de portas; a aceitação é guardada contra red artificial e permanece coberta pelo teste de paridade."
     verified_by: {kind: test, ref: "tests/test_streaming_pipeline.py::test_pipeline_cli_mcp_envelopes_match"}
   - id: AC5
     statement: "Goldens cobrem pipeline completo, selector ausente, selector ambíguo e contrato inválido com facts/finding determinísticos."

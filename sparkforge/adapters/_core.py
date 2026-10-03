@@ -1083,6 +1083,7 @@ def analyze_streaming_composition(
     slo_name: str = "",
     transport_key: str = "",
     max_skew_seconds: float | None = None,
+    pipeline_path: str | None = None,
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
@@ -1103,6 +1104,17 @@ def analyze_streaming_composition(
         facts_paths,
         producer="sparkforge analyze <streaming|transport|iceberg> --out {path}",
     )
+    pipeline: Mapping[str, Any] | None = None
+    if mode == "pipeline":
+        if not pipeline_path:
+            raise AdapterError("Informe --pipeline-path quando mode=pipeline.")
+        contract_path = Path(pipeline_path)
+        if not contract_path.exists():
+            raise AdapterError(f"Caminho nao encontrado para contrato de pipeline: {pipeline_path}")
+        try:
+            pipeline = json.loads(contract_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise AdapterError(f"Contrato de pipeline invalido: {pipeline_path}: {exc}") from exc
     composed = build_streaming_composition(
         facts,
         mode=mode,
@@ -1111,6 +1123,7 @@ def analyze_streaming_composition(
         slo_name=slo_name,
         transport_key=transport_key,
         max_skew_seconds=max_skew_seconds,
+        pipeline=pipeline,
     )
     return _facts_page(
         composed,

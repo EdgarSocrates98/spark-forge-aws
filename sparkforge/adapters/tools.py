@@ -6018,6 +6018,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "SLO de progress/sink/Kafka/Kinesis, janela temporal pareada e unresolved. `streaming_sink` liga "
             "num_output_rows ao batch por batch_id; `sink_name` pode desambiguar descrições. Modes temporal e iceberg_temporal exigem "
             "`max_skew_seconds` declarado. "
+            "Mode pipeline aceita contrato JSON declarativo com selectors exatos por kind/attrs e preserva unresolved para zero ou múltiplos matches. "
             "Não consulta AWS, Kafka, Spark ou Iceberg e não infere causalidade."
         ),
         "inputSchema": {
@@ -6032,8 +6033,8 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
                 "mode": {
                     "type": "string",
-                    "enum": ["iceberg", "iceberg_temporal", "observability", "slo", "temporal"],
-                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte ou janela temporal pareada.",
+                    "enum": ["iceberg", "iceberg_temporal", "observability", "slo", "temporal", "pipeline"],
+                    "description": "Relação streaming→Iceberg, janela streaming→Iceberg, progresso→transporte, SLO→progress/sink/transporte, janela temporal pareada ou contrato pipeline.",
                 },
                 "table": {"type": "string", "description": "Tabela Iceberg declarada."},
                 "query_name": {"type": "string", "description": "Query Structured Streaming declarada."},
@@ -6045,6 +6046,10 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "max_skew_seconds": {
                     "type": "number",
                     "description": "Tolerância temporal declarada para modes temporal/iceberg_temporal; sem valor sai unresolved.",
+                },
+                "pipeline_path": {
+                    "type": "string",
+                    "description": "Arquivo JSON do contrato declarativo de nós/arestas; obrigatório no mode=pipeline.",
                 },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
@@ -10942,6 +10947,7 @@ def _h_analyze_streaming_composition(args: dict[str, Any]) -> dict[str, Any]:
         slo_name=args.get("slo_name", ""),
         transport_key=args.get("transport_key", ""),
         max_skew_seconds=args.get("max_skew_seconds"),
+        pipeline_path=args.get("pipeline_path"),
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
