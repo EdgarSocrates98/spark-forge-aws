@@ -170,6 +170,7 @@ do wheel e de uma CLI real do host.
 | `d433caf` | ship SDD e atualização transversal das docs, skills, knowledge, mirrors, referências, manifests, evolução, STATUS e prompt coverage do sink SLO |
 | `57ae53d` | SDD explore/define/design/plan da profundidade de observabilidade do progresso |
 | `0ea23e1` | extrator temporal, `SF-STREAM-013/014`, testes, fixture e goldens de progresso |
+| `d4106b6` | ship SDD, knowledge, skills, mirrors, referências, manifests, surface lock, status e documentação transversal |
 
 Os commits acima são referências de fase no histórico local. O estado final deve
 ser lido pelo código e pelos gates atuais, não por um número isolado de commit.
