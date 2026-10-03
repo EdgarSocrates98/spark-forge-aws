@@ -123,8 +123,8 @@
     "measures": {
       "progress_observation_count": 2,
       "transport_measurement_count": 1,
-      "max_lag": 40,
-      "lag_sum": 40
+      "max_lag": 40.0,
+      "lag_sum": 40.0
     },
     "attrs": {
       "query_name": "orders-query",
@@ -138,7 +138,7 @@
       "causal_inference": false,
       "source_fact_ids": [
         "f_34cc06",
-        "f_d2aaaf",
+        "f_ac42dd",
         "f_e4ddff",
         "f_e848b4"
       ]
@@ -194,8 +194,8 @@
       "batch_id": 1,
       "observed_index": 0,
       "num_input_rows": 100,
-      "input_rows_per_second": 100,
-      "processed_rows_per_second": 80
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 80.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:00Z",
@@ -225,8 +225,8 @@
       "batch_id": 2,
       "observed_index": 1,
       "num_input_rows": 100,
-      "input_rows_per_second": 100,
-      "processed_rows_per_second": 70
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 70.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:05Z",
@@ -241,7 +241,7 @@
     }
   },
   {
-    "id": "f_d2aaaf",
+    "id": "f_ac42dd",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
@@ -256,15 +256,18 @@
       "observation_count": 2,
       "first_batch_id": 1,
       "last_batch_id": 2,
-      "input_rows_per_second_first": 100,
-      "input_rows_per_second_last": 100,
-      "processed_rows_per_second_first": 80,
-      "processed_rows_per_second_last": 70
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 80.0,
+      "processed_rows_per_second_last": 70.0,
+      "observed_span_seconds": 5.0
     },
     "attrs": {
       "first_observed_index": 0,
       "last_observed_index": 1,
-      "all_processed_below_input": true
+      "all_processed_below_input": true,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\observability_lag\\input\\progress.jsonl",

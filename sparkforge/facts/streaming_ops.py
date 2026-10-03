@@ -145,9 +145,26 @@ def _slo(data: dict[str, Any], artifact: str, provenance: dict[str, Any]) -> tup
     for item in items:
         name = _text(item.get("name")) or "unresolved"
         attrs, safe_unresolved = _safe_attrs(
-            item, ("name", "metric", "operator", "unit", "window", "source", "transport_key", "sink_name")
+            item,
+            (
+                "name",
+                "metric",
+                "operator",
+                "unit",
+                "window",
+                "source",
+                "transport_key",
+                "sink_name",
+                "statistic",
+            ),
         )
         unresolved.extend(safe_unresolved)
+        statistic = _text(item.get("statistic"))
+        if statistic is not None and statistic.lower() not in {"all", "p95"}:
+            unresolved.append(f"slo_statistic_unsupported:{name}")
+            continue
+        if statistic is not None:
+            attrs["statistic"] = statistic.lower()
         target = _number(item.get("target"))
         if target is None:
             unresolved.append(f"slo_target_missing:{name}")

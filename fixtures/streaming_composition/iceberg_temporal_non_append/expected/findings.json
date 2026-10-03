@@ -24,7 +24,7 @@
       "paired_observation_count": 2,
       "progress_timestamped_count": 2,
       "snapshot_timestamped_count": 2,
-      "max_skew_seconds": 0,
+      "max_skew_seconds": 0.0,
       "non_append_snapshot_count": 1
     },
     "threshold": {},

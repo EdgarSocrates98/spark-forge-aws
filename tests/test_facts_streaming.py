@@ -1,4 +1,5 @@
 from sparkforge.facts.pyspark_ast import extract_source
+from sparkforge.facts.streaming import extract_streaming_progress_path
 
 
 def _progress(batch_id: int, input_rate: float, processed_rate: float, state_rows: int) -> dict:
@@ -42,8 +43,6 @@ def _progress(batch_id: int, input_rate: float, processed_rate: float, state_row
 
 
 def test_extract_streaming_progress_emits_batch_source_sink_and_state_facts(tmp_path):
-    from sparkforge.facts.streaming import extract_streaming_progress_path
-
     path = tmp_path / "progress.jsonl"
     path.write_text(
         "\n".join(
@@ -76,8 +75,6 @@ def test_extract_streaming_progress_emits_batch_source_sink_and_state_facts(tmp_
 
 
 def test_insufficient_progress_is_unresolved_not_a_trend(tmp_path):
-    from sparkforge.facts.streaming import extract_streaming_progress_path
-
     path = tmp_path / "single.jsonl"
     path.write_text(__import__("json").dumps(_progress(0, 100.0, 80.0, 10)) + "\n", encoding="utf-8")
 
@@ -91,8 +88,6 @@ def test_insufficient_progress_is_unresolved_not_a_trend(tmp_path):
 
 
 def test_streaming_extraction_is_deterministic_and_batch_safe(tmp_path):
-    from sparkforge.facts.streaming import extract_streaming_progress_path
-
     path = tmp_path / "progress.jsonl"
     path.write_text(__import__("json").dumps(_progress(0, 100.0, 80.0, 10)) + "\n", encoding="utf-8")
     first = [fact.to_dict() for fact in extract_streaming_progress_path(path, repo_root=tmp_path)]
@@ -108,8 +103,6 @@ def test_streaming_extraction_is_deterministic_and_batch_safe(tmp_path):
 
 
 def test_progress_series_summarizes_temporal_state_and_watermark(tmp_path):
-    from sparkforge.facts.streaming import extract_streaming_progress_path
-
     first = _progress(0, 100.0, 100.0, 10)
     second = _progress(1, 100.0, 100.0, 10)
     first["batchDuration"] = 1000
@@ -138,8 +131,6 @@ def test_progress_series_summarizes_temporal_state_and_watermark(tmp_path):
 
 
 def test_progress_series_unresolved_for_invalid_temporal_measurement(tmp_path):
-    from sparkforge.facts.streaming import extract_streaming_progress_path
-
     first = _progress(0, 100.0, 100.0, 10)
     second = _progress(1, 100.0, 100.0, 10)
     second["eventTime"]["watermark"] = "not-a-timestamp"
@@ -155,6 +146,60 @@ def test_progress_series_unresolved_for_invalid_temporal_measurement(tmp_path):
 
     assert any(fact.attrs["reason"] == "invalid_watermark_series" for fact in unresolved)
     assert "watermark_stalled" not in series.attrs
+
+
+def test_progress_derives_freshness_only_from_event_time_max(tmp_path):
+    first = _progress(0, 100.0, 100.0, 10)
+    second = _progress(1, 100.0, 100.0, 10)
+    first["timestamp"] = "2026-10-01T00:00:05Z"
+    second["timestamp"] = "2026-10-01T00:05:20Z"
+    first["eventTime"]["max"] = "2026-10-01T00:00:00Z"
+    second["eventTime"]["max"] = "2026-10-01T00:05:00Z"
+    path = tmp_path / "progress.jsonl"
+    path.write_text(
+        "\n".join(__import__("json").dumps(item) for item in (first, second)) + "\n",
+        encoding="utf-8",
+    )
+
+    facts = extract_streaming_progress_path(path, repo_root=tmp_path)
+    batches = [fact for fact in facts if fact.kind == "streaming.progress.batch"]
+    assert [fact.measures["freshness_ms"] for fact in batches] == [5000.0, 20000.0]
+    assert not [
+        fact
+        for fact in facts
+        if fact.kind == "streaming.progress.unresolved"
+        and fact.attrs["reason"] == "invalid_freshness_measurement"
+    ]
+
+    second["eventTime"]["max"] = "not-a-timestamp"
+    path.write_text(
+        "\n".join(__import__("json").dumps(item) for item in (first, second)) + "\n",
+        encoding="utf-8",
+    )
+    invalid_facts = extract_streaming_progress_path(path, repo_root=tmp_path)
+    assert any(
+        fact.attrs["reason"] == "invalid_freshness_measurement"
+        for fact in invalid_facts
+        if fact.kind == "streaming.progress.unresolved"
+    )
+    invalid_batches = [fact for fact in invalid_facts if fact.kind == "streaming.progress.batch"]
+    assert "freshness_ms" not in invalid_batches[1].measures
+
+
+def test_progress_preserves_explicit_end_to_end_latency(tmp_path):
+    first = _progress(0, 100.0, 100.0, 10)
+    second = _progress(1, 100.0, 100.0, 10)
+    first["endToEndLatencyMs"] = 120.0
+    second["endToEndLatencyMs"] = 180.0
+    path = tmp_path / "progress.jsonl"
+    path.write_text(
+        "\n".join(__import__("json").dumps(item) for item in (first, second)) + "\n",
+        encoding="utf-8",
+    )
+
+    facts = extract_streaming_progress_path(path, repo_root=tmp_path)
+    batches = [fact for fact in facts if fact.kind == "streaming.progress.batch"]
+    assert [fact.measures["end_to_end_latency_ms"] for fact in batches] == [120.0, 180.0]
 
 
 def test_extract_structured_streaming_source_emits_anchored_facts():

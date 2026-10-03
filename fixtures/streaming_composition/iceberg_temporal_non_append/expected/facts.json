@@ -173,7 +173,7 @@
       "paired_observation_count": 2,
       "progress_timestamped_count": 2,
       "snapshot_timestamped_count": 2,
-      "max_skew_seconds": 0,
+      "max_skew_seconds": 0.0,
       "non_append_snapshot_count": 1
     },
     "attrs": {
@@ -185,7 +185,7 @@
       ],
       "non_append_observed": true,
       "temporal_window_complete": true,
-      "max_skew_seconds_declared": 0,
+      "max_skew_seconds_declared": 0.0,
       "source_fact_ids": [
         "f_22fa05",
         "f_6e22f5",
@@ -250,8 +250,8 @@
       "batch_id": 1,
       "observed_index": 0,
       "num_input_rows": 100,
-      "input_rows_per_second": 100,
-      "processed_rows_per_second": 120
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 120.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:00Z",
@@ -281,8 +281,8 @@
       "batch_id": 2,
       "observed_index": 1,
       "num_input_rows": 100,
-      "input_rows_per_second": 100,
-      "processed_rows_per_second": 110
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 110.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:05Z",
@@ -297,7 +297,7 @@
     }
   },
   {
-    "id": "f_7c04e0",
+    "id": "f_f0ae2b",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
@@ -312,15 +312,18 @@
       "observation_count": 2,
       "first_batch_id": 1,
       "last_batch_id": 2,
-      "input_rows_per_second_first": 100,
-      "input_rows_per_second_last": 100,
-      "processed_rows_per_second_first": 120,
-      "processed_rows_per_second_last": 110
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 120.0,
+      "processed_rows_per_second_last": 110.0,
+      "observed_span_seconds": 5.0
     },
     "attrs": {
       "first_observed_index": 0,
       "last_observed_index": 1,
-      "all_processed_below_input": false
+      "all_processed_below_input": false,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_non_append\\input\\progress.jsonl",

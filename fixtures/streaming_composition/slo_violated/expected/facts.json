@@ -150,7 +150,7 @@
     }
   },
   {
-    "id": "f_68de5f",
+    "id": "f_a0ecab",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
@@ -168,12 +168,15 @@
       "input_rows_per_second_first": 120.0,
       "input_rows_per_second_last": 120.0,
       "processed_rows_per_second_first": 100.0,
-      "processed_rows_per_second_last": 110.0
+      "processed_rows_per_second_last": 110.0,
+      "observed_span_seconds": 600.0
     },
     "attrs": {
       "first_observed_index": 0,
       "last_observed_index": 2,
-      "all_processed_below_input": true
+      "all_processed_below_input": true,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:10:00+00:00"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\slo_violated\\input\\progress.jsonl",

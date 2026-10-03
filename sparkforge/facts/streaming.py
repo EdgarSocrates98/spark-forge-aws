@@ -172,10 +172,74 @@ def _progress_facts(
             ("numInputRows", "num_input_rows"),
             ("inputRowsPerSecond", "input_rows_per_second"),
             ("processedRowsPerSecond", "processed_rows_per_second"),
+            ("freshnessMs", "freshness_ms"),
+            ("endToEndLatencyMs", "end_to_end_latency_ms"),
         ):
             number = _number(value.get(key))
             if number is not None:
                 measures[output] = number
+        if "freshnessMs" in value and (
+            "freshness_ms" not in measures or measures["freshness_ms"] < 0
+        ):
+            measures.pop("freshness_ms", None)
+            facts.append(
+                _unresolved(
+                    artifact,
+                    line,
+                    provenance,
+                    "invalid_freshness_measurement",
+                    batch_id=batch_id,
+                    source="freshnessMs",
+                )
+            )
+        if "endToEndLatencyMs" in value and (
+            "end_to_end_latency_ms" not in measures
+            or measures["end_to_end_latency_ms"] < 0
+        ):
+            measures.pop("end_to_end_latency_ms", None)
+            facts.append(
+                _unresolved(
+                    artifact,
+                    line,
+                    provenance,
+                    "invalid_latency_measurement",
+                    batch_id=batch_id,
+                    source="endToEndLatencyMs",
+                )
+            )
+        event_time = value.get("eventTime")
+        event_time_max = event_time.get("max") if isinstance(event_time, dict) else None
+        if "freshnessMs" not in value and "freshness_ms" not in measures and event_time_max is not None:
+            observed_timestamp = _timestamp(timestamp)
+            parsed_event_time_max = _timestamp(event_time_max)
+            if observed_timestamp is not None and parsed_event_time_max is not None:
+                freshness_ms = (
+                    observed_timestamp - parsed_event_time_max
+                ).total_seconds() * 1000
+                if freshness_ms >= 0:
+                    measures["freshness_ms"] = freshness_ms
+                else:
+                    facts.append(
+                        _unresolved(
+                            artifact,
+                            line,
+                            provenance,
+                            "invalid_freshness_measurement",
+                            batch_id=batch_id,
+                            source="eventTime.max",
+                        )
+                    )
+            else:
+                facts.append(
+                    _unresolved(
+                        artifact,
+                        line,
+                        provenance,
+                        "invalid_freshness_measurement",
+                        batch_id=batch_id,
+                        source="eventTime.max",
+                    )
+                )
         duration = value.get("durationMs")
         if isinstance(duration, dict):
             for key, number in duration.items():
@@ -198,7 +262,6 @@ def _progress_facts(
             )
         )
 
-        event_time = value.get("eventTime")
         if isinstance(event_time, dict):
             facts.append(
                 _fact(

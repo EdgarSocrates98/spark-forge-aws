@@ -34,6 +34,7 @@ REQUIRED_FIXTURES = {
     "slo_sink_met",
     "slo_sink_violated",
     "slo_sink_unresolved",
+    "slo_p95_freshness",
 }
 
 

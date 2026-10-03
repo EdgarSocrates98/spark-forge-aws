@@ -21,24 +21,24 @@
     "measured": {},
     "threshold": {},
     "runtime_scope": {},
-    "explanation": "A declara\u00e7\u00e3o SLO existe ou foi solicitada, mas o artefato fornecido n\u00e3o sustenta compara\u00e7\u00e3o: identidade, m\u00e9trica direta, unidade, source, timestamp, observa\u00e7\u00f5es ou cobertura da janela ficaram unresolved. Isso n\u00e3o \u00e9 sucesso nem falha do SLO.",
+    "explanation": "A declaração SLO existe ou foi solicitada, mas o artefato fornecido não sustenta comparação: identidade, métrica direta, unidade, source, timestamp, observações ou cobertura da janela ficaram unresolved. Isso não é sucesso nem falha do SLO.",
     "proposed_change": [
-      "Coletar batches com query, m\u00e9trica, unidade e timestamps suficientes para a janela declarada.",
-      "Corrigir a declara\u00e7\u00e3o somente quando o contrato estiver incompleto; n\u00e3o preencher observa\u00e7\u00f5es ausentes."
+      "Coletar batches com query, métrica, unidade e timestamps suficientes para a janela declarada.",
+      "Corrigir a declaração somente quando o contrato estiver incompleto; não preencher observações ausentes."
     ],
     "expected_effect": "",
     "benchmark_ref": "",
     "risks": [
-      "Tratar janela incompleta como met pode esconder viola\u00e7\u00e3o operacional."
+      "Tratar janela incompleta como met pode esconder violação operacional."
     ],
     "tradeoffs": [
-      "Instrumenta\u00e7\u00e3o e reten\u00e7\u00e3o maiores aumentam custo de observabilidade."
+      "Instrumentação e retenção maiores aumentam custo de observabilidade."
     ],
     "validation": [
       "Conferir motivo unresolved, source_fact_ids e cobertura temporal antes de julgar novamente."
     ],
     "rollback": [
-      "Remover apenas a conclus\u00e3o n\u00e3o comprovada e preservar o artefato parcial para reauditoria."
+      "Remover apenas a conclusão não comprovada e preservar o artefato parcial para reauditoria."
     ],
     "sources": [
       {

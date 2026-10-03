@@ -23,13 +23,13 @@
       "snapshot_count": 2,
       "first_batch_id": 1,
       "last_batch_id": 2,
-      "input_rows_per_second_first": 100,
-      "input_rows_per_second_last": 100,
-      "processed_rows_per_second_first": 120,
-      "processed_rows_per_second_last": 110,
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 120.0,
+      "processed_rows_per_second_last": 110.0,
       "snapshot_span_hours": 0.001388888888888889,
       "data_file_count": 1,
-      "avg_file_bytes": 67108864
+      "avg_file_bytes": 67108864.0
     },
     "threshold": {},
     "runtime_scope": {},

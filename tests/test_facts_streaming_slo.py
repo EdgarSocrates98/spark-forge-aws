@@ -303,3 +303,57 @@ def test_transport_slo_unresolved_reasons(kwargs, transport_key: str, reason: st
     assert not [fact for fact in result if fact.kind == "streaming.slo.evaluation"]
     unresolved = [fact for fact in result if fact.kind == "streaming.slo.unresolved"]
     assert unresolved and unresolved[0].attrs["reason"] == reason
+
+
+def test_evaluates_p95_freshness_slo():
+    facts = _facts(metric="freshness_ms")
+    facts[0] = Fact(
+        kind=facts[0].kind,
+        subject=facts[0].subject,
+        attrs={
+            **facts[0].attrs,
+            "metric": "freshness_ms",
+            "statistic": "p95",
+            "unit": "ms",
+            "operator": "lte",
+        },
+        measures={"target": 110.0},
+        provenance=facts[0].provenance,
+    )
+    for fact, value in zip(
+        [item for item in facts if item.kind == "streaming.progress.batch"],
+        (100.0, 200.0, 1000.0),
+    ):
+        fact.measures["freshness_ms"] = value
+
+    result = build_streaming_slo(facts, slo_name="throughput", query_name="orders-query")
+    evaluation = next(fact for fact in result if fact.kind == "streaming.slo.evaluation")
+    assert evaluation.attrs["statistic"] == "p95"
+    assert evaluation.attrs["status"] == "violated"
+    assert evaluation.measures["observed_p95"] == 1000.0
+    assert evaluation.measures["violated_count"] == 1
+    assert len(evaluation.attrs["source_fact_ids"]) == 4
+
+
+def test_end_to_end_latency_requires_explicit_measurement():
+    facts = _facts(metric="batch_duration_ms")
+    facts[0] = Fact(
+        kind=facts[0].kind,
+        subject=facts[0].subject,
+        attrs={
+            **facts[0].attrs,
+            "metric": "end_to_end_latency_ms",
+            "statistic": "p95",
+            "unit": "ms",
+            "operator": "lte",
+        },
+        measures={"target": 1000.0},
+        provenance=facts[0].provenance,
+    )
+    for fact in [item for item in facts if item.kind == "streaming.progress.batch"]:
+        fact.measures["batch_duration_ms"] = 500.0
+
+    result = build_streaming_slo(facts, slo_name="throughput", query_name="orders-query")
+    assert not [fact for fact in result if fact.kind == "streaming.slo.evaluation"]
+    unresolved = [fact for fact in result if fact.kind == "streaming.slo.unresolved"]
+    assert unresolved and unresolved[0].attrs["reason"] == "observation_metric_missing"

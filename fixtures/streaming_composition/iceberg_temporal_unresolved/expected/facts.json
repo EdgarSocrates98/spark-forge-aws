@@ -59,7 +59,7 @@
     },
     "measures": {
       "snapshot_count": 1,
-      "span_hours": 0
+      "span_hours": 0.0
     },
     "attrs": {
       "operations": [
@@ -197,8 +197,8 @@
       "batch_id": 1,
       "observed_index": 0,
       "num_input_rows": 100,
-      "input_rows_per_second": 100,
-      "processed_rows_per_second": 100
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 100.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:00Z",
@@ -228,8 +228,8 @@
       "batch_id": 2,
       "observed_index": 1,
       "num_input_rows": 100,
-      "input_rows_per_second": 100,
-      "processed_rows_per_second": 100
+      "input_rows_per_second": 100.0,
+      "processed_rows_per_second": 100.0
     },
     "attrs": {
       "timestamp": "2026-10-01T00:00:05Z",
@@ -244,7 +244,7 @@
     }
   },
   {
-    "id": "f_bccca1",
+    "id": "f_c882c5",
     "schema_version": 1,
     "kind": "streaming.progress.series",
     "subject": {
@@ -259,15 +259,18 @@
       "observation_count": 2,
       "first_batch_id": 1,
       "last_batch_id": 2,
-      "input_rows_per_second_first": 100,
-      "input_rows_per_second_last": 100,
-      "processed_rows_per_second_first": 100,
-      "processed_rows_per_second_last": 100
+      "input_rows_per_second_first": 100.0,
+      "input_rows_per_second_last": 100.0,
+      "processed_rows_per_second_first": 100.0,
+      "processed_rows_per_second_last": 100.0,
+      "observed_span_seconds": 5.0
     },
     "attrs": {
       "first_observed_index": 0,
       "last_observed_index": 1,
-      "all_processed_below_input": false
+      "all_processed_below_input": false,
+      "observed_timestamp_first": "2026-10-01T00:00:00+00:00",
+      "observed_timestamp_last": "2026-10-01T00:00:05+00:00"
     },
     "provenance": {
       "artifact": "E:\\projetos\\spark-forge-aws\\fixtures\\streaming_composition\\iceberg_temporal_unresolved\\input\\progress.jsonl",

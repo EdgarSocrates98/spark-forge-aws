@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime, timezone
+import math
 import re
 from typing import Any, Callable
 
@@ -39,6 +40,11 @@ _METRIC_ALIASES = {
     "iterator_age_milliseconds": "iterator_age_ms",
     "iteratoragems": "iterator_age_ms",
     "iteratoragemilliseconds": "iterator_age_ms",
+    "freshness_ms": "freshness_ms",
+    "freshness_milliseconds": "freshness_ms",
+    "end_to_end_latency_ms": "end_to_end_latency_ms",
+    "end_to_end_latency_milliseconds": "end_to_end_latency_ms",
+    "e2e_latency_ms": "end_to_end_latency_ms",
 }
 _METRIC_UNITS = {
     "input_rows_per_second": "rows_per_second",
@@ -48,6 +54,8 @@ _METRIC_UNITS = {
     "num_output_rows": "rows",
     "lag": "records",
     "iterator_age_ms": "ms",
+    "freshness_ms": "ms",
+    "end_to_end_latency_ms": "ms",
 }
 _UNIT_ALIASES = {
     "ms": "ms",
@@ -81,6 +89,7 @@ _WINDOW_RE = re.compile(r"^\s*(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>[smhd])\s*$", 
 _SOURCE_ALIASES = {"spark_progress", "structured_streaming", "structured streaming", "spark"}
 _TRANSPORT_SOURCES = {"kafka": "kafka.lag", "kinesis": "kinesis.shard"}
 _SINK_SOURCES = {"streaming_sink", "spark_sink", "sink"}
+_STATISTIC_ALIASES = {"all": "all", "p95": "p95"}
 
 
 def _subject(symbol: str) -> dict[str, Any]:
@@ -174,6 +183,22 @@ def _canonical_operator(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
     return _OPERATOR_ALIASES.get(value.strip().lower())
+
+
+def _canonical_statistic(value: Any) -> str | None:
+    if value is None:
+        return "all"
+    if not isinstance(value, str):
+        return None
+    return _STATISTIC_ALIASES.get(value.strip().lower())
+
+
+def _nearest_rank_p95(values: Sequence[float]) -> float:
+    if not values:
+        raise ValueError("p95 requires at least one observation")
+    ordered = sorted(values)
+    rank = max(1, math.ceil(0.95 * len(ordered)))
+    return ordered[rank - 1]
 
 
 def _transport_series_identity(fact: Fact, source: str) -> tuple[str, ...]:
@@ -272,6 +297,7 @@ def build_streaming_slo(
                 metric = _canonical_metric(attrs.get("metric"))
                 operator = _canonical_operator(attrs.get("operator"))
                 unit = _canonical_unit(attrs.get("unit"))
+                statistic = _canonical_statistic(attrs.get("statistic"))
                 window_seconds = _parse_window(attrs.get("window"))
                 if metric is None:
                     reason = "metric_not_observed"
@@ -279,6 +305,8 @@ def build_streaming_slo(
                     reason = "unsupported_operator"
                 elif unit != _METRIC_UNITS[metric]:
                     reason = "unit_mismatch"
+                elif statistic is None:
+                    reason = "unsupported_statistic"
                 elif window_seconds is None:
                     reason = "invalid_window"
                 elif source not in _SOURCE_ALIASES and source not in _TRANSPORT_SOURCES and source not in _SINK_SOURCES:
@@ -434,9 +462,16 @@ def build_streaming_slo(
                                 ]
                             else:
                                 values = [item[0] for item in observations]
-                                violated_count = sum(
-                                    not _passes(operator, observed, float(target)) for observed in values
-                                )
+                                if statistic == "p95":
+                                    observed_p95 = _nearest_rank_p95(values)
+                                    violated_count = int(
+                                        not _passes(operator, observed_p95, float(target))
+                                    )
+                                else:
+                                    observed_p95 = None
+                                    violated_count = sum(
+                                        not _passes(operator, observed, float(target)) for observed in values
+                                    )
                                 evaluation_attrs = {
                                     "name": declared_name,
                                     "metric": metric,
@@ -457,6 +492,8 @@ def build_streaming_slo(
                                         ],
                                     }),
                                 }
+                                if "statistic" in attrs:
+                                    evaluation_attrs["statistic"] = statistic
                                 if is_transport:
                                     evaluation_attrs["transport_key"] = declared_transport_key
                                     evaluation_attrs["observation_source"] = _TRANSPORT_SOURCES[source]
@@ -473,6 +510,8 @@ def build_streaming_slo(
                                     "window_seconds": window_seconds,
                                     "violated_count": violated_count,
                                 }
+                                if observed_p95 is not None:
+                                    evaluation_measures["observed_p95"] = observed_p95
                                 derived = [
                                     Fact(
                                         kind="streaming.slo.evaluation",
